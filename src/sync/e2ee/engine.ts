@@ -1206,7 +1206,7 @@ export class E2eeSync {
         // N6: a device that can't verify it has the latest keys pulls but
         // doesn't upload — served an old epoch, what it wrote would be
         // readable by a device revoked meanwhile. Its changes wait here.
-        const waiting = this.localChanges(remote, held, await this.o.local.list());
+        const waiting = this.localChanges(remote, held, await this.listLocal());
         await this.collectGarbage(remote);
         res.held = [...held];
         if (waiting.length) res.waiting = waiting;
