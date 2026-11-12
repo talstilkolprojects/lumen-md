@@ -1878,6 +1878,27 @@
       "group": "File",
       "hint": "main.tex for LuaLaTeX / XeLaTeX with Hebrew right to left, math, [@key] citations from the vault's .bib, and the images, in a ZIP",
       "icon": "Download"
+    },
+    {
+      "id": "automations.new",
+      "label": "Automations: new rule (when… then…)…",
+      "group": "Tools",
+      "hint": "A rule in a few choices: note created, tag added, property changed or daily → move, tag, template or a line in the daily note",
+      "icon": "Workflow"
+    },
+    {
+      "id": "automations.dryRun",
+      "label": "Automations: dry run on this note",
+      "group": "Tools",
+      "hint": "What the rules would change for this note — nothing is written",
+      "icon": "Workflow"
+    },
+    {
+      "id": "automations.undo",
+      "label": "Automations: undo the last run",
+      "group": "Tools",
+      "hint": "Puts back every file the last automation run changed, byte for byte",
+      "icon": "Workflow"
     }
   ],
   "full": [
@@ -3908,6 +3929,27 @@
       "group": "File",
       "hint": "main.tex for LuaLaTeX / XeLaTeX with Hebrew right to left, math, [@key] citations from the vault's .bib, and the images, in a ZIP",
       "icon": "Download"
+    },
+    {
+      "id": "automations.new",
+      "label": "Automations: new rule (when… then…)…",
+      "group": "Tools",
+      "hint": "A rule in a few choices: note created, tag added, property changed or daily → move, tag, template or a line in the daily note",
+      "icon": "Workflow"
+    },
+    {
+      "id": "automations.dryRun",
+      "label": "Automations: dry run on this note",
+      "group": "Tools",
+      "hint": "What the rules would change for this note — nothing is written",
+      "icon": "Workflow"
+    },
+    {
+      "id": "automations.undo",
+      "label": "Automations: undo the last run",
+      "group": "Tools",
+      "hint": "Puts back every file the last automation run changed, byte for byte",
+      "icon": "Workflow"
     }
   ],
   "autoSaveOn": [
@@ -4182,6 +4224,9 @@
     "spell.arabicDictionary",
     "arabic.toggleTashkeel",
     "arabic.removeTashkeel",
-    "export.latexProject"
+    "export.latexProject",
+    "automations.new",
+    "automations.dryRun",
+    "automations.undo"
   ]
 }

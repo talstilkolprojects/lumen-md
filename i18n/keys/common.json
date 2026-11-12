@@ -741,6 +741,152 @@
       ]
     },
     {
+      "key": "automations.action.appendDaily",
+      "en": "add a line to the daily note",
+      "vars": []
+    },
+    {
+      "key": "automations.action.move",
+      "en": "move it to a folder",
+      "vars": []
+    },
+    {
+      "key": "automations.action.tag",
+      "en": "add a tag",
+      "vars": []
+    },
+    {
+      "key": "automations.action.template",
+      "en": "apply a template",
+      "vars": []
+    },
+    {
+      "key": "automations.ask.folder",
+      "en": "Folder (empty: anywhere)",
+      "vars": []
+    },
+    {
+      "key": "automations.ask.key",
+      "en": "Property name",
+      "vars": []
+    },
+    {
+      "key": "automations.ask.name",
+      "en": "Rule name",
+      "vars": []
+    },
+    {
+      "key": "automations.ask.tag",
+      "en": "Tag",
+      "vars": []
+    },
+    {
+      "key": "automations.ask.template",
+      "en": "Template note path",
+      "vars": []
+    },
+    {
+      "key": "automations.ask.text",
+      "en": "Line to add ({{link}}, {{title}}, {{date}})",
+      "vars": [
+        "link",
+        "title",
+        "date"
+      ]
+    },
+    {
+      "key": "automations.ask.value",
+      "en": "Value (empty: any change)",
+      "vars": []
+    },
+    {
+      "key": "automations.created",
+      "en": "Rule saved: {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "automations.dryRun.none",
+      "en": "No rule would change anything for this note.",
+      "vars": []
+    },
+    {
+      "key": "automations.dryRun.stopped",
+      "en": "{count} repeats stopped by the loop guard",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "automations.dryRun.title",
+      "en": "Dry run — nothing was written. These rules would run:",
+      "vars": []
+    },
+    {
+      "key": "automations.failed",
+      "en": "Automations: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "automations.pick.action",
+      "en": "Then…",
+      "vars": []
+    },
+    {
+      "key": "automations.pick.trigger",
+      "en": "When…",
+      "vars": []
+    },
+    {
+      "key": "automations.ran",
+      "en": "Automations: {count} changes",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "automations.trigger.created",
+      "en": "a note is created (in a folder)",
+      "vars": []
+    },
+    {
+      "key": "automations.trigger.daily",
+      "en": "every day",
+      "vars": []
+    },
+    {
+      "key": "automations.trigger.propertyChanged",
+      "en": "a property changes",
+      "vars": []
+    },
+    {
+      "key": "automations.trigger.tagAdded",
+      "en": "a tag is added",
+      "vars": []
+    },
+    {
+      "key": "automations.undo.changed",
+      "en": "{path} was edited after the run, so the run was not undone.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "automations.undo.none",
+      "en": "No automation run to undo.",
+      "vars": []
+    },
+    {
+      "key": "automations.undone",
+      "en": "Undone: {event}",
+      "vars": [
+        "event"
+      ]
+    },
+    {
       "key": "backup.choose.age",
       "en": "Back up encrypted to a folder or drive…",
       "vars": []
