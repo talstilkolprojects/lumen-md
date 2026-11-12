@@ -13,7 +13,8 @@
  *     devices: { <id>: { recipient: "age1…", wrap: "<base64 age file of the secret>" } },
  *     sealed: {n, c},              // AES-GCM(epoch's keyring key, JSON KeyringContents)
  *     header?: "<b64u>",           // a passphrase change: the new vault header, until it is written
- *     prev?: "<b64u>"              // with `header`: the keyring this one replaced (the old passphrase's way back)
+ *     prev?: "<b64u>",             // with `header`: the keyring this one replaced (the old passphrase's way back)
+ *     dropped?: [{epoch, at, devices, mac}]  // devices a re-key from an unverified device left out (F4)
  *   }
  *
  * Every AES-GCM has the protocol, the vault id, the epoch and its role as
@@ -48,7 +49,7 @@
 
 import { bs, equalBytes, fromB64u, fromUtf8, randomBytes, sha256Hex, toB64u, utf8 } from "./bytes";
 import { ageDecrypt, ageEncrypt, parseRecipient } from "./age";
-import { anchorKey, blobKey, DecryptError, epochKeys, hmac, namesKey, passphraseKeys, verifyHmac, type RingInfo, type VaultKeys } from "./keys";
+import { anchorKey, blobKey, DecryptError, droppedKey, epochKeys, hmac, namesKey, passphraseKeys, verifyHmac, type RingInfo, type VaultKeys } from "./keys";
 import { isManifestLabel } from "./manifest";
 import { PreconditionFailedError, type StoredObject, type SyncProvider } from "./provider";
 
@@ -87,7 +88,26 @@ export interface KeyringFile {
   header?: string;
   /** With `header`: the keyring this one replaced (base64url bytes), bound by `KeyringContents.parent`. */
   prev?: string;
+  /**
+   * Devices left out by a re-key from a device that couldn't vouch for the
+   * device list (fifth review 12.11, F4), per such re-key: they get "pair
+   * again", not "removed". Not in the digest; each marker is authenticated
+   * by `mac`, HMAC(droppedKey(S_{epoch-1}), droppedData(…)), which a device
+   * left out can check with the secret it holds.
+   */
+  dropped?: DroppedMarker[];
 }
+
+export interface DroppedMarker {
+  /** The epoch whose re-key left the devices out. */
+  epoch: number;
+  at: number;
+  devices: string[];
+  mac: string;
+}
+
+/** How many dropped markers a keyring carries. */
+export const DROPPED_LENGTH = 8;
 
 export interface KeyringContents {
   /** Secrets of the earlier epochs, base64url, by epoch. */
@@ -138,6 +158,20 @@ export class RevokedError extends Error {
   constructor() {
     super("This device was removed from the vault: it can't open the current keys");
     this.name = "RevokedError";
+  }
+}
+
+/**
+ * This device was left out, not revoked (fifth review 12.11, F4): a device
+ * that couldn't verify the device list re-keyed (with the user's consent,
+ * `dropDevices`), so the new keys are wrapped for the passphrase and the
+ * devices it enrolled only. Nothing on this device was changed: pair it
+ * again from a device you trust (or unlock it with the passphrase).
+ */
+export class DroppedFromVaultError extends Error {
+  constructor(public readonly epoch: number) {
+    super("A device that couldn't verify the vault's device list changed the keys, and this device wasn't carried over (it wasn't removed). Nothing on this device was changed: pair it again from a device you trust, or unlock it with the passphrase.");
+    this.name = "DroppedFromVaultError";
   }
 }
 
@@ -196,14 +230,20 @@ export class KeyringRollbackError extends Error {
  */
 export class KeyringForkError extends Error {
   constructor(
-    detail: string,
+    public readonly detail: string,
     public readonly revocationReapplied: string[] = [],
     public readonly reappliedAt: number | null = null,
+    /**
+     * Devices this device revoked that the refused keyring may let back in
+     * (fifth review 12.11, F2), when it couldn't revoke them again on top:
+     * the UI says the revocation may have been undone.
+     */
+    public readonly revocationAtRisk: string[] = [],
   ) {
     super(
       revocationReapplied.length
         ? `The storage replaced this device's key change with another device's (${detail}): it ignored a conditional write. The revocation of ${revocationReapplied.map((d) => `"${d}"`).join(", ")} may not have taken effect for what was written in between; this device made it again at key epoch ${reappliedAt}. Sync every device, and don't trust this storage with key changes.`
-        : `The provider returned a keyring that doesn't descend from the one this device verified (${detail}) — refused (fork). Don't re-key or enroll until every device agrees; pair this device again from one you trust.`,
+        : `The provider returned a keyring that doesn't descend from the one this device verified (${detail}) — refused (fork).${revocationAtRisk.length ? ` The revocation of ${revocationAtRisk.map((d) => `"${d}"`).join(", ")} may have been undone.` : ""} Don't re-key or enroll until every device agrees; pair this device again from one you trust.`,
     );
     this.name = "KeyringForkError";
   }
@@ -240,6 +280,11 @@ async function openWith(key: CryptoKey, s: Sealed, ad: Uint8Array): Promise<Uint
 
 /* ─── Reading ──────────────────────────────────────────────────────────── */
 
+const droppedOk = (d: unknown) => {
+  const m = d as DroppedMarker;
+  return !!m && Number.isSafeInteger(m.epoch) && m.epoch >= 1 && Number.isSafeInteger(m.at) && Array.isArray(m.devices) && m.devices.every((x) => typeof x === "string") && typeof m.mac === "string";
+};
+
 export function decodeKeyring(bytes: Uint8Array): KeyringFile {
   let o: KeyringFile;
   try {
@@ -259,7 +304,8 @@ export function decodeKeyring(bytes: Uint8Array): KeyringFile {
     !o.devices ||
     typeof o.devices !== "object" ||
     (o.header !== undefined && typeof o.header !== "string") ||
-    (o.prev !== undefined && (typeof o.prev !== "string" || o.header === undefined))
+    (o.prev !== undefined && (typeof o.prev !== "string" || o.header === undefined)) ||
+    (o.dropped !== undefined && !(Array.isArray(o.dropped) && o.dropped.length <= DROPPED_LENGTH && o.dropped.every(droppedOk)))
   ) {
     throw new DecryptError("Not a Lumen keyring");
   }
@@ -302,7 +348,9 @@ export async function unwrapSecret(file: KeyringFile, access: KeyAccess): Promis
   if ("wrap" in access) return openWith(access.wrap, file.passphrase, aadFor(file.protocol, file.vaultId, file.epoch, "passphrase"));
   if (file.protocol !== KEYRING_PROTOCOL) throw new PreReleaseKeyringError();
   const d = file.devices[access.device];
-  if (!d) throw new RevokedError();
+  // A dropped re-key's marker says "left out", not "removed" (F4). The device
+  // can't check it here (it holds no secret yet); E2eeSync checks its MAC.
+  if (!d) throw droppedAt(file, access.device) !== null ? new DroppedFromVaultError(droppedAt(file, access.device)!) : new RevokedError();
   try {
     return await ageDecrypt(fromB64u(d.wrap), [{ identity: access.identity }]);
   } catch {
@@ -312,6 +360,44 @@ export async function unwrapSecret(file: KeyringFile, access: KeyAccess): Promis
 }
 
 const isHex64 = (s: unknown) => typeof s === "string" && /^[0-9a-f]{64}$/.test(s);
+
+/** The epoch of the newest dropped marker that lists `device`, or null. */
+function droppedAt(file: KeyringFile, device: string): number | null {
+  const m = (file.dropped ?? []).filter((x) => x.devices.includes(device)).sort((a, b) => b.epoch - a.epoch)[0];
+  return m ? m.epoch : null;
+}
+
+const droppedData = (vaultId: string, m: Omit<DroppedMarker, "mac">) => utf8(JSON.stringify(["lumen-e2ee-dropped/1", vaultId, m.epoch, m.at, [...m.devices].sort()]));
+
+/** A dropped marker for `epoch`, authenticated with `previous`, the secret of epoch `epoch - 1`. */
+async function droppedMarker(vaultId: string, previous: Uint8Array, m: Omit<DroppedMarker, "mac">): Promise<DroppedMarker> {
+  const devices = [...m.devices].sort();
+  return { epoch: m.epoch, at: m.at, devices, mac: toB64u(await hmac(await droppedKey(previous, vaultId), droppedData(vaultId, { ...m, devices }))) };
+}
+
+/**
+ * Did a member of the vault leave `device` out with a dropped re-key (F4)?
+ * True when the keyring has a marker listing it whose MAC the secret of the
+ * epoch before that re-key reproduces — `keys` (the device's own, from
+ * before) must hold it. False otherwise: then it was removed, or the storage
+ * made the marker up.
+ */
+export async function verifyDropped(file: KeyringFile, device: string, keys: Pick<VaultKeys, "vaultId" | "epoch" | "secret" | "olderSecrets">): Promise<boolean> {
+  for (const m of file.dropped ?? []) if (m.devices.includes(device) && (await markerValid(file.vaultId, m, keys))) return true;
+  return false;
+}
+
+async function markerValid(vaultId: string, m: DroppedMarker, keys: Pick<VaultKeys, "epoch" | "secret" | "olderSecrets">): Promise<boolean> {
+  const prev = m.epoch - 1 === keys.epoch ? keys.secret : keys.olderSecrets.get(m.epoch - 1);
+  if (!prev) return false;
+  let tag: Uint8Array;
+  try {
+    tag = fromB64u(m.mac);
+  } catch {
+    return false;
+  }
+  return verifyHmac(await droppedKey(prev, vaultId), tag, droppedData(vaultId, m));
+}
 
 function parseContents(bytes: Uint8Array, epoch: number): KeyringContents {
   let c: KeyringContents;
@@ -365,6 +451,8 @@ function ringInfo(c: KeyringContents, digest: string, preRelease = false): RingI
     ...(c.header ? { header: c.header } : {}),
     aborted: c.aborted ?? [],
     ...(preRelease ? { preRelease: true as const } : {}),
+    enrolled: { ...c.devices },
+    revoked: c.revoked.map((r) => ({ device: r.device, ...(r.recipient ? { recipient: r.recipient } : {}) })),
   };
 }
 
@@ -561,6 +649,8 @@ export interface RekeyOptions {
   carry?: { label: string; epoch: number; digest: string };
   /** Carry no enrolled device over (a re-key from a device that can't vouch for the list): only `enroll` and the passphrase. */
   dropDevices?: boolean;
+  /** Recipients (age public keys) that never get a wrap, whatever id they are listed under (F2: this device revoked them). */
+  excludeRecipients?: string[];
   now?: () => number;
 }
 
@@ -601,7 +691,7 @@ export async function prepareEpoch(current: ReadKeyring | null, keys: VaultKeys,
   const older: Record<string, string> = { ...(prior?.older ?? {}), [String(keys.epoch)]: toB64u(keys.secret) };
   const now = (opts.now ?? Date.now)();
   const revokedIds = new Set(priorRevoked.map((r) => r.device));
-  const revokedKeys = new Set(priorRevoked.map((r) => r.recipient).filter((r): r is string => !!r));
+  const revokedKeys = new Set([...priorRevoked.map((r) => r.recipient).filter((r): r is string => !!r), ...(opts.excludeRecipients ?? [])]);
   const revoke = new Set(opts.revoke ?? []);
   for (const [id, r] of Object.entries(opts.enroll ?? {})) {
     if (revoke.has(id)) continue;
@@ -613,6 +703,19 @@ export async function prepareEpoch(current: ReadKeyring | null, keys: VaultKeys,
   const recipients = new Map<string, string>();
   for (const [id, r] of Object.entries(enrolled)) if (!revoke.has(id) && !revokedIds.has(id) && !revokedKeys.has(r)) recipients.set(id, r);
   for (const [id, r] of Object.entries(opts.enroll ?? {})) if (!revoke.has(id)) recipients.set(id, r);
+  // F4: the devices a dropped re-key leaves out are marked, so they're told
+  // "left out", not "removed"; earlier markers are carried over, minus the
+  // devices enrolled or revoked since (each marker made again with its own
+  // epoch's predecessor secret, which this device holds).
+  const markers: DroppedMarker[] = [];
+  const out = (id: string) => !recipients.has(id) && !revoke.has(id) && !revokedIds.has(id);
+  for (const m of current?.file.dropped ?? []) {
+    const prev = m.epoch - 1 === keys.epoch ? keys.secret : keys.olderSecrets.get(m.epoch - 1);
+    const devices = m.devices.filter(out);
+    if (prev && devices.length && (await markerValid(keys.vaultId, m, keys))) markers.push(await droppedMarker(keys.vaultId, prev, { epoch: m.epoch, at: m.at, devices }));
+  }
+  const left = Object.keys(prior && !preRelease ? prior.devices : {}).filter((id) => opts.dropDevices && out(id));
+  if (left.length) markers.push(await droppedMarker(keys.vaultId, keys.secret, { epoch, at: now, devices: left }));
 
   let wrap = keys.wrap;
   let header = keys.header;
@@ -643,6 +746,7 @@ export async function prepareEpoch(current: ReadKeyring | null, keys: VaultKeys,
     devices,
     sealed: await sealWith(e.keyring, utf8(JSON.stringify(contents)), aad(keys.vaultId, epoch, "sealed")),
     ...(opts.newHeader ? { header: toB64u(opts.newHeader), ...(current ? { prev: toB64u(current.bytes) } : {}) } : {}),
+    ...(markers.length ? { dropped: markers.slice(-DROPPED_LENGTH) } : {}),
   };
   const bytes = utf8(JSON.stringify(file));
   const digest = await keyringDigest(file);

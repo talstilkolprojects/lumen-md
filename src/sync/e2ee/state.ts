@@ -28,6 +28,19 @@ import type { PairingRequest } from "./pairing";
  */
 export type FreshnessSource = "created" | "paired" | "confirmed" | "unverified";
 
+/**
+ * The devices this device revoked (fifth review 12.11, F2), with their keys
+ * and when, authenticated with `mac` (HMAC under a key from epoch 0's secret,
+ * which every keyring of the vault carries). Every re-key and every round
+ * checks the keyring against it: a keyring that lets one of them back in is
+ * a storage that ignored a conditional write, and this device revokes them
+ * again on top of it.
+ */
+export interface RevokedHere {
+  devices: Array<{ device: string; recipient?: string; at: number }>;
+  mac: string;
+}
+
 export interface DeviceState {
   deviceId: string;
   anchor: FreshnessAnchor | null;
@@ -74,6 +87,8 @@ export interface DeviceState {
    * still agree they are unreferenced.
    */
   hold?: string[];
+  /** The devices this device revoked (F2): see `RevokedHere`. */
+  revokedHere?: RevokedHere;
 }
 
 export interface SyncStateStore {
