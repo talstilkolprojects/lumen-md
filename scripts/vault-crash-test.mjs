@@ -44,7 +44,10 @@ if (!process.features?.typescript && !process.execArgv.includes("--experimental-
 const { atomicWrite, isTempName, recoverDir } = await import(pathToFileURL(join(here, "..", "src", "storage", "vault", "atomic.ts")).href);
 
 const DIRS = ["", "notes", "notes/deep"];
-const NOTES = DIRS.flatMap((d) => Array.from({ length: 10 }, (_, i) => (d ? `${d}/n${i}.md` : `n${i}.md`)));
+// Plus one note per folder whose name fills a file name: 126 Hebrew letters + ".md" = 255 bytes
+// (its save takes the short names and the journal, and the real disk refuses anything longer).
+const LONG = "א".repeat(126) + ".md";
+const NOTES = DIRS.flatMap((d) => [...Array.from({ length: 10 }, (_, i) => `n${i}.md`), LONG].map((n) => (d ? `${d}/${n}` : n)));
 
 /** The atomic-save steps over a real folder; every write is fsynced. */
 function diskFs(root) {
@@ -64,6 +67,7 @@ function diskFs(root) {
       }
     },
     size: (p) => fsp.stat(at(p)).then((s) => s.size, () => null),
+    readFile: async (p) => new Uint8Array(await fsp.readFile(at(p))),
     rename: (a, b) => fsp.rename(at(a), at(b)),
     remove: (p) => fsp.rm(at(p), { recursive: true, force: false }),
   };

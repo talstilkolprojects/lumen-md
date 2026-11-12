@@ -44,7 +44,7 @@ export interface DirectoryHandleBackendOptions {
 }
 
 /** Names an interrupted atomic save leaves (./atomic.ts, written by the OPFS worker). */
-const isSaveLeftover = (name: string) => name.startsWith(".lumen-old~") || name.startsWith(".lumen-tmp~");
+const isSaveLeftover = (name: string) => name.startsWith(".lumen-old~") || name.startsWith(".lumen-tmp~") || /^\.lumen-(tmp|old|jnl)-[0-9a-f]{16}$/.test(name);
 
 type Found =
   | { kind: "file"; handle: FileSystemFileHandle }
@@ -230,7 +230,18 @@ export function createDirectoryHandleBackend(o: DirectoryHandleBackendOptions): 
     }
     const { recoverHandleDir } = await import("./atomic");
     await recoverHandleDir<Found>(
-      { lookup, move, removeAt, writeAt, segments: vaultSegments, fileSize: async (f) => (f.kind === "file" ? (await f.handle.getFile()).size : null) },
+      {
+        lookup,
+        move,
+        removeAt,
+        writeAt,
+        segments: vaultSegments,
+        fileSize: async (f) => (f.kind === "file" ? (await f.handle.getFile()).size : null),
+        fileBytes: async (f) => {
+          if (f.kind !== "file") throw new Error("a folder, not a file");
+          return new Uint8Array(await (await f.handle.getFile()).arrayBuffer());
+        },
+      },
       key,
       names,
     );
