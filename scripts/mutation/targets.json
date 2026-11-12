@@ -43,14 +43,11 @@
     ],
     "src/sync/e2ee/conflict.ts": [
       {
-        "file": "src/__tests__/e2eeSync.test.ts"
+        "file": "src/__tests__/e2eeSync.test.ts",
+        "runner": "harness"
       },
       {
         "file": "src/__tests__/e2eeMutants.test.ts"
-      },
-      {
-        "file": "src/__tests__/e2eeSync.test.ts",
-        "runner": "harness"
       },
       {
         "file": "src/__tests__/e2eeRandom.test.ts"
@@ -61,7 +58,8 @@
     ],
     "src/sync/e2ee/manifest.ts": [
       {
-        "file": "src/__tests__/e2eeSync.test.ts"
+        "file": "src/__tests__/e2eeSync.test.ts",
+        "runner": "harness"
       },
       {
         "file": "src/__tests__/e2eeKeyring.test.ts",
@@ -79,7 +77,8 @@
         "file": "src/__tests__/e2eeCrypto.test.ts"
       },
       {
-        "file": "src/__tests__/e2eeSync.test.ts"
+        "file": "src/__tests__/e2eeSync.test.ts",
+        "runner": "harness"
       }
     ],
     "src/ai/privacyLedger.ts": [
