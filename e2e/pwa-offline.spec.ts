@@ -79,7 +79,9 @@ test("offline: a shared note opens, its code is highlighted and its Hebrew uses 
     if (/\.woff2($|\?)/.test(r.url()) && why !== "net::ERR_ABORTED") failedFonts.push(`${r.url()} ${why}`);
   });
   await page.goto("/?title=" + encodeURIComponent("Offline share") + "&text=" + encodeURIComponent(SHARED));
-  await expect(page.locator(".cm-content").first()).toContainText("# Offline share", { timeout: 20_000 });
+  // A share lands in inbox.md (plan 4.16, quick-capture.spec.ts), which opens:
+  // the entry carries the title and the shared text, code fence included.
+  await expect(page.locator(".cm-content").first()).toContainText("Offline share", { timeout: 20_000 });
   await expect(page.locator(".cm-content").first()).toContainText("def greet");
 
   // Split view: the preview highlights the Python block with Shiki.

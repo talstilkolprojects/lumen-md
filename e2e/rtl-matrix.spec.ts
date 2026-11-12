@@ -37,10 +37,19 @@ async function open(page: Page, locale: Locale, mode: "preview" | "wysiwyg" | "s
   await expect(page.locator("html")).toHaveAttribute("dir", locale === "he" ? "rtl" : "ltr");
 }
 
-/** [first text, computed direction, dir attribute] for each element matched under `root`. */
+/**
+ * [first text, computed direction, dir attribute] for each element matched under `root`.
+ * The WYSIWYG editor's block drag handle (a `<button>` with "⠿" in a `<bdi>`,
+ * src/editor/dragHandles.ts) sits at the start of every top-level block; its
+ * glyph is not the block's text, so it is left out of the text compared here.
+ */
 async function dirs(page: Page, root: string, selector: string) {
   return page.locator(root).first().locator(selector).evaluateAll((els) =>
-    els.map((el) => [(el.textContent ?? "").trim().slice(0, 14), getComputedStyle(el).direction, el.getAttribute("dir") ?? ""] as const),
+    els.map((el) => {
+      const copy = el.cloneNode(true) as HTMLElement;
+      for (const h of copy.querySelectorAll(".lumen-drag-handle")) h.remove();
+      return [(copy.textContent ?? "").trim().slice(0, 14), getComputedStyle(el).direction, el.getAttribute("dir") ?? ""] as const;
+    }),
   );
 }
 
