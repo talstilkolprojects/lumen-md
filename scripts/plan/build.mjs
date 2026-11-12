@@ -12,7 +12,11 @@
  *   npm run plan:check       exit 1 when either differs from plan.json (CI),
  *                            or a ✅ task has no `dod` (plan 0.7, scripts/dod.mjs),
  *                            a ✅ is verified below `browser` (W10.G8), or a
- *                            status is longer than STATUS_MAX (W10.G7)
+ *                            status is longer than STATUS_MAX (W10.G7);
+ *                            warns when a wave is over its work-in-progress limit
+ *                            while the next wave has started (plan W6.39, below)
+ *   npm run plan:check -- --wip-strict      the WIP warning fails the check
+ *   npm run plan:check -- --wip-limit 8     another limit than plan.schedule.wipLimit / WIP_LIMIT
  *   npm run plan -- --hours  also print actual hours per task branch (git)
  *
  * The scheduler started as a port of the earlier Python generator (plan5.py
@@ -646,9 +650,66 @@ export function actualHours(M, { root = ROOT, base = "origin/main", remote = "or
   return out;
 }
 
+// ───────────────────────────── work in progress (W6.39) ─────────────────────────────
+
+/**
+ * Plan W6.39 — no new wave before the previous one is verified. A wave (a
+ * phase titled "גל N — …") is over its limit when more than `limit` of its
+ * ⏳ tasks are verified below `browser`; while it is, starting tasks of the
+ * next wave is the warning. A task without a `verified` level (plan W4.24)
+ * counts as below `browser`: unknown is not verified.
+ */
+export const WIP_LIMIT = 5;
+/** Verification levels, weakest first (the W4.24 order: `owner` = only the owner's real-world part is left). */
+export const WIP_LEVELS = Object.freeze(["built", "node", "browser", "real", "owner"]);
+export const WIP_FLOOR = "browser";
+
+/** The wave number of a phase title ("גל 6 — …" → 6), or null for the numbered phases before the waves. */
+export function waveNumber(title) {
+  const m = /^גל\s+(\d+)/.exec(String(title ?? "").trim());
+  return m ? Number(m[1]) : null;
+}
+
+/** ⏳ and verified below the floor (or not at all). */
+export function belowFloor(task, floor = WIP_FLOOR) {
+  if (!String(task.status ?? "").startsWith("⏳")) return false;
+  return WIP_LEVELS.indexOf(task.verified) < WIP_LEVELS.indexOf(floor);
+}
+
+/** A task is started once it has a status (a PR, work in progress, or done). */
+export const isStarted = (task) => String(task.status ?? "").trim() !== "";
+
+/**
+ * Every wave over its limit whose next wave has started:
+ * [{ wave, next, limit, open: [ids below the floor], unlabelled, started: [ids of the next wave] }].
+ * The limit is `limit`, else plan.schedule.wipLimit, else WIP_LIMIT.
+ */
+export function wipWarnings(plan, { limit } = {}) {
+  const max = Number.isInteger(limit) && limit >= 0 ? limit : Number.isInteger(plan.schedule?.wipLimit) ? plan.schedule.wipLimit : WIP_LIMIT;
+  const waves = plan.phases
+    .map((p) => ({ n: waveNumber(p.title), tasks: p.tasks }))
+    .filter((w) => w.n !== null)
+    .sort((a, b) => a.n - b.n);
+  const out = [];
+  for (let i = 0; i + 1 < waves.length; i++) {
+    const open = waves[i].tasks.filter((t) => belowFloor(t));
+    const started = waves[i + 1].tasks.filter(isStarted);
+    if (open.length > max && started.length) {
+      out.push({ wave: waves[i].n, next: waves[i + 1].n, limit: max, open: open.map((t) => t.id), unlabelled: open.filter((t) => t.verified === undefined).length, started: started.map((t) => t.id) });
+    }
+  }
+  return out;
+}
+
+/** One line per warning, for the terminal. */
+export function formatWip(w) {
+  const list = (ids) => (ids.length > 8 ? `${ids.slice(0, 8).join(", ")} … (+${ids.length - 8})` : ids.join(", "));
+  return `plan: WIP — wave ${w.wave} has ${w.open.length} ⏳ tasks verified below ${WIP_FLOOR} (limit ${w.limit}${w.unlabelled ? `; ${w.unlabelled} with no verified level` : ""}) while wave ${w.next} has ${w.started.length} started (${list(w.started)}). Verify wave ${w.wave} first: ${list(w.open)}.`;
+}
+
 // ───────────────────────────── CLI ─────────────────────────────
 
-export function run({ root = ROOT, check = false } = {}) {
+export function run({ root = ROOT, check = false, wipLimit } = {}) {
   const plan = JSON.parse(readFileSync(join(root, PLAN_FILE), "utf8"));
   // Plan 0.7: no ✅ without the commands that prove it.
   const dodProblems = checkDod(plan);
@@ -672,12 +733,15 @@ export function run({ root = ROOT, check = false } = {}) {
     if (stale.includes(DOC_FILE)) writeFileSync(docPath, wantDoc);
     if (stale.includes(HTML_FILE)) writeFileSync(htmlPath, wantHtml);
   }
-  return { M, stale };
+  return { M, stale, wip: wipWarnings(plan, { limit: wipLimit }) };
 }
 
 function main(argv) {
   const check = argv.includes("--check");
-  const { M, stale } = run({ check });
+  const at = argv.indexOf("--wip-limit");
+  const wipLimit = at >= 0 ? Number(argv[at + 1]) : undefined;
+  if (at >= 0 && !(Number.isInteger(wipLimit) && wipLimit >= 0)) throw new Error(`plan: --wip-limit takes a whole number, not ${JSON.stringify(argv[at + 1])}`);
+  const { M, stale, wip } = run({ check, wipLimit });
   const P0 = M.agent.filter((t) => t.eff === "P0").length;
   const levels = [...VERIFIED_LEVELS.map((k) => `${k} ${M.VERIFIED[k]}`), ...(M.VERIFIED.none ? [`unset ${M.VERIFIED.none}`] : [])].join(", ");
   const summary = `${M.agent.length} tasks, ${M.owner.length} owner items, ${Math.floor(M.EFFORT / 60)} h left; release (P0, ${P0} tasks) ${fmt(M.P0_END)}, end ${fmt(M.END)}; verified: ${levels}`;
@@ -686,6 +750,11 @@ function main(argv) {
     for (const h of actualHours(M, { base })) console.log(`${h.id.padEnd(6)} ${h.branch.padEnd(32)} ${String(h.commits).padStart(3)} commits  ${h.hours.toFixed(2).padStart(6)} h actual  ${h.estimate.toFixed(2).padStart(6)} h estimated`);
   }
   if (check) {
+    for (const w of wip) console.error(formatWip(w));
+    if (wip.length && argv.includes("--wip-strict")) {
+      console.error(`plan: ${wip.length} wave${wip.length > 1 ? "s" : ""} over the work-in-progress limit (--wip-strict).`);
+      return 1;
+    }
     if (stale.length) {
       console.error(`plan: ${stale.join(" and ")} ${stale.length > 1 ? "differ" : "differs"} from ${PLAN_FILE}. Run \`npm run plan\` and commit the result.`);
       return 1;
