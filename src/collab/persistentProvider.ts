@@ -85,7 +85,7 @@ export async function createPersistentProvider(
     token: async () => {
       // The owner secret is kept under the plain name; the server is asked for the committed one
       // (the Node server reads `<name>_k<commit>` as `<name>`, the public one checks the commitment).
-      const payload = { ...tokenPayload(roomName, { share: opts.share ?? null, accessKey, e2ee: opts.e2ee === true }), room: serverRoom };
+      const payload: Record<string, unknown> = { ...tokenPayload(roomName, { share: opts.share ?? null, accessKey, e2ee: opts.e2ee === true }), room: serverRoom };
       // Review 2 (#469): the public server gives a token only with the room proof derived from the
       // room password (over the plain name), and may ask for a proof of work bound to the room and the proof.
       if (opts.password) payload.proof = await (await import("./roomProof")).roomProof(opts.password, roomName);
