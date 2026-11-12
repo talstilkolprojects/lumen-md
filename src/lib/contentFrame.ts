@@ -36,10 +36,12 @@ export type ContentFrameRequest =
  * parent's sandbox, and the providers need their own origin (storage,
  * cookies, a referrer) to play. Only the content frame's own script runs
  * at the app's origin there, and it builds elements, never HTML.
+ * No frame gets allow-popups (airplane mode's frame guard, review 6 of #451:
+ * a frame must not open a window this page can't reach and close).
  */
 export function contentFrameSandbox(kind: ContentFrameRequest["kind"]): string {
-  if (kind === "embed") return "allow-scripts allow-same-origin allow-popups allow-presentation allow-forms";
-  if (kind === "gist") return "allow-scripts allow-popups allow-popups-to-escape-sandbox";
+  if (kind === "embed") return "allow-scripts allow-same-origin allow-presentation allow-forms";
+  if (kind === "gist") return "allow-scripts";
   return "allow-scripts";
 }
 

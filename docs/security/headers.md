@@ -218,8 +218,8 @@ copy for the dev server and Capacitor.
 |---|---|---|
 | Image (Markdown, raw `<img>`, WYSIWYG) | `allow-scripts` (opaque origin) | `img-src https:` |
 | `<video>` / `<audio>` | `allow-scripts` | `media-src https:` (posters stay removed by the sanitizer) |
-| Embed block, raw `<iframe>` | the embed block's old flags, `allow-same-origin` included | `frame-src` = the providers the embed block knows (`src/plugins/EmbedBlock.tsx`) |
-| Gist | `allow-scripts allow-popups allow-popups-to-escape-sandbox` | `script-src https://gist.github.com`, `style-src https://github.githubassets.com` |
+| Embed block, raw `<iframe>` | `allow-scripts allow-same-origin allow-presentation allow-forms` (the embed block's old flags without `allow-popups`) | `frame-src` = the providers the embed block knows (`src/plugins/EmbedBlock.tsx`) |
+| Gist | `allow-scripts` | `script-src https://gist.github.com`, `style-src https://github.githubassets.com` |
 
 - **Nothing loads before the user allows it.** Images and media keep the plan 2.2
   placeholder. Embeds and raw iframes now wait too (before, they loaded when the note

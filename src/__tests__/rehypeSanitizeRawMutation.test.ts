@@ -99,6 +99,6 @@ describe("rehypeSanitizeRaw", () => {
   it("sandboxes https frames and drops frames without a usable src", () => {
     const t = run(el("iframe", { src: "https://x.org/e" }), el("iframe", { src: "http://x.org" }), el("iframe", { src: ["https://x"] }));
     expect(tags(t)).toEqual(["iframe"]);
-    expect((t.children[0] as Element).properties).toMatchObject({ sandbox: ["allow-scripts", "allow-popups", "allow-presentation", "allow-same-origin"], referrerPolicy: "no-referrer", loading: "lazy" });
+    expect((t.children[0] as Element).properties).toMatchObject({ sandbox: ["allow-scripts", "allow-presentation", "allow-same-origin"], referrerPolicy: "no-referrer", loading: "lazy" });
   });
 });
