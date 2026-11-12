@@ -1,0 +1,11 @@
+# Context for Dockerfile.ci (plan W4.27). Unlike .dockerignore, .git stays in:
+# the test pipeline reads git (merge base, changed files, ls-files).
+node_modules
+dist
+coverage
+playwright-report
+e2e/results
+ci-docker-out
+*.tsbuildinfo
+.DS_Store
+.env*
