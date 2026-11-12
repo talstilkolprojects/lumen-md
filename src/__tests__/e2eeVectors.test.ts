@@ -14,7 +14,7 @@ import { memoryFiles } from "../sync/e2ee/localFiles";
 import { memoryStateStore } from "../sync/e2ee/state";
 import { ageDecrypt } from "../sync/e2ee/age";
 import { argon2id } from "../sync/e2ee/primitives/argon2";
-import { readPairingCode } from "../sync/e2ee/pairing";
+import { readPairingAnswer, readPairingCode, readPairingRequest } from "../sync/e2ee/pairing";
 import { manifestName, openManifest } from "../sync/e2ee/manifest";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -34,6 +34,14 @@ const V = JSON.parse(readFileSync(join(root, "docs/sync-protocol-vectors.json"),
   argon2id: Array<{ password: string; salt: string; memoryKiB: number; iterations: number; parallelism: number; tag: string }>;
   age: Array<{ identity?: string; passphrase?: string; plaintext: string; file: string }>;
   pairing: Array<{ vault: number; code: string; body: { counter: number; digest: string; ring: { epoch: number; rev: number; digest: string } } }>;
+  pairingTwoWay: Array<{
+    vault: number;
+    now: number;
+    request: string;
+    requestBody: { nonce: string; ring: { epoch: number; rev: number; digest: string }; manifest: { counter: number; digest: string } | null; issuedAt: number; hash: string };
+    answer: string;
+    answerBody: { counter: number; digest: string; ring: { epoch: number; rev: number; digest: string } };
+  }>;
 };
 const bytes = (b64: string) => new Uint8Array(Buffer.from(b64, "base64"));
 
@@ -76,7 +84,7 @@ describe("the sync protocol's test vectors", () => {
     }, 60_000);
   }
 
-  it("Argon2id, age (X25519 and scrypt) and the pairing code", async () => {
+  it("Argon2id, age (X25519 and scrypt), the one-way pairing code and the two-way request and answer", async () => {
     for (const a of V.argon2id) {
       expect(Buffer.from(argon2id({ password: bytes(a.password), salt: bytes(a.salt), memoryKiB: a.memoryKiB, iterations: a.iterations, parallelism: a.parallelism, tagLength: 32 })).toString("base64")).toBe(a.tag);
     }
@@ -88,6 +96,17 @@ describe("the sync protocol's test vectors", () => {
       const v = V.vaults[pv.vault];
       const { keys } = await unlockVault(await load(v), v.passphrase, { minPbkdf2Iterations: 1000 });
       expect(await readPairingCode(keys, pv.code, 1_800_000_000_000)).toEqual(pv.body);
+    }
+    expect(V.pairingTwoWay).toHaveLength(2);
+    for (const pv of V.pairingTwoWay) {
+      const v = V.vaults[pv.vault];
+      const { keys } = await unlockVault(await load(v), v.passphrase, { minPbkdf2Iterations: 1000 });
+      expect(await readPairingRequest(keys, pv.request)).toEqual(pv.requestBody);
+      expect(await readPairingAnswer(keys, pv.answer, pv.requestBody, pv.now + 1000)).toEqual(pv.answerBody);
+      // F1: the kind is inside the MAC — a request under another kind's prefix doesn't verify.
+      const body = pv.request.slice(pv.request.indexOf(":", "lumen-pair-request:2:".length));
+      await expect(readPairingAnswer(keys, `lumen-pair-answer:2:${pv.requestBody.ring.epoch}${body}`, pv.requestBody, pv.now + 1000)).rejects.toThrow(/not from this vault/);
+      await expect(readPairingCode(keys, `lumen-pair:3:${pv.requestBody.ring.epoch}${body}`, pv.now)).rejects.toThrow(/not from this vault/);
     }
   }, 60_000);
 });

@@ -237,18 +237,56 @@ def main():
         pt = agepy.decrypt(data, identity=a.get("identity"), passphrase=a.get("passphrase"))
         check(f"age ({'scrypt' if 'passphrase' in a else 'X25519'}, {len(pt)} bytes)", base64.b64encode(pt).decode() == a["plaintext"])
 
-    for pv in v["pairing"]:
-        vault = v["vaults"][pv["vault"]]
+    # Spec §6 (fifth review, F1): "<prefix><epoch>:" + b64u(HMAC(pairing_N, "lumen-pair/<kind>/<v>\0" ‖ body) ‖ body),
+    # the body says its kind and has exactly that kind's fields.
+    fields = {
+        "code": {"kind", "vaultId", "counter", "digest", "epoch", "ringRev", "ringDigest", "issuedAt", "nonce"},
+        "request": {"kind", "vaultId", "epoch", "ringRev", "ringDigest", "counter", "digest", "requestedAt", "nonce"},
+        "answer": {"kind", "vaultId", "request", "nonce", "counter", "digest", "epoch", "ringRev", "ringDigest", "answeredAt"},
+    }
+    versions = {"code": 3, "request": 2, "answer": 2}
+    prefixes = {"code": "lumen-pair:3:", "request": "lumen-pair-request:2:", "answer": "lumen-pair-answer:2:"}
+
+    def read_pairing(text, kind, epoch, key):
+        """The body of a pairing message of `kind`, or None when its MAC (with that kind's label) or shape is wrong."""
+        prefix = f"{prefixes[kind]}{epoch}:"
+        if not text.startswith(prefix):
+            return None
+        raw = unb64u(text[len(prefix):])
+        label = f"lumen-pair/{kind}/{versions[kind]}\0".encode()
+        if len(raw) < 33 or not hmac.compare_digest(hmac256(key, label + raw[32:]), raw[:32]):
+            return None
+        body = json.loads(raw[32:])
+        return body if body.get("kind") == kind and set(body) == fields[kind] else None
+
+    def vault_keys(index):
+        vault = v["vaults"][index]
         objects = {n: base64.b64decode(d) for n, d in vault["objects"].items()}
         vid = json.loads(objects["lumen-e2ee-vault"])["vaultId"]
         epoch, _, secret, _, ring = read_vault(objects, passphrase=vault["passphrase"])
-        # Spec §8: "lumen-pair:2:<epoch>:" + b64u(HMAC(the epoch's pairing key, body) ‖ body).
-        prefix = f"lumen-pair:2:{epoch}:"
-        raw = unb64u(pv["code"][len(prefix):]) if pv["code"].startswith(prefix) else b""
-        body = json.loads(raw[32:]) if raw else {}
+        return vid, epoch, subkey(secret, vid, "pairing"), ring
+
+    def ring_ok(body, epoch, ring, want):
+        return body.get("epoch") == epoch and (ring is None or (body.get("ringDigest") == ring[0] and body.get("ringRev") == ring[1])) and body.get("ringDigest") == want["ring"]["digest"]
+
+    for pv in v["pairing"]:
+        vid, epoch, key, ring = vault_keys(pv["vault"])
+        body = read_pairing(pv["code"], "code", epoch, key) or {}
         want = pv["body"]
-        ring_ok = body.get("epoch") == epoch and (ring is None or (body.get("ringDigest") == ring[0] and body.get("ringRev") == ring[1]))
-        check(f"pairing code at epoch {epoch}: HMAC under that epoch's key, body and keyring anchor as stated", bool(raw) and hmac.compare_digest(hmac256(subkey(secret, vid, "pairing"), raw[32:]), raw[:32]) and body["counter"] == want["counter"] and body["digest"] == want["digest"] and ring_ok and body["ringDigest"] == want["ring"]["digest"])
+        check(f"pairing code at epoch {epoch}: HMAC with the code label under that epoch's key, body and keyring anchor as stated", body.get("vaultId") == vid and body.get("counter") == want["counter"] and body.get("digest") == want["digest"] and ring_ok(body, epoch, ring, want))
+
+    for pv in v.get("pairingTwoWay", []):
+        vid, epoch, key, ring = vault_keys(pv["vault"])
+        req = read_pairing(pv["request"], "request", epoch, key) or {}
+        rw = pv["requestBody"]
+        check(f"pairing request at epoch {epoch}: request label, nonce, manifest and keyring as stated", req.get("vaultId") == vid and req.get("nonce") == rw["nonce"] and req.get("counter") == (rw["manifest"] or {}).get("counter") and req.get("requestedAt") == rw["issuedAt"] and ring_ok(req, epoch, ring, rw))
+        ans = read_pairing(pv["answer"], "answer", epoch, key) or {}
+        want = pv["answerBody"]
+        sha = hashlib.sha256(pv["request"].strip().encode()).hexdigest()
+        check(f"pairing answer at epoch {epoch}: answer label, names the request's SHA-256 and nonce, anchors as stated", sha == rw["hash"] and ans.get("request") == sha and ans.get("nonce") == rw["nonce"] and ans.get("counter") == want["counter"] and ans.get("digest") == want["digest"] and ring_ok(ans, epoch, ring, want))
+        # Reflection (F1): the request's bytes under the answer's or the code's prefix don't verify.
+        tail = pv["request"][len(f"{prefixes['request']}{epoch}:"):]
+        check(f"pairing request at epoch {epoch} relabelled as an answer or a code is refused", read_pairing(f"{prefixes['answer']}{epoch}:{tail}", "answer", epoch, key) is None and read_pairing(f"{prefixes['code']}{epoch}:{tail}", "code", epoch, key) is None)
 
     print(f"\n{ok}/{total} vectors decoded identically")
     sys.exit(0 if ok == total else 1)

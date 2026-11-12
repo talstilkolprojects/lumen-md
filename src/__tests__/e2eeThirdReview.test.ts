@@ -234,7 +234,7 @@ describe("N3: pairing", () => {
     const laptop = await joinVault("laptop", p);
     await laptop.sync.sync();
     const request = await laptop.sync.pairingRequest();
-    expect(request).toMatch(/^lumen-pair-request:1:1:/);
+    expect(request).toMatch(/^lumen-pair-request:2:1:/);
     for (const [k, v] of now) p.objects.set(k, v);
     const err = await a.sync.answerPairing(request).then(() => null, (e) => e);
     expect(err).toBeInstanceOf(PairingEpochError);
