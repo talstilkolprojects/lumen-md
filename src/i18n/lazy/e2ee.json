@@ -213,5 +213,15 @@
   "e2ee.class.error.link.tooLarge": "The note is too large for a classroom link (32 KB).",
   "e2ee.class.error.link.unsupported": "This browser cannot open classroom links.",
   "e2ee.class.error.tooLong": "Too long to hand in.",
-  "e2ee.class.error.relay": "The relay did not answer: {error}"
+  "e2ee.class.error.relay": "The relay did not answer: {error}",
+  "e2ee.fresh.held": "Until then, changes made on this device stay on it and are not uploaded: it can't tell yet whether it has the vault's latest keys, and a device removed meanwhile could read what it uploads.",
+  "e2ee.fresh.request": "Show a pairing request",
+  "e2ee.fresh.requestHint": "Enter this request on a device you already use. It checks it against the vault as it is now and shows an answer: enter that answer above.",
+  "e2ee.pair.answerTitle": "Pairing request from a new device",
+  "e2ee.pair.answer": "Answer",
+  "e2ee.pair.stale": "The new device is being shown older keys than this one has: the sync service may be showing it an old state. Don't pair it; sync it and try again, and if it stays like this, don't trust this service.",
+  "e2ee.pair.pending": "A pairing code from this device is still valid, so it makes no key change for now: a device paired with that code wouldn't learn of the change. Try again in a couple of minutes.",
+  "e2ee.rekey.unconfirmed": "The revocation may not have taken effect: right after this key change was written, the sync service returned another device's instead (it ignored a conditional write). Sync this device: it revokes again, or says why it can't. If this happens again, don't use this service for key changes.",
+  "e2ee.fork.reapplied": "The sync service replaced this device's key change with another device's. The revocation may not have taken effect for what was written in between; this device has made it again. Sync every device, and don't use this service for key changes.",
+  "e2ee.wrap.tampered": "This device's key in the vault's keyring doesn't open it: the sync service changed it or put back an old one. Nothing on this device was changed. Try again later; if it stays like this, pair this device again from one you trust."
 }

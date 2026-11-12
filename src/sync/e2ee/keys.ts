@@ -125,6 +125,15 @@ export async function epochKeys(secret: Uint8Array, vaultId: string): Promise<{ 
   return { manifest, blobs, pairing, keyring };
 }
 
+/**
+ * The anchor key of an epoch (third review 12.11, N1): HMAC-SHA256 from the
+ * epoch secret, under which a device seals the keyring anchor it remembers.
+ * Only holders of the epoch's secret can compute it, the provider can't.
+ */
+export async function anchorKey(secret: Uint8Array, vaultId: string): Promise<CryptoKey> {
+  return hkdfKey(await ikm(secret), vaultId, "anchor", HMAC_KEY, ["sign", "verify"]);
+}
+
 /** The names key: always from epoch 0's secret. */
 export async function namesKey(secret0: Uint8Array, vaultId: string): Promise<CryptoKey> {
   return hkdfKey(await ikm(secret0), vaultId, "names", HMAC_KEY, ["sign"]);

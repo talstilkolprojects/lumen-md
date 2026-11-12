@@ -19,7 +19,7 @@ import { isSyncedPath, vaultLocalFiles } from "../sync/e2ee/localFiles";
 import { createMemoryBackend } from "../storage/vault/memory";
 import { VaultError, type VaultBackend } from "../storage/vault/types";
 import { utf8 } from "../sync/e2ee/bytes";
-import { device, joinVault, newVault, PASSPHRASE, snapshot, TEST_ITERATIONS, TEST_POLICY } from "./helpers/e2ee";
+import { device, joinTrusted, joinVault, newVault, trusted, PASSPHRASE, snapshot, TEST_ITERATIONS, TEST_POLICY } from "./helpers/e2ee";
 
 /** True when `needle` occurs in `hay` as a byte sequence. */
 function contains(hay: Uint8Array, needle: Uint8Array): boolean {
@@ -43,7 +43,7 @@ describe("e2ee sync: two devices", () => {
     const r1 = await a.sync.sync();
     expect(r1).toMatchObject({ uploaded: 2, counter: 2, incomplete: false });
 
-    const b = await joinVault("B", provider);
+    const b = await joinTrusted("B", provider);
     expect((await b.sync.sync()).downloaded).toBe(2);
     expect(snapshot(b)).toEqual(snapshot(a));
 
@@ -86,7 +86,7 @@ describe("e2ee sync: two devices", () => {
     a.files.set(".github/ci.yml", "on: push");
     a.files.set("n.md", "x");
     expect((await a.sync.sync()).uploaded).toBe(2);
-    const b = await joinVault("B", provider);
+    const b = await joinTrusted("B", provider);
     await b.sync.sync();
     expect(snapshot(b).map(([p]) => p)).toEqual([".github/ci.yml", "n.md"]);
   });
@@ -96,7 +96,7 @@ describe("e2ee sync: what the provider sees", () => {
   it("only ciphertext and opaque names — no paths, contents, versions or counter", async () => {
     const provider = memoryProvider();
     const a = await newVault(provider);
-    const b = await joinVault("B", provider);
+    const b = await joinTrusted("B", provider);
     const texts: Record<string, string> = {
       "projects/תוכנית סודית.md": "# תוכנית\nפגישה עם הספק ביום שלישי",
       "secret-plan.md": "launch codes: hunter2",
@@ -193,7 +193,7 @@ describe("e2ee sync: rollback and replay", () => {
     const na = await blobName(a.keys, "a.md", manifest.files["a.md"].rev);
     const nb = await blobName(a.keys, "b.md", manifest.files["b.md"].rev);
     provider.objects.set(na, provider.objects.get(nb)!);
-    const b = await joinVault("B", provider);
+    const b = await joinTrusted("B", provider);
     await expect(b.sync.sync()).rejects.toBeInstanceOf(DecryptError);
   });
 });
@@ -341,7 +341,7 @@ describe("e2ee sync: conditional manifest writes (CAS)", () => {
     const a = await newVault(provider);
     a.files.set("shared.md", "base");
     await a.sync.sync();
-    const b = await joinVault("B", provider);
+    const b = await joinTrusted("B", provider);
     await b.sync.sync();
     const mname = await manifestName(a.keys);
     provider.manifest = mname;
@@ -374,7 +374,7 @@ describe("e2ee sync: conditional manifest writes (CAS)", () => {
     const a = await newVault(provider, union);
     a.files.set("shared.md", "base");
     await a.sync.sync();
-    const b = await joinVault("B", provider, union);
+    const b = await joinTrusted("B", provider, union);
     await b.sync.sync();
     provider.manifest = await manifestName(a.keys);
     a.files.set("shared.md", "edit from A");
@@ -408,7 +408,7 @@ describe("e2ee sync: conditional manifest writes (CAS)", () => {
     a.files.set("x.md", "x");
     expect(await a.sync.sync()).toMatchObject({ incomplete: true, retries: 8 });
     expect(await a.sync.sync()).toMatchObject({ incomplete: false, uploaded: 1 });
-    const b = await joinVault("B", flaky);
+    const b = await joinTrusted("B", flaky);
     await b.sync.sync();
     expect(b.files.text("x.md")).toBe("x");
     // The blobs of the lost attempts were cleaned up: header + manifest + one blob.
@@ -439,7 +439,7 @@ describe("e2ee sync: interruption mid-way", () => {
     await expect(a.sync.sync()).rejects.toBeInstanceOf(ProviderUnavailableError);
     // The write did happen; the next round finds its own change there and uploads nothing.
     expect(await a.sync.sync()).toMatchObject({ uploaded: 0, counter: 2 });
-    const b = await joinVault("B", provider);
+    const b = await joinTrusted("B", provider);
     await b.sync.sync();
     expect(b.files.text("a.md")).toBe("hello");
     expect(provider.objects.size).toBe(3);
@@ -457,7 +457,7 @@ describe("e2ee sync: interruption mid-way", () => {
     a.files.set("b.md", "2, edited after the failure");
     expect(await a.sync.sync()).toMatchObject({ uploaded: 2 });
     expect(provider.objects.size).toBe(4); // header, manifest, two live blobs: the orphans are gone
-    const b = await joinVault("B", provider);
+    const b = await joinTrusted("B", provider);
     await b.sync.sync();
     expect(snapshot(b)).toEqual(snapshot(a));
   });
@@ -467,7 +467,7 @@ describe("e2ee sync: interruption mid-way", () => {
     const a = await newVault(provider);
     for (let i = 0; i < 6; i++) a.files.set(`n${i}.md`, `note ${i}`);
     await a.sync.sync();
-    const b = await joinVault("B", provider);
+    const b = await joinTrusted("B", provider);
     let gets = 0;
     failOnce((op, name, phase) => op === "get" && name !== HEADER_NAME && phase === "before" && ++gets === 4);
     await expect(b.sync.sync()).rejects.toBeInstanceOf(ProviderUnavailableError);
@@ -484,7 +484,7 @@ describe("e2ee sync: interruption mid-way", () => {
     const a = await newVault(provider);
     a.files.set("a.md", "v1");
     await a.sync.sync();
-    const b = await joinVault("B", provider);
+    const b = await joinTrusted("B", provider);
     await b.sync.sync();
     a.files.set("a.md", "v2 from A");
     await a.sync.sync();
@@ -509,7 +509,7 @@ describe("e2ee sync: conflicts", () => {
     const a = await newVault(provider);
     a.files.set("note.md", "line 1");
     await a.sync.sync();
-    const b = await joinVault("B", provider, resolver, () => Date.UTC(2026, 9, 20));
+    const b = await joinTrusted("B", provider, resolver, () => Date.UTC(2026, 9, 20));
     await b.sync.sync();
     a.files.set("note.md", remote);
     await a.sync.sync();
@@ -582,7 +582,7 @@ describe("e2ee sync: conflicts", () => {
     a.files.set("x.md", "x");
     a.files.set("y.md", "y");
     await a.sync.sync();
-    const b = await joinVault("B", provider);
+    const b = await joinTrusted("B", provider);
     await b.sync.sync();
     a.files.delete("x.md");
     a.files.set("y.md", "y edited on A");
@@ -616,7 +616,7 @@ describe("e2ee sync: the vault as the local side", () => {
     await vault.write("notes/a.md", "# A");
     await vault.write("img/x.bin", new Uint8Array([0, 1, 2, 255]));
     await vault.write(".trash/old.md", "gone");
-    const a = device("A", provider, keys);
+    const a = trusted(device("A", provider, keys));
     const sa = new E2eeSync({ provider, keys, local: vaultLocalFiles(vault), store: memoryStateStore() });
     await sa.markCreated(anchor);
     expect((await sa.sync()).uploaded).toBe(2);
@@ -719,7 +719,7 @@ describe("e2ee sync: edge cases", () => {
     for (const p of ["__proto__", "constructor", "notes/toString", "hasOwnProperty.md"]) a.files.set(p, `content of ${p}`);
     expect((await a.sync.sync()).uploaded).toBe(4);
     expect((await a.sync.sync()).uploaded).toBe(0);
-    const b = await joinVault("B", provider);
+    const b = await joinTrusted("B", provider);
     expect((await b.sync.sync()).downloaded).toBe(4);
     expect(snapshot(b)).toEqual(snapshot(a));
     b.files.set("__proto__", "edited");
@@ -738,7 +738,7 @@ describe("e2ee sync: edge cases", () => {
     const a = await newVault(provider);
     a.files.set("n.md", "ancestor");
     await a.sync.sync();
-    const b = await joinVault("B", provider, record);
+    const b = await joinTrusted("B", provider, record);
     await b.sync.sync();
     for (const tamper of [false, true]) {
       a.files.set("n.md", `A ${tamper}`);
@@ -804,7 +804,7 @@ describe("e2ee sync: folders and files trading places", () => {
     const v = new E2eeSync({ provider, keys, local: vaultLocalFiles(vault), store: memoryStateStore() });
     await v.markCreated(anchor);
     await v.sync();
-    const m = device("M", provider, keys);
+    const m = trusted(device("M", provider, keys));
     await m.sync.sync();
     m.files.delete("a/b.md");
     m.files.set("a", "a is now a file");
@@ -827,7 +827,7 @@ describe("e2ee sync: folders and files trading places", () => {
     const v = new E2eeSync({ provider, keys, local: vaultLocalFiles(vault), store: memoryStateStore() });
     await v.markCreated(anchor);
     await v.sync();
-    const m = device("M", provider, keys);
+    const m = trusted(device("M", provider, keys));
     await m.sync.sync();
     m.files.delete("a/b/c.md");
     m.files.delete("a/b/d/e.md");
@@ -843,7 +843,7 @@ describe("e2ee sync: folders and files trading places", () => {
     const vault = createMemoryBackend();
     const v = new E2eeSync({ provider, keys, local: vaultLocalFiles(vault), store: memoryStateStore() });
     await v.markCreated(anchor);
-    const m = device("M", provider, keys);
+    const m = trusted(device("M", provider, keys));
     m.files.set("x", "x is a file there");
     m.files.set("y.md", "y");
     await m.sync.sync();
@@ -869,7 +869,7 @@ describe("e2ee sync: folders and files trading places", () => {
     const vault = createMemoryBackend();
     const v = new E2eeSync({ provider, keys, local: vaultLocalFiles(vault), store: memoryStateStore() });
     await v.markCreated(anchor);
-    const m = device("M", provider, keys);
+    const m = trusted(device("M", provider, keys));
     m.files.set("x/a.md", "a note in folder x");
     await m.sync.sync();
     await vault.write("x", "x is a file here");
@@ -904,7 +904,7 @@ describe("e2ee sync: paths the local vault cannot hold", () => {
     };
     const v = new E2eeSync({ provider, keys, local: vaultLocalFiles(windows), store: memoryStateStore() });
     await v.markCreated(anchor);
-    const m = device("M", provider, keys);
+    const m = trusted(device("M", provider, keys));
     m.files.set("notes/12:30 meeting.md", "from a Mac");
     m.files.set("notes/ok.md", "fine everywhere");
     await m.sync.sync();
@@ -949,7 +949,7 @@ describe("e2ee sync: a manifest write with a lost answer", () => {
     expect(provider.objects.size).toBe(3);
     expect(a.store.state?.pending).toEqual([]);
     expect(a.store.state?.committing).toEqual([]);
-    const b = await joinVault("B", provider);
+    const b = await joinTrusted("B", provider);
     await b.sync.sync();
     expect(b.files.text("x.md")).toBe("2");
   });
@@ -973,7 +973,7 @@ describe("e2ee sync: a manifest write with a lost answer", () => {
     failNext = true;
     await expect(a.sync.sync()).rejects.toBeInstanceOf(ProviderUnavailableError);
     // Another device reads the old manifest meanwhile: its blob must still be there.
-    const b = await joinVault("B", provider);
+    const b = await joinTrusted("B", provider);
     a.files.set("x.md", "1"); // and A even goes back to the old text
     await a.sync.sync();
     await b.sync.sync();
@@ -988,7 +988,7 @@ describe("e2ee sync: newer manifests must descend from the trusted one", () => {
     const name = await manifestName(a.keys);
     a.files.set("n.md", "base");
     await a.sync.sync();
-    const b = await joinVault("B", provider);
+    const b = await joinTrusted("B", provider);
     await b.sync.sync();
     await b.sync.pair(await a.sync.pairingCode());
     const fork = provider.objects.get(name)!; // counter 2, both devices anchored here

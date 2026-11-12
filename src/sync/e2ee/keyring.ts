@@ -48,7 +48,7 @@
 
 import { bs, equalBytes, fromB64u, fromUtf8, randomBytes, sha256Hex, toB64u, utf8 } from "./bytes";
 import { ageDecrypt, ageEncrypt, parseRecipient } from "./age";
-import { blobKey, DecryptError, epochKeys, namesKey, passphraseKeys, type RingInfo, type VaultKeys } from "./keys";
+import { anchorKey, blobKey, DecryptError, epochKeys, hmac, namesKey, passphraseKeys, verifyHmac, type RingInfo, type VaultKeys } from "./keys";
 import { isManifestLabel } from "./manifest";
 import { PreconditionFailedError, type StoredObject, type SyncProvider } from "./provider";
 
@@ -117,6 +117,14 @@ export interface RingAnchor {
   epoch: number;
   rev: number;
   digest: string;
+  /**
+   * HMAC under the epoch's anchor key (`anchorKey(S_epoch)`) over the vault
+   * id, epoch, rev and digest (third review 12.11, N1). The digest alone is
+   * public; this binds the anchor to a secret the provider doesn't hold, so
+   * keys the provider made (a keyring wrapped for this device's public key)
+   * can't pass for a descendant of it.
+   */
+  check?: string;
 }
 
 export class RevokedDeviceEnrollError extends Error {
@@ -133,6 +141,40 @@ export class RevokedError extends Error {
   }
 }
 
+/**
+ * This device's wrap in the keyring doesn't open it (third review 12.11, N5):
+ * the age file decrypts, or is there, but its secret doesn't open the
+ * keyring's sealed part. The storage changed the wrap (or put back one from
+ * another epoch); whether this device is still enrolled can't be told from
+ * it. Nothing is changed on the device: try again later, or pair it again.
+ * Unlike `RevokedError`, never a reason to act on the device's data.
+ */
+export class TamperedWrapError extends DecryptError {
+  constructor() {
+    super("This device's key in the vault's keyring doesn't open the keyring: the storage changed it, or put back an old one. Nothing on this device was changed. Try again later; if it stays like this, pair this device again from one you trust.");
+    this.name = "TamperedWrapError";
+  }
+}
+
+/**
+ * A keyring this device just wrote is not what the storage returns right
+ * after (third review 12.11, N2): the storage accepted a conditional write
+ * it should have refused, and another device's key change replaced this
+ * one. `revoked` lists the devices this write revoked: the revocation may
+ * not have taken effect, and must be made again from a verified device.
+ */
+export class KeyringCommitLostError extends Error {
+  constructor(
+    public readonly revoked: string[],
+    detail = "the storage returned another keyring right after this device wrote its own",
+  ) {
+    super(
+      `${revoked.length ? `The revocation of ${revoked.map((d) => `"${d}"`).join(", ")} may not have taken effect: ` : "This device's key change did not take effect: "}${detail} (it ignored a conditional write). Sync, then make the change again from a verified device; if it happens again, don't trust this storage with key changes.`,
+    );
+    this.name = "KeyringCommitLostError";
+  }
+}
+
 export class KeyringRollbackError extends Error {
   constructor(
     public readonly seen: number,
@@ -144,10 +186,25 @@ export class KeyringRollbackError extends Error {
   }
 }
 
-/** A keyring that doesn't descend from the one this device verified last (RR-2). */
+/**
+ * A keyring that doesn't descend from the one this device verified last
+ * (RR-2). `revocationReapplied` (third review 12.11, N2): the keyring that
+ * replaced this device's own re-key was another device's at the same epoch,
+ * which didn't revoke these devices; this device revoked them again on top
+ * of it, at epoch `reappliedAt`. Anything written in between may be
+ * readable by them: the revocation may not have taken effect for it.
+ */
 export class KeyringForkError extends Error {
-  constructor(detail: string) {
-    super(`The provider returned a keyring that doesn't descend from the one this device verified (${detail}) — refused (fork). Don't re-key or enroll until every device agrees; pair this device again from one you trust.`);
+  constructor(
+    detail: string,
+    public readonly revocationReapplied: string[] = [],
+    public readonly reappliedAt: number | null = null,
+  ) {
+    super(
+      revocationReapplied.length
+        ? `The storage replaced this device's key change with another device's (${detail}): it ignored a conditional write. The revocation of ${revocationReapplied.map((d) => `"${d}"`).join(", ")} may not have taken effect for what was written in between; this device made it again at key epoch ${reappliedAt}. Sync every device, and don't trust this storage with key changes.`
+        : `The provider returned a keyring that doesn't descend from the one this device verified (${detail}) — refused (fork). Don't re-key or enroll until every device agrees; pair this device again from one you trust.`,
+    );
     this.name = "KeyringForkError";
   }
 }
@@ -237,7 +294,10 @@ export async function readKeyring(provider: SyncProvider, name = KEYRING_NAME): 
 /** How this device opens the keyring: the passphrase's wrap key, or its own age identity. */
 export type KeyAccess = { wrap: CryptoKey } | { device: string; identity: string };
 
-/** The epoch secret of `file`, through `access`. RevokedError when the device has no wrap. */
+/**
+ * The epoch secret of `file`, through `access`. RevokedError when the device
+ * has no wrap; TamperedWrapError when its wrap doesn't open with its key (N5).
+ */
 export async function unwrapSecret(file: KeyringFile, access: KeyAccess): Promise<Uint8Array> {
   if ("wrap" in access) return openWith(access.wrap, file.passphrase, aadFor(file.protocol, file.vaultId, file.epoch, "passphrase"));
   if (file.protocol !== KEYRING_PROTOCOL) throw new PreReleaseKeyringError();
@@ -246,7 +306,8 @@ export async function unwrapSecret(file: KeyringFile, access: KeyAccess): Promis
   try {
     return await ageDecrypt(fromB64u(d.wrap), [{ identity: access.identity }]);
   } catch {
-    throw new RevokedError();
+    // A wrap under this id that this device's key doesn't open: changed by the storage (N5).
+    throw new TamperedWrapError();
   }
 }
 
@@ -359,9 +420,55 @@ export async function checkDeviceEnrolled(file: KeyringFile, keys: VaultKeys, de
   if (c.revoked.some((r) => r.device === device) || !(device in c.devices)) throw new RevokedError();
 }
 
-/** The anchor of the keyring `keys` came from (epoch 0: none yet). */
+/** The anchor of the keyring `keys` came from (epoch 0: none yet), without its check. */
 export function anchorOf(keys: VaultKeys): RingAnchor {
   return keys.ring ? { epoch: keys.epoch, rev: keys.ring.rev, digest: keys.ring.digest } : { epoch: 0, rev: 0, digest: "" };
+}
+
+const anchorData = (vaultId: string, a: RingAnchor) => utf8(JSON.stringify(["lumen-e2ee-anchor/1", vaultId, a.epoch, a.rev, a.digest]));
+
+/**
+ * `a` with its check (N1), computed from `secret`, the secret of epoch
+ * `a.epoch`. Epoch 0 has no keyring and no check.
+ */
+export async function sealAnchor(a: RingAnchor, secret: Uint8Array, vaultId: string): Promise<RingAnchor> {
+  if (a.epoch === 0) return { epoch: 0, rev: 0, digest: "" };
+  const tag = await hmac(await anchorKey(secret, vaultId), anchorData(vaultId, a));
+  return { epoch: a.epoch, rev: a.rev, digest: a.digest, check: toB64u(tag) };
+}
+
+/** The checked anchor of the keyring `keys` came from. */
+export function checkedAnchorOf(keys: VaultKeys): Promise<RingAnchor> {
+  return sealAnchor(anchorOf(keys), keys.secret, keys.vaultId);
+}
+
+/**
+ * Do `keys` descend from the keyring this device verified, `a` (N1)? They
+ * must hold the secret of `a`'s epoch — their own at that epoch, or among
+ * `older` at a newer one — and that secret must reproduce `a.check`. A
+ * device opened with its own age key gets its keys from a keyring the
+ * provider could have made for its public recipient; this is what ties them
+ * to the vault the device knew. Throws KeyringRollbackError for keys of an
+ * older epoch and KeyringForkError for keys that don't hold the secret.
+ * Returns false when `a` has no check yet (a state from before N1): the
+ * caller seals it from keys it trusts.
+ */
+export async function verifyAnchor(keys: VaultKeys, a: RingAnchor): Promise<boolean> {
+  if (a.epoch === 0) return true;
+  if (keys.epoch < a.epoch) throw new KeyringRollbackError(a.epoch, keys.epoch);
+  const secret = keys.epoch === a.epoch ? keys.secret : keys.olderSecrets.get(a.epoch);
+  if (!secret) throw new KeyringForkError(`its keys don't hold the secret of epoch ${a.epoch}, which this device verified`);
+  if (!a.check) return false;
+  let tag: Uint8Array;
+  try {
+    tag = fromB64u(a.check);
+  } catch {
+    throw new KeyringForkError("this device's stored anchor is damaged");
+  }
+  if (!(await verifyHmac(await anchorKey(secret, keys.vaultId), tag, anchorData(keys.vaultId, a)))) {
+    throw new KeyringForkError(`its keys don't hold the secret of epoch ${a.epoch} this device verified, only one of the same number`);
+  }
+  return true;
 }
 
 /**
@@ -426,7 +533,7 @@ export async function refreshKeys(provider: SyncProvider, keys: VaultKeys, acces
     } catch (e) {
       if (e instanceof PreReleaseKeyringError) throw e;
       if ("wrap" in access) throw e;
-      throw new RevokedError(); // a wrap of some other epoch's secret, put back by the provider
+      throw new TamperedWrapError(); // a wrap of some other secret (another epoch's, or the provider's), N5
     }
     // Lineage: the new epoch must list this device's current secret as its own epoch's.
     const mine = next.olderSecrets.get(keys.epoch);
@@ -452,6 +559,8 @@ export interface RekeyOptions {
   newHeader?: Uint8Array;
   /** The previous epoch's frozen manifest this epoch's manifest is made from. */
   carry?: { label: string; epoch: number; digest: string };
+  /** Carry no enrolled device over (a re-key from a device that can't vouch for the list): only `enroll` and the passphrase. */
+  dropDevices?: boolean;
   now?: () => number;
 }
 
@@ -485,7 +594,7 @@ export async function prepareEpoch(current: ReadKeyring | null, keys: VaultKeys,
   if (!current && keys.epoch !== 0) throw new KeyringRollbackError(keys.epoch, 0);
   const preRelease = !!current && current.file.protocol !== KEYRING_PROTOCOL;
   const prior: KeyringContents | null = current ? await openContents(current.file, keys.keyring, preRelease) : null;
-  const enrolled: Record<string, string> = prior && !preRelease ? prior.devices : {};
+  const enrolled: Record<string, string> = prior && !preRelease && !opts.dropDevices ? prior.devices : {};
   const priorRevoked = prior?.revoked ?? [];
   const epoch = keys.epoch + 1;
   const secret = randomBytes(32);
@@ -555,6 +664,7 @@ export async function prepareEpoch(current: ReadKeyring | null, keys: VaultKeys,
 export async function rewriteKeyring(
   provider: SyncProvider,
   keys: VaultKeys,
+  access: KeyAccess | null,
   edit: (c: KeyringContents, f: KeyringFile) => { contents: KeyringContents; file: KeyringFile },
 ): Promise<VaultKeys> {
   const current = await readKeyring(provider);
@@ -563,28 +673,49 @@ export async function rewriteKeyring(
   const edited = edit(c, current.file);
   const contents: KeyringContents = { ...edited.contents, rev: c.rev + 1, parent: current.digest, chain: chainAfter(c, keys.epoch, current.digest) };
   const f = edited.file;
-  const next: KeyringFile = { ...f, protocol: KEYRING_PROTOCOL, sealed: await sealWith(keys.keyring, utf8(JSON.stringify(contents)), aad(f.vaultId, f.epoch, "sealed")) };
-  await provider.put(KEYRING_NAME, utf8(JSON.stringify(next)), { ifMatch: current.etag });
-  return { ...keys, ring: ringInfo(contents, await keyringDigest(next)) };
+  // Every wrap is made again from the sealed list (N5): a wrap the storage swapped is repaired, one it added is dropped.
+  const devices: Record<string, DeviceWrap> = {};
+  for (const [id, recipient] of Object.entries(contents.devices)) devices[id] = { recipient, wrap: toB64u(await ageEncrypt(keys.secret, [{ x25519: recipient }])) };
+  const next: KeyringFile = { ...f, protocol: KEYRING_PROTOCOL, devices, sealed: await sealWith(keys.keyring, utf8(JSON.stringify(contents)), aad(f.vaultId, f.epoch, "sealed")) };
+  const bytes = utf8(JSON.stringify(next));
+  await provider.put(KEYRING_NAME, bytes, { ifMatch: current.etag });
+  const out = { ...keys, ring: ringInfo(contents, await keyringDigest(next)) };
+  await confirmCommit(provider, out, bytes, access); // N2
+  return out;
+}
+
+/**
+ * Read the keyring back right after this device wrote it (third review
+ * 12.11, N2): it must be what was written, or a keyring that already
+ * descends from it (another device built on it at once). Anything else
+ * means the storage let another write replace it — it ignored the
+ * compare-and-swap — and the change (a revocation, `revoked`) may not have
+ * taken effect: `KeyringCommitLostError`. Against a storage that holds the
+ * other write back until after this read, only a later round sees it
+ * (`KeyringForkError`); see spec §9.
+ */
+export async function confirmCommit(provider: SyncProvider, keys: VaultKeys, bytes: Uint8Array, access: KeyAccess | null, revoked: string[] = []): Promise<void> {
+  const back = await provider.get(KEYRING_NAME);
+  if (back && equalBytes(back.data, bytes)) return;
+  if (back && access) {
+    try {
+      await refreshKeys(provider, keys, access, anchorOf(keys));
+      return;
+    } catch {
+      // not a descendant: lost
+    }
+  }
+  throw new KeyringCommitLostError(revoked);
 }
 
 /** Keep the same epoch, add a device's wrap (an enrollment needs no re-key). Use `E2eeSync.enroll`. */
-export async function enrollDevice(provider: SyncProvider, keys: VaultKeys, device: string, recipient: string): Promise<VaultKeys> {
+export async function enrollDevice(provider: SyncProvider, keys: VaultKeys, device: string, recipient: string, access: KeyAccess | null = keys.wrap ? { wrap: keys.wrap } : null): Promise<VaultKeys> {
   if (!keys.ring) throw new Error("Enroll devices after the first re-key (the vault has no keyring yet)");
   parseRecipient(recipient);
-  const wrap: DeviceWrap = { recipient, wrap: toB64u(await ageEncrypt(keys.secret, [{ x25519: recipient }])) };
-  return rewriteKeyring(provider, keys, (c, f) => {
+  return rewriteKeyring(provider, keys, access, (c, f) => {
     if (c.revoked.some((r) => r.device === device || r.recipient === recipient)) throw new RevokedDeviceEnrollError(device);
-    const list = { ...c.devices, [device]: recipient };
-    return { contents: { ...c, devices: list }, file: { ...f, devices: { ...pickWraps(f, list), [device]: wrap } } };
+    return { contents: { ...c, devices: { ...c.devices, [device]: recipient } }, file: f };
   });
-}
-
-/** The plaintext wraps that match the sealed list (anything else the provider added is dropped). */
-function pickWraps(f: KeyringFile, list: Record<string, string>): Record<string, DeviceWrap> {
-  const out: Record<string, DeviceWrap> = {};
-  for (const [id, r] of Object.entries(list)) if (f.devices[id]?.recipient === r) out[id] = f.devices[id];
-  return out;
 }
 
 /** The additional data of a keyring field (the spec's test vectors use it). */

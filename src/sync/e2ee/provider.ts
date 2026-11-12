@@ -9,6 +9,8 @@
  * names and sealed bytes (see keys.ts and manifest.ts).
  */
 
+import { randomBytes, toB64u } from "./bytes";
+
 export interface StoredObject {
   data: Uint8Array;
   /** The provider's revision / ETag of this object, opaque to the client. */
@@ -34,6 +36,12 @@ export interface SyncProvider {
   delete(name: string): Promise<void>;
   /** Every object name. */
   list(): Promise<string[]>;
+  /**
+   * False when create-only (`ifNoneMatch: "*"`) isn't atomic on this storage
+   * (Google Drive: look → create → look, third review 12.11 N7). Syncing
+   * works; key and device changes are refused (`proveCas`): sync-only.
+   */
+  readonly atomicCreate?: boolean;
 }
 
 export class PreconditionFailedError extends Error {
@@ -58,43 +66,76 @@ export class CasUnsupportedError extends Error {
   }
 }
 
-/** The object `proveCas` writes and deletes (a fixed, content-free name). */
-export const CAS_PROBE_NAME = "lumen-e2ee-cas-probe";
-
 const proven = new WeakSet<object>();
+
+/** A random 43-character name and sealed-blob-sized random bytes: what a blob upload looks like (N2). */
+function probeObject(): { name: string; data: () => Uint8Array } {
+  const name = toB64u(randomBytes(32));
+  const size = 1 + 12 + 256 + 16; // format byte, nonce, the smallest padded plaintext, tag
+  return {
+    name,
+    data: () => {
+      const d = randomBytes(size);
+      d[0] = 1;
+      return d;
+    },
+  };
+}
 
 /**
  * Prove that `provider` honours both conditions (RR-7): create-only on a
- * new object succeeds and on an existing one is refused; If-Match with the
- * current etag succeeds and with a stale one is refused, leaving the object
- * as it was. Throws `CasUnsupportedError` when a condition is ignored. The
- * result is remembered per provider object.
+ * new object succeeds and on an existing one is refused — also when two
+ * creates race —; If-Match with the current etag succeeds and with a stale
+ * one is refused, leaving the object as it was. Throws `CasUnsupportedError`
+ * when a condition is ignored, or when the provider says its create-only
+ * isn't atomic (`atomicCreate: false`, N7). The result is remembered per
+ * provider object.
+ *
+ * The probe objects have random names and blob-sized random contents (N2),
+ * so a provider can't single the probe out by its name. This proves a
+ * storage is configured right; it can't prove a malicious one honours the
+ * conditions on the writes that matter — the engine reads each keyring
+ * write back for that (spec §9).
  */
 export async function proveCas(provider: SyncProvider): Promise<void> {
   if (proven.has(provider)) return;
-  const name = CAS_PROBE_NAME;
-  const refused = async (data: number, cond: PutCondition): Promise<boolean> => {
+  if (provider.atomicCreate === false) throw new CasUnsupportedError(provider.id, "its create-only write is not atomic");
+  const probe = probeObject();
+  const race = probeObject();
+  const name = probe.name;
+  const refused = async (data: Uint8Array, cond: PutCondition): Promise<boolean> => {
     try {
-      await provider.put(name, new Uint8Array([data]), cond);
+      await provider.put(name, data, cond);
       return false;
     } catch (e) {
       if (e instanceof PreconditionFailedError) return true;
       throw e;
     }
   };
-  await provider.delete(name);
   try {
-    const a = await provider.put(name, new Uint8Array([1]), { ifNoneMatch: "*" });
-    if (!(await refused(2, { ifNoneMatch: "*" }))) throw new CasUnsupportedError(provider.id, "If-None-Match: * on an existing object was accepted");
-    const b = await provider.put(name, new Uint8Array([3]), { ifMatch: a.etag });
+    const first = probe.data();
+    const a = await provider.put(name, first, { ifNoneMatch: "*" });
+    if (!(await refused(probe.data(), { ifNoneMatch: "*" }))) throw new CasUnsupportedError(provider.id, "If-None-Match: * on an existing object was accepted");
+    const third = probe.data();
+    const b = await provider.put(name, third, { ifMatch: a.etag });
     if (b.etag === a.etag) throw new CasUnsupportedError(provider.id, "a write kept the same etag");
-    if (!(await refused(4, { ifMatch: a.etag }))) throw new CasUnsupportedError(provider.id, "If-Match with a stale etag was accepted");
+    if (!(await refused(probe.data(), { ifMatch: a.etag }))) throw new CasUnsupportedError(provider.id, "If-Match with a stale etag was accepted");
     const now = await provider.get(name);
-    if (!now || now.data.length !== 1 || now.data[0] !== 3 || now.etag !== b.etag) throw new CasUnsupportedError(provider.id, "a refused write changed the object");
+    if (!now || !sameBytes(now.data, third) || now.etag !== b.etag) throw new CasUnsupportedError(provider.id, "a refused write changed the object");
+    // Two creates at once: exactly one may win (where the storage lets a race show).
+    const wins = await Promise.all([race.data(), race.data()].map((d) => provider.put(race.name, d, { ifNoneMatch: "*" }).then(() => 1, (e) => (e instanceof PreconditionFailedError ? 0 : Promise.reject(e)))));
+    if (wins[0] + wins[1] !== 1) throw new CasUnsupportedError(provider.id, "two racing create-only writes both succeeded");
   } finally {
     await provider.delete(name).catch(() => undefined);
+    await provider.delete(race.name).catch(() => undefined);
   }
   proven.add(provider);
+}
+
+function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
 }
 
 /** A transient failure (network down, timeout); the sync round can be retried. */

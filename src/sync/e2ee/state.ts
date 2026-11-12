@@ -12,6 +12,7 @@
 
 import type { RingAnchor } from "./keyring";
 import type { FreshnessAnchor, ManifestEntry } from "./manifest";
+import type { PairingRequest } from "./pairing";
 
 /**
  * How the device knows its anchor is current:
@@ -22,6 +23,8 @@ import type { FreshnessAnchor, ManifestEntry } from "./manifest";
  *                  was accepted as-is. Later rollbacks below it are refused, but
  *                  an old state served from the very start would not be noticed,
  *                  so the UI shows "freshness not verified" and claims no protection.
+ *                  Such a device pulls but doesn't upload: its changes wait on it
+ *                  until it is paired or confirmed (third review 12.11, N6).
  */
 export type FreshnessSource = "created" | "paired" | "confirmed" | "unverified";
 
@@ -39,9 +42,27 @@ export interface DeviceState {
   /**
    * The keyring this device verified last (re-review 12.11, RR-2): every
    * later keyring must descend from it (same epoch: a higher revision that
-   * chains to it; a newer epoch: a chain that lists it).
+   * chains to it; a newer epoch: a chain that lists it). Its `check` (third
+   * review, N1) binds it to that epoch's secret: keys that don't hold the
+   * secret are refused, however they were opened.
    */
   ring?: RingAnchor;
+  /**
+   * The last re-key this device committed and confirmed by reading it back
+   * (third review 12.11, N2): the keyring it replaced (`parent`) and the
+   * devices it revoked. If a keyring at that epoch from the same parent
+   * replaces it later (a storage that ignored the compare-and-swap), the
+   * device revokes them again on top of it.
+   */
+  rekeyed?: { epoch: number; digest: string; parent: string | null; parentEpoch: number; revoked: string[]; manifest: FreshnessAnchor | null };
+  /** The two-way pairing request this device is waiting to have answered (N3). */
+  pairRequest?: PairingRequest;
+  /**
+   * Until when (this device's clock) a pairing code or answer it made is
+   * valid (N3): no key change from this device before then, since a device
+   * paired with it would not learn of the change.
+   */
+  pairingUntil?: number;
   /**
    * A frozen manifest this device has been waiting on, and when it first saw
    * it on its own clock (RR-4): the wait is measured on one clock only.

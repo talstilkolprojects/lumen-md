@@ -54,6 +54,22 @@ export async function joinVault(name: string, provider: SyncProvider, resolver?:
   return device(name, provider, keys, resolver, now);
 }
 
+/**
+ * Another device that unlocks with the passphrase and that the user has
+ * confirmed by hand (as `confirmFreshness` does, before its first round):
+ * for tests whose subject isn't freshness. An unverified device pulls but
+ * doesn't upload (third review 12.11, N6).
+ */
+export async function joinTrusted(name: string, provider: SyncProvider, resolver?: ConflictResolver, now?: () => number): Promise<Device> {
+  return trusted(await joinVault(name, provider, resolver, now));
+}
+
+/** `d`, confirmed by hand before its first round (see `joinTrusted`). */
+export function trusted(d: Device): Device {
+  d.store.state = { deviceId: `${d.name}-${Math.random().toString(36).slice(2, 10)}`, anchor: null, freshness: "confirmed", base: {}, pending: [] };
+  return d;
+}
+
 /** Every file of `d`, sorted, as [path, text] pairs. */
 export function snapshot(d: Device): Array<[string, string]> {
   return [...d.files.files.keys()].sort().map((p) => [p, d.files.text(p) ?? ""]);

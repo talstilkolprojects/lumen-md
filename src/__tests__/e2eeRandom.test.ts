@@ -18,7 +18,7 @@ import { memoryProvider, ProviderUnavailableError } from "../sync/e2ee/provider"
 import { asText, type ConflictResolver } from "../sync/e2ee/conflict";
 import { RollbackError } from "../sync/e2ee/manifest";
 import { utf8 } from "../sync/e2ee/bytes";
-import { joinVault, mulberry32, newVault, snapshot, type Device } from "./helpers/e2ee";
+import { joinTrusted, mulberry32, newVault, snapshot, type Device } from "./helpers/e2ee";
 
 const ROUNDS = 10_000;
 const PATHS = ["a.md", "b.md", "notes/c.md", "notes/d.md", "e.md", "f.md", "שלום/ג.md", "x.bin"];
@@ -45,7 +45,7 @@ describe("e2ee sync: randomized rounds", () => {
         return { kind: "content", data: utf8([...local, ...remote].join("\n")) };
       };
       const devices: Device[] = [await newVault(provider, merge)];
-      devices.push(await joinVault("B", provider, merge), await joinVault("C", provider, merge));
+      devices.push(await joinTrusted("B", provider, merge), await joinTrusted("C", provider, merge));
       faults = true;
 
       const written: string[] = [];

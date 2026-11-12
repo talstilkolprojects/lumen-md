@@ -2966,6 +2966,11 @@
       "vars": []
     },
     {
+      "key": "e2ee.fork.reapplied",
+      "en": "The sync service replaced this device's key change with another device's. The revocation may not have taken effect for what was written in between; this device has made it again. Sync every device, and don't use this service for key changes.",
+      "vars": []
+    },
+    {
       "key": "e2ee.fresh.badCode",
       "en": "This pairing code is not valid for this vault, or it has expired.",
       "vars": []
@@ -2981,6 +2986,11 @@
       "vars": []
     },
     {
+      "key": "e2ee.fresh.held",
+      "en": "Until then, changes made on this device stay on it and are not uploaded: it can't tell yet whether it has the vault's latest keys, and a device removed meanwhile could read what it uploads.",
+      "vars": []
+    },
+    {
       "key": "e2ee.fresh.olderKeys",
       "en": "The other device is at a newer key epoch than this one sees: the sync service may be showing this device old keys. Sync both devices and try again; if it stays like this, don't trust this service.",
       "vars": []
@@ -2988,6 +2998,16 @@
     {
       "key": "e2ee.fresh.pair",
       "en": "Pair",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.request",
+      "en": "Show a pairing request",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.requestHint",
+      "en": "Enter this request on a device you already use. It checks it against the vault as it is now and shows an answer: enter that answer above.",
       "vars": []
     },
     {
@@ -3366,6 +3386,26 @@
       "vars": []
     },
     {
+      "key": "e2ee.pair.answer",
+      "en": "Answer",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.answerTitle",
+      "en": "Pairing request from a new device",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.pending",
+      "en": "A pairing code from this device is still valid, so it makes no key change for now: a device paired with that code wouldn't learn of the change. Try again in a couple of minutes.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.stale",
+      "en": "The new device is being shown older keys than this one has: the sync service may be showing it an old state. Don't pair it; sync it and try again, and if it stays like this, don't trust this service.",
+      "vars": []
+    },
+    {
       "key": "e2ee.progress",
       "en": "{done} of {total} files · {bytesDone} of {bytes}",
       "vars": [
@@ -3374,6 +3414,11 @@
         "bytesDone",
         "bytes"
       ]
+    },
+    {
+      "key": "e2ee.rekey.unconfirmed",
+      "en": "The revocation may not have taken effect: right after this key change was written, the sync service returned another device's instead (it ignored a conditional write). Sync this device: it revokes again, or says why it can't. If this happens again, don't use this service for key changes.",
+      "vars": []
     },
     {
       "key": "e2ee.rule.folder",
@@ -3759,6 +3804,11 @@
     {
       "key": "e2ee.sync.username",
       "en": "User name",
+      "vars": []
+    },
+    {
+      "key": "e2ee.wrap.tampered",
+      "en": "This device's key in the vault's keyring doesn't open it: the sync service changed it or put back an old one. Nothing on this device was changed. Try again later; if it stays like this, pair this device again from one you trust.",
       "vars": []
     },
     {

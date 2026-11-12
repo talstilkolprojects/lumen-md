@@ -9,8 +9,8 @@
  * @vitest-environment node
  */
 import { describe, expect, it } from "vitest";
-import { CAS_PROBE_NAME, CasUnsupportedError, memoryProvider, PreconditionFailedError, type SyncProvider } from "../sync/e2ee/provider";
-import { E2eeSync, unlockVault, unlockWithDevice, UnverifiedDeviceError } from "../sync/e2ee/engine";
+import { CasUnsupportedError, memoryProvider, PreconditionFailedError, proveCas, type SyncProvider } from "../sync/e2ee/provider";
+import { E2eeSync, PairingPendingError, unlockVault, unlockWithDevice, UnverifiedDeviceError } from "../sync/e2ee/engine";
 import { ageDecrypt, ageEncrypt, generateIdentity } from "../sync/e2ee/age";
 import { bs, fromB64u, fromUtf8, randomBytes, toB64u, utf8 } from "../sync/e2ee/bytes";
 import { HEADER_NAME, WrongPassphraseError } from "../sync/e2ee/header";
@@ -22,14 +22,25 @@ import {
   KeyringRollbackError,
   PreReleaseKeyringError,
   RevokedDeviceEnrollError,
-  RevokedError,
+  TamperedWrapError,
 } from "../sync/e2ee/keyring";
 import { memoryFiles } from "../sync/e2ee/localFiles";
 import { FREEZE_TTL_MS, manifestName, manifestNameFor, openManifest, sealManifest } from "../sync/e2ee/manifest";
 import { memoryStateStore } from "../sync/e2ee/state";
-import { device, joinVault, newVault, PASSPHRASE, TEST_ITERATIONS, TEST_POLICY } from "./helpers/e2ee";
+import { device, joinTrusted, joinVault, newVault, PASSPHRASE, TEST_ITERATIONS, TEST_POLICY, type Device } from "./helpers/e2ee";
 
 type Provider = ReturnType<typeof memoryProvider>;
+
+/**
+ * A pairing code made by a copy of `d` (its keys and state now), so `d`
+ * itself stays free to change keys: a device makes no key change while a
+ * code of its own is valid (third review N3).
+ */
+async function codeFrom(p: SyncProvider, d: Device): Promise<string> {
+  const issuer = device(`${d.name}-issuer`, p, d.sync.keys());
+  issuer.store.state = JSON.parse(JSON.stringify(d.store.state));
+  return issuer.sync.pairingCode();
+}
 
 /** The provider edits the keyring's plaintext JSON (it can't touch the sealed part). */
 function tamper(p: Provider, edit: (ring: { devices: Record<string, { recipient: string; wrap: string }> }) => void) {
@@ -53,17 +64,18 @@ async function enrolled(provider: SyncProvider, name: string, identity: string) 
   return { files, sync: new E2eeSync({ provider, keys, local: files, store: memoryStateStore(), access: { device: name, identity } }) };
 }
 
-/** A provider whose next matching put fails once (network down), when armed. */
-function flaky() {
+/** A provider whose next matching put fails once (network down), when armed. Its conditional writes are proven up front. */
+async function flaky() {
   let failOn: ((name: string) => boolean) | null = null;
   const p = memoryProvider({
     fault(op, name, phase) {
-      if (failOn && op === "put" && phase === "before" && name !== CAS_PROBE_NAME && failOn(name)) {
+      if (failOn && op === "put" && phase === "before" && failOn(name)) {
         failOn = null;
         throw new Error("network down");
       }
     },
   });
+  await proveCas(p);
   return { p, failNext: (f: (name: string) => boolean) => (failOn = f) };
 }
 
@@ -113,8 +125,9 @@ describe("finding 1: the device list is authenticated", () => {
     await a.sync.rekey({ revoke: ["phone"] });
     // The provider puts the phone back into the plaintext map, twice over: its old wrap…
     tamper(p, (r) => (r.devices.phone = oldWrap));
-    await expect(unlockWithDevice(p, "phone", phone.identity)).rejects.toBeInstanceOf(RevokedError);
-    await expect(lost.sync.sync()).rejects.toBeInstanceOf(RevokedError);
+    // (third review N5: a wrap that doesn't open the keyring says so, not "removed")
+    await expect(unlockWithDevice(p, "phone", phone.identity)).rejects.toBeInstanceOf(TamperedWrapError);
+    await expect(lost.sync.sync()).rejects.toBeInstanceOf(TamperedWrapError);
     // …and its recipient, so that the next re-key would wrap for it.
     tamper(p, (r) => (r.devices.phone = { recipient: phone.recipient, wrap: oldWrap.wrap }));
     await a.sync.sync();
@@ -186,7 +199,7 @@ describe("RR-2: the keyring chain", () => {
     for (const [k, v] of p.objects) fork.objects.set(k, { data: v.data.slice(), etag: v.etag });
     const b = device("B", fork, a.sync.keys());
     await b.sync.sync();
-    await b.sync.pair(await a.sync.pairingCode());
+    await b.sync.pair(await codeFrom(p, a));
     await b.sync.rekey();
     await a.sync.rekey();
     p.objects.set(KEYRING_NAME, fork.objects.get(KEYRING_NAME)!);
@@ -217,11 +230,11 @@ describe("RR-2: the keyring chain", () => {
 describe("finding 2: a re-key cut off at any write", () => {
   it("before the keyring (the new manifest or the keyring write lost): nothing committed; pulls go on, pushes wait; running it again finishes", async () => {
     for (const cut of ["manifest", "keyring"] as const) {
-      const { p, failNext } = flaky();
+      const { p, failNext } = await flaky();
       const a = await newVault(p);
       a.files.set("a.md", "one");
       await a.sync.sync();
-      const b = await joinVault("B", p);
+      const b = await joinTrusted("B", p);
       await b.sync.sync();
       const old = await manifestName(a.sync.keys());
       failNext((n) => (cut === "keyring" ? n === KEYRING_NAME : n !== KEYRING_NAME && n !== old && n !== HEADER_NAME));
@@ -264,7 +277,7 @@ describe("finding 2: a re-key cut off at any write", () => {
     const name = await manifestName(a.sync.keys());
     p.objects.set(old, { data: (await sealManifest(keys0, manifest, old)).bytes, etag: "restored" }); // the frozen one, intact
     p.objects.set(name, { data: randomBytes(300), etag: "junk" });
-    const c = await joinVault("C", p);
+    const c = await joinTrusted("C", p);
     await c.sync.sync();
     expect(c.files.text("a.md")).toBe("hello");
     c.files.set("c.md", "after");
@@ -276,10 +289,10 @@ describe("finding 2: a re-key cut off at any write", () => {
   it("RR-4: a freeze abandoned at epoch 0 — after FREEZE_TTL_MS on its own clock, a device finishes the re-key for the passphrase", async () => {
     let clock = 1_800_000_000_000;
     const now = () => clock;
-    const { p, failNext } = flaky();
+    const { p, failNext } = await flaky();
     const a = await newVault(p);
     await a.sync.sync();
-    const b = await joinVault("B", p, undefined, now);
+    const b = await joinTrusted("B", p, undefined, now);
     await b.sync.sync();
     failNext((n) => n === KEYRING_NAME);
     await expect(a.sync.rekey()).rejects.toThrow("network down");
@@ -304,7 +317,7 @@ describe("finding 2: a re-key cut off at any write", () => {
     await a.sync.sync();
     await a.sync.rekey(); // epoch 1
     await a.sync.sync();
-    const b = await joinVault("B", p, undefined, () => clock);
+    const b = await joinTrusted("B", p, undefined, () => clock);
     await b.sync.sync();
     // A's keyring write is held until B has waited out the freeze and written over it.
     let fired = false;
@@ -344,7 +357,7 @@ describe("finding 2: a re-key cut off at any write", () => {
 
   it("a passphrase change cut off before the header: the old passphrase opens the epoch before, the new one opens and finishes it; then the keyring forgets both", async () => {
     for (const startEpoch of [0, 1]) {
-      const { p, failNext } = flaky();
+      const { p, failNext } = await flaky();
       const a = await newVault(p);
       a.files.set("x.md", "x");
       await a.sync.sync();
@@ -373,19 +386,36 @@ describe("finding 2: a re-key cut off at any write", () => {
 });
 
 describe("re-review 12.11: who may change keys", () => {
-  it("RR-5: a device opened with the passphrase alone syncs but can't re-key or enroll until paired", async () => {
+  it("RR-5/N6: a device opened with the passphrase alone pulls, keeps its changes, can't enroll, and re-keys for the passphrase only until paired", async () => {
     const p = memoryProvider();
     const a = await newVault(p);
     a.files.set("a.md", "x");
     await a.sync.sync();
-    await a.sync.rekey();
+    const phone = await generateIdentity();
+    await a.sync.rekey({ enroll: { phone: phone.recipient } });
+    await a.sync.sync();
     const b = await joinVault("B", p);
     await b.sync.sync();
     expect(b.files.text("a.md")).toBe("x");
-    await expect(b.sync.rekey()).rejects.toBeInstanceOf(UnverifiedDeviceError);
+    // N6: its edits wait on it.
+    b.files.set("b.md", "from B");
+    const held = await b.sync.sync();
+    expect(held.uploaded).toBe(0);
+    expect(held.waiting).toEqual(["b.md"]);
     await expect(b.sync.enroll("t", (await generateIdentity()).recipient)).rejects.toBeInstanceOf(UnverifiedDeviceError);
-    await b.sync.pair(await a.sync.pairingCode());
-    expect((await b.sync.rekey()).epoch).toBe(2);
+    // It can't vouch for the device list: its re-key wraps the next epoch for no device (they enroll again).
+    const r = await b.sync.rekey();
+    expect(r).toMatchObject({ epoch: 2, devices: [], dropped: true, confirmed: true });
+    expect(await wrapsFor(p, "phone", phone.identity)).toBeNull();
+    // Paired (two-way), it uploads what waited, and its re-keys carry the device list again.
+    await a.sync.sync();
+    await b.sync.pair(await a.sync.answerPairing(await b.sync.pairingRequest()));
+    expect((await b.sync.sync()).uploaded).toBe(1);
+    await a.sync.sync();
+    expect(a.files.text("b.md")).toBe("from B");
+    await expect(a.sync.enroll("laptop", (await generateIdentity()).recipient)).rejects.toBeInstanceOf(PairingPendingError); // its answer is still valid (N3)
+    await b.sync.enroll("laptop", (await generateIdentity()).recipient);
+    expect((await b.sync.rekey()).devices).toEqual(["laptop"]);
   });
 
   it("RR-5: a pairing code names the keyring; a code from another lineage at the same revision is refused", async () => {
@@ -402,8 +432,12 @@ describe("re-review 12.11: who may change keys", () => {
     await x.sync.sync();
     await x.sync.pair(code);
     await x.sync.enroll("x", (await generateIdentity()).recipient);
-    await a.sync.enroll("y", (await generateIdentity()).recipient);
-    await expect(x.sync.pair(await a.sync.pairingCode())).rejects.toBeInstanceOf(KeyringForkError);
+    await expect(a.sync.enroll("y", (await generateIdentity()).recipient)).rejects.toBeInstanceOf(PairingPendingError); // its own code is still valid (N3)
+    const a2 = device("A2", p, a.sync.keys());
+    a2.store.state = JSON.parse(JSON.stringify(a.store.state));
+    delete a2.store.state!.pairingUntil;
+    await a2.sync.enroll("y", (await generateIdentity()).recipient);
+    await expect(x.sync.pair(await codeFrom(p, a2))).rejects.toBeInstanceOf(KeyringForkError);
   });
 
   it("RR-7: a provider that ignores If-Match / If-None-Match syncs, but re-key and enroll are refused", async () => {
@@ -418,9 +452,10 @@ describe("re-review 12.11: who may change keys", () => {
     await b.sync.pair(await a.sync.pairingCode());
     b.files.set("b.md", "y");
     expect((await b.sync.sync()).uploaded).toBe(1);
+    const names = new Set(base.objects.keys());
     await expect(b.sync.rekey()).rejects.toBeInstanceOf(CasUnsupportedError);
     await expect(b.sync.enroll("t", (await generateIdentity()).recipient)).rejects.toBeInstanceOf(CasUnsupportedError);
-    expect(base.objects.has(CAS_PROBE_NAME)).toBe(false);
+    expect([...base.objects.keys()].filter((n) => !names.has(n))).toEqual([]); // the probe's objects are gone
     expect(ringJson(base).epoch).toBe(1);
   });
 

@@ -64,19 +64,25 @@ import {
   ABORTED_LENGTH,
   anchorOf,
   checkDeviceEnrolled,
+  checkedAnchorOf,
+  confirmCommit,
   decodeKeyring,
   enrollDevice,
   KEYRING_NAME,
+  KeyringCommitLostError,
   KeyringForkError,
+  keyringContents,
   keyringDigest,
   keysFromKeyring,
   prepareEpoch,
   PreReleaseKeyringError,
   readKeyring,
   refreshKeys,
-  RevokedError,
   rewriteKeyring,
+  sealAnchor,
+  TamperedWrapError,
   unwrapSecret,
+  verifyAnchor,
   type KeyAccess,
   type RingAnchor,
 } from "./keyring";
@@ -98,7 +104,20 @@ import {
   type Manifest,
   type ManifestEntry,
 } from "./manifest";
-import { readPairingCode, createPairingCode, PairingError } from "./pairing";
+import {
+  createPairingAnswer,
+  createPairingCode,
+  createPairingRequest,
+  isPairingAnswer,
+  PAIRING_REQUEST_TTL_MS,
+  PAIRING_TTL_MS,
+  PairingEpochError,
+  PairingError,
+  readPairingAnswer,
+  readPairingCode,
+  readPairingRequest,
+  type PairingAnchor,
+} from "./pairing";
 import { PreconditionFailedError, proveCas, type StoredObject, type SyncProvider } from "./provider";
 import type { DeviceState, FreshnessSource, SyncStateStore } from "./state";
 import type { SyncEvent, SyncEventListener } from "./activity";
@@ -121,14 +140,26 @@ export class NoVaultError extends Error {
 /**
  * This device can't prove it has the latest keys (re-review 12.11, RR-5): it
  * was opened with the passphrase alone and never paired or confirmed, so the
- * provider may be showing it an old epoch. It syncs, but it doesn't re-key or
- * enroll devices: from an old epoch it would wrap the next one for a device
- * revoked meanwhile.
+ * provider may be showing it an old epoch. It pulls, but doesn't upload
+ * (third review N6) or enroll devices, and its re-keys carry no device over:
+ * from an old epoch it would wrap the next one for a device revoked meanwhile.
  */
 export class UnverifiedDeviceError extends Error {
   constructor(what: string) {
     super(`This device can't verify it has the latest keys, so it can't ${what}: pair it from a device you trust (or confirm its state), then try again`);
     this.name = "UnverifiedDeviceError";
+  }
+}
+
+/**
+ * A pairing code or answer this device made is still valid (third review
+ * 12.11, N3): a device paired with it would vouch for keys this change
+ * replaces, so this device makes no key change until it expires.
+ */
+export class PairingPendingError extends Error {
+  constructor(public readonly until: number) {
+    super("A pairing code from this device is still valid: a device paired with it wouldn't learn of this key change. Wait until it expires (2 minutes at most), then try again.");
+    this.name = "PairingPendingError";
   }
 }
 
@@ -196,7 +227,19 @@ export async function unlockVault(
   provider: SyncProvider,
   passphrase: string,
   policy: KdfPolicy = {},
-  opts: { resetPreReleaseKeyring?: boolean } = {},
+  opts: { resetPreReleaseKeyring?: boolean; state?: Pick<DeviceState, "ring"> | null } = {},
+): Promise<{ header: VaultHeader; keys: VaultKeys }> {
+  const out = await openWithPassphrase(provider, passphrase, policy, opts);
+  // The keyring this device verified before (N1): the keys must hold its secret.
+  if (opts.state?.ring) await verifyAnchor(out.keys, opts.state.ring);
+  return out;
+}
+
+async function openWithPassphrase(
+  provider: SyncProvider,
+  passphrase: string,
+  policy: KdfPolicy,
+  opts: { resetPreReleaseKeyring?: boolean },
 ): Promise<{ header: VaultHeader; keys: VaultKeys }> {
   const obj = await provider.get(HEADER_NAME);
   if (!obj) throw new NoVaultError();
@@ -251,9 +294,15 @@ export async function unlockVault(
 
 /**
  * Open the vault with this device's own key (an age identity enrolled in
- * the keyring), without the passphrase. `RevokedError` once it was revoked.
+ * the keyring), without the passphrase. `RevokedError` once it was revoked;
+ * `TamperedWrapError` when its wrap doesn't open the keyring (N5).
+ *
+ * The provider knows the device's public key, so it can make a keyring this
+ * key opens (third review 12.11, N1): pass the device's saved `state`, and
+ * keys that don't hold the secret of the keyring it verified are refused
+ * (`KeyringForkError`). `E2eeSync` checks the same at every round.
  */
-export async function unlockWithDevice(provider: SyncProvider, device: string, identity: string): Promise<{ keys: VaultKeys }> {
+export async function unlockWithDevice(provider: SyncProvider, device: string, identity: string, state?: Pick<DeviceState, "ring"> | null): Promise<{ keys: VaultKeys }> {
   const ring = await readKeyring(provider);
   if (!ring) throw new NoVaultError();
   const secret = await unwrapSecret(ring.file, { device, identity });
@@ -261,11 +310,24 @@ export async function unlockWithDevice(provider: SyncProvider, device: string, i
   let keys: VaultKeys;
   try {
     keys = await keysFromKeyring(ring.file, secret, { header: placeholder, wrap: null }, { digest: ring.digest });
-  } catch {
-    throw new RevokedError(); // a wrap of another epoch's secret, put back by the provider
+  } catch (e) {
+    if (e instanceof PreReleaseKeyringError) throw e;
+    // The wrap opened, but its secret doesn't open the keyring: another epoch's wrap put back, or one the storage made (N5).
+    throw new TamperedWrapError();
   }
+  // Only a keyring sealed with the secret the wrap holds says who is enrolled: not on it is revoked.
   await checkDeviceEnrolled(ring.file, keys, device);
+  // Keys the storage made for this device's public key can't hold the secret of the keyring it verified (N1).
+  if (state?.ring) await verifyAnchor(keys, state.ring);
   return { keys };
+}
+
+export interface RekeyRequest {
+  revoke?: string[];
+  enroll?: Record<string, string>;
+  newPassphrase?: string;
+  pbkdf2Iterations?: number;
+  kdf?: "argon2id" | "pbkdf2-sha256";
 }
 
 export interface RekeyResult {
@@ -279,6 +341,16 @@ export interface RekeyResult {
   written: string[];
   /** Devices the new epoch is wrapped for. */
   devices: string[];
+  /**
+   * False when the keyring read back right after the commit was not this
+   * one (third review 12.11, N2): the storage let another device's key
+   * change replace it. `warning` says the revocation may not have taken
+   * effect; the next round repairs it or stops with `KeyringForkError`.
+   */
+  confirmed: boolean;
+  warning?: string;
+  /** The re-key came from an unverified device: only the passphrase (and `enroll`) can open the new epoch; other devices enroll again. */
+  dropped?: true;
 }
 
 export interface SyncResult {
@@ -295,6 +367,12 @@ export interface SyncResult {
   retries: number;
   /** True when the round gave up after `maxAttempts` lost races; nothing is lost, run it again. */
   incomplete: boolean;
+  /**
+   * Local changes not uploaded because this device's freshness isn't
+   * verified (third review 12.11, N6): they wait on this device until it is
+   * paired or confirmed. Absent when nothing waits.
+   */
+  waiting?: string[];
   /** A re-key froze the manifest and has not committed yet: pulled, but local changes wait. */
   rekeyPending?: boolean;
 }
@@ -424,7 +502,7 @@ export class E2eeSync {
     const s = await this.loadState();
     this.o.keys = keys;
     if (keys.wrap && (!this.o.access || "wrap" in this.o.access)) this.o.access = { wrap: keys.wrap };
-    if (keys.ring) s.ring = anchorOf(keys);
+    if (keys.ring) s.ring = await checkedAnchorOf(keys);
     s.epoch = Math.max(s.epoch ?? 0, keys.epoch);
     await this.save();
   }
@@ -433,7 +511,21 @@ export class E2eeSync {
   private async refresh(): Promise<void> {
     if (!this.o.access) return;
     const s = await this.loadState();
-    const next = await refreshKeys(this.o.provider, this.o.keys, this.o.access, s.ring ?? Math.max(s.epoch ?? 0, this.o.keys.epoch));
+    // N1: the keys in memory must hold the secret of the keyring this device
+    // verified. A device opened with its own key may hold keys the provider
+    // made for its public recipient; the anchor's check is what they lack.
+    if (s.ring && !(await verifyAnchor(this.o.keys, s.ring)) && s.ring.epoch === this.o.keys.epoch) {
+      s.ring = await sealAnchor(s.ring, this.o.keys.secret, this.o.keys.vaultId); // a state from before N1
+      await this.save();
+    }
+    let next: VaultKeys;
+    try {
+      next = await refreshKeys(this.o.provider, this.o.keys, this.o.access, s.ring ?? Math.max(s.epoch ?? 0, this.o.keys.epoch));
+    } catch (e) {
+      if (e instanceof KeyringForkError) await this.reapplyRevocation(e);
+      throw e;
+    }
+    if (s.ring) await verifyAnchor(next, s.ring);
     this.o.keys = next;
     let dirty = false;
     if (next.ring?.unproven && s.freshness !== "unverified") {
@@ -442,7 +534,11 @@ export class E2eeSync {
       dirty = true;
     }
     if (next.ring && !sameAnchor(s.ring, anchorOf(next))) {
-      s.ring = anchorOf(next);
+      s.ring = await checkedAnchorOf(next);
+      dirty = true;
+    }
+    if (s.rekeyed && next.epoch > s.rekeyed.epoch) {
+      delete s.rekeyed; // a later epoch descends from it: that re-key stood
       dirty = true;
     }
     if ((s.epoch ?? 0) < next.epoch) {
@@ -484,7 +580,7 @@ export class E2eeSync {
   /** The header of a passphrase change is written: the keyring drops it, and the previous keyring with it. */
   private async finishPassphraseChange(): Promise<boolean> {
     try {
-      const next = await rewriteKeyring(this.o.provider, this.o.keys, (c, f) => {
+      const next = await rewriteKeyring(this.o.provider, this.o.keys, this.o.access, (c, f) => {
         const contents = { ...c };
         delete contents.header;
         const file = { ...f };
@@ -495,7 +591,7 @@ export class E2eeSync {
       await this.adopt(next);
       return true;
     } catch (e) {
-      if (e instanceof PreconditionFailedError) return false; // another device did; the next refresh sees it
+      if (e instanceof PreconditionFailedError || e instanceof KeyringCommitLostError) return false; // another device did; the next refresh sees it
       throw e;
     }
   }
@@ -507,95 +603,174 @@ export class E2eeSync {
    * the header. No blob is downloaded or uploaded: older blobs keep their
    * epoch's key.
    *
-   * Refused on a device that can't verify it has the latest keys
-   * (`UnverifiedDeviceError`, RR-5) and on a provider whose conditional
-   * writes don't hold (`CasUnsupportedError`, RR-7). A passphrase change
+   * On a device that can't verify it has the latest keys (RR-5) the new
+   * epoch is wrapped for the passphrase and `enroll` only (`dropped`): it
+   * can't vouch for the device list. Refused on a provider whose conditional
+   * writes don't hold (`CasUnsupportedError`, RR-7) and while a pairing code
+   * or answer from this device is valid (`PairingPendingError`, N3). The
+   * keyring is read back after the commit (`confirmed`, N2). A passphrase change
    * keeps the header's KDF family unless `kdf` asks for another (RR-10).
    * On keys from a pre-release keyring (`unlockVault(…, {resetPreReleaseKeyring})`)
    * this is the reset: the new epoch is wrapped for the passphrase and `enroll` only.
    */
-  rekey(
-    opts: { revoke?: string[]; enroll?: Record<string, string>; newPassphrase?: string; pbkdf2Iterations?: number; kdf?: "argon2id" | "pbkdf2-sha256" } = {},
-  ): Promise<RekeyResult> {
-    return this.exclusive(async () => {
-      const s = await this.loadState();
-      await this.refresh();
-      const previous = this.o.keys;
-      const reset = !!previous.ring?.preRelease;
-      if (!reset && s.freshness === "unverified") throw new UnverifiedDeviceError("re-key");
-      await proveCas(this.o.provider);
-      const current = await readKeyring(this.o.provider);
-      if (current ? current.file.epoch !== previous.epoch || current.digest !== previous.ring?.digest : previous.epoch !== 0) throw new PreconditionFailedError(KEYRING_NAME);
-      const written: string[] = [];
-      let header: { header: VaultHeader; master: Uint8Array } | null = null;
-      if (opts.newPassphrase !== undefined) {
-        const was = kdfOf(await this.o.provider.get(HEADER_NAME));
-        // The KDF family stays what it was (PBKDF2 stays PBKDF2) unless `kdf` asks for another.
-        let pbkdf2: number | undefined = opts.pbkdf2Iterations;
-        if (pbkdf2 === undefined && (opts.kdf === "pbkdf2-sha256" || (opts.kdf === undefined && was?.alg === "pbkdf2-sha256"))) pbkdf2 = Math.max(PBKDF2_DEFAULT_ITERATIONS, was?.iterations ?? 0);
-        header = await rekeyHeader(previous.vaultId, opts.newPassphrase, pbkdf2 !== undefined ? { pbkdf2Iterations: pbkdf2 } : {});
-      }
-      const oldName = await this.manifestObject();
-      const now = this.o.now();
+  rekey(opts: RekeyRequest = {}): Promise<RekeyResult> {
+    return this.exclusive(() => this.rekeyNow(opts));
+  }
 
-      // 1. Freeze this epoch's manifest: nobody adds to it once it is copied.
-      //    A stale freeze (an earlier re-key that never committed) is frozen again.
-      let frozen: Manifest;
-      let frozenDigest: string;
-      for (let attempt = 0; ; attempt++) {
-        const { manifest: m, etag } = await this.readManifest();
-        frozen = { ...successor(m, this.remoteDigest), protocol: FROZEN_PROTOCOL, frozen: { epoch: previous.epoch + 1, at: now, by: s.deviceId } };
-        const sealed = await sealManifest(previous, frozen, oldName);
-        try {
-          await this.o.provider.put(oldName, sealed.bytes, etag ? { ifMatch: etag } : { ifNoneMatch: "*" });
-        } catch (e) {
-          if (!(e instanceof PreconditionFailedError) || attempt >= this.o.maxAttempts) throw e;
-          continue;
-        }
-        frozenDigest = sealed.digest;
-        break;
-      }
-      written.push(oldName);
+  /** No key change while a pairing code or answer from this device is valid (N3). */
+  private async checkNoPairingPending(): Promise<void> {
+    const s = await this.loadState();
+    if (s.pairingUntil !== undefined && this.o.now() < s.pairingUntil) throw new PairingPendingError(s.pairingUntil);
+  }
 
-      // 2. The new epoch's manifest, under its random label, before anything names it.
-      const prepared = await prepareEpoch(current, previous, {
-        revoke: opts.revoke,
-        enroll: opts.enroll,
-        newPassphraseMaster: header?.master,
-        newHeader: header ? encodeHeader(header.header) : undefined,
-        carry: { label: previous.ring?.manifest ?? "manifest", epoch: previous.epoch, digest: frozenDigest },
-        now: this.o.now,
-      });
-      const keys = prepared.keys;
-      const name = await manifestName(keys);
-      const next = successor(frozen, frozenDigest);
-      const sealedNext = await sealManifest(keys, next, name);
-      await this.o.provider.put(name, sealedNext.bytes, { ifNoneMatch: "*" });
-      written.push(name);
+  private async rekeyNow(opts: RekeyRequest): Promise<RekeyResult> {
+    const s = await this.loadState();
+    await this.refresh();
+    const previous = this.o.keys;
+    const reset = !!previous.ring?.preRelease;
+    // A device that can't verify it has the latest keys can't vouch for the
+    // device list either (RR-5, third review N3): its re-key wraps the new
+    // epoch for the passphrase and the devices it enrolls now, no other.
+    // Served an old epoch, it so never wraps for a device revoked meanwhile.
+    const dropDevices = !reset && s.freshness === "unverified";
+    await this.checkNoPairingPending();
+    await proveCas(this.o.provider);
+    const current = await readKeyring(this.o.provider);
+    if (current ? current.file.epoch !== previous.epoch || current.digest !== previous.ring?.digest : previous.epoch !== 0) throw new PreconditionFailedError(KEYRING_NAME);
+    const written: string[] = [];
+    let header: { header: VaultHeader; master: Uint8Array } | null = null;
+    if (opts.newPassphrase !== undefined) {
+      const was = kdfOf(await this.o.provider.get(HEADER_NAME));
+      // The KDF family stays what it was (PBKDF2 stays PBKDF2) unless `kdf` asks for another.
+      let pbkdf2: number | undefined = opts.pbkdf2Iterations;
+      if (pbkdf2 === undefined && (opts.kdf === "pbkdf2-sha256" || (opts.kdf === undefined && was?.alg === "pbkdf2-sha256"))) pbkdf2 = Math.max(PBKDF2_DEFAULT_ITERATIONS, was?.iterations ?? 0);
+      header = await rekeyHeader(previous.vaultId, opts.newPassphrase, pbkdf2 !== undefined ? { pbkdf2Iterations: pbkdf2 } : {});
+    }
+    const oldName = await this.manifestObject();
+    const now = this.o.now();
 
-      // 3. Commit: the keyring, compare-and-swap on the one this device verified.
-      //    Lost: someone re-keyed, enrolled or called this freeze off first.
+    // 1. Freeze this epoch's manifest: nobody adds to it once it is copied.
+    //    A stale freeze (an earlier re-key that never committed) is frozen again.
+    let frozen: Manifest;
+    let frozenDigest: string;
+    for (let attempt = 0; ; attempt++) {
+      const { manifest: m, etag } = await this.readManifest();
+      frozen = { ...successor(m, this.remoteDigest), protocol: FROZEN_PROTOCOL, frozen: { epoch: previous.epoch + 1, at: now, by: s.deviceId } };
+      const sealed = await sealManifest(previous, frozen, oldName);
       try {
-        await this.o.provider.put(KEYRING_NAME, prepared.bytes, current ? { ifMatch: current.etag } : { ifNoneMatch: "*" });
+        await this.o.provider.put(oldName, sealed.bytes, etag ? { ifMatch: etag } : { ifNoneMatch: "*" });
       } catch (e) {
-        if (e instanceof PreconditionFailedError) await this.o.provider.delete(name).catch(() => undefined);
-        throw e; // anything else: the outcome is unknown, and the manifest stays for the keyring that may have landed
+        if (!(e instanceof PreconditionFailedError) || attempt >= this.o.maxAttempts) throw e;
+        continue;
       }
-      written.push(KEYRING_NAME);
-      s.anchor = { counter: next.counter, digest: sealedNext.digest };
-      delete s.frozenSeen;
-      await this.adopt(keys);
+      frozenDigest = sealed.digest;
+      break;
+    }
+    written.push(oldName);
 
-      // 4. A passphrase change: the new header, then the keyring without it.
-      if (header) {
-        const cur = await this.o.provider.get(HEADER_NAME);
-        await this.o.provider.put(HEADER_NAME, encodeHeader(header.header), cur ? { ifMatch: cur.etag } : { ifNoneMatch: "*" });
-        written.push(HEADER_NAME);
-        if (await this.finishPassphraseChange()) written.push(KEYRING_NAME);
-      }
-      this.resumed = this.o.keys.ring?.digest ?? "";
-      return { epoch: keys.epoch, counter: next.counter, written, devices: prepared.devices };
+    // 2. The new epoch's manifest, under its random label, before anything names it.
+    const prepared = await prepareEpoch(current, previous, {
+      revoke: opts.revoke,
+      enroll: opts.enroll,
+      newPassphraseMaster: header?.master,
+      newHeader: header ? encodeHeader(header.header) : undefined,
+      carry: { label: previous.ring?.manifest ?? "manifest", epoch: previous.epoch, digest: frozenDigest },
+      dropDevices,
+      now: this.o.now,
     });
+    const keys = prepared.keys;
+    const name = await manifestName(keys);
+    const next = successor(frozen, frozenDigest);
+    const sealedNext = await sealManifest(keys, next, name);
+    await this.o.provider.put(name, sealedNext.bytes, { ifNoneMatch: "*" });
+    written.push(name);
+
+    // 3. Commit: the keyring, compare-and-swap on the one this device verified.
+    //    Lost: someone re-keyed, enrolled or called this freeze off first.
+    try {
+      await this.o.provider.put(KEYRING_NAME, prepared.bytes, current ? { ifMatch: current.etag } : { ifNoneMatch: "*" });
+    } catch (e) {
+      if (e instanceof PreconditionFailedError) await this.o.provider.delete(name).catch(() => undefined);
+      throw e; // anything else: the outcome is unknown, and the manifest stays for the keyring that may have landed
+    }
+    // Read it back (third review 12.11, N2): a storage that passed the
+    // probe can still drop the condition on this write, and let another
+    // device's key change replace this one. Then the result says so
+    // (`confirmed: false`): the revocation may not have taken effect.
+    let lost: KeyringCommitLostError | null = null;
+    try {
+      await confirmCommit(this.o.provider, keys, prepared.bytes, { wrap: keys.wrap! }, opts.revoke ?? []);
+    } catch (e) {
+      if (!(e instanceof KeyringCommitLostError)) throw e;
+      // The write went through and was replaced: this device keeps its
+      // commit as the keyring it verified, so the next round sees the
+      // replacement as a fork — and, when it is another device's re-key
+      // from the same keyring, revokes again on top of it (reapplyRevocation).
+      lost = e;
+    }
+    written.push(KEYRING_NAME);
+    const anchorBefore = s.anchor;
+    s.anchor = { counter: next.counter, digest: sealedNext.digest };
+    delete s.frozenSeen;
+    s.rekeyed = { epoch: keys.epoch, digest: keys.ring!.digest, parent: current?.digest ?? null, parentEpoch: previous.epoch, revoked: [...new Set(opts.revoke ?? [])], manifest: anchorBefore };
+    await this.adopt(keys);
+
+    // 4. A passphrase change: the new header, then the keyring without it.
+    if (header) {
+      const cur = await this.o.provider.get(HEADER_NAME);
+      await this.o.provider.put(HEADER_NAME, encodeHeader(header.header), cur ? { ifMatch: cur.etag } : { ifNoneMatch: "*" });
+      written.push(HEADER_NAME);
+      if (await this.finishPassphraseChange()) written.push(KEYRING_NAME);
+    }
+    this.resumed = this.o.keys.ring?.digest ?? "";
+    return { epoch: keys.epoch, counter: next.counter, written, devices: prepared.devices, confirmed: !lost, ...(lost ? { warning: lost.message } : {}), ...(dropDevices ? { dropped: true as const } : {}) };
+  }
+
+  /**
+   * N2: this device's re-key, confirmed when it was written, was replaced
+   * by a keyring at the same epoch made from the same parent — another
+   * device's re-key that the storage let through without its
+   * compare-and-swap. That device didn't know of this one's revocations, so
+   * it wrapped the new epoch for the revoked devices again. Revoke them
+   * again on top of it (it descends from the keyring this device verified,
+   * and a holder of that epoch's secret made it), then throw a
+   * `KeyringForkError` naming them: what was written in between may be
+   * readable by them. Returns quietly when that isn't the case.
+   */
+  private async reapplyRevocation(fork: KeyringForkError): Promise<void> {
+    const s = await this.loadState();
+    const r = s.rekeyed;
+    const access = this.o.access;
+    if (!r || !r.revoked.length || fork.revocationReapplied.length || !access || !("wrap" in access) || s.freshness === "unverified") return;
+    const k = await readKeyring(this.o.provider);
+    if (!k || k.file.epoch !== r.epoch || k.digest === r.digest || k.file.vaultId !== this.o.keys.vaultId) return;
+    let sibling: VaultKeys;
+    let c: Awaited<ReturnType<typeof keyringContents>>;
+    try {
+      sibling = await keysFromKeyring(k.file, await unwrapSecret(k.file, access), this.o.keys, { digest: k.digest });
+      c = await keyringContents(k.file, sibling);
+    } catch {
+      return;
+    }
+    const mine = this.o.keys.olderSecrets.get(r.parentEpoch);
+    const theirs = sibling.olderSecrets.get(r.parentEpoch);
+    const fromParent = r.parent !== null && c.chain.some(([e, , d]) => e === r.parentEpoch && d === r.parent);
+    if (!fromParent || c.chain.some(([, , d]) => d === r.digest) || !mine || !theirs || !equalBytes(mine, theirs)) return;
+    const missing = r.revoked.filter((d) => !c.revoked.some((x) => x.device === d));
+    if (!missing.length) return;
+    this.o.keys = sibling;
+    s.ring = await checkedAnchorOf(sibling);
+    // The manifest this device trusted before its re-key: the sibling's manifest descends from it, not from this device's own.
+    s.anchor = r.manifest;
+    delete s.rekeyed;
+    await this.save();
+    let done: RekeyResult;
+    try {
+      done = await this.rekeyNow({ revoke: missing });
+    } catch {
+      return;
+    }
+    throw new KeyringForkError(`another keyring at epoch ${r.epoch} replaced this device's`, missing, done.epoch);
   }
 
   /**
@@ -610,8 +785,9 @@ export class E2eeSync {
       await this.refresh();
       if (this.o.keys.ring?.preRelease) throw new PreReleaseKeyringError();
       if (s.freshness === "unverified") throw new UnverifiedDeviceError("enroll devices");
+      await this.checkNoPairingPending();
       await proveCas(this.o.provider);
-      await this.adopt(await enrollDevice(this.o.provider, this.o.keys, device, recipient));
+      await this.adopt(await enrollDevice(this.o.provider, this.o.keys, device, recipient, this.o.access));
     });
   }
 
@@ -662,14 +838,69 @@ export class E2eeSync {
     if (s.freshness === "unverified") {
       throw new PairingError("This device's freshness is not verified: pair it or confirm it before pairing others");
     }
-    return createPairingCode(this.o.keys, s.anchor, this.o.now(), anchorOf(this.o.keys));
+    const now = this.o.now();
+    const code = await createPairingCode(this.o.keys, s.anchor, now, anchorOf(this.o.keys));
+    s.pairingUntil = Math.max(s.pairingUntil ?? 0, now + PAIRING_TTL_MS); // N3: no key change while it is valid
+    await this.save();
+    return code;
+  }
+
+  /**
+   * Two-way pairing, step 1, on the new device (third review 12.11, N3): a
+   * request naming the keyring and manifest this device sees now. The user
+   * enters it on an existing device (`answerPairing`), and that device's
+   * answer here (`pair`).
+   */
+  pairingRequest(): Promise<string> {
+    return this.exclusive(async () => {
+      await this.refresh();
+      const s = await this.loadState();
+      const { code, request } = await createPairingRequest(this.o.keys, s.anchor, this.o.now(), anchorOf(this.o.keys));
+      s.pairRequest = request;
+      await this.save();
+      return code;
+    });
+  }
+
+  /**
+   * Two-way pairing, step 2, on an existing, verified device: check the new
+   * device's request against this device's *current* keyring and manifest —
+   * read now, not when anything was issued — and answer with them, bound to
+   * the request. A new device shown an older epoch or revision is refused
+   * here (`PairingEpochError("older")`), whichever device made the newer one.
+   */
+  answerPairing(request: string): Promise<string> {
+    return this.exclusive(async () => {
+      const s = await this.loadState();
+      if (s.freshness === "unverified") throw new PairingError("This device's freshness is not verified: pair it or confirm it before pairing others");
+      await this.refresh();
+      await this.readManifest();
+      if (!s.anchor) throw new PairingError("Sync once before pairing another device");
+      const req = await readPairingRequest(this.o.keys, request);
+      const mine = anchorOf(this.o.keys);
+      if (req.ring.epoch === mine.epoch && req.ring.digest !== mine.digest) {
+        if (req.ring.rev < mine.rev) {
+          throw new PairingEpochError("older", `The new device is shown an older version of the keys (${mine.epoch}.${req.ring.rev}; this device is at ${mine.epoch}.${mine.rev}): the storage is showing it old keys. Don't pair it; sync it and try again.`);
+        }
+        if (req.ring.rev === mine.rev) throw new KeyringForkError(`the new device sees another keyring at ${mine.epoch}.${mine.rev}`);
+        throw new PairingEpochError("newer", "The new device sees newer keys than this one: sync this device, then enter the request again");
+      }
+      if (req.manifest && req.manifest.counter > s.anchor.counter) throw new PairingEpochError("newer", "The new device sees newer notes than this one: sync this device, then enter the request again");
+      const now = this.o.now();
+      const answer = await createPairingAnswer(this.o.keys, req, s.anchor, now, mine);
+      s.pairingUntil = Math.max(s.pairingUntil ?? 0, now + PAIRING_REQUEST_TTL_MS);
+      await this.save();
+      return answer;
+    });
   }
 
   /** Accept a pairing code from an existing device: anchors the rollback guards (manifest and keyring). */
   pair(code: string): Promise<void> {
     return this.exclusive(async () => {
-      const got = await readPairingCode(this.o.keys, code, this.o.now());
       const s = await this.loadState();
+      const answer = isPairingAnswer(code);
+      // A one-way code, or the answer to this device's own request (N3).
+      const got: PairingAnchor = answer ? await readPairingAnswer(this.o.keys, code, s.pairRequest ?? null, this.o.now()) : await readPairingCode(this.o.keys, code, this.o.now());
       // The keyring: same epoch (readPairingCode checks it); the same revision must be the same keyring.
       const mine = s.ring ?? anchorOf(this.o.keys);
       if (got.ring.epoch === mine.epoch && got.ring.rev === mine.rev && mine.digest && got.ring.digest !== mine.digest) {
@@ -688,8 +919,9 @@ export class E2eeSync {
         throw new PairingError("The pairing code is older than this device's state; create a new code on the other device");
       }
       s.anchor = { counter: got.counter, digest: got.digest };
-      if (got.ring.epoch > 0 && (ringNewer || !s.ring)) s.ring = got.ring;
+      if (got.ring.epoch > 0 && (ringNewer || !s.ring)) s.ring = await sealAnchor(got.ring, this.o.keys.secret, this.o.keys.vaultId);
       s.freshness = "paired";
+      if (answer) delete s.pairRequest;
       await this.save();
     });
   }
@@ -896,10 +1128,10 @@ export class E2eeSync {
     const k = this.o.keys;
     if (k.epoch > 0) {
       try {
-        await this.adopt(await rewriteKeyring(this.o.provider, k, (c, f) => ({ contents: { ...c, aborted: [...(c.aborted ?? []), digest].slice(-ABORTED_LENGTH) }, file: f })));
+        await this.adopt(await rewriteKeyring(this.o.provider, k, this.o.access, (c, f) => ({ contents: { ...c, aborted: [...(c.aborted ?? []), digest].slice(-ABORTED_LENGTH) }, file: f })));
         return true;
       } catch (e) {
-        if (e instanceof PreconditionFailedError) return false;
+        if (e instanceof PreconditionFailedError || e instanceof KeyringCommitLostError) return false;
         throw e;
       }
     }
@@ -911,8 +1143,9 @@ export class E2eeSync {
     await this.o.provider.put(name, sealed.bytes, { ifNoneMatch: "*" });
     try {
       await this.o.provider.put(KEYRING_NAME, prepared.bytes, { ifNoneMatch: "*" });
+      await confirmCommit(this.o.provider, prepared.keys, prepared.bytes, { wrap: k.wrap }); // N2
     } catch (e) {
-      if (!(e instanceof PreconditionFailedError)) throw e;
+      if (!(e instanceof PreconditionFailedError || e instanceof KeyringCommitLostError)) throw e;
       await this.o.provider.delete(name).catch(() => undefined);
       return false;
     }
@@ -967,6 +1200,17 @@ export class E2eeSync {
         res.retries++;
         if (this.o.keys.epoch !== epochBefore) delete s.frozenSeen;
         continue; // read again: under the new keyring the freeze is called off, or the epoch moved on
+      }
+
+      if (s.freshness === "unverified") {
+        // N6: a device that can't verify it has the latest keys pulls but
+        // doesn't upload — served an old epoch, what it wrote would be
+        // readable by a device revoked meanwhile. Its changes wait here.
+        const waiting = this.localChanges(remote, held, await this.o.local.list());
+        await this.collectGarbage(remote);
+        res.held = [...held];
+        if (waiting.length) res.waiting = waiting;
+        return res;
       }
 
       const changes = await this.collectChanges(remote, held, uploads);
@@ -1154,6 +1398,20 @@ export class E2eeSync {
         }
       }
     }
+  }
+
+  /** Paths changed on this device since its base (not held), without uploading anything. */
+  private localChanges(remote: Manifest, held: Set<string>, files: Array<{ path: string; hash: string }>): string[] {
+    const s = this.state!;
+    const local = new Map(files.filter((f) => isSyncedPath(f.path)).map((f) => [f.path, f.hash]));
+    const out: string[] = [];
+    for (const path of [...new Set([...Object.keys(s.base), ...local.keys()])].sort()) {
+      if (held.has(path)) continue;
+      if ((local.get(path) ?? null) === liveHash(s.base[path])) continue;
+      if (!local.has(path) && !(remote.files[path] && !remote.files[path].deleted)) continue;
+      out.push(path);
+    }
+    return out;
   }
 
   /** Step 3 (blobs): upload every local change; returns the new manifest entries. */
