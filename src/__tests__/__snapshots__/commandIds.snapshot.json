@@ -87,6 +87,19 @@
       "icon": "FileText"
     },
     {
+      "id": "file.exportAcademic",
+      "label": "Export for academic submission (Word)…",
+      "group": "File",
+      "hint": "Title page, table of contents, page numbers and the institution's formatting",
+      "icon": "Download"
+    },
+    {
+      "id": "cite.syncZoteroWeb",
+      "label": "Citations: sync the Zotero library from zotero.org (read-only)",
+      "group": "Tools",
+      "icon": "FileText"
+    },
+    {
       "id": "file.exportRtf",
       "label": "Export to RTF",
       "group": "File",
@@ -175,6 +188,27 @@
       "group": "File",
       "hint": "colorful, exactly as shown",
       "icon": "Download"
+    },
+    {
+      "id": "file.exportMarkdown",
+      "label": "Export Markdown",
+      "group": "File",
+      "hint": "without the redacted passages",
+      "icon": "Download"
+    },
+    {
+      "id": "edit.redact",
+      "label": "Redact selection",
+      "group": "Edit",
+      "hint": "removed from every export",
+      "icon": "Pencil"
+    },
+    {
+      "id": "file.notePassword",
+      "label": "Note password…",
+      "group": "File",
+      "hint": "lock this note with its own password",
+      "icon": "FileText"
     },
     {
       "id": "file.print",
@@ -662,18 +696,36 @@
       "icon": "Sparkles"
     },
     {
-      "id": "vault.backups",
-      "label": "Backups…",
-      "group": "File",
-      "hint": "Daily backups to another drive, and restore",
-      "icon": "Save"
-    },
-    {
       "id": "research.usabilitySelf",
       "label": "Usability test (self-guided)…",
       "group": "Tools",
       "hint": "10 tasks on your own; recorded on this device only",
       "icon": "Sparkles"
+    },
+    {
+      "id": "spell.arabicDictionary",
+      "label": "Arabic spelling: download or remove the word list",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "arabic.toggleTashkeel",
+      "label": "Hide or show Arabic tashkeel",
+      "group": "View",
+      "icon": "Eye"
+    },
+    {
+      "id": "arabic.removeTashkeel",
+      "label": "Remove Arabic tashkeel (selection or note)",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "vault.backups",
+      "label": "Backups…",
+      "group": "File",
+      "hint": "Daily backups to another drive, and restore",
+      "icon": "Save"
     },
     {
       "id": "vault.export",
@@ -694,6 +746,20 @@
       "label": "Undo the last import",
       "group": "File",
       "hint": "Removes the folder the last import created",
+      "icon": "Save"
+    },
+    {
+      "id": "vault.importChat",
+      "label": "Import a WhatsApp or Telegram chat…",
+      "group": "File",
+      "hint": "Exported chat → notes per day, with its media; on this device only",
+      "icon": "Save"
+    },
+    {
+      "id": "vault.importMail",
+      "label": "Import mail (.eml, .mbox) or Google Takeout…",
+      "group": "File",
+      "hint": "A note per thread with attachments, Keep notes and Docs; files only, on this device",
       "icon": "Save"
     },
     {
@@ -754,6 +820,18 @@
     {
       "id": "sync.open",
       "label": "Encrypted sync…",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "sync.setup",
+      "label": "Set up sync (two clicks)",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "classroom.open",
+      "label": "Private classroom…",
       "group": "Tools",
       "icon": "Sparkles"
     },
@@ -1729,6 +1807,13 @@
       "icon": "Link"
     },
     {
+      "id": "insert.ink",
+      "label": "Handwriting: draw or edit",
+      "group": "Insert",
+      "hint": "Pen, Apple Pencil or finger; saved as SVG in the note",
+      "icon": "Pencil"
+    },
+    {
       "id": "a11y.srVerbosity",
       "label": "Screen reader announcements: headings and structure",
       "group": "View",
@@ -1785,69 +1870,6 @@
       "icon": "Link"
     },
     {
-      "id": "file.exportAcademic",
-      "label": "Export for academic submission (Word)…",
-      "group": "File",
-      "hint": "Title page, table of contents, page numbers and the institution's formatting",
-      "icon": "Download"
-    },
-    {
-      "id": "view.search",
-      "label": "Search workspace…",
-      "group": "View",
-      "shortcut": "⇧⌘F",
-      "icon": "PanelRightOpen"
-    },
-    {
-      "id": "vault.import",
-      "label": "Import notes (zip / folder: Obsidian, Notion, Lumen)…",
-      "group": "File",
-      "hint": "Into a new folder — nothing existing is overwritten",
-      "icon": "Save"
-    },
-    {
-      "id": "lang.ar",
-      "label": "Language: العربية",
-      "group": "View",
-      "hint": "right-to-left",
-      "icon": "PanelRightOpen"
-    },
-    {
-      "id": "lang.ru",
-      "label": "Language: Русский",
-      "group": "View",
-      "hint": "left-to-right",
-      "icon": "PanelRightOpen"
-    },
-    {
-      "id": "lang.fr",
-      "label": "Language: Français",
-      "group": "View",
-      "hint": "left-to-right",
-      "icon": "PanelRightOpen"
-    },
-    {
-      "id": "lang.de",
-      "label": "Language: Deutsch",
-      "group": "View",
-      "hint": "left-to-right",
-      "icon": "PanelRightOpen"
-    },
-    {
-      "id": "lang.ja",
-      "label": "Language: 日本語",
-      "group": "View",
-      "hint": "left-to-right",
-      "icon": "PanelRightOpen"
-    },
-    {
-      "id": "lang.zh-CN",
-      "label": "Language: 简体中文",
-      "group": "View",
-      "hint": "left-to-right",
-      "icon": "PanelRightOpen"
-    },
-    {
       "id": "book.open",
       "label": "Book: chapters, goals and export",
       "group": "View",
@@ -1860,24 +1882,6 @@
       "group": "View",
       "hint": "Adds the note to the end of the book whose index is in the same folder",
       "icon": "FileText"
-    },
-    {
-      "id": "spell.arabicDictionary",
-      "label": "Arabic spelling: download or remove the word list",
-      "group": "Tools",
-      "icon": "Sparkles"
-    },
-    {
-      "id": "arabic.toggleTashkeel",
-      "label": "Hide or show Arabic tashkeel",
-      "group": "View",
-      "icon": "Eye"
-    },
-    {
-      "id": "arabic.removeTashkeel",
-      "label": "Remove Arabic tashkeel (selection or note)",
-      "group": "Tools",
-      "icon": "Sparkles"
     },
     {
       "id": "export.latexProject",
@@ -1906,25 +1910,6 @@
       "group": "Tools",
       "hint": "Puts back every file the last automation run changed, byte for byte",
       "icon": "Workflow"
-    },
-    {
-      "id": "insert.ink",
-      "label": "Handwriting: draw or edit",
-      "group": "Insert",
-      "hint": "Pen, Apple Pencil or finger; saved as SVG in the note",
-      "icon": "Pencil"
-    },
-    {
-      "id": "sync.setup",
-      "label": "Set up sync (two clicks)",
-      "group": "Tools",
-      "icon": "Sparkles"
-    },
-    {
-      "id": "classroom.open",
-      "label": "Private classroom…",
-      "group": "Tools",
-      "icon": "Sparkles"
     }
   ],
   "full": [
@@ -2041,6 +2026,19 @@
       "icon": "FileText"
     },
     {
+      "id": "file.exportAcademic",
+      "label": "Export for academic submission (Word)…",
+      "group": "File",
+      "hint": "Title page, table of contents, page numbers and the institution's formatting",
+      "icon": "Download"
+    },
+    {
+      "id": "cite.syncZoteroWeb",
+      "label": "Citations: sync the Zotero library from zotero.org (read-only)",
+      "group": "Tools",
+      "icon": "FileText"
+    },
+    {
       "id": "file.exportRtf",
       "label": "Export to RTF",
       "group": "File",
@@ -2129,6 +2127,27 @@
       "group": "File",
       "hint": "colorful, exactly as shown",
       "icon": "Download"
+    },
+    {
+      "id": "file.exportMarkdown",
+      "label": "Export Markdown",
+      "group": "File",
+      "hint": "without the redacted passages",
+      "icon": "Download"
+    },
+    {
+      "id": "edit.redact",
+      "label": "Redact selection",
+      "group": "Edit",
+      "hint": "removed from every export",
+      "icon": "Pencil"
+    },
+    {
+      "id": "file.notePassword",
+      "label": "Note password…",
+      "group": "File",
+      "hint": "lock this note with its own password",
+      "icon": "FileText"
     },
     {
       "id": "file.print",
@@ -2623,18 +2642,36 @@
       "icon": "Sparkles"
     },
     {
-      "id": "vault.backups",
-      "label": "Backups…",
-      "group": "File",
-      "hint": "Daily backups to another drive, and restore",
-      "icon": "Save"
-    },
-    {
       "id": "research.usabilitySelf",
       "label": "Usability test (self-guided)…",
       "group": "Tools",
       "hint": "10 tasks on your own; recorded on this device only",
       "icon": "Sparkles"
+    },
+    {
+      "id": "spell.arabicDictionary",
+      "label": "Arabic spelling: download or remove the word list",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "arabic.toggleTashkeel",
+      "label": "Hide or show Arabic tashkeel",
+      "group": "View",
+      "icon": "Eye"
+    },
+    {
+      "id": "arabic.removeTashkeel",
+      "label": "Remove Arabic tashkeel (selection or note)",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "vault.backups",
+      "label": "Backups…",
+      "group": "File",
+      "hint": "Daily backups to another drive, and restore",
+      "icon": "Save"
     },
     {
       "id": "vault.export",
@@ -2655,6 +2692,20 @@
       "label": "Undo the last import",
       "group": "File",
       "hint": "Removes the folder the last import created",
+      "icon": "Save"
+    },
+    {
+      "id": "vault.importChat",
+      "label": "Import a WhatsApp or Telegram chat…",
+      "group": "File",
+      "hint": "Exported chat → notes per day, with its media; on this device only",
+      "icon": "Save"
+    },
+    {
+      "id": "vault.importMail",
+      "label": "Import mail (.eml, .mbox) or Google Takeout…",
+      "group": "File",
+      "hint": "A note per thread with attachments, Keep notes and Docs; files only, on this device",
       "icon": "Save"
     },
     {
@@ -2715,6 +2766,18 @@
     {
       "id": "sync.open",
       "label": "Encrypted sync…",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "sync.setup",
+      "label": "Set up sync (two clicks)",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "classroom.open",
+      "label": "Private classroom…",
       "group": "Tools",
       "icon": "Sparkles"
     },
@@ -3806,6 +3869,13 @@
       "icon": "Link"
     },
     {
+      "id": "insert.ink",
+      "label": "Handwriting: draw or edit",
+      "group": "Insert",
+      "hint": "Pen, Apple Pencil or finger; saved as SVG in the note",
+      "icon": "Pencil"
+    },
+    {
       "id": "a11y.srVerbosity",
       "label": "Screen reader announcements: headings and structure",
       "group": "View",
@@ -3862,69 +3932,6 @@
       "icon": "Link"
     },
     {
-      "id": "file.exportAcademic",
-      "label": "Export for academic submission (Word)…",
-      "group": "File",
-      "hint": "Title page, table of contents, page numbers and the institution's formatting",
-      "icon": "Download"
-    },
-    {
-      "id": "view.search",
-      "label": "Search workspace…",
-      "group": "View",
-      "shortcut": "⇧⌘F",
-      "icon": "PanelRightOpen"
-    },
-    {
-      "id": "vault.import",
-      "label": "Import notes (zip / folder: Obsidian, Notion, Lumen)…",
-      "group": "File",
-      "hint": "Into a new folder — nothing existing is overwritten",
-      "icon": "Save"
-    },
-    {
-      "id": "lang.ar",
-      "label": "Language: العربية",
-      "group": "View",
-      "hint": "right-to-left",
-      "icon": "PanelRightOpen"
-    },
-    {
-      "id": "lang.ru",
-      "label": "Language: Русский",
-      "group": "View",
-      "hint": "left-to-right",
-      "icon": "PanelRightOpen"
-    },
-    {
-      "id": "lang.fr",
-      "label": "Language: Français",
-      "group": "View",
-      "hint": "left-to-right",
-      "icon": "PanelRightOpen"
-    },
-    {
-      "id": "lang.de",
-      "label": "Language: Deutsch",
-      "group": "View",
-      "hint": "left-to-right",
-      "icon": "PanelRightOpen"
-    },
-    {
-      "id": "lang.ja",
-      "label": "Language: 日本語",
-      "group": "View",
-      "hint": "left-to-right",
-      "icon": "PanelRightOpen"
-    },
-    {
-      "id": "lang.zh-CN",
-      "label": "Language: 简体中文",
-      "group": "View",
-      "hint": "left-to-right",
-      "icon": "PanelRightOpen"
-    },
-    {
       "id": "book.open",
       "label": "Book: chapters, goals and export",
       "group": "View",
@@ -3937,24 +3944,6 @@
       "group": "View",
       "hint": "Adds the note to the end of the book whose index is in the same folder",
       "icon": "FileText"
-    },
-    {
-      "id": "spell.arabicDictionary",
-      "label": "Arabic spelling: download or remove the word list",
-      "group": "Tools",
-      "icon": "Sparkles"
-    },
-    {
-      "id": "arabic.toggleTashkeel",
-      "label": "Hide or show Arabic tashkeel",
-      "group": "View",
-      "icon": "Eye"
-    },
-    {
-      "id": "arabic.removeTashkeel",
-      "label": "Remove Arabic tashkeel (selection or note)",
-      "group": "Tools",
-      "icon": "Sparkles"
     },
     {
       "id": "export.latexProject",
@@ -3983,25 +3972,6 @@
       "group": "Tools",
       "hint": "Puts back every file the last automation run changed, byte for byte",
       "icon": "Workflow"
-    },
-    {
-      "id": "insert.ink",
-      "label": "Handwriting: draw or edit",
-      "group": "Insert",
-      "hint": "Pen, Apple Pencil or finger; saved as SVG in the note",
-      "icon": "Pencil"
-    },
-    {
-      "id": "sync.setup",
-      "label": "Set up sync (two clicks)",
-      "group": "Tools",
-      "icon": "Sparkles"
-    },
-    {
-      "id": "classroom.open",
-      "label": "Private classroom…",
-      "group": "Tools",
-      "icon": "Sparkles"
     }
   ],
   "autoSaveOn": [
@@ -4027,6 +3997,8 @@
     "cite.legal",
     "cite.legalFromCase",
     "cite.syncZotero",
+    "file.exportAcademic",
+    "cite.syncZoteroWeb",
     "file.exportRtf",
     "file.exportMarkdownAiMarks",
     "file.exportLatex",
@@ -4040,6 +4012,9 @@
     "file.exportSite",
     "file.exportPptx",
     "file.exportPdf",
+    "file.exportMarkdown",
+    "edit.redact",
+    "file.notePassword",
     "file.print",
     "view.source",
     "view.split",
@@ -4109,11 +4084,16 @@
     "lexicon.pack",
     "lexicon.lookup",
     "research.usability",
-    "vault.backups",
     "research.usabilitySelf",
+    "spell.arabicDictionary",
+    "arabic.toggleTashkeel",
+    "arabic.removeTashkeel",
+    "vault.backups",
     "vault.export",
     "vault.import",
     "vault.importUndo",
+    "vault.importChat",
+    "vault.importMail",
     "vault.toFolder",
     "vault.openFolder",
     "vault.toBrowser",
@@ -4123,6 +4103,8 @@
     "privacy.imageHosts",
     "file.trash",
     "sync.open",
+    "sync.setup",
+    "classroom.open",
     "tasks.open",
     "ai.cancel",
     "note.read",
@@ -4263,6 +4245,7 @@
     "insert.htmlpreview",
     "insert.bibtex",
     "insert.wikilink",
+    "insert.ink",
     "a11y.srVerbosity",
     "a11y.whereAmI",
     "help.a11yStatement",
@@ -4271,18 +4254,11 @@
     "sources.insertSefaria",
     "sources.saveOffline",
     "sources.notesOnVerse",
-    "file.exportAcademic",
     "book.open",
     "book.addChapter",
-    "spell.arabicDictionary",
-    "arabic.toggleTashkeel",
-    "arabic.removeTashkeel",
     "export.latexProject",
     "automations.new",
     "automations.dryRun",
-    "automations.undo",
-    "insert.ink",
-    "sync.setup",
-    "classroom.open"
+    "automations.undo"
   ]
 }
