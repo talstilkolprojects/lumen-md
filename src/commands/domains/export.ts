@@ -38,9 +38,10 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       action: async () => {
         // Snapshot before any await: a tab switch while the chunk loads must not share another note.
         const doc = liveDoc();
-        // Review 12.11: the link carries the export text (through #473's door once it is in the build).
-        const [{ openShareLink }, { shareReadyText }] = await Promise.all([import("../../share/ShareLinkDialog"), import("../../share/shareReady")]);
-        openShareLink({ title: doc.name, markdown: await shareReadyText(doc.content) });
+        // Review 12.11 + W5.11: a link is an export, so it carries the export door's text (<redact>
+        // passages and hidden comments removed; photos are not inlined: a link has no room for them).
+        const [{ openShareLink }, { exportReadyText }] = await Promise.all([import("../../share/ShareLinkDialog"), import("../../storage/exportReady")]);
+        openShareLink({ title: doc.name, markdown: await exportReadyText(doc.content, false) });
       },
     },
     {
