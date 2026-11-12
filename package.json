@@ -34,6 +34,8 @@
     "test:e2e:ui": "playwright test --ui",
     "e2e:gate": "node scripts/e2e-gate.mjs",
     "e2e:flake": "node scripts/e2e-flake.mjs",
+    "nightly:full": "node scripts/nightly/plan.mjs --run",
+    "check:vercel-ignore": "node scripts/check-vercel-ignore.mjs",
     "preview:visual": "node scripts/preview-visual.mjs",
     "test:visual": "playwright test -c playwright.visual.config.ts",
     "test:visual:update": "playwright test -c playwright.visual.config.ts --update-snapshots",

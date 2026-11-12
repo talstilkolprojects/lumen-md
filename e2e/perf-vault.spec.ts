@@ -8,9 +8,11 @@ import { test, expect, type Page } from "@playwright/test";
  *     server's on-the-fly transforms are not Lumen's startup), the file
  *     tree opens with folders collapsed, the index builds in the worker,
  *     a save reaches the index in < 50 ms and a search answers in < 100 ms.
- *   - @nightly: typing into a 2 MB note keeps each keystroke under a frame
- *     (16 ms of handler time). Runs only in the "perf" project
- *     (playwright.config.ts), from .github/workflows/nightly-perf.yml.
+ *   - typing into a 2 MB note keeps each keystroke under a frame (16 ms of
+ *     handler time).
+ *
+ * Both are @nightly: they run only in the "perf" project (playwright.config.ts),
+ * from the nightly runner (scripts/test-tiers.mjs), never in a per-push gate.
  *
  * Every number is also attached to the report as a "perf" annotation.
  */
@@ -85,7 +87,10 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(".cm-content").first()).toBeVisible({ timeout: 30_000 });
 });
 
-test("a 10,000-note vault: open < 1 s, save → index < 50 ms, search < 100 ms", async ({ page }) => {
+// @nightly (W6.8): its budgets are wall-clock times, which the 2-CPU Vercel
+// build machine missed by a hair (open 1017 ms, verify/e2e-probe run 4). It runs
+// in the "perf" project on the nightly host, against the production build.
+test("a 10,000-note vault: open < 1 s, save → index < 50 ms, search < 100 ms", { tag: "@nightly" }, async ({ page }) => {
   test.setTimeout(300_000);
   test.skip(!(await canSeed(page)), "OPFS createWritable is unavailable in this engine's test context");
   report("seed 10,000 notes (test setup)", await seedVault(page, NOTES));
