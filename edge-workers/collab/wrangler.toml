@@ -27,11 +27,14 @@ COLLAB_NEW_ROOMS_PER_DAY = "2000"
 COLLAB_NEW_ROOMS_PER_ADDRESS = "20"
 COLLAB_NEW_ROOMS_PER_48 = "80"
 # What is stored (review 6 RR6-469-2): rooms, bytes (4 GB, under the Free plan's
-# 5 GB) and rooms per address. When rooms or bytes are full, a new room replaces the
-# smallest stored room nobody joined again in COLLAB_PROTECT_DAYS.
+# 5 GB) and rooms per address and per IPv6 /48 (review 8). When rooms or bytes are
+# full, a new room replaces one stored room nobody joined again in
+# COLLAB_PROTECT_DAYS and nobody is connected to: the smallest that frees one
+# room's share (bytes / rooms), or none (review 8 RR8-469-1).
 COLLAB_MAX_ROOMS = "20000"
 COLLAB_MAX_STORED_BYTES = "4000000000"
 COLLAB_STORED_ROOMS_PER_ADDRESS = "50"
+COLLAB_STORED_ROOMS_PER_48 = "50"
 COLLAB_PROTECT_DAYS = "14"
 
 [[durable_objects.bindings]]

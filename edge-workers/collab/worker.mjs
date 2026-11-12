@@ -34,9 +34,10 @@
  *     it, keep it alive or lock its owners out.
  *   - New rooms are limited (review 2): per day on the whole server, per
  *     address and per IPv6 /48; and what is stored, in rooms, in bytes and
- *     in rooms per address (review 6). When the store is full, a new room
- *     may replace the smallest stored room that nobody came back to
- *     (sync-server/collab/roomQuota.mjs, the Quota object below). A new proof also costs a
+ *     in rooms per address and per IPv6 /48 (review 6, review 8). When the
+ *     store is full, a new room may replace one stored room that nobody
+ *     came back to and nobody is connected to, the smallest that frees one
+ *     room's share (sync-server/collab/roomQuota.mjs, the Quota object below). A new proof also costs a
  *     proof of work of COLLAB_POW_BITS (wrangler.toml sets 18), bound to the
  *     room and the proof, which the app solves once per room and session.
  *     With COLLAB_ACCESS_KEY (a private server), the key is enough.
@@ -61,11 +62,16 @@ import {
   splitCommittedRoom,
   tokenVerifier,
   admit,
+  charge,
   cleanIds,
+  cleanOwner,
   dayBuckets,
   dayOf,
   evictionOrder,
+  evictionPlan,
+  needed,
   ownerOf,
+  prefixOwnerOf,
   quotaIds,
   quotaLimits,
   storeFull,
@@ -80,6 +86,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const CHUNK = 1_000_000; // a Durable Object value holds at most 2 MB
 const SAVE_DEBOUNCE_MS = 2000;
 const MAX_PEERS = 50;
+/** At most this many room RPCs when a full store makes way for one new room (review 8, RR8-469-2). */
+const MAX_EVICT_CALLS = 64;
 
 const num = (v, d) => (v === undefined || v === "" || Number.isNaN(Number(v)) ? d : Number(v));
 const json = (body, status = 200) =>
@@ -162,6 +170,8 @@ export class CollabRoom {
     this.admitting = null;
     /** When this wake last told the quota that someone joined the stored room again. */
     this.joinedAt = 0;
+    /** The admitted creator's owner values ({o, p}, 20-bit hashes, no address), stored with the first write (review 8, RR8-469-3). */
+    this.owner = null;
   }
 
   /** This room's id at the quota: its Durable Object id (no name), or a keyed hash of the name. */
@@ -184,7 +194,10 @@ export class CollabRoom {
       // The client's ids, not the day: the Quota decides the day (review 6, RR6-469-1).
       const ids = Array.isArray(a.q?.ids) ? a.q.ids : quotaIds(this.env.COLLAB_TOKEN_SECRET, "?");
       const stub = this.env.QUOTA.get(this.env.QUOTA.idFromName("quota"));
-      return (await stub.admit(ids, this.rid(a.room ?? "").rid)) === null;
+      const ok = (await stub.admit(ids, this.rid(a.room ?? "").rid)) === null;
+      // Who created it, kept with the room's first write: a Quota that restarts before then still counts it (RR8-469-3).
+      if (ok) this.owner = { o: ownerOf(this.env.COLLAB_TOKEN_SECRET, ids), p: prefixOwnerOf(this.env.COLLAB_TOKEN_SECRET, ids) };
+      return ok;
     })().catch(() => false);
     const ok = await this.admitting;
     if (!ok) this.admitting = null; // why: refused today: a later try asks again
@@ -193,10 +206,12 @@ export class CollabRoom {
 
   async loadRoom(name) {
     if (this.room) return this.room;
-    const stored = await this.state.storage.get(["name", "chunks", "verifier"]);
+    const stored = await this.state.storage.get(["name", "chunks", "verifier", "owner"]);
     const chunks = stored.get("chunks") ?? 0;
     this.stored = chunks > 0;
     this.verifier = typeof stored.get("verifier") === "string" ? stored.get("verifier") : null;
+    const o = stored.get("owner");
+    if (o && typeof o === "object") this.owner = { o: cleanOwner(o.o), p: cleanOwner(o.p) };
     let state = null;
     if (chunks > 0) {
       const parts = await this.state.storage.get(Array.from({ length: chunks }, (_, i) => `s${i}`));
@@ -235,7 +250,8 @@ export class CollabRoom {
         return this.verifier === null || v === this.verifier;
       },
       onAuthenticated: (socket, address) => {
-        socket.ws.serializeAttachment({ ready: true, address, room: name });
+        // The owner rides with the socket until the first write, so the room's hibernation doesn't lose it either.
+        socket.ws.serializeAttachment({ ready: true, address, room: name, ...(this.owner && !this.stored ? { owner: this.owner } : {}) });
         // Someone came back to a stored room: the quota never evicts it while that is recent.
         if (this.stored && this.env.QUOTA && Date.now() - this.joinedAt > 3_600_000) {
           this.joinedAt = Date.now();
@@ -251,6 +267,7 @@ export class CollabRoom {
     for (const ws of this.state.getWebSockets()) {
       if (this.peers.has(ws)) continue;
       const a = ws.deserializeAttachment() ?? {};
+      if (!this.owner && a.owner && typeof a.owner === "object") this.owner = { o: cleanOwner(a.owner.o), p: cleanOwner(a.owner.p) };
       this.peers.set(ws, this.room.join(this.socketFor(ws), a.ready ? { ready: true, address: a.address } : null));
     }
     return this.room;
@@ -290,7 +307,7 @@ export class CollabRoom {
     this.dirty = false;
     const state = this.room.state();
     const chunks = Math.max(1, Math.ceil(state.byteLength / CHUNK));
-    const entries = { name, chunks, lastWrite: Date.now(), ...(this.verifier ? { verifier: this.verifier } : {}) };
+    const entries = { name, chunks, lastWrite: Date.now(), ...(this.verifier ? { verifier: this.verifier } : {}), ...(this.owner ? { owner: this.owner } : {}) };
     for (let i = 0; i < chunks; i++) entries[`s${i}`] = state.slice(i * CHUNK, (i + 1) * CHUNK);
     try {
       const old = (await this.state.storage.get("chunks")) ?? 0;
@@ -300,7 +317,7 @@ export class CollabRoom {
       this.stored = true;
       // Size and time, every save: the quota caps bytes too (review 6, RR6-469-2).
       const { rid, did } = this.rid(name);
-      await this.quotaStub()?.saved(rid, state.byteLength, did).catch(() => {}); // why: a count that drifts is not a reason to lose the room
+      await this.quotaStub()?.saved(rid, state.byteLength, did, this.owner).catch(() => {}); // why: a count that drifts is not a reason to lose the room
     } catch (e) {
       this.dirty = true; // why: not stored: the next save tries again
       throw e;
@@ -356,18 +373,45 @@ export class CollabRoom {
     }
   }
 
+  /** Sockets that sent the room token: only they keep a room in use (review 8, RR8-469-2). */
+  inUse() {
+    return this.state.getWebSockets().some((ws) => {
+      try {
+        return ws.deserializeAttachment()?.ready === true;
+      } catch {
+        return true; // why: unsure: count it
+      }
+    });
+  }
+
+  /** RPC from the quota: could this room give up its storage now? (The first of two phases, so a plan that can't succeed evicts nothing.) */
+  async canEvict() {
+    return !this.inUse();
+  }
+
   /**
    * RPC from the quota (review 6, RR6-469-2): give up this room's storage for
-   * a new room. Refused (false) while anyone is connected; the quota then
-   * tries the next room.
+   * a new room. Refused (false) while anyone who sent the room token is
+   * connected; the quota then tries the next room. A socket that never
+   * authenticated doesn't hold the room (review 8, RR8-469-2): it is closed.
    */
   async evict() {
-    if (this.state.getWebSockets().length > 0) return false;
+    if (this.inUse()) return false;
+    for (const ws of this.state.getWebSockets()) {
+      this.peers.get(ws)?.leave();
+      this.peers.delete(ws);
+      try {
+        ws.close(1013, "room evicted");
+      } catch {
+        /* already closed */
+      }
+    }
     await this.state.storage.deleteAll();
     this.room?.destroy();
     this.room = null;
     this.stored = false;
     this.verifier = null;
+    this.owner = null;
     this.dirty = false;
     return true;
   }
@@ -460,14 +504,14 @@ export class Signal {
  * The one counter for new rooms (review 2 RR2-469-1, review 6; the rules
  * are in sync-server/collab/roomQuota.mjs).
  * Its storage: day, rooms (today's new ones), stored, bytes, one `b:` key per
- * bucket of the day and one `r:` key per stored room ({o, b, w, a, d}).
+ * bucket of the day and one `r:` key per stored room ({o, p, b, w, a, u, d}).
  */
 export class Quota {
   constructor(state, env) {
     this.state = state;
     this.env = env;
     this.counts = null;
-    /** Admitted rooms not saved yet: room id → owner (memory only; lost with the object, which only loses an owner). */
+    /** Admitted rooms not saved yet: room id → {o, p} (memory only; the room brings the same with its first write, RR8-469-3). */
     this.pending = new Map();
   }
 
@@ -480,7 +524,7 @@ export class Quota {
       if (k.startsWith("b:")) buckets.set(k.slice(2), v);
       else if (k.startsWith("r:") && v && typeof v === "object") rooms.set(k.slice(2), v);
     }
-    this.counts = { day: all.get("day") ?? "", rooms: all.get("rooms") ?? 0, stored: 0, bytes: 0, buckets, owners: new Map(), registry: rooms };
+    this.counts = { day: all.get("day") ?? "", rooms: all.get("rooms") ?? 0, stored: 0, bytes: 0, buckets, owners: new Map(), owners48: new Map(), registry: rooms };
     this.recount();
     return this.counts;
   }
@@ -491,9 +535,11 @@ export class Quota {
     c.stored = c.registry.size;
     c.bytes = 0;
     c.owners = new Map();
+    c.owners48 = new Map();
     for (const r of c.registry.values()) {
       c.bytes += r.b ?? 0;
       if (typeof r.o === "number") c.owners.set(r.o, (c.owners.get(r.o) ?? 0) + 1);
+      if (typeof r.p === "number") c.owners48.set(r.p, (c.owners48.get(r.p) ?? 0) + 1);
     }
   }
 
@@ -515,58 +561,95 @@ export class Quota {
     const limits = quotaLimits(this.env);
     const keys = dayBuckets(secret, cleanIds(ids), day);
     const owner = ownerOf(secret, cleanIds(ids));
+    const owner48 = prefixOwnerOf(secret, cleanIds(ids));
     if (day > c.day) {
       // A new day: yesterday's buckets go (the rooms' records stay).
       const old = [...c.buckets.keys()].map((k) => `b:${k}`);
       for (let i = 0; i < old.length; i += 128) await this.state.storage.delete(old.slice(i, i + 128));
+      c.day = day;
+      c.rooms = 0;
+      c.buckets = new Map();
     }
-    // A full store: a stored room nobody came back to may make way (RR6-469-2).
-    // Only for a client the other limits would let in: a refused one never costs a stored room.
-    if (storeFull(c, limits) && admit({ ...c, buckets: new Map(c.buckets) }, keys, day, { ...limits, maxRooms: Infinity, maxBytes: Infinity }, owner) === null) {
-      await this.evictFor(limits);
-    }
-    const why = admit(c, keys, day, limits, owner);
-    const put = { day: c.day, rooms: c.rooms };
+    // First every limit but the store's: a client refused by those never costs a stored room (RR6-469-2).
+    let why = admit({ ...c, buckets: new Map(c.buckets) }, keys, day, { ...limits, maxRooms: Infinity, maxBytes: Infinity }, owner, owner48);
     if (why === null) {
-      for (const k of keys) put[`b:${k}`] = c.buckets.get(k);
-      if (typeof rid === "string" && rid && rid.length <= 128) {
-        this.pending.set(rid, owner);
-        if (this.pending.size > 5000) this.pending.delete(this.pending.keys().next().value);
-      }
+      // A full store: one stored room nobody came back to may make way, but only for an attempt that passes
+      // everything else, and only when it is enough (review 8, RR8-469-1).
+      const full = storeFull(c, limits);
+      if (full && !(await this.makeWay(limits))) {
+        why = "rooms-full";
+        charge(c, keys); // why: refused, the attempt still counts for this client
+      } else why = admit(c, keys, day, full ? { ...limits, maxRooms: Infinity, maxBytes: Infinity } : limits, owner, owner48);
+    }
+    const put = { day: c.day, rooms: c.rooms };
+    if (why === null || why === "rooms-full") for (const k of keys) put[`b:${k}`] = c.buckets.get(k);
+    if (why === null && typeof rid === "string" && rid && rid.length <= 128) {
+      this.pending.set(rid, { o: owner, p: owner48 });
+      if (this.pending.size > 5000) this.pending.delete(this.pending.keys().next().value);
     }
     await this.state.storage.put(put);
     return why;
   }
 
-  /** Make room: evict stored rooms in `evictionOrder` until the store is not full (a few tries at most). */
-  async evictFor(limits) {
+  /** One room's RPC (`canEvict` or `evict`): true when it agrees. A record with no Durable Object id has no room to ask. */
+  async askRoom(rid, method) {
+    const r = this.counts.registry.get(rid);
+    if (!r?.d || !this.env.ROOMS?.idFromString) return true;
+    try {
+      return (await this.env.ROOMS.get(this.env.ROOMS.idFromString(r.d))[method]()) === true;
+    } catch {
+      return false; // why: not reachable now: keep its record and try another room
+    }
+  }
+
+  /**
+   * Make way for one new room (review 8, RR8-469-1 and -2): the one room
+   * `evictionPlan` picks, asked first, then evicted. A room in use is left
+   * out and goes last for an hour, and the search goes on with the next; it
+   * stops at MAX_EVICT_CALLS room RPCs, not at a number of rooms tried. True
+   * when a room made way; when none can, nothing is evicted.
+   */
+  async makeWay(limits) {
     const c = this.counts;
-    let tries = 0;
-    for (const rid of evictionOrder(c.registry, Date.now(), limits)) {
-      if (!storeFull(c, limits) || tries++ >= 8) break;
+    const now = Date.now();
+    const need = needed(c, limits);
+    const left = new Set();
+    const busy = async (rid) => {
+      left.add(rid);
       const r = c.registry.get(rid);
-      let ok = true;
-      if (r?.d && this.env.ROOMS?.idFromString) {
-        try {
-          ok = (await this.env.ROOMS.get(this.env.ROOMS.idFromString(r.d)).evict()) === true;
-        } catch {
-          ok = false; // why: not reachable now: keep its record and try the next room
-        }
+      if (!r) return;
+      r.u = now;
+      await this.state.storage.put({ [`r:${rid}`]: r });
+    };
+    for (let calls = 0; calls + 2 <= MAX_EVICT_CALLS; ) {
+      const plan = evictionPlan(c.registry, evictionOrder(c.registry, now, limits).filter((rid) => !left.has(rid)), need);
+      if (!plan) return false;
+      const [rid] = plan;
+      calls += 2;
+      // Two phases: the room agrees before anything is deleted; one that someone joined since refuses the second.
+      if (!(await this.askRoom(rid, "canEvict")) || !(await this.askRoom(rid, "evict"))) {
+        await busy(rid);
+        continue;
       }
-      if (!ok) continue;
       c.registry.delete(rid);
       await this.state.storage.delete(`r:${rid}`);
       this.recount();
+      await this.state.storage.put({ stored: c.stored, bytes: c.bytes });
+      return true;
     }
-    await this.state.storage.put({ stored: c.stored, bytes: c.bytes });
+    return false;
   }
 
   /** RPC: a room was stored (first time) or stored again: its size and time. */
-  async saved(rid, bytes, did = "") {
+  async saved(rid, bytes, did = "", owner = null) {
     if (typeof rid !== "string" || !rid || rid.length > 128) return null;
     const c = await this.load();
     const old = c.registry.get(rid);
-    const r = { o: old ? old.o : (this.pending.get(rid) ?? null), b: Math.max(0, Math.floor(Number(bytes) || 0)), w: Date.now(), a: old?.a ?? 0, d: typeof did === "string" ? did.slice(0, 128) : "" };
+    // The owner from this object's memory, else the one the room stored with its first write (RR8-469-3).
+    const mine = this.pending.get(rid);
+    const o = old?.o ?? mine?.o ?? cleanOwner(owner?.o);
+    const p = old?.p ?? mine?.p ?? cleanOwner(owner?.p);
+    const r = { o, p, b: Math.max(0, Math.floor(Number(bytes) || 0)), w: Date.now(), a: old?.a ?? 0, u: old?.u ?? 0, d: typeof did === "string" ? did.slice(0, 128) : "" };
     this.pending.delete(rid);
     c.registry.set(rid, r);
     this.recount();
