@@ -55,12 +55,17 @@
  *     to 4 KiB blocks (an empty object costs one block), in every cap.
  *
  * The client address: mounted in server.js, the relay uses the address that
- * server.js reads (SIGNAL_TRUST_PROXY=1 on Fly). Standalone, it reads
- * Fly-Client-IP from a peer on a private (non-loopback) network, as Fly's
- * proxy is, and the last X-Forwarded-For hop from a loopback or private peer,
- * as nginx's `$proxy_add_x_forwarded_for` appends it; a peer on a public
- * address is used as is. VAULT_RELAY_TRUST_PROXY=0 turns the headers off. A
- * proxy other than Fly's must drop a client's own Fly-Client-IP header.
+ * server.js reads (SIGNAL_TRUST_PROXY=1 on Fly). Standalone, it trusts no
+ * header unless told (review 4, RR4-483-1: on a school network every laptop
+ * is a "private peer" and could name any address it liked):
+ *   VAULT_RELAY_TRUST_PROXY unset    on Fly (FLY_APP_NAME set): as "fly"; elsewhere: no header
+ *   VAULT_RELAY_TRUST_PROXY=0        no header: the socket's address
+ *   VAULT_RELAY_TRUST_PROXY=fly      Fly-Client-IP, only on Fly and only from a private peer (Fly's proxy)
+ *   VAULT_RELAY_TRUST_PROXY=<CIDRs>  e.g. "10.0.0.2/32,fd00::2/128": the proxies' own addresses; the
+ *                                    client is the right-most X-Forwarded-For hop that is not one of them
+ * IPv6 clients are counted by their /64, and new spaces also by their /48
+ * (VAULT_RELAY_NEW_SPACES_PER_48, default 16 × the per-address limit), so a
+ * tunnel's 65,536 /64s are not 65,536 clients (review 4, RR4-483-2).
  *
  * For a public relay, opening a space can also require (opt-in):
  *   VAULT_RELAY_INVITE=<secret>     the header `X-Lumen-Invite: <secret>`
@@ -272,6 +277,96 @@ function addressKey(raw) {
   return `${g.slice(0, 4).map((x) => x.toString(16)).join(":")}::/64`;
 }
 
+/** An IPv6 client's /48, or null for IPv4 (and IPv4-mapped) addresses. */
+function prefix48(raw) {
+  let a = String(raw || "?").trim().toLowerCase();
+  if (a.startsWith("[")) a = a.slice(1, a.indexOf("]") >>> 0);
+  a = a.replace(/%.*$/, "");
+  const g = v6Groups(a);
+  if (!g || (g.slice(0, 5).every((x) => x === 0) && g[5] === 0xffff)) return null;
+  return `${g.slice(0, 3).map((x) => x.toString(16)).join(":")}::/48`;
+}
+
+/** An address as 8 IPv6 groups (IPv4 as IPv4-mapped), or null. */
+function groupsOf(raw) {
+  let a = String(raw || "").trim().toLowerCase();
+  if (a.startsWith("[")) a = a.slice(1, a.indexOf("]") >>> 0);
+  a = a.replace(/%.*$/, "");
+  const v4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(a);
+  if (v4) {
+    const b = v4.slice(1).map(Number);
+    if (b.some((x) => x > 255)) return null;
+    return [0, 0, 0, 0, 0, 0xffff, (b[0] << 8) | b[1], (b[2] << 8) | b[3]];
+  }
+  return v6Groups(a);
+}
+
+/** "10.0.0.2/32,fd00::2/128" → a test of whether an address is in one of the ranges; null when the list doesn't parse. */
+function cidrList(text) {
+  const ranges = [];
+  let parsed = 0;
+  for (const part of String(text).split(",").map((x) => x.trim()).filter(Boolean)) {
+    const [addr, bits] = part.split("/");
+    const g = groupsOf(addr);
+    if (!g) return null;
+    const isV4 = /^\d+\.\d+\.\d+\.\d+$/.test(addr.trim());
+    const n = bits === undefined ? 128 : Number(bits) + (isV4 ? 96 : 0);
+    if (!Number.isInteger(n) || n < (isV4 ? 96 : 0) || n > 128) return null;
+    parsed++;
+    // Review 6 (RR6-483-1): a range wider than /24 (IPv4) or /64 (IPv6) holds clients too (a school's
+    // laptops, every ULA address), and a client in the list picks its own address. Such a range is not a proxy.
+    if (n < (isV4 ? 120 : 64)) {
+      console.warn(`vault-relay: VAULT_RELAY_TRUST_PROXY: "${part}" is wider than ${isV4 ? "/24" : "/64"}, ignored: list the proxies' own addresses (/32, /128)`);
+      continue;
+    }
+    ranges.push({ g, n });
+  }
+  if (!parsed) return null;
+  return (raw) => {
+    const g = groupsOf(raw);
+    if (!g) return false;
+    return ranges.some((r) => {
+      for (let bit = 0; bit < r.n; bit += 16) {
+        const take = Math.min(16, r.n - bit);
+        const mask = (0xffff << (16 - take)) & 0xffff;
+        if ((g[bit / 16] & mask) !== (r.g[bit / 16] & mask)) return false;
+      }
+      return true;
+    });
+  };
+}
+
+/**
+ * How the standalone relay reads the client's address (see the module comment).
+ * Returns (req) => address.
+ */
+function addressReader(setting, env) {
+  const peerOf = (req) => req.socket?.remoteAddress || "?";
+  const value = setting === false ? "0" : setting === true ? "fly" : String(setting ?? "").trim().toLowerCase();
+  const onFly = !!env.FLY_APP_NAME;
+  if (value === "fly" || (value === "" && onFly) || (value === "auto" && onFly)) {
+    return (req) => {
+      const peer = peerOf(req);
+      const fly = req.headers?.["fly-client-ip"];
+      if (onFly && peerKind(peer) !== "public" && typeof fly === "string" && fly.trim()) return fly.trim();
+      return peer;
+    };
+  }
+  if (value === "" || value === "0" || value === "auto" || value === "off" || value === "false") return peerOf;
+  const isProxy = cidrList(value);
+  if (!isProxy) throw new Error(`VAULT_RELAY_TRUST_PROXY: "${setting}" is not 0, fly or a list of CIDR ranges`);
+  return (req) => {
+    const peer = peerOf(req);
+    if (!isProxy(peer)) return peer;
+    const xff = req.headers?.["x-forwarded-for"];
+    const hops = typeof xff === "string" ? xff.split(",").map((x) => x.trim()).filter(Boolean) : [];
+    // From the right: each hop a proxy appended; the first that is not a proxy is the client.
+    for (let i = hops.length - 1; i >= 0; i--) if (!isProxy(hops[i])) return hops[i];
+    // Every hop is a proxy (review 6, RR6-483-1): the left-most is the client's own word, so the socket's address counts.
+    return peer;
+  };
+}
+
 /** Is a peer address loopback, or on a private network? */
 function peerKind(raw) {
   const a = addressKey(raw);
@@ -312,24 +407,14 @@ function createVaultRelay(opts = {}) {
   const invite = String(opts.invite ?? env.VAULT_RELAY_INVITE ?? "");
   // The app refuses more than MAX_POW_BITS, so a higher setting would make every new vault fail.
   const powBits = Math.min(MAX_POW_BITS, Math.floor(num(opts.powBits ?? env.VAULT_RELAY_POW_BITS, 0)));
-  const trustProxy = String(opts.trustProxy ?? env.VAULT_RELAY_TRUST_PROXY ?? "auto") !== "0" && opts.trustProxy !== false;
-  /** The client's address: server.js's own reading when mounted there, else the socket (and a proxy's header). */
-  const clientAddress =
-    typeof opts.clientAddress === "function"
-      ? opts.clientAddress
-      : (req) => {
-          const peer = req.socket?.remoteAddress || "?";
-          if (!trustProxy) return peer;
-          const kind = peerKind(peer);
-          const fly = req.headers?.["fly-client-ip"];
-          if (kind === "private" && typeof fly === "string" && fly.trim()) return fly.trim();
-          const xff = req.headers?.["x-forwarded-for"];
-          if (kind !== "public" && typeof xff === "string" && xff.trim()) return xff.split(",").pop().trim();
-          return peer;
-        };
+  const newSpacesPer48 = num(opts.newSpacesPer48 ?? env.VAULT_RELAY_NEW_SPACES_PER_48, newSpacesPerDay * 16);
+  /** The client's address: server.js's own reading when mounted there, else the socket (and a proxy's header, when told). */
+  const clientAddress = typeof opts.clientAddress === "function" ? opts.clientAddress : addressReader(opts.trustProxy ?? env.VAULT_RELAY_TRUST_PROXY, env);
   /** Per address (as a daily HMAC, never the address): requests this minute, spaces opened and bytes written today. */
   const hits = sketch();
-  const newSpaces = sketch();
+  // Sized for a busy day: 2^17 cells a row keeps collisions rare at a few hundred thousand new spaces.
+  const newSpaces = sketch(1 << 17);
+  const newSpaces48 = sketch(1 << 17);
   const written = sketch();
   let salt = { day: -1, key: Buffer.alloc(0) };
   let minute = -1;
@@ -340,6 +425,7 @@ function createVaultRelay(opts = {}) {
       // A new day: a new key, and the day's counts start again (the time bucket, not an eviction).
       salt = { day, key: crypto.randomBytes(32) };
       newSpaces.reset();
+      newSpaces48.reset();
       written.reset();
     }
     if (minute !== Math.floor(now / 60000)) {
@@ -347,6 +433,11 @@ function createVaultRelay(opts = {}) {
       hits.reset();
     }
     return hits.cells(crypto.createHmac("sha256", salt.key).update(addressKey(clientAddress(req))).digest());
+  };
+  /** The client's IPv6 /48 cells (after addressId, under the same day's key), or null for IPv4. */
+  const prefixId = (req) => {
+    const p = prefix48(clientAddress(req));
+    return p ? newSpaces48.cells(crypto.createHmac("sha256", salt.key).update(`48|${p}`).digest()) : null;
   };
   /**
    * Bytes in all spaces: counted once from the store (one walk at a time),
@@ -444,6 +535,7 @@ function createVaultRelay(opts = {}) {
       });
     }
     const addr = addressId(req);
+    const addr48 = prefixId(req);
     if (limited(req, addr)) return json(res, 429, { error: "slow down" });
     const who = spaceOf(req.headers.authorization);
     if (!who) return json(res, 401, { error: "token" });
@@ -483,7 +575,10 @@ function createVaultRelay(opts = {}) {
     let spaceHeld = false;
     let bytesHeld = 0;
     const release = () => {
-      if (spaceHeld) newSpaces.add(addr, -1);
+      if (spaceHeld) {
+        newSpaces.add(addr, -1);
+        if (addr48) newSpaces48.add(addr48, -1);
+      }
       if (bytesHeld) written.add(addr, -bytesHeld);
       spaceHeld = false;
       bytesHeld = 0;
@@ -493,7 +588,9 @@ function createVaultRelay(opts = {}) {
       if (invite && !sameSecret(req.headers["x-lumen-invite"], invite)) return json(res, 403, { error: "invite" });
       if (powBits > 0 && !powOk(space, req.headers["x-lumen-pow"], powBits)) return json(res, 428, { error: "pow", bits: powBits });
       if (newSpaces.get(addr) >= newSpacesPerDay) return json(res, 429, { error: "new spaces today" });
+      if (addr48 && newSpaces48.get(addr48) >= newSpacesPer48) return json(res, 429, { error: "new spaces today" });
       newSpaces.add(addr, 1);
+      if (addr48) newSpaces48.add(addr48, 1);
       spaceHeld = true;
     }
     let data;
@@ -536,7 +633,10 @@ function createVaultRelay(opts = {}) {
           pending -= delta;
         }
         // The space was opened by a concurrent request: this one did not open it.
-        if (spaceHeld && !opened) newSpaces.add(addr, -1);
+        if (spaceHeld && !opened) {
+          newSpaces.add(addr, -1);
+          if (addr48) newSpaces48.add(addr48, -1);
+        }
         spaceHeld = false;
         bytesHeld = 0;
         return null;

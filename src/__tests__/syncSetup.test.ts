@@ -6,6 +6,7 @@
  * shared folder, with the real crypto.
  */
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { EventEmitter } from "node:events";
 import { createRequire } from "node:module";
 import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
@@ -378,5 +379,35 @@ describe("relay limits (review 12.11)", () => {
     } finally {
       await r.close();
     }
+  });
+  it("review 4: no proxy header is trusted unless told; fly only on Fly; a CIDR list takes the right-most hop that is no proxy; IPv6 /48 counts too", async () => {
+    /** One PUT without a socket server: the peer and the headers are the test's. */
+    const put = (relay: ReturnType<typeof createVaultRelay>, token: string, ip: string, headers: Record<string, string> = {}) =>
+      new Promise<number>((resolve) => {
+        const req = Object.assign(new EventEmitter(), { method: "PUT", url: "/v1/vault/o/a", headers: { authorization: `Bearer ${token}`, ...headers }, socket: { remoteAddress: ip }, destroy() {} });
+        relay.handle(req, { writeHead(status: number) { resolve(status); }, end() {} });
+        setImmediate(() => (req.emit("data", Buffer.from("x")), req.emit("end")));
+      });
+    const opened = async (relay: ReturnType<typeof createVaultRelay>, n: number, args: (i: number) => [string, Record<string, string>?]) => {
+      let k = 0;
+      for (let i = 0; i < n; i++) if ((await put(relay, tok(i + 1000 * n), ...args(i))) === 201) k++;
+      return k;
+    };
+    const mk = (o: Record<string, unknown> = {}) => createVaultRelay({ sweep: false, ratePerMinute: 1e9, newSpacesPerDay: 2, ...o });
+    // Default: a laptop on the school network can't name other addresses.
+    expect(await opened(mk(), 6, (i) => ["10.20.0.66", { "fly-client-ip": `10.20.${i}.1`, "x-forwarded-for": `10.20.${i}.2` }])).toBe(2);
+    // "fly" off Fly: still the socket.
+    expect(await opened(mk({ trustProxy: "fly" }), 6, (i) => ["172.16.0.2", { "fly-client-ip": `198.51.100.${i}` }])).toBe(2);
+    // A proxy list: the client is the right-most hop that is not a proxy, whatever it sent before.
+    const lb = mk({ trustProxy: "10.0.0.2/32, 10.0.1.0/24" });
+    expect(await opened(lb, 6, (i) => ["10.0.0.2", { "x-forwarded-for": `192.0.2.${i}, 203.0.113.9, 10.0.1.7` }])).toBe(2);
+    expect(await opened(lb, 2, (i) => ["10.0.0.2", { "x-forwarded-for": `203.0.113.${20 + i}` }])).toBe(2);
+    // A peer that is not in the list is the client itself.
+    expect(await opened(lb, 4, (i) => ["198.51.100.7", { "x-forwarded-for": `192.0.2.${i}` }])).toBe(2);
+    expect(() => mk({ trustProxy: "nginx" })).toThrow(/TRUST_PROXY/);
+    // IPv6: many /64s of one /48 share the /48's own limit (16 × the per-address one by default).
+    const v6 = mk({ newSpacesPer48: 3 });
+    expect(await opened(v6, 6, (i) => [`2001:db8:7:${i}::1`])).toBe(3);
+    expect(await opened(v6, 1, () => ["2001:db8:8::1"])).toBe(1);
   });
 });

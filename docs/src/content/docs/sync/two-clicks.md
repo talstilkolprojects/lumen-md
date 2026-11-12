@@ -76,12 +76,22 @@ so many tiny objects cost what they really cost.
 
 Behind a reverse proxy, every request comes from the proxy's address. Mounted
 in `server.js`, the relay uses the client address that `server.js` reads
-(`SIGNAL_TRUST_PROXY=1`, which `fly.toml` sets). The standalone relay reads
-`Fly-Client-IP` when the request comes from a private network, as Fly's proxy
-does, and the last `X-Forwarded-For` entry when it comes from the same machine
-or a private network, as nginx adds it. A proxy other than Fly's must remove a
-client's own `Fly-Client-IP` header. `VAULT_RELAY_TRUST_PROXY=0` turns both
-headers off.
+(`SIGNAL_TRUST_PROXY=1`, which `fly.toml` sets): `Fly-Client-IP` only on Fly,
+and otherwise the last `X-Forwarded-For` entry, the one the proxy in front
+added. The standalone relay trusts no header unless you tell it to, because
+on a shared network (a school, an office) any machine could otherwise name
+any address it liked:
+
+| `VAULT_RELAY_TRUST_PROXY` | The client address is |
+|---|---|
+| not set | on Fly, as `fly`; anywhere else, the connection's own address |
+| `0` | the connection's own address |
+| `fly` | `Fly-Client-IP`, only on Fly and only from Fly's proxy |
+| a list of the proxies' own addresses, e.g. `10.0.0.2/32,fd00::2/128` | the connections from those proxies: the right-most `X-Forwarded-For` entry that is not one of them. When every entry is a proxy, the connection's own address. A range wider than /24 (IPv4) or /64 (IPv6) would hold clients too, so the relay ignores it |
+
+An IPv6 client counts as its /64 for every limit. For new spaces, its /48
+counts as well (`VAULT_RELAY_NEW_SPACES_PER_48`, 16 times the per-address
+limit by default), so one tunnel's many /64s are not many clients.
 
 A public relay can also ask for more before it opens a new space (existing
 spaces are not affected):
