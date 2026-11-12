@@ -11,6 +11,7 @@
  * cannot run says "skipped" and why.
  */
 
+import { bounded } from "../lib/bounded";
 import type { ExecutorId } from "./types";
 
 export type DoctorStatus = "ok" | "warn" | "fail" | "skip";
@@ -51,6 +52,12 @@ export interface DoctorOptions {
   golden?: boolean;
   /** Per-request timeout for network probes. */
   timeoutMs?: number;
+  /**
+   * Limit for each local check (WebGPU, storage, service worker, the engines,
+   * the executor pick): one that never settles becomes a "timed out" row
+   * instead of holding the whole report back (W4.2).
+   */
+  localTimeoutMs?: number;
   /** Stage-6 engine probes (tests); see ./doctorEngines.ts. */
   engines?: Partial<import("./doctorEngines").EngineProbe>;
 }
@@ -136,6 +143,7 @@ async function probe(url: string, opts: { signal?: AbortSignal; timeoutMs: numbe
  */
 export async function runDoctor(opts: DoctorOptions = {}): Promise<DoctorReport> {
   const timeoutMs = opts.timeoutMs ?? 2500;
+  const localMs = opts.localTimeoutMs ?? 5000;
   const findings: DoctorFinding[] = [];
   const push = (f: DoctorFinding) => findings.push(f);
   const origin = pageOrigin();
@@ -225,7 +233,7 @@ export async function runDoctor(opts: DoctorOptions = {}): Promise<DoctorReport>
       // Tool calling: the committer/tasker agents need it.
       let toolsOk: boolean | null = null;
       try {
-        const avail = await ollamaExecutor.available();
+        const avail = await bounded(() => ollamaExecutor.available(), localMs);
         if (avail.available) toolsOk = ollamaExecutor.supportsTools(ollamaExecutor.modelFor("small", { tools: true }));
       } catch {
         toolsOk = null;
@@ -250,7 +258,7 @@ export async function runDoctor(opts: DoctorOptions = {}): Promise<DoctorReport>
   // 4. In-browser model: WebGPU, f16, a model that fits.
   try {
     const mm = await import("../ai/modelManager");
-    const hw = await mm.detectHardware();
+    const hw = await bounded(() => mm.detectHardware(), localMs);
     if (!hw.webgpu) {
       push({ id: "webgpu", title: "ai.doctor.check.webgpu", status: ollamaUp ? "warn" : "fail", detail: hw.reason, fix: { label: "ai.doctor.fix.webgpu", url: "https://caniuse.com/webgpu" } });
     } else {
@@ -275,11 +283,11 @@ export async function runDoctor(opts: DoctorOptions = {}): Promise<DoctorReport>
     if (!nav?.storage?.estimate) {
       push({ id: "storage", title: "ai.doctor.check.storage", status: "skip" });
     } else {
-      const est = await nav.storage.estimate();
+      const est = await bounded(() => nav.storage.estimate(), localMs);
       const mb = (n?: number) => (typeof n === "number" ? Math.round(n / (1024 * 1024)) : null);
       const used = mb(est.usage);
       const quota = mb(est.quota);
-      const persisted = typeof nav.storage.persisted === "function" ? await nav.storage.persisted() : null;
+      const persisted = typeof nav.storage.persisted === "function" ? await bounded(() => nav.storage.persisted(), localMs) : null;
       const low = used !== null && quota !== null && quota - used < 200;
       push({
         id: "storage",
@@ -298,7 +306,7 @@ export async function runDoctor(opts: DoctorOptions = {}): Promise<DoctorReport>
     const nav = typeof navigator !== "undefined" ? navigator : undefined;
     if (!nav?.serviceWorker) push({ id: "sw", title: "ai.doctor.check.sw", status: "skip" });
     else {
-      const reg = await nav.serviceWorker.getRegistration();
+      const reg = await bounded(() => nav.serviceWorker.getRegistration(), localMs);
       push({ id: "sw", title: "ai.doctor.check.sw", status: reg ? "ok" : "warn", detail: reg ? (reg.active ? "active" : "installing") : undefined });
     }
   } catch (e) {
@@ -356,14 +364,14 @@ export async function runDoctor(opts: DoctorOptions = {}): Promise<DoctorReport>
   // 8b. The on-device engines of stage 6 (translation, spelling, niqqud, captions).
   try {
     const { engineFindings } = await import("./doctorEngines");
-    for (const f of await engineFindings(opts.engines)) push(f);
+    for (const f of await engineFindings(opts.engines, { timeoutMs: localMs })) push(f);
   } catch (e) {
     push({ id: "engines", title: "ai.doctor.check.engines", status: "skip", detail: (e as Error).message });
   }
 
   // 9. Which executor would the runtime pick right now?
   try {
-    const pick = await executors.pickExecutor();
+    const pick = await bounded(() => executors.pickExecutor(), localMs);
     push({
       id: "executor",
       title: "ai.doctor.check.executor",
