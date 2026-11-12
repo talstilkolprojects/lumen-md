@@ -115,6 +115,7 @@
   "cmd.cite.legalFromCase.hint": "Repère les numéros ע\"א, בג\"ץ, ת\"א … et remplit la fenêtre ; la référence remplace le numéro",
   "cmd.cite.syncZotero": "Citations : copier la bibliothèque Zotero dans le coffre",
   "cmd.cite.syncZoteroWeb": "Citations : synchroniser la bibliothèque Zotero depuis zotero.org (lecture seule)",
+  "cmd.classroom.open": "Classe privée…",
   "cmd.clip.clipboard": "Capturer depuis le presse-papiers",
   "cmd.clip.clipboard.hint": "Copiez une partie d’une page dans le navigateur, puis enregistrez-la",
   "cmd.clip.url": "Capturer une page web…",

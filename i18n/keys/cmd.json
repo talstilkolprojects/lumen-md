@@ -586,6 +586,11 @@
       "vars": []
     },
     {
+      "key": "cmd.classroom.open",
+      "en": "Private classroom…",
+      "vars": []
+    },
+    {
       "key": "cmd.clip.clipboard",
       "en": "Clip from clipboard",
       "vars": []

@@ -1913,6 +1913,18 @@
       "group": "Insert",
       "hint": "Pen, Apple Pencil or finger; saved as SVG in the note",
       "icon": "Pencil"
+    },
+    {
+      "id": "sync.setup",
+      "label": "Set up sync (two clicks)",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "classroom.open",
+      "label": "Private classroom…",
+      "group": "Tools",
+      "icon": "Sparkles"
     }
   ],
   "full": [
@@ -3978,6 +3990,18 @@
       "group": "Insert",
       "hint": "Pen, Apple Pencil or finger; saved as SVG in the note",
       "icon": "Pencil"
+    },
+    {
+      "id": "sync.setup",
+      "label": "Set up sync (two clicks)",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "classroom.open",
+      "label": "Private classroom…",
+      "group": "Tools",
+      "icon": "Sparkles"
     }
   ],
   "autoSaveOn": [
@@ -4257,6 +4281,8 @@
     "automations.new",
     "automations.dryRun",
     "automations.undo",
-    "insert.ink"
+    "insert.ink",
+    "sync.setup",
+    "classroom.open"
   ]
 }

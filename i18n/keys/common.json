@@ -2702,6 +2702,222 @@
       ]
     },
     {
+      "key": "e2ee.class.assignmentTitle",
+      "en": "Assignment title",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.check",
+      "en": "Check submissions",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.close",
+      "en": "Delete from the relay",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.closeConfirm",
+      "en": "Delete every submission and comment of \"{title}\" from the relay? Copies you opened into tabs stay.",
+      "vars": [
+        "title"
+      ]
+    },
+    {
+      "key": "e2ee.class.commentHeading",
+      "en": "Teacher's comment, {date}",
+      "vars": [
+        "date"
+      ]
+    },
+    {
+      "key": "e2ee.class.commentLabel",
+      "en": "Comment to {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.class.commentSent",
+      "en": "Sent — only this student can open it.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.commentsAdded",
+      "en": "{n} new comments added to the open note",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.class.copy",
+      "en": "Copy",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.create",
+      "en": "New assignment from the open note",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.error.link.malformed",
+      "en": "This classroom link is broken or incomplete.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.error.link.tooLarge",
+      "en": "The note is too large for a classroom link (32 KB).",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.error.link.unsupported",
+      "en": "This browser cannot open classroom links.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.error.relay",
+      "en": "The relay did not answer: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "e2ee.class.error.tooLong",
+      "en": "Too long to hand in.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.getComments",
+      "en": "Get comments",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.getCopy",
+      "en": "Get my copy",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.handIn",
+      "en": "Hand in \"{name}\"",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.class.handedIn",
+      "en": "Handed in: version {n}, {date}",
+      "vars": [
+        "n",
+        "date"
+      ]
+    },
+    {
+      "key": "e2ee.class.intro",
+      "en": "Hand out a template, collect sealed work, send comments back. Only the teacher opens a student's work, only that student opens the teacher's comments; the relay holds sealed boxes it cannot read.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.joinNote",
+      "en": "You get your own copy of the template in a new tab. Nothing is sent until you choose \"Hand in\".",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.joinTitle",
+      "en": "Assignment: {title}",
+      "vars": [
+        "title"
+      ]
+    },
+    {
+      "key": "e2ee.class.learn",
+      "en": "My assignments as a student",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.link",
+      "en": "Link for the class",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.linkNote",
+      "en": "Send this link to the class. It holds the template and what is needed to hand in, not your key: only this device can open the work.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.noName",
+      "en": "(no name)",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.noRelay",
+      "en": "This build has no relay (VITE_SYNC_RELAY_URL). A school can run its own on the school network: see the docs, \"Private classroom\".",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.notHandedIn",
+      "en": "Not handed in yet. Your copy stays on this device until you hand it in.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.openTab",
+      "en": "Open in a tab",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.otherRelay",
+      "en": "This link uses another relay ({relay}) than this copy of Lumen. Ask your teacher for a link from your school's Lumen.",
+      "vars": [
+        "relay"
+      ]
+    },
+    {
+      "key": "e2ee.class.received",
+      "en": "{n} received",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.class.sendComment",
+      "en": "Send comment (sealed)",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.teach",
+      "en": "Teach",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.title",
+      "en": "Private classroom",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.unreadable",
+      "en": "{n} unreadable objects skipped",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.class.untitled",
+      "en": "Assignment",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.version",
+      "en": "version {n} · {date}",
+      "vars": [
+        "n",
+        "date"
+      ]
+    },
+    {
+      "key": "e2ee.class.yourName",
+      "en": "Your name (only the teacher sees it)",
+      "vars": []
+    },
+    {
       "key": "e2ee.conflict.body",
       "en": "This note was also changed on another device. Choose what to keep; it is not synced until you decide.",
       "vars": []

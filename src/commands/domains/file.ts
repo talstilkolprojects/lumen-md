@@ -142,6 +142,14 @@ export function buildSyncCommands(): Command[] {
       group: t("group.tools"),
       action: () => void import("../../sync/e2ee/ui/launch").then((m) => m.openSyncSetup()),
     },
+    {
+      // Plan W5.21: a teacher shares a template, students hand in sealed work; loaded on use.
+      id: "classroom.open",
+      label: t("cmd.classroom.open"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: () => void import("../../sync/e2ee/classroom/launch").then((m) => m.openClassroom()),
+    },
   ];
 }
 
