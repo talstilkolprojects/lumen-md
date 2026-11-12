@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lumen — תמיכה ועלויות · Support and costs</title>
+    <meta name="description" content="כמה עולה להחזיק את Lumen, מי משלם ואיך אפשר לעזור. What it costs to run Lumen, who pays, and how to help. No scripts, no trackers." />
+    <meta name="theme-color" content="#0c0f17" />
+    <meta name="referrer" content="no-referrer" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!--
+      Plan W5.25. This page loads nothing but itself and the favicon: no
+      script, no font, no image, no frame, no analytics, no payment widget.
+      Payment and sponsor sites are plain links, so they load only when
+      someone clicks them. src/__tests__/sustainability.test.ts checks this,
+      and that every number below matches scripts/cost-model.mjs.
+    -->
+    <style>
+      :root {
+        color-scheme: dark light;
+        --bg: hsl(232 27% 8%);
+        --bg-card: hsl(232 25% 13%);
+        --fg: hsl(220 16% 92%);
+        --fg-mute: hsl(220 14% 68%);
+        --border: hsl(232 22% 22%);
+        --accent: hsl(258 92% 72%);
+      }
+      @media (prefers-color-scheme: light) {
+        :root { --bg: hsl(0 0% 100%); --bg-card: hsl(230 30% 97%); --fg: hsl(232 27% 12%); --fg-mute: hsl(230 10% 38%); --border: hsl(230 15% 86%); --accent: hsl(258 70% 48%); }
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; line-height: 1.6; }
+      main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+      h1 { font-size: clamp(26px, 4vw, 36px); margin: 0 0 8px; }
+      h2 { font-size: 20px; margin: 32px 0 8px; }
+      p, li { color: var(--fg); }
+      .mute { color: var(--fg-mute); font-size: 14px; }
+      .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin: 12px 0; }
+      table { width: 100%; border-collapse: collapse; font-size: 15px; }
+      th, td { text-align: start; padding: 8px 6px; border-block-end: 1px solid var(--border); vertical-align: top; }
+      td.num, th.num { text-align: end; white-space: nowrap; font-variant-numeric: tabular-nums; direction: ltr; }
+      td.val { text-align: end; font-variant-numeric: tabular-nums; unicode-bidi: plaintext; }
+      td.val span { white-space: nowrap; }
+      tfoot td { font-weight: 700; }
+      a { color: var(--accent); }
+      .links { display: flex; flex-wrap: wrap; gap: 10px; }
+      .links a { border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; text-decoration: none; }
+      hr { border: none; border-block-start: 1px solid var(--border); margin: 48px 0; }
+      [lang="en"] { direction: ltr; text-align: left; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section lang="he" dir="rtl" id="he">
+        <h1>תמיכה ועלויות</h1>
+        <p>Lumen הוא קוד פתוח (MIT), ורוב העבודה בו נעשית על ידי אדם אחד. <strong>כל פיצ׳ר נשאר חינמי ומקומי.</strong> כסף נכנס רק כדי לשלם על אירוח, ורק אם בוחרים בו.</p>
+        <p class="mute">הדף הזה לא מריץ שום סקריפט ולא טוען שום דבר מאתר אחר. הקישורים לתשלום נפתחים רק כשלוחצים עליהם. <a href="#en" lang="en">English below</a></p>
+
+        <h2>מה זה עולה היום</h2>
+        <div class="card">
+          <table>
+            <thead><tr><th>שירות</th><th>למה</th><th class="num">לחודש</th></tr></thead>
+            <tbody>
+              <tr data-cost="0"><td>Vercel Hobby</td><td>האפליקציה ב-lumen-md.vercel.app</td><td class="num">$0</td></tr>
+              <tr data-cost="0"><td>Cloudflare Workers (חינם)</td><td>שרת השיתוף החי הציבורי, רק חדרים מוצפנים</td><td class="num">$0</td></tr>
+              <tr data-cost="0"><td>GitHub</td><td>הקוד, הבעיות והגרסאות</td><td class="num">$0</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="2">סה״כ</td><td class="num" data-total="0">$0</td></tr></tfoot>
+          </table>
+        </div>
+
+        <h2>ממסר סנכרון מוצפן בתשלום (אופציונלי, בתכנון)</h2>
+        <p>מי שלא רוצה להפעיל שרת משלו יוכל לשלם על ממסר מנוהל. הממסר רואה רק קופסאות מוצפנות, כמו בממסר החינמי שמריצים לבד. ההצפנה, המפתח והשחזור נשארים במכשיר.</p>
+        <div class="card">
+          <table>
+            <tbody>
+              <tr><td>מחיר</td><td class="val"><span data-model="plans.monthly">$3</span> / חודש · <span data-model="plans.yearly">$30</span> / שנה</td></tr>
+              <tr><td>תשתית לכל מנוי לחודש (הערכה)</td><td class="val" data-model="perUser.total">$0.0496</td></tr>
+              <tr><td>עמלת התשלום (Polar, במקרה הגרוע)</td><td class="val"><span data-model="morFee.monthly">$0.6950</span> · <span data-model="morFee.yearly">$2.45</span></td></tr>
+              <tr><td>נשאר לחודש ממנוי</td><td class="val" data-model="net.yearly">$2.25</td></tr>
+              <tr><td>עלות קבועה לחודש</td><td class="val"><span data-model="fixed.cloudflarePages">$5.87</span> (Cloudflare Pages) · <span data-model="fixed.vercelPro">$25.87</span> (Vercel Pro)</td></tr>
+              <tr><td>נקודת איזון</td><td class="val"><span data-model="breakEven.cloudflarePages">3</span> מנויים · <span data-model="breakEven.vercelPro">12</span> עם Vercel Pro</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="mute">ההנחות (1GB מוצפן, כ-100 כתיבות ו-1,000 קריאות ביום) ומחירי הספקים נמצאים ב-<code>scripts/cost-model.mjs</code>. התוכנית המלאה: <a href="https://github.com/talstilkol/lumen-md/blob/main/docs/src/content/docs/he/project/sustainability.md">קיימות</a>.</p>
+
+        <h2>איך עוזרים</h2>
+        <div class="links">
+          <a href="https://github.com/sponsors/talstilkol">GitHub Sponsors</a>
+          <a href="https://opencollective.com/lumen-md">Open Collective</a>
+          <a href="https://github.com/talstilkol/lumen-md">כוכב, באג, תרגום או קוד</a>
+        </div>
+        <p class="mute">ב-GitHub Sponsors כל הסכום מגיע לפרויקט. ב-Open Collective כל הוצאה פומבית, ו-Open Source Collective לוקחת 10%. עד שהחשבונות נפתחים, הקישורים יכולים להוביל לדף ריק.</p>
+      </section>
+
+      <hr />
+
+      <section lang="en" dir="ltr" id="en">
+        <h1>Support and costs</h1>
+        <p>Lumen is open source (MIT) and mostly built by one person. <strong>Every feature stays free and local.</strong> Money comes in only to pay for hosting, and only if you choose it.</p>
+        <p class="mute">This page runs no script and loads nothing from another site. Payment links open only when you click them.</p>
+
+        <h2>What it costs today</h2>
+        <div class="card">
+          <table>
+            <thead><tr><th>Service</th><th>What for</th><th class="num">Per month</th></tr></thead>
+            <tbody>
+              <tr data-cost="0"><td>Vercel Hobby</td><td>The app at lumen-md.vercel.app</td><td class="num">$0</td></tr>
+              <tr data-cost="0"><td>Cloudflare Workers (free)</td><td>The public live-share server, encrypted rooms only</td><td class="num">$0</td></tr>
+              <tr data-cost="0"><td>GitHub</td><td>Code, issues and releases</td><td class="num">$0</td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="2">Total</td><td class="num" data-total="0">$0</td></tr></tfoot>
+          </table>
+        </div>
+
+        <h2>Paid encrypted sync relay (optional, planned)</h2>
+        <p>If you don't want to run your own server, you will be able to pay for a managed relay. Like the free relay you can run yourself, it sees only encrypted boxes. Encryption, the key and recovery stay on your device.</p>
+        <div class="card">
+          <table>
+            <tbody>
+              <tr><td>Price</td><td class="val"><span data-model="plans.monthly">$3</span> / month · <span data-model="plans.yearly">$30</span> / year</td></tr>
+              <tr><td>Infrastructure per subscriber per month (estimate)</td><td class="val" data-model="perUser.total">$0.0496</td></tr>
+              <tr><td>Payment fee (Polar, worst case)</td><td class="val"><span data-model="morFee.monthly">$0.6950</span> · <span data-model="morFee.yearly">$2.45</span></td></tr>
+              <tr><td>Left per subscriber per month</td><td class="val" data-model="net.yearly">$2.25</td></tr>
+              <tr><td>Fixed per month</td><td class="val"><span data-model="fixed.cloudflarePages">$5.87</span> (Cloudflare Pages) · <span data-model="fixed.vercelPro">$25.87</span> (Vercel Pro)</td></tr>
+              <tr><td>Break-even</td><td class="val"><span data-model="breakEven.cloudflarePages">3</span> subscribers · <span data-model="breakEven.vercelPro">12</span> with Vercel Pro</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="mute">The assumptions (1 GB encrypted, about 100 writes and 1,000 reads a day) and the providers' prices are in <code>scripts/cost-model.mjs</code>. The full plan: <a href="https://github.com/talstilkol/lumen-md/blob/main/docs/src/content/docs/project/sustainability.md">Sustainability</a>.</p>
+
+        <h2>How to help</h2>
+        <div class="links">
+          <a href="https://github.com/sponsors/talstilkol">GitHub Sponsors</a>
+          <a href="https://opencollective.com/lumen-md">Open Collective</a>
+          <a href="https://github.com/talstilkol/lumen-md">A star, a bug, a translation or code</a>
+        </div>
+        <p class="mute">With GitHub Sponsors every dollar reaches the project. On Open Collective every expense is public, and Open Source Collective keeps 10%. Until the accounts are open, these links may lead to an empty page.</p>
+      </section>
+    </main>
+  </body>
+</html>

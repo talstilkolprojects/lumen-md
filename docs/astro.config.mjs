@@ -317,6 +317,7 @@ export default defineConfig({
             { label: "Lumen, Obsidian, Notion and Google Docs", slug: "project/compare", translations: { he: "Lumen, ‏Obsidian, ‏Notion ו-Google Docs" } },
             { label: "Community and the beta", slug: "project/community", translations: { he: "הקהילה והבטא" } },
             { label: "Owner sessions", slug: "project/owner-sessions", translations: { he: "ישיבות הבעלים" } },
+            { label: "Sustainability", slug: "project/sustainability", translations: { he: "קיימות" } },
           ],
         },
       ],
