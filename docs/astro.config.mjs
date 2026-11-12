@@ -161,6 +161,7 @@ export default defineConfig({
             { label: "English spelling on this device", slug: "ai/spelling" },
             { label: "Image descriptions on this device", slug: "ai/image-captions" },
             { label: "Hebrew niqqud on this device", slug: "ai/nikud" },
+            { label: "Where models download from", translations: { he: "מאיפה המודלים יורדים" }, slug: "ai/model-hosting" },
             { label: "AI doctor", slug: "ai/doctor" },
             { label: "Image search by description", slug: "ai/image-search" },
             { label: "Data analyst", slug: "ai/data-analyst" },

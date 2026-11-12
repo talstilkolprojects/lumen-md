@@ -30,6 +30,9 @@ ARG VITE_GIT_CORS_PROXY
 # Error tracker (Sentry / GlitchTip). Public by design, not a secret; used
 # only after the user turns error reports on (docs/src/content/docs/security/monitoring.md).
 ARG VITE_SENTRY_DSN
+# Lumen's model mirror (plan W4.14): the CORS proxy in front of the GitHub
+# releases with a copy of every model file; empty = Hugging Face only.
+ARG VITE_MODEL_MIRROR_URL
 # Collaboration servers (signaling, comma-separated; persistent y-websocket).
 ARG VITE_WEBRTC_SIGNALING_URL
 ARG VITE_YJS_WEBSOCKET_URL

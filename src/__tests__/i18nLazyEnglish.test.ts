@@ -169,6 +169,8 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   },
   // The handwriting pad (plan W5.27): the palette command and the preview's double-click load it.
   "ink.json": { module: "ink/inkStrings.ts", users: ["ink/InkPad.tsx", "ink/inkCommand.ts"], prefixes: ["ink."] },
+  // Where models download from (plan W4.14), a lazy section of the AI settings.
+  "modelSources.json": { module: "ai/modelSourcesStrings.ts", users: ["ui/ModelSourcesSection.tsx"], prefixes: ["modelSources."] },
 };
 
 function sources(dir: string): string[] {

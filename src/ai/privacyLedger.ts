@@ -70,6 +70,16 @@ interface Rule {
   reason: string;
 }
 
+/** The model mirror's host from the build, or "" (no mirror deployed). */
+const MODEL_MIRROR_HOST = (() => {
+  try {
+    // why: a static name read — Vite inlines this one value, not the whole env
+    return new URL(String(import.meta.env.VITE_MODEL_MIRROR_URL ?? "")).hostname;
+  } catch {
+    return "";
+  }
+})();
+
 const RULES: Rule[] = [
   { test: (h) => h === "api.openai.com", category: "cloud-ai", reason: "OpenAI" },
   { test: (h) => h === "api.anthropic.com", category: "cloud-ai", reason: "Anthropic (Claude)" },
@@ -84,6 +94,10 @@ const RULES: Rule[] = [
     category: "model-download",
     reason: "Model download (Hugging Face)",
   },
+  // Lumen's model mirror (plan W4.14): GitHub releases behind the
+  // deployment's CORS proxy (VITE_MODEL_MIRROR_URL), tried when Hugging Face
+  // does not serve a model file. Every file is checked by sha256.
+  { test: (h) => !!MODEL_MIRROR_HOST && h === MODEL_MIRROR_HOST, category: "model-download", reason: "Model download (Lumen's mirror)" },
   // Excalidraw (the canvas, plan 4.19) names esm.sh as the fallback for its
   // fonts. Lumen serves them from its own origin (EXCALIDRAW_ASSET_PATH), so
   // this host is never needed; a request to it would be third-party traffic.

@@ -5796,6 +5796,66 @@
       "vars": []
     },
     {
+      "key": "modelSources.about",
+      "en": "Models download from Hugging Face first, then from Lumen's mirror, then from your own copy. Every file is checked against its checksum in the model registry, whichever source it came from.",
+      "vars": []
+    },
+    {
+      "key": "modelSources.importFiles",
+      "en": "Add model files from this device…",
+      "vars": []
+    },
+    {
+      "key": "modelSources.imported",
+      "en": "{stored} files added, {unknown} not recognised.",
+      "vars": [
+        "stored",
+        "unknown"
+      ]
+    },
+    {
+      "key": "modelSources.invalid",
+      "en": "Enter an http(s) address, or leave it empty.",
+      "vars": []
+    },
+    {
+      "key": "modelSources.mirrorOff",
+      "en": "Lumen's mirror: not set up on this deployment",
+      "vars": []
+    },
+    {
+      "key": "modelSources.mirrorOn",
+      "en": "Lumen's mirror: on ({host})",
+      "vars": [
+        "host"
+      ]
+    },
+    {
+      "key": "modelSources.save",
+      "en": "Save",
+      "vars": []
+    },
+    {
+      "key": "modelSources.saved",
+      "en": "Saved.",
+      "vars": []
+    },
+    {
+      "key": "modelSources.title",
+      "en": "Model download sources",
+      "vars": []
+    },
+    {
+      "key": "modelSources.userHint",
+      "en": "A web address laid out like the mirror's releases: <address>/<release tag>/<file>. This deployment's security policy must allow it.",
+      "vars": []
+    },
+    {
+      "key": "modelSources.userLabel",
+      "en": "Your own copy",
+      "vars": []
+    },
+    {
       "key": "models.consent.body",
       "en": "{purpose}\n\n{name} · {size}. It is downloaded once, checked against its published checksum and kept in this browser's storage. Nothing you write is sent anywhere.\n\nLicence: {license}. {attribution}",
       "vars": [

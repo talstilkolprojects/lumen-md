@@ -74,6 +74,24 @@ async function ensureLoaded(id: number, modelId: string): Promise<MLCEngineInter
   const settle = cached ? null : reportWorkerDownload(`https://huggingface.co/mlc-ai/${encodeURIComponent(modelId)}/resolve/main/`);
   const initProgressCallback = (r: { progress: number; text: string }) => post({ id, type: "progress", progress: r.progress, text: r.text });
   try {
+    // Plan W4.14: when models/registry.json pins this model's files, fill
+    // web-llm's caches from the first source that serves the right bytes
+    // (Hugging Face, Lumen's mirror, the user's URL), each checked by
+    // sha256; web-llm then finds them cached. Nothing pinned: unchanged.
+    if (!cached) {
+      const { prefillFor, findHosted, hostedBytes, loadHostedModels } = await import("./modelHosting");
+      const models = await loadHostedModels();
+      const entry = findHosted(models, modelId);
+      const total = entry ? hostedBytes(entry) : 0;
+      let loaded = 0;
+      await prefillFor(modelId, {
+        models,
+        onBytes: (n) => {
+          loaded += n;
+          if (total > 0) post({ id, type: "progress", progress: Math.min(1, loaded / total), text: `verified download ${Math.round((loaded / total) * 100)}%` });
+        },
+      });
+    }
     if (!engine) {
       engine = await mod.CreateMLCEngine(modelId, { initProgressCallback });
     } else {
