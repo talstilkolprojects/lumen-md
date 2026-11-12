@@ -13,7 +13,12 @@
  * This relies on Drive's listing showing a file once its create has
  * returned. If the listing lagged, both creates could appear to win. The
  * object would then have two copies, and every device would read the
- * older one. The ETag of an object is the
+ * older one. Nothing in Drive's API makes this atomic, and no probe can
+ * prove it (third review 12.11, N7), so Drive is **sync-only**
+ * (`atomicCreate: false`): it syncs — blob names are random and the
+ * manifest is replaced with If-Match — but `proveCas` refuses every key and
+ * device change on it (no re-key, no revocation, no enrollment): two first
+ * keyrings created at once could both "win". The ETag of an object is the
  * `ETag` header of its metadata; `get` reads metadata and media (2 requests),
  * and `put` returns the same metadata ETag, read after the write — never the
  * upload answer's, a different representation (re-review 12.11, RR-7) — so
@@ -115,6 +120,7 @@ export function gdriveSyncProvider(cfg: GDriveSyncConfig = {}, deps: { fetch?: F
 
   const provider: GDriveProvider = {
     id: "gdrive",
+    atomicCreate: false,
 
     probe: () => checkConditionalWrites(provider),
 

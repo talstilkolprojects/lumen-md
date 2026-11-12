@@ -15,7 +15,7 @@
  */
 
 import { PreconditionFailedError, type PutCondition, type StoredObject, type SyncProvider } from "../provider";
-import { basicAuth, checkConditionalWrites, checkObjectName, defaultFetch, elements, failed, parseXml, PROBE_NAME, ProviderUnsupportedError, request, type FetchLike } from "./http";
+import { basicAuth, checkConditionalWrites, checkObjectName, defaultFetch, elements, failed, parseXml, probeObject, ProviderUnsupportedError, request, type FetchLike } from "./http";
 
 export interface WebdavConfig {
   /** The folder's URL, e.g. `https://cloud.example.com/remote.php/dav/files/me/Lumen/`. */
@@ -74,10 +74,11 @@ export function webdavProvider(cfg: WebdavConfig, deps: { fetch?: FetchLike } = 
       // MKCOL: 201 created, 405 already there, 409 parent missing.
       const mk = await go(base, { method: "MKCOL", headers: headers() });
       if (!mk.ok && mk.status !== 405) throw await failed(mk, "webdav", "");
-      const put = await go(url(PROBE_NAME), { method: "PUT", headers: headers({ "Content-Type": "application/octet-stream" }), body: new Uint8Array([1]) });
-      if (!put.ok) throw await failed(put, "webdav", PROBE_NAME);
-      const etag = normEtag(put.headers.get("ETag")) ?? (await etagOf(PROBE_NAME));
-      await go(url(PROBE_NAME), { method: "DELETE", headers: headers() }).catch(() => undefined);
+      const probe = probeObject(); // a random, blob-like name and size (third review N2)
+      const put = await go(url(probe.name), { method: "PUT", headers: headers({ "Content-Type": "application/octet-stream" }), body: probe.data() as BodyInit });
+      if (!put.ok) throw await failed(put, "webdav", probe.name);
+      const etag = normEtag(put.headers.get("ETag")) ?? (await etagOf(probe.name));
+      await go(url(probe.name), { method: "DELETE", headers: headers() }).catch(() => undefined);
       if (!etag) throw new ProviderUnsupportedError("webdav", "the server returns no ETags, so it cannot do conditional writes");
       await checkConditionalWrites(provider);
     },

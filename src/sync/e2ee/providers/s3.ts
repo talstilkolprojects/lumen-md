@@ -12,7 +12,7 @@
 
 import { signRequest } from "./sigv4";
 import { PreconditionFailedError, type PutCondition, type StoredObject, type SyncProvider } from "../provider";
-import { checkConditionalWrites, checkObjectName, defaultFetch, elements, failed, parseXml, PROBE_NAME, ProviderUnsupportedError, request, type FetchLike } from "./http";
+import { checkConditionalWrites, checkObjectName, defaultFetch, elements, failed, parseXml, probeObject, ProviderUnsupportedError, request, type FetchLike } from "./http";
 
 export interface S3Config {
   /** `https://s3.eu-central-1.amazonaws.com`, `https://<account>.r2.cloudflarestorage.com`, `http://localhost:9000`… */
@@ -58,10 +58,11 @@ export function s3Provider(cfg: S3Config, deps: { fetch?: FetchLike } = {}): S3P
     id: "s3",
 
     async probe() {
-      const a = await signed(keyUrl(PROBE_NAME), { method: "PUT", body: new Uint8Array([1]), headers: { "Content-Type": "application/octet-stream" } });
-      if (!a.ok) throw await failed(a, "s3", PROBE_NAME);
+      const probe = probeObject(); // a random, blob-like name and size (third review N2)
+      const a = await signed(keyUrl(probe.name), { method: "PUT", body: probe.data() as BodyInit, headers: { "Content-Type": "application/octet-stream" } });
+      if (!a.ok) throw await failed(a, "s3", probe.name);
       const etag = a.headers.get("ETag");
-      await signed(keyUrl(PROBE_NAME), { method: "DELETE" }).catch(() => undefined);
+      await signed(keyUrl(probe.name), { method: "DELETE" }).catch(() => undefined);
       if (!etag) throw new ProviderUnsupportedError("s3", "the service returns no ETag on PUT");
       // Both preconditions must hold, or two devices could overwrite each other.
       await checkConditionalWrites(provider);

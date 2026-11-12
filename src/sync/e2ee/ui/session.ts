@@ -30,6 +30,7 @@ import { folderStates, type ExcludeRule, type FileStatus, type FileSyncState } f
 import { installBackgroundSync, isNativeApp, type ResumeNotice } from "../background";
 import { applyTreeBadges, clearTreeBadges } from "./treeBadges";
 import { liveSync } from "../lan/rpc";
+import { e2eeErrorText } from "./errorText";
 
 export type Phase = "disconnected" | "connected" | "unlocked";
 
@@ -183,7 +184,7 @@ export function createSession(deps: SessionDeps = {}) {
       await refreshStates().catch(() => undefined);
       return last;
     } catch (e) {
-      set({ syncing: false, error: (e as Error).message ?? String(e) });
+      set({ syncing: false, error: e2eeErrorText(e) });
       throw e;
     }
   }

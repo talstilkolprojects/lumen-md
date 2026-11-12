@@ -2935,6 +2935,11 @@
       ]
     },
     {
+      "key": "e2ee.drive.syncOnly",
+      "en": "Google Drive can't refuse a second \"create\" of the same file atomically, so with Drive this vault syncs, but keys and devices can't be changed here (no re-key, no revocation, no new device key). Make those changes with another storage, or move the vault.",
+      "vars": []
+    },
+    {
       "key": "e2ee.eta.hours",
       "en": "about {n} h left",
       "vars": [
@@ -3391,6 +3396,11 @@
       "vars": []
     },
     {
+      "key": "e2ee.pair.answerHint",
+      "en": "Paste the request the new device shows. This device checks it against the vault as it is now; enter the answer on the new device within 5 minutes.",
+      "vars": []
+    },
+    {
       "key": "e2ee.pair.answerTitle",
       "en": "Pairing request from a new device",
       "vars": []
@@ -3724,7 +3734,7 @@
     },
     {
       "key": "e2ee.sync.pairCodeNote",
-      "en": "Enter it on the other device within 15 minutes. It proves to that device which state is current.",
+      "en": "Enter it on the other device within 2 minutes. It proves to that device which state is current; this device changes no keys meanwhile. Pairing from the new device's request (two-way) is safer.",
       "vars": []
     },
     {

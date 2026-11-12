@@ -7,6 +7,7 @@
  * `window.fetch` sees every request, and a test can hand in a fake server.
  */
 
+import { randomBytes, toB64u } from "../bytes";
 import { PreconditionFailedError, ProviderUnavailableError, type PutCondition, type SyncProvider } from "../provider";
 
 export type FetchLike = (input: Request | string, init?: RequestInit) => Promise<Response>;
@@ -107,8 +108,22 @@ export function checkObjectName(name: string): void {
 }
 
 
-/** The object the probes write and delete: a fixed, content-free name. */
-export const PROBE_NAME = "lumen-e2ee-cas-probe";
+/**
+ * An object for a probe (third review 12.11, N2): a random 43-character
+ * name and random bytes the size of the smallest sealed blob, so a probe
+ * looks like any blob upload and a provider can't single it out by its name.
+ */
+export function probeObject(): { name: string; data: () => Uint8Array } {
+  const name = toB64u(randomBytes(32));
+  return {
+    name,
+    data: () => {
+      const d = randomBytes(1 + 12 + 256 + 16);
+      d[0] = 1;
+      return d;
+    },
+  };
+}
 
 /**
  * Prove a provider's conditional writes when it is connected, through its
@@ -127,33 +142,47 @@ export async function checkConditionalWrites(p: SyncProvider): Promise<void> {
 
 /** Which condition `p` ignores, or null when both hold. */
 async function conditionalWriteGap(p: SyncProvider): Promise<string | null> {
-  const refused = async (byte: number, cond: PutCondition): Promise<boolean> => {
+  const probe = probeObject();
+  const race = probeObject();
+  const name = probe.name;
+  const refused = async (cond: PutCondition): Promise<boolean> => {
     try {
-      await p.put(PROBE_NAME, new Uint8Array([byte]), cond);
+      await p.put(name, probe.data(), cond);
       return false;
     } catch (e) {
       if (e instanceof PreconditionFailedError) return true;
       throw e;
     }
   };
-  await p.delete(PROBE_NAME);
   try {
-    const a = await p.put(PROBE_NAME, new Uint8Array([1]), { ifNoneMatch: "*" });
-    if (!(await refused(2, { ifNoneMatch: "*" }))) return "it accepted If-None-Match: * on an existing object";
+    const a = await p.put(name, probe.data(), { ifNoneMatch: "*" });
+    if (!(await refused({ ifNoneMatch: "*" }))) return "it accepted If-None-Match: * on an existing object";
     let b: { etag: string };
+    const third = probe.data();
     try {
-      b = await p.put(PROBE_NAME, new Uint8Array([3]), { ifMatch: a.etag });
+      b = await p.put(name, third, { ifMatch: a.etag });
     } catch (e) {
       if (e instanceof PreconditionFailedError) return "it refused If-Match with the current ETag";
       throw e;
     }
-    if (!(await refused(4, { ifMatch: a.etag }))) return "it accepted If-Match with a stale ETag";
-    const now = await p.get(PROBE_NAME);
-    if (!now || now.data[0] !== 3 || now.etag !== b.etag) return "the ETag read back is not the one the write returned";
+    if (!(await refused({ ifMatch: a.etag }))) return "it accepted If-Match with a stale ETag";
+    const now = await p.get(name);
+    if (!now || !sameBytes(now.data, third) || now.etag !== b.etag) return "the ETag read back is not the one the write returned";
+    // Two creates at once: exactly one may win. A provider that says its
+    // create-only isn't atomic (Drive) is sync-only anyway (N7).
+    if (p.atomicCreate !== false) {
+      const wins = await Promise.all([race.data(), race.data()].map((d) => p.put(race.name, d, { ifNoneMatch: "*" }).then(() => 1, (e) => (e instanceof PreconditionFailedError ? 0 : Promise.reject(e)))));
+      if (wins[0] + wins[1] !== 1) return "two create-only writes racing on one name both succeeded";
+    }
     return null;
   } finally {
-    await p.delete(PROBE_NAME).catch(() => undefined);
+    await p.delete(name).catch(() => undefined);
+    await p.delete(race.name).catch(() => undefined);
   }
+}
+
+function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+  return a.length === b.length && a.every((x, i) => x === b[i]);
 }
 
 /** XML without a dependency: the browser's (and jsdom's) DOMParser. */

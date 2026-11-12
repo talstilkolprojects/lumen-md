@@ -54,7 +54,7 @@
   "e2ee.sync.choose": "Change provider",
   "e2ee.sync.back": "Back",
   "e2ee.sync.pairCode": "Pairing code for another device",
-  "e2ee.sync.pairCodeNote": "Enter it on the other device within 15 minutes. It proves to that device which state is current.",
+  "e2ee.sync.pairCodeNote": "Enter it on the other device within 2 minutes. It proves to that device which state is current; this device changes no keys meanwhile. Pairing from the new device's request (two-way) is safer.",
   "e2ee.sync.migrate.title": "Readable notes from an earlier Lumen",
   "e2ee.sync.migrate.found": "{n} unencrypted notes are in your {name} folder. Import them into the encrypted vault; the readable copies are moved into a backup folder at {name}, not deleted.",
   "e2ee.sync.migrate.clashes": "{n} of them differ from notes here; both versions are kept.",
@@ -223,5 +223,7 @@
   "e2ee.pair.pending": "A pairing code from this device is still valid, so it makes no key change for now: a device paired with that code wouldn't learn of the change. Try again in a couple of minutes.",
   "e2ee.rekey.unconfirmed": "The revocation may not have taken effect: right after this key change was written, the sync service returned another device's instead (it ignored a conditional write). Sync this device: it revokes again, or says why it can't. If this happens again, don't use this service for key changes.",
   "e2ee.fork.reapplied": "The sync service replaced this device's key change with another device's. The revocation may not have taken effect for what was written in between; this device has made it again. Sync every device, and don't use this service for key changes.",
-  "e2ee.wrap.tampered": "This device's key in the vault's keyring doesn't open it: the sync service changed it or put back an old one. Nothing on this device was changed. Try again later; if it stays like this, pair this device again from one you trust."
+  "e2ee.wrap.tampered": "This device's key in the vault's keyring doesn't open it: the sync service changed it or put back an old one. Nothing on this device was changed. Try again later; if it stays like this, pair this device again from one you trust.",
+  "e2ee.pair.answerHint": "Paste the request the new device shows. This device checks it against the vault as it is now; enter the answer on the new device within 5 minutes.",
+  "e2ee.drive.syncOnly": "Google Drive can't refuse a second \"create\" of the same file atomically, so with Drive this vault syncs, but keys and devices can't be changed here (no re-key, no revocation, no new device key). Make those changes with another storage, or move the vault."
 }

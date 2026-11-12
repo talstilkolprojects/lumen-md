@@ -53,10 +53,13 @@ the provider.
 The server must return an `ETag` for every file and honour `If-Match` and
 `If-None-Match: *` on `PUT`. Nextcloud, ownCloud, Apache `mod_dav` and
 Synology's WebDAV server do. Lumen tests this when you connect: it writes a
-small `lumen-e2ee-cas-probe` file, checks that a second "only if absent"
-write and a write with an outdated `If-Match` are both refused, and deletes
-the file. Some servers (for example nginx's DAV module) accept every write;
-Lumen refuses to sync with them.
+file under a random name, the size of a small note, checks that a second
+"only if absent" write and a write with an outdated `If-Match` are both
+refused, and that of two "only if absent" writes at once exactly one wins,
+then deletes the files. Some servers (for example nginx's DAV module)
+accept every write; Lumen refuses to sync with them. The test catches a
+misconfigured server, not a dishonest one: Lumen also reads every key change
+back right after writing it ([keys](/sync/e2ee-keys/)).
 
 ### S3-compatible
 
@@ -118,7 +121,7 @@ mechanism:
 | WebDAV | `If-Match: <ETag>` / `If-None-Match: *` → `412` |
 | S3 | `If-Match: <ETag>` / `If-None-Match: *` → `412` (or `409` during a concurrent write) |
 | Dropbox | `mode: update` with the file's `rev` / `mode: add`, `strict_conflict` → `409 conflict` |
-| Google Drive | `If-Match` with the file's metadata ETag → `412`. Lumen always takes that ETag from the file's metadata, also after an upload, never the upload answer's own (Google's ETags differ per representation). Drive has no "only if absent" for a new file, so Lumen creates the file and then looks again. If another device created the same file first, Lumen removes its own copy and counts the write as lost. This relies on Drive listing a new file as soon as it has been created. That is untested against the real Drive (see Status) |
+| Google Drive | `If-Match` with the file's metadata ETag → `412`. Lumen always takes that ETag from the file's metadata, also after an upload, never the upload answer's own (Google's ETags differ per representation). Drive has no "only if absent" for a new file, so Lumen creates the file and then looks again. If another device created the same file first, Lumen removes its own copy and counts the write as lost. This relies on Drive listing a new file as soon as it has been created, and two devices creating the same file at once can both seem to win, so a vault on Drive is **sync-only**: it syncs, but Lumen makes no key or device change through Drive (no re-key, no removing a device, no new device key). Make those with another storage. Untested against the real Drive (see Status) |
 
 ## Notes from the old plain-text sync
 
