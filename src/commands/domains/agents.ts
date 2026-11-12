@@ -3,7 +3,7 @@ import { cmdIcons, type Command } from "../../ui/CommandPalette";
 import { useAppStore } from "../../store/useStore";
 import { t, getLocale, tPlural } from "../../i18n";
 import { uiAlert, uiConfirm, uiPrompt } from "../../ui/PromptDialog";
-import { AI_PROMPT_TEMPLATES, applyTemplate } from "../../ai/multiLangPrompts";
+import { AI_PROMPT_INDEX } from "../../ai/multiLangPromptIndex";
 import { showAiToast } from "../../ui/AiToast";
 import { isAbort } from "../../ai/aiAbort";
 import { cancellable, type CommandContext } from "./context";
@@ -351,15 +351,20 @@ export function buildGrammarCommands({ locale, liveDoc }: CommandContext): Comma
 /** AI prompt templates in the UI language. */
 export function buildPromptTemplateCommands({ locale, setContent, liveDoc }: CommandContext): Command[] {
   return [
-    ...AI_PROMPT_TEMPLATES.filter((tpl) => tpl.lang === locale).map((tpl) => ({
+    // The palette lists the templates from their index; the prompts load with the command.
+    ...AI_PROMPT_INDEX.filter((tpl) => tpl.lang === locale).map((tpl) => ({
       id: `ai.prompt.${tpl.id}`,
       label: tpl.label,
       hint: tpl.category,
       icon: cmdIcons.Sparkles,
       group: t("group.ai"),
       action: async () => {
-        const prompt = applyTemplate(tpl, liveDoc().content);
+        const content = liveDoc().content;
         try {
+          const { AI_PROMPT_TEMPLATES, applyTemplate } = await import("../../ai/multiLangPrompts");
+          const template = AI_PROMPT_TEMPLATES.find((x) => x.id === tpl.id);
+          if (!template) return;
+          const prompt = applyTemplate(template, content);
           showAiToast(t("toast.processing", { name: tpl.label }), "info");
           const { runAgentOrThrow } = await import("../../agents/runtime");
           const { templaterAgent } = await import("../../agents/defs");
