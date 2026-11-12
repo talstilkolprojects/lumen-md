@@ -25,10 +25,12 @@ import { TEST_ITERATIONS } from "./helpers/e2ee";
 
 const require = createRequire(import.meta.url);
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { createVaultRelay, memoryStore, powOk } = require("../../sync-server/vault-relay.js") as {
+const { createVaultRelay, memoryStore, powOk, addressKey, charge } = require("../../sync-server/vault-relay.js") as {
   createVaultRelay: (o?: Record<string, unknown>) => { handle(req: unknown, res: unknown): boolean; close(): void; sweep(): Promise<number> };
   memoryStore: () => unknown;
   powOk: (space: string, nonce: string, bits: number) => boolean;
+  addressKey: (address: string) => string;
+  charge: (bytes: number) => number;
 };
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const http = require("node:http") as typeof import("node:http");
@@ -148,7 +150,8 @@ describe("relay", () => {
   let origin = "";
   let relay: { close(): void };
   beforeAll(async () => {
-    relay = createVaultRelay({ sweep: false, maxSpaceBytes: 64 * 1024, ratePerMinute: 100000 });
+    // The daily bytes of the one test address are not under test here (they cover every object, in 4 KiB blocks).
+    relay = createVaultRelay({ sweep: false, maxSpaceBytes: 64 * 1024, addressBytesPerDay: 1024 * 1024, ratePerMinute: 100000 });
     server = http.createServer((req, res) => {
       if (!(relay as ReturnType<typeof createVaultRelay>).handle(req, res)) {
         res.writeHead(404);
@@ -278,7 +281,8 @@ describe("relay limits (review 12.11)", () => {
   const tok = (i: number) => `t${String(i).padStart(40, "0")}`;
 
   it("a new token is not free: new spaces per address per day, bytes per address per day, and all spaces together are capped", async () => {
-    const r = await serve({ newSpacesPerDay: 2, maxSpaceBytes: 20_000, addressBytesPerDay: 100_000, maxTotalBytes: 25_000 });
+    // Every object is charged in whole 4 KiB blocks (review 2): 10,000 bytes cost 12,288.
+    const r = await serve({ newSpacesPerDay: 2, maxSpaceBytes: 20_000, addressBytesPerDay: 100_000, maxTotalBytes: 30_000 });
     try {
       await relayProvider({ url: r.origin, token: tok(1) }).put("a", new Uint8Array(10_000));
       await relayProvider({ url: r.origin, token: tok(2) }).put("a", new Uint8Array(10_000));
@@ -293,7 +297,7 @@ describe("relay limits (review 12.11)", () => {
     } finally {
       await r.close();
     }
-    const b = await serve({ maxSpaceBytes: 10_000, addressBytesPerDay: 15_000 });
+    const b = await serve({ maxSpaceBytes: 12_288, addressBytesPerDay: 15_000 });
     try {
       await relayProvider({ url: b.origin, token: tok(1) }).put("a", new Uint8Array(10_000));
       await expect(relayProvider({ url: b.origin, token: tok(2) }).put("a", new Uint8Array(10_000))).rejects.toThrow(/429/);
@@ -358,6 +362,20 @@ describe("relay limits (review 12.11)", () => {
       }
     } finally {
       Date.now = real;
+    }
+  });
+
+  it("review 2: an IPv6 /64 is one address; objects cost whole blocks; a concurrent burst is counted in full", async () => {
+    expect(addressKey("2001:db8:1:2::5")).toBe(addressKey("2001:db8:1:2:ffff:1:2:3"));
+    expect(addressKey("2001:db8:1:3::5")).not.toBe(addressKey("2001:db8:1:2::5"));
+    expect(addressKey("::ffff:192.0.2.7")).toBe("192.0.2.7");
+    expect([charge(0), charge(1), charge(4096), charge(4097)]).toEqual([4096, 4096, 4096, 8192]);
+    const r = await serve({ newSpacesPerDay: 3 });
+    try {
+      const out = await Promise.allSettled(Array.from({ length: 12 }, (_, i) => relayProvider({ url: r.origin, token: tok(100 + i) }).put("a", enc("x"))));
+      expect(out.filter((o) => o.status === "fulfilled")).toHaveLength(3);
+    } finally {
+      await r.close();
     }
   });
 });

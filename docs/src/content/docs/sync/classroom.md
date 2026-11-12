@@ -67,4 +67,4 @@ The relay counts, per network address and per day, the new spaces it opens and t
 - **A lost or compromised teacher device.** The assignment's key cannot be exported. If the device is lost, its submissions cannot be opened. If someone controls that device, they can read that assignment's submissions. Each assignment has its own key, so the damage stays within one assignment.
 - **Anything already on a device.** Once a teacher opens a submission into a tab, or a student adds comments to a note, that text is ordinary note text on that device.
 - **No forward secrecy.** Submissions are sealed to the assignment's long-lived key. Anyone who later gets that key can open the submissions of that assignment that they have kept.
-- **Retention.** The relay deletes a drop box that no one has touched for 180 days. Use **Delete from the relay** to remove it sooner.
+- **Retention.** The relay deletes a drop box that no one has written to, and its teacher has not read, for 180 days. A student's link reading it does not keep it. Use **Delete from the relay** to remove it sooner.

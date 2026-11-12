@@ -68,11 +68,27 @@ the whole server can hold:
 Addresses are never stored: the relay counts them under a keyed hash whose
 key is random, kept in memory only and replaced every day.
 
+An IPv6 address counts as its /64, since one host usually holds a whole /64.
+The counts sit in a fixed-size table that never forgets an address, so other
+addresses cannot reset them. A burst of requests sent at once is counted in
+full. Every object is charged the disk space it takes, in whole 4 KiB blocks,
+so many tiny objects cost what they really cost.
+
+Behind a reverse proxy, every request comes from the proxy's address. Mounted
+in `server.js`, the relay uses the client address that `server.js` reads
+(`SIGNAL_TRUST_PROXY=1`, which `fly.toml` sets). The standalone relay reads
+`Fly-Client-IP` when the request comes from a private network, as Fly's proxy
+does, and the last `X-Forwarded-For` entry when it comes from the same machine
+or a private network, as nginx adds it. A proxy other than Fly's must remove a
+client's own `Fly-Client-IP` header. `VAULT_RELAY_TRUST_PROXY=0` turns both
+headers off.
+
 A public relay can also ask for more before it opens a new space (existing
 spaces are not affected):
 
 - `VAULT_RELAY_POW_BITS=18`: a proof of work. The app solves it by itself, in
-  a few seconds, the first time it writes to a new space.
+  a few seconds, the first time it writes to a new space. The relay accepts
+  at most 24 bits, the most the app will solve.
 - `VAULT_RELAY_INVITE=<secret>`: an invite. Build the app with
   `VITE_SYNC_RELAY_INVITE` set to the same secret. Anyone who has the build has
   the invite, so use it for a relay whose app you don't publish.

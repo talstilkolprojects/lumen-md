@@ -140,8 +140,9 @@ function createServer(opts = {}) {
     uptime: (Date.now() - startedAt) / 1000,
   });
 
-  // Plan W4.19: the encrypted vault relay, when this server is asked to keep it.
-  const vaultRelay = opts.vaultRelay ?? (process.env.VAULT_RELAY === "1" || process.env.VAULT_RELAY_DIR ? require("./vault-relay").createVaultRelay() : null);
+  // Plan W4.19: the encrypted vault relay, when this server is asked to keep it. It counts its
+  // per-address limits under this server's own reading of the client address (review 2, 12.11).
+  const vaultRelay = opts.vaultRelay ?? (process.env.VAULT_RELAY === "1" || process.env.VAULT_RELAY_DIR ? require("./vault-relay").createVaultRelay({ clientAddress: clientIp }) : null);
 
   const server = http.createServer((req, res) => {
     if (vaultRelay && vaultRelay.handle(req, res)) return;
