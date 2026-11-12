@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "id": "lumen.natural-dates",
+  "name": "Natural dates",
+  "version": "1.0.0",
+  "description": "Turns “tomorrow”, “next Friday”, “in 3 days”, “מחר”, “יום שישי הבא” or 12/11/2026 (day first) into a date link like [[2026-11-13]].",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    {
+      "id": "commands",
+      "reason": "Adds “Date from words” and “Insert today’s date”"
+    },
+    {
+      "id": "document:read",
+      "reason": "Reads the words you selected"
+    },
+    {
+      "id": "document:write",
+      "reason": "Replaces them with the date"
+    },
+    {
+      "id": "notifications",
+      "reason": "Tells you when the words are not a date it knows"
+    },
+    {
+      "id": "settings",
+      "reason": "Remembers whether to write a [[link]] or a plain date"
+    }
+  ]
+}

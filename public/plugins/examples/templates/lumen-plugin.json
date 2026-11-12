@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "id": "lumen.templates",
+  "name": "Templates",
+  "version": "1.0.0",
+  "description": "Insert a note from your Templates folder at the cursor, with {{date}}, {{time}}, {{title}}, {{selection}} and Hebrew weekdays filled in. Like Templater, without running code.",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    {
+      "id": "commands",
+      "reason": "Adds the “Insert template” command"
+    },
+    {
+      "id": "vault:read",
+      "reason": "Reads the notes in your Templates folder"
+    },
+    {
+      "id": "document:read",
+      "reason": "Uses the note’s name for {{title}} and the selection for {{selection}}"
+    },
+    {
+      "id": "document:write",
+      "reason": "Inserts the filled template at the cursor"
+    },
+    {
+      "id": "panel",
+      "reason": "Lets you choose a template when there are several"
+    },
+    {
+      "id": "settings",
+      "reason": "Remembers which folder holds your templates"
+    }
+  ]
+}
