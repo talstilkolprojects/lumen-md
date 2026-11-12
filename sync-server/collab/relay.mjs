@@ -126,7 +126,7 @@ function frame(address, type, write) {
 /**
  * One room. `state` is what was stored (or null); `onChange(doc)` follows
  * every change, for the host to store (debounced).
- * `authorize(token, documentName)` resolves true to let a connection in;
+ * `authorize(token, documentName, socket)` resolves true to let a connection in;
  * `onAuthenticated(socket, address)` follows (the Worker stores it with the
  * socket). Updates that would make the room larger than `maxBytes` close
  * the connection.
@@ -257,7 +257,7 @@ export function createRelayRoom({ name, state = null, authorize, onChange = () =
           const docName = sep === -1 ? address : address.slice(0, sep);
           let ok = false;
           try {
-            ok = docName === name && (await authorize(token, docName));
+            ok = docName === name && (await authorize(token, docName, socket));
           } catch {
             ok = false;
           }

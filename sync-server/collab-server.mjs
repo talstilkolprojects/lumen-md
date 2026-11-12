@@ -105,6 +105,11 @@ export function createCollabServer(opts = {}) {
   const store = openStore(dataDir, { keepBackups });
   const sealed = (room) => requireE2ee || store.isSealed(room);
   /** A room may be sealed while it stores no readable content (a new room, or one that was always encrypted). */
+  /** The stored name of a document: its room's plain name (+ `~comments`). */
+  const storedName = (documentName) => {
+    const d = parseDocumentName(documentName);
+    return d ? (d.kind === "comments" ? `${d.room}~comments` : d.room) : documentName;
+  };
   const sealable = (room) =>
     [room, `${room}~comments`].every((name) => {
       const state = store.load(name);
@@ -218,7 +223,10 @@ export function createCollabServer(opts = {}) {
       }
     },
     async onLoadDocument({ document, documentName }) {
-      const state = store.load(documentName);
+      // The app now names a password room `<name>_k<commit>` (review 4 of #469). This
+      // server reads that as `<name>` (sharing.mjs roomOf), so it is stored under the plain
+      // name: rooms stored before are found there, and the seal check sees every copy.
+      const state = store.load(storedName(documentName));
       if (state) Y.applyUpdate(document, state);
     },
     async onStoreDocument({ document, documentName }) {
@@ -228,7 +236,7 @@ export function createCollabServer(opts = {}) {
         log("store refused: a sealed room's document is not ciphertext-only");
         return;
       }
-      store.save(documentName, Y.encodeStateAsUpdate(document));
+      store.save(storedName(documentName), Y.encodeStateAsUpdate(document));
     },
   });
 

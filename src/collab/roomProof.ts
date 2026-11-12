@@ -12,6 +12,13 @@
  * The server may also ask for a proof of work bound to the room and the
  * proof; it is solved once per room and session.
  * Server side: sync-server/collab/roomToken.mjs.
+ *
+ * Review 4 (RR4-469-1): on the public server the app uses the room's name
+ * with a commitment to its proof, `<name>_k<32 hex>` (`committedRoomName`),
+ * so the room accepts its first binding only from a proof that matches: a
+ * stranger who knows the name (a typed `#room=` link) but not the password
+ * can't bind it first and lock its owners out. The proof itself is derived
+ * over the plain name, which is what the share link carries.
  */
 
 export const ROOM_PROOF_ITERATIONS = 200_000;
@@ -25,6 +32,9 @@ function b64url(bytes: Uint8Array): string {
   for (const b of bytes) s += String.fromCharCode(b);
   return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
+
+/** `<name>_k<32 hex>`: a name that carries a commitment (as the server's COMMITTED_ROOM). */
+const COMMITTED = /^([\w-]{1,128})_k([0-9a-f]{32})$/;
 
 const hex = (bytes: Uint8Array) => Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 
@@ -92,4 +102,20 @@ export function solveRoomPow(room: string, verifier: string, bits: number): Prom
   solved.set(id, p);
   p.catch(() => solved.delete(id));
   return p;
+}
+
+/** The plain room name a server-side name was made from (`<name>_k<commit>` → `<name>`). */
+export function roomBaseName(serverRoom: string): string {
+  return COMMITTED.exec(serverRoom)?.[1] ?? serverRoom;
+}
+
+/**
+ * The room's name on the public server: `<room>_k` + the first 128 bits of
+ * SHA-256("lumen-collab commit v1|<room>|<verifier>"), where the verifier is
+ * the hash of the room proof under `password`.
+ */
+export async function committedRoomName(room: string, password: string): Promise<string> {
+  const v = await proofVerifier(await roomProof(password, room));
+  const d = new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(`lumen-collab commit v1|${room}|${v}`)));
+  return `${room}_k${hex(d).slice(0, 32)}`;
 }

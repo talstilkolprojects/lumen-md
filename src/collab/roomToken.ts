@@ -54,8 +54,9 @@ export async function requestRoomToken(
   const timeoutMs = opts.timeoutMs ?? ROOM_TOKEN_TIMEOUT_MS;
   const extra: Record<string, string> = {};
   if (opts.password) {
-    const { roomProof } = await import("./roomProof");
-    extra.proof = await roomProof(opts.password, room);
+    // The proof is over the plain name; `room` may carry its commitment (review 4).
+    const { roomBaseName, roomProof } = await import("./roomProof");
+    extra.proof = await roomProof(opts.password, roomBaseName(room));
   }
   try {
     return await askOnce(serverUrl, room, accessKey, extra, timeoutMs);

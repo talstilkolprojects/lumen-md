@@ -10,7 +10,7 @@
  * (`onRole`), and `docName` opens a room's comments document.
  */
 import type * as Y from "yjs";
-import { isRole, tokenPayload, tokenRequest, type Role } from "./sharing";
+import { commentsDocName, isRole, tokenPayload, tokenRequest, type Role } from "./sharing";
 import { RoomTokenError } from "./roomToken";
 
 type SyncListener = (isSynced: boolean) => void;
@@ -67,21 +67,27 @@ export async function createPersistentProvider(
   const mod = (await import("@hocuspocus/provider")) as unknown as {
     HocuspocusProvider: new (cfg: Record<string, unknown>) => HocuspocusLike;
   };
+  // Review 4 (RR4-469-1): with the room's password, the server-side name commits to the
+  // room proof, so nobody who lacks the password can bind the room before its owners.
+  const serverRoom = opts.password ? await (await import("./roomProof")).committedRoomName(roomName, opts.password) : roomName;
   const listeners = { sync: new Set<SyncListener>(), "connection-error": new Set<SyncListener>() };
   const emit = (event: keyof typeof listeners, v: boolean) => {
     for (const fn of [...listeners[event]]) fn(v);
   };
   const provider = new mod.HocuspocusProvider({
-    url: roomSocketUrl(url, roomName),
-    name: opts.docName ?? roomName,
+    url: roomSocketUrl(url, serverRoom),
+    // The comments document follows the room's server-side name (`<serverRoom>~comments`).
+    name: opts.docName === undefined ? serverRoom : opts.docName === commentsDocName(roomName) ? commentsDocName(serverRoom) : opts.docName,
     document: doc,
     ...(opts.awareness ? { awareness: opts.awareness } : {}),
     // Called on every connect, so a reconnect after expiry gets a new token
     // (and a revoked share link gets none).
     token: async () => {
-      const payload = tokenPayload(roomName, { share: opts.share ?? null, accessKey, e2ee: opts.e2ee === true });
+      // The owner secret is kept under the plain name; the server is asked for the committed one
+      // (the Node server reads `<name>_k<commit>` as `<name>`, the public one checks the commitment).
+      const payload = { ...tokenPayload(roomName, { share: opts.share ?? null, accessKey, e2ee: opts.e2ee === true }), room: serverRoom };
       // Review 2 (#469): the public server gives a token only with the room proof derived from the
-      // room password, and may ask for a proof of work bound to the room and the proof.
+      // room password (over the plain name), and may ask for a proof of work bound to the room and the proof.
       if (opts.password) payload.proof = await (await import("./roomProof")).roomProof(opts.password, roomName);
       type Answer = { token: string; expiresAt: number; role?: unknown };
       let r: Answer;
@@ -90,7 +96,7 @@ export async function createPersistentProvider(
       } catch (e) {
         if (!(e instanceof RoomTokenError) || e.reason !== "pow" || typeof payload.proof !== "string" || typeof e.bits !== "number") throw e;
         const { proofVerifier, solveRoomPow } = await import("./roomProof");
-        payload.pow = await solveRoomPow(roomName, await proofVerifier(payload.proof), e.bits);
+        payload.pow = await solveRoomPow(serverRoom, await proofVerifier(payload.proof), e.bits);
         r = await tokenRequest<Answer>(url, payload);
       }
       opts.onRole?.(isRole(r.role) ? r.role : "edit");

@@ -22,11 +22,12 @@ import * as Y from "yjs";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import { wireE2E } from "../collab/e2e";
 import { requestRoomToken } from "../collab/roomToken";
+import { committedRoomName } from "../collab/roomProof";
 import { roomSocketUrl } from "../collab/persistentProvider";
 // @ts-expect-error -- plain ESM server module, no types
 import { checkE2eeUpdate, createRelayRoom, updateInMessage } from "../../sync-server/collab/relay.mjs";
 // @ts-expect-error -- plain ESM server module, no types
-import worker, { CollabRoom, Signal } from "../../edge-workers/collab/worker.mjs";
+import worker, { CollabRoom, Quota, Signal } from "../../edge-workers/collab/worker.mjs";
 // @ts-expect-error -- plain ESM server module, no types
 import { createCollabServer } from "../../sync-server/collab-server.mjs";
 // @ts-expect-error -- plain ESM server module, no types
@@ -442,6 +443,41 @@ describe("edge-workers/collab: the public server on Cloudflare (simulated runtim
     expect(await until(() => o.state.getWebSockets().length === 0)).toBe(true);
     expect(o.data.get("lastWrite")).toBe(lastWrite);
     expect(o.alarm).toBe(alarm);
+  }, 30_000);
+
+  it("a committed name lets in only its own proof, even first; new rooms stop at the address limit (review 4, review 2)", async () => {
+    const { url, rooms, env } = await serveWorker();
+    const qs = new Map<string, unknown>();
+    const qstate = {
+      storage: {
+        list: async () => new Map(qs),
+        put: async (o: Record<string, unknown>) => void Object.entries(o).forEach(([k, v]) => qs.set(k, v)),
+        delete: async (k: string | string[]) => void ([] as string[]).concat(k).forEach((x) => qs.delete(x)),
+        deleteAll: async () => qs.clear(),
+      },
+    };
+    const quota = new Quota(qstate, env);
+    env.QUOTA = { idFromName: (n: string) => n, get: () => quota };
+    env.COLLAB_NEW_ROOMS_PER_ADDRESS = "1";
+    const base = `team-${Date.now().toString(36)}`;
+    const room = await committedRoomName(base, "the room password");
+    // A stranger who knows the name but not the password: no token, and the room stays unbound.
+    await expect(requestRoomToken(url, room, null, { password: "a guess" })).rejects.toThrow(/commitment/);
+    const owner = connect(url, room, "the room password", async () => (await requestRoomToken(url, room, null, { password: "the room password" })).token);
+    expect(await until(() => owner.synced())).toBe(true);
+    owner.plain.getText("t").insert(0, "kept");
+    expect(await until(() => rooms.objs.get(room)?.data.has("s0") === true)).toBe(true);
+    expect(await until(() => qs.get("stored") === 1)).toBe(true);
+    // A second new room from the same address the same day is refused.
+    const other = `${base}-2`;
+    let denied = false;
+    const p = new HocuspocusProvider({ url: roomSocketUrl(url, other), name: other, document: new Y.Doc(), token: async () => (await requestRoomToken(url, other, null, { password: "pw" })).token });
+    p.on("authenticationFailed", () => (denied = true));
+    cleanups.push(() => p.destroy());
+    expect(await until(() => denied)).toBe(true);
+    // The room that exists is not affected.
+    const again = connect(url, room, "the room password", async () => (await requestRoomToken(url, room, null, { password: "the room password" })).token);
+    expect(await until(() => again.synced() && again.plain.getText("t").toString() === "kept")).toBe(true);
   }, 30_000);
 
   it("refuses a plaintext room and stores nothing of it; answers /healthz; relays signaling", async () => {

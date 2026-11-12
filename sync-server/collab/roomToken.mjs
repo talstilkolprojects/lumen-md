@@ -13,6 +13,9 @@
  */
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
+// The new-room limits' pure part (review 2 RR2-469-1), for the Worker through this one module.
+export { addressParts, admit, cleanIds, dayBuckets, dayOf, evictionOrder, ownerOf, quotaBuckets, quotaIds, quotaLimits, storeFull } from "./roomQuota.mjs";
+
 export const DEFAULT_TOKEN_TTL_S = 10 * 60;
 
 const b64url = (buf) => Buffer.from(buf).toString("base64url");
@@ -139,4 +142,50 @@ export function roomPowOk(room, verifier, nonce, bits) {
     break;
   }
   return n >= bits;
+}
+
+/**
+ * Review 4 (RR4-469-1): a room's name can carry a commitment to its proof,
+ * `<base>_k<32 hex>`, where the 32 hex are the first 128 bits of
+ * SHA-256("lumen-collab commit v1|<base>|<verifier>"). The app derives it
+ * from the room's password (src/collab/roomProof.ts `committedRoomName`), so
+ * the first binding is not "whoever connects first": only a proof whose
+ * verifier matches the name gets a token for it, or is let into it.
+ */
+export const COMMITTED_ROOM = /^([\w-]{1,128})_k([0-9a-f]{32})$/;
+/** The names the app made before commitments: `lumen-` + 128 random bits (src/collab/yjs.ts makeRoomName). */
+export const APP_ROOM = /^lumen-[0-9a-f]{32}$/;
+
+/** The commitment (32 hex) to `verifier` for the room name `base`. */
+export function roomCommitment(base, verifier) {
+  return createHash("sha256").update(`lumen-collab commit v1|${base}|${verifier}`).digest("hex").slice(0, 32);
+}
+
+/** `<base>_k<commit>` → {base, commit}, or null for a name without a commitment. */
+export function splitCommittedRoom(name) {
+  const m = typeof name === "string" ? COMMITTED_ROOM.exec(name) : null;
+  return m ? { base: m[1], commit: m[2] } : null;
+}
+
+/** Does `verifier` match the commitment in the committed room name `name`? */
+export function commitmentOk(name, verifier) {
+  const c = splitCommittedRoom(name);
+  if (!c || typeof verifier !== "string") return false;
+  const a = Buffer.from(roomCommitment(c.base, verifier));
+  const b = Buffer.from(c.commit);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/**
+ * How a room binds its proof:
+ *   "committed"  the name commits to the proof: only the matching one is let in;
+ *   "app"        an app-made name from before commitments (128 random bits, and the
+ *                creator connects first): the first proof binds it;
+ *   "open"       any other name (typed, known in advance): it binds nothing, so whoever
+ *                connects first can't lock its owners out (the app never uses such a
+ *                name on the public server: it commits it first).
+ */
+export function roomKind(name) {
+  if (splitCommittedRoom(name)) return "committed";
+  return APP_ROOM.test(String(name)) ? "app" : "open";
 }
