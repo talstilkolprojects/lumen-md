@@ -173,6 +173,8 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "modelSources.json": { module: "ai/modelSourcesStrings.ts", users: ["ui/ModelSourcesSection.tsx"], prefixes: ["modelSources."] },
   // Chat import (plan W5.7): the command loads its module with a dynamic import.
   "chatImport.json": { module: "capture/chats/strings.ts", users: ["capture/chats/runImport.ts"], prefixes: ["chatImport."] },
+  // Mail and Takeout import (plan W5.18), loaded the same way.
+  "mailImport.json": { module: "capture/mail/strings.ts", users: ["capture/mail/runImport.ts"], prefixes: ["mailImport."] },
 };
 
 function sources(dir: string): string[] {

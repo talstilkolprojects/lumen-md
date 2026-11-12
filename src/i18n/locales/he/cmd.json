@@ -282,6 +282,8 @@
   "cmd.lexicon.lookup.hint": "מילים נרדפות, הגדרה וניקוד של המילה, מהמילון שבמכשיר",
   "cmd.lexicon.pack": "מילון עברי ומילים נרדפות (הורדה / הסרה)",
   "cmd.lexicon.pack.hint": "הגדרות, מילים נרדפות וניקוד מוויקימילון העברי, במכשיר הזה; לחיצה ימנית על מילה בעברית כדי להשתמש בהם",
+  "cmd.mail.import": "ייבוא דואר (.eml, .mbox) או Google Takeout…",
+  "cmd.mail.import.hint": "פתק לכל שרשור עם הקבצים המצורפים, פתקי Keep ומסמכי Docs; רק קבצים, במכשיר הזה",
   "cmd.mobile.customizeToolbar": "התאמת סרגל המובייל",
   "cmd.mobile.customizeToolbar.hint": "הפעולות שמעל המקלדת שעל המסך",
   "cmd.mobile.readLongNotes": "טלפון: פתקים ארוכים נפתחים לקריאה",

@@ -282,6 +282,8 @@
   "cmd.lexicon.lookup.hint": "مرادفات الكلمة وتعريفها وتشكيلها من القاموس دون اتصال",
   "cmd.lexicon.pack": "القاموس العبري والمرادفات (تنزيل / إزالة)",
   "cmd.lexicon.pack.hint": "تعريفات ومرادفات وتشكيل من ويكاموس العبري على هذا الجهاز؛ انقر بزر الفأرة الأيمن على كلمة عبرية لاستخدامها",
+  "cmd.mail.import": "استيراد البريد (.eml، .mbox) أو Google Takeout…",
+  "cmd.mail.import.hint": "ملاحظة لكل سلسلة مع مرفقاتها، وملاحظات Keep ومستندات Docs؛ ملفات فقط، على هذا الجهاز",
   "cmd.mobile.customizeToolbar": "تخصيص شريط الهاتف",
   "cmd.mobile.customizeToolbar.hint": "الإجراءات فوق لوحة المفاتيح على الشاشة",
   "cmd.mobile.readLongNotes": "الهاتف: فتح الملاحظات الطويلة للقراءة",

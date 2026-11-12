@@ -282,6 +282,8 @@
   "cmd.lexicon.lookup.hint": "Synonymes, définition et niqqud du mot, depuis le dictionnaire hors ligne",
   "cmd.lexicon.pack": "Dictionnaire hébreu et synonymes (télécharger / supprimer)",
   "cmd.lexicon.pack.hint": "Définitions, synonymes et niqqud du Wiktionnaire hébreu, sur cet appareil ; clic droit sur un mot hébreu pour les utiliser",
+  "cmd.mail.import": "Importer des e-mails (.eml, .mbox) ou Google Takeout…",
+  "cmd.mail.import.hint": "Une note par fil avec ses pièces jointes, les notes Keep et les Docs ; fichiers uniquement, sur cet appareil",
   "cmd.mobile.customizeToolbar": "Personnaliser la barre mobile",
   "cmd.mobile.customizeToolbar.hint": "Les actions au-dessus du clavier à l'écran",
   "cmd.mobile.readLongNotes": "Téléphone : ouvrir les longues notes en lecture",

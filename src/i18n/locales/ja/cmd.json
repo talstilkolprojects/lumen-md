@@ -282,6 +282,8 @@
   "cmd.lexicon.lookup.hint": "オフライン辞書から単語の類義語・定義・ニクード",
   "cmd.lexicon.pack": "ヘブライ語辞書と類義語（ダウンロード / 削除）",
   "cmd.lexicon.pack.hint": "ヘブライ語版ウィクショナリーの定義・類義語・ニクードをこのデバイスで。ヘブライ語の単語を右クリックして使います",
+  "cmd.mail.import": "メール (.eml, .mbox) または Google Takeout をインポート…",
+  "cmd.mail.import.hint": "スレッドごとに 1 ノート（添付付き）、Keep のメモと Docs。ファイルのみ、この端末内で処理",
   "cmd.mobile.customizeToolbar": "モバイルツールバーをカスタマイズ",
   "cmd.mobile.customizeToolbar.hint": "画面キーボードの上にある操作",
   "cmd.mobile.readLongNotes": "スマートフォン：長いノートは閲覧モードで開く",

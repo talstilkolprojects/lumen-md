@@ -282,6 +282,8 @@
   "cmd.lexicon.lookup.hint": "从离线词典查看该词的同义词、释义和尼库德",
   "cmd.lexicon.pack": "希伯来语词典和同义词（下载 / 删除）",
   "cmd.lexicon.pack.hint": "来自希伯来语维基词典的释义、同义词和尼库德，保存在本设备；右键单击希伯来语单词即可使用",
+  "cmd.mail.import": "导入邮件（.eml、.mbox）或 Google Takeout…",
+  "cmd.mail.import.hint": "每个会话一篇笔记（含附件）、Keep 笔记和 Docs 文档；仅文件，在此设备上处理",
   "cmd.mobile.customizeToolbar": "自定义移动端工具栏",
   "cmd.mobile.customizeToolbar.hint": "屏幕键盘上方的操作",
   "cmd.mobile.readLongNotes": "手机：长笔记以阅读模式打开",

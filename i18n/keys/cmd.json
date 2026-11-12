@@ -1425,6 +1425,16 @@
       "vars": []
     },
     {
+      "key": "cmd.mail.import",
+      "en": "Import mail (.eml, .mbox) or Google Takeout…",
+      "vars": []
+    },
+    {
+      "key": "cmd.mail.import.hint",
+      "en": "A note per thread with attachments, Keep notes and Docs; files only, on this device",
+      "vars": []
+    },
+    {
       "key": "cmd.mobile.customizeToolbar",
       "en": "Customize the mobile toolbar",
       "vars": []

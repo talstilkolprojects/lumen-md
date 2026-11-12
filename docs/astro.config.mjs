@@ -113,6 +113,7 @@ export default defineConfig({
             { label: "Vault Doctor", slug: "workspace/doctor" },
             { label: "Quick capture (inbox)", slug: "workspace/quick-capture", translations: { he: "לכידה מהירה (תיבת דואר נכנס)" } },
             { label: "WhatsApp and Telegram chats into notes", slug: "workspace/chat-import", translations: { he: "שיחות WhatsApp ו-Telegram לפתקים" } },
+            { label: "Mail and Google Takeout into notes", slug: "workspace/mail-import", translations: { he: "דואר ו-Google Takeout לפתקים" } },
             { label: "PDF reader and highlights", slug: "workspace/pdf-reader", translations: { he: "קורא PDF והדגשות" } },
             { label: "Large vaults and long notes", slug: "workspace/large-vaults", translations: { he: "כספות גדולות ופתקים ארוכים" } },
             { label: "Canvas (Excalidraw)", slug: "workspace/canvas", translations: { he: "קנבס (Excalidraw)" } },

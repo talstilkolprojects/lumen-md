@@ -1,0 +1,10 @@
+{
+  "mailImport.label": "Which Gmail label should be imported?",
+  "mailImport.allLabels": "All mail ({n})",
+  "mailImport.done": "Imported {messages} messages in {threads} threads, {keep} Keep notes, {docs} documents and {files} files → {folders}",
+  "mailImport.trashSkipped": "{n} Keep notes in Keep's trash were left out.",
+  "mailImport.none": "No mail (.eml, .mbox) or Google Takeout data in these files.",
+  "mailImport.failed": "Mail import failed: {error}",
+  "mailImport.noSubject": "(no subject)",
+  "mailImport.missing": "(not in the export)"
+}

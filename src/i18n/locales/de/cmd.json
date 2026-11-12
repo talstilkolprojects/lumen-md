@@ -282,6 +282,8 @@
   "cmd.lexicon.lookup.hint": "Synonyme, Definition und Nikud des Wortes aus dem Offline-Wörterbuch",
   "cmd.lexicon.pack": "Hebräisches Wörterbuch und Synonyme (herunterladen / entfernen)",
   "cmd.lexicon.pack.hint": "Definitionen, Synonyme und Nikud aus dem hebräischen Wiktionary, auf diesem Gerät; Rechtsklick auf ein hebräisches Wort",
+  "cmd.mail.import": "E-Mails (.eml, .mbox) oder Google Takeout importieren…",
+  "cmd.mail.import.hint": "Eine Notiz pro Unterhaltung mit Anhängen, Keep-Notizen und Docs; nur Dateien, auf diesem Gerät",
   "cmd.mobile.customizeToolbar": "Mobile Leiste anpassen",
   "cmd.mobile.customizeToolbar.hint": "Die Aktionen über der Bildschirmtastatur",
   "cmd.mobile.readLongNotes": "Telefon: lange Notizen zum Lesen öffnen",
