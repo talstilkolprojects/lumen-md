@@ -40,6 +40,8 @@ android/.gradle/
 android/build/
 android/local.properties
 android/app/release/
+# npm run mobile:ios works here: archive, export options, .ipa (plan W4.22)
+/build/ios/
 android/app/src/main/assets/public/
 **/xcuserdata/
 **/*.xcworkspace/xcuserdata/
