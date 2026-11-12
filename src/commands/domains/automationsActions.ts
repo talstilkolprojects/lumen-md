@@ -7,10 +7,11 @@ import "../../automations/automationStrings";
 import { uiAlert, uiPrompt, uiSelect } from "../../ui/PromptDialog";
 import { useToastStore } from "../../store/useToastStore";
 import type { Action, Rule, Trigger } from "../../automations/engine";
+import { explainError } from "../../lib/userError";
 
 const load = () => import("../../automations/app");
 const ask = async (key: string, defaultValue = "") => (await uiPrompt({ message: t(key), defaultValue }))?.trim() ?? null;
-const fail = (e: unknown) => useToastStore.getState().push({ kind: "error", title: t("automations.failed", { error: (e as Error).message }) });
+const fail = (e: unknown) => useToastStore.getState().push({ kind: "error", title: t("automations.failed", { error: explainError(e) }) });
 
 async function buildRule(): Promise<Rule | null> {
   const w = await uiSelect({ message: t("automations.pick.trigger"), choices: ["created", "tagAdded", "propertyChanged", "daily"].map((v) => ({ value: v, label: t(`automations.trigger.${v}`) })) });

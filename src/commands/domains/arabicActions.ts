@@ -3,6 +3,7 @@ import type { EditorView } from "@codemirror/view";
 import { t } from "../../i18n";
 import { uiConfirm } from "../../ui/PromptDialog";
 import { showAiToast } from "../../ui/AiToast";
+import { explainError } from "../../lib/userError";
 
 /** Download the Arabic word list, or remove it when it is installed. */
 export async function toggleArabicDictionary(): Promise<void> {
@@ -18,7 +19,7 @@ export async function toggleArabicDictionary(): Promise<void> {
     const n = await svc.downloadArabicDictionary();
     showAiToast(t("spell.ar.installed", { n: n.toLocaleString() }), "info");
   } catch (e) {
-    showAiToast(t("spell.ar.failed", { error: (e as Error).message }), "error");
+    showAiToast(t("spell.ar.failed", { error: explainError(e) }), "error");
   }
 }
 

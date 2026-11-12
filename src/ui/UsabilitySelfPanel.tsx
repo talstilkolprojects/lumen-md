@@ -20,8 +20,9 @@ import { newSelfCode, outcomeOf, SCRIPTS, SEED_FOLDER, seedPracticeNotes, stepOf
 import { uiStrings } from "../research/usability/uiStrings";
 import { useAppStore } from "../store/useStore";
 import { version as appVersion } from "../../package.json";
+import { explainError } from "../lib/userError";
 
-const box: CSSProperties = { position: "fixed", insetBlockEnd: 12, insetInlineEnd: 12, zIndex: 80, inlineSize: "min(400px, calc(100vw - 24px))", maxBlockSize: "75vh", overflowY: "auto", background: "hsl(var(--bg))", color: "hsl(var(--fg))", border: "1px solid hsl(var(--border-strong))", borderRadius: 10, boxShadow: "0 8px 30px hsl(0 0% 0% / 0.25)", padding: 14, fontSize: 14, lineHeight: 1.5 };
+const box: CSSProperties = { position: "fixed", insetBlockEnd: 12, insetInlineEnd: 12, zIndex: 80, inlineSize: "min(400px, calc(100vw - 24px))", maxBlockSize: "75vh", overflowY: "auto", background: "hsl(var(--bg))", color: "hsl(var(--fg))", border: "1px solid hsl(var(--border-strong))", borderRadius: 10, boxShadow: "var(--shadow-xl)", padding: 14, fontSize: 14, lineHeight: 1.5 };
 const row: CSSProperties = { display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBlock: 8 };
 const big: CSSProperties = { minBlockSize: 44, paddingInline: 14 };
 
@@ -97,7 +98,7 @@ export function UsabilitySelfPanel({ onClose }: { onClose: () => void }) {
         );
         events.notifyWorkspaceChanged();
       } catch (e) {
-        setError(t("usabilitySelf.seedFailed", { error: e instanceof Error ? e.message : String(e) }));
+        setError(t("usabilitySelf.seedFailed", { error: explainError(e) }));
       }
       setSession(s);
     } finally {

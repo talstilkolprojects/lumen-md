@@ -5,6 +5,7 @@
  */
 import "../lib/journalistStrings";
 import { t } from "../i18n";
+import { explainError } from "../lib/userError";
 import { useAppStore } from "../store/useStore";
 import { readWorkspaceFile, writeWorkspaceFile } from "../storage/workspace";
 import { clearHistory, historyKey } from "../storage/history";
@@ -73,7 +74,7 @@ export async function notePasswordFlow(): Promise<void> {
       rememberOpen(path, key, sealed, readCurrent);
       showText(plain);
     } catch (e) {
-      await uiAlert({ message: e instanceof WrongNotePasswordError ? t("notePw.wrong") : t("notePw.failed", { error: (e as Error).message }) });
+      await uiAlert({ message: e instanceof WrongNotePasswordError ? t("notePw.wrong") : t("notePw.failed", { error: explainError(e) }) });
     }
     return;
   }

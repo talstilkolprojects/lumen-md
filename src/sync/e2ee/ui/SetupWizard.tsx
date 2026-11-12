@@ -26,6 +26,7 @@ import { isMobileDevice, setupChoices, type SetupBackend } from "../setup/recomm
 import { checkPosition, newRecoveryWords, normalizeWord, parseRecoveryWords, relayToken } from "../setup/recoveryWords";
 import type { FileSyncState } from "../status";
 import { WrongPassphraseError } from "../header";
+import { explainError } from "../../../lib/userError";
 
 const muted: React.CSSProperties = { fontSize: 13, color: "hsl(var(--fg-muted))" };
 const errorStyle: React.CSSProperties = { fontSize: 13, color: "hsl(0 70% 50%)" };
@@ -88,7 +89,7 @@ export function SetupWizard({
     if (where === "dropbox" || where === "gdrive") return onAdvanced();
     if (where === "folder") {
       const { pickSyncFolder } = await import("../setup/folderHandle");
-      const picked = await pickSyncFolder().catch((e: unknown) => (setError(String((e as Error).message)), null));
+      const picked = await pickSyncFolder().catch((e: unknown) => (setError(explainError(e)), null));
       if (!picked) return;
       setSettings({ kind: "folder", name: picked.name });
     } else if (where === "relay") setSettings({ kind: "relay", url: relay ?? "" });

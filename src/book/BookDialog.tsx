@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import { t } from "../i18n";
 import { useToastStore } from "../store/useToastStore";
 import type { BookState } from "./app";
+import { explainError } from "../lib/userError";
 
 type App = typeof import("./app");
 
@@ -43,7 +44,7 @@ function BookPanel({ app, indexPath, close }: { app: App; indexPath: string; clo
       await app.saveIndex(indexPath, app.moveChapter(await app.readIndex(indexPath), from, to));
       await reload();
     } catch (e) {
-      toast({ kind: "error", title: t("book.failed", { error: (e as Error).message }) });
+      toast({ kind: "error", title: t("book.failed", { error: explainError(e) }) });
     }
   };
   const run = async (what: "epub" | "print") => {
@@ -58,7 +59,7 @@ function BookPanel({ app, indexPath, close }: { app: App; indexPath: string; clo
         if (r.missing.length) toast({ kind: "info", title: t("book.missing", { count: r.missing.length }) });
       }
     } catch (e) {
-      toast({ kind: "error", title: t("book.failed", { error: (e as Error).message }) });
+      toast({ kind: "error", title: t("book.failed", { error: explainError(e) }) });
     } finally {
       setBusy(false);
     }

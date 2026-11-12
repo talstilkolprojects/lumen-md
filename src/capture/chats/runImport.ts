@@ -10,6 +10,7 @@ import { uiSelect } from "../../ui/PromptDialog";
 import { showAiToast } from "../../ui/AiToast";
 import { appVault, planChatImport, readChatFiles, writeChatImport, type InputFile } from "./importChats";
 import type { Grouping, RenderStrings } from "./notes";
+import { explainError } from "../../lib/userError";
 
 export function renderStrings(): RenderStrings {
   return {
@@ -56,6 +57,6 @@ export async function runChatImport(): Promise<void> {
     showAiToast(t("chatImport.done", { chats: report.chats, messages: report.messages, notes: report.notes, files: report.attachments, folder: report.folders.join(", ") }), "info");
     if (report.missing) showAiToast(t("chatImport.missingSome", { n: report.missing }), "info");
   } catch (e) {
-    showAiToast(t("chatImport.failed", { error: e instanceof Error ? e.message : String(e) }), "error");
+    showAiToast(t("chatImport.failed", { error: explainError(e) }), "error");
   }
 }

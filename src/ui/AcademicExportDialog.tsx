@@ -15,6 +15,7 @@ import { createRoot } from "react-dom/client";
 import { GraduationCap, X } from "lucide-react";
 import { t, getLocale } from "../i18n";
 import { ACADEMIC_TEMPLATES, COVER_KEYS, academicTemplate, splitCover, type AcademicTemplateId, type CoverFields, type PageNumberFormat } from "../storage/academicTemplates";
+import { explainError } from "../lib/userError";
 
 const SETTINGS_KEY = "lumen.academicExport.v1";
 
@@ -99,7 +100,7 @@ export function AcademicExportDialog({ content, name, onClose }: AcademicExportP
       saveRemembered({ institution, author: cover.author ?? "" });
       setResult({ text: t("academic.done", { name: name.replace(/\.[^.]+$/, "") + ".docx" }), error: false });
     } catch (err) {
-      setResult({ text: t("academic.failed", { error: err instanceof Error ? err.message : String(err) }), error: true });
+      setResult({ text: t("academic.failed", { error: explainError(err) }), error: true });
     } finally {
       setBusy(false);
     }
@@ -171,7 +172,7 @@ export function AcademicExportDialog({ content, name, onClose }: AcademicExportP
           </div>
 
           {result && (
-            <div role={result.error ? "alert" : "status"} style={{ fontSize: 13, color: result.error ? "hsl(0 70% 55%)" : undefined }} data-testid="academic-result">
+            <div role={result.error ? "alert" : "status"} style={{ fontSize: 13, color: result.error ? "hsl(var(--danger))" : undefined }} data-testid="academic-result">
               {result.text}
             </div>
           )}

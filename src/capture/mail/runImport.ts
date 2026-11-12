@@ -10,6 +10,7 @@ import { uiSelect } from "../../ui/PromptDialog";
 import { showAiToast } from "../../ui/AiToast";
 import { appVault, writeChatImport, type InputFile } from "../chats/importChats";
 import { labelCounts, planMailImport, readMailFiles } from "./importMail";
+import { explainError } from "../../lib/userError";
 
 function pickFiles(): Promise<File[]> {
   return new Promise((resolve) => {
@@ -62,6 +63,6 @@ export async function runMailImport(): Promise<void> {
     showAiToast(t("mailImport.done", { messages: report.messages, threads: plan.threads, keep, docs, files: report.attachments, folders: report.folders.join(", ") }), "info");
     if (plan.trashed) showAiToast(t("mailImport.trashSkipped", { n: plan.trashed }), "info");
   } catch (e) {
-    showAiToast(t("mailImport.failed", { error: e instanceof Error ? e.message : String(e) }), "error");
+    showAiToast(t("mailImport.failed", { error: explainError(e) }), "error");
   }
 }

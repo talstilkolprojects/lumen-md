@@ -6,12 +6,13 @@ import { t } from "../../i18n";
 import "../../book/bookStrings";
 import { uiAlert, uiConfirm, uiPrompt } from "../../ui/PromptDialog";
 import { useToastStore } from "../../store/useToastStore";
+import { explainError } from "../../lib/userError";
 
 const load = async () => {
   const [app, dialog] = await Promise.all([import("../../book/app"), import("../../book/BookDialog")]);
   return { app, dialog };
 };
-const failed = (e: unknown) => useToastStore.getState().push({ kind: "error", title: t("book.failed", { error: (e as Error).message }) });
+const failed = (e: unknown) => useToastStore.getState().push({ kind: "error", title: t("book.failed", { error: explainError(e) }) });
 
 /** The book of the open note (its index or one of its chapters), or an offer to make its folder a book. */
 export async function openBook(doc: { workspaceName?: string | null; content: string }): Promise<void> {
