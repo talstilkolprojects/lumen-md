@@ -1058,6 +1058,15 @@
       "size": "~164 MB (fp16 encoder + fp32 decoder, transformers.js)",
       "runs": "browser",
       "delivery": "download",
+      "hosting": {
+        "hf": "itayinbar/Ozen-v1",
+        "revision": null,
+        "cache": "transformers-cache",
+        "dtypes": [
+          "fp16",
+          "fp32"
+        ]
+      },
       "catalog": "WHISPER_MODELS.ozenHe (src/ai/transformersEngine.ts)",
       "verified": false,
       "notes": "Hebrew files without the turbo's GPU budget, and the WASM / mobile re-read of live dictation sentences (plan W4.13). Weights Apache-2.0 per the model card (read 12.11.2026); its card says the training audio is ivrit.ai's (ivrit.ai License), FLEURS (CC BY 4.0) and imvladikon/hebrew_speech_kan (no licence declared on the Hub) — the owner confirms before release. Revision to pin and FLEURS WER measured by `npm run eval:asr-web` (15.3)."
@@ -1288,45 +1297,13 @@
       "size": "set from the first export run (int8 ONNX, q8)",
       "runs": "browser",
       "delivery": "download",
+      "hosting": {
+        "via": "converted",
+        "tag": "models-dictabert-char-menaked"
+      },
       "catalog": "CONVERTED_MODELS (src/ai/convertedModels.ts), MENAKED_ID (src/ai/nikudService.ts)",
       "verified": false,
       "notes": "Plan W2.5: the high-quality niqqud layer above Nakdimon. Custom architecture (trust_remote_code), so it is not an optimum export: scripts/models/export-menaked.py exports it to ONNX, quantises it to int8 and writes menaked.json (vocabulary, class lists, tensor names) at a pinned revision; then scripts/models/registry-edit.mjs records the files here. Until then (no files) the app uses Nakdimon. CC BY 4.0: the attribution is shown in the consent dialog."
-    },
-    {
-      "id": "tessdata_fast/heb.traineddata",
-      "kind": "ocr",
-      "source": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/heb.traineddata",
-      "license": "Apache-2.0",
-      "class": "allowed",
-      "commercial": "yes",
-      "attribution": "Tesseract tessdata_fast © Google / tesseract-ocr contributors, licensed under the Apache License 2.0.",
-      "size": "~1 MB",
-      "runs": "browser",
-      "delivery": "download",
-      "catalog": "LANG_PATH / LANGS (src/ai/ocr.ts)",
-      "match": [
-        "tessdata_fast"
-      ],
-      "verified": true,
-      "notes": ""
-    },
-    {
-      "id": "tessdata_fast/eng.traineddata",
-      "kind": "ocr",
-      "source": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/eng.traineddata",
-      "license": "Apache-2.0",
-      "class": "allowed",
-      "commercial": "yes",
-      "attribution": "Tesseract tessdata_fast © Google / tesseract-ocr contributors, licensed under the Apache License 2.0.",
-      "size": "~4 MB",
-      "runs": "browser",
-      "delivery": "download",
-      "catalog": "LANG_PATH / LANGS (src/ai/ocr.ts)",
-      "match": [
-        "tessdata_fast"
-      ],
-      "verified": true,
-      "notes": ""
     },
     {
       "id": "DictaLM-3.0-12B",

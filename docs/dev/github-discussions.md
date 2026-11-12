@@ -18,7 +18,7 @@ the categories are already in the repo, under `.github/DISCUSSION_TEMPLATE/`.
 
 2. **Name the categories.** GitHub creates the default categories. Open
    *Discussions → Categories* (the pencil next to each category) and set the
-   names and descriptions below. Then add **Polls** if it is missing.
+   names and descriptions below. Then add **Polls** if it is missing, and the two beta categories (**Beta**, **Beta feedback**) with the slugs `beta` and `beta-feedback`.
 
    | Default slug | Name | Description | Format |
    |---|---|---|---|
@@ -28,6 +28,8 @@ the categories are already in the repo, under `.github/DISCUSSION_TEMPLATE/`.
    | `show-and-tell` | Show and tell · הראו מה בניתם | Vaults, templates, plugins, workflows · כספות, תבניות, תוספים | Open-ended discussion |
    | `general` | General · כללי | Everything else · כל השאר | Open-ended discussion |
    | `polls` | Polls · סקרים | Vote on what comes next · הצביעו על הבא בתור | Poll |
+   | `beta` (new) | Beta · בטא | Join the beta (plan W2.25) · הצטרפות לבטא | Open-ended discussion |
+   | `beta-feedback` (new) | Beta feedback · משוב על הבטא | Reports from the beta, triaged with the 14.3 labels · דיווחים מהבטא | Open-ended discussion |
 
 3. **Check the forms against the categories.** A form works only if its file
    name is its category's slug. Renaming a category can change the slug. Run:

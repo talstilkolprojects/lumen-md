@@ -14,9 +14,9 @@ const DIR = resolve(__dirname, "../../.github/DISCUSSION_TEMPLATE");
 describe("discussion category forms", () => {
   const forms = readdirSync(DIR).sort();
 
-  it("there is a form for Q&A, Ideas and Show and tell, with Hebrew labels", () => {
-    expect(forms).toEqual(["ideas.yml", "q-a.yml", "show-and-tell.yml"]);
-    for (const f of forms) expect(readFileSync(join(DIR, f), "utf8")).toMatch(/label: [\u0590-\u05FF]/);
+  it("there is a form for Q&A, Ideas and Show and tell, and the beta's two (W2.25), with Hebrew labels", () => {
+    expect(forms).toEqual(["beta-feedback.yml", "beta.yml", "ideas.yml", "q-a.yml", "show-and-tell.yml"]);
+    for (const f of forms) expect(readFileSync(join(DIR, f), "utf8")).toMatch(/label: "?[\u0590-\u05FF]/);
   });
 
   it("each passes the check", () => {

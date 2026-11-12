@@ -24,6 +24,9 @@ export const CATEGORIES = {
   "show-and-tell": "Show and tell · הראו מה בניתם",
   general: "General · כללי",
   polls: "Polls · סקרים",
+  // The beta (plan W2.25, launch/checklist.md): two categories added by hand.
+  beta: "Beta · בטא",
+  "beta-feedback": "Beta feedback · משוב על הבטא",
 };
 
 /** Problems with a form's text (a light check of the category-form schema, no YAML parser needed). */

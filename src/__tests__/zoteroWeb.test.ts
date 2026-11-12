@@ -205,7 +205,7 @@ describe("W5.23 the network: rate limits, refusals, the ledger, CSP and secrets"
     expect(c?.category).toBe("research");
     expect(blockedByPolicy(c!.category, "local-only")).toBe(true);
     expect(isSecretName("lumen.zotero.apiKey")).toBe(true);
-    for (const f of ["index.html", "public/_headers", "docker/nginx.conf", "src-tauri/tauri.conf.json"]) {
+    for (const f of ["index.html", "public/_headers", "deploy/nginx.conf", "src-tauri/tauri.conf.json"]) {
       expect(readFileSync(join(__dirname, "../..", f), "utf8"), f).toContain("https://api.zotero.org");
     }
   });

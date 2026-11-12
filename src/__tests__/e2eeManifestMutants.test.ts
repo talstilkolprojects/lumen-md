@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { utf8 } from "../sync/e2ee/bytes";
 import { PROTOCOL_VERSION } from "../sync/e2ee/header";
 import { DecryptError, deriveVaultKeys, seal, type VaultKeys } from "../sync/e2ee/keys";
-import { blobName, checkFreshness, emptyManifest, HISTORY_LENGTH, manifestName, openManifest, pathRecord, RollbackError, sealManifest, type Manifest } from "../sync/e2ee/manifest";
+import { blobName, checkFreshness, emptyManifest, FROZEN_PROTOCOL, HISTORY_LENGTH, manifestName, openManifest, pathRecord, RollbackError, sealManifest, type Manifest } from "../sync/e2ee/manifest";
 
 const VAULT = "AAAAAAAAAAAAAAAAAAAAAA";
 const keys = (): Promise<VaultKeys> => deriveVaultKeys(new Uint8Array(32).fill(7), VAULT);
@@ -58,7 +58,8 @@ describe("manifest, mutant-killing cases", () => {
 
   it("refuses the wrong protocol, vault, counter or files", async () => {
     const k = await keys();
-    expect(await refused(k, good({ protocol: PROTOCOL_VERSION + 1 }))).toMatch(/protocol/);
+    // Neither this build's protocol nor a re-key's frozen one (#472's keyring: FROZEN_PROTOCOL).
+    expect(await refused(k, good({ protocol: Math.max(PROTOCOL_VERSION, FROZEN_PROTOCOL) + 1 }))).toMatch(/protocol/);
     expect(await refused(k, good({ vaultId: "BBBBBBBBBBBBBBBBBBBBBB" }))).toMatch(/another vault/);
     for (const counter of [0, -1, 1.5, "3", null]) expect(await refused(k, good({ counter, history: [] }))).toMatch(/counter/);
     for (const files of [null, "x", 5]) expect(await refused(k, good({ files }))).toMatch(/files/);
