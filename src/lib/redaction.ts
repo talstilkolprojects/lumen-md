@@ -219,7 +219,8 @@ export function cleanInlineImages(markdown: string): { text: string; cleaned: nu
   let withheld = 0;
   const text = markdown.replace(DATA_IMAGE, (whole, type: string, b64: string) => {
     try {
-      const r = stripImageMetadata(fromBase64(b64));
+      // The declared type is checked against the bytes: a HEIC labelled image/jpeg is withheld (review 2).
+      const r = stripImageMetadata(fromBase64(b64), `image/${type.toLowerCase() === "jpg" ? "jpeg" : type.toLowerCase()}`);
       if (!r.format || r.removed.length === 0) return whole;
       cleaned++;
       return `data:image/${type.toLowerCase()};base64,${toBase64(r.bytes)}`;

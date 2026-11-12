@@ -5,14 +5,25 @@
  * Cameras and phones write EXIF (GPS position, time, camera serial number,
  * owner name), XMP, IPTC and text chunks into JPEG, PNG and WebP files. All
  * of it is removed; the pixels are not touched (no re-encoding, no quality
- * loss). What is kept:
- *   - JPEG: JFIF (APP0), the ICC colour profile (APP2), Adobe's colour
- *     transform (APP14), and the EXIF orientation — rewritten as an EXIF
- *     block holding that one tag, so a portrait photo still stands upright;
- *   - PNG: every chunk but eXIf, tEXt, zTXt, iTXt and tIME;
- *   - WebP: every chunk but EXIF and XMP (the VP8X flags are corrected).
- * Other formats (GIF, SVG, HEIC, AVIF) come back unchanged, with
- * `format: null`.
+ * loss). Only what a decoder needs to draw the image is kept, by an
+ * allow-list (review 2, 12.11: a segment or chunk this code doesn't know,
+ * such as a reserved JPEG marker or a C2PA Content Credentials chunk, goes):
+ *   - JPEG: the coding segments (DQT, DHT, DAC, SOFn, SOS, DRI, DNL, RSTn),
+ *     JFIF (APP0), the ICC colour profile (APP2), Adobe's colour transform
+ *     (APP14), and the EXIF orientation — rewritten as an EXIF block holding
+ *     that one tag, so a portrait photo still stands upright;
+ *   - PNG: the critical chunks and iCCP, sRGB, gAMA, cHRM, cICP, mDCv, cLLi,
+ *     pHYs, sBIT, tRNS, bKGD, acTL, fcTL, fdAT;
+ *   - WebP: VP8, VP8L, VP8X, ALPH, ANIM, ANMF, ICCP (the VP8X flags are
+ *     corrected).
+ *
+ * What a file is comes from its bytes, never from its declared type or its
+ * name (review 2): a HEIC photo named .jpg is a HEIC photo. JPEG, PNG and
+ * WebP are cleaned whatever they are called. HEIC, AVIF, TIFF and JPEG XL
+ * can't be cleaned in place: the async helpers re-encode them through a
+ * canvas (only the pixels survive) or refuse them. A file declared as JPEG,
+ * PNG or WebP that is none of them throws ImageMetadataError. GIF, SVG, BMP
+ * and ICO come back unchanged, with `format: null`.
  *
  * Fail closed (review 12.11): a JPEG, PNG or WebP that can't be parsed throws
  * ImageMetadataError instead of coming back as it was. The async helpers
@@ -24,6 +35,47 @@
  * between scans are cleaned like the header's, and APP2 is kept only when it
  * is an ICC profile (an MPF index is APP2 too).
  */
+
+/** What a file is, from its first bytes. */
+export type MediaKind = "jpeg" | "png" | "webp" | "gif" | "svg" | "bmp" | "ico" | "heif" | "avif" | "tiff" | "jxl" | "video";
+
+const HEIF_BRANDS = new Set(["heic", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs", "mif1", "msf1", "mif2"]);
+const AVIF_BRANDS = new Set(["avif", "avis"]);
+
+/** Sniff a file's kind from its content; null for anything that isn't an image or a video. */
+export function sniffMedia(b: Uint8Array): MediaKind | null {
+  const at = (o: number, sig: number[]) => b.length >= o + sig.length && sig.every((v, k) => b[o + k] === v);
+  const str = (o: number, n: number) => (b.length >= o + n ? String.fromCharCode(...b.subarray(o, o + n)) : "");
+  if (at(0, [0xff, 0xd8, 0xff])) return "jpeg";
+  if (at(0, PNG_SIG)) return "png";
+  if (str(0, 4) === "RIFF") return str(8, 4) === "WEBP" ? "webp" : str(8, 4) === "AVI " ? "video" : null;
+  if (str(0, 4) === "GIF8") return "gif";
+  if (at(0, [0x49, 0x49, 0x2a, 0x00]) || at(0, [0x4d, 0x4d, 0x00, 0x2a]) || at(0, [0x49, 0x49, 0x2b, 0x00]) || at(0, [0x4d, 0x4d, 0x00, 0x2b])) return "tiff";
+  if (at(0, [0xff, 0x0a]) || at(0, [0, 0, 0, 0x0c, 0x4a, 0x58, 0x4c, 0x20])) return "jxl";
+  if (at(0, [0x1a, 0x45, 0xdf, 0xa3])) return "video"; // Matroska / WebM
+  if (str(4, 4) === "ftyp") {
+    // ISO-BMFF: the major brand, then the compatible ones, up to the box's size.
+    const size = Math.min(b.length, ((b[0] << 24) >>> 0) + ((b[1] << 16) | (b[2] << 8) | b[3]));
+    const brands = [str(8, 4)];
+    for (let o = 16; o + 4 <= size; o += 4) brands.push(str(o, 4));
+    if (brands.some((x) => AVIF_BRANDS.has(x))) return "avif";
+    if (brands.some((x) => HEIF_BRANDS.has(x))) return "heif";
+    return "video"; // mp4, mov (qt), m4v, 3gp …
+  }
+  if (str(4, 4) === "moov" || str(4, 4) === "mdat" || str(4, 4) === "wide") return "video"; // old QuickTime
+  if (str(0, 2) === "BM") return "bmp";
+  if (at(0, [0, 0, 1, 0])) return "ico";
+  // SVG: text whose first element is <svg (after an XML declaration, comments or a doctype).
+  const head = new TextDecoder().decode(b.subarray(0, 1024)).replace(/^\uFEFF/, "").trimStart();
+  if (/^<(\?xml|!--|!doctype\s+svg|svg[\s>])/i.test(head) && /<svg[\s>]/i.test(head)) return "svg";
+  return null;
+}
+
+/** Kinds that carry no location metadata we would ship: copied as they are. */
+const PLAIN: ReadonlySet<MediaKind> = new Set(["gif", "svg", "bmp", "ico"]);
+/** Image kinds whose metadata can't be removed in place: re-encoded through a canvas, or refused. */
+const REENCODE: ReadonlySet<MediaKind> = new Set(["heif", "avif", "tiff", "jxl"]);
+const MIME_OF: Partial<Record<MediaKind, string>> = { heif: "image/heic", avif: "image/avif", tiff: "image/tiff", jxl: "image/jxl" };
 
 export interface StripResult {
   bytes: Uint8Array<ArrayBuffer>;
@@ -78,8 +130,16 @@ function orientationSegment(orientation: number): Uint8Array {
   return new Uint8Array([0xff, 0xe1, len >> 8, len & 0xff, ...body]);
 }
 
-/** What to do with one marker segment (APPn, COM, DQT, DHT …): keep it, or drop it and say what it was. */
+/** The coding segments a decoder needs: DQT, DHT, DAC, SOFn, SOS, DRI, DNL, DHP, EXP. */
+function jpegCoding(marker: number): boolean {
+  return (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc8) || marker === 0xda || marker === 0xdb || marker === 0xdd || marker === 0xdc || marker === 0xde || marker === 0xdf;
+}
+
+/** What to do with one marker segment: keep it (an allow-list), or drop it and say what it was. */
 function jpegSegment(marker: number, data: Uint8Array, removed: Set<string>, found: { orientation: number | null }): boolean {
+  if (jpegCoding(marker)) return true;
+  if (marker === 0xe0) return true; // JFIF / JFXX
+  if (marker === 0xee) return true; // Adobe: the colour transform
   if (marker === 0xe1) {
     if (ascii(data, 0, 6) === "Exif\0\0") {
       removed.add("EXIF");
@@ -103,11 +163,13 @@ function jpegSegment(marker: number, data: Uint8Array, removed: Set<string>, fou
     removed.add("comment");
     return false;
   }
-  if (marker >= 0xe3 && marker <= 0xef && marker !== 0xee) {
-    removed.add(`APP${marker - 0xe0}`); // APP3–APP13, APP15: maker notes, Photoshop, FlashPix …
+  if (marker >= 0xe3 && marker <= 0xef) {
+    removed.add(marker === 0xeb ? "C2PA" : `APP${marker - 0xe0}`); // maker notes, Photoshop, FlashPix, JUMBF / C2PA …
     return false;
   }
-  return true;
+  // Anything else (the reserved JPGn markers 0xF0–0xFD, unknown ones): not needed to draw the image.
+  removed.add(`marker ${marker.toString(16).toUpperCase()}`);
+  return false;
 }
 
 function stripJpeg(b: Uint8Array): StripResult | null {
@@ -162,7 +224,9 @@ function stripJpeg(b: Uint8Array): StripResult | null {
 }
 
 const PNG_SIG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-const PNG_DROP: Record<string, string> = { eXIf: "EXIF", tEXt: "text", zTXt: "text", iTXt: "text", tIME: "time" };
+const PNG_DROP: Record<string, string> = { eXIf: "EXIF", tEXt: "text", zTXt: "text", iTXt: "text", tIME: "time", caBX: "C2PA" };
+/** The chunks a PNG (or APNG) needs to be drawn as it was; every other chunk goes. */
+const PNG_KEEP = new Set(["IHDR", "PLTE", "IDAT", "IEND", "iCCP", "sRGB", "gAMA", "cHRM", "cICP", "mDCv", "cLLi", "pHYs", "sBIT", "tRNS", "bKGD", "acTL", "fcTL", "fdAT"]);
 
 function stripPng(b: Uint8Array): StripResult | null {
   if (b.length < 8 || PNG_SIG.some((v, k) => b[k] !== v)) return null;
@@ -174,9 +238,8 @@ function stripPng(b: Uint8Array): StripResult | null {
     const type = ascii(b, i + 4, 4);
     const end = i + 12 + len;
     if (end > b.length) throw new ImageMetadataError("png", "bad chunk length");
-    const what = PNG_DROP[type];
-    if (what) {
-      removed.add(what);
+    if (!PNG_KEEP.has(type)) {
+      removed.add(PNG_DROP[type] ?? type);
       if (type === "eXIf" && readExif(b.subarray(i + 8, i + 8 + len)).gps) removed.add("GPS");
       if (type === "iTXt" && /XML:com\.adobe\.xmp/.test(ascii(b, i + 8, Math.min(len, 32)))) removed.add("XMP");
     } else parts.push(b.subarray(i, end));
@@ -189,6 +252,9 @@ function stripPng(b: Uint8Array): StripResult | null {
   }
   return { bytes: concat(parts), format: "png", removed: [...removed] };
 }
+
+/** The chunks a WebP needs to be drawn as it was; every other chunk (C2PA among them) goes. */
+const WEBP_KEEP = new Set(["VP8 ", "VP8L", "VP8X", "ALPH", "ANIM", "ANMF", "ICCP"]);
 
 function stripWebp(b: Uint8Array): StripResult | null {
   if (b.length < 12 || ascii(b, 0, 4) !== "RIFF" || ascii(b, 8, 4) !== "WEBP") return null;
@@ -210,6 +276,7 @@ function stripWebp(b: Uint8Array): StripResult | null {
       const tiff = ascii(data, 0, 6) === "Exif\0\0" ? data.subarray(6) : data;
       if (readExif(tiff).gps) removed.add("GPS");
     } else if (type === "XMP ") removed.add("XMP");
+    else if (!WEBP_KEEP.has(type)) removed.add(type.trim() || "chunk");
     else {
       const chunk = b.slice(i, Math.min(end, riffEnd));
       if (type === "VP8X") vp8x = chunk;
@@ -242,11 +309,19 @@ function concat(parts: Uint8Array[]): Uint8Array<ArrayBuffer> {
 
 /**
  * Remove location, time, device and text metadata from a JPEG, PNG or WebP.
- * Throws ImageMetadataError when such a file can't be parsed (fail closed).
+ * Throws ImageMetadataError when such a file can't be parsed (fail closed),
+ * when it is a HEIC, AVIF, TIFF or JPEG XL image (their metadata can't be
+ * removed in place), and when `declared` names JPEG, PNG or WebP but the
+ * bytes are none of them (review 2).
  */
-export function stripImageMetadata(bytes: Uint8Array): StripResult {
+export function stripImageMetadata(bytes: Uint8Array, declared?: string): StripResult {
   const r = stripJpeg(bytes) ?? stripPng(bytes) ?? stripWebp(bytes);
   if (r) return r;
+  const kind = sniffMedia(bytes);
+  if (kind && REENCODE.has(kind)) throw new ImageMetadataError(kind, "it can only be cleaned by re-encoding");
+  if (declared && /^image\/(jpe?g|png|webp)$/i.test(declared) && !(kind && PLAIN.has(kind))) {
+    throw new ImageMetadataError(declared.slice(6), "its bytes are not that format");
+  }
   const copy = new Uint8Array(bytes.length);
   copy.set(bytes);
   return { bytes: copy, format: null, removed: [] };
@@ -267,7 +342,7 @@ const OUT_TYPE: Record<string, string> = { jpeg: "image/jpeg", png: "image/png",
  * Re-encode through a canvas: only the pixels survive (orientation applied).
  * Null when this engine has no canvas or can't decode the file.
  */
-export async function reencodeImage(bytes: Uint8Array, type: string): Promise<{ bytes: Uint8Array<ArrayBuffer>; type: string } | null> {
+export async function reencodeImage(bytes: Uint8Array, type: string, outType: string = type): Promise<{ bytes: Uint8Array<ArrayBuffer>; type: string } | null> {
   if (typeof createImageBitmap !== "function") return null;
   try {
     const copy = new Uint8Array(bytes.length);
@@ -278,13 +353,13 @@ export async function reencodeImage(bytes: Uint8Array, type: string): Promise<{ 
       if (typeof OffscreenCanvas !== "undefined") {
         const c = new OffscreenCanvas(bmp.width, bmp.height);
         c.getContext("2d")?.drawImage(bmp, 0, 0);
-        blob = await c.convertToBlob({ type, quality: 0.92 });
+        blob = await c.convertToBlob({ type: outType, quality: 0.92 });
       } else if (typeof document !== "undefined") {
         const c = document.createElement("canvas");
         c.width = bmp.width;
         c.height = bmp.height;
         c.getContext("2d")?.drawImage(bmp, 0, 0);
-        blob = await new Promise<Blob | null>((resolve) => c.toBlob(resolve, type, 0.92));
+        blob = await new Promise<Blob | null>((resolve) => c.toBlob(resolve, outType, 0.92));
       }
     } finally {
       bmp.close();
@@ -307,15 +382,37 @@ export async function reencodeImage(bytes: Uint8Array, type: string): Promise<{ 
  */
 export async function cleanImageBytes(bytes: Uint8Array, type: string): Promise<{ bytes: Uint8Array<ArrayBuffer>; type: string; format: StripResult["format"]; removed: string[] } | null> {
   try {
-    const r = stripImageMetadata(bytes);
+    const r = stripImageMetadata(bytes, type);
     return { bytes: r.bytes, type: r.format ? OUT_TYPE[r.format] : type, format: r.format, removed: r.removed };
   } catch (e) {
     if (!(e instanceof ImageMetadataError)) throw e;
-    const re = await reencodeImage(bytes, type);
+    // Decoded as what the bytes are (a HEIC named .jpg is decoded as HEIC); a lossless source stays lossless.
+    const kind = sniffMedia(bytes);
+    const source = (kind && (MIME_OF[kind] ?? OUT_TYPE[kind])) || type;
+    const re = await reencodeImage(bytes, source, kind === "tiff" ? "image/png" : kind && REENCODE.has(kind) ? "image/jpeg" : type);
     if (!re) return null;
     const format = /png/.test(re.type) ? "png" : /webp/.test(re.type) ? "webp" : "jpeg";
     return { bytes: re.bytes, type: re.type, format, removed: ["re-encoded"] };
   }
+}
+
+/**
+ * A file that a published site copies as it is (review 2): what to publish.
+ * By content, whatever its name: a JPEG, PNG or WebP goes out cleaned (in
+ * place, as the same format, so its link still matches); HEIC, AVIF, TIFF,
+ * JPEG XL and video are refused (their metadata can't be removed here; the
+ * caller reports them as not cleaned); anything else (GIF, SVG, a PDF, a
+ * text file) is copied.
+ */
+export async function cleanPublishedFile(bytes: Uint8Array): Promise<{ action: "copy" } | { action: "clean"; bytes: Uint8Array<ArrayBuffer> } | { action: "refuse"; kind: MediaKind | "image" }> {
+  const kind = sniffMedia(bytes);
+  if (!kind || PLAIN.has(kind)) return { action: "copy" };
+  if (kind === "video" || REENCODE.has(kind)) return { action: "refuse", kind };
+  const type = OUT_TYPE[kind];
+  const r = await cleanImageBytes(bytes, type);
+  // Re-encoded to another format, its link would not match: it stays out.
+  if (!r || r.type !== type) return { action: "refuse", kind: "image" };
+  return { action: "clean", bytes: r.bytes };
 }
 
 /** localStorage key: "1" keeps photos' metadata (the default removes it). */
@@ -339,9 +436,14 @@ const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "
  * either, this throws ImageMetadataError and the caller must not store it.
  */
 export async function cleanImageFile(file: File): Promise<File> {
-  if (keepImageMetadata() || !/^image\/(jpeg|png|webp)$/.test(file.type)) return file;
-  const r = await cleanImageBytes(new Uint8Array(await file.arrayBuffer()), file.type);
-  if (!r) throw new ImageMetadataError(file.type.slice(6), "no canvas to re-encode it");
+  if (keepImageMetadata()) return file;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  // By content, not by the declared type (review 2): a HEIC photo saved as .jpg is still a HEIC photo.
+  const kind = sniffMedia(bytes);
+  const declaredPhoto = /^image\/(jpeg|png|webp)$/.test(file.type);
+  if (!declaredPhoto && !(kind && (kind in OUT_TYPE || REENCODE.has(kind)))) return file;
+  const r = await cleanImageBytes(bytes, declaredPhoto ? file.type : (kind && OUT_TYPE[kind]) || file.type);
+  if (!r) throw new ImageMetadataError((kind ?? file.type.slice(6)) || "image", "no canvas to re-encode it");
   if (!r.format || r.removed.length === 0) return file;
   const name = r.type === file.type ? file.name : file.name.replace(/\.[^.]*$/, "") + "." + EXT[r.type];
   return new File([r.bytes], name, { type: r.type, lastModified: file.lastModified });

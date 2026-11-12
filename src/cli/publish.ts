@@ -17,11 +17,14 @@
  * Node-only (uses node:fs); bin/lumen.ts is the thin argv wrapper.
  */
 import {
+  closeSync,
   copyFileSync,
   lstatSync,
   mkdirSync,
+  openSync,
   readdirSync,
   readFileSync,
+  readSync,
   realpathSync,
   rmdirSync,
   statSync,
@@ -33,10 +36,18 @@ import { renderHtmlDocument, escapeHtml } from "../storage/exportHtml";
 import { MD_RE, PUBLISH_CSS, encodePath, pageTitle, rewriteMarkdownLinks, rewriteWikiLinks } from "../publish/siteLinks";
 import { resolveWikiTarget, splitWikiTarget } from "../renderer/wikiLinks";
 import { prepareForExport } from "../lib/redaction";
-import { cleanImageBytes } from "../lib/imageMetadata";
+import { cleanPublishedFile, sniffMedia } from "../lib/imageMetadata";
 
-/** Photos whose published copy loses its metadata (plan W5.11). */
-const PHOTO_TYPE: Record<string, string> = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp" };
+/** The first bytes of a file: enough to tell what it is without reading a video whole. */
+function fileHead(path: string, n = 4096): Uint8Array {
+  const fd = openSync(path, "r");
+  try {
+    const buf = new Uint8Array(n);
+    return buf.subarray(0, readSync(fd, buf, 0, n, 0));
+  } finally {
+    closeSync(fd);
+  }
+}
 
 export { PUBLISH_CSS, encodePath, pageTitle, rewriteMarkdownLinks, rewriteWikiLinks } from "../publish/siteLinks";
 
@@ -452,14 +463,20 @@ export async function publishSite(
       skipped.push({ source: rel, output: rel, reason: `collides with ${taken}` });
       continue;
     }
-    const photo = opts.keepImageMetadata ? undefined : PHOTO_TYPE[(rel.split(".").pop() ?? "").toLowerCase()];
-    if (photo) {
-      // A photo goes out without its location, time and camera details; one that can't be cleaned stays out.
-      const r = await cleanImageBytes(new Uint8Array(readFileSync(a)), photo);
-      if (!r || r.type !== photo) {
-        skipped.push({ source: rel, output: rel, reason: "its photo metadata could not be removed" });
-        continue;
-      }
+    // Every file is judged by its content, not its extension (review 2): a photo goes out without its
+    // location, time and camera details; a HEIC, AVIF or TIFF photo, or a video, can't be cleaned here
+    // and stays out with a reason, unless the metadata is kept on purpose.
+    const kind = opts.keepImageMetadata ? null : sniffMedia(fileHead(a));
+    const r = kind === null ? ({ action: "copy" } as const) : kind === "video" ? ({ action: "refuse", kind } as const) : await cleanPublishedFile(new Uint8Array(readFileSync(a)));
+    if (r.action === "refuse") {
+      skipped.push({
+        source: rel,
+        output: rel,
+        reason: r.kind === "video" ? "a video's metadata (such as its location) can't be removed: not published (keep metadata to publish it)" : "its photo metadata could not be removed",
+      });
+      continue;
+    }
+    if (r.action === "clean") {
       reserve(rel, `the asset ${rel}`);
       writeFileSync(prepareOutputPath(outAbs, rel), r.bytes);
     } else {

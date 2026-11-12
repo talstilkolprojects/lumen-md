@@ -163,12 +163,22 @@ export function isEnvelopeText(text: string): boolean {
   }
 }
 
+/** Do two envelopes carry the same KDF parameters (the same salt: sealed with the same key)? */
+function sameKdf(a: string, b: string): boolean {
+  try {
+    return JSON.stringify(parse(a, STRUCTURE_ONLY).kdf) === JSON.stringify(parse(b, STRUCTURE_ONLY).kdf);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * The workspace write hook. An unlocked locked note is always sealed, unless
  * the text is already an envelope that opens with this note's key (which
- * nobody without the key can forge). Plain text is never written over a
- * locked note that is not open (the editor showing the sealed text, a tool,
- * an old tab): that write is refused.
+ * nobody without the key can forge). Nothing is written over a locked note
+ * that is not open (the editor showing the sealed text, a tool, an old tab)
+ * but an envelope with the note's own KDF parameters (review 2): plain text
+ * and an envelope under another password are refused alike.
  */
 export function makeSealer(readCurrent: (path: string) => Promise<string | null>) {
   return async (path: string, content: string): Promise<string> => {
@@ -188,11 +198,14 @@ export function makeSealer(readCurrent: (path: string) => Promise<string | null>
       lockedNotes.set(path, sealed, k);
       return sealed;
     }
-    if (isEnvelopeText(content)) return content;
     if (allowPlain.delete(path)) return content;
     const current = await readCurrent(path);
-    if (current !== null && isSealedNote(current)) throw new LockedNoteOverwriteError(path);
-    return content;
+    if (current === null || !isSealedNote(current)) return content;
+    // A closed locked note (review 2): not even a well-formed envelope replaces it, unless it is the
+    // same envelope or one sealed under the same password and salt (another tab or device that holds
+    // the key: its KDF parameters, salt included, are the note's own). Anything else is refused.
+    if (isEnvelopeText(content) && (content === current || sameKdf(content, current))) return content;
+    throw new LockedNoteOverwriteError(path);
   };
 }
 

@@ -5,7 +5,7 @@
  */
 import { afterEach, describe, expect, it } from "vitest";
 import fixtures from "./fixtures/gps-photos.json";
-import { cleanImageBytes, cleanImageFile, hasGps, ImageMetadataError, KEEP_METADATA_KEY, stripImageMetadata } from "../lib/imageMetadata";
+import { cleanImageBytes, cleanImageFile, cleanPublishedFile, hasGps, ImageMetadataError, KEEP_METADATA_KEY, sniffMedia, stripImageMetadata } from "../lib/imageMetadata";
 
 const images = Object.entries((fixtures as { images: Record<string, string> }).images).map(
   ([name, b64]) => [name, Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))] as const,
@@ -114,3 +114,54 @@ describe("cleanImageFile (what the editor stores)", () => {
     expect(await cleanImageFile(file)).toBe(file);
   });
 });
+
+describe("review 2: by content, and by an allow-list", () => {
+  const ascii = (t: string) => [...t].map((c) => c.charCodeAt(0));
+  const heic = new Uint8Array([0, 0, 0, 0x18, ...ascii("ftypheic"), 0, 0, 0, 0, ...ascii("mif1heic"), ...ascii("Exif"), 0, 0]);
+  const jpeg = images.find(([n]) => n.endsWith(".jpg"))![1];
+
+  it("sniffs what a file is from its bytes", () => {
+    expect(sniffMedia(jpeg)).toBe("jpeg");
+    expect(sniffMedia(heic)).toBe("heif");
+    expect(sniffMedia(new Uint8Array([0, 0, 0, 0x14, ...ascii("ftypavif"), 0, 0, 0, 0, ...ascii("avif")]))).toBe("avif");
+    expect(sniffMedia(new Uint8Array([0, 0, 0, 0x14, ...ascii("ftypqt  "), 0, 0, 0, 0, ...ascii("qt  ")]))).toBe("video");
+    expect(sniffMedia(new Uint8Array(ascii("MM\0*\0\0\0\x08")))).toBe("tiff");
+    expect(sniffMedia(new Uint8Array(ascii("GIF89a")))).toBe("gif");
+    expect(sniffMedia(new TextEncoder().encode('<?xml version="1.0"?>\n<svg xmlns="http://www.w3.org/2000/svg"/>'))).toBe("svg");
+    expect(sniffMedia(new TextEncoder().encode("# a note"))).toBeNull();
+  });
+
+  it("a photo declared as JPEG whose bytes are HEIC is refused (no canvas here), never kept as it was", async () => {
+    expect(() => stripImageMetadata(heic, "image/jpeg")).toThrow(ImageMetadataError);
+    expect(() => stripImageMetadata(heic)).toThrow(ImageMetadataError);
+    expect(await cleanImageBytes(heic, "image/jpeg")).toBeNull();
+    await expect(cleanImageFile(new File([heic], "IMG_0001.jpg", { type: "image/jpeg" }))).rejects.toBeInstanceOf(ImageMetadataError);
+    await expect(cleanImageFile(new File([heic], "IMG_0001.heic", { type: "image/heic" }))).rejects.toBeInstanceOf(ImageMetadataError);
+    // A GIF or a text file is not a photo this cleans: unchanged.
+    expect(stripImageMetadata(new Uint8Array(ascii("GIF89a")), "image/jpeg").format).toBeNull();
+  });
+
+  it("drops JPEG segments and PNG chunks it does not know (reserved markers, C2PA)", () => {
+    const seg = [0xff, 0xf3, 0, 6, 1, 2, 3, 4];
+    const withSeg = new Uint8Array([...jpeg.subarray(0, 2), ...seg, ...jpeg.subarray(2)]);
+    const r = stripImageMetadata(withSeg);
+    expect(r.removed).toContain("marker F3");
+    expect(latin1(r.bytes).includes(latin1(new Uint8Array(seg)))).toBe(false);
+    const png = images.find(([n]) => n.endsWith(".png"))![1];
+    const chunk = [0, 0, 0, 4, ...ascii("caBX"), 9, 9, 9, 9, 0, 0, 0, 0];
+    const withChunk = new Uint8Array([...png.subarray(0, 33), ...chunk, ...png.subarray(33)]);
+    const p = stripImageMetadata(withChunk);
+    expect(p.removed).toContain("C2PA");
+    expect(latin1(p.bytes).includes("caBX")).toBe(false);
+  });
+
+  it("a published file is judged by content: a JPEG under any name is cleaned; HEIC and video stay out", async () => {
+    const r = await cleanPublishedFile(jpeg);
+    expect(r.action).toBe("clean");
+    expect(r.action === "clean" && hasGps(r.bytes)).toBe(false);
+    expect((await cleanPublishedFile(heic)).action).toBe("refuse");
+    expect(await cleanPublishedFile(new Uint8Array([0, 0, 0, 0x14, ...ascii("ftypisom"), 0, 0, 0, 0, ...ascii("isom")]))).toEqual({ action: "refuse", kind: "video" });
+    expect(await cleanPublishedFile(new TextEncoder().encode("plain text"))).toEqual({ action: "copy" });
+  });
+});
+

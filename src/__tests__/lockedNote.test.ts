@@ -119,4 +119,22 @@ describe("the write hook", () => {
     forgetOpen("s.md");
     await expect(seal("s.md", lookalike)).rejects.toBeInstanceOf(LockedNoteOverwriteError);
   });
+
+  it("review 2: a closed locked note is not replaced by an envelope under another password; one with its own key passes", async () => {
+    const { sealed, key } = await lockNote(SECRET, "correct horse", FAST);
+    const disk = new Map<string, string>([["s.md", sealed]]);
+    const seal = makeSealer(async (p) => disk.get(p) ?? null);
+    const foreign = (await lockNote("nothing here", "attacker pass", FAST)).sealed;
+    await expect(seal("s.md", foreign)).rejects.toBeInstanceOf(LockedNoteOverwriteError);
+    // The same envelope, or a newer one sealed with the note's own key (another tab, a synced device), passes.
+    expect(await seal("s.md", sealed)).toBe(sealed);
+    rememberOpen("s.md", key, sealed, async (p) => disk.get(p) ?? null);
+    const newer = await seal("s.md", "an edit");
+    forgetOpen("s.md");
+    expect(await seal("s.md", newer)).toBe(newer);
+    // Removing the password is the explicit way to write something else.
+    allowPlainWrite("s.md");
+    expect(await seal("s.md", foreign)).toBe(foreign);
+  });
 });
+

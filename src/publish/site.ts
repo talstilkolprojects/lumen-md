@@ -26,7 +26,7 @@ import type { HtmlDocumentOptions } from "../storage/exportHtml";
 import { escapeHtml } from "../lib/escapeHtml";
 import { MD_RE, PUBLISH_CSS, encodePath, pageTitle, rewriteMarkdownLinks, rewriteWikiLinks } from "./siteLinks";
 import { prepareForExport } from "../lib/redaction";
-import { cleanImageBytes, keepImageMetadata } from "../lib/imageMetadata";
+import { cleanPublishedFile, keepImageMetadata } from "../lib/imageMetadata";
 
 export interface SiteNote {
   /** Vault-relative path, POSIX separators (`Projects/Plan.md`). */
@@ -273,9 +273,6 @@ export interface SiteResult {
   withheld: string[];
 }
 
-/** Photos whose metadata a published copy loses (by the referenced file's extension). */
-const IMAGE_TYPE: Record<string, string> = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp" };
-
 /** Build the site from the picked notes. */
 export async function buildSite(notes: readonly SiteNote[], opts: SiteOptions): Promise<SiteResult> {
   const words = { ...wordsFor(opts.lang), ...opts.words };
@@ -329,14 +326,15 @@ export async function buildSite(notes: readonly SiteNote[], opts: SiteOptions): 
       for (const ref of referencedFiles(body, dir)) {
         if (assets.has(ref) || missing.has(ref) || withheld.has(ref) || outputs.has(ref)) continue;
         const data = await opts.readAsset(ref);
-        const type = IMAGE_TYPE[ref.slice(ref.lastIndexOf(".") + 1).toLowerCase()];
         if (!data) missing.add(ref);
-        else if (keepMeta || !type) assets.set(ref, data);
+        else if (keepMeta) assets.set(ref, data);
         else {
-          // A photo goes out without its metadata, at the same path; one that can't be cleaned (or
-          // only re-encoded to another type, which its link would not match) stays out.
-          const r = await cleanImageBytes(data, type);
-          if (r && r.type === type) assets.set(ref, r.bytes);
+          // By content, not by extension (review 2: a JPEG named .jfif, a HEIC named .jpg): a photo goes
+          // out without its metadata at the same path; one that can't be cleaned that way (HEIC, AVIF,
+          // TIFF, a video) stays out and is reported.
+          const r = await cleanPublishedFile(data);
+          if (r.action === "copy") assets.set(ref, data);
+          else if (r.action === "clean") assets.set(ref, r.bytes);
           else withheld.add(ref);
         }
       }
