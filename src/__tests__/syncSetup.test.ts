@@ -257,8 +257,9 @@ describe("two devices, two clicks each", () => {
     // The session builds folder providers from the stored handle; drive the engine-level provider directly.
     const { createVault, unlockVault, E2eeSync } = await import("../sync/e2ee/engine");
     const pa = folderProvider(shared);
-    const { keys: ka } = await createVault(pa, words, { pbkdf2Iterations: TEST_ITERATIONS });
+    const { keys: ka, anchor } = await createVault(pa, words, { pbkdf2Iterations: TEST_ITERATIONS });
     const ea = new E2eeSync({ provider: pa, keys: ka, local: a.files, store: memoryStateStore(), resolver: keepBothResolver });
+    await ea.markCreated(anchor); // as the session does for the device that creates the vault (an unverified one doesn't upload, third review N6)
     expect((await ea.sync()).uploaded).toBe(1);
     const b = device();
     const pb = folderProvider(shared);
