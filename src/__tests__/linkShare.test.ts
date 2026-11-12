@@ -212,6 +212,18 @@ describe("review 12.11: inflation cap, public origin, the export door", () => {
     expect(shareOrigin(null, undefined)).toBe(PUBLIC_APP_ORIGIN);
   });
 
+  it("IPv4-mapped IPv6 hosts are judged as their IPv4 address, in the hex form the URL parser writes (review 4)", () => {
+    const at = (href: string) => {
+      const u = new URL(href);
+      return { protocol: u.protocol, hostname: u.hostname, origin: u.origin };
+    };
+    for (const href of ["https://[::ffff:192.168.1.10]/", "https://[::ffff:10.0.0.5]/", "https://[::ffff:127.0.0.1]/", "https://[::ffff:100.64.0.1]/"]) {
+      expect(at(href).hostname, href).toMatch(/^\[::ffff:[0-9a-f]+:[0-9a-f]+\]$/);
+      expect(shareOrigin(at(href), undefined), href).toBe(PUBLIC_APP_ORIGIN);
+    }
+    expect(shareOrigin(at("https://[::ffff:8.8.8.8]/"), undefined)).toBe("https://[::ffff:808:808]");
+  });
+
   it("the share command sends the note through the export door (W5.11): redacted passages and hidden comments never reach the link", async () => {
     const cmd = readFileSync(join(__dirname, "..", "commands", "domains", "export.ts"), "utf8");
     const share = cmd.slice(cmd.indexOf('id: "file.shareLink"'), cmd.indexOf('id: "file.exportDocx"'));

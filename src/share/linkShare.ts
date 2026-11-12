@@ -60,8 +60,14 @@ export function maxInflated(compressed: number): number {
 /** Is `host` a name others can reach (not loopback, not a local-network name or address)? */
 function publicHost(host: string): boolean {
   let h = host.replace(/^\[|\]$/g, "").toLowerCase().replace(/\.$/, "");
-  // An IPv4 address written as IPv6 (::ffff:a.b.c.d) is judged as the IPv4 address.
+  // An IPv4 address written as IPv6 is judged as the IPv4 address: dotted (::ffff:a.b.c.d), or in
+  // hex, as the URL parser and so `location.hostname` write it (::ffff:c0a8:10a, review 4 RR4-448-1).
   h = h.replace(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/, "$1");
+  const mapped = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(h);
+  if (mapped) {
+    const [hi, lo] = [parseInt(mapped[1], 16), parseInt(mapped[2], 16)];
+    h = `${hi >> 8}.${hi & 0xff}.${lo >> 8}.${lo & 0xff}`;
+  }
   if (!h || h === "localhost" || h === "::1" || h === "::" || h === "0.0.0.0") return false;
   // Names that only a local network resolves (review 2).
   if (/\.(localhost|local|lan|internal|intranet|home|corp|home\.arpa)$/.test(h)) return false;
