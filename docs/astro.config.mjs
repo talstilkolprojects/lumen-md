@@ -291,6 +291,7 @@ export default defineConfig({
           translations: { he: "הפרויקט" },
           items: [
             { label: "Issue triage", slug: "project/issue-triage", translations: { he: "מיון issues" } },
+            { label: "Releasing a version", slug: "project/releasing", translations: { he: "שחרור גרסה" } },
           ],
         },
         {

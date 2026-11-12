@@ -81,8 +81,10 @@
       }
     },
     "updater": {
-      "pubkey": "",
-      "endpoints": [],
+      "pubkey": "${LUMEN_UPDATER_PUBKEY}",
+      "endpoints": [
+        "https://github.com/talstilkol/lumen-md/releases/latest/download/latest.json"
+      ],
       "requireSignedVersion": true
     }
   }
