@@ -34,6 +34,8 @@ It can also run inside the live-share server (`VAULT_RELAY=1 node sync-server/se
 
 The relay counts, per network address and per day, the new spaces it opens and the bytes it takes (5 spaces and 1 GiB by default; see [sync in two clicks](/sync/two-clicks/)). A whole school usually reaches the relay from one address, and each assignment is a new space. On a school relay, raise `VAULT_RELAY_NEW_SPACES_PER_DAY` and `VAULT_RELAY_ADDRESS_BYTES_PER_DAY` to fit the class.
 
+On the school's network the relay counts each laptop by its own address and believes no header a laptop sends, so one student can't spend a classmate's spaces or get round the limits. If the relay sits behind the school's own proxy, name that proxy's own address, never the school's range: `VAULT_RELAY_TRUST_PROXY=10.0.0.2/32` (a range wider than /24 is ignored; see [sync in two clicks](/sync/two-clicks/)).
+
 ## How it works
 
 | What | Where it goes | Who can read it |
