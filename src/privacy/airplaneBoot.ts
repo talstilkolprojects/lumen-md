@@ -17,6 +17,12 @@
  * (src/ai/workerLedger.ts) from the startup bundle, so the answer never
  * depends on a lazy chunk loading. A worker that hears nothing blocks. Each
  * window answers only its own workers (AIRPLANE_TAB, review 2).
+ *
+ * Other tabs (review 4, RR4-451-2): the storage listener is here too, so a
+ * tab follows the switch even when the lazy chunk didn't load. It adds the
+ * <meta>, blanks the frames that can still make requests (`blankFrames`)
+ * and tells this window's workers "on". When airplane.ts is loaded, it does
+ * the full switch instead (`onSwitchedElsewhere`), with the certificate.
  */
 
 export const AIRPLANE_KEY = "lumen.airplane";
@@ -100,7 +106,69 @@ export function answerWorkers(make: () => Pick<BroadcastChannel, "postMessage" |
   }
 }
 
-if (typeof window !== "undefined" && typeof document !== "undefined" && typeof BroadcastChannel !== "undefined") answerWorkers();
+const workerChannel = typeof window !== "undefined" && typeof document !== "undefined" && typeof BroadcastChannel !== "undefined" ? answerWorkers() : null;
+
+/** A frame `blankFrames` stopped: its URL ("about:srcdoc" for an inline document) and title. */
+export interface BlankedFrame {
+  src: string;
+  title: string;
+}
+
+/**
+ * Stop every frame that can still make requests (review 4, RR4-451-1): any
+ * iframe with a page in it except one sandboxed without allow-scripts. A
+ * frame keeps the policy it was created with (a srcdoc copies the page's
+ * policy then, and a URL-loaded page has its own), so the <meta> added later
+ * doesn't reach it. Its document is replaced by about:blank, which ends its
+ * scripts, timers and workers.
+ */
+export function blankFrames(doc: Pick<Document, "querySelectorAll">): BlankedFrame[] {
+  const out: BlankedFrame[] = [];
+  try {
+    for (const f of doc.querySelectorAll("iframe")) {
+      const sandbox = f.getAttribute("sandbox");
+      const src = f.getAttribute("srcdoc") !== null ? "about:srcdoc" : (f.getAttribute("src") ?? "");
+      if ((sandbox !== null && !/(^|\s)allow-scripts(\s|$)/i.test(sandbox)) || !src || src === "about:blank") continue;
+      f.removeAttribute("srcdoc");
+      f.setAttribute("src", "about:blank");
+      out.push({ src, title: f.title });
+    }
+  } catch {
+    /* why: no frames to reach here */
+  }
+  return out;
+}
+
+const elsewhere: Array<() => void> = [];
+
+/** airplane.ts: run the full switch when another tab turns it on (instead of the minimal one here). */
+export function onSwitchedElsewhere(fn: () => void): void {
+  elsewhere.push(fn);
+}
+
+/** Another tab turned the switch on: on here too (turning it off there reloads only that tab). */
+export function followOtherTab(e: Pick<StorageEvent, "key" | "newValue">, doc: Document = document, full: ReadonlyArray<() => void> = elsewhere): void {
+  if (e.key !== AIRPLANE_KEY || e.newValue === null || on) return;
+  if (full.length) {
+    for (const fn of full) fn();
+    return;
+  }
+  addAirplaneCsp(doc);
+  blankFrames(doc);
+  try {
+    workerChannel?.postMessage({ kind: "state", on: true, tab: AIRPLANE_TAB });
+  } catch {
+    /* why: a closed channel: workers that ask again hear "on" */
+  }
+}
+
+if (typeof window !== "undefined" && typeof document !== "undefined") {
+  try {
+    window.addEventListener("storage", (e) => followOtherTab(e));
+  } catch {
+    /* why: no storage events here */
+  }
+}
 
 /** Tests only: the flag as if the page had just loaded with it. */
 export function __setAirplaneFlag(value: boolean): void {

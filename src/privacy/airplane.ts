@@ -33,14 +33,16 @@
  *
  * Frames: a URL-loaded frame (the playground and live-js runners) has its own
  * header policy, so the <meta> allows frames from blob: only and those
- * blocks don't run while the switch is on (review 12.11). A runner frame
- * already running when the switch goes on is torn down at that moment (its
- * page replaced by about:blank, which stops its scripts and the live-js
- * worker inside it) and recorded as "in-flight" (review 2).
+ * blocks don't run while the switch is on (review 12.11). Every frame
+ * already open that can make requests (runners, HTML previews with scripts,
+ * embeds: any iframe not sandboxed without scripts) is torn down when the
+ * switch goes on (its page replaced by about:blank, which stops its scripts
+ * and any worker inside it) and recorded as "in-flight" (reviews 2 and 4).
  *
  * Other tabs: the workers' channel is shared by every tab, so each window
  * answers only its own workers (AIRPLANE_TAB), and a tab that sees the
- * switch go on in another tab (the storage event) turns it on too.
+ * switch go on in another tab (the storage event, listened to in the startup
+ * bundle, airplaneBoot.ts) turns it on too.
  *
  * Not covered, said plainly: the app's own script chunks that the service
  * worker does not have cached load from the app's server like any page
@@ -48,7 +50,7 @@
  * from Resource Timing, so a non-zero transfer shows up.
  */
 
-import { __setAirplaneFlag, addAirplaneCsp, AIRPLANE_KEY, AIRPLANE_TAB, airplaneSinceStored } from "./airplaneBoot";
+import { __setAirplaneFlag, addAirplaneCsp, AIRPLANE_KEY, AIRPLANE_TAB, airplaneSinceStored, blankFrames, onSwitchedElsewhere } from "./airplaneBoot";
 import { AIRPLANE_CHANNEL, type AirplaneMessage } from "../ai/workerLedger";
 
 export type EgressKind = "fetch" | "xhr" | "websocket" | "eventsource" | "beacon" | "webrtc" | "worker" | "resource" | "csp" | "frame";
@@ -195,6 +197,7 @@ const inFlight = new Set<Flight>();
 let bodies: AbortController[] = [];
 const MAX_BODIES = 200;
 let channel: BroadcastChannel | null = null;
+let followingOtherTabs = false;
 
 /** Tell this window's workers the state (a reply to a hello says the hello's own tab, if any). */
 function broadcast(tab: string | null = AIRPLANE_TAB): void {
@@ -243,42 +246,27 @@ export function enableAirplaneMode(): void {
     }
   }
   openSockets.clear();
-  if (typeof document !== "undefined") stopRunnerFrames(document, at);
+  if (typeof document !== "undefined") stopFrames(document, at);
   broadcast();
   // A new snapshot, so subscribers (the monitor) re-render with the new state.
   attempts = [...attempts];
   for (const fn of [...listeners]) fn();
 }
 
-/** The pages the playground and live-js blocks run code in (public/*-runner.html). */
-const RUNNER_PAGE = /-runner\.html(?:[?#]|$)/;
-
 /**
- * Stop every runner frame that is already running: its document is replaced
- * by about:blank (always allowed, and it ends the frame's scripts, timers and
- * workers), and each is recorded as in-flight. The blocks cannot start a new
- * one while the switch is on (frame-src blob:).
+ * Stop every frame that can still make requests when the switch goes on
+ * (review 4, RR4-451-1): the runner frames, HTML previews with scripts,
+ * embeds, and any iframe not sandboxed without scripts (`blankFrames`).
+ * Each that had something in it is recorded as in-flight. The blocks cannot
+ * load a new page while the switch is on (frame-src blob:), and a frame made
+ * after the switch inherits the <meta>.
  */
-export function stopRunnerFrames(doc: Pick<Document, "querySelectorAll">, at: number = Date.now()): number {
-  let n = 0;
-  let frames: HTMLIFrameElement[] = [];
-  try {
-    frames = [...doc.querySelectorAll<HTMLIFrameElement>("iframe")];
-  } catch {
-    return 0;
+export function stopFrames(doc: Pick<Document, "querySelectorAll">, at: number = Date.now()): number {
+  const stopped = blankFrames(doc);
+  for (const f of stopped) {
+    record({ kind: "frame", target: f.src === "about:srcdoc" ? f.src : egressTarget(f.src), method: "FRAME", decision: "in-flight", origin: f.title || "frame", ts: at });
   }
-  for (const f of frames) {
-    const src = f.getAttribute?.("src") ?? f.src ?? "";
-    if (!RUNNER_PAGE.test(src)) continue;
-    record({ kind: "frame", target: egressTarget(src), method: "FRAME", decision: "in-flight", origin: f.title || "runner frame", ts: at });
-    try {
-      f.setAttribute("src", "about:blank");
-    } catch {
-      /* why: a detached frame: nothing runs in it */
-    }
-    n++;
-  }
-  return n;
+  return stopped.length;
 }
 
 /** Turn it off: the page reloads (a CSP cannot be lifted from a loaded page). */
@@ -442,13 +430,13 @@ export function installAirplaneMode(win: W = window as W): void {
     });
     broadcast();
   }
-  // Switched on in another tab of the app: on here too (turning it off there reloads only that tab).
-  try {
-    win.addEventListener?.("storage", (e: StorageEvent) => {
-      if (e.key === AIRPLANE_KEY && e.newValue !== null && !on) enableAirplaneMode();
+  // Switched on in another tab of the app: the startup bundle's storage listener (airplaneBoot)
+  // runs the full switch here, with the certificate, once this chunk is loaded (review 4).
+  if (!followingOtherTabs) {
+    followingOtherTabs = true;
+    onSwitchedElsewhere(() => {
+      if (!on) enableAirplaneMode();
     });
-  } catch {
-    /* why: no storage events here */
   }
   for (const fn of [...listeners]) fn();
 }

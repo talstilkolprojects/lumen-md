@@ -19,11 +19,11 @@ import {
   egressTarget,
   enableAirplaneMode,
   installAirplaneMode,
-  stopRunnerFrames,
+  stopFrames,
   subscribeEgress,
   verdict,
 } from "../privacy/airplane";
-import { AIRPLANE_CSP, AIRPLANE_KEY, AIRPLANE_TAB, airplaneWorkerName, answerWorkers, __setAirplaneFlag } from "../privacy/airplaneBoot";
+import { AIRPLANE_CSP, AIRPLANE_KEY, AIRPLANE_TAB, airplaneFlagOn, airplaneWorkerName, answerWorkers, followOtherTab, __setAirplaneFlag } from "../privacy/airplaneBoot";
 import { buildCertificate, reachedNetwork, sealCertificate, verifyCertificate } from "../privacy/airplaneCertificate";
 import { AIRPLANE_WAIT_MS, installWorkerLedger, type AirplaneMessage } from "../ai/workerLedger";
 
@@ -414,19 +414,57 @@ describe("review 2 fixes", () => {
     expect(posted).toEqual([{ kind: "state", on: true, tab: AIRPLANE_TAB }]);
   });
 
-  it("runner frames already running when the switch goes on are stopped and recorded", () => {
-    const frame = (src: string) => {
-      const f = { src, title: "", getAttribute: (k: string) => (k === "src" ? f.src : null), setAttribute: (k: string, v: string) => void (k === "src" && (f.src = v)) };
+  it("every frame that can make requests is stopped and recorded when the switch goes on (reviews 2 and 4)", () => {
+    const frame = (attrs: Record<string, string>, title = "") => {
+      const a = new Map(Object.entries(attrs));
+      const f = {
+        title,
+        contentDocument: null,
+        getAttribute: (k: string) => a.get(k) ?? null,
+        setAttribute: (k: string, v: string) => void a.set(k, v),
+        removeAttribute: (k: string) => void a.delete(k),
+        attr: (k: string) => a.get(k) ?? null,
+      };
       return f;
     };
-    const runner = frame("https://lumen-md.vercel.app/playground-runner.html");
-    const live = frame("/livejs-runner.html#x");
-    const other = frame("blob:https://lumen-md.vercel.app/1");
-    const doc = { querySelectorAll: () => [runner, live, other] } as unknown as Document;
-    expect(stopRunnerFrames(doc, 1000)).toBe(2);
-    expect([runner.src, live.src, other.src]).toEqual(["about:blank", "about:blank", "blob:https://lumen-md.vercel.app/1"]);
+    const runner = frame({ src: "https://lumen-md.vercel.app/playground-runner.html", sandbox: "allow-scripts" });
+    const live = frame({ src: "https://lumen-md.vercel.app/livejs-runner.html#x" });
+    const blob = frame({ src: "blob:https://lumen-md.vercel.app/1" });
+    const preview = frame({ srcdoc: "<script>setInterval(() => new Image().src = 'https://example.com/x', 200)</script>", sandbox: "allow-scripts" }, "HTML preview");
+    const embed = frame({ src: "https://example.com/embed", sandbox: "allow-scripts allow-same-origin allow-popups" });
+    const inert = frame({ srcdoc: "<p>no scripts</p>", sandbox: "" });
+    const empty = frame({});
+    const doc = { querySelectorAll: () => [runner, live, blob, preview, embed, inert, empty] } as unknown as Document;
+    expect(stopFrames(doc, 1000)).toBe(5);
+    expect([runner, live, blob, preview, embed].map((f) => f.attr("src"))).toEqual(Array(5).fill("about:blank"));
+    expect(preview.attr("srcdoc")).toBeNull();
+    // Sandboxed without scripts: it can't start a request, so it is left as it is.
+    expect(inert.attr("srcdoc")).toBe("<p>no scripts</p>");
+    expect(inert.attr("src")).toBeNull();
     const frames = egressAttempts().filter((a) => a.kind === "frame");
-    expect(frames.map((a) => a.decision)).toEqual(["in-flight", "in-flight"]);
-    expect(frames.every((a) => reachedNetwork(a))).toBe(true);
+    expect(frames.map((a) => a.target)).toEqual([
+      "https://lumen-md.vercel.app/playground-runner.html",
+      "https://lumen-md.vercel.app/livejs-runner.html",
+      "blob:…",
+      "about:srcdoc",
+      "https://example.com/embed",
+    ]);
+    expect(frames.map((a) => a.origin)).toContain("HTML preview");
+    expect(frames.every((a) => a.decision === "in-flight" && reachedNetwork(a))).toBe(true);
+  });
+
+  it("the startup half follows another tab's switch even without this chunk (review 4)", () => {
+    const head = { children: [] as unknown[], appendChild: (m: unknown) => head.children.push(m) };
+    const live = { title: "", contentDocument: null, a: new Map([["src", "/livejs-runner.html"]]), getAttribute(k: string) { return this.a.get(k) ?? null; }, setAttribute(k: string, v: string) { this.a.set(k, v); }, removeAttribute(k: string) { this.a.delete(k); } };
+    const doc = { head, getElementById: () => null, createElement: () => ({}), querySelectorAll: () => [live] } as unknown as Document;
+    __setAirplaneFlag(false);
+    followOtherTab({ key: "something.else", newValue: "x" }, doc, []);
+    followOtherTab({ key: AIRPLANE_KEY, newValue: null }, doc, []);
+    expect(airplaneFlagOn()).toBe(false);
+    followOtherTab({ key: AIRPLANE_KEY, newValue: JSON.stringify({ since: 1 }) }, doc, []);
+    expect(airplaneFlagOn()).toBe(true);
+    expect(head.children).toHaveLength(1);
+    expect(live.a.get("src")).toBe("about:blank");
+    __setAirplaneFlag(false);
   });
 });
