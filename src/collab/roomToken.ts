@@ -1,7 +1,8 @@
 /**
  * Ask the persistent collab server for a short-lived token for one room
  * (plan 3.6.2). The server signs it; the app holds no signing key, only the
- * optional operator access key the user typed into Collab settings.
+ * optional operator access key the user typed into Collab settings, and,
+ * for the public server, the room proof derived from the room's password.
  *
  * Over a WebSocket to `<server>/token`, not fetch: the CSP's connect-src
  * allows ws:/wss: to any host but not https:.
@@ -19,17 +20,59 @@ export function roomTokenUrl(serverUrl: string): string {
 }
 
 export class RoomTokenError extends Error {
-  constructor(readonly reason: string) {
+  /** With reason "pow": the bits of work the server asks for. */
+  constructor(
+    readonly reason: string,
+    readonly bits?: number,
+  ) {
     super(`Collab server refused a room token: ${reason}`);
     this.name = "RoomTokenError";
   }
 }
 
-export function requestRoomToken(
+export interface RoomTokenOptions {
+  /**
+   * The room's password (from the share link). The public server gives a
+   * token only with the room proof derived from it (`roomProof.ts`, review 2).
+   */
+  password?: string | null;
+  timeoutMs?: number;
+}
+
+/**
+ * Ask for a token. With the room password, the request carries the room
+ * proof; when the server asks for a proof of work ({error:"pow", bits}), it
+ * is solved once and the request is sent again.
+ */
+export async function requestRoomToken(
   serverUrl: string,
   room: string,
   accessKey: string | null,
-  timeoutMs = ROOM_TOKEN_TIMEOUT_MS,
+  options: RoomTokenOptions | number = {},
+): Promise<{ token: string; expiresAt: number }> {
+  const opts = typeof options === "number" ? { timeoutMs: options } : options;
+  const timeoutMs = opts.timeoutMs ?? ROOM_TOKEN_TIMEOUT_MS;
+  const extra: Record<string, string> = {};
+  if (opts.password) {
+    const { roomProof } = await import("./roomProof");
+    extra.proof = await roomProof(opts.password, room);
+  }
+  try {
+    return await askOnce(serverUrl, room, accessKey, extra, timeoutMs);
+  } catch (e) {
+    if (!(e instanceof RoomTokenError) || e.reason !== "pow" || !extra.proof || typeof e.bits !== "number") throw e;
+    const { proofVerifier, solveRoomPow } = await import("./roomProof");
+    extra.pow = await solveRoomPow(room, await proofVerifier(extra.proof), e.bits);
+    return askOnce(serverUrl, room, accessKey, extra, timeoutMs);
+  }
+}
+
+function askOnce(
+  serverUrl: string,
+  room: string,
+  accessKey: string | null,
+  extra: Record<string, string>,
+  timeoutMs: number,
 ): Promise<{ token: string; expiresAt: number }> {
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -46,7 +89,7 @@ export function requestRoomToken(
       fn();
     };
     const timer = setTimeout(() => finish(() => reject(new RoomTokenError("timeout"))), timeoutMs);
-    ws.onopen = () => ws.send(JSON.stringify({ room, ...(accessKey ? { key: accessKey } : {}) }));
+    ws.onopen = () => ws.send(JSON.stringify({ room, ...(accessKey ? { key: accessKey } : {}), ...extra }));
     ws.onmessage = (ev: MessageEvent) => {
       let msg: unknown;
       try {
@@ -54,12 +97,12 @@ export function requestRoomToken(
       } catch {
         return finish(() => reject(new RoomTokenError("bad-response")));
       }
-      const m = msg as { token?: unknown; expiresAt?: unknown; error?: unknown };
+      const m = msg as { token?: unknown; expiresAt?: unknown; error?: unknown; bits?: unknown };
       if (typeof m.token === "string" && typeof m.expiresAt === "number") {
         const ok = { token: m.token, expiresAt: m.expiresAt };
         return finish(() => resolve(ok));
       }
-      finish(() => reject(new RoomTokenError(typeof m.error === "string" ? m.error : "bad-response")));
+      finish(() => reject(new RoomTokenError(typeof m.error === "string" ? m.error : "bad-response", typeof m.bits === "number" ? m.bits : undefined)));
     };
     ws.onerror = () => finish(() => reject(new RoomTokenError("unreachable")));
     ws.onclose = () => finish(() => reject(new RoomTokenError("closed")));

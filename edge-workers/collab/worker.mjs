@@ -22,6 +22,16 @@
  *     token, or one that only read, writes nothing and doesn't refresh the
  *     retention clock. (The relay applies no update before the token is
  *     checked, so a change always comes from an authenticated peer.)
+ *   - A token is not free (review 2, 12.11). Without COLLAB_ACCESS_KEY (the
+ *     public server), /token answers only a request that carries the room
+ *     proof, which the app derives from the room's password in the share
+ *     link (sync-server/collab/roomToken.mjs). The token names the proof's
+ *     hash, and the room binds the first one it stores: a token for any
+ *     other proof is refused there. So knowing a room's name is not enough
+ *     to join it, write to it or keep it alive. A new proof also costs a
+ *     proof of work of COLLAB_POW_BITS (wrangler.toml sets 18), bound to the
+ *     room and the proof, which the app solves once per room and session.
+ *     With COLLAB_ACCESS_KEY (a private server), the key is enough.
  *   - No IP addresses in logs: this code logs nothing about connections,
  *     and Workers Logs are off in wrangler.toml. Cloudflare's own edge
  *     sees addresses, as any host does.
@@ -31,7 +41,17 @@
  * Deploy: `npm run collab:deploy` (docs: collab/public-server).
  */
 import { createRelayRoom } from "../../sync-server/collab/relay.mjs";
-import { accessKeyOk, issueRoomToken, signingKey, verifyRoomToken, DEFAULT_TOKEN_TTL_S } from "../../sync-server/collab/roomToken.mjs";
+import {
+  accessKeyOk,
+  issueRoomToken,
+  proofVerifier,
+  roomPowOk,
+  signingKey,
+  tokenVerifier,
+  verifyRoomToken,
+  DEFAULT_TOKEN_TTL_S,
+  MAX_ROOM_POW_BITS,
+} from "../../sync-server/collab/roomToken.mjs";
 
 const ROOM_NAME = /^[\w-]{1,128}$/;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -70,9 +90,16 @@ function tokenSocket(env) {
       /* answered below */
     }
     let answer;
+    const keyed = Boolean(env.COLLAB_ACCESS_KEY);
+    const verifier = req ? proofVerifier(req.proof) : null;
+    const bits = Math.min(MAX_ROOM_POW_BITS, Math.max(0, Math.floor(num(env.COLLAB_POW_BITS, 0))));
+    const ttlS = num(env.COLLAB_TOKEN_TTL_S, DEFAULT_TOKEN_TTL_S);
     if (!req || typeof req.room !== "string" || !ROOM_NAME.test(req.room)) answer = { error: "bad-room" };
-    else if (!accessKeyOk(req.key, env.COLLAB_ACCESS_KEY || "")) answer = { error: "unauthorized" };
-    else answer = issueRoomToken(tokenKey(env), req.room, { ttlS: num(env.COLLAB_TOKEN_TTL_S, DEFAULT_TOKEN_TTL_S) });
+    else if (keyed && !accessKeyOk(req.key, env.COLLAB_ACCESS_KEY)) answer = { error: "unauthorized" };
+    // The public server: no token without the room proof, and a proof of work for it.
+    else if (!keyed && !verifier) answer = { error: "proof" };
+    else if (!keyed && bits > 0 && !roomPowOk(req.room, verifier, req.pow, bits)) answer = { error: "pow", bits };
+    else answer = issueRoomToken(tokenKey(env), req.room, { ttlS, ...(verifier ? { verifier } : {}) });
     server.send(JSON.stringify(answer));
     server.close(1000, "done");
   });
@@ -103,12 +130,15 @@ export class CollabRoom {
     this.saveTimer = null;
     /** An authenticated peer changed the room since the last save. */
     this.dirty = false;
+    /** The hash of the room proof this room is bound to (stored with the room), or null before the first. */
+    this.verifier = null;
   }
 
   async loadRoom(name) {
     if (this.room) return this.room;
-    const stored = await this.state.storage.get(["name", "chunks"]);
+    const stored = await this.state.storage.get(["name", "chunks", "verifier"]);
     const chunks = stored.get("chunks") ?? 0;
+    this.verifier = typeof stored.get("verifier") === "string" ? stored.get("verifier") : null;
     let state = null;
     if (chunks > 0) {
       const parts = await this.state.storage.get(Array.from({ length: chunks }, (_, i) => `s${i}`));
@@ -129,7 +159,15 @@ export class CollabRoom {
       state,
       e2eeOnly: true,
       maxBytes: num(this.env.MAX_ROOM_BYTES, 4_000_000),
-      authorize: async (token, room) => verifyRoomToken(key, token, room) === null,
+      authorize: async (token, room) => {
+        if (verifyRoomToken(key, token, room) !== null) return false;
+        const v = tokenVerifier(token);
+        // A token with no verifier comes only from a server with an access key.
+        if (v === null) return Boolean(this.env.COLLAB_ACCESS_KEY);
+        // The first proof binds the room (kept with its first save); any other is refused.
+        this.verifier ??= v;
+        return v === this.verifier;
+      },
       onAuthenticated: (socket, address) => socket.ws.serializeAttachment({ ready: true, address, room: name }),
       onChange: () => {
         this.dirty = true;
@@ -179,7 +217,7 @@ export class CollabRoom {
     this.dirty = false;
     const state = this.room.state();
     const chunks = Math.max(1, Math.ceil(state.byteLength / CHUNK));
-    const entries = { name, chunks, lastWrite: Date.now() };
+    const entries = { name, chunks, lastWrite: Date.now(), ...(this.verifier ? { verifier: this.verifier } : {}) };
     for (let i = 0; i < chunks; i++) entries[`s${i}`] = state.slice(i * CHUNK, (i + 1) * CHUNK);
     try {
       const old = (await this.state.storage.get("chunks")) ?? 0;

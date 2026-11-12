@@ -11,7 +11,7 @@
  * roles) — and, when it was bought with a share link, that link's id, so
  * the server can drop the connection the moment the link is revoked.
  */
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 export const DEFAULT_TOKEN_TTL_S = 10 * 60;
 
@@ -32,12 +32,14 @@ export const ROLES = ["view", "comment", "edit"];
 /**
  * Issue a token for `room`, valid for `ttlS` seconds from `nowMs` (never
  * past `notAfterMs`, a share link's expiry), for `role`, bought with `share`.
+ * With `verifier` (review 2, 12.11) the token also names the room secret it
+ * was issued for: the hash of the client's room proof (`proofVerifier`).
  */
-export function issueRoomToken(key, room, { ttlS = DEFAULT_TOKEN_TTL_S, nowMs = Date.now(), role = "edit", share = null, notAfterMs = null } = {}) {
+export function issueRoomToken(key, room, { ttlS = DEFAULT_TOKEN_TTL_S, nowMs = Date.now(), role = "edit", share = null, notAfterMs = null, verifier } = {}) {
   if (!ROLES.includes(role)) throw new Error(`unknown role ${role}`);
   let exp = Math.floor(nowMs / 1000) + ttlS;
   if (notAfterMs !== null) exp = Math.min(exp, Math.floor(notAfterMs / 1000));
-  const claims = { r: room, e: exp, ...(role !== "edit" ? { o: role } : {}), ...(share ? { s: share } : {}) };
+  const claims = { r: room, e: exp, ...(role !== "edit" ? { o: role } : {}), ...(share ? { s: share } : {}), ...(verifier ? { v: verifier } : {}) };
   const payload = b64url(JSON.stringify(claims));
   return { token: `${payload}.${b64url(mac(key, payload))}`, expiresAt: exp * 1000, role };
 }
@@ -91,4 +93,50 @@ export function accessKeyOk(given, expected) {
   const a = Buffer.from(String(given ?? ""));
   const b = Buffer.from(expected);
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/**
+ * The room proof (review 2, 12.11): the app derives it from the room's
+ * password in the share link, HMAC-SHA256(PBKDF2-SHA256(password,
+ * "lumen.collab.proof.v1|<room>", 200,000), "lumen-collab room v1|<room>"),
+ * as 43 base64url characters (src/collab/roomProof.ts). The server keeps
+ * only its SHA-256, the verifier, so it learns nothing it could open the
+ * room with, and guessing a password from it costs the same PBKDF2 as
+ * guessing it from the room's ciphertext.
+ */
+export const ROOM_PROOF = /^[A-Za-z0-9_-]{43}$/;
+
+/** The verifier of a room proof (hex SHA-256), or null for a malformed one. */
+export function proofVerifier(proof) {
+  if (typeof proof !== "string" || !ROOM_PROOF.test(proof)) return null;
+  return createHash("sha256").update(proof).digest("hex");
+}
+
+/** The verifier a (signature-checked) token was issued for, or null when it names none. */
+export function tokenVerifier(token) {
+  try {
+    const claims = JSON.parse(Buffer.from(String(token).split(".")[0], "base64url").toString("utf8"));
+    return typeof claims?.v === "string" ? claims.v : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The most proof-of-work bits the app solves (src/collab/roomProof.ts MAX_ROOM_POW_BITS). */
+export const MAX_ROOM_POW_BITS = 24;
+
+/** Does `nonce` prove `bits` of work for `room` under `verifier`? SHA-256("lumen-collab pow v1|<room>|<verifier>|<nonce>"). */
+export function roomPowOk(room, verifier, nonce, bits) {
+  if (typeof nonce !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(nonce)) return false;
+  const d = createHash("sha256").update(`lumen-collab pow v1|${room}|${verifier}|${nonce}`).digest();
+  let n = 0;
+  for (const b of d) {
+    if (b === 0) {
+      n += 8;
+      continue;
+    }
+    n += Math.clz32(b) - 24;
+    break;
+  }
+  return n >= bits;
 }

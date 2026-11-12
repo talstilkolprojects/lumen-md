@@ -17,6 +17,10 @@ RETENTION_DAYS = "90"
 # A room's encrypted document may grow to this size.
 MAX_ROOM_BYTES = "4000000"
 COLLAB_TOKEN_TTL_S = "600"
+# Review 2 (12.11): without COLLAB_ACCESS_KEY a token needs the room proof
+# (from the room's password) and a proof of work of this many bits for it,
+# which the app solves once per room and session (at most 24).
+COLLAB_POW_BITS = "18"
 
 [[durable_objects.bindings]]
 name = "ROOMS"

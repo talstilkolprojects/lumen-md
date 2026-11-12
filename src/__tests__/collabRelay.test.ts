@@ -386,7 +386,7 @@ describe("edge-workers/collab: the public server on Cloudflare (simulated runtim
   it("two people edit, the object hibernates, the room is stored as ciphertext and deleted after 90 days", async () => {
     const { url, rooms } = await serveWorker();
     const room = `room-${Date.now().toString(36)}`;
-    const token = async () => (await requestRoomToken(url, room, null)).token;
+    const token = async () => (await requestRoomToken(url, room, null, { password: "pw" })).token;
     const a = connect(url, room, "pw", token);
     const b = connect(url, room, "pw", token);
     expect(await until(() => a.synced() && b.synced())).toBe(true);
@@ -428,7 +428,7 @@ describe("edge-workers/collab: the public server on Cloudflare (simulated runtim
     expect(o.alarm).toBeNull();
 
     // A real change is stored; then a reader comes and goes: the retention clock doesn't move.
-    const token = async () => (await requestRoomToken(url, room, null)).token;
+    const token = async () => (await requestRoomToken(url, room, null, { password: "pw" })).token;
     const a = connect(url, room, "pw", token);
     expect(await until(() => a.synced())).toBe(true);
     a.plain.getText("t").insert(0, "kept");
@@ -447,7 +447,8 @@ describe("edge-workers/collab: the public server on Cloudflare (simulated runtim
   it("refuses a plaintext room and stores nothing of it; answers /healthz; relays signaling", async () => {
     const { url, rooms, fetchWorker, env } = await serveWorker();
     const room = `plain-${Date.now().toString(36)}`;
-    const p = connect(url, room, null, async () => (await requestRoomToken(url, room, null)).token);
+    // A client that holds the room proof, and sends plaintext anyway.
+    const p = connect(url, room, null, async () => (await requestRoomToken(url, room, null, { password: "pw" })).token);
     expect(await until(() => p.synced())).toBe(true);
     p.plain.getText("t").insert(0, "visible words");
     const o = rooms.objs.get(room)!;

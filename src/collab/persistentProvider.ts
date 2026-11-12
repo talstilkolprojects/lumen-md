@@ -11,6 +11,7 @@
  */
 import type * as Y from "yjs";
 import { isRole, tokenPayload, tokenRequest, type Role } from "./sharing";
+import { RoomTokenError } from "./roomToken";
 
 type SyncListener = (isSynced: boolean) => void;
 
@@ -41,6 +42,8 @@ export interface PersistentOptions {
   onRole?: (role: Role) => void;
   /** The session is end-to-end encrypted: ask the server to seal the room (plan W2.20). */
   e2ee?: boolean;
+  /** The room's password (review 2, #469): the public server's token needs the room proof derived from it. */
+  password?: string | null;
 }
 
 /**
@@ -76,7 +79,20 @@ export async function createPersistentProvider(
     // Called on every connect, so a reconnect after expiry gets a new token
     // (and a revoked share link gets none).
     token: async () => {
-      const r = await tokenRequest<{ token: string; expiresAt: number; role?: unknown }>(url, tokenPayload(roomName, { share: opts.share ?? null, accessKey, e2ee: opts.e2ee === true }));
+      const payload = tokenPayload(roomName, { share: opts.share ?? null, accessKey, e2ee: opts.e2ee === true });
+      // Review 2 (#469): the public server gives a token only with the room proof derived from the
+      // room password, and may ask for a proof of work bound to the room and the proof.
+      if (opts.password) payload.proof = await (await import("./roomProof")).roomProof(opts.password, roomName);
+      type Answer = { token: string; expiresAt: number; role?: unknown };
+      let r: Answer;
+      try {
+        r = await tokenRequest<Answer>(url, payload);
+      } catch (e) {
+        if (!(e instanceof RoomTokenError) || e.reason !== "pow" || typeof payload.proof !== "string" || typeof e.bits !== "number") throw e;
+        const { proofVerifier, solveRoomPow } = await import("./roomProof");
+        payload.pow = await solveRoomPow(roomName, await proofVerifier(payload.proof), e.bits);
+        r = await tokenRequest<Answer>(url, payload);
+      }
       opts.onRole?.(isRole(r.role) ? r.role : "edit");
       return r.token;
     },
