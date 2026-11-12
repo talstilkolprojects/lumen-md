@@ -160,6 +160,13 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "relatedPanel.json": { module: "ui/relatedPanelStrings.ts", users: ["ui/RelatedPanel.tsx"], prefixes: ["related."] },
   "tasksBlock.json": { module: "plugins/tasksBlockStrings.ts", users: ["plugins/TasksBlock.tsx"], prefixes: ["tasks.count", "tasks.error.date", "tasks.error.query", "tasks.error.regex", "tasks.group.done", "tasks.group.none", "tasks.group.todo"] },
   "tts.json": { module: "ai/ttsStrings.ts", users: ["ai/tts.ts"], prefixes: ["tts.", "toast.tts."] },
+  // Journalist mode (plan W5.11): the note-password flow, the redact command, the settings switch,
+  // and the photo-metadata refusals of the editor and Publish site, all behind a dynamic import.
+  "journalist.json": {
+    module: "lib/journalistStrings.ts",
+    users: ["ui/SettingsScreen.tsx", "ui/notePassword.ts"],
+    prefixes: ["notePw.", "redact.", "settings.keepImageMetadata", "photoMeta.", "publish.withheld"],
+  },
 };
 
 function sources(dir: string): string[] {

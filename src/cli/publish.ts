@@ -32,6 +32,11 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "nod
 import { renderHtmlDocument, escapeHtml } from "../storage/exportHtml";
 import { MD_RE, PUBLISH_CSS, encodePath, pageTitle, rewriteMarkdownLinks, rewriteWikiLinks } from "../publish/siteLinks";
 import { resolveWikiTarget, splitWikiTarget } from "../renderer/wikiLinks";
+import { prepareForExport } from "../lib/redaction";
+import { cleanImageBytes } from "../lib/imageMetadata";
+
+/** Photos whose published copy loses its metadata (plan W5.11). */
+const PHOTO_TYPE: Record<string, string> = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp" };
 
 export { PUBLISH_CSS, encodePath, pageTitle, rewriteMarkdownLinks, rewriteWikiLinks } from "../publish/siteLinks";
 
@@ -45,14 +50,15 @@ export interface PublishPage {
 
 export interface PublishResult {
   pages: PublishPage[];
-  /** Non-Markdown files copied verbatim (relative POSIX paths). */
+  /** Non-Markdown files copied (relative POSIX paths); photos without their metadata. */
   assets: string[];
   /** Absolute path of the written index.html. */
   index: string;
   /**
    * Source files that were NOT written because their output path collides
    * with a generated file (a page, the index or style.css). Generated
-   * targets always win so every Markdown page and the index survive.
+   * targets always win so every Markdown page and the index survive. A
+   * photo whose metadata can't be removed is skipped too.
    */
   skipped: { source: string; output: string; reason: string }[];
 }
@@ -315,7 +321,7 @@ const WIKI_RE = /\[\[([^\]\n]+)\]\]/g;
 export async function publishSite(
   input: string,
   outDir: string,
-  opts: { siteTitle?: string } = {},
+  opts: { siteTitle?: string; keepImageMetadata?: boolean } = {},
 ): Promise<PublishResult> {
   // Compare and write through canonical paths: a symlinked input or --out
   // must not let the containment check below be bypassed.
@@ -391,7 +397,8 @@ export async function publishSite(
       continue;
     }
     reserve(output, `the page generated from ${rel}`);
-    const md = readFileSync(f, "utf8");
+    // W5.11: the published text is the export text: no <redact> passage, no hidden comment.
+    const { text: md } = await prepareForExport(readFileSync(f, "utf8"), { keepImageMetadata: opts.keepImageMetadata ?? false });
     pages.push({ source: rel, output, title: pageTitle(md, rel), md });
   }
   if (!reserved.has(key("index.html"))) reserve("index.html", "the generated page index");
@@ -445,8 +452,20 @@ export async function publishSite(
       skipped.push({ source: rel, output: rel, reason: `collides with ${taken}` });
       continue;
     }
-    reserve(rel, `the asset ${rel}`);
-    copyFileSync(a, prepareOutputPath(outAbs, rel));
+    const photo = opts.keepImageMetadata ? undefined : PHOTO_TYPE[(rel.split(".").pop() ?? "").toLowerCase()];
+    if (photo) {
+      // A photo goes out without its location, time and camera details; one that can't be cleaned stays out.
+      const r = await cleanImageBytes(new Uint8Array(readFileSync(a)), photo);
+      if (!r || r.type !== photo) {
+        skipped.push({ source: rel, output: rel, reason: "its photo metadata could not be removed" });
+        continue;
+      }
+      reserve(rel, `the asset ${rel}`);
+      writeFileSync(prepareOutputPath(outAbs, rel), r.bytes);
+    } else {
+      reserve(rel, `the asset ${rel}`);
+      copyFileSync(a, prepareOutputPath(outAbs, rel));
+    }
     assetRels.push(rel);
   }
 

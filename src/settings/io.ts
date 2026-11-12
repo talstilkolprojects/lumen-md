@@ -82,6 +82,8 @@ export function loosens(key: string, value: string, current: string | null): boo
       return value === "off" && current !== "off";
     case "lumen.ai.redact.preview": // on only when "1"
       return value !== "1" && current === "1";
+    case "lumen.images.keepMetadata": // W5.11: photos lose their metadata unless "1"
+      return value === "1" && current !== "1";
     case "lumen.vaultLock.minutes":
       return lockLooseness(value) > lockLooseness(current);
     default:

@@ -30,6 +30,7 @@ import { firstStrongDirection, markdownBaseDirection, type BaseDirection } from 
 import { inlineMathSpans } from "../lib/mathIsolate";
 import { zip } from "./zip";
 import { BIBLIOGRAPHY_HEADING, COVER_LABELS, cmToTwips, lineTwips, splitCover, type AcademicTemplate, type CoverFields, type PageNumberFormat } from "./academicTemplates";
+import { exportReadyText } from "./exportReady";
 
 const DOCX_MIME =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -916,6 +917,9 @@ export async function markdownToDocxBlob(content: string, opts: DocxOptions = {}
 /** Export markdown content as a downloadable .docx file. */
 export async function exportToDocx(content: string, fileName: string, opts: DocxOptions = {}): Promise<void> {
   const baseName = fileName.replace(/\.[^.]+$/, "");
+  // W5.11: marked passages and hidden comments never reach the document's XML
+  // (first, so a redacted [@key] adds nothing to the reference list either).
+  content = await exportReadyText(content);
   // Plan W2.16: [@key] citations formatted and the reference list added, as in the preview.
   const { mayHaveCitations, expandWithLibrary } = await import("../citations/expand");
   if (mayHaveCitations(content)) content = (await expandWithLibrary(content).catch(() => ({ markdown: content }))).markdown;

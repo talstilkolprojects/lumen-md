@@ -1838,6 +1838,15 @@
   text-decoration-color: hsl(0 75% 55%);
   background: hsl(0 75% 55% / 0.1);
 }
+/* W5.11: what the author marked <redact> — visible to the author, removed from every export. */
+.prose-lumen redact {
+  background: hsl(var(--fg) / 0.14);
+  outline: 1px dashed hsl(var(--fg) / 0.5);
+  border-radius: 2px;
+}
+@media print {
+  .prose-lumen redact { display: none; }
+}
 .prose-lumen mark.critic-highlight,
 .prose-lumen mark.critic-comment {
   background: hsl(45 95% 55% / 0.3);

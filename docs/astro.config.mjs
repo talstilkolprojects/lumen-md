@@ -239,6 +239,8 @@ export default defineConfig({
             { label: "Secret scan of the build", slug: "security/secret-scan", translations: { he: "סריקת סודות בבנייה" } },
             { label: "Usage on this device", slug: "security/usage-metrics", translations: { he: "שימוש במכשיר הזה" } },
             { label: "Data-safety drill", slug: "security/data-safety-drill", translations: { he: "תרגיל בטיחות נתונים" } },
+            { label: "Photo metadata", slug: "security/photo-metadata", translations: { he: "מטא-נתונים של תמונות" } },
+            { label: "Journalist mode: redaction and locked notes", slug: "security/journalist-mode", translations: { he: "מצב עיתונאי: השחרה ופתקים נעולים" } },
           ],
         },
         {

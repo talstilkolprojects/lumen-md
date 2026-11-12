@@ -746,6 +746,16 @@
       "vars": []
     },
     {
+      "key": "cmd.edit.redact",
+      "en": "Redact selection",
+      "vars": []
+    },
+    {
+      "key": "cmd.edit.redact.hint",
+      "en": "removed from every export",
+      "vars": []
+    },
+    {
       "key": "cmd.epub.open",
       "en": "Open an EPUB for reading…",
       "vars": []
@@ -841,6 +851,16 @@
       "vars": []
     },
     {
+      "key": "cmd.file.exportMarkdown",
+      "en": "Export Markdown",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportMarkdown.hint",
+      "en": "without the redacted passages",
+      "vars": []
+    },
+    {
       "key": "cmd.file.exportOpml",
       "en": "Export to OPML",
       "vars": []
@@ -923,6 +943,16 @@
     {
       "key": "cmd.file.new",
       "en": "New document",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.notePassword",
+      "en": "Note password…",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.notePassword.hint",
+      "en": "lock this note with its own password",
       "vars": []
     },
     {
