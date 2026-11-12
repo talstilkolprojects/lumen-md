@@ -19,11 +19,19 @@
  * indented code and math inside them, tables, HTML blocks), rendered the way
  * the preview renders them, Markdown first (micromark, CommonMark + GFM
  * tables + math, raw HTML kept) and that HTML through DOMParser.
+ *
+ * Review 8 (RR8-473-1, RR8-473-2) added what the preview does before and
+ * after that: it parses `prepareCriticMarkup(note)`, whose delimiters are one
+ * character each, and it appends the footnotes after the last block.
  */
 import { micromark } from "micromark";
+import { directive, directiveHtml, type Handle } from "micromark-extension-directive";
+import { gfmFootnote, gfmFootnoteHtml } from "micromark-extension-gfm-footnote";
 import { gfmTable, gfmTableHtml } from "micromark-extension-gfm-table";
 import { math, mathHtml } from "micromark-extension-math";
 import { describe, expect, it } from "vitest";
+import { removeRedacted } from "../lib/redaction";
+import { prepareCriticMarkup, prepareCriticMarkupMapped } from "../renderer/criticMarkup";
 import { exportReadyText } from "../storage/exportReady";
 
 /** A small seeded PRNG (mulberry32), so a failure names a case that comes back. */
@@ -271,4 +279,108 @@ describe("what the preview shades, the export removes (F-8, preview ⊆ export)"
     expect(await exportReadyText("<redact>\n\n- Source A: Dana Levi\n- Source B: Yossi Cohen\n\n</redact>\n\nPublished text.")).toBe("█████\n\nPublished text.");
     expect(await exportReadyText("> <redact>Dana Levi</redact> said\n\nPublished text.")).toBe("> █████ said\n\nPublished text.");
   });
+});
+
+/** The preview as pipeline.ts builds it: CriticMarkup swapped first, then GFM tables and footnotes, math and directives (an unknown one is a div). */
+function previewHtml8(md: string): string {
+  const asDiv: Handle = function (d) {
+    this.tag("<div>");
+    if (d.label) this.raw(d.label);
+    if (d.content) this.raw(d.content);
+    this.tag("</div>");
+    return undefined;
+  };
+  return micromark(prepareCriticMarkup(md), {
+    allowDangerousHtml: true,
+    extensions: [gfmTable(), gfmFootnote(), math(), directive()],
+    htmlExtensions: [gfmTableHtml(), gfmFootnoteHtml(), mathHtml(), directiveHtml({ "*": asDiv })],
+  });
+}
+
+function shaded8(md: string): string[] {
+  const doc = new DOMParser().parseFromString(`<!doctype html><body>${previewHtml8(md)}`, "text/html");
+  const out = new Set<string>();
+  for (const el of doc.querySelectorAll("redact")) for (const m of (el.textContent ?? "").matchAll(/Z\d+Z/g)) out.add(m[0]);
+  return [...out];
+}
+
+describe("review 8: the text the preview parses, and where it puts footnotes", () => {
+  it("prepareCriticMarkupMapped gives the preview's text and each character's place in the note", () => {
+    for (const md of ["plain", "a {>>c<<} b {~~x~>y~~} {++i++}{--d--} {==h==}", "{++x++}{>>@dana<<} z", "user \uE003 glyph {>>c<<}", "`{>>code<<}` {>>c<<}"]) {
+      const { text, at } = prepareCriticMarkupMapped(md);
+      expect(text).toBe(prepareCriticMarkup(md));
+      expect(at.length).toBe(text.length + 1);
+      expect(at[text.length]).toBe(md.length);
+      // Generated: the sentinels, the escape and the author tag's own characters (`@dana` is rebuilt).
+      const made = new Set<number>();
+      for (const m of text.matchAll(/\uE007@[^\uE008]*\uE008/g)) for (let i = 0; i < m[0].length; i++) made.add((m.index ?? 0) + i);
+      for (let i = 0; i < text.length; i++) {
+        expect(at[i + 1] >= at[i]).toBe(true);
+        const c = text.charCodeAt(i);
+        if ((c < 0xe000 || c > 0xe00b) && !made.has(i) && !(i > 0 && text.charCodeAt(i - 1) === 0xe00b)) expect(md[at[i]]).toBe(text[i]);
+      }
+    }
+  });
+  (haveDom ? it : it.skip)("a suggestion's `>` inside a tag ends nothing the preview keeps open (RR8-473-1)", async () => {
+    for (const md of [
+      "Interview notes.\n\n<redact>\nZ1Z Source: Dana Levi <span title={>>check<<} </redact> Z2Z Yossi Cohen, 054-0000000\n\nZ3Z Met at the cafe on Herzl street.\n",
+      "<redact>\nZ1Z Dana Levi <b data-x={~~a~>b~~} </redact> Z2Z Yossi Cohen\n\nZ3Z next paragraph\n",
+      "Z0Z public <redact>Z1Z secret</redact> public again.\n\n<div>\n<redact>Z4Z <i title={>>x<<} </redact> Z5Z still secret?\n</div>\n\nZ6Z after\n",
+    ]) {
+      const shaded = shaded8(md);
+      expect(shaded.length, JSON.stringify(md)).toBeGreaterThan(1);
+      const out = await exportReadyText(md);
+      expect(shaded.filter((t) => out.includes(t)), JSON.stringify(md)).toEqual([]);
+    }
+    // Without the suggestion the close closes, and the text after it stays.
+    expect(await exportReadyText("<redact>\nDana Levi <span title=check> </redact> kept\n\nkept too\n")).toContain("kept too");
+  });
+  (haveDom ? it : it.skip)("a passage still open at the end takes every footnote with it, as the preview shades them (RR8-473-2)", async () => {
+    const f1 = "Dana told me[^1] that the deal closed on Sunday.\n\n[^1]: Z1Z Dana Levi, deputy CFO, 054-0000000\n\n## Private notes\n<redact>\nZ2Z Everything below stays private.\n";
+    const f2 = "Text[^1].\n\n[^1]: Z1Z source name </redact> Z2Z more\n\n<redact>\n\nZ3Z private\n";
+    for (const md of [f1, f2]) {
+      const shaded = shaded8(md);
+      expect(shaded, JSON.stringify(md)).toContain("Z1Z");
+      const out = await exportReadyText(md);
+      expect(shaded.filter((t) => out.includes(t)), JSON.stringify(md)).toEqual([]);
+    }
+    expect(removeRedacted(f1).text).toBe("Dana told me[^1] that the deal closed on Sunday.\n\n\n\n## Private notes\n█████");
+    // Closed: the footnote stays (the preview shows it outside the passage).
+    expect(await exportReadyText("Dana told me[^1] that.\n\n[^1]: Z1Z Dana Levi\n\n<redact>\nZ2Z private\n</redact>\n")).toContain("Z1Z Dana Levi");
+  });
+  (haveDom ? it : it.skip)("notes with footnotes and suggestions, 2 seeds × 1,500: no shaded token survives the export", async () => {
+    const kept: string[] = [];
+    let shadedTotal = 0;
+    for (const seed of [21, 22]) {
+      const r = rng6(seed);
+      let tok = 0;
+      const T = () => `Z${++tok}Z`;
+      const one = <X,>(a: readonly X[]): X => a[Math.floor(r() * a.length)];
+      const MARK = () => one(["<redact>", "</redact>", "<redact class=x>", "</REDACT>"]);
+      for (let i = 0; i < 1500; i++) {
+        const blocks = markdownNote(r, T).split("\n\n");
+        const extra = 1 + Math.floor(r() * 3);
+        for (let e = 0; e < extra; e++) {
+          const n = 1 + Math.floor(r() * 3);
+          const at = Math.floor(r() * (blocks.length + 1));
+          blocks.splice(at, 0, one([
+            () => `[^${n}]: ${T()} ${one(["", MARK()])} ${T()}`,
+            () => `${T()}[^${n}] ${T()}`,
+            () => `${T()} <span title={>>${T()}<<} ${MARK()} ${T()}`,
+            () => `${T()} {~~${T()}~>${MARK()}~~} ${T()}`,
+            () => `- ${T()} [^${n}]\n  [^${n}]: ${T()}`,
+          ])());
+        }
+        const md = blocks.join("\n\n");
+        const shaded = shaded8(md);
+        if (!shaded.length) continue;
+        shadedTotal += shaded.length;
+        const out = await exportReadyText(md);
+        const leak = shaded.filter((t) => new RegExp(`${t}(?!\\d)`).test(out));
+        if (leak.length) kept.push(`seed ${seed} #${i}: ${JSON.stringify(md)} kept ${leak.join(",")}`);
+      }
+    }
+    expect(shadedTotal).toBeGreaterThan(1500);
+    expect(kept.slice(0, 10)).toEqual([]);
+  }, 120_000);
 });

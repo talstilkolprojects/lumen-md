@@ -15,7 +15,11 @@
  *     `<redact\tid=1>` and `<redact/>` are marks too (review F-8). A tag cut
  *     off by the end of the note opens a mark.
  *   - Marks nest; the outermost pair wins. A `<redact>` that is never closed
- *     removes everything to the end of the note.
+ *     removes everything to the end of the note, and every footnote
+ *     definition: the preview appends the footnotes after the last block,
+ *     inside that passage (review 8, RR8-473-2).
+ *   - Every pass reads the note as the preview parses it, with the
+ *     CriticMarkup delimiters swapped (review 8, RR8-473-1).
  *   - "Redact selection" over text that already holds marks merges them into
  *     one mark over the whole selection, and leaves every passage outside it
  *     as covered as it was (review F-9).
@@ -45,7 +49,8 @@
  */
 
 import { cleanDataUrls, cleanDataUrlsAsync, cleanImageBytes, keepImageMetadata, WITHHELD_IMAGE } from "./imageMetadata";
-import { treeInertCloses } from "./redactionTree";
+import { prepareCriticMarkupMapped } from "../renderer/criticMarkup";
+import { footnoteDefinitionRanges, treeInertCloses } from "./redactionTree";
 
 export { WITHHELD_IMAGE };
 
@@ -85,12 +90,22 @@ const isSpace = (c: string) => c === " " || c === "\t" || c === "\n" || c === "\
  * comment), so the mark before it stays open.
  */
 export function redactMarks(text: string): RedactMark[] {
-  const marks = candidateMarks(text);
+  // The preview parses the note with its CriticMarkup delimiters swapped for one character each, so a
+  // `>` of `{>>` or `~>` ends no tag there (review 8, RR8-473-1): every pass reads that text, and the
+  // marks are mapped back to the note.
+  const { text: seen, at } = prepareCriticMarkupMapped(text);
+  const marks = candidateMarks(seen);
   if (marks.some((m) => m.close)) {
     // Two passes, and a close counts only where both say it closes (fail closed): the Markdown tree the
     // preview builds (review 6, RR6-473-1), then the text with the HTML tokenizer's rules (review F-8).
-    treeInertCloses(text, marks);
-    markInertCloses(text, marks);
+    treeInertCloses(seen, marks);
+    markInertCloses(seen, marks);
+  }
+  if (seen === text) return marks;
+  // A tag ends just after its `>`, which is always a character of the note; one the text cuts off runs to the end.
+  for (const m of marks) {
+    m.index = at[m.index];
+    m.end = seen[m.end - 1] === ">" ? at[m.end - 1] + 1 : text.length;
   }
   return marks;
 }
@@ -374,6 +389,82 @@ export function hasRedactions(markdown: string): boolean {
   return redactMarks(markdown).length > 0;
 }
 
+/**
+ * The pieces of the note an export keeps, in order (`[from, to)`), with `null` where a passage went. When
+ * a passage is still open at the end, every footnote definition goes too: the preview appends the
+ * footnotes after the last block, inside that passage (review 8, RR8-473-2).
+ */
+function keptPieces(markdown: string): { pieces: Array<[number, number] | null>; count: number; footnotes: Array<[number, number]> } {
+  const pieces: Array<[number, number] | null> = [];
+  let depth = 0;
+  let last = 0;
+  let count = 0;
+  for (const m of redactMarks(markdown)) {
+    // Inside the passage: removed with it. (One with no passage open is a stray mark, below.)
+    if (m.inert && !(m.close && depth === 0)) continue;
+    if (!m.close) {
+      if (depth === 0) {
+        pieces.push([last, m.index]);
+        count++;
+      }
+      depth++;
+    } else if (depth > 0) {
+      depth--;
+      if (depth === 0) pieces.push(null);
+    } else {
+      // A stray closing mark: drop the mark, keep the text before it.
+      pieces.push([last, m.index]);
+    }
+    last = m.end;
+  }
+  if (depth === 0) {
+    pieces.push([last, markdown.length]);
+    return { pieces, count, footnotes: [] };
+  }
+  pieces.push(null);
+  const footnotes = footnoteRanges(markdown);
+  const out: Array<[number, number] | null> = [];
+  for (const p of pieces) {
+    if (!p) {
+      out.push(p);
+      continue;
+    }
+    let [a] = p;
+    const b = p[1];
+    for (const [fa, fb] of footnotes) {
+      if (fb <= a || fa >= b) continue;
+      if (fa > a) out.push([a, fa]);
+      a = Math.max(a, fb);
+    }
+    if (a < b) out.push([a, b]);
+  }
+  return { pieces: out, count, footnotes };
+}
+
+/**
+ * The note's footnote definitions as the preview reads them (after its CriticMarkup swap), in the note's
+ * offsets. When micromark can't read the note, every line from a `[^…]:` up to the next blank line counts
+ * as one (fail closed).
+ */
+function footnoteRanges(markdown: string): Array<[number, number]> {
+  const { text: seen, at } = prepareCriticMarkupMapped(markdown);
+  const found = footnoteDefinitionRanges(seen);
+  if (found) return found.map(([a, b]) => [at[a], b >= seen.length ? markdown.length : at[b]]);
+  const out: Array<[number, number]> = [];
+  let from = -1;
+  let pos = 0;
+  for (const line of markdown.split("\n")) {
+    if (from < 0 && /\[\^[^\]]*\]:/.test(line)) from = pos;
+    else if (from >= 0 && line.trim() === "") {
+      out.push([from, pos]);
+      from = -1;
+    }
+    pos += line.length + 1;
+  }
+  if (from >= 0) out.push([from, markdown.length]);
+  return out;
+}
+
 /** The marked passages, as written (for the author's own review before an export). */
 export function redactedPassages(markdown: string): string[] {
   const out: string[] = [];
@@ -389,35 +480,20 @@ export function redactedPassages(markdown: string): string[] {
       if (depth === 0) out.push(markdown.slice(start, m.index));
     }
   }
-  if (depth > 0) out.push(markdown.slice(start));
+  if (depth > 0) {
+    out.push(markdown.slice(start));
+    // The footnotes the export removes with it (RR8-473-2): those written before that passage.
+    for (const [a, b] of footnoteRanges(markdown)) if (a < start) out.push(markdown.slice(a, b));
+  }
   return out;
 }
 
 /** Remove every marked passage; returns the text and how many passages went. */
 export function removeRedacted(markdown: string): { text: string; count: number } {
-  let out = "";
-  let depth = 0;
-  let last = 0;
-  let count = 0;
-  for (const m of redactMarks(markdown)) {
-    if (m.inert) continue; // inside the passage: removed with it
-    if (!m.close) {
-      if (depth === 0) {
-        out += markdown.slice(last, m.index);
-        count++;
-      }
-      depth++;
-    } else if (depth > 0) {
-      depth--;
-      if (depth === 0) out += REDACTED;
-    } else {
-      // A stray closing mark: drop the mark, keep the text before it.
-      out += markdown.slice(last, m.index);
-    }
-    last = m.end;
-  }
-  if (depth > 0) return { text: out + REDACTED, count };
-  return { text: out + markdown.slice(last), count };
+  const { pieces, count } = keptPieces(markdown);
+  let text = "";
+  for (const p of pieces) text += p ? markdown.slice(p[0], p[1]) : REDACTED;
+  return { text, count };
 }
 
 /** Code fence opener/closer (``` or ~~~, up to three spaces in). */
