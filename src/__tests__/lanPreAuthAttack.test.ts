@@ -17,7 +17,7 @@ import { memoryProvider, PreconditionFailedError, type SyncProvider } from "../s
 import { unlockVault, unlockWithDevice } from "../sync/e2ee/engine";
 import { generateIdentity } from "../sync/e2ee/age";
 import { decodeHeader, HEADER_NAME } from "../sync/e2ee/header";
-import { decodeKeyring, KEYRING_NAME, KEYRING_PREV_NAME, unwrapSecret } from "../sync/e2ee/keyring";
+import { decodeKeyring, KEYRING_NAME, unwrapSecret } from "../sync/e2ee/keyring";
 import { deriveMasterKey, type KdfParams } from "../sync/e2ee/kdf";
 import { DecryptError, hmac, passphraseKeys } from "../sync/e2ee/keys";
 import { fromUtf8, randomBytes, toB64u, utf8 } from "../sync/e2ee/bytes";
@@ -99,9 +99,9 @@ describe("the LAN host before the proof (E56)", () => {
     for (const leak of ["tal-phone", "tal-laptop", d.phone.recipient, d.laptop.recipient, "age-encryption.org"]) expect(text).not.toContain(leak);
     expect(decodeKeyring(pre!.data).devices).toEqual({});
     expect(pre!.etag.startsWith("pre-auth:")).toBe(true);
-    // Object names, the .prev keyring and the listing stay closed.
+    // Object names (protocol 1's separate .prev keyring among them) and the listing stay closed.
     await expect(stranger.list()).rejects.toBeInstanceOf(LanAuthError);
-    await expect(stranger.get(KEYRING_PREV_NAME)).rejects.toBeInstanceOf(LanAuthError);
+    await expect(stranger.get("lumen-e2ee-keyring.prev")).rejects.toBeInstanceOf(LanAuthError);
 
     // An honest new device unlocks from those bytes, proves itself, and then reads the whole keyring.
     const keys = (await unlockVault(stranger, PASSPHRASE, TEST_POLICY)).keys;

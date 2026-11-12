@@ -50,14 +50,33 @@ const PRE_AUTH: ReadonlySet<string> = new Set([HEADER_NAME, KEYRING_NAME]);
  */
 const PRE_AUTH_ETAG = "pre-auth:";
 
-function preAuthKeyring(bytes: Uint8Array): Uint8Array | null {
+function preAuthKeyring(bytes: Uint8Array, depth = 0): Uint8Array | null {
   let f: KeyringFile;
   try {
     f = decodeKeyring(bytes);
   } catch {
     return null;
   }
-  const out: KeyringFile = { format: f.format, protocol: f.protocol, vaultId: f.vaultId, epoch: f.epoch, passphrase: f.passphrase, devices: {}, sealed: f.sealed, ...(f.header !== undefined ? { header: f.header } : {}) };
+  // Keyring protocol 2: during a passphrase change `prev` carries the keyring it replaced (the old
+  // passphrase's way back, engine.ts unlockVault). It goes out the same way, without its device map
+  // (keyringDigest does not cover the devices, so the chain still checks).
+  let prev: string | undefined;
+  if (f.prev !== undefined) {
+    const p = depth < 1 ? preAuthKeyring(fromB64u(f.prev), depth + 1) : null;
+    if (!p) return null;
+    prev = toB64u(p);
+  }
+  const out: KeyringFile = {
+    format: f.format,
+    protocol: f.protocol,
+    vaultId: f.vaultId,
+    epoch: f.epoch,
+    passphrase: f.passphrase,
+    devices: {},
+    sealed: f.sealed,
+    ...(f.header !== undefined ? { header: f.header } : {}),
+    ...(prev !== undefined ? { prev } : {}),
+  };
   return utf8(JSON.stringify(out));
 }
 
