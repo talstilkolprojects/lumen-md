@@ -43,6 +43,17 @@ export interface PersistentOptions {
   e2ee?: boolean;
 }
 
+/**
+ * The room's socket URL: the server URL with `?room=<name>` (plan W4.8).
+ * The public server on Cloudflare starts one Durable Object per room and
+ * needs the room before the first message; the Node server ignores it.
+ */
+export function roomSocketUrl(serverUrl: string, roomName: string): string {
+  const u = new URL(serverUrl);
+  u.searchParams.set("room", roomName);
+  return u.toString();
+}
+
 export async function createPersistentProvider(
   url: string,
   roomName: string,
@@ -58,7 +69,7 @@ export async function createPersistentProvider(
     for (const fn of [...listeners[event]]) fn(v);
   };
   const provider = new mod.HocuspocusProvider({
-    url,
+    url: roomSocketUrl(url, roomName),
     name: opts.docName ?? roomName,
     document: doc,
     ...(opts.awareness ? { awareness: opts.awareness } : {}),

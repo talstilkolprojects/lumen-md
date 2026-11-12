@@ -1,0 +1,36 @@
+# The public live-share server (plan W4.8): Cloudflare Workers + Durable
+# Objects on the Workers Free plan. Deploy: `npm run collab:deploy`
+# (docs: collab/public-server).
+name = "lumen-collab"
+main = "worker.mjs"
+compatibility_date = "2025-06-01"
+# node:crypto (HMAC room tokens) and Buffer, used by sync-server/collab/roomToken.mjs.
+compatibility_flags = ["nodejs_compat"]
+
+# No request logs: the server keeps no IP addresses (PRIVACY.he.md, W4.29).
+[observability]
+enabled = false
+
+[vars]
+# Delete a room nobody changed for this many days.
+RETENTION_DAYS = "90"
+# A room's encrypted document may grow to this size.
+MAX_ROOM_BYTES = "4000000"
+COLLAB_TOKEN_TTL_S = "600"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "CollabRoom"
+
+[[durable_objects.bindings]]
+name = "SIGNAL"
+class_name = "Signal"
+
+# SQLite-backed Durable Objects are the ones the Free plan includes.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["CollabRoom", "Signal"]
+
+# Secrets (`wrangler secret put`, done by scripts/collab-deploy.mjs):
+#   COLLAB_TOKEN_SECRET   ≥ 32 random characters; signs the room tokens
+#   COLLAB_ACCESS_KEY     optional; when set, only people with the key get tokens

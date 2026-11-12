@@ -73,6 +73,7 @@ export function openStore(dir, { keepBackups = 24 } = {}) {
     "INSERT INTO documents (name, state, updated_at) VALUES (?, ?, ?) " +
       "ON CONFLICT(name) DO UPDATE SET state = excluded.state, updated_at = excluded.updated_at",
   );
+  const sweepOld = db.prepare("DELETE FROM documents WHERE updated_at < ?");
   let closed = false;
   const sealedCache = new Map();
 
@@ -115,6 +116,13 @@ export function openStore(dir, { keepBackups = 24 } = {}) {
     sealRoom(room) {
       setMeta.run(`sealed:${room}`, "1");
       sealedCache.set(room, true);
+    },
+    /**
+     * Retention (plan W4.8): delete every room not changed since `cutoffMs`.
+     * Returns how many were deleted.
+     */
+    sweep(cutoffMs) {
+      return Number(sweepOld.run(cutoffMs).changes);
     },
     getMeta(key) {
       return getMeta.get(key)?.value ?? null;
