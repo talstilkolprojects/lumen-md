@@ -17,16 +17,24 @@ A sync provider (WebDAV, S3, Dropbox, Google Drive, the LAN host) is a
 flat set of named objects with conditional writes (If-Match /
 If-None-Match). Syncing works on a provider that ignores them (a lost race
 costs a round), but key and device changes (§5) are made only on one that
-has proved them: a client creates `lumen-e2ee-cas-probe` create-only, checks
+has proved them: a client creates an object under a random 43-character name
+with random contents the size of the smallest blob, create-only; checks that
 a second create-only write and a write with the stale etag are both refused
-and left the object unchanged, then deletes it. It sees only:
+and left the object unchanged, and that of two create-only writes racing on
+another random name exactly one wins; then deletes both. The probe looks
+like any blob upload, so a provider can't single it out by name or size (it
+can still by behaviour: the probe proves a storage is configured right, not
+that a malicious one keeps the conditions; see §5 *Read-back* and §9). A
+provider whose create-only is not atomic (Google Drive: look, create, look
+again) is **sync-only**: it syncs, but no key or device change is made on
+it. The provider sees only:
 
 | Object | Name | Contents |
 |---|---|---|
 | Header | `lumen-e2ee-vault` | JSON, in the clear but MACed (§2) |
 | Keyring | `lumen-e2ee-keyring` | JSON with encrypted fields (§5); absent at epoch 0 |
 | Manifest | `b64u(HMAC(names, label))` | a sealed object (§4); `label` is `"manifest"` at epoch 0, else the random label the keyring names (§5) |
-| Probe | `lumen-e2ee-cas-probe` | one byte, only while a client checks the conditional writes (above) |
+| Probe | random, 43 characters | random bytes, only while a client checks the conditional writes (above) |
 | Blobs | `b64u(HMAC(names, "blob\0" + path + "\0" + rev))` | sealed objects |
 
 Every non-fixed name is 43 characters long, the same for every object.
@@ -66,6 +74,7 @@ An *epoch secret* `S` (32 bytes) gives, with `salt = vaultId`:
 | blobs | `lumen-e2ee/1/blobs` | AES-256-GCM, file contents |
 | pairing | `lumen-e2ee/1/pairing` | HMAC, pairing codes |
 | keyring | `lumen-e2ee/1/keyring` | AES-256-GCM, the keyring's sealed part |
+| anchor | `lumen-e2ee/1/anchor` | HMAC, the check a device keeps with its keyring anchor (§5); never sent |
 
 **Epoch 0** is the vault before any re-key, with `S0 = master`. The **names**
 key is always `HKDF(S0, vaultId, "lumen-e2ee/1/names")`, so blob names
@@ -155,6 +164,19 @@ digest)`, and accepts a keyring only if it descends from it:
   and starts after it, descent is unproven and the device is no longer
   "verified"; otherwise a missing entry is a fork.
 
+**Anchors** (third review 12.11, N1). The `(epoch, rev, digest)` a device
+remembers is public: the provider can compute every digest. A device opened
+with its own age key gets its keys from the keyring's plaintext wrap, which
+the provider can also make — for any secret it chose — because the device's
+recipient is public. So a device stores, with the anchor,
+`check = b64u(HMAC(anchor_E, JSON ["lumen-e2ee-anchor/1", vaultId, epoch, rev, digest]))`,
+where `anchor_E = HKDF(S_E, vaultId, "lumen-e2ee/1/anchor")` comes from the
+secret of the anchor's epoch `E`. At every open and every round, before
+anything else, the keys must reproduce it: at epoch `E` with their own
+secret, at a newer epoch with `older["E"]`; keys of an older epoch are a
+rollback, keys without that secret (or with one that doesn't reproduce the
+check) a fork. This holds for passphrase and device-key devices alike.
+
 **Re-key** from epoch N. The keyring write is the only commit:
 
 1. **Freeze**: write manifest N once more, `protocol: 2` with `frozen`
@@ -166,6 +188,14 @@ digest)`, and accepts a keyring only if it descends from it:
    wrapped for the passphrase (the same one, or a new one) and for each
    device on the sealed list, except those revoked. If the commit loses, the
    re-keyer deletes the manifest of step 2.
+   **Read-back** (third review 12.11, N2): the re-keyer then reads the
+   keyring again. It must be the bytes it wrote, or a keyring that already
+   descends from them. Otherwise the provider let another write replace it
+   (it ignored the compare-and-swap): the re-key reports *not confirmed*
+   ("the revocation may not have taken effect"), and the device keeps its own
+   keyring as its anchor, so its next round sees the replacement as a fork.
+   Every same-epoch rewrite (`rev + 1`) is read back the same way, and fails
+   if it was replaced.
 4. **Header** (a passphrase change only): write the new header, then
    rewrite the keyring without `header` and `prev` (`rev + 1`). Until the
    header lands, the new passphrase opens the header the keyring carries,
@@ -185,9 +215,23 @@ epoch 0 there is no keyring to rewrite: it finishes the re-key itself
 (steps 2 and 3, create-only, for the passphrase alone). Blobs replaced by a
 commit over a freeze are deleted only by a later round.
 
-**Who may change keys.** Re-keying and enrolling need a device whose state
-is verified (it created the vault, was paired, or the user confirmed it,
-§6) and a provider that proved its conditional writes (§1).
+**A re-key replaced by a sibling** (N2). When a device's round finds that
+the keyring at the epoch of its last confirmed re-key is another one made
+from the same parent (the same `[N, rev, parent]` in its chain), opening with
+the same epoch-N secret in `older`, and not revoking every device its own
+re-key revoked, it revokes them again on top of it (a re-key from that
+keyring), then stops the round with a fork error that names them: anything
+written under the sibling's epoch may be readable by them.
+
+**Who may change keys.** Enrolling needs a device whose state is verified
+(it created the vault, was paired, or the user confirmed it, §6), and both
+need a provider that proved its conditional writes (§1). A device that is
+not verified can re-key, but it can't vouch for the sealed device list (the
+provider may be showing it an old one), so its re-key wraps the new epoch
+for the passphrase and the devices it enrolls in that re-key only; every
+other device enrolls again. Served an old epoch, it never wraps for a device
+revoked meanwhile. A device makes no key change while a pairing code or
+answer it made is still valid (§6).
 
 **Revocation**: a device without a wrap at epoch N+1 can't learn `S_{N+1}`,
 so it can't open a manifest written after its revocation. A revoked id or
@@ -196,15 +240,45 @@ knows the passphrase, the passphrase changes in the same re-key.
 
 ## 6. Pairing codes
 
-`"lumen-pair:2:" + N + ":" + b64u(HMAC(pairing_N, body) ‖ body)`, where `N`
+**Two-way pairing** (third review 12.11, N3), the default:
+
+1. The new device shows a request,
+   `"lumen-pair-request:1:" + N + ":" + b64u(HMAC(pairing_N, body) ‖ body)`,
+   `body = JSON {vaultId, epoch, ringRev, ringDigest, counter, digest, issuedAt, nonce}`:
+   the keyring and manifest it sees (`counter`, `digest` `null` before its
+   first round) and 16 random bytes.
+2. An existing, verified device reads its keyring and manifest **now**, then
+   checks the request against them. A request from an older epoch (it opens
+   it with `older["N"]`'s pairing key) or an older revision is refused: the
+   provider is showing the new device old keys, whichever device made the
+   newer ones. Same epoch and revision with another digest is a fork. A
+   newer request means this device must sync first. Otherwise it answers
+   `"lumen-pair-answer:1:" + N + ":" + b64u(HMAC(pairing_N, body) ‖ body)`,
+   `body = JSON {vaultId, nonce, counter, digest, epoch, ringRev, ringDigest, answeredAt}`,
+   with its anchors at that moment and the request's nonce. It then makes no
+   key change for 5 minutes.
+3. The new device accepts only the answer to its own outstanding request, at
+   the epoch it sees, within 5 minutes of making the request, on its own
+   clock (no other device's clock is compared).
+
+**One-way codes**: `"lumen-pair:2:" + N + ":" + b64u(HMAC(pairing_N, body) ‖ body)`, where `N`
 is the issuer's epoch, `pairing_N` that epoch's pairing key (§3, from `S_N`;
 the master at epoch 0) and
 `body = JSON {vaultId, counter, digest, epoch, ringRev, ringDigest, issuedAt, nonce}`.
-A code is valid for 15 minutes. It carries the issuing device's verified
-anchors — the manifest `(counter, digest)` and the keyring `(epoch, rev,
-digest)`, `ringDigest` `""` at epoch 0 — and no key material. A device that
-sees an older epoch than `N` says so (its provider may be replaying keys)
-instead of trying the HMAC.
+It carries the issuing device's verified anchors — the manifest `(counter,
+digest)` and the keyring `(epoch, rev, digest)`, `ringDigest` `""` at epoch
+0 — and no key material. A device that sees an older epoch than `N` says so
+(its provider may be replaying keys) instead of trying the HMAC. A one-way
+code vouches for the issuer's state when it was made, so it is valid for 2
+minutes (15 before the third review), and the issuer makes no key change
+while it is valid.
+
+Why two-way: refusing key changes while a code is valid only covers changes
+made on the issuing device. The two-way answer is made after the new device
+has looked at the vault, from the answering device's state at that moment,
+so a new device shown an epoch from before *any* device's revocation is
+caught on the answering device. What remains is a key change made on a
+third device between an answer and its use (§9).
 
 ## 7. age
 
@@ -248,17 +322,50 @@ sizes, timing and the header's KDF parameters. It can withhold, replay or
 delete objects. Withholding and deleting are denial of service. A replay is
 detected by a device that has an anchor — it created the vault, was paired,
 or saw the vault before — through the manifest counter and history and the
-keyring chain (§5); pairing codes carry both anchors. It can't read, forge
-or reorder content. **Inherent limit:** a device opened with the passphrase
-alone and never paired has no anchor, so the provider can show it an old
-state, an old epoch included (with the old passphrase, the epoch before a
-passphrase change, through an old keyring that still carries `prev`). Such a
-device says "freshness not verified", may write under that old epoch's keys
-(which a device revoked since can read), and can't re-key or enroll. A device holding the
-current keys is trusted for that epoch; revocation ends that at the next
-epoch. Not covered: a device that is compromised *while* it is enrolled
-(it can read what it can sync), metadata (sizes, timing, how many objects),
-and the provider's own access controls.
+keyring chain (§5); pairing codes carry both anchors. Anchors are bound to
+the epoch's secret (§5 *Anchors*), so a provider that makes a whole keyring
+for a device's public key (a device opened with its own age key) can't move
+that device into a vault of its own. It can't read, forge or reorder the
+content of a device that has an anchor.
+
+**Inherent limits:**
+
+- *No anchor.* A device opened with the passphrase alone and never paired
+  can be shown an old state, an old epoch included (with the old
+  passphrase, the epoch before a passphrase change, through an old keyring
+  that still carries `prev`). Such a device says "freshness not verified",
+  **doesn't upload** (its changes wait on it until it is paired or
+  confirmed), can't enroll devices, and a re-key from it wraps for no other
+  device; so nothing it does reaches a device revoked meanwhile.
+- *Withholding a key change* (a split view). A provider can keep showing
+  some devices the vault from before a revocation while the re-keyer sees
+  its own. Every view is self-consistent, so no device errors; what the
+  others write stays readable by the revoked device. Only a channel outside
+  the provider shows it: a two-way pairing between the views is refused
+  (§6). A revocation is therefore only as current as the other devices'
+  view of it — confirm it by pairing them.
+- *A provider that ignores compare-and-swap after the probe.* The re-keyer's
+  read-back (§5) catches a replacement that lands before it, and the next
+  round of the re-keyer catches one that lands after, and revokes again on
+  top of it. Neither can stop the other device's keyring from wrapping the
+  new epoch for a device revoked in the replaced one, in the moment between
+  that write and the re-keyer's next round: the other device acted on the
+  keyring it verified, and only the provider knew both. Preventing that, not
+  just repairing it, needs a server that keeps the compare-and-swap (or a
+  channel between the devices); see §5 *A re-key replaced by a sibling*.
+- *Pairing windows.* A one-way code vouches for its issuer's state for 2
+  minutes, and a two-way answer for the answering device's state until the
+  new device enters it (at most 5 minutes after its request); a key change
+  made on a third device inside that window, plus a provider showing the new
+  device the state before it, passes. The issuing or answering device itself
+  makes no key change in that window.
+- *Google Drive* can't make create-only atomic, so it is sync-only: no
+  re-key, revocation or enrollment through it.
+
+A device holding the current keys is trusted for that epoch; revocation
+ends that at the next epoch. Not covered: a device that is compromised
+*while* it is enrolled (it can read what it can sync), metadata (sizes,
+timing, how many objects), and the provider's own access controls.
 
 ## 10. Public review
 
@@ -282,3 +389,12 @@ Changes:
   keyring anchor under the epoch's pairing key. Key and device changes need a
   verified device and proven conditional writes. §9 states which devices
   detect a replay.
+- Third review 12.11: anchors carry a check under a key from the epoch's
+  secret, verified at every open and round (N1). Every keyring write is read
+  back; a re-key replaced by a sibling is reported and revoked again (N2).
+  The CAS probe uses random names and blob-sized contents, and races two
+  creates; Google Drive is sync-only (N7). Two-way pairing; one-way codes
+  last 2 minutes and block their issuer's key changes (N3). Unverified
+  devices don't upload, and their re-keys wrap for no device (N6, RR-5). A
+  wrap that doesn't open the keyring is reported as tampered, not as a
+  revocation, and every rewrite makes all wraps again (N5).

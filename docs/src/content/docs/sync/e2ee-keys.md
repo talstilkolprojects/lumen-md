@@ -38,19 +38,49 @@ Tested on a vault of 10,000 notes (3 objects written, every note readable
 after), and over 10,000 random sync rounds with 40 re-keys and revocations
 in between, with 0 lost.
 
+## Pairing a new device
+
+Pair a new device from one you already use, in two steps:
+
+1. On the new device, choose **Show a pairing request**.
+2. Enter the request on the device you already use. It checks the request
+   against the vault as it is right now and shows an answer; enter the answer
+   on the new device.
+
+If the storage is showing the new device old keys (from before a device was
+removed, say), the device you already use says so at step 2, and the new
+device isn't paired. A one-way pairing code (from the device you already use
+to the new one) still works, but only for 2 minutes, and the device that made
+it doesn't change keys while it is valid.
+
+Until a new device is paired (or you confirm it by hand), it downloads
+changes but **keeps its own changes on the device**: it can't tell yet
+whether it has the latest keys, and a device removed meanwhile could read
+what it uploads. The banner says so.
+
 ## Who can change the keys
 
-- **A verified device.** Only a device that created the vault, was paired
-  with a pairing code, or that you confirmed by hand can re-key or enroll a
-  device. A device opened with the passphrase alone syncs, but the storage
-  could be showing it old keys, so it can't change them until you pair it.
-  Pairing codes carry the keys' version too: a device that is shown old keys
-  is told so when you pair it.
+- **A verified device.** Only a device that created the vault, was paired,
+  or that you confirmed by hand can enroll a device, and only its re-keys
+  keep the enrolled devices. A device opened with the passphrase alone can
+  re-key, but the storage could be showing it an old device list, so its new
+  keys open only with the passphrase: every device with its own key enrolls
+  again.
+- **Keys tied to a secret.** Each device remembers the keys it last checked
+  together with a check only the vault's keys can make. A device that opens
+  with its own key refuses keys the storage made for it, even though the
+  storage knows the device's public key.
 - **A storage that refuses stale writes.** Before it changes keys, Lumen
   checks that the storage refuses a write based on an outdated version. One
   that doesn't (some WebDAV servers) can still sync, but Lumen won't re-key,
   revoke or enroll there, because two devices could change the keys at once
-  without either noticing.
+  without either noticing. **Google Drive** can't refuse a second "create" of
+  the same file atomically, so a vault on Drive syncs, but its keys and
+  devices are changed with another storage.
+- **Each key change is read back.** Right after a re-key, Lumen reads the
+  keyring again. If the storage returns another device's key change instead,
+  Lumen says *the revocation may not have taken effect*. At its next sync it
+  removes the device again on top of the other change, and says so.
 - **The keys must line up.** Every keyring names the one before it. A device
   refuses a keyring that doesn't follow from the last one it checked, and
   says so, instead of quietly using different keys.
@@ -70,10 +100,13 @@ provider can't add a device of its own or bring back a removed one. A removed
 device can't be enrolled again under its old name or key either: enroll it
 as a new device with a new key.
 
-One limit is built in: a brand-new device that you open with the passphrase
-alone and never pair can be shown the vault as it was before the removal,
-and what it writes then is readable by the removed device. Pair new devices
-from one you already use.
+A storage can still keep showing your *other* devices the vault from before
+the removal. Each of them then sees a consistent vault, so none of them can
+tell, and what they write stays readable by the removed device. Pairing two
+devices (above) shows it. After removing a device, pair or sync the others
+from the device you removed it on. If a device's key in the keyring doesn't
+open it, Lumen says the storage changed it, and changes nothing on the
+device.
 
 ## age
 
