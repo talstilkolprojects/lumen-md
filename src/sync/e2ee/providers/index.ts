@@ -18,11 +18,14 @@ import { dropboxSyncProvider, DROPBOX_DEFAULT_FOLDER } from "./dropbox";
 import { gdriveSyncProvider, GDRIVE_DEFAULT_FOLDER } from "./gdrive";
 import { s3Provider, type S3Provider } from "./s3";
 import { webdavProvider, type WebdavProvider } from "./webdav";
+import { folderProvider } from "./folder";
+import { relayProvider } from "./relay";
 import type { FetchLike } from "./http";
 import { lanSyncProvider, type LanRole, type LiveProvider } from "../lan";
 
-export type ProviderKind = "webdav" | "s3" | "dropbox" | "gdrive" | "lan";
+export type ProviderKind = "webdav" | "s3" | "dropbox" | "gdrive" | "lan" | "folder" | "relay";
 
+/** The kinds the advanced form edits (the guided setup adds "folder" and "relay", plan W4.19). */
 export const PROVIDER_KINDS: ProviderKind[] = ["webdav", "s3", "dropbox", "gdrive", "lan"];
 
 /** Settings without secrets — what is persisted in IndexedDB. */
@@ -31,7 +34,11 @@ export type ProviderSettings =
   | { kind: "s3"; endpoint: string; region: string; bucket: string; prefix: string; accessKeyId: string; pathStyle: boolean }
   | { kind: "dropbox"; folder: string }
   | { kind: "gdrive"; folderName: string }
-  | { kind: "lan"; role: LanRole };
+  | { kind: "lan"; role: LanRole }
+  /** A desktop sync app's folder (iCloud, Dropbox, Drive, OneDrive); its handle is kept in IndexedDB (setup/folderHandle.ts). */
+  | { kind: "folder"; name: string }
+  /** The encrypted relay; its space token is a secret. */
+  | { kind: "relay"; url: string };
 
 /** The secret of a provider, by kind (OAuth providers keep their tokens through the cloud modules). */
 export const SECRET_NAMES: Record<ProviderKind, string | null> = {
@@ -40,6 +47,8 @@ export const SECRET_NAMES: Record<ProviderKind, string | null> = {
   dropbox: null,
   gdrive: null,
   lan: null,
+  folder: null,
+  relay: "lumen.sync.relay.token",
 };
 
 export function defaultSettings(kind: ProviderKind): ProviderSettings {
@@ -54,6 +63,10 @@ export function defaultSettings(kind: ProviderKind): ProviderSettings {
       return { kind, folderName: GDRIVE_DEFAULT_FOLDER };
     case "lan":
       return { kind, role: "host" };
+    case "folder":
+      return { kind, name: "" };
+    case "relay":
+      return { kind, url: "" };
   }
 }
 
@@ -97,6 +110,7 @@ export function hasProviderSecret(kind: ProviderKind): boolean {
   const name = SECRET_NAMES[kind];
   if (name) return !!getSecret(name);
   if (kind === "lan") return true; // no account: the vault's passphrase is the only secret
+  if (kind === "folder") return true;
   return kind === "dropbox" ? dropboxLegacy.isConnected() : gdriveLegacy.isConnected();
 }
 
@@ -127,6 +141,10 @@ export function providerHosts(settings: ProviderSettings): string[] {
       return ["www.googleapis.com", "oauth2.googleapis.com"];
     case "lan":
       return [];
+    case "folder":
+      return [];
+    case "relay":
+      return safeHost(settings.url);
   }
 }
 
@@ -158,5 +176,9 @@ export function createSyncProvider(settings: ProviderSettings, opts: { secret?: 
       return gdriveSyncProvider({ folderName: settings.folderName }, deps);
     case "lan":
       return lanSyncProvider(settings.role);
+    case "folder":
+      return folderProvider(async () => (await import("../setup/folderHandle")).syncFolderBackend());
+    case "relay":
+      return relayProvider({ url: settings.url, token: secret, invite: (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env?.VITE_SYNC_RELAY_INVITE || undefined }, deps);
   }
 }

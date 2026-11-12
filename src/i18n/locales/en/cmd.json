@@ -388,6 +388,7 @@
   "cmd.suggest.toggle.off": "Turn off suggesting mode",
   "cmd.suggest.toggle.on": "Turn on suggesting mode (track changes)",
   "cmd.sync.open": "Encrypted sync…",
+  "cmd.sync.setup": "Set up sync (two clicks)",
   "cmd.tasks.open": "Tasks: Today and upcoming",
   "cmd.tasks.open.hint": "Overdue, today and the next 7 days, from every note",
   "cmd.template.importFromFile": "Import template from file…",

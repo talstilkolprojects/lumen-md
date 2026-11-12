@@ -389,6 +389,7 @@
   "cmd.suggest.toggle.off": "关闭建议模式",
   "cmd.suggest.toggle.on": "开启建议模式（修订跟踪）",
   "cmd.sync.open": "加密同步…",
+  "cmd.sync.setup": "设置同步(两次点击)",
   "cmd.tasks.open": "任务：今天与即将到来",
   "cmd.tasks.open.hint": "所有笔记中的逾期、今天和未来 7 天的任务",
   "cmd.template.importFromFile": "从文件导入模板…",

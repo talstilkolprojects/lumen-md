@@ -1966,6 +1966,11 @@
       "vars": []
     },
     {
+      "key": "cmd.sync.setup",
+      "en": "Set up sync (two clicks)",
+      "vars": []
+    },
+    {
       "key": "cmd.tasks.open",
       "en": "Tasks: Today and upcoming",
       "vars": []

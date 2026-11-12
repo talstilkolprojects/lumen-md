@@ -389,6 +389,7 @@
   "cmd.suggest.toggle.off": "إيقاف وضع الاقتراح",
   "cmd.suggest.toggle.on": "تفعيل وضع الاقتراح (تتبّع التغييرات)",
   "cmd.sync.open": "المزامنة المشفّرة…",
+  "cmd.sync.setup": "إعداد المزامنة (بنقرتين)",
   "cmd.tasks.open": "المهام: اليوم والقادمة",
   "cmd.tasks.open.hint": "المتأخرة واليوم والأيام السبعة القادمة، من كل الملاحظات",
   "cmd.template.importFromFile": "استيراد قالب من ملف…",

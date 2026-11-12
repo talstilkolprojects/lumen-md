@@ -389,6 +389,7 @@
   "cmd.suggest.toggle.off": "Désactiver le mode suggestion",
   "cmd.suggest.toggle.on": "Activer le mode suggestion (suivi des modifications)",
   "cmd.sync.open": "Synchronisation chiffrée…",
+  "cmd.sync.setup": "Configurer la synchronisation (deux clics)",
   "cmd.tasks.open": "Tâches : aujourd’hui et à venir",
   "cmd.tasks.open.hint": "En retard, aujourd’hui et les 7 prochains jours, dans toutes les notes",
   "cmd.template.importFromFile": "Importer un modèle depuis un fichier…",

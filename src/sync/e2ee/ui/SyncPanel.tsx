@@ -24,7 +24,7 @@ import { loadMigrationRecord, migratePlaintext, planPlaintextMigration, revertPl
 import { HelpButton } from "../../../ui/HelpButton";
 import { explainError } from "../../../lib/userError";
 
-const NAMES: Record<ProviderKind, string> = { webdav: "WebDAV", s3: "S3", dropbox: "Dropbox", gdrive: "Google Drive", lan: "LAN" };
+const NAMES: Record<ProviderKind, string> = { webdav: "WebDAV", s3: "S3", dropbox: "Dropbox", gdrive: "Google Drive", lan: "LAN", folder: "📁", relay: "Lumen relay" };
 const PENDING_OAUTH = "lumen-sync-pending-oauth";
 
 const field: React.CSSProperties = {
@@ -363,7 +363,7 @@ export function SyncPanel({ onClose, session = syncSession() }: { onClose: () =>
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const where = !s.settings ? "" : s.settings.kind === "lan" ? t(`e2ee.lan.where.${s.settings.role}`) : `${NAMES[s.settings.kind]} — ${providerHosts(s.settings)[0] ?? ""}`;
+  const where = !s.settings ? "" : s.settings.kind === "lan" ? t(`e2ee.lan.where.${s.settings.role}`) : s.settings.kind === "folder" ? `${NAMES.folder} ${s.settings.name}` : `${NAMES[s.settings.kind]} — ${providerHosts(s.settings)[0] ?? ""}`;
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "hsl(0 0% 0% / 0.4)", display: "grid", placeItems: "center", zIndex: 1000 }} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>

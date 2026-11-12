@@ -140,7 +140,11 @@ function createServer(opts = {}) {
     uptime: (Date.now() - startedAt) / 1000,
   });
 
+  // Plan W4.19: the encrypted vault relay, when this server is asked to keep it.
+  const vaultRelay = opts.vaultRelay ?? (process.env.VAULT_RELAY === "1" || process.env.VAULT_RELAY_DIR ? require("./vault-relay").createVaultRelay() : null);
+
   const server = http.createServer((req, res) => {
+    if (vaultRelay && vaultRelay.handle(req, res)) return;
     const pathname = (req.url || "/").split("?")[0];
     if (pathname === "/healthz" || pathname === "/health" || pathname === "/") {
       res.writeHead(200, { "Content-Type": "application/json" });

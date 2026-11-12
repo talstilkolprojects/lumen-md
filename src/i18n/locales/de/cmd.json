@@ -389,6 +389,7 @@
   "cmd.suggest.toggle.off": "Vorschlagsmodus ausschalten",
   "cmd.suggest.toggle.on": "Vorschlagsmodus einschalten (Änderungen nachverfolgen)",
   "cmd.sync.open": "Verschlüsselte Synchronisierung…",
+  "cmd.sync.setup": "Synchronisierung einrichten (zwei Klicks)",
   "cmd.tasks.open": "Aufgaben: heute und demnächst",
   "cmd.tasks.open.hint": "Überfällig, heute und die nächsten 7 Tage, aus allen Notizen",
   "cmd.template.importFromFile": "Vorlage aus Datei importieren…",

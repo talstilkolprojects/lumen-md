@@ -134,6 +134,14 @@ export function buildSyncCommands(): Command[] {
       group: t("group.tools"),
       action: () => void import("../../sync/e2ee/ui/launch").then((m) => m.openSync()),
     },
+    {
+      // Plan W4.19: the guided setup for people who don't know what WebDAV is.
+      id: "sync.setup",
+      label: t("cmd.sync.setup"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: () => void import("../../sync/e2ee/ui/launch").then((m) => m.openSyncSetup()),
+    },
   ];
 }
 

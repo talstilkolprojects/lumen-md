@@ -389,6 +389,7 @@
   "cmd.suggest.toggle.off": "כיבוי מצב הצעות",
   "cmd.suggest.toggle.on": "הפעלת מצב הצעות (מעקב שינויים)",
   "cmd.sync.open": "סנכרון מוצפן…",
+  "cmd.sync.setup": "הגדרת סנכרון (בשתי לחיצות)",
   "cmd.tasks.open": "משימות: היום ובקרוב",
   "cmd.tasks.open.hint": "באיחור, היום ו-7 הימים הבאים, מכל הפתקים",
   "cmd.template.importFromFile": "ייבוא תבנית מקובץ…",

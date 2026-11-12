@@ -2726,6 +2726,199 @@
       "vars": []
     },
     {
+      "key": "e2ee.guide.advanced",
+      "en": "Advanced: S3, Dropbox, Google Drive and every detail",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.checkAsk",
+      "en": "To show you saved them, type word number {n}:",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.guide.checkWrong",
+      "en": "Word {n} doesn't match. Look at the list again.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.guide.continue",
+      "en": "Continue",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.copy",
+      "en": "Copy the words",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.done",
+      "en": "Syncing is on. Every file's state:",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.existing",
+      "en": "This place already holds a synced vault. Enter the 13 words from the device that set it up.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.finish",
+      "en": "Done",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.haveKey",
+      "en": "I already have a key from another device",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.join",
+      "en": "Connect this device",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.joinAsk",
+      "en": "Paste or type the 13 words from your first device:",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.keyIntro",
+      "en": "This is your sync key: 13 words. Write them down or keep them in your password manager. Every other device needs them.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.lossWarning",
+      "en": "Without these words nobody can open the encrypted copy — not you on a new device, not Lumen. If you lose them and this device, the synced copy is lost. Your notes on this device stay.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.newKey",
+      "en": "I need a new key",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.pickFolder",
+      "en": "Choose the folder",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.recommended",
+      "en": "recommended",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.secondDevice",
+      "en": "On your next device: open Lumen, run “Set up sync”, choose the same place and paste the 13 words.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.start",
+      "en": "Start syncing",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.statusTitle",
+      "en": "Files",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.title",
+      "en": "Sync in two clicks",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.webdavUrl",
+      "en": "The address must start with https://",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.dropbox",
+      "en": "Dropbox",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.dropbox.about",
+      "en": "Sign in to Dropbox.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.folder",
+      "en": "A folder of iCloud Drive, Dropbox, Google Drive or OneDrive",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.folder.about",
+      "en": "Pick the folder your sync app already syncs on this computer. Lumen puts only encrypted files there, in “Lumen sync”.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.gdrive",
+      "en": "Google Drive",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.gdrive.about",
+      "en": "Sign in to Google.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.relay",
+      "en": "Lumen's encrypted relay",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.relay.about",
+      "en": "Works on phones and every browser. The relay stores only encrypted files and can't read them.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.webdav",
+      "en": "WebDAV (Nextcloud, a NAS)",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.webdav.about",
+      "en": "Your own server: its address, user name and password.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.whereIntro",
+      "en": "Your notes are encrypted on this device before they leave it. Choose where the encrypted copy is kept; the best place for this device is already chosen.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.whereTitle",
+      "en": "Where to keep the encrypted copy",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.wordCheck",
+      "en": "One of the words is wrong (the last word checks the others).",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.wordCount",
+      "en": "A key has {n} words.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.guide.wordUnknown",
+      "en": "Word {n} isn't one of the key's words. Check its spelling.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.guide.wrongKey",
+      "en": "These words don't open the vault in this place.",
+      "vars": []
+    },
+    {
       "key": "e2ee.lan.addressHidden",
       "en": "address hidden by the browser",
       "vars": []

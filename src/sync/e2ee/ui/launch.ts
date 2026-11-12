@@ -8,6 +8,11 @@ export function openSync(): Promise<void> {
   return import("./open").then((m) => m.openSyncPanel());
 }
 
+/** The guided two-click setup (plan W4.19). */
+export function openSyncSetup(): Promise<void> {
+  return import("./open").then((m) => m.openSyncSetup());
+}
+
 /** `/oauth/dropbox` or `/oauth/gdrive` with `?code=`: finish the sign-in once secrets and vault are ready. */
 export async function oauthReturn(ready: Promise<unknown>): Promise<void> {
   const kind = /^\/oauth\/(dropbox|gdrive)$/.exec(location.pathname)?.[1] as "dropbox" | "gdrive" | undefined;

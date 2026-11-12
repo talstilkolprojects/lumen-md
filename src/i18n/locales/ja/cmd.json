@@ -389,6 +389,7 @@
   "cmd.suggest.toggle.off": "提案モードをオフ",
   "cmd.suggest.toggle.on": "提案モードをオン（変更の追跡）",
   "cmd.sync.open": "暗号化同期…",
+  "cmd.sync.setup": "同期を設定(2 クリック)",
   "cmd.tasks.open": "タスク：今日と今後",
   "cmd.tasks.open.hint": "すべてのノートから、期限切れ・今日・今後7日間のタスク",
   "cmd.template.importFromFile": "ファイルからテンプレートを読み込む…",
