@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "id": "lumen.tags",
+  "name": "Tag manager",
+  "version": "1.0.0",
+  "description": "Lists every #tag in your vault — inline and in front matter, Hebrew included — with how many notes use it, and renames a tag (and its nested tags) in every note at once.",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    {
+      "id": "commands",
+      "reason": "Adds the “Tags: list and rename” command"
+    },
+    {
+      "id": "panel",
+      "reason": "Shows the tags and the rename form"
+    },
+    {
+      "id": "vault:read",
+      "reason": "Reads your notes to find their tags"
+    },
+    {
+      "id": "vault:write",
+      "reason": "Writes the notes whose tag you rename"
+    },
+    {
+      "id": "notifications",
+      "reason": "Tells you how many notes changed"
+    }
+  ]
+}

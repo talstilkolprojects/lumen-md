@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "id": "lumen.calendar",
+  "name": "Calendar",
+  "version": "1.0.0",
+  "description": "A month view of your daily notes (YYYY-MM-DD.md) in a side panel: days with a note link to it; the week starts on Sunday or Monday.",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    {
+      "id": "commands",
+      "reason": "Adds the “Calendar of daily notes” command"
+    },
+    {
+      "id": "panel",
+      "reason": "Shows the month in a side panel"
+    },
+    {
+      "id": "vault:read",
+      "reason": "Finds your daily notes by their file names"
+    },
+    {
+      "id": "settings",
+      "reason": "Remembers the daily-notes folder and the first day of the week"
+    }
+  ]
+}

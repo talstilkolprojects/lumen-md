@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "id": "lumen.kanban",
+  "name": "Kanban board",
+  "version": "1.0.0",
+  "description": "Draws a ```kanban block — a heading per column, a list item per card — as a board, and copies the board as a Markdown table. The note stays plain Markdown.",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    {
+      "id": "renderer",
+      "reason": "Draws the `kanban` code-block language"
+    },
+    {
+      "id": "commands",
+      "reason": "Adds “New Kanban board” and “Copy Kanban board as a table”"
+    },
+    {
+      "id": "document:read",
+      "reason": "Finds the board in the open note to export it"
+    },
+    {
+      "id": "document:write",
+      "reason": "Inserts a new board at the cursor"
+    },
+    {
+      "id": "clipboard:write",
+      "reason": "Copies the board as a table"
+    },
+    {
+      "id": "notifications",
+      "reason": "Tells you the board was copied, or that there is none"
+    }
+  ]
+}

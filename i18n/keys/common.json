@@ -7201,6 +7201,13 @@
       ]
     },
     {
+      "key": "pluginTrust.changed",
+      "en": "“{name}” was not installed: the code downloaded is not the code that was scanned.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
       "key": "pluginTrust.dialog.asks",
       "en": "{name} {version} by {author} asks to:",
       "vars": [
@@ -7269,6 +7276,11 @@
       ]
     },
     {
+      "key": "pluginTrust.installedBadge",
+      "en": "Installed",
+      "vars": []
+    },
+    {
       "key": "pluginTrust.loadFailed",
       "en": "Could not load the sandboxed plugin list.",
       "vars": []
@@ -7277,6 +7289,18 @@
       "key": "pluginTrust.loading",
       "en": "Loading sandboxed plugins…",
       "vars": []
+    },
+    {
+      "key": "pluginTrust.remove",
+      "en": "Remove",
+      "vars": []
+    },
+    {
+      "key": "pluginTrust.removed",
+      "en": "“{name}” is removed, with the settings and data it kept.",
+      "vars": [
+        "name"
+      ]
     },
     {
       "key": "pluginTrust.report",
