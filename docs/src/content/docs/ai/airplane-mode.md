@@ -15,9 +15,9 @@ where in the code it came from. A badge in the corner shows that the mode is on.
 | `fetch` to another site | refused before it runs |
 | `fetch` to Lumen's own server | GET only, and only from a cache (`only-if-cached`): never the network |
 | `XMLHttpRequest`, `WebSocket`, `EventSource`, `sendBeacon`, WebRTC peers | refused. Live-collaboration sockets that were open are closed |
-| Workers (model downloads) | the worker asks the page and refuses the request itself. A worker that gets no answer refuses too |
+| Workers (model downloads) | the worker asks its own page and refuses the request itself. A worker that gets no answer refuses too. Another tab of Lumen can't answer for it, and once it has heard "on" it stays on until the page reloads. A tab that sees the mode turned on in another tab turns it on too |
 | Images, fonts, media, frames, stylesheets from other sites | refused by the browser itself: a Content-Security-Policy is added to the page |
-| Playground and live-JS blocks | they don't run. Their runner page is a separate frame with its own policy, so the page's policy can't cover it. Frames load only from `blob:` while the mode is on |
+| Playground and live-JS blocks | they don't run. Their runner page is a separate frame with its own policy, so the page's policy can't cover it. Frames load only from `blob:` while the mode is on. A block that was already running when you turned the mode on is stopped at that moment |
 | Cloud dictation (the browser's speech service) | not started |
 
 These stay allowed, because they don't leave the computer: `localhost` / `127.0.0.1`
@@ -41,7 +41,8 @@ is 0). It counts attempts, not bytes:
 - every request the page and its workers made through the wrapped network calls;
 - every resource load the browser lists. A load from another site counts as reaching the
   network even when the browser reports 0 bytes (it hides the size of other sites' files);
-- every request, socket or peer still open when you turned the mode on. These count as
+- every request, socket, peer or running playground frame still open when you turned the
+  mode on. These count as
   having reached the network, and are stopped at that moment.
 
 The file also lists what it doesn't prove (`notCounted`). For example, a request made

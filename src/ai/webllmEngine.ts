@@ -10,6 +10,8 @@
  */
 
 import type { WorkerChatRequest, WorkerChatResult, WorkerIn, WorkerOut } from "./webllm.worker";
+// The window id on the airplane channel (review 2): only this window answers this worker.
+import { airplaneWorkerName } from "../privacy/airplaneBoot";
 
 export type { WorkerChatRequest as WebLlmChatRequest, WorkerChatResult as WebLlmChatResult };
 
@@ -50,7 +52,7 @@ function failAll(message: string): void {
 
 function getWorker(): Worker {
   if (worker) return worker;
-  const w = new Worker(new URL("./webllm.worker.ts", import.meta.url), { type: "module" });
+  const w = new Worker(new URL("./webllm.worker.ts", import.meta.url), { type: "module", name: airplaneWorkerName("webllm") });
   w.onmessage = (ev: MessageEvent<WorkerOut>) => {
     const m = ev.data;
     const p = pending.get(m.id);

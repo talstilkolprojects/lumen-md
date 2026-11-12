@@ -22,12 +22,13 @@ export const CERTIFICATE_COUNTS: readonly string[] = [
   "Every request this page made through fetch, XMLHttpRequest, WebSocket, EventSource, sendBeacon or RTCPeerConnection after airplane mode's wrappers loaded, and every fetch of its workers: each attempt counts once, whatever its size.",
   "Every resource load (image, font, style sheet, script) the browser lists in Resource Timing: a load from another origin counts as reaching the network even when the browser reports 0 bytes; a load from the app's own origin counts when it transferred bytes (it did not come from a cache).",
   "Every request, socket and peer still open when the switch went on: counted as having reached the network, then aborted or closed at that moment.",
+  "Every playground or live-js runner frame still running when the switch went on: counted as having reached the network, then stopped at that moment (its page replaced by about:blank).",
 ];
 
 /** What it does not prove, said plainly. */
 export const CERTIFICATE_NOT_COUNTED: readonly string[] = [
   "Requests made through a reference to fetch taken before airplane mode's wrappers loaded are not listed; the browser's Content-Security-Policy still refuses them to any other site.",
-  "Frames load nothing from a URL while the switch is on (frame-src allows blob: only); a frame open before it went on is not counted.",
+  "Frames load nothing from a URL while the switch is on (frame-src allows blob: only). What a runner frame open before the switch sent, before it was stopped, is counted once as that frame, not request by request.",
   "What other apps, browser extensions or the operating system send is outside this page.",
 ];
 

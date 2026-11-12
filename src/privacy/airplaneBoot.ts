@@ -15,7 +15,8 @@
  *
  * Workers: this module also answers their "is airplane mode on?" question
  * (src/ai/workerLedger.ts) from the startup bundle, so the answer never
- * depends on a lazy chunk loading. A worker that hears nothing blocks.
+ * depends on a lazy chunk loading. A worker that hears nothing blocks. Each
+ * window answers only its own workers (AIRPLANE_TAB, review 2).
  */
 
 export const AIRPLANE_KEY = "lumen.airplane";
@@ -59,6 +60,25 @@ if (on && typeof document !== "undefined" && document.head) addAirplaneCsp(docum
 const WORKER_CHANNEL = "lumen-airplane";
 
 /**
+ * This window's id on the workers' channel (review 2, 12.11). The channel is
+ * shared by every tab of the app, so a worker is told its window's id in its
+ * name (`airplaneWorkerName`), says it in its "hello", and takes an answer
+ * only from that window: another tab, still off, cannot switch it off.
+ */
+export const AIRPLANE_TAB: string = (() => {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  }
+})();
+
+/** A worker's name that carries this window's id (read back by src/ai/workerLedger.ts). */
+export function airplaneWorkerName(label: string): string {
+  return `${label}#lumen-tab=${AIRPLANE_TAB}`;
+}
+
+/**
  * Answer a worker's "hello" with the switch's state, at once. Exported for
  * tests; runs on load in a window. Returns the channel, or null.
  */
@@ -66,7 +86,11 @@ export function answerWorkers(make: () => Pick<BroadcastChannel, "postMessage" |
   try {
     const ch = make();
     ch.addEventListener("message", ((e: MessageEvent<{ kind?: unknown } | null>) => {
-      if (e.data?.kind === "hello") ch.postMessage({ kind: "state", on });
+      const m = e.data as { kind?: unknown; tab?: unknown } | null;
+      if (m?.kind !== "hello") return;
+      // A worker of another window: that window answers it.
+      if (typeof m.tab === "string" && m.tab !== AIRPLANE_TAB) return;
+      ch.postMessage(typeof m.tab === "string" ? { kind: "state", on, tab: m.tab } : { kind: "state", on });
     }) as EventListener);
     (ch as { unref?: () => void }).unref?.();
     return ch;

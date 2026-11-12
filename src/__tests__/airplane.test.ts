@@ -19,10 +19,11 @@ import {
   egressTarget,
   enableAirplaneMode,
   installAirplaneMode,
+  stopRunnerFrames,
   subscribeEgress,
   verdict,
 } from "../privacy/airplane";
-import { AIRPLANE_CSP, AIRPLANE_KEY, answerWorkers, __setAirplaneFlag } from "../privacy/airplaneBoot";
+import { AIRPLANE_CSP, AIRPLANE_KEY, AIRPLANE_TAB, airplaneWorkerName, answerWorkers, __setAirplaneFlag } from "../privacy/airplaneBoot";
 import { buildCertificate, reachedNetwork, sealCertificate, verifyCertificate } from "../privacy/airplaneCertificate";
 import { AIRPLANE_WAIT_MS, installWorkerLedger, type AirplaneMessage } from "../ai/workerLedger";
 
@@ -370,5 +371,62 @@ describe("review 12.11 fixes", () => {
     const base = { id: 1, ts: 1, method: "img", origin: "img", target: "https://tracker.example.com/p.gif" };
     expect(reachedNetwork({ ...base, kind: "resource", decision: "allowed" })).toBe(true);
     expect(reachedNetwork({ ...base, kind: "fetch", decision: "in-flight" })).toBe(true);
+  });
+});
+
+describe("review 2 fixes", () => {
+  beforeEach(() => __resetAirplane());
+
+  it("a worker named for its window takes answers only from that window, and on sticks until a reload", async () => {
+    const inner: string[] = [];
+    const scope = { fetch: (async (u: string) => (inner.push(u), new Response(""))) as unknown as typeof fetch, name: airplaneWorkerName("transformers"), location: { href: "https://lumen-md.vercel.app/assets/w.js" } };
+    const hellos: AirplaneMessage[] = [];
+    let listener: ((e: MessageEvent<AirplaneMessage>) => void) | null = null;
+    const air = {
+      postMessage: (m: AirplaneMessage) => hellos.push(m),
+      addEventListener(_t: string, fn: EventListenerOrEventListenerObject) {
+        listener = fn as unknown as (e: MessageEvent<AirplaneMessage>) => void;
+      },
+    } as unknown as BroadcastChannel;
+    installWorkerLedger(scope, { postMessage() {} } as unknown as BroadcastChannel, air);
+    expect(hellos[0]).toEqual({ kind: "hello", tab: AIRPLANE_TAB });
+    const say = (data: AirplaneMessage) => listener!({ data } as MessageEvent<AirplaneMessage>);
+    // Another tab, still off, answers first; then a message with no window at all: neither counts.
+    say({ kind: "state", on: false, tab: "another-tab" });
+    say({ kind: "state", on: false });
+    say({ kind: "state", on: true, tab: AIRPLANE_TAB });
+    await expect(scope.fetch("https://huggingface.co/model.onnx")).rejects.toThrow(/airplane mode is on/);
+    // Even this window saying off does not lift it: turning off reloads the page.
+    say({ kind: "state", on: false, tab: AIRPLANE_TAB });
+    await expect(scope.fetch("https://huggingface.co/model.onnx")).rejects.toThrow(/airplane mode is on/);
+    expect(inner).toEqual([]);
+  });
+
+  it("the startup half answers only its own window's workers (and those that name none)", () => {
+    const posted: unknown[] = [];
+    let fn: ((e: MessageEvent) => void) | null = null;
+    const ch = { postMessage: (m: unknown) => posted.push(m), addEventListener: (_t: string, f: EventListener) => (fn = f as unknown as (e: MessageEvent) => void) };
+    __setAirplaneFlag(true);
+    answerWorkers(() => ch as unknown as BroadcastChannel);
+    fn!({ data: { kind: "hello", tab: "another-tab" } } as MessageEvent);
+    fn!({ data: { kind: "hello", tab: AIRPLANE_TAB } } as MessageEvent);
+    __setAirplaneFlag(false);
+    expect(posted).toEqual([{ kind: "state", on: true, tab: AIRPLANE_TAB }]);
+  });
+
+  it("runner frames already running when the switch goes on are stopped and recorded", () => {
+    const frame = (src: string) => {
+      const f = { src, title: "", getAttribute: (k: string) => (k === "src" ? f.src : null), setAttribute: (k: string, v: string) => void (k === "src" && (f.src = v)) };
+      return f;
+    };
+    const runner = frame("https://lumen-md.vercel.app/playground-runner.html");
+    const live = frame("/livejs-runner.html#x");
+    const other = frame("blob:https://lumen-md.vercel.app/1");
+    const doc = { querySelectorAll: () => [runner, live, other] } as unknown as Document;
+    expect(stopRunnerFrames(doc, 1000)).toBe(2);
+    expect([runner.src, live.src, other.src]).toEqual(["about:blank", "about:blank", "blob:https://lumen-md.vercel.app/1"]);
+    const frames = egressAttempts().filter((a) => a.kind === "frame");
+    expect(frames.map((a) => a.decision)).toEqual(["in-flight", "in-flight"]);
+    expect(frames.every((a) => reachedNetwork(a))).toBe(true);
   });
 });

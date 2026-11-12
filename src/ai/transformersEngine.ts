@@ -16,6 +16,8 @@
 
 import type { CaptionFamily, Device, EmbedResult, TranscribeResult, WorkerIn, WorkerOut, TimedSegment } from "./transformers.worker";
 import { detectHardware, vramBudgetMB, type Hardware } from "./modelManager";
+// The window id on the airplane channel (review 2): only this window answers this worker.
+import { airplaneWorkerName } from "../privacy/airplaneBoot";
 
 export type { TranscribeResult, EmbedResult, TimedSegment };
 
@@ -102,7 +104,7 @@ function failAll(message: string): void {
 
 function getWorker(): Worker {
   if (worker) return worker;
-  const w = new Worker(new URL("./transformers.worker.ts", import.meta.url), { type: "module" });
+  const w = new Worker(new URL("./transformers.worker.ts", import.meta.url), { type: "module", name: airplaneWorkerName("transformers") });
   w.onmessage = (ev: MessageEvent<WorkerOut>) => {
     const m = ev.data;
     const p = pending.get(m.id);

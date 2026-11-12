@@ -32,9 +32,18 @@ export const LEDGER_CHANNEL = "lumen-privacy-ledger";
  */
 export const AIRPLANE_CHANNEL = "lumen-airplane";
 export const AIRPLANE_WAIT_MS = 3000;
+/**
+ * Review 2 (12.11): the channel is shared by every tab of the app. A worker
+ * whose name carries its window's id (`<label>#lumen-tab=<id>`,
+ * airplaneWorkerName in src/privacy/airplaneBoot.ts) says it in its hello
+ * and takes a state only for that id, so another tab (still off) cannot
+ * switch it off. And "on" sticks: once a worker has heard on, only a reload
+ * (a new worker) turns it off, as turning the switch off reloads the page.
+ */
+export const AIRPLANE_TAB_MARK = "#lumen-tab=";
 export type AirplaneMessage =
-  | { kind: "hello" }
-  | { kind: "state"; on: boolean }
+  | { kind: "hello"; tab?: string }
+  | { kind: "state"; on: boolean; tab?: string }
   | { kind: "attempt"; url: string; method: string; worker: string; blocked: boolean };
 
 /** blob:, data: and loopback never leave the device. */
@@ -85,7 +94,10 @@ export function installWorkerLedger(
   }
   marker.__lumenLedger = true;
   const inner = scope.fetch.bind(scope);
-  const worker = scope.name || scope.location?.pathname?.split("/").pop() || "worker";
+  const rawName = scope.name ?? "";
+  const mark = rawName.indexOf(AIRPLANE_TAB_MARK);
+  const tab = mark >= 0 ? rawName.slice(mark + AIRPLANE_TAB_MARK.length) || null : null;
+  const worker = (mark >= 0 ? rawName.slice(0, mark) : rawName) || scope.location?.pathname?.split("/").pop() || "worker";
   let seq = 0;
   const post = (m: WorkerLedgerMessage) => {
     try {
@@ -107,12 +119,17 @@ export function installWorkerLedger(
       const timer = setTimeout(resolve, AIRPLANE_WAIT_MS);
       air.addEventListener("message", ((e: MessageEvent<AirplaneMessage>) => {
         if (e.data?.kind !== "state") return;
-        airplane = e.data.on === false ? false : true;
+        // Bound to a window: only its answers count.
+        if (tab !== null && e.data.tab !== tab) return;
+        const next = e.data.on === false ? false : true;
+        // On sticks until the page (and so this worker) is reloaded.
+        if (airplane === true && !next) return;
+        airplane = next;
         clearTimeout(timer);
         resolve();
       }) as EventListener);
     });
-    air.postMessage({ kind: "hello" } satisfies AirplaneMessage);
+    air.postMessage((tab !== null ? { kind: "hello", tab } : { kind: "hello" }) satisfies AirplaneMessage);
   }
   scope.fetch = async function ledgerWorkerFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
