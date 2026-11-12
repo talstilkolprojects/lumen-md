@@ -13,6 +13,31 @@
 | [`findings-template.he.md`](findings-template.he.md) | Issues with Nielsen severity, frequency and evidence, per-task results, the round-2 acceptance table; `usability-analyze.mjs --findings` reads its issues table |
 | [`seed-vault/`](seed-vault) | The notes the tasks use, all made up. Import them before each session, then delete “טיוטה ישנה” so it waits in the trash for task 9 |
 
+## Self-guided round (plan W4.25)
+
+So the first round does not depend on Tal alone: **5 moderated sessions** (Tal,
+`protocol.he.md`) plus **at least 7 self-guided ones**. Acceptance: ≥ 12
+participants, mean SUS ≥ 75, and every severe finding has a plan task.
+
+| File | What it is |
+|---|---|
+| [`unmoderated.he.md`](unmoderated.he.md) | The self-guided protocol: how it runs, what the app does in the moderator's place, outcome rules, what is and isn't recorded, collection and analysis |
+| [`tasks-self.he.md`](tasks-self.he.md) | The ten task scripts as participants see them, and what the app checks (a test keeps them equal to the code) |
+| [`tools.he.md`](tools.he.md) | The free-tool research and the decision: the app's own self-guided mode, plus a free Tally form to receive the file |
+| [`invitation-self.he.md`](invitation-self.he.md) | Channels and wording for recruiting (**Tal's step**) |
+| [`submission-form.he.md`](submission-form.he.md) | The Tally form to set up (**Tal's step**) |
+
+In the app: Command palette → **Usability test (self-guided)…**
+(`src/ui/UsabilitySelfPanel.tsx`, `src/research/usability/unmoderated.ts`).
+
+- **Opt-in, consent first.** Nothing is recorded before consent.
+- **Random code.** The participant gets a code like `U-7K3F`, never a name.
+- **Practice notes.** The panel writes them into the folder `בדיקת שימושיות` and puts `טיוטה ישנה` in the trash for task 9.
+- **Tasks.** Each task shows its script, a timer, and **Done** / **I couldn't do it**, then the ease question. SUS comes at the end.
+- **Result check.** Where a task's result is in the notes, the app checks it on the device and records only **yes or no**.
+- **Export.** The participant saves a `.zip` (the session JSON and a README) and sends it through the form.
+- **Analysis.** `usability-analyze.mjs` reads `.zip` and `.json` files together, splits moderated from self-guided sessions, and checks the W4.25 acceptance.
+
 ## In the app: the session recorder
 
 Command palette → **Usability study (moderator)…**

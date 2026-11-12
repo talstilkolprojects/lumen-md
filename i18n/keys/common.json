@@ -10817,6 +10817,167 @@
       "vars": []
     },
     {
+      "key": "usabilitySelf.begin",
+      "en": "Start the task",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.code",
+      "en": "Your code: {code}. No names are recorded.",
+      "vars": [
+        "code"
+      ]
+    },
+    {
+      "key": "usabilitySelf.consent",
+      "en": "I have read this and agree to take part.",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.delete",
+      "en": "Delete my session data",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.delete.confirm",
+      "en": "Delete everything this session recorded on this device?",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.done",
+      "en": "Done",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.finish",
+      "en": "Finish",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.gaveUp",
+      "en": "I couldn’t do it",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.hide",
+      "en": "Hide the panel",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.intro",
+      "en": "Thank you for helping. You will do 10 short tasks in Lumen on your own, about 30 minutes. We are testing Lumen, not you: if something is unclear, that is exactly what we want to find.",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.overLimit",
+      "en": "This is taking longer than planned. You can keep going, or press “I couldn’t do it”.",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.privacy",
+      "en": "Nothing is sent anywhere. At the end you save one file and decide whether to send it. You can stop at any time.",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.readme",
+      "en": "This file holds one Lumen usability session (code {code}): task times, the names of the buttons and commands used, key counts, whether each task's result was in the practice notes, and the questionnaire answers. It holds no note text and no names.",
+      "vars": [
+        "code"
+      ]
+    },
+    {
+      "key": "usabilitySelf.records",
+      "en": "What is recorded, on this device only:",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.records.answers",
+      "en": "your answers to the short questions after each task and at the end",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.records.check",
+      "en": "whether a task’s result is in the practice notes (yes or no) — never the notes’ text",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.records.clicks",
+      "en": "the buttons and commands you use (their names in the app) and how many keys you press — never what you type",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.records.time",
+      "en": "which task you are on, and how long it takes",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.save",
+      "en": "Save the file (.zip)",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.seedFailed",
+      "en": "The practice notes could not be added ({error}). You can still do the tasks.",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "usabilitySelf.send",
+      "en": "To send it: open the link in your invitation and attach the file, or reply to the invitation with the file attached.",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.setupNote",
+      "en": "Please use a private window or a separate browser profile. The practice notes go into a folder named “{folder}”.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "usabilitySelf.show",
+      "en": "Show the task",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.start",
+      "en": "Start",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.stop",
+      "en": "Stop the session",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.stop.confirm",
+      "en": "Stop now? What was recorded so far can still be saved and sent.",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.sus.intro",
+      "en": "Last step: 10 statements about Lumen. Choose how much you agree with each.",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.taskOf",
+      "en": "Task {n} of {total}",
+      "vars": [
+        "n",
+        "total"
+      ]
+    },
+    {
+      "key": "usabilitySelf.thanks",
+      "en": "Thank you! Save the file and send it as your invitation explains.",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.title",
+      "en": "Usability test (self-guided)",
+      "vars": []
+    },
+    {
       "key": "usage.activated",
       "en": "Using Lumen since {date}",
       "vars": [

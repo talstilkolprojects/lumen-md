@@ -175,6 +175,8 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "chatImport.json": { module: "capture/chats/strings.ts", users: ["capture/chats/runImport.ts"], prefixes: ["chatImport."] },
   // Mail and Takeout import (plan W5.18), loaded the same way.
   "mailImport.json": { module: "capture/mail/strings.ts", users: ["capture/mail/runImport.ts"], prefixes: ["mailImport."] },
+  // The self-guided usability session (plan W4.25), opened from the palette.
+  "usabilitySelf.json": { module: "research/usability/selfStrings.ts", users: ["ui/UsabilitySelfPanel.tsx"], prefixes: ["usabilitySelf."] },
 };
 
 function sources(dir: string): string[] {

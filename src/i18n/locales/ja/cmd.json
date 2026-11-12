@@ -342,6 +342,8 @@
   "cmd.research.settings.hint": "Claude のウェブ検索、または自分のキーで Brave / Tavily",
   "cmd.research.usability": "ユーザビリティ調査（司会者）…",
   "cmd.research.usability.hint": "参加者の同意のもと、このデバイスでユーザビリティセッションを記録",
+  "cmd.research.usabilitySelf": "ユーザビリティテスト（セルフガイド）…",
+  "cmd.research.usabilitySelf.hint": "一人で 10 タスク。記録はこの端末のみ",
   "cmd.research.verify": "🔎 リサーチ：このノートの引用を検証",
   "cmd.research.verify.hint": "脚注のリンクが生きていて、引用が実際にページにあるかを確認",
   "cmd.review.daily": "今日の復習",

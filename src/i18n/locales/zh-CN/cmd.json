@@ -342,6 +342,8 @@
   "cmd.research.settings.hint": "Claude 网络搜索，或使用你自己的密钥的 Brave / Tavily",
   "cmd.research.usability": "可用性研究（主持人）…",
   "cmd.research.usability.hint": "经参与者同意，在此设备上记录一次可用性会话",
+  "cmd.research.usabilitySelf": "可用性测试（自助）…",
+  "cmd.research.usabilitySelf.hint": "独自完成 10 个任务；仅记录在本设备",
   "cmd.research.verify": "🔎 研究：核查本笔记的引用",
   "cmd.research.verify.hint": "检查每个脚注链接是否有效、引文是否真的出现在页面上",
   "cmd.review.daily": "每日复习",

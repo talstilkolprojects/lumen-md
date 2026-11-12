@@ -342,6 +342,8 @@
   "cmd.research.settings.hint": "Recherche web de Claude, ou Brave / Tavily avec votre clé",
   "cmd.research.usability": "Étude d'utilisabilité (animateur)…",
   "cmd.research.usability.hint": "Enregistrer une séance d'utilisabilité sur cet appareil, avec le consentement du participant",
+  "cmd.research.usabilitySelf": "Test d’utilisabilité (en autonomie)…",
+  "cmd.research.usabilitySelf.hint": "10 tâches en autonomie ; enregistré sur cet appareil uniquement",
   "cmd.research.verify": "🔎 Recherche : vérifier les citations de cette note",
   "cmd.research.verify.hint": "Vérifie que chaque lien de note fonctionne et que la citation figure vraiment sur la page",
   "cmd.review.daily": "Révision du jour",

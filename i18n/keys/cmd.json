@@ -1725,6 +1725,16 @@
       "vars": []
     },
     {
+      "key": "cmd.research.usabilitySelf",
+      "en": "Usability test (self-guided)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.research.usabilitySelf.hint",
+      "en": "10 tasks on your own; recorded on this device only",
+      "vars": []
+    },
+    {
       "key": "cmd.research.verify",
       "en": "🔎 Research: Verify Citations in This Note",
       "vars": []

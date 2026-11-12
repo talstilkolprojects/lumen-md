@@ -342,6 +342,8 @@
   "cmd.research.settings.hint": "بحث Claude على الويب، أو Brave / Tavily بمفتاحك",
   "cmd.research.usability": "دراسة قابلية الاستخدام (للمُدير)…",
   "cmd.research.usability.hint": "تسجيل جلسة قابلية استخدام على هذا الجهاز بموافقة المشارك",
+  "cmd.research.usabilitySelf": "اختبار سهولة الاستخدام (ذاتي)…",
+  "cmd.research.usabilitySelf.hint": "10 مهام بمفردك؛ يُسجَّل على هذا الجهاز فقط",
   "cmd.research.verify": "🔎 بحث: التحقق من الاستشهادات في هذه الملاحظة",
   "cmd.research.verify.hint": "يتحقق من أن كل رابط في الحواشي يعمل وأن الاقتباس موجود فعلًا في الصفحة",
   "cmd.review.daily": "المراجعة اليومية",

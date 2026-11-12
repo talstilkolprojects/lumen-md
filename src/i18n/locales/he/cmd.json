@@ -342,6 +342,8 @@
   "cmd.research.settings.hint": "חיפוש הרשת של Claude, או Brave / Tavily עם מפתח משלך",
   "cmd.research.usability": "בדיקת שימושיות (למנחה)…",
   "cmd.research.usability.hint": "הקלטת מפגש בדיקת שימושיות במכשיר הזה, בהסכמת המשתתף/ת",
+  "cmd.research.usabilitySelf": "בדיקת שימושיות (עצמאית)…",
+  "cmd.research.usabilitySelf.hint": "10 משימות לבד; נרשם במכשיר הזה בלבד",
   "cmd.research.verify": "🔎 מחקר: בדיקת הציטוטים בפתק",
   "cmd.research.verify.hint": "בודק שכל קישור בהערות השוליים חי ושהציטוט באמת מופיע בעמוד",
   "cmd.review.daily": "חזרה יומית",

@@ -35,6 +35,28 @@ and everything in it is in Hebrew, the participants' language.
   of at least 80, at least 90% unaided success, and all ten severe issues
   closed. The study is repeated before every major release.
 
+## Take the test on your own
+
+You can help without a meeting. The session takes about 30 minutes, on your own.
+
+1. Open lumen-md.vercel.app in a **private window**.
+2. Open the command palette (Ctrl+K, or ⌘K on a Mac) and choose **Usability test (self-guided)…**.
+3. Read what is recorded and agree.
+
+What happens then:
+
+- Lumen gives you a random code such as `U-7K3F`, never your name.
+- It adds a few practice notes to a folder named `בדיקת שימושיות`.
+- It shows ten short tasks one at a time. You press **Done** or **I couldn't do it**, then rate how easy the task was.
+- At the end come ten short statements about Lumen.
+
+Where a task's result can be seen in the practice notes, Lumen checks it on
+your device and keeps only **yes or no**, never the text.
+
+At the end you save one `.zip` file and send it through the link in your
+invitation. Then press **Delete my session data**. Nothing is sent until you
+send the file yourself.
+
 ## The session recorder
 
 Command palette → **Usability study (moderator)…** opens the moderator's

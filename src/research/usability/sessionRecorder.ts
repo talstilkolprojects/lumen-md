@@ -28,7 +28,15 @@ export type Outcome = "success" | "partial" | "fail" | "gave-up";
 
 export type RecorderEvent =
   | { t: number; type: "task-start"; task: number }
-  | { t: number; type: "task-end"; task: number; outcome: Outcome; assisted: boolean }
+  | {
+      t: number;
+      type: "task-end";
+      task: number;
+      outcome: Outcome;
+      assisted: boolean;
+      /** Self-guided sessions (W4.25): did the notes show the result? null: nothing to check. Only this boolean is kept, never the text. */
+      verified?: boolean | null;
+    }
   | { t: number; type: "click"; role: string; label: string; testid?: string }
   | { t: number; type: "command"; id: string }
   | { t: number; type: "shortcut"; combo: string }
@@ -36,10 +44,14 @@ export type RecorderEvent =
   | { t: number; type: "error" }
   | { t: number; type: "note"; code: string };
 
+export type SessionMode = "moderated" | "unmoderated";
+
 export interface Session {
   schema: typeof SCHEMA;
-  /** P1…P8: a code, never a name. */
+  /** P1…P20 (moderated) or U-XXXX (self-guided, random): a code, never a name. */
   participant: string;
+  /** Absent in moderated sessions recorded before plan W4.25. */
+  mode?: SessionMode;
   /** 1 or 2 (the re-test after fixes). */
   round: number;
   consentAt: string;
@@ -57,9 +69,11 @@ export interface Session {
 export const NOTE_CODES = ["hesitated", "wrong-path", "asked-help", "said-confused", "said-liked", "rtl-issue", "bug"] as const;
 
 const PARTICIPANT = /^P([1-9]|1[0-9]|20)$/;
+const SELF_PARTICIPANT = /^U-[A-HJ-NP-Z2-9]{4}$/;
 
-export function validParticipant(code: string): boolean {
-  return PARTICIPANT.test(code.trim().toUpperCase());
+/** A moderated code (P1…P20), or with `mode` "unmoderated" a self-guided one (U-XXXX). */
+export function validParticipant(code: string, mode: SessionMode = "moderated"): boolean {
+  return (mode === "unmoderated" ? SELF_PARTICIPANT : PARTICIPANT).test(code.trim().toUpperCase());
 }
 
 /** A command id worth recording: a fixed id from the code, or its family for ids that carry a name. */
@@ -147,17 +161,20 @@ export interface StartOptions {
   round: number;
   consent: boolean;
   app: Session["app"];
+  /** Default "moderated". */
+  mode?: SessionMode;
   now?: number;
   storage?: Store | null;
 }
 
-/** A new session. Throws without consent or with a code that isn't P1…P20. */
+/** A new session. Throws without consent or with a code that isn't P1…P20 (U-XXXX when self-guided). */
 export function startSession(o: StartOptions): Session {
+  const mode = o.mode ?? "moderated";
   if (o.consent !== true) throw new Error("consent required");
-  if (!validParticipant(o.participant)) throw new Error("participant code must be P1…P20");
+  if (!validParticipant(o.participant, mode)) throw new Error(mode === "unmoderated" ? "participant code must be U-XXXX" : "participant code must be P1…P20");
   if (o.round !== 1 && o.round !== 2) throw new Error("round must be 1 or 2");
   const now = o.now ?? Date.now();
-  const s: Session = { schema: SCHEMA, participant: o.participant.trim().toUpperCase(), round: o.round, consentAt: new Date(now).toISOString(), startedAt: now, app: o.app, events: [], seq: {}, sus: [] };
+  const s: Session = { schema: SCHEMA, participant: o.participant.trim().toUpperCase(), ...(mode === "unmoderated" ? { mode } : {}), round: o.round, consentAt: new Date(now).toISOString(), startedAt: now, app: o.app, events: [], seq: {}, sus: [] };
   save(s, o.storage === undefined ? safeStorage() : o.storage);
   return s;
 }
