@@ -218,7 +218,7 @@ describe("e2ee sync: anchoring a new device (pairing / TOFU)", () => {
   it("after pairing, a new device rejects the old manifest", async () => {
     const { provider, a, name, old } = await replaySetup();
     const code = await a.sync.pairingCode();
-    expect(code).toMatch(/^lumen-pair:1:[A-Za-z0-9_-]+$/);
+    expect(code).toMatch(/^lumen-pair:2:0:[A-Za-z0-9_-]+$/);
 
     const c = await joinVault("C", provider);
     await c.sync.pair(code);
@@ -274,8 +274,10 @@ describe("e2ee sync: anchoring a new device (pairing / TOFU)", () => {
     const code = await a.sync.pairingCode();
     const c = await joinVault("C", provider, undefined, () => now);
     await expect(c.sync.pair("hello")).rejects.toBeInstanceOf(PairingError);
-    await expect(c.sync.pair("lumen-pair:1:@@@")).rejects.toBeInstanceOf(PairingError);
-    await expect(c.sync.pair("lumen-pair:1:AAAA")).rejects.toBeInstanceOf(PairingError);
+    await expect(c.sync.pair("lumen-pair:1:AAAA")).rejects.toBeInstanceOf(PairingError); // an older build's code
+    await expect(c.sync.pair("lumen-pair:2:0:@@@")).rejects.toBeInstanceOf(PairingError);
+    await expect(c.sync.pair("lumen-pair:2:0:AAAA")).rejects.toBeInstanceOf(PairingError);
+    await expect(c.sync.pair("lumen-pair:2:x:AAAA")).rejects.toBeInstanceOf(PairingError);
     const altered = code.slice(0, -3) + (code.endsWith("A") ? "BBB" : "AAA");
     await expect(c.sync.pair(altered)).rejects.toBeInstanceOf(PairingError);
 

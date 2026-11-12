@@ -68,7 +68,7 @@ describe("e2ee freshness banner", () => {
     render(<FreshnessBanner sync={c.sync} />);
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Freshness not verified");
-    type("Pairing code from another device", "lumen-pair:1:AAAA");
+    type("Pairing code from another device", "lumen-pair:2:0:AAAA");
     fireEvent.click(screen.getByText("Pair"));
     expect(await screen.findByText("This pairing code is not valid for this vault, or it has expired.")).toBeTruthy();
     type("Pairing code from another device", await a.sync.pairingCode());

@@ -15,6 +15,7 @@ import { memoryStateStore } from "../sync/e2ee/state";
 import { ageDecrypt } from "../sync/e2ee/age";
 import { argon2id } from "../sync/e2ee/primitives/argon2";
 import { readPairingCode } from "../sync/e2ee/pairing";
+import { manifestName, openManifest } from "../sync/e2ee/manifest";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 interface Vault {
@@ -23,12 +24,16 @@ interface Vault {
   objects: Record<string, string>;
   expect: { epoch: number; files: Record<string, string> };
   device?: { id: string; identity: string };
+  /** The epoch's manifest is frozen (a re-key cut off before its commit). */
+  frozen?: boolean;
+  /** A passphrase change cut off before its header: the old passphrase still opens the epoch before. */
+  pending?: { oldPassphrase: string; oldEpoch: number; oldFiles: string[] };
 }
 const V = JSON.parse(readFileSync(join(root, "docs/sync-protocol-vectors.json"), "utf8")) as {
   vaults: Vault[];
   argon2id: Array<{ password: string; salt: string; memoryKiB: number; iterations: number; parallelism: number; tag: string }>;
   age: Array<{ identity?: string; passphrase?: string; plaintext: string; file: string }>;
-  pairing: { vault: number; code: string; body: { counter: number; digest: string } };
+  pairing: Array<{ vault: number; code: string; body: { counter: number; digest: string; ring: { epoch: number; rev: number; digest: string } } }>;
 };
 const bytes = (b64: string) => new Uint8Array(Buffer.from(b64, "base64"));
 
@@ -51,6 +56,19 @@ describe("the sync protocol's test vectors", () => {
     it(`opens "${v.name}" with the passphrase${v.device ? " and with the device key" : ""}`, async () => {
       const got = await readAll(v, (p) => unlockVault(p, v.passphrase, { minPbkdf2Iterations: 1000 }));
       expect(got).toEqual(v.expect);
+      if (v.frozen) {
+        const p = await load(v);
+        const { keys } = await unlockVault(p, v.passphrase, { minPbkdf2Iterations: 1000 });
+        const name = await manifestName(keys);
+        expect((await openManifest(keys, p.objects.get(name)!.data, name)).manifest.frozen?.epoch).toBe(keys.epoch + 1);
+      }
+      if (v.pending) {
+        const p = await load(v);
+        const { keys } = await unlockVault(p, v.pending.oldPassphrase, { minPbkdf2Iterations: 1000 });
+        expect(keys.epoch).toBe(v.pending.oldEpoch);
+        const name = await manifestName(keys);
+        expect(Object.keys((await openManifest(keys, p.objects.get(name)!.data, name)).manifest.files)).toEqual(v.pending.oldFiles);
+      }
       if (v.device) {
         const d = v.device;
         expect(await readAll(v, async (p) => ({ ...(await unlockWithDevice(p, d.id, d.identity)), access: { device: d.id, identity: d.identity } }))).toEqual(v.expect);
@@ -66,8 +84,10 @@ describe("the sync protocol's test vectors", () => {
       const pt = await ageDecrypt(bytes(a.file), [a.identity ? { identity: a.identity } : { passphrase: a.passphrase! }]);
       expect(Buffer.from(pt).toString("base64")).toBe(a.plaintext);
     }
-    const v = V.vaults[V.pairing.vault];
-    const { keys } = await unlockVault(await load(v), v.passphrase, { minPbkdf2Iterations: 1000 });
-    expect(await readPairingCode(keys, V.pairing.code, 1_800_000_000_000)).toEqual(V.pairing.body);
+    for (const pv of V.pairing) {
+      const v = V.vaults[pv.vault];
+      const { keys } = await unlockVault(await load(v), v.passphrase, { minPbkdf2Iterations: 1000 });
+      expect(await readPairingCode(keys, pv.code, 1_800_000_000_000)).toEqual(pv.body);
+    }
   }, 60_000);
 });

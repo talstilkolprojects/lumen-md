@@ -4,7 +4,7 @@
  * @vitest-environment node
  */
 import { describe, expect, it } from "vitest";
-import { memoryProvider, type SyncProvider } from "../sync/e2ee/provider";
+import { CAS_PROBE_NAME, memoryProvider, type SyncProvider } from "../sync/e2ee/provider";
 import { E2eeSync, unlockVault, unlockWithDevice } from "../sync/e2ee/engine";
 import { generateIdentity } from "../sync/e2ee/age";
 import { KEYRING_NAME, KeyringRollbackError, RevokedError } from "../sync/e2ee/keyring";
@@ -15,10 +15,10 @@ import { memoryFiles } from "../sync/e2ee/localFiles";
 import { memoryStateStore } from "../sync/e2ee/state";
 import { device, joinVault, mulberry32, newVault, PASSPHRASE, snapshot, TEST_ITERATIONS, TEST_POLICY } from "./helpers/e2ee";
 
-/** A provider that records the names written. */
+/** A provider that records the names written (not the conditional-write probe a re-key runs first). */
 function recording(inner: SyncProvider) {
   const puts: string[] = [];
-  const p: SyncProvider = { id: inner.id, get: (n) => inner.get(n), list: () => inner.list(), delete: (n) => inner.delete(n), put: (n, d, c) => (puts.push(n), inner.put(n, d, c)) };
+  const p: SyncProvider = { id: inner.id, get: (n) => inner.get(n), list: () => inner.list(), delete: (n) => inner.delete(n), put: (n, d, c) => (n !== CAS_PROBE_NAME && puts.push(n), inner.put(n, d, c)) };
   return { p, puts };
 }
 
@@ -41,8 +41,8 @@ describe("re-key", () => {
     const oldManifest = await manifestName(a.sync.keys());
     const r = await a.sync.rekey();
     expect(r.epoch).toBe(1);
-    // Only the frozen old manifest, the keyring and the new epoch's manifest were written: no blob.
-    expect(puts).toEqual([oldManifest, KEYRING_NAME, await manifestName(a.sync.keys())]);
+    // Only the frozen old manifest, the new epoch's manifest and the keyring (the commit) were written: no blob.
+    expect(puts).toEqual([oldManifest, await manifestName(a.sync.keys()), KEYRING_NAME]);
     expect(r.written).toEqual(puts);
     // B picks up the new epoch on its next round, through the passphrase.
     b.files.set("n/after.md", "after the re-key");
@@ -130,6 +130,9 @@ describe("re-key under load", () => {
     const rand = mulberry32(0x7a11);
     const a = await newVault(p);
     const b = await joinVault("B", p);
+    await a.sync.sync();
+    await b.sync.sync();
+    await b.sync.pair(await a.sync.pairingCode()); // B re-keys too: only a verified device may (RR-5)
     const truth = new Map<string, string | null>();
     let rekeys = 0;
     for (let round = 0; round < 10_000; round++) {
@@ -176,7 +179,7 @@ describe("re-key under load", () => {
     await a.sync.sync();
     puts.length = 0;
     await a.sync.rekey();
-    // The frozen manifest, the keyring, the new manifest: no blob.
+    // The frozen manifest, the new manifest, the keyring: no blob.
     expect(puts).toHaveLength(3);
     expect(puts).toContain(KEYRING_NAME);
     const fresh = await joinVault("F", p);
