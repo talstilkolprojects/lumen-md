@@ -21,7 +21,9 @@ The exporters never receive the text at all.
 
 The rules fail closed:
 
-- A `<redact>` that is never closed removes everything after it.
+- A `<redact>` that is never closed removes everything after it, and every
+  footnote too: the preview shows the footnotes at the end of the note, so they
+  are shaded with the rest.
 - A mark with attributes or a slash (`<redact class="x">`, `<redact/>`) is a
   mark too, exactly as the preview reads it, so what you see shaded is what
   goes.
@@ -34,7 +36,9 @@ The rules fail closed:
 - A `</redact>` that the preview doesn't read as one (in code, in a link's
   address, in a comment, or while a paragraph or table opened inside the
   passage is still open) doesn't end the passage. Everything the preview
-  shades is gone from the export, and sometimes a little more.
+  shades is gone from the export, and sometimes a little more. A suggestion
+  (`{>>comment<<}`, `{~~old~>new~~}`) is read the way the preview reads it,
+  so its `>` doesn't end a tag that the preview keeps open.
 - The same goes for Markdown structure. A `<redact>` on a line of its own
   shades the blocks after it, and a `</redact>` typed inside one of them (a
   list item, a quote, a table cell, a heading or a paragraph) doesn't end the

@@ -20,13 +20,18 @@
  * caller keeps every close the text pass (`markInertCloses`) marked inert as
  * well, so the union removes more than either pass alone, never less.
  *
+ * The text it reads is the one the preview parses: the caller swaps the
+ * CriticMarkup delimiters first, as pipeline.ts does (`prepareCriticMarkup`),
+ * because a `>` of `{>>` or `~>` ends a tag in the note as written but not in
+ * the preview (review 8, RR8-473-1). Footnote definitions are read where the
+ * preview puts them (review 8, RR8-473-2): after the last block, in the
+ * footnotes section (special elements), in the order of their first
+ * reference; there, a close with no passage open in that order ends nothing.
+ *
  * Not modelled, and why that is safe: the preview's frontmatter is blanked
  * (it is never rendered); GFM strikethrough, task lists and autolink literals
- * make no special element; CriticMarkup only swaps its delimiters for
- * single characters before parsing and wraps text in ins/del/mark after
- * rehype-raw. Footnote definitions are moved to the end of the preview; they
- * count as an open list item where they are written, so a close inside one is
- * inert.
+ * make no special element; CriticMarkup wraps text in ins/del/mark after
+ * rehype-raw, which are not special.
  */
 
 import { parse, postprocess, preprocess } from "micromark";
@@ -255,10 +260,28 @@ export function treeInertCloses(text: string, marks: TreeMark[]): void {
     }
   });
 
+  // The preview's order: the note without its footnote definitions, then the footnotes section after the
+  // last block (review 8, RR8-473-2), the definitions in the order they are first referenced, as
+  // mdast-util-to-hast builds it. Each part gets its own marks, in their order in the note.
+  const parts = previewOrder(text, evs);
+  const rawOfToken = new Map<unknown, number>();
+  {
+    let rx = 0;
+    let img = 0;
+    for (const [kind, t] of evs) {
+      if (t.type === "image") img += kind === "enter" ? 1 : -1;
+      else if (kind === "enter" && img === 0 && (t.type === "htmlFlow" || t.type === "htmlText") && !rawOfToken.has(t)) rawOfToken.set(t, rx++);
+    }
+  }
+  const inPart = (m: TreeMark, p: Part) => p.ranges.some(([a, b]) => m.index >= a && m.index < b);
+
+  let seg: TreeMark[] = [];
   let k = 0;
   let depth = 0;
   let uncertain = false;
   let poisoned = false;
+  /** In the footnotes section, a close with no passage open here may still be inside one in the note's order: it ends nothing. */
+  let moved = false;
   const stack: string[] = [];
   const open = (asText = false) => {
     depth++;
@@ -266,7 +289,10 @@ export function treeInertCloses(text: string, marks: TreeMark[]): void {
   };
   const innermost = () => Math.max(stack.lastIndexOf("redact"), stack.lastIndexOf("redact~"));
   const close = (m: TreeMark) => {
-    if (depth === 0) return;
+    if (depth === 0) {
+      if (moved) m.inert = true;
+      return;
+    }
     const r = innermost();
     if (poisoned || uncertain || r < 0 || stack.slice(r + 1).some((e) => SPECIAL.has(e))) {
       m.inert = true;
@@ -281,13 +307,13 @@ export function treeInertCloses(text: string, marks: TreeMark[]): void {
   };
   /** Marks before `to` that are text here: an opening one opens, a closing one closes only a mark that is text too. */
   const asText = (to: number) => {
-    for (; k < marks.length && marks[k].index < to; k++) {
-      const m = marks[k];
+    for (; k < seg.length && seg[k].index < to; k++) {
+      const m = seg[k];
       if (!m.close) open(true);
       else if (depth > 0) {
         if (stack[innermost()] === "redact~") close(m);
         else m.inert = true;
-      }
+      } else if (moved) m.inert = true;
     }
   };
   const push = (name: string) => {
@@ -297,82 +323,194 @@ export function treeInertCloses(text: string, marks: TreeMark[]): void {
     if (depth > 0 && stack[stack.length - 1] === name) stack.pop();
   };
 
-  let rx = 0;
-  let inImage = 0;
-  const lists: boolean[] = [];
+  for (const part of parts) {
+    seg = marks.filter((m) => inPart(m, part));
+    k = 0;
+    if (part.footnote && !moved) {
+      // `<section class="footnotes"><h2>…</h2><ol>`: special elements, around every definition.
+      moved = true;
+      push("section");
+      push("ol");
+    }
+    let inImage = 0;
+    let inHtml: unknown = null;
+    const lists: boolean[] = [];
+    for (const i of part.events) {
+      const [kind, t] = evs[i];
+      if (inHtml) {
+        // Inside an HTML node, read above from its tokens.
+        if (kind === "exit" && t === inHtml) inHtml = null;
+        continue;
+      }
+      const at = kind === "enter" ? t.start.offset : t.end.offset;
+      if (t.type === "image") {
+        inImage += kind === "enter" ? 1 : -1;
+        continue;
+      }
+      if (kind === "enter" && inImage === 0 && (t.type === "htmlFlow" || t.type === "htmlText")) {
+        const rx = rawOfToken.get(t);
+        if (rx === undefined) {
+          poisoned = true; // not read above: nothing after is sure
+          inHtml = t;
+          continue;
+        }
+        const r = raws[rx];
+        const { tokens, clean } = tokensOf[rx];
+        asText(r.start);
+        for (const tk of tokens) {
+          if (tk.kind === "text") {
+            asText(r.at[tk.end]);
+            continue;
+          }
+          if (tk.kind === "cdata") {
+            if (depth > 0) uncertain = true;
+            asText(r.at[tk.end]);
+            continue;
+          }
+          const s = r.at[tk.start];
+          asText(s);
+          const m = seg[k]?.index === s ? seg[k] : undefined;
+          if (m) k++;
+          if (tk.name === "redact") {
+            if (!tk.close) open();
+            else if (m) {
+              if (m.close) close(m);
+              else open(); // a mark made an opening one above
+            }
+          } else if (!tk.close) {
+            if (depth > 0) {
+              if (UNCERTAIN.has(tk.name)) uncertain = true;
+              else if (!VOID.has(tk.name)) stack.push(tk.name);
+            }
+          } else pop(tk.name);
+          asText(r.at[Math.min(tk.end, r.v.length)]); // marks inside this tag's attributes are text
+        }
+        // parse5 may carry a comment, a tag or a raw-text element over into what follows: nothing after is sure.
+        if (!clean) poisoned = true;
+        asText(r.end);
+        inHtml = t;
+        continue;
+      }
+      if (t.type === "listOrdered" || t.type === "listUnordered") {
+        asText(at);
+        const name = t.type === "listOrdered" ? "ol" : "ul";
+        if (kind === "enter") {
+          push(name);
+          lists.push(false);
+        } else {
+          if (lists.pop()) pop("li");
+          pop(name);
+        }
+        continue;
+      }
+      if (t.type === "listItemPrefix" && kind === "enter") {
+        asText(at);
+        if (lists.length && lists[lists.length - 1]) pop("li");
+        push("li");
+        if (lists.length) lists[lists.length - 1] = true;
+        continue;
+      }
+      const block = BLOCK[t.type];
+      if (block) {
+        asText(at);
+        if (kind === "enter") push(block);
+        else pop(block);
+      }
+    }
+    asText(Number.POSITIVE_INFINITY);
+  }
+}
+
+/** One part of the note in the preview's order: its events (indexes into `evs`) and the note's ranges they cover. */
+interface Part {
+  events: number[];
+  ranges: Array<[number, number]>;
+  footnote: boolean;
+}
+
+/** micromark's identifier normalisation (`normalizeIdentifier`): whitespace collapsed, case folded. */
+const labelId = (s: string) => s.replace(/[\t\n\r ]+/g, " ").replace(/^ | $/g, "").toLowerCase().toUpperCase();
+
+/**
+ * The note in the preview's order (review 8, RR8-473-2). remark-rehype takes every footnote definition
+ * out of its place and appends the referenced ones after the last block, in the order of their first
+ * reference (references inside a definition count when that definition is reached); a definition no one
+ * references is not rendered. Here the unreferenced ones go last, still inside the footnotes section:
+ * a close in one ends nothing it did not open.
+ */
+function previewOrder(text: string, evs: Event[]): Part[] {
+  interface Owner extends Part {
+    id: string;
+    calls: string[];
+    /** Where this part's current range starts. */
+    from: number;
+  }
+  const make = (footnote: boolean, from: number): Owner => ({ events: [], ranges: [], footnote, id: "", calls: [], from });
+  const main = make(false, 0);
+  const defs: Owner[] = [];
+  // Each event belongs to the innermost definition around it, or to the note.
+  const owners: Owner[] = [main];
   for (let i = 0; i < evs.length; i++) {
     const [kind, t] = evs[i];
-    const at = kind === "enter" ? t.start.offset : t.end.offset;
-    if (t.type === "image") {
-      inImage += kind === "enter" ? 1 : -1;
+    const cur = owners[owners.length - 1];
+    if (t.type === "gfmFootnoteDefinition" && kind === "enter") {
+      cur.ranges.push([cur.from, t.start.offset]);
+      const d = make(true, t.start.offset);
+      d.events.push(i);
+      defs.push(d);
+      owners.push(d);
       continue;
     }
-    if (kind === "enter" && inImage === 0 && (t.type === "htmlFlow" || t.type === "htmlText")) {
-      const r = raws[rx];
-      const { tokens, clean } = tokensOf[rx];
-      rx++;
-      asText(r.start);
-      for (const tk of tokens) {
-        if (tk.kind === "text") {
-          asText(r.at[tk.end]);
-          continue;
-        }
-        if (tk.kind === "cdata") {
-          if (depth > 0) uncertain = true;
-          asText(r.at[tk.end]);
-          continue;
-        }
-        const s = r.at[tk.start];
-        asText(s);
-        const m = marks[k]?.index === s ? marks[k] : undefined;
-        if (m) k++;
-        if (tk.name === "redact") {
-          if (!tk.close) open();
-          else if (m) {
-            if (m.close) close(m);
-            else open(); // a mark made an opening one above
-          }
-        } else if (!tk.close) {
-          if (depth > 0) {
-            if (UNCERTAIN.has(tk.name)) uncertain = true;
-            else if (!VOID.has(tk.name)) stack.push(tk.name);
-          }
-        } else pop(tk.name);
-        asText(r.at[Math.min(tk.end, r.v.length)]); // marks inside this tag's attributes are text
-      }
-      // parse5 may carry a comment, a tag or a raw-text element over into what follows: nothing after is sure.
-      if (!clean) poisoned = true;
-      asText(r.end);
-      // Skip to this node's exit.
-      while (i + 1 < evs.length && !(evs[i + 1][0] === "exit" && evs[i + 1][1] === t)) i++;
-      i++;
-      continue;
-    }
-    if (t.type === "listOrdered" || t.type === "listUnordered") {
-      asText(at);
-      const name = t.type === "listOrdered" ? "ol" : "ul";
-      if (kind === "enter") {
-        push(name);
-        lists.push(false);
-      } else {
-        if (lists.pop()) pop("li");
-        pop(name);
-      }
-      continue;
-    }
-    if (t.type === "listItemPrefix" && kind === "enter") {
-      asText(at);
-      if (lists.length && lists[lists.length - 1]) pop("li");
-      push("li");
-      if (lists.length) lists[lists.length - 1] = true;
-      continue;
-    }
-    const block = BLOCK[t.type];
-    if (block) {
-      asText(at);
-      if (kind === "enter") push(block);
-      else pop(block);
+    cur.events.push(i);
+    if (t.type === "gfmFootnoteDefinition" && kind === "exit" && cur !== main) {
+      cur.ranges.push([cur.from, t.end.offset]);
+      owners.pop();
+      owners[owners.length - 1].from = t.end.offset;
+    } else if (kind === "enter" && t.type === "gfmFootnoteDefinitionLabelString" && cur !== main && !cur.id) {
+      cur.id = labelId(text.slice(t.start.offset, t.end.offset));
+    } else if (kind === "enter" && t.type === "gfmFootnoteCallString") {
+      cur.calls.push(labelId(text.slice(t.start.offset, t.end.offset)));
     }
   }
-  asText(Number.POSITIVE_INFINITY);
+  // A definition the events leave open (none should) runs to the end, like the note.
+  while (owners.length > 1) {
+    const d = owners.pop() as Owner;
+    d.ranges.push([d.from, Number.POSITIVE_INFINITY]);
+  }
+  main.ranges.push([main.from, Number.POSITIVE_INFINITY]);
+  if (!defs.length) return [main];
+  const byId = new Map<string, Owner>();
+  for (const d of defs) if (!byId.has(d.id)) byId.set(d.id, d);
+  const order: Owner[] = [];
+  const queue = [...main.calls];
+  for (let q = 0; q < queue.length; q++) {
+    const d = byId.get(queue[q]);
+    if (!d || order.includes(d)) continue;
+    order.push(d);
+    queue.push(...d.calls);
+  }
+  for (const d of defs) if (!order.includes(d)) order.push(d);
+  return [main, ...order];
+}
+
+/**
+ * Where the note's footnote definitions are (the outermost ones), as micromark reads `text`; null when it
+ * can't parse it. The export removes them all when a passage is still open at the end (RR8-473-2): the
+ * preview has moved them inside it.
+ */
+export function footnoteDefinitionRanges(text: string): Array<[number, number]> | null {
+  let evs: Event[];
+  try {
+    evs = events(text);
+  } catch {
+    return null;
+  }
+  const out: Array<[number, number]> = [];
+  let depth = 0;
+  for (const [kind, t] of evs) {
+    if (t.type !== "gfmFootnoteDefinition") continue;
+    if (kind === "enter" && depth++ === 0) out.push([t.start.offset, t.end.offset]);
+    else if (kind === "exit") depth--;
+  }
+  return out;
 }
