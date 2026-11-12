@@ -339,9 +339,7 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       action: async () => {
         // Snapshot before any await: a tab switch while the chunk loads must not export another note.
         const doc = liveDoc();
-        const content = await exportReadyText(doc.content);
-        const { downloadText } = await import("../../storage/exportFormats");
-        downloadText(`${doc.name.replace(/\.(md|markdown)$/i, "") || "note"}.md`, content, "text/markdown");
+        await (await import("./journalistActions")).exportRedactedMarkdown(doc);
       },
     },
     {
@@ -351,18 +349,7 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       hint: t("cmd.edit.redact.hint"),
       icon: cmdIcons.Pencil,
       group: t("group.edit"),
-      action: async () => {
-        const view = getEditorView?.() ?? null;
-        const sel = view?.state.selection.main;
-        if (!view || !sel || sel.empty) {
-          const [{ uiAlert }] = await Promise.all([import("../../ui/PromptDialog"), import("../../lib/journalistStrings")]);
-          await uiAlert({ message: t("redact.empty") });
-          return;
-        }
-        const { wrapRedaction } = await import("../../lib/redaction");
-        view.dispatch({ changes: { from: sel.from, to: sel.to, insert: wrapRedaction(view.state.sliceDoc(sel.from, sel.to)) } });
-        view.focus();
-      },
+      action: async () => (await import("./journalistActions")).redactSelection(getEditorView?.() ?? null),
     },
     {
       // W5.11: lock the open note with a password of its own (or open, re-lock, change, remove).
