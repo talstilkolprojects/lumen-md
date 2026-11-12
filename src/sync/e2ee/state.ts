@@ -80,7 +80,17 @@ export interface DeviceState {
    * A frozen manifest this device has been waiting on, and when it first saw
    * it on its own clock (RR-4): the wait is measured on one clock only.
    */
-  frozenSeen?: { digest: string; at: number };
+  frozenSeen?: { digest: string; at: number; epoch?: number };
+  /**
+   * When (this device's clock) a key change from this device was first held
+   * back by another device's freeze (seventh review 12.11, G1). The wait is
+   * bounded per key change, not per frozen manifest: once FREEZE_TTL_MS has
+   * passed since then, the next attempt freezes over whatever freeze is
+   * there, so a device that keeps writing fresh freezes (the one being
+   * revoked, which still holds the epoch's secret) can't hold it back for
+   * ever. Cleared when a key change from this device commits.
+   */
+  rekeyBlocked?: { since: number };
   /**
    * Blobs replaced by a commit written over a called-off freeze (RR-4):
    * deleted only after a later round has seen the keyring and the manifest
@@ -89,6 +99,16 @@ export interface DeviceState {
   hold?: string[];
   /** The devices this device revoked (F2): see `RevokedHere`. */
   revokedHere?: RevokedHere;
+  /**
+   * Every device the sealed `revoked` list of a keyring this device adopted
+   * named (seventh review 12.11, G5). The sealed list only grows, so a later
+   * keyring that leaves one of them out, or lets one back in, is refused
+   * like a readmission — without `revokedHere`, which a reinstall or a
+   * restored backup can lose.
+   */
+  sealedRevoked?: Array<{ device: string; recipient?: string }>;
+  /** `revokedHere` didn't verify and was set aside (G5): the next round says so (`SyncResult.revokedListReset`). */
+  revokedHereReset?: true;
 }
 
 export interface SyncStateStore {

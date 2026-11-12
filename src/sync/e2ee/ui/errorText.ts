@@ -5,7 +5,7 @@
  */
 
 import { t } from "../../../i18n";
-import { DropDevicesRequiredError, KeyChangeInProgressError, PairingPendingError } from "../engine";
+import { DropDevicesRequiredError, KeyChangeInProgressError, PairingDuringKeyChangeError, PairingPendingError } from "../engine";
 import { DroppedFromVaultError, KeyringCommitLostError, KeyringForkError, RevokedError, TamperedWrapError } from "../keyring";
 import { PairingEpochError } from "../pairing";
 import "../strings";
@@ -28,9 +28,18 @@ export function e2eeErrorText(e: unknown, side: "answer" | "pair" | "other" = "o
   if (e instanceof DropDevicesRequiredError) return t("e2ee.rekey.dropConfirm", { devices: e.devices.join(", ") });
   if (e instanceof KeyChangeInProgressError) return t("e2ee.rekey.busy");
   if (e instanceof PairingPendingError) return t("e2ee.pair.pending");
+  if (e instanceof PairingDuringKeyChangeError) return t("e2ee.pair.rekeying");
   if (e instanceof PairingEpochError) {
     if (side === "answer" && e.kind === "older") return t("e2ee.pair.stale");
     if (side === "pair" && e.kind === "newer") return t("e2ee.fresh.olderKeys");
   }
   return fallback(e);
+}
+
+/**
+ * What a sync round's result asks the user to know beyond its counts
+ * (seventh review 12.11, G5): i18n keys, in the user's language via `t`.
+ */
+export function e2eeResultNotices(r: { revokedListReset?: true }): string[] {
+  return r.revokedListReset ? [t("e2ee.revokedHere.reset")] : [];
 }

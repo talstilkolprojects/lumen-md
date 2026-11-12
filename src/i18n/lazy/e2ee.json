@@ -234,5 +234,7 @@
   "e2ee.dropped": "A device that couldn't verify the vault's device list changed the keys, and this device wasn't carried over. It wasn't removed, and nothing on it was changed: pair it again from a device you trust, or unlock it with the passphrase.",
   "e2ee.revoked": "This device was removed from the vault, so it can't open the current keys. The notes already on it stay.",
   "e2ee.rekey.dropConfirm": "This device can't verify it has the vault's latest keys, so a key change from it would leave out {devices}: they would have to be paired again. Pair this device from one you trust first, or confirm to leave them out.",
-  "e2ee.rekey.busy": "Another device is changing the vault's keys right now. Sync, and try again once it has finished (10 minutes at most)."
+  "e2ee.rekey.busy": "Another device is changing the vault's keys right now. Sync, and try again once it has finished (10 minutes at most).",
+  "e2ee.pair.rekeying": "This device is changing the vault's keys right now. Make the pairing code once the change has finished.",
+  "e2ee.revokedHere.reset": "This device's own list of the devices it removed couldn't be verified, so it was set aside. It now checks against the vault's sealed list of removed devices. Check the device list on a device you trust."
 }

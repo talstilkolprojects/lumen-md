@@ -377,13 +377,15 @@ async function droppedMarker(vaultId: string, previous: Uint8Array, m: Omit<Drop
 
 /**
  * Did a member of the vault leave `device` out with a dropped re-key (F4)?
- * True when the keyring has a marker listing it whose MAC the secret of the
- * epoch before that re-key reproduces — `keys` (the device's own, from
- * before) must hold it. False otherwise: then it was removed, or the storage
- * made the marker up.
+ * True when the keyring has a marker listing it for the first epoch this
+ * device doesn't hold (`keys.epoch + 1`: seventh review 12.11, G2 — an
+ * older genuine marker, kept by the storage and put back after a real
+ * revocation, is not the one that shut this device out) whose MAC this
+ * device's own secret of the epoch before reproduces. False otherwise: then
+ * it was removed, or the storage made the marker up or replayed it.
  */
 export async function verifyDropped(file: KeyringFile, device: string, keys: Pick<VaultKeys, "vaultId" | "epoch" | "secret" | "olderSecrets">): Promise<boolean> {
-  for (const m of file.dropped ?? []) if (m.devices.includes(device) && (await markerValid(file.vaultId, m, keys))) return true;
+  for (const m of file.dropped ?? []) if (m.epoch === keys.epoch + 1 && m.devices.includes(device) && (await markerValid(file.vaultId, m, keys))) return true;
   return false;
 }
 
@@ -769,12 +771,12 @@ export async function rewriteKeyring(
   provider: SyncProvider,
   keys: VaultKeys,
   access: KeyAccess | null,
-  edit: (c: KeyringContents, f: KeyringFile) => { contents: KeyringContents; file: KeyringFile },
+  edit: (c: KeyringContents, f: KeyringFile) => { contents: KeyringContents; file: KeyringFile } | Promise<{ contents: KeyringContents; file: KeyringFile }>,
 ): Promise<VaultKeys> {
   const current = await readKeyring(provider);
   if (!current || !keys.ring || current.file.epoch !== keys.epoch || current.digest !== keys.ring.digest) throw new PreconditionFailedError(KEYRING_NAME);
   const c = await keyringContents(current.file, keys);
-  const edited = edit(c, current.file);
+  const edited = await edit(c, current.file);
   const contents: KeyringContents = { ...edited.contents, rev: c.rev + 1, parent: current.digest, chain: chainAfter(c, keys.epoch, current.digest) };
   const f = edited.file;
   // Every wrap is made again from the sealed list (N5): a wrap the storage swapped is repaired, one it added is dropped.
@@ -816,9 +818,22 @@ export async function confirmCommit(provider: SyncProvider, keys: VaultKeys, byt
 export async function enrollDevice(provider: SyncProvider, keys: VaultKeys, device: string, recipient: string, access: KeyAccess | null = keys.wrap ? { wrap: keys.wrap } : null): Promise<VaultKeys> {
   if (!keys.ring) throw new Error("Enroll devices after the first re-key (the vault has no keyring yet)");
   parseRecipient(recipient);
-  return rewriteKeyring(provider, keys, access, (c, f) => {
+  return rewriteKeyring(provider, keys, access, async (c, f) => {
     if (c.revoked.some((r) => r.device === device || r.recipient === recipient)) throw new RevokedDeviceEnrollError(device);
-    return { contents: { ...c, devices: { ...c.devices, [device]: recipient } }, file: f };
+    // G2: enrolled again, the device is no longer left out: its dropped markers go (made again without it, or dropped).
+    const markers: DroppedMarker[] = [];
+    for (const m of f.dropped ?? []) {
+      if (!m.devices.includes(device)) {
+        markers.push(m);
+        continue;
+      }
+      const prev = m.epoch - 1 === keys.epoch ? keys.secret : keys.olderSecrets.get(m.epoch - 1);
+      const devices = m.devices.filter((d) => d !== device);
+      if (prev && devices.length && (await markerValid(keys.vaultId, m, keys))) markers.push(await droppedMarker(keys.vaultId, prev, { epoch: m.epoch, at: m.at, devices }));
+    }
+    const file = { ...f };
+    delete file.dropped;
+    return { contents: { ...c, devices: { ...c.devices, [device]: recipient } }, file: markers.length ? { ...file, dropped: markers } : file };
   });
 }
 

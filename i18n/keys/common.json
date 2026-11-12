@@ -3441,6 +3441,11 @@
       "vars": []
     },
     {
+      "key": "e2ee.pair.rekeying",
+      "en": "This device is changing the vault's keys right now. Make the pairing code once the change has finished.",
+      "vars": []
+    },
+    {
       "key": "e2ee.pair.stale",
       "en": "The new device is being shown older keys than this one has: the sync service may be showing it an old state. Don't pair it; sync it and try again, and if it stays like this, don't trust this service.",
       "vars": []
@@ -3475,6 +3480,11 @@
     {
       "key": "e2ee.revoked",
       "en": "This device was removed from the vault, so it can't open the current keys. The notes already on it stay.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.revokedHere.reset",
+      "en": "This device's own list of the devices it removed couldn't be verified, so it was set aside. It now checks against the vault's sealed list of removed devices. Check the device list on a device you trust.",
       "vars": []
     },
     {

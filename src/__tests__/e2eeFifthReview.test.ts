@@ -313,7 +313,8 @@ describe("F2: a revocation holds at any later epoch", () => {
     await a.sync.sync();
     await readmit("phone-2");
     const err2 = await a.sync.sync().then(() => null, (e) => e);
-    expect((err2 as KeyringForkError).revocationReapplied).toEqual(["phone-2"]);
+    // The readmitting keyring also emptied the sealed revoked list: under G5 (seventh review) that is a readmission of "phone" too.
+    expect((err2 as KeyringForkError).revocationReapplied).toEqual(["phone-2", "phone"]);
     expect(ringJson(p).devices["phone-2"]).toBeUndefined();
     // A re-key of A's leaves the key out too, whatever id it is listed under.
     await a.sync.sync();
@@ -336,7 +337,11 @@ describe("F2: a revocation holds at any later epoch", () => {
     const t1 = device("A", p, a.sync.keys());
     sameDevice(a, t1);
     t1.store.state!.revokedHere!.devices = [];
-    await expect(t1.sync.sync()).rejects.toThrow(/list of the devices it revoked/);
+    // Seventh review G5: set aside and said, not a wedge; the sealed lists this device adopted still hold.
+    expect((await t1.sync.sync()).revokedListReset).toBe(true);
+    expect(t1.store.state!.revokedHere).toBeUndefined();
+    expect(t1.store.state!.sealedRevoked?.map((d) => d.device)).toEqual(["phone"]);
+    expect((await t1.sync.sync()).revokedListReset).toBeUndefined();
     // The storage shows B's epoch 2': A can't repair it, and says what is at risk.
     p.objects.set(KEYRING_NAME, { ...copy.objects.get(KEYRING_NAME)! });
     const err = await a.sync.sync().then(() => null, (e) => e);
