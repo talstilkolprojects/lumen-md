@@ -16,7 +16,7 @@ import { SyncRulesForm } from "./SyncRulesForm";
 import { e2eeErrorText } from "./errorText";
 import { syncSession, type SyncSession } from "./session";
 import { ProviderAuthError, ProviderUnreachableError, ProviderUnsupportedError } from "../providers/http";
-import { defaultSettings, hasProviderSecret, legacyStore, oauthAvailable, PROVIDER_KINDS, providerHosts, SECRET_NAMES, type ProviderKind, type ProviderSettings } from "../providers";
+import { defaultSettings, hasProviderSecret, legacyStore, oauthAvailable, PROVIDER_KINDS, providerCapabilities, providerHosts, SECRET_NAMES, type ProviderKind, type ProviderSettings } from "../providers";
 import { LanHostPairing, LanJoin, describeLanError } from "./LanPairing";
 import { LanAuthError } from "../lan/rpc";
 import { LanLinkError } from "../lan/link";
@@ -299,11 +299,22 @@ function Unlocked({ session }: { session: SyncSession }) {
   const [request, setRequest] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
   const [pairError, setPairError] = useState<string | null>(null);
+  const [cancelled, setCancelled] = useState(false);
   const last = s.last;
+  // I3: an answer or a code holds this device's key changes back for minutes; the user can call it off.
+  const cancelPairing = () => {
+    if (!engine) return;
+    void engine.cancelPairing().then(() => {
+      setAnswer(null);
+      setCode(null);
+      setCancelled(true);
+    });
+  };
   const answerRequest = () => {
     if (!engine) return;
     setPairError(null);
     setAnswer(null);
+    setCancelled(false);
     void engine.answerPairing(request).then(setAnswer, (e) => setPairError(e2eeErrorText(e, "answer", explainError)));
   };
   return (
@@ -338,7 +349,12 @@ function Unlocked({ session }: { session: SyncSession }) {
       )}
       <SyncActivity session={session} />
       <SyncRulesForm session={session} />
-      {s.settings?.kind === "gdrive" && <div style={muted}>{t("e2ee.drive.syncOnly")}</div>}
+      {s.settings &&
+        providerCapabilities(s.settings.kind).limits.map((key) => (
+          <div key={key} style={muted} data-testid="provider-limit">
+            {t(key)}
+          </div>
+        ))}
       {engine && (
         <div style={{ display: "grid", gap: 4 }}>
           <Field label={t("e2ee.pair.answerTitle")}>
@@ -362,7 +378,19 @@ function Unlocked({ session }: { session: SyncSession }) {
       )}
       {engine && (
         <div style={{ display: "grid", gap: 4 }}>
-          <button type="button" style={{ justifySelf: "start" }} onClick={() => void engine.pairingCode().then(setCode, (e) => setCode(e2eeErrorText(e, "other", explainError)))}>
+          <button
+            type="button"
+            style={{ justifySelf: "start" }}
+            onClick={() =>
+              void engine.pairingCode().then(
+                (c) => {
+                  setCode(c);
+                  setCancelled(false);
+                },
+                (e) => setCode(e2eeErrorText(e, "other", explainError)),
+              )
+            }
+          >
             {t("e2ee.sync.pairCode")}
           </button>
           {code && (
@@ -372,6 +400,16 @@ function Unlocked({ session }: { session: SyncSession }) {
               </code>
               <div style={muted}>{t("e2ee.sync.pairCodeNote")}</div>
             </>
+          )}
+          {(answer || code) && (
+            <button type="button" style={{ justifySelf: "start" }} onClick={cancelPairing}>
+              {t("e2ee.pair.cancel")}
+            </button>
+          )}
+          {cancelled && (
+            <div role="status" style={muted}>
+              {t("e2ee.pair.cancelled")}
+            </div>
           )}
         </div>
       )}

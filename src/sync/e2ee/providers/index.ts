@@ -156,6 +156,37 @@ function safeHost(url: string): string[] {
   }
 }
 
+/**
+ * What a storage lets the vault do (fifth review 12.11, info): every
+ * provider syncs; key and device changes need an atomic create-only and
+ * If-Match (`proveCas`), which Google Drive can't give (N7: `atomicCreate:
+ * false`). `limits` are the i18n keys the UI shows for the storage, so a
+ * Drive user learns, in those words, that a lost device can't be removed and
+ * a leaked passphrase can't be changed there without moving the vault.
+ */
+export interface ProviderCapabilities {
+  sync: true;
+  /** Re-key, revoke a device, change the passphrase, enroll a device key. */
+  keyChanges: boolean;
+  revokeDevice: boolean;
+  changePassphrase: boolean;
+  enrollDevice: boolean;
+  limits: string[];
+}
+
+/** The capabilities of a provider kind (before connecting) or of a connected provider. */
+export function providerCapabilities(of: ProviderKind | Pick<SyncProvider, "atomicCreate">): ProviderCapabilities {
+  const keyChanges = typeof of === "string" ? of !== "gdrive" : of.atomicCreate !== false;
+  return {
+    sync: true,
+    keyChanges,
+    revokeDevice: keyChanges,
+    changePassphrase: keyChanges,
+    enrollDevice: keyChanges,
+    limits: keyChanges ? [] : ["e2ee.drive.syncOnly", "e2ee.drive.limits"],
+  };
+}
+
 export type ConnectedProvider = SyncProvider & Omit<LiveProvider, keyof SyncProvider>;
 
 /** The SyncProvider for `settings`, with its secret from the secret store (or `secret`, before it is saved). */

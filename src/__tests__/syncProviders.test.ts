@@ -14,6 +14,7 @@ import { webdavProvider } from "../sync/e2ee/providers/webdav";
 import { s3Provider } from "../sync/e2ee/providers/s3";
 import { dropboxSyncProvider } from "../sync/e2ee/providers/dropbox";
 import { gdriveSyncProvider } from "../sync/e2ee/providers/gdrive";
+import { providerCapabilities } from "../sync/e2ee/providers";
 import { HEADER_NAME } from "../sync/e2ee/header";
 import { generateIdentity } from "../sync/e2ee/age";
 import { unlockWithDevice } from "../sync/e2ee/engine";
@@ -279,6 +280,10 @@ describe("provider specifics", () => {
     const b = await joinVault("B", drive);
     await b.sync.sync();
     expect(b.files.text("a.md")).toBe("on Drive");
+    // Fifth review (info): the limits are in the capabilities, for the UI to say.
+    expect(providerCapabilities(drive)).toEqual({ sync: true, keyChanges: false, revokeDevice: false, changePassphrase: false, enrollDevice: false, limits: ["e2ee.drive.syncOnly", "e2ee.drive.limits"] });
+    expect(providerCapabilities("gdrive")).toEqual(providerCapabilities(drive));
+    for (const k of ["webdav", "s3", "dropbox"] as const) expect(providerCapabilities(k)).toMatchObject({ keyChanges: true, revokeDevice: true, changePassphrase: true, limits: [] });
   }, 30_000);
 
   it("the connect probe uses random, blob-like names and leaves nothing behind (third review N2)", async () => {
