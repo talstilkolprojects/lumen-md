@@ -46,14 +46,21 @@ and English exports:
 
 - Hebrew: `12.11.2026, 14:03 - טל: …` and 12-hour times with לפנה״צ / אחה״צ.
 - English: US `11/12/26, 2:03 PM - …` and day-first `12/11/2026, 14:03`.
-- Arabic, with Arabic-Indic digits and ص / م.
+- Arabic, with Arabic-Indic digits and ص / م. The digits are read as numbers
+  only in the date and time: a message keeps the digits it was written with.
 - iPhone's `[12.11.2026, 14:03:12]` form, and the invisible direction marks
   iPhones add around names and attachments.
+- An export without media: Android's `<Media omitted>` / `<המדיה לא נכללה>`,
+  and the iPhone's line per kind, in English and in Hebrew (`image omitted` /
+  `התמונה הושמטה`, `video omitted` / `סרטון הווידאו הושמט`, voice, GIF,
+  sticker, document and contact card). A document keeps its file name.
 
 WhatsApp doesn't write the date order anywhere, so Lumen works it out from the
-whole file: a number over 12 must be the day. When every date could be read
-either way, dots mean day first, and slashes in a 12-hour export mean the US
-order. Otherwise the day comes first, as in Israel and Europe.
+whole file: a number over 12 must be the day. Otherwise, if the dates only run
+forward when read one way, that way is right. When every date could still be
+read either way, dots mean day first, slashes with an English AM/PM mean the
+US order, and slashes with an Arabic or Hebrew clock (ص / م, לפנה״צ / אחה״צ)
+mean day first. Otherwise the day comes first, as in Israel and Europe.
 
 ## One message into the inbox
 

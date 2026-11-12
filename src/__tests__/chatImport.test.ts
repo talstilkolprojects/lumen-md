@@ -73,6 +73,44 @@ describe("W5.7 WhatsApp exports (golden)", () => {
     expect(inferOrder([h("2026-04-03, 10:00 - A: x")])).toBe("ymd");
   });
 
+  it("W6.38: Arabic-Indic digits are read in the date and time only; the message keeps its own digits", () => {
+    const c = parseWhatsApp("٠٩/١٢/٢٠٢٦, ٠٨:٠٥ - أحمد: سأصل الساعة ٨ مع ٢ أصدقاء\n٠٩/١٢/٢٠٢٦, ٠٨:٠٦ - أحمد: IMG-٢٠٢٦١٢٠٩-WA٠٠٠١.jpg (file attached)");
+    expect(c.messages[0].text).toBe("سأصل الساعة ٨ مع ٢ أصدقاء");
+    expect([c.messages[0].time.d, c.messages[0].time.m, c.messages[0].time.hh, c.messages[0].time.mm]).toEqual([9, 12, 8, 5]);
+    expect(c.messages[1].media).toEqual(["IMG-20261209-WA0001.jpg"]);
+    // Bidi marks and no-break spaces inside a message are the writer's, not the export's: kept.
+    const m = parseWhatsApp("[12.11.2026, 14:03:12] טל: מחיר\u00a0100\u200f₪ (\u200eABC\u200e)");
+    expect(m.messages[0].text).toBe("מחיר" + String.fromCharCode(0xa0) + "100" + String.fromCharCode(0x200f) + "₪ (" + String.fromCharCode(0x200e) + "ABC" + String.fromCharCode(0x200e) + ")");
+  });
+
+  it("W6.38: an Arabic or Hebrew 12-hour clock with slashes is day first; a Latin AM/PM is month first; dates that only run forward one way decide", () => {
+    const h = (s: string) => headerOf(s)!;
+    expect(inferOrder([h("[12/07/2026, 9:58:01 ص] سارة: x"), h("[12/07/2026, 1:02:33 م] أحمد: y")])).toBe("dmy");
+    expect(inferOrder([h("12/07/2026, 9:58 לפנה״צ - טל: x")])).toBe("dmy");
+    expect(inferOrder([h("12/07/26, 9:58 AM - Tal: x")])).toBe("mdy");
+    expect(inferOrder([h("12/07/26, 9:58 p.m. - Tal: x")])).toBe("mdy");
+    // 01/02 then 02/01: under day first the chat would go back from 1 Feb to 2 Jan; month first runs forward.
+    expect(inferOrder([h("01/02/26, 9:58 - A: x"), h("02/01/26, 9:58 - A: y")])).toBe("mdy");
+    expect(inferOrder([h("02/01/26, 9:58 PM - A: x"), h("01/02/26, 9:58 PM - A: y")])).toBe("dmy");
+    const c = parseWhatsApp("[12/07/2026, 9:58:01 ص] سارة: صباح الخير\n[12/07/2026, 1:02:33 م] أحمد: شكراً");
+    expect([c.messages[0].time.d, c.messages[0].time.m, c.messages[1].time.hh]).toEqual([12, 7, 13]);
+  });
+
+  it("W6.38: iPhone omitted media in Hebrew, as WhatsApp for iOS writes it, with or without marks and brackets", () => {
+    const lines = ["התמונה הושמטה", "סרטון הווידאו הושמט", "קטע קול הושמט", "GIF הושמט", "סטיקר הושמט", "מסמך הושמט", "כרטיס איש קשר הושמט", "<התמונה הושמטה>", "image omitted", "Contact card omitted"];
+    const rlm = String.fromCharCode(0x200f);
+    const lrm = String.fromCharCode(0x200e);
+    const text = lines.map((l, i) => `${lrm}[13.03.2026, 11:${String(10 + i)}:40] יוסי: ${i % 2 ? lrm : rlm}${l}`).join("\n");
+    const c = parseWhatsApp(text);
+    expect(c.messages.map((m) => [m.omitted, m.text])).toEqual(lines.map(() => [true, ""]));
+    // Android's single line, and a view-once voice message.
+    expect(parseWhatsApp("19.8.2025, 11:23 - טל: <הודעה קולית להאזנה חד פעמית הושמטה>").messages[0].omitted).toBe(true);
+    // A document left out keeps its name; a message that only mentions the words stays a message.
+    const d = parseWhatsApp(`[14/08/26, 13:51:12] Tal: ${lrm}coursebooks.pdf • ${lrm}61 pages ${lrm}document omitted\n[14/08/26, 13:52:00] Tal: the image omitted from the deck`);
+    expect([d.messages[0].omitted, d.messages[0].text]).toEqual([true, "coursebooks.pdf"]);
+    expect([d.messages[1].omitted, d.messages[1].text]).toEqual([undefined, "the image omitted from the deck"]);
+  });
+
   it("multi-line messages stay one message; bidi marks are dropped from names and markers", () => {
     const c = parseWhatsApp(read("ios-he/_chat.txt"));
     expect(c.messages[3].text).toBe("שורה ראשונה\nשורה שנייה\n- לא רשימה");

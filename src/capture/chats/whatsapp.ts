@@ -8,25 +8,50 @@
  *            [12/11/2026, 14:03:12] Tal: hi
  *
  * Hebrew 12-hour clocks write לפנה״צ / אחה״צ, Arabic ص / م, and Arabic
- * exports may use Arabic-Indic digits. iPhones put U+200E before lines that
- * hold an attachment; both apps may put bidi marks around names and times.
- * Day/month order is not written anywhere: it is inferred from the whole
- * file (a part over 12 is the day), and for an all-ambiguous file from the
- * separator — dots and dashes mean day first, slashes in a 12-hour file
- * mean the US month first, otherwise day first (Israel, Europe).
+ * exports may use Arabic-Indic digits. Only the date and time are read with
+ * those digits made ASCII: the message itself is kept exactly as written
+ * (W6.38 found "٨" in a message turned into "8"). iPhones put U+200E before
+ * lines that hold an attachment; both apps may put bidi marks around names
+ * and times.
+ * Day/month order is not written anywhere. It is inferred from the whole
+ * file: a part over 12 is the day; else the one order under which the dates
+ * never go back in time (a chat is in order); else the separator and the
+ * clock's language — dots and dashes mean day first; slashes with a Latin
+ * AM/PM mean the US month first; slashes with an Arabic or Hebrew clock
+ * (ص / م, לפנה״צ / אחה״צ) mean day first, as every Arabic and Hebrew locale
+ * writes it (W6.38: an Arabic iPhone export was read month first);
+ * otherwise day first (Israel, Europe).
  *
  * Attachments: Android "IMG-20261112-WA0001.jpg (file attached)" /
  * "(קובץ מצורף)"; iPhone "<attached: 00000012-PHOTO-…jpg>" / "<מצורף: …>".
- * Without media: "<Media omitted>" / "<המדיה לא נכללה>" and their kin.
+ * Without media: "<Media omitted>" / "<המדיה לא נכללה>" on Android; on an
+ * iPhone one line per kind, from WhatsApp for iOS's own strings
+ * (EXPORT_OMITTED_*): "image omitted" / "התמונה הושמטה", "video omitted" /
+ * "סרטון הווידאו הושמט", "Report.pdf • 3 pages document omitted" / "מסמך הושמט"…
  */
 import type { ChatMessage, ParsedChat, ChatTime } from "./types";
 
 const BIDI = /[‎‏‪-‮⁦-⁩؜﻿]/g;
 const NBSP = /[  ]/g;
+const BIDI_CH = new RegExp(BIDI.source);
+const NBSP_CH = new RegExp(NBSP.source);
 
-/** Arabic-Indic and Persian digits → ASCII. */
+/** Arabic-Indic and Persian digits → ASCII, one character for one (so positions stay the same). */
 export function asciiDigits(s: string): string {
   return s.replace(/[٠-٩]/g, (c) => String(c.charCodeAt(0) - 0x0660)).replace(/[۰-۹]/g, (c) => String(c.charCodeAt(0) - 0x06f0));
+}
+
+/** The line without bidi marks and with plain spaces, and where each kept character was in the line. */
+function cleanWithMap(line: string): { clean: string; at: number[] } {
+  let clean = "";
+  const at: number[] = [];
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (BIDI_CH.test(c)) continue;
+    clean += NBSP_CH.test(c) ? " " : c;
+    at.push(i);
+  }
+  return { clean, at };
 }
 
 const AM = /^(am|a\.m\.|לפנה״צ|לפנה"צ|לפני הצהריים|ص|صباحًا|صباحا|vorm\.|du matin)$/i;
@@ -49,22 +74,45 @@ interface RawLine {
 }
 
 export function headerOf(line: string): RawLine | null {
-  const clean = asciiDigits(line.replace(BIDI, "").replace(NBSP, " ")).trimStart();
-  const m = IOS.exec(clean) ?? ANDROID.exec(clean);
+  const { clean, at } = cleanWithMap(line);
+  const lead = clean.length - clean.trimStart().length;
+  // ASCII digits for the date and time only; `rest` is cut from the line as written.
+  const m = IOS.exec(asciiDigits(clean.slice(lead))) ?? ANDROID.exec(asciiDigits(clean.slice(lead)));
   if (!m) return null;
-  return { a: +m[1], sep: m[2], b: +m[3], c: +m[4], hh: +m[5], mm: +m[6], ss: m[7] ? +m[7] : 0, ampm: (m[8] ?? "").trim(), rest: m[9] ?? "" };
+  const restLen = (m[9] ?? "").length;
+  const start = restLen ? at[clean.length - restLen] : line.length;
+  return { a: +m[1], sep: m[2], b: +m[3], c: +m[4], hh: +m[5], mm: +m[6], ss: m[7] ? +m[7] : 0, ampm: (m[8] ?? "").trim(), rest: line.slice(start) };
 }
 
 type Order = "dmy" | "mdy" | "ymd";
+
+/** A Latin AM/PM ("PM", "p.m.") — the clock of a US-style 12-hour locale. */
+const LATIN_AMPM = /^[ap]\.?\s?m\.?$/i;
+
+/** True when the file's dates never go back under this order (a chat is written in order). */
+function inOrder(lines: RawLine[], order: Order): boolean {
+  let last = -1;
+  for (const l of lines) {
+    const t = toTime(l, order);
+    const key = (t.y * 13 + t.m) * 32 + t.d;
+    if (key < last) return false;
+    last = key;
+  }
+  return true;
+}
 
 /** Day/month order for a whole file, from every header line. */
 export function inferOrder(lines: RawLine[]): Order {
   if (lines.some((l) => l.a > 31)) return "ymd";
   if (lines.some((l) => l.a > 12)) return "dmy";
   if (lines.some((l) => l.b > 12)) return "mdy";
+  const dmy = inOrder(lines, "dmy");
+  if (dmy !== inOrder(lines, "mdy")) return dmy ? "dmy" : "mdy";
   const sep = lines[0]?.sep ?? "/";
   if (sep === "." || sep === "-") return "dmy";
-  return lines.some((l) => l.ampm) ? "mdy" : "dmy";
+  const clock = lines.find((l) => l.ampm)?.ampm;
+  if (!clock) return "dmy";
+  return LATIN_AMPM.test(clock) ? "mdy" : "dmy";
 }
 
 function toTime(l: RawLine, order: Order): ChatTime {
@@ -80,7 +128,48 @@ function toTime(l: RawLine, order: Order): ChatTime {
 
 const ATTACHED_IOS = /^<(?:attached|מצורף|مرفق|angehängt|pièce jointe|joint)\s*:\s*([^>]+)>\s*$/i;
 const ATTACHED_ANDROID = /^(.+?\.[A-Za-z0-9]{1,5})\s+\((?:file attached|קובץ מצורף|ملف مرفق|Datei angehängt|fichier joint)\)\s*$/i;
-const OMITTED = /^<?(?:Media omitted|המדיה לא נכללה|מדיה הושמטה|تم استبعاد الوسائط|الوسائط غير مضمنة|Medien ausgeschlossen|Medien weggelassen|médias omis|image omitted|video omitted|audio omitted|sticker omitted|GIF omitted|document omitted|תמונה הושמטה|סרטון הושמט|הקלטה הושמטה)>?$/i;
+// Android writes one line for any media; WhatsApp for iOS one per kind (its EXPORT_OMITTED_* strings),
+// with or without angle brackets depending on the version. Hebrew iOS strings as WhatsApp for iOS ships them:
+// התמונה הושמטה, סרטון הווידאו הושמט, קטע קול הושמט, GIF הושמט, סטיקר הושמט, מסמך הושמט, כרטיס איש קשר הושמט.
+const OMITTED = new RegExp(
+  "^<?(?:" +
+    [
+      "Media omitted",
+      "המדיה לא נכללה",
+      "מדיה הושמטה",
+      "המדיה הושמטה",
+      "הודעה קולית להאזנה חד פעמית הושמטה",
+      "تم استبعاد الوسائط",
+      "الوسائط غير مضمنة",
+      "Medien ausgeschlossen",
+      "Medien weggelassen",
+      "médias omis",
+      "image omitted",
+      "video omitted",
+      "audio omitted",
+      "sticker omitted",
+      "GIF omitted",
+      "document omitted",
+      "Contact card omitted",
+      "התמונה הושמטה",
+      "תמונה הושמטה",
+      "סרטון הווידאו הושמט",
+      "סרטון הושמט",
+      "קטע קול הושמט",
+      "הקלטה הושמטה",
+      "GIF הושמט",
+      "סטיקר הושמט",
+      "מסמך הושמט",
+      "כרטיס איש קשר הושמט",
+      "Bild weggelassen",
+      "Video weggelassen",
+      "Audio weggelassen",
+    ].join("|") +
+    ")>?$",
+  "i",
+);
+/** iPhone: a document left out keeps its name — "Report.pdf • 3 pages document omitted". */
+const DOC_OMITTED = /^(.+?\.[A-Za-z0-9]{1,5})(?:\s*•\s*[^•]+?)?\s+<?(?:document omitted|מסמך הושמט)>?$/i;
 
 /** Split "Name: text" — the name is the part before the first ": " (names may hold ":" only in very rare cases). */
 function splitAuthor(rest: string): { author: string | null; text: string } {
@@ -96,16 +185,23 @@ function readBody(msg: ChatMessage): void {
     const l = raw.replace(BIDI, "").trim();
     let m = ATTACHED_IOS.exec(l);
     if (m) {
-      msg.media.push(m[1].trim());
+      msg.media.push(asciiDigits(m[1].trim()));
       continue;
     }
     m = ATTACHED_ANDROID.exec(l);
     if (m) {
-      msg.media.push(m[1].trim());
+      // A file's name on disk is ASCII even when the export wrote its digits in Arabic-Indic.
+      msg.media.push(asciiDigits(m[1].trim()));
       continue;
     }
     if (OMITTED.test(l)) {
       msg.omitted = true;
+      continue;
+    }
+    m = DOC_OMITTED.exec(l);
+    if (m) {
+      msg.omitted = true;
+      kept.push(m[1].trim());
       continue;
     }
     kept.push(raw.replace(/^[‎‏]+/, ""));
