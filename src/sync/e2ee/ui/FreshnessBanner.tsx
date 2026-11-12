@@ -43,6 +43,7 @@ export function FreshnessBanner({ sync }: Props) {
       await fn();
       setState(await sync.freshness());
     } catch (e) {
+      // raw-error-allow: no raw text; e2eeErrorText names the known sync errors and falls back to explainError
       setError(e instanceof PairingEpochError && e.kind === "newer" ? t("e2ee.fresh.olderKeys") : e instanceof PairingError ? t("e2ee.fresh.badCode") : e2eeErrorText(e, "pair", explainError));
     }
   }
