@@ -81,7 +81,7 @@ describe("the nightly run covers everything (scripts/nightly/plan.mjs)", () => {
   });
 
   it("every e2e spec is either in the fast gate or only in the nightly run, and the whole folder runs nightly", () => {
-    const specs = readdirSync(resolve(ROOT, "e2e")).filter((f) => f.endsWith(".spec.ts")).map((f) => `e2e/${f}`);
+    const specs = (readdirSync(resolve(ROOT, "e2e")) as string[]).filter((f: string) => f.endsWith(".spec.ts")).map((f: string) => `e2e/${f}`);
     expect(specs.length).toBeGreaterThan(50);
     for (const f of E2E_FAST as string[]) expect(specs, f).toContain(f);
   });
