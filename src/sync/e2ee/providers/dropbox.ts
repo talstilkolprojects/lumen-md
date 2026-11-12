@@ -17,7 +17,7 @@
 
 import { dropboxFetch } from "../../cloud/dropbox";
 import { PreconditionFailedError, ProviderUnavailableError, type PutCondition, type StoredObject, type SyncProvider } from "../provider";
-import { checkObjectName, defaultFetch, failed, type FetchLike } from "./http";
+import { checkConditionalWrites, checkObjectName, defaultFetch, failed, type FetchLike } from "./http";
 
 export interface DropboxSyncConfig {
   /** Folder of the vault inside Dropbox, e.g. `/Apps/Lumen/vault`. */
@@ -25,6 +25,11 @@ export interface DropboxSyncConfig {
 }
 
 export const DROPBOX_DEFAULT_FOLDER = "/Apps/Lumen/vault";
+
+export interface DropboxProvider extends SyncProvider {
+  /** Check Dropbox refuses a stale rev and a second `add` (RR-7); `ProviderUnsupportedError` if not. */
+  probe(): Promise<void>;
+}
 
 /** Dropbox-API-Arg must be ASCII: non-ASCII characters are escaped. */
 function apiArg(arg: unknown): string {
@@ -35,7 +40,7 @@ function isConflict(body: string): boolean {
   return /"conflict"|path\/conflict/.test(body);
 }
 
-export function dropboxSyncProvider(cfg: DropboxSyncConfig = {}, deps: { fetch?: FetchLike } = {}): SyncProvider {
+export function dropboxSyncProvider(cfg: DropboxSyncConfig = {}, deps: { fetch?: FetchLike } = {}): DropboxProvider {
   const fetchImpl = deps.fetch ?? defaultFetch;
   const folder = (cfg.folder ?? DROPBOX_DEFAULT_FOLDER).replace(/\/+$/, "");
   const path = (name: string) => {
@@ -56,8 +61,10 @@ export function dropboxSyncProvider(cfg: DropboxSyncConfig = {}, deps: { fetch?:
     }
   }
 
-  return {
+  const provider: DropboxProvider = {
     id: "dropbox",
+
+    probe: () => checkConditionalWrites(provider),
 
     async get(name): Promise<StoredObject | null> {
       const res = await call("/2/files/download", { contentEndpoint: true, headers: { "Dropbox-API-Arg": apiArg({ path: path(name) }) } });
@@ -118,4 +125,5 @@ export function dropboxSyncProvider(cfg: DropboxSyncConfig = {}, deps: { fetch?:
       return out;
     },
   };
+  return provider;
 }

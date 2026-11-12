@@ -12,7 +12,7 @@
 
 import { signRequest } from "./sigv4";
 import { PreconditionFailedError, type PutCondition, type StoredObject, type SyncProvider } from "../provider";
-import { checkObjectName, defaultFetch, elements, failed, parseXml, ProviderUnsupportedError, request, type FetchLike } from "./http";
+import { checkConditionalWrites, checkObjectName, defaultFetch, elements, failed, parseXml, PROBE_NAME, ProviderUnsupportedError, request, type FetchLike } from "./http";
 
 export interface S3Config {
   /** `https://s3.eu-central-1.amazonaws.com`, `https://<account>.r2.cloudflarestorage.com`, `http://localhost:9000`… */
@@ -30,7 +30,7 @@ export interface S3Config {
 }
 
 export interface S3Provider extends SyncProvider {
-  /** A signed write + conditional rewrite, to check the credentials and that the service enforces preconditions. */
+  /** A signed write, to check the credentials and the ETags, then both preconditions (RR-7: If-None-Match too). */
   probe(): Promise<void>;
 }
 
@@ -54,21 +54,17 @@ export function s3Provider(cfg: S3Config, deps: { fetch?: FetchLike } = {}): S3P
     return request(fetchImpl, url, { method: init.method, headers, body: init.body as BodyInit | undefined }, { provider: "s3" });
   }
 
-  return {
+  const provider: S3Provider = {
     id: "s3",
 
     async probe() {
-      const name = ".lumen-probe";
-      const a = await signed(keyUrl(name), { method: "PUT", body: new Uint8Array([1]), headers: { "Content-Type": "application/octet-stream" } });
-      if (!a.ok) throw await failed(a, "s3", name);
+      const a = await signed(keyUrl(PROBE_NAME), { method: "PUT", body: new Uint8Array([1]), headers: { "Content-Type": "application/octet-stream" } });
+      if (!a.ok) throw await failed(a, "s3", PROBE_NAME);
       const etag = a.headers.get("ETag");
+      await signed(keyUrl(PROBE_NAME), { method: "DELETE" }).catch(() => undefined);
       if (!etag) throw new ProviderUnsupportedError("s3", "the service returns no ETag on PUT");
-      // A stale precondition must be refused, or two devices could overwrite each other.
-      const stale = await signed(keyUrl(name), { method: "PUT", body: new Uint8Array([2]), headers: { "Content-Type": "application/octet-stream", "If-Match": '"not-the-etag"' } });
-      await signed(keyUrl(name), { method: "DELETE" }).catch(() => undefined);
-      if (stale.status !== 412 && stale.status !== 409) {
-        throw new ProviderUnsupportedError("s3", "the service ignores If-Match, so it cannot do conditional writes");
-      }
+      // Both preconditions must hold, or two devices could overwrite each other.
+      await checkConditionalWrites(provider);
     },
 
     async get(name): Promise<StoredObject | null> {
@@ -119,4 +115,5 @@ export function s3Provider(cfg: S3Config, deps: { fetch?: FetchLike } = {}): S3P
       return out;
     },
   };
+  return provider;
 }

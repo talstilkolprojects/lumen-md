@@ -7,7 +7,7 @@
  * `window.fetch` sees every request, and a test can hand in a fake server.
  */
 
-import { PreconditionFailedError, ProviderUnavailableError } from "../provider";
+import { PreconditionFailedError, ProviderUnavailableError, type PutCondition, type SyncProvider } from "../provider";
 
 export type FetchLike = (input: Request | string, init?: RequestInit) => Promise<Response>;
 
@@ -104,6 +104,56 @@ export function basicAuth(username: string, password: string): string {
 /** Only the vault's object names reach a provider: the fixed header name or a 43-character HMAC name. */
 export function checkObjectName(name: string): void {
   if (!/^[A-Za-z0-9_.-]{1,64}$/.test(name)) throw new Error(`Invalid object name "${name}"`);
+}
+
+
+/** The object the probes write and delete: a fixed, content-free name. */
+export const PROBE_NAME = "lumen-e2ee-cas-probe";
+
+/**
+ * Prove a provider's conditional writes when it is connected, through its
+ * own `put` (re-review 12.11, RR-7): a create-only write succeeds on a new
+ * object and is refused on an existing one; a write with the current etag
+ * succeeds and one with the stale etag is refused, leaving the object as it
+ * was, and the etag read back is the one the write returned. A provider
+ * that fails is refused (`ProviderUnsupportedError`): without these, two
+ * devices saving at once can lose a change. The engine runs the same check
+ * again before any key or device change.
+ */
+export async function checkConditionalWrites(p: SyncProvider): Promise<void> {
+  const ignored = await conditionalWriteGap(p);
+  if (ignored) throw new ProviderUnsupportedError(p.id, `${ignored}, so it cannot do safe conditional writes`);
+}
+
+/** Which condition `p` ignores, or null when both hold. */
+async function conditionalWriteGap(p: SyncProvider): Promise<string | null> {
+  const refused = async (byte: number, cond: PutCondition): Promise<boolean> => {
+    try {
+      await p.put(PROBE_NAME, new Uint8Array([byte]), cond);
+      return false;
+    } catch (e) {
+      if (e instanceof PreconditionFailedError) return true;
+      throw e;
+    }
+  };
+  await p.delete(PROBE_NAME);
+  try {
+    const a = await p.put(PROBE_NAME, new Uint8Array([1]), { ifNoneMatch: "*" });
+    if (!(await refused(2, { ifNoneMatch: "*" }))) return "it accepted If-None-Match: * on an existing object";
+    let b: { etag: string };
+    try {
+      b = await p.put(PROBE_NAME, new Uint8Array([3]), { ifMatch: a.etag });
+    } catch (e) {
+      if (e instanceof PreconditionFailedError) return "it refused If-Match with the current ETag";
+      throw e;
+    }
+    if (!(await refused(4, { ifMatch: a.etag }))) return "it accepted If-Match with a stale ETag";
+    const now = await p.get(PROBE_NAME);
+    if (!now || now.data[0] !== 3 || now.etag !== b.etag) return "the ETag read back is not the one the write returned";
+    return null;
+  } finally {
+    await p.delete(PROBE_NAME).catch(() => undefined);
+  }
 }
 
 /** XML without a dependency: the browser's (and jsdom's) DOMParser. */

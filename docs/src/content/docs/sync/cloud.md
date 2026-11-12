@@ -52,7 +52,11 @@ the provider.
 
 The server must return an `ETag` for every file and honour `If-Match` and
 `If-None-Match: *` on `PUT`. Nextcloud, ownCloud, Apache `mod_dav` and
-Synology's WebDAV server do. Lumen tests this when you connect.
+Synology's WebDAV server do. Lumen tests this when you connect: it writes a
+small `lumen-e2ee-cas-probe` file, checks that a second "only if absent"
+write and a write with an outdated `If-Match` are both refused, and deletes
+the file. Some servers (for example nginx's DAV module) accept every write;
+Lumen refuses to sync with them.
 
 ### S3-compatible
 
@@ -65,8 +69,8 @@ Synology's WebDAV server do. Lumen tests this when you connect.
 
 The service must support conditional writes (`If-None-Match: *` and
 `If-Match` on `PutObject`). AWS S3 has supported them since 2024; R2 and
-MinIO do too. Lumen checks this when you connect: it makes one write with a
-stale `If-Match` and expects a refusal.
+MinIO do too. Lumen checks both when you connect, the same way as for
+WebDAV.
 
 ### Dropbox and Google Drive
 
@@ -103,14 +107,18 @@ Two devices can sync at the same moment. Every write Lumen makes says what
 it expects to replace (`If-Match` with the version it read, or "only if
 absent"). When another device got there first, the server refuses, and
 Lumen re-reads, merges and tries again. Without that, the second write
-would silently erase the first device's changes. Each provider's mechanism:
+would silently erase the first device's changes. Lumen checks the mechanism
+when you connect, and again before it changes the vault's keys or devices: a
+re-key or a device change on a storage that let a stale write through could
+give two devices different keys without either noticing. Each provider's
+mechanism:
 
 | Provider | Mechanism |
 |---|---|
 | WebDAV | `If-Match: <ETag>` / `If-None-Match: *` → `412` |
 | S3 | `If-Match: <ETag>` / `If-None-Match: *` → `412` (or `409` during a concurrent write) |
 | Dropbox | `mode: update` with the file's `rev` / `mode: add`, `strict_conflict` → `409 conflict` |
-| Google Drive | `If-Match` with the file's ETag → `412`. Drive has no "only if absent" for a new file, so Lumen creates the file and then looks again. If another device created the same file first, Lumen removes its own copy and counts the write as lost. This relies on Drive listing a new file as soon as it has been created. That is untested against the real Drive (see Status) |
+| Google Drive | `If-Match` with the file's metadata ETag → `412`. Lumen always takes that ETag from the file's metadata, also after an upload, never the upload answer's own (Google's ETags differ per representation). Drive has no "only if absent" for a new file, so Lumen creates the file and then looks again. If another device created the same file first, Lumen removes its own copy and counts the write as lost. This relies on Drive listing a new file as soon as it has been created. That is untested against the real Drive (see Status) |
 
 ## Notes from the old plain-text sync
 

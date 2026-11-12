@@ -14,7 +14,10 @@
  * returned. If the listing lagged, both creates could appear to win. The
  * object would then have two copies, and every device would read the
  * older one. The ETag of an object is the
- * `ETag` header of its metadata; `get` reads metadata and media (2 requests).
+ * `ETag` header of its metadata; `get` reads metadata and media (2 requests),
+ * and `put` returns the same metadata ETag, read after the write — never the
+ * upload answer's, a different representation (re-review 12.11, RR-7) — so
+ * an etag from `put` and one from `get` compare equal.
  *
  * OAuth and tokens: src/sync/cloud/gdrive.ts (PKCE; client id from
  * `VITE_GDRIVE_CLIENT_ID`, plan 15.5). Without a real client id this
@@ -24,7 +27,7 @@
 
 import { gdriveFetch } from "../../cloud/gdrive";
 import { PreconditionFailedError, ProviderUnavailableError, type PutCondition, type StoredObject, type SyncProvider } from "../provider";
-import { checkObjectName, defaultFetch, failed, ProviderUnsupportedError, type FetchLike } from "./http";
+import { checkConditionalWrites, checkObjectName, defaultFetch, failed, ProviderUnsupportedError, type FetchLike } from "./http";
 
 export interface GDriveSyncConfig {
   /** Name of the vault folder in Drive. */
@@ -32,13 +35,18 @@ export interface GDriveSyncConfig {
 }
 
 export const GDRIVE_DEFAULT_FOLDER = "Lumen Vault";
+
+export interface GDriveProvider extends SyncProvider {
+  /** Check Drive refuses a stale If-Match and a second create (RR-7; the create is look → create → look); `ProviderUnsupportedError` if not. */
+  probe(): Promise<void>;
+}
 const FOLDER_MIME = "application/vnd.google-apps.folder";
 
 function q(s: string): string {
   return s.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
 
-export function gdriveSyncProvider(cfg: GDriveSyncConfig = {}, deps: { fetch?: FetchLike } = {}): SyncProvider {
+export function gdriveSyncProvider(cfg: GDriveSyncConfig = {}, deps: { fetch?: FetchLike } = {}): GDriveProvider {
   const fetchImpl = deps.fetch ?? defaultFetch;
   const folderName = cfg.folderName ?? GDRIVE_DEFAULT_FOLDER;
   const via = (input: string, init?: RequestInit) => fetchImpl(input, init);
@@ -105,8 +113,10 @@ export function gdriveSyncProvider(cfg: GDriveSyncConfig = {}, deps: { fetch?: F
     return etag;
   }
 
-  return {
+  const provider: GDriveProvider = {
     id: "gdrive",
+
+    probe: () => checkConditionalWrites(provider),
 
     async get(name): Promise<StoredObject | null> {
       const id = await lookup(name);
@@ -128,7 +138,7 @@ export function gdriveSyncProvider(cfg: GDriveSyncConfig = {}, deps: { fetch?: F
         const res = await call(`/upload/drive/v3/files/${id}?uploadType=media&fields=id`, { method: "PATCH", headers, body: data as BodyInit });
         if (res.status === 412) throw new PreconditionFailedError(name);
         if (!res.ok) throw await failed(res, "gdrive", name);
-        return { etag: res.headers.get("ETag") ?? (await etagOf(id, name)) };
+        return { etag: await etagOf(id, name) };
       }
       const parent = await folder();
       const boundary = "lumen-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -155,7 +165,7 @@ export function gdriveSyncProvider(cfg: GDriveSyncConfig = {}, deps: { fetch?: F
           throw new PreconditionFailedError(name);
         }
       }
-      return { etag: res.headers.get("ETag") ?? (await etagOf(created.id, name)) };
+      return { etag: await etagOf(created.id, name) };
     },
 
     async delete(name) {
@@ -181,4 +191,5 @@ export function gdriveSyncProvider(cfg: GDriveSyncConfig = {}, deps: { fetch?: F
       return out;
     },
   };
+  return provider;
 }

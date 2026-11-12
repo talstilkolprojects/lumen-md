@@ -18,6 +18,8 @@ export interface FakeWebdav extends FakeServer {
   outage: number | null;
   /** Leave out ETags (a server the sync must refuse). */
   noEtags: boolean;
+  /** Ignore If-Match / If-None-Match on PUT, like servers that don't evaluate preconditions (refused too). */
+  ignorePreconditions: boolean;
 }
 
 function xmlEscape(s: string): string {
@@ -33,6 +35,7 @@ export function fakeWebdav(opts: { baseUrl: string; username?: string; password?
     collection: !!opts.preCreated,
     outage: null,
     noEtags: false,
+    ignorePreconditions: false,
     log: [],
     handle: (req) => handle(req),
   };
@@ -95,8 +98,8 @@ export function fakeWebdav(opts: { baseUrl: string; username?: string; password?
         if (!cur) return { status: 404, body: "not found" };
         return { status: 207, headers: { "Content-Type": "application/xml" }, body: propfindXml([{ href: `${basePath}/${encodeURIComponent(name)}`, file: cur }]) };
       case "PUT": {
-        const ifMatch = req.headers.get("if-match");
-        const ifNone = req.headers.get("if-none-match");
+        const ifMatch = server.ignorePreconditions ? null : req.headers.get("if-match");
+        const ifNone = server.ignorePreconditions ? null : req.headers.get("if-none-match");
         if (ifMatch !== null && (!cur || cur.etag !== ifMatch)) return { status: 412, body: "precondition failed" };
         if (ifNone === "*" && cur) return { status: 412, body: "precondition failed" };
         const f: WebdavFile = { data: req.body.slice(), etag: `"w${++seq}"` };

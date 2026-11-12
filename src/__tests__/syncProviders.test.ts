@@ -9,7 +9,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { PreconditionFailedError, ProviderUnavailableError, type SyncProvider } from "../sync/e2ee/provider";
-import { ProviderAuthError, ProviderUnsupportedError } from "../sync/e2ee/providers/http";
+import { PROBE_NAME, ProviderAuthError, ProviderUnsupportedError } from "../sync/e2ee/providers/http";
 import { webdavProvider } from "../sync/e2ee/providers/webdav";
 import { s3Provider } from "../sync/e2ee/providers/s3";
 import { dropboxSyncProvider } from "../sync/e2ee/providers/dropbox";
@@ -211,6 +211,32 @@ describe("provider specifics", () => {
     server.noEtags = true;
     const p = webdavProvider({ url: "https://dav.example/d/" }, { fetch: fakeFetch(server.handle) });
     await expect(p.probe()).rejects.toBeInstanceOf(ProviderUnsupportedError);
+  });
+
+  it("webdav: a server that ignores If-Match / If-None-Match on PUT is refused at connect (re-review 12.11, RR-7)", async () => {
+    const server = fakeWebdav({ baseUrl: "https://dav.example/d/", preCreated: true });
+    server.ignorePreconditions = true;
+    const p = webdavProvider({ url: "https://dav.example/d/" }, { fetch: fakeFetch(server.handle) });
+    await expect(p.probe()).rejects.toThrow(/If-None-Match|If-Match/);
+    expect(server.files.has(PROBE_NAME)).toBe(false);
+    server.ignorePreconditions = false;
+    await p.probe();
+    expect(server.files.has(PROBE_NAME)).toBe(false);
+  });
+
+  it("dropbox and drive probe both conditions too; drive's put returns the metadata ETag a later get compares with", async () => {
+    const dbx = fakeDropbox({ token: "dbx-test-token" });
+    await token("lumen.cloud.dropbox.token", "dbx-test-token");
+    await dropboxSyncProvider({ folder: "/Apps/Lumen/vault" }, { fetch: fakeFetch(dbx.handle) }).probe();
+    const gd = fakeGdrive({ token: "gd-test-token" });
+    await token("lumen.cloud.gdrive.token", "gd-test-token");
+    const drive = gdriveSyncProvider({}, { fetch: fakeFetch(gd.handle) });
+    await drive.probe();
+    const { etag } = await drive.put("x", text("1"), { ifNoneMatch: "*" });
+    expect((await drive.get("x"))!.etag).toBe(etag);
+    const { etag: e2 } = await drive.put("x", text("2"), { ifMatch: etag });
+    expect((await drive.get("x"))!.etag).toBe(e2);
+    await expect(drive.put("x", text("3"), { ifMatch: etag })).rejects.toBeInstanceOf(PreconditionFailedError);
   });
 
   it("webdav: lists only the collection's files, names decoded", async () => {
