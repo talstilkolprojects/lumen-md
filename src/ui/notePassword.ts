@@ -6,7 +6,6 @@
 import "../lib/journalistStrings";
 import { t } from "../i18n";
 import { useAppStore } from "../store/useStore";
-import { noteOwnWrite } from "../store/externalChanges";
 import { readWorkspaceFile, writeWorkspaceFile } from "../storage/workspace";
 import { clearHistory, historyKey } from "../storage/history";
 import { lockedNotes } from "../storage/lockedNotesRegistry";
@@ -46,10 +45,13 @@ async function askNewPassword(): Promise<string | null> {
   }
 }
 
+// The external-changes watcher is itself loaded on demand (its strings are lazy): reached the same way here.
+const ownWrite = async () => (await import("../store/externalChanges")).noteOwnWrite;
+
 /** Seal and write the open note's text under its (new or kept) key. */
 async function writeSealed(path: string, plain: string): Promise<void> {
   await writeWorkspaceFile(path, plain);
-  noteOwnWrite(path, lockedNotes.sealed(path) ?? plain);
+  (await ownWrite())(path, lockedNotes.sealed(path) ?? plain);
 }
 
 export async function notePasswordFlow(): Promise<void> {
@@ -103,7 +105,7 @@ export async function notePasswordFlow(): Promise<void> {
       if (!(await uiConfirm({ title: t("notePw.title"), message: t("notePw.removeConfirm") }))) return;
       allowPlainWrite(path);
       await writeWorkspaceFile(path, plain);
-      noteOwnWrite(path, plain);
+      (await ownWrite())(path, plain);
     }
     return;
   }

@@ -5,7 +5,6 @@
  */
 import { t } from "../../i18n";
 import { cmdIcons, type Command } from "../../ui/CommandPalette";
-import { useToastStore } from "../../store/useToastStore";
 import type { CommandContext } from "./context";
 
 export function buildLatexCommands({ liveDoc }: CommandContext): Command[] {
@@ -17,14 +16,9 @@ export function buildLatexCommands({ liveDoc }: CommandContext): Command[] {
       icon: cmdIcons.Download,
       group: t("group.file"),
       action: async () => {
-        const { exportLatexProject } = await import("../../latex/app");
+        // Snapshot before the import: a tab switch while the chunk loads must not export another note.
         const doc = liveDoc();
-        try {
-          const r = await exportLatexProject(doc.name, doc.content, doc.workspaceName ?? undefined);
-          useToastStore.getState().push({ kind: "success", title: t("latex.exported", { file: r.file }), ...(r.missingKeys.length ? { body: t("latex.missingKeys", { keys: r.missingKeys.join(", ") }) } : {}) });
-        } catch (e) {
-          useToastStore.getState().push({ kind: "error", title: t("latex.failed", { error: (e as Error).message }) });
-        }
+        await (await import("./latexActions")).exportLatexFor(doc);
       },
     },
   ];
