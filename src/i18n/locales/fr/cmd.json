@@ -261,6 +261,8 @@
   "cmd.insert.graphviz": "Insertion Graphviz / DOT",
   "cmd.insert.htmlpreview": "Insertion live HTML preview",
   "cmd.insert.htmlpreview.hint": "HTML/CSS/JS isolé dans un iframe",
+  "cmd.insert.ink": "Écriture manuscrite : dessiner ou modifier",
+  "cmd.insert.ink.hint": "Stylet, Apple Pencil ou doigt ; enregistré en SVG dans la note",
   "cmd.insert.inlineMath": "Insérer une formule dans la ligne",
   "cmd.insert.inlineMath.hint": "Une formule au milieu de la phrase, $…$ (Ctrl/⌘+M). Elle reste de gauche à droite dans un texte hébreu.",
   "cmd.insert.json": "Insertion JSON table",

@@ -4895,6 +4895,136 @@
       "vars": []
     },
     {
+      "key": "ink.cancel",
+      "en": "Cancel",
+      "vars": []
+    },
+    {
+      "key": "ink.clear",
+      "en": "Clear",
+      "vars": []
+    },
+    {
+      "key": "ink.color.black",
+      "en": "Black",
+      "vars": []
+    },
+    {
+      "key": "ink.color.blue",
+      "en": "Blue",
+      "vars": []
+    },
+    {
+      "key": "ink.color.green",
+      "en": "Green",
+      "vars": []
+    },
+    {
+      "key": "ink.color.red",
+      "en": "Red",
+      "vars": []
+    },
+    {
+      "key": "ink.eraser",
+      "en": "Eraser",
+      "vars": []
+    },
+    {
+      "key": "ink.fingers",
+      "en": "Draw with a finger",
+      "vars": []
+    },
+    {
+      "key": "ink.gone",
+      "en": "That handwriting is no longer in the note.",
+      "vars": []
+    },
+    {
+      "key": "ink.hint",
+      "en": "Write or draw with a pen, Apple Pencil, finger or mouse. While a pen is on the screen, your palm is ignored.",
+      "vars": []
+    },
+    {
+      "key": "ink.label",
+      "en": "Handwriting",
+      "vars": []
+    },
+    {
+      "key": "ink.noEditor",
+      "en": "Open the note in an editing mode to add handwriting.",
+      "vars": []
+    },
+    {
+      "key": "ink.pen",
+      "en": "Pen",
+      "vars": []
+    },
+    {
+      "key": "ink.place",
+      "en": "Place",
+      "vars": []
+    },
+    {
+      "key": "ink.place.block",
+      "en": "On its own line",
+      "vars": []
+    },
+    {
+      "key": "ink.place.side",
+      "en": "Beside the text (study page)",
+      "vars": []
+    },
+    {
+      "key": "ink.removed",
+      "en": "Handwriting removed.",
+      "vars": []
+    },
+    {
+      "key": "ink.save",
+      "en": "Insert",
+      "vars": []
+    },
+    {
+      "key": "ink.saveEdit",
+      "en": "Save",
+      "vars": []
+    },
+    {
+      "key": "ink.size.medium",
+      "en": "Medium",
+      "vars": []
+    },
+    {
+      "key": "ink.size.thick",
+      "en": "Thick",
+      "vars": []
+    },
+    {
+      "key": "ink.size.thin",
+      "en": "Thin",
+      "vars": []
+    },
+    {
+      "key": "ink.surface",
+      "en": "Drawing area",
+      "vars": []
+    },
+    {
+      "key": "ink.title",
+      "en": "Handwriting",
+      "vars": []
+    },
+    {
+      "key": "ink.undo",
+      "en": "Undo",
+      "vars": []
+    },
+    {
+      "key": "ink.updated",
+      "en": "Handwriting updated.",
+      "vars": []
+    },
+    {
       "key": "israeliTime.dayOff",
       "en": "Falls on {reason}",
       "vars": [

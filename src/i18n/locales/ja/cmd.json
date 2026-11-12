@@ -261,6 +261,8 @@
   "cmd.insert.graphviz": "挿入 Graphviz / DOT",
   "cmd.insert.htmlpreview": "挿入 live HTML preview",
   "cmd.insert.htmlpreview.hint": "iframe 内のサンドボックス化された HTML/CSS/JS",
+  "cmd.insert.ink": "手書き：描く・編集",
+  "cmd.insert.ink.hint": "ペン・Apple Pencil・指；ノート内に SVG で保存",
   "cmd.insert.inlineMath": "行内に数式を挿入",
   "cmd.insert.inlineMath.hint": "文中の数式 $…$（Ctrl/⌘+M）。ヘブライ語の文中でも左から右のまま表示されます。",
   "cmd.insert.json": "挿入 JSON table",

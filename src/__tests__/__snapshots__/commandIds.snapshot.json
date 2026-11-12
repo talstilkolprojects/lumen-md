@@ -1899,6 +1899,13 @@
       "group": "Tools",
       "hint": "Puts back every file the last automation run changed, byte for byte",
       "icon": "Workflow"
+    },
+    {
+      "id": "insert.ink",
+      "label": "Handwriting: draw or edit",
+      "group": "Insert",
+      "hint": "Pen, Apple Pencil or finger; saved as SVG in the note",
+      "icon": "Pencil"
     }
   ],
   "full": [
@@ -3950,6 +3957,13 @@
       "group": "Tools",
       "hint": "Puts back every file the last automation run changed, byte for byte",
       "icon": "Workflow"
+    },
+    {
+      "id": "insert.ink",
+      "label": "Handwriting: draw or edit",
+      "group": "Insert",
+      "hint": "Pen, Apple Pencil or finger; saved as SVG in the note",
+      "icon": "Pencil"
     }
   ],
   "autoSaveOn": [
@@ -4227,6 +4241,7 @@
     "export.latexProject",
     "automations.new",
     "automations.dryRun",
-    "automations.undo"
+    "automations.undo",
+    "insert.ink"
   ]
 }
