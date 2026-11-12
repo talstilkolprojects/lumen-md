@@ -106,6 +106,8 @@
   "cmd.book.open.hint": "章节顺序、字数目标、今日字数与连续天数；导出 EPUB 或打印为 PDF",
   "cmd.canvas.migrate": "🎨 画布：将 tldraw 画布转换为 Excalidraw",
   "cmd.canvas.migrate.hint": ".tldr 文件保留为备份",
+  "cmd.chat.import": "导入 WhatsApp 或 Telegram 聊天…",
+  "cmd.chat.import.hint": "导出的聊天 → 每天一篇笔记，含媒体；仅在此设备上处理",
   "cmd.cite.insert": "插入引用 [@key]…",
   "cmd.cite.legal": "引用：法律来源（统一引用规则）…",
   "cmd.cite.legal.hint": "判决、法律、条例、法案、书籍或文章，按以色列统一引用规则（第三版，2021）书写",

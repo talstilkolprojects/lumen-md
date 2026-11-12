@@ -106,6 +106,8 @@
   "cmd.book.open.hint": "סדר הפרקים, יעדי מילים, המילים של היום והרצף; ייצוא EPUB עברי או הדפסה ל-PDF",
   "cmd.canvas.migrate": "🎨 קנבס: המרת קנבסים של tldraw ל-Excalidraw",
   "cmd.canvas.migrate.hint": "קובצי ה-.tldr נשמרים כגיבוי",
+  "cmd.chat.import": "ייבוא שיחת WhatsApp או Telegram…",
+  "cmd.chat.import.hint": "שיחה מיוצאת ← פתק לכל יום, עם המדיה; רק במכשיר הזה",
   "cmd.cite.insert": "הוספת ציטוט ‎[@key]…",
   "cmd.cite.legal": "ציטוטים: מקור משפטי (כללי האזכור האחיד)…",
   "cmd.cite.legal.hint": "פסק דין, חוק, תקנות, הצעת חוק, ספר או מאמר, לפי כללי האזכור האחיד (מהדורה שלישית, 2021)",

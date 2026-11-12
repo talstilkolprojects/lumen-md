@@ -171,6 +171,8 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "ink.json": { module: "ink/inkStrings.ts", users: ["ink/InkPad.tsx", "ink/inkCommand.ts"], prefixes: ["ink."] },
   // Where models download from (plan W4.14), a lazy section of the AI settings.
   "modelSources.json": { module: "ai/modelSourcesStrings.ts", users: ["ui/ModelSourcesSection.tsx"], prefixes: ["modelSources."] },
+  // Chat import (plan W5.7): the command loads its module with a dynamic import.
+  "chatImport.json": { module: "capture/chats/strings.ts", users: ["capture/chats/runImport.ts"], prefixes: ["chatImport."] },
 };
 
 function sources(dir: string): string[] {

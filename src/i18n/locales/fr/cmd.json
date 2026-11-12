@@ -106,6 +106,8 @@
   "cmd.book.open.hint": "Ordre des chapitres, objectifs de mots, mots du jour et série ; export EPUB ou impression PDF",
   "cmd.canvas.migrate": "🎨 Canevas : convertir les canevas tldraw en Excalidraw",
   "cmd.canvas.migrate.hint": "les fichiers .tldr sont conservés en sauvegarde",
+  "cmd.chat.import": "Importer une discussion WhatsApp ou Telegram…",
+  "cmd.chat.import.hint": "Discussion exportée → une note par jour, avec ses médias ; sur cet appareil uniquement",
   "cmd.cite.insert": "Insérer une citation [@key]…",
   "cmd.cite.legal": "Citations : source juridique (règles uniformes de citation)…",
   "cmd.cite.legal.hint": "Un arrêt, une loi, un règlement, un projet de loi, un livre ou un article, selon les règles israéliennes uniformes de citation (3e éd., 2021)",

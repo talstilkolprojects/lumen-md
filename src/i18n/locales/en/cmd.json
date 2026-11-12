@@ -105,6 +105,8 @@
   "cmd.book.open.hint": "Chapter order, word goals, today's words and streak; export a Hebrew EPUB or print to PDF",
   "cmd.canvas.migrate": "🎨 Canvas: convert tldraw canvases to Excalidraw",
   "cmd.canvas.migrate.hint": "the .tldr files stay as backups",
+  "cmd.chat.import": "Import a WhatsApp or Telegram chat…",
+  "cmd.chat.import.hint": "Exported chat → notes per day, with its media; on this device only",
   "cmd.cite.insert": "Insert a citation [@key]…",
   "cmd.cite.legal": "Citations: legal source (uniform citation rules)…",
   "cmd.cite.legal.hint": "A ruling, a law, regulations, a bill, a book or an article, written by the Israeli uniform citation rules (3rd edition, 2021)",

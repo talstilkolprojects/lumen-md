@@ -1768,6 +1768,75 @@
       "vars": []
     },
     {
+      "key": "chatImport.byChat",
+      "en": "One note for the whole chat",
+      "vars": []
+    },
+    {
+      "key": "chatImport.byDay",
+      "en": "One note per day",
+      "vars": []
+    },
+    {
+      "key": "chatImport.done",
+      "en": "Imported {chats} chats: {messages} messages in {notes} notes, {files} files → {folder}",
+      "vars": [
+        "chats",
+        "messages",
+        "notes",
+        "files",
+        "folder"
+      ]
+    },
+    {
+      "key": "chatImport.failed",
+      "en": "Chat import failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "chatImport.forwarded",
+      "en": "forwarded from {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "chatImport.grouping",
+      "en": "How should the chat be split into notes?",
+      "vars": []
+    },
+    {
+      "key": "chatImport.missing",
+      "en": "(not in the export)",
+      "vars": []
+    },
+    {
+      "key": "chatImport.missingSome",
+      "en": "{n} media files were not in the export; each is named in its note.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "chatImport.none",
+      "en": "No WhatsApp or Telegram chat in these files. Pick the exported .txt or .zip (WhatsApp) or result.json (Telegram Desktop).",
+      "vars": []
+    },
+    {
+      "key": "chatImport.omitted",
+      "en": "(media left out of the export)",
+      "vars": []
+    },
+    {
+      "key": "chatImport.reply",
+      "en": "in reply to message {id}",
+      "vars": [
+        "id"
+      ]
+    },
+    {
       "key": "cite.keys",
       "en": "Enter [@key] · ⇧Enter @key · Tab locator · Esc",
       "vars": []
