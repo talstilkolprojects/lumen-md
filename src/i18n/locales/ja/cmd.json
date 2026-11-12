@@ -138,6 +138,8 @@
   "cmd.epub.open": "EPUB を開いて読む…",
   "cmd.feedback": "ヘルプ: フィードバックを送る",
   "cmd.feedback.hint": "GitHub の issue またはコピー用テキスト — クリックするまで何も送信されません",
+  "cmd.file.exportAcademic": "学術提出用にエクスポート (Word)…",
+  "cmd.file.exportAcademic.hint": "表紙、目次、ページ番号、機関の書式",
   "cmd.file.exportAdoc": "エクスポート to AsciiDoc",
   "cmd.file.exportAdoc.hint": "Asciidoctor 互換のソース",
   "cmd.file.exportDocx": "エクスポート to Word (.doc)",

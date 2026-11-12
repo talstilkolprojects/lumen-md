@@ -138,6 +138,8 @@
   "cmd.epub.open": "打开 EPUB 阅读…",
   "cmd.feedback": "帮助：发送反馈",
   "cmd.feedback.hint": "GitHub issue 或可复制的文本——不经你点击，什么都不会发送",
+  "cmd.file.exportAcademic": "导出为学术提交格式 (Word)…",
+  "cmd.file.exportAcademic.hint": "封面、目录、页码和院校格式",
   "cmd.file.exportAdoc": "导出 to AsciiDoc",
   "cmd.file.exportAdoc.hint": "兼容 Asciidoctor 的源文件",
   "cmd.file.exportDocx": "导出 to Word (.doc)",

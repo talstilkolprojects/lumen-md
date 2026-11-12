@@ -1776,6 +1776,69 @@
       "group": "Insert",
       "hint": "Every note that cites the verse under the cursor",
       "icon": "Link"
+    },
+    {
+      "id": "file.exportAcademic",
+      "label": "Export for academic submission (Word)…",
+      "group": "File",
+      "hint": "Title page, table of contents, page numbers and the institution's formatting",
+      "icon": "Download"
+    },
+    {
+      "id": "view.search",
+      "label": "Search workspace…",
+      "group": "View",
+      "shortcut": "⇧⌘F",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "vault.import",
+      "label": "Import notes (zip / folder: Obsidian, Notion, Lumen)…",
+      "group": "File",
+      "hint": "Into a new folder — nothing existing is overwritten",
+      "icon": "Save"
+    },
+    {
+      "id": "lang.ar",
+      "label": "Language: العربية",
+      "group": "View",
+      "hint": "right-to-left",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.ru",
+      "label": "Language: Русский",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.fr",
+      "label": "Language: Français",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.de",
+      "label": "Language: Deutsch",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.ja",
+      "label": "Language: 日本語",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.zh-CN",
+      "label": "Language: 简体中文",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
     }
   ],
   "full": [
@@ -3704,6 +3767,69 @@
       "group": "Insert",
       "hint": "Every note that cites the verse under the cursor",
       "icon": "Link"
+    },
+    {
+      "id": "file.exportAcademic",
+      "label": "Export for academic submission (Word)…",
+      "group": "File",
+      "hint": "Title page, table of contents, page numbers and the institution's formatting",
+      "icon": "Download"
+    },
+    {
+      "id": "view.search",
+      "label": "Search workspace…",
+      "group": "View",
+      "shortcut": "⇧⌘F",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "vault.import",
+      "label": "Import notes (zip / folder: Obsidian, Notion, Lumen)…",
+      "group": "File",
+      "hint": "Into a new folder — nothing existing is overwritten",
+      "icon": "Save"
+    },
+    {
+      "id": "lang.ar",
+      "label": "Language: العربية",
+      "group": "View",
+      "hint": "right-to-left",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.ru",
+      "label": "Language: Русский",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.fr",
+      "label": "Language: Français",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.de",
+      "label": "Language: Deutsch",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.ja",
+      "label": "Language: 日本語",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.zh-CN",
+      "label": "Language: 简体中文",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
     }
   ],
   "autoSaveOn": [
@@ -3971,6 +4097,7 @@
     "help.a11yReport",
     "sources.insertSefaria",
     "sources.saveOffline",
-    "sources.notesOnVerse"
+    "sources.notesOnVerse",
+    "file.exportAcademic"
   ]
 }

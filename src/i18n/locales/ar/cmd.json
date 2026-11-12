@@ -138,6 +138,8 @@
   "cmd.epub.open": "فتح كتاب EPUB للقراءة…",
   "cmd.feedback": "مساعدة: إرسال ملاحظات",
   "cmd.feedback.hint": "مشكلة على GitHub أو نص للنسخ — لا يُرسل شيء دون نقرتك",
+  "cmd.file.exportAcademic": "تصدير للتقديم الأكاديمي (Word)…",
+  "cmd.file.exportAcademic.hint": "صفحة عنوان وفهرس وأرقام صفحات وتنسيق المؤسسة",
   "cmd.file.exportAdoc": "تصدير to AsciiDoc",
   "cmd.file.exportAdoc.hint": "مصدر متوافق مع Asciidoctor",
   "cmd.file.exportDocx": "تصدير to Word (.doc)",

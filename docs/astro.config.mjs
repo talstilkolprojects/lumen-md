@@ -108,6 +108,7 @@ export default defineConfig({
             { label: "Canvas (Excalidraw)", slug: "workspace/canvas", translations: { he: "קנבס (Excalidraw)" } },
             { label: "Side panels", slug: "workspace/panels", translations: { he: "חלוניות צד" } },
             { label: "Export and import", slug: "workspace/export-import", translations: { he: "ייצוא וייבוא" } },
+            { label: "Academic submission (Word)", slug: "workspace/academic-docx", translations: { he: "הגשה אקדמית (Word)" } },
             { label: "Tasks across the vault", slug: "workspace/tasks" },
             { label: "Ask a PDF", translations: { he: "שאלו את ה-PDF" }, slug: "workspace/pdf-chat" },
             { label: "Vault in a folder on the phone", slug: "workspace/mobile-vault-folder" },

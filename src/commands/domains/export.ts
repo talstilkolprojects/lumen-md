@@ -103,6 +103,19 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       action: () => void import("../../citations/run").then((m) => m.syncZoteroLibrary()),
     },
     {
+      // W5.16: the institution's formatting, title page and table of contents; the dialog loads on use.
+      id: "file.exportAcademic",
+      label: t("cmd.file.exportAcademic"),
+      hint: t("cmd.file.exportAcademic.hint"),
+      icon: cmdIcons.Download,
+      group: t("group.file"),
+      action: () => {
+        // Snapshot before the import: a tab switch while the chunk loads must not export another note.
+        const doc = liveDoc();
+        void import("../../ui/AcademicExportDialog").then((m) => m.openAcademicExport({ content: doc.content, name: doc.name }));
+      },
+    },
+    {
       id: "file.exportRtf",
       label: t("cmd.file.exportRtf"),
       hint: t("cmd.file.exportRtf.hint"),

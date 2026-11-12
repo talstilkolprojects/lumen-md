@@ -138,6 +138,8 @@
   "cmd.epub.open": "פתיחת ספר EPUB לקריאה…",
   "cmd.feedback": "עזרה: שליחת משוב",
   "cmd.feedback.hint": "issue ב-GitHub או טקסט להעתקה — שום דבר לא נשלח בלי לחיצה שלך",
+  "cmd.file.exportAcademic": "ייצוא להגשה אקדמית (Word)…",
+  "cmd.file.exportAcademic.hint": "עמוד שער, תוכן עניינים, מספרי עמודים ועיצוב לפי המוסד",
   "cmd.file.exportAdoc": "ייצוא ל-AsciiDoc",
   "cmd.file.exportAdoc.hint": "מקור תואם Asciidoctor",
   "cmd.file.exportDocx": "ייצוא ל-Word (.doc)",
