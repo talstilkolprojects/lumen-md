@@ -38,7 +38,6 @@ import {
   readKeyring,
   refreshKeys,
   RevokedDeviceEnrollError,
-  rewriteKeyring,
   unwrapSecret,
   type KeyringContents,
   type KeyringFile,
@@ -59,7 +58,6 @@ async function rekey(provider: SyncProvider, keys: VaultKeys, opts: Parameters<t
   return p.keys;
 }
 
-const same = (c: KeyringContents, f: KeyringFile) => ({ contents: c, file: f });
 const hex = (ch: string) => ch.repeat(64);
 
 /** `file` with its sealed part replaced by `contents`, sealed with the epoch's real key (for `epoch`, `protocol`). */
@@ -237,7 +235,8 @@ describe("refreshing the keys", () => {
 
   it("accepts the next epoch from a device that saw a later revision of this one", async () => {
     const { provider, keys } = await epochOne();
-    const rev1 = await rewriteKeyring(provider, keys, same);
+    const b = await generateIdentity();
+    const rev1 = await enrollDevice(provider, keys, "B", b.recipient);
     const anchor = anchorOf(rev1);
     expect(anchor.rev).toBe(1);
     await rekey(provider, rev1);
@@ -248,8 +247,9 @@ describe("refreshing the keys", () => {
 
   it("refuses a keyring whose complete chain doesn't list what this device saw, or lists something else there", async () => {
     const { provider, keys } = await epochOne();
-    const rev1 = await rewriteKeyring(provider, keys, same);
-    await rewriteKeyring(provider, rev1, same);
+    const b = await generateIdentity();
+    const rev1 = await enrollDevice(provider, keys, "B", b.recipient);
+    await enrollDevice(provider, rev1, "B", b.recipient);
     await expect(refreshKeys(provider, keys, { wrap: keys.wrap! }, { epoch: 1, rev: 1, digest: hex("0") })).rejects.toThrow(/its chain has another 1\.1/);
     // Revision 1.5 never existed: a complete chain (three entries, under the cap) would list it.
     await rekey(provider, await refreshKeys(provider, keys, { wrap: keys.wrap! }));
@@ -258,10 +258,12 @@ describe("refreshing the keys", () => {
 
   it("can't prove the descent of a device further behind than the chain reaches", async () => {
     const { provider, keys } = await epochOne();
+    const b = await generateIdentity();
     const seen = [anchorOf(keys)];
     let k = keys;
+    // Each enrollment rewrites the keyring at the same epoch (rev + 1), even for a device already on the list.
     for (let i = 0; i < CHAIN_LENGTH + 3; i++) {
-      k = await rewriteKeyring(provider, k, same);
+      k = await enrollDevice(provider, k, "B", b.recipient);
       seen.push(anchorOf(k));
     }
     // The chain now starts at revision 3: devices that saw 0, 1 or 2 are too far behind for it.
