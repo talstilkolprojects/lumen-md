@@ -117,3 +117,6 @@ fuzz-findings/
 # Python bytecode (scripts/sync-protocol)
 __pycache__/
 *.pyc
+
+# W4.21: Guidepup screen-reader results (sr/)
+sr-results/
