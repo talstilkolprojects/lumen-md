@@ -52,6 +52,24 @@
 /src/plugins/runtime/capabilities.ts     @talstilkol
 /src/plugins/plantumlPolicy.ts           @talstilkol
 
+# ── Relays, sharing, privacy and redaction (reviews 4 and 6: the receipt gate's sensitive list) ──
+/sync-server/                            @talstilkol
+/edge-workers/                           @talstilkol
+/src/collab/roomProof.ts                 @talstilkol
+/src/collab/roomToken.ts                 @talstilkol
+/src/collab/persistentProvider.ts        @talstilkol
+/src/collab/yjs.ts                       @talstilkol
+/src/privacy/                            @talstilkol
+/src/share/                              @talstilkol
+/src/storage/lockedNote.ts               @talstilkol
+/src/storage/lockedNotesRegistry.ts      @talstilkol
+/src/lib/imageMetadata.ts                @talstilkol
+/src/lib/redaction.ts                    @talstilkol
+/src/lib/redactionTree.ts                @talstilkol
+/src/storage/exportReady.ts              @talstilkol
+/src/sync/publish.ts                     @talstilkol
+/src/ai/dictation/desktopOffload.ts      @talstilkol
+
 # ── Native permissions and updates ──
 /src-tauri/capabilities/                 @talstilkol
 /src-tauri/tauri.conf.json               @talstilkol
