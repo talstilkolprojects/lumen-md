@@ -11,11 +11,15 @@
  *   - bytes                            COLLAB_MAX_STORED_BYTES       (default 4 GB, under the
  *                                      Workers Free plan's 5 GB of Durable Object storage)
  *   - rooms per address                COLLAB_STORED_ROOMS_PER_ADDRESS (default 50)
- * When the rooms or the bytes are full, a new room may take the place of a
- * stored one that nobody came back to: the smallest first, then the least
- * recently written. A room someone joined again (a second person, or the same
- * one later) within COLLAB_PROTECT_DAYS (default 14) is never evicted, and
- * neither is a room with someone connected.
+ *   - rooms per IPv6 /48               COLLAB_STORED_ROOMS_PER_48    (default: the same; review 8)
+ * When the rooms or the bytes are full, a new room may take the place of one
+ * stored room that nobody came back to: the smallest that frees one room's
+ * share of the bytes, then the least recently written (review 8: only for an
+ * attempt every other limit lets in, and one room for one new room; when no
+ * room is enough alone, none is evicted and the attempt is refused, and it
+ * still counts for the client). A room someone joined again (a second person,
+ * or the same one later) within COLLAB_PROTECT_DAYS (default 14) is never
+ * evicted, and neither is a room someone who sent its token is connected to.
  *
  * The day is the Quota's own (review 6, RR6-469-1): a room passes ids that do
  * not depend on the day, and the Quota turns them into the day's bucket
@@ -33,10 +37,12 @@
  *     the day, of an HMAC of the address (from COLLAB_TOKEN_SECRET); the
  *     previous day's buckets are dropped with the day;
  *   - per stored room (by its Durable Object id): its size, when it was last
- *     written and last joined again, and its owner: 20 bits of a keyed hash
- *     of the address that created it. About 4,000 IPv4 addresses share each
- *     owner value, so it names none, and two people who share one rarely
- *     both have rooms.
+ *     written, last joined again and last refused to make way, and its
+ *     owners: 20 bits of a keyed hash of the address that created it, and
+ *     for IPv6 20 bits of one of its /48. About 4,000 IPv4 addresses share
+ *     each owner value, so it names none, and two people who share one
+ *     rarely both have rooms. The room keeps the same two values with its
+ *     first write, so a Quota that restarts in between still counts it.
  * A room is counted once, when its first peer authenticates and nothing of
  * it is stored yet.
  * The counter itself is the `Quota` Durable Object in edge-workers/collab/worker.mjs;
@@ -128,6 +134,16 @@ export function ownerOf(secret, ids) {
   return createHmac("sha256", hmacKey(secret, "lumen-collab owner v1")).update(a).digest().readUInt32BE(0) >>> 12;
 }
 
+/** The same for the creator's IPv6 /48 (review 8, RR8-469-4), or null for IPv4. */
+export function prefixOwnerOf(secret, ids) {
+  const p = cleanIds(ids).find((k) => k.startsWith("p:"));
+  if (!p) return null;
+  return createHmac("sha256", hmacKey(secret, "lumen-collab owner /48 v1")).update(p).digest().readUInt32BE(0) >>> 12;
+}
+
+/** An owner value as the Quota accepts it from a room: a 20-bit integer, or null. */
+export const cleanOwner = (v) => (Number.isInteger(v) && v >= 0 && v < 1 << 20 ? v : null);
+
 /** The limits, from the Worker's vars. */
 export function quotaLimits(env = {}) {
   const perAddress = Math.max(1, Math.floor(num(env.COLLAB_NEW_ROOMS_PER_ADDRESS, 20)));
@@ -138,6 +154,8 @@ export function quotaLimits(env = {}) {
     maxRooms: Math.max(1, Math.floor(num(env.COLLAB_MAX_ROOMS, 20_000))),
     maxBytes: Math.max(1, Math.floor(num(env.COLLAB_MAX_STORED_BYTES, 4_000_000_000))),
     storedPerAddress: Math.max(1, Math.floor(num(env.COLLAB_STORED_ROOMS_PER_ADDRESS, 50))),
+    // A /48 is one site as a rule (RFC 6177): the same cap as one address (review 8, RR8-469-4).
+    storedPer48: Math.max(1, Math.floor(num(env.COLLAB_STORED_ROOMS_PER_48, num(env.COLLAB_STORED_ROOMS_PER_ADDRESS, 50)))),
     protectMs: Math.max(0, num(env.COLLAB_PROTECT_DAYS, 14)) * 86_400_000,
   };
 }
@@ -150,9 +168,9 @@ export const storeFull = (counts, limits) => counts.stored >= limits.maxRooms ||
  * {day, rooms, stored, bytes, buckets: Map, owners: Map}. `day` is the
  * Quota's own; the counts never go back to an earlier day. Returns null to
  * admit (and counts it), or the reason: "rooms-full" | "address-stored" |
- * "day" | "address" | "prefix".
+ * "prefix-stored" | "day" | "address" | "prefix".
  */
-export function admit(counts, keys, day, limits, owner = null) {
+export function admit(counts, keys, day, limits, owner = null, owner48 = null) {
   if (day > counts.day) {
     counts.day = day;
     counts.rooms = 0;
@@ -160,6 +178,7 @@ export function admit(counts, keys, day, limits, owner = null) {
   }
   if (storeFull(counts, limits)) return "rooms-full";
   if (owner !== null && (counts.owners?.get(owner) ?? 0) >= limits.storedPerAddress) return "address-stored";
+  if (owner48 !== null && (counts.owners48?.get(owner48) ?? 0) >= (limits.storedPer48 ?? limits.storedPerAddress)) return "prefix-stored";
   if (counts.rooms >= limits.perDay) return "day";
   for (const k of keys) {
     const cap = k.startsWith("p:") ? limits.per48 : limits.perAddress;
@@ -171,13 +190,53 @@ export function admit(counts, keys, day, limits, owner = null) {
 }
 
 /**
+ * A refused attempt still costs the client one of its new rooms for the day
+ * (review 8, RR8-469-1): asking again and again for a room the full store
+ * can't make way for is not free. The server's own daily count is not
+ * charged, so refusals can't use it up for everyone.
+ */
+export function charge(counts, keys) {
+  for (const k of keys) counts.buckets.set(k, (counts.buckets.get(k) ?? 0) + 1);
+}
+
+/** A room that refused to make way (someone was connected) goes last for this long. */
+export const BUSY_MS = 3_600_000;
+
+/**
  * The stored rooms a new one may replace, in order: none that someone joined
  * again within `protectMs`; the smallest first, then the least recently
- * written. `rooms` is a Map of id → {b: bytes, w: last write, a: last joined again}.
+ * written; a room that refused within BUSY_MS after all the others (review 8,
+ * RR8-469-2). `rooms` is a Map of id → {b: bytes, w: last write, a: last
+ * joined again, u: last refused}.
  */
 export function evictionOrder(rooms, nowMs, limits) {
+  const busy = (r) => (r.u && nowMs - r.u < BUSY_MS ? 1 : 0);
   return [...rooms]
     .filter(([, r]) => !(r.a && nowMs - r.a < limits.protectMs))
-    .sort(([, x], [, y]) => (x.b ?? 0) - (y.b ?? 0) || (x.w ?? 0) - (y.w ?? 0))
+    .sort(([, x], [, y]) => busy(x) - busy(y) || (x.b ?? 0) - (y.b ?? 0) || (x.w ?? 0) - (y.w ?? 0))
     .map(([id]) => id);
+}
+
+/**
+ * What a full store frees for one new room (review 8, RR8-469-1): one room's
+ * place when the rooms are full, and the room's share of the bytes when the
+ * bytes are (COLLAB_MAX_STORED_BYTES / COLLAB_MAX_ROOMS, or less when the
+ * store is over by less). Stored rooms that grew past the cap are not made up
+ * for by evicting others: each new room takes one place, never more.
+ */
+export function needed(counts, limits) {
+  const share = Math.max(1, Math.floor(limits.maxBytes / limits.maxRooms));
+  const over = (counts.bytes ?? 0) - limits.maxBytes + 1;
+  return { rooms: counts.stored >= limits.maxRooms ? 1 : 0, bytes: over > 0 ? Math.min(over, share) : 0 };
+}
+
+/**
+ * The one stored room, of `order` (eviction order), that frees `need`: the
+ * first that is big enough, so the smallest that is (review 8, RR8-469-1).
+ * At most one room makes way for one new room; null when none is enough
+ * alone, and then nothing is evicted.
+ */
+export function evictionPlan(rooms, order, need) {
+  const one = order.find((id) => (rooms.get(id)?.b ?? 0) >= need.bytes);
+  return one === undefined ? null : [one];
 }
