@@ -1,0 +1,22 @@
+# Category "Q&A · שאלות ותשובות" (default slug q-a). See docs/dev/github-discussions.md.
+title: "[שאלה] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        שאלו כל דבר על Lumen — בעברית או באנגלית. תשובה שעזרה? סמנו אותה כ„תשובה”.
+        Ask anything about Lumen, in Hebrew or English. Mark the reply that helped as the answer.
+  - type: textarea
+    id: question
+    attributes:
+      label: מה השאלה? · Your question
+      description: מה ניסיתם לעשות, ומה קרה. · What you tried to do, and what happened.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: גרסה ופלטפורמה · Version and platform
+      description: למשל „0.1.0, Chrome ב-Windows” או „האתר lumen-md.vercel.app”. · e.g. "0.1.0, Chrome on Windows".
+    validations:
+      required: false

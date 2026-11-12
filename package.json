@@ -119,7 +119,9 @@
     "tts:mos": "node scripts/tts-mos.mjs",
     "test:sr": "playwright test -c sr/playwright.sr.config.ts",
     "drill:data-safety": "node scripts/data-safety-drill.mjs",
-    "mutation:check": "node scripts/mutation/check.mjs"
+    "mutation:check": "node scripts/mutation/check.mjs",
+    "docs:build": "npm --prefix docs ci && npm --prefix docs run build && node scripts/docs-pagefind.mjs && node scripts/docs-search.mjs --site docs/dist",
+    "docs:gifs": "playwright test -c playwright.gifs.config.ts"
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "0.4.2",

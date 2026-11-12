@@ -16,6 +16,25 @@ npm run dev          # http://localhost:4321
 npm run build        # → dist/
 ```
 
+From the repository root, `npm run docs:build` does the whole thing:
+
+1. installs the docs' dependencies;
+2. builds the site, which runs Pagefind;
+3. re-indexes with the pinned Pagefind release binary if the build left no index (`scripts/docs-pagefind.mjs`);
+4. runs the 20 golden Hebrew search queries against the real index (`scripts/docs-search.mjs --site docs/dist`).
+
+## GIFs
+
+`npm run docs:gifs` (repository root) records the 30 docs GIFs in Hebrew from
+the running app into `docs/public/gifs/`. The flows are in `e2e/gifs/flows.ts`,
+and the recorder is `e2e/gifs/record.gifs.ts` with `playwright.gifs.config.ts`.
+The GIFs are encoded in plain JavaScript (`scripts/lib/gif.mjs`), with no
+ffmpeg. To record a single GIF, run `npm run docs:gifs -- --grep palette`.
+
+## Discussions
+
+See [dev/github-discussions.md](dev/github-discussions.md).
+
 Deploy `dist/` to any static host. We point `docs.lumen.app` at Cloudflare
 Pages with `npm run build` as the build command.
 

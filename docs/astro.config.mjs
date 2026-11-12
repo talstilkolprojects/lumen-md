@@ -14,6 +14,12 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "Lumen Docs",
+      // Pagefind (Starlight's search, MIT) indexes dist/ at the end of every
+      // `astro build` (plan W4.34). scripts/docs-pagefind.mjs is the fallback
+      // that runs the pinned release binary when an install skipped
+      // Pagefind's platform binary; scripts/docs-search.mjs --site checks the
+      // 20 golden Hebrew queries against the index.
+      pagefind: true,
       description: "Markdown, illuminated. The user manual.",
       social: [
         { icon: "github", label: "GitHub", href: "https://github.com/talstilkol/lumen-md" },
