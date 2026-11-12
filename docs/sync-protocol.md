@@ -75,6 +75,8 @@ An *epoch secret* `S` (32 bytes) gives, with `salt = vaultId`:
 | pairing | `lumen-e2ee/1/pairing` | HMAC, pairing codes |
 | keyring | `lumen-e2ee/1/keyring` | AES-256-GCM, the keyring's sealed part |
 | anchor | `lumen-e2ee/1/anchor` | HMAC, the check a device keeps with its keyring anchor (§5); never sent |
+| dropped | `lumen-e2ee/1/dropped` | HMAC, from `S_{N−1}`: the `dropped` marker of a re-key to epoch N (§5) |
+| revoked-here | `lumen-e2ee/1/revoked-here` | HMAC, from `S0` only: the list of devices a device revoked, kept in its own state (§5); never sent |
 
 **Epoch 0** is the vault before any re-key, with `S0 = master`. The **names**
 key is always `HKDF(S0, vaultId, "lumen-e2ee/1/names")`, so blob names
@@ -114,7 +116,8 @@ a frozen manifest only once the keyring lists the frozen manifest's digest in
  "passphrase":{"n":"<b64u 12>","c":"<b64u>"},
  "devices":{"<id>":{"recipient":"age1…","wrap":"<b64u age file of S_N>"}},
  "sealed":{"n":"…","c":"…"},
- "header":"<b64u>", "prev":"<b64u>"}
+ "header":"<b64u>", "prev":"<b64u>",
+ "dropped":[{"epoch":N,"at":ms,"devices":["<id>",…],"mac":"<b64u>"}]}
 ```
 
 - `passphrase` is `AES-256-GCM(wrap, n, S_N, aad = "lumen-e2ee-keyring/2/<vaultId>/<N>/passphrase")`.
@@ -148,6 +151,16 @@ a frozen manifest only once the keyring lists the frozen manifest's digest in
 - The keyring's **digest** is
   `sha256hex(JSON.stringify([format, protocol, vaultId, epoch, passphrase.n, passphrase.c, sealed.n, sealed.c, header ?? null, prev ?? null]))`:
   every checkable field, never the plaintext wraps.
+- `dropped` (fifth review 12.11, F4), optional, at most 8: the devices a
+  re-key from an unverified device left out (*Who may change keys*), per such
+  re-key at epoch `N`, with
+  `mac = b64u(HMAC(dropped_{N−1}, JSON ["lumen-e2ee-dropped/1", vaultId, N, at, sorted devices]))`,
+  `dropped_{N−1} = HKDF(S_{N−1}, vaultId, "lumen-e2ee/1/dropped")`. A device
+  without a wrap that is listed reads "left out: pair again", not "removed";
+  a device that holds `S_{N−1}` (one that synced before) believes the marker
+  only if the MAC verifies, and otherwise reads "removed". Later re-keys carry
+  each marker, minus the devices enrolled or revoked since (its MAC made again
+  with `S_{N−1}`, which they hold in `older`). Not in the digest.
 - A keyring of protocol 1, or without a sealed `devices` list, comes from a
   pre-release build. It is refused. The passphrase may reset it: a re-key
   wrapped for the passphrase (and devices it enrolls) only, starting a new
@@ -161,8 +174,14 @@ digest)`, and accepts a keyring only if it descends from it:
 - at the same epoch, a keyring this device's `S_N` can't open is a fork;
 - at a newer epoch, `older["<its epoch>"]` must be its secret, and `chain`
   must list its `(epoch, rev, digest)`. If `chain` is full (64 entries)
-  and starts after it, descent is unproven and the device is no longer
-  "verified"; otherwise a missing entry is a fork.
+  and starts after it, descent is unproven; otherwise a missing entry is a
+  fork. Unproven descent is not a demotion when the device's anchor check
+  (below) verifies: the keys hold the secret of the keyring it verified, and
+  the device walks forward on that (fifth review 12.11, F3). Only a device
+  without a checked anchor is no longer "verified". The same holds for a
+  manifest more than 100 commits ahead of the device's manifest anchor (§4):
+  sealed under keys that reproduce the anchor, it is accepted as the new
+  anchor.
 
 **Anchors** (third review 12.11, N1). The `(epoch, rev, digest)` a device
 remembers is public: the provider can compute every digest. A device opened
@@ -180,7 +199,14 @@ check) a fork. This holds for passphrase and device-key devices alike.
 **Re-key** from epoch N. The keyring write is the only commit:
 
 1. **Freeze**: write manifest N once more, `protocol: 2` with `frozen`
-   (compare-and-swap).
+   (compare-and-swap). If manifest N is already frozen by *another* device
+   and the keyring doesn't list it in `aborted`, that is a key change in
+   progress (fifth review 12.11, Q2): the re-keyer waits it out as a round
+   does — 10 minutes on its own clock from when it first saw that freeze — and
+   refuses ("another device is changing keys") instead of freezing over it.
+   After that it freezes over it. Against a provider that keeps the
+   compare-and-swap on the manifest but drops it on the keyring, this keeps
+   two re-keys from both committing.
 2. **New manifest**: create manifest N+1 under a fresh random label, the
    frozen one with `counter + 1`, sealed with `S_{N+1}`. Nothing names it yet.
 3. **Commit**: write the keyring for N+1, compare-and-swap on the keyring
@@ -215,13 +241,24 @@ epoch 0 there is no keyring to rewrite: it finishes the re-key itself
 (steps 2 and 3, create-only, for the passphrase alone). Blobs replaced by a
 commit over a freeze are deleted only by a later round.
 
-**A re-key replaced by a sibling** (N2). When a device's round finds that
-the keyring at the epoch of its last confirmed re-key is another one made
-from the same parent (the same `[N, rev, parent]` in its chain), opening with
-the same epoch-N secret in `older`, and not revoking every device its own
-re-key revoked, it revokes them again on top of it (a re-key from that
-keyring), then stops the round with a fork error that names them: anything
-written under the sibling's epoch may be readable by them.
+**A re-key replaced by a sibling** (N2, F2). When a device's round finds a
+fork, and the live keyring descends from the keyring its last confirmed
+re-key replaced (the same `[N, rev, parent]` in its chain) at that re-key's
+epoch **or any later one**, opening with the same epoch-N secret in `older`,
+and it doesn't revoke every device this device revoked (or lets one in again
+by id or key), the device revokes them again on top of it (a re-key from the
+live keyring), then stops the round with a fork error that names them:
+anything written in between may be readable by them. A fork it can't repair
+names the devices it revoked in the last 30 days: their revocation may be
+undone.
+
+**Revocations are sticky** (F2). A device keeps the devices it revoked, with
+their keys, in its own state, authenticated with
+`HMAC(HKDF(S_0, vaultId, "lumen-e2ee/1/revoked-here"), JSON ["lumen-e2ee-revoked-here/1", vaultId, deviceId, devices])`.
+Every re-key it makes leaves them out, by id and by key, and every round
+checks the keyring against them: a keyring that lists one again — which no
+honest client writes, since a revoked id or key can't be enrolled again — is
+revoked again on top, or the round stops with the revocation at risk.
 
 **Who may change keys.** Enrolling needs a device whose state is verified
 (it created the vault, was paired, or the user confirmed it, §6), and both
@@ -229,9 +266,17 @@ need a provider that proved its conditional writes (§1). A device that is
 not verified can re-key, but it can't vouch for the sealed device list (the
 provider may be showing it an old one), so its re-key wraps the new epoch
 for the passphrase and the devices it enrolls in that re-key only; every
-other device enrolls again. Served an old epoch, it never wraps for a device
-revoked meanwhile. A device makes no key change while a pairing code or
-answer it made is still valid (§6).
+other device pairs again (`dropped`). Served an old epoch, it never wraps
+for a device revoked meanwhile. Leaving devices out takes the user's
+consent (fifth review 12.11, F3): without `dropDevices`, such a re-key is
+refused with the list of devices it would leave out. A device makes no key
+change while a pairing code or answer it made is still valid (§6), unless
+the user cancels the pairing.
+
+**The next passphrase's KDF** (F5). A passphrase change keeps the KDF family
+of the stored header only if that header's MAC verifies under the device's
+header key; a header that doesn't verify counts as Argon2id. An Argon2id
+vault never moves to PBKDF2.
 
 **Revocation**: a device without a wrap at epoch N+1 can't learn `S_{N+1}`,
 so it can't open a manifest written after its revocation. A revoked id or
@@ -240,34 +285,49 @@ knows the passphrase, the passphrase changes in the same re-key.
 
 ## 6. Pairing codes
 
+Every pairing message is `prefix + N + ":" + b64u(tag ‖ body)`, where `N` is
+the sender's epoch, `pairing_N` that epoch's pairing key (§3, from `S_N`;
+the master at epoch 0), and
+
+`tag = HMAC(pairing_N, "lumen-pair/" + kind + "/" + version + "\0" ‖ body)`
+
+(fifth review 12.11, F1). The MAC covers the message's kind, the body says
+its kind (`"kind"`), and each kind has exactly its own fields — a reader
+refuses any other — so a request can't be passed off as an answer or a
+one-way code, nor the reverse:
+
+| kind | prefix | version | body fields |
+|---|---|---|---|
+| `request` | `lumen-pair-request:2:` | 2 | `kind, vaultId, epoch, ringRev, ringDigest, counter, digest, requestedAt, nonce` |
+| `answer` | `lumen-pair-answer:2:` | 2 | `kind, vaultId, request, nonce, counter, digest, epoch, ringRev, ringDigest, answeredAt` |
+| `code` | `lumen-pair:3:` | 3 | `kind, vaultId, counter, digest, epoch, ringRev, ringDigest, issuedAt, nonce` |
+
+Messages of earlier builds (`lumen-pair:2:`, `lumen-pair-request:1:`,
+`lumen-pair-answer:1:`) are refused as "from an older build".
+
 **Two-way pairing** (third review 12.11, N3), the default:
 
-1. The new device shows a request,
-   `"lumen-pair-request:1:" + N + ":" + b64u(HMAC(pairing_N, body) ‖ body)`,
-   `body = JSON {vaultId, epoch, ringRev, ringDigest, counter, digest, issuedAt, nonce}`:
-   the keyring and manifest it sees (`counter`, `digest` `null` before its
-   first round) and 16 random bytes.
+1. The new device shows a request: the keyring and manifest it sees
+   (`counter`, `digest` `null` before its first round) and 16 random bytes
+   (`nonce`).
 2. An existing, verified device reads its keyring and manifest **now**, then
    checks the request against them. A request from an older epoch (it opens
    it with `older["N"]`'s pairing key) or an older revision is refused: the
    provider is showing the new device old keys, whichever device made the
    newer ones. Same epoch and revision with another digest is a fork. A
-   newer request means this device must sync first. Otherwise it answers
-   `"lumen-pair-answer:1:" + N + ":" + b64u(HMAC(pairing_N, body) ‖ body)`,
-   `body = JSON {vaultId, nonce, counter, digest, epoch, ringRev, ringDigest, answeredAt}`,
-   with its anchors at that moment and the request's nonce. It then makes no
-   key change for 5 minutes.
-3. The new device accepts only the answer to its own outstanding request, at
-   the epoch it sees, within 5 minutes of making the request, on its own
-   clock (no other device's clock is compared).
+   newer request means this device must sync first. Otherwise it answers with
+   its anchors at that moment, the request's nonce, and `request =
+   sha256hex(the request's text, trimmed)`. It then makes no key change for 5
+   minutes, unless its user cancels the pairing (then tell the new device not
+   to use the answer).
+3. The new device accepts only the answer to its own outstanding request —
+   the same `request` hash and nonce — at the epoch it sees, within 5 minutes
+   of making the request, on its own clock (no other device's clock is
+   compared).
 
-**One-way codes**: `"lumen-pair:2:" + N + ":" + b64u(HMAC(pairing_N, body) ‖ body)`, where `N`
-is the issuer's epoch, `pairing_N` that epoch's pairing key (§3, from `S_N`;
-the master at epoch 0) and
-`body = JSON {vaultId, counter, digest, epoch, ringRev, ringDigest, issuedAt, nonce}`.
-It carries the issuing device's verified anchors — the manifest `(counter,
-digest)` and the keyring `(epoch, rev, digest)`, `ringDigest` `""` at epoch
-0 — and no key material. A device that sees an older epoch than `N` says so
+**One-way codes** carry the issuing device's verified anchors — the manifest
+`(counter, digest)` and the keyring `(epoch, rev, digest)`, `ringDigest` `""`
+at epoch 0 — and no key material. A device that sees an older epoch than `N` says so
 (its provider may be replaying keys) instead of trying the HMAC. A one-way
 code vouches for the issuer's state when it was made, so it is valid for 2
 minutes (15 before the third review), and the issuer makes no key change
@@ -307,11 +367,14 @@ scrypt file.
 - `argon2id[]`: password, salt, parameters and tag, including the production
   parameters.
 - `age[]`: X25519 and scrypt files with their plaintext.
-- `pairing[]`: codes for vault 1 (epoch 0) and vault 2 (epoch 2, keyring
-  revision 1), with their bodies.
+- `pairing[]`: one-way codes for vault 1 (epoch 0) and vault 2 (epoch 2,
+  keyring revision 1), with what they anchor.
+- `pairingTwoWay[]`: a request and its answer for the same two vaults, with
+  what each says; the request relabelled as an answer or a code must not
+  verify.
 
 ```sh
-python3 scripts/sync-protocol/check_vectors.py      # the independent reader: 25/25
+python3 scripts/sync-protocol/check_vectors.py      # the independent reader: 31/31
 npx vitest run src/__tests__/e2eeVectors.test.ts    # Lumen's own reader, same file
 ```
 
@@ -344,21 +407,27 @@ content of a device that has an anchor.
   the provider shows it: a two-way pairing between the views is refused
   (§6). A revocation is therefore only as current as the other devices'
   view of it — confirm it by pairing them.
-- *A provider that ignores compare-and-swap after the probe.* The re-keyer's
-  read-back (§5) catches a replacement that lands before it, and the next
-  round of the re-keyer catches one that lands after, and revokes again on
-  top of it. Neither can stop the other device's keyring from wrapping the
-  new epoch for a device revoked in the replaced one, in the moment between
-  that write and the re-keyer's next round: the other device acted on the
-  keyring it verified, and only the provider knew both. Preventing that, not
-  just repairing it, needs a server that keeps the compare-and-swap (or a
-  channel between the devices); see §5 *A re-key replaced by a sibling*.
+- *A provider that withholds or reorders every object after the probe.* A
+  provider that drops If-Match on the keyring alone is stopped by the
+  freeze: the second re-keyer sees the first one's frozen manifest and waits
+  (§5, *Re-key* step 1). A provider that also lies about the manifest — shows
+  the second re-keyer the manifest from before the freeze — can let both
+  commit. The re-keyer's read-back (§5) catches a replacement that lands
+  before it, and its next round catches one that lands after, at any later
+  epoch, and revokes again on top of it; its own revocations are sticky.
+  Neither can stop the other device's keyring from wrapping the new epoch for
+  a device revoked in the replaced one, in the moment between that write and
+  the re-keyer's next round: the other device acted on the keyring it
+  verified, and only the provider knew both (fork consistency: with no
+  channel between the devices, detection on merge is the best a client can
+  do). Preventing it needs a server that keeps the compare-and-swap, or a
+  channel between the devices; see §5 *A re-key replaced by a sibling*.
 - *Pairing windows.* A one-way code vouches for its issuer's state for 2
   minutes, and a two-way answer for the answering device's state until the
   new device enters it (at most 5 minutes after its request); a key change
   made on a third device inside that window, plus a provider showing the new
   device the state before it, passes. The issuing or answering device itself
-  makes no key change in that window.
+  makes no key change in that window, unless its user cancels the pairing.
 - *Google Drive* can't make create-only atomic, so it is sync-only: no
   re-key, revocation or enrollment through it.
 
@@ -398,3 +467,14 @@ Changes:
   devices don't upload, and their re-keys wrap for no device (N6, RR-5). A
   wrap that doesn't open the keyring is reported as tampered, not as a
   revocation, and every rewrite makes all wraps again (N5).
+- Fifth review 12.11: pairing messages are domain-separated — the kind is in
+  the MAC and the body, each kind has its own fields, and the answer names the
+  request's hash; versions request 2, answer 2, code 3 (F1). A re-key waits
+  out another device's fresh freeze on its own clock (Q2). A device revokes
+  again on top of any descendant of the keyring it replaced, and keeps its own
+  revocations (F2). A device whose anchor check verifies isn't demoted after
+  100 manifests or 64 keyring revisions; leaving devices out takes consent,
+  and the devices left out are marked `dropped` (F3, F4). The next
+  passphrase's KDF comes from the authenticated header, never down from
+  Argon2id (F5). Pairing and device unlock check the anchor first (F6, F7).
+  A pairing can be cancelled.

@@ -51,7 +51,16 @@ If the storage is showing the new device old keys (from before a device was
 removed, say), the device you already use says so at step 2, and the new
 device isn't paired. A one-way pairing code (from the device you already use
 to the new one) still works, but only for 2 minutes, and the device that made
-it doesn't change keys while it is valid.
+it doesn't change keys while it is valid. A request, an answer and a one-way
+code are three different kinds of message: one can't be turned into another,
+and an answer works only for the request it answers.
+
+**Cancelling a pairing.** The device that answered a request (or made a code)
+doesn't change keys for the next 5 minutes (2 for a code). If you must remove a
+lost device right away, cancel the pairing on it first (`cancelPairing()`;
+in the app, *Cancel pairing*). Then don't use that answer or code on the new
+device: pair it again after the key change. Cancelling on the new device
+forgets its request, so no answer to it is accepted any more.
 
 Until a new device is paired (or you confirm it by hand), it downloads
 changes but **keeps its own changes on the device**: it can't tell yet
@@ -64,8 +73,11 @@ what it uploads. The banner says so.
   or that you confirmed by hand can enroll a device, and only its re-keys
   keep the enrolled devices. A device opened with the passphrase alone can
   re-key, but the storage could be showing it an old device list, so its new
-  keys open only with the passphrase: every device with its own key enrolls
-  again.
+  keys open only with the passphrase: every device with its own key would
+  have to be paired again. Lumen asks first, naming those devices, and only
+  goes ahead once you confirm. Each of them then says *pair this device
+  again*, not *removed*. A device stays verified as long as its keys still
+  match the check it keeps, however long it was away.
 - **Keys tied to a secret.** Each device remembers the keys it last checked
   together with a check only the vault's keys can make. A device that opens
   with its own key refuses keys the storage made for it, even though the
@@ -80,7 +92,17 @@ what it uploads. The banner says so.
 - **Each key change is read back.** Right after a re-key, Lumen reads the
   keyring again. If the storage returns another device's key change instead,
   Lumen says *the revocation may not have taken effect*. At its next sync it
-  removes the device again on top of the other change, and says so.
+  removes the device again on top of the other change, even if that change
+  was built on since, and says so.
+- **A removal sticks.** The device you removed a device on remembers it. If a
+  keyring ever lets that device back in, it removes it again; if it can't, it
+  stops and says the removal may have been undone.
+- **Two key changes don't race.** If another device is in the middle of a key
+  change, Lumen waits for it to finish (at most 10 minutes) instead of
+  making its own on top.
+- **A new passphrase keeps Argon2id.** A passphrase change keeps the way the
+  passphrase is protected, as the vault's signed header says; it never moves
+  an Argon2id vault to PBKDF2.
 - **The keys must line up.** Every keyring names the one before it. A device
   refuses a keyring that doesn't follow from the last one it checked, and
   says so, instead of quietly using different keys.
