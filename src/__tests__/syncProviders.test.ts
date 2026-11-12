@@ -15,6 +15,9 @@ import { s3Provider } from "../sync/e2ee/providers/s3";
 import { dropboxSyncProvider } from "../sync/e2ee/providers/dropbox";
 import { gdriveSyncProvider } from "../sync/e2ee/providers/gdrive";
 import { HEADER_NAME } from "../sync/e2ee/header";
+import { generateIdentity } from "../sync/e2ee/age";
+import { unlockWithDevice } from "../sync/e2ee/engine";
+import { RevokedError } from "../sync/e2ee/keyring";
 import { manifestName, openManifest } from "../sync/e2ee/manifest";
 import { setSecret, __resetSecretStore } from "../lib/secretStore";
 import { fakeFetch, text, utf8 } from "./helpers/fakeServers/http";
@@ -185,6 +188,29 @@ describe.each(labs)("sync provider: %s", (_name, makeLab) => {
       ]);
     }
   }, 30_000);
+
+  it("providers + keyring + proveCas together (third review N8): re-key, enroll, revoke, read back; Drive refuses them (sync-only)", async () => {
+    const a = await newVault(lab.provider);
+    a.files.set("a.md", "before");
+    await a.sync.sync();
+    const phone = await generateIdentity();
+    if (lab.provider.atomicCreate === false) {
+      await expect(a.sync.rekey({ enroll: { phone: phone.recipient } })).rejects.toBeInstanceOf(CasUnsupportedError);
+      return;
+    }
+    const r1 = await a.sync.rekey({ enroll: { phone: phone.recipient } });
+    expect(r1).toMatchObject({ epoch: 1, devices: ["phone"], confirmed: true });
+    const { keys } = await unlockWithDevice(lab.again(), "phone", phone.identity);
+    expect(keys.epoch).toBe(1);
+    const r2 = await a.sync.rekey({ revoke: ["phone"] });
+    expect(r2).toMatchObject({ epoch: 2, devices: [], confirmed: true });
+    await expect(unlockWithDevice(lab.again(), "phone", phone.identity)).rejects.toBeInstanceOf(RevokedError);
+    a.files.set("a.md", "after the revocation");
+    await a.sync.sync();
+    const b = await joinVault("B", lab.again());
+    await b.sync.sync();
+    expect(b.files.text("a.md")).toBe("after the revocation");
+  }, 60_000);
 
   it("the service sees only the header, opaque names and ciphertext", async () => {
     const a = await newVault(lab.provider);
