@@ -30,6 +30,9 @@
       },
       {
         "file": "src/__tests__/e2eeVectors.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeAgeSpec.test.ts"
       }
     ],
     "src/sync/e2ee/keyring.ts": [
@@ -42,6 +45,9 @@
       },
       {
         "file": "src/__tests__/e2eeRekeyIntegrity.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeKeyringContents.test.ts"
       }
     ],
     "src/sync/e2ee/conflict.ts": [
@@ -99,6 +105,9 @@
       },
       {
         "file": "src/__tests__/privacyLedgerMoreMutants.test.ts"
+      },
+      {
+        "file": "src/__tests__/privacyLedgerRules.test.ts"
       }
     ],
     "src/text/hebrew.ts": [
@@ -182,6 +191,9 @@
     "src/storage/vault/handleBackend.ts": [
       {
         "file": "src/__tests__/vaultBackend.contract.test.ts"
+      },
+      {
+        "file": "src/__tests__/vaultHandleStrict.test.ts"
       }
     ]
   },
