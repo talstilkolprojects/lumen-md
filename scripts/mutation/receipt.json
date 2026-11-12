@@ -1,0 +1,122 @@
+{
+  "$comment": "Plan W4.17: mutation scores of the critical modules, written by `node scripts/mutation/run.mjs --critical --receipt`. sha256 is the module source each score was measured on; scripts/mutation/check.mjs (npm run mutation:check, a preview-build gate) fails when a critical module scores under the minimum or has changed since its run.",
+  "modules": {
+    "src/ai/privacyLedger.ts": {
+      "score": 85,
+      "caught": 68,
+      "survived": 12,
+      "invalid": 0,
+      "sampled": 80,
+      "mutants": 203,
+      "max": 80,
+      "runner": "shim",
+      "sha256": "079d88ab5043a8caca1dd867e441d89030c1941bdfd6bbd2b8deb1b5408c7ac0",
+      "tests": "03112dce1ef313c89804ffad5eb84f150b5d326acffbb5779f79f3503f268513",
+      "date": "2026-11-12"
+    },
+    "src/lib/secretStore.ts": {
+      "score": 88.8,
+      "caught": 71,
+      "survived": 9,
+      "invalid": 0,
+      "sampled": 80,
+      "mutants": 93,
+      "max": 80,
+      "runner": "shim",
+      "sha256": "d08635fc1dab45e76acca6badb5c909d9f9adc0992e5eeeae4a875d321f29177",
+      "tests": "00030d0b540d3cbfeba93b2c7102bd1a04e58899d6710369c15a0b1a07abeaab",
+      "date": "2026-11-12"
+    },
+    "src/renderer/rehypeSanitizeRaw.ts": {
+      "score": 93.8,
+      "caught": 75,
+      "survived": 5,
+      "invalid": 0,
+      "sampled": 80,
+      "mutants": 107,
+      "max": 80,
+      "runner": "shim",
+      "sha256": "e60ee7fa980d5b13b932edbbeca773bad3ac06adc47dd21b96aae98b6a3a5602",
+      "tests": "281833e4e5acbeb819822508f2ef5d82fec6ff9af8aec113146caab933ce26e2",
+      "date": "2026-11-12"
+    },
+    "src/storage/encryption.ts": {
+      "score": 85.7,
+      "caught": 18,
+      "survived": 3,
+      "invalid": 0,
+      "sampled": 21,
+      "mutants": 21,
+      "max": 80,
+      "runner": "shim",
+      "sha256": "aec55f1852f79e78a55c5bc723aa7443e08b636ec585b967f34c3f969330cafa",
+      "tests": "22a642eee1fe516631d17409c6e7b05b57518d5f1750d4f5275bde46c234edc0",
+      "date": "2026-11-12"
+    },
+    "src/storage/vault/handleBackend.ts": {
+      "score": 90,
+      "caught": 72,
+      "survived": 8,
+      "invalid": 0,
+      "sampled": 80,
+      "mutants": 114,
+      "max": 80,
+      "runner": "shim",
+      "sha256": "9820366966e21faf62a64a5a74be5ee3e5aac226f13eb01e68f0b669afd5ab78",
+      "tests": "a9c4aa2ea6a94ae7bb7340297d212d157a8118b010aee6760432fa39f91ddbfe",
+      "date": "2026-11-12"
+    },
+    "src/storage/vault/shared.ts": {
+      "score": 86.7,
+      "caught": 26,
+      "survived": 4,
+      "invalid": 0,
+      "sampled": 30,
+      "mutants": 30,
+      "max": 80,
+      "runner": "shim",
+      "sha256": "c3b4aadc449c00b0e729d37ac75455fc961333f9ca9dbb2dfc16a6c2f15d1bb2",
+      "tests": "a9c4aa2ea6a94ae7bb7340297d212d157a8118b010aee6760432fa39f91ddbfe",
+      "date": "2026-11-12"
+    },
+    "src/sync/e2ee/conflict.ts": {
+      "score": 92,
+      "caught": 23,
+      "survived": 2,
+      "invalid": 0,
+      "sampled": 25,
+      "mutants": 25,
+      "max": 80,
+      "runner": "shim",
+      "sha256": "9ce86c7fe369e0c7c8b0928405a2581fb79a69271d36d2b918a4bd9aa393cfd8",
+      "tests": "2cf182f5718f7b6cf3c467c80ce552eb00f8947ce374fb9d20d8a09240fbf9d4",
+      "date": "2026-11-12"
+    },
+    "src/sync/e2ee/header.ts": {
+      "score": 86.7,
+      "caught": 13,
+      "survived": 2,
+      "invalid": 0,
+      "sampled": 15,
+      "mutants": 15,
+      "max": 80,
+      "runner": "shim",
+      "sha256": "e99674e9ea9910e1a698b76cc614cc7b67fcd170c7a88082132e10ea736b2708",
+      "tests": "67037f4ca0772eec747f560ee593ea3fbacfc4e4b22dc912c5911160054b17bb",
+      "date": "2026-11-12"
+    },
+    "src/sync/e2ee/manifest.ts": {
+      "score": 97.5,
+      "caught": 78,
+      "survived": 2,
+      "invalid": 0,
+      "sampled": 80,
+      "mutants": 84,
+      "max": 80,
+      "runner": "shim",
+      "sha256": "ec8b54e7cc97738575eec0869a105541a7f91816cc29644fab682788d26c2702",
+      "tests": "4b58fe4c42e327432bc001824864cbb0d7675d4edaab379d9c7330d5054b192f",
+      "date": "2026-11-12"
+    }
+  }
+}

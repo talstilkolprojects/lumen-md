@@ -1,5 +1,5 @@
 {
-  "$comment": "Plan 0.15: critical pure modules and the tests that must kill their mutants. `filter` is a test-name regex (the slow 10,000-round tests are left out). `runner: \"harness\"`: offline, run in a browser harness (the vitest shim cannot load it); under vitest every test runs in vitest.",
+  "$comment": "Plan 0.15: critical pure modules and the tests that must kill their mutants. `filter` is a test-name regex (the slow 10,000-round tests are left out). `runner: \"harness\"`: offline, run in a browser harness (the vitest shim cannot load it); under vitest every test runs in vitest. `offline: false`: left out of the offline shim run (needs a package it cannot load). `critical` (plan W4.17): modules whose score must be at least `min`; scripts/mutation/check.mjs compares them with the committed receipt (scripts/mutation/receipt.json) in every preview build. A module that is not on this branch yet is listed as such and not counted.",
   "modules": {
     "src/sync/e2ee/primitives/chacha20poly1305.ts": [
       {
@@ -47,6 +47,16 @@
       },
       {
         "file": "src/__tests__/e2eeMutants.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeSync.test.ts",
+        "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/e2eeRandom.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeConflictMutants.test.ts"
       }
     ],
     "src/sync/e2ee/manifest.ts": [
@@ -56,6 +66,12 @@
       {
         "file": "src/__tests__/e2eeKeyring.test.ts",
         "filter": "rotates|rollback|revoked|passphrase"
+      },
+      {
+        "file": "src/__tests__/e2eeRandom.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeManifestMutants.test.ts"
       }
     ],
     "src/sync/e2ee/header.ts": [
@@ -72,6 +88,15 @@
       },
       {
         "file": "src/__tests__/privacyLedgerMutants.test.ts"
+      },
+      {
+        "file": "src/__tests__/ledgerComplete.test.ts"
+      },
+      {
+        "file": "src/__tests__/ocrLedger.test.ts"
+      },
+      {
+        "file": "src/__tests__/privacyLedgerMoreMutants.test.ts"
       }
     ],
     "src/text/hebrew.ts": [
@@ -82,6 +107,13 @@
     "src/renderer/rehypeSanitizeRaw.ts": [
       {
         "file": "src/__tests__/rehypeSanitizeRawMutation.test.ts"
+      },
+      {
+        "file": "src/__tests__/rehypeSanitizeRaw.test.ts",
+        "offline": false
+      },
+      {
+        "file": "src/__tests__/rehypeSanitizeRawRemote.test.ts"
       }
     ],
     "src/lib/secretStore.ts": [
@@ -92,6 +124,9 @@
     "src/storage/encryption.ts": [
       {
         "file": "src/__tests__/encryption.test.ts"
+      },
+      {
+        "file": "src/__tests__/encryptionMutants.test.ts"
       }
     ],
     "src/storage/zip.ts": [
@@ -136,6 +171,36 @@
         "file": "src/__tests__/agentRuntimeMutation.test.ts",
         "runner": "harness"
       }
+    ],
+    "src/storage/vault/shared.ts": [
+      {
+        "file": "src/__tests__/vaultBackend.contract.test.ts"
+      }
+    ],
+    "src/storage/vault/handleBackend.ts": [
+      {
+        "file": "src/__tests__/vaultBackend.contract.test.ts"
+      }
+    ]
+  },
+  "critical": {
+    "min": 80,
+    "modules": [
+      "src/sync/e2ee/primitives/chacha20poly1305.ts",
+      "src/sync/e2ee/primitives/blake2b.ts",
+      "src/sync/e2ee/primitives/scrypt.ts",
+      "src/sync/e2ee/primitives/argon2.ts",
+      "src/sync/e2ee/age.ts",
+      "src/sync/e2ee/keyring.ts",
+      "src/sync/e2ee/conflict.ts",
+      "src/sync/e2ee/manifest.ts",
+      "src/sync/e2ee/header.ts",
+      "src/ai/privacyLedger.ts",
+      "src/renderer/rehypeSanitizeRaw.ts",
+      "src/lib/secretStore.ts",
+      "src/storage/encryption.ts",
+      "src/storage/vault/shared.ts",
+      "src/storage/vault/handleBackend.ts"
     ]
   }
 }

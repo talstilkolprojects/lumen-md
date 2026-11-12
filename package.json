@@ -117,7 +117,8 @@
     "nightly": "node scripts/nightly/run.mjs",
     "tts:mos": "node scripts/tts-mos.mjs",
     "test:sr": "playwright test -c sr/playwright.sr.config.ts",
-    "drill:data-safety": "node scripts/data-safety-drill.mjs"
+    "drill:data-safety": "node scripts/data-safety-drill.mjs",
+    "mutation:check": "node scripts/mutation/check.mjs"
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "0.4.2",
