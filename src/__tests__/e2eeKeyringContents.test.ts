@@ -191,6 +191,32 @@ describe("the digest and the anchor", () => {
   });
 });
 
+describe("the keyring file and its rewrites", () => {
+  it("refuses a `prev` without a pending header, or one that isn't text", async () => {
+    const { file } = await epochOne();
+    expect(decodeKeyring(utf8(JSON.stringify({ ...file, header: "aGVhZA", prev: "cHJldg" }))).prev).toBe("cHJldg");
+    for (const bad of [{ ...file, prev: "cHJldg" }, { ...file, header: "aGVhZA", prev: 5 }, { ...file, header: 5 }]) {
+      expect(() => decodeKeyring(utf8(JSON.stringify(bad)))).toThrow(DecryptError);
+    }
+  });
+
+  it("rewrites only the keyring the keys came from", async () => {
+    const { provider, keys } = await epochOne();
+    const b = await generateIdentity();
+    await enrollDevice(provider, keys, "B", b.recipient);
+    await expect(enrollDevice(provider, keys, "C", b.recipient)).rejects.toBeInstanceOf(PreconditionFailedError);
+  });
+
+  it("calls a missing keyring a rollback once any epoch was seen", async () => {
+    const { provider, keys: k0 } = await vault();
+    expect(await refreshKeys(provider, k0, { wrap: k0.wrap! })).toBe(k0);
+    await expect(refreshKeys(provider, k0, { wrap: k0.wrap! }, 1)).rejects.toBeInstanceOf(KeyringRollbackError);
+    const { provider: p1, keys: k1 } = await epochOne();
+    p1.objects.delete(KEYRING_NAME);
+    await expect(refreshKeys(p1, k1, { wrap: k1.wrap! })).rejects.toBeInstanceOf(KeyringRollbackError);
+  });
+});
+
 describe("preparing a re-key", () => {
   it("makes a fresh 32-byte secret, wrapped for the passphrase", async () => {
     const { provider, keys } = await epochOne();
