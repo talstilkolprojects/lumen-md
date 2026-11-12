@@ -7,11 +7,13 @@ import { afterEach, describe, expect, it } from "vitest";
 import fixtures from "./fixtures/gps-photos.json";
 import {
   cleanInlineImages,
+  WITHHELD_IMAGE,
   hasRedactions,
   inlineVaultImages,
   prepareForExport,
   REDACTED,
   redactedPassages,
+  redactMarks,
   removeHiddenComments,
   removeRedacted,
   wrapRedaction,
@@ -107,6 +109,74 @@ describe("removeRedacted", () => {
     expect(redactedPassages("x <redact>one</redact> y <Redact >two")).toEqual(["one", "two"]);
     expect(hasRedactions("plain")).toBe(false);
     expect(hasRedactions("a <REDACT>b</REDACT>")).toBe(true);
+  });
+  it("a mark with attributes, a tab or a slash is a mark, as in the preview (F-8)", () => {
+    const S = "Dana Levi";
+    for (const md of [`a <redact class="x">${S}</redact> b`, `a <redact\tid=1>${S}</redact> b`, `a <redact title="1 > 2">${S}</redact> b`, `a <REDACT data-x='>'>${S}</Redact > b`, `a <redact/>${S}</redact> b`]) {
+      expect(removeRedacted(md).text, md).toBe(`a ${REDACTED} b`);
+    }
+    // No closing mark: the rest goes (fail closed); a tag cut off by the end opens a mark too.
+    expect(removeRedacted(`a <redact/>${S} b`).text).toBe(`a ${REDACTED}`);
+    expect(removeRedacted(`a <redact class="${S}`).text).toBe(`a ${REDACTED}`);
+    // `</ redact>` is a comment in HTML, not a closing mark: the mark stays open.
+    expect(removeRedacted(`a <redact>${S}</ redact> b`).text).toBe(`a ${REDACTED}`);
+    // Names that only start with "redact" are other elements.
+    expect(redactMarks("<redaction>x</redactor>")).toEqual([]);
+  });
+
+  it("the export removes everything the preview's HTML parser puts in a redact element (F-8)", () => {
+    const S = "SECRET";
+    const corpus = [
+      `<redact class="x">${S}</redact>`, `<redact\tid=1>${S}</redact>`, `<redact\nid=1>${S}</redact>`, `<redact/>${S}`, `<redact title='a>b'>${S}</redact>`,
+      `<redact a=b>c>${S}</redact>`, `<REDACT>${S}</REDACT>`, `<redact >${S}</redact foo>`, `<redact><redact>${S}</redact>${S}</redact>`, `<redact x="y" / >${S}</redact>`,
+    ];
+    for (const md of corpus) {
+      const doc = new DOMParser().parseFromString(`<body>${md}</body>`, "text/html");
+      const shaded = [...doc.querySelectorAll("redact")].map((e) => e.textContent ?? "").join("");
+      expect(shaded, md).toContain(S);
+      expect(removeRedacted(md).text, md).not.toContain(S);
+    }
+  });
+
+  it("Redact selection over existing marks makes one mark over the whole selection and uncovers nothing (F-9)", () => {
+    const exp = (md: string) => removeRedacted(md).text;
+    // The selection ends past an existing closing mark.
+    expect(exp(`x ${wrapRedaction("Dana</redact> at Cafe X")} y`)).toBe(`x ${REDACTED} y`);
+    // The selection starts inside a mark and ends inside another: text before and after stays covered.
+    const note = "a <redact>B1 B2</redact> c <redact>D1 D2</redact> e";
+    const from = note.indexOf("B2");
+    const to = note.indexOf(" D2");
+    const merged = note.slice(0, from) + wrapRedaction(note.slice(from, to)) + note.slice(to);
+    const out = exp(merged);
+    for (const secret of ["B1", "B2", " c ", "D1", "D2"]) expect(out, merged).not.toContain(secret);
+    expect(out.startsWith("a ") && out.endsWith(" e")).toBe(true);
+    // A plain selection is wrapped as before.
+    expect(wrapRedaction("plain")).toBe("<redact>plain</redact>");
+  });
+});
+
+describe("inline photos under any label (review 4, RR4-473-2)", () => {
+  const exifGps = [0xff, 0xe1, 0, 34, 0x45, 0x78, 0x69, 0x66, 0, 0, 0x4d, 0x4d, 0, 0x2a, 0, 0, 0, 8, 0, 1, 0x88, 0x25, 0, 4, 0, 0, 0, 1, 0, 0, 0, 26, 0, 0, 0, 0];
+  const JPEG = new Uint8Array([0xff, 0xd8, ...exifGps, 0xff, 0xda, 0, 8, 1, 1, 0, 0, 0x3f, 0, 0x12, 0x34, 0xff, 0xd9]);
+  const asc = (t: string) => [...t].map((c) => c.charCodeAt(0));
+  const HEIC = new Uint8Array([0, 0, 0, 0x18, ...asc("ftypheic"), 0, 0, 0, 0, ...asc("mif1heic"), 0, 0, 0, 0x2a, ...asc("Exif"), ...exifGps.slice(4, 22)]);
+  const b64 = (b: Uint8Array) => btoa(String.fromCharCode(...b));
+  it("the bytes decide: a JPEG labelled gif or octet-stream is cleaned, a HEIC is withheld without a canvas", () => {
+    for (const label of ["image/gif", "application/octet-stream", "image/jpeg"]) {
+      const out = cleanInlineImages(`![p](data:${label};base64,${b64(JPEG)})`);
+      expect(out.text, label).not.toContain(b64(JPEG));
+      expect(out.text, label).toContain("data:image/jpeg;base64,");
+    }
+    expect(cleanInlineImages(`![p](data:image/heic;base64,${b64(HEIC)})`).text).toBe(`![p](${WITHHELD_IMAGE})`);
+    // Data that is no image, under a label that is not image/*, stays.
+    const pdf = `[f](data:application/pdf;base64,${btoa("%PDF-1.7 x")})`;
+    expect(cleanInlineImages(pdf).text).toBe(pdf);
+  });
+  it("an SVG that embeds the photo has the embedded photo cleaned", () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/jpeg;base64,${b64(JPEG)}"/></svg>`;
+    const out = cleanInlineImages(`![d](data:image/svg+xml;base64,${btoa(svg)})`);
+    expect(out.cleaned).toBe(1);
+    expect(atob(/base64,([^)]+)\)/.exec(out.text)![1])).not.toContain(b64(JPEG));
   });
 });
 

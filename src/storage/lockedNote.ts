@@ -133,6 +133,8 @@ async function openWith(env: Envelope, k: NoteKey): Promise<string> {
 
 /** Paths whose next plain write is wanted (the password was just removed). */
 const allowPlain = new Set<string>();
+/** Paths whose next write may replace the closed note with another envelope (`allowEnvelopeWrite`). */
+const allowEnvelope = new Set<string>();
 
 const keyOf = (path: string) => lockedNotes.key(path) as NoteKey | undefined;
 
@@ -163,22 +165,17 @@ export function isEnvelopeText(text: string): boolean {
   }
 }
 
-/** Do two envelopes carry the same KDF parameters (the same salt: sealed with the same key)? */
-function sameKdf(a: string, b: string): boolean {
-  try {
-    return JSON.stringify(parse(a, STRUCTURE_ONLY).kdf) === JSON.stringify(parse(b, STRUCTURE_ONLY).kdf);
-  } catch {
-    return false;
-  }
-}
-
 /**
  * The workspace write hook. An unlocked locked note is always sealed, unless
  * the text is already an envelope that opens with this note's key (which
  * nobody without the key can forge). Nothing is written over a locked note
  * that is not open (the editor showing the sealed text, a tool, an old tab)
- * but an envelope with the note's own KDF parameters (review 2): plain text
- * and an envelope under another password are refused alike.
+ * but the very same envelope: plain text and any other envelope are refused
+ * alike. The KDF parameters and salt are plaintext in the file, so "the
+ * same salt" proves nothing: a writer who copies them can seal junk, or text
+ * under a password of its own, that looks like the note's (review 4,
+ * RR4-473-1). A caller that vouches for another envelope (a sync pull of the
+ * note's newer version) says so first with `allowEnvelopeWrite`.
  */
 export function makeSealer(readCurrent: (path: string) => Promise<string | null>) {
   return async (path: string, content: string): Promise<string> => {
@@ -199,12 +196,11 @@ export function makeSealer(readCurrent: (path: string) => Promise<string | null>
       return sealed;
     }
     if (allowPlain.delete(path)) return content;
+    if (isEnvelopeText(content) && allowEnvelope.delete(path)) return content;
     const current = await readCurrent(path);
     if (current === null || !isSealedNote(current)) return content;
-    // A closed locked note (review 2): not even a well-formed envelope replaces it, unless it is the
-    // same envelope or one sealed under the same password and salt (another tab or device that holds
-    // the key: its KDF parameters, salt included, are the note's own). Anything else is refused.
-    if (isEnvelopeText(content) && (content === current || sameKdf(content, current))) return content;
+    // A closed locked note (reviews 2 and 4): only the same envelope, byte for byte, is written over it.
+    if (content === current) return content;
     throw new LockedNoteOverwriteError(path);
   };
 }
@@ -221,6 +217,15 @@ export function forgetOpen(path: string): void {
   lockedNotes.delete(path);
 }
 
+/**
+ * The next write of `path` may replace the closed locked note with another
+ * envelope, for a caller that knows where it comes from (a sync pull of the
+ * note's newer version). Plain text is still refused.
+ */
+export function allowEnvelopeWrite(path: string): void {
+  allowEnvelope.add(path);
+}
+
 /** The password was removed: the next write of `path` may be plain. */
 export function allowPlainWrite(path: string): void {
   lockedNotes.delete(path);
@@ -235,5 +240,6 @@ export function isOpenLocked(path: string): boolean {
 export function __resetLockedNotes(): void {
   for (const p of lockedNotes.paths()) lockedNotes.delete(p);
   allowPlain.clear();
+  allowEnvelope.clear();
   setNoteSealer(null);
 }

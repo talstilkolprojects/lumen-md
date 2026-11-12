@@ -406,6 +406,16 @@ export async function cleanImageBytes(bytes: Uint8Array, type: string): Promise<
  */
 export async function cleanPublishedFile(bytes: Uint8Array): Promise<{ action: "copy" } | { action: "clean"; bytes: Uint8Array<ArrayBuffer> } | { action: "refuse"; kind: MediaKind | "image" }> {
   const kind = sniffMedia(bytes);
+  if (kind === "svg") {
+    // An SVG can embed the original photo as a data: URL (Inkscape's "embed", diagram tools): cleaned too (review 4).
+    const r = cleanDataUrls(new TextDecoder().decode(bytes));
+    if (!r.cleaned && !r.withheld) return { action: "copy" };
+    const out = new TextEncoder().encode(r.text);
+    const copy = new Uint8Array(out.length);
+    copy.set(out);
+    return { action: "clean", bytes: copy };
+  }
+  if (kind === "ico" && containsPng(bytes)) return { action: "refuse", kind };
   if (!kind || PLAIN.has(kind)) return { action: "copy" };
   if (kind === "video" || REENCODE.has(kind)) return { action: "refuse", kind };
   const type = OUT_TYPE[kind];
@@ -413,6 +423,125 @@ export async function cleanPublishedFile(bytes: Uint8Array): Promise<{ action: "
   // Re-encoded to another format, its link would not match: it stays out.
   if (!r || r.type !== type) return { action: "refuse", kind: "image" };
   return { action: "clean", bytes: r.bytes };
+}
+
+/** What a photo becomes when its metadata can't be removed: a 1×1 transparent GIF. */
+export const WITHHELD_IMAGE = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
+/** Every base64 `data:` URL, whatever its label (review 4, RR4-473-2): the label says nothing about the bytes. */
+const DATA_URL = /data:([a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+)?((?:;[a-z0-9!#$&^_.+-]+=[^;,\s"')]*)*);base64,([A-Za-z0-9+/]+={0,2})/gi;
+/** SVG inside SVG inside SVG: deeper than this is withheld rather than read. */
+const MAX_SVG_DEPTH = 3;
+
+function fromBase64(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function toBase64(bytes: Uint8Array): string {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+const containsPng = (b: Uint8Array) => {
+  for (let i = b.indexOf(0x89); i >= 0 && i + 8 <= b.length; i = b.indexOf(0x89, i + 1)) if (PNG_SIG.every((v, k) => b[i + k] === v)) return true;
+  return false;
+};
+
+/** A data: URL's fate: the same URL, a cleaned one, null (withhold it), or bytes only a canvas could clean. */
+type DataUrlVerdict = { url: string; changed: boolean } | null;
+type Judged = DataUrlVerdict | { reencode: Uint8Array; kind: MediaKind };
+
+/**
+ * One data: URL, judged by its bytes. JPEG, PNG and WebP are stripped in
+ * place; an SVG has its own embedded data: URLs cleaned; GIF and BMP carry no
+ * location and stay; an ICO with PNG frames, video, and anything labelled
+ * image/* that is no image we know are withheld; HEIC, AVIF, TIFF, JPEG XL
+ * and a JPEG/PNG/WebP that doesn't parse need a canvas (the async doors) or
+ * are withheld. Bytes that are no image under a label that is not image/*
+ * (a PDF, a text) stay.
+ */
+function judgeDataUrl(whole: string, label: string, b64: string, depth: number): Judged {
+  const imageLabel = /^image\//i.test(label);
+  let bytes: Uint8Array;
+  try {
+    bytes = fromBase64(b64);
+  } catch {
+    return imageLabel ? null : { url: whole, changed: false };
+  }
+  const kind = sniffMedia(bytes);
+  if (!kind) return imageLabel ? null : { url: whole, changed: false };
+  if (kind === "jpeg" || kind === "png" || kind === "webp") {
+    try {
+      const r = stripImageMetadata(bytes);
+      const type = OUT_TYPE[kind];
+      if (!r.removed.length && label.toLowerCase() === type) return { url: whole, changed: false };
+      return { url: `data:${type};base64,${toBase64(r.bytes)}`, changed: true };
+    } catch {
+      return { reencode: bytes, kind };
+    }
+  }
+  if (kind === "svg") {
+    if (depth >= MAX_SVG_DEPTH) return null;
+    const inner = cleanDataUrlsAt(new TextDecoder().decode(bytes), depth + 1);
+    if (!inner.cleaned && !inner.withheld) return { url: whole, changed: false };
+    return { url: `data:image/svg+xml;base64,${toBase64(new TextEncoder().encode(inner.text))}`, changed: true };
+  }
+  if (kind === "gif" || kind === "bmp") return { url: whole, changed: false };
+  if (kind === "ico") return containsPng(bytes) ? null : { url: whole, changed: false };
+  if (kind === "video") return null;
+  return { reencode: bytes, kind };
+}
+
+function replaceDataUrls(text: string, verdicts: Map<string, DataUrlVerdict>): { text: string; cleaned: number; withheld: number } {
+  let cleaned = 0;
+  let withheld = 0;
+  const out = text.replace(DATA_URL, (whole) => {
+    const v = verdicts.get(whole);
+    if (!v) {
+      withheld++;
+      return WITHHELD_IMAGE;
+    }
+    if (v.changed) cleaned++;
+    return v.url;
+  });
+  return { text: out, cleaned, withheld };
+}
+
+function cleanDataUrlsAt(text: string, depth: number): { text: string; cleaned: number; withheld: number } {
+  const verdicts = new Map<string, DataUrlVerdict>();
+  for (const m of text.matchAll(DATA_URL)) {
+    if (verdicts.has(m[0])) continue;
+    const j = judgeDataUrl(m[0], m[1] ?? "", m[3], depth);
+    verdicts.set(m[0], j && "reencode" in j ? null : j);
+  }
+  return verdicts.size ? replaceDataUrls(text, verdicts) : { text, cleaned: 0, withheld: 0 };
+}
+
+/**
+ * Every base64 data: URL in `text` (a note, an SVG's source), judged by its
+ * bytes whatever its label (`judgeDataUrl`), without a canvas: what can't be
+ * stripped in place is withheld (WITHHELD_IMAGE).
+ */
+export function cleanDataUrls(text: string): { text: string; cleaned: number; withheld: number } {
+  return cleanDataUrlsAt(text, 0);
+}
+
+/** The same, re-encoding through a canvas what can't be stripped in place; withheld only when that fails too. */
+export async function cleanDataUrlsAsync(text: string): Promise<{ text: string; cleaned: number; withheld: number }> {
+  const verdicts = new Map<string, DataUrlVerdict>();
+  for (const m of text.matchAll(DATA_URL)) {
+    if (verdicts.has(m[0])) continue;
+    const j = judgeDataUrl(m[0], m[1] ?? "", m[3], 0);
+    if (j && "reencode" in j) {
+      const r = await cleanImageBytes(j.reencode, MIME_OF[j.kind] ?? OUT_TYPE[j.kind] ?? "application/octet-stream");
+      verdicts.set(m[0], r ? { url: `data:${r.type};base64,${toBase64(r.bytes)}`, changed: true } : null);
+    } else verdicts.set(m[0], j);
+  }
+  return verdicts.size ? replaceDataUrls(text, verdicts) : { text, cleaned: 0, withheld: 0 };
 }
 
 /** localStorage key: "1" keeps photos' metadata (the default removes it). */
