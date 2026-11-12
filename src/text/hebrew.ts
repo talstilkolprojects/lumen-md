@@ -7,6 +7,8 @@
  * word, and word counting that does not break a pointed word apart.
  */
 
+import { foldArabic } from "./arabic";
+
 /**
  * Niqqud, cantillation and the other Hebrew combining marks, as a regex
  * character-class body: U+0591–U+05C7 *without* the punctuation inside
@@ -34,7 +36,8 @@ export function stripNiqqud(text: string): string {
  * equal.
  */
 export function normalizeForMatch(text: string): string {
-  return stripNiqqud(text)
+  // Arabic folds the same way (W5.17): tashkeel, tatweel, hamza seats, ى / ي, ة / ه.
+  return foldArabic(stripNiqqud(text))
     .toLowerCase()
     .replace(/[ךםןףץ]/g, (c) => FINALS[c])
     .replace(/[׳’‘]/g, "'")

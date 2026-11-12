@@ -113,6 +113,62 @@ export function buildUsabilityStudyCommands(): Command[] {
   ];
 }
 
+/**
+ * Arabic (plan W5.17): download or remove the Arabic word list, hide or show
+ * tashkeel in the editor, remove it from the selection or the note. The
+ * modules and their messages load on use.
+ */
+export function buildArabicCommands({ getEditorView }: CommandContext): Command[] {
+  return [
+    {
+      id: "spell.arabicDictionary",
+      label: t("cmd.spell.arabicDictionary"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: async () => {
+        const svc = await import("../../ai/arabicSpellService");
+        if (await svc.arabicDictionaryInstalled()) {
+          if (!(await uiConfirm({ message: t("spell.ar.removeConfirm") }))) return;
+          await svc.removeArabicDictionary();
+          showAiToast(t("spell.ar.removed"), "info");
+          return;
+        }
+        if (!(await uiConfirm({ message: t("spell.ar.downloadConfirm") }))) return;
+        try {
+          const n = await svc.downloadArabicDictionary();
+          showAiToast(t("spell.ar.installed", { n: n.toLocaleString() }), "info");
+        } catch (e) {
+          showAiToast(t("spell.ar.failed", { error: (e as Error).message }), "error");
+        }
+      },
+    },
+    {
+      id: "arabic.toggleTashkeel",
+      label: t("cmd.arabic.toggleTashkeel"),
+      icon: cmdIcons.Eye,
+      group: t("group.view"),
+      action: async () => {
+        const view = getEditorView?.();
+        if (!view) return;
+        const { toggleTashkeel } = await import("../../editor/tashkeelView");
+        showAiToast(t(toggleTashkeel(view) ? "tashkeel.hidden" : "tashkeel.shown"), "info");
+      },
+    },
+    {
+      id: "arabic.removeTashkeel",
+      label: t("cmd.arabic.removeTashkeel"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: async () => {
+        const view = getEditorView?.();
+        if (!view) return;
+        const { removeTashkeelIn } = await import("../../editor/tashkeelView");
+        if (!removeTashkeelIn(view)) showAiToast(t("tashkeel.nothing"), "info");
+      },
+    },
+  ];
+}
+
 /** Commands registered by plugins. */
 export function buildPluginCommands(): Command[] {
   return [

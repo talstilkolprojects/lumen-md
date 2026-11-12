@@ -1853,6 +1853,24 @@
       "group": "View",
       "hint": "Adds the note to the end of the book whose index is in the same folder",
       "icon": "FileText"
+    },
+    {
+      "id": "spell.arabicDictionary",
+      "label": "Arabic spelling: download or remove the word list",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "arabic.toggleTashkeel",
+      "label": "Hide or show Arabic tashkeel",
+      "group": "View",
+      "icon": "Eye"
+    },
+    {
+      "id": "arabic.removeTashkeel",
+      "label": "Remove Arabic tashkeel (selection or note)",
+      "group": "Tools",
+      "icon": "Sparkles"
     }
   ],
   "full": [
@@ -3858,6 +3876,24 @@
       "group": "View",
       "hint": "Adds the note to the end of the book whose index is in the same folder",
       "icon": "FileText"
+    },
+    {
+      "id": "spell.arabicDictionary",
+      "label": "Arabic spelling: download or remove the word list",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "arabic.toggleTashkeel",
+      "label": "Hide or show Arabic tashkeel",
+      "group": "View",
+      "icon": "Eye"
+    },
+    {
+      "id": "arabic.removeTashkeel",
+      "label": "Remove Arabic tashkeel (selection or note)",
+      "group": "Tools",
+      "icon": "Sparkles"
     }
   ],
   "autoSaveOn": [
@@ -4128,6 +4164,9 @@
     "sources.notesOnVerse",
     "file.exportAcademic",
     "book.open",
-    "book.addChapter"
+    "book.addChapter",
+    "spell.arabicDictionary",
+    "arabic.toggleTashkeel",
+    "arabic.removeTashkeel"
   ]
 }

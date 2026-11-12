@@ -8940,6 +8940,21 @@
       ]
     },
     {
+      "key": "tashkeel.hidden",
+      "en": "Tashkeel hidden in this editor. The note still has it.",
+      "vars": []
+    },
+    {
+      "key": "tashkeel.nothing",
+      "en": "No tashkeel to remove here.",
+      "vars": []
+    },
+    {
+      "key": "tashkeel.shown",
+      "en": "Tashkeel shown.",
+      "vars": []
+    },
+    {
       "key": "tasks.changed",
       "en": "The note changed since this list was made — nothing was written. Try again.",
       "vars": []

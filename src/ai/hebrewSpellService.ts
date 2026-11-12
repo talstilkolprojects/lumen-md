@@ -43,6 +43,7 @@ export function localize(matches: GrammarMatch[]): GrammarMatch[] {
     return g.messageKey ? { ...m, message: `${t(g.messageKey, g.vars)} — ${t(g.explainKey, g.vars)}` } : m;
   });
 }
+import { arabicRatio } from "../text/arabic";
 
 const DICT_KEY = "lumen.dict.he.v1";
 /** Window event after the dictionary is installed or removed: open editors re-check. */
@@ -181,7 +182,11 @@ export async function checkByLanguage(
     if (hebrewRatio(p[0]) >= 0.5) {
       latinOnly += p[0].replace(/[^\n]/g, " ");
       hebrewJobs.push(checkHebrew(p[0]).then((ms) => ms.map((m) => ({ ...m, offset: m.offset + start }))));
-    } else latinOnly += p[0].replace(/\p{Script=Hebrew}/gu, " "); // Hebrew words inside a Latin paragraph stay on this device too.
+    } else if (arabicRatio(p[0]) >= 0.5) {
+      // W5.17: an Arabic paragraph is checked on this device too (Ayaspell once installed, rules always).
+      latinOnly += p[0].replace(/[^\n]/g, " ");
+      hebrewJobs.push(import("./arabicSpellService").then((svc) => svc.checkArabic(p[0])).then((ms) => ms.map((m) => ({ ...m, offset: m.offset + start }))));
+    } else latinOnly += p[0].replace(/[\p{Script=Hebrew}\p{Script=Arabic}]/gu, " "); // Hebrew and Arabic words inside a Latin paragraph stay on this device too.
     cursor = start + p[0].length;
   }
   latinOnly += text.slice(cursor);
