@@ -34,10 +34,23 @@
  * Frames: a URL-loaded frame (the playground and live-js runners) has its own
  * header policy, so the <meta> allows frames from blob: only and those
  * blocks don't run while the switch is on (review 12.11). Every frame
- * already open that can make requests (runners, HTML previews with scripts,
- * embeds: any iframe not sandboxed without scripts) is torn down when the
- * switch goes on (its page replaced by about:blank, which stops its scripts
- * and any worker inside it) and recorded as "in-flight" (reviews 2 and 4).
+ * already open with something in it, whatever its sandbox (CSS alone makes
+ * requests), in the page or in a shadow root, and every <object> and
+ * <embed>, is torn down when the switch goes on (its page replaced by
+ * about:blank, which stops its scripts, animations and any worker inside it)
+ * and recorded as "in-flight" (reviews 2, 4 and 6).
+ *
+ * What a frame could start outside itself (review 6, RR6-451-2):
+ *   windows   the app's own window.open (and that of every same-origin
+ *             frame) is tracked, and those windows are closed at the switch.
+ *             A frame never gets allow-popups (`guardFrames`), so an embed
+ *             can't open one this page can't reach.
+ *   service workers   a frame from another site keeps allow-same-origin
+ *             only for the known embed providers (EMBED_ORIGINS), so another
+ *             site's page can't register one. At the switch, every service
+ *             worker registration of the app's origin other than the app's
+ *             own is unregistered. One a known provider registered is out of
+ *             this page's reach, and the certificate says so.
  *
  * Other tabs: the workers' channel is shared by every tab, so each window
  * answers only its own workers (AIRPLANE_TAB), and a tab that sees the
@@ -50,7 +63,7 @@
  * from Resource Timing, so a non-zero transfer shows up.
  */
 
-import { __setAirplaneFlag, addAirplaneCsp, AIRPLANE_KEY, AIRPLANE_TAB, airplaneSinceStored, blankFrames, onSwitchedElsewhere } from "./airplaneBoot";
+import { __setAirplaneFlag, addAirplaneCsp, AIRPLANE_KEY, AIRPLANE_TAB, airplaneSinceStored, blankFrames, onSwitchedElsewhere, shadowRoots } from "./airplaneBoot";
 import { AIRPLANE_CHANNEL, type AirplaneMessage } from "../ai/workerLedger";
 
 export type EgressKind = "fetch" | "xhr" | "websocket" | "eventsource" | "beacon" | "webrtc" | "worker" | "resource" | "csp" | "frame";
@@ -247,6 +260,7 @@ export function enableAirplaneMode(): void {
   }
   openSockets.clear();
   if (typeof document !== "undefined") stopFrames(document, at);
+  if (typeof navigator !== "undefined") void stopForeignWorkers(navigator, at);
   broadcast();
   // A new snapshot, so subscribers (the monitor) re-render with the new state.
   attempts = [...attempts];
@@ -254,19 +268,203 @@ export function enableAirplaneMode(): void {
 }
 
 /**
- * Stop every frame that can still make requests when the switch goes on
- * (review 4, RR4-451-1): the runner frames, HTML previews with scripts,
- * embeds, and any iframe not sandboxed without scripts (`blankFrames`).
- * Each that had something in it is recorded as in-flight. The blocks cannot
+ * Stop every frame with something in it when the switch goes on (reviews 4
+ * and 6, `blankFrames`), and close the windows the app opened. Each is
+ * recorded as in-flight. The blocks cannot
  * load a new page while the switch is on (frame-src blob:), and a frame made
  * after the switch inherits the <meta>.
  */
 export function stopFrames(doc: Pick<Document, "querySelectorAll">, at: number = Date.now()): number {
   const stopped = blankFrames(doc);
   for (const f of stopped) {
-    record({ kind: "frame", target: f.src === "about:srcdoc" ? f.src : egressTarget(f.src), method: "FRAME", decision: "in-flight", origin: f.title || "frame", ts: at });
+    record({ kind: "frame", target: f.src.startsWith("about:") ? f.src : egressTarget(f.src), method: "FRAME", decision: "in-flight", origin: f.title || "frame", ts: at });
+  }
+  // Windows the app (or a same-origin frame) opened: closed, and counted.
+  for (const [w, url] of [...popups]) {
+    popups.delete(w);
+    try {
+      if (w.closed) continue;
+      w.close();
+    } catch {
+      /* why: already gone */
+    }
+    record({ kind: "frame", target: egressTarget(url || "about:blank"), method: "POPUP", decision: "in-flight", origin: "window.open", ts: at });
   }
   return stopped.length;
+}
+
+/** Windows opened through a tracked window.open, with the URL asked for. */
+const popups = new Map<Window, string>();
+
+/** Wrap one window's `open` so the window it returns can be closed at the switch (RR6-451-2). */
+export function trackOpen(w: Window | null | undefined): void {
+  const target = w as (Window & { __lumenOpen?: boolean }) | null | undefined;
+  try {
+    if (!target || typeof target.open !== "function" || target.__lumenOpen) return;
+    const inner = target.open.bind(target);
+    target.open = ((url?: string | URL, name?: string, features?: string) => {
+      const opened = inner(url, name, features);
+      if (opened) popups.set(opened, String(url ?? ""));
+      return opened;
+    }) as typeof window.open;
+    Object.defineProperty(target, "__lumenOpen", { value: true });
+  } catch {
+    /* why: another origin's window: out of reach (and `guardFrames` gives it no allow-popups) */
+  }
+}
+
+/**
+ * The sites whose embeds keep `allow-same-origin` (the providers of
+ * src/plugins/EmbedBlock.tsx). A frame from any other site loses it, so it
+ * has no storage and no service worker of its own (review 6, RR6-451-2).
+ */
+export const EMBED_ORIGINS: ReadonlySet<string> = new Set([
+  "https://codepen.io",
+  "https://codesandbox.io",
+  "https://open.spotify.com",
+  "https://platform.twitter.com",
+  "https://player.vimeo.com",
+  "https://w.soundcloud.com",
+  "https://www.facebook.com",
+  "https://www.figma.com",
+  "https://www.google.com",
+  "https://www.instagram.com",
+  "https://www.linkedin.com",
+  "https://www.loom.com",
+  "https://www.openstreetmap.org",
+  "https://www.redditmedia.com",
+  "https://www.tiktok.com",
+  "https://www.youtube-nocookie.com",
+]);
+
+const NO_POPUPS = new Set(["allow-popups", "allow-popups-to-escape-sandbox"]);
+
+/** A frame's sandbox as `guardFrames` leaves it: no popups; same-origin powers only for the app and the known embeds. */
+export function guardedSandbox(sandbox: string, src: string | null, base: string): string {
+  let foreign = false;
+  if (src) {
+    try {
+      const u = new URL(src, base);
+      foreign = /^https?:$/.test(u.protocol) && u.origin !== new URL(base).origin && !EMBED_ORIGINS.has(u.origin);
+    } catch {
+      foreign = true; // why: a URL that doesn't parse gets no powers
+    }
+  }
+  return sandbox
+    .split(/[\t\n\f\r ]+/)
+    .filter((t) => t && !NO_POPUPS.has(t.toLowerCase()) && !(foreign && t.toLowerCase() === "allow-same-origin"))
+    .join(" ");
+}
+
+/**
+ * Every sandboxed iframe this page makes through the DOM (React included)
+ * gets `guardedSandbox`, decided before it loads: when its sandbox or its
+ * src is set. A frame with no sandbox attribute is left as it is (the app
+ * sandboxes every frame it loads from another site).
+ */
+export function guardFrames(win: W): void {
+  const proto = win.HTMLIFrameElement?.prototype as (HTMLIFrameElement & { __lumenGuard?: boolean }) | undefined;
+  if (!proto || proto.__lumenGuard) return;
+  Object.defineProperty(proto, "__lumenGuard", { value: true });
+  const base = () => win.location?.href ?? "http://localhost/";
+  const native = win.Element.prototype.setAttribute;
+  const apply = (f: HTMLIFrameElement, src: string | null) => {
+    const sb = f.getAttribute("sandbox");
+    if (sb === null) return;
+    const next = guardedSandbox(sb, src, base());
+    if (next !== sb) native.call(f, "sandbox", next);
+  };
+  proto.setAttribute = function (this: HTMLIFrameElement, name: string, value: string) {
+    const n = String(name).toLowerCase();
+    if (n === "sandbox") native.call(this, name, guardedSandbox(String(value), this.getAttribute("src"), base()));
+    else {
+      if (n === "src") apply(this, String(value));
+      native.call(this, name, value);
+    }
+  };
+  const srcDesc = Object.getOwnPropertyDescriptor(proto, "src");
+  if (srcDesc?.set) {
+    Object.defineProperty(proto, "src", {
+      ...srcDesc,
+      set(this: HTMLIFrameElement, v: string) {
+        apply(this, String(v));
+        srcDesc.set!.call(this, v);
+      },
+    });
+  }
+  const sbDesc = Object.getOwnPropertyDescriptor(proto, "sandbox");
+  if (sbDesc?.get) {
+    Object.defineProperty(proto, "sandbox", {
+      ...sbDesc,
+      get(this: HTMLIFrameElement) {
+        const list = sbDesc.get!.call(this) as DOMTokenList;
+        owners.set(list, this);
+        return list;
+      },
+      set(this: HTMLIFrameElement, v: string) {
+        native.call(this, "sandbox", guardedSandbox(String(v), this.getAttribute("src"), base()));
+      },
+    });
+  }
+  // `frame.sandbox.add("allow-popups")` and the like: put the guard back after the change.
+  const TL = win.DOMTokenList?.prototype;
+  if (TL) {
+    for (const m of ["add", "toggle", "replace"] as const) {
+      const inner = TL[m] as (...a: unknown[]) => unknown;
+      (TL as unknown as Record<string, unknown>)[m] = function (this: DOMTokenList, ...a: unknown[]) {
+        const r = inner.apply(this, a);
+        const f = owners.get(this);
+        if (f) apply(f, f.getAttribute("src"));
+        return r;
+      };
+    }
+    const value = Object.getOwnPropertyDescriptor(TL, "value");
+    if (value?.set) {
+      Object.defineProperty(TL, "value", {
+        ...value,
+        set(this: DOMTokenList, v: string) {
+          value.set!.call(this, v);
+          const f = owners.get(this);
+          if (f) apply(f, f.getAttribute("src"));
+        },
+      });
+    }
+  }
+}
+const owners = new WeakMap<DOMTokenList, HTMLIFrameElement>();
+
+/** Wrap `attachShadow`, so `blankFrames` finds frames in shadow roots, closed ones too (RR6-451-3). */
+export function trackShadowRoots(win: W): void {
+  const proto = win.Element?.prototype as (Element & { __lumenShadow?: boolean }) | undefined;
+  if (!proto || typeof proto.attachShadow !== "function" || proto.__lumenShadow || typeof WeakRef === "undefined") return;
+  const inner = proto.attachShadow;
+  proto.attachShadow = function (this: Element, init: ShadowRootInit): ShadowRoot {
+    const root = inner.call(this, init);
+    shadowRoots.add(new WeakRef(root));
+    return root;
+  };
+  Object.defineProperty(proto, "__lumenShadow", { value: true });
+}
+
+/**
+ * Service workers of the app's origin that are not the app's own (one a
+ * same-origin frame registered): unregistered at the switch, and counted.
+ * Another site's are out of reach (see EMBED_ORIGINS).
+ */
+async function stopForeignWorkers(nav: Navigator | undefined, at: number): Promise<void> {
+  const sw = nav?.serviceWorker;
+  if (!sw || typeof sw.getRegistrations !== "function") return;
+  try {
+    const own = sw.controller?.scriptURL ?? null;
+    for (const reg of await sw.getRegistrations()) {
+      const script = (reg.active ?? reg.waiting ?? reg.installing)?.scriptURL ?? "";
+      if (own !== null ? script === own : /\/(sw|service-worker)\.js$/.test(new URL(script || reg.scope).pathname)) continue;
+      await reg.unregister().catch(() => false);
+      record({ kind: "worker", target: egressTarget(script || reg.scope), method: "SERVICE-WORKER", decision: "in-flight", origin: "service worker", ts: at });
+    }
+  } catch {
+    /* why: no registrations to reach here */
+  }
 }
 
 /** Turn it off: the page reloads (a CSP cannot be lifted from a loaded page). */
@@ -300,6 +498,24 @@ export function installAirplaneMode(win: W = window as W): void {
   since = airplaneSinceStored();
   on = since !== null;
   if (on && win.document) addAirplaneCsp(win.document);
+
+  // What a frame could start outside itself, and frames in shadow roots (review 6).
+  guardFrames(win);
+  trackShadowRoots(win);
+  trackOpen(win);
+  try {
+    // A same-origin frame's window.open, as each frame loads.
+    win.document?.addEventListener?.(
+      "load",
+      (e: Event) => {
+        const t = e.target as HTMLIFrameElement | null;
+        if (t && t.tagName === "IFRAME") trackOpen(t.contentWindow);
+      },
+      true,
+    );
+  } catch {
+    /* why: no document here */
+  }
 
   const innerFetch = win.fetch.bind(win);
   win.fetch = function airplaneFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
@@ -452,6 +668,7 @@ export function __resetAirplane(): void {
   installed = false;
   openSockets.clear();
   inFlight.clear();
+  popups.clear();
   bodies = [];
   channel?.close();
   channel = null;

@@ -8,6 +8,8 @@
  * in the live list (synchronously: well inside the 1 s of the acceptance)
  * with the place in the code it came from.
  */
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, it, expect, beforeEach } from "vitest";
 import {
   __resetAirplane,
@@ -18,8 +20,11 @@ import {
   egressAttempts,
   egressTarget,
   enableAirplaneMode,
+  EMBED_ORIGINS,
+  guardedSandbox,
   installAirplaneMode,
   stopFrames,
+  trackOpen,
   subscribeEgress,
   verdict,
 } from "../privacy/airplane";
@@ -435,12 +440,13 @@ describe("review 2 fixes", () => {
     const inert = frame({ srcdoc: "<p>no scripts</p>", sandbox: "" });
     const empty = frame({});
     const doc = { querySelectorAll: () => [runner, live, blob, preview, embed, inert, empty] } as unknown as Document;
-    expect(stopFrames(doc, 1000)).toBe(5);
-    expect([runner, live, blob, preview, embed].map((f) => f.attr("src"))).toEqual(Array(5).fill("about:blank"));
+    expect(stopFrames(doc, 1000)).toBe(6);
+    expect([runner, live, blob, preview, embed, inert].map((f) => f.attr("src"))).toEqual(Array(6).fill("about:blank"));
     expect(preview.attr("srcdoc")).toBeNull();
-    // Sandboxed without scripts: it can't start a request, so it is left as it is.
-    expect(inert.attr("srcdoc")).toBe("<p>no scripts</p>");
-    expect(inert.attr("src")).toBeNull();
+    // Sandboxed without scripts, it still loads what its CSS asks for (review 6): stopped too.
+    expect(inert.attr("srcdoc")).toBeNull();
+    // An empty frame has nothing to stop.
+    expect(empty.attr("src")).toBeNull();
     const frames = egressAttempts().filter((a) => a.kind === "frame");
     expect(frames.map((a) => a.target)).toEqual([
       "https://lumen-md.vercel.app/playground-runner.html",
@@ -448,9 +454,35 @@ describe("review 2 fixes", () => {
       "blob:…",
       "about:srcdoc",
       "https://example.com/embed",
+      "about:srcdoc",
     ]);
     expect(frames.map((a) => a.origin)).toContain("HTML preview");
     expect(frames.every((a) => a.decision === "in-flight" && reachedNetwork(a))).toBe(true);
+  });
+
+  it("no frame gets allow-popups; a frame from another site keeps same-origin powers only as a known embed (review 6, RR6-451-2)", () => {
+    const base = "https://lumen-md.vercel.app/note";
+    expect(guardedSandbox("allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox", "https://www.youtube-nocookie.com/embed/x", base)).toBe("allow-scripts allow-same-origin");
+    expect(guardedSandbox("allow-scripts allow-same-origin", "https://example.com/widget", base)).toBe("allow-scripts");
+    expect(guardedSandbox("allow-scripts allow-same-origin", "/livejs-runner.html", base)).toBe("allow-scripts allow-same-origin");
+    expect(guardedSandbox("allow-forms ALLOW-POPUPS", null, base)).toBe("allow-forms");
+    // The embed block's providers are the known ones.
+    const src = readFileSync(resolve(process.cwd(), "src/plugins/EmbedBlock.tsx"), "utf8");
+    const origins = new Set([...src.matchAll(/src: `(https:\/\/[^/`$]+)/g)].map((m) => m[1]));
+    expect(origins.size).toBeGreaterThan(10);
+    for (const o of origins) expect(EMBED_ORIGINS.has(o), o).toBe(true);
+    expect(src).not.toMatch(/allow-popups/);
+  });
+
+  it("windows opened through window.open are closed and counted when the switch goes on (RR6-451-2)", () => {
+    const closed: string[] = [];
+    const win = { open: (url: string) => ({ closed: false, close: () => closed.push(url) }) } as unknown as Window;
+    trackOpen(win);
+    trackOpen(win); // once
+    win.open("https://example.com/popup", "_blank");
+    expect(stopFrames({ querySelectorAll: () => [] } as unknown as Document, 1000)).toBe(0);
+    expect(closed).toEqual(["https://example.com/popup"]);
+    expect(egressAttempts().filter((a) => a.method === "POPUP").map((a) => a.target)).toEqual(["https://example.com/popup"]);
   });
 
   it("the startup half follows another tab's switch even without this chunk (review 4)", () => {

@@ -147,7 +147,7 @@ function cleanElement(el: Element) {
   dropRemoteLoads(el, props);
   if (el.tagName === "iframe") {
     if (typeof props.src !== "string") return false;
-    props.sandbox = ["allow-scripts", "allow-popups", "allow-presentation", "allow-same-origin"];
+    props.sandbox = ["allow-scripts", "allow-presentation", "allow-same-origin"];
     props.referrerPolicy = "no-referrer";
     props.loading = "lazy";
   }

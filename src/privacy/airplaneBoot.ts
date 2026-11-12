@@ -20,7 +20,7 @@
  *
  * Other tabs (review 4, RR4-451-2): the storage listener is here too, so a
  * tab follows the switch even when the lazy chunk didn't load. It adds the
- * <meta>, blanks the frames that can still make requests (`blankFrames`)
+ * <meta>, blanks every frame with something in it (`blankFrames`)
  * and tells this window's workers "on". When airplane.ts is loaded, it does
  * the full switch instead (`onSwitchedElsewhere`), with the certificate.
  */
@@ -115,26 +115,98 @@ export interface BlankedFrame {
 }
 
 /**
- * Stop every frame that can still make requests (review 4, RR4-451-1): any
- * iframe with a page in it except one sandboxed without allow-scripts. A
- * frame keeps the policy it was created with (a srcdoc copies the page's
- * policy then, and a URL-loaded page has its own), so the <meta> added later
- * doesn't reach it. Its document is replaced by about:blank, which ends its
- * scripts, timers and workers.
+ * Shadow roots, open and closed (review 6, RR6-451-3): airplane.ts wraps
+ * `attachShadow` and adds each root here, so a frame inside one can still be
+ * found. A closed root made before that is out of reach.
  */
-export function blankFrames(doc: Pick<Document, "querySelectorAll">): BlankedFrame[] {
-  const out: BlankedFrame[] = [];
-  try {
-    for (const f of doc.querySelectorAll("iframe")) {
-      const sandbox = f.getAttribute("sandbox");
-      const src = f.getAttribute("srcdoc") !== null ? "about:srcdoc" : (f.getAttribute("src") ?? "");
-      if ((sandbox !== null && !/(^|\s)allow-scripts(\s|$)/i.test(sandbox)) || !src || src === "about:blank") continue;
-      f.removeAttribute("srcdoc");
-      f.setAttribute("src", "about:blank");
-      out.push({ src, title: f.title });
+export const shadowRoots = new Set<WeakRef<ShadowRoot>>();
+
+type Root = Pick<Document, "querySelectorAll">;
+
+/** The document and every shadow root in it: the tracked ones, and open ones found on the way. */
+function rootsOf(doc: Root): Root[] {
+  const out: Root[] = [doc];
+  const seen = new Set<unknown>([doc]);
+  for (const ref of [...shadowRoots]) {
+    const r = ref.deref();
+    if (!r) shadowRoots.delete(ref);
+    else if (!seen.has(r)) {
+      seen.add(r);
+      out.push(r);
     }
+  }
+  for (let i = 0; i < out.length; i++) {
+    let all: ArrayLike<Element> = [];
+    try {
+      all = out[i].querySelectorAll("*");
+    } catch {
+      /* why: a fake document */
+    }
+    for (const el of Array.from(all)) {
+      const r = (el as Element & { shadowRoot?: ShadowRoot | null }).shadowRoot;
+      if (r && !seen.has(r)) {
+        seen.add(r);
+        out.push(r);
+      }
+    }
+  }
+  return out;
+}
+
+/** What a frame holds: its URL, "about:srcdoc", or null when it is empty (nothing loaded or written). */
+function frameContent(f: HTMLIFrameElement): string | null {
+  if (f.getAttribute("srcdoc") !== null) return "about:srcdoc";
+  const src = f.getAttribute("src") ?? "";
+  let here = "";
+  try {
+    here = f.contentWindow?.location?.href ?? "";
   } catch {
-    /* why: no frames to reach here */
+    // why: another origin's page is in it (a src, or a page script navigated it to)
+    return src && src !== "about:blank" ? src : "about:navigated";
+  }
+  if (src && src !== "about:blank") return src;
+  if (here && here !== "about:blank" && here !== "about:srcdoc") return here;
+  try {
+    const d = f.contentDocument;
+    if (d && ((d.head?.childNodes.length ?? 0) > 0 || (d.body?.childNodes.length ?? 0) > 0)) return "about:blank";
+  } catch {
+    /* why: not readable: nothing written by this page */
+  }
+  return null;
+}
+
+/**
+ * Stop every frame that has something in it (reviews 4 and 6): whatever
+ * its sandbox, because CSS alone (an animation over background images, a
+ * :hover image) makes requests without a script. A frame keeps the policy
+ * it was created with (a srcdoc copies the page's policy then, and a
+ * URL-loaded page has its own), so the <meta> added later doesn't reach it.
+ * Its document is replaced by about:blank, which ends its scripts, timers,
+ * animations and workers. Frames in shadow roots and frames a script
+ * navigated count too (RR6-451-3), and so do <object> and <embed>.
+ */
+export function blankFrames(doc: Root): BlankedFrame[] {
+  const out: BlankedFrame[] = [];
+  for (const root of rootsOf(doc)) {
+    try {
+      for (const f of Array.from(root.querySelectorAll("iframe"))) {
+        const src = frameContent(f);
+        if (src === null) continue;
+        f.removeAttribute("srcdoc");
+        f.setAttribute("src", "about:blank");
+        out.push({ src, title: f.title });
+      }
+      for (const o of Array.from(root.querySelectorAll("object, embed"))) {
+        const attr = o.tagName.toLowerCase() === "object" ? "data" : "src";
+        const src = o.getAttribute(attr);
+        if (!src || src === "about:blank") continue;
+        if (attr === "data") o.setAttribute("data", "about:blank");
+        else o.removeAttribute("src");
+        out.push({ src, title: o.getAttribute("title") ?? "" });
+      }
+    } catch {
+      /* why: no frames to reach here */
+    }
   }
   return out;
 }

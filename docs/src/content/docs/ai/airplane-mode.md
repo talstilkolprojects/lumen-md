@@ -18,7 +18,7 @@ where in the code it came from. A badge in the corner shows that the mode is on.
 | Workers (model downloads) | the worker asks its own page and refuses the request itself. A worker that gets no answer refuses too. Another tab of Lumen can't answer for it, and once it has heard "on" it stays on until the page reloads. A tab that sees the mode turned on in another tab turns it on too |
 | Images, fonts, media, frames, stylesheets from other sites | refused by the browser itself: a Content-Security-Policy is added to the page |
 | Playground and live-JS blocks | they don't run. Their runner page is a separate frame with its own policy, so the page's policy can't cover it. Frames load only from `blob:` while the mode is on. A block that was already running when you turned the mode on is stopped at that moment |
-| HTML previews with scripts, embeds and other open frames | a frame keeps the policy it was opened with, so every frame that can run scripts is closed (emptied) when you turn the mode on, and listed in the certificate |
+| HTML and Live CSS previews, embeds and other open frames | a frame keeps the policy it was opened with, and CSS alone can load images, so every frame with something in it is closed (emptied) when you turn the mode on, whatever its sandbox, and listed in the certificate. Windows the app opened are closed too |
 | Cloud dictation (the browser's speech service) | not started |
 
 These stay allowed, because they don't leave the computer: `localhost` / `127.0.0.1`
@@ -53,6 +53,11 @@ JSON with its SHA-256. It is not signed yet: signing with this device's key come
 the signed privacy report.
 
 ## Limits
+
+- A site embedded in a note can't open a window, and only the known embed providers
+  (YouTube, Vimeo and the others of the embed block) keep a storage of their own. A
+  service worker one of them registered before you turned the mode on is outside the
+  page and may keep running.
 
 - Lumen's own script files that the offline cache doesn't hold load from Lumen's server,
   like any page resource; they are not `fetch` requests. The monitor sees them through
