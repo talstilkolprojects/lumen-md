@@ -301,7 +301,10 @@ export default defineConfig({
         {
           label: "Contributing",
           translations: { he: "תרומה לפרויקט" },
-          items: [{ label: "The PR check", slug: "contributing/pr-check", translations: { he: "בדיקת ה־PR" } }],
+          items: [
+            { label: "The PR check", slug: "contributing/pr-check", translations: { he: "בדיקת ה־PR" } },
+            { label: "Second maintainer", slug: "contributing/second-maintainer", translations: { he: "מתחזק שני" } },
+          ],
         },
         {
           label: "Project",

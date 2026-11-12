@@ -37,6 +37,12 @@ npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-c
 - **רישיונות.** לכל חבילת production שנוספה או השתנתה ב־lockfile יש רישיון
   מותר (לא copyleft, לא לא־מסחרי, ולא חסר).
 - **דומיין.** אף שורה שנוספה לא מזכירה את הדומיין של הפרויקט.
+- **סקירה אנושית (משימה W4.28).** שינוי בנתיב רגיש — כל נתיב
+  ב־`.github/CODEOWNERS`: הצפנה, כתיבה לכספת, יומן הפרטיות, CSP ומדיניות
+  אבטחה, הרשאות native — צריך את התווית `human-reviewed`, שאדם הוסיף אחרי
+  ה־commit האחרון. עם `--pr <n>` התווית והזמן שלה נקראים מ־GitHub (‏`gh api`)
+  והבדיקה נכשלת בלעדיהם; בלי `--pr` היא רק מזהירה. טל מריץ אותה עם `--pr`
+  לפני כל מיזוג. ראו [מתחזק שני](/he/contributing/second-maintainer/).
 
 הפקודה גם מזהירה:
 - כשקוד השתנה ואף בדיקה לא השתנתה;
@@ -51,4 +57,6 @@ npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-c
 | ‏`--base-sizes <file>`,‏ `--head-sizes <file>` | גדלים שכבר נמדדו |
 | ‏`--build-base` | בנייה ומדידה של הבסיס |
 | ‏`--no-size` | דילוג על בדיקת הגודל |
+| ‏`--pr <n>` | מספר ה־pull request: קריאת התוויות, אירועי התוויות והסקירות (כלל הסקירה האנושית) |
+| ‏`--repo <owner/name>` | הריפו, כשה־remote ‏`origin` לא מציין אותו |
 | ‏`--out <file>` | כתיבת הדוח לקובץ |
