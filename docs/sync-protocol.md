@@ -158,9 +158,13 @@ a frozen manifest only once the keyring lists the frozen manifest's digest in
   `dropped_{N−1} = HKDF(S_{N−1}, vaultId, "lumen-e2ee/1/dropped")`. A device
   without a wrap that is listed reads "left out: pair again", not "removed";
   a device that holds `S_{N−1}` (one that synced before) believes the marker
-  only if the MAC verifies, and otherwise reads "removed". Later re-keys carry
-  each marker, minus the devices enrolled or revoked since (its MAC made again
-  with `S_{N−1}`, which they hold in `older`). Not in the digest.
+  only if `N` is the first epoch it doesn't hold (`N = its epoch + 1`) and
+  the MAC verifies, and otherwise reads "removed": an older genuine marker
+  the provider kept and put back after a real revocation is refused (seventh
+  review 12.11, G2). Later re-keys carry each marker, minus the devices
+  enrolled or revoked since (its MAC made again with `S_{N−1}`, which they
+  hold in `older`); enrolling a device again removes it from every marker
+  the same way. Not in the digest.
 - A keyring of protocol 1, or without a sealed `devices` list, comes from a
   pre-release build. It is refused. The passphrase may reset it: a re-key
   wrapped for the passphrase (and devices it enrolls) only, starting a new
@@ -201,12 +205,20 @@ check) a fork. This holds for passphrase and device-key devices alike.
 1. **Freeze**: write manifest N once more, `protocol: 2` with `frozen`
    (compare-and-swap). If manifest N is already frozen by *another* device
    and the keyring doesn't list it in `aborted`, that is a key change in
-   progress (fifth review 12.11, Q2): the re-keyer waits it out as a round
-   does — 10 minutes on its own clock from when it first saw that freeze — and
-   refuses ("another device is changing keys") instead of freezing over it.
-   After that it freezes over it. Against a provider that keeps the
+   progress (fifth review 12.11, Q2): the re-keyer refuses ("another device
+   is changing keys") instead of freezing over it, for at most 10 minutes on
+   its own clock. The wait is bounded per key change, not per frozen
+   manifest (seventh review 12.11, G1): it runs from this device's first
+   refusal (kept in its state, and from the first of an unbroken run of
+   foreign freezes its rounds saw), whatever freezes come after, and after
+   it the re-keyer freezes over whatever freeze is there. A refusal older
+   than 24 hours starts the wait again. Nothing in a freeze (digest, `at`,
+   `by`) moves this clock, so the device being revoked, which still holds
+   `S_N` and the storage login, can't hold its revocation back by writing a
+   fresh freeze every few minutes. Against a provider that keeps the
    compare-and-swap on the manifest but drops it on the keyring, this keeps
-   two re-keys from both committing.
+   two re-keys from both committing: an honest re-key commits within
+   seconds, far inside the wait.
 2. **New manifest**: create manifest N+1 under a fresh random label, the
    frozen one with `counter + 1`, sealed with `S_{N+1}`. Nothing names it yet.
 3. **Commit**: write the keyring for N+1, compare-and-swap on the keyring
@@ -232,9 +244,10 @@ If the manifest a keyring names is missing or doesn't open, a device
 re-creates it from the frozen manifest `carry` names (exactly that digest),
 unless that would be behind its own anchor. No blob is ever rewritten.
 
-**Calling a freeze off.** A device that has seen the same frozen manifest
-for 10 minutes on its own clock (`at` from another clock is never used)
-calls the re-key off: at epoch N ≥ 1 it rewrites the keyring (`rev + 1`)
+**Calling a freeze off.** A device whose rounds have seen frozen manifests
+at its epoch, one after another, for 10 minutes on its own clock (`at` from
+another clock is never used; a fresh freeze doesn't restart the wait, G1,
+and an unfrozen manifest or a new epoch ends the run) calls the re-key off: at epoch N ≥ 1 it rewrites the keyring (`rev + 1`)
 adding the frozen digest to `aborted`, so the re-keyer's commit, a
 compare-and-swap on the keyring, fails; then it writes over the freeze. At
 epoch 0 there is no keyring to rewrite: it finishes the re-key itself
@@ -259,6 +272,14 @@ Every re-key it makes leaves them out, by id and by key, and every round
 checks the keyring against them: a keyring that lists one again — which no
 honest client writes, since a revoked id or key can't be enrolled again — is
 revoked again on top, or the round stops with the revocation at risk.
+The sealed `revoked` list only grows (seventh review 12.11, G5): a device
+also keeps every device the sealed list of a keyring it adopted named
+(`sealedRevoked`), and a later keyring that leaves one of them off the list,
+or lets one in again by id or key, is treated the same way. This needs no
+local list, so it survives a restored backup or a reinstall that pairs
+again. A local list whose MAC doesn't verify is set aside, not a reason to
+stop every round: the round reports it (`revokedListReset`, "check the
+device list on a device you trust"), and the sealed lists still apply.
 
 **Who may change keys.** Enrolling needs a device whose state is verified
 (it created the vault, was paired, or the user confirmed it, §6), and both
@@ -271,7 +292,10 @@ for a device revoked meanwhile. Leaving devices out takes the user's
 consent (fifth review 12.11, F3): without `dropDevices`, such a re-key is
 refused with the list of devices it would leave out. A device makes no key
 change while a pairing code or answer it made is still valid (§6), unless
-the user cancels the pairing.
+the user cancels the pairing, and makes no pairing code while one of its own
+key changes is running (seventh review 12.11, G3): the code would vouch for
+the epoch being replaced. The pairing lock is checked again right before the
+keyring commit.
 
 **The next passphrase's KDF** (F5). A passphrase change keeps the KDF family
 of the stored header only if that header's MAC verifies under the device's
@@ -478,3 +502,12 @@ Changes:
   passphrase's KDF comes from the authenticated header, never down from
   Argon2id (F5). Pairing and device unlock check the anchor first (F6, F7).
   A pairing can be cancelled.
+- Seventh review 12.11: the freeze wait is bounded per key change, so the
+  device being revoked can't block its revocation by re-freezing (G1); a
+  dropped marker counts only for the first epoch the device lacks (G2); no
+  pairing code during this device's key change, and the lock is checked
+  again before the commit (G3); the sealed revoked list only grows, and a
+  local list that fails to verify is set aside with a message (G5). Inherent
+  (G4): a code or answer already given out, entered after `cancelPairing` on
+  a device the provider keeps on the old view, still pairs it; only telling
+  that device not to use it helps.

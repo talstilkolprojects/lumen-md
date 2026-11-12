@@ -96,10 +96,20 @@ what it uploads. The banner says so.
   was built on since, and says so.
 - **A removal sticks.** The device you removed a device on remembers it. If a
   keyring ever lets that device back in, it removes it again; if it can't, it
-  stops and says the removal may have been undone.
+  stops and says the removal may have been undone. Every device also
+  remembers each removal the vault's signed device list has shown it, so this
+  holds after you restore a backup or reinstall and pair again. If a device's
+  own list of removals is ever damaged, Lumen sets it aside, keeps checking
+  against the signed list, and asks you to check the device list on a device
+  you trust.
 - **Two key changes don't race.** If another device is in the middle of a key
   change, Lumen waits for it to finish (at most 10 minutes) instead of
-  making its own on top.
+  making its own on top. The 10 minutes count from your first try, so a lost
+  device that keeps starting key changes of its own can't hold back its
+  removal: try again after 10 minutes and the removal goes through.
+- **No pairing code during a key change.** While this device is changing
+  keys, it doesn't make a pairing code: the code would be for the keys being
+  replaced. Make it once the change has finished.
 - **A new passphrase keeps Argon2id.** A passphrase change keeps the way the
   passphrase is protected, as the vault's signed header says; it never moves
   an Argon2id vault to PBKDF2.
