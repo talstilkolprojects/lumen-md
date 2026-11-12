@@ -2981,6 +2981,11 @@
       "vars": []
     },
     {
+      "key": "e2ee.fresh.olderKeys",
+      "en": "The other device is at a newer key epoch than this one sees: the sync service may be showing this device old keys. Sync both devices and try again; if it stays like this, don't trust this service.",
+      "vars": []
+    },
+    {
       "key": "e2ee.fresh.pair",
       "en": "Pair",
       "vars": []

@@ -524,6 +524,7 @@
   "e2ee.fresh.badCode": "Dieser Kopplungscode gilt nicht für diesen Tresor oder ist abgelaufen.",
   "e2ee.fresh.code": "Kopplungscode von einem anderen Gerät",
   "e2ee.fresh.confirm": "Geprüft — ist aktuell",
+  "e2ee.fresh.olderKeys": "Das andere Gerät ist auf einer neueren Schlüssel-Epoche, als dieses Gerät sieht: Der Sync-Dienst zeigt diesem Gerät womöglich alte Schlüssel. Synchronisiere beide Geräte und versuche es erneut; bleibt es so, vertraue diesem Dienst nicht.",
   "e2ee.fresh.pair": "Koppeln",
   "e2ee.fresh.unverified": "Aktualität nicht geprüft: Dieses Gerät kann noch nicht erkennen, ob der Sync-Dienst deine neuesten Notizen zeigt. Kopple es mit einem Gerät, das du schon nutzt, oder bestätige nach einer Prüfung.",
   "e2ee.fresh.verified": "Aktualität geprüft",

@@ -43,6 +43,60 @@ export class PreconditionFailedError extends Error {
   }
 }
 
+/**
+ * The provider doesn't refuse a stale conditional write (re-review 12.11,
+ * RR-7/RR-8). Syncing still works — a lost race at worst costs an extra
+ * round — but a re-key or an enrollment could silently fork the keys, so
+ * those are refused on it.
+ */
+export class CasUnsupportedError extends Error {
+  constructor(public readonly provider: string, detail: string) {
+    super(
+      `This storage (${provider}) doesn't refuse stale conditional writes (${detail}). Lumen can sync with it, but it can't change keys or devices here: a re-key, a revocation or an enrollment could silently fork the keys. Use a storage that supports If-Match / If-None-Match (see the docs).`,
+    );
+    this.name = "CasUnsupportedError";
+  }
+}
+
+/** The object `proveCas` writes and deletes (a fixed, content-free name). */
+export const CAS_PROBE_NAME = "lumen-e2ee-cas-probe";
+
+const proven = new WeakSet<object>();
+
+/**
+ * Prove that `provider` honours both conditions (RR-7): create-only on a
+ * new object succeeds and on an existing one is refused; If-Match with the
+ * current etag succeeds and with a stale one is refused, leaving the object
+ * as it was. Throws `CasUnsupportedError` when a condition is ignored. The
+ * result is remembered per provider object.
+ */
+export async function proveCas(provider: SyncProvider): Promise<void> {
+  if (proven.has(provider)) return;
+  const name = CAS_PROBE_NAME;
+  const refused = async (data: number, cond: PutCondition): Promise<boolean> => {
+    try {
+      await provider.put(name, new Uint8Array([data]), cond);
+      return false;
+    } catch (e) {
+      if (e instanceof PreconditionFailedError) return true;
+      throw e;
+    }
+  };
+  await provider.delete(name);
+  try {
+    const a = await provider.put(name, new Uint8Array([1]), { ifNoneMatch: "*" });
+    if (!(await refused(2, { ifNoneMatch: "*" }))) throw new CasUnsupportedError(provider.id, "If-None-Match: * on an existing object was accepted");
+    const b = await provider.put(name, new Uint8Array([3]), { ifMatch: a.etag });
+    if (b.etag === a.etag) throw new CasUnsupportedError(provider.id, "a write kept the same etag");
+    if (!(await refused(4, { ifMatch: a.etag }))) throw new CasUnsupportedError(provider.id, "If-Match with a stale etag was accepted");
+    const now = await provider.get(name);
+    if (!now || now.data.length !== 1 || now.data[0] !== 3 || now.etag !== b.etag) throw new CasUnsupportedError(provider.id, "a refused write changed the object");
+  } finally {
+    await provider.delete(name).catch(() => undefined);
+  }
+  proven.add(provider);
+}
+
 /** A transient failure (network down, timeout); the sync round can be retried. */
 export class ProviderUnavailableError extends Error {
   constructor(message = "The sync provider is unavailable") {

@@ -10,6 +10,7 @@
  *     round), so it can delete exactly its own orphans later.
  */
 
+import type { RingAnchor } from "./keyring";
 import type { FreshnessAnchor, ManifestEntry } from "./manifest";
 
 /**
@@ -35,6 +36,23 @@ export interface DeviceState {
   committing?: string[];
   /** The highest keyring epoch this device has seen (plan W1.7): an older keyring is a rollback. */
   epoch?: number;
+  /**
+   * The keyring this device verified last (re-review 12.11, RR-2): every
+   * later keyring must descend from it (same epoch: a higher revision that
+   * chains to it; a newer epoch: a chain that lists it).
+   */
+  ring?: RingAnchor;
+  /**
+   * A frozen manifest this device has been waiting on, and when it first saw
+   * it on its own clock (RR-4): the wait is measured on one clock only.
+   */
+  frozenSeen?: { digest: string; at: number };
+  /**
+   * Blobs replaced by a commit written over a called-off freeze (RR-4):
+   * deleted only after a later round has seen the keyring and the manifest
+   * still agree they are unreferenced.
+   */
+  hold?: string[];
 }
 
 export interface SyncStateStore {

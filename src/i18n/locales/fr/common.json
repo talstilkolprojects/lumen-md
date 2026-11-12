@@ -524,6 +524,7 @@
   "e2ee.fresh.badCode": "Ce code d'association n'est pas valable pour ce coffre, ou il a expiré.",
   "e2ee.fresh.code": "Code d'association d'un autre appareil",
   "e2ee.fresh.confirm": "J'ai vérifié — c'est à jour",
+  "e2ee.fresh.olderKeys": "L'autre appareil est à une époque de clés plus récente que celle que voit cet appareil : le service de synchronisation montre peut-être d'anciennes clés à cet appareil. Synchronisez les deux appareils et réessayez ; si rien ne change, ne faites pas confiance à ce service.",
   "e2ee.fresh.pair": "Associer",
   "e2ee.fresh.unverified": "Fraîcheur non vérifiée : cet appareil ne peut pas encore savoir si le service de synchronisation affiche vos notes les plus récentes. Associez-le à un appareil que vous utilisez déjà, ou confirmez après vérification.",
   "e2ee.fresh.verified": "Fraîcheur vérifiée",
