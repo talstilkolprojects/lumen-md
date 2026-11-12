@@ -43,6 +43,13 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
   const [active, setActive] = useState(0);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  // A tab button takes focus when clicked: hand it back to the query box, so
+  // typing after switching to Images (or any tab) searches instead of going
+  // nowhere (e2e image-search, W4.2).
+  const pickMode = (m: "search" | "smart" | "ai" | "images") => {
+    setMode(m);
+    inputRef.current?.focus();
+  };
   const listRef = useRef<HTMLDivElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
@@ -367,21 +374,21 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
     <div className="cmd-palette-backdrop" onClick={onClose} role="dialog" aria-modal>
       <div ref={dialogRef} className="cmd-palette" style={{ minHeight: "350px", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", borderBottom: "1px solid hsl(var(--border))", padding: "0 10px", alignItems: "center" }}>
-          <button className={`chart-block-tab ${mode === "search" ? "active" : ""}`} style={{ fontSize: 13, background: "transparent" }} onClick={() => setMode("search")}>
+          <button className={`chart-block-tab ${mode === "search" ? "active" : ""}`} style={{ fontSize: 13, background: "transparent" }} onClick={() => pickMode("search")}>
              {t("searchDialog.mode.search")}
           </button>
           <button
             className={`chart-block-tab ${mode === "smart" ? "active" : ""}`}
             style={{ fontSize: 13, background: "transparent" }}
-            onClick={() => setMode("smart")}
+            onClick={() => pickMode("smart")}
             title={t("searchDialog.smartHint")}
           >
             <Wand2 size={11} style={{ display: "inline", marginInlineEnd: 4 }} /> {t("searchDialog.mode.smart")}
           </button>
-          <button className={`chart-block-tab ${mode === "ai" ? "active" : ""}`} style={{ fontSize: 13, background: "transparent" }} onClick={() => setMode("ai")}>
+          <button className={`chart-block-tab ${mode === "ai" ? "active" : ""}`} style={{ fontSize: 13, background: "transparent" }} onClick={() => pickMode("ai")}>
              <Sparkles size={11} style={{display:"inline", marginInlineEnd:4}}/> {t("searchDialog.mode.ai")}
           </button>
-          <button className={`chart-block-tab ${mode === "images" ? "active" : ""}`} style={{ fontSize: 13, background: "transparent" }} onClick={() => setMode("images")} data-testid="search-tab-images">
+          <button className={`chart-block-tab ${mode === "images" ? "active" : ""}`} style={{ fontSize: 13, background: "transparent" }} onClick={() => pickMode("images")} data-testid="search-tab-images">
              <ImageIcon size={11} style={{ display: "inline", marginInlineEnd: 4 }} /> {t("imageSearch.tab")}
           </button>
           {mode === "smart" && smartAllowed && (
