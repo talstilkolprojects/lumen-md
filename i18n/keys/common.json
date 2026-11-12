@@ -1142,6 +1142,178 @@
       "vars": []
     },
     {
+      "key": "book.chapter.down",
+      "en": "Move down",
+      "vars": []
+    },
+    {
+      "key": "book.chapter.missing",
+      "en": "Missing note",
+      "vars": []
+    },
+    {
+      "key": "book.chapter.ofGoal",
+      "en": "{words} of {goal} words",
+      "vars": [
+        "words",
+        "goal"
+      ]
+    },
+    {
+      "key": "book.chapter.open",
+      "en": "Open {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "book.chapter.up",
+      "en": "Move up",
+      "vars": []
+    },
+    {
+      "key": "book.chapter.words",
+      "en": "{words} words",
+      "vars": [
+        "words"
+      ]
+    },
+    {
+      "key": "book.chapters",
+      "en": "Chapters",
+      "vars": []
+    },
+    {
+      "key": "book.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "book.create",
+      "en": "Make a book from this folder",
+      "vars": []
+    },
+    {
+      "key": "book.create.prompt",
+      "en": "The book's title",
+      "vars": []
+    },
+    {
+      "key": "book.created",
+      "en": "Book created: {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "book.exists",
+      "en": "{path} already exists",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "book.exportEpub",
+      "en": "Export EPUB",
+      "vars": []
+    },
+    {
+      "key": "book.exported",
+      "en": "{name}.epub: {chapters} chapters in {seconds} s",
+      "vars": [
+        "name",
+        "chapters",
+        "seconds"
+      ]
+    },
+    {
+      "key": "book.failed",
+      "en": "Book: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "book.goalHint",
+      "en": "Goals: word-goal and daily-goal in the index note's frontmatter; a chapter's goal is word-goal in its own frontmatter.",
+      "vars": []
+    },
+    {
+      "key": "book.missing",
+      "en": "{count} chapters are missing and were left out",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "book.none",
+      "en": "This note is not part of a book. A book is an index note that lists its chapters in order (the Longform format, so it opens in Obsidian too).",
+      "vars": []
+    },
+    {
+      "key": "book.popupBlocked",
+      "en": "The browser blocked the print window. Allow pop-ups for Lumen and try again.",
+      "vars": []
+    },
+    {
+      "key": "book.print",
+      "en": "Print / PDF",
+      "vars": []
+    },
+    {
+      "key": "book.streak",
+      "en": "Streak: {days} days",
+      "vars": [
+        "days"
+      ]
+    },
+    {
+      "key": "book.title",
+      "en": "Book",
+      "vars": []
+    },
+    {
+      "key": "book.titlePage",
+      "en": "Title page",
+      "vars": []
+    },
+    {
+      "key": "book.toc",
+      "en": "Contents",
+      "vars": []
+    },
+    {
+      "key": "book.today",
+      "en": "Today: {words} words",
+      "vars": [
+        "words"
+      ]
+    },
+    {
+      "key": "book.today.ofGoal",
+      "en": "Today: {words} of {goal} words",
+      "vars": [
+        "words",
+        "goal"
+      ]
+    },
+    {
+      "key": "book.total",
+      "en": "Book: {words} words",
+      "vars": [
+        "words"
+      ]
+    },
+    {
+      "key": "book.total.ofGoal",
+      "en": "Book: {words} of {goal} words ({percent}%)",
+      "vars": [
+        "words",
+        "goal",
+        "percent"
+      ]
+    },
+    {
       "key": "boot.crashBody",
       "en": "Lumen encountered an unexpected error.",
       "vars": []

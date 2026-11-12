@@ -1839,6 +1839,20 @@
       "group": "View",
       "hint": "left-to-right",
       "icon": "PanelRightOpen"
+    },
+    {
+      "id": "book.open",
+      "label": "Book: chapters, goals and export",
+      "group": "View",
+      "hint": "Chapter order, word goals, today's words and streak; export a Hebrew EPUB or print to PDF",
+      "icon": "FileText"
+    },
+    {
+      "id": "book.addChapter",
+      "label": "Book: add this note as a chapter",
+      "group": "View",
+      "hint": "Adds the note to the end of the book whose index is in the same folder",
+      "icon": "FileText"
     }
   ],
   "full": [
@@ -3830,6 +3844,20 @@
       "group": "View",
       "hint": "left-to-right",
       "icon": "PanelRightOpen"
+    },
+    {
+      "id": "book.open",
+      "label": "Book: chapters, goals and export",
+      "group": "View",
+      "hint": "Chapter order, word goals, today's words and streak; export a Hebrew EPUB or print to PDF",
+      "icon": "FileText"
+    },
+    {
+      "id": "book.addChapter",
+      "label": "Book: add this note as a chapter",
+      "group": "View",
+      "hint": "Adds the note to the end of the book whose index is in the same folder",
+      "icon": "FileText"
     }
   ],
   "autoSaveOn": [
@@ -4098,6 +4126,8 @@
     "sources.insertSefaria",
     "sources.saveOffline",
     "sources.notesOnVerse",
-    "file.exportAcademic"
+    "file.exportAcademic",
+    "book.open",
+    "book.addChapter"
   ]
 }

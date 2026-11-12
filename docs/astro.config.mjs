@@ -131,6 +131,7 @@ export default defineConfig({
             { label: "Student mode", translations: { he: "מצב סטודנט" }, slug: "workspace/student-mode" },
             { label: "Jewish sources (Sefaria)", slug: "workspace/jewish-sources", translations: { he: "מקורות יהודיים (ספריא)" } },
             { label: "Israeli time", slug: "workspace/israeli-time", translations: { he: "זמן ישראלי" } },
+            { label: "Writing a book", slug: "workspace/book", translations: { he: "כתיבת ספר" } },
           ],
         },
         {
