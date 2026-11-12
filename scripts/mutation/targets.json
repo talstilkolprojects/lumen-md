@@ -39,6 +39,9 @@
       },
       {
         "file": "src/__tests__/e2eeMutants.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeRekeyIntegrity.test.ts"
       }
     ],
     "src/sync/e2ee/conflict.ts": [
