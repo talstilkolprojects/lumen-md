@@ -89,6 +89,9 @@ const RULES: Rule[] = [
   { test: (h) => h === "kroki.io", category: "cloud-text", reason: "PlantUML rendering (kroki.io)" },
   // Jewish sources (plan W5.1): the reference the user asked for, nothing else.
   { test: (h) => h === "www.sefaria.org" || h === "sefaria.org", category: "cloud-text", reason: "Jewish sources (Sefaria): the reference only" },
+  // Plan W5.23: the Zotero Web API, read-only, with the user's own key. A
+  // cloud route: a local-only policy blocks it like the research service.
+  { test: (h) => h === "api.zotero.org", category: "research", reason: "Zotero Web API (your library, read-only)" },
   {
     test: (h) => h === "huggingface.co" || h.endsWith(".huggingface.co") || h.endsWith(".hf.co") || h === "hf.co",
     category: "model-download",

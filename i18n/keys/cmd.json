@@ -581,6 +581,11 @@
       "vars": []
     },
     {
+      "key": "cmd.cite.syncZoteroWeb",
+      "en": "Citations: sync the Zotero library from zotero.org (read-only)",
+      "vars": []
+    },
+    {
       "key": "cmd.clip.clipboard",
       "en": "Clip from clipboard",
       "vars": []

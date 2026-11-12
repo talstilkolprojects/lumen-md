@@ -114,6 +114,7 @@
   "cmd.cite.legalFromCase": "ציטוטים: אזכור משפטי ממספר התיק שליד הסמן",
   "cmd.cite.legalFromCase.hint": "מזהה מספרי ע\"א, בג\"ץ, ת\"א … וממלא את חלון האזכור; האזכור מחליף את המספר",
   "cmd.cite.syncZotero": "ציטוטים: העתקת ספריית Zotero לכספת",
+  "cmd.cite.syncZoteroWeb": "ציטוטים: סנכרון ספריית Zotero מ-zotero.org (קריאה בלבד)",
   "cmd.clip.clipboard": "גזירה מהלוח",
   "cmd.clip.clipboard.hint": "מעתיקים חלק מדף בדפדפן ושומרים אותו בספרייה",
   "cmd.clip.url": "גזירת דף מהרשת…",

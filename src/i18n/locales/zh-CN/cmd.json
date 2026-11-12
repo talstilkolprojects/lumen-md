@@ -114,6 +114,7 @@
   "cmd.cite.legalFromCase": "引用：根据光标处的案件编号生成法律引用",
   "cmd.cite.legalFromCase.hint": "识别 ע\"א、בג\"ץ、ת\"א 等编号并填入引用窗口；引用会替换该编号",
   "cmd.cite.syncZotero": "引用：将 Zotero 文献库复制到库中",
+  "cmd.cite.syncZoteroWeb": "引用：从 zotero.org 同步 Zotero 文献库（只读）",
   "cmd.clip.clipboard": "从剪贴板剪藏",
   "cmd.clip.clipboard.hint": "在浏览器中复制网页的一部分，然后保存到资料库",
   "cmd.clip.url": "剪藏网页…",

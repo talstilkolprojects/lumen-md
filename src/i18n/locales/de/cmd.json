@@ -114,6 +114,7 @@
   "cmd.cite.legalFromCase": "Zitate: Rechtszitat aus dem Aktenzeichen am Cursor",
   "cmd.cite.legalFromCase.hint": "Erkennt Nummern wie ע\"א, בג\"ץ, ת\"א … und füllt das Fenster; das Zitat ersetzt die Nummer",
   "cmd.cite.syncZotero": "Zitate: Zotero-Bibliothek in den Vault kopieren",
+  "cmd.cite.syncZoteroWeb": "Zitate: Zotero-Bibliothek von zotero.org synchronisieren (nur lesen)",
   "cmd.clip.clipboard": "Aus der Zwischenablage ausschneiden",
   "cmd.clip.clipboard.hint": "Kopiere einen Teil einer Seite im Browser und speichere ihn in der Bibliothek",
   "cmd.clip.url": "Webseite ausschneiden…",

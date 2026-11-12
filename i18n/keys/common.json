@@ -1909,6 +1909,60 @@
       "vars": []
     },
     {
+      "key": "cite.web.blocked",
+      "en": "The AI and privacy policy is local-only, so Lumen doesn't contact zotero.org.",
+      "vars": []
+    },
+    {
+      "key": "cite.web.failed",
+      "en": "Couldn't sync from zotero.org: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "cite.web.forbidden",
+      "en": "Zotero refused the key. Run the sync again and enter a key from zotero.org → Settings → Security → Applications.",
+      "vars": []
+    },
+    {
+      "key": "cite.web.keyBody",
+      "en": "Lumen reads your Zotero library from api.zotero.org with a key you create at zotero.org → Settings → Security → Applications (read-only library access is enough). The key stays in this device's secret store and is sent only to api.zotero.org; every request shows in the privacy ledger. Nothing is written to Zotero.",
+      "vars": []
+    },
+    {
+      "key": "cite.web.keyTitle",
+      "en": "Zotero API key",
+      "vars": []
+    },
+    {
+      "key": "cite.web.noAccess",
+      "en": "This key can't read your library: edit it on zotero.org and allow library access.",
+      "vars": []
+    },
+    {
+      "key": "cite.web.rateLimited",
+      "en": "Zotero asked to slow down; try again in a few minutes.",
+      "vars": []
+    },
+    {
+      "key": "cite.web.synced",
+      "en": "Zotero library synced from zotero.org: {n} sources ({changed} changed, {deleted} removed, {notes} notes).",
+      "vars": [
+        "n",
+        "changed",
+        "deleted",
+        "notes"
+      ]
+    },
+    {
+      "key": "cite.web.upToDate",
+      "en": "The Zotero library is up to date ({n} sources).",
+      "vars": [
+        "n"
+      ]
+    },
+    {
       "key": "cite.zotero.browser",
       "en": "Zotero only answers apps on this computer, not web pages: copy the library from the desktop app.",
       "vars": []

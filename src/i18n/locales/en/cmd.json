@@ -113,6 +113,7 @@
   "cmd.cite.legalFromCase": "Citations: legal citation from the case number at the cursor",
   "cmd.cite.legalFromCase.hint": "Finds ע\"א, בג\"ץ, ת\"א … numbers and fills the citation picker; the citation replaces the number",
   "cmd.cite.syncZotero": "Citations: copy the Zotero library into the vault",
+  "cmd.cite.syncZoteroWeb": "Citations: sync the Zotero library from zotero.org (read-only)",
   "cmd.clip.clipboard": "Clip from clipboard",
   "cmd.clip.clipboard.hint": "Copy part of a page in the browser, then save it to the library",
   "cmd.clip.url": "Clip a web page…",

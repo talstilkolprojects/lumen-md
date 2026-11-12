@@ -114,6 +114,7 @@
   "cmd.cite.legalFromCase": "引用: カーソル位置の事件番号から法的引用",
   "cmd.cite.legalFromCase.hint": "ע\"א・בג\"ץ・ת\"א などの番号を見つけて入力欄を埋め、引用で番号を置き換えます",
   "cmd.cite.syncZotero": "引用: Zotero ライブラリを保管庫にコピー",
+  "cmd.cite.syncZoteroWeb": "引用: zotero.org から Zotero ライブラリを同期（読み取り専用）",
   "cmd.clip.clipboard": "クリップボードからクリップ",
   "cmd.clip.clipboard.hint": "ブラウザーでページの一部をコピーしてライブラリに保存",
   "cmd.clip.url": "Web ページをクリップ…",

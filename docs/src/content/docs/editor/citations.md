@@ -32,6 +32,29 @@ Keys come from the source: the BibTeX key, CSL's `citation-key`, or a
 `Citation Key:` line from Better BibTeX. Otherwise the key is the author's
 family name and the year (`austen1813`, `כהן2020`).
 
+## Zotero without the desktop app
+
+On the web and on phones, **⌘K → Citations: sync the Zotero library from
+zotero.org (read-only)** reads your library from Zotero's Web API. Zotero
+Desktop doesn't need to be open.
+
+1. On zotero.org, open **Settings → Security → Applications** and create a
+   key with **read-only** access to your library.
+2. Run the command and paste the key. It is kept in this device's secret
+   store and sent only to `api.zotero.org`, as the `Zotero-API-Key` header.
+   Every request shows in the privacy ledger as a cloud route. A
+   **local-only** AI and privacy policy blocks it.
+3. Your sources join the cite dialog, the same as the desktop copy. Items
+   with notes or PDFs also get a note in `Zotero/`, headed with their
+   `[@key]`. The note holds the Zotero notes as Markdown, a link that opens
+   each PDF in Zotero, and a link to it on zotero.org.
+
+The next sync asks only for what changed since the last one. If nothing
+changed, Zotero answers with one empty response (`304`). Otherwise Lumen
+fetches the changed items, up to 50 per request, and drops the deleted ones.
+Lumen never writes to Zotero. If Zotero asks the app to slow down
+(`Backoff`, `429`), Lumen waits.
+
 ## Pandoc syntax
 
 | You write | APA 7 shows |

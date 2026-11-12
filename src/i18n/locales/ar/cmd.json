@@ -114,6 +114,7 @@
   "cmd.cite.legalFromCase": "الاستشهادات: إحالة قانونية من رقم القضية عند المؤشر",
   "cmd.cite.legalFromCase.hint": "يتعرّف على أرقام ע\"א وבג\"ץ وת\"א … ويملأ نافذة الإحالة؛ تحل الإحالة محل الرقم",
   "cmd.cite.syncZotero": "الاستشهادات: نسخ مكتبة Zotero إلى الخزنة",
+  "cmd.cite.syncZoteroWeb": "الاستشهادات: مزامنة مكتبة Zotero من zotero.org (قراءة فقط)",
   "cmd.clip.clipboard": "قص من الحافظة",
   "cmd.clip.clipboard.hint": "انسخ جزءاً من صفحة في المتصفح ثم احفظه في المكتبة",
   "cmd.clip.url": "قص صفحة ويب…",
