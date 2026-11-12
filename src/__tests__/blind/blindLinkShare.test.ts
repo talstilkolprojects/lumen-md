@@ -3,7 +3,7 @@
  *
  * Written from the spec only: PR #448's body (with its review 12.11 fixes),
  * docs/src/content/docs/collab/share-link.md and the public API of
- * src/share/linkShare.ts and shareReady.ts (declarations emitted by tsc, no function
+ * src/share/linkShare.ts and shareReady.ts (on the train: #473's exportReady; declarations emitted by tsc, no function
  * bodies). The test list (S1–S11) was written before any implementation was read; the
  * implementation was then opened only to check the import paths. Runs on
  * verify/train-2 and on the feat/share-link-fragment head (both modules are identical).
@@ -30,7 +30,6 @@ import {
   toBase64Url,
   type SharedNote,
 } from "../../share/linkShare";
-import { hasExportDoor, shareReadyText } from "../../share/shareReady";
 
 const ORIGIN = "https://lumen-md.vercel.app";
 const MARKER = "סוד-מקור-7731";
@@ -245,11 +244,18 @@ describe("base64url and the export door (S10, S11)", () => {
     }
   });
 
-  // Spec decision (coordinator, 12.11): without the door the share fails closed. The text is
-  // never sent unredacted; the share command refuses (ExportDoorMissingError, #448 round 2).
-  it("without the export door in the build, no link is made: the share refuses", async () => {
-    if (hasExportDoor()) return; // a build with #473: covered by blindRedaction
-    const t = "plain <!-- c --> text";
-    await expect(shareReadyText(t)).rejects.toMatchObject({ name: "ExportDoorMissingError" });
+  // Spec decision (coordinator, 12.11): the text is never sent unredacted. On the train the door
+  // (#473's exportReadyText) is always in the build and the share command calls it directly
+  // (no shareReady seam, so no "door missing" path): what the link carries is the door's text.
+  it("the share command takes the export door's text: no redacted passage or hidden comment", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const cmd = readFileSync(join(__dirname, "..", "..", "commands", "domains", "export.ts"), "utf8");
+    expect(cmd.slice(cmd.indexOf('id: "file.shareLink"'))).toMatch(/markdown: await exportReadyText\(doc\.content, false\)/);
+    const { exportReadyText } = await import("../../storage/exportReady");
+    const text = await exportReadyText("plain <redact>secret name</redact> <!-- c --> text", false);
+    expect(text).toContain("plain");
+    expect(text).not.toContain("secret name");
+    expect(text).not.toContain("<!--");
   });
 });

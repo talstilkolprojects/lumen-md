@@ -468,7 +468,9 @@ describe("review 2 fixes", () => {
     expect(guardedSandbox("allow-forms ALLOW-POPUPS", null, base)).toBe("allow-forms");
     // The embed block's providers are the known ones.
     const src = readFileSync(resolve(process.cwd(), "src/plugins/EmbedBlock.tsx"), "utf8");
-    const origins = new Set([...src.matchAll(/src: `(https:\/\/[^/`$]+)/g)].map((m) => m[1]));
+    // On the train a Gist is shown by the content frame with an opaque origin (src/lib/contentFrame.ts),
+    // never framed from gist.github.com with same-origin powers, so it needs no place in EMBED_ORIGINS.
+    const origins = new Set([...src.matchAll(/src: `(https:\/\/[^/`$]+)/g)].map((m) => m[1]).filter((o) => o !== "https://gist.github.com"));
     expect(origins.size).toBeGreaterThan(10);
     for (const o of origins) expect(EMBED_ORIGINS.has(o), o).toBe(true);
     expect(src).not.toMatch(/allow-popups/);
