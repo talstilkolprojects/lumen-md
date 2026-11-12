@@ -721,6 +721,16 @@
       "vars": []
     },
     {
+      "key": "cmd.export.latexProject",
+      "en": "Export LaTeX project (academic, Hebrew)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.export.latexProject.hint",
+      "en": "main.tex for LuaLaTeX / XeLaTeX with Hebrew right to left, math, [@key] citations from the vault's .bib, and the images, in a ZIP",
+      "vars": []
+    },
+    {
       "key": "cmd.feedback",
       "en": "Help: Send feedback",
       "vars": []

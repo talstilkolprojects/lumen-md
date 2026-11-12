@@ -1871,6 +1871,13 @@
       "label": "Remove Arabic tashkeel (selection or note)",
       "group": "Tools",
       "icon": "Sparkles"
+    },
+    {
+      "id": "export.latexProject",
+      "label": "Export LaTeX project (academic, Hebrew)…",
+      "group": "File",
+      "hint": "main.tex for LuaLaTeX / XeLaTeX with Hebrew right to left, math, [@key] citations from the vault's .bib, and the images, in a ZIP",
+      "icon": "Download"
     }
   ],
   "full": [
@@ -3894,6 +3901,13 @@
       "label": "Remove Arabic tashkeel (selection or note)",
       "group": "Tools",
       "icon": "Sparkles"
+    },
+    {
+      "id": "export.latexProject",
+      "label": "Export LaTeX project (academic, Hebrew)…",
+      "group": "File",
+      "hint": "main.tex for LuaLaTeX / XeLaTeX with Hebrew right to left, math, [@key] citations from the vault's .bib, and the images, in a ZIP",
+      "icon": "Download"
     }
   ],
   "autoSaveOn": [
@@ -4167,6 +4181,7 @@
     "book.addChapter",
     "spell.arabicDictionary",
     "arabic.toggleTashkeel",
-    "arabic.removeTashkeel"
+    "arabic.removeTashkeel",
+    "export.latexProject"
   ]
 }

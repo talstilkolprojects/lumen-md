@@ -142,6 +142,8 @@
   "cmd.edit.pastePlain": "Вставить как обычный текст",
   "cmd.edit.pastePlain.hint": "Вставляет текст из буфера обмена без форматирования",
   "cmd.epub.open": "Открыть EPUB для чтения…",
+  "cmd.export.latexProject": "Экспорт проекта LaTeX (научный, иврит)…",
+  "cmd.export.latexProject.hint": "main.tex для LuaLaTeX / XeLaTeX с ивритом справа налево, формулами, ссылками [@key] из .bib хранилища и изображениями, в ZIP",
   "cmd.feedback": "Справка: отправить отзыв",
   "cmd.feedback.hint": "Issue на GitHub или текст для копирования — без вашего щелчка ничего не отправляется",
   "cmd.file.exportAcademic": "Экспорт для сдачи в университет (Word)…",

@@ -142,6 +142,8 @@
   "cmd.edit.pastePlain": "הדבקה כטקסט פשוט",
   "cmd.edit.pastePlain.hint": "מדביק את הטקסט שבלוח בלי שום עיצוב",
   "cmd.epub.open": "פתיחת ספר EPUB לקריאה…",
+  "cmd.export.latexProject": "ייצוא פרויקט LaTeX (אקדמי, עברית)…",
+  "cmd.export.latexProject.hint": "main.tex ל-LuaLaTeX / XeLaTeX עם עברית מימין לשמאל, מתמטיקה, ציטוטי [@key] מקובצי ה-.bib בכספת, והתמונות, ב-ZIP",
   "cmd.feedback": "עזרה: שליחת משוב",
   "cmd.feedback.hint": "issue ב-GitHub או טקסט להעתקה — שום דבר לא נשלח בלי לחיצה שלך",
   "cmd.file.exportAcademic": "ייצוא להגשה אקדמית (Word)…",

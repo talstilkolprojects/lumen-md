@@ -142,6 +142,8 @@
   "cmd.edit.pastePlain": "Als reinen Text einfügen",
   "cmd.edit.pastePlain.hint": "Fügt den Text der Zwischenablage ohne Formatierung ein",
   "cmd.epub.open": "EPUB zum Lesen öffnen…",
+  "cmd.export.latexProject": "LaTeX-Projekt exportieren (akademisch, Hebräisch)…",
+  "cmd.export.latexProject.hint": "main.tex für LuaLaTeX / XeLaTeX mit Hebräisch von rechts nach links, Mathematik, [@key]-Zitaten aus den .bib-Dateien und den Bildern, als ZIP",
   "cmd.feedback": "Hilfe: Feedback senden",
   "cmd.feedback.hint": "Ein GitHub-Issue oder Text zum Kopieren — nichts wird ohne deinen Klick gesendet",
   "cmd.file.exportAcademic": "Für die Abgabe an der Hochschule exportieren (Word)…",

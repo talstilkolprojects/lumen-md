@@ -142,6 +142,8 @@
   "cmd.edit.pastePlain": "Coller en texte brut",
   "cmd.edit.pastePlain.hint": "Colle le texte du presse-papiers sans mise en forme",
   "cmd.epub.open": "Ouvrir un EPUB pour le lire…",
+  "cmd.export.latexProject": "Exporter un projet LaTeX (académique, hébreu)…",
+  "cmd.export.latexProject.hint": "main.tex pour LuaLaTeX / XeLaTeX avec l’hébreu de droite à gauche, les maths, les citations [@key] des .bib du coffre et les images, en ZIP",
   "cmd.feedback": "Aide : envoyer un avis",
   "cmd.feedback.hint": "Une issue GitHub ou un texte à copier — rien n'est envoyé sans votre clic",
   "cmd.file.exportAcademic": "Exporter pour un rendu universitaire (Word)…",

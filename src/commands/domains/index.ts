@@ -22,6 +22,7 @@ import { buildBillingCommands, buildOptionalPanelCommands, buildAirplaneCommands
 import { buildAccessibilityCommands } from "./a11y";
 import { buildSourceCommands } from "./sources";
 import { buildBookCommands } from "./book";
+import { buildLatexCommands } from "./latex";
 
 export const COMMAND_SECTIONS: ReadonlyArray<(ctx: CommandContext) => Command[]> = [
   buildRecentCommands,
@@ -76,4 +77,5 @@ export const COMMAND_SECTIONS: ReadonlyArray<(ctx: CommandContext) => Command[]>
   buildAccessibilityCommands,
   buildSourceCommands,
   buildBookCommands,
+  buildLatexCommands,
 ];

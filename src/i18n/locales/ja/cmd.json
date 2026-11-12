@@ -142,6 +142,8 @@
   "cmd.edit.pastePlain": "プレーンテキストとして貼り付け",
   "cmd.edit.pastePlain.hint": "クリップボードのテキストを書式なしで貼り付けます",
   "cmd.epub.open": "EPUB を開いて読む…",
+  "cmd.export.latexProject": "LaTeX プロジェクトを書き出す（学術、ヘブライ語）…",
+  "cmd.export.latexProject.hint": "右から左のヘブライ語、数式、保管庫の .bib からの [@key] 引用、画像を含む LuaLaTeX / XeLaTeX 用 main.tex を ZIP で",
   "cmd.feedback": "ヘルプ: フィードバックを送る",
   "cmd.feedback.hint": "GitHub の issue またはコピー用テキスト — クリックするまで何も送信されません",
   "cmd.file.exportAcademic": "学術提出用にエクスポート (Word)…",
