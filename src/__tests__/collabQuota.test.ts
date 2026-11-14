@@ -179,7 +179,8 @@ describe("the Quota object (worker.mjs)", () => {
   it("a refused attempt evicts nothing and still counts; small rooms make way together, up to what one new room needs (RR8-469-1, RR11-469-1)", async () => {
     const st = memState();
     const evicted: string[] = [];
-    const env: Record<string, unknown> = { COLLAB_TOKEN_SECRET: SECRET, COLLAB_MAX_ROOMS: "100", COLLAB_MAX_STORED_BYTES: "1000", COLLAB_NEW_ROOMS_PER_ADDRESS: "3" };
+    // The byte cap per owner is lifted here, so the big room stays protected (RR14-469-1a has its own case).
+    const env: Record<string, unknown> = { COLLAB_TOKEN_SECRET: SECRET, COLLAB_MAX_ROOMS: "100", COLLAB_MAX_STORED_BYTES: "1000", COLLAB_NEW_ROOMS_PER_ADDRESS: "3", COLLAB_STORED_BYTES_PER_ADDRESS: "1000000" };
     env.ROOMS = { idFromString: (d: string) => d, get: (d: string) => ({ canEvict: async () => true, evict: async () => (evicted.push(d), true) }) };
     const q = new Quota(st, env);
     at("2026-11-12T10:00:00Z");
@@ -198,11 +199,11 @@ describe("the Quota object (worker.mjs)", () => {
     expect(await q.admit(attacker, "x3")).toBe("address");
     expect(evicted).toEqual([]);
     expect(q.counts.stored).toBe(4);
-    // Grown to 2 + 4 + 5: together they are one share, so they make way for one new room, smallest first.
+    // Grown to 2 + 4 + 5: together they are one share, so they make way for one new room, the largest first.
     await q.saved("v1", 4, "v1");
     await q.saved("v2", 5, "v2");
     expect(await q.admit(quotaIds(SECRET, "198.51.100.7"), "n1")).toBeNull();
-    expect(evicted).toEqual(["v0", "v1", "v2"]);
+    expect(evicted).toEqual(["v2", "v1", "v0"]);
   });
 
   it("the creator's own return protects nothing; bytes per address are capped (RR11-469-1)", async () => {
@@ -233,9 +234,9 @@ describe("the Quota object (worker.mjs)", () => {
     expect(evictionPlan(rooms, ["a", "c", "b"], { rooms: 1, bytes: 100 })).toEqual(["c"]);
     expect(evictionPlan(rooms, ["a", "c", "b"], { rooms: 1, bytes: 0 })).toEqual(["a"]);
     expect(evictionPlan(rooms, ["a"], { rooms: 0, bytes: 100 })).toBeNull();
-    // None is enough alone: the smallest ones together, each smaller than the need (RR11-469-1).
+    // None is enough alone: rooms smaller than the need together, the largest first (RR11-469-1, RR14-469-1c).
     const small = new Map([["s1", { b: 40 }], ["s2", { b: 30 }], ["s3", { b: 50 }], ["s4", { b: 90 }]]);
-    expect(evictionPlan(small, ["s2", "s1", "s3", "s4"], { rooms: 0, bytes: 100 })).toEqual(["s2", "s1", "s3"]);
+    expect(evictionPlan(small, ["s2", "s1", "s3", "s4"], { rooms: 0, bytes: 100 })).toEqual(["s4", "s3"]);
     expect(evictionPlan(small, ["s2"], { rooms: 0, bytes: 100 })).toBeNull();
   });
 
@@ -289,6 +290,71 @@ describe("the Quota object (worker.mjs)", () => {
       await q6.saved(`p${n}`, 10, "");
     }
     expect(await new Quota(st, env).admit(v6(3), "p3")).toBe("prefix-stored");
+  });
+
+  // Review 14 (RR14-469-1, -2): each gap as a regression, at a scale where the store really is full.
+  it("RR14-469-1a: an owner's rooms that grew past its byte cap after admission make way first, protected or not", async () => {
+    const st = memState();
+    const evicted: string[] = [];
+    // 8,000 bytes, 10 rooms: one room's share 800; 40 bytes per owner.
+    const env: Record<string, unknown> = { COLLAB_TOKEN_SECRET: SECRET, COLLAB_MAX_ROOMS: "10", COLLAB_MAX_STORED_BYTES: "8000" };
+    env.ROOMS = { idFromString: (d: string) => d, get: (d: string) => ({ canEvict: async () => true, evict: async () => (evicted.push(d), true) }) };
+    const q = new Quota(st, env);
+    at("2026-11-12T10:00:00Z");
+    const a = quotaIds(SECRET, "203.0.113.5");
+    for (const rid of ["g1", "g2"]) {
+      expect(await q.admit(a, rid)).toBeNull();
+      await q.saved(rid, 10, rid);
+      expect(await q.joined(rid, { o: visitor, p: null })).toBe(true); // someone else came back: protected
+    }
+    expect(await q.admit(quotaIds(SECRET, "192.0.2.9"), "note")).toBeNull();
+    await q.saved("note", 5, "note");
+    // Both of the owner's rooms grow past its 40 bytes after admission, and fill the store.
+    await q.saved("g1", 4000, "g1");
+    await q.saved("g2", 4000, "g2");
+    expect(q.counts.bytes).toBeGreaterThanOrEqual(8000);
+    expect(await q.admit(quotaIds(SECRET, "198.51.100.30"), "n1")).toBeNull();
+    expect(evicted).toHaveLength(1);
+    expect(evicted[0]).toMatch(/^g/);
+    expect(q.counts.registry.has("note")).toBe(true);
+  });
+
+  it("RR14-469-1b: a return from another /64 of the creator's own /48 protects nothing; another address does", async () => {
+    const st = memState();
+    const env: Record<string, unknown> = { COLLAB_TOKEN_SECRET: SECRET };
+    const q = new Quota(st, env);
+    at("2026-11-12T10:00:00Z");
+    const v6 = (n: number) => quotaIds(SECRET, `2001:db8:77:${n.toString(16)}::1`);
+    const who = (ids: string[]) => ({ o: ownerOf(SECRET, ids), p: prefixOwnerOf(SECRET, ids) });
+    expect(await q.admit(v6(1), "r6")).toBeNull();
+    await q.saved("r6", 10, "r6", who(v6(1)));
+    expect(await q.joined("r6", who(v6(2)))).toBe(false);
+    expect(await q.joined("r6", who(quotaIds(SECRET, "2001:db8:99::1")))).toBe(true);
+  });
+
+  it("RR14-469-1c: 32 tiny rooms don't block a plan that larger rooms under the need can make", () => {
+    const rooms = new Map<string, { b: number }>();
+    for (let i = 0; i < 40; i++) rooms.set(`tiny${i}`, { b: 1 });
+    for (let i = 0; i < 5; i++) rooms.set(`mid${i}`, { b: 60 });
+    const order = [...rooms.keys()]; // eviction order: smallest first
+    const plan = evictionPlan(rooms, order, { rooms: 0, bytes: 100 });
+    expect(plan).not.toBeNull();
+    expect(plan!.reduce((n: number, id: string) => n + rooms.get(id)!.b, 0)).toBeGreaterThanOrEqual(100);
+    expect(plan!.length).toBeLessThanOrEqual(2);
+  });
+
+  it("RR14-469-2: every canEvict call counts, also those inside a plan that then fails", async () => {
+    const st = memState();
+    let asks = 0;
+    // 1,000 bytes, 10 rooms: share 100. 300 rooms of 10 bytes: a plan needs 10 of them. The first 9 always agree, every other refuses.
+    const env: Record<string, unknown> = { COLLAB_TOKEN_SECRET: SECRET, COLLAB_MAX_ROOMS: "10", COLLAB_MAX_STORED_BYTES: "1000" };
+    const agree = new Set(Array.from({ length: 9 }, (_, i) => `k${i}`));
+    env.ROOMS = { idFromString: (d: string) => d, get: (d: string) => ({ canEvict: async () => (asks++, agree.has(d)), evict: async () => true }) };
+    const q = new Quota(st, env);
+    at("2026-11-12T10:00:00Z");
+    for (let i = 0; i < 300; i++) await q.saved(`k${i}`, 10, `k${i}`);
+    expect(await q.admit(quotaIds(SECRET, "198.51.100.40"), "n1")).toBe("rooms-full");
+    expect(asks).toBeLessThanOrEqual(256);
   });
 });
 

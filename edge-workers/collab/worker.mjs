@@ -89,8 +89,8 @@ const SAVE_DEBOUNCE_MS = 2000;
 const MAX_PEERS = 50;
 /** At most this many room RPCs for the rooms that make way for one new room (review 8, RR8-469-2). */
 const MAX_EVICT_CALLS = 64;
-/** And at most this many rooms that say they are in use, on a budget of their own (review 11, RR11-469-2). */
-const MAX_REFUSALS = 256;
+/** And at most this many "can you make way?" asks, on a budget of their own (review 11, RR11-469-2; every ask counts, review 14 RR14-469-2). */
+const MAX_ASKS = 256;
 
 const num = (v, d) => (v === undefined || v === "" || Number.isNaN(Number(v)) ? d : Number(v));
 const json = (body, status = 200) =>
@@ -258,8 +258,12 @@ export class CollabRoom {
         socket.ws.serializeAttachment({ ready: true, address, room: name, ...(this.owner && !this.stored ? { owner: this.owner } : {}) });
         // Someone else came back to a stored room: the quota never evicts it while that is recent. The creator's
         // own return doesn't count, or anyone could protect every room they make (review 11, RR11-469-1).
-        const joiner = Array.isArray(before.q?.ids) ? ownerOf(this.env.COLLAB_TOKEN_SECRET, before.q.ids) : null;
-        if (this.stored && this.env.QUOTA && joiner !== null && joiner !== this.owner?.o && Date.now() - this.joinedAt > 3_600_000) {
+        // "Someone other" (review 14, RR14-469-1b): another owner value, and not the creator's IPv6 /48 either.
+        const ids = Array.isArray(before.q?.ids) ? before.q.ids : null;
+        const secret = this.env.COLLAB_TOKEN_SECRET;
+        const joiner = ids ? { o: ownerOf(secret, ids), p: prefixOwnerOf(secret, ids) } : null;
+        const creator = joiner !== null && (joiner.o === this.owner?.o || (joiner.p !== null && joiner.p === this.owner?.p));
+        if (this.stored && this.env.QUOTA && joiner?.o != null && !creator && Date.now() - this.joinedAt > 3_600_000) {
           this.joinedAt = Date.now();
           void this.quotaStub()?.joined(this.rid(name).rid, joiner).catch(() => {});
         }
@@ -621,10 +625,10 @@ export class Quota {
    * Make way for one new room (review 8, RR8-469-1 and -2; review 11,
    * RR11-469-1 and -2): the rooms `evictionPlan` picks, each asked first, then
    * evicted. A room in use is left out, and for an hour it isn't asked again
-   * (it is not a candidate); the search goes on with the next. A refusal
-   * costs one RPC, out of a budget of its own (MAX_REFUSALS), so rooms held
-   * open can't use up the budget the rooms that can go need
-   * (MAX_EVICT_CALLS). True when the need was freed; when it can't be,
+   * (it is not a candidate); the search goes on with the next. Every ask
+   * (canEvict) costs one RPC out of a budget of its own (MAX_ASKS), and a
+   * plan stops at its first refusal, so rooms held open can't use up the
+   * budget the rooms that can go need (MAX_EVICT_CALLS). True when the need was freed; when it can't be,
    * nothing is evicted (a room can only be lost in a race, to a reader who
    * joined between the two phases).
    */
@@ -633,13 +637,12 @@ export class Quota {
     const now = Date.now();
     const want = needed(c, limits);
     const left = new Set();
-    let refusals = 0;
+    let asks = 0;
     let calls = 0;
     let freedBytes = 0;
     let freedRooms = 0;
     const busy = async (rid) => {
       left.add(rid);
-      refusals++;
       const r = c.registry.get(rid);
       if (!r) return;
       r.u = now;
@@ -649,22 +652,24 @@ export class Quota {
       const u = c.registry.get(rid)?.u;
       return Boolean(u && now - u < BUSY_MS);
     };
-    while (refusals < MAX_REFUSALS) {
+    while (asks < MAX_ASKS) {
       const need = { rooms: Math.max(0, want.rooms - freedRooms), bytes: Math.max(0, want.bytes - freedBytes) };
       if (need.rooms === 0 && need.bytes === 0 && (freedRooms > 0 || freedBytes > 0)) return true;
       const order = evictionOrder(c.registry, now, limits).filter((rid) => !left.has(rid) && !recent(rid));
       const plan = evictionPlan(c.registry, order, need);
-      if (!plan || calls + 2 * plan.length > MAX_EVICT_CALLS) return false;
-      // Phase one: every room in the plan agrees before anything is deleted.
+      if (!plan || calls + plan.length > MAX_EVICT_CALLS || asks + plan.length > MAX_ASKS) return false;
+      // Phase one: every room in the plan agrees before anything is deleted. Every ask counts (review 14,
+      // RR14-469-2), and the first refusal ends the plan.
       let agreed = true;
       for (const rid of plan) {
+        asks++;
         if (!(await this.askRoom(rid, "canEvict"))) {
           agreed = false;
           await busy(rid);
+          break;
         }
       }
       if (!agreed) continue;
-      calls += plan.length;
       for (const rid of plan) {
         calls++;
         const bytes = c.registry.get(rid)?.b ?? 0;
@@ -702,14 +707,19 @@ export class Quota {
   }
 
   /**
-   * RPC: someone joined the stored room again: it is not evicted for COLLAB_PROTECT_DAYS. Only a joiner whose
-   * owner value is not the creator's protects it (review 11, RR11-469-1).
+   * RPC: someone joined the stored room again: it is not evicted for COLLAB_PROTECT_DAYS. Only a joiner that is
+   * not the creator protects it (review 11, RR11-469-1): another owner value, and, when both are on IPv6, not
+   * the creator's /48 (review 14, RR14-469-1b). `joiner` is {o, p} (a bare number is an `o`). Another IPv4
+   * address counts as another person: the Quota keeps no address to tell two of one person's apart, and an
+   * owner's rooms past its byte cap lose their protection anyway (RR14-469-1a).
    */
   async joined(rid, joiner = null) {
     const c = await this.load();
     const r = c.registry.get(rid);
-    const who = cleanOwner(joiner);
-    if (!r || who === null || (r.o !== null && r.o !== undefined && who === r.o)) return false;
+    const who = typeof joiner === "object" && joiner !== null ? { o: cleanOwner(joiner.o), p: cleanOwner(joiner.p) } : { o: cleanOwner(joiner), p: null };
+    if (!r || who.o === null) return false;
+    if (typeof r.o === "number" && who.o === r.o) return false;
+    if (typeof r.p === "number" && who.p === r.p) return false;
     r.a = Date.now();
     await this.state.storage.put({ [`r:${rid}`]: r });
     return true;

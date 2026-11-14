@@ -220,9 +220,19 @@ export const BUSY_MS = 3_600_000;
  */
 export function evictionOrder(rooms, nowMs, limits) {
   const busy = (r) => (r.u && nowMs - r.u < BUSY_MS ? 1 : 0);
+  // Review 14 (RR14-469-1a): rooms grow after admission. An owner (address or /48) whose rooms together hold
+  // more than its byte cap loses their protection, and they make way first, the largest first.
+  const cap = limits.storedBytesPerAddress ?? Infinity;
+  const byO = new Map();
+  const byP = new Map();
+  for (const r of rooms.values()) {
+    if (typeof r.o === "number") byO.set(r.o, (byO.get(r.o) ?? 0) + (r.b ?? 0));
+    if (typeof r.p === "number") byP.set(r.p, (byP.get(r.p) ?? 0) + (r.b ?? 0));
+  }
+  const over = (r) => (typeof r.o === "number" && byO.get(r.o) > cap) || (typeof r.p === "number" && byP.get(r.p) > cap);
   return [...rooms]
-    .filter(([, r]) => !(r.a && nowMs - r.a < limits.protectMs))
-    .sort(([, x], [, y]) => busy(x) - busy(y) || (x.b ?? 0) - (y.b ?? 0) || (x.w ?? 0) - (y.w ?? 0))
+    .filter(([, r]) => over(r) || !(r.a && nowMs - r.a < limits.protectMs))
+    .sort(([, x], [, y]) => busy(x) - busy(y) || Number(over(y)) - Number(over(x)) || (over(x) ? (y.b ?? 0) - (x.b ?? 0) : (x.b ?? 0) - (y.b ?? 0)) || (x.w ?? 0) - (y.w ?? 0))
     .map(([id]) => id);
 }
 
@@ -245,7 +255,7 @@ export const MAX_PLAN_ROOMS = 32;
 /**
  * The rooms, of `order` (eviction order), that free `need` for one new room
  * (review 8, RR8-469-1; review 11, RR11-469-1): the smallest one that is
- * enough alone; else the smallest ones, each smaller than that, until they
+ * enough alone; else the largest ones, each smaller than that, until they
  * are enough (at most MAX_PLAN_ROOMS, and under two shares in all); null
  * when neither works, and then nothing is evicted.
  */
@@ -253,9 +263,11 @@ export function evictionPlan(rooms, order, need) {
   const size = (id) => rooms.get(id)?.b ?? 0;
   const one = order.find((id) => size(id) >= need.bytes);
   if (one !== undefined) return [one];
+  // The largest rooms under the need first (review 14, RR14-469-1c): the fewest rooms, so tiny ones can't use
+  // up the MAX_PLAN_ROOMS before the need is met.
   const plan = [];
   let freed = 0;
-  for (const id of [...order].sort((x, y) => size(x) - size(y))) {
+  for (const id of [...order].sort((x, y) => size(y) - size(x))) {
     if (plan.length >= MAX_PLAN_ROOMS) break;
     plan.push(id);
     freed += size(id);
