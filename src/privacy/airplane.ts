@@ -68,6 +68,9 @@
 
 import { __setAirplaneFlag, addAirplaneCsp, AIRPLANE_KEY, AIRPLANE_TAB, airplaneSinceStored, blankFrames, onSwitchedElsewhere, rootsOf, shadowRoots } from "./airplaneBoot";
 import { AIRPLANE_CHANNEL, type AirplaneMessage } from "../ai/workerLedger";
+import { EMBED_ORIGINS, egressTarget, guardedSandbox as sandboxFor } from "./airplaneEmbeds";
+
+export { EMBED_ORIGINS, egressTarget };
 
 export type EgressKind = "fetch" | "xhr" | "websocket" | "eventsource" | "beacon" | "webrtc" | "worker" | "resource" | "csp" | "frame";
 /** "in-flight": a request still waiting for its answer when the switch went on (counted, then aborted). */
@@ -142,17 +145,6 @@ export function codeOrigin(stack: string | undefined, skip = 0): string {
   const fn = (m[1] ?? m[2] ?? "").replace(/^async\s+/, "").trim();
   const file = m[3].split("/").pop() ?? m[3];
   return `${fn ? `${fn} ` : ""}${file}`.slice(0, 160);
-}
-
-/** Origin + path only. */
-export function egressTarget(url: string, base: string = typeof location !== "undefined" ? location.href : "http://localhost/"): string {
-  try {
-    const u = new URL(url, base);
-    if (u.protocol === "blob:" || u.protocol === "data:") return `${u.protocol}…`;
-    return `${u.origin}${u.pathname}`;
-  } catch {
-    return String(url).split(/[?#]/)[0].slice(0, 200);
-  }
 }
 
 export function record(a: Omit<EgressAttempt, "id" | "ts"> & { ts?: number }): EgressAttempt {
@@ -353,58 +345,9 @@ export function trackOpen(w: Window | null | undefined): void {
   }
 }
 
-/**
- * The sites whose embeds keep `allow-same-origin`: the https origins of
- * public/_headers' frame-src, which are the providers of
- * src/plugins/EmbedBlock.tsx and the embed codes they hand out (review 8,
- * RR8-451-2: one list; a test keeps them equal). A frame from any other site
- * loses it, so it has no storage and no service worker of its own (review 6,
- * RR6-451-2).
- */
-export const EMBED_ORIGINS: ReadonlySet<string> = new Set([
-  "https://codepen.io",
-  "https://codesandbox.io",
-  "https://gist.github.com",
-  "https://maps.google.com",
-  "https://open.spotify.com",
-  "https://platform.twitter.com",
-  "https://player.vimeo.com",
-  "https://w.soundcloud.com",
-  "https://www.facebook.com",
-  "https://www.figma.com",
-  "https://www.google.com",
-  "https://www.instagram.com",
-  "https://www.linkedin.com",
-  "https://www.loom.com",
-  "https://www.openstreetmap.org",
-  "https://www.reddit.com",
-  "https://www.redditmedia.com",
-  "https://www.tiktok.com",
-  "https://www.youtube.com",
-  "https://www.youtube-nocookie.com",
-]);
-
-const NO_POPUPS = new Set(["allow-popups", "allow-popups-to-escape-sandbox"]);
-
-/**
- * A frame's sandbox as `guardFrames` leaves it: no popups while the switch is
- * on (`stripPopups`, review 8, RR8-451-2: before it, an embed's links still
- * open their page); same-origin powers only for the app and the known embeds.
- */
+/** guardedSandbox (airplaneEmbeds.ts), stripping popups while the switch is on unless told otherwise. */
 export function guardedSandbox(sandbox: string, src: string | null, base: string, stripPopups: boolean = on): string {
-  let foreign = false;
-  if (src) {
-    try {
-      const u = new URL(src, base);
-      foreign = /^https?:$/.test(u.protocol) && u.origin !== new URL(base).origin && !EMBED_ORIGINS.has(u.origin);
-    } catch {
-      foreign = true; // why: a URL that doesn't parse gets no powers
-    }
-  }
-  return sandbox
-    .split(/[\t\n\f\r ]+/)
-    .filter((t) => t && !(stripPopups && NO_POPUPS.has(t.toLowerCase())) && !(foreign && t.toLowerCase() === "allow-same-origin"))
-    .join(" ");
+  return sandboxFor(sandbox, src, base, stripPopups);
 }
 
 /**
