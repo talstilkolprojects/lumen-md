@@ -133,3 +133,14 @@ export function selfTest(pages = goodPages(), host = OUR_HOST) {
   ];
   return plants.filter(([, p]) => checkLiveMeta(p, host).ok).map(([name]) => `missed: ${name}`);
 }
+
+/**
+ * The deployment URL a deploy command printed (audit W10.C29): the last
+ * https URL on a Vercel or Cloudflare Pages host in its output, or null.
+ * `vercel deploy` prints it as its last line; wrangler prints it in a
+ * sentence ("Take a peek over at https://<id>.<project>.pages.dev").
+ */
+export function deploymentUrlFrom(output) {
+  const urls = [...String(output ?? "").matchAll(/https:\/\/[a-z0-9.-]+\.(?:vercel\.app|pages\.dev)\b[^\s"'<>)]*/gi)].map((m) => m[0].replace(/[.,;:]+$/, ""));
+  return urls.length ? urls[urls.length - 1].replace(/\/+$/, "") : null;
+}

@@ -13,7 +13,15 @@
  *
  * Fetches with Node's fetch, and with curl when fetch can't (curl honours
  * HTTPS_PROXY). The nightly (scripts/nightly/run.mjs, kind "triage") runs it
- * with --self-test. Exit 1 when the check or the self-test fails.
+ * with --self-test. Exit 1 when the check or the self-test fails, with an
+ * ALERT block on stderr.
+ *
+ * Every deploy path runs it too (audit W10.C29):
+ *   - vercel-build.mjs: the `live:meta` gate checks dist/ — the exact files
+ *     Vercel then deploys — on production and preview builds. A failure
+ *     fails the build, so nothing is deployed and the commit status is red.
+ *   - pages-deploy.sh: dist/ before the upload, the deployment URL after it.
+ *   - release.mjs deploy-beta: the beta's deployment URL after the deploy.
  */
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -51,20 +59,41 @@ export async function loadPages(opts) {
   return pages;
 }
 
-async function main() {
-  const opts = parseArgs(process.argv.slice(2));
+/**
+ * Run the check (and the self-test when asked) → { ok, lines }. The deploy
+ * paths call this after a deploy (scripts/release.mjs deploy-beta) or run
+ * the CLI (scripts/pages-deploy.sh, the vercel-build gate on dist/).
+ */
+export async function liveMetaReport(opts) {
   const pages = await loadPages(opts);
   const r = checkLiveMeta(pages);
   for (const p of Object.values(pages)) if (p.error) r.problems.unshift(`${p.source}: ${p.error}`);
   const missed = opts.selfTest ? selfTest() : [];
   const ok = r.ok && !missed.length;
-  console.log(`live:meta ${opts.dir ? opts.dir : opts.url} — ${r.checked.length} URLs checked, ${r.problems.length} problem${r.problems.length === 1 ? "" : "s"}`);
-  for (const c of r.checked) console.log(`  ${c.page} ${c.where}: ${c.url}`);
-  for (const p of r.problems) console.log(`  ✗ ${p}`);
-  if (opts.selfTest) console.log(missed.length ? missed.map((m) => `  ✗ self-test ${m}`).join("\n") : "  ✓ self-test: every planted foreign reference was caught");
-  if (opts.json) writeFileSync(opts.json, JSON.stringify({ target: opts.dir ?? opts.url, at: new Date().toISOString(), ok, problems: r.problems, checked: r.checked, selfTest: opts.selfTest ? { missed } : null }, null, 2) + "\n");
-  console.log(ok ? "live:meta: passed" : "live:meta: FAILED");
-  process.exit(ok ? 0 : 1);
+  const lines = [`live:meta ${opts.dir ? opts.dir : opts.url} — ${r.checked.length} URLs checked, ${r.problems.length} problem${r.problems.length === 1 ? "" : "s"}`];
+  for (const c of r.checked) lines.push(`  ${c.page} ${c.where}: ${c.url}`);
+  for (const p of r.problems) lines.push(`  ✗ ${p}`);
+  if (opts.selfTest) lines.push(missed.length ? missed.map((m) => `  ✗ self-test ${m}`).join("\n") : "  ✓ self-test: every planted foreign reference was caught");
+  lines.push(ok ? "live:meta: passed" : "live:meta: FAILED");
+  return { ok, lines, problems: r.problems, checked: r.checked, missed };
+}
+
+/** The alert a failed check after a deploy prints (stderr), naming what to do. */
+export function liveMetaAlert(target, problems) {
+  return [
+    `✗ ALERT live:meta: the deployment at ${target} names a host that is not ${OUR_HOST}.`,
+    ...problems.slice(0, 20).map((p) => `  ${p}`),
+    "  Roll back or redeploy a fixed build, then run `npm run live:meta -- --url <deployment>` again.",
+  ].join("\n");
+}
+
+async function main() {
+  const opts = parseArgs(process.argv.slice(2));
+  const r = await liveMetaReport(opts);
+  console.log(r.lines.join("\n"));
+  if (opts.json) writeFileSync(opts.json, JSON.stringify({ target: opts.dir ?? opts.url, at: new Date().toISOString(), ok: r.ok, problems: r.problems, checked: r.checked, selfTest: opts.selfTest ? { missed: r.missed } : null }, null, 2) + "\n");
+  if (!r.ok) console.error(liveMetaAlert(opts.dir ?? opts.url, r.problems));
+  process.exit(r.ok ? 0 : 1);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) await main();
