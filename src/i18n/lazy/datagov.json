@@ -1,0 +1,21 @@
+{
+  "datagov.prompt": "Search data.gov.il (for example תאונות דרכים, אוכלוסייה ביישובים)",
+  "datagov.enable": "Turn on government data? Lumen then sends search words and dataset ids to data.gov.il and the CBS when you ask, and never on its own.",
+  "datagov.confirm": "Search data.gov.il for “{query}”? Only these words are sent, nothing from your notes.",
+  "datagov.confirmSeries": "Fetch CBS series {id}? Only its id is sent to apis.cbs.gov.il.",
+  "datagov.confirmRefresh": "Fetch this dataset again? Only its id is sent.",
+  "datagov.none": "No dataset matches “{query}”.",
+  "datagov.pickDataset": "Which dataset?",
+  "datagov.pickResource": "Which table of this dataset?",
+  "datagov.noTable": "This dataset has no table Lumen can read (only files without a data API).",
+  "datagov.seriesPrompt": "CBS series id (for example 120010, the Consumer Price Index)",
+  "datagov.personal": "Some columns look like personal data ({columns}). The CBS licence forbids cross-matching data to identify people. Insert anyway?",
+  "datagov.inserted": "Inserted {title} ({rows} rows, saved locally)",
+  "datagov.failed": "Fetching the data failed: {error}",
+  "datagov.noBlock": "Put the cursor in a ```dataset block first.",
+  "datagov.unchanged": "Nothing changed since the last snapshot. Switch to the new date anyway?",
+  "datagov.changes": "Changes since the last snapshot. Switch the note to the new one?",
+  "datagov.badBlock": "This dataset block is missing its source, id or snapshot.",
+  "datagov.loading": "Reading the local snapshot…",
+  "datagov.missing": "The snapshot {path} is not in this vault."
+}

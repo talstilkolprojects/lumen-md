@@ -81,6 +81,8 @@ const RULES: Rule[] = [
   { test: (h) => h === "www.sefaria.org" || h === "sefaria.org", category: "cloud-text", reason: "Jewish sources (Sefaria): the reference only" },
   // Knesset records (plan W7.5): the law or bill name the user asked for.
   { test: (h) => h === "knesset.gov.il" || h === "main.knesset.gov.il", category: "cloud-text", reason: "Knesset records (OData): the law or bill name only" },
+  // Government data (plan W7.6): search words, a dataset id or a series id.
+  { test: (h) => h === "data.gov.il" || h === "apis.cbs.gov.il", category: "cloud-text", reason: "Government data (data.gov.il, CBS): the search words or dataset id only" },
   {
     test: (h) => h === "huggingface.co" || h.endsWith(".huggingface.co") || h.endsWith(".hf.co") || h === "hf.co",
     category: "model-download",

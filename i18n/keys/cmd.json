@@ -1690,6 +1690,36 @@
       "vars": []
     },
     {
+      "key": "cmd.sources.cbsSeries",
+      "en": "Insert a CBS series…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.cbsSeries.hint",
+      "en": "A Central Bureau of Statistics time series by its id (120010 is the CPI), with the attribution its licence asks for",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.datagovInsert",
+      "en": "Insert government data (data.gov.il)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.datagovInsert.hint",
+      "en": "Search datasets; the rows are saved as a CSV in your vault, shown as a table or chart, with the attribution",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.datasetRefresh",
+      "en": "Refresh this dataset",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.datasetRefresh.hint",
+      "en": "Fetch the dataset under the cursor again and see what changed before switching to the new snapshot",
+      "vars": []
+    },
+    {
       "key": "cmd.sources.insert",
       "en": "Insert a source from Sefaria…",
       "vars": []

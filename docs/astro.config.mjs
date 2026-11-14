@@ -130,6 +130,7 @@ export default defineConfig({
             { label: "Student mode", translations: { he: "מצב סטודנט" }, slug: "workspace/student-mode" },
             { label: "Jewish sources (Sefaria)", slug: "workspace/jewish-sources", translations: { he: "מקורות יהודיים (ספריא)" } },
             { label: "Laws and Knesset records", slug: "workspace/knesset-sources", translations: { he: "חקיקה ודברי הכנסת" } },
+            { label: "Government data (data.gov.il, CBS)", slug: "workspace/government-data", translations: { he: "נתונים ממשלתיים (data.gov.il, הלמ״ס)" } },
             { label: "Israeli time", slug: "workspace/israeli-time", translations: { he: "זמן ישראלי" } },
           ],
         },

@@ -1492,6 +1492,116 @@
       "vars": []
     },
     {
+      "key": "datagov.badBlock",
+      "en": "This dataset block is missing its source, id or snapshot.",
+      "vars": []
+    },
+    {
+      "key": "datagov.changes",
+      "en": "Changes since the last snapshot. Switch the note to the new one?",
+      "vars": []
+    },
+    {
+      "key": "datagov.confirm",
+      "en": "Search data.gov.il for “{query}”? Only these words are sent, nothing from your notes.",
+      "vars": [
+        "query"
+      ]
+    },
+    {
+      "key": "datagov.confirmRefresh",
+      "en": "Fetch this dataset again? Only its id is sent.",
+      "vars": []
+    },
+    {
+      "key": "datagov.confirmSeries",
+      "en": "Fetch CBS series {id}? Only its id is sent to apis.cbs.gov.il.",
+      "vars": [
+        "id"
+      ]
+    },
+    {
+      "key": "datagov.enable",
+      "en": "Turn on government data? Lumen then sends search words and dataset ids to data.gov.il and the CBS when you ask, and never on its own.",
+      "vars": []
+    },
+    {
+      "key": "datagov.failed",
+      "en": "Fetching the data failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "datagov.inserted",
+      "en": "Inserted {title} ({rows} rows, saved locally)",
+      "vars": [
+        "title",
+        "rows"
+      ]
+    },
+    {
+      "key": "datagov.loading",
+      "en": "Reading the local snapshot…",
+      "vars": []
+    },
+    {
+      "key": "datagov.missing",
+      "en": "The snapshot {path} is not in this vault.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "datagov.noBlock",
+      "en": "Put the cursor in a ```dataset block first.",
+      "vars": []
+    },
+    {
+      "key": "datagov.noTable",
+      "en": "This dataset has no table Lumen can read (only files without a data API).",
+      "vars": []
+    },
+    {
+      "key": "datagov.none",
+      "en": "No dataset matches “{query}”.",
+      "vars": [
+        "query"
+      ]
+    },
+    {
+      "key": "datagov.personal",
+      "en": "Some columns look like personal data ({columns}). The CBS licence forbids cross-matching data to identify people. Insert anyway?",
+      "vars": [
+        "columns"
+      ]
+    },
+    {
+      "key": "datagov.pickDataset",
+      "en": "Which dataset?",
+      "vars": []
+    },
+    {
+      "key": "datagov.pickResource",
+      "en": "Which table of this dataset?",
+      "vars": []
+    },
+    {
+      "key": "datagov.prompt",
+      "en": "Search data.gov.il (for example תאונות דרכים, אוכלוסייה ביישובים)",
+      "vars": []
+    },
+    {
+      "key": "datagov.seriesPrompt",
+      "en": "CBS series id (for example 120010, the Consumer Price Index)",
+      "vars": []
+    },
+    {
+      "key": "datagov.unchanged",
+      "en": "Nothing changed since the last snapshot. Switch to the new date anyway?",
+      "vars": []
+    },
+    {
       "key": "db.all",
       "en": "All",
       "vars": []

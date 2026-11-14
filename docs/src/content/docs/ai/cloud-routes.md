@@ -41,6 +41,7 @@ route loses its gate.
 | PlantUML diagrams | `plantuml-kroki` | — (no local renderer yet) | kroki.io draws the diagram from its text | *cloud*; otherwise only for a diagram you choose to send ("Render this diagram with kroki.io") |
 | Jewish sources | `sefaria-texts` | the copy you saved for offline (Sources/Sefaria) | Sefaria's texts API: the reference only, such as "Genesis 1:1" | under any policy, each time you confirm a lookup; a saved source needs no request |
 | Laws and Knesset records | `knesset-odata` | laws you saved for offline (Sources/Knesset/Laws); "Ask the law" searches only them | the Knesset's OData service: the law or bill name only, such as "הגנת הפרטיות" | only after you turn Knesset sources on, each time you confirm a lookup |
+| Government data | `datagov-ckan` | the CSV snapshot saved in your vault (Data/datagov, Data/cbs) | data.gov.il's CKAN API and the CBS series API: the search words, a dataset id or a series id | only after you turn government data on, each time you confirm a fetch; a note with a snapshot needs no request |
 
 Model downloads (Hugging Face, the OCR and dictionary files) carry no
 content of yours; they are listed in the privacy ledger and happen only

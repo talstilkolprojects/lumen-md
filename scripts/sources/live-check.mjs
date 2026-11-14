@@ -33,6 +33,20 @@ const checks = {
       fields: ["DocumentCommitteeSessionID", "CommitteeSessionID", "GroupTypeDesc", "ApplicationDesc", "FilePath"],
     },
   ],
+  datagov: [
+    {
+      name: "CKAN package_search",
+      url: "https://data.gov.il/api/3/action/package_search?q=" + encodeURIComponent("תאונות דרכים") + "&rows=3",
+      rows: (j) => j?.result?.results ?? [],
+      fields: ["name", "title", "organization", "metadata_modified", "resources"],
+    },
+    {
+      name: "CBS series 120010 (CPI)",
+      url: "https://apis.cbs.gov.il/series/data/list?id=120010&format=json&download=false",
+      rows: (j) => j?.DataSet?.Series ?? [],
+      fields: ["id", "obs"],
+    },
+  ],
 };
 
 const rowsOf = (j) => (Array.isArray(j?.value) ? j.value : Array.isArray(j?.d) ? j.d : Array.isArray(j?.d?.results) ? j.d.results : []);
@@ -56,7 +70,7 @@ for (const [source, list] of Object.entries(checks)) {
         used = "fallback";
       }
       if (!r.res.ok) throw new Error(`HTTP ${r.res.status}`);
-      const rows = rowsOf(r.json);
+      const rows = c.rows ? c.rows(r.json) : rowsOf(r.json);
       const missing = c.fields.filter((f) => rows.length && !(f in rows[0]));
       const ok = rows.length > 0 && !missing.length && (!c.expect || c.expect(rows));
       if (!ok) failed++;

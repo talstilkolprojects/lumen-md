@@ -18,6 +18,7 @@ import {
 const ChartBlock = lazy(() => import("../plugins/ChartBlock"));
 const MermaidBlock = lazy(() => import("../plugins/MermaidBlock"));
 const CsvBlock = lazy(() => import("../plugins/CsvBlock"));
+const DatasetBlock = lazy(() => import("../plugins/DatasetBlock"));
 const JsonTableBlock = lazy(() => import("../plugins/JsonTableBlock"));
 const InsightsBlock = lazy(() => import("../plugins/InsightsBlock"));
 const CodeDoctorBlock = lazy(() => import("../plugins/CodeDoctorBlock"));
@@ -245,6 +246,9 @@ const Csv = withSuspense<BlockProps>(
   ),
   "data",
 );
+
+// A ```dataset block (plan W7.6): the table or chart of its local CSV snapshot.
+const Dataset = withSuspense<BlockProps>((props) => <DatasetBlock source={getText(props.children)} />, "data");
 
 const JsonTable = withSuspense<BlockProps>(
   (props) => <JsonTableBlock source={getText(props.children)} meta={props.meta} />,
@@ -686,6 +690,7 @@ export const components: Record<string, LumenBlock> = {
   "lumen-tasks": Tasks as unknown as LumenBlock,
   "lumen-data": DataBlockComp as unknown as LumenBlock,
   "lumen-database": Database as unknown as LumenBlock,
+  "lumen-dataset": Dataset as unknown as LumenBlock,
   "lumen-base": Base as unknown as LumenBlock,
   "lumen-query": Query as unknown as LumenBlock,
   "lumen-dataview": Query as unknown as LumenBlock,
