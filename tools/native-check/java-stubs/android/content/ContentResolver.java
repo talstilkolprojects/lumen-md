@@ -9,4 +9,5 @@ public abstract class ContentResolver {
   public final InputStream openInputStream(Uri uri) throws FileNotFoundException { return null; }
   public final OutputStream openOutputStream(Uri uri, String mode) throws FileNotFoundException { return null; }
   public final Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) { return null; }
+  public final android.os.ParcelFileDescriptor openFileDescriptor(Uri uri, String mode) throws FileNotFoundException { return null; }
 }

@@ -27,6 +27,26 @@ ten seconds.
 | 3. Android | `javac -Xlint:all -Werror` on `android/app/src/main/java` and `mobile/android` against `java-stubs/`, with an `R` class generated from `res/` | The Java compiles with no warnings; every `@string`, `@xml`, `@layout`, `@drawable`, `@mipmap` and `@style` reference exists. |
 | 4. Swift | listed only | Nothing: Swift needs Xcode. |
 
+## Real cargo, without crate downloads
+
+`Cargo.toml` is also checked for a key or a `[table]` written twice: cargo
+refuses such a manifest ("duplicate key") before it resolves anything, and rustc
+against stubs never sees it.
+
+When the crates.io index is reachable as git but crate downloads are not, the
+real cargo can still run its manifest parser, resolver, feature check and the
+`--locked` rule:
+
+```bash
+git clone --depth 1 https://github.com/rust-lang/crates.io-index ~/crates.io-index   # about 8 GB checked out
+NATIVE_CHECK_INDEX=~/crates.io-index bash tools/native-check/run.sh
+```
+
+`real-cargo.sh` points a throwaway `CARGO_HOME` at the clone as a local registry,
+on a copy of `src-tauri/`. `cargo check --locked` must stop only at the first
+crate download, and every path crate with no dependencies (`desktop/`) is
+compiled and tested by cargo.
+
 ## What it cannot prove
 
 The stubs hold signatures, not behaviour. They were copied from tauri 2 and
