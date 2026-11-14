@@ -6958,7 +6958,7 @@
      ],
      "why": "שלוש משימות P0/P1 תקועות כי הקבלה שלהן נכתבה סביב GitHub Actions.",
      "branch": "chore/nightly-receipts",
-     "status": "⏳ #455 (על verify/train; npm run nightly: flake (e2e ×5 ב-3 דפדפנים), perf, triage, weekly — כל דוח חתום sha256 + Ed25519; status.json מחשב 0.5/0.11/0.14; ריצת weekly אמיתית נחתמה ואומתה; 0.14 לא עומד היום (32 בניות preview נכשלו ב-20 PR-ים); nightlyReceipts 12/12; חסר: 3 לילות מתוזמנים ב-Mac של טל (launchd))"
+     "status": "⏳ #455 ‏d124512a27 — הקוד הושלם. חסר: שלושה לילות מתוזמנים על ה-Mac של טל (launchd, הצעדים ב-PR)"
     }
    ]
   },
@@ -8045,7 +8045,7 @@
       "קבלה שבועית ב-4 שבועות רצופים"
      ],
      "why": "הציונים היום מחושבים במהדר משלנו, לא ב-vitest. מודול שמגן על נתונים צריך הוכחה אמיתית.",
-     "status": "⏳ (מקומי, test/mutation-survivors ‏ae1123bd6b): כל 15 המודולים הקריטיים ≥80% — keyring 66→92.5 (85 על K3), conflict 69→94, age 79→94, secretStore 73→91, privacyLedger 65→88, handleBackend 65→94; 58 מבחני התנהגות חדשים (קורא/כותב age עצמאי, סט מבחני מערכת קבצים לפי WHATWG); 0 באגים; הציונים הנמוכים נבעו בעיקר מסביבת הבדיקה; mutation:check עובר; חסר: הרצה ב-vitest אמיתי"
+     "status": "⏳ הקוד הושלם: mutation ≥80 ב-15/15 (ברכבת 3 #547) + ריצה שבועית ב-vitest אמיתי ב-#455 ‏d124512a27 (nightlyReceipts 15/15). חסר: 4 ריצות שבועיות על ה-Mac של טל"
     },
     {
      "id": "W6.17",
@@ -8274,7 +8274,7 @@
      ],
      "why": "הסטטוס טען 789 שורות, והקובץ ממשיך לגדול בכל רכבת. שער שרק יורד עוצר את זה ביום אחד.",
      "branch": "chore/max-lines-gate",
-     "status": "⏳ #500 (על verify/train-2; App.tsx מ-1,622 ל-773 שורות — 9 hooks ו-3 רכיבים חדשים, הזזה בלי שכתוב; שער max-lines ב-hygiene עם baseline שרק יורד (21→20 קבצים), pr:check נכשל על העלאה; tsc offline 0 שגיאות, השוואה בדפדפן: App המקורי והמפוצל זהים ב-37 צעדים; חסר: vitest מלא כולל App.test, בנייה)"
+     "status": "⏳ #500 ‏dc4b14ffe7 — הקוד הושלם; רכבת 3 נכשלת בשער: Editor.tsx, engine.ts מעל ה-baseline; App.tsx, airplane.ts, exportDocx.ts, keyring.ts מעל 800 — פיצול בעבודה (מסלולים V ו-H; engine/keyring אחרי הקריפטו)"
     },
     {
      "id": "W6.26",
@@ -8760,7 +8760,7 @@
      ],
      "why": "״מהיר״ בלי מספר על מכשיר אמיתי הוא טענה, לא מדידה.",
      "branch": "perf/inp-baseline",
-     "status": "⏳ #521 (על #510 + #385; spec של INP והקשה-עד-ציור בשני העורכים בכספת של 10k פתקים, desktop ו-Pixel 7 מואט, BrowserStack; שער נכשל ב-+10%; קבלת lumen-metric ללוח התחומים; מספרים ראשונים offline הם רצפת הדפדפן ולא של Lumen (INP p75 ‏32ms) — לא נחתמו; חסר: הרצה על האפליקציה במארח הלילה ו-BrowserStack)"
+     "status": "⏳ #521 ‏bb9b41e502 — הקוד הושלם: ה-spec פותח את פאנל הקשורים לפני המדידה, והשער מסרב להשוות בין הגדרות שונות; responsiveness 13/13, inpGate 4/4. חסר: Playwright מול האפליקציה האמיתית, BrowserStack"
     },
     {
      "id": "W6.46",
