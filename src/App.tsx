@@ -30,6 +30,7 @@ const QuickCapture = lazy(() => import("./ui/QuickCapture").then(m => ({ default
 const ImageHostsPanel = lazy(() => import("./ui/ImageHostsPanel").then(m => ({ default: m.ImageHostsPanel })));
 const AiDoctorPanel = lazy(() => import("./ui/AiDoctorPanel").then(m => ({ default: m.AiDoctorPanel })));
 const AgentReviewPanel = lazy(() => import("./ui/AgentReviewPanel").then(m => ({ default: m.AgentReviewPanel })));
+import { FIRST_RUN_SOURCES, OPEN_IMPORT_EVENT, importFromSearch, readOpenImport, type OpenImportDetail } from "./onboarding/importEvent";
 const ImportWizard = lazy(() => import("./storage/import/ImportWizard").then(m => ({ default: m.ImportWizard })));
 const VersionHistory = lazy(() => import("./ui/VersionHistory").then(m => ({ default: m.VersionHistory })));
 const MarkdownTableEditor = lazy(() => import("./ui/MarkdownTableEditor").then(m => ({ default: m.MarkdownTableEditor })));
@@ -370,7 +371,22 @@ export default function App() {
   // the status bar counts the waiting ones, a toast announces new ones.
   const agentReviewPending = useAgentReview(editorRef, openAgentReview);
   useWindowEvent("lumen-open-agent-review", openAgentReview);
-  useWindowEvent("lumen-open-import", () => setImportOpen(true));
+  // W11.P6: the first run's "Bring your notes" opens the wizard on the source picked there.
+  const [importPreset, setImportPreset] = useState<OpenImportDetail>({});
+  useWindowEvent(OPEN_IMPORT_EVENT, (e) => {
+    setImportPreset(readOpenImport(e, FIRST_RUN_SOURCES));
+    setImportOpen(true);
+  });
+  // W11.P7: a `?import=<source>` link (the "Leaving Evernote or Notion?" page) opens the wizard on that source, once.
+  useEffect(() => {
+    const source = importFromSearch(window.location.search);
+    if (!source) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("import");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    setImportPreset({ source });
+    setImportOpen(true);
+  }, []);
 
   // Comment-anchor click in the editor → window event from
   // commentDecorations.ts. Open the side panel + jump the panel
@@ -677,7 +693,7 @@ export default function App() {
           {agentReviewOpen && <AgentReviewPanel open={agentReviewOpen} onClose={() => setAgentReviewOpen(false)} />}
           {privacyOpen && <PrivacyLedgerPanel open={privacyOpen} onClose={() => setPrivacyOpen(false)} />}
           {trashOpen && <TrashPanel open={trashOpen} onClose={() => setTrashOpen(false)} />}
-          {importOpen && <ImportWizard open={importOpen} onClose={() => setImportOpen(false)} />}
+          {importOpen && <ImportWizard open={importOpen} initialSource={importPreset.source} firstRun={importPreset.firstRun} onClose={() => setImportOpen(false)} />}
           {propertiesOpen && <PropertiesPanel open={propertiesOpen} onClose={() => setPropertiesOpen(false)} text={doc.content} applyEdit={applyPropertiesEdit} />}
           {captureOpen && <QuickCapture open={captureOpen} voice={captureVoice} onClose={() => { setCaptureOpen(false); setCaptureVoice(false); }} />}
           {imageHostsOpen && <ImageHostsPanel open={imageHostsOpen} onClose={() => setImageHostsOpen(false)} />}

@@ -1,20 +1,23 @@
 /**
  * First-run setup (plan 14.1): four short steps — language, where the vault
  * lives (browser storage or a folder), the look, and what to start with (a
- * sample vault in Hebrew or English, or an empty one, with an optional
- * Obsidian / Notion import). Every choice applies at once and can be changed
+ * sample vault in Hebrew or English, an empty one, "bring your notes" from
+ * six apps into the import wizard, or an existing Obsidian folder opened as
+ * the vault: plan W11.P6). Every choice applies at once and can be changed
  * later. Loaded lazily, only on a first visit or from ⌘K.
  */
 import { useEffect, useRef, useState } from "react";
 import { SUPPORTED_LOCALES, getLocale, isLocaleLoaded, loadLocale, systemLanguages, t, type Locale } from "../i18n";
 import { useAppStore, type Theme } from "../store/useStore";
 import { PRESET_IDS, type PresetId } from "../lib/themeSettings";
-import { createFirstNote, currentVault, importInto, languageOrder, languagePlan, markSetupDone, openBrowserVault, openFolderVault, reconnectFolderVault, setupDue, type StartChoice } from "./setup";
+import { createFirstNote, currentVault, languageOrder, languagePlan, markSetupDone, openBrowserVault, openFolderVault, reconnectFolderVault, setupDue, type StartChoice } from "./setup";
 import "./FirstRun.css";
 import { useFocusTrap } from "../ui/useFocusTrap";
 import "./firstRunStrings";
 import { HelpButton } from "../ui/HelpButton";
 import { explainError } from "../lib/userError";
+import { FIRST_RUN_SOURCES, openImportWizard, type StartPath } from "./importEvent";
+import type { ImportSourceId } from "../storage/import/types";
 
 const ALL_STEPS = ["lang", "vault", "look", "start"] as const;
 const THEMES: Theme[] = ["light", "dark", "system"];
@@ -25,7 +28,7 @@ export interface FirstRunResult {
 }
 
 interface Props {
-  /** Finished: open the note and start the tour. `null`: setup skipped. */
+  /** Finished: open the note and start the tour. `null`: setup skipped, or handed to the import wizard / an opened folder (W11.P6). */
   onDone: (result: FirstRunResult | null) => void;
 }
 
@@ -50,12 +53,12 @@ export default function FirstRun({ onDone }: Props) {
   const [folder, setFolder] = useState<string | null>(null);
   /** The folder vault needs permission again (browser restart): it can't be written until reconnected. */
   const [disconnected, setDisconnected] = useState(false);
-  const [start, setStart] = useState<StartChoice>("sample");
+  const [path, setPath] = useState<StartPath>("sample");
+  const start: StartChoice = path === "empty" ? "empty" : "sample";
+  const [source, setSource] = useState<ImportSourceId>(FIRST_RUN_SOURCES[0]);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
-  const importKind = useRef<"obsidian" | "notion">("obsidian");
-  const fileInput = useRef<HTMLInputElement>(null);
 
   // Reopened from ⌘K: the vault may already be in a folder.
   useEffect(() => {
@@ -118,42 +121,54 @@ export default function FirstRun({ onDone }: Props) {
     return false;
   };
 
-  const startImport = (kind: "obsidian" | "notion") => {
-    importKind.current = kind;
-    const input = fileInput.current;
-    if (!input) return;
-    input.value = "";
-    input.accept = kind === "notion" ? ".zip,application/zip" : "";
-    (input as HTMLInputElement & { webkitdirectory: boolean }).webkitdirectory = kind === "obsidian";
-    input.click();
+  /** The language picked may still be loading: settle it before anything is written in it. */
+  const settleLocale = async () => {
+    const chosen = pickedLocale ?? locale;
+    await loadLocale(chosen).catch(() => undefined);
+    if (isLocaleLoaded(chosen) && getLocale() !== chosen) useAppStore.getState().setLocale(chosen);
+    setPickedLocale(null);
   };
 
-  const onImportFiles = async () => {
-    const files = fileInput.current?.files;
-    if (!files?.length) return;
-    setBusy(true);
-    try {
-      const r = await importInto(importKind.current, files);
-      window.dispatchEvent(new Event("lumen-workspace-changed"));
-      setStatus(t("onboard.import.done", { notes: String(r.notes), folder: r.folder }));
-    } catch (e) {
-      setStatus(t("onboard.import.failed", { error: explainError(e) }));
-    } finally {
-      setBusy(false);
-    }
+  /** W11.P6 "Bring your notes": setup is done, the import wizard opens on the source picked. */
+  const finishWithImport = async () => {
+    await settleLocale();
+    markSetupDone();
+    onDone(null);
+    openImportWizard({ source, firstRun: true });
+  };
+
+  /** W11.P6 "Open an Obsidian folder": the folder becomes the vault as it is; no note is written into it. */
+  const finishWithFolder = async () => {
+    if (folder === null) {
+      const picker = (window as unknown as { showDirectoryPicker?: (o: object) => Promise<FileSystemDirectoryHandle> }).showDirectoryPicker;
+      if (!picker) return;
+      let handle: FileSystemDirectoryHandle;
+      try {
+        handle = await picker.call(window, { mode: "readwrite" });
+      } catch {
+        return; // why: picker cancelled — stay on this step
+      }
+      if (!(await openFolderVault(handle))) {
+        setStatus(t("onboard.vault.folder.denied", { folder: handle.name }));
+        return;
+      }
+    } else if (disconnected && !(await reconnect())) return;
+    await settleLocale();
+    window.dispatchEvent(new Event("lumen-workspace-changed"));
+    markSetupDone();
+    onDone(null);
   };
 
   const finish = async () => {
     // A folder vault the browser closed: ask first (this click is the user gesture it needs).
+    if (path === "import") return void finishWithImport();
+    if (path === "obsidianFolder") return void finishWithFolder();
     if (folder !== null && disconnected && !(await reconnect())) return;
     setBusy(true);
     setStatus(t("onboard.working"));
     try {
       // The language picked may still be loading: the first note is in the one that actually applies.
-      const chosen = pickedLocale ?? locale;
-      await loadLocale(chosen).catch(() => undefined);
-      if (isLocaleLoaded(chosen) && getLocale() !== chosen) useAppStore.getState().setLocale(chosen);
-      setPickedLocale(null);
+      await settleLocale();
       const note = await createFirstNote(start, getLocale());
       window.dispatchEvent(new Event("lumen-workspace-changed"));
       markSetupDone();
@@ -288,34 +303,49 @@ export default function FirstRun({ onDone }: Props) {
             <>
               <fieldset>
                 <legend>{t("onboard.start.title")}</legend>
-                <label className="lumen-firstrun-choice wide" data-checked={start === "sample"}>
-                  <input type="radio" name="fr-start" checked={start === "sample"} onChange={() => setStart("sample")} />
+                <label className="lumen-firstrun-choice wide" data-checked={path === "sample"}>
+                  <input type="radio" name="fr-start" checked={path === "sample"} onChange={() => setPath("sample")} />
                   <span>
                     <strong>{t("onboard.start.sample")}</strong>
                     <small>{t("onboard.start.sample.desc", { language: langLabel })}</small>
                   </span>
                 </label>
-                <label className="lumen-firstrun-choice wide" data-checked={start === "empty"}>
-                  <input type="radio" name="fr-start" checked={start === "empty"} onChange={() => setStart("empty")} />
+                <label className="lumen-firstrun-choice wide" data-checked={path === "empty"}>
+                  <input type="radio" name="fr-start" checked={path === "empty"} onChange={() => setPath("empty")} />
                   <span>
                     {/* empty-allow: the "start empty" choice's label, not an empty state */}
                     <strong>{t("onboard.start.empty")}</strong>
                     <small>{t("onboard.start.empty.desc")}</small>
                   </span>
                 </label>
+                <label className="lumen-firstrun-choice wide" data-checked={path === "import"}>
+                  <input type="radio" name="fr-start" checked={path === "import"} onChange={() => setPath("import")} data-testid="first-run-path-import" />
+                  <span>
+                    <strong>{t("onboard.start.import")}</strong>
+                    <small>{t("onboard.start.import.desc")}</small>
+                  </span>
+                </label>
+                <label className="lumen-firstrun-choice wide" data-checked={path === "obsidianFolder"} data-disabled={!folderSupported()}>
+                  <input type="radio" name="fr-start" checked={path === "obsidianFolder"} disabled={!folderSupported()} onChange={() => setPath("obsidianFolder")} data-testid="first-run-path-folder" />
+                  <span>
+                    <strong>{t("onboard.start.folder")}</strong>
+                    <small>{folderSupported() ? (folder !== null ? t("onboard.start.folder.current", { folder }) : t("onboard.start.folder.desc")) : t("onboard.vault.folder.unsupported")}</small>
+                  </span>
+                </label>
               </fieldset>
-              <fieldset>
-                <legend>{t("onboard.import.title")}</legend>
-                <div className="lumen-firstrun-row">
-                  <button type="button" className="lumen-firstrun-btn" disabled={busy} onClick={() => startImport("obsidian")}>
-                    {t("onboard.import.obsidian")}
-                  </button>
-                  <button type="button" className="lumen-firstrun-btn" disabled={busy} onClick={() => startImport("notion")}>
-                    {t("onboard.import.notion")}
-                  </button>
-                </div>
-                <input ref={fileInput} type="file" multiple hidden onChange={() => void onImportFiles()} data-testid="first-run-import" />
-              </fieldset>
+              {path === "import" && (
+                <fieldset data-testid="first-run-sources">
+                  <legend>{t("onboard.import.from")}</legend>
+                  <div className="lumen-firstrun-grid">
+                    {FIRST_RUN_SOURCES.map((s) => (
+                      <label key={s} className="lumen-firstrun-choice" data-checked={source === s}>
+                        <input type="radio" name="fr-source" checked={source === s} onChange={() => setSource(s)} />
+                        <span>{t(`onboard.import.source.${s}`)}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
             </>
           )}
         </div>
@@ -335,7 +365,7 @@ export default function FirstRun({ onDone }: Props) {
             </button>
           )}
           <button type="button" className="lumen-firstrun-btn primary" disabled={busy} onClick={() => (last ? void finish() : setStep(step + 1))}>
-            {last ? t("onboard.finish") : t("onboard.next")}
+            {last ? t(path === "import" ? "onboard.finish.import" : path === "obsidianFolder" ? "onboard.finish.folder" : "onboard.finish") : t("onboard.next")}
           </button>
         </footer>
       </div>
