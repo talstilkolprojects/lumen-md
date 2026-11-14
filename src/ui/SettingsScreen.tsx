@@ -70,6 +70,13 @@ function applyAppPatch(patch: Record<string, unknown>): void {
       case "writingGoalWords":
         s.setWritingGoal(value as number);
         break;
+      case "mobileToolbar":
+        // Unknown or repeated action ids go, as when the store loads (review t5, L2).
+        s.setMobileToolbar(value as AppState["mobileToolbar"]);
+        break;
+      case "enabledSnippets":
+        rest.enabledSnippets = [...new Set(value as string[])];
+        break;
       case "rtl":
         if (s.rtl !== value) s.toggleRtl();
         break;
@@ -156,7 +163,7 @@ export function SettingsScreen({ tab: initialTab = "general", onClose, onOpenAud
     downloadText("lumen-settings.json", `${JSON.stringify(file, null, 2)}\n`, "application/json");
   };
 
-  const general = entries.filter((e) => e.tab === "general" && e.label && e.type !== "json" && e.type !== "text");
+  const general = entries.filter((e) => e.tab === "general" && e.label && e.type !== "json" && e.type !== "list" && e.type !== "text");
 
   const setEntry = (entry: SettingEntry, value: unknown) => {
     if (entry.store === "app") applyAppPatch({ [entry.id]: value });

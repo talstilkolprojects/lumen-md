@@ -37,7 +37,7 @@ export const SETTINGS_TABS: ReadonlyArray<{ id: SettingsTab; label: string }> = 
 
 export type SettingKind = "setting" | "secret" | "data";
 
-export type SettingType = "boolean" | "choice" | "number" | "text" | "json";
+export type SettingType = "boolean" | "choice" | "number" | "text" | "json" | "list";
 
 export interface SettingEntry {
   /** Store field (`app`) or localStorage key (`local`). */
@@ -55,6 +55,8 @@ export interface SettingEntry {
   /** `number` bounds, inclusive. */
   min?: number;
   max?: number;
+  /** `list` (an array of strings): at most this many items (default 200). */
+  maxItems?: number;
 }
 
 const app = (id: string, rest: Omit<SettingEntry, "id" | "store">): SettingEntry => ({ id, store: "app", ...rest });
@@ -120,9 +122,10 @@ export const SETTINGS: readonly SettingEntry[] = [
   app("useFineTunedModel", { kind: "setting", tab: "fineTune", label: "fineTune.useToggle", type: "boolean" }),
   app("fineTunedModelId", { kind: "setting", tab: "fineTune", type: "text" }),
   app("showLocalGraph", { kind: "setting", tab: "general", type: "boolean" }),
-  app("enabledSnippets", { kind: "setting", tab: "general", type: "json" }),
+  // Arrays of names, so `list`, not `json` (a plain object): with `json` an import skipped them (review t5, L2).
+  app("enabledSnippets", { kind: "setting", tab: "general", type: "list", maxItems: 200 }),
   // Phones (plan W3.x): the keyboard bar's actions, and long notes opening in reading view.
-  app("mobileToolbar", { kind: "setting", tab: "general", type: "json" }),
+  app("mobileToolbar", { kind: "setting", tab: "general", type: "list", maxItems: 64 }),
   app("readLongNotes", { kind: "setting", tab: "general", type: "boolean" }),
   app("readingWords", { kind: "setting", tab: "general", type: "number", min: 0, max: 1_000_000 }),
   app("doc", { kind: "data" }),
