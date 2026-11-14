@@ -89,7 +89,7 @@
   "toast.privacyModeUnavailableFallsBack": "隐私模式不可用：{reason}。已回退到云端 AI。",
   "toast.processing": "🤖 正在处理 {name}...",
   "toast.productAgentStarting": "🚀 Product Agent 正在启动...",
-  "toast.productCreatedFilesGenerated": "✅ 产品已创建！已生成文件：{count}",
+  "toast.productCreatedFilesGenerated": "✅ 产品已就绪：{count} 个文件在审阅界面等待你的批准",
   "toast.productCreationFailed": "产品创建失败：{error}",
   "toast.pulledChangedFiles": "✅ 已拉取变更文件：{count}",
   "toast.pulledFile": "⬇️ 已拉取文件：{count}",

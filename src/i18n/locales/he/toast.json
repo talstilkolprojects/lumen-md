@@ -89,7 +89,7 @@
   "toast.privacyModeUnavailableFallsBack": "מצב פרטיות אינו זמין: {reason}. עובר ל-AI בענן.",
   "toast.processing": "🤖 מעבד {name}...",
   "toast.productAgentStarting": "🚀 Product Agent מתחיל...",
-  "toast.productCreatedFilesGenerated": "✅ המוצר נוצר! קבצים שנוצרו: {count}",
+  "toast.productCreatedFilesGenerated": "✅ המוצר מוכן: {count} קבצים ממתינים לאישור שלך במסך הבדיקה",
   "toast.productCreationFailed": "יצירת המוצר נכשלה: {error}",
   "toast.pulledChangedFiles": "✅ קבצים שהשתנו ונמשכו: {count}",
   "toast.pulledFile": "⬇️ קבצים שנמשכו: {count}",

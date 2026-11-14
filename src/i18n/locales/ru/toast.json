@@ -89,7 +89,7 @@
   "toast.privacyModeUnavailableFallsBack": "Режим конфиденциальности недоступен: {reason}. Переключение на облачный ИИ.",
   "toast.processing": "🤖 Обработка: {name}...",
   "toast.productAgentStarting": "🚀 Запуск Product Agent...",
-  "toast.productCreatedFilesGenerated": "✅ Продукт создан! Создано файлов: {count}",
+  "toast.productCreatedFilesGenerated": "✅ Продукт готов: {count} файлов ждут вашего подтверждения на экране проверки",
   "toast.productCreationFailed": "Не удалось создать продукт: {error}",
   "toast.pulledChangedFiles": "✅ Получено изменённых файлов: {count}",
   "toast.pulledFile": "⬇️ Получено файлов: {count}",

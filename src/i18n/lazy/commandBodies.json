@@ -92,7 +92,7 @@
   "toast.noLinkSuggestions": "No link suggestions",
   "toast.noTagSuggestionsReturned": "No tag suggestions returned",
   "toast.productAgentStarting": "🚀 Product Agent starting...",
-  "toast.productCreatedFilesGenerated": "✅ Product created! Files generated: {count}",
+  "toast.productCreatedFilesGenerated": "\u2705 Product ready: {count} files are waiting for your approval in the review screen",
   "toast.productCreationFailed": "Product creation failed: {error}",
   "toast.pulledFile": "⬇️ Pulled files: {count}",
   "toast.related.folderOff": "Related notes are off in {folder}",

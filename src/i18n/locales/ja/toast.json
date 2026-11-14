@@ -89,7 +89,7 @@
   "toast.privacyModeUnavailableFallsBack": "プライバシーモードを利用できません: {reason}。クラウド AI に切り替えます。",
   "toast.processing": "🤖 {name} を処理中...",
   "toast.productAgentStarting": "🚀 Product Agent を開始しています...",
-  "toast.productCreatedFilesGenerated": "✅ プロダクトを作成しました!生成したファイル: {count}",
+  "toast.productCreatedFilesGenerated": "✅ プロダクトの準備ができました。{count} 個のファイルがレビュー画面で承認を待っています",
   "toast.productCreationFailed": "プロダクトの作成に失敗しました: {error}",
   "toast.pulledChangedFiles": "✅ プルした変更ファイル: {count}",
   "toast.pulledFile": "⬇️ プルしたファイル: {count}",

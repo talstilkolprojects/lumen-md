@@ -89,7 +89,7 @@
   "toast.privacyModeUnavailableFallsBack": "Mode confidentialité indisponible : {reason}. Retour à l'IA cloud.",
   "toast.processing": "🤖 Traitement de {name}...",
   "toast.productAgentStarting": "🚀 Démarrage de Product Agent...",
-  "toast.productCreatedFilesGenerated": "✅ Produit créé ! Fichiers générés : {count}",
+  "toast.productCreatedFilesGenerated": "✅ Produit prêt : {count} fichiers attendent votre approbation dans l’écran de revue",
   "toast.productCreationFailed": "Échec de la création du produit : {error}",
   "toast.pulledChangedFiles": "✅ Fichiers modifiés récupérés : {count}",
   "toast.pulledFile": "⬇️ Fichiers récupérés : {count}",

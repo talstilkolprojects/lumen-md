@@ -89,7 +89,7 @@
   "toast.privacyModeUnavailableFallsBack": "Datenschutzmodus nicht verfügbar: {reason}. Wechsel zur Cloud-KI.",
   "toast.processing": "🤖 {name} wird verarbeitet...",
   "toast.productAgentStarting": "🚀 Product Agent startet...",
-  "toast.productCreatedFilesGenerated": "✅ Produkt erstellt! Generierte Dateien: {count}",
+  "toast.productCreatedFilesGenerated": "✅ Produkt bereit: {count} Dateien warten auf deine Freigabe in der Prüfansicht",
   "toast.productCreationFailed": "Produkterstellung fehlgeschlagen: {error}",
   "toast.pulledChangedFiles": "✅ Geänderte Dateien gepullt: {count}",
   "toast.pulledFile": "⬇️ Gepullte Dateien: {count}",
