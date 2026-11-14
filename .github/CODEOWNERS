@@ -84,6 +84,10 @@
 # ── What the preview parses, which redaction must read the same way (RR8-473-1, -2) ──
 /src/renderer/criticMarkup.ts            @talstilkol
 /src/renderer/pipeline.ts                @talstilkol
+/src/renderer/renderCore.ts              @talstilkol
+/src/renderer/renderWorkerCore.ts        @talstilkol
+/src/renderer/render.worker.ts           @talstilkol
+/src/renderer/renderClient.ts            @talstilkol
 
 # ── Frame sandboxes, and where the frame guard is installed (RR8-451) ──
 /src/plugins/EmbedBlock.tsx              @talstilkol
