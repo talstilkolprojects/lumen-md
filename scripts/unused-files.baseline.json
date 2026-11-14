@@ -5,7 +5,6 @@
   "src/hooks/useAppHandlers.ts",
   "src/hooks/useGit.ts",
   "src/lib/cryptoStorage.ts",
-  "src/plugins/sandbox.ts",
   "src/ui/CanvasWhiteboard.tsx"
  ]
 }
