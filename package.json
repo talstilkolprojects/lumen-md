@@ -33,6 +33,7 @@
     "preview:visual": "node scripts/preview-visual.mjs",
     "budget": "node scripts/bundle-budget.mjs",
     "pr:check": "node scripts/pr-check.mjs",
+    "codeowners:check": "node scripts/codeowners-coverage.mjs",
     "lighthouse": "lhci autorun --config=./lighthouserc.json",
     "lighthouse:a11y": "node scripts/lighthouse-a11y.mjs",
     "i18n:extract": "node scripts/extract-i18n-keys.mjs",

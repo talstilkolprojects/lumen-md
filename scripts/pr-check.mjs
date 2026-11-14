@@ -20,6 +20,10 @@
  *     adds the `human-reviewed` label (plan W4.28). With `--pr <n>` the
  *     label is read from GitHub and must be newer than the last commit;
  *     without it the rule only warns.
+ *   - Every sensitive file the PR adds or changes has an owner in
+ *     CODEOWNERS or a dated exception (plan W8.6; sensitive is worked out
+ *     from the code: scripts/lib/sensitivePaths.mjs). When the PR changes
+ *     CODEOWNERS or the exceptions, the whole tree is checked.
  *
  *   npm run pr:check -- --base origin/main --body pr-body.md
  *   npm run build && npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-check.md
@@ -35,6 +39,8 @@ import { pathToFileURL } from "node:url";
 import { addedLinesFromDiff, AI_LABEL, bodyProblems, domainMentions, licenceChanges, skipCiViolations, unregisteredNetworkCalls, untestedChanges, writtenByAi } from "./lib/prGate.mjs";
 import { bundleDiffMarkdown } from "./bundle-diff.mjs";
 import { HUMAN_REVIEW_LABEL, humanReviewVerdict, parseCodeowners, sensitiveChanges } from "./lib/humanReview.mjs";
+import { EXCEPTIONS_FILE } from "./lib/sensitivePaths.mjs";
+import { coverageLines, treeCoverage } from "./codeowners-coverage.mjs";
 
 export function parseArgs(argv) {
   const opt = (n) => (argv.includes(n) ? argv[argv.indexOf(n) + 1] : undefined);
@@ -152,6 +158,16 @@ export function runChecks(opts) {
     const v = humanReviewVerdict(sensitive, pr, HUMAN_REVIEW_LABEL);
     add("Human review of sensitive paths", mismatch ? "fail" : v.status, mismatch ? [mismatch, "", ...v.lines] : v.lines);
   } else add("Human review of sensitive paths", "skipped", [".github/CODEOWNERS is not on this branch."]);
+
+  // Every sensitive file has an owner (plan W8.6)
+  {
+    const whole = changed.includes(".github/CODEOWNERS") || changed.includes(EXCEPTIONS_FILE);
+    const paths = whole ? git(cwd, "ls-files", "-z").split("\0").filter(Boolean) : changed;
+    const c = treeCoverage(cwd, paths, opts.today ?? new Date());
+    const title = "Sensitive files have an owner";
+    if (!c) add(title, "skipped", [".github/CODEOWNERS is not on this branch."]);
+    else add(title, c.uncovered.length || c.problems.length ? "fail" : "ok", [whole ? "CODEOWNERS or its exceptions changed: the whole tree is checked." : `The ${changed.length} changed file${changed.length === 1 ? "" : "s"} are checked (\`npm run codeowners:check\` checks the whole tree).`, "", ...coverageLines(c)]);
+  }
 
   const untested = untestedChanges(changed);
   add("Tests", untested.length ? "warn" : "ok", untested.length ? [`Source changed and no test changed: ${untested.slice(0, 10).map((f) => `\`${f}\``).join(", ")}${untested.length > 10 ? ` and ${untested.length - 10} more` : ""}.`] : ["Source changes come with test changes (or there are none)."]);
