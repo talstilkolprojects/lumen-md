@@ -58,7 +58,6 @@
   "toast.issues": "⚠️ 問題: {count}件 — {list}",
   "toast.learnMore": "詳細",
   "toast.linkSuggestFailed": "リンクの提案に失敗しました: {error}",
-  "toast.loadedFromRemoteModule": "✅ リモートモジュールから {name} を読み込みました",
   "toast.localMtUnavailable": "ローカル翻訳は利用できませんでした（{why}）。代わりに AI モデルが翻訳しました。",
   "toast.loremIpsumInserted": "📄 Lorem ipsum を挿入しました",
   "toast.mediarecorderNotSupportedInThis": "このブラウザは MediaRecorder に対応していません",

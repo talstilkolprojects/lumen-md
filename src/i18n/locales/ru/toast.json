@@ -58,7 +58,6 @@
   "toast.issues": "⚠️ Проблемы: {count} — {list}",
   "toast.learnMore": "Подробнее",
   "toast.linkSuggestFailed": "Не удалось подобрать ссылки: {error}",
-  "toast.loadedFromRemoteModule": "✅ Модуль {name} загружен удалённо",
   "toast.localMtUnavailable": "Локальный перевод был недоступен ({why}); перевела ИИ-модель.",
   "toast.loremIpsumInserted": "📄 Lorem ipsum вставлен",
   "toast.mediarecorderNotSupportedInThis": "MediaRecorder не поддерживается в этом браузере",
