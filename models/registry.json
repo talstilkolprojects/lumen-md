@@ -502,6 +502,24 @@
       "notes": "Must never be bundled. The app downloads it from upstream only after an explicit user action and shows its licence first (HEBREW_DICT_LICENSE); that exception is recorded in licenses.allow.json."
     },
     {
+      "id": "hunspell-yi-dictionary",
+      "kind": "other",
+      "source": "https://raw.githubusercontent.com/alephreish/hunspell-yi/9f537e5a46caf571c91d86e8a3cf5d0f4ac77192/yi.dic",
+      "license": "GPL-3.0-only",
+      "class": "forbidden",
+      "commercial": "no",
+      "attribution": "Yiddish word list hunspell-yi by Raphael A. Finkel, Simche Taub and Andrey Rozenberg (github.com/alephreish/hunspell-yi), GPL-3.0.",
+      "size": "2.4 MB",
+      "runs": "browser",
+      "delivery": "user-download",
+      "catalog": "YIDDISH_DICT (src/ai/yiddishSpell.ts)",
+      "match": [
+        "alephreish/hunspell-yi"
+      ],
+      "verified": true,
+      "notes": "Must never be bundled. The app downloads it from the pinned commit only after an explicit user command, names the licence and authors first (jewishLang.dict.downloadConfirm), and checks each file's SHA-256; that exception is recorded in licenses.allow.json (plan W7.9)."
+    },
+    {
       "id": "frequencywords-he-50k",
       "kind": "other",
       "source": "https://github.com/hermitdave/FrequencyWords/blob/525f9b560de45753a5ea01069454e72e9aa541c6/content/2018/he/he_50k.txt",

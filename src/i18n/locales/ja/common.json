@@ -800,6 +800,19 @@
   "israeliTime.moved": "{reason}に当たります：{date} を提案",
   "israeliTime.overdue.one": "{n} 勤務日の遅れ",
   "israeliTime.overdue.other": "{n} 勤務日の遅れ",
+  "jewishLang.dict.downloadConfirm": "イディッシュ語のスペル用単語リスト（hunspell-yi・2.4MB・GPL-3.0、Raphael A. Finkel、Simche Taub、Andrey Rozenberg 作）を GitHub からこの端末にダウンロードしますか？ Lumen の一部ではなく、この端末にのみ保存されます。",
+  "jewishLang.dict.failed": "イディッシュ語の単語リストをダウンロードできませんでした：{error}",
+  "jewishLang.dict.installed": "イディッシュ語のスペルチェックが有効です（{count} 語）。",
+  "jewishLang.dict.removeConfirm": "この端末からイディッシュ語の単語リストを削除しますか？",
+  "jewishLang.dict.removed": "イディッシュ語の単語リストを削除しました。",
+  "jewishLang.translit.done": "翻字しました。",
+  "jewishLang.translit.guessed": "翻字しました。{count} 個の母音は二通りに読める י または ו から推定しました。確認してください。",
+  "jewishLang.translit.ladToHebrew": "ラディノ語：ラテン文字 → ヘブライ文字",
+  "jewishLang.translit.ladToLatin": "ラディノ語：ヘブライ文字 → ラテン文字",
+  "jewishLang.translit.latinToYi": "YIVO ローマ字 → イディッシュ語",
+  "jewishLang.translit.noSelection": "先に翻字するテキストを選択してください。",
+  "jewishLang.translit.title": "選択範囲を翻字",
+  "jewishLang.translit.yiToLatin": "イディッシュ語 → YIVO ローマ字",
   "legalCite.cancel": "キャンセル",
   "legalCite.f.authors": "Authors (separated by commas)",
   "legalCite.f.collection": "Collection (ה\"ח הממשלה)",
@@ -1871,5 +1884,6 @@
   "wikiComplete.create": "ノート「{name}」を作成",
   "wikiComplete.createFailed": "ノート「{name}」を作成できませんでした: {error}",
   "wikiComplete.created": "ノート「{name}」を作成しました",
-  "wikiComplete.listLabel": "リンクの候補"
+  "wikiComplete.listLabel": "リンクの候補",
+  "yiddish.spell.unknown": "イディッシュ語の単語リストにありません"
 }

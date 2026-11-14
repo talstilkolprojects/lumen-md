@@ -37,6 +37,7 @@ import {
 } from "@codemirror/autocomplete";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { bidiExtension } from "./bidi";
+import { noteLangExtension } from "./noteLang";
 import { hebrewTypographyExtension } from "./hebrewTypographyExtension";
 import { bidiMarksExtension } from "./bidiMarks";
 import { mathBidiExtension } from "./mathBidi";
@@ -440,6 +441,8 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
       EditorView.lineWrapping,
       // Hebrew and English lines each read in their own direction (T25).
       bidiExtension(),
+      // The note's language tag (Yiddish, Ladino…) on the content element (plan W7.9).
+      noteLangExtension(),
       // Hebrew typography as you type: ״ ׳ „” ־ – (plan W2.9).
       hebrewTypographyExtension(),
       bidiMarksExtension(),

@@ -8,6 +8,7 @@ import type { GrammarMatch } from "./grammar";
 import { HEBREW_DICT_URL, hebrewRules } from "./hebrewSpell";
 import { HEBREW_FREQ_PATH, lonePrefixRule } from "./hebrewFreq";
 import { hebrewRatio } from "../text/hebrew";
+import { isYiddishText } from "../text/yiddish";
 import { GRAMMAR_LEVELS, mergeGrammar, type GrammarLevel, type HebrewGrammarMatch } from "./hebrewGrammar";
 import { t } from "../i18n";
 
@@ -172,6 +173,10 @@ export async function checkByLanguage(
   other: (latinOnly: string) => Promise<GrammarMatch[]>,
 ): Promise<GrammarMatch[]> {
   const paragraphs = [...text.matchAll(/[^\n]+(?:\n(?!\s*\n)[^\n]+)*/g)];
+  // Yiddish (plan W7.9): a front matter `lang: yi` makes every Hebrew-letter paragraph Yiddish,
+  // `lang: he` none; otherwise each paragraph is read for Yiddish spelling (אַ, אָ, ע as a vowel).
+  const fmLang = /^---\r?\n[\s\S]*?^(?:lang|language):\s*["']?([A-Za-z-]+)/m.exec(text.slice(0, 2000))?.[1]?.toLowerCase();
+  const yiddishParagraph = (p: string) => (fmLang === "yi" ? true : fmLang === "he" ? false : isYiddishText(p));
   let latinOnly = "";
   let cursor = 0;
   const hebrewJobs: Array<Promise<GrammarMatch[]>> = [];
@@ -180,7 +185,8 @@ export async function checkByLanguage(
     latinOnly += text.slice(cursor, start);
     if (hebrewRatio(p[0]) >= 0.5) {
       latinOnly += p[0].replace(/[^\n]/g, " ");
-      hebrewJobs.push(checkHebrew(p[0]).then((ms) => ms.map((m) => ({ ...m, offset: m.offset + start }))));
+      const check = yiddishParagraph(p[0]) ? import("./yiddishSpellService").then((y) => y.checkYiddish(p[0], (k) => t(k))) : checkHebrew(p[0]);
+      hebrewJobs.push(check.then((ms) => ms.map((m) => ({ ...m, offset: m.offset + start }))));
     } else latinOnly += p[0].replace(/\p{Script=Hebrew}/gu, " "); // Hebrew words inside a Latin paragraph stay on this device too.
     cursor = start + p[0].length;
   }

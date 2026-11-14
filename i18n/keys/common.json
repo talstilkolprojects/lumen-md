@@ -4491,6 +4491,77 @@
       ]
     },
     {
+      "key": "jewishLang.dict.downloadConfirm",
+      "en": "Download the Yiddish spelling list (hunspell-yi, 2.4 MB, GPL-3.0, by Raphael A. Finkel, Simche Taub and Andrey Rozenberg) from GitHub to this device? It is not part of Lumen; it is kept only here.",
+      "vars": []
+    },
+    {
+      "key": "jewishLang.dict.failed",
+      "en": "The Yiddish spelling list did not download: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "jewishLang.dict.installed",
+      "en": "Yiddish spelling is on ({count} words).",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "jewishLang.dict.removeConfirm",
+      "en": "Remove the Yiddish spelling list from this device?",
+      "vars": []
+    },
+    {
+      "key": "jewishLang.dict.removed",
+      "en": "The Yiddish spelling list is removed.",
+      "vars": []
+    },
+    {
+      "key": "jewishLang.translit.done",
+      "en": "Transliterated.",
+      "vars": []
+    },
+    {
+      "key": "jewishLang.translit.guessed",
+      "en": "Transliterated. {count} vowels were read from י or ו, which can stand for two vowels: please check them.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "jewishLang.translit.ladToHebrew",
+      "en": "Ladino: Latin letters → Hebrew letters",
+      "vars": []
+    },
+    {
+      "key": "jewishLang.translit.ladToLatin",
+      "en": "Ladino: Hebrew letters → Latin letters",
+      "vars": []
+    },
+    {
+      "key": "jewishLang.translit.latinToYi",
+      "en": "YIVO romanisation → Yiddish",
+      "vars": []
+    },
+    {
+      "key": "jewishLang.translit.noSelection",
+      "en": "Select the text to transliterate first.",
+      "vars": []
+    },
+    {
+      "key": "jewishLang.translit.title",
+      "en": "Transliterate the selection",
+      "vars": []
+    },
+    {
+      "key": "jewishLang.translit.yiToLatin",
+      "en": "Yiddish → YIVO romanisation",
+      "vars": []
+    },
+    {
       "key": "legalCite.cancel",
       "en": "Cancel",
       "vars": []
@@ -10404,6 +10475,11 @@
     {
       "key": "wikiComplete.listLabel",
       "en": "Link suggestions",
+      "vars": []
+    },
+    {
+      "key": "yiddish.spell.unknown",
+      "en": "Not in the Yiddish word list",
       "vars": []
     }
   ]

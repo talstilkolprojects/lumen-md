@@ -800,6 +800,19 @@
   "israeliTime.moved": "נופל ב{reason}: מוצע {date}",
   "israeliTime.overdue.one": "באיחור של {n} יום עבודה",
   "israeliTime.overdue.other": "באיחור של {n} ימי עבודה",
+  "jewishLang.dict.downloadConfirm": "להוריד למכשיר הזה את רשימת האיות של יידיש (hunspell-yi, ‏2.4MB, ‏GPL-3.0, מאת רפאל פינקל, שמחה טאַוב ואנדריי רוזנברג) מ-GitHub? היא לא חלק מ-Lumen, והיא נשמרת רק כאן.",
+  "jewishLang.dict.failed": "רשימת האיות של יידיש לא ירדה: {error}",
+  "jewishLang.dict.installed": "איות יידיש פעיל ({count} מילים).",
+  "jewishLang.dict.removeConfirm": "להסיר את רשימת האיות של יידיש מהמכשיר הזה?",
+  "jewishLang.dict.removed": "רשימת האיות של יידיש הוסרה.",
+  "jewishLang.translit.done": "התעתיק בוצע.",
+  "jewishLang.translit.guessed": "התעתיק בוצע. {count} תנועות נקראו מ-י או מ-ו, שיכולות לסמן שתי תנועות: כדאי לבדוק אותן.",
+  "jewishLang.translit.ladToHebrew": "לדינו: אותיות לטיניות ← אותיות עבריות",
+  "jewishLang.translit.ladToLatin": "לדינו: אותיות עבריות ← אותיות לטיניות",
+  "jewishLang.translit.latinToYi": "תעתיק YIVO ← יידיש",
+  "jewishLang.translit.noSelection": "קודם בוחרים את הטקסט לתעתיק.",
+  "jewishLang.translit.title": "תעתיק של הבחירה",
+  "jewishLang.translit.yiToLatin": "יידיש ← תעתיק YIVO",
   "legalCite.cancel": "ביטול",
   "legalCite.f.authors": "מחברים (מופרדים בפסיקים)",
   "legalCite.f.collection": "קובץ (ה\"ח הממשלה)",
@@ -1871,5 +1884,6 @@
   "wikiComplete.create": "יצירת פתק «{name}»",
   "wikiComplete.createFailed": "לא ניתן ליצור את הפתק «{name}»: {error}",
   "wikiComplete.created": "נוצר הפתק «{name}»",
-  "wikiComplete.listLabel": "הצעות לקישור"
+  "wikiComplete.listLabel": "הצעות לקישור",
+  "yiddish.spell.unknown": "לא ברשימת המילים של יידיש"
 }

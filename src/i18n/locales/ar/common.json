@@ -800,6 +800,19 @@
   "israeliTime.moved": "يقع في {reason}: المقترح {date}",
   "israeliTime.overdue.one": "أيام العمل المتأخرة: {n}",
   "israeliTime.overdue.other": "أيام العمل المتأخرة: {n}",
+  "jewishLang.dict.downloadConfirm": "هل تريد تنزيل قائمة التدقيق اليديشية (hunspell-yi، 2.4MB، GPL-3.0، من إعداد رافائيل فينكل وسيمخه تاوب وأندريه روزنبرغ) من GitHub إلى هذا الجهاز؟ ليست جزءًا من Lumen، وتُحفظ هنا فقط.",
+  "jewishLang.dict.failed": "لم تُنزَّل قائمة التدقيق اليديشية: {error}",
+  "jewishLang.dict.installed": "التدقيق اليديشي مفعّل ({count} كلمة).",
+  "jewishLang.dict.removeConfirm": "هل تريد إزالة قائمة التدقيق اليديشية من هذا الجهاز؟",
+  "jewishLang.dict.removed": "أُزيلت قائمة التدقيق اليديشية.",
+  "jewishLang.translit.done": "تم النقل الحرفي.",
+  "jewishLang.translit.guessed": "تم النقل الحرفي. قُرئت {count} حركات من י أو ו، وقد يدل كل منهما على حركتين: يُرجى مراجعتها.",
+  "jewishLang.translit.ladToHebrew": "اللادينو: الحروف اللاتينية ← الحروف العبرية",
+  "jewishLang.translit.ladToLatin": "اللادينو: الحروف العبرية ← الحروف اللاتينية",
+  "jewishLang.translit.latinToYi": "كتابة YIVO اللاتينية ← اليديشية",
+  "jewishLang.translit.noSelection": "حدّد النص المراد نقله أولًا.",
+  "jewishLang.translit.title": "نقل التحديد حرفيًا",
+  "jewishLang.translit.yiToLatin": "اليديشية ← كتابة YIVO اللاتينية",
   "legalCite.cancel": "إلغاء",
   "legalCite.f.authors": "Authors (separated by commas)",
   "legalCite.f.collection": "Collection (ה\"ח הממשלה)",
@@ -1871,5 +1884,6 @@
   "wikiComplete.create": "إنشاء ملاحظة «{name}»",
   "wikiComplete.createFailed": "تعذّر إنشاء الملاحظة «{name}»: {error}",
   "wikiComplete.created": "أُنشئت الملاحظة «{name}»",
-  "wikiComplete.listLabel": "اقتراحات الروابط"
+  "wikiComplete.listLabel": "اقتراحات الروابط",
+  "yiddish.spell.unknown": "ليست في قائمة الكلمات اليديشية"
 }

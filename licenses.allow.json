@@ -9,6 +9,13 @@
       "reason": "AGPL-3.0 Hspell word list: never bundled. The app fetches it from upstream (wooorm/dictionaries) only after an explicit user command and names the licence first (HEBREW_DICT_LICENSE in src/ai/hebrewSpell.ts), so Lumen does not distribute it."
     },
     {
+      "area": "model",
+      "name": "hunspell-yi-dictionary",
+      "license": "GPL-3.0-only",
+      "level": "warn",
+      "reason": "GPL-3.0 Yiddish word list (hunspell-yi): never bundled. The app fetches it from a pinned upstream commit only after an explicit user command, names the licence and authors first and checks its SHA-256 (YIDDISH_DICT in src/ai/yiddishSpell.ts), so Lumen does not distribute it (plan W7.9)."
+    },
+    {
       "area": "npm",
       "name": "dictionary-en",
       "license": "(MIT AND BSD)",

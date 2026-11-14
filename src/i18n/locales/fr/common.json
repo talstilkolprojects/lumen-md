@@ -800,6 +800,19 @@
   "israeliTime.moved": "Tombe un jour de {reason} : proposé le {date}",
   "israeliTime.overdue.one": "En retard de {n} jour ouvré",
   "israeliTime.overdue.other": "En retard de {n} jours ouvrés",
+  "jewishLang.dict.downloadConfirm": "Télécharger sur cet appareil la liste orthographique yiddish (hunspell-yi, 2,4 Mo, GPL-3.0, de Raphael A. Finkel, Simche Taub et Andrey Rozenberg) depuis GitHub ? Elle ne fait pas partie de Lumen et n’est conservée qu’ici.",
+  "jewishLang.dict.failed": "La liste orthographique yiddish n’a pas été téléchargée : {error}",
+  "jewishLang.dict.installed": "L’orthographe yiddish est activée ({count} mots).",
+  "jewishLang.dict.removeConfirm": "Supprimer la liste orthographique yiddish de cet appareil ?",
+  "jewishLang.dict.removed": "La liste orthographique yiddish est supprimée.",
+  "jewishLang.translit.done": "Translittéré.",
+  "jewishLang.translit.guessed": "Translittéré. {count} voyelles ont été lues à partir de י ou ו, qui peuvent noter deux voyelles : vérifiez-les.",
+  "jewishLang.translit.ladToHebrew": "Ladino : lettres latines → lettres hébraïques",
+  "jewishLang.translit.ladToLatin": "Ladino : lettres hébraïques → lettres latines",
+  "jewishLang.translit.latinToYi": "Romanisation YIVO → yiddish",
+  "jewishLang.translit.noSelection": "Sélectionnez d’abord le texte.",
+  "jewishLang.translit.title": "Translittérer la sélection",
+  "jewishLang.translit.yiToLatin": "Yiddish → romanisation YIVO",
   "legalCite.cancel": "Annuler",
   "legalCite.f.authors": "Authors (separated by commas)",
   "legalCite.f.collection": "Collection (ה\"ח הממשלה)",
@@ -1871,5 +1884,6 @@
   "wikiComplete.create": "Créer la note « {name} »",
   "wikiComplete.createFailed": "Impossible de créer la note « {name} » : {error}",
   "wikiComplete.created": "Note « {name} » créée",
-  "wikiComplete.listLabel": "Suggestions de liens"
+  "wikiComplete.listLabel": "Suggestions de liens",
+  "yiddish.spell.unknown": "Absent de la liste de mots yiddish"
 }

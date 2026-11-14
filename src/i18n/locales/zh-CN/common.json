@@ -800,6 +800,19 @@
   "israeliTime.moved": "落在{reason}：建议 {date}",
   "israeliTime.overdue.one": "已逾期 {n} 个工作日",
   "israeliTime.overdue.other": "已逾期 {n} 个工作日",
+  "jewishLang.dict.downloadConfirm": "要从 GitHub 将意第绪语拼写词表（hunspell-yi，2.4 MB，GPL-3.0，作者 Raphael A. Finkel、Simche Taub、Andrey Rozenberg）下载到此设备吗？它不属于 Lumen，只保存在此设备上。",
+  "jewishLang.dict.failed": "意第绪语词表未能下载：{error}",
+  "jewishLang.dict.installed": "意第绪语拼写检查已开启（{count} 个词）。",
+  "jewishLang.dict.removeConfirm": "要从此设备删除意第绪语词表吗？",
+  "jewishLang.dict.removed": "已删除意第绪语词表。",
+  "jewishLang.translit.done": "已转写。",
+  "jewishLang.translit.guessed": "已转写。有 {count} 个元音是从可表示两种元音的 י 或 ו 推断的，请检查。",
+  "jewishLang.translit.ladToHebrew": "拉迪诺语：拉丁字母 → 希伯来字母",
+  "jewishLang.translit.ladToLatin": "拉迪诺语：希伯来字母 → 拉丁字母",
+  "jewishLang.translit.latinToYi": "YIVO 拉丁转写 → 意第绪语",
+  "jewishLang.translit.noSelection": "请先选择要转写的文本。",
+  "jewishLang.translit.title": "转写所选内容",
+  "jewishLang.translit.yiToLatin": "意第绪语 → YIVO 拉丁转写",
   "legalCite.cancel": "取消",
   "legalCite.f.authors": "Authors (separated by commas)",
   "legalCite.f.collection": "Collection (ה\"ח הממשלה)",
@@ -1871,5 +1884,6 @@
   "wikiComplete.create": "新建笔记“{name}”",
   "wikiComplete.createFailed": "无法新建笔记“{name}”：{error}",
   "wikiComplete.created": "已新建笔记“{name}”",
-  "wikiComplete.listLabel": "链接建议"
+  "wikiComplete.listLabel": "链接建议",
+  "yiddish.spell.unknown": "不在意第绪语词表中"
 }
