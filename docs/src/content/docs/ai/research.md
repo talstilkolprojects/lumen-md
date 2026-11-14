@@ -39,7 +39,7 @@ footnotes that link to web pages and checks each one:
 | Result | Meaning |
 |---|---|
 | ✅ quote found | The quoted passage is on the page. Quote marks, dashes, case and spacing don't need to match exactly. |
-| 🟡 found approximately | At least 85% of the quote's words appear close together on the page. |
+| 🟡 found approximately | At least 85% of the quote's words appear close together on the page. A quote longer than 200 words is scored on samples, so it is "approximate" unless it is on the page word for word. |
 | ❌ quote not found | The page is reachable, but the passage isn't on it. |
 | 💀 dead link | The page returned an HTTP error. |
 | ⚠️ couldn't read | The address was blocked, the page isn't HTML or text, or the request timed out. |
@@ -60,5 +60,17 @@ your deployment runs (`edge-workers/research`, set with
 - Your search key is passed through for each request and is never
   stored.
 - It only answers your app's own origins.
+- It requires a shared token (`RESEARCH_TOKEN`). Your deployment builds
+  it into the app (`VITE_RESEARCH_TOKEN`), or you enter it under AI
+  settings → Research token. A token entered there is sent only to the
+  research address that was in use when you saved it. Without a token
+  configured, the service refuses every request.
 
 Claude web search doesn't need the service.
+
+## Known limitations — status
+
+| Id | Limitation | Status |
+|---|---|---|
+| A7 | Approximate quote matching is a heuristic with a compute budget | Decision: kept. The check runs on your device, so a long quote is scored on up to 5 samples of 200 words. A quote is ✅ only when it is on the page word for word; a full score on the samples alone is 🟡 "checked on samples". |
+| A8 | No real authentication without accounts | Fixed in part. The token is now required: a service without one refuses everything. In a public web app the token ships in the app, so it only stops casual reuse. To restrict who may use it, put the service behind Cloudflare Access and add a rate-limiting rule. |

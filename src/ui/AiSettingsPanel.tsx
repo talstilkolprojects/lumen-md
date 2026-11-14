@@ -15,6 +15,10 @@ import { t } from "../i18n";
 import type { AgentRun, ExecutorId } from "../agents/types";
 import type { AiPolicy } from "../ai/policy";
 import type { Hardware } from "../ai/modelManager";
+import { getSecret } from "../lib/secretStore";
+
+/** Secret-store name of the research service token (the research client reads it). */
+const RESEARCH_TOKEN_SECRET = "lumen.research.token";
 
 interface Props {
   open: boolean;
@@ -72,6 +76,9 @@ export function AiSettingsPanel({ open, onClose }: Props) {
   const [catalog, setCatalog] = useState<Array<{ id: string; label: string; vram: number }>>([]);
   const [grammarUrl, setGrammarUrl] = useState("");
   const [researchUrl, setResearchUrl] = useState("");
+  const [researchToken, setResearchToken] = useState("");
+  /** The token as loaded: an unchanged token isn't moved to a new endpoint. */
+  const loadedToken = useRef("");
   const [endpointError, setEndpointError] = useState("");
   const [styleOn, setStyleOn] = useState(false);
   const [hasStyle, setHasStyle] = useState(false);
@@ -135,6 +142,9 @@ export function AiSettingsPanel({ open, onClose }: Props) {
       setOllamaModel(ls("lumen.ollama.model") || getOllamaConfigModel());
       setGrammarUrl(ls("lumen.grammar.endpoint") || grammarEndpoint());
       setResearchUrl(ls("lumen.research.endpoint"));
+      const saved = getSecret(RESEARCH_TOKEN_SECRET) ?? "";
+      loadedToken.current = saved;
+      setResearchToken(saved);
       setHasStyle(!!style.getStyleProfile());
       setStyleOn(style.styleProfileActive());
       setWebModel(mm.selectedWebLlmModel() ?? "");
@@ -196,7 +206,7 @@ export function AiSettingsPanel({ open, onClose }: Props) {
   const saveEndpoints = async () => {
     // An address the browser can't reach (bad URL, blocked by the CSP) is
     // not stored: it would hide a working build-time endpoint.
-    const { usableResearchEndpoint } = await import("../research/client");
+    const { usableResearchEndpoint, saveResearchToken } = await import("../research/client");
     const research = researchUrl.trim() ? usableResearchEndpoint(researchUrl) : "";
     if (research === null) {
       setEndpointError(t("research.endpointInvalid", { url: researchUrl.trim() }));
@@ -205,6 +215,10 @@ export function AiSettingsPanel({ open, onClose }: Props) {
     setEndpointError("");
     setLs("lumen.grammar.endpoint", grammarUrl);
     setLs("lumen.research.endpoint", research);
+    // The research service's shared token (A8), bound to the endpoint in use.
+    const kept = saveResearchToken(researchToken, researchToken !== loadedToken.current);
+    loadedToken.current = kept;
+    setResearchToken(kept);
     const { clearGrammarCache } = await import("../ai/grammar");
     clearGrammarCache();
     flash();
@@ -335,6 +349,10 @@ export function AiSettingsPanel({ open, onClose }: Props) {
             <label style={row}>
               <span style={{ minWidth: 90 }}>{t("ai.settings.research")}</span>
               <input style={input} value={researchUrl} onChange={(e) => setResearchUrl(e.target.value)} placeholder="http://localhost:8787" />
+            </label>
+            <label style={row}>
+              <span style={{ minWidth: 90 }}>{t("ai.settings.researchToken")}</span>
+              <input style={input} type="password" autoComplete="off" value={researchToken} onChange={(e) => setResearchToken(e.target.value)} />
             </label>
             <div style={muted}>{t("ai.settings.endpoints.hint")}</div>
             {endpointError && (

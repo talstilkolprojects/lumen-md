@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-10-18T03:18:44.238Z",
+  "generated_at": "2026-10-20T17:10:44.379Z",
   "source": "src/i18n/index.ts (en bundle)",
-  "count": 1411,
+  "count": 1413,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -3211,6 +3211,11 @@
       "vars": []
     },
     {
+      "key": "block.playground.runnerBlocked",
+      "en": "The preview page didn't load. This host may block it (Netlify isn't supported for the Web Playground; use Cloudflare Pages, Vercel or the Docker image).",
+      "vars": []
+    },
+    {
       "key": "toast.insertText.success",
       "en": "Text inserted and converted",
       "vars": []
@@ -5394,6 +5399,11 @@
     {
       "key": "ai.settings.research",
       "en": "Research",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.researchToken",
+      "en": "Research token (RESEARCH_TOKEN)",
       "vars": []
     },
     {

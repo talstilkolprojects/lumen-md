@@ -63,13 +63,51 @@ export function researchEndpoint(): string | null {
   return connectAllowedByCsp(url) ? url.replace(/\/+$/, "") : null;
 }
 
+/** Secret-store name of the research service token set in the AI settings. */
+const RESEARCH_TOKEN_SECRET = "lumen.research.token";
+/** The endpoint that token was saved for (not secret): it is sent only there. */
+const TOKEN_ENDPOINT_KEY = "lumen.research.tokenEndpoint";
+const builtEndpoint = () => (import.meta.env?.VITE_RESEARCH_ENDPOINT as string | undefined)?.trim() ?? "";
+const builtToken = () => (import.meta.env?.VITE_RESEARCH_TOKEN as string | undefined)?.trim() ?? "";
+const sameEndpoint = (a: string, b: string) => !!a && a.trim().replace(/\/+$/, "") === b.trim().replace(/\/+$/, "");
+
 /**
- * Headers for research-service requests: the optional shared token the
- * worker requires when its RESEARCH_TOKEN is set (see the worker README).
- * Sent only when configured, so a plain GET stays a simple CORS request.
+ * The shared token the research worker requires (its RESEARCH_TOKEN, A8)
+ * for the endpoint in use (the settings override, else the build's). A
+ * token saved in the AI settings goes only to the endpoint it was saved
+ * for; otherwise the build's endpoint gets VITE_RESEARCH_TOKEN, and any
+ * other endpoint gets none — a token is never sent to another service.
  */
+export function researchToken(build = builtToken(), built = builtEndpoint()): string {
+  const override = ls("lumen.research.endpoint")?.trim() ?? "";
+  const active = override || built;
+  const saved = getSecret(RESEARCH_TOKEN_SECRET)?.trim() ?? "";
+  if (saved && sameEndpoint(ls(TOKEN_ENDPOINT_KEY) ?? "", active)) return saved;
+  return sameEndpoint(built, active) ? build : "";
+}
+
+/**
+ * Save the AI-settings token for the endpoint now in use. A token left
+ * unchanged while the endpoint changed is dropped instead of being moved
+ * to the new service. Returns the token now kept ("" when none).
+ */
+export function saveResearchToken(token: string, edited: boolean, built = builtEndpoint()): string {
+  const active = ls("lumen.research.endpoint")?.trim() || built;
+  let keep = token.trim();
+  if (!edited && keep && !sameEndpoint(ls(TOKEN_ENDPOINT_KEY) ?? "", active)) keep = "";
+  void setSecret(RESEARCH_TOKEN_SECRET, keep || null);
+  try {
+    if (keep && active) localStorage.setItem(TOKEN_ENDPOINT_KEY, active.replace(/\/+$/, ""));
+    else localStorage.removeItem(TOKEN_ENDPOINT_KEY);
+  } catch {
+    /* storage denied */
+  }
+  return keep;
+}
+
+/** Headers for research-service requests, with the token when one is configured. */
 function serviceHeaders(extra: Record<string, string> = {}): Record<string, string> {
-  const token = (import.meta.env?.VITE_RESEARCH_TOKEN as string | undefined)?.trim();
+  const token = researchToken();
   return token ? { ...extra, "X-Lumen-Research-Token": token } : extra;
 }
 

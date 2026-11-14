@@ -10,6 +10,7 @@
 import { transform } from "sucrase";
 import {
   IMPORT_ATTRS_RE,
+  circularImportMessage,
   formatValue,
   LOOP_GUARD,
   guardLoops,
@@ -121,12 +122,13 @@ async function link(project: PlaygroundProject): Promise<string> {
   const provided = await providedModules(project.framework);
   const names = project.files.map((f) => f.name);
   const urls = new Map<string, string>();
-  const visiting = new Set<string>();
+  /** The files being linked, outermost first (to name a cycle). */
+  const visiting: string[] = [];
   const build = (name: string): string => {
     const done = urls.get(name);
     if (done) return done;
-    if (visiting.has(name)) throw new Error(`Circular import involving ${name} isn't supported`);
-    visiting.add(name);
+    if (visiting.includes(name)) throw new Error(circularImportMessage(visiting, name));
+    visiting.push(name);
     const file = project.files.find((f) => f.name === name)!;
     let code = file.code;
     if (/\.css$/i.test(name)) code = `export default ${JSON.stringify(file.code)};`;
@@ -161,7 +163,7 @@ async function link(project: PlaygroundProject): Promise<string> {
     }
     const url = blob(code + `\n//# sourceURL=${name}`);
     urls.set(name, url);
-    visiting.delete(name);
+    visiting.pop();
     return url;
   };
   if (!project.entry) throw new Error("No script to run: add a main.js / main.jsx file");

@@ -169,7 +169,7 @@ export function quoteCoverage(quote: string, page: string): number {
   // Bounded work: a long quote is matched as up to 5 segments of 200 words
   // spread over its whole length (head and tail always included), so a
   // fabricated tail lowers the score and a one-word difference doesn't.
-  const SEG = 200;
+  const SEG = SAMPLE_WORDS;
   const segs: Array<{ words: string[]; offset: number }> = [];
   if (all.length <= SEG) segs.push({ words: all, offset: 0 });
   else {
@@ -252,6 +252,8 @@ function matchSegment(qw: string[], pw: string[]): { matched: number; at: number
 }
 
 export const APPROXIMATE_AT = 0.85;
+/** Quotes longer than this many words are scored on up to 5 samples of this size (A7). */
+export const SAMPLE_WORDS = 200;
 
 /** Check every citation; `fetchPage` is the research client's extractPage (injected for tests). */
 export async function verifyCitations(
@@ -276,11 +278,14 @@ export async function verifyCitations(
       else if (!c.quote) check = { ...c, status: "reachable" };
       else {
         const cov = quoteCoverage(c.quote, p.text);
+        // "Supported" means word for word (A7): a long quote is scored on
+        // samples, so a full score there is only an approximate match.
+        const sampled = words(c.quote).length > SAMPLE_WORDS;
         check =
-          cov === 1
+          cov === 1 && quoteContained(c.quote, p.text)
             ? { ...c, status: "supported" }
             : cov >= APPROXIMATE_AT
-              ? { ...c, status: "approximate", detail: `${Math.round(cov * 100)}% of the words` }
+              ? { ...c, status: "approximate", detail: sampled ? `${Math.round(cov * 100)}% of the sampled words (long quote, checked on samples)` : `${Math.round(cov * 100)}% of the words` }
               : p.truncated
                 ? // Only the start of a long page was read: the passage may be further down.
                   { ...c, status: "not-in-excerpt", detail: `best match ${Math.round(cov * 100)}% in the part read` }

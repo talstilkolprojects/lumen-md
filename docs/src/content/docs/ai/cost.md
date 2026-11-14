@@ -99,3 +99,9 @@ Batches. Both charge half the normal price and return results within
 
 Batch jobs need the OpenAI or Anthropic provider. Their usage appears
 in the usage report at batch prices.
+
+### Known limitations — status
+
+| Id | Limitation | Status |
+|---|---|---|
+| A9 | A retry after a failure saving the job's state could write one duplicate translation | Fixed. Each translation carries its job's marker, and a retry looks for it among all `name.<language>-N.md` files of the note, so deleting a lower-numbered copy in between no longer leads to a second copy. |

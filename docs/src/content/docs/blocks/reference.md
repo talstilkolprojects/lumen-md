@@ -119,3 +119,11 @@ button { font: 16px system-ui; }
 - **Files:** `--- name.ext ---` starts a file. A body without markers is one file (`main.jsx` for React, `main.js` otherwise). `index.html` is the page body (default `<div id="root">`, or `<div id="app">` for Vue); its `<script>` tags don't run, so put code in files.
 - **Imports:** relative imports between files (with or without the extension), CSS / JSON files, and the provided `react`, `react-dom`, `react-dom/client`, `react/jsx-runtime` and `vue`.
 - **Isolation:** each Run loads a fresh runner document in a sandboxed iframe with an opaque origin and its own Content-Security-Policy. The project can't read the app's storage, cookies or page.
+
+### Known limitations — status
+
+| Id | Limitation | Status |
+|---|---|---|
+| A4 | Circular imports between playground files | Decision: not supported. Each file is linked as its own module once its imports are final, so a loop can't be linked. The run stops with an error that names the loop (`Circular import: a.js → b.js → a.js`) and suggests moving the shared code into a third file. |
+| A5 | The playground on Netlify | Decision: not supported. Netlify's `_headers` can't remove the app-wide frame and CSP headers for `/playground-runner.html`. When the runner page doesn't load within 10 seconds, the block says so. Use Cloudflare Pages, Vercel or the Docker image. |
+| A6 | Type checks of `live-js shared` blocks: a parameter with the same name as an outer variable | Fixed. A parameter shadows the outer binding inside its function, including `Array`, `Object` and `Promise`. |

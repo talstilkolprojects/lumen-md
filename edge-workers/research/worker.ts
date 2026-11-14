@@ -13,10 +13,13 @@
  *  - Only origins in ALLOWED_ORIGINS may call it (CORS + an Origin check;
  *    a request without an Origin is refused). That keeps other sites'
  *    pages from using it, but a non-browser client can send any Origin, so
- *    it is not authentication. With RESEARCH_TOKEN set, every request must
- *    also carry it in X-Lumen-Research-Token; the app sends it when built
- *    with VITE_RESEARCH_TOKEN. In a public web app that value ships in the
- *    bundle, so it only stops casual reuse; see README.md.
+ *    it is not authentication. Every request must also carry the
+ *    RESEARCH_TOKEN secret in X-Lumen-Research-Token (A8): a worker deployed
+ *    without one refuses everything but /healthz with 503, so it is never an
+ *    open endpoint by accident. The app sends it when built with
+ *    VITE_RESEARCH_TOKEN (or set at runtime in the AI settings). In a public
+ *    web app that value ships in the bundle, so it only stops casual reuse;
+ *    see README.md.
  *  - Public http(s) URLs only, re-checked on every redirect (max 5); no
  *    cookies or credentials are forwarded; 10 s timeout; at most 2 MB read;
  *    HTML / plain text only; returned text capped at 200K characters.
@@ -31,7 +34,10 @@ import { charsetOf, htmlToText, isFetchableUrl } from "./extract";
 export interface Env {
   /** Comma-separated app origins, e.g. "https://lumen-md.app,http://localhost:5173". */
   ALLOWED_ORIGINS: string;
-  /** Optional shared token (a Worker secret) required in X-Lumen-Research-Token. */
+  /**
+   * Shared token (a Worker secret) every request must send in
+   * X-Lumen-Research-Token. Required: without it the worker serves nothing.
+   */
   RESEARCH_TOKEN?: string;
   /** Optional self-hosted SearXNG (e.g. http://localhost:8888) for keyless search. */
   SEARXNG_URL?: string;
@@ -193,7 +199,10 @@ export default {
     if (!headers) return new Response("Forbidden origin", { status: 403 });
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
     // Checked after the preflight: browsers never send custom headers on OPTIONS.
-    if (env.RESEARCH_TOKEN && !sameToken(req.headers.get(TOKEN_HEADER) ?? "", env.RESEARCH_TOKEN)) {
+    // No secret configured: fail closed rather than serve anyone (A8).
+    const secret = env.RESEARCH_TOKEN?.trim();
+    if (!secret) return json({ error: "token-not-configured" }, headers, 503);
+    if (!sameToken(req.headers.get(TOKEN_HEADER) ?? "", secret)) {
       return json({ error: "unauthorized" }, headers, 401);
     }
     const ip = req.headers.get("CF-Connecting-IP") ?? "unknown";

@@ -26,6 +26,12 @@ interface ConsoleLine {
 
 /** Console / error messages kept per run (the runner itself sends at most 500). */
 const MAX_MESSAGES = 600;
+/**
+ * How long a run waits for the runner page's `ready` before saying it
+ * didn't load. A host that serves the runner with the app's frame headers
+ * (Netlify, A5) blocks it silently; the run still starts if it turns up.
+ */
+export const RUNNER_LOAD_MS = 10_000;
 
 export function runnerUrl(base: string = import.meta.env?.BASE_URL ?? "/"): string {
   return `${base.replace(/\/?$/, "/")}playground-runner.html`;
@@ -40,6 +46,8 @@ export default function PlaygroundBlock({ source, meta }: Props) {
   const [lines, setLines] = useState<ConsoleLine[]>([]);
   const [elapsed, setElapsed] = useState<number | null>(null);
   const [frameKey, setFrameKey] = useState(0);
+  /** The runner page hasn't said `ready` within RUNNER_LOAD_MS of this run. */
+  const [stalled, setStalled] = useState(false);
   const frameRef = useRef<HTMLIFrameElement | null>(null);
   const runRef = useRef(0);
   const lineId = useRef(0);
@@ -47,6 +55,18 @@ export default function PlaygroundBlock({ source, meta }: Props) {
   const received = useRef(0);
   const projectRef = useRef(project);
   projectRef.current = project;
+  /** The run whose runner page has reported `ready`. */
+  const readyFor = useRef(0);
+
+  // Watch for a runner page that never loads (blocked by the host's headers).
+  useEffect(() => {
+    if (state !== "running") return;
+    const runId = runRef.current;
+    const timer = setTimeout(() => {
+      if (readyFor.current !== runId && runRef.current === runId) setStalled(true);
+    }, RUNNER_LOAD_MS);
+    return () => clearTimeout(timer);
+  }, [state, frameKey]);
 
   useEffect(() => {
     const onMessage = (e: MessageEvent<RunnerMessage>) => {
@@ -57,6 +77,8 @@ export default function PlaygroundBlock({ source, meta }: Props) {
       if (msg.type === "ready") {
         const runId = runRef.current;
         if (!runId) return;
+        readyFor.current = runId;
+        setStalled(false);
         frame.contentWindow?.postMessage({ type: "run", runId, project: projectRef.current } satisfies RunnerRequest, "*");
         return;
       }
@@ -82,6 +104,7 @@ export default function PlaygroundBlock({ source, meta }: Props) {
 
   function run() {
     runRef.current++;
+    setStalled(false);
     received.current = 0;
     setLines([]);
     setElapsed(null);
@@ -92,6 +115,7 @@ export default function PlaygroundBlock({ source, meta }: Props) {
 
   function reset() {
     runRef.current++;
+    setStalled(false);
     setLines([]);
     setElapsed(null);
     setState("idle");
@@ -164,6 +188,11 @@ export default function PlaygroundBlock({ source, meta }: Props) {
         {elapsed !== null && ` · ${elapsed} ms`}
         {errors ? ` · ${t("block.playground.errors", { n: errors })}` : ""}
       </div>
+      {stalled && (
+        <div role="status" data-testid="playground-stalled" style={{ marginBottom: 6, fontSize: 12, color: "hsl(40 90% 45%)" }}>
+          {t("block.playground.runnerBlocked")}
+        </div>
+      )}
       <div style={{ display: tab === "preview" ? "block" : "none" }}>
         {state === "idle" ? (
           <div

@@ -422,6 +422,12 @@ export function planWrites(
   exists: (path: string) => boolean = (p) => read(p) !== null,
   /** Notes edited since submission are collected here (their results are skipped). */
   changed: string[] = [],
+  /**
+   * Every path in the workspace, when known: a retry then finds this job's
+   * earlier translation among ALL `-n` siblings, even after a lower-numbered
+   * one was deleted (A9). Without it, siblings are probed up to the first gap.
+   */
+  paths?: readonly string[],
 ): PlannedWrite[] {
   const out: PlannedWrite[] = [];
   const taken = new Set<string>();
@@ -447,7 +453,7 @@ export function planWrites(
       const want = item.path.replace(/(\.(md|markdown))?$/i, `.${code}.md`);
       // A retry of this job (its state couldn't be saved) finds the file it
       // already wrote by its markers instead of writing a `-2` copy.
-      if (writtenByJob(want, item.path, job.id, read, exists)) continue;
+      if (writtenByJob(want, item.path, job.id, read, exists, paths)) continue;
       // The markers make later batches skip this note, however many there are.
       // The path is stored exactly (no whitespace folding): retries compare it.
       let content = setFrontmatterField(answer.trim() + "\n", TRANSLATED_FROM, JSON.stringify(item.path));
@@ -466,11 +472,27 @@ export function planWrites(
 }
 
 /** Whether `want` (or one of its `-2`, `-3`… siblings) is the translation job `id` made of `source`. */
-function writtenByJob(want: string, source: string, id: string, read: (path: string) => string | null, exists: (path: string) => boolean): boolean {
-  for (let n = 2, p = want; exists(p); p = want.replace(/\.md$/i, `-${n++}.md`)) {
+function writtenByJob(
+  want: string,
+  source: string,
+  id: string,
+  read: (path: string) => string | null,
+  exists: (path: string) => boolean,
+  paths?: readonly string[],
+): boolean {
+  const ours = (p: string) => {
     const text = read(p);
-    if (text !== null && frontmatterField(text, TRANSLATED_FROM) === source && frontmatterField(text, TRANSLATION_JOB) === id) return true;
+    return text !== null && frontmatterField(text, TRANSLATED_FROM) === source && frontmatterField(text, TRANSLATION_JOB) === id;
+  };
+  if (paths) {
+    // `want` itself or `want` with `-<n>` before `.md`, compared case-insensitively like freePath.
+    const stem = want.replace(/\.md$/i, "").toLowerCase();
+    return paths.some((p) => {
+      const l = p.toLowerCase();
+      return l.endsWith(".md") && (l === `${stem}.md` || (l.startsWith(`${stem}-`) && /^\d+$/.test(l.slice(stem.length + 1, -3)))) && ours(p);
+    });
   }
+  for (let n = 2, p = want; exists(p); p = want.replace(/\.md$/i, `-${n++}.md`)) if (ours(p)) return true;
   return false;
 }
 
