@@ -135,6 +135,18 @@ describe("offline, refresh and the personal-data warning", () => {
     expect(parseBlock(md.split("```dataset\n")[1].split("\n```")[0])!.dataset).toBe("slug\n```\n<b>Z1Z</b>");
   });
 
+  it("the attribution line keeps remote titles as plain text (RR25-3, Q4)", () => {
+    for (const title of ["T\n\n<b>Z3Z</b>", "T <b>Z3Z</b>", "T [x](javascript:alert(1))", "T <!-- hide", "# T"]) {
+      for (const source of ["datagov", "cbs"] as const) {
+        const line = attribution({ source, id: "r1", title, snapshot: "Data/datagov/r1/2026-11-14.csv", retrieved: "2026-11-14", view: "table", organization: "O\n# Z4Z", updated: null, dataset: "s" });
+        expect(line, title).not.toMatch(/[\n\u2028\u2029]/);
+        expect(line, title).not.toMatch(/(^|[^\\])<(b|!--)/);
+        expect(line, title).not.toMatch(/(^|[^\\])\[x\]/);
+        expect(line, title).not.toMatch(/^#/);
+      }
+    }
+  });
+
   it("a block reads only the file it wrote: its own folder, and its hash (RR20-4)", async () => {
     expect(parseBlock("source: datagov\nid: r1\nsnapshot: Private/diary.md\n")).toBe(null);
     expect(parseBlock("source: datagov\nid: r1\nsnapshot: Data/datagov/other/2026-11-14.csv\n")).toBe(null);
