@@ -72,6 +72,8 @@ export interface RedactMark {
    * It ends nothing: the passage goes on.
    */
   inert?: boolean;
+  /** An opening tag the preview reads inside this mark's tag, which the mark stands for (redactionTree.ts). */
+  at?: number;
 }
 
 /** The HTML tokenizer's whitespace (CR included: the input stream turns it into LF). */
@@ -240,7 +242,8 @@ function markInertCloses(text: string, marks: RedactMark[]): void {
    */
   const asText = (to: number) => {
     for (; k < marks.length && marks[k].index < to; k++) {
-      if (!marks[k].close) open(true);
+      // One that stands for a tag the preview reads (`at`) opens as an element, not as text (W8.8-F1, -F2).
+      if (!marks[k].close) open(marks[k].at === undefined);
       else if (depth > 0) {
         const r = innermost();
         if (stack[r] === "redact~") close(marks[k]);
@@ -332,7 +335,8 @@ function markInertCloses(text: string, marks: RedactMark[]): void {
       continue;
     }
     if (name === "redact") {
-      if (!isClose) open();
+      // A `</redact …>` the tree pass made an opening mark (the preview reads an opening tag inside it) opens.
+      if (!isClose || (m && !m.close)) open();
       else if (m) close(m);
     } else if (!isClose) {
       if (depth > 0) {
