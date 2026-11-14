@@ -14,8 +14,8 @@ import { showAiToast } from "./AiToast";
 import { useAppStore } from "../store/useStore";
 import { getAiPolicy } from "../ai/policy";
 import { detectHardware, vramBudgetMB } from "../ai/modelManager";
-import { chooseCorrection, chooseEngine, type EngineId } from "../ai/dictation/engines";
-import { downloadedCorrectionModels, makeCorrector } from "../ai/dictation/correction";
+import { baseLanguage, chooseCorrection, chooseEngine, type EngineId } from "../ai/dictation/engines";
+import { downloadedCorrectionModels, makeCorrector, type SegmentCorrector } from "../ai/dictation/correction";
 
 type CorrectionEngine = ReturnType<typeof chooseCorrection>;
 import { dictationDownloadBytes, formatMB } from "../ai/dictation/models";
@@ -26,6 +26,42 @@ import { log } from "../lib/logger";
 import "./liveDictationStrings";
 import { HelpButton } from "./HelpButton";
 import { explainError } from "../lib/userError";
+
+/** Plan W6.19: this device is over 15 % WER and the user's linked desktop can re-read each sentence. */
+interface DesktopOffer {
+  /** This device's WER, as a whole percentage, for the offer's text. */
+  werPercent: number;
+  correct: SegmentCorrector;
+}
+
+/**
+ * Whether to offer "send to my desktop": Hebrew, a desktop linked over the
+ * LAN sync and ready, and this device's WER over the target (measured, or
+ * from what it runs). Lazy: the LAN and offload code load only for Hebrew.
+ */
+async function desktopOffer(lang: string, correction: CorrectionEngine): Promise<DesktopOffer | null> {
+  if (baseLanguage(lang) !== "he") return null;
+  try {
+    const [{ peerService }, off] = await Promise.all([import("../sync/e2ee/lan"), import("../ai/dictation/desktopOffload")]);
+    const link = peerService();
+    if (!link) return null;
+    const estimate = off.estimateDictationWer({ correction });
+    const decision = off.shouldOfferDesktop({ language: lang, estimate, desktop: await off.desktopStatus(link) });
+    if (!decision.offer || estimate.wer === null) return null;
+    let warned = false;
+    const correct = off.makeDesktopCorrector(link, {
+      onMiss: () => {
+        if (warned) return;
+        warned = true;
+        showAiToast(t("dictation.desktop.missed"), "info");
+      },
+    });
+    return { werPercent: Math.round(estimate.wer * 100), correct };
+  } catch (e) {
+    log.info(`dictation: no desktop offer (${(e as Error).name})`);
+    return null;
+  }
+}
 
 type Phase = { kind: "ask"; browserAllowed: boolean } | { kind: "downloading"; percent: number } | { kind: "loading" } | { kind: "listening"; speaking: boolean; interim: string };
 
@@ -47,8 +83,10 @@ function removeText(text: string): void {
   if (store.doc.content.endsWith(text)) store.setContent(store.doc.content.slice(0, -text.length));
 }
 
-function Panel({ initial, onBrowser, onClose, correction = null }: { initial: Phase; onBrowser: () => void; onClose: () => void; correction?: CorrectionEngine }) {
+function Panel({ initial, onBrowser, onClose, correction = null, desktop = null }: { initial: Phase; onBrowser: () => void; onClose: () => void; correction?: CorrectionEngine; desktop?: DesktopOffer | null }) {
   const [phase, setPhase] = useState<Phase>(initial);
+  const [viaDesktop, setViaDesktop] = useState(false);
+  const viaDesktopRef = useRef(false);
   const session = useRef<DictationSession | null>(null);
   const abort = useRef<AbortController | null>(null);
   const inserted = useRef<string[]>([]);
@@ -100,8 +138,13 @@ function Panel({ initial, onBrowser, onClose, correction = null }: { initial: Ph
       }, {
         signal: ctl.signal,
         audioContext,
-        // Plan W4.13: each sentence re-read by a Whisper already on this device.
-        correct: correction ? makeCorrector(correction, async (audio, o) => (await import("../ai/transformersEngine")).transcribeAudio(audio, o)) : undefined,
+        // Plan W4.13: each sentence re-read by a Whisper already on this device;
+        // plan W6.19: or by the user's desktop, once they press "send to my desktop".
+        correct: sentenceCorrector(
+          correction ? makeCorrector(correction, async (audio, o) => (await import("../ai/transformersEngine")).transcribeAudio(audio, o)) : undefined,
+          desktop,
+          () => viaDesktopRef.current,
+        ),
       });
       // Cancelled or closed while the model loaded: never leave a hidden session holding the microphone.
       if (ctl.signal.aborted) {
@@ -170,11 +213,33 @@ function Panel({ initial, onBrowser, onClose, correction = null }: { initial: Ph
             {button(t("dictation.stop"), () => void stop(), true)}
           </div>
           {phase.interim && <span style={{ opacity: 0.6, fontStyle: "italic" }}>{phase.interim}</span>}
+          {desktop && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <button
+                type="button"
+                aria-pressed={viaDesktop}
+                onClick={() => {
+                  viaDesktopRef.current = !viaDesktopRef.current;
+                  setViaDesktop(viaDesktopRef.current);
+                }}
+                style={{ alignSelf: "flex-start", background: viaDesktop ? "hsl(var(--primary))" : "transparent", color: viaDesktop ? "hsl(var(--primary-foreground))" : "hsl(var(--fg))", border: "1px solid hsl(var(--border-strong))", borderRadius: 6, padding: "4px 12px", cursor: "pointer", fontSize: 12 }}
+              >
+                {t("dictation.desktop.send")}
+              </button>
+              <span style={{ opacity: 0.7, fontSize: 11 }}>{viaDesktop ? t("dictation.desktop.sending") : t("dictation.desktop.why", { wer: desktop.werPercent })}</span>
+            </div>
+          )}
           <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}`}</style>
         </>
       )}
     </div>
   );
+}
+
+/** The session's corrector: the desktop's while the user has it on, else this device's (or none). */
+function sentenceCorrector(local: SegmentCorrector | undefined, desktop: DesktopOffer | null, useDesktop: () => boolean): SegmentCorrector | undefined {
+  if (!desktop) return local;
+  return (audio, text) => (useDesktop() ? desktop.correct(audio, text) : local ? local(audio, text) : Promise.resolve(text));
 }
 
 let open: (() => void) | null = null;
@@ -205,6 +270,7 @@ export async function openLiveDictation(lang: string, fallbacks: DictationFallba
   if (choice.candidates[0] === "web-speech") return fallbackToBrowser();
   if (choice.candidates[0] !== "zipformer-he") return fallbacks.record();
   const correction = chooseCorrection({ language: lang, webgpu: hw.webgpu, f16: hw.f16, vramMB: vramBudgetMB(hw), downloaded: await downloadedCorrectionModels() });
+  const desktop = await desktopOffer(lang, correction);
   const host = document.createElement("div");
   document.body.appendChild(host);
   const root = createRoot(host);
@@ -223,6 +289,7 @@ export async function openLiveDictation(lang: string, fallbacks: DictationFallba
     <Panel
       initial={initial}
       correction={correction}
+      desktop={desktop}
       onClose={close}
       onBrowser={() => {
         close();

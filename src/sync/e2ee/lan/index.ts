@@ -135,6 +135,22 @@ async function current(): Promise<RemoteLanProvider> {
   return p.remote;
 }
 
+/**
+ * Ask a service on the host this device is linked to (plan W6.19: dictation
+ * sent to the desktop). Null when there is no link, or the vault isn't
+ * unlocked here yet (a service needs the proof, and the proof needs the keys).
+ */
+export function peerService(): { address: string | null; call: RemoteLanProvider["service"]; keys: VaultKeys } | null {
+  const p = peer;
+  if (!p || p.remote.closed || !peerKeys) return null;
+  const keys = peerKeys;
+  return {
+    address: p.link.remoteAddress ?? null,
+    keys,
+    call: async (op, header, payload, opts) => (await current()).service(op, header, payload, opts),
+  };
+}
+
 function peerProvider(): LiveProvider {
   return {
     id: "lan",

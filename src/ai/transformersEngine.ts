@@ -18,6 +18,7 @@ import type { CaptionFamily, Device, EmbedResult, TranscribeResult, WorkerIn, Wo
 import { detectHardware, vramBudgetMB, type Hardware } from "./modelManager";
 // The window id on the airplane channel (review 2): only this window answers this worker.
 import { airplaneWorkerName } from "../privacy/airplaneBoot";
+import { OZEN_LICENSE_APPROVED } from "./dictation/engines";
 
 export type { TranscribeResult, EmbedResult, TimedSegment };
 
@@ -178,12 +179,14 @@ export function whisperModelFor(hw: Hardware, device: Device = hw.webgpu ? "webg
  * Hebrew gets ivrit.ai's turbo on a GPU with f16 and the VRAM for it, else
  * Ozen v1 (164 MB, WebGPU or wasm, plan W4.13) — whisper-base and tiny are too
  * weak for Hebrew (Ozen's card: 48 % WER for whisper-base vs 8.6 % on
- * ivrit-ai/eval-d1). Other languages keep whisperModelFor.
+ * ivrit-ai/eval-d1). Ozen stays off until its licence is approved (plan
+ * W6.19, OZEN_LICENSE_APPROVED); until then Hebrew without the turbo's GPU
+ * gets whisperModelFor, like other languages.
  */
 export function whisperModelForLanguage(hw: Hardware, device: Device, language: string | undefined): string {
   if (language !== "he") return whisperModelFor(hw, device);
   if (device === "webgpu" && hw.f16 && !hw.mobile && vramBudgetMB(hw) >= TURBO_HE_VRAM_MB) return WHISPER_MODELS.turboHe;
-  return WHISPER_MODELS.ozenHe;
+  return OZEN_LICENSE_APPROVED ? WHISPER_MODELS.ozenHe : whisperModelFor(hw, device);
 }
 
 /** Transcribe 16 kHz mono PCM. `language` is an ISO-639-1 code ("he", "en"); omitted = auto-detect. */

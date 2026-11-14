@@ -12,7 +12,17 @@
  *   {id, op: "put", name, cond?} + bytes   → {etag} | {error: "precondition"}
  *   {id, op: "delete", name}               → {}
  *   {id, op: "list"}                       → {names}
+ *   {id, op: "svc.<name>", …} + bytes      → what the service answers, or {error: "unsupported"}
  *   host → peer, unasked: {ev: "changed"} after any write by someone else.
+ *
+ * ── Services (plan W6.19) ──────────────────────────────────────────────────
+ * A feature on the host may answer its own requests on the same link
+ * (`LanHost.serve`), e.g. "send this dictation to my desktop". Services are
+ * for proven peers only: before the proof every "svc." request is refused
+ * like any other, so PRE_AUTH below is unchanged. A service runs beside the
+ * bucket's request queue, not in it, so a slow one never holds up a sync
+ * round; each service orders its own work. What a service carries is sealed
+ * by the feature with the vault's keys, on top of the link's own encryption.
  *
  * ── Who may do what ────────────────────────────────────────────────────────
  * Before the proof, a peer may read only what a passphrase unlock reads: the
@@ -128,7 +138,28 @@ export interface LanHostOptions {
   keys: () => VaultKeys | null;
 }
 
+/** A request to a service on the host, from a proven peer. */
+export interface LanServiceRequest {
+  header: Record<string, unknown>;
+  payload: Uint8Array;
+  peer: LanPeerInfo;
+  /** The vault's keys on the host (the peer proved it holds the same). */
+  keys: VaultKeys;
+}
+
+export interface LanServiceReply {
+  header: Record<string, unknown>;
+  payload?: Uint8Array;
+}
+
+export type LanService = (req: LanServiceRequest) => Promise<LanServiceReply>;
+
+/** Service ops are namespaced so they can never shadow a bucket op. */
+export const SERVICE_PREFIX = "svc.";
+
 export interface LanHost {
+  /** Answer `op` ("svc.…") for proven peers. Returns the function that stops serving it. */
+  serve(op: string, service: LanService): () => void;
   /** The bucket for this device's own sync engine: its writes tell the peers. */
   readonly provider: SyncProvider;
   /** Serve one peer over `channel`. Returns the detach function. */
@@ -151,6 +182,7 @@ interface Conn {
 
 export function lanHost(opts: LanHostOptions): LanHost {
   const conns = new Set<Conn>();
+  const services = new Map<string, LanService>();
   const writeListeners = new Set<() => void>();
   const peerListeners = new Set<() => void>();
   const inner = opts.bucket;
@@ -163,6 +195,19 @@ export function lanHost(opts: LanHostOptions): LanHost {
     for (const c of conns) if (c !== except && c.authed) c.send({ ev: "changed" });
     if (except) for (const l of [...writeListeners]) l();
   };
+
+  /** A "svc." request: proven peers only, answered by the service registered for it. */
+  async function handleService(c: Conn, { header, payload }: Message): Promise<void> {
+    const id = header.id;
+    const reply = (h: Record<string, unknown>, p?: Uint8Array) => c.send({ ...h, id }, p);
+    if (!c.authed) return reply({ error: "auth" });
+    const keys = opts.keys();
+    if (!keys) return reply({ error: "locked" });
+    const service = services.get(String(header.op));
+    if (!service) return reply({ error: "unsupported" });
+    const r = await service({ header, payload, peer: { ...c.info }, keys });
+    return reply(r.header, r.payload);
+  }
 
   async function handle(c: Conn, { header, payload }: Message): Promise<void> {
     const id = header.id;
@@ -244,6 +289,13 @@ export function lanHost(opts: LanHostOptions): LanHost {
 
   return {
     provider,
+    serve(op, service) {
+      if (!op.startsWith(SERVICE_PREFIX)) throw new Error(`a LAN service op starts with "${SERVICE_PREFIX}"`);
+      services.set(op, service);
+      return () => {
+        if (services.get(op) === service) services.delete(op);
+      };
+    },
     attach(channel, info = {}) {
       const m = messenger(channel);
       const c: Conn = { send: m.send, channel, nonce: toB64u(randomBytes(16)), authed: false, info: { address: info.address ?? null, authed: false, connectedAt: Date.now() } };
@@ -251,6 +303,10 @@ export function lanHost(opts: LanHostOptions): LanHost {
       // One request at a time per peer, in order (a sync round is sequential anyway).
       let chain: Promise<void> = Promise.resolve();
       const off = m.onMessage((msg) => {
+        if (typeof msg.header.op === "string" && msg.header.op.startsWith(SERVICE_PREFIX)) {
+          void handleService(c, msg).catch(() => c.send({ id: msg.header.id, error: "unavailable" }));
+          return;
+        }
         chain = chain.then(() =>
           handle(c, msg).catch(() => {
             c.send({ id: msg.header.id, error: "unavailable" });
@@ -286,9 +342,19 @@ export function lanHost(opts: LanHostOptions): LanHost {
 
 /* ─── A peer: the host's bucket as a SyncProvider ───────────────────────── */
 
+/** A host service refused or could not answer ("unsupported": the host has no such service). */
+export class LanServiceError extends ProviderUnavailableError {
+  constructor(readonly code: string) {
+    super(`The hosting device could not answer (${code})`);
+    this.name = "LanServiceError";
+  }
+}
+
 export interface RemoteLanProvider extends SyncProvider {
   /** Prove this device belongs to the vault, and check the host does. Needed before anything but the header. */
   authenticate(keys: VaultKeys): Promise<void>;
+  /** Ask a service on the host ("svc.…"); after `authenticate`. Rejects with LanServiceError (or LanAuthError) on a refusal. */
+  service(op: string, header: Record<string, unknown>, payload?: Uint8Array, opts?: { timeoutMs?: number }): Promise<Message>;
   /** Called when the host says the bucket changed. */
   onChanged(fn: () => void): () => void;
   readonly closed: boolean;
@@ -322,14 +388,14 @@ export function remoteLanProvider(channel: LanChannel, opts: { timeoutMs?: numbe
     pending.clear();
   });
 
-  const request = (header: Record<string, unknown>, payload?: Uint8Array): Promise<Message> =>
+  const request = (header: Record<string, unknown>, payload?: Uint8Array, waitMs = timeoutMs): Promise<Message> =>
     new Promise((resolve, reject) => {
       if (channel.closed) return reject(new ProviderUnavailableError("Not connected to the hosting device"));
       const id = nextId++;
       const timer = setTimeout(() => {
         pending.delete(id);
         reject(new ProviderUnavailableError("The hosting device did not answer"));
-      }, timeoutMs);
+      }, waitMs);
       pending.set(id, { resolve, reject, timer });
       m.send({ ...header, id }, payload);
     });
@@ -389,6 +455,14 @@ export function remoteLanProvider(channel: LanChannel, opts: { timeoutMs?: numbe
         channel.close();
         throw new LanAuthError("The hosting device is not part of this vault");
       }
+    },
+    async service(op, header, payload, o = {}) {
+      if (!op.startsWith(SERVICE_PREFIX)) throw new Error(`a LAN service op starts with "${SERVICE_PREFIX}"`);
+      const r = await request({ ...header, op }, payload, o.timeoutMs ?? timeoutMs);
+      if (r.header.error === "auth") throw new LanAuthError();
+      if (r.header.error === "locked") throw new LanHostLockedError();
+      if (r.header.error !== undefined) throw new LanServiceError(String(r.header.error));
+      return r;
     },
     onChanged(fn) {
       changeListeners.add(fn);

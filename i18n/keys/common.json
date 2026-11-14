@@ -2485,6 +2485,28 @@
       "vars": []
     },
     {
+      "key": "dictation.desktop.missed",
+      "en": "Your desktop didn't answer in time, so this device's text was kept.",
+      "vars": []
+    },
+    {
+      "key": "dictation.desktop.send",
+      "en": "Send to my desktop",
+      "vars": []
+    },
+    {
+      "key": "dictation.desktop.sending",
+      "en": "Each sentence goes to your desktop and back over your local network.",
+      "vars": []
+    },
+    {
+      "key": "dictation.desktop.why",
+      "en": "Dictation on this device makes about {wer}% word errors. Your desktop can transcribe each sentence with a bigger model, over your local network, end-to-end encrypted.",
+      "vars": [
+        "wer"
+      ]
+    },
+    {
       "key": "dictation.download.body",
       "en": "Hebrew dictation runs entirely on this device — no audio leaves it. It needs a one-time download of {size}, kept for offline use.",
       "vars": [

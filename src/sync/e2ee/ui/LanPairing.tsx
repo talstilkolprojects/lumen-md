@@ -20,6 +20,23 @@ const field: React.CSSProperties = { width: "100%", padding: "6px 8px", border: 
 const muted: React.CSSProperties = { fontSize: 12, color: "hsl(var(--fg-muted))" };
 const errorStyle: React.CSSProperties = { fontSize: 12, color: "hsl(var(--danger))" };
 
+let dictationServed = false;
+
+/**
+ * Plan W6.19: a phone linked to this device may send its Hebrew dictation
+ * here, to the bigger model. Lazy: nothing loads until a device is linked,
+ * and the model is only looked for when a phone asks.
+ */
+function serveDictationOnce(): void {
+  if (dictationServed) return;
+  dictationServed = true;
+  void import("../../../ai/dictation/desktopOffload")
+    .then((m) => m.serveDesktopDictation(thisHost(), m.appDesktopEngine()))
+    .catch(() => {
+      dictationServed = false;
+    });
+}
+
 /** A human message for a LAN failure (never the error's own text: explainError). */
 export function describeLanError(e: unknown): string {
   if (e instanceof LanLinkError) return t(`e2ee.lan.error.${e.reason}`);
@@ -182,6 +199,7 @@ export function LanHostPairing() {
       pending.current = null;
       trackInLedger(link);
       thisHost().attach(link.channel, { address: link.remoteAddress });
+      serveDictationOnce();
       setOffer(null); // used up: the next pairing makes a new offer
     } catch (err) {
       setError(describeLanError(err));
