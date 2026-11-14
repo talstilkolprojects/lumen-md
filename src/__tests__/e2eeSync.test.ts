@@ -7,7 +7,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { memoryProvider, PreconditionFailedError, ProviderUnavailableError, type SyncProvider } from "../sync/e2ee/provider";
-import { HEADER_NAME } from "../sync/e2ee/header";
+import { createHeader, encodeHeader, HEADER_NAME } from "../sync/e2ee/header";
 import { manifestName, openManifest, sealManifest, RollbackError, checkFreshness, blobName, HISTORY_LENGTH } from "../sync/e2ee/manifest";
 import { SEALED_FORMAT, DecryptError } from "../sync/e2ee/keys";
 import { createVault, unlockVault, NoVaultError, VaultExistsError, E2eeSync } from "../sync/e2ee/engine";
@@ -67,6 +67,34 @@ describe("e2ee sync: two devices", () => {
     await expect(createVault(provider, "x", { pbkdf2Iterations: TEST_ITERATIONS })).rejects.toBeInstanceOf(VaultExistsError);
     await expect(unlockVault(memoryProvider(), PASSPHRASE, TEST_POLICY)).rejects.toBeInstanceOf(NoVaultError);
     await expect(unlockVault(provider, "not it", TEST_POLICY)).rejects.toBeInstanceOf(WrongPassphraseError);
+  });
+
+  it("resuming a create: a transient failure reading the header is rethrown for a retry, not VaultExistsError (2.30)", async () => {
+    // An interrupted create left the header; the manifest put never happened.
+    let downOnce = false;
+    const provider = memoryProvider({
+      fault: (op, name, phase) => {
+        if (op === "get" && name === HEADER_NAME && phase === "before" && downOnce) {
+          downOnce = false;
+          throw new ProviderUnavailableError();
+        }
+      },
+    });
+    const { header } = await createHeader(PASSPHRASE, { pbkdf2Iterations: TEST_ITERATIONS });
+    await provider.put(HEADER_NAME, encodeHeader(header), { ifNoneMatch: "*" });
+    downOnce = true;
+    await expect(createVault(provider, PASSPHRASE, { pbkdf2Iterations: TEST_ITERATIONS })).rejects.toBeInstanceOf(ProviderUnavailableError);
+    // The retry resumes on that header.
+    const { anchor } = await createVault(provider, PASSPHRASE, { pbkdf2Iterations: TEST_ITERATIONS });
+    expect(anchor.counter).toBe(1);
+    // A real collision is still refused: a wrong passphrase, or bytes that are not a vault header.
+    await expect(createVault(provider, "someone else", { pbkdf2Iterations: TEST_ITERATIONS })).rejects.toBeInstanceOf(VaultExistsError);
+    const junk = memoryProvider();
+    await junk.put(HEADER_NAME, utf8("not a header"), { ifNoneMatch: "*" });
+    await expect(createVault(junk, PASSPHRASE, { pbkdf2Iterations: TEST_ITERATIONS })).rejects.toBeInstanceOf(VaultExistsError);
+    const future = memoryProvider();
+    await future.put(HEADER_NAME, utf8(JSON.stringify({ format: "lumen-e2ee", protocol: 99 })), { ifNoneMatch: "*" });
+    await expect(createVault(future, PASSPHRASE, { pbkdf2Iterations: TEST_ITERATIONS })).rejects.toBeInstanceOf(VaultExistsError);
   });
 
   it("syncs hidden repository content but not the trash or git internals", async () => {
@@ -861,6 +889,27 @@ describe("e2ee sync: folders and files trading places", () => {
     expect(Object.keys(await liveFiles(provider, keys)).sort()).toEqual(["x", "x-folder/kept.md", "y.md"]);
   });
 
+  it("never encrypts or uploads a change the tree check holds, round after round (2.29)", async () => {
+    const puts: string[] = [];
+    const provider = memoryProvider({ fault: (op, name, phase) => void (op === "put" && phase === "before" && puts.push(name)) });
+    const { keys, anchor } = await createVault(provider, PASSPHRASE, { pbkdf2Iterations: TEST_ITERATIONS });
+    const vault = createMemoryBackend();
+    const v = new E2eeSync({ provider, keys, local: vaultLocalFiles(vault), store: memoryStateStore() });
+    await v.markCreated(anchor);
+    const m = device("M", provider, keys);
+    m.files.set("x", "x is a file there");
+    await m.sync.sync();
+    // A local folder `x` with notes under it: they clash with the remote file `x`.
+    await vault.write("x/kept.md", "x is a folder here");
+    await vault.write("x/deeper/more.md", "and more");
+    const manifest = await manifestName(keys);
+    const before = provider.objects.size;
+    puts.length = 0;
+    for (let i = 0; i < 3; i++) expect((await v.sync()).held.sort()).toEqual(["x", "x/deeper/more.md", "x/kept.md"]);
+    expect(puts.filter((n) => n !== manifest)).toEqual([]);
+    expect(provider.objects.size).toBe(before);
+  });
+
   it("the reverse clash — a local file where the other side has a folder — is held the same way", async () => {
     const provider = memoryProvider();
     const { keys, anchor } = await createVault(provider, PASSPHRASE, { pbkdf2Iterations: TEST_ITERATIONS });
@@ -898,7 +947,9 @@ describe("e2ee sync: paths the local vault cannot hold", () => {
       stat: async (p) => (guard(p), inner.stat(p)),
       read: async (p) => (guard(p), inner.read(p)),
       write: async (p, d) => (guard(p), inner.write(p, d)),
+      writeIf: async (p, d, e) => (guard(p), inner.writeIf(p, d, e)),
       remove: async (p) => (guard(p), inner.remove(p)),
+      removeIf: async (p, e) => (guard(p), inner.removeIf(p, e)),
     };
     const v = new E2eeSync({ provider, keys, local: vaultLocalFiles(windows), store: memoryStateStore() });
     await v.markCreated(anchor);

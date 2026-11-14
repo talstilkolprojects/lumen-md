@@ -4,7 +4,8 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { HISTORY_LENGTH } from "../sync/e2ee/manifest";
 import { PassphraseForm, MIN_PASSPHRASE_LENGTH } from "../sync/e2ee/ui/PassphraseForm";
 import { FreshnessBanner } from "../sync/e2ee/ui/FreshnessBanner";
 import { WrongPassphraseError } from "../sync/e2ee/header";
@@ -87,6 +88,51 @@ describe("e2ee freshness banner", () => {
     unmount();
     render(<FreshnessBanner sync={a.sync} />);
     expect((await screen.findByRole("status")).textContent).toBe("Freshness verified");
+  });
+
+  it("re-reads after every round: a round that revokes the verification brings the warning back (2.31)", async () => {
+    const provider = memoryProvider();
+    const a = await newVault(provider);
+    await a.sync.sync();
+    const c = await joinVault("C", provider);
+    await c.sync.sync();
+    await c.sync.pair(await a.sync.pairingCode());
+    render(<FreshnessBanner sync={c.sync} />);
+    expect((await screen.findByRole("status")).textContent).toBe("Freshness verified");
+    for (let i = 0; i < HISTORY_LENGTH + 1; i++) {
+      a.files.set("n.md", `v${i}`);
+      await a.sync.sync();
+    }
+    await c.sync.sync();
+    expect((await screen.findByRole("alert")).textContent).toContain("Freshness not verified");
+    expect(screen.queryByText("Freshness verified")).toBeNull();
+  });
+
+  it("shows nothing, never 'verified', while freshness is unknown", async () => {
+    let listener: () => void = () => {};
+    let answer: (f: { source: "paired"; verified: boolean; counter: number }) => void = () => {};
+    let calls = 0;
+    const fake = {
+      freshness: vi.fn(() => {
+        calls++;
+        if (calls === 1) return Promise.resolve({ source: "paired" as const, verified: true, counter: 3 });
+        if (calls === 2) return new Promise<{ source: "paired"; verified: boolean; counter: number }>((r) => (answer = r));
+        return Promise.reject(new Error("store unavailable"));
+      }),
+      pair: vi.fn(async () => {}),
+      confirmFreshness: vi.fn(async () => {}),
+      onChange: (l: () => void) => ((listener = l), () => {}),
+    };
+    const { container } = render(<FreshnessBanner sync={fake as never} />);
+    expect((await screen.findByRole("status")).textContent).toBe("Freshness verified");
+    // A round ended: until the re-read answers, nothing is shown.
+    act(() => listener());
+    expect(screen.queryByRole("status")).toBeNull();
+    await act(async () => answer({ source: "paired", verified: true, counter: 4 }));
+    expect((await screen.findByRole("status")).textContent).toBe("Freshness verified");
+    // A re-read that fails leaves it unknown: nothing.
+    await act(async () => listener());
+    await waitFor(() => expect(container.textContent).toBe(""));
   });
 
   it("exposes the core through one lazy entry", () => {

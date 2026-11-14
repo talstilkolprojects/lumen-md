@@ -48,6 +48,8 @@ const backends: [string, () => VaultBackend][] = [
 ];
 
 const bytesOf = async (b: Blob) => [...new Uint8Array(await b.arrayBuffer())];
+/** SHA-256 hex of `text`, as writeIf / removeIf compare it. */
+const hex = async (text: string) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)))].map((b) => b.toString(16).padStart(2, "0")).join("");
 
 describe.each(backends)("VaultBackend contract — %s", (_label, make) => {
   let v: VaultBackend;
@@ -95,6 +97,63 @@ describe.each(backends)("VaultBackend contract — %s", (_label, make) => {
       await v.write("empty.md", "");
       expect(await v.readText("empty.md")).toBe("");
       expect(await v.stat("empty.md")).toMatchObject({ kind: "file", size: 0 });
+    });
+  });
+
+  describe("compare-and-swap: writeIf / removeIf (2.28)", () => {
+    it("writeIf(null) creates only while nothing is there; writeIf(hash) swaps only that content", async () => {
+      expect(await v.writeIf("n/a.md", "one", null)).toBe(true);
+      expect(await v.readText("n/a.md")).toBe("one");
+      expect(await v.writeIf("n/a.md", "again", null)).toBe(false);
+      expect(await v.writeIf("n/a.md", "two", await hex("one"))).toBe(true);
+      expect(await v.readText("n/a.md")).toBe("two");
+      expect(await v.writeIf("n/a.md", "three", await hex("one"))).toBe(false);
+      expect(await v.readText("n/a.md")).toBe("two");
+      expect(await v.writeIf("gone.md", "x", await hex(""))).toBe(false);
+      expect(await v.stat("gone.md")).toBeNull();
+      await v.mkdir("folder");
+      expect(await v.writeIf("folder", "x", null)).toBe(false);
+      expect((await v.stat("folder"))?.kind).toBe("directory");
+      expect(await v.writeIf("empty.md", new Uint8Array(0), null)).toBe(true);
+      expect(await v.writeIf("empty.md", "filled", await hex(""))).toBe(true);
+      expect(await v.readText("empty.md")).toBe("filled");
+      expect(await code(v.writeIf("../x.md", "x", null))).toBe("EINVAL");
+    });
+
+    it("removeIf deletes only that content, never a folder or a missing file", async () => {
+      await v.write("a.md", "mine");
+      expect(await v.removeIf("a.md", await hex("other"))).toBe(false);
+      expect(await v.readText("a.md")).toBe("mine");
+      expect(await v.removeIf("a.md", await hex("mine"))).toBe(true);
+      expect(await v.stat("a.md")).toBeNull();
+      expect(await v.removeIf("a.md", await hex("mine"))).toBe(false);
+      await v.write("d/x.md", "x");
+      expect(await v.removeIf("d", await hex(""))).toBe(false);
+      expect(await v.readText("d/x.md")).toBe("x");
+    });
+
+    it("fires events only for a swap that happened", async () => {
+      const events: VaultEvent[] = [];
+      v.watch((e) => events.push(e));
+      await v.writeIf("a.md", "1", null);
+      await v.writeIf("a.md", "2", await hex("nope"));
+      await v.removeIf("a.md", await hex("nope"));
+      await v.removeIf("a.md", await hex("1"));
+      expect(events).toEqual([
+        { type: "write", path: "a.md", origin: "self" },
+        { type: "delete", path: "a.md", origin: "self" },
+      ]);
+    });
+
+    it("never loses a write made through the backend while a writeIf is in flight", async () => {
+      await v.write("a.md", "base");
+      const [ok] = await Promise.all([v.writeIf("a.md", "from sync", await hex("base")), v.write("a.md", "typed by the user")]);
+      expect(await v.readText("a.md")).toBe("typed by the user");
+      // Either the swap ran first and the write replaced it, or the write ran first and the swap was refused.
+      expect(typeof ok).toBe("boolean");
+      const [gone] = await Promise.all([v.removeIf("a.md", await hex("typed by the user")), v.write("a.md", "typed again")]);
+      expect(typeof gone).toBe("boolean");
+      expect(await v.readText("a.md")).toBe("typed again");
     });
   });
 
@@ -452,6 +511,97 @@ class CaseInsensitiveDir extends FakeDir {
     return super.removeEntry(this.files.has(this.key(this.files, name)) ? this.key(this.files, name) : this.key(this.dirs, name));
   }
 }
+
+describe("compare-and-swap against another program (2.28)", () => {
+  it("directory handle: a file changed after the hash, before the swap, is not overwritten", async () => {
+    const dir = new FakeDir("picked");
+    const v = createDirectoryHandleBackend({ id: "folder", root: async () => dir as unknown as FileSystemDirectoryHandle });
+    await v.write("a.md", "one");
+    const plain = dir.getFileHandle.bind(dir);
+    let reads = 0;
+    dir.getFileHandle = (async (name: string, opts?: { create?: boolean }) => {
+      const h = await plain(name, opts);
+      const get = h.getFile.bind(h);
+      // Another program saves right after the first read (the one that is hashed).
+      h.getFile = async () => {
+        const f = await get();
+        if (name === "a.md" && ++reads === 1) dir.files.get("a.md")!.data = new Blob(["edited elsewhere"]);
+        return f;
+      };
+      return h;
+    }) as typeof dir.getFileHandle;
+    expect(await v.writeIf("a.md", "from sync", await hex("one"))).toBe(false);
+    dir.getFileHandle = plain;
+    expect(await v.readText("a.md")).toBe("edited elsewhere");
+    expect(await v.writeIf("a.md", "from sync", await hex("edited elsewhere"))).toBe(true);
+    expect(await v.readText("a.md")).toBe("from sync");
+  });
+
+  it("directory handle: a writeIf(null) that loses the race leaves the other program's file, and no empty file when it fails", async () => {
+    const dir = new FakeDir("picked");
+    const v = createDirectoryHandleBackend({ id: "folder", root: async () => dir as unknown as FileSystemDirectoryHandle });
+    const plain = dir.getFileHandle.bind(dir);
+    dir.getFileHandle = (async (name: string, opts?: { create?: boolean }) => {
+      const h = await plain(name, opts);
+      // The file appears with content as soon as the handle is created.
+      if (opts?.create) dir.files.get(name)!.data = new Blob(["theirs"]);
+      return h;
+    }) as typeof dir.getFileHandle;
+    expect(await v.writeIf("new.md", "ours", null)).toBe(false);
+    dir.getFileHandle = plain;
+    expect(await v.readText("new.md")).toBe("theirs");
+  });
+
+  it("directory handle without createWritable (WebKit fallback) still checks before writing", async () => {
+    const dir = new FakeDir();
+    const plain = dir.getFileHandle.bind(dir);
+    dir.getFileHandle = (async (name: string, opts?: { create?: boolean }) => {
+      const h = await plain(name, opts);
+      return Object.assign(Object.create(null), { kind: h.kind, name: h.name, getFile: () => h.getFile() });
+    }) as typeof dir.getFileHandle;
+    const fallback = vi.fn(async (parts: string[], data: unknown) => {
+      dir.files.get(parts[0])!.data = new Blob([data as BlobPart]);
+    });
+    const v = createDirectoryHandleBackend({ id: "webkit", root: async () => dir as unknown as FileSystemDirectoryHandle, writeFallback: fallback });
+    await v.write("a.md", "one");
+    expect(await v.writeIf("a.md", "two", await hex("other"))).toBe(false);
+    expect(fallback).toHaveBeenCalledTimes(1);
+    expect(await v.writeIf("a.md", "two", await hex("one"))).toBe(true);
+    expect(fallback).toHaveBeenLastCalledWith(["a.md"], "two");
+  });
+
+  it("desktop: the expected bytes travel to Rust, which refuses a file changed since the hash", async () => {
+    const fake = fakeTauriVault("/home/tal/Notes");
+    const inner = fake.invoke;
+    let edits = 0;
+    let edit = false;
+    // Another program saves right after each read the backend hashes.
+    const invoke = (async (cmd: string, args?: Record<string, unknown> | Uint8Array, o?: { headers?: Record<string, string> }) => {
+      const out = await inner(cmd, args, o);
+      if (cmd === "vault_read" && edit) await fake.fs.write("a.md", `edited elsewhere ${++edits}`);
+      return out;
+    }) as typeof inner;
+    const v = createTauriBackend(invoke, "/home/tal/Notes");
+    await v.write("a.md", "one");
+    edit = true;
+    expect(await v.writeIf("a.md", "from sync", await hex("one"))).toBe(false);
+    expect(await v.removeIf("a.md", await hex("edited elsewhere 1"))).toBe(false);
+    edit = false;
+    expect(await v.readText("a.md")).toBe("edited elsewhere 2");
+    expect(fake.calls).toContain("vault_write_if");
+    expect(fake.calls).toContain("vault_remove_if");
+    expect(await v.removeIf("a.md", await hex("edited elsewhere 2"))).toBe(true);
+  });
+
+  it("memory: a write that lands while the hash is computed wins", async () => {
+    const v = createMemoryBackend();
+    await v.write("a.md", "one");
+    const swap = v.writeIf("a.md", "from sync", await hex("one"));
+    await v.write("a.md", "typed");
+    expect(await swap).toBe(false);
+    expect(await v.readText("a.md")).toBe("typed");
+  });
+});
 
 describe("directory-handle backend specifics", () => {
   it("writes through the fallback when a file handle has no createWritable (OPFS on WebKit)", async () => {

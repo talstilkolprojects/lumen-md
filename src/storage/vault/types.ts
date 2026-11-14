@@ -93,6 +93,24 @@ export interface VaultBackend {
    * file is where a parent folder should be.
    */
   write(path: string, data: VaultData): Promise<void>;
+  /**
+   * Compare-and-swap write (2.28): create or replace the file at `path`
+   * only while its bytes still hash (SHA-256, lower-case hex) to `expect`
+   * — `null`: only while nothing is at `path`. Resolves false, writing
+   * nothing, when the file is no longer that one or a folder is there.
+   *
+   * Atomic against every write, writeIf, remove and removeIf made through
+   * the same backend (they wait for each other, per path). Against other
+   * writers, per backend: memory — atomic; directory handle (OPFS, a picked
+   * folder) — the new bytes go to the swap file first, and the file is
+   * compared again right before the swap replaces it, so only a write by
+   * another program in that last step is missed (and on engines without
+   * `createWritable`, the fallback writes right after the check); desktop
+   * — compare and replace run in one Rust command (`vault_write_if`).
+   */
+  writeIf(path: string, data: VaultData, expect: string | null): Promise<boolean>;
+  /** Compare-and-swap delete of a file: only while its bytes hash to `expect` (as `writeIf`). False otherwise. */
+  removeIf(path: string, expect: string): Promise<boolean>;
   /** Create the folder at `path` and any missing parents; a no-op when it exists. "EKIND" when a file is in the way. */
   mkdir(path: string): Promise<void>;
   /**

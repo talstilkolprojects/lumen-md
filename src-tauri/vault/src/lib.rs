@@ -403,6 +403,48 @@ impl Vault {
         fs::rename(&src, &dst).map_err(|e| VaultError::io(from, e))
     }
 
+    /// Compare-and-swap write (2.28, `VaultBackend.writeIf`): replace the file
+    /// only while its bytes are exactly `expect` (`None`: only while nothing is
+    /// there). `Ok(false)`, writing nothing, otherwise, or when a folder is
+    /// there. The TypeScript side hashes the bytes it read and sends them as
+    /// `expect`; the compare and the atomic replace (`write`) run here, in one
+    /// command, so the window left for another program is this function.
+    pub fn write_if(&self, path: &str, expect: Option<&[u8]>, data: &[u8]) -> Result<bool> {
+        let (p, segs) = self.resolve(path)?;
+        if segs.is_empty() {
+            return Err(VaultError::new("EKIND", "Cannot write to the vault root"));
+        }
+        if p.is_dir() {
+            return Ok(false);
+        }
+        let now = match fs::read(&p) {
+            Ok(bytes) => Some(bytes),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => None,
+            Err(e) => return Err(VaultError::io(path, e)),
+        };
+        if now.as_deref() != expect {
+            return Ok(false);
+        }
+        self.write(path, data)?;
+        Ok(true)
+    }
+
+    /// Compare-and-swap delete of a file: only while its bytes are exactly `expect`.
+    pub fn remove_if(&self, path: &str, expect: &[u8]) -> Result<bool> {
+        let (p, segs) = self.resolve(path)?;
+        if segs.is_empty() || !p.is_file() {
+            return Ok(false);
+        }
+        match fs::read(&p) {
+            Ok(bytes) if bytes == expect => {}
+            Ok(_) => return Ok(false),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(false),
+            Err(e) => return Err(VaultError::io(path, e)),
+        }
+        fs::remove_file(&p).map_err(|e| VaultError::io(path, e))?;
+        Ok(true)
+    }
+
     pub fn remove(&self, path: &str) -> Result<()> {
         let (p, segs) = self.resolve(path)?;
         if segs.is_empty() {

@@ -12,7 +12,8 @@
  * deletes, removing a half-written target when the copy fails.
  */
 
-import { checkRename, compareVaultEntries, VaultEmitter, vaultSegments } from "./shared";
+import { checkRename, compareVaultEntries, PathLock, VaultEmitter, vaultSegments } from "./shared";
+import type { HandleCasHost } from "./cas";
 import {
   VaultError,
   VaultNotFoundError,
@@ -54,6 +55,8 @@ function isMissing(e: unknown): boolean {
 export function createDirectoryHandleBackend(o: DirectoryHandleBackendOptions): VaultBackend {
   const events = new VaultEmitter();
   const emit = (e: Omit<VaultEvent, "origin">) => events.emit({ ...e, origin: "self" });
+  /** write / remove / writeIf / removeIf on one path, one at a time (2.28). */
+  const lock = new PathLock();
 
   async function dirAt(parts: string[], create: boolean): Promise<FileSystemDirectoryHandle> {
     let cur = await o.root();
@@ -188,6 +191,23 @@ export function createDirectoryHandleBackend(o: DirectoryHandleBackendOptions): 
     await removeAt(src, src.join("/"));
   }
 
+  /** What the lazy compare-and-swap (./cas.ts) needs of this backend. */
+  const casHost: HandleCasHost = {
+    lookup,
+    removeAt,
+    createFile: async (parts) => (await dirAt(parts.slice(0, -1), true)).getFileHandle(parts[parts.length - 1], { create: true }),
+    openWritable: (handle) => handle.createWritable(),
+    writeFallback: o.writeFallback,
+  };
+  /** writeIf / removeIf: the lazy compare-and-swap under the path lock; the event only for a swap that happened. */
+  const swap = async (path: string, type: "write" | "delete", run: (cas: typeof import("./cas"), parts: string[]) => Promise<boolean>) => {
+    const parts = vaultSegments(path);
+    const p = parts.join("/");
+    const ok = await lock.run(p, async () => run(await import("./cas"), parts));
+    if (ok) emit({ type, path: p });
+    return ok;
+  };
+
   return {
     id: o.id,
 
@@ -246,9 +266,14 @@ export function createDirectoryHandleBackend(o: DirectoryHandleBackendOptions): 
 
     async write(path, data) {
       const parts = vaultSegments(path);
-      await writeAt(parts, data, path);
-      emit({ type: "write", path: parts.join("/") });
+      const p = parts.join("/");
+      await lock.run(p, () => writeAt(parts, data, path));
+      emit({ type: "write", path: p });
     },
+
+    writeIf: (path, data, expect) => swap(path, "write", (cas, parts) => cas.handleWriteIf(casHost, parts, path, data, expect)),
+
+    removeIf: (path, expect) => swap(path, "delete", (cas, parts) => cas.handleRemoveIf(casHost, parts, path, expect)),
 
     async mkdir(path) {
       const parts = vaultSegments(path);
@@ -310,8 +335,9 @@ export function createDirectoryHandleBackend(o: DirectoryHandleBackendOptions): 
 
     async remove(path) {
       const parts = vaultSegments(path);
-      await removeAt(parts, path);
-      emit({ type: "delete", path: parts.join("/") });
+      const p = parts.join("/");
+      await lock.run(p, () => removeAt(parts, path));
+      emit({ type: "delete", path: p });
     },
 
     watch: (listener) => events.on(listener),

@@ -26,8 +26,8 @@
 
 import { randomBytes, sha256Hex, toB64u } from "./bytes";
 import { conflictCopyPath, keepBothResolver, type ConflictResolver } from "./conflict";
-import { createHeader, decodeHeader, encodeHeader, HEADER_NAME, unlockHeader, type VaultHeader } from "./header";
-import { PBKDF2_MIN_ITERATIONS, type KdfPolicy } from "./kdf";
+import { createHeader, decodeHeader, encodeHeader, HEADER_NAME, HeaderFormatError, unlockHeader, UnsupportedProtocolError, WrongPassphraseError, type VaultHeader } from "./header";
+import { KdfUnavailableError, PBKDF2_MIN_ITERATIONS, WeakKdfError, type KdfPolicy } from "./kdf";
 import { DecryptError, seal, unseal, type VaultKeys } from "./keys";
 import { isSyncedPath, type LocalFiles } from "./localFiles";
 import {
@@ -62,6 +62,17 @@ export class NoVaultError extends Error {
   }
 }
 
+/** The header there cannot be resumed with this passphrase: a wrong passphrase, or a header that is not one we can open. */
+function isForeignHeader(err: unknown): boolean {
+  return (
+    err instanceof WrongPassphraseError ||
+    err instanceof HeaderFormatError ||
+    err instanceof UnsupportedProtocolError ||
+    err instanceof WeakKdfError ||
+    err instanceof KdfUnavailableError
+  );
+}
+
 /** A blob the manifest names is missing (replaced by a newer commit meanwhile): the round restarts. */
 class BlobMissingError extends Error {}
 
@@ -88,8 +99,12 @@ export async function createVault(
     const floor = Math.min(PBKDF2_MIN_ITERATIONS, opts.pbkdf2Iterations ?? PBKDF2_MIN_ITERATIONS);
     try {
       ({ header, keys } = await unlockVault(provider, passphrase, { minPbkdf2Iterations: floor }));
-    } catch {
-      throw new VaultExistsError();
+    } catch (err) {
+      // Only an answer about the header that is there means "someone else's
+      // vault" (2.30): a provider that is down, a timeout, a header that
+      // vanished in between are rethrown, so the caller can retry the create.
+      if (isForeignHeader(err)) throw new VaultExistsError();
+      throw err;
     }
   }
   const name = await manifestName(keys);
@@ -193,11 +208,35 @@ export class E2eeSync {
     if (this.state) await this.o.store.save(this.state);
   }
 
-  /** Serialise calls: one round (or pairing) at a time per device. */
+  /** Serialise calls: one round (or pairing) at a time per device. Listeners hear when each one ends. */
   private exclusive<T>(fn: () => Promise<T>): Promise<T> {
     const next = this.running.then(fn, fn);
+    const notify = () => {
+      for (const l of [...this.listeners]) {
+        try {
+          l();
+        } catch {
+          /* a listener's failure is its own */
+        }
+      }
+    };
+    void next.then(notify, notify);
     this.running = next.catch(() => undefined);
     return next;
+  }
+
+  private readonly listeners = new Set<() => void>();
+
+  /**
+   * Called after every round, pairing, confirmation and `markCreated`,
+   * whether it succeeded or not (2.31): what `freshness()` says may have
+   * changed — a round can revoke a verification. Returns the unsubscribe.
+   */
+  onChange(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
   }
 
   /** How this device knows its view of the vault is current. */
@@ -541,7 +580,7 @@ export class E2eeSync {
     }
   }
 
-  /** Step 3 (blobs): upload every local change; returns the new manifest entries. */
+  /** Step 3 (blobs): upload every local change the tree check lets through; returns the new manifest entries. */
   private async collectChanges(
     remote: Manifest,
     held: Set<string>,
@@ -549,7 +588,10 @@ export class E2eeSync {
   ): Promise<Map<string, { entry: ManifestEntry; data: Uint8Array | null }>> {
     const s = await this.loadState();
     const local = new Map((await this.o.local.list()).filter((f) => isSyncedPath(f.path)).map((f) => [f.path, f.hash]));
-    const out = new Map<string, { entry: ManifestEntry; data: Uint8Array | null }>();
+    // Planned first, uploaded after the tree check below (2.29): a change
+    // the check holds is never encrypted or uploaded.
+    type Planned = { ver: number; deleted: true } | { ver: number; deleted?: undefined; data: Uint8Array; hash: string };
+    const plan = new Map<string, Planned>();
     const paths = new Set([...Object.keys(s.base), ...local.keys()]);
     for (const path of [...paths].sort()) {
       if (held.has(path)) continue;
@@ -561,12 +603,44 @@ export class E2eeSync {
       const ver = (r?.ver ?? 0) + 1;
       if (lh === null) {
         if (!r || r.deleted) continue; // never existed there, or already deleted
-        out.set(path, { entry: { ver, rev: "", hash: "", size: 0, deleted: true, by: s.deviceId }, data: null });
+        plan.set(path, { ver, deleted: true });
         continue;
       }
       const data = await this.o.local.read(path);
       if (!data) continue;
-      const hash = await sha256Hex(data);
+      plan.set(path, { ver, data, hash: await sha256Hex(data) });
+    }
+    // The manifest must describe a tree a file system can hold: never a live
+    // file `x` together with live entries under `x/`. A change that would
+    // create that — typically because the other side of the clash is held —
+    // is held too, until the clash is settled.
+    for (let changed = true; changed; ) {
+      changed = false;
+      const live = new Set(Object.keys(remote.files).filter((p) => !remote.files[p].deleted));
+      for (const [p, c] of plan) {
+        if (c.deleted) live.delete(p);
+        else live.add(p);
+      }
+      for (const [p, c] of plan) {
+        if (c.deleted) continue;
+        const segs = p.split("/");
+        const above = segs.slice(0, -1).some((_, k) => live.has(segs.slice(0, k + 1).join("/")));
+        const below = [...live].some((q) => q.startsWith(`${p}/`));
+        if (above || below) {
+          plan.delete(p);
+          held.add(p);
+          changed = true;
+          break;
+        }
+      }
+    }
+    const out = new Map<string, { entry: ManifestEntry; data: Uint8Array | null }>();
+    for (const [path, c] of plan) {
+      if (c.deleted) {
+        out.set(path, { entry: { ver: c.ver, rev: "", hash: "", size: 0, deleted: true, by: s.deviceId }, data: null });
+        continue;
+      }
+      const { data, hash } = c;
       let up = uploads.get(path);
       if (!up || up.hash !== hash) {
         const rev = toB64u(randomBytes(12));
@@ -578,31 +652,7 @@ export class E2eeSync {
         up = { hash, rev, size: data.length, data };
         uploads.set(path, up);
       }
-      out.set(path, { entry: { ver, rev: up.rev, hash, size: up.size, by: s.deviceId }, data: up.data });
-    }
-    // The manifest must describe a tree a file system can hold: never a live
-    // file `x` together with live entries under `x/`. A change that would
-    // create that — typically because the other side of the clash is held —
-    // is held too, until the clash is settled.
-    for (let changed = true; changed; ) {
-      changed = false;
-      const live = new Set(Object.keys(remote.files).filter((p) => !remote.files[p].deleted));
-      for (const [p, c] of out) {
-        if (c.entry.deleted) live.delete(p);
-        else live.add(p);
-      }
-      for (const [p, c] of out) {
-        if (c.entry.deleted) continue;
-        const segs = p.split("/");
-        const above = segs.slice(0, -1).some((_, k) => live.has(segs.slice(0, k + 1).join("/")));
-        const below = [...live].some((q) => q.startsWith(`${p}/`));
-        if (above || below) {
-          out.delete(p);
-          held.add(p);
-          changed = true;
-          break;
-        }
-      }
+      out.set(path, { entry: { ver: c.ver, rev: up.rev, hash, size: up.size, by: s.deviceId }, data: up.data });
     }
     return out;
   }

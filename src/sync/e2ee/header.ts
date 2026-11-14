@@ -44,6 +44,14 @@ export class UnsupportedProtocolError extends Error {
   }
 }
 
+/** The bytes at the header's name are not a well-formed Lumen vault header (not a transient failure). */
+export class HeaderFormatError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "HeaderFormatError";
+  }
+}
+
 /** The exact bytes the MAC covers: every field but the MAC, in a fixed order. */
 function headerMacInput(h: Omit<VaultHeader, "mac">): Uint8Array {
   return utf8(JSON.stringify([h.format, h.protocol, h.vaultId, h.kdf]));
@@ -75,13 +83,20 @@ export function decodeHeader(bytes: Uint8Array, policy: KdfPolicy = {}): VaultHe
   try {
     o = JSON.parse(fromUtf8(bytes)) as Record<string, unknown>;
   } catch {
-    throw new Error("The vault header is not valid JSON");
+    throw new HeaderFormatError("The vault header is not valid JSON");
   }
-  if (o.format !== FORMAT) throw new Error("Not a Lumen encrypted vault");
+  if (!o || typeof o !== "object") throw new HeaderFormatError("Not a Lumen encrypted vault");
+  if (o.format !== FORMAT) throw new HeaderFormatError("Not a Lumen encrypted vault");
   if (o.protocol !== PROTOCOL_VERSION) throw new UnsupportedProtocolError(o.protocol);
-  if (typeof o.vaultId !== "string" || fromB64u(o.vaultId).length !== 16) throw new Error("Bad vault id");
-  if (typeof o.mac !== "string") throw new Error("The vault header has no MAC");
-  return { format: FORMAT, protocol: PROTOCOL_VERSION, vaultId: o.vaultId, kdf: validateKdfParams(o.kdf, policy), mac: o.mac };
+  let idBytes = -1;
+  try {
+    if (typeof o.vaultId === "string") idBytes = fromB64u(o.vaultId).length;
+  } catch {
+    /* not base64url */
+  }
+  if (idBytes !== 16) throw new HeaderFormatError("Bad vault id");
+  if (typeof o.mac !== "string") throw new HeaderFormatError("The vault header has no MAC");
+  return { format: FORMAT, protocol: PROTOCOL_VERSION, vaultId: o.vaultId as string, kdf: validateKdfParams(o.kdf, policy), mac: o.mac };
 }
 
 /** Derive the keys for `header` from `passphrase` and check its MAC. */

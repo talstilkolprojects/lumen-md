@@ -114,19 +114,16 @@ export function isSyncedPath(path: string): boolean {
 /**
  * The active vault (plan 4.1) as the local side.
  *
- * Known limit: the hash check and the write are two steps, because
- * VaultBackend (and underneath it OPFS, the File System Access API and the
- * desktop file system) has no conditional write. Another program saving the
- * same file in the moment between them is overwritten, and the vault watcher
- * records the sync's write as its own. The window is one stat + read + hash;
- * closing it needs a compare-and-swap write in VaultBackend.
+ * Writes and deletes are the vault's compare-and-swap (`writeIf` /
+ * `removeIf`, 2.28): the hash check and the change are one operation of the
+ * backend, so a save through Lumen in between (autosave, another view) is
+ * never overwritten; the sync's change is skipped and the next round sees a
+ * conflict. What each backend guarantees against other programs is in
+ * VaultBackend.writeIf (src/storage/vault/types.ts): on OPFS and a picked
+ * folder the file is compared again right before the swap file replaces it,
+ * and on the desktop the compare and the replace are one Rust command.
  */
 export function vaultLocalFiles(backend: VaultBackend): LocalFiles {
-  const hashAt = async (path: string): Promise<string | null> => {
-    const st = await backend.stat(path);
-    if (!st || st.kind !== "file") return null;
-    return sha256Hex(new Uint8Array(await (await backend.read(path)).arrayBuffer()));
-  };
   /**
    * A path this vault cannot hold — a name the platform refuses (`:` or `\`
    * on Windows), a folder in a file's place, a file where a parent folder
@@ -180,19 +177,12 @@ export function vaultLocalFiles(backend: VaultBackend): LocalFiles {
           // way; anything else is held.
           if (expect !== null || (await hasFiles(path))) return false;
           await backend.remove(path);
-        } else if ((await hashAt(path)) !== expect) {
-          return false;
         }
-        await backend.write(path, data.slice());
-        return true;
+        return backend.writeIf(path, data.slice(), expect);
       });
     },
     remove(path, expect) {
-      return soft(false, async () => {
-        if ((await hashAt(path)) !== expect) return false;
-        await backend.remove(path);
-        return true;
-      });
+      return soft(false, () => backend.removeIf(path, expect));
     },
   };
 }

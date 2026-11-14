@@ -268,6 +268,44 @@ mod desktop_vault {
         with(&state, &root, |v| v.write(&path, data))
     }
 
+    /// Compare-and-swap write (2.28): the raw body is the expected bytes, then
+    /// the new ones; `x-vault-expect` is the length of the first part, or
+    /// "none" (only while nothing is there). False when the file differs.
+    #[tauri::command]
+    pub fn vault_write_if(state: State<VaultState>, request: tauri::ipc::Request) -> Result<bool, String> {
+        let tauri::ipc::InvokeBody::Raw(body) = request.body() else {
+            return Err("EINVAL: vault_write_if expects raw bytes".into());
+        };
+        let root = header(&request, "x-vault-root")?;
+        let path = header(&request, "x-vault-path")?;
+        let expect = header(&request, "x-vault-expect")?;
+        let split = if expect == "none" {
+            None
+        } else {
+            let n: usize = expect.parse().map_err(|_| "EINVAL: bad x-vault-expect".to_string())?;
+            if n > body.len() {
+                return Err("EINVAL: bad x-vault-expect".into());
+            }
+            Some(n)
+        };
+        let (want, data) = match split {
+            Some(n) => (Some(&body[..n]), &body[n..]),
+            None => (None, &body[..]),
+        };
+        with(&state, &root, |v| v.write_if(&path, want, data))
+    }
+
+    /// Compare-and-swap delete: the raw body is the bytes the file must still have.
+    #[tauri::command]
+    pub fn vault_remove_if(state: State<VaultState>, request: tauri::ipc::Request) -> Result<bool, String> {
+        let tauri::ipc::InvokeBody::Raw(body) = request.body() else {
+            return Err("EINVAL: vault_remove_if expects raw bytes".into());
+        };
+        let root = header(&request, "x-vault-root")?;
+        let path = header(&request, "x-vault-path")?;
+        with(&state, &root, |v| v.remove_if(&path, body))
+    }
+
     /// Every file with size and mtime, for change polling (plan 4.4).
     #[tauri::command]
     pub fn vault_snapshot(state: State<VaultState>, root: String) -> Result<Vec<lumen_vault::SnapEntry>, String> {
@@ -378,6 +416,8 @@ pub fn run() {
             desktop_vault::vault_stat,
             desktop_vault::vault_read,
             desktop_vault::vault_write,
+            desktop_vault::vault_write_if,
+            desktop_vault::vault_remove_if,
             desktop_vault::vault_snapshot,
             desktop_vault::vault_mkdir,
             desktop_vault::vault_rename,
