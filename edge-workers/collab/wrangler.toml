@@ -1,0 +1,103 @@
+# The public live-share server (plan W4.8): Cloudflare Workers + Durable
+# Objects on the Workers Free plan. Deploy: `npm run collab:deploy`
+# (docs: collab/public-server).
+name = "lumen-collab"
+main = "worker.mjs"
+compatibility_date = "2025-06-01"
+# node:crypto (HMAC room tokens) and Buffer, used by sync-server/collab/roomToken.mjs.
+compatibility_flags = ["nodejs_compat"]
+
+# No request logs: the server keeps no IP addresses (PRIVACY.he.md, W4.29).
+[observability]
+enabled = false
+
+[vars]
+# Delete a room nobody changed for this many days.
+RETENTION_DAYS = "90"
+# A room's encrypted document may grow to this size.
+MAX_ROOM_BYTES = "4000000"
+COLLAB_TOKEN_TTL_S = "600"
+# Review 2 (12.11): without COLLAB_ACCESS_KEY a token needs the room proof
+# (from the room's password) and a proof of work of this many bits for it,
+# which the app solves once per room and session (at most 24).
+COLLAB_POW_BITS = "18"
+# New rooms (review 2 RR2-469-1, sync-server/collab/roomQuota.mjs): per UTC day on the
+# whole server, per client address (IPv4, or IPv6 /64) and per IPv6 /48.
+COLLAB_NEW_ROOMS_PER_DAY = "2000"
+COLLAB_NEW_ROOMS_PER_ADDRESS = "20"
+COLLAB_NEW_ROOMS_PER_48 = "80"
+# What is stored (review 6 RR6-469-2): rooms, bytes (4 GB, under the Free plan's
+# 5 GB) and rooms per address and per IPv6 /48 (review 8). When rooms or bytes are
+# full, a new room replaces one stored room nobody joined again in
+# COLLAB_PROTECT_DAYS and nobody is connected to: the smallest that frees one
+# room's share (bytes / rooms), or none (review 8 RR8-469-1).
+COLLAB_MAX_ROOMS = "20000"
+COLLAB_MAX_STORED_BYTES = "4000000000"
+COLLAB_STORED_ROOMS_PER_ADDRESS = "50"
+COLLAB_STORED_ROOMS_PER_48 = "50"
+# Review 11 (RR11-469-1): bytes per address and per /48, 1/200 of the store, so 20
+# addresses can't hold it; and only a return by someone other than the creator
+# (another address, not the creator's /48) protects a room. Several smaller rooms
+# may free one room's share together. Review 14: an owner whose rooms grew past
+# this cap after admission loses their protection, and they make way first.
+COLLAB_STORED_BYTES_PER_ADDRESS = "20000000"
+COLLAB_PROTECT_DAYS = "14"
+# The encrypted vault relay (plan W4.19, decision 5.16; edge-workers/collab/vaultRelay.mjs).
+# Same retention as rooms: a space nobody read or wrote for 90 days is deleted.
+VAULT_RELAY_RETENTION_DAYS = "90"
+# Storage: the Free plan holds 5 GB of Durable Object data for the account, and
+# rooms may use 4 GB (COLLAB_MAX_STORED_BYTES), so all vault spaces together get
+# 0.9 GB (507 past it), 100 MiB a space, 25 MiB an object.
+VAULT_RELAY_MAX_TOTAL = "900000000"
+VAULT_RELAY_MAX_SPACE = "104857600"
+VAULT_RELAY_MAX_OBJECT = "26214400"
+# Per client address (IPv4, or IPv6 /64) a day, counted as the rooms' quota counts:
+# new spaces, and bytes written (one space's size); new spaces per IPv6 /48.
+VAULT_RELAY_NEW_SPACES_PER_DAY = "5"
+VAULT_RELAY_NEW_SPACES_PER_48 = "80"
+VAULT_RELAY_ADDRESS_BYTES_PER_DAY = "104857600"
+# Requests per minute per space.
+VAULT_RELAY_RATE = "600"
+# A new space costs a proof of work of this many bits (the app solves it once; at most 24).
+VAULT_RELAY_POW_BITS = "18"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "CollabRoom"
+
+[[durable_objects.bindings]]
+name = "SIGNAL"
+class_name = "Signal"
+
+# One counter for the new-room limits (a global, exact count: the rate-limit
+# binding counts per location and only per 10 or 60 seconds).
+[[durable_objects.bindings]]
+name = "QUOTA"
+class_name = "Quota"
+
+# SQLite-backed Durable Objects are the ones the Free plan includes.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["CollabRoom", "Signal"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Quota"]
+
+# The vault relay: one object per space, and one counter (decision 5.16).
+[[durable_objects.bindings]]
+name = "VAULT"
+class_name = "VaultSpace"
+
+[[durable_objects.bindings]]
+name = "VAULT_QUOTA"
+class_name = "VaultQuota"
+
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["VaultSpace", "VaultQuota"]
+
+# Secrets (`wrangler secret put`, done by scripts/collab-deploy.mjs):
+#   COLLAB_TOKEN_SECRET   ≥ 32 random characters; signs the room tokens
+#   COLLAB_ACCESS_KEY     optional; when set, only people with the key get tokens
+#   VAULT_RELAY_INVITE    optional; when set, opening a vault space needs X-Lumen-Invite

@@ -29,6 +29,16 @@
  *   COLLAB_LEGACY_LEVELDB_DIR (the Docker image sets /data/yjs) are imported
  *   once at start, never overwriting a room SQLite already has.
  *
+ * ── Privacy (plan W4.8, PRIVACY.he.md) ───────────────────────────────────
+ *   COLLAB_E2EE_ONLY=1   refuse every update that is not an encrypted
+ *                        envelope (collab/relay.mjs, checkE2eeUpdate): the
+ *                        connection is closed (4403) before the update is
+ *                        applied, so the server only ever holds ciphertext.
+ *                        The public server (edge-workers/collab) always does.
+ *   COLLAB_RETENTION_DAYS  delete rooms nobody changed for this many days
+ *                        (default 90; 0 keeps them). Swept at start and daily.
+ *   Logs name no IP address.
+ *
  * ── Health ────────────────────────────────────────────────────────────────
  *   GET /healthz → 200 {"ok":true,"service":"lumen-collab","persistence":"sqlite"}
  *
@@ -42,9 +52,11 @@ import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { openStore } from "./collab/sqliteStore.mjs";
 import { importLegacyDir } from "./collab/legacyImport.mjs";
-import { DEFAULT_TOKEN_TTL_S, accessKeyOk, issueRoomToken, signingKey, verifyRoomToken } from "./collab/roomToken.mjs";
+import { DEFAULT_TOKEN_TTL_S, accessKeyOk, issueRoomToken, signingKey, splitCommittedRoom, verifyRoomToken } from "./collab/roomToken.mjs";
+import { checkE2eeUpdate, updateInMessage } from "./collab/relay.mjs";
 
-const ROOM_NAME = /^[\w-]{1,128}$/;
+// A name, or a name with its proof commitment (`<name>_k<32 hex>`, review 4, roomToken.mjs).
+const ROOM_NAME = /^[\w-]{1,162}$/;
 
 /**
  * Build (not start) a collab server. `listen()` resolves with the bound
@@ -65,6 +77,8 @@ export function createCollabServer(opts = {}) {
     backupIntervalMs = 60 * 60 * 1000,
     keepBackups = 24,
     quiet = true,
+    e2eeOnly = false,
+    retentionDays = 90,
     log = () => {},
   } = opts;
   const key = signingKey(tokenSecret);
@@ -116,6 +130,17 @@ export function createCollabServer(opts = {}) {
       response.end(JSON.stringify({ ok: true, status: "ok", service: "lumen-collab", persistence: "sqlite" }));
       throw null;
     },
+    async beforeHandleMessage({ update, document }) {
+      if (!e2eeOnly) return;
+      const yjsUpdate = updateInMessage(update);
+      if (!yjsUpdate) return;
+      const why = checkE2eeUpdate(document, yjsUpdate);
+      if (why) {
+        log(`update refused (e2ee-only: ${why})`);
+        // A CloseEvent-like object: Hocuspocus closes the connection with it.
+        throw { code: 4403, reason: `e2ee-only: ${why}` };
+      }
+    },
     async onAuthenticate({ token, documentName }) {
       if (!ROOM_NAME.test(documentName)) throw new Error("bad-room");
       const why = verifyRoomToken(key, token, documentName);
@@ -125,7 +150,10 @@ export function createCollabServer(opts = {}) {
       }
     },
     async onLoadDocument({ document, documentName }) {
-      const state = store.load(documentName);
+      // The app now names a password room `<name>_k<commit>` (review 4): a room stored
+      // under its plain name before that is found there, and saved under the new name.
+      const legacy = splitCommittedRoom(documentName)?.base;
+      const state = store.load(documentName) ?? (legacy ? store.load(legacy) : null);
       if (state) Y.applyUpdate(document, state);
     },
     async onStoreDocument({ document, documentName }) {
@@ -146,20 +174,33 @@ export function createCollabServer(opts = {}) {
   const backupTimer = backupIntervalMs > 0 ? setInterval(backup, backupIntervalMs) : null;
   backupTimer?.unref?.();
 
+  /** Retention: rooms not changed for `retentionDays` are deleted. */
+  const sweep = (nowMs = Date.now()) => {
+    if (!(retentionDays > 0)) return 0;
+    const n = store.sweep(nowMs - retentionDays * 24 * 60 * 60 * 1000);
+    if (n) log(`retention: deleted ${n} room(s) unchanged for ${retentionDays} days`);
+    return n;
+  };
+  const sweepTimer = retentionDays > 0 ? setInterval(sweep, 24 * 60 * 60 * 1000) : null;
+  sweepTimer?.unref?.();
+
   let closing = null;
   return {
     server,
     store,
     backup,
+    sweep,
     async listen() {
       // Before accepting connections, so nobody opens an "empty" legacy room.
       if (legacyLeveldbDir) await importLegacyDir(store, legacyLeveldbDir, { log });
+      sweep();
       await server.listen();
       return server.address.port;
     },
     close() {
       closing ??= (async () => {
         if (backupTimer) clearInterval(backupTimer);
+        if (sweepTimer) clearInterval(sweepTimer);
         for (const c of tokenWss.clients) c.terminate();
         tokenWss.close();
         await server.destroy();
@@ -186,6 +227,8 @@ function fromEnv(env) {
     debounceMs: num(env.COLLAB_DEBOUNCE_MS, 2000),
     backupIntervalMs: num(env.COLLAB_BACKUP_INTERVAL_MS, 60 * 60 * 1000),
     keepBackups: num(env.COLLAB_BACKUP_KEEP, 24),
+    e2eeOnly: env.COLLAB_E2EE_ONLY === "1",
+    retentionDays: num(env.COLLAB_RETENTION_DAYS, 90),
     log: (m) => console.log(`[collab] ${m}`),
   };
 }

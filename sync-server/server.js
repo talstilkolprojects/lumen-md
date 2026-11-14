@@ -175,7 +175,9 @@ function createServer(opts = {}) {
     // unhandled 'error' event — that would crash the whole process. `ws`
     // closes the socket itself (1009 / 1007); just log it.
     ws.on("error", (err) => {
-      log(`socket error from ${ip}: ${err && err.message}`);
+      // No IP address in the log (plan W4.8, PRIVACY.he.md): the per-IP
+      // limits keep addresses in memory only.
+      log(`socket error: ${err && err.message}`);
     });
 
     ws.on("message", (raw) => {
@@ -236,7 +238,7 @@ function createServer(opts = {}) {
             send(ws, { type: "error", error: "Topic limit exceeded" });
             return;
           }
-          log(`[${legacyRoom}] Peer joined: ${message.peerId || "anon"} (${ip})`);
+          log(`[${legacyRoom}] Peer joined`);
           send(ws, { type: "joined", room: legacyRoom, peers: topics.get(legacyRoom).size });
           return;
         }

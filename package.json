@@ -58,6 +58,7 @@
     "headers:write": "node scripts/headers.mjs --write",
     "handoff": "node scripts/handoff.mjs",
     "docs:sync": "node scripts/docs-sync.mjs",
+    "collab:deploy": "node scripts/collab-deploy.mjs",
     "lint": "eslint src",
     "lint:prune": "eslint src --prune-suppressions",
     "plan": "node scripts/plan/build.mjs",

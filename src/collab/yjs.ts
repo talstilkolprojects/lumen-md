@@ -219,13 +219,15 @@ async function attachWebsocketProvider(
   url: string,
   roomName: string,
   doc: Y.Doc,
+  password: string | null,
 ): Promise<WebsocketLike | null> {
   try {
     const { createPersistentProvider } = await import("./persistentProvider");
     // The server's optional access key (Collab settings → "Server access
     // token"), kept in the secret store. It only buys a short-lived token
     // for this room; there is no build-time token (no secret in the bundle).
-    return await createPersistentProvider(url, roomName, doc, getSecret("lumen.collab.wsToken"));
+    // The room password proves to the public server that this person holds the room (review 2).
+    return await createPersistentProvider(url, roomName, doc, getSecret("lumen.collab.wsToken"), password);
   } catch (err) {
     log.warn("persistent collab attach failed", err);
     return null;
@@ -347,7 +349,7 @@ export function connectCollab(
     onPersistentSettled?.();
   };
   const startPersistent = (url: string) => {
-    void attachWebsocketProvider(url, roomName, syncedDoc).then((p) => {
+    void attachWebsocketProvider(url, roomName, syncedDoc, password).then((p) => {
       if (destroyed) {
         p?.destroy();
         return;
