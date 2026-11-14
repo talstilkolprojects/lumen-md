@@ -1044,6 +1044,17 @@ export async function indexedNoteText(path: string): Promise<string | null> {
   return (await indexedNotes([path]))[0]?.content ?? null;
 }
 
+/**
+ * Every highlight in the vault (plan W1.15), built in the index worker from
+ * the notes it already holds (W10.C25): the main thread neither reads the
+ * notes again nor parses them. Follows the index, so a note a sync round
+ * changed is answered as it is now.
+ */
+export async function indexedHighlights(): Promise<import("../highlights/hub").HighlightItem[]> {
+  await checkedIndex();
+  return withEngine((e) => e.highlights());
+}
+
 /** Notes related to a paragraph (plan W2.2), ranked by the index's BM25 in the index worker. */
 export async function relatedInIndex(query: import("./vaultIndexProtocol").RelatedQuery): Promise<import("../related/related").RelatedHit[]> {
   await checkedIndex();
