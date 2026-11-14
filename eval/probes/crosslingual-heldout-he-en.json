@@ -1,0 +1,392 @@
+{
+ "kind": "held-out",
+ "origin": "synthetic",
+ "about": "Held-out Hebrew → English search probe for plan W2.11 (plan W10.B6): 30 everyday Hebrew queries, each about one short English note. Written on 15.11.2026 by an AI agent (lane X-B), AFTER the dev probe and the HE_EN lexicon existed, so it is not blind in the strict sense. To keep it out of tuning: the file is frozen (its sha256 is pinned in src/__tests__/hebrewMorph.test.ts), the English terms the lexicon gave each query at freeze time are recorded in englishAtFreeze, and the test fails if the lexicon gains a term for a held-out query. Synthetic (written here), not real user queries. Report this probe's result, not the dev probe's.",
+ "license": "CC0-1.0",
+ "items": [
+  {
+   "id": "xh-01",
+   "query": "ספרי בישול צמחוניים",
+   "relevant": [
+    "en-h01"
+   ],
+   "doc": {
+    "id": "en-h01",
+    "text": "Vegetarian cookbooks I want to borrow from the library: three titles with lentil and chickpea dishes."
+   }
+  },
+  {
+   "id": "xh-02",
+   "query": "הזמנת שולחן במסעדה",
+   "relevant": [
+    "en-h02"
+   ],
+   "doc": {
+    "id": "en-h02",
+    "text": "Booked a table for four at the Italian restaurant on Thursday at eight."
+   }
+  },
+  {
+   "id": "xh-03",
+   "query": "החלפת צמיג פנצ'ר",
+   "relevant": [
+    "en-h03"
+   ],
+   "doc": {
+    "id": "en-h03",
+    "text": "Changed the flat tyre on the highway; the spare is now in use, buy a new one."
+   }
+  },
+  {
+   "id": "xh-04",
+   "query": "חשבון חשמל גבוה",
+   "relevant": [
+    "en-h04"
+   ],
+   "doc": {
+    "id": "en-h04",
+    "text": "The electricity bill doubled this winter; check the heater and the boiler timer."
+   }
+  },
+  {
+   "id": "xh-05",
+   "query": "שיעורי בית במתמטיקה",
+   "relevant": [
+    "en-h05"
+   ],
+   "doc": {
+    "id": "en-h05",
+    "text": "Math homework for Sunday: fractions, pages 40 to 42, and a short quiz."
+   }
+  },
+  {
+   "id": "xh-06",
+   "query": "תור לרופאת עיניים",
+   "relevant": [
+    "en-h06"
+   ],
+   "doc": {
+    "id": "en-h06",
+    "text": "Eye doctor visit next Monday; bring the old glasses and the prescription."
+   }
+  },
+  {
+   "id": "xh-07",
+   "query": "מתנה ליום הולדת של אמא",
+   "relevant": [
+    "en-h07"
+   ],
+   "doc": {
+    "id": "en-h07",
+    "text": "Birthday gift ideas for Mom: a scarf, a pottery class or a weekend away."
+   }
+  },
+  {
+   "id": "xh-08",
+   "query": "אימון כוח בחדר כושר",
+   "relevant": [
+    "en-h08"
+   ],
+   "doc": {
+    "id": "en-h08",
+    "text": "Gym strength workout: squats, deadlifts and bench press, three sets each."
+   }
+  },
+  {
+   "id": "xh-09",
+   "query": "השכרת דירה בחיפה",
+   "relevant": [
+    "en-h09"
+   ],
+   "doc": {
+    "id": "en-h09",
+    "text": "Apartment for rent in Haifa: two rooms, near the beach, available in March."
+   }
+  },
+  {
+   "id": "xh-10",
+   "query": "ניקוי מזגן לפני הקיץ",
+   "relevant": [
+    "en-h10"
+   ],
+   "doc": {
+    "id": "en-h10",
+    "text": "Clean the air conditioner filters before summer and call a technician for the gas."
+   }
+  },
+  {
+   "id": "xh-11",
+   "query": "קורס תכנות בפייתון",
+   "relevant": [
+    "en-h11"
+   ],
+   "doc": {
+    "id": "en-h11",
+    "text": "Online Python programming course: loops, functions and a small final project."
+   }
+  },
+  {
+   "id": "xh-12",
+   "query": "חיסון לכלב אצל הווטרינר",
+   "relevant": [
+    "en-h12"
+   ],
+   "doc": {
+    "id": "en-h12",
+    "text": "The dog's rabies vaccine is due; the vet clinic opens at nine."
+   }
+  },
+  {
+   "id": "xh-13",
+   "query": "רשימת אורחים לחתונה",
+   "relevant": [
+    "en-h13"
+   ],
+   "doc": {
+    "id": "en-h13",
+    "text": "Wedding guest list: family first, then friends from work, about 180 people."
+   }
+  },
+  {
+   "id": "xh-14",
+   "query": "תיקון ברז דולף במטבח",
+   "relevant": [
+    "en-h14"
+   ],
+   "doc": {
+    "id": "en-h14",
+    "text": "The kitchen faucet is dripping; replace the washer or call the plumber."
+   }
+  },
+  {
+   "id": "xh-15",
+   "query": "ספר מתח שקראתי",
+   "relevant": [
+    "en-h15"
+   ],
+   "doc": {
+    "id": "en-h15",
+    "text": "Finished a thriller novel last night; the twist in the final chapter surprised me."
+   }
+  },
+  {
+   "id": "xh-16",
+   "query": "החזר מס הכנסה",
+   "relevant": [
+    "en-h16"
+   ],
+   "doc": {
+    "id": "en-h16",
+    "text": "Income tax refund form submitted; the money should arrive within ninety days."
+   }
+  },
+  {
+   "id": "xh-17",
+   "query": "טיול משפחתי בגליל",
+   "relevant": [
+    "en-h17"
+   ],
+   "doc": {
+    "id": "en-h17",
+    "text": "Family hike in the Galilee: a stream trail, a picnic and a visit to a goat farm."
+   }
+  },
+  {
+   "id": "xh-18",
+   "query": "הכנת קורות חיים",
+   "relevant": [
+    "en-h18"
+   ],
+   "doc": {
+    "id": "en-h18",
+    "text": "Updating my resume: add the last job, shorten the education part, one page only."
+   }
+  },
+  {
+   "id": "xh-19",
+   "query": "גינון במרפסת",
+   "relevant": [
+    "en-h19"
+   ],
+   "doc": {
+    "id": "en-h19",
+    "text": "Balcony gardening: tomatoes and basil in pots, water every morning."
+   }
+  },
+  {
+   "id": "xh-20",
+   "query": "הרשמה לגן ילדים",
+   "relevant": [
+    "en-h20"
+   ],
+   "doc": {
+    "id": "en-h20",
+    "text": "Kindergarten registration closes in February; prepare the ID and vaccination record."
+   }
+  },
+  {
+   "id": "xh-21",
+   "query": "מכירת רכב ישן",
+   "relevant": [
+    "en-h21"
+   ],
+   "doc": {
+    "id": "en-h21",
+    "text": "Selling the old car: take photos, check the price list and post the ad."
+   }
+  },
+  {
+   "id": "xh-22",
+   "query": "שיחת וידאו עם סבתא",
+   "relevant": [
+    "en-h22"
+   ],
+   "doc": {
+    "id": "en-h22",
+    "text": "Video call with Grandma on Saturday evening; help her set up the tablet camera."
+   }
+  },
+  {
+   "id": "xh-23",
+   "query": "מתכון למרק עדשים",
+   "relevant": [
+    "en-h23"
+   ],
+   "doc": {
+    "id": "en-h23",
+    "text": "Lentil soup: onion, carrot, red lentils and cumin, cook for half an hour."
+   }
+  },
+  {
+   "id": "xh-24",
+   "query": "תשלום ארנונה",
+   "relevant": [
+    "en-h24"
+   ],
+   "doc": {
+    "id": "en-h24",
+    "text": "Pay the municipal property tax before the end of the month to get the discount."
+   }
+  },
+  {
+   "id": "xh-25",
+   "query": "כאבי גב מישיבה",
+   "relevant": [
+    "en-h25"
+   ],
+   "doc": {
+    "id": "en-h25",
+    "text": "Back pain from sitting all day: stretch every hour and raise the screen."
+   }
+  },
+  {
+   "id": "xh-26",
+   "query": "לימוד ספרדית באפליקציה",
+   "relevant": [
+    "en-h26"
+   ],
+   "doc": {
+    "id": "en-h26",
+    "text": "Learning Spanish with an app: ten minutes a day, verbs and short dialogues."
+   }
+  },
+  {
+   "id": "xh-27",
+   "query": "הכנות למעבר דירה",
+   "relevant": [
+    "en-h27"
+   ],
+   "doc": {
+    "id": "en-h27",
+    "text": "Moving checklist: boxes, a moving company quote, change the address at the bank."
+   }
+  },
+  {
+   "id": "xh-28",
+   "query": "פרויקט גמר באוניברסיטה",
+   "relevant": [
+    "en-h28"
+   ],
+   "doc": {
+    "id": "en-h28",
+    "text": "Final university project: choose a topic, meet the supervisor, submit a proposal."
+   }
+  },
+  {
+   "id": "xh-29",
+   "query": "כביסה של מעיל צמר",
+   "relevant": [
+    "en-h29"
+   ],
+   "doc": {
+    "id": "en-h29",
+    "text": "Wash the wool coat by hand in cold water and dry it flat."
+   }
+  },
+  {
+   "id": "xh-30",
+   "query": "תקלה בראוטר האינטרנט",
+   "relevant": [
+    "en-h30"
+   ],
+   "doc": {
+    "id": "en-h30",
+    "text": "The internet router keeps disconnecting; restart it and call the provider."
+   }
+  }
+ ],
+ "englishAtFreeze": {
+  "xh-01": [],
+  "xh-02": [],
+  "xh-03": [],
+  "xh-04": [],
+  "xh-05": [
+   "home",
+   "house"
+  ],
+  "xh-06": [],
+  "xh-07": [
+   "day"
+  ],
+  "xh-08": [
+   "training",
+   "workout"
+  ],
+  "xh-09": [],
+  "xh-10": [],
+  "xh-11": [],
+  "xh-12": [
+   "dog"
+  ],
+  "xh-13": [],
+  "xh-14": [],
+  "xh-15": [
+   "book"
+  ],
+  "xh-16": [],
+  "xh-17": [
+   "hike",
+   "trip"
+  ],
+  "xh-18": [],
+  "xh-19": [],
+  "xh-20": [
+   "children",
+   "kids"
+  ],
+  "xh-21": [
+   "car"
+  ],
+  "xh-22": [],
+  "xh-23": [],
+  "xh-24": [],
+  "xh-25": [],
+  "xh-26": [],
+  "xh-27": [],
+  "xh-28": [
+   "project"
+  ],
+  "xh-29": [],
+  "xh-30": []
+ }
+}

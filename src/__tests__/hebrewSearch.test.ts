@@ -36,8 +36,13 @@ describe("Hebrew search with morphology (W2.11)", () => {
     expect(r.ktivTop10).toBeGreaterThan(BEFORE.ktiv);
   });
 
-  it("a Hebrew query finds the English note", () => {
-    expect(r.cross).toBe(r.crossTotal);
+  it("the dev probe's 5 Hebrew → English queries are development only (W10.B6): the lexicon no longer holds their words", () => {
+    // The lexicon was written from these 5 queries (audit W2.11), so their
+    // "5/5" measured nothing and is not reported. The held-out result is
+    // in hebrewMorph.test.ts. Here: the rows derived from them are gone.
+    console.info(`dev cross-lingual (not a result): ${r.cross}/${r.crossTotal}`);
+    expect(r.crossTotal).toBe(5);
+    expect(r.cross).toBeLessThan(r.crossTotal);
   });
 
   it("HeQ dev does not regress (nDCG@10 = 1 before W2.11)", () => {

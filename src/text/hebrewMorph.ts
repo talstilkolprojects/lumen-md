@@ -100,13 +100,21 @@ export function synonymsOf(word: string): string[] {
   return SYNONYMS.get(word) ?? [];
 }
 
-/** Hebrew → English equivalents of common words (comparison forms), for Hebrew queries over English notes. */
+/**
+ * Hebrew → English equivalents of common words (comparison forms), for Hebrew queries over English notes.
+ *
+ * Plan W10.B6 (audit W2.11): the first rows of this table were the
+ * five dev-probe queries (eval/probes/hebrew-search.json, `crosslingual`) and
+ * the words of their target notes (מתכון/עוגת/שוקולד, אופניים/שרשרת/בלמים,
+ * קניות/סופר, רופא/שיניים/ביטוח, טיסה/אילת…). They are removed: a lexicon
+ * written from the test measures nothing. What is left is general
+ * vocabulary, hand-written, with no external source. The result is
+ * reported on a held-out probe (eval/probes/crosslingual-heldout-he-en.json),
+ * frozen by sha256; src/__tests__/hebrewMorph.test.ts fails if a word of a
+ * held-out query is added here.
+ */
 const HE_EN: Record<string, string[]> = {
-  "מתכונ": ["recipe"], "עוגה": ["cake"], "עוגת": ["cake"], "שוקולד": ["chocolate"], "לחמ": ["bread"], "חלב": ["milk"], "קפה": ["coffee"], "אורז": ["rice"], "תפוח": ["apple", "apples"], "תפוחימ": ["apples"],
-  "קניות": ["shopping"], "רשימה": ["list"], "רשימת": ["list"], "סופר": ["supermarket"], "חנות": ["shop", "store"],
-  "תיקונ": ["fix", "fixed", "repair"], "אופניימ": ["bicycle", "bike"], "שרשרת": ["chain"], "בלמימ": ["brakes"],
-  "פגישה": ["meeting", "appointment"], "רופא": ["doctor"], "שיניימ": ["dentist", "teeth"], "ביטוח": ["insurance"],
-  "טיסה": ["flight"], "אילת": ["eilat"], "ירושלימ": ["jerusalem"], "תל": ["tel"], "אביב": ["aviv"],
+  "חנות": ["shop", "store"], "ירושלימ": ["jerusalem"], "תל": ["tel"], "אביב": ["aviv"],
   "ספר": ["book"], "ספרימ": ["books"], "שיעור": ["lesson", "class"], "בית": ["home", "house"], "עבודה": ["work", "job"],
   "משפחה": ["family"], "ילד": ["child", "kid"], "ילדימ": ["children", "kids"], "חבר": ["friend"], "חברימ": ["friends"],
   "מחשב": ["computer"], "טלפונ": ["phone"], "סיסמה": ["password"], "מייל": ["email", "mail"], "אתר": ["website", "site"],

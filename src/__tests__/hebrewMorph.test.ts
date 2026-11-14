@@ -3,8 +3,12 @@
  * and how its terms enter BM25 (src/text/searchTokens.ts).
  */
 import { describe, it, expect } from "vitest";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { englishOf, ktivKey, lemmaKeys, synonymsOf } from "../text/hebrewMorph";
-import { KTIV, KTIV_WEIGHT, LEMMA, LEMMA_WEIGHT, documentTerms, morphTerms, queryTerms } from "../text/searchTokens";
+import { ENGLISH_WEIGHT, KTIV, KTIV_WEIGHT, LEMMA, LEMMA_WEIGHT, documentTerms, morphTerms, queryTerms } from "../text/searchTokens";
+// @ts-expect-error plain JavaScript
+import { scoreHeldOut } from "../../scripts/search/hebrew-probe.mjs";
 import { normalizeForMatch } from "../text/hebrew";
 import { Bm25Index } from "../search/bm25";
 
@@ -48,8 +52,44 @@ describe("lexicon", () => {
   it("synonyms both ways, English for common words", () => {
     expect(synonymsOf(n("סמארטפון"))).toContain(n("טלפון"));
     expect(synonymsOf(n("טלפון"))).toContain(n("סמארטפון"));
-    expect(englishOf(n("מתכון"))).toEqual(["recipe"]);
+    expect(englishOf(n("כלב"))).toEqual(["dog"]);
     expect(englishOf("xyz")).toEqual([]);
+  });
+});
+
+describe("Hebrew → English: held-out probe (W10.B6, audit W2.11)", () => {
+  const FILE = "eval/probes/crosslingual-heldout-he-en.json";
+  /** Frozen 15.11.2026. A change to the file (queries, notes or englishAtFreeze) fails here. */
+  const SHA256 = "110649b7cf61fd479bd07f1ea0d11963cb3bbdd58244c288e54dfd1f60828b72";
+  const raw = readFileSync(FILE, "utf8");
+  const held = JSON.parse(raw) as { kind: string; items: Array<{ id: string; query: string; relevant: string[]; doc: { id: string; text: string } }>; englishAtFreeze: Record<string, string[]> };
+  const english = (q: string) => [...new Set(queryTerms(q).filter((t) => t.weight === ENGLISH_WEIGHT).map((t) => t.term))].sort();
+
+  it("is frozen: 30 queries, sha256 pinned", () => {
+    expect(createHash("sha256").update(raw).digest("hex")).toBe(SHA256);
+    expect(held.kind).toBe("held-out");
+    expect(held.items).toHaveLength(30);
+  });
+
+  it("fails when the lexicon gains (or loses) an English term for a held-out query", () => {
+    for (const it of held.items) expect(english(it.query), `${it.id} ${it.query}`).toEqual(held.englishAtFreeze[it.id]);
+  });
+
+  it("the dev probe's query words are not in the lexicon any more", () => {
+    const dev = JSON.parse(readFileSync("eval/probes/hebrew-search.json", "utf8")) as { crosslingual: Array<{ query: string }> };
+    for (const c of dev.crosslingual) expect(english(c.query), c.query).toEqual([]);
+  });
+
+  it("reports the held-out result, however low", () => {
+    const heq = (JSON.parse(readFileSync("eval/golden/retrieval/dev/heq.json", "utf8")) as { corpus: Array<{ id: string; text: string }> }).corpus;
+    const r = scoreHeldOut(Bm25Index, held, heq) as { top10: number; top1: number; total: number; missed: string[] };
+    console.info(`held-out Hebrew → English: ${r.top10}/${r.total} in the top 10, ${r.top1}/${r.total} at rank 1`);
+    expect(r.total).toBe(30);
+    // Measured 15.11.2026: 0/30, with the old lexicon as well. A query
+    // finds an English note only when every one of its words is in the
+    // lexicon, which held for the dev probe because the lexicon was written
+    // from it. A ratchet, not a target: this may only go up.
+    expect(r.top10).toBeGreaterThanOrEqual(0);
   });
 });
 
@@ -77,7 +117,8 @@ describe("search terms", () => {
     idx.set("other", "פגישה על התוכנית החדשה");
     idx.set("none", "פגישה על התקציב");
     expect(idx.search("תכנית").map((h) => h.id)).toEqual(["exact", "other"]);
-    idx.set("en", "Chocolate cake recipe with butter and eggs");
-    expect(idx.search("מתכון לעוגת שוקולד")[0].id).toBe("en");
+    // A word of the general lexicon (the dev-probe rows are gone, W10.B6).
+    idx.set("en", "The cat sleeps on the sofa all afternoon");
+    expect(idx.search("חתול")[0].id).toBe("en");
   });
 });

@@ -51,3 +51,25 @@ export function scoreProbe(Index, probe, heqCorpus, { k = 10 } = {}) {
     perQuery,
   };
 }
+
+/**
+ * The held-out Hebrew → English probe (plan W10.B6,
+ * eval/probes/crosslingual-heldout-he-en.json): how many of its queries
+ * find their English note in the top k, and at rank 1, over the HeQ corpus
+ * plus the held-out notes. This is the number to report for W2.11's
+ * cross-lingual step; the dev probe's 5 queries were used to write the
+ * lexicon.
+ */
+export function scoreHeldOut(Index, heldout, heqCorpus, { k = 10 } = {}) {
+  const index = indexOf(Index, [...heqCorpus, ...heldout.items.map((c) => c.doc)]);
+  let top10 = 0;
+  let top1 = 0;
+  const missed = [];
+  for (const c of heldout.items) {
+    const ids = index.search(c.query, { limit: k }).map((h) => h.id);
+    if (ids.some((id) => c.relevant.includes(id))) top10++;
+    else missed.push(c.id);
+    if (c.relevant.includes(ids[0])) top1++;
+  }
+  return { top10, top1, total: heldout.items.length, missed };
+}
