@@ -23,7 +23,7 @@ export const CERTIFICATE_COUNTS: readonly string[] = [
   "Every resource load (image, font, style sheet, script) the browser lists in Resource Timing: a load from another origin counts as reaching the network even when the browser reports 0 bytes; a load from the app's own origin counts when it transferred bytes (it did not come from a cache).",
   "Every request, socket and peer still open when the switch went on: counted as having reached the network, then aborted or closed at that moment.",
   "Every frame open when the switch went on with something in it, whatever its sandbox (playground and live-js runners, HTML and Live CSS previews, embeds, frames in shadow roots, frames a script navigated, <object> and <embed>): counted as having reached the network, then stopped at that moment (its page replaced by about:blank).",
-  "Every window the app or a frame of its own origin opened (window.open): counted, then closed at that moment. Every frame that could open windows while the switch was off (its sandbox allowed popups, or it had none and held another site's page) and whose windows this page can't reach, from the moment it was made, whether it is still open at the switch or not: counted as a window that may have reached the network. Every service worker of the app's origin other than the app's own: counted, then unregistered.",
+  "Every window the app or a frame of its own origin opened (window.open): counted, then closed at that moment. Every frame that could open windows while the switch was off (its sandbox allowed popups, or it had none and held another site's page) and whose windows this page can't reach, from the moment it was made, whether it is still open at the switch or not: counted as a window that may have reached the network (the last 500 such frames one by one, any before them as one more). Every service worker of the app's origin other than the app's own: counted, then unregistered.",
 ];
 
 /** What it does not prove, said plainly. */
@@ -31,6 +31,7 @@ export const CERTIFICATE_NOT_COUNTED: readonly string[] = [
   "Requests made through a reference to fetch taken before airplane mode's wrappers loaded are not listed; the browser's Content-Security-Policy still refuses them to any other site.",
   "Frames load nothing from a URL while the switch is on (frame-src allows blob: only). What a frame open before the switch sent, before it was stopped, is counted once as that frame, not request by request.",
   "While the switch is on, no frame gets allow-popups, however it is made, so none can open a window. A window a frame opened before the switch is out of this page's reach: it is counted (above), not closed, and may keep loading. A frame from another site, unless it is one of the known embed providers, has no storage or service worker of its own. A service worker that a known provider (YouTube, Vimeo and the others of the embed block) registered before the switch is outside this page and may keep running. A frame inside a closed shadow root made before airplane mode loaded, or inside a closed declarative shadow root (setHTMLUnsafe, parseHTMLUnsafe), is out of reach.",
+  "The page keeps its last 500 attempts, and the certificate is made from those: in a session with more, the earlier ones are not in it.",
   "What other apps, browser extensions or the operating system send is outside this page.",
 ];
 

@@ -289,6 +289,11 @@ export function stopFrames(doc: Pick<Document, "querySelectorAll">, at: number =
   for (const src of counted) {
     record({ kind: "frame", target: src.startsWith("about:") ? src : egressTarget(src), method: "POPUP", decision: "in-flight", origin: "frame (allow-popups)", ts: at });
   }
+  // More frames than the list keeps: those dropped from it may have opened windows too (review 14, RR14-451-1).
+  if (droppedLatches > 0) {
+    record({ kind: "frame", target: "about:frames", method: "POPUP", decision: "in-flight", origin: `${droppedLatches} earlier frames (allow-popups)`, ts: at });
+    droppedLatches = 0;
+  }
   const stopped = blankFrames(doc);
   for (const f of stopped) {
     record({ kind: "frame", target: f.src.startsWith("about:") ? f.src : egressTarget(f.src), method: "FRAME", decision: "in-flight", origin: f.title || "frame", ts: at });
@@ -319,6 +324,8 @@ const popups = new Map<Window, string>();
 const latched: Array<{ target: string; frame: WeakRef<HTMLIFrameElement> | null }> = [];
 const latchedFrames = new WeakSet<HTMLIFrameElement>();
 const MAX_LATCHED = 500;
+/** Latches dropped to keep the list at MAX_LATCHED: recorded at the switch as one POPUP (review 14, RR14-451-1). */
+let droppedLatches = 0;
 
 /** Remember a frame that can open windows now (its sandbox allows popups, or it has none and holds another site's page). */
 function latchPopups(f: HTMLIFrameElement, base: string): void {
@@ -340,7 +347,10 @@ function latchPopups(f: HTMLIFrameElement, base: string): void {
   if (!may) return;
   latchedFrames.add(f);
   latched.push({ target: srcdoc !== null ? "about:srcdoc" : src, frame: typeof WeakRef === "undefined" ? null : new WeakRef(f) });
-  if (latched.length > MAX_LATCHED) latched.shift();
+  if (latched.length > MAX_LATCHED) {
+    latched.shift();
+    droppedLatches++;
+  }
 }
 
 /**
