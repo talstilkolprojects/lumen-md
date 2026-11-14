@@ -402,6 +402,8 @@ export async function runAgent<I extends AgentInput, O = string>(def: AgentDefin
   };
   const modelInput: I = guard.guardInput(input, inputUntrusted, ctx.document);
   toolEnvRef.current = toolEnv;
+  // W11.I2: the privacy log shows when a run became tainted, and by what.
+  if (toolEnv.taint.length) await guard.logRuleOfTwo({ event: "tainted", sources: toolEnv.taint });
   const inputChars = (input.text ?? "").length + (input.selection ?? "").length;
   const maxRetries = def.maxRetries ?? DEFAULT_MAX_RETRIES;
   const maxSteps = def.maxSteps ?? DEFAULT_MAX_STEPS;
@@ -475,7 +477,9 @@ export async function runAgent<I extends AgentInput, O = string>(def: AgentDefin
     else if (r.untrusted?.length) {
       // Plan 2.7: context from outside notes is cleaned and delimited, and taints the run
       // (the system prompt, built after this loop, then carries the rule).
+      const wasClean = toolEnv.taint.length === 0;
       ({ body, note: guardNote } = guard.guardToolResult((v) => truncate(toolResultMessage(call, v), TOOL_RESULT_LIMIT), r.result, r.untrusted, toolEnv.taint, []));
+      if (wasClean) await guard.logRuleOfTwo({ event: "tainted", sources: toolEnv.taint });
     } else body = truncate(toolResultMessage(call, r.result), TOOL_RESULT_LIMIT);
     step({ kind: "tool", ms: Date.now() - t1, label: call.name, ok: r.error === undefined, detail: ["context", guardNote, r.error ?? truncate(JSON.stringify(call.args), 200)].filter(Boolean).join(" · ") });
     context.push({ role: "assistant", content: "", toolCalls: [call] }, { role: "tool", content: body, toolCallId: call.id, name: call.name });
@@ -644,7 +648,9 @@ export async function runAgent<I extends AgentInput, O = string>(def: AgentDefin
           else if (r.error !== undefined) body = toolResultMessage(call, undefined, r.error);
           else if (r.untrusted?.length) {
             // Outside content: cleaned, then delimited (after truncation, so the closing marker stays).
+            const wasClean = toolEnv.taint.length === 0;
             ({ body, note: guardNote } = guard.guardToolResult((v) => truncate(toolResultMessage(call, v), TOOL_RESULT_LIMIT), r.result, r.untrusted, toolEnv.taint, messages));
+            if (wasClean) await guard.logRuleOfTwo({ event: "tainted", sources: toolEnv.taint });
           } else body = truncate(toolResultMessage(call, r.result), TOOL_RESULT_LIMIT);
           const argsText = truncate(JSON.stringify(call.args), 200);
           const detail = [r.note, guardNote, repairNote, argsText].filter(Boolean).join(" · ");

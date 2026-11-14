@@ -153,6 +153,8 @@ export function untrustedSourcesOfNote(path: string | null | undefined, content?
   const out: string[] = [];
   if (path) {
     if (isClipLibraryPath(path)) out.push(`clipped page (${path})`);
+    // W11.I2: a PDF was made outside Lumen (and can carry hidden text layers): reading one taints the run.
+    if (/\.pdf$/i.test(path)) out.push(`PDF (${path})`);
     const r = readRegistry();
     if (!r) return [...out, `unknown origin: provenance records unreadable (${path})`];
     // The note itself, or a folder above it (a cloned repo, an imported folder, a moved library).

@@ -333,11 +333,15 @@ export const UNTRUSTED_DENIED =
 
 /** Ask through the run's hook (or the default dialog). A failing prompt is a no. */
 export async function askUntrusted(hook: ((r: UntrustedConsentRequest) => boolean | Promise<boolean>) | undefined, req: UntrustedConsentRequest): Promise<boolean> {
+  let ok = false;
   try {
-    return (await (hook ?? defaultUntrustedConsent)(req)) === true;
+    ok = (await (hook ?? defaultUntrustedConsent)(req)) === true;
   } catch {
-    return false;
+    ok = false;
   }
+  // W11.I2: every answer goes to the privacy log, with where the run's outside content came from.
+  await logRuleOfTwo({ event: ok ? "approved" : "declined", tool: req.tool, scope: req.scope, sources: req.sources });
+  return ok;
 }
 
 /* ─── Runtime glue ─────────────────────────────────────────────────────── */
@@ -364,7 +368,36 @@ export async function inputSources(i: { path?: string | null; document?: string;
   await ensureProvenanceBackfill();
   const found = workspacePathOf(i.document ?? i.text ?? i.selection);
   const path = i.path ?? (await found);
-  return [...new Set([...(i.untrusted ?? []), ...untrustedSourcesOfNote(path, i.document)])];
+  return [...new Set([...(i.untrusted ?? []), ...untrustedSourcesOfNote(path, i.document), ...(await sharedRoomSources(i.document ?? i.text ?? i.selection))])];
+}
+
+/**
+ * W11.I2: the open note is shared when a collaboration room is open
+ * (`#room=…`): other people can write into it, so it is outside content.
+ */
+async function sharedRoomSources(text: string | undefined): Promise<string[]> {
+  if (!text) return [];
+  try {
+    const room = (await import("../collab/roomUrl")).readRoomFromHash();
+    return room ? [`shared note (collaboration room ${room})`] : [];
+  } catch {
+    /* why: no location (workers, node): no room */
+    return [];
+  }
+}
+
+/**
+ * W11.I2: the privacy log records the Rule of Two — when a run first holds
+ * outside content, and every approval asked for a write or network call in
+ * it, with the user's answer. Never throws (the log must not break a run).
+ */
+export async function logRuleOfTwo(e: { event: "tainted"; tool?: undefined; sources: string[] } | { event: "approved" | "declined"; tool: string; scope: "write" | "network"; sources: string[] }): Promise<void> {
+  try {
+    const { recordAgentGuard } = await import("../ai/privacyLedger");
+    recordAgentGuard(e.event === "tainted" ? { event: "tainted", sources: sourcesLabel(e.sources) } : { event: e.event, tool: e.tool, scope: e.scope, sources: sourcesLabel(e.sources) });
+  } catch {
+    /* why: the ledger is unavailable (a worker): the approval itself still holds */
+  }
 }
 
 /**
