@@ -247,7 +247,9 @@ describe("running a skill through the runtime (5.3)", () => {
   });
 
   it("review 21 D3: no agent writes under dot folders, to agent control files or outside the vault", () => {
-    for (const p of [".lumen/skills/helper/SKILL.md", ".lumen/mcp.json", ".claude/settings.json", ".git/config", "CLAUDE.md", "docs/AGENTS.md", "/etc/passwd", "C:/x.md", "../up.md"]) {
+    for (const p of [".lumen/skills/helper/SKILL.md", ".lumen/mcp.json", ".claude/settings.json", ".git/config", "CLAUDE.md", "docs/AGENTS.md", "/etc/passwd", "C:/x.md", "../up.md",
+      // review 24: more control files, and spellings that a file system or a reader takes for them
+      "CLAUDE.local.md", "AGENTS.override.md", "CLAUDE.md.", "CLAUDE.md ", "CLAUDE.md::$DATA", "CLAUDE~1.MD", "\uFF0Elumen/x.md", "\u2024lumen/x.md", "\u0421LAUDE.md", "CLAUDE\u200B.md", "\\\\server\\x"]) {
       expect(() => safeWriteTarget(p), p).toThrow();
     }
     expect(safeWriteTarget("notes/plan.md")).toBe("notes/plan.md");

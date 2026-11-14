@@ -279,9 +279,11 @@ export const setFrontmatterTool = defineTool<
     const remove = Array.isArray(args.remove) ? args.remove.filter((k): k is string => typeof k === "string" && !!k) : [];
     if (!Object.keys(set).length && !remove.length) throw new ToolError("bad-args", 'Nothing to change: give "set" and/or "remove"');
     if (Object.keys(set).some((k) => !k.trim())) throw new ToolError("bad-args", "Frontmatter keys must be non-empty");
-    const path = typeof args.path === "string" && args.path.trim() ? safeWorkspacePath(args.path) : null;
+    const path = typeof args.path === "string" && args.path.trim() ? safeWriteTarget(args.path) : null;
     const onOpenDocument = ctx.document !== undefined && (!path || path === ctx.path);
     if (onOpenDocument) {
+      // The open note is a write target too (review 24): an open CLAUDE.md or .lumen file is not changed by an agent.
+      if (ctx.path) safeWriteTarget(ctx.path);
       const r = updateFrontmatter(ctx.document!, set, remove);
       if (r.block.before === r.block.after) throw new ToolError("bad-args", "The frontmatter already has these values");
       const receipt = stageChange(ctx, "set_frontmatter", {

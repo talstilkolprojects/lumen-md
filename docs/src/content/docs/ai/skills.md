@@ -58,11 +58,15 @@ metadata:
   them (`Read`, `Write`, `Edit`, `Grep`, `Glob`). A call to any other tool is
   refused. Skills never get network, Python or git tools.
 - A skill in your vault with a starter's name replaces the starter.
+- The first time each version of a vault skill runs, Lumen asks you, on this
+  device. Only the six starters run without asking.
+- Skills (like every agent) never write under dot folders (`.lumen/`, `.claude/`,
+  `.git/`) or files that steer other agents (`CLAUDE.md`, `AGENTS.md` …).
 
 ## Skills from others
 
-A skill that comes with a plugin, or from a vault someone shared with you, is
-marked **untrusted**. The first time each version runs, Lumen shows where it
+A skill that comes with a plugin, or from a vault someone shared with you (a
+vault that is a git repository counts), is marked **untrusted**. The first time each version runs, Lumen shows where it
 came from and which tools it asks for, and runs it only if you allow it. Its
 instructions go through the injection guard, and every write or network call
 it makes asks you again, on top of the review screen.
