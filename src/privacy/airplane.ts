@@ -278,8 +278,15 @@ export function enableAirplaneMode(): void {
  * after the switch inherits the <meta>.
  */
 export function stopFrames(doc: Pick<Document, "querySelectorAll">, at: number = Date.now()): number {
-  // Before they are emptied: frames that could have opened a window out of this page's reach (RR8-451-1, -2).
-  for (const src of popupFrames(doc)) {
+  // Before they are emptied: frames that could have opened a window out of this page's reach (RR8-451-1, -2),
+  // and those seen able to since they were made, gone or changed since (RR11-451-1).
+  const seen = new Set<HTMLIFrameElement>();
+  const counted = popupFrames(doc, 0, seen);
+  for (const l of latched.splice(0)) {
+    const f = l.frame?.deref();
+    if (!f || !seen.has(f)) counted.push(l.target);
+  }
+  for (const src of counted) {
     record({ kind: "frame", target: src.startsWith("about:") ? src : egressTarget(src), method: "POPUP", decision: "in-flight", origin: "frame (allow-popups)", ts: at });
   }
   const stopped = blankFrames(doc);
@@ -304,12 +311,45 @@ export function stopFrames(doc: Pick<Document, "querySelectorAll">, at: number =
 const popups = new Map<Window, string>();
 
 /**
+ * Every frame seen able to open windows while the switch was off (review 11,
+ * RR11-451-1), from when the guard first decided it: a window it opened stays
+ * open after the frame is gone or loses allow-popups, so the switch counts it
+ * even then. Its target, and the frame while it is alive (to not count it twice).
+ */
+const latched: Array<{ target: string; frame: WeakRef<HTMLIFrameElement> | null }> = [];
+const latchedFrames = new WeakSet<HTMLIFrameElement>();
+const MAX_LATCHED = 500;
+
+/** Remember a frame that can open windows now (its sandbox allows popups, or it has none and holds another site's page). */
+function latchPopups(f: HTMLIFrameElement, base: string): void {
+  if (on || latchedFrames.has(f)) return;
+  const sb = f.getAttribute("sandbox");
+  const srcdoc = f.getAttribute("srcdoc");
+  const src = f.getAttribute("src") ?? "";
+  if (srcdoc === null && (!src || src === "about:blank")) return; // why: nothing loaded in it yet
+  let may = false;
+  if (sb !== null) may = sb.split(/[\t\n\f\r ]+/).some((t) => t.toLowerCase() === "allow-popups");
+  else {
+    try {
+      const u = new URL(src, base);
+      may = /^https?:$/.test(u.protocol) && u.origin !== new URL(base).origin;
+    } catch {
+      may = true; // why: a URL that doesn't parse: count it
+    }
+  }
+  if (!may) return;
+  latchedFrames.add(f);
+  latched.push({ target: srcdoc !== null ? "about:srcdoc" : src, frame: typeof WeakRef === "undefined" ? null : new WeakRef(f) });
+  if (latched.length > MAX_LATCHED) latched.shift();
+}
+
+/**
  * Frames that may have opened a window this page can't close (review 8,
  * RR8-451-1, -2): a frame whose sandbox allows popups, or that has none,
  * unless its window is one whose window.open is tracked (`trackOpen`); and
  * the same in same-origin frames' documents.
  */
-function popupFrames(doc: Pick<Document, "querySelectorAll">, depth = 0): string[] {
+function popupFrames(doc: Pick<Document, "querySelectorAll">, depth = 0, seen?: Set<HTMLIFrameElement>): string[] {
   const out: string[] = [];
   for (const root of rootsOf(doc)) {
     let frames: HTMLIFrameElement[] = [];
@@ -329,8 +369,11 @@ function popupFrames(doc: Pick<Document, "querySelectorAll">, depth = 0): string
       }
       const sb = f.getAttribute("sandbox");
       const may = sb === null || sb.split(/[\t\n\f\r ]+/).some((t) => t.toLowerCase() === "allow-popups");
-      if (may && !tracked) out.push(f.getAttribute("srcdoc") !== null ? "about:srcdoc" : f.getAttribute("src") || "about:blank");
-      if (inner && depth < 8) out.push(...popupFrames(inner, depth + 1));
+      if (may && !tracked) {
+        out.push(f.getAttribute("srcdoc") !== null ? "about:srcdoc" : f.getAttribute("src") || "about:blank");
+        seen?.add(f);
+      }
+      if (inner && depth < 8) out.push(...popupFrames(inner, depth + 1, seen));
     }
   }
   return out;
@@ -512,6 +555,7 @@ function observeFrames(win: W, root: Node | null | undefined, native: (this: Ele
   observed.add(root);
   const base = () => win.location?.href ?? "http://localhost/";
   const decide = (f: HTMLIFrameElement) => {
+    latchPopups(f, base());
     const sb = f.getAttribute("sandbox");
     if (sb !== null) {
       const next = guardedSandbox(sb, f.getAttribute("src"), base());
