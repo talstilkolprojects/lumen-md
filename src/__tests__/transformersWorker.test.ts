@@ -119,7 +119,8 @@ describe("transformers worker", () => {
     embedCall.mockImplementationOnce(() => new Promise((r) => (release = () => r({ tolist: () => [[1]] }))));
     const running = handle({ id: 30, type: "embed", model: "m", device: "wasm", texts: ["a"] });
     const queued = handle({ id: 31, type: "embed", model: "m", device: "wasm", texts: ["b"] });
-    await new Promise((r) => setTimeout(r, 0));
+    // Job 30 is running once the model call has started; since W4.14 it first prefills the verified files (two dynamic imports).
+    await vi.waitFor(() => expect(release).not.toBeNull());
     await handle({ id: 32, type: "cancel", target: 30 });
     await handle({ id: 33, type: "cancel", target: 31 });
     release!();
