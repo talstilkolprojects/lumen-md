@@ -58,15 +58,16 @@ import { isSyncedPath } from "./localFiles";
 import { FREEZE_TTL_MS, sealManifest, type Manifest, type ManifestEntry } from "./manifest";
 import { PreconditionFailedError } from "./provider";
 import { BlobMissingError, liveHash, sameEntry, successor, type SyncResult } from "./engineTypes";
-import { E2eeSyncKeys } from "./engineKeys";
+import { E2eeSyncPairing } from "./enginePairing";
 
 // W4.11: the engine is split into engineTypes.ts, vaultOpen.ts,
-// engineCore.ts and engineKeys.ts; everything is still imported from here.
+// engineCore.ts, engineKeys.ts and enginePairing.ts (W8.5); everything is still imported from here.
 export {
   DeviceBusyError,
   DropDevicesRequiredError,
   KeyChangeInProgressError,
   NoVaultError,
+  PairingAbortedError,
   PairingDuringKeyChangeError,
   PairingPendingError,
   RevocationContestedError,
@@ -74,6 +75,7 @@ export {
   VaultExistsError,
   KEY_CHANGE_LOCK_WAIT_MS,
   type E2eeSyncOptions,
+  type PairingComparison,
   type RekeyRequest,
   type RekeyResult,
   type SyncResult,
@@ -81,7 +83,7 @@ export {
 export { createVault, unlockVault, unlockWithDevice } from "./vaultOpen";
 
 
-export class E2eeSync extends E2eeSyncKeys {
+export class E2eeSync extends E2eeSyncPairing {
   sync(): Promise<SyncResult> {
     // K6-1 (review 16): under the device lock, from the state as stored, so a
     // tab with an older cached state doesn't save it over another tab's.
