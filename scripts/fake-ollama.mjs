@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // A fake Ollama server for tests: answers /api/tags, /api/version, /api/show,
-// /api/chat and /api/embed over real HTTP, so the app's local-AI path can be
+// /api/chat, /api/embed, /api/pull (streamed progress) and /api/delete over real HTTP, so the app's local-AI path can be
 // exercised in CI without a GPU or a model download.
 //
 //   npm run fake-ollama -- [--port 11434] [--fixtures src/agents/eval/fixtures.ts]
@@ -88,7 +88,7 @@ const server = http.createServer((req, res) => {
     const origin = req.headers.origin;
     if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Headers", "content-type");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
     if (req.method === "OPTIONS") return res.end();
     res.setHeader("content-type", "application/json");
     const url = req.url.split("?")[0];
@@ -99,6 +99,32 @@ const server = http.createServer((req, res) => {
       const j = JSON.parse(body || "{}");
       const input = Array.isArray(j.input) ? j.input : [j.input ?? ""];
       return res.end(JSON.stringify({ embeddings: input.map(embed) }));
+    }
+    if (url === "/api/pull") {
+      // Two layers in four steps, then "success" — the shape of a real
+      // pull (plan 5.7). A name with "missing" fails like an unknown model.
+      const j = JSON.parse(body || "{}");
+      const name = String(j.model ?? j.name ?? "");
+      res.setHeader("content-type", "application/x-ndjson");
+      const send = (o) => res.write(JSON.stringify(o) + "\n");
+      send({ status: "pulling manifest" });
+      if (!name || name.includes("missing")) return res.end(JSON.stringify({ error: "pull model manifest: file does not exist" }) + "\n");
+      const layers = [{ digest: "sha256:aaa", total: 4_000_000 }, { digest: "sha256:bbb", total: 1_000 }];
+      for (const l of layers) for (const f of [0, 0.5, 1]) send({ status: `pulling ${l.digest.slice(7, 19)}`, digest: l.digest, total: l.total, completed: Math.round(l.total * f) });
+      send({ status: "verifying sha256 digest" });
+      send({ status: "writing manifest" });
+      if (!MODELS.some((m) => m.name === name)) MODELS.push({ name, details: { parameter_size: "4B", family: "fake" } });
+      return res.end(JSON.stringify({ status: "success" }) + "\n");
+    }
+    if (url === "/api/delete") {
+      const j = JSON.parse(body || "{}");
+      const i = MODELS.findIndex((m) => m.name === String(j.model ?? j.name ?? ""));
+      if (i < 0) {
+        res.statusCode = 404;
+        return res.end(JSON.stringify({ error: "model not found" }));
+      }
+      MODELS.splice(i, 1);
+      return res.end("{}");
     }
     if (url === "/api/chat") {
       const j = JSON.parse(body || "{}");

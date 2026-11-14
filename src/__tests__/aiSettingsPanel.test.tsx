@@ -53,6 +53,34 @@ describe("preferred executor", () => {
 });
 
 describe("AiSettingsPanel", () => {
+  it("refuses to save an Ollama address the CSP blocks, and shows the address requests use (2.38)", async () => {
+    const meta = document.createElement("meta");
+    meta.setAttribute("http-equiv", "Content-Security-Policy");
+    meta.setAttribute("content", "default-src 'self'; connect-src 'self' http://localhost:11434 http://127.0.0.1:11434");
+    document.head.appendChild(meta);
+    try {
+      registerExecutor(fake("ollama", true));
+      render(<AiSettingsPanel open onClose={() => {}} />);
+      const [url] = screen.getAllByPlaceholderText("http://localhost:11434");
+      await waitFor(() => expect((url as HTMLInputElement).value).toBe("http://localhost:11434"));
+      fireEvent.change(url, { target: { value: "http://10.0.0.5:11434" } });
+      fireEvent.click(screen.getAllByText("Save")[0]);
+      await waitFor(() => expect(screen.getByTestId("ollama-url-error").textContent).toContain("http://10.0.0.5:11434"));
+      expect(localStorage.getItem("lumen.ollama.baseUrl")).toBeNull();
+      // The pull stays locked: the field differs from the address in use.
+      fireEvent.change(screen.getByLabelText("Download", { selector: "input" }), { target: { value: "qwen3:4b" } });
+      expect((screen.getByText("Download", { selector: "button" }) as HTMLButtonElement).disabled).toBe(true);
+      // An allowed address saves, clears the error and is what the panel shows.
+      fireEvent.change(url, { target: { value: "http://127.0.0.1:11434/" } });
+      fireEvent.click(screen.getAllByText("Save")[0]);
+      await waitFor(() => expect(localStorage.getItem("lumen.ollama.baseUrl")).toBe("http://127.0.0.1:11434"));
+      await waitFor(() => expect((url as HTMLInputElement).value).toBe("http://127.0.0.1:11434"));
+      expect(screen.queryByTestId("ollama-url-error")).toBeNull();
+    } finally {
+      meta.remove();
+    }
+  });
+
   it("shows availability, hardware and installed models; writes the same keys the runtime reads", async () => {
     registerExecutor(fake("ollama", true));
     registerExecutor(fake("webllm", false));

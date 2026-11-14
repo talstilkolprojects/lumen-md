@@ -189,6 +189,10 @@ jobs:
             console.log(`${r.results.length - bad.length}/${r.results.length} cases passed against the fake server`);
             if (bad.length) { console.error(bad.map((x) => `${x.id}: ${x.error ?? x.checks.filter((c) => !c.ok).map((c) => c.detail).join("; ")}`).join("\n")); process.exit(1); }
           '
+      - name: Model manager — Ollama pull with progress, over real HTTP
+        # Plan 5.7: the app's pull client against the fake server (after the
+        # eval, and it deletes the model again, so the eval's list is untouched).
+        run: node --experimental-strip-types scripts/check-ollama-pull.mjs --url http://localhost:11434
       - name: Upload the report
         if: always()
         uses: actions/upload-artifact@v7

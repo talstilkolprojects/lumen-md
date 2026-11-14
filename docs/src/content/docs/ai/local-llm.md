@@ -26,6 +26,11 @@ Inference runs in a **Web Worker**, so the editor stays responsive
 while a model loads or generates, and a toast reports download progress
 at 5 % intervals.
 
+Firefox on Linux and Android browsers have no WebGPU yet: there the
+in-browser model is off and the AI settings say so; use Ollama instead.
+The settings also show how much browser storage the models take and
+clear it (see [Model manager](/ai/local-agents/#model-manager)).
+
 ## When to use it
 
 - You're on a plane / café / corporate network without API access.

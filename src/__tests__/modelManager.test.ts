@@ -12,6 +12,8 @@ import {
   __resetHardware,
   type Hardware,
 } from "../ai/modelManager";
+import { tierForMode } from "../ai/aiMode";
+import { webGpuGap } from "../ai/webGpuGap";
 
 const hw = (over: Partial<Hardware> = {}): Hardware => ({ webgpu: true, f16: true, maxBufferMB: 2048, deviceMemoryGB: 8, cores: 8, mobile: false, ...over });
 
@@ -121,5 +123,38 @@ describe("model manager — selection and hardware", () => {
       },
     });
     expect((await detectHardware()).reason).toMatch(/adapter-error: boom/);
+  });
+});
+
+describe("model manager — AI modes and WebGPU gaps (plan 5.7)", () => {
+  it("economy runs one tier down, quality one tier up, balanced as declared; the ends hold", () => {
+    expect(tierForMode("small", "economy")).toBe("tiny");
+    expect(tierForMode("small", "balanced")).toBe("small");
+    expect(tierForMode("small", "quality")).toBe("medium");
+    expect(tierForMode("tiny", "economy")).toBe("tiny");
+    expect(tierForMode("large", "quality")).toBe("large");
+  });
+
+  it("the mode's tier picks a different in-browser model, within the device budget", () => {
+    const big = hw({ deviceMemoryGB: 8 });
+    const economy = webLlmModelFor(tierForMode("small", "economy"), big);
+    const balanced = webLlmModelFor(tierForMode("small", "balanced"), big);
+    const quality = webLlmModelFor(tierForMode("small", "quality"), big);
+    expect(catalogEntryFor(economy)?.tier).toBe("tiny");
+    expect(catalogEntryFor(balanced)?.tier).toBe("small");
+    expect(catalogEntryFor(quality)?.tier).toBe("medium");
+    // A 4 GB device: quality still gets what fits, never more than the budget.
+    const small = hw({ deviceMemoryGB: 4 });
+    const q = catalogEntryFor(webLlmModelFor(tierForMode("small", "quality"), small))!;
+    expect(q.vramMB.f16).toBeLessThanOrEqual(vramBudgetMB(small));
+  });
+
+  it("names Firefox on Linux and Android as known WebGPU gaps", () => {
+    const off = { webgpu: false };
+    expect(webGpuGap(off, "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0")).toBe("firefox-linux");
+    expect(webGpuGap(off, "Mozilla/5.0 (Android 14; Mobile; rv:140.0) Gecko/140.0 Firefox/140.0")).toBe("android");
+    expect(webGpuGap(off, "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Mobile Safari/537.36")).toBe("android");
+    expect(webGpuGap(off, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0")).toBeNull();
+    expect(webGpuGap({ webgpu: true }, "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0")).toBeNull();
   });
 });

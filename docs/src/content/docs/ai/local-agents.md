@@ -70,6 +70,58 @@ The panel writes the same settings the runtime reads; nothing is stored
 twice. The VRAM budget is a heuristic from the browser's coarse hints,
 not a measurement.
 
+## Model manager
+
+The same panel manages the models themselves:
+
+- **AI mode** — *economy*, *balanced* (the default) or *quality*. For the
+  local executors it moves the model tier of the next agent run: economy
+  runs one size smaller than the agent asks for (a tagger that wants a
+  *small* model gets a *tiny* one), quality one size larger, balanced as
+  declared. The device budget still applies, so *quality* on a 4 GB
+  machine gets the largest model that fits, not a larger one. A run that
+  is already going keeps its model; a retry that climbs a tier climbs
+  from the mode's tier. The cloud chat provider keeps its own routing
+  (see [Cost](/ai/cost/)); the mode also sets how much of your notes is
+  sent as context.
+
+  | Agent tier | Economy | Balanced | Quality |
+  |---|---|---|---|
+  | tiny | tiny | tiny | small |
+  | small | tiny | small | medium |
+  | medium | small | medium | large |
+  | large | medium | large | large |
+
+  The mode moves the *automatic* choice. A model you picked yourself
+  wins: an in-browser model chosen in the panel runs whenever it is at
+  least the tier asked for (pick *Recommended for this device* to let the
+  mode choose), and a configured Ollama model runs when it fits the
+  tier.
+
+  Ollama tiers are by parameter count (tiny ≤ 2.5 B, small ≤ 9 B,
+  medium ≤ 16 B, larger is large) among the models you have installed;
+  web-llm tiers are the catalogue's.
+- **Download an Ollama model** — type a name (`qwen3:4b`,
+  `hf.co/<owner>/<repo>`) and *Download*: the panel streams Ollama's
+  `/api/pull` and shows the progress over all layers in bytes and
+  percent, with *Cancel*. An edited address is saved first. A model under
+  its own licence (Llama, Gemma, non-commercial ones) is named and
+  confirmed before the download. When it finishes the installed list refreshes.
+  The download goes to the Ollama server at the address above; no note
+  content is involved.
+- **Storage** — how much this site uses of the browser's quota
+  (`navigator.storage.estimate()`), and two buttons: *Clear in-browser
+  models* removes web-llm's caches (`webllm/model`, `webllm/wasm`,
+  `webllm/config`, in Cache Storage or IndexedDB) after unloading the
+  model, and *Clear speech and search models* removes transformers.js's
+  cache (Whisper, embeddings). The app's own offline cache and your vault
+  are not touched. The next use downloads the model again.
+- **No WebGPU** — Firefox has no WebGPU on Linux and Android yet, and
+  Android browsers vary. The panel says so by name: the in-browser chat
+  model is off there, speech and search models run on WASM (slower,
+  smaller models), and agents use Ollama (or the chat provider, if the
+  policy allows it).
+
 ## Transcription and embeddings on this device
 
 Speech recognition and text embeddings do not go through a chat model:

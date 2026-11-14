@@ -39,6 +39,20 @@ describe("ollamaProvider", () => {
     expect(getBaseUrl()).toBe("http://localhost:11434");
   });
 
+  it("never stores an address the CSP blocks, so getBaseUrl() can't drift from the saved one (2.38)", async () => {
+    const { usableOllamaUrl } = await import("../ai/ollamaProvider");
+    expect(usableOllamaUrl(" http://192.168.1.20:11434/ ")).toBe("http://192.168.1.20:11434");
+    expect(usableOllamaUrl("")).toBe("");
+    expect(usableOllamaUrl("ftp://host:11434")).toBeNull();
+    expect(usableOllamaUrl("not a url")).toBeNull();
+    cspAllowed.mockImplementation((u: string) => u.startsWith("http://localhost"));
+    expect(usableOllamaUrl("http://10.0.0.5:11434")).toBeNull();
+    setOllamaConfig({ baseUrl: "http://10.0.0.5:11434" });
+    expect(localStorage.getItem("lumen.ollama.baseUrl")).toBeNull();
+    expect(getBaseUrl()).toBe("http://localhost:11434");
+    cspAllowed.mockImplementation(() => true);
+  });
+
   it("probes availability and lists models", async () => {
     handler = () => json({ models: [{ name: "llama3.1:8b", size: 1, digest: "abcdef1234567890", modified_at: "t", details: { family: "llama" } }] });
     expect(await isOllamaAvailable()).toBe(true);

@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-10-18T12:22:55.812Z",
+  "generated_at": "2026-10-20T23:17:09.704Z",
   "source": "src/i18n/index.ts (en bundle)",
-  "count": 1432,
+  "count": 1441,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -5539,6 +5539,61 @@
     {
       "key": "ai.settings.trace.clear",
       "en": "Clear",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.ollama.pull",
+      "en": "Download",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.ollama.pulling",
+      "en": "Downloading {model}: {status}",
+      "vars": [
+        "model",
+        "status"
+      ]
+    },
+    {
+      "key": "ai.settings.ollama.pulled",
+      "en": "{model} is installed",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "ai.settings.ollama.pullFailed",
+      "en": "Download failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "ai.settings.hw.wasm",
+      "en": "Speech and search run on WASM.",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.storage",
+      "en": "Model storage",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.storage.usage",
+      "en": "{usage} of {quota} used on this device",
+      "vars": [
+        "usage",
+        "quota"
+      ]
+    },
+    {
+      "key": "ai.settings.storage.clearWebllm",
+      "en": "Clear in-browser models",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.storage.clearWasm",
+      "en": "Clear speech and search models",
       "vars": []
     },
     {
