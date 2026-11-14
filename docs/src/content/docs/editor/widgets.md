@@ -65,33 +65,29 @@ line to the app. What a link means is decided in
 
 ### iOS (Xcode)
 
-The repository has the sources. These steps add them to the Xcode project
-once:
+The Xcode project already holds everything (`ios/App/App.xcodeproj`,
+checked by `src/__tests__/iosProject.test.ts`):
+
+- the **App** target compiles `AppDelegate.swift`, `LumenNative.swift`,
+  `LumenIntents.swift` and `iCloudSync.swift`, with `en.lproj` / `he.lproj`
+  (`Localizable.strings`, `AppShortcuts.strings`); Hebrew is a project
+  localization;
+- the **LumenWidgets** widget extension (`com.lumen.editor.LumenWidgets`)
+  compiles `LumenWidgets/LumenWidgets.swift` with its own strings,
+  `Info.plist` and entitlements, and the app embeds it;
+- both targets have the App Group `group.com.lumen.editor` in their
+  entitlements (the share extension's queue is read through it).
+
+To build:
 
 1. `npm run build && npx cap sync ios`, then open `ios/App/App.xcworkspace`
    (or `App.xcodeproj` with Swift Package Manager).
-2. **App target, new files:** File → Add Files to "App"… and select:
-   - `App/LumenNative.swift` and `App/LumenIntents.swift`, with *Target:
-     App* ticked;
-   - `App/en.lproj` and `App/he.lproj` (`Localizable.strings`,
-     `AppShortcuts.strings`).
-3. **Localizations:** Project → Info → Localizations, add **Hebrew**.
-4. **The widget extension:**
-   - File → New → Target → **Widget Extension**. Name it `LumenWidgets`,
-     untick *Include Configuration App Intent* and *Include Live Activity*,
-     and choose *Activate* when asked.
-   - Delete the Swift file Xcode generated. Add
-     `LumenWidgets/LumenWidgets.swift` and
-     `LumenWidgets/en.lproj` / `he.lproj` to the **LumenWidgets** target.
-   - Set its deployment target to iOS 16 or later, and its bundle id to
-     `com.lumen.editor.LumenWidgets`.
-5. **Signing:** set the same team for the App and LumenWidgets targets
-   (the accounts are in plan 15.7). No App Group or new capability is
-   needed: the widget only opens links, and Siri's *Add to inbox* runs in
-   the app's own process.
-6. `Main.storyboard` already uses `MainViewController`, which registers the
+2. **Signing:** set the same team for the App and LumenWidgets targets
+   (the accounts are in plan 15.7), and register the App Group
+   `group.com.lumen.editor` for both bundle ids in the developer account.
+3. `Main.storyboard` already uses `MainViewController`, which registers the
    app's plugin. Check that its class shows *Module: App*.
-7. Build and run on a device. Long-press the home screen → **+** →
+4. Build and run on a device. Long-press the home screen → **+** →
    **Lumen** to add the widget.
 
 ### Android (Android Studio)

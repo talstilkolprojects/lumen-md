@@ -63,32 +63,28 @@ description: ווידג'ט של Lumen במסך הבית, Siri ו-Spotlight בא�
 
 ### ‏iOS ‏(Xcode)
 
-הקבצים נמצאים במאגר. הצעדים האלה מוסיפים אותם לפרויקט Xcode, פעם אחת:
+פרויקט ה-Xcode כבר מכיל הכול (`ios/App/App.xcodeproj`, ונבדק ב-`src/__tests__/iosProject.test.ts`):
 
-1. `npm run build && npx cap sync ios`, ואז פותחים את
-   `ios/App/App.xcworkspace` (או `App.xcodeproj` עם Swift Package Manager).
-2. **קבצים חדשים ליעד App:** ‏File ← Add Files to "App"… ובוחרים:
-   - את `App/LumenNative.swift` ואת `App/LumenIntents.swift`, כשהתיבה
-     *Target: App* מסומנת;
-   - את `App/en.lproj` ואת `App/he.lproj` ‏(`Localizable.strings`,
-     ‏`AppShortcuts.strings`).
-3. **שפות:** ‏Project ← Info ← Localizations, ומוסיפים **Hebrew**.
-4. **הרחבת הווידג'ט:**
-   - ‏File ← New ← Target ← **Widget Extension**. קוראים לה
-     `LumenWidgets`, מבטלים את *Include Configuration App Intent* ואת
-     *Include Live Activity*, ובוחרים *Activate* כשנשאלים.
-   - מוחקים את קובץ ה-Swift ש-Xcode יצר. מוסיפים את
-     `LumenWidgets/LumenWidgets.swift` ואת `LumenWidgets/en.lproj` /
-     `he.lproj` ליעד **LumenWidgets**.
-   - קובעים את גרסת היעד ל-iOS 16 ומעלה, ואת מזהה החבילה
-     ל-`com.lumen.editor.LumenWidgets`.
-5. **חתימה:** אותו צוות ליעד App וליעד LumenWidgets (החשבונות בתוכנית
-   15.7). לא צריך App Group או יכולת חדשה: הווידג'ט רק פותח קישורים,
-   ו*הוספה לתיבה* של Siri רצה בתהליך של האפליקציה עצמה.
-6. ‏`Main.storyboard` כבר משתמש ב-`MainViewController`, שרושם את התוסף של
-   האפליקציה. בודקים שהמחלקה שלו מציגה *Module: App*.
-7. בונים ומריצים על מכשיר. לחיצה ארוכה על מסך הבית ← **+** ← **Lumen**
-   מוסיפה את הווידג'ט.
+- היעד **App** מקמפל את `AppDelegate.swift`, ‏`LumenNative.swift`,
+  ‏`LumenIntents.swift` ו-`iCloudSync.swift`, עם `en.lproj` / `he.lproj`
+  (`Localizable.strings`, ‏`AppShortcuts.strings`); עברית היא שפה של הפרויקט;
+- הרחבת הווידג׳ט **LumenWidgets** ‏(`com.lumen.editor.LumenWidgets`)
+  מקמפלת את `LumenWidgets/LumenWidgets.swift` עם המחרוזות, ה-`Info.plist`
+  וה-entitlements שלה, והאפליקציה מטמיעה אותה;
+- לשני היעדים יש את ה-App Group ‏`group.com.lumen.editor` ב-entitlements
+  (התור של הרחבת השיתוף נקרא דרכו).
+
+כדי לבנות:
+
+1. ‏`npm run build && npx cap sync ios`, ואז פותחים את `ios/App/App.xcworkspace`
+   (או את `App.xcodeproj` עם Swift Package Manager).
+2. **חתימה:** אותו צוות ליעדים App ו-LumenWidgets (החשבונות בתוכנית 15.7),
+   ורושמים את ה-App Group ‏`group.com.lumen.editor` לשני מזהי החבילה בחשבון
+   המפתחים.
+3. ‏`Main.storyboard` כבר משתמש ב-`MainViewController`, שרושם את התוסף של
+   האפליקציה. בודקים שהמחלקה מציגה *Module: App*.
+4. בונים ומריצים במכשיר. לחיצה ארוכה על מסך הבית → **+** → **Lumen** כדי
+   להוסיף את הווידג׳ט.
 
 ### ‏Android ‏(Android Studio)
 

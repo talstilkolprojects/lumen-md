@@ -108,7 +108,8 @@ describe("every manifest in lock-step (13.4.1)", () => {
     expect([lock.version, lock.packages[""].version]).toEqual(["0.2.0", "0.2.0"]);
     expect(JSON.parse(out["src-tauri/tauri.conf.json"]).version).toBe("0.2.0");
     expect(out["src-tauri/Cargo.toml"]).toMatch(/^\[package\]\nname = "lumen"\nversion = "0\.2\.0"/m); // #422 put [workspace] first
-    expect(out["ios/App/App.xcodeproj/project.pbxproj"].match(/MARKETING_VERSION = 0\.2\.0;/g)).toHaveLength(2);
+    // Two targets (App and the LumenWidgets extension) × Debug/Release: the extension moves with the app (W10.C7).
+    expect(out["ios/App/App.xcodeproj/project.pbxproj"].match(/MARKETING_VERSION = 0\.2\.0;/g)).toHaveLength(4);
     expect(out["ios/App/App.xcodeproj/project.pbxproj"]).toMatch(/CURRENT_PROJECT_VERSION = 2;/);
     // Only the version lines differ: formatting, dependency versions and other entries stay.
     for (const p of paths) {
