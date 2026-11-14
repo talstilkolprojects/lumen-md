@@ -32,7 +32,7 @@ export function InstallDialog(props: { manifest: PluginManifest; scan: ScanResul
       aria-modal="true"
       aria-labelledby="plugin-install-title"
       data-testid="plugin-install-dialog"
-      style={{ position: "fixed", inset: 0, zIndex: 210, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      style={{ position: "fixed", inset: 0, zIndex: 210, background: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
       onClick={(e) => {
         e.stopPropagation();
         if (e.target === e.currentTarget) props.onCancel();

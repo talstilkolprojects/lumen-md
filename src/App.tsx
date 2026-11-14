@@ -1496,7 +1496,7 @@ export default function App() {
           <div style={{ height: "calc(100vh - 42px)" }}>
             <Suspense fallback={<div style={{padding:'2rem',color:'hsl(var(--fg-muted))'}}>{t("loading.generic")}</div>}>
               <ErrorBoundary fallback={
-                <div style={{ padding: "3rem", textAlign: "center", color: "hsl(0 80% 60%)" }}>
+                <div style={{ padding: "3rem", textAlign: "center", color: "hsl(var(--danger))" }}>
                   <strong>{t("graphView.renderFailed")}</strong>
                   <p>{t("graphView.renderFailedDetail")}</p>
                 </div>
@@ -1513,7 +1513,7 @@ export default function App() {
 
       {/* Canvas Whiteboard overlay */}
       <Suspense fallback={null}>
-        <ErrorBoundary fallback={<div style={{ padding: '2rem', color: 'hsl(0 80% 60%)' }}>{t("errorBoundary.heading")}</div>}>
+        <ErrorBoundary fallback={<div style={{ padding: '2rem', color: 'hsl(var(--danger))' }}>{t("errorBoundary.heading")}</div>}>
           {canvasOpen && <CanvasWhiteboard open={canvasOpen} onClose={() => setCanvasOpen(false)} />}
           {galleryOpen && <PluginGallery open={galleryOpen} onClose={() => setGalleryOpen(false)} />}
           {templateGalleryOpen && <TemplateGallery open={templateGalleryOpen} onClose={() => setTemplateGalleryOpen(false)} />}
@@ -1540,7 +1540,7 @@ export default function App() {
       {/* Version History overlay */}
       {historyOpen && (
         <Suspense fallback={<div style={{padding:'2rem',color:'hsl(var(--fg-muted))'}}>{t("loading.generic")}</div>}>
-          <ErrorBoundary fallback={<div style={{ padding: '2rem', color: 'hsl(0 80% 60%)' }}>{t("errorBoundary.heading")}</div>}>
+          <ErrorBoundary fallback={<div style={{ padding: '2rem', color: 'hsl(var(--danger))' }}>{t("errorBoundary.heading")}</div>}>
             <VersionHistory
               fileName={historyKey(doc)}
               currentContent={doc.content}
@@ -1554,7 +1554,7 @@ export default function App() {
       {/* Table Editor overlay */}
       {tableEditorOpen && (
         <Suspense fallback={null}>
-          <ErrorBoundary fallback={<div style={{ padding: '2rem', color: 'hsl(0 80% 60%)' }}>{t("errorBoundary.heading")}</div>}>
+          <ErrorBoundary fallback={<div style={{ padding: '2rem', color: 'hsl(var(--danger))' }}>{t("errorBoundary.heading")}</div>}>
             <MarkdownTableEditor
               onUpdate={(md) => {
                 const current = doc.content;

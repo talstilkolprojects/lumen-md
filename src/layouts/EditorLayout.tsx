@@ -408,7 +408,7 @@ export function EditorLayout({
             }
           >
             <ErrorBoundary fallback={
-              <div style={{ padding: "2rem", color: "hsl(0 80% 60%)" }}>
+              <div style={{ padding: "2rem", color: "hsl(var(--danger))" }}>
                 <strong>{t("editor.wysiwygFailed")}</strong>
                 <p style={{ fontSize: 12, opacity: 0.8 }}>{t("editor.wysiwygFailedHint")}</p>
               </div>

@@ -1,11 +1,12 @@
 {
-  "$comment": "Plan W3.1: the 40 surfaces of the design audit (scripts/design-audit.mjs). Each is a component a person sees; the audit runs the checklist on its source.",
+  "$comment": "Plans W3.1 and W6.41: the 43 surfaces of the design audit (scripts/design-audit.mjs). Each is a component a person sees; the audit runs the checklist on its source. A bare name is src/ui/<name>.tsx; a name with a folder is src/<folder>/<name>.tsx.",
   "surfaces": [
     "Toolbar", "StatusBar", "CommandPalette", "SearchDialog", "SearchReplace", "FileTree", "FileContextMenu", "DocTabs",
     "Outline", "BacklinksPanel", "TagsPanel", "CommentsPanel", "GraphView", "VersionHistory", "TrashPanel", "PromptDialog",
     "InsertTextDialog", "MarkdownTableEditor", "KeyboardShortcuts", "OnboardingTour", "ThemeSettings", "AiSettingsPanel",
     "AiDoctorPanel", "AiSuggestionsPanel", "AiInlinePrompt", "AiFab", "AiToast", "PrivacyLedgerPanel", "TemplateGallery",
     "PluginGallery", "AuditLog", "OrgSettings", "TrustedKeysSettings", "CollabSettings", "FineTuneSettings",
-    "RuntimeMetricsPanel", "VoiceDictation", "WritingGoalBanner", "ScrollProgress", "PageView"
+    "RuntimeMetricsPanel", "VoiceDictation", "WritingGoalBanner", "ScrollProgress", "PageView",
+    "components/AuthDialog", "sync/cloud/ConflictDialog", "sync/e2ee/ui/SyncPanel"
   ]
 }

@@ -29,11 +29,11 @@ const primary: React.CSSProperties = { ...ghost, background: "hsl(var(--accent))
 const cell: React.CSSProperties = { padding: "3px 6px", borderBottom: "1px solid hsl(var(--border))", verticalAlign: "top" };
 
 const DECISION_COLOR: Record<EgressAttempt["decision"], string> = {
-  allowed: "hsl(35 90% 50%)",
-  blocked: "hsl(0 70% 55%)",
+  allowed: "hsl(var(--warning))",
+  blocked: "hsl(var(--danger))",
   "cache-only": "hsl(var(--fg-muted))",
-  local: "hsl(140 50% 45%)",
-  "in-flight": "hsl(35 90% 50%)",
+  local: "hsl(var(--success))",
+  "in-flight": "hsl(var(--warning))",
 };
 
 const decisionLabel = (d: EgressAttempt["decision"]) =>

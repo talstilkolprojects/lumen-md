@@ -127,6 +127,7 @@ export function communityPalette(n: number): string[] {
   const out: string[] = [];
   for (let i = 0; i < n; i++) {
     const hue = Math.round((360 * i) / Math.max(n, 1));
+    // design-allow: generated hues for graph communities (data colours, not interface colours)
     out.push(`hsl(${hue} 70% 60%)`);
   }
   return out;

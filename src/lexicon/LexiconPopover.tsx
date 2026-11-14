@@ -62,7 +62,7 @@ function Panel({ view, range, initial, x, y, close }: { view: EditorView; range:
       dir="rtl"
       lang="he"
       tabIndex={-1}
-      style={{ position: "fixed", left: Math.max(8, Math.min(x, window.innerWidth - 328)), top: Math.max(8, Math.min(y, window.innerHeight - 340)), zIndex: 9999, width: 320, maxHeight: 340, overflow: "auto", background: "hsl(var(--bg))", color: "hsl(var(--fg))", border: "1px solid hsl(var(--border-strong))", borderRadius: 10, padding: 12, boxShadow: "0 8px 24px hsl(0 0% 0%/0.2)", fontSize: 13 }}
+      style={{ position: "fixed", left: Math.max(8, Math.min(x, window.innerWidth - 328)), top: Math.max(8, Math.min(y, window.innerHeight - 340)), zIndex: 9999, width: 320, maxHeight: 340, overflow: "auto", background: "hsl(var(--bg))", color: "hsl(var(--fg))", border: "1px solid hsl(var(--border-strong))", borderRadius: 10, padding: 12, boxShadow: "var(--shadow-md)", fontSize: 13 }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <strong>{range.word}</strong>

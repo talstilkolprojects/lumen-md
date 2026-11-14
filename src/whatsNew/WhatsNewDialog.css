@@ -5,7 +5,7 @@
   z-index: 500;
   display: grid;
   place-items: center;
-  background: rgb(0 0 0 / 0.35);
+  background: var(--overlay);
 }
 
 .wn-dialog {
@@ -19,7 +19,7 @@
   border-radius: 10px;
   background: hsl(var(--bg));
   color: hsl(var(--fg));
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .wn-dialog h2 {

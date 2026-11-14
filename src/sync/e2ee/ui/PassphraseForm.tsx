@@ -68,7 +68,7 @@ export function PassphraseForm({ mode, onSubmit }: Props) {
         </label>
       )}
       {error && (
-        <div role="alert" style={{ fontSize: 12, color: "hsl(0 70% 50%)" }}>
+        <div role="alert" style={{ fontSize: 12, color: "hsl(var(--danger))" }}>
           {error}
         </div>
       )}

@@ -38,7 +38,7 @@ const field: React.CSSProperties = {
   font: "inherit",
 };
 const muted: React.CSSProperties = { fontSize: 12, color: "hsl(var(--fg-muted))" };
-const errorStyle: React.CSSProperties = { fontSize: 12, color: "hsl(0 70% 50%)" };
+const errorStyle: React.CSSProperties = { fontSize: 12, color: "hsl(var(--danger))" };
 const primary: React.CSSProperties = { padding: "6px 14px", border: "none", borderRadius: 6, background: "hsl(var(--accent))", color: "white", cursor: "pointer", justifySelf: "start" };
 
 /** A human message for a failed connection (never the error's own text: explainError). */
@@ -442,7 +442,7 @@ export function SyncPanel({ onClose, session = syncSession() }: { onClose: () =>
   const where = !s.settings ? "" : s.settings.kind === "lan" ? t(`e2ee.lan.where.${s.settings.role}`) : s.settings.kind === "folder" ? `${NAMES.folder} ${s.settings.name}` : `${NAMES[s.settings.kind]} — ${providerHosts(s.settings)[0] ?? ""}`;
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "hsl(0 0% 0% / 0.4)", display: "grid", placeItems: "center", zIndex: 1000 }} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div style={{ position: "fixed", inset: 0, background: "var(--overlay)", display: "grid", placeItems: "center", zIndex: 1000 }} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div
         role="dialog"
         aria-modal="true"

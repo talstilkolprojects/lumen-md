@@ -18,7 +18,7 @@ import { explainError } from "../../../lib/userError";
 
 const field: React.CSSProperties = { width: "100%", padding: "6px 8px", border: "1px solid hsl(var(--border))", borderRadius: 6, background: "transparent", color: "inherit", font: "inherit", fontSize: 12 };
 const muted: React.CSSProperties = { fontSize: 12, color: "hsl(var(--fg-muted))" };
-const errorStyle: React.CSSProperties = { fontSize: 12, color: "hsl(0 70% 50%)" };
+const errorStyle: React.CSSProperties = { fontSize: 12, color: "hsl(var(--danger))" };
 
 /** A human message for a LAN failure (never the error's own text: explainError). */
 export function describeLanError(e: unknown): string {
@@ -53,8 +53,9 @@ function QrSvg({ text }: { text: string }) {
   }, [text]);
   if (!qr) return null;
   const n = qr.size + 8;
-  return (
+  return ( // design-allow: a QR code stays pure black on white in every theme, so phone cameras can read it
     <svg role="img" aria-label={t("e2ee.lan.qr")} viewBox={`0 0 ${n} ${n}`} width={Math.min(260, n * 4)} height={Math.min(260, n * 4)} shapeRendering="crispEdges" style={{ background: "#fff", borderRadius: 4, justifySelf: "start" }}>
+      {/* design-allow: the QR modules are pure black (see above) */}
       <path d={qrPath(qr)} fill="#000" />
     </svg>
   );

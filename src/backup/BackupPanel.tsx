@@ -35,7 +35,7 @@ function Status() {
           ? t("backup.status.never")
           : t("backup.status.ok", { time: when(s.lastSuccessAt) });
   return (
-    <p role={health === "failed" ? "alert" : "status"} data-testid="backup-status" data-health={health} style={{ ...muted, color: health === "failed" ? "hsl(0 70% 55%)" : undefined }}>
+    <p role={health === "failed" ? "alert" : "status"} data-testid="backup-status" data-health={health} style={{ ...muted, color: health === "failed" ? "hsl(var(--danger))" : undefined }}>
       {s.running ? t("backup.running") : text}
     </p>
   );
@@ -195,7 +195,7 @@ function Panel({ onClose }: { onClose: () => void }) {
           </p>
         )}
         {error && (
-          <p role="alert" style={{ ...muted, color: "hsl(0 70% 55%)" }}>
+          <p role="alert" style={{ ...muted, color: "hsl(var(--danger))" }}>
             {error}
           </p>
         )}

@@ -6,7 +6,7 @@
   display: flex;
   justify-content: center;
   padding-block-start: 12vh;
-  background: rgb(0 0 0 / 0.3);
+  background: var(--overlay);
 }
 
 .cite-dialog {
@@ -20,7 +20,7 @@
   border-radius: 8px;
   background: hsl(var(--bg));
   color: hsl(var(--fg));
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .cite-fields {

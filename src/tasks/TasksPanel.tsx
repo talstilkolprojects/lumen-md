@@ -62,7 +62,7 @@ function Panel({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div role="dialog" aria-label={t("tasks.panel.title")} className="lumen-tasks-panel" style={{ position: "fixed", insetBlockStart: 56, insetInlineEnd: 16, width: "min(420px, calc(100vw - 32px))", maxHeight: "70vh", overflow: "auto", background: "hsl(var(--bg-elevated, var(--bg)))", color: "hsl(var(--fg))", border: "1px solid hsl(var(--border))", borderRadius: 10, boxShadow: "0 12px 32px -8px rgb(0 0 0 / .35)", zIndex: 60, padding: 12 }}>
+    <div role="dialog" aria-label={t("tasks.panel.title")} className="lumen-tasks-panel" style={{ position: "fixed", insetBlockStart: 56, insetInlineEnd: 16, width: "min(420px, calc(100vw - 32px))", maxHeight: "70vh", overflow: "auto", background: "hsl(var(--bg-elevated, var(--bg)))", color: "hsl(var(--fg))", border: "1px solid hsl(var(--border))", borderRadius: 10, boxShadow: "var(--shadow-lg)", zIndex: 60, padding: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
         <strong style={{ flex: 1 }}>{t("tasks.panel.title")}</strong>
         <HelpButton topic="workspace/tasks" />
@@ -74,7 +74,7 @@ function Panel({ onClose }: { onClose: () => void }) {
           ✕
         </button>
       </div>
-      {changed ? <p role="status" style={{ color: "hsl(0 70% 55%)", fontSize: 13 }}>{t("tasks.changed")}</p> : null}
+      {changed ? <p role="status" style={{ color: "hsl(var(--danger))", fontSize: 13 }}>{t("tasks.changed")}</p> : null}
       <h4 style={{ margin: "4px 0" }}>{t("tasks.panel.today")}</h4>
       {today ? <TaskList tasks={today.groups[0]?.tasks ?? []} onToggle={onToggle} today={now} /> : <p>{t("tasks.loading")}</p>}
       <h4 style={{ margin: "12px 0 4px" }}>{t("tasks.panel.upcoming")}</h4>

@@ -128,7 +128,7 @@ export function ShareLinkDialog({ title, markdown, onClose }: { title: string; m
             </button>
           </div>
           {error && (
-            <div role="alert" style={{ fontSize: 13, color: "hsl(0 70% 55%)" }}>
+            <div role="alert" style={{ fontSize: 13, color: "hsl(var(--danger))" }}>
               {error}
             </div>
           )}

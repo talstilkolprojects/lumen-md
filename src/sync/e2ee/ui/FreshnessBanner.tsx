@@ -63,8 +63,8 @@ export function FreshnessBanner({ sync }: Props) {
         display: "grid",
         gap: 8,
         padding: "10px 12px",
-        border: "1px solid hsl(40 90% 45%)",
-        background: "hsl(40 90% 50% / 0.1)",
+        border: "1px solid hsl(var(--warning))",
+        background: "hsl(var(--warning) / 0.1)",
         borderRadius: 8,
         fontSize: 13,
       }}
@@ -94,7 +94,7 @@ export function FreshnessBanner({ sync }: Props) {
           style={{ padding: "4px 6px", border: "1px solid hsl(var(--border))", borderRadius: 6, background: "transparent", color: "inherit", fontFamily: "JetBrains Mono, ui-monospace, monospace" }}
         />
       </label>
-      {error && <div style={{ color: "hsl(0 70% 50%)", fontSize: 12 }}>{error}</div>}
+      {error && <div style={{ color: "hsl(var(--danger))", fontSize: 12 }}>{error}</div>}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button type="button" onClick={() => act(async () => setRequest(await sync.pairingRequest()))}>
           {t("e2ee.fresh.request")}

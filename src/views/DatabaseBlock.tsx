@@ -206,7 +206,7 @@ export default function DatabaseBlock({ source, meta }: Props) {
   if (parseError || !spec) {
     return (
       <div className="chart-block" style={{ padding: "1rem" }}>
-        <div style={{ color: "hsl(0 80% 60%)", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ color: "hsl(var(--danger))", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
           <AlertCircle size={14} />
           {t("db.specError", { error: parseError ?? "invalid" })}
         </div>
@@ -237,14 +237,14 @@ export default function DatabaseBlock({ source, meta }: Props) {
       <Toolbar where={where} setWhere={setWhere} filterError={filter.ok ? null : filter} sort={sort} setSort={setSort} groupBy={groupBy} setGroupBy={setGroupBy} keys={allKeys} />
       <FormulaBox keys={propertyKeys} sample={computed.rows[0]} taken={formulaNames} onAdd={(name, formula) => setExtraFormulas((x) => ({ ...x, [name]: formula }))} />
       {badFormulas.length > 0 && (
-        <div role="alert" style={{ paddingInline: 8, paddingBlockStart: 4, color: "hsl(0 80% 60%)", fontSize: 11 }} data-testid="database-formula-spec-error">
+        <div role="alert" style={{ paddingInline: 8, paddingBlockStart: 4, color: "hsl(var(--danger))", fontSize: 11 }} data-testid="database-formula-spec-error">
           {badFormulas.map((f) => (
             <div key={f.name} dir="auto">{t("db.formula.specError", { name: f.name, error: f.error?.message ?? "", at: (f.error?.at ?? 0) + 1 })}</div>
           ))}
         </div>
       )}
       <div style={{ padding: 8 }}>
-        {error && <div style={{ padding: 12, color: "hsl(0 80% 60%)" }}>{error}</div>}
+        {error && <div style={{ padding: 12, color: "hsl(var(--danger))" }}>{error}</div>}
         {!error && shown.length === 0 && !loading && (
           <EmptyState
             style={{ padding: 24, alignItems: "center", textAlign: "center", fontSize: 13 }}
@@ -362,7 +362,7 @@ function Toolbar({
         </select>
       </label>
       {filterError && (
-        <div id="db-filter-error" role="alert" style={{ flexBasis: "100%", color: "hsl(0 80% 60%)", fontSize: 11 }}>
+        <div id="db-filter-error" role="alert" style={{ flexBasis: "100%", color: "hsl(var(--danger))", fontSize: 11 }}>
           {t("db.filter.error", { error: filterError.error, at: filterError.at + 1 })}
         </div>
       )}
@@ -517,7 +517,7 @@ function CellValue({ value, dates }: { value: unknown; dates: CellDates }) {
         </span>
       )}
       {d && (
-        <span data-testid="db-deadline-left" style={{ fontSize: 11, color: cell.deadline!.left < 0 ? "hsl(0 70% 50%)" : "hsl(var(--fg-muted))" }}>
+        <span data-testid="db-deadline-left" style={{ fontSize: 11, color: cell.deadline!.left < 0 ? "hsl(var(--danger))" : "hsl(var(--fg-muted))" }}>
           {d.left}
           {d.notes ? ` · ${d.notes}` : ""}
         </span>
@@ -531,7 +531,7 @@ function CellValue({ value, dates }: { value: unknown; dates: CellDates }) {
 function FormulaCell({ value, error }: { value: unknown; error?: string }) {
   if (error) {
     return (
-      <span title={error} style={{ color: "hsl(0 80% 60%)" }} data-testid="database-formula-error" dir="auto">
+      <span title={error} style={{ color: "hsl(var(--danger))" }} data-testid="database-formula-error" dir="auto">
         <AlertCircle size={11} aria-hidden style={{ display: "inline", verticalAlign: "-1px", marginInlineEnd: 3 }} />
         {t("db.formula.cellError")}
         <span className="sr-only">{`: ${error}`}</span>
@@ -636,12 +636,12 @@ function FormulaBox({ keys, sample, taken, onAdd }: { keys: string[]; sample?: D
         {t("db.formula.close")}
       </button>
       {error && (
-        <div id="db-formula-error" role="alert" style={{ flexBasis: "100%", color: "hsl(0 80% 60%)", fontSize: 11 }} dir="auto">
+        <div id="db-formula-error" role="alert" style={{ flexBasis: "100%", color: "hsl(var(--danger))", fontSize: 11 }} dir="auto">
           {t("db.formula.error", { error: error.message, at: error.at + 1 })}
         </div>
       )}
       {cleanName && taken.has(cleanName) && (
-        <div role="alert" style={{ flexBasis: "100%", color: "hsl(0 80% 60%)", fontSize: 11 }} dir="auto">
+        <div role="alert" style={{ flexBasis: "100%", color: "hsl(var(--danger))", fontSize: 11 }} dir="auto">
           {t("db.formula.nameTaken", { name: cleanName })}
         </div>
       )}

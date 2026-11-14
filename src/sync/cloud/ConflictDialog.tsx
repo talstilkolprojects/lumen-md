@@ -96,7 +96,7 @@ function ConflictDialogImpl({ path, base, local, remote, labels, hunks: given, o
       style={{
         position: "fixed",
         inset: 0,
-        background: "hsl(0 0% 0% / 0.5)",
+        background: "var(--overlay)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -147,11 +147,11 @@ function ConflictDialogImpl({ path, base, local, remote, labels, hunks: given, o
                   borderBottom: "1px solid hsl(var(--border))",
                   background:
                     h.op === "conflict"
-                      ? "hsl(0 80% 60% / 0.06)"
+                      ? "hsl(var(--danger) / 0.06)"
                       : h.op === "local"
-                        ? "hsl(258 60% 60% / 0.06)"
+                        ? "hsl(var(--accent) / 0.06)"
                         : h.op === "remote"
-                          ? "hsl(190 60% 60% / 0.06)"
+                          ? "hsl(var(--info) / 0.06)"
                           : undefined,
                 }}
               >

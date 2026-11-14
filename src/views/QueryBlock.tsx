@@ -126,7 +126,7 @@ export default function QueryBlock({ source, lang }: Props) {
         )}
         {!out && <div style={{ fontSize: 12, color: "hsl(var(--fg-muted))" }}>{t("query.loading")}</div>}
         {out?.kind === "error" && (
-          <div role="alert" style={{ color: "hsl(0 80% 60%)", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+          <div role="alert" style={{ color: "hsl(var(--danger))", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
             <AlertCircle size={14} />
             {t("query.error", { error: out.message })}
           </div>
