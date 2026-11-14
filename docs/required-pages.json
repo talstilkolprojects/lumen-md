@@ -1,5 +1,5 @@
 {
-  "$comment": "Plan 13.1: every feature has a docs page in English and Hebrew. `areas`: the areas 13.1.1 names, each mapped to its page slug. `pending`: pages whose content is written by another open PR (named here); the check fails once such a page exists on this branch, so the entry must then be removed. Checked by scripts/docs-complete.mjs (npm run docs:complete). `hebrewPending`: English page exists here, its Hebrew twin comes with another open PR.",
+  "$comment": "Plan 13.1: every feature has a docs page in English and Hebrew. `areas`: the areas 13.1.1 names, each mapped to its page slug. `pending`: pages whose content is written by another open PR (named here); the check fails once such a page exists on this branch, so the entry must then be removed. Checked by scripts/docs-complete.mjs (npm run docs:complete). `hebrewPending`: English page exists here, its Hebrew twin comes with another open PR. `tasks`: plan 13.1 — every finished plan task that changed what a user sees names its page here when its own PR wrote none (docs-complete checks the page exists and is in the sidebar; npm run docs:audit lists the tasks that still have no page). `tasksWithoutPage`: a finished task the audit flags that changed nothing a user reads about, with the reason.",
   "areas": {
     "git sync": "sync/git",
     "encrypted sync": "sync/e2ee",
@@ -15,5 +15,34 @@
   "pending": {
     "plugins/gallery": "feat/plugins-install (plan 11.2 part 3, S5b)"
   },
-  "hebrewPending": {}
+  "hebrewPending": {},
+  "tasks": {
+    "0.3": "contributing/translations",
+    "0.5": "contributing/nightly",
+    "1.3": "ai/hebrew-dictation",
+    "1.4": "getting-started/shortcuts",
+    "2.2": "security/image-hosts",
+    "2.5": "security/vault",
+    "3.1": "workspace/history",
+    "3.2": "workspace/history",
+    "4.1": "contributing/code-checks",
+    "4.2": "workspace/vault-folder",
+    "4.3": "workspace/vault-folder",
+    "4.4": "workspace/vault-folder",
+    "4.5": "workspace/links",
+    "4.6": "workspace/links",
+    "4.7": "workspace/links",
+    "4.8": "workspace/links",
+    "4.9": "workspace/properties",
+    "4.12": "workspace/hebrew-calendar",
+    "6.1": "ai/hebrew-dictation",
+    "9.1": "contributing/code-checks",
+    "9.2": "editor/hebrew",
+    "9.7": "editor/hebrew-rtl",
+    "10.4": "contributing/code-checks",
+    "W6.29": "ai/privacy"
+  },
+  "tasksWithoutPage": {
+    "W6.25": "#574 moves code out of Editor.tsx, airplane.ts and exportDocx.ts as is; the max-lines gate itself, and its page, come with #500"
+  }
 }
