@@ -1,0 +1,194 @@
+{
+  "about": "Hebrew APA 7 examples transcribed from the published university library guides (plan W11.H15), each with its source. Transcription: Bar-Ilan's page was read through a summarising fetch tool and Haifa's PDF through text extraction (which prints parentheses reversed, ')2009(' — written here the right way round); entries that came through truncated were left out. Owed: check each entry against the guide by eye, and add entries up to 40 from the full guides (W11.H15 acceptance: >= 38/40 identical).",
+  "normalisation": "Compared after: FSI/PDI removed; italics markers removed (Haifa's PDF text has no italics); the initial mark unified (׳, ' and . after a single Hebrew letter are the same mark — Bar-Ilan writes א', Haifa writes א., Lumen writes א׳); typographic apostrophe/geresh in surnames unified.",
+  "sources": {
+    "biu": "https://lib.biu.ac.il/en/Education/APA7 (read 2026-11-15)",
+    "haifa": "https://lib.haifa.ac.il/wp-content/uploads/2025/08/apaheb.pdf (linked from https://lib.haifa.ac.il/en/bibliography-rules/, read 2026-11-15)"
+  },
+  "examples": [
+    {
+      "id": "biu-book-1",
+      "source": "biu",
+      "kind": "reference",
+      "record": {
+        "type": "book",
+        "authors": [
+          {
+            "family": "שפירא-לשצ'ינסקי",
+            "given": "א"
+          }
+        ],
+        "year": "2017",
+        "title": "אתיקה ארגונית בניהול משאבי אנוש במערכת החינוך הישראלית",
+        "publisher": "פרדס"
+      },
+      "expected": "שפירא-לשצ'ינסקי, א' (2017). *אתיקה ארגונית בניהול משאבי אנוש במערכת החינוך הישראלית*. פרדס."
+    },
+    {
+      "id": "biu-book-2",
+      "source": "biu",
+      "kind": "reference",
+      "record": {
+        "type": "book",
+        "authors": [
+          {
+            "family": "איזקסון",
+            "given": "ע"
+          },
+          {
+            "family": "שוורץ",
+            "given": "ד"
+          }
+        ],
+        "year": "2020",
+        "title": "מוסיקה, יהדות, ישראליות ואנחנו : מסע של זהות",
+        "publisher": "כרמל"
+      },
+      "expected": "איזקסון, ע' ושוורץ, ד'. (2020). *מוסיקה, יהדות, ישראליות ואנחנו : מסע של זהות*. כרמל.",
+      "note": "The guide writes a period after the last author before the year here ('ד'. (2020)') but not in its one-author example ('א' (2017)'): the guide is not consistent with itself."
+    },
+    {
+      "id": "haifa-book-2",
+      "source": "haifa",
+      "kind": "reference",
+      "record": {
+        "type": "book",
+        "authors": [
+          {
+            "family": "דיאמונד",
+            "given": "ג"
+          },
+          {
+            "family": "ארבל",
+            "given": "א"
+          }
+        ],
+        "year": "2009",
+        "title": "אימוץ: מסע להורות חדשה",
+        "publisher": "הקיבוץ המאוחד"
+      },
+      "expected": "דיאמונד, ג. וארבל, א. (2009). אימוץ: מסע להורות חדשה. הקיבוץ המאוחד."
+    },
+    {
+      "id": "haifa-book-1",
+      "source": "haifa",
+      "kind": "reference",
+      "record": {
+        "type": "book",
+        "authors": [
+          {
+            "family": "ויניקוט",
+            "given": "ד ו"
+          }
+        ],
+        "year": "1995",
+        "title": "משחק ומציאות",
+        "publisher": "עם עובד"
+      },
+      "expected": "ויניקוט, ד.ו. (1995). משחק ומציאות. עם עובד.",
+      "note": "Two initials written without a space ('ד.ו.'); APA 7 puts a space between initials."
+    },
+    {
+      "id": "haifa-encyclopedia",
+      "source": "haifa",
+      "kind": "reference",
+      "record": {
+        "type": "chapter",
+        "authors": [
+          {
+            "family": "קאזנס",
+            "given": "ל ס"
+          }
+        ],
+        "editors": [
+          {
+            "family": "הינלס",
+            "given": "ג ר"
+          }
+        ],
+        "year": "1992",
+        "title": "בודהיזם",
+        "container": "לקסיקון לדתות בנות זמננו",
+        "pages": "193-239",
+        "publisher": "כתר"
+      },
+      "expected": "קאזנס, ל. ס. (1992). בודהיזם. בתוך ג. ר. הינלס (עורך), לקסיקון לדתות בנות זמננו (עמ' 193-239). כתר."
+    },
+    {
+      "id": "haifa-intext-2",
+      "source": "haifa",
+      "kind": "parenthetical",
+      "record": {
+        "type": "book",
+        "authors": [
+          {
+            "family": "דיאמונד",
+            "given": "ג"
+          },
+          {
+            "family": "ארבל",
+            "given": "א"
+          }
+        ],
+        "year": "2009",
+        "title": "אימוץ",
+        "publisher": "הקיבוץ המאוחד"
+      },
+      "expected": "(דיאמונד וארבל, 2009)"
+    },
+    {
+      "id": "haifa-intext-3plus",
+      "source": "haifa",
+      "kind": "parenthetical",
+      "record": {
+        "type": "article",
+        "authors": [
+          {
+            "family": "דהאן",
+            "given": "א"
+          },
+          {
+            "family": "כהן",
+            "given": "ב"
+          },
+          {
+            "family": "לוי",
+            "given": "ג"
+          }
+        ],
+        "year": "2012",
+        "title": "מחקר",
+        "container": "מגמות"
+      },
+      "expected": "(דהאן ואחרים, 2012)",
+      "note": "The guide shows only 'דהאן ואחרים (2012)': the co-authors and the title in this record are placeholders; the citation depends only on the first author, three or more authors, and the year."
+    },
+    {
+      "id": "haifa-intext-3plus-narrative",
+      "source": "haifa",
+      "kind": "narrative",
+      "record": {
+        "type": "article",
+        "authors": [
+          {
+            "family": "דהאן",
+            "given": "א"
+          },
+          {
+            "family": "כהן",
+            "given": "ב"
+          },
+          {
+            "family": "לוי",
+            "given": "ג"
+          }
+        ],
+        "year": "2012",
+        "title": "מחקר",
+        "container": "מגמות"
+      },
+      "expected": "דהאן ואחרים (2012)",
+      "note": "The guide shows only 'דהאן ואחרים (2012)': the co-authors and the title in this record are placeholders; the citation depends only on the first author, three or more authors, and the year."
+    }
+  ]
+}

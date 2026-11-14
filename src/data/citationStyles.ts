@@ -93,7 +93,9 @@ const directName = (n: Name) => `${n.given ? `${n.given} ` : ""}${n.family}${n.s
 function apaAuthors(names: Name[], lang: CitationLang): string {
   const list = names.map(apaName);
   if (list.length === 1) return list[0];
-  if (list.length <= 20) return `${list.slice(0, -1).join(", ")}, ${and(lang, list[list.length - 1], "amp")}`;
+  // Hebrew (W11.H15): no comma before the ו of the last author — the BIU and Haifa
+  // library guides: "כהן, א' ולוי, ב'"; English keeps APA's serial comma before "&".
+  if (list.length <= 20) return lang === "he" ? `${list.slice(0, -1).join(", ")} ${and(lang, list[list.length - 1], "amp")}` : `${list.slice(0, -1).join(", ")}, ${and(lang, list[list.length - 1], "amp")}`;
   // 21 or more: the first 19, an ellipsis, the last.
   return `${list.slice(0, 19).join(", ")}, … ${list[list.length - 1]}`;
 }

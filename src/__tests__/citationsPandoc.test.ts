@@ -25,7 +25,9 @@ const lookupOf = (xs: ReadonlyArray<{ key: string; record: CitationRecord }>) =>
   return (k: string) => m.get(k);
 };
 const cluster = (src: string): Cluster => findCitations(src)[0];
-const cite = (src: string, style: Style, lang: "en" | "he" = "en", lib = gold) => formatCluster(cluster(src), { style, lang, lookup: lookupOf(lib), suffix: yearSuffixes(lib, style) }, src);
+/** W11.H15 puts FSI … PDI around parentheticals in Hebrew output; these assertions are about the visible text. */
+const noIso = (s: string) => s.replace(/[\u2068\u2069]/g, "");
+const cite = (src: string, style: Style, lang: "en" | "he" = "en", lib = gold) => noIso(formatCluster(cluster(src), { style, lang, lookup: lookupOf(lib), suffix: yearSuffixes(lib, style) }, src));
 
 describe("pandoc syntax (W2.16)", () => {
   it("brackets, several sources, prefix, locator, suffix, suppressed author", () => {
@@ -90,10 +92,10 @@ describe("the Israeli APA (W2.16, decision 15.10)", () => {
     expect(cite("[@austen1813, p. 5]", "il", "he", lib)).toBe("(Austen, 1813, p. 5)");
     const lists = bibliography(lib, { style: "il", lang: "he", suffix: yearSuffixes(lib, "il") });
     expect(lists).toHaveLength(2);
-    expect(lists[0].map((e) => runsToMarkdown(e.runs))).toEqual([
+    expect(lists[0].map((e) => noIso(runsToMarkdown(e.runs)))).toEqual([
       "דרשן, ד׳ (2022א). *ילד אמיץ, ילד רגיש*. פסיכולוגיה לעם הוצאה לאור.",
       "דרשן, ד׳ (2022ב). *ילדה חכמה*. פסיכולוגיה לעם הוצאה לאור.",
-      "נבו, א׳, ומרום, ד׳ (2023). *מחקר*. הוצאה.",
+      "נבו, א׳ ומרום, ד׳ (2023). *מחקר*. הוצאה.",
     ]);
     expect(lists[1].map((e) => e.key)).toEqual(["austen1813", "darwin1859", "melville1851"]);
   });
@@ -156,8 +158,9 @@ describe("a note with citations, expanded (preview, DOCX, PDF) (W2.16)", () => {
     const lib = [...gold, { key: "d", record: he }];
     const r = expandCitations("---\ncitation-style: il\n---\nכפי שנכתב [@d, עמ׳ 4] ו-[@austen1813].", lookupOf(lib));
     expect(r.lang).toBe("he");
-    expect(r.markdown).toContain("כפי שנכתב (דרשן, 2022, עמ׳ 4) ו-(Austen, 1813).");
-    expect(r.markdown).toMatch(/## מקורות\n\n### מקורות בעברית\n\nדרשן, ד׳ \(2022\)\. \*ילד אמיץ\*\. הוצאה\.\n\n### מקורות בשפות אחרות\n\nAusten, J\. \(1813\)\./);
+    expect(noIso(r.markdown)).toContain("כפי שנכתב (דרשן, 2022, עמ׳ 4) ו-(Austen, 1813).");
+    expect(r.markdown).toContain("\u2068(דרשן, 2022, עמ׳ 4)\u2069");
+    expect(noIso(r.markdown)).toMatch(/## מקורות\n\n### מקורות בעברית\n\nדרשן, ד׳ \(2022\)\. \*ילד אמיץ\*\. הוצאה\.\n\n### מקורות בשפות אחרות\n\nAusten, J\. \(1813\)\./);
   });
 
   it("markdown in titles is escaped; a note without citations is unchanged", () => {
@@ -200,7 +203,7 @@ describe("DOCX with the bibliography (W2.16)", () => {
     const lib = [...gold, { key: "d", record: he }];
     const md = expandCitations("---\ncitation-style: il\n---\nכפי שנכתב [@d, עמ׳ 4] ו-[@austen1813].", lookupOf(lib)).markdown;
     const bytes = await markdownToDocxBytes(md);
-    const text = docxText(bytes);
+    const text = noIso(docxText(bytes));
     for (const s of ["(דרשן, 2022, עמ׳ 4)", "מקורות בעברית", "דרשן, ד׳ (2022)", "Austen, J. (1813)", "Pride and prejudice"]) expect(text, s).toContain(s);
   });
 });
