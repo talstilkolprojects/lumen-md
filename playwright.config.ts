@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+// @ts-expect-error — plain .mjs script without type declarations
 import { E2E_COLLAB_WS } from "./scripts/test-tiers.mjs";
 
 /**

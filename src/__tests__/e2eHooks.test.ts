@@ -40,6 +40,6 @@ describe("e2e test hooks", () => {
     // vercel-build sets VITE_E2E for a build whose gates include e2e: previews, not production.
     expect(PREVIEW_GATES).toContain("e2e");
     expect(PRODUCTION_GATES).not.toContain("e2e");
-    expect(readFileSync(join(ROOT, "scripts/vercel-build.mjs"), "utf8")).toContain('if (gates.includes("e2e")) process.env.VITE_E2E ??= "1";');
+    expect(readFileSync(join(ROOT, "scripts/vercel-build.mjs"), "utf8")).toMatch(/if \(gates\.includes\("e2e"\)\) \{?\s*process\.env\.VITE_E2E \?\?= "1";/);
   });
 });
