@@ -229,6 +229,7 @@ export default defineConfig({
             { label: "Secrets and encryption", slug: "security/vault" },
             { label: "Monitoring and web vitals", slug: "security/monitoring", translations: { he: "ניטור ומדדי ביצועים" } },
             { label: "Vault encryption at rest", slug: "security/vault-encryption", translations: { he: "הצפנת הכספת במנוחה" } },
+            { label: "Built the same on two infrastructures", slug: "security/two-host-build", translations: { he: "נבנה זהה בשתי תשתיות" } },
             { label: "Secret scan of the build", slug: "security/secret-scan", translations: { he: "סריקת סודות בבנייה" } },
             { label: "Usage on this device", slug: "security/usage-metrics", translations: { he: "שימוש במכשיר הזה" } },
           ],
