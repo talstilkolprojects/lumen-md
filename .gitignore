@@ -103,3 +103,6 @@ public/excalidraw/
 !/reports/nightly/
 # npm run ci:docker output (plan W4.27)
 ci-docker-out/
+# Buildkite job output (plan W7.21): shard plans, blob reports, receipts — build artifacts
+/ci-out/
+/.vitest/
