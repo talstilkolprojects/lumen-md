@@ -42,14 +42,14 @@ passes on the real code fails, when the run crashes, or when it hangs.
 ## Running it
 
 ```sh
-npm run test:mutation                          # all modules, fails under 70%
+npm run test:mutation                          # all modules, fails under 80%
 node scripts/mutation/run.mjs --module keyring # one module
-node scripts/mutation/run.mjs --max 200        # a bigger sample per module
+node scripts/mutation/run.mjs --max 200        # a bigger sample per module (still an estimate)
 ```
 
 The report, with the score per module and every surviving mutant's line, is
-written to `reports/mutation/`. The plan's target is a score of at least
-70% per module. A mutant that survives in a security module should get a
+written to `reports/mutation/`. The floor is a score of at least
+80% per module, on a full vitest run (a sample is only an estimate). A mutant that survives in a security module should get a
 test that catches it.
 ---
 title: Mutation testing
@@ -95,14 +95,14 @@ passes on the real code fails, when the run crashes, or when it hangs.
 ## Running it
 
 ```sh
-npm run test:mutation                          # all modules, fails under 70%
+npm run test:mutation                          # all modules, fails under 80%
 node scripts/mutation/run.mjs --module keyring # one module
-node scripts/mutation/run.mjs --max 200        # a bigger sample per module
+node scripts/mutation/run.mjs --max 200        # a bigger sample per module (still an estimate)
 ```
 
 The report, with the score per module and every surviving mutant's line, is
-written to `reports/mutation/`. The plan's target is a score of at least
-70% per module. A mutant that survives in a security module should get a
+written to `reports/mutation/`. The floor is a score of at least
+80% per module, on a full vitest run (a sample is only an estimate). A mutant that survives in a security module should get a
 test that catches it.
 
 ## The 80% floor in every preview build
@@ -117,8 +117,7 @@ least **80%**:
 - the secret store
 - vault writes: `storage/vault/shared` and `handleBackend`
 
-`npm run test:mutation` fails when one of them is under 80%, and when any
-other module is under 70%.
+`npm run test:mutation` fails when any module is under 80%.
 
 A full run takes too long for a preview build, so the build checks a
 **receipt** instead. `scripts/mutation/receipt.json` records each critical
@@ -127,13 +126,21 @@ module's last score and the sha256 of the source it was measured on.
 on the branch:
 
 - has no score in the receipt,
-- scores under 80%, or
-- changed since its score was measured.
+- scores under 80%,
+- changed since its score was measured, or
+- has only an **estimate**.
 
-After changing a critical module, measure it again and commit the receipt:
+A score counts only when it comes from real vitest over **every** mutant
+(`runner: "vitest"` and `sampled` equal to `mutants` in the receipt). A run
+in the offline shim, or a sample such as 80 of 502 mutants, is shown as
+`~90% estimated (80/502 mutants, runner shim)`, and the gate does not pass
+it. Until a full vitest run is committed, the gate stays red.
+
+After changing a critical module, measure it again under vitest, over every
+mutant, and commit the receipt:
 
 ```sh
-node scripts/mutation/run.mjs --critical --module privacyLedger --receipt
+node scripts/mutation/run.mjs --critical --module privacyLedger --receipt --max 100000
 ```
 
 A module that isn't on the branch yet (it comes with another pull request)

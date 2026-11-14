@@ -7,7 +7,9 @@
  *
  *   node scripts/mutation/run.mjs                       # vitest, all modules
  *   node scripts/mutation/run.mjs --module keyring      # modules whose path contains "keyring"
- *   node scripts/mutation/run.mjs --max 80 --min 70     # sample size; fail under 70%
+ *   node scripts/mutation/run.mjs --max 80 --min 80     # sample size; fail under 80%
+ *                                         # (a sample is an estimate: the receipt
+ *                                         # gate counts only vitest over every mutant)
  *   node scripts/mutation/run.mjs --critical --receipt  # the W4.17 critical set; record the
  *                                         # scores in scripts/mutation/receipt.json
  *   node scripts/mutation/run.mjs --runner shim --shim <dir> --harness <file>
@@ -157,7 +159,8 @@ for (const [path, listed] of Object.entries(targets)) {
   const caught = row.killed + row.timeout;
   row.score = caught + row.survived ? Math.round((caught / (caught + row.survived)) * 1000) / 10 : 0;
   report.push(row);
-  console.log(`${path}: ${row.score}% (${caught} caught of ${caught + row.survived}; ${row.invalid} not parsing; ${row.mutants} mutants, ${row.sampled} run)`);
+  const estimate = runner !== "vitest" || row.sampled !== row.mutants;
+  console.log(`${path}: ${estimate ? "~" : ""}${row.score}%${estimate ? ` estimated (${row.sampled}/${row.mutants} mutants, runner ${runner})` : ""} (${caught} caught of ${caught + row.survived}; ${row.invalid} not parsing; ${row.mutants} mutants, ${row.sampled} run)`);
 }
 
 writeFileSync(join(root, "reports/mutation/report.json"), JSON.stringify(report, null, 2));
@@ -179,7 +182,8 @@ if (writeReceipt) {
 const md = ["# Mutation testing (plan 0.15, W4.17)", "", "| Module | Score | Caught | Survived | Run / all |", "| --- | --- | --- | --- | --- |"];
 for (const r of report) {
   if (r.error) md.push(`| ${r.module} | — | — | — | ${r.error} |`);
-  else md.push(`| ${r.module} | ${r.score}% | ${r.killed + r.timeout} | ${r.survived} | ${r.sampled} / ${r.mutants} |`);
+  // A sample or a shim run is an estimate, not the module's score (plan W10.B14).
+  else md.push(`| ${r.module} | ${runner === "vitest" && r.sampled === r.mutants ? `${r.score}%` : `~${r.score}% (estimated)`} | ${r.killed + r.timeout} | ${r.survived} | ${r.sampled} / ${r.mutants} |`);
 }
 for (const r of report.filter((x) => x.survivors?.length)) {
   md.push("", `## ${r.module}: survivors`, "");
