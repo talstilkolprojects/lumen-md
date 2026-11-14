@@ -85,6 +85,7 @@ import {
   type KeyAccess,
   type RingAnchor,
 } from "./keyring";
+import { LOCK_BUSY, tryDeviceLock, withDeviceLock } from "./deviceLock";
 import { isSyncedPath, type LocalFiles } from "./localFiles";
 import {
   blobName,
@@ -170,6 +171,26 @@ export class PairingDuringKeyChangeError extends Error {
   constructor() {
     super("This device is changing the vault's keys right now: make the pairing code once the change has finished.");
     this.name = "PairingDuringKeyChangeError";
+  }
+}
+
+/**
+ * A revocation from this device lost its keyring commit, two or more times
+ * in a row, to a rewrite of the keyring at the same epoch (ninth review
+ * 12.11, H2). Anyone who still holds the epoch's secret and the storage
+ * login can do that every time, most likely the device being removed: no
+ * retry from here can win against it. Change the storage password or token
+ * first, so the lost device can't write any more, then remove it again.
+ * A `PreconditionFailedError`, as before, for callers that handle that.
+ */
+export class RevocationContestedError extends PreconditionFailedError {
+  constructor(
+    public readonly devices: string[],
+    public readonly losses: number,
+  ) {
+    super(KEYRING_NAME);
+    this.message = `Removing ${devices.join(", ")} lost to a rewrite of the device list ${losses} times in a row: something that still has the vault's keys and the storage login (most likely the device being removed) is blocking it. Change the storage password or token first, then remove it again.`;
+    this.name = "RevocationContestedError";
   }
 }
 
@@ -516,6 +537,8 @@ export class E2eeSync {
   private running: Promise<unknown> = Promise.resolve();
   /** Key changes (`rekeyNow`) running now: no pairing code meanwhile (G3). */
   private keyChanges = 0;
+  /** This engine holds the device lock (`deviceLock`, H3) for the call running now. */
+  private lockHeld = false;
   private state: DeviceState | null = null;
   /** Digest of the manifest `readManifest` returned last (the parent of the next commit). */
   private remoteDigest = "";
@@ -547,6 +570,25 @@ export class E2eeSync {
     return this.o.keys;
   }
 
+  /**
+   * H1, H2 (ninth review 12.11): what this device remembers about a key
+   * change held back or contested at one epoch is void once the epoch has
+   * moved: that key change committed (or another did), so the next one is
+   * waited on, and counted, from scratch. True when something was dropped.
+   */
+  private dropStaleEpochRecords(s: DeviceState, epoch: number): boolean {
+    let dirty = false;
+    if (s.rekeyBlocked && s.rekeyBlocked.epoch !== epoch) {
+      delete s.rekeyBlocked;
+      dirty = true;
+    }
+    if (s.revokeContested && s.revokeContested.epoch !== epoch) {
+      delete s.revokeContested;
+      dirty = true;
+    }
+    return dirty;
+  }
+
   /** Adopt keys this device wrote or verified itself, and remember their keyring as verified. */
   private async adopt(keys: VaultKeys): Promise<void> {
     const s = await this.loadState();
@@ -555,6 +597,7 @@ export class E2eeSync {
     if (keys.ring) s.ring = await checkedAnchorOf(keys);
     s.epoch = Math.max(s.epoch ?? 0, keys.epoch);
     this.rememberSealedRevoked(s, keys);
+    this.dropStaleEpochRecords(s, keys.epoch);
     await this.save();
   }
 
@@ -629,6 +672,7 @@ export class E2eeSync {
       dirty = true;
     }
     if (this.rememberSealedRevoked(s, next)) dirty = true;
+    if (this.dropStaleEpochRecords(s, next.epoch)) dirty = true;
     if (dirty) await this.save();
     if (enforce) await this.enforceRevocations();
     await this.resumeEpoch();
@@ -799,7 +843,54 @@ export class E2eeSync {
    * this is the reset: the new epoch is wrapped for the passphrase and `enroll` only.
    */
   rekey(opts: RekeyRequest = {}): Promise<RekeyResult> {
-    return this.exclusive(() => this.rekeyNow(opts));
+    // H3: under the device lock, from the state as stored (another tab of
+    // this device may have changed it since this engine read it).
+    return this.exclusive(() => this.underDeviceLock(true, () => this.rekeyNow(opts)));
+  }
+
+  /** The lock shared by every engine (every tab) of this device on this vault (H3). */
+  private lockName(s: DeviceState): string {
+    return `lumen-e2ee-device:${this.o.keys.vaultId}:${s.deviceId}`;
+  }
+
+  /**
+   * Run `fn` holding this device's lock (ninth review 12.11, H3), waiting
+   * for another tab's key change or pairing to finish. Re-entrant within this
+   * engine. `reload`: first read the device state again from the store; only
+   * at the start of a public call, before anything holds the cached state.
+   */
+  private async underDeviceLock<T>(reload: boolean, fn: () => Promise<T>): Promise<T> {
+    if (this.lockHeld) return fn();
+    return withDeviceLock(this.lockName(await this.loadState()), async () => {
+      this.lockHeld = true;
+      try {
+        if (reload) await this.reloadState();
+        return await fn();
+      } finally {
+        this.lockHeld = false;
+      }
+    });
+  }
+
+  /**
+   * Run `fn` holding this device's lock if no key change holds it now, in
+   * any tab (H3); `PairingDuringKeyChangeError` at once otherwise, as for a
+   * key change in this engine (G3). The state is read again from the store
+   * first, and keys another tab moved on to are taken up.
+   */
+  private async pairingUnderLock<T>(fn: (s: DeviceState) => Promise<T>): Promise<T> {
+    const out = await tryDeviceLock(this.lockName(await this.loadState()), async () => {
+      this.lockHeld = true;
+      try {
+        const s = await this.reloadState();
+        if (s.ring && !sameAnchor(s.ring, anchorOf(this.o.keys))) await this.refresh();
+        return await fn(await this.loadState());
+      } finally {
+        this.lockHeld = false;
+      }
+    });
+    if (out === LOCK_BUSY) throw new PairingDuringKeyChangeError();
+    return out;
   }
 
   /**
@@ -809,30 +900,70 @@ export class E2eeSync {
    * device's rounds first saw the current run of foreign freezes. A refusal
    * older than REKEY_BLOCK_WINDOW_MS is a key change given up long ago: the
    * wait starts again, so it can't cut short the wait on an honest re-key
-   * that started just now (t8).
+   * that started just now (t8). So does a refusal from an earlier epoch
+   * (ninth review 12.11, H1): the key change that held this device back
+   * has committed since, and the freeze now in the way is another one.
    */
   private async keyChangeBlockedSince(s: DeviceState, now: number): Promise<number> {
+    const epoch = this.o.keys.epoch;
     const valid = (t: number | undefined): t is number => t !== undefined && t <= now && now - t < REKEY_BLOCK_WINDOW_MS;
-    let since = s.rekeyBlocked?.since;
+    let since = s.rekeyBlocked?.epoch === epoch ? s.rekeyBlocked.since : undefined;
     if (!valid(since)) {
       since = now;
-      s.rekeyBlocked = { since };
+      s.rekeyBlocked = { since, epoch };
       await this.save();
     }
     const seen = s.frozenSeen;
     return seen && seen.epoch === this.o.keys.epoch && valid(seen.at) ? Math.min(since, seen.at) : since;
   }
 
-  /** No key change while a pairing code or answer from this device is valid (N3). */
-  private async checkNoPairingPending(): Promise<void> {
+  /**
+   * H2 (ninth review 12.11): a revocation's commit just lost. When the live
+   * keyring is still at the epoch this device re-keyed from, the keyring was
+   * rewritten at that epoch (an enrollment, a call-off, or a no-op), not
+   * replaced by another device's key change. Counted per epoch and per
+   * device being removed; from the second loss in a row, throws
+   * `RevocationContestedError`: retrying can't win against a writer that
+   * still holds the epoch's secret and the storage login, so the user is
+   * told to take the storage login away first.
+   */
+  private async countContestedRevocation(s: DeviceState, epoch: number, revoke: string[]): Promise<void> {
+    const live = await readKeyring(this.o.provider).catch(() => null);
+    if (!live || live.file.epoch !== epoch) {
+      if (s.revokeContested) {
+        delete s.revokeContested;
+        await this.save();
+      }
+      return;
+    }
+    const was = s.revokeContested;
+    const same = !!was && was.epoch === epoch && was.devices.some((d) => revoke.includes(d));
+    const losses = (same ? was.losses : 0) + 1;
+    s.revokeContested = { epoch, devices: [...new Set([...(same ? was.devices : []), ...revoke])], losses };
+    await this.save();
+    if (losses >= 2) throw new RevocationContestedError(revoke, losses);
+  }
+
+  /**
+   * No key change while a pairing code or answer from this device is valid
+   * (N3). `fromStore`: also the one another tab of this device saved since
+   * this engine read the state (H3), which is then kept.
+   */
+  private async checkNoPairingPending(fromStore = false): Promise<void> {
     const s = await this.loadState();
+    if (fromStore) {
+      const stored = await this.o.store.load().catch(() => null);
+      if (stored?.pairingUntil !== undefined && stored.pairingUntil > (s.pairingUntil ?? 0)) s.pairingUntil = stored.pairingUntil;
+    }
     if (s.pairingUntil !== undefined && this.o.now() < s.pairingUntil) throw new PairingPendingError(s.pairingUntil);
   }
 
   private async rekeyNow(opts: RekeyRequest): Promise<RekeyResult> {
     this.keyChanges++;
     try {
-      return await this.rekeyRunning(opts);
+      // H3: also when a round re-applies a revocation (enforceRevocations,
+      // reapplyRevocation): no other tab of this device makes a code meanwhile.
+      return await this.underDeviceLock(false, () => this.rekeyRunning(opts));
     } finally {
       this.keyChanges--;
     }
@@ -855,7 +986,12 @@ export class E2eeSync {
     await this.checkNoPairingPending();
     await proveCas(this.o.provider);
     const current = await readKeyring(this.o.provider);
-    if (current ? current.file.epoch !== previous.epoch || current.digest !== previous.ring?.digest : previous.epoch !== 0) throw new PreconditionFailedError(KEYRING_NAME);
+    if (current ? current.file.epoch !== previous.epoch || current.digest !== previous.ring?.digest : previous.epoch !== 0) {
+      // H2: rewritten between this device's refresh and here (the probe's
+      // writes are enough of a cue for a writer that polls) counts as a loss too.
+      if (opts.revoke?.length) await this.countContestedRevocation(s, previous.epoch, opts.revoke);
+      throw new PreconditionFailedError(KEYRING_NAME);
+    }
     // F2: the devices this device revoked stay out of every re-key it makes,
     // by id and by key; G5: so do those of every sealed list it adopted.
     const mine = await this.knownRevoked();
@@ -932,7 +1068,7 @@ export class E2eeSync {
     //    No pairing code or answer from this device may have become valid
     //    meanwhile (G3): checked again right before the commit.
     try {
-      await this.checkNoPairingPending();
+      await this.checkNoPairingPending(true);
     } catch (e) {
       await this.o.provider.delete(name).catch(() => undefined);
       throw e;
@@ -940,7 +1076,10 @@ export class E2eeSync {
     try {
       await this.o.provider.put(KEYRING_NAME, prepared.bytes, current ? { ifMatch: current.etag } : { ifNoneMatch: "*" });
     } catch (e) {
-      if (e instanceof PreconditionFailedError) await this.o.provider.delete(name).catch(() => undefined);
+      if (e instanceof PreconditionFailedError) {
+        await this.o.provider.delete(name).catch(() => undefined);
+        if (revoke.length) await this.countContestedRevocation(s, previous.epoch, revoke);
+      }
       throw e; // anything else: the outcome is unknown, and the manifest stays for the keyring that may have landed
     }
     // Read it back (third review 12.11, N2): a storage that passed the
@@ -963,6 +1102,7 @@ export class E2eeSync {
     s.anchor = { counter: next.counter, digest: sealedNext.digest };
     delete s.frozenSeen;
     delete s.rekeyBlocked;
+    delete s.revokeContested;
     s.rekeyed = { epoch: keys.epoch, digest: keys.ring!.digest, parent: current?.digest ?? null, parentEpoch: previous.epoch, revoked: revoke, manifest: anchorBefore };
     await this.adopt(keys);
     // F2: remembered here, so a keyring that lets them back in later — at any epoch — is caught.
@@ -1064,6 +1204,28 @@ export class E2eeSync {
     return this.state;
   }
 
+  /**
+   * Read the device state again from the store (H3): another tab of this
+   * device may have saved it since. Only at the start of a call, under the
+   * device lock, before anything holds the cached state.
+   */
+  private async reloadState(): Promise<DeviceState> {
+    const loaded = await this.o.store.load();
+    if (loaded) this.state = { ...loaded, base: pathRecord(loaded.base) };
+    const s = await this.loadState();
+    // Another tab took this device to a newer epoch: take its keys up from the
+    // keyring that tab verified (lineage and descent checked, then the
+    // anchor's check), so that the refresh that follows starts from them.
+    const access = this.o.access;
+    if (s.ring && access && this.o.keys.epoch < s.ring.epoch) {
+      const next = await refreshKeys(this.o.provider, this.o.keys, access, s.ring);
+      if (!(await verifyAnchor(next, s.ring))) throw new KeyringForkError("this device's stored anchor has no check for the keys another tab adopted");
+      this.o.keys = next;
+      if (next.wrap && "wrap" in access) this.o.access = { wrap: next.wrap };
+    }
+    return s;
+  }
+
   private async save(): Promise<void> {
     if (this.state) await this.o.store.save(this.state);
   }
@@ -1101,8 +1263,8 @@ export class E2eeSync {
     // running now (its keyring write may be stalled) would make the code
     // vouch for the epoch it is replacing: refused at once, not queued.
     if (this.keyChanges > 0) return Promise.reject(new PairingDuringKeyChangeError());
-    return this.exclusive(async () => {
-      const s = await this.loadState();
+    // H3: nor while another tab of this device changes keys (the device lock).
+    return this.exclusive(() => this.pairingUnderLock(async (s) => {
       if (!s.anchor) throw new PairingError("Sync once before pairing another device");
       if (s.freshness === "unverified") {
         throw new PairingError("This device's freshness is not verified: pair it or confirm it before pairing others");
@@ -1112,7 +1274,7 @@ export class E2eeSync {
       s.pairingUntil = Math.max(s.pairingUntil ?? 0, now + PAIRING_TTL_MS); // N3: no key change while it is valid
       await this.save();
       return code;
-    });
+    }));
   }
 
   /**
@@ -1140,8 +1302,8 @@ export class E2eeSync {
    * here (`PairingEpochError("older")`), whichever device made the newer one.
    */
   answerPairing(request: string): Promise<string> {
-    return this.exclusive(async () => {
-      const s = await this.loadState();
+    // H3: not while another tab of this device changes keys (the device lock).
+    return this.exclusive(() => this.pairingUnderLock(async (s) => {
       if (s.freshness === "unverified") throw new PairingError("This device's freshness is not verified: pair it or confirm it before pairing others");
       await this.refresh();
       await this.readManifest();
@@ -1161,7 +1323,7 @@ export class E2eeSync {
       s.pairingUntil = Math.max(s.pairingUntil ?? 0, now + PAIRING_REQUEST_TTL_MS);
       await this.save();
       return answer;
-    });
+    }));
   }
 
   /**
@@ -1466,11 +1628,15 @@ export class E2eeSync {
       // called off, pull only, and wait FREEZE_TTL_MS on this device's own
       // clock before calling it off.
       const overFreeze = !!remote.frozen;
-      if (!remote.frozen && s.frozenSeen) {
-        delete s.frozenSeen; // the run of freezes is over: the next one is waited on in full
+      const liveFreeze = !!remote.frozen && !this.o.keys.ring?.aborted.includes(this.remoteDigest);
+      if (!liveFreeze && s.frozenSeen) {
+        // The run of freezes is over (an unfrozen manifest, or one the keyring
+        // lists as called off: ninth review 12.11, H1): the next freeze is
+        // waited on in full.
+        delete s.frozenSeen;
         await this.save();
       }
-      if (remote.frozen && !this.o.keys.ring?.aborted.includes(this.remoteDigest)) {
+      if (liveFreeze) {
         const now = this.o.now();
         // G1: the wait runs from the first of an unbroken run of freezes at
         // this epoch, whatever their digests: a fresh freeze every few
@@ -1490,9 +1656,17 @@ export class E2eeSync {
           return res;
         }
         const epochBefore = this.o.keys.epoch;
-        if (!(await this.callOffFreeze(remote, this.remoteDigest))) await this.refresh();
+        const calledOff = await this.callOffFreeze(remote, this.remoteDigest);
+        if (!calledOff) await this.refresh();
         res.retries++;
-        if (this.o.keys.epoch !== epochBefore) delete s.frozenSeen;
+        // H1: called off, the run is over: a fresh freeze after it (an honest
+        // re-key that starts now) is waited on in full, by rounds and by this
+        // device's own re-key (`keyChangeBlockedSince`), even when this round
+        // has nothing to upload.
+        if (calledOff || this.o.keys.epoch !== epochBefore) {
+          delete s.frozenSeen;
+          await this.save();
+        }
         continue; // read again: under the new keyring the freeze is called off, or the epoch moved on
       }
 

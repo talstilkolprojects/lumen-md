@@ -6,7 +6,7 @@
  * docs/src/content/docs/sync/e2ee.md.
  */
 
-export { createVault, unlockVault, E2eeSync, DropDevicesRequiredError, KeyChangeInProgressError, NoVaultError, PairingDuringKeyChangeError, UnverifiedDeviceError, VaultExistsError } from "./engine";
+export { createVault, unlockVault, E2eeSync, DropDevicesRequiredError, KeyChangeInProgressError, NoVaultError, PairingDuringKeyChangeError, RevocationContestedError, UnverifiedDeviceError, VaultExistsError } from "./engine";
 export type { E2eeSyncOptions, SyncResult } from "./engine";
 export type { SyncProvider, StoredObject, PutCondition } from "./provider";
 export { CasUnsupportedError, memoryProvider, PreconditionFailedError, proveCas, ProviderUnavailableError } from "./provider";
