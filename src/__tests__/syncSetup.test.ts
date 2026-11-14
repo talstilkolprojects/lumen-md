@@ -42,14 +42,15 @@ const dec = (b: Uint8Array) => new TextDecoder().decode(b);
 describe("setupChoices", () => {
   const base = { folderAccess: false, mobile: false, relayUrl: null, dropboxOAuth: false, gdriveOAuth: false };
   it("a computer with folder access gets the desktop sync folder first", () => {
-    expect(setupChoices({ ...base, folderAccess: true, relayUrl: "https://r.example" })).toEqual({ recommended: "folder", available: ["folder", "relay", "webdav"] });
+    expect(setupChoices({ ...base, folderAccess: true, relayUrl: "https://r.example" })).toEqual({ recommended: "folder", available: ["folder", "relay", "webdav"], unready: ["gdrive", "dropbox"] });
   });
   it("a phone gets the relay, even if it could open a folder", () => {
     expect(setupChoices({ ...base, folderAccess: true, mobile: true, relayUrl: "https://r.example" }).recommended).toBe("relay");
   });
-  it("no folder access and no relay: WebDAV; OAuth providers only once registered", () => {
-    expect(setupChoices(base)).toEqual({ recommended: "webdav", available: ["webdav"] });
-    expect(setupChoices({ ...base, gdriveOAuth: true, dropboxOAuth: true }).available).toEqual(["gdrive", "dropbox", "webdav"]);
+  it("no folder access and no relay: WebDAV; Drive and Dropbox always listed, usable once their OAuth app is registered (W10.C19)", () => {
+    expect(setupChoices(base)).toEqual({ recommended: "webdav", available: ["webdav"], unready: ["gdrive", "dropbox"] });
+    expect(setupChoices({ ...base, gdriveOAuth: true, dropboxOAuth: true })).toMatchObject({ available: ["gdrive", "dropbox", "webdav"], unready: [] });
+    expect(setupChoices({ ...base, gdriveOAuth: true })).toMatchObject({ available: ["gdrive", "webdav"], unready: ["dropbox"] });
   });
   it("tells phones and iPads from computers", () => {
     expect(isMobileDevice({ userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)" }, false)).toBe(true);

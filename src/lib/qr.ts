@@ -42,6 +42,11 @@ function numDataCodewords(ver: number, ecc: Ecc): number {
 
 /* ─── Reed–Solomon over GF(2^8), polynomial 0x11D ──────────────────────── */
 
+/** The `eccLen` error-correction codewords of `data` (one block), for the standard's worked examples (tests). */
+export function reedSolomon(data: readonly number[], eccLen: number): number[] {
+  return rsRemainder([...data], rsDivisor(eccLen));
+}
+
 function rsMultiply(x: number, y: number): number {
   let z = 0;
   for (let i = 7; i >= 0; i--) {
