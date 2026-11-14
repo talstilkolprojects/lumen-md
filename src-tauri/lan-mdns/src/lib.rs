@@ -24,7 +24,7 @@ pub mod net;
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, SocketAddrV4, TcpListener, TcpStream, UdpSocket};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
@@ -40,6 +40,11 @@ pub const PROTOCOL: &str = "LUMEN-LAN/1";
 pub const CODE_PREFIX: &str = "lumen-lan:1:";
 pub const MAX_LINE: usize = 64 * 1024;
 const TTL: u32 = 120;
+/// How long a pairing stays offered (review 28, L3): the port closes and the announcement stops after this,
+/// even if the app's page never says so (reloaded or crashed mid-pairing).
+pub const OFFER_TTL: Duration = Duration::from_secs(5 * 60);
+/// Connections the rendezvous serves at once; more are closed straight away (review 28, L3).
+pub const MAX_CONNECTIONS: usize = 8;
 
 /// Which addresses may be answered or contacted. The app uses `net::is_lan_ip`;
 /// only the two-process test widens it (its container has no private address).
@@ -122,6 +127,11 @@ impl Advertiser {
     }
 
     pub fn start_with(label: String, port: u16, txt: Vec<String>, allow: Allow) -> std::io::Result<Advertiser> {
+        Self::start_for(label, port, txt, allow, OFFER_TTL)
+    }
+
+    /// As `start_with`, answering for `ttl` at most.
+    pub fn start_for(label: String, port: u16, txt: Vec<String>, allow: Allow, ttl: Duration) -> std::io::Result<Advertiser> {
         let sock = net::bind_mdns()?;
         sock.join_multicast_v4(&MDNS_GROUP, &Ipv4Addr::UNSPECIFIED)?;
         sock.set_multicast_ttl_v4(255)?;
@@ -134,9 +144,10 @@ impl Advertiser {
         let stop = Arc::new(AtomicBool::new(false));
         let flag = stop.clone();
         let l = label.clone();
+        let born = Instant::now();
         let thread = std::thread::spawn(move || {
             let mut buf = [0u8; dns::MAX_MESSAGE];
-            while !flag.load(Ordering::Relaxed) {
+            while !flag.load(Ordering::Relaxed) && born.elapsed() < ttl {
                 let (n, from) = match sock.recv_from(&mut buf) {
                     Ok(x) => x,
                     Err(_) => continue,
@@ -226,7 +237,8 @@ pub fn browse_with(wait: Duration, allow: Allow) -> std::io::Result<Vec<Found>> 
     let start = Instant::now();
     let resend = [Duration::ZERO, Duration::from_millis(250), Duration::from_millis(1000)];
     let mut sent = 0;
-    let mut seen: HashMap<String, Found> = HashMap::new();
+    // Every device that answers, even two with the same name (review 28, L2): the app warns about those.
+    let mut seen: HashMap<(String, IpAddr, u16), Found> = HashMap::new();
     let mut buf = [0u8; dns::MAX_MESSAGE];
     while start.elapsed() < wait {
         if sent < resend.len() && start.elapsed() >= resend[sent] {
@@ -239,11 +251,11 @@ pub fn browse_with(wait: Duration, allow: Allow) -> std::io::Result<Vec<Found>> 
         }
         let Ok(m) = dns::decode(&buf[..n]) else { continue };
         for f in found_in(&m, from.ip()) {
-            seen.insert(f.name.clone(), f);
+            seen.insert((f.name.clone(), f.host, f.port), f);
         }
     }
     let mut v: Vec<Found> = seen.into_values().collect();
-    v.sort_by(|a, b| a.name.cmp(&b.name));
+    v.sort_by(|a, b| (&a.name, a.host, a.port).cmp(&(&b.name, b.host, b.port)));
     Ok(v)
 }
 
@@ -257,6 +269,8 @@ struct Slot {
     answer: Option<String>,
     /// An answer came: the offer is used up, even once the answer was taken.
     used: bool,
+    /// The offer's time ran out (OFFER_TTL).
+    expired: bool,
 }
 
 /// One pairing at a time: `OFFER` hands out the code once an answer hasn't come yet; the first good `ANSWER` uses it up.
@@ -312,24 +326,52 @@ impl Rendezvous {
     }
 
     pub fn start_with(offer: String, allow: Allow) -> std::io::Result<Rendezvous> {
+        Self::start_for(offer, allow, OFFER_TTL, MAX_CONNECTIONS)
+    }
+
+    /// As `start_with`, offered for `ttl` at most, serving `max_conns` connections at once.
+    pub fn start_for(offer: String, allow: Allow, ttl: Duration, max_conns: usize) -> std::io::Result<Rendezvous> {
         if !is_code(&offer) {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "not a pairing code"));
         }
         let listener = TcpListener::bind(SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0)))?;
         listener.set_nonblocking(true)?;
         let port = listener.local_addr()?.port();
-        let slot = Arc::new(Mutex::new(Slot { offer: Some(offer), token: net::token(), answer: None, used: false }));
+        let slot = Arc::new(Mutex::new(Slot { offer: Some(offer), token: net::token(), answer: None, used: false, expired: false }));
         let stop = Arc::new(AtomicBool::new(false));
         let (s2, f2) = (slot.clone(), stop.clone());
+        let active = Arc::new(AtomicUsize::new(0));
+        let born = Instant::now();
         let thread = std::thread::spawn(move || {
             while !f2.load(Ordering::Relaxed) {
+                if born.elapsed() >= ttl {
+                    // Expired: nothing more is handed out, and the listener closes with this thread.
+                    if let Ok(mut s) = s2.lock() {
+                        s.offer = None;
+                        s.expired = true;
+                    }
+                    break;
+                }
                 match listener.accept() {
                     Ok((stream, from)) => {
                         if !allow(from.ip()) {
                             continue;
                         }
+                        if active.load(Ordering::SeqCst) >= max_conns {
+                            drop(stream);
+                            continue;
+                        }
+                        active.fetch_add(1, Ordering::SeqCst);
                         let s3 = s2.clone();
+                        let a3 = active.clone();
                         std::thread::spawn(move || {
+                            struct Done(Arc<AtomicUsize>);
+                            impl Drop for Done {
+                                fn drop(&mut self) {
+                                    self.0.fetch_sub(1, Ordering::SeqCst);
+                                }
+                            }
+                            let _done = Done(a3);
                             let _ = stream.set_nonblocking(false);
                             let _ = stream.set_read_timeout(Some(Duration::from_secs(5)));
                             let _ = stream.set_write_timeout(Some(Duration::from_secs(5)));
@@ -349,6 +391,11 @@ impl Rendezvous {
     /// The answer code, once a joining device sent one (taken once).
     pub fn take_answer(&self) -> Option<String> {
         self.slot.lock().ok()?.answer.take()
+    }
+
+    /// Whether the offer ran out of time without being used.
+    pub fn expired(&self) -> bool {
+        self.slot.lock().map(|s| s.expired).unwrap_or(false)
     }
 
     /// Whether an answer came (it may already have been taken).
@@ -492,7 +539,7 @@ mod tests {
 
     #[test]
     fn the_rendezvous_hands_the_offer_out_once_and_takes_one_answer_for_its_token() {
-        let slot = Mutex::new(Slot { offer: Some(OFFER.into()), token: "t0k3n".into(), answer: None, used: false });
+        let slot = Mutex::new(Slot { offer: Some(OFFER.into()), token: "t0k3n".into(), answer: None, used: false, expired: false });
         assert_eq!(handle_line(&slot, "LUMEN-LAN/1 OFFER\n"), format!("OK t0k3n {OFFER}"));
         assert_eq!(handle_line(&slot, &format!("LUMEN-LAN/1 ANSWER wrong {ANSWER}")), "ERR token");
         assert_eq!(handle_line(&slot, "LUMEN-LAN/1 ANSWER t0k3n not-a-code"), "ERR bad");
@@ -526,6 +573,45 @@ mod tests {
         assert_eq!(e.kind(), std::io::ErrorKind::PermissionDenied);
         let e = send_answer("1.1.1.1".parse().unwrap(), 9, "t", ANSWER).unwrap_err();
         assert_eq!(e.kind(), std::io::ErrorKind::PermissionDenied);
+    }
+
+    #[test]
+    fn an_offer_expires_and_its_port_closes() {
+        let r = Rendezvous::start_for(OFFER.into(), net::is_lan_ip, Duration::from_millis(300), MAX_CONNECTIONS).unwrap();
+        let lo: IpAddr = "127.0.0.1".parse().unwrap();
+        assert!(fetch_offer(lo, r.port).is_ok());
+        let t0 = Instant::now();
+        while !r.expired() && t0.elapsed() < Duration::from_secs(10) {
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        assert!(r.expired());
+        // The listener is gone with the thread: nothing answers on the port any more.
+        std::thread::sleep(Duration::from_millis(100));
+        assert!(fetch_offer(lo, r.port).is_err());
+        assert_eq!(OFFER_TTL, Duration::from_secs(300));
+    }
+
+    #[test]
+    fn connections_over_the_cap_are_closed_and_the_rest_still_served() {
+        let r = Rendezvous::start_for(OFFER.into(), net::is_lan_ip, OFFER_TTL, 2).unwrap();
+        let lo = SocketAddr::new("127.0.0.1".parse().unwrap(), r.port);
+        // Two idle connections hold both places (each times out after 5 s).
+        let idle: Vec<TcpStream> = (0..2).map(|_| TcpStream::connect(lo).unwrap()).collect();
+        std::thread::sleep(Duration::from_millis(300));
+        let extra = fetch_offer(lo.ip(), r.port);
+        assert!(extra.is_err(), "a third connection is closed while two are open");
+        drop(idle);
+        // Places come back when the idle ones end.
+        let t0 = Instant::now();
+        let mut ok = false;
+        while t0.elapsed() < Duration::from_secs(15) {
+            if fetch_offer(lo.ip(), r.port).is_ok() {
+                ok = true;
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(200));
+        }
+        assert!(ok);
     }
 
     #[test]

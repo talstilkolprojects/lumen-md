@@ -67,6 +67,11 @@ pub fn lan_discovery_host(state: State<DiscoveryState>, offer: String) -> Result
 #[tauri::command]
 pub fn lan_discovery_answer(state: State<DiscoveryState>) -> Result<Option<String>, String> {
     let mut slot = state.0.lock().map_err(err)?;
+    // Review 28, L3: the offer's own time ran out (the port is closed already); stop announcing too.
+    if slot.as_ref().is_some_and(|(_, r)| r.expired()) {
+        *slot = None;
+        return Err("expired".into());
+    }
     let answer = slot.as_ref().and_then(|(_, r)| r.take_answer());
     if answer.is_some() {
         *slot = None;
