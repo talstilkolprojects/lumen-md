@@ -343,12 +343,9 @@ jobs:
       contents: read
       pull-requests: write
     needs: check
-    # Lighthouse runs are slow + flaky on cold runners. Only required on
-    # explicit triggers — main pushes and `lighthouse` PR labels — so day-to-day
-    # PRs still get fast feedback from `check`.
-    if: |
-      github.event_name == 'push' ||
-      contains(github.event.pull_request.labels.*.name, 'lighthouse')
+    # Plan 8.3 / W10.E10: on every PR, not only on main or a `lighthouse`
+    # label — a gate that runs on no PR protects nothing. Desktop and mobile,
+    # 5 runs each, median run, reports kept on disk (reports/lh/).
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -374,7 +371,7 @@ jobs:
           node scripts/perf/profile-startup.mjs --url http://localhost:4747/ --runs 5 --settle 15000 --out reports/perf-startup.json >> perf.md
           { echo; echo "### Lighthouse mobile (default preset: simulated 4× CPU, slow 4G)"; echo; echo "| run | TBT (ms) | FCP | LCP | TTI | score |"; echo "|---|---:|---:|---:|---:|---:|"; } >> perf.md
           for r in 1 2 3; do
-            npx -y lighthouse@12.8.2 http://localhost:4747/ --only-categories=performance --chrome-flags="--headless=new --no-sandbox" --output=json --output-path="lh-mobile-$r.json" --quiet || continue
+            npx -y lighthouse@13.6.0 http://localhost:4747/ --only-categories=performance --chrome-flags="--headless=new --no-sandbox" --output=json --output-path="lh-mobile-$r.json" --quiet || continue
             node -e 'const j=require("./lh-mobile-'$r'.json"),a=j.audits,v=(k)=>Math.round(a[k].numericValue);console.log(`| '$r' | ${v("total-blocking-time")} | ${v("first-contentful-paint")} | ${v("largest-contentful-paint")} | ${v("interactive")} | ${j.categories.performance.score} |`)' >> perf.md
           done
           # Nothing of this step stays alive while Lighthouse CI measures.
@@ -385,7 +382,9 @@ jobs:
             if [ -n "$id" ]; then gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@perf.md > /dev/null; else gh api "repos/$REPO/issues/$PR/comments" -F body=@perf.md > /dev/null; fi
           fi
       - name: Lighthouse CI
-        run: npx -y @lhci/cli@0.13.x autorun --config=./lighthouserc.json
+        run: |
+          npx -y @lhci/cli@0.16.1 autorun --config=./lighthouserc.json
+          npx -y @lhci/cli@0.16.1 autorun --config=./lighthouserc.mobile.json
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
       # Job logs can't be read from everywhere the PR is worked on: the desktop

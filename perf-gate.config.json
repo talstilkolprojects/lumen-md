@@ -1,30 +1,66 @@
 {
-  "about": "Plan 8.3: the performance gate (npm run perf:gate), Playwright + the browser's own PerformanceObserver metrics, since Lighthouse / LHCI is not in the lockfile. Levels: error fails the gate, warn is reported. Error thresholds are the runner level of decision 15.16 (20)/(21) (LCP ≈ 3500 ms, FCP ≈ 1200 ms) and are tightened by 8.1/8.2; `target` is the plan's goal, reported only, until the runner meets it.",
+  "about": "Plan 8.3: the performance gate (npm run perf:gate), Playwright + the browser's own PerformanceObserver metrics, measured like Lighthouse (5 runs, median run). Levels: error fails the gate, warn is reported. W10.E9: every limit is the plan's target as an error, on desktop and on the phone; `target` repeats it for the report. The gate stays red until the work that meets the targets lands (W10.E1-E3, W10.E19); src/__tests__/perfGate.test.ts fails when a limit is looser than the plan. INP is measured in e2e/inp-budget.spec.ts, not here.",
   "runs": 5,
   "aggregation": "median-run",
   "profiles": {
     "desktop": {
-      "viewport": { "width": 1350, "height": 940 },
+      "viewport": {
+        "width": 1350,
+        "height": 940
+      },
       "cpuSlowdown": 1,
       "network": null,
       "assert": {
-        "fcp": { "error": 1200, "target": 1000 },
-        "lcp": { "error": 3500, "target": 2500 },
-        "tti": { "warn": 3500 },
-        "tbt": { "warn": 250 },
-        "cls": { "warn": 0.1 }
+        "fcp": {
+          "error": 1000,
+          "target": 1000
+        },
+        "lcp": {
+          "error": 2500,
+          "target": 2500
+        },
+        "tti": {
+          "warn": 3500
+        },
+        "tbt": {
+          "error": 200,
+          "target": 200
+        },
+        "cls": {
+          "error": 0.1,
+          "target": 0.1
+        }
       }
     },
     "mobile": {
       "device": "Pixel 7",
       "cpuSlowdown": 4,
-      "network": { "latencyMs": 150, "downloadKbps": 1600, "uploadKbps": 750 },
+      "network": {
+        "latencyMs": 150,
+        "downloadKbps": 1600,
+        "uploadKbps": 750
+      },
       "assert": {
-        "fcp": { "warn": 3000, "target": 1800 },
-        "lcp": { "warn": 6000, "target": 2500 },
-        "tti": { "warn": 8000, "target": 3500 },
-        "tbt": { "warn": 600, "target": 300 },
-        "cls": { "warn": 0.1 }
+        "fcp": {
+          "error": 1800,
+          "target": 1800
+        },
+        "lcp": {
+          "error": 2500,
+          "target": 2500
+        },
+        "tti": {
+          "error": 3500,
+          "target": 3500
+        },
+        "tbt": {
+          "error": 300,
+          "target": 300
+        },
+        "cls": {
+          "error": 0.1,
+          "target": 0.1
+        }
       }
     }
   }

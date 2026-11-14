@@ -25,7 +25,7 @@ if (!existsSync("dist/index.html")) {
 console.error("→ Running Lighthouse CI against ./dist …");
 const lhci = spawnSync(
   "npx",
-  ["-y", "@lhci/cli@0.13.x", "autorun", "--config=./lighthouserc.json"],
+  ["-y", "@lhci/cli@0.16.1", "autorun", "--config=./lighthouserc.json"],
   { stdio: "inherit", encoding: "utf8" },
 );
 
@@ -34,4 +34,4 @@ if (lhci.status !== 0) {
   process.exit(lhci.status ?? 2);
 }
 
-console.error("✓ Lighthouse a11y target met (≥ 0.95). See `.lighthouseci/` for HTML reports.");
+console.error("✓ Lighthouse a11y target met (≥ 0.95). See `reports/lh/desktop/` for the reports.");

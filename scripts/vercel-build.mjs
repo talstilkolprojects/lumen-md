@@ -49,6 +49,8 @@ export const GATES = {
   secrets: ["run", "-s", "secrets:dist"],
   // The committed mutation scores of the critical modules, against their current source (W4.17).
   mutation: ["run", "-s", "mutation:check"],
+  // Plan 8.3 / W10.E10: FCP, LCP, TBT, CLS on desktop and a phone, 5 runs, median run (perf-gate.config.json).
+  "perf:gate": ["run", "-s", "perf:gate"],
 };
 
 /**
@@ -64,6 +66,8 @@ export const SIZES_REPORT = "reports/bundle-sizes.json";
 export const GATE_EXTRA = {
   vitest: ["--", "--reporter=default", "--reporter=json", `--outputFile.json=${VITEST_REPORT}`],
   budget: ["--", "--json", SIZES_REPORT],
+  // The gate's tables and numbers, kept with the build (W10.E10).
+  "perf:gate": ["--", "--out", "reports/perf-gate.md", "--json", "reports/perf-gate.json"],
 };
 
 /**
@@ -92,7 +96,7 @@ export function vitestSummary(report, { maxFiles = 80 } = {}) {
 }
 
 export const PRODUCTION_GATES = ["build", "budget", "manifest"];
-export const PREVIEW_GATES = ["build", "budget", "secrets", "manifest", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "docs:complete", "licenses", "mutation"];
+export const PREVIEW_GATES = ["build", "budget", "secrets", "manifest", "vitest", "e2e", "perf:gate", "i18n:check", "hygiene", "docs:sync", "docs:complete", "licenses", "mutation"];
 /**
  * `--e2e-only`: build and the e2e gate, nothing else. For a probe branch
  * that runs Playwright specs (LUMEN_E2E_SPECS, a longer LUMEN_E2E_MINUTES)

@@ -12,7 +12,8 @@ A budget that stays put after a saving invites the next growth.
 |---|---|---|
 | `scripts/bundle-budgets.json` | Each chunk class (KB gzipped, per file) and the startup total | `npm run budget` |
 | `perf-gate.config.json` | FCP and LCP of each profile, and the other metrics | `npm run perf:gate` |
-| `lighthouserc.json` | Lighthouse scores and metrics | `npm run lighthouse` |
+| `lighthouserc.json` | Lighthouse scores and metrics, desktop | `npm run lighthouse` |
+| `lighthouserc.mobile.json` | Lighthouse scores and metrics, phone | `npm run lighthouse` |
 
 The first rule in `bundle-budgets.json` whose pattern matches a file
 name sets that file's budget, so narrower patterns come first.

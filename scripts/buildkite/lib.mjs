@@ -114,8 +114,9 @@ export const JOBS = [
     steps: ["run: npm run build", "Lighthouse CI"],
     env: { LHCI_GITHUB_APP_TOKEN: "" },
     browsers: ["chromium"],
-    // ci.yml: main pushes and PRs labelled `lighthouse` only. The same condition in Buildkite's syntax.
-    if: 'build.branch == "main" || build.pull_request.labels includes "lighthouse"',
+    // The reports stay with the build (upload.target "filesystem"): nothing goes to public storage.
+    artifacts: ["reports/lh/**/*"],
+    // Every PR and every push (W10.E10): no condition.
     timeout: 35,
   },
 ];
