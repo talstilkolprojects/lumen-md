@@ -43,6 +43,9 @@ npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-c
   ה־commit האחרון. עם `--pr <n>` התווית והזמן שלה נקראים מ־GitHub (‏`gh api`)
   והבדיקה נכשלת בלעדיהם; בלי `--pr` היא רק מזהירה. טל מריץ אותה עם `--pr`
   לפני כל מיזוג. ראו [מתחזק שני](/he/contributing/second-maintainer/).
+- **סקירה עצמאית (משימה W6.11).** אותם נתיבים רגישים צריכים גם קבלת סקירה
+  על ה־commit שבראש, מסוקר שלא כתב את השינוי, עם מבחני התקפה ובלי ממצא
+  קריטי או גבוה פתוח. ראו [סקירה עצמאית](/he/contributing/independent-review/).
 
 הפקודה גם מזהירה:
 - כשקוד השתנה ואף בדיקה לא השתנתה;
@@ -57,6 +60,7 @@ npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-c
 | ‏`--base-sizes <file>`,‏ `--head-sizes <file>` | גדלים שכבר נמדדו |
 | ‏`--build-base` | בנייה ומדידה של הבסיס |
 | ‏`--no-size` | דילוג על בדיקת הגודל |
-| ‏`--pr <n>` | מספר ה־pull request: קריאת התוויות, אירועי התוויות והסקירות (כלל הסקירה האנושית) |
+| ‏`--pr <n>` | מספר ה־pull request: קריאת התוויות, אירועי התוויות, הסקירות והתגובות (כללי הסקירה האנושית והסקירה העצמאית) |
+| ‏`--review <file>` | קובץ קבלת סקירה לבדיקה מול ה-HEAD המקומי, בלי רשת; אפשר כמה פעמים ([סקירה עצמאית](/he/contributing/independent-review/)) |
 | ‏`--repo <owner/name>` | הריפו, כשה־remote ‏`origin` לא מציין אותו |
 | ‏`--out <file>` | כתיבת הדוח לקובץ |

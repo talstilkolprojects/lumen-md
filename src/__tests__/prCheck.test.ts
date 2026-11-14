@@ -113,6 +113,46 @@ describe("pr:check", () => {
     }
   });
 
+  it("plan W6.11: a sensitive path fails with --pr or --review until an independent receipt for the head is there", () => {
+    const r0 = repo();
+    try {
+      mkdirSync(join(r0.dir, ".github"));
+      writeFileSync(join(r0.dir, ".github/CODEOWNERS"), "/src/sync/e2ee/ @talstilkol\n");
+      r0.git("add", "-A");
+      r0.git("commit", "-q", "-m", "chore: owners [skip ci]");
+      mkdirSync(join(r0.dir, "src/sync/e2ee"), { recursive: true });
+      writeFileSync(join(r0.dir, "src/sync/e2ee/kdf.ts"), "export const iterations = 600000;\n");
+      r0.git("add", "-A");
+      r0.git("commit", "-q", "-m", "feat: kdf [skip ci]");
+      const head = r0.git("rev-parse", "HEAD").trim();
+      const receipt = (o: Record<string, unknown> = {}) => ({
+        format: "lumen-review", version: 1, head, author: "K", reviewer: "S", access: "read-only", date: "2026-11-12T18:00:00Z",
+        files: ["/src/sync/e2ee/"], attackTests: [{ path: "src/__tests__/kdfAttack.test.ts", result: "4/4 pass" }], findings: [], verdict: "approve", ...o,
+      });
+      const comment = (r: object) => "Review\n\n```lumen-review\n" + JSON.stringify(r) + "\n```\n";
+      const pr = (bodies: string[]) => () => ({ number: 9, labels: [], author: "a", headSha: head, headDate: "2026-11-12T09:00:00Z", reviews: [], events: [], comments: bodies.map((body, i) => ({ id: i + 1, user: "a", body })) });
+      const section = (o: Record<string, unknown>, extra: string[] = []) =>
+        runChecks({ ...parseArgs(["--cwd", r0.dir, "--base", "main~1", "--no-size", ...(o.pr ? ["--pr", "9"] : []), ...extra]), ...o }).sections.find((s: { title: string }) => s.title === "Independent review of sensitive paths");
+      expect(section({}).status).toBe("warn");
+      expect(section({ pr: "9", loadPr: pr([]) }).status).toBe("fail");
+      expect(section({ pr: "9", loadPr: pr([comment(receipt())]) }).status).toBe("ok");
+      // A push after the review: the receipt is for an older head.
+      const stale = section({ pr: "9", loadPr: pr([comment(receipt({ head: "a".repeat(40) }))]) });
+      expect(stale.status).toBe("fail");
+      expect(stale.lines.join("\n")).toMatch(/not the head/);
+      // The author reviewing itself, or an open high finding, does not count.
+      expect(section({ pr: "9", loadPr: pr([comment(receipt({ reviewer: "k" }))]) }).status).toBe("fail");
+      expect(section({ pr: "9", loadPr: pr([comment(receipt({ findings: [{ id: "F1", severity: "high", status: "open" }] }))]) }).status).toBe("fail");
+      // Offline: a receipt file for this checkout's HEAD.
+      writeFileSync(join(r0.dir, "review.json"), JSON.stringify(receipt()));
+      expect(section({}, ["--review", "review.json"]).status).toBe("ok");
+      writeFileSync(join(r0.dir, "review.json"), JSON.stringify(receipt({ files: ["src/other.ts"] })));
+      expect(section({}, ["--review", "review.json"]).status).toBe("fail");
+    } finally {
+      r0.done();
+    }
+  });
+
   it("no dist/: the size check is skipped with what to do", () => {
     const r0 = repo();
     try {

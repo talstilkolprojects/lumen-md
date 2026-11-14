@@ -99,3 +99,4 @@
 # ── This rule itself ──
 /.github/CODEOWNERS                      @talstilkol
 /scripts/lib/humanReview.mjs             @talstilkol
+/scripts/lib/independentReview.mjs       @talstilkol

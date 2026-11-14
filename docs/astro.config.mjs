@@ -309,6 +309,7 @@ export default defineConfig({
           items: [
             { label: "The PR check", slug: "contributing/pr-check", translations: { he: "בדיקת ה־PR" } },
             { label: "Second maintainer", slug: "contributing/second-maintainer", translations: { he: "מתחזק שני" } },
+            { label: "Independent review", slug: "contributing/independent-review", translations: { he: "סקירה עצמאית" } },
           ],
         },
         {

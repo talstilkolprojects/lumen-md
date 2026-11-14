@@ -20,10 +20,16 @@
  *     adds the `human-reviewed` label (plan W4.28). With `--pr <n>` the
  *     label is read from GitHub and must be newer than the last commit;
  *     without it the rule only warns.
+ *   - The same paths need an independent review receipt for the head
+ *     commit (plan W6.11): a `lumen-review` block in a PR comment (read with
+ *     `--pr`) or a JSON file (`--review <file>`, repeatable), by a reviewer
+ *     that is not the author, with attack tests and no critical or high
+ *     finding open. A new push makes older receipts stale.
  *
  *   npm run pr:check -- --base origin/main --body pr-body.md
  *   npm run build && npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-check.md
  *   npm run pr:check -- --base origin/main --pr 123 --no-size     # before merging
+ *   npm run pr:check -- --base origin/verify/train-2 --review review.json --no-size   # offline
  *
  * Exit 1 when a check fails; warnings do not fail.
  */
@@ -35,6 +41,7 @@ import { pathToFileURL } from "node:url";
 import { addedLinesFromDiff, AI_LABEL, bodyProblems, domainMentions, licenceChanges, skipCiViolations, unregisteredNetworkCalls, untestedChanges, writtenByAi } from "./lib/prGate.mjs";
 import { bundleDiffMarkdown } from "./bundle-diff.mjs";
 import { HUMAN_REVIEW_LABEL, humanReviewVerdict, parseCodeowners, sensitiveChanges } from "./lib/humanReview.mjs";
+import { extractReceipts, independentReviewVerdict } from "./lib/independentReview.mjs";
 
 export function parseArgs(argv) {
   const opt = (n) => (argv.includes(n) ? argv[argv.indexOf(n) + 1] : undefined);
@@ -47,6 +54,7 @@ export function parseArgs(argv) {
     buildBase: argv.includes("--build-base"),
     noSize: argv.includes("--no-size"),
     pr: opt("--pr"),
+    review: argv.flatMap((a, i) => (a === "--review" && argv[i + 1] ? [argv[i + 1]] : [])),
     repo: opt("--repo"),
     cwd: resolve(opt("--cwd") ?? process.cwd()),
   };
@@ -100,8 +108,9 @@ export function loadPr(repo, n) {
   const pull = ghJson([`repos/${repo}/pulls/${n}`]);
   const events = ghJson(["--paginate", `repos/${repo}/issues/${n}/events?per_page=100`]).map((e) => ({ event: e.event, label: e.label?.name, created_at: e.created_at, actor: e.actor?.login }));
   const reviews = ghJson(["--paginate", `repos/${repo}/pulls/${n}/reviews?per_page=100`]).map((r) => ({ user: r.user?.login, state: r.state, submitted_at: r.submitted_at, commit_id: r.commit_id }));
+  const comments = ghJson(["--paginate", `repos/${repo}/issues/${n}/comments?per_page=100`]).map((c) => ({ id: c.id, user: c.user?.login, created_at: c.created_at, body: c.body ?? "" }));
   const head = ghJson([`repos/${repo}/commits/${pull.head.sha}`]);
-  return { number: Number(n), labels: pull.labels.map((l) => l.name), events, reviews, author: pull.user?.login, headSha: pull.head.sha, headDate: head.commit?.committer?.date ?? null };
+  return { number: Number(n), labels: pull.labels.map((l) => l.name), events, reviews, comments, author: pull.user?.login, headSha: pull.head.sha, headDate: head.commit?.committer?.date ?? null };
 }
 
 /** Every check → { sections: [{ title, status: "ok" | "warn" | "fail" | "skipped", lines }], failed }. */
@@ -151,7 +160,26 @@ export function runChecks(opts) {
     }
     const v = humanReviewVerdict(sensitive, pr, HUMAN_REVIEW_LABEL);
     add("Human review of sensitive paths", mismatch ? "fail" : v.status, mismatch ? [mismatch, "", ...v.lines] : v.lines);
-  } else add("Human review of sensitive paths", "skipped", [".github/CODEOWNERS is not on this branch."]);
+
+    // Independent review receipt for the head (plan W6.11)
+    const receipts = [];
+    for (const c of pr?.comments ?? []) for (const receipt of extractReceipts(c.body)) receipts.push({ source: `comment${c.id ? ` ${c.id}` : ""} by @${c.user ?? "?"}`, receipt });
+    for (const f of opts.review ?? []) {
+      let receipt;
+      try {
+        receipt = JSON.parse(readFileSync(resolve(cwd, f), "utf8"));
+      } catch (e) {
+        receipt = { error: `cannot read ${f} as JSON (${e.message})` };
+      }
+      receipts.push({ source: `\`${f}\``, receipt });
+    }
+    const head = pr?.headSha ?? git(cwd, "rev-parse", "HEAD").trim();
+    const iv = independentReviewVerdict(sensitive, receipts, { head, strict: !!opts.pr || (opts.review ?? []).length > 0 });
+    add("Independent review of sensitive paths", mismatch ? "fail" : iv.status, mismatch ? [mismatch, "", ...iv.lines] : iv.lines);
+  } else {
+    add("Human review of sensitive paths", "skipped", [".github/CODEOWNERS is not on this branch."]);
+    add("Independent review of sensitive paths", "skipped", [".github/CODEOWNERS is not on this branch."]);
+  }
 
   const untested = untestedChanges(changed);
   add("Tests", untested.length ? "warn" : "ok", untested.length ? [`Source changed and no test changed: ${untested.slice(0, 10).map((f) => `\`${f}\``).join(", ")}${untested.length > 10 ? ` and ${untested.length - 10} more` : ""}.`] : ["Source changes come with test changes (or there are none)."]);
