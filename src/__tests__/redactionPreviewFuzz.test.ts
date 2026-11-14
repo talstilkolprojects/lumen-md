@@ -33,88 +33,13 @@ import { describe, expect, it } from "vitest";
 import { removeRedacted } from "../lib/redaction";
 import { prepareCriticMarkup, prepareCriticMarkupMapped } from "../renderer/criticMarkup";
 import { exportReadyText } from "../storage/exportReady";
+import { markdownNote, rng, rng6, tagCase } from "../../tests/fuzz/redaction/generators";
+import { tokensIn } from "../../tests/fuzz/redaction/tokens";
 
-/** A small seeded PRNG (mulberry32), so a failure names a case that comes back. */
-function rng(seed: number) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-const NAMES = ["redact", "REDACT", "Redact", "rEdAcT"];
-const AFTER = ["", " ", "\t", "\n", "\f", "\r", "/", " /", "  "];
-const ATTRS = ["", ' class="x"', " id=1", " title='a>b'", ' title="a>b"', " a=b>c", " x=`y`", ' data-x="</redact>"', " a", ' a="', " a='", " /x", " =x"];
-const CLOSERS = ["</redact>", "</REDACT>", "</redact >", "</redact\t>", "</redact foo>", "</redact/>", "</redact x='>'>", "</ redact>", "</redact", "</redactx>", "</redac>"];
-/** Constructs that change how what follows them is read. `@` is where a closing tag variant goes. */
-const WRAPS = [
-  "<!-- @ -->",
-  "<!--@-->",
-  "<!-->@",
-  "<!--->@",
-  "<!-- @",
-  "<!--- @ --->",
-  "<!@>",
-  "<?@?>",
-  '<a title="@">',
-  "<a title='@'>",
-  "<a title=@>",
-  '<img alt="@">',
-  "<script>@</script>",
-  "<style>@</style>",
-  "<textarea>@</textarea>",
-  "<title>@</title>",
-  "<xmp>@</xmp>",
-  "<noembed>@</noembed>",
-  "<noframes>@</noframes>",
-  "<iframe>@</iframe>",
-  "<svg><![CDATA[@]]></svg>",
-  "<math><![CDATA[@]]></math>",
-  "<svg><title>@</title></svg>",
-  "`@`",
-  "\\@",
-  "&lt;@",
-  "<p>@</p>",
-  "<table><tr><td>@</td></tr></table>",
-  "<b>@</b>",
-  "@",
-];
-
-const pick = <T,>(r: () => number, xs: readonly T[]): T => xs[Math.floor(r() * xs.length)];
-
-function openTag(r: () => number): string {
-  const after = pick(r, AFTER);
-  const attrs = after === "" || after.endsWith("/") ? "" : pick(r, ATTRS);
-  return `<${pick(r, NAMES)}${after}${attrs}${r() < 0.85 ? ">" : ""}`;
-}
-
-/** One case: text runs, each with its own token, around marks and wrapped closing variants. */
+/** One F-8 case and its tokens (the generator lives in tests/fuzz/redaction, plan W8.8). */
 function makeCase(r: () => number): { md: string; tokens: string[] } {
-  const tokens: string[] = [];
-  const tok = () => {
-    const t = `TK${tokens.length}Q`;
-    tokens.push(t);
-    return t;
-  };
-  let md = tok();
-  const parts = 1 + Math.floor(r() * 4);
-  for (let p = 0; p < parts; p++) {
-    md += ` ${openTag(r)}${tok()}`;
-    const inner = Math.floor(r() * 3);
-    for (let k = 0; k < inner; k++) {
-      const what = r();
-      if (what < 0.5) md += pick(r, WRAPS).replace("@", pick(r, CLOSERS)) + tok();
-      else if (what < 0.7) md += `${openTag(r)}${tok()}`;
-      else md += (r() < 0.5 ? "\n\n" : " ") + tok();
-    }
-    if (r() < 0.8) md += pick(r, CLOSERS);
-    md += ` ${tok()}`;
-  }
-  return { md, tokens };
+  const md = tagCase(r);
+  return { md, tokens: [...tokensIn(md)] };
 }
 
 /** The tokens the preview shades: inside a `redact` element of the parsed document. */
@@ -124,58 +49,6 @@ function shadedTokens(md: string, tokens: string[]): string[] {
   return tokens.filter((t) => shaded.includes(t));
 }
 
-
-/** Review 6's PRNG and generator (`rr6/r473-md-fuzz.mjs`), kept as written so its seeds name the same notes. */
-function rng6(seed: number) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x9e3779b9) >>> 0;
-    let t = a ^ (a >>> 16);
-    t = Math.imul(t, 0x21f0aaad);
-    t ^= t >>> 15;
-    t = Math.imul(t, 0x735a2d97);
-    t ^= t >>> 15;
-    return (t >>> 0) / 4294967296;
-  };
-}
-
-function markdownNote(r: () => number, T: () => string): string {
-  const one = <X,>(a: readonly X[]): X => a[Math.floor(r() * a.length)];
-  const OPEN = () => one(["<redact>", "<REDACT>", "<redact class=x>"]);
-  const CLOSE = () => one(["</redact>", "</REDACT>", "</redact >"]);
-  const inline = () => {
-    const parts: string[] = [];
-    const n = 1 + Math.floor(r() * 4);
-    for (let i = 0; i < n; i++) parts.push(one([T, T, T, OPEN, CLOSE, () => "`" + CLOSE() + "`", () => "*" + T() + "*", () => `[${T()}](x)`])());
-    return parts.join(" ");
-  };
-  const codeBody = () => one([() => CLOSE(), () => T() + " " + CLOSE(), () => OPEN(), () => T()])();
-  const leaf = (pre: string, cont: string): string[] =>
-    one([
-      () => [pre + inline()],
-      () => [pre + "# " + inline()],
-      () => [pre + "```", cont + codeBody(), cont + "```"],
-      () => [pre + "~~~ js", cont + codeBody(), cont + "~~~"],
-      () => [pre + "    " + codeBody()],
-      () => [pre + "$$", cont + codeBody(), cont + "$$"],
-      () => [pre + OPEN()],
-      () => [pre + CLOSE()],
-      () => [pre + "| a | b |", cont + "| - | - |", cont + `| ${T()} ${one(["", CLOSE()])} | ${T()} |`],
-      () => [pre + "<div>", cont + T() + " " + one(["", CLOSE()]), cont + "</div>"],
-    ])();
-  const block = (depth = 0): string[] => {
-    const kind = depth < 2 ? one(["leaf", "leaf", "quote", "list", "olist"]) : "leaf";
-    if (kind === "leaf") return leaf("", "");
-    if (kind === "quote") return block(depth + 1).map((l) => "> " + l);
-    const marker = kind === "list" ? "- " : "1. ";
-    const pad = " ".repeat(marker.length);
-    return block(depth + 1).map((l, i) => (i === 0 ? marker : pad) + l);
-  };
-  const blocks: string[] = [];
-  const n = 2 + Math.floor(r() * 5);
-  for (let i = 0; i < n; i++) blocks.push(block().join("\n"));
-  return blocks.map((b, i) => (i ? one(["\n\n", "\n\n", "\n"]) : "") + b).join("");
-}
 
 /** The preview's HTML for a note: Markdown first, raw HTML kept, as remark-rehype + rehype-raw hand it to parse5. */
 const previewHtml = (md: string) =>

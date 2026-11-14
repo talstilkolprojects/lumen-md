@@ -50,6 +50,7 @@
     "docker:build": "docker build -t lumen-md .",
     "docker:run": "docker run -p 8080:8080 lumen-md",
     "eval:agents": "node scripts/agent-eval.mjs",
+    "fuzz:redaction": "node scripts/fuzz/redaction-nightly.mjs",
     "eval:compare": "node scripts/eval-compare.mjs",
     "fake-ollama": "node --experimental-strip-types scripts/fake-ollama.mjs",
     "headers": "node scripts/headers.mjs --check",

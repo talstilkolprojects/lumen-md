@@ -1,0 +1,361 @@
+{
+ "about": "Minimised redaction leaks (plan W8.8): every note here once made the preview shade a token the export kept. src/__tests__/redactionFuzzRegressions.test.ts asserts that none of them leaks now. The nightly fuzz (npm run fuzz:redaction) adds what it finds; do not edit cases by hand.",
+ "cases": [
+  {
+   "id": "rdx-09328bf5",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "</redact>\n<redact class=x>\n\n1. </REDACT> </redact> *Q02fxZ*\n\n- <div>\n  Q02fyZ \n  </div>",
+   "leaked": [
+    "Q02fxZ",
+    "Q02fyZ"
+   ]
+  },
+  {
+   "id": "rdx-0bea8c40",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "<redact>\n\nQ027rZ </REDACT> [Q027sZ](x)",
+   "leaked": [
+    "Q027sZ"
+   ]
+  },
+  {
+   "id": "rdx-0dd6964c",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "<REDACT>\n\n$$\nQ08p1Z </redact>\n$$\n> 1. </redact > [Q08p2Z](x) <REDACT> `</REDACT>`",
+   "leaked": [
+    "Q08p2Z"
+   ]
+  },
+  {
+   "id": "rdx-10d6981f",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "> </redact >\n~~~ js\n</redact>\n~~~\n<redact>\n\n$$\n</REDACT>\n$$\n\n>     </redact>\n\n- 1.     Q09bhZ </redact>",
+   "leaked": [
+    "Q09bhZ"
+   ]
+  },
+  {
+   "id": "rdx-1bd3e6db",
+   "found": "review 8 (2026-11-12, #473)",
+   "generator": "containers",
+   "md": "```html\n```\n[^3]: `<b>`\n[^3]\n    </span> Z6Z Z7Z Z8Z </redact\n<redact\tclass=x>",
+   "leaked": [
+    "Z6Z",
+    "Z7Z",
+    "Z8Z"
+   ]
+  },
+  {
+   "id": "rdx-1f497081",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "<div>\nQ04nkZ </redact>\n</div>\n<REDACT>\n\n- 1. Q04nlZ *Q04nmZ* </REDACT> Q04nnZ",
+   "leaked": [
+    "Q04nnZ"
+   ]
+  },
+  {
+   "id": "rdx-211831ad",
+   "found": "review 8 (2026-11-12, #473)",
+   "generator": "containers",
+   "md": "+\t[^2]: Z1Z\r\n+\t[^2]\r\n<redact\tclass=x>",
+   "leaked": [
+    "Z1Z"
+   ]
+  },
+  {
+   "id": "rdx-2b8a4887",
+   "found": "review 8 (2026-11-12, #473)",
+   "generator": "containers",
+   "md": "[^1]: Z3Z\r\n<details class=x{>>c<<}>\n<redact>\n\r\n1.  [^1] <summary title=Z27Z>\r",
+   "leaked": [
+    "Z3Z"
+   ]
+  },
+  {
+   "id": "rdx-350e105a",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "<div>\nQ00nnZ \n</div>\n> <REDACT>\n\n- # *Q00noZ* </REDACT> [Q00npZ](x)\n\n[Q00nqZ](x) </redact> *Q00nrZ* <redact class=x>",
+   "leaked": [
+    "Q00npZ",
+    "Q00nqZ",
+    "Q00nrZ"
+   ]
+  },
+  {
+   "id": "rdx-39fbb95d",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "<redact class=x>\n\n1. # </redact> *Q03kmZ*",
+   "leaked": [
+    "Q03kmZ"
+   ]
+  },
+  {
+   "id": "rdx-3c1344ea",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "<REDACT>\n\n>     </redact >\n\n| a | b |\n| - | - |\n| Q09muZ </REDACT> | Q09mvZ |\n\n1. ```\n   </redact>\n   ```\n\n# Q09mwZ </REDACT>",
+   "leaked": [
+    "Q09muZ",
+    "Q09mvZ",
+    "Q09mwZ"
+   ]
+  },
+  {
+   "id": "rdx-3ccafb9c",
+   "found": "review 8 (2026-11-12, #473)",
+   "generator": "containers",
+   "md": "[^3]: Z7Z Z8Z <span title={~~a~>b~~}  <redact >\n\n<redact>\n\n   * [^3]Z68Z Z69Z Z70ZZ71Z",
+   "leaked": [
+    "Z7Z",
+    "Z8Z"
+   ]
+  },
+  {
+   "id": "rdx-3db0825d",
+   "found": "2026-11-14",
+   "generator": "tags",
+   "seed": 20261114,
+   "md": "<Redact > --->TK2Q</redact <redact   data-x=\"</redact>\">TK4Q<!--</redact-->TK5Q<b></redact></b>TK6Q</redact/> TK7Q",
+   "leaked": [
+    "TK7Q"
+   ],
+   "open": "W8.8-F2"
+  },
+  {
+   "id": "rdx-45ec2bbd",
+   "found": "review 8 (2026-11-12, #473)",
+   "generator": "containers",
+   "md": "+  [^3]: *Z1Z* [^3]\n1.\t>\t-  <redact > </redact > Z4Z Z5Z Z6Z Z7Z Z8Z <redact/>\n   <td title=\"</redact>\">\n   1.  >\t## <em title=Z37Z> [[<REDACT>]]",
+   "leaked": [
+    "Z1Z"
+   ]
+  },
+  {
+   "id": "rdx-47c2ad81",
+   "found": "review 8 (2026-11-12, #473)",
+   "generator": "containers",
+   "md": ">\t-\t# *Z1Z*`</redact>`Z3Z\n>\t\t[^3]: Z4Z Z5Z Z6Z`<b>`Z8Z<redact/>[^3]\n````\n````\n<![CDATA[\n*Z39Z* `<redact>` <redact/>",
+   "leaked": [
+    "Z4Z",
+    "Z5Z",
+    "Z6Z",
+    "Z8Z"
+   ]
+  },
+  {
+   "id": "rdx-4dc00816",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "<div>\nQ09iyZ \n</div>\n- ```\n  <redact>\n  ```\n\n| a | b |\n| - | - |\n| Q09izZ </redact > | Q09j0Z |",
+   "leaked": [
+    "Q09j0Z"
+   ]
+  },
+  {
+   "id": "rdx-4f057c95",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "> ~~~ js\n> Q002eZ </REDACT>\n> ~~~\n\n1. </redact>\n\n<div>\nQ002fZ \n</div>\n\n<redact class=x>\n\n- </REDACT>\n\n1. $$\n   Q002gZ\n   $$",
+   "leaked": [
+    "Q002gZ"
+   ]
+  },
+  {
+   "id": "rdx-53870dad",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "<redact class=x>\n\n~~~ js\n</redact>\n~~~\n\n    Q0974Z\n<div>\nQ0975Z \n</div>\n\n- - </REDACT>\n[Q0976Z](x) Q0977Z Q0978Z",
+   "leaked": [
+    "Q0976Z",
+    "Q0977Z",
+    "Q0978Z"
+   ]
+  },
+  {
+   "id": "rdx-5510e2a6",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "<REDACT>\n\n$$\n</redact >\n$$\n\n> > </redact >\n\n> 1.     Q01obZ\n1. 1. $$\n      Q01ocZ\n      $$",
+   "leaked": [
+    "Q01obZ",
+    "Q01ocZ"
+   ]
+  },
+  {
+   "id": "rdx-5a39865b",
+   "found": "review 8 (2026-11-12, #473)",
+   "generator": "containers",
+   "md": "*  [^2]: {--Z5Z--} <kbd title=Z8Z> Z9Z Z10Z :abbr[</redact>]{t=\"</REDACT>\"}\n1)\t<?php\n![</redact>](/i.png)\n\t   \t+  Z74Z Z75Z Z76Z [^2] :note[Z77Z] <redact>",
+   "leaked": [
+    "Z5Z",
+    "Z9Z",
+    "Z10Z"
+   ]
+  },
+  {
+   "id": "rdx-6138b455",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "```\nQ0490Z\n```\n$$\nQ0491Z </redact>\n$$\n\n<REDACT>\n\n1. - # </redact>\n1. | a | b |\n   | - | - |\n   | Q0492Z </REDACT> | Q0493Z |",
+   "leaked": [
+    "Q0492Z",
+    "Q0493Z"
+   ]
+  },
+  {
+   "id": "rdx-68c185a2",
+   "found": "review 8 (2026-11-12, #473)",
+   "generator": "containers",
+   "md": ">\t[^3]: [^1]</redact></redact >\r\n>\t  \t[^2][^3]Z1Z\r\n<redact/>",
+   "leaked": [
+    "Z1Z"
+   ]
+  },
+  {
+   "id": "rdx-6aafeeeb",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "- - </REDACT>\n\n<REDACT>\n\n> <div>\n> Q05weZ \n> </div>\n\n> 1.     Q05wfZ\n> - </redact>\n\n1. 1. [Q05wgZ](x) *Q05whZ* Q05wiZ Q05wjZ",
+   "leaked": [
+    "Q05wgZ",
+    "Q05whZ",
+    "Q05wiZ",
+    "Q05wjZ"
+   ]
+  },
+  {
+   "id": "rdx-7ffb9935",
+   "found": "2026-11-14",
+   "generator": "tags",
+   "seed": 20261114,
+   "md": "<REDACT\r a='>TK1Q<redact\t id=1>TK2Q<redact\n title='a>b'>TK3Q</REDACT>  TK12Q",
+   "leaked": [
+    "TK12Q"
+   ],
+   "open": "W8.8-F1"
+  },
+  {
+   "id": "rdx-92cfdd80",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "<redact class=x>\n\n| a | b |\n| - | - |\n| Q06idZ </redact> | Q06ieZ |\n\n    <REDACT>\n\n- > <REDACT>",
+   "leaked": [
+    "Q06ieZ"
+   ]
+  },
+  {
+   "id": "rdx-9a176f1e",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "- ```\n  </redact >\n  ```\n\n> - ~~~ js\n>   </redact>\n>   ~~~\n<REDACT>\n\n> - </REDACT>\n1. ```\n   Q05oxZ </redact >\n   ```",
+   "leaked": [
+    "Q05oxZ"
+   ]
+  },
+  {
+   "id": "rdx-a6add158",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "- > $$\n  > <REDACT>\n  > $$\n\n# Q06u6Z Q06u7Z\n\n1. </REDACT>\n\n- - </redact>\n\n<redact class=x>\n\nQ06u8Z </redact> Q06u9Z Q06uaZ",
+   "leaked": [
+    "Q06u9Z",
+    "Q06uaZ"
+   ]
+  },
+  {
+   "id": "rdx-aee8aa71",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "<redact>\n\n- -     Q09x5Z\n\n> > | a | b |\n> > | - | - |\n> > | Q09x6Z </redact> | Q09x7Z |\n\n| a | b |\n| - | - |\n| Q09x8Z  | Q09x9Z |",
+   "leaked": [
+    "Q09x7Z",
+    "Q09x8Z",
+    "Q09x9Z"
+   ]
+  },
+  {
+   "id": "rdx-be855c30",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "<redact>\n\n# </redact> Q00ziZ </redact> Q00zjZ\n\n    Q00zkZ </redact>\n\n- 1. ```\n     Q00zlZ </redact>\n     ```\n\n- > </redact >",
+   "leaked": [
+    "Q00ziZ",
+    "Q00zjZ",
+    "Q00zkZ",
+    "Q00zlZ"
+   ]
+  },
+  {
+   "id": "rdx-bfef4a76",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "<redact>\n\n1. > </REDACT>\n\n<div>\nQ000yZ \n</div>",
+   "leaked": [
+    "Q000yZ"
+   ]
+  },
+  {
+   "id": "rdx-c1b2b014",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "<redact>\n\n> </REDACT>\n1. >     <redact class=x>\n\n- | a | b |\n  | - | - |\n  | Q091cZ </redact > | Q091dZ |",
+   "leaked": [
+    "Q091dZ"
+   ]
+  },
+  {
+   "id": "rdx-dad6a830",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "<REDACT>\n\n- # *Q00t4Z*\n1. > </redact>\n> ~~~ js\n> Q00t5Z </REDACT>\n> ~~~\n\n1. </REDACT>",
+   "leaked": [
+    "Q00t5Z"
+   ]
+  },
+  {
+   "id": "rdx-e624ffbd",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "<div>\nQ028tZ </redact >\n</div>\n\n<REDACT>\n\n- -     Q028uZ\n\n- > </REDACT>\n\n- # [Q028vZ](x) Q028wZ\n$$\n</redact >\n$$",
+   "leaked": [
+    "Q028vZ",
+    "Q028wZ"
+   ]
+  },
+  {
+   "id": "rdx-e85cbf83",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": "- ```\n  Q04suZ\n  ```\n\n<REDACT>\n\n1. - # </redact> [Q04svZ](x) Q04swZ",
+   "leaked": [
+    "Q04svZ",
+    "Q04swZ"
+   ]
+  },
+  {
+   "id": "rdx-ec472f75",
+   "found": "review 8 (2026-11-12, #473)",
+   "generator": "containers",
+   "md": "+ *\t[^1]: {--Z5Z--}\n  [^3]: [^1]\r\n<redact>",
+   "leaked": [
+    "Z5Z"
+   ]
+  },
+  {
+   "id": "rdx-ed512fac",
+   "found": "review 6 (2026-11-12, #473)",
+   "generator": "blocks",
+   "md": ">     Q03keZ </redact >\n<REDACT>\n\n| a | b |\n| - | - |\n| Q03kfZ </redact > | Q03kgZ |\n$$\n</redact>\n$$\n\n</redact>",
+   "leaked": [
+    "Q03kgZ"
+   ]
+  }
+ ]
+}

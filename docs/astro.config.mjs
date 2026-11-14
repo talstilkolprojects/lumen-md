@@ -153,6 +153,7 @@ export default defineConfig({
           items: [
             { label: "Translation drafts", translations: { he: "טיוטות תרגום" }, slug: "contributing/translation-drafts" },
             { label: "Visual regression", translations: { he: "רגרסיה חזותית" }, slug: "contributing/visual-regression" },
+            { label: "Nightly redaction fuzz", translations: { he: "fuzz השחרה כל לילה" }, slug: "contributing/redaction-fuzz" },
             { label: "Checks on every branch (Vercel)", translations: { he: "בדיקות בכל ענף (Vercel)" }, slug: "contributing/checks" },
           ],
         },
