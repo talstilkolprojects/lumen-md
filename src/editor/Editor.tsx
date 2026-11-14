@@ -16,7 +16,7 @@ import { useEffect, useImperativeHandle, useRef, useState, forwardRef } from "re
 import { Compartment, EditorState } from "@codemirror/state";
 import { lineSeparatorFor } from "./lineEndings";
 import { obsidianSourceExtension } from "./obsidianSource";
-import { pastedHtmlToMarkdown, shouldConvertPaste } from "../paste/htmlPaste";
+import { cleanPastedText, pastedHtmlToMarkdown, shouldConvertPaste } from "../paste/htmlPaste";
 import { wysiwygTakesPaste, type PasteDetail } from "../paste/pasteCommands";
 import { FIX_PDF_HEBREW_EVENT, fixSourceSelection, offerInSourceEditor } from "../paste/pdfPaste";
 import { EditorView, keymap, highlightActiveLine, Decoration, WidgetType } from "@codemirror/view";
@@ -368,7 +368,16 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
           // W1.4 — HTML from Word, Google Docs or a website pastes as clean Markdown.
           const html = event.clipboardData?.getData("text/html");
           const text = event.clipboardData?.getData("text/plain");
-          if (!html || !shouldConvertPaste(html, text)) return false;
+          if (!html || !shouldConvertPaste(html, text)) {
+            // W6.38 — text from a PDF reader can carry invisible direction embeddings: they go.
+            if (!text) return false;
+            const clean = cleanPastedText(text);
+            if (clean === text) return false;
+            event.preventDefault();
+            const { from, to } = view.state.selection.main;
+            view.dispatch({ changes: { from, to, insert: clean }, selection: { anchor: from + clean.length }, userEvent: "input.paste" });
+            return true;
+          }
           const md = pastedHtmlToMarkdown(html);
           if (!md) return false;
           event.preventDefault();

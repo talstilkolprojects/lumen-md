@@ -154,8 +154,10 @@ export function analyzePdfHebrew(text: string): PdfHebrewAnalysis {
   const strongForward = e.finalEnd + e.wordsForward + e.punctEnd + e.regularStart;
   const back = strongBack + e.regularEnd;
   let kind: PdfHebrewKind | null = null;
-  if (e.finalMid >= 1 && e.wordsBackward + e.punctStart === 0) {
-    // A final letter inside a word: neither correct nor reversed text has one.
+  if (e.finalMid >= 1 && e.finalMid > e.finalEnd && e.wordsBackward + e.punctStart === 0) {
+    // A final letter inside a word: neither correct nor reversed text has one. But a PDF
+    // reader joins words where the PDF has no space glyph ("גםאתר"): with more words that
+    // end in their final letter than finals inside words, the text reads right (W6.38).
     kind = "finals";
   } else if (strongBack >= 1 && (back >= 2 || (strongForward === 0 && e.finalStart + e.wordsBackward >= 1)) && 4 * strongForward <= back) {
     // A final letter opening a word, or a frequent word spelled backwards, never occurs in

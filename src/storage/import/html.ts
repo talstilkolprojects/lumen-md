@@ -20,6 +20,12 @@ const TOKEN = new RegExp(`${MARK}(\\d+)${MARK}`, "g");
 
 export function htmlToNote(html: string, refs: HtmlRefs = {}): string {
   const doc = parseInertDocument(html, "text/html");
+  nestStrayLists(doc);
+  // An image wrapped in a link to itself (Notion's figures) is the image: the link would swallow it.
+  for (const a of Array.from(doc.querySelectorAll("a[href]"))) {
+    const img = a.querySelector("img");
+    if (img && a.children.length === 1 && !(a.textContent ?? "").trim() && a.getAttribute("href") === img.getAttribute("src")) a.replaceWith(img);
+  }
   const out: string[] = [];
   const swap = (el: Element, md: string | null) => {
     if (md === null) return;
@@ -39,7 +45,32 @@ export function htmlToNote(html: string, refs: HtmlRefs = {}): string {
   }
   const md = htmlToMarkdown(doc.documentElement.outerHTML);
   // A checkbox outside a list (Evernote's to-dos are lines) is a task item.
-  return md.replace(TOKEN, (_, n: string) => out[Number(n)] ?? "").replace(/^(\s*)\[([ x])\] /gm, "$1- [$2] ");
+  // A token may hold another (an image inside a link's text): resolve until none is left.
+  let text = md;
+  for (let i = 0; i < 3 && text.includes(MARK); i++) text = text.replace(TOKEN, (_, n: string) => out[Number(n)] ?? "");
+  return text.replace(/^(\s*)\[([ x])\] /gm, "$1- [$2] ");
+}
+
+/**
+ * A list written straight inside a list (`<ul><li>a</li><ul><li>b</li></ul></ul>`,
+ * as Evernote and Google Docs write sub-lists), or alone in an item of its own,
+ * moves into the item before it, so it nests one level down instead of
+ * becoming an item of its own.
+ */
+export function nestStrayLists(root: ParentNode): void {
+  // An item holding nothing but a sub-list (Evernote's valid form of the same) is that sub-list.
+  for (const li of Array.from(root.querySelectorAll("li"))) {
+    const kids = Array.from(li.childNodes).filter((n) => n.nodeType !== 3 || (n.textContent ?? "").trim());
+    if (kids.length === 1 && kids[0] instanceof Element && /^(UL|OL)$/.test(kids[0].tagName) && li.previousElementSibling?.tagName === "LI") li.replaceWith(kids[0]);
+  }
+  for (const list of Array.from(root.querySelectorAll("ul > ul, ul > ol, ol > ul, ol > ol"))) {
+    let prev = list.previousElementSibling;
+    if (!prev || prev.tagName !== "LI") {
+      prev = list.ownerDocument.createElement("li");
+      list.before(prev);
+    }
+    prev.appendChild(list);
+  }
 }
 
 /** Decode the five XML entities and numeric references (ENEX titles, CSV-less fields). */

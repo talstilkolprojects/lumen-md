@@ -57,6 +57,15 @@ export function cleanBidiControls(s: string): string {
   return out;
 }
 
+/**
+ * Plain text pasted into a note (W6.38): a PDF reader built on poppler wraps
+ * each right-to-left line in embedding controls (U+202B … U+202C). Those go,
+ * as they do from pasted HTML; text without them is pasted exactly as copied.
+ */
+export function cleanPastedText(s: string): string {
+  return /[\u202A-\u202E\u2066-\u2069]/.test(s) ? cleanBidiControls(s) : s;
+}
+
 /** Count of direction controls in a string (for the paste report and tests). */
 export function countBidiControls(s: string): number {
   return (s.match(/[\u200E\u200F\u202A-\u202E\u2066-\u2069]/g) ?? []).length;
@@ -139,13 +148,16 @@ function docsLists(body: HTMLElement): void {
       run.push(n);
     const root = doc.createElement(list.tagName.toLowerCase());
     const stack: { list: Element; level: number }[] = [{ list: root, level: 1 }];
+    // Newer Docs also nest a level's list straight inside the parent list, next to the items.
+    const itemsOf = (l: Element): { li: Element; tag: string }[] =>
+      Array.from(l.children).flatMap((c) => (/^(UL|OL)$/.test(c.tagName) ? itemsOf(c) : [{ li: c, tag: l.tagName.toLowerCase() }]));
     for (const l of run) {
-      for (const li of Array.from(l.children)) {
+      for (const { li, tag } of itemsOf(l)) {
         const level = Number(li.getAttribute("aria-level") ?? "1");
         while (stack.length > 1 && stack[stack.length - 1].level > level) stack.pop();
         let cur = stack[stack.length - 1];
         if (level > cur.level) {
-          const sub = doc.createElement(l.tagName.toLowerCase());
+          const sub = doc.createElement(tag);
           const host = cur.list.lastElementChild ?? cur.list.appendChild(doc.createElement("li"));
           host.appendChild(sub);
           cur = { list: sub, level };
@@ -158,6 +170,8 @@ function docsLists(body: HTMLElement): void {
     run.forEach((l) => l.remove());
   }
 }
+
+const SAME_EMPHASIS: Record<string, string> = { B: "STRONG", I: "EM", S: "DEL" };
 
 /** Undo what Word, Google Docs and websites do to clipboard HTML. */
 export function cleanPastedDom(body: HTMLElement): void {
@@ -212,6 +226,22 @@ export function cleanPastedDom(body: HTMLElement): void {
       if (italic) wrap("em");
       if (bold) wrap("strong");
       unwrap(node);
+    }
+  }
+
+  // Neighbouring emphasis of one kind is one span (LibreOffice splits a bold run where the
+  // script changes: <b>ש</b><b>"</b><b>ח</b>), or the Markdown reads **ש****"****ח**.
+  for (const el of Array.from(body.querySelectorAll("strong,b,em,i,del,s"))) {
+    const kind = (t: string) => SAME_EMPHASIS[t] ?? t;
+    let prev = el.previousSibling;
+    const gap: Node[] = [];
+    while (prev && prev.nodeType === 3 && !(prev.textContent ?? "").trim()) {
+      gap.unshift(prev);
+      prev = prev.previousSibling;
+    }
+    if (prev instanceof Element && el.isConnected && kind(prev.tagName) === kind(el.tagName)) {
+      prev.append(...gap, ...Array.from(el.childNodes));
+      el.remove();
     }
   }
 

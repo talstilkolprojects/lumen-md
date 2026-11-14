@@ -40,12 +40,12 @@ function htmlNodeToMd(node: Node, depth = 0): string {
     case "br": return "\n";
     case "hr": return "\n---\n";
     case "strong":
-    case "b": return `**${children().trim()}**`;
+    case "b": return emphasis("**", children());
     case "em":
-    case "i": return `*${children().trim()}*`;
+    case "i": return emphasis("*", children());
     case "s":
     case "del":
-    case "strike": return `~~${children().trim()}~~`;
+    case "strike": return emphasis("~~", children());
     case "code": return `\`${children().trim()}\``;
     case "pre": {
       const code = el.querySelector("code");
@@ -113,6 +113,16 @@ function tableToMd(table: HTMLTableElement): string {
     "| " + sep.join(" | ") + " |\n" +
     body.map((r) => "| " + r.join(" | ") + " |").join("\n")
   );
+}
+
+/**
+ * Emphasis around the text, the spaces at its edges left outside: `<b>bold </b>and`
+ * is `**bold** and`, never `**bold**and` (W6.38, Evernote notes).
+ */
+function emphasis(mark: string, inner: string): string {
+  const core = inner.trim();
+  if (!core) return inner;
+  return `${/^\s*/.exec(inner)![0]}${mark}${core}${mark}${/\s*$/.exec(inner)![0]}`;
 }
 
 export function htmlToMarkdown(html: string): string {
@@ -395,62 +405,150 @@ const els = (parent: Element | Document, tag: string) =>
   Array.from(parent.getElementsByTagName(tag));
 
 /**
- * Real DOCX import: unzips `word/document.xml` and walks the WordprocessingML
- * tree. Handles headings (Heading1–6 / Title styles), bold/italic runs,
- * bulleted & numbered list items, and tables. Images are noted but not
- * embedded (no asset extraction yet).
+ * Real DOCX import: unzips the package and walks `word/document.xml`.
+ * Headings (Heading1–6 / Title styles), bold / italic runs (the complex-
+ * script `w:bCs` / `w:iCs` too: Word and LibreOffice mark Hebrew bold that
+ * way), lists from `word/numbering.xml` (bullet or numbered, nested by
+ * `w:ilvl`), hyperlinks from the relationships, tables, and images, which
+ * come along inline as `data:` URIs (up to 512 KB each; a larger one keeps
+ * its alt text and file name). Plan W6.38 measured this on a real corpus.
  */
 export async function docxToMarkdown(file: File): Promise<string> {
-  let xml: string | null;
+  let parts: Map<string, Uint8Array>;
   try {
-    xml = await unzipText(await file.arrayBuffer(), "word/document.xml");
+    parts = await unzip(await file.arrayBuffer());
   } catch (err) {
     return `> ⚠️ Could not read DOCX archive: ${(err as Error).message}`;
   }
+  const dec = new TextDecoder();
+  const part = (name: string) => {
+    const b = parts.get(name);
+    return b ? dec.decode(b) : null;
+  };
+  const xml = part("word/document.xml");
   if (!xml) return "> ⚠️ DOCX has no word/document.xml part.";
 
   const doc = parseInertDocument(xml, "application/xml");
   const body = doc.getElementsByTagName("w:body")[0];
   if (!body) return "> ⚠️ DOCX document body not found.";
 
-  const runText = (r: Element): string => {
-    let t = els(r, "w:t").map((x) => x.textContent ?? "").join("");
-    if (els(r, "w:tab").length) t = "\t" + t;
-    if (!t) return "";
-    const rPr = r.getElementsByTagName("w:rPr")[0];
-    const bold = rPr && els(rPr, "w:b").length > 0;
-    const italic = rPr && els(rPr, "w:i").length > 0;
-    if (bold) t = `**${t}**`;
-    if (italic) t = `*${t}*`;
-    return t;
+  // Relationships: hyperlink targets and image parts.
+  const rels = new Map<string, string>();
+  const relsXml = part("word/_rels/document.xml.rels");
+  if (relsXml) for (const r of els(parseInertDocument(relsXml, "application/xml"), "Relationship")) rels.set(r.getAttribute("Id") ?? "", r.getAttribute("Target") ?? "");
+
+  // Numbering: numId → abstractNumId → per level, bullet or not.
+  const bulletOf = new Map<string, boolean[]>();
+  const numXml = part("word/numbering.xml");
+  if (numXml) {
+    const nd = parseInertDocument(numXml, "application/xml");
+    const abstract = new Map<string, boolean[]>();
+    for (const an of els(nd, "w:abstractNum")) {
+      const levels: boolean[] = [];
+      for (const lvl of els(an, "w:lvl")) levels[+(lvl.getAttribute("w:ilvl") ?? "0")] = lvl.getElementsByTagName("w:numFmt")[0]?.getAttribute("w:val") === "bullet";
+      abstract.set(an.getAttribute("w:abstractNumId") ?? "", levels);
+    }
+    for (const n of els(nd, "w:num")) bulletOf.set(n.getAttribute("w:numId") ?? "", abstract.get(n.getElementsByTagName("w:abstractNumId")[0]?.getAttribute("w:val") ?? "") ?? []);
+  }
+
+  const on = (rPr: Element | undefined, ...tags: string[]) =>
+    !!rPr && tags.some((t) => {
+      const el = rPr.getElementsByTagName(t)[0];
+      const v = el?.getAttribute("w:val");
+      return !!el && v !== "0" && v !== "false";
+    });
+
+  const imageMd = (drawing: Element): string => {
+    const props = drawing.getElementsByTagName("wp:docPr")[0];
+    const alt = (props?.getAttribute("descr") || props?.getAttribute("title") || "").replace(/[[\]]/g, "");
+    const id = drawing.getElementsByTagName("a:blip")[0]?.getAttribute("r:embed") ?? "";
+    const target = rels.get(id) ?? "";
+    const path = target.startsWith("/") ? target.slice(1) : `word/${target}`;
+    const data = parts.get(path);
+    const ext = (/\.(\w+)$/.exec(target)?.[1] ?? "png").toLowerCase();
+    const mime = ext === "jpg" || ext === "jpeg" ? "image/jpeg" : ext === "svg" ? "image/svg+xml" : `image/${ext}`;
+    if (!data || data.length > 512 * 1024) return `![${alt || target.split("/").pop()}](${target.split("/").pop() ?? ""})`;
+    let bin = "";
+    for (let i = 0; i < data.length; i += 0x8000) bin += String.fromCharCode(...data.subarray(i, i + 0x8000));
+    return `![${alt}](data:${mime};base64,${btoa(bin)})`;
   };
 
-  const paraText = (p: Element): string =>
-    els(p, "w:r").map(runText).join("").trim();
-
-  const paraToMd = (p: Element): string => {
-    const text = paraText(p);
-    if (!text) return "";
-    const style = p
-      .getElementsByTagName("w:pStyle")[0]
-      ?.getAttribute("w:val")
-      ?.toLowerCase();
-    const headingMatch = style?.match(/heading(\d)/);
-    if (headingMatch) return `${"#".repeat(Math.min(6, +headingMatch[1]))} ${text}`;
-    if (style === "title") return `# ${text}`;
-    if (els(p, "w:numPr").length) return `- ${text}`;
-    return text;
+  // Runs of a paragraph (hyperlinks included), with neighbouring runs of the same emphasis joined.
+  const paraText = (p: Element): string => {
+    const pieces: { text: string; b: boolean; i: boolean; href?: string; raw?: boolean }[] = [];
+    const runOf = (r: Element, href?: string) => {
+      for (const d of els(r, "w:drawing")) pieces.push({ text: imageMd(d), b: false, i: false, raw: true });
+      let t = "";
+      for (const c of Array.from(r.children)) {
+        if (c.tagName === "w:t") t += c.textContent ?? "";
+        else if (c.tagName === "w:tab") t += "\t";
+        else if (c.tagName === "w:br") t += " ";
+      }
+      if (!t) return;
+      const rPr = r.getElementsByTagName("w:rPr")[0];
+      pieces.push({ text: t, b: on(rPr, "w:b", "w:bCs"), i: on(rPr, "w:i", "w:iCs"), href });
+    };
+    for (const c of Array.from(p.children)) {
+      if (c.tagName === "w:r") runOf(c);
+      else if (c.tagName === "w:hyperlink") {
+        const href = rels.get(c.getAttribute("r:id") ?? ""); // an internal w:anchor link keeps its text only
+        for (const r of els(c, "w:r")) runOf(r, href);
+      } else if (c.tagName === "w:ins" || c.tagName === "w:smartTag" || c.tagName === "w:sdt") for (const r of els(c, "w:r")) runOf(r);
+    }
+    // Whitespace takes the emphasis of the text before it, so "**a** **b**" joins into one span.
+    for (let k = 1; k < pieces.length; k++) if (!pieces[k].raw && !pieces[k].text.trim()) Object.assign(pieces[k], { b: pieces[k - 1].b, i: pieces[k - 1].i });
+    const groups: typeof pieces = [];
+    for (const x of pieces) {
+      const last = groups[groups.length - 1];
+      if (last && !last.raw && !x.raw && last.b === x.b && last.i === x.i && last.href === x.href) last.text += x.text;
+      else groups.push({ ...x });
+    }
+    return groups
+      .map((g) => {
+        if (g.raw) return g.text;
+        const lead = /^\s*/.exec(g.text)![0];
+        const trail = /\s*$/.exec(g.text)![0];
+        let core = g.text.trim();
+        if (!core) return g.text;
+        if (g.b) core = `**${core}**`;
+        if (g.i) core = `*${core}*`;
+        if (g.href) core = `[${core}](${g.href})`;
+        return lead + core + trail;
+      })
+      .join("")
+      .trim();
   };
 
-  // Walk only top-level body children so table cells aren't double-counted.
+  const listOf = (p: Element): { depth: number; bullet: boolean } | null => {
+    const numPr = p.getElementsByTagName("w:numPr")[0];
+    if (!numPr) return null;
+    const numId = numPr.getElementsByTagName("w:numId")[0]?.getAttribute("w:val") ?? "";
+    if (numId === "0") return null;
+    const depth = +(numPr.getElementsByTagName("w:ilvl")[0]?.getAttribute("w:val") ?? "0");
+    return { depth, bullet: bulletOf.get(numId)?.[depth] ?? true };
+  };
+
   const out: string[] = [];
+  let inList = false;
   for (const node of Array.from(body.children)) {
-    const tag = node.tagName;
-    if (tag === "w:p") {
-      const md = paraToMd(node);
-      if (md) out.push(md);
-    } else if (tag === "w:tbl") {
+    if (node.tagName === "w:p") {
+      const text = paraText(node);
+      if (!text) continue;
+      const style = node.getElementsByTagName("w:pStyle")[0]?.getAttribute("w:val")?.toLowerCase();
+      const heading = style?.match(/heading(\d)/);
+      const list = heading ? null : listOf(node);
+      let md: string;
+      if (heading) md = `${"#".repeat(Math.min(6, +heading[1]))} ${text}`;
+      else if (style === "title") md = `# ${text}`;
+      else if (list) md = `${"   ".repeat(list.depth)}${list.bullet ? "-" : "1."} ${text}`;
+      else md = text;
+      // A list's items stay together; anything else is its own block.
+      if (list && inList) out[out.length - 1] += `\n${md}`;
+      else out.push(md);
+      inList = !!list;
+    } else if (node.tagName === "w:tbl") {
       out.push(docxTableToMd(node));
+      inList = false;
     }
   }
   const md = out.join("\n\n").replace(/\n{3,}/g, "\n\n").trim();

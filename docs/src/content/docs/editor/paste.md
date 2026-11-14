@@ -48,3 +48,11 @@ against its expected Markdown. They cover Word, Google Docs, Wikipedia
 (English and Hebrew), a Hebrew news site and Gmail, in Hebrew, English and
 mixed text. The run also checks for zero inline styles and zero needless
 direction marks.
+
+A second set is a real corpus (`src/__tests__/fixtures/real-corpus`): the
+same thirty Hebrew-first documents as Google Docs and Word put them on the
+clipboard, as LibreOffice Writer does, and as the text a PDF reader copies
+(pdf.js and poppler) out of the PDF LibreOffice printed. All 150 paste
+whole: headings, nested lists, tables, links, images and right-to-left
+text. Text pasted from a PDF reader loses the invisible direction
+embeddings some readers add to each line.
