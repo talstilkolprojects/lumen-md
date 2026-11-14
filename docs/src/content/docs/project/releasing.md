@@ -44,6 +44,14 @@ exact commands `--publish` would run.
    `latest.json` is built from the `.sig` files. Every signature is checked
    against the updater key, and the same check must refuse a copy with one
    byte changed.
+   `latest.json` itself is then signed with the same updater key
+   (`latest.json.sig`, the same format as a bundle's `.sig`). The run checks
+   that signature, and a copy with one byte changed must be refused. **The
+   run refuses to publish without it**: the app downloads `latest.json` and
+   `latest.json.sig`, verifies the signature before it reads anything in the
+   manifest, and refuses a version that isn't newer than the running one and
+   the highest ever installed (W11.S2/S3). With the owner's key the signing
+   is `tauri signer sign` on the file.
 7. **SBOM.** `sbom.cdx.json` (CycloneDX 1.5) lists every package in
    `package-lock.json` and every crate in `Cargo.lock`. It is built offline.
 8. **Release notes.** Hebrew first, then English, from

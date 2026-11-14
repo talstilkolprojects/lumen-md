@@ -13,4 +13,7 @@ $R --crate-type rlib --crate-name tauri $ST/tauri.rs --extern serde --extern ser
 for p in fs dialog deep_link single_instance updater; do
   $R --crate-type rlib --crate-name tauri_plugin_$p $ST/tauri_plugin_$p.rs --extern tauri --extern url --extern serde --extern serde_json $([ $p = dialog ] && echo --extern tauri_plugin_fs)
 done
+# W11.S2: the update manifest's signature check and its fetch.
+$R --crate-type rlib --crate-name minisign_verify $ST/minisign_verify.rs
+$R --crate-type rlib --crate-name reqwest $ST/reqwest.rs
 echo "stubs built in $OUT"

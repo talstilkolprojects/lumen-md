@@ -160,7 +160,7 @@ describe("desktop update channel", () => {
       return { state: "up-to-date", current: "0.2.0-beta.1" };
     }) as never;
     await checkForUpdate({ invoke, desktop: true, channel: "beta" });
-    expect(calls[0]).toEqual(["update_check", { channel: "beta" }]);
+    expect(calls).toEqual([["lumen_set_update_channel", { channel: "beta" }], ["lumen_check_update"]]);
   });
 
   it("the launch check (beta flag): once a day, only when the flag is on, never outside the desktop app", async () => {
@@ -172,8 +172,8 @@ describe("desktop update channel", () => {
     expect(shouldCheckOnLaunch("garbage", now)).toBe(true);
 
     let n = 0;
-    const invoke = (async () => {
-      n++;
+    const invoke = (async (cmd: string) => {
+      if (cmd === "lumen_check_update") n++; // W11.S2: each check also sets the channel first
       return { state: "available", current: "0.2.0-beta.1", version: "0.2.0-beta.2", notes: null };
     }) as never;
     const s = mem();

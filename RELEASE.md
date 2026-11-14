@@ -76,7 +76,7 @@ dropped from commit subjects.
 |---|---|---|
 | `lumen-web-vX.tgz` | `SHA256SUMS` + `SHA256SUMS.asc` | `LUMEN_RELEASE_GPG_KEY` (a GPG key id) |
 | desktop bundles (`--desktop`) | Apple / Authenticode + the updater's minisign `.sig` | see "Signing" below, `TAURI_SIGNING_PRIVATE_KEY` |
-| `latest.json` (Tauri updater) | built from the `.sig` files | — |
+| `latest.json` (Tauri updater) | built from the `.sig` files; `latest.json.sig` (W11.S3): the file itself, signed with the updater key — no publish without it, and the app refuses an unsigned manifest | `TAURI_SIGNING_PRIVATE_KEY` |
 | iOS `.ipa`, Android `.aab` (plan 13.3) | Xcode / Gradle, store signing | put them in `release/` before `build`'s checksum step |
 
 Every key is optional: without one, that signature is skipped with a warning

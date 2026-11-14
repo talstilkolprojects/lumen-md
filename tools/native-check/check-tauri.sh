@@ -19,6 +19,7 @@ for dep in $(sed -n '/^\[dependencies\]/,/^\[/p;/^\[target/,/^\[/p' "$T/Cargo.to
   case $dep in
     tauri|serde|serde_json) ;;
     tauri-plugin-*) EXTERNS+=(--extern "${dep//-/_}") ;;
+    minisign-verify|reqwest) EXTERNS+=(--extern "${dep//-/_}") ;;  # stubs (W11.S2)
     keyring) ;;  # macOS/Windows only; not checked on Linux
     *)
       path=$(grep -E "^$dep *=" "$T/Cargo.toml" | grep -oE 'path *= *"[^"]+"' | sed -E 's/.*"(.+)"/\1/')
