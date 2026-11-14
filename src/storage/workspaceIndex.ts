@@ -315,11 +315,13 @@ async function withEngine<T>(fn: (e: IndexEngine) => Promise<T>): Promise<T> {
     // The text died with the worker (W2.22: this thread keeps summaries only):
     // fill the new index from the snapshot, reading only what it lacks.
     // Z5: the refill reads from the vault active now; once the vault or the epoch moved (a switch, a lock, a drop),
-    // what it read is another index's: it stops posting, what it posted goes, and the request is not retried.
+    // what it read is another index's: it stops posting, and the request is not retried.
     const stale = () => moved(at, vault);
     const filled = await fillEngine(local, [...cache.byPath.values()], stale);
     if (stale()) {
-      discard();
+      // Review 33 Z7: when the epoch moved, the drop already cleared the engine, and a newer build may have filled
+      // it since: leave it. When only the vault moved (no drop yet), drop now, so the next use builds that vault.
+      if (at === epoch) dropIndex();
       throw err;
     }
     for (const [path, f] of filled) cache.byPath.set(path, f);
