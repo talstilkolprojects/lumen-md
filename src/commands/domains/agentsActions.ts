@@ -1,4 +1,4 @@
-/** The bodies of the tag, link and product agents (./agents.ts), loaded on first use. */
+/** The bodies of the tag, link, product, diagram, action-item and translation agents (./agents.ts), loaded on first use. */
 import { t } from "../../i18n";
 import { uiAlert, uiPrompt } from "../../ui/PromptDialog";
 import { showAiToast } from "../../ui/AiToast";
@@ -108,5 +108,55 @@ export async function productAgentFlow({ setContent }: Pick<Ctx, "setContent">):
     if (isAbort(e)) return;
     if ((await import("../../agents/suggestions")).reportAgentFailure(e, "ai.productAgent")) return;
     showAiToast(t("toast.agentError", { error: explainError(e) }), "error");
+  }
+}
+
+/** Append a Mermaid diagram made from the open note. */
+export async function diagramFlow({ setContent, liveDoc }: Ctx): Promise<void> {
+  try {
+    showAiToast(t("toast.generatingDiagram"), "info");
+    const { generateDiagram } = await import("../../agents/commands");
+    const block = await cancellable((signal) => generateDiagram(liveDoc().content, signal));
+    setContent(`${liveDoc().content.trimEnd()}\n\n${block}\n`);
+    showAiToast(t("toast.diagramInserted"), "success");
+  } catch (e) {
+    if (isAbort(e)) return;
+    if ((await import("../../agents/suggestions")).reportAgentFailure(e, "ai.diagram")) return;
+    showAiToast(t("toast.diagramFailed", { error: explainError(e) }), "error");
+  }
+}
+
+/** Append the open note's action items as a task list. */
+export async function actionItemsFlow({ setContent, liveDoc }: Ctx): Promise<void> {
+  try {
+    showAiToast(t("toast.extractingActionItems"), "info");
+    const { extractActionItems } = await import("../../agents/commands");
+    const list = await cancellable((signal) => extractActionItems(liveDoc().content, signal));
+    setContent(`${liveDoc().content.trimEnd()}\n\n## Action Items\n\n${list}\n`);
+    showAiToast(t("toast.actionItemsAdded"), "success");
+  } catch (e) {
+    if (isAbort(e)) return;
+    if ((await import("../../agents/suggestions")).reportAgentFailure(e, "ai.actionItems")) return;
+    showAiToast(t("toast.actionItemsFailed", { error: explainError(e) }), "error");
+  }
+}
+
+/** Translate the open note (the target language asked first), keeping its formatting. */
+export async function translateFlow({ setContent, liveDoc }: Ctx): Promise<void> {
+  const target = await uiPrompt({
+    message: t("agent.translate.prompt"),
+    defaultValue: "",
+  });
+  if (!target || !target.trim()) return;
+  try {
+    showAiToast(t("toast.translatingTo", { target }), "info");
+    const { translateMarkdownDetailed, translationToasts } = await import("../../agents/commands");
+    const r = await cancellable((signal) => translateMarkdownDetailed(liveDoc().content, target.trim(), signal));
+    setContent(r.text);
+    for (const [msg, kind] of translationToasts(r, t)) showAiToast(msg, kind);
+  } catch (e) {
+    if (isAbort(e)) return;
+    if ((await import("../../agents/suggestions")).reportAgentFailure(e, "ai.translate")) return;
+    showAiToast(t("toast.translationFailed", { error: explainError(e) }), "error");
   }
 }

@@ -42,19 +42,7 @@ export function buildDocumentAgentCommands({ setContent, liveDoc }: CommandConte
       hint: t("cmd.ai.diagram.hint", { defaultValue: "Generate a Mermaid diagram from the document" }),
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
-      action: async () => {
-        try {
-          showAiToast(t("toast.generatingDiagram"), "info");
-          const { generateDiagram } = await import("../../agents/commands");
-          const block = await cancellable((signal) => generateDiagram(liveDoc().content, signal));
-          setContent(`${liveDoc().content.trimEnd()}\n\n${block}\n`);
-          showAiToast(t("toast.diagramInserted"), "success");
-        } catch (e) {
-          if (isAbort(e)) return;
-          if ((await import("../../agents/suggestions")).reportAgentFailure(e, "ai.diagram")) return;
-          showAiToast(t("toast.diagramFailed", { error: explainError(e) }), "error");
-        }
-      },
+      action: () => void import("./agentsActions").then((m) => m.diagramFlow({ setContent, liveDoc })),
     },
     {
       id: "ai.actionItems",
@@ -62,19 +50,7 @@ export function buildDocumentAgentCommands({ setContent, liveDoc }: CommandConte
       hint: t("cmd.ai.actionItems.hint", { defaultValue: "Pull a task list out of meeting notes" }),
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
-      action: async () => {
-        try {
-          showAiToast(t("toast.extractingActionItems"), "info");
-          const { extractActionItems } = await import("../../agents/commands");
-          const list = await cancellable((signal) => extractActionItems(liveDoc().content, signal));
-          setContent(`${liveDoc().content.trimEnd()}\n\n## Action Items\n\n${list}\n`);
-          showAiToast(t("toast.actionItemsAdded"), "success");
-        } catch (e) {
-          if (isAbort(e)) return;
-          if ((await import("../../agents/suggestions")).reportAgentFailure(e, "ai.actionItems")) return;
-          showAiToast(t("toast.actionItemsFailed", { error: explainError(e) }), "error");
-        }
-      },
+      action: () => void import("./agentsActions").then((m) => m.actionItemsFlow({ setContent, liveDoc })),
     },
     {
       id: "ai.translate",
@@ -82,24 +58,7 @@ export function buildDocumentAgentCommands({ setContent, liveDoc }: CommandConte
       hint: t("cmd.ai.translate.hint", { defaultValue: "Translate the whole document, preserving formatting" }),
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
-      action: async () => {
-        const target = await uiPrompt({
-          message: t("agent.translate.prompt"),
-          defaultValue: "",
-        });
-        if (!target || !target.trim()) return;
-        try {
-          showAiToast(t("toast.translatingTo", { target }), "info");
-          const { translateMarkdownDetailed, translationToasts } = await import("../../agents/commands");
-          const r = await cancellable((signal) => translateMarkdownDetailed(liveDoc().content, target.trim(), signal));
-          setContent(r.text);
-          for (const [msg, kind] of translationToasts(r, t)) showAiToast(msg, kind);
-        } catch (e) {
-          if (isAbort(e)) return;
-          if ((await import("../../agents/suggestions")).reportAgentFailure(e, "ai.translate")) return;
-          showAiToast(t("toast.translationFailed", { error: explainError(e) }), "error");
-        }
-      },
+      action: () => void import("./agentsActions").then((m) => m.translateFlow({ setContent, liveDoc })),
     },
     {
       id: "ai.chart",
