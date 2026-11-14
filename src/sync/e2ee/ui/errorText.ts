@@ -6,7 +6,8 @@
 
 import { t } from "../../../i18n";
 import { DeviceBusyError, DropDevicesRequiredError, KeyChangeInProgressError, PairingAbortedError, PairingDuringKeyChangeError, PairingPendingError, RevocationContestedError } from "../engine";
-import { DroppedFromVaultError, KeyringCommitLostError, KeyringForkError, RevokedError, TamperedWrapError } from "../keyring";
+import { DroppedFromVaultError, KeyringCommitLostError, KeyringForkError, KeyringRollbackError, RevokedError, TamperedWrapError } from "../keyring";
+import { RollbackError } from "../manifest";
 import { PairingEpochError } from "../pairing";
 import "../strings";
 
@@ -22,6 +23,11 @@ export function e2eeErrorText(e: unknown, side: "answer" | "pair" | "other" = "o
     if (e.revocationAtRisk.length) return t("e2ee.fork.atRisk");
     return t("e2ee.fork.refused");
   }
+  // W10.D8: a storage that served an older or a forked vault — Drive without
+  // a kept If-Match, or a malicious one. The engine stopped before any write
+  // (manifest counter and hash chain, spec §9); say so, not a generic error.
+  if (e instanceof RollbackError) return t(e.kind === "fork" ? "e2ee.rollback.fork" : "e2ee.rollback.older");
+  if (e instanceof KeyringRollbackError) return t("e2ee.rollback.keyring");
   if (e instanceof TamperedWrapError) return t("e2ee.wrap.tampered");
   if (e instanceof DroppedFromVaultError) return t("e2ee.dropped");
   if (e instanceof RevokedError) return t("e2ee.revoked");

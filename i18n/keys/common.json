@@ -4129,6 +4129,21 @@
       "vars": []
     },
     {
+      "key": "e2ee.rollback.fork",
+      "en": "The sync service returned another version of the vault in place of the one this device saw: another device's changes replaced it, so the service didn't keep a conditional write. This device stopped and wrote nothing; the notes on it are unchanged. Don't make changes here for now: sync your other devices and see which one has the latest notes. If this happens again, don't use this service for this vault.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.rollback.keyring",
+      "en": "The sync service returned older keys than this device has already seen (a rollback). This device stopped and wrote nothing; the notes on it are unchanged. Sync your other devices; if this stays, don't trust this service.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.rollback.older",
+      "en": "The sync service returned an older version of the vault than this device has already seen, as if changes had been undone (a rollback or a replay). This device stopped and wrote nothing; the notes on it are unchanged. Sync your other devices and check that their latest changes are there; if this stays, don't trust this service.",
+      "vars": []
+    },
+    {
       "key": "e2ee.rule.folder",
       "en": "folder {value}",
       "vars": [
