@@ -25,6 +25,7 @@ import * as Y from "yjs";
 import * as encoding from "lib0/encoding";
 import * as decoding from "lib0/decoding";
 import { Awareness, applyAwarenessUpdate, encodeAwarenessUpdate, removeAwarenessStates } from "y-protocols/awareness";
+import { createRoomMeter } from "./roomSize.mjs";
 
 export const E2E_ARRAY = "e2e";
 
@@ -274,13 +275,16 @@ export function createRelayRoom({ name, state = null, authorize, onChange = () =
   awareness.setLocalState(null); // the server is not a participant
   const peers = new Set();
   let bytes = state ? state.byteLength : 0;
+  // The exact size again after each update, at the cost of what the update touched (roomSize.mjs).
+  const meter = createRoomMeter(doc);
+  if (state) meter.measure(); // why: the stored room's structs are counted at load, not in its first message
 
   doc.on("update", (update, origin) => {
     for (const p of peers) if (p !== origin && p.ready) p.socket.send(frame(p.address, MessageType.Sync, (e) => {
       encoding.writeVarUint(e, SyncUpdate);
       encoding.writeVarUint8Array(e, update);
     }));
-    bytes = Y.encodeStateAsUpdate(doc).byteLength;
+    bytes = meter.measure(); // = Y.encodeStateAsUpdate(doc).byteLength
     onChange(doc, origin); // origin: the peer whose update it was (its socket), or null
   });
   awareness.on("update", ({ added, updated, removed }, origin) => {

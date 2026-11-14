@@ -287,12 +287,11 @@ describe("a 4 MB room", () => {
     expect(p(checkMs, 0.95)).toBeLessThan(WORKERS_FREE_CPU_MS / 2);
   });
 
-  // OWED (train 5): on the train the room keeps the reviewed size accounting (R6 r14/r18: the room is
-  // measured exactly, Y.encodeStateAsUpdate, on every update, and the growth is attributed to its writer), not
-  // #531's estimate, so a 4 MB room's whole message is still over the Workers Free budget (p95 ~50 ms here)
-  // even though the check is not. Marked as a known failure, unchanged: it turns red once the accounting is
-  // cheap, and must then become a plain it() again. Needs #531's lane and a relay review.
-  it.fails("the whole message (check + apply + ack) is within the Workers CPU budget [owed: the room's size accounting]", () => {
+  // The room keeps the reviewed size accounting (R6 r14/r18: the room's exact Y.encodeStateAsUpdate length
+  // after every update, the growth attributed to its writer), now kept per update by roomSize.mjs instead of
+  // encoding the room again (train 5 measured p95 ~50 ms that way in this 4 MB room). collabRoomSize.test.ts
+  // checks that the number is the same.
+  it("the whole message (check + apply + ack) is within the Workers CPU budget", () => {
     expect(wholeMessageMs.length).toBeGreaterThan(0);
     expect(p(wholeMessageMs, 0.95)).toBeLessThan(WORKERS_FREE_CPU_MS);
   });
