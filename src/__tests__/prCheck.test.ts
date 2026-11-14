@@ -130,12 +130,17 @@ describe("pr:check", () => {
         files: ["/src/sync/e2ee/"], attackTests: [{ path: "src/__tests__/kdfAttack.test.ts", result: "4/4 pass" }], findings: [], verdict: "approve", ...o,
       });
       const comment = (r: object) => "Review\n\n```lumen-review\n" + JSON.stringify(r) + "\n```\n";
-      const pr = (bodies: string[]) => () => ({ number: 9, labels: [], author: "a", headSha: head, headDate: "2026-11-12T09:00:00Z", reviews: [], events: [], comments: bodies.map((body, i) => ({ id: i + 1, user: "a", body })) });
+      const pr = (bodies: string[]) => () => ({ number: 9, labels: [], author: "a", headSha: head, headDate: "2026-11-12T09:00:00Z", reviews: [], events: [], comments: bodies.map((body, i) => ({ id: i + 1, user: "a", association: "OWNER", body })) });
       const section = (o: Record<string, unknown>, extra: string[] = []) =>
         runChecks({ ...parseArgs(["--cwd", r0.dir, "--base", "main~1", "--no-size", ...(o.pr ? ["--pr", "9"] : []), ...extra]), ...o }).sections.find((s: { title: string }) => s.title === "Independent review of sensitive paths");
       expect(section({}).status).toBe("warn");
       expect(section({ pr: "9", loadPr: pr([]) }).status).toBe("fail");
       expect(section({ pr: "9", loadPr: pr([comment(receipt())]) }).status).toBe("ok");
+      // Review 14.11: a comment by an account without write access (anyone, on a public repository) does not count.
+      const stranger = () => ({ ...pr([])(), comments: [{ id: 7, user: "someone", association: "NONE", body: comment(receipt()) }] });
+      const st = section({ pr: "9", loadPr: stranger });
+      expect(st.status).toBe("fail");
+      expect(st.lines.join("\n")).toMatch(/@someone has no write access/);
       // A push after the review: the receipt is for an older head.
       const stale = section({ pr: "9", loadPr: pr([comment(receipt({ head: "a".repeat(40) }))]) });
       expect(stale.status).toBe("fail");

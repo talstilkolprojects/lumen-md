@@ -61,3 +61,6 @@
 /.github/CODEOWNERS                      @talstilkol
 /scripts/lib/humanReview.mjs             @talstilkol
 /scripts/lib/independentReview.mjs       @talstilkol
+/scripts/review-sign.mjs                 @talstilkol
+/scripts/review-coverage.mjs             @talstilkol
+/security/reviewers.json                 @talstilkol
