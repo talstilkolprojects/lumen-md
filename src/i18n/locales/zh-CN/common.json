@@ -747,5 +747,8 @@
   "wikiComplete.create": "新建笔记“{name}”",
   "wikiComplete.createFailed": "无法新建笔记“{name}”：{error}",
   "wikiComplete.created": "已新建笔记“{name}”",
-  "wikiComplete.listLabel": "链接建议"
+  "wikiComplete.listLabel": "链接建议",
+  "latex.exported": "{file}：main.tex、参考文献和图片。使用 latexmk -lualatex（或 -xelatex）编译。",
+  "latex.missingKeys": "库中任何 .bib 都没有：{keys}",
+  "latex.failed": "LaTeX 导出：{error}"
 }

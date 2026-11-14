@@ -99,6 +99,8 @@
   "cmd.edit.formatCodeBlock.hint": "Prettier: отформатировать блок кода, в котором стоит курсор",
   "cmd.edit.formatDocument": "Форматировать документ",
   "cmd.edit.formatDocument.hint": "Prettier: привести в порядок Markdown, frontmatter и блоки кода",
+  "cmd.export.latexProject": "Экспорт проекта LaTeX (научный, иврит)…",
+  "cmd.export.latexProject.hint": "main.tex для LuaLaTeX / XeLaTeX с ивритом справа налево, формулами, ссылками [@key] из .bib хранилища и изображениями, в ZIP",
   "cmd.feedback": "Справка: отправить отзыв",
   "cmd.feedback.hint": "Issue на GitHub или текст для копирования — без вашего щелчка ничего не отправляется",
   "cmd.file.exportAdoc": "Экспорт to AsciiDoc",

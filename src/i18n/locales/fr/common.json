@@ -747,5 +747,8 @@
   "wikiComplete.create": "Créer la note « {name} »",
   "wikiComplete.createFailed": "Impossible de créer la note « {name} » : {error}",
   "wikiComplete.created": "Note « {name} » créée",
-  "wikiComplete.listLabel": "Suggestions de liens"
+  "wikiComplete.listLabel": "Suggestions de liens",
+  "latex.exported": "{file} : main.tex, les références et les images. Compiler avec latexmk -lualatex (ou -xelatex).",
+  "latex.missingKeys": "Absent de tous les .bib du coffre : {keys}",
+  "latex.failed": "Export LaTeX : {error}"
 }

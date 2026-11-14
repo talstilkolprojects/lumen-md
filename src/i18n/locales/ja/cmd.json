@@ -99,6 +99,8 @@
   "cmd.edit.formatCodeBlock.hint": "Prettier: カーソルがあるコードブロックを整形",
   "cmd.edit.formatDocument": "ドキュメントを整形",
   "cmd.edit.formatDocument.hint": "Prettier: Markdown・フロントマター・コードブロックを整える",
+  "cmd.export.latexProject": "LaTeX プロジェクトを書き出す（学術、ヘブライ語）…",
+  "cmd.export.latexProject.hint": "右から左のヘブライ語、数式、保管庫の .bib からの [@key] 引用、画像を含む LuaLaTeX / XeLaTeX 用 main.tex を ZIP で",
   "cmd.feedback": "ヘルプ: フィードバックを送る",
   "cmd.feedback.hint": "GitHub の issue またはコピー用テキスト — クリックするまで何も送信されません",
   "cmd.file.exportAdoc": "エクスポート to AsciiDoc",

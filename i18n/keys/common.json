@@ -1795,6 +1795,27 @@
       ]
     },
     {
+      "key": "latex.exported",
+      "en": "{file}: main.tex, the references and the images. Compile with latexmk -lualatex (or -xelatex).",
+      "vars": [
+        "file"
+      ]
+    },
+    {
+      "key": "latex.failed",
+      "en": "LaTeX export: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "latex.missingKeys",
+      "en": "Not in any .bib in the vault: {keys}",
+      "vars": [
+        "keys"
+      ]
+    },
+    {
       "key": "loading.generic",
       "en": "Loading…",
       "vars": []

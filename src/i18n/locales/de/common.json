@@ -747,5 +747,8 @@
   "wikiComplete.create": "Notiz „{name}“ erstellen",
   "wikiComplete.createFailed": "Die Notiz „{name}“ konnte nicht erstellt werden: {error}",
   "wikiComplete.created": "Notiz „{name}“ erstellt",
-  "wikiComplete.listLabel": "Linkvorschläge"
+  "wikiComplete.listLabel": "Linkvorschläge",
+  "latex.exported": "{file}: main.tex, die Quellen und die Bilder. Übersetzen mit latexmk -lualatex (oder -xelatex).",
+  "latex.missingKeys": "In keiner .bib-Datei: {keys}",
+  "latex.failed": "LaTeX-Export: {error}"
 }

@@ -747,5 +747,8 @@
   "wikiComplete.create": "יצירת פתק «{name}»",
   "wikiComplete.createFailed": "לא ניתן ליצור את הפתק «{name}»: {error}",
   "wikiComplete.created": "נוצר הפתק «{name}»",
-  "wikiComplete.listLabel": "הצעות לקישור"
+  "wikiComplete.listLabel": "הצעות לקישור",
+  "latex.exported": "‏{file}: ‏main.tex, המקורות והתמונות. קומפילציה: latexmk -lualatex (או ‎-xelatex).",
+  "latex.missingKeys": "לא נמצאו באף קובץ .bib בכספת: {keys}",
+  "latex.failed": "ייצוא LaTeX: {error}"
 }

@@ -1,0 +1,37 @@
+% Lumen academic export (plan W5.22). Compile with:
+%   latexmk -lualatex main.tex      (recommended: babel's bidi=basic)
+%   latexmk -xelatex main.tex       (works too: babel's bidi=default)
+% Fonts: Frank Ruhl Libre / David Libre (SIL OFL) when installed, else FreeSerif.
+\documentclass[11pt,a4paper]{article}
+\usepackage{iftex}
+\ifLuaTeX
+  \usepackage[bidi=basic]{babel}
+\else
+  \usepackage[bidi=default]{babel}
+\fi
+\babelprovide[import, main]{english}
+\babelprovide[import]{hebrew}
+\usepackage{fontspec}
+\IfFontExistsTF{Frank Ruhl Libre}{\babelfont[hebrew]{rm}{Frank Ruhl Libre}}{\IfFontExistsTF{David Libre}{\babelfont[hebrew]{rm}{David Libre}}{\IfFontExistsTF{Noto Serif Hebrew}{\babelfont[hebrew]{rm}{Noto Serif Hebrew}}{\babelfont[hebrew]{rm}{FreeSerif}}}}
+\babelfont[english]{rm}{Latin Modern Roman}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[hidelinks]{hyperref}
+\title{A Short English Paper}
+\date{}
+\begin{document}
+\maketitle
+
+This paper cites \citet{knuth1984} and quotes a Hebrew phrase: \foreignlanguage{hebrew}{שלום עולם}.
+
+\section{Method}
+
+We minimise $L(\theta) = \sum_i \ell(y_i, f_\theta(x_i))$ as in \citep{vaswani2017}.
+
+\begin{thebibliography}{2}
+\bibitem[Knuth(1984)]{knuth1984} Knuth, D. E. (1984). \emph{The TeXbook}. Addison-Wesley.
+
+\bibitem[Vaswani(2017)]{vaswani2017} Vaswani, A., \& others. (2017). Attention is all you need. In \emph{NeurIPS}.
+\end{thebibliography}
+\end{document}

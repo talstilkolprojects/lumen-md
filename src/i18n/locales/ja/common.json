@@ -747,5 +747,8 @@
   "wikiComplete.create": "ノート「{name}」を作成",
   "wikiComplete.createFailed": "ノート「{name}」を作成できませんでした: {error}",
   "wikiComplete.created": "ノート「{name}」を作成しました",
-  "wikiComplete.listLabel": "リンクの候補"
+  "wikiComplete.listLabel": "リンクの候補",
+  "latex.exported": "{file}: main.tex、参考文献、画像。latexmk -lualatex（または -xelatex）でコンパイル。",
+  "latex.missingKeys": "保管庫のどの .bib にもありません: {keys}",
+  "latex.failed": "LaTeX 書き出し: {error}"
 }

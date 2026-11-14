@@ -99,6 +99,8 @@
   "cmd.edit.formatCodeBlock.hint": "Prettier: den Codeblock unter dem Cursor formatieren",
   "cmd.edit.formatDocument": "Dokument formatieren",
   "cmd.edit.formatDocument.hint": "Prettier: Markdown, Frontmatter und Codeblöcke aufräumen",
+  "cmd.export.latexProject": "LaTeX-Projekt exportieren (akademisch, Hebräisch)…",
+  "cmd.export.latexProject.hint": "main.tex für LuaLaTeX / XeLaTeX mit Hebräisch von rechts nach links, Mathematik, [@key]-Zitaten aus den .bib-Dateien und den Bildern, als ZIP",
   "cmd.feedback": "Hilfe: Feedback senden",
   "cmd.feedback.hint": "Ein GitHub-Issue oder Text zum Kopieren — nichts wird ohne deinen Klick gesendet",
   "cmd.file.exportAdoc": "Exportieren to AsciiDoc",

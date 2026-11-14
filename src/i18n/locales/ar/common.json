@@ -747,5 +747,8 @@
   "wikiComplete.create": "إنشاء ملاحظة «{name}»",
   "wikiComplete.createFailed": "تعذّر إنشاء الملاحظة «{name}»: {error}",
   "wikiComplete.created": "أُنشئت الملاحظة «{name}»",
-  "wikiComplete.listLabel": "اقتراحات الروابط"
+  "wikiComplete.listLabel": "اقتراحات الروابط",
+  "latex.exported": "{file}: main.tex والمراجع والصور. الترجمة: latexmk -lualatex (أو -xelatex).",
+  "latex.missingKeys": "غير موجود في أي ملف .bib: {keys}",
+  "latex.failed": "تصدير LaTeX: {error}"
 }

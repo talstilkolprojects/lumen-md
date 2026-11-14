@@ -99,6 +99,8 @@
   "cmd.edit.formatCodeBlock.hint": "Prettier: تنسيق كتلة الشيفرة التي يقع فيها المؤشر",
   "cmd.edit.formatDocument": "تنسيق المستند",
   "cmd.edit.formatDocument.hint": "Prettier: ترتيب Markdown والبيانات الأمامية وكتل الشيفرة",
+  "cmd.export.latexProject": "تصدير مشروع LaTeX (أكاديمي، عبرية)…",
+  "cmd.export.latexProject.hint": "main.tex لـ LuaLaTeX / XeLaTeX مع العبرية من اليمين إلى اليسار والرياضيات واستشهادات [@key] من ملفات ‎.bib والصور، في ZIP",
   "cmd.feedback": "مساعدة: إرسال ملاحظات",
   "cmd.feedback.hint": "مشكلة على GitHub أو نص للنسخ — لا يُرسل شيء دون نقرتك",
   "cmd.file.exportAdoc": "تصدير to AsciiDoc",

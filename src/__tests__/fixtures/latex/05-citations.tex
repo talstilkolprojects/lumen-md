@@ -1,0 +1,37 @@
+% Lumen academic export (plan W5.22). Compile with:
+%   latexmk -lualatex main.tex      (recommended: babel's bidi=basic)
+%   latexmk -xelatex main.tex       (works too: babel's bidi=default)
+% Fonts: Frank Ruhl Libre / David Libre (SIL OFL) when installed, else FreeSerif.
+\documentclass[11pt,a4paper]{article}
+\usepackage{iftex}
+\ifLuaTeX
+  \usepackage[bidi=basic]{babel}
+\else
+  \usepackage[bidi=default]{babel}
+\fi
+\babelprovide[import, main]{hebrew}
+\babelprovide[import]{english}
+\usepackage{fontspec}
+\IfFontExistsTF{Frank Ruhl Libre}{\babelfont[hebrew]{rm}{Frank Ruhl Libre}}{\IfFontExistsTF{David Libre}{\babelfont[hebrew]{rm}{David Libre}}{\IfFontExistsTF{Noto Serif Hebrew}{\babelfont[hebrew]{rm}{Noto Serif Hebrew}}{\babelfont[hebrew]{rm}{FreeSerif}}}}
+\babelfont[english]{rm}{Latin Modern Roman}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[hidelinks]{hyperref}
+\title{ציטוטים}
+\date{}
+\begin{document}
+\maketitle
+
+כפי שהראו \citet{cohen2020}, מודלים עבריים משתפרים במהירות \citep{vaswani2017}.
+
+ראו גם \citep[ראו][עמ'~33]{knuth1984} ו-\citep{cohen2020,vaswani2017}. כתובת דוא"ל כמו \foreignlanguage{english}{noa@example.com} אינה ציטוט.
+
+\begin{thebibliography}{3}
+\bibitem[כהן(2020)]{cohen2020} כהן, נ., ו-\foreignlanguage{english}{Levi, D}. (2020). למידה עמוקה בעברית. \emph{\foreignlanguage{english}{Journal of Hebrew NLP}}, \emph{4}, \foreignlanguage{english}{1–20}.
+
+\bibitem[Knuth(1984)]{knuth1984} \foreignlanguage{english}{Knuth, D. E. (1984). \emph{The TeXbook}. Addison-Wesley.}
+
+\bibitem[Vaswani(2017)]{vaswani2017} \foreignlanguage{english}{Vaswani, A., \& others. (2017). Attention is all you need. In \emph{NeurIPS}.}
+\end{thebibliography}
+\end{document}

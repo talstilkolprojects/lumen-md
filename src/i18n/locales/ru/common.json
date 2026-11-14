@@ -747,5 +747,8 @@
   "wikiComplete.create": "Создать заметку «{name}»",
   "wikiComplete.createFailed": "Не удалось создать заметку «{name}»: {error}",
   "wikiComplete.created": "Заметка «{name}» создана",
-  "wikiComplete.listLabel": "Варианты ссылок"
+  "wikiComplete.listLabel": "Варианты ссылок",
+  "latex.exported": "{file}: main.tex, источники и изображения. Компиляция: latexmk -lualatex (или -xelatex).",
+  "latex.missingKeys": "Нет ни в одном .bib хранилища: {keys}",
+  "latex.failed": "Экспорт LaTeX: {error}"
 }

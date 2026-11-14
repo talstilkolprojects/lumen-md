@@ -1240,6 +1240,13 @@
       "group": "Insert",
       "hint": "[[Page|label]]",
       "icon": "Link"
+    },
+    {
+      "id": "export.latexProject",
+      "label": "Export LaTeX project (academic, Hebrew)…",
+      "group": "File",
+      "hint": "main.tex for LuaLaTeX / XeLaTeX with Hebrew right to left, math, [@key] citations from the vault's .bib, and the images, in a ZIP",
+      "icon": "Download"
     }
   ],
   "full": [
@@ -2618,6 +2625,13 @@
       "group": "Insert",
       "hint": "[[Page|label]]",
       "icon": "Link"
+    },
+    {
+      "id": "export.latexProject",
+      "label": "Export LaTeX project (academic, Hebrew)…",
+      "group": "File",
+      "hint": "main.tex for LuaLaTeX / XeLaTeX with Hebrew right to left, math, [@key] citations from the vault's .bib, and the images, in a ZIP",
+      "icon": "Download"
     }
   ],
   "autoSaveOn": [
@@ -2806,6 +2820,7 @@
     "insert.embed",
     "insert.htmlpreview",
     "insert.bibtex",
-    "insert.wikilink"
+    "insert.wikilink",
+    "export.latexProject"
   ]
 }

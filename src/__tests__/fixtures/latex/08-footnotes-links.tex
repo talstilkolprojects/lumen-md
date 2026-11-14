@@ -1,0 +1,28 @@
+% Lumen academic export (plan W5.22). Compile with:
+%   latexmk -lualatex main.tex      (recommended: babel's bidi=basic)
+%   latexmk -xelatex main.tex       (works too: babel's bidi=default)
+% Fonts: Frank Ruhl Libre / David Libre (SIL OFL) when installed, else FreeSerif.
+\documentclass[11pt,a4paper]{article}
+\usepackage{iftex}
+\ifLuaTeX
+  \usepackage[bidi=basic]{babel}
+\else
+  \usepackage[bidi=default]{babel}
+\fi
+\babelprovide[import, main]{hebrew}
+\babelprovide[import]{english}
+\usepackage{fontspec}
+\IfFontExistsTF{Frank Ruhl Libre}{\babelfont[hebrew]{rm}{Frank Ruhl Libre}}{\IfFontExistsTF{David Libre}{\babelfont[hebrew]{rm}{David Libre}}{\IfFontExistsTF{Noto Serif Hebrew}{\babelfont[hebrew]{rm}{Noto Serif Hebrew}}{\babelfont[hebrew]{rm}{FreeSerif}}}}
+\babelfont[english]{rm}{Latin Modern Roman}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[hidelinks]{hyperref}
+\title{הערות שוליים וקישורים}
+\date{}
+\begin{document}
+\maketitle
+
+טענה חשובה\footnote{מקור הטענה: ניסוי שנערך ב-2023.} עם קישור ל\href{https://example.com/course}{אתר הקורס} ולפתק פתק אחר.
+
+\end{document}
