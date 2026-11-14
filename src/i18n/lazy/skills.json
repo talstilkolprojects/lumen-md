@@ -1,0 +1,12 @@
+{
+  "skills.answerSummary": "The answer of the skill “{name}”",
+  "skills.done": "“{name}” finished: {n} change(s) wait for your review.",
+  "skills.empty": "No skill matches.",
+  "skills.failed": "“{name}” did not finish: {error}",
+  "skills.heading": "Skills",
+  "skills.running": "Running “{name}”…",
+  "skills.untrusted.message": "This skill comes from {source}, not from your own vault. It may ask to use: {tools}. Every change it proposes still waits for your approval, and outside content in it is checked for injected instructions. Allow this version to run?",
+  "skills.untrusted.ok": "Allow and run",
+  "skills.untrusted.title": "Run the untrusted skill “{name}”?",
+  "skills.untrustedBadge": "Untrusted"
+}

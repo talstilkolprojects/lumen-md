@@ -87,6 +87,49 @@ export function safeWorkspacePath(path: string): string {
   return p;
 }
 
+/** Files that steer other agents (Claude Code, Codex, Copilot, Cursor …): an agent of Lumen never writes them. */
+export const AGENT_CONTROL_FILES = /^(claude|claude\.local|agents|agents\.override|gemini|copilot-instructions)\.md$|^\.(cursorrules|windsurfrules|mcp\.json)$/i;
+
+/** Latin look-alikes (Cyrillic, Greek) folded to Latin before matching a name. */
+const CONFUSABLES: Record<string, string> = {
+  "\u0410": "A", "\u0412": "B", "\u0421": "C", "\u0415": "E", "\u041D": "H", "\u0406": "I", "\u0408": "J", "\u041A": "K", "\u041C": "M", "\u041E": "O", "\u0420": "P", "\u0405": "S", "\u0422": "T", "\u0425": "X", "\u0423": "Y",
+  "\u0430": "a", "\u0441": "c", "\u0435": "e", "\u043E": "o", "\u0440": "p", "\u0455": "s", "\u0445": "x", "\u0443": "y", "\u0456": "i", "\u0458": "j",
+  "\u0391": "A", "\u0392": "B", "\u0395": "E", "\u0397": "H", "\u0399": "I", "\u039A": "K", "\u039C": "M", "\u039D": "N", "\u039F": "O", "\u03A1": "P", "\u03A4": "T", "\u03A7": "X", "\u03BF": "o",
+};
+
+/** A path segment as a file system (and a person) would read it: NFKC, no invisible characters, look-alikes folded, no trailing dots or spaces. */
+export function canonicalSegment(seg: string): string {
+  return seg
+    .normalize("NFKC")
+    .replace(/[\p{Cf}]/gu, "")
+    .replace(/[\u0370-\u03FF\u0400-\u04FF]/g, (c) => CONFUSABLES[c] ?? c)
+    .replace(/[. ]+$/, "");
+}
+
+/**
+ * A path an agent may WRITE (reviews 21 D3, 24): `safeWorkspacePath`, and not
+ * an absolute or UNC path, no Windows stream syntax (`:$`, `::`, a trailing
+ * `:`), drive prefix (`C:`) or 8.3 short name (`~1`), nothing under a dot folder (`.lumen/` holds skills and MCP grants,
+ * `.claude/` and `.git/` steer other tools), no agent control file — each
+ * segment compared in its canonical form (NFKC, invisible characters
+ * dropped, look-alike letters folded, trailing dots and spaces removed).
+ * Every write tool calls it; the MCP server applies the same rule to outside clients.
+ */
+export function safeWriteTarget(path: string): string {
+  if (/^([a-zA-Z]:)?[\\/]/.test(path)) throw new ToolError("denied", `Agents write only inside the vault, not to ${path}`);
+  const p = safeWorkspacePath(path);
+  const parts = p.split("/");
+  for (const raw of parts) {
+    // Windows streams (`:$`, `::`, a trailing `:`), drive prefixes (`C:`), 8.3 short names (`~1`), backslashes.
+    // An ordinary ":" or "~" in a note name ("Meeting: plan.md", "~draft.md") is fine.
+    if (/\\/.test(raw) || /:\$|::|:$|^[a-zA-Z]:|~\d/.test(raw)) throw new ToolError("denied", `Agents do not write stream, drive or short names (${p})`);
+    const seg = canonicalSegment(raw);
+    if (!seg || seg.startsWith(".")) throw new ToolError("denied", `Agents do not write under dot folders (${p}): they hold Lumen's skills and permissions and other tools' settings`);
+  }
+  if (AGENT_CONTROL_FILES.test(canonicalSegment(parts[parts.length - 1]!))) throw new ToolError("denied", `Agents do not write ${p}: it steers other agents`);
+  return p;
+}
+
 /**
  * Small models often send `"10"` for a number or `"true"` for a boolean.
  * Top-level arguments whose schema says number / integer / boolean are

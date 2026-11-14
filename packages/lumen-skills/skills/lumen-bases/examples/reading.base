@@ -1,0 +1,16 @@
+filters:
+  or:
+    - file.hasTag("book")
+    - file.inFolder("Reading")
+properties:
+  author:
+    displayName: מחבר
+views:
+  - type: table
+    name: לפי מחבר
+    order: [file.name, author, year, rating]
+    groupBy:
+      property: author
+      direction: ASC
+    summaries:
+      rating: Average
