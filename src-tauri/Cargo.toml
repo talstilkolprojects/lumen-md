@@ -23,6 +23,9 @@ tauri-plugin-dialog = "2"
 # confined to the folder the user picked. Replaces tauri-plugin-fs, whose
 # broad `fs:` scope nothing used.
 lumen-vault = { path = "vault" }
+# Finding the other device on the local network (plan W2.19): mDNS and the
+# pairing-code rendezvous, std only.
+lumen-lan-mdns = { path = "lan-mdns" }
 
 # OS keychain for API keys and tokens (T36): Keychain on macOS, Credential
 # Manager on Windows. Linux keeps the WebCrypto store (keyutils is per-session
