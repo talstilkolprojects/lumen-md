@@ -12,7 +12,7 @@
  *     no stack, no file name).
  * There is no user id, no device id, no note content and no time of day.
  * The last 60 days are kept. Counting can be turned off, which also clears
- * the counts.
+ * the counts, and the activation marks of ./activation.ts (W11.P4).
  *
  * This module never makes a request. The report (`weeklyReport`) is plain
  * JSON the dialog shows in full; it leaves only when the user clicks "Open
@@ -30,6 +30,8 @@ export const COUNTING_KEY = "lumen.usage.counting";
 export const WEEKLY_KEY = "lumen.usage.weekly";
 /** The day the user last sent or dismissed a weekly report (YYYY-MM-DD). */
 export const LAST_REPORT_KEY = "lumen.usage.lastReport";
+/** Activation and TTFV on this device (plan W11.P4, ./activation.ts); cleared with the counts. */
+export const ACTIVATION_KEY = "lumen.activation.v1";
 export const KEEP_DAYS = 60;
 /**
  * A command id: dotted lower-camel segments ("file.exportHtml",
@@ -132,6 +134,7 @@ export function setCounting(on: boolean, storage: Storage | null = safeStorage()
     else {
       storage?.setItem(COUNTING_KEY, "0");
       storage?.removeItem(USAGE_KEY);
+      storage?.removeItem(ACTIVATION_KEY);
     }
   } catch {
     // why: storage refused — nothing is counted without it anyway

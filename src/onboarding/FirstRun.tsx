@@ -15,6 +15,7 @@ import { useFocusTrap } from "../ui/useFocusTrap";
 import "./firstRunStrings";
 import { HelpButton } from "../ui/HelpButton";
 import { explainError } from "../lib/userError";
+import { markActivation } from "../metrics/count";
 
 const ALL_STEPS = ["lang", "vault", "look", "start"] as const;
 const THEMES: Theme[] = ["light", "dark", "system"];
@@ -58,6 +59,11 @@ export default function FirstRun({ onDone }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
 
   // Reopened from ⌘K: the vault may already be in a folder.
+  // W11.P4: the first run started (only on a device that never finished setup; local only).
+  useEffect(() => {
+    if (setupDue()) markActivation("firstRun.start");
+  }, []);
+
   useEffect(() => {
     let live = true;
     void currentVault().then((v) => {
@@ -135,6 +141,7 @@ export default function FirstRun({ onDone }: Props) {
     try {
       const r = await importInto(importKind.current, files);
       window.dispatchEvent(new Event("lumen-workspace-changed"));
+      markActivation("import.complete", r.notes); // W11.P4, local only
       setStatus(t("onboard.import.done", { notes: String(r.notes), folder: r.folder }));
     } catch (e) {
       setStatus(t("onboard.import.failed", { error: explainError(e) }));

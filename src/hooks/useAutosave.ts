@@ -10,6 +10,7 @@ import { historyKey, isQuotaError, recordSnapshot } from "../storage/history";
 import { notifyWorkspaceChanged } from "../storage/workspaceEvents";
 import { showAiToast } from "../ui/AiToast";
 import { log } from "../lib/logger";
+import { markActivation } from "../metrics/count";
 
 export interface AutosaveActions {
   handleSave: (saveAs?: boolean) => Promise<void>;
@@ -34,6 +35,8 @@ export function useAutosave({ handleSave, adoptIntoWorkspace }: AutosaveActions)
         .then((m) => m.saveOpenNote(name, content))
         .then((saved) => {
           if (!saved) return;
+          // W11.P4: the first note of the user's own reached the disk (local mark only).
+          markActivation("note.firstOwnSave");
           // Only if nothing changed the note meanwhile (a quick capture into
           // the open inbox, plan 4.16): otherwise its newer text stays dirty
           // and the next autosave writes it.

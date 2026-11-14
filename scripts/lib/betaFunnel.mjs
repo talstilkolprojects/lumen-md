@@ -11,7 +11,16 @@
  * the report shows Lumen opened on 3 or more of its 7 days; *all week* on
  * all 7. The plan's acceptance ("50 beta testers active for 7 days") is read
  * as: some week has ≥ 50 active testers.
+ *
+ * Beta targets (plan W11.P4, research R6 §5, gates M1/M2): activation ≥ 50%,
+ * D7 ≥ 30%, D30 ≥ 15%. Each rate is over the testers whose reports can say
+ * (activation decided, a 7- or 30-day window old enough); a tester counts
+ * as yes when any of their reports says yes. TTFV figures are the averages
+ * the devices computed (W11.P4); the funnel only averages them again.
  */
+
+/** The beta's targets, here in code so a report can't move them (W11.P4). Never lower these. */
+export const BETA_TARGETS = Object.freeze({ activation: 0.5, d7: 0.3, d30: 0.15 });
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const count = (n) => (typeof n === "number" && Number.isFinite(n) && n >= 0 ? Math.floor(n) : null);
@@ -41,6 +50,8 @@ export function parseReport(text) {
     opens7: count(raw.opens7) ?? 0,
     errors7: count(raw.errors7) ?? 0,
     retained7: raw.retained7 === true ? true : raw.retained7 === false ? false : null,
+    retained30: raw.retained30 === true ? true : raw.retained30 === false ? false : null,
+    activation: parseActivation(raw.activation),
     topFeatures: Object.fromEntries(
       Object.entries(raw.topFeatures && typeof raw.topFeatures === "object" ? raw.topFeatures : {})
         .filter(([k, v]) => /^[a-z][a-zA-Z0-9_.:-]{0,80}$/.test(k) && count(v) !== null)
@@ -48,6 +59,37 @@ export function parseReport(text) {
     ),
   };
 }
+
+const yesNo = (v) => (v === true ? true : v === false ? false : null);
+const millis = (v) => (typeof v === "number" && Number.isFinite(v) && v >= 0 && v < 86_400_000 ? Math.round(v) : null);
+
+/** The activation block of a report (W11.P4): its known fields only, or null. */
+function parseActivation(a) {
+  if (!a || typeof a !== "object" || Array.isArray(a)) return null;
+  return { activated: yesNo(a.activated), ownNote: a.ownNote === true, imported: a.imported === true, returnedDay2: a.returnedDay2 === true, ttfv1MeanMs: millis(a.ttfv1MeanMs), ttfv2Ms: millis(a.ttfv2Ms) };
+}
+
+/** A rate over the testers that can say: yes / (yes + no), and whether it meets `target`. */
+function rate(testers, pick, target) {
+  let yes = 0;
+  let known = 0;
+  for (const t of testers) {
+    const vals = t.weeks.map(pick).filter((v) => v !== null);
+    if (!vals.length) continue;
+    known++;
+    if (vals.includes(true)) yes++;
+  }
+  const value = known ? yes / known : null;
+  return { yes, of: known, rate: value, target, met: value !== null && value >= target };
+}
+
+const mean = (xs) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
+const median = (xs) => {
+  if (!xs.length) return null;
+  const s = [...xs].sort((a, b) => a - b);
+  const m = s.length >> 1;
+  return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
+};
 
 /**
  * The funnel over `{ tester, text }` records. One report per tester and
@@ -87,6 +129,10 @@ export function funnel(records, { target = 50 } = {}) {
   const features = new Map();
   for (const r of reports) for (const [k, v] of Object.entries(r.topFeatures)) features.set(k, (features.get(k) ?? 0) + v);
   const bestWeek = weeks.reduce((b, w) => (!b || w.active > b.active ? w : b), null);
+  // Per tester, their latest report's device averages (a later week supersedes an earlier one).
+  const latest = all.map((t) => [...t.weeks].sort((a, b) => (a.week < b.week ? -1 : 1)).at(-1));
+  const ttfv1 = latest.map((r) => r.activation?.ttfv1MeanMs ?? null).filter((v) => v !== null);
+  const ttfv2 = latest.map((r) => r.activation?.ttfv2Ms ?? null).filter((v) => v !== null);
   return {
     reports: reports.length,
     skipped,
@@ -102,6 +148,15 @@ export function funnel(records, { target = 50 } = {}) {
     topFeatures: [...features.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, 15),
     errorsPerReport: reports.length ? Math.round((reports.reduce((s, r) => s + r.errors7, 0) / reports.length) * 100) / 100 : 0,
     target: { active: target, bestWeek: bestWeek?.week ?? null, bestActive: bestWeek?.active ?? 0, met: (bestWeek?.active ?? 0) >= target },
+    beta: {
+      activation: rate(all, (r) => r.activation?.activated ?? null, BETA_TARGETS.activation),
+      d7: rate(all, (r) => r.retained7, BETA_TARGETS.d7),
+      d30: rate(all, (r) => r.retained30, BETA_TARGETS.d30),
+      ttfv1MeanMs: mean(ttfv1),
+      ttfv1Testers: ttfv1.length,
+      ttfv2MedianMs: median(ttfv2),
+      ttfv2Testers: ttfv2.length,
+    },
   };
 }
 
@@ -143,6 +198,19 @@ export function funnelMarkdown(f) {
     ...(f.topFeatures.length ? f.topFeatures.map(([k, v]) => `- \`${k}\` × ${v}`) : ["—"]),
     "",
     `שגיאות לדוח, בממוצע: ${f.errorsPerReport}`,
+    "",
+    "## יעדי הבטא (beta targets, W11.P4)",
+    "",
+    "| מדד | בפועל | יעד | |",
+    "|---|---|---|---|",
+    ...[
+      ["הפעלה (activation)", f.beta.activation],
+      ["D7", f.beta.d7],
+      ["D30", f.beta.d30],
+    ].map(([name, r]) => `| ${name} | ${r.rate === null ? "—" : `${pct(r.yes, r.of)} (${r.yes}/${r.of})`} | ≥ ${Math.round(r.target * 100)}% | ${r.rate === null ? "⏳ אין נתונים" : r.met ? "✅" : "❌"} |`),
+    "",
+    `TTFV-1 (פתיחה→סמן), ממוצע המכשירים: ${f.beta.ttfv1MeanMs === null ? "—" : `${f.beta.ttfv1MeanMs} ms (${f.beta.ttfv1Testers})`}`,
+    `TTFV-2 (פתק ראשון משלך), חציון: ${f.beta.ttfv2MedianMs === null ? "—" : `${Math.round(f.beta.ttfv2MedianMs / 1000)} s (${f.beta.ttfv2Testers})`}`,
     "",
   ];
   return lines.join("\n");

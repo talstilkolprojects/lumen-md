@@ -19,6 +19,7 @@ import "../beta/strings";
 import { BETA_AREAS, betaFeedbackLink, betaReport, betaReportUrl, joinBeta, leaveBeta, markBetaReported, readEnrolment, setBetaWeekly, type BetaArea } from "../beta/programme";
 import { FEEDBACK_KINDS, collectEnvironment, type FeedbackKind } from "../feedback/feedback";
 import { dayKey, loadUsage } from "../metrics/usage";
+import { loadActivation, summarizeActivation } from "../metrics/activation";
 import { setUpdateChannel, updateChannel } from "../desktop/updates";
 import { getAiPolicy } from "../ai/policy";
 import { recordUserShare } from "../ai/privacyLedger";
@@ -50,7 +51,7 @@ function BetaPanel({ options, onClose }: { options: BetaOptions; onClose: () => 
   const [withEnv, setWithEnv] = useState(true);
   const today = dayKey();
   const ids = options.commandIds ?? [];
-  const report = useMemo(() => (enrolment ? betaReport(loadUsage(), enrolment, today, ids, updateChannel()) : null), [enrolment, today, ids]);
+  const report = useMemo(() => (enrolment ? betaReport(loadUsage(), enrolment, today, ids, updateChannel(), undefined, summarizeActivation(loadActivation(), today)) : null), [enrolment, today, ids]);
   const json = report ? JSON.stringify(report, null, 2) : "";
 
   const toggle = (on: boolean) => {

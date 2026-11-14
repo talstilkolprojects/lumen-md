@@ -24,6 +24,7 @@
 import { FLAGS, setFlag, type Channel } from "../flags/flags";
 import { feedbackBody, MAX_ISSUE_URL, type FeedbackEnvironment, type FeedbackKind } from "../feedback/feedback";
 import { dayKey, shiftDay, weeklyReport, type UsageStore, type WeeklyReport } from "../metrics/usage";
+import type { ActivationSummary } from "../metrics/activation";
 
 export const BETA_KEY = "lumen.beta.v1";
 /** The repository reports and feedback go to, as issues the tester opens. */
@@ -139,6 +140,12 @@ export interface BetaReport extends Omit<WeeklyReport, "kind"> {
   /** Whole weeks since joining (0 in the first week). */
   weeksInBeta: number;
   channel: Channel;
+  /**
+   * Plan W11.P4: activation and TTFV as computed on the device — yes/no
+   * facts and averages only (the mean TTFV-1 rounded to 100 ms, TTFV-2 to
+   * the second), never the samples or a time of day. Null when none was given.
+   */
+  activation: ActivationSummary | null;
 }
 
 const monday = (day: string) => {
@@ -153,14 +160,26 @@ const daysBetween = (a: string, b: string) => {
 
 /**
  * The beta report: W4.26's weekly report (counts, the app's command ids
- * only) plus the cohort, weeks in the beta and the channel. Nothing else.
+ * only) plus the cohort, weeks in the beta, the channel and the activation
+ * summary (W11.P4). Nothing else.
  */
-export function betaReport(store: UsageStore, enrolment: BetaEnrolment, today: string, allIds: readonly string[], channel: Channel, app?: string): BetaReport {
+export function betaReport(store: UsageStore, enrolment: BetaEnrolment, today: string, allIds: readonly string[], channel: Channel, app?: string, activation: ActivationSummary | null = null): BetaReport {
   const base = weeklyReport(store, today, allIds, app);
   const { kind: _kind, ...rest } = base;
   void _kind;
-  return { kind: "lumen-beta-report", ...rest, cohort: monday(enrolment.joined), weeksInBeta: Math.max(0, Math.floor(daysBetween(enrolment.joined, today) / 7)), channel };
+  return { kind: "lumen-beta-report", ...rest, cohort: monday(enrolment.joined), weeksInBeta: Math.max(0, Math.floor(daysBetween(enrolment.joined, today) / 7)), channel, activation: activation && pickActivation(activation) };
 }
+
+/** Only the summary's own fields, so nothing else rides along. */
+const pickActivation = (a: ActivationSummary): ActivationSummary => ({
+  activated: a.activated,
+  ownNote: a.ownNote,
+  imported: a.imported,
+  returnedDay2: a.returnedDay2,
+  ttfv1MeanMs: a.ttfv1MeanMs,
+  ttfv1Launches: a.ttfv1Launches,
+  ttfv2Ms: a.ttfv2Ms,
+});
 
 /** github.com's new-issue form with the beta report as its body, labelled `beta-report`. */
 export function betaReportUrl(report: BetaReport, repo = BETA_REPO): string {
