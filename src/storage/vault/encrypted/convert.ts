@@ -58,8 +58,8 @@ export async function readHeader(inner: VaultBackend, policy: KdfPolicy = {}): P
       return decodeRestHeader(await bytesOf(await inner.read(path)), policy);
     } catch (err) {
       reason = err instanceof Error ? err.message : String(err);
-      // The KDF is known but unavailable here (argon2id) or too weak: the
-      // other copy says the same, and guessing would be wrong.
+      // The KDF is unknown to this build or too weak: the other copy says
+      // the same, and guessing would be wrong.
       if (err instanceof Error && (err.name === "KdfUnavailableError" || err.name === "WeakKdfError")) throw err;
     }
   }

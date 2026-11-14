@@ -23,7 +23,7 @@ import { fakeS3 } from "./helpers/fakeServers/s3";
 import { fakeDropbox } from "./helpers/fakeServers/dropbox";
 import { fakeGdrive } from "./helpers/fakeServers/gdrive";
 import { gatedProvider } from "./helpers/gatedProvider";
-import { joinVault, newVault, snapshot } from "./helpers/e2ee";
+import { joinTrusted, joinVault, newVault, snapshot } from "./helpers/e2ee";
 
 interface Lab {
   provider: SyncProvider;
@@ -164,7 +164,7 @@ describe.each(labs)("sync provider: %s", (_name, makeLab) => {
     const a = await newVault(provider);
     a.files.set("shared.md", "base");
     await a.sync.sync();
-    const b = await joinVault("B", provider);
+    const b = await joinTrusted("B", provider); // a device the user confirmed: an unverified one doesn't upload (third review N6)
     await b.sync.sync();
     const mname = await manifestName(a.keys);
     provider.manifest = mname;

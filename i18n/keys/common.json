@@ -1064,6 +1064,11 @@
       "vars": []
     },
     {
+      "key": "e2ee.busy",
+      "en": "This device is syncing in another tab right now, so nothing was changed. Try again in a moment; if it keeps happening, reload or close the other tabs of Lumen.",
+      "vars": []
+    },
+    {
       "key": "e2ee.conflict.body",
       "en": "This note was also changed on another device. Choose what to keep; it is not synced until you decide.",
       "vars": []
@@ -1081,6 +1086,26 @@
       ]
     },
     {
+      "key": "e2ee.dropped",
+      "en": "This device wasn't carried over to the vault's new keys: either a device that couldn't verify the vault's device list changed them, or this device was removed. Nothing on it was changed. To use it with the vault again, unlock it with the passphrase, or pair it from a device you trust (as a new device, if it was removed).",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fork.atRisk",
+      "en": "The sync service returned keys that don't follow from the ones this device verified, and they may let back in a device you removed here. This device stopped; nothing on it was changed. Once every device agrees, remove that device again from a device you trust, and don't use this service for key changes.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fork.reapplied",
+      "en": "The sync service replaced this device's key change with another device's. The revocation may not have taken effect for what was written in between; this device has made it again. Sync every device, and don't use this service for key changes.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fork.refused",
+      "en": "The sync service returned keys that don't follow from the ones this device verified, so this device stopped (nothing on it was changed). Don't change keys or add devices until every device agrees; pair this device again from one you trust.",
+      "vars": []
+    },
+    {
       "key": "e2ee.fresh.badCode",
       "en": "This pairing code is not valid for this vault, or it has expired.",
       "vars": []
@@ -1096,8 +1121,28 @@
       "vars": []
     },
     {
+      "key": "e2ee.fresh.held",
+      "en": "Until then, changes made on this device stay on it and are not uploaded: it can't tell yet whether it has the vault's latest keys, and a device removed meanwhile could read what it uploads.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.olderKeys",
+      "en": "The other device is at a newer key epoch than this one sees: the sync service may be showing this device old keys. Sync both devices and try again; if it stays like this, don't trust this service.",
+      "vars": []
+    },
+    {
       "key": "e2ee.fresh.pair",
       "en": "Pair",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.request",
+      "en": "Show a pairing request",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.requestHint",
+      "en": "Enter this request on a device you already use. It checks it against the vault as it is now and shows an answer: enter that answer above.",
       "vars": []
     },
     {
@@ -1108,6 +1153,65 @@
     {
       "key": "e2ee.fresh.verified",
       "en": "Freshness verified",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.answer",
+      "en": "Answer",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.answerTitle",
+      "en": "Pairing request from a new device",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.pending",
+      "en": "A pairing code from this device is still valid, so it makes no key change for now: a device paired with that code wouldn't learn of the change. Try again in a couple of minutes.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.rekeying",
+      "en": "This device is changing the vault's keys right now. Make the pairing code once the change has finished.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.stale",
+      "en": "The new device is being shown older keys than this one has: the sync service may be showing it an old state. Don't pair it; sync it and try again, and if it stays like this, don't trust this service.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.rekey.busy",
+      "en": "Another device is changing the vault's keys right now. Sync, and try again once it has finished (10 minutes at most).",
+      "vars": []
+    },
+    {
+      "key": "e2ee.rekey.contested",
+      "en": "Removing {devices} didn't go through, again: each time, the vault's device list was rewritten at the same moment by something that still has the vault's keys and the storage login, most likely the device you're removing. Change the storage password or token first, so that device can't write any more, then remove it again.",
+      "vars": [
+        "devices"
+      ]
+    },
+    {
+      "key": "e2ee.rekey.dropConfirm",
+      "en": "This device can't verify it has the vault's latest keys, so a key change from it would leave out {devices}: they would have to be paired again. Pair this device from one you trust first, or confirm to leave them out.",
+      "vars": [
+        "devices"
+      ]
+    },
+    {
+      "key": "e2ee.rekey.unconfirmed",
+      "en": "The revocation may not have taken effect: right after this key change was written, the sync service returned another device's instead (it ignored a conditional write). Sync this device: it revokes again, or says why it can't. If this happens again, don't use this service for key changes.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.revoked",
+      "en": "This device was removed from the vault, so it can't open the current keys. The notes already on it stay.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.revokedHere.reset",
+      "en": "This device's own list of the devices it removed couldn't be verified, so it was set aside. It now checks against the vault's sealed list of removed devices. Check the device list on a device you trust.",
       "vars": []
     },
     {
@@ -1323,7 +1427,7 @@
     },
     {
       "key": "e2ee.sync.pairCodeNote",
-      "en": "Enter it on the other device within 15 minutes. It proves to that device which state is current.",
+      "en": "Enter it on the other device within 2 minutes. It proves to that device which state is current; this device changes no keys meanwhile. Pairing from the new device's request (two-way) is safer.",
       "vars": []
     },
     {
@@ -1403,6 +1507,11 @@
     {
       "key": "e2ee.sync.username",
       "en": "User name",
+      "vars": []
+    },
+    {
+      "key": "e2ee.wrap.tampered",
+      "en": "This device's key in the vault's keyring doesn't open it: the sync service changed it or put back an old one. Nothing on this device was changed. Try again later; if it stays like this, pair this device again from one you trust.",
       "vars": []
     },
     {
@@ -3972,6 +4081,21 @@
     {
       "key": "vaultEnc.intro",
       "en": "Encrypts every note and file of this vault where it is stored, and the history, agent traces and search index Lumen keeps about them. Only the passphrase or the recovery key opens it.",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.kdfUpgrade",
+      "en": "Switch to Argon2id",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.kdfUpgradeNote",
+      "en": "This vault's passphrase is protected with PBKDF2. Argon2id makes guessing it much slower. Update Lumen first on every device that opens this vault: an older Lumen can't open it after the switch. Only the header changes; no note is rewritten.",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.kdfUpgraded",
+      "en": "The passphrase is now protected with Argon2id.",
       "vars": []
     },
     {

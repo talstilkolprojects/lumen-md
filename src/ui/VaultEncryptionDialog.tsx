@@ -14,9 +14,11 @@ import {
   changePassphrase,
   disableEncryption,
   enableEncryption,
+  kdfUpgradeAvailable,
   lock,
   repair,
   setAutoLockMinutes,
+  upgradeKdf,
 } from "../storage/vault/encrypted/session";
 import type { ConvertProgress, ConvertReport } from "../storage/vault/encrypted/convert";
 import { WrongPassphraseError, MIN_PASSPHRASE_LENGTH } from "../storage/vault/encrypted/format";
@@ -153,7 +155,9 @@ function TurnOn({ onDone }: { onDone: () => void }) {
 
 function Manage({ onDone }: { onDone: () => void }) {
   const [minutes, setMinutes] = useState(autoLockMinutes());
-  const [panel, setPanel] = useState<"none" | "change" | "off">("none");
+  const [panel, setPanel] = useState<"none" | "change" | "off" | "kdf">("none");
+  // Review 12.11: a PBKDF2 vault moves to Argon2id only when the user asks.
+  const [canUpgrade, setCanUpgrade] = useState(kdfUpgradeAvailable());
   const [cur, setCur] = useState("");
   const [pass, setPass] = useState("");
   const [again, setAgain] = useState("");
@@ -226,7 +230,34 @@ function Manage({ onDone }: { onDone: () => void }) {
         <button type="button" onClick={() => setPanel(panel === "off" ? "none" : "off")} style={secondary}>
           {t("vaultEnc.turnOff")}
         </button>
+        {canUpgrade && (
+          <button type="button" onClick={() => setPanel(panel === "kdf" ? "none" : "kdf")} style={secondary} data-testid="vault-kdf-upgrade">
+            {t("vaultEnc.kdfUpgrade")}
+          </button>
+        )}
       </div>
+      {panel === "kdf" && canUpgrade && (
+        <form
+          style={{ display: "grid", gap: 8 }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            void run(async () => {
+              await upgradeKdf(cur);
+              setCanUpgrade(kdfUpgradeAvailable());
+              setPanel("none");
+              return [t("vaultEnc.kdfUpgraded")];
+            });
+          }}
+        >
+          <div role="note" style={{ fontSize: 13, padding: "8px 10px", borderInlineStart: "3px solid hsl(40 90% 50%)", background: "hsl(40 90% 50% / 0.08)" }}>
+            {t("vaultEnc.kdfUpgradeNote")}
+          </div>
+          <Field label={t("vaultEnc.current")} value={cur} onChange={setCur} autoComplete="current-password" />
+          <button type="submit" disabled={busy || !cur} style={primary}>
+            {t("vaultEnc.kdfUpgrade")}
+          </button>
+        </form>
+      )}
       {panel === "change" && (
         <form
           style={{ display: "grid", gap: 8 }}
