@@ -117,6 +117,17 @@ describe("map — coordinates", () => {
     for (const bad of ["Tel Aviv", "91, 0", "0, 181", [1], null, 5, new Date(0), { lat: "x", lng: 1 }, [null, null], ["", ""], [true, false], { lat: "", lng: " " }, { lat: true, lng: 1 }]) expect(parseLatLng(bad)).toBeNull();
   });
 
+  it("a coordinate object: each alias on its own, the first valid pair wins (2.12)", () => {
+    expect(parseLatLng({ lat: "", latitude: 32, lng: 34 })).toEqual({ lat: 32, lng: 34 });
+    expect(parseLatLng({ lat: 32, lng: null, longitude: "34.5" })).toEqual({ lat: 32, lng: 34.5 });
+    expect(parseLatLng({ lat: " ", latitude: "31.7", lon: "", long: 35.2 })).toEqual({ lat: 31.7, lng: 35.2 });
+    // An out-of-range alias does not hide a valid one.
+    expect(parseLatLng({ lat: 200, latitude: 10, lng: 20 })).toEqual({ lat: 10, lng: 20 });
+    // The first alias still wins when both are valid.
+    expect(parseLatLng({ lat: 1, latitude: 2, lng: 3, longitude: 4 })).toEqual({ lat: 1, lng: 3 });
+    for (const bad of [{ lat: "", latitude: "" , lng: 1 }, { latitude: 32 }, { lat: 1, lng: "", lon: " " }]) expect(parseLatLng(bad)).toBeNull();
+  });
+
   it("a row's point: the spec's column, else location, else lat + lng", () => {
     const r = (fm: Record<string, unknown>): DatabaseRow => ({ path: "x.md", basename: "x", fm });
     expect(rowLatLng(r({ place: "1, 2", location: "3, 4" }), { location: "place" })).toEqual({ lat: 1, lng: 2 });

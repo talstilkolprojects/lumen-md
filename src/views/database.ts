@@ -355,9 +355,17 @@ export function parseLatLng(v: unknown): LatLng | null {
     lat = coord(v[0]);
     lng = coord(v[1]);
   } else if (v && typeof v === "object" && !(v instanceof Date)) {
+    // Each alias on its own, first valid pair wins: `{lat: "", latitude: 32, …}` must not be
+    // rejected because an earlier alias is present but empty (as rowLatLng does for columns).
     const o = v as Record<string, unknown>;
-    lat = coord(o.lat ?? o.latitude);
-    lng = coord(o.lng ?? o.lon ?? o.long ?? o.longitude);
+    for (const latKey of ["lat", "latitude"]) {
+      for (const lngKey of ["lng", "lon", "long", "longitude"]) {
+        const a = coord(o[latKey]);
+        const b = coord(o[lngKey]);
+        if (inRange(a, b)) return { lat: a, lng: b };
+      }
+    }
+    return null;
   } else return null;
   return inRange(lat, lng) ? { lat, lng } : null;
 }
