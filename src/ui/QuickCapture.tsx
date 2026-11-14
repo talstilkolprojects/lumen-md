@@ -47,7 +47,9 @@ export function QuickCapture({ open, onClose }: Props) {
     }
     setBusy(true);
     try {
-      await captureToInbox(text);
+      // A message pasted from WhatsApp or Telegram keeps its app, author and time (plan W5.7).
+      const { chatShareText } = await import("../capture/chats/share");
+      await captureToInbox(chatShareText(text) ?? text);
       setText("");
       toast.success(t("capture.saved", { path: INBOX_PATH }));
       onClose();

@@ -163,6 +163,18 @@ export function buildVaultTransferCommands(): Command[] {
         input.click();
       },
     },
+    {
+      // Plan W5.7: an exported WhatsApp / Telegram chat → notes, on this device.
+      id: "vault.importChat",
+      label: t("cmd.chat.import"),
+      hint: t("cmd.chat.import.hint"),
+      icon: cmdIcons.Save,
+      group: t("group.file"),
+      action: async () => {
+        if (!isOPFSAvailable()) return;
+        await (await import("../../capture/chats/runImport")).runChatImport();
+      },
+    },
   ];
 }
 

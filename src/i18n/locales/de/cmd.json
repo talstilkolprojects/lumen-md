@@ -79,6 +79,8 @@
   "cmd.billing.upgradeTeam": "Abrechnung: Auf Team upgraden",
   "cmd.canvas.migrate": "🎨 Canvas: tldraw-Canvases in Excalidraw umwandeln",
   "cmd.canvas.migrate.hint": "die .tldr-Dateien bleiben als Sicherung erhalten",
+  "cmd.chat.import": "WhatsApp- oder Telegram-Chat importieren…",
+  "cmd.chat.import.hint": "Exportierter Chat → eine Notiz pro Tag, mit Medien; nur auf diesem Gerät",
   "cmd.clip.clipboard": "Aus der Zwischenablage ausschneiden",
   "cmd.clip.clipboard.hint": "Kopiere einen Teil einer Seite im Browser und speichere ihn in der Bibliothek",
   "cmd.clip.url": "Webseite ausschneiden…",

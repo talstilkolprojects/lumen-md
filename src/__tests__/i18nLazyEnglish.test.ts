@@ -43,6 +43,8 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "vaultEncryption.json": { module: "storage/vault/encrypted/strings.ts", users: ["ui/VaultEncryptionDialog.tsx", "ui/VaultUnlock.tsx"], prefixes: ["vaultEnc."] },
   // The webR download offer (plan W1.34), in the lazily rendered live-R block.
   "webr.json": { module: "plugins/r/webrStrings.ts", users: ["plugins/LiveRBlock.tsx"], prefixes: ["block.liveR.install."] },
+  // Chat import (plan W5.7): the command loads its module with a dynamic import.
+  "chatImport.json": { module: "capture/chats/strings.ts", users: ["capture/chats/runImport.ts"], prefixes: ["chatImport."] },
 };
 
 function sources(dir: string): string[] {

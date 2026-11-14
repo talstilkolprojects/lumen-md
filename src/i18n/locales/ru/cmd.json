@@ -79,6 +79,8 @@
   "cmd.billing.upgradeTeam": "Оплата: перейти на Team",
   "cmd.canvas.migrate": "🎨 Холст: перевести холсты tldraw в Excalidraw",
   "cmd.canvas.migrate.hint": "файлы .tldr остаются как резервные копии",
+  "cmd.chat.import": "Импортировать чат WhatsApp или Telegram…",
+  "cmd.chat.import.hint": "Экспортированный чат → заметка на каждый день, с медиа; только на этом устройстве",
   "cmd.clip.clipboard": "Сохранить из буфера обмена",
   "cmd.clip.clipboard.hint": "Скопируйте часть страницы в браузере и сохраните в библиотеку",
   "cmd.clip.url": "Сохранить веб-страницу…",

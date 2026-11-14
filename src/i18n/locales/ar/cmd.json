@@ -79,6 +79,8 @@
   "cmd.billing.upgradeTeam": "الفوترة: الترقية إلى Team",
   "cmd.canvas.migrate": "🎨 اللوحة: تحويل لوحات tldraw إلى Excalidraw",
   "cmd.canvas.migrate.hint": "تبقى ملفات .tldr كنسخ احتياطية",
+  "cmd.chat.import": "استيراد محادثة WhatsApp أو Telegram…",
+  "cmd.chat.import.hint": "محادثة مُصدَّرة ← ملاحظة لكل يوم مع وسائطها؛ على هذا الجهاز فقط",
   "cmd.clip.clipboard": "قص من الحافظة",
   "cmd.clip.clipboard.hint": "انسخ جزءاً من صفحة في المتصفح ثم احفظه في المكتبة",
   "cmd.clip.url": "قص صفحة ويب…",

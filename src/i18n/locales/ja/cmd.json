@@ -79,6 +79,8 @@
   "cmd.billing.upgradeTeam": "請求: Team にアップグレード",
   "cmd.canvas.migrate": "🎨 キャンバス: tldraw のキャンバスを Excalidraw に変換",
   "cmd.canvas.migrate.hint": ".tldr ファイルはバックアップとして残ります",
+  "cmd.chat.import": "WhatsApp または Telegram のチャットをインポート…",
+  "cmd.chat.import.hint": "エクスポートしたチャット → 1 日 1 ノート（メディア付き）。この端末内だけで処理",
   "cmd.clip.clipboard": "クリップボードからクリップ",
   "cmd.clip.clipboard.hint": "ブラウザーでページの一部をコピーしてライブラリに保存",
   "cmd.clip.url": "Web ページをクリップ…",

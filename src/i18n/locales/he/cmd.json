@@ -79,6 +79,8 @@
   "cmd.billing.upgradeTeam": "חיוב: שדרוג ל-Team",
   "cmd.canvas.migrate": "🎨 קנבס: המרת קנבסים של tldraw ל-Excalidraw",
   "cmd.canvas.migrate.hint": "קובצי ה-.tldr נשמרים כגיבוי",
+  "cmd.chat.import": "ייבוא שיחת WhatsApp או Telegram…",
+  "cmd.chat.import.hint": "שיחה מיוצאת ← פתק לכל יום, עם המדיה; רק במכשיר הזה",
   "cmd.clip.clipboard": "גזירה מהלוח",
   "cmd.clip.clipboard.hint": "מעתיקים חלק מדף בדפדפן ושומרים אותו בספרייה",
   "cmd.clip.url": "גזירת דף מהרשת…",

@@ -404,6 +404,16 @@
       "vars": []
     },
     {
+      "key": "cmd.chat.import",
+      "en": "Import a WhatsApp or Telegram chat…",
+      "vars": []
+    },
+    {
+      "key": "cmd.chat.import.hint",
+      "en": "Exported chat → notes per day, with its media; on this device only",
+      "vars": []
+    },
+    {
       "key": "cmd.clip.clipboard",
       "en": "Clip from clipboard",
       "vars": []

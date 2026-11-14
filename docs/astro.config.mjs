@@ -59,6 +59,7 @@ export default defineConfig({
             { label: "Search operators and #tags", slug: "workspace/search-operators", translations: { he: "אופרטורי חיפוש ו-#תגיות" } },
             { label: "Vault Doctor", slug: "workspace/doctor" },
             { label: "Quick capture (inbox)", slug: "workspace/quick-capture", translations: { he: "לכידה מהירה (תיבת דואר נכנס)" } },
+            { label: "WhatsApp and Telegram chats into notes", slug: "workspace/chat-import", translations: { he: "שיחות WhatsApp ו-Telegram לפתקים" } },
             { label: "PDF reader and highlights", slug: "workspace/pdf-reader", translations: { he: "קורא PDF והדגשות" } },
             { label: "Large vaults and long notes", slug: "workspace/large-vaults", translations: { he: "כספות גדולות ופתקים ארוכים" } },
             { label: "Canvas (Excalidraw)", slug: "workspace/canvas", translations: { he: "קנבס (Excalidraw)" } },
