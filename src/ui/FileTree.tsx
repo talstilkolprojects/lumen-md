@@ -1,4 +1,8 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+// The tree's own rules (width, background, the border that faces the editor,
+// header, rows, row actions). Nothing imported this file, so the tree drew
+// unstyled: no border, no hover, row actions always shown (e2e rtl-parity 6).
+import "./FileTree.css";
 import { FilePlus2, FolderPlus, RefreshCcw } from "lucide-react";
 import {
   basename,

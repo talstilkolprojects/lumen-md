@@ -1,4 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
+// @ts-expect-error — plain .mjs script without type declarations
+import { E2E_COLLAB_WS } from "./scripts/test-tiers.mjs";
 
 /**
  * Playwright configuration for Lumen end-to-end tests.
@@ -94,6 +96,9 @@ export default defineConfig({
         // run against this deployment's own copy (`webr:local`), and the
         // download offer is tested with /webr/ answered 404.
         command: "npm run webr:local && npm run dev",
+        // The page may reach the loopback collab server of e2e/collab-persist.spec.ts
+        // (an e2e build adds the same origin: scripts/vercel-build.mjs).
+        env: { VITE_CSP_CONNECT_EXTRA: [process.env.VITE_CSP_CONNECT_EXTRA, E2E_COLLAB_WS].filter(Boolean).join(" ") },
         url: BASE_URL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
