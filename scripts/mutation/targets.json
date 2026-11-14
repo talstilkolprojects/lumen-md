@@ -234,6 +234,9 @@
     ],
     "src/agents/runtimeText.ts": [
       {
+        "file": "src/__tests__/agentRuntimeText.test.ts"
+      },
+      {
         "file": "src/__tests__/agentRuntime.test.ts",
         "runner": "harness"
       },
