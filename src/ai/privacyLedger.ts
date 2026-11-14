@@ -79,6 +79,8 @@ const RULES: Rule[] = [
   { test: (h) => h === "kroki.io", category: "cloud-text", reason: "PlantUML rendering (kroki.io)" },
   // Jewish sources (plan W5.1): the reference the user asked for, nothing else.
   { test: (h) => h === "www.sefaria.org" || h === "sefaria.org", category: "cloud-text", reason: "Jewish sources (Sefaria): the reference only" },
+  // Knesset records (plan W7.5): the law or bill name the user asked for.
+  { test: (h) => h === "knesset.gov.il" || h === "main.knesset.gov.il", category: "cloud-text", reason: "Knesset records (OData): the law or bill name only" },
   {
     test: (h) => h === "huggingface.co" || h.endsWith(".huggingface.co") || h.endsWith(".hf.co") || h === "hf.co",
     category: "model-download",

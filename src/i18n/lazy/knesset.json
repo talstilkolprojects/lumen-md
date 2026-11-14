@@ -1,0 +1,20 @@
+{
+  "knesset.prompt": "Which law? For example חוק הגנת הפרטיות or [[חוק:חופש המידע]]",
+  "knesset.enable": "Turn on Knesset sources? Lumen then sends law and bill names to knesset.gov.il when you ask, and never on its own.",
+  "knesset.confirm": "Look up “{name}” in the Knesset's records? Only the name is sent to knesset.gov.il, nothing from your notes. Saved laws open without asking.",
+  "knesset.noMatch": "No law named “{name}” was found.",
+  "knesset.pick": "Which of these laws?",
+  "knesset.inserted": "Cited {name}",
+  "knesset.saveOffline": "Save for offline",
+  "knesset.saved": "Saved to {path}. Paste the law's text under “## נוסח” to ask it questions.",
+  "knesset.failed": "Knesset lookup failed: {error}",
+  "knesset.billPrompt": "Which bill? A word from its name",
+  "knesset.billPick": "{count} bill(s) found",
+  "knesset.noBills": "No bill matches “{name}”.",
+  "knesset.protocolSelect": "Open a committee protocol and select the words to quote first.",
+  "knesset.protocolNotFound": "These words are not in a speaker's turn in this protocol.",
+  "knesset.askPrompt": "Ask the laws you saved (searched on this device)",
+  "knesset.askNone": "No saved law answers that. The search reads only laws saved for offline, with their text.",
+  "knesset.askPick": "Sections that answer it",
+  "knesset.unverified": "not verified"
+}
