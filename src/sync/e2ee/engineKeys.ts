@@ -29,6 +29,7 @@ import {
 } from "./keyring";
 import { LOCK_BUSY, tryDeviceLock } from "./deviceLock";
 import { FREEZE_TTL_MS, FROZEN_PROTOCOL, manifestName, sealManifest, type FreshnessAnchor, type Manifest } from "./manifest";
+import { PAIRING_WINDOW_MAX_MS } from "./pairing";
 import { PreconditionFailedError, proveCas } from "./provider";
 import type { DeviceState, FreshnessSource } from "./state";
 import {
@@ -155,6 +156,15 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
       const stored = await this.o.store.load().catch(() => null);
       if (stored?.pairingUntil !== undefined && stored.pairingUntil > (s.pairingUntil ?? 0)) s.pairingUntil = stored.pairingUntil;
       if (stored?.pairingKept !== undefined && stored.pairingKept > (s.pairingKept ?? 0)) s.pairingKept = stored.pairingKept;
+    }
+    // Review 27, S27-2: no pairing holds longer than an answer's life plus the
+    // clock allowance; a hold stored further ahead (a clock that was fast,
+    // then corrected) is void, and cleared.
+    const max = this.o.now() + PAIRING_WINDOW_MAX_MS;
+    if ((s.pairingUntil ?? 0) > max || (s.pairingKept ?? 0) > max) {
+      if ((s.pairingUntil ?? 0) > max) delete s.pairingUntil;
+      if ((s.pairingKept ?? 0) > max) delete s.pairingKept;
+      await this.save();
     }
     // W8.5 (review 13, S13-1): a pairing this device confirmed holds key
     // changes for the new device's whole window, cancel or not.

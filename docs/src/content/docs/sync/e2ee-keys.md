@@ -63,7 +63,9 @@ confirmed any more (see *Compare the symbols* below), so it pairs nothing; pair
 the new device again after the key change. Once you have chosen **They match**
 on both devices, though, the new device may still finish pairing for the rest
 of the code's or answer's life, so the device you already use keeps waiting
-until then (at most 6 minutes), even if you cancel. Cancelling on the new device
+until then (at most 6 minutes), even if you cancel. If the two devices' clocks
+differ by more than a minute, the new device refuses the code or answer: set
+both clocks right, then pair again. Cancelling on the new device
 forgets its request, so no answer to it is accepted any more.
 
 **Compare the symbols.** Since plan W8.5, an answer or a code alone pairs

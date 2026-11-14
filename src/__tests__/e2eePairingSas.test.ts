@@ -143,7 +143,7 @@ describe("W8.5: the pairing comparison", () => {
     const keys = laptop.sync.keys();
     const session = await pairingRequestHash(request);
     // A holder of the epoch's pairing key (the device about to be revoked) writes the issuer's confirmation.
-    await p.put(await opaqueName(keys, `pairing/${session}/confirm-issuer`), utf8(await createPairingConfirm(keys, session, "issuer", new Uint8Array(32).fill(7))));
+    await p.put(await opaqueName(keys, `pairing/${session}/confirm-issuer`), utf8(await createPairingConfirm(keys, session, "issuer", new Uint8Array(32).fill(7), 60_000)));
     await expect(laptop.sync.confirmPairing()).rejects.toBeInstanceOf(PairingAbortedError);
     expect((await laptop.sync.freshness()).verified).toBe(false);
   });
@@ -257,6 +257,61 @@ describe("W8.5: the pairing comparison", () => {
     await expect(a2.sync.rekey()).rejects.toBeInstanceOf(PairingPendingError);
     clock += 2 * 60_000 + 60_000 + 1; // the code's life plus the clock allowance
     expect((await a2.sync.rekey()).epoch).toBe(2);
+  });
+
+  it("S27-1: the new device's clock 150 s behind; A's confirmation is withheld until A's hold ends and A revokes: the stale laptop isn't paired", async () => {
+    let real = 1_800_000_000_000;
+    const { p, a, phone } = await g4World(() => real);
+    const { keys } = await unlockVault(p, PASSPHRASE, TEST_POLICY);
+    const laptop = device("laptop", p, keys, undefined, () => real - 150_000);
+    await laptop.sync.sync();
+    const code = await a.sync.pairingCode();
+    real += 100_000; // 1:40 on A's clock; the code is 50 s in the laptop's future (allowed)
+    const epoch1 = copy(p.objects);
+    await laptop.sync.pair(code);
+    await a.sync.pairingSas();
+    await laptop.sync.pairingSas();
+    expect(await laptop.sync.confirmPairing()).toBe("waiting");
+    expect(await a.sync.confirmPairing()).toBe("done");
+    // A's hold: the code's remaining 20 s plus the allowance, not the laptop's longer window.
+    expect(a.store.state!.pairingKept).toBe(real + 20_000 + 60_000);
+    const kept = copy(p.objects);
+    real += 85_000; // 3:05
+    expect((await a.sync.rekey({ revoke: ["phone"] })).epoch).toBe(2);
+    real += 30_000; // 3:35; the laptop's clock says 1:05 after the code
+    const stale = staleView(epoch1, kept);
+    (laptop.sync as unknown as { o: { provider: unknown } }).o.provider = stale;
+    await expect(laptop.sync.confirmPairing()).rejects.toBeInstanceOf(PairingAbortedError); // past the hold A stated
+    expect(await g4Outcome(laptop, stale, phone)).toEqual({ verified: false, phoneReads: ["a.md"] });
+  });
+
+  it("S27-1: a code or answer more than a minute in this device's future is refused when entered", async () => {
+    let real = 1_800_000_000_000;
+    const { p, a } = await g4World(() => real);
+    const { keys } = await unlockVault(p, PASSPHRASE, TEST_POLICY);
+    const laptop = device("laptop", p, keys, undefined, () => real - 61_000);
+    await laptop.sync.sync();
+    await expect(laptop.sync.pair(await a.sync.pairingCode())).rejects.toBeInstanceOf(PairingError);
+    await a.sync.cancelPairing();
+    const answer = await a.sync.answerPairing(await laptop.sync.pairingRequest());
+    await expect(laptop.sync.pair(answer)).rejects.toThrow(/clock is ahead/);
+    expect((await laptop.sync.freshness()).verified).toBe(false);
+  });
+
+  it("S27-2: a hold stored while the clock was a year fast is void once the clock is right: cancel, then revoke, works", async () => {
+    let real = 1_800_000_000_000;
+    let skew = 365 * 24 * 3600_000;
+    const { p, a } = await g4World(() => real + skew);
+    const { keys } = await unlockVault(p, PASSPHRASE, TEST_POLICY);
+    const laptop = device("laptop", p, keys, undefined, () => real + skew);
+    await laptop.sync.sync();
+    await pairConfirmed(laptop, a, await a.sync.pairingCode());
+    expect(a.store.state!.pairingKept).toBeGreaterThan(real + skew);
+    skew = 0;
+    real += 10 * 60_000;
+    await a.sync.cancelPairing();
+    expect((await a.sync.rekey({ revoke: ["phone"] })).epoch).toBe(2);
+    expect(a.store.state!.pairingKept).toBeUndefined();
   });
 
   it("the helper the other suites use pairs through the full comparison, and leaves no pairing objects in the storage", async () => {

@@ -87,16 +87,16 @@ const ANSWER_PREFIX = "lumen-pair-answer:3:";
  * storage, never typed.
  */
 const REVEAL_PREFIX = "lumen-pair-reveal:1:";
-const CONFIRM_PREFIX = "lumen-pair-confirm:1:";
+const CONFIRM_PREFIX = "lumen-pair-confirm:2:";
 /**
  * Codes of earlier builds: refused with a message that says so. Code 3,
  * request 2 and answer 2 carry no comparison key (W8.5), so they can't be
  * confirmed and don't pair.
  */
-const OLDER_PREFIXES = ["lumen-pair:1:", "lumen-pair:2:", "lumen-pair:3:", "lumen-pair-request:1:", "lumen-pair-request:2:", "lumen-pair-answer:1:", "lumen-pair-answer:2:"];
+const OLDER_PREFIXES = ["lumen-pair:1:", "lumen-pair:2:", "lumen-pair:3:", "lumen-pair-request:1:", "lumen-pair-request:2:", "lumen-pair-answer:1:", "lumen-pair-answer:2:", "lumen-pair-confirm:1:"];
 
 type Kind = "code" | "request" | "answer" | "reveal" | "confirm";
-const VERSION: Record<Kind, number> = { code: 4, request: 3, answer: 3, reveal: 1, confirm: 1 };
+const VERSION: Record<Kind, number> = { code: 4, request: 3, answer: 3, reveal: 1, confirm: 2 };
 /** The domain label in front of a message's body, inside its MAC. */
 export const pairingLabel = (kind: Kind) => utf8(`lumen-pair/${kind}/${VERSION[kind]}\u0000`);
 
@@ -120,6 +120,12 @@ export const PAIRING_REQUEST_TTL_MS = 5 * 60 * 1000;
  * against issuedAt on its own clock, always ends inside the hold.
  */
 export const PAIRING_CLOCK_SKEW_MS = 60_000;
+/**
+ * The longest any pairing can hold back key changes (review 27, S27-2): an
+ * answer's life plus the clock allowance. A hold stored further ahead than
+ * this (a clock that was fast, then corrected) is void.
+ */
+export const PAIRING_WINDOW_MAX_MS = PAIRING_REQUEST_TTL_MS + PAIRING_CLOCK_SKEW_MS;
 
 /** The fields of each kind's body, exactly: a body with any other field is refused. */
 const FIELDS: Record<Kind, string[]> = {
@@ -127,7 +133,7 @@ const FIELDS: Record<Kind, string[]> = {
   request: ["kind", "vaultId", "epoch", "ringRev", "ringDigest", "counter", "digest", "requestedAt", "nonce", "commit"],
   answer: ["kind", "vaultId", "request", "nonce", "counter", "digest", "epoch", "ringRev", "ringDigest", "answeredAt", "pub"],
   reveal: ["kind", "vaultId", "session", "role", "pub"],
-  confirm: ["kind", "vaultId", "session", "role", "tag"],
+  confirm: ["kind", "vaultId", "session", "role", "tag", "window"],
 };
 
 interface CodeBody {
@@ -193,6 +199,8 @@ interface ConfirmBody {
   session: string;
   role: PairingRole;
   tag: string;
+  /** ms this side still holds (S27-1). */
+  window: number;
 }
 
 /** What a pairing code anchors: the manifest (counter, digest) and the keyring. */
@@ -402,6 +410,8 @@ export async function readPairingAnswer(keys: VaultKeys, code: string, request: 
   if (!Number.isSafeInteger(body.counter) || body.counter < 1 || typeof body.digest !== "string" || !ringOk(body) || !Number.isSafeInteger(body.answeredAt) || !isKey(body.pub)) {
     throw new PairingError("The pairing answer is damaged");
   }
+  // Review 27, S27-1: an answer from the future (the other device's clock ahead by more than the allowance) is refused at entry.
+  if (body.answeredAt - now > PAIRING_CLOCK_SKEW_MS) throw new PairingError("The other device's clock is ahead of this one's by more than a minute: check both clocks, then make a new request");
   return { counter: body.counter, digest: body.digest, ring: { epoch, rev: body.ringRev, digest: body.ringDigest }, sas: { session: request.hash, answer: await pairingRequestHash(code), nonce: request.nonce, expires: body.answeredAt + PAIRING_REQUEST_TTL_MS, pub: body.pub } };
 }
 
@@ -413,9 +423,13 @@ export function createPairingReveal(keys: VaultKeys, session: string, role: Pair
   return encode(REVEAL_PREFIX, "reveal", keys.pairing, keys.epoch, body);
 }
 
-/** `role`'s confirmation of `session` (a MAC from sas.ts's confirmTag), MACed under this epoch's pairing key. */
-export function createPairingConfirm(keys: VaultKeys, session: string, role: PairingRole, tag: Uint8Array): Promise<string> {
-  const body: ConfirmBody = { kind: "confirm", vaultId: keys.vaultId, session, role, tag: toB64u(tag) };
+/**
+ * `role`'s confirmation of `session` (a MAC from sas.ts's confirmTag over
+ * `window`), MACed under this epoch's pairing key. `window`: the ms this
+ * side still holds (review 27, S27-1), at most `PAIRING_WINDOW_MAX_MS`.
+ */
+export function createPairingConfirm(keys: VaultKeys, session: string, role: PairingRole, tag: Uint8Array, window: number): Promise<string> {
+  const body: ConfirmBody = { kind: "confirm", vaultId: keys.vaultId, session, role, tag: toB64u(tag), window };
   return encode(CONFIRM_PREFIX, "confirm", keys.pairing, keys.epoch, body);
 }
 
@@ -434,8 +448,8 @@ export async function readPairingReveal(keys: VaultKeys, text: string, session: 
   return fromB64u(body.pub);
 }
 
-/** The other device's confirmation tag for `session`. */
-export async function readPairingConfirm(keys: VaultKeys, text: string, session: string, role: PairingRole): Promise<Uint8Array> {
+/** The other device's confirmation tag for `session`, and the window it states (check both with sas.ts's confirmValid). */
+export async function readPairingConfirm(keys: VaultKeys, text: string, session: string, role: PairingRole): Promise<{ tag: Uint8Array; window: number }> {
   const body = await readStored<ConfirmBody>("confirm", CONFIRM_PREFIX, keys, text, session, role);
   let tag: Uint8Array;
   try {
@@ -443,6 +457,6 @@ export async function readPairingConfirm(keys: VaultKeys, text: string, session:
   } catch {
     throw new PairingError("The pairing confirmation is damaged");
   }
-  if (tag.length !== 32) throw new PairingError("The pairing confirmation is damaged");
-  return tag;
+  if (tag.length !== 32 || !Number.isSafeInteger(body.window) || body.window < 0 || body.window > PAIRING_WINDOW_MAX_MS) throw new PairingError("The pairing confirmation is damaged");
+  return { tag, window: body.window };
 }

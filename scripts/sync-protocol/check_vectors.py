@@ -306,10 +306,11 @@ def main():
         n = int.from_bytes(hk("sas", 4), "big")
         symbols = [(n >> (26 - 6 * i)) & 63 for i in range(5)]
         commit = lambda pub: hashlib.sha256(b"lumen-pair-sas/1/commit\0" + pub).hexdigest()
-        tag = lambda role: b64u(hmac256(hk("confirm/" + role, 32), b"lumen-pair-sas/1/confirm\0" + th))
+        # Review 27, S27-1: the confirmation covers the window its side states ("\0" + decimal ms).
+        tag = lambda role, w: b64u(hmac256(hk("confirm/" + role, 32), b"lumen-pair-sas/1/confirm-window\0" + th + b"\0" + str(w).encode()))
         commits = (sv.get("commitI") in (None, commit(pub_i))) and (sv.get("commitJ") in (None, commit(pub_j)))
         layout = t[0] == "lumen-pair-sas/1" and t[1] == sv["flow"] and t[11] == b64u(pub_i) and t[12] == b64u(pub_j) and len(t) == 13
-        check(f"comparison ({sv['flow']}, vault {sv['vault']}): transcript layout, commitments, the five symbols {symbols} and both confirmations", same and layout and commits and symbols == sv["symbols"] and tag("issuer") == sv["confirmIssuer"] and tag("joiner") == sv["confirmJoiner"])
+        check(f"comparison ({sv['flow']}, vault {sv['vault']}): transcript layout, commitments, the five symbols {symbols} and both confirmations", same and layout and commits and symbols == sv["symbols"] and tag("issuer", sv["windowIssuer"]) == sv["confirmIssuer"] and tag("joiner", sv["windowJoiner"]) == sv["confirmJoiner"])
     # The pairing vectors and the comparison vectors describe the same sessions.
     for pv, tw in zip(v["pairing"], v.get("pairingTwoWay", [])):
         for sv in v.get("sas", []):
