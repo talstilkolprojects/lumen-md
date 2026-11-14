@@ -3,8 +3,12 @@
  * in-memory doc trees (the real tree is checked by `npm run docs:complete`).
  */
 import { describe, expect, it } from "vitest";
+import { existsSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 // @ts-expect-error — plain .mjs script without types
 import { check, sidebarOf } from "../../scripts/docs-complete.mjs";
+
+const ROOT = resolve(__dirname, "..", "..");
 
 const CONFIG = `
 sidebar: [
@@ -110,5 +114,34 @@ describe("docs-complete (plan 13.1)", () => {
     const req = { hebrewPending: { "sync/git": "S5b" } };
     expect(check({ config: CONFIG, required: req, ...tree(files) })).toEqual([]);
     expect(check({ config: CONFIG, required: req, ...tree(ALL) })).toEqual(['sync/git: Hebrew page exists — remove it from "hebrewPending"']);
+  });
+
+  it("every task listed in `tasks` names a page that is in the sidebar and exists (13.1: each task its page)", () => {
+    expect(check({ config: CONFIG, required: { tasks: { "4.5": "sync/git", "4.7": "blocks/ref" } }, ...tree(ALL) })).toEqual([]);
+    expect(check({ config: CONFIG, required: { tasks: { "4.6": "workspace/links" } }, ...tree(ALL) })).toEqual([
+      "task 4.6: its page workspace/links is not in the sidebar",
+    ]);
+    const files: Record<string, string> = { ...ALL };
+    delete files["sync/git.md"];
+    expect(check({ config: CONFIG, required: { tasks: { "4.5": "sync/git" } }, ...tree(files) })).toEqual([
+      "sync/git: in the sidebar, but there is no English page (docs/src/content/docs/sync/git.md)",
+      "he/sync/git.md: a Hebrew page with no English twin (sync/git.md)",
+      "task 4.5: its page sync/git does not exist (docs/src/content/docs/sync/git.md)",
+    ]);
+  });
+
+  it("the real tree: every page `tasks` names is in the sidebar, in both languages", () => {
+    const required = JSON.parse(readFileSync(join(ROOT, "docs/required-pages.json"), "utf8"));
+    const config = readFileSync(join(ROOT, "docs/astro.config.mjs"), "utf8");
+    const { slugs } = sidebarOf(config);
+    expect(Object.keys(required.tasks).length).toBeGreaterThanOrEqual(24);
+    for (const [id, slug] of Object.entries(required.tasks as Record<string, string>)) {
+      expect(slugs, `task ${id}`).toContain(slug);
+      for (const lang of ["", "he/"]) expect(existsSync(join(ROOT, "docs/src/content/docs", `${lang}${slug}.md`)) || existsSync(join(ROOT, "docs/src/content/docs", `${lang}${slug}.mdx`)), `${lang}${slug}`).toBe(true);
+    }
+    for (const [id, why] of Object.entries((required.tasksWithoutPage ?? {}) as Record<string, string>)) {
+      expect(required.tasks[id], `task ${id} is listed twice`).toBeUndefined();
+      expect(why.length, `task ${id} says why`).toBeGreaterThan(20);
+    }
   });
 });

@@ -91,6 +91,7 @@
     "ci:real-model": "node scripts/real-tiny-model.mjs",
     "docs:complete": "node scripts/docs-complete.mjs && node scripts/docs-parity.mjs --strict",
     "docs:parity": "node scripts/docs-parity.mjs --strict",
+    "docs:audit": "node scripts/docs-audit.mjs",
     "bench:fim": "node --experimental-strip-types scripts/bench-fim.mjs",
     "models:day": "node scripts/models-day.mjs",
     "eval:asr-web": "node scripts/asr/web-eval.mjs",

@@ -18,6 +18,11 @@
  *    page too), exists in both languages — no English page without its
  *    Hebrew twin, no Hebrew page without its English one — except a page
  *    listed in `hebrewPending`.
+ * 8. Every finished plan task that changed what a user sees names its page
+ *    (docs/required-pages.json `tasks`: plan id → slug), and that page is
+ *    in the sidebar and exists (plan 13.1: every task writes its own page).
+ *    `npm run docs:audit` (scripts/docs-audit.mjs) finds the tasks that
+ *    still have none.
  * 6. A page another open PR writes is listed in `pending` with that PR; it
  *    is exempt from 1 until it lands, and listing a page that already
  *    exists is an error (the exemption must be removed).
@@ -97,6 +102,11 @@ export function check({ config, required, has, list, pages = [], read = () => ""
   for (const [area, slug] of Object.entries(required.areas ?? {})) {
     if (!slugs.includes(slug)) problems.push(`area "${area}": its page ${slug} is not in the sidebar`);
   }
+  for (const [id, slug] of Object.entries(required.tasks ?? {})) {
+    const listed = slugs.includes(slug) || dirs.some((d) => slug.startsWith(d + "/"));
+    if (!listed) problems.push(`task ${id}: its page ${slug} is not in the sidebar`);
+    else if (!pending[slug] && !page(slug, "en")) problems.push(`task ${id}: its page ${slug} does not exist (docs/src/content/docs/${slug}.md)`);
+  }
   return problems;
 }
 
@@ -126,7 +136,7 @@ function main() {
     console.error(`\n✗ docs-complete: ${problems.length} problem(s)`);
     process.exit(1);
   }
-  process.stdout.write("✓ docs-complete: every sidebar page exists in English and Hebrew; every 13.1.1 area has a page\n");
+  process.stdout.write("✓ docs-complete: every sidebar page exists in English and Hebrew; every 13.1.1 area and every listed task has a page\n");
 }
 
 if (import.meta.url.startsWith("file:") && process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

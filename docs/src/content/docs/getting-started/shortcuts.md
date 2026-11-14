@@ -24,7 +24,9 @@ which shows each command's shortcut when it has one.
 | `⌘H` | Find and replace |
 | `⇧⌘V` | Smart Insert (paste anything, detected and wrapped) |
 | `⇧⌘F` | Focus mode (press again to leave) |
-| `Esc` | Close the open dialog |
+| `Esc` | Close the open dialog; also stops every running AI request, like `⌘K → AI: Cancel` |
+| `⌥⌘D` | Today's note ([daily notes](/workspace/hebrew-calendar/)) |
+| `⌘Z` outside an editor | Restore the last deleted file or folder ([undoing a delete](/workspace/history/#undoing-a-delete)) |
 
 Workspace search has no global key of its own today: open it with
 `⌘K → Search workspace…`. Printing is `⌘K → Print / Save as PDF…`; `⌘P`
