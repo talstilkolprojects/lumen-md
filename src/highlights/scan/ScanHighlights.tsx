@@ -12,7 +12,6 @@ import { getLocale, t } from "../../i18n";
 import "./strings";
 import { detectMarks, padBox, type Box, type Mark } from "./detect";
 import { cleanIsbn, groupPassages, pageNumberOf, scannedBook, type ScannedMark } from "./text";
-import { writeBooks } from "../import/runImport";
 import { bookNotePath, safeName } from "../import/notes";
 import { showAiToast } from "../../ui/AiToast";
 import { explainError } from "../../lib/userError";
@@ -130,7 +129,7 @@ export default function ScanHighlights({ onClose }: Props) {
     const pageNo = /^\d{1,4}$/.test(page.trim()) ? Number(page.trim()) : null;
     const book = scannedBook({ title: title.trim(), author: author.trim(), isbn: cleanIsbn(isbn) ?? undefined }, passages, pageNo);
     try {
-      const { writeSidecar } = await import("../sidecar");
+      const [{ writeSidecar }, { writeBooks }] = await Promise.all([import("../sidecar"), import("../import/runImport")]);
       await writeBooks({ books: [book], skipped: {} }, writeSidecar);
       if (keep && photo.current) {
         const { writeWorkspaceBlob } = await import("../../storage/workspace");
