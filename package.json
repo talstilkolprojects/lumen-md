@@ -102,6 +102,7 @@
     "eval:canvas-draw": "node scripts/canvas-draw-eval.mjs",
     "acr": "node scripts/acr.mjs",
     "acr:check": "node scripts/acr.mjs --check",
+    "acr:axe": "node scripts/acr-axe-run.mjs",
     "md:conformance": "vitest run src/__tests__/mdConformance.test.ts src/__tests__/mdRoundTrip.test.ts src/__tests__/sourcePreserve.test.ts",
     "help:bundle": "node scripts/help-bundle.mjs",
     "help:check": "node scripts/help-bundle.mjs --check",

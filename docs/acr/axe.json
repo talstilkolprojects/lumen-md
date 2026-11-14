@@ -1,0 +1,549 @@
+{
+  "tool": "axe-core",
+  "version": "4.11.3",
+  "date": "2026-11-14",
+  "commit": "ad415c29a3",
+  "source": "the app's components in headless Chromium, with the app's compiled CSS (offline harness)",
+  "setups": [
+    "he/light",
+    "he/dark",
+    "en/light"
+  ],
+  "surfaces": [
+    "Toolbar",
+    "StatusBar",
+    "Outline",
+    "DocTabs",
+    "CommandPalette",
+    "KeyboardShortcuts",
+    "TagsPanel",
+    "BacklinksPanel",
+    "AuthDialog",
+    "OnboardingTour",
+    "AiFab",
+    "ThemeSettings",
+    "ReadingSettings",
+    "SettingsScreen",
+    "TrashPanel",
+    "PrivacyLedgerPanel",
+    "PropertiesPanel",
+    "QuickCapture",
+    "CollabSettings",
+    "FeatureFlagsPanel",
+    "VaultEncryptionDialog",
+    "TrustedReposDialog",
+    "VaultUnlockScreen",
+    "CalendarPanel",
+    "SidebarResizer",
+    "EmptyState",
+    "UpdateBanner",
+    "AiToastContainer",
+    "FileTree",
+    "AiSettingsPanel",
+    "AuditLog",
+    "VersionHistory",
+    "UsabilitySessionPanel",
+    "AiDoctorPanel",
+    "SnippetSettings",
+    "TrustedKeysSettings",
+    "FineTuneSettings",
+    "OrgSettings",
+    "RuntimeMetricsPanel",
+    "AutofillPanel",
+    "BatchPanel",
+    "WritingGoalBanner",
+    "VaultFolderBanner",
+    "PublishSiteDialog",
+    "MarkdownTableEditor",
+    "AgentReviewPanel",
+    "LocalGraphPanel",
+    "TranslationSuggest",
+    "ErrorActions",
+    "Frontmatter",
+    "SavedSearches",
+    "UnlinkedMentions",
+    "ErrorBoundary"
+  ],
+  "notRun": [
+    "SearchDialog: import Cannot read properties of undefined (reading 'define')",
+    "HelpPanel: import (intermediate value).glob is not a function"
+  ],
+  "runs": 159,
+  "rules": {
+    "aria-allowed-attr": {
+      "criteria": [
+        "4.1.2"
+      ],
+      "pass": 126,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "aria-conditional-attr": {
+      "criteria": [
+        "4.1.2"
+      ],
+      "pass": 126,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "aria-deprecated-role": {
+      "criteria": [
+        "4.1.2"
+      ],
+      "pass": 99,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "aria-hidden-body": {
+      "criteria": [
+        "1.3.1",
+        "4.1.2"
+      ],
+      "pass": 159,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "aria-hidden-focus": {
+      "criteria": [
+        "4.1.2"
+      ],
+      "pass": 14,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "aria-input-field-name": {
+      "criteria": [
+        "4.1.2"
+      ],
+      "pass": 3,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "aria-prohibited-attr": {
+      "criteria": [
+        "4.1.2"
+      ],
+      "pass": 126,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "aria-required-attr": {
+      "criteria": [
+        "4.1.2"
+      ],
+      "pass": 99,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "aria-required-children": {
+      "criteria": [
+        "1.3.1"
+      ],
+      "pass": 6,
+      "fail": 3,
+      "incomplete": 0,
+      "failures": [
+        {
+          "surface": "CalendarPanel",
+          "setup": "he/light",
+          "impact": "critical",
+          "nodes": 1
+        },
+        {
+          "surface": "CalendarPanel",
+          "setup": "he/dark",
+          "impact": "critical",
+          "nodes": 1
+        },
+        {
+          "surface": "CalendarPanel",
+          "setup": "en/light",
+          "impact": "critical",
+          "nodes": 1
+        }
+      ]
+    },
+    "aria-required-parent": {
+      "criteria": [
+        "1.3.1"
+      ],
+      "pass": 6,
+      "fail": 3,
+      "incomplete": 0,
+      "failures": [
+        {
+          "surface": "CalendarPanel",
+          "setup": "he/light",
+          "impact": "critical",
+          "nodes": 37
+        },
+        {
+          "surface": "CalendarPanel",
+          "setup": "he/dark",
+          "impact": "critical",
+          "nodes": 37
+        },
+        {
+          "surface": "CalendarPanel",
+          "setup": "en/light",
+          "impact": "critical",
+          "nodes": 37
+        }
+      ]
+    },
+    "aria-roles": {
+      "criteria": [
+        "4.1.2"
+      ],
+      "pass": 99,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "aria-toggle-field-name": {
+      "criteria": [
+        "4.1.2"
+      ],
+      "pass": 3,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "aria-valid-attr": {
+      "criteria": [
+        "4.1.2"
+      ],
+      "pass": 126,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "aria-valid-attr-value": {
+      "criteria": [
+        "4.1.2"
+      ],
+      "pass": 126,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "autocomplete-valid": {
+      "criteria": [
+        "1.3.5"
+      ],
+      "pass": 12,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "avoid-inline-spacing": {
+      "criteria": [
+        "1.4.12"
+      ],
+      "pass": 144,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "button-name": {
+      "criteria": [
+        "4.1.2"
+      ],
+      "pass": 135,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "color-contrast": {
+      "criteria": [
+        "1.4.3"
+      ],
+      "pass": 136,
+      "fail": 11,
+      "incomplete": 30,
+      "failures": [
+        {
+          "surface": "StatusBar",
+          "setup": "he/light",
+          "impact": "serious",
+          "nodes": 1
+        },
+        {
+          "surface": "StatusBar",
+          "setup": "en/light",
+          "impact": "serious",
+          "nodes": 1
+        },
+        {
+          "surface": "OnboardingTour",
+          "setup": "he/dark",
+          "impact": "serious",
+          "nodes": 1
+        },
+        {
+          "surface": "CollabSettings",
+          "setup": "he/dark",
+          "impact": "serious",
+          "nodes": 1
+        },
+        {
+          "surface": "VersionHistory",
+          "setup": "he/light",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "surface": "VersionHistory",
+          "setup": "en/light",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "surface": "AiDoctorPanel",
+          "setup": "en/light",
+          "impact": "serious",
+          "nodes": 12
+        },
+        {
+          "surface": "MarkdownTableEditor",
+          "setup": "he/dark",
+          "impact": "serious",
+          "nodes": 1
+        },
+        {
+          "surface": "ErrorBoundary",
+          "setup": "he/light",
+          "impact": "serious",
+          "nodes": 4
+        },
+        {
+          "surface": "ErrorBoundary",
+          "setup": "he/dark",
+          "impact": "serious",
+          "nodes": 1
+        },
+        {
+          "surface": "ErrorBoundary",
+          "setup": "en/light",
+          "impact": "serious",
+          "nodes": 4
+        }
+      ]
+    },
+    "duplicate-id-aria": {
+      "criteria": [
+        "4.1.2"
+      ],
+      "pass": 48,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "form-field-multiple-labels": {
+      "criteria": [
+        "3.3.2"
+      ],
+      "pass": 60,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "label": {
+      "criteria": [
+        "4.1.2"
+      ],
+      "pass": 60,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "link-in-text-block": {
+      "criteria": [
+        "1.4.1"
+      ],
+      "pass": 12,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "link-name": {
+      "criteria": [
+        "2.4.4",
+        "4.1.2"
+      ],
+      "pass": 20,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "list": {
+      "criteria": [
+        "1.3.1"
+      ],
+      "pass": 12,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "listitem": {
+      "criteria": [
+        "1.3.1"
+      ],
+      "pass": 9,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "nested-interactive": {
+      "criteria": [
+        "4.1.2"
+      ],
+      "pass": 138,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "scrollable-region-focusable": {
+      "criteria": [
+        "2.1.1",
+        "2.1.3"
+      ],
+      "pass": 20,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "select-name": {
+      "criteria": [
+        "4.1.2"
+      ],
+      "pass": 21,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "target-size": {
+      "criteria": [
+        "2.5.8"
+      ],
+      "pass": 132,
+      "fail": 13,
+      "incomplete": 0,
+      "failures": [
+        {
+          "surface": "DocTabs",
+          "setup": "en/light",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "surface": "VaultEncryptionDialog",
+          "setup": "he/light",
+          "impact": "serious",
+          "nodes": 1
+        },
+        {
+          "surface": "CalendarPanel",
+          "setup": "he/light",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "surface": "VaultEncryptionDialog",
+          "setup": "he/dark",
+          "impact": "serious",
+          "nodes": 1
+        },
+        {
+          "surface": "CalendarPanel",
+          "setup": "he/dark",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "surface": "VaultEncryptionDialog",
+          "setup": "en/light",
+          "impact": "serious",
+          "nodes": 1
+        },
+        {
+          "surface": "CalendarPanel",
+          "setup": "en/light",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "surface": "UsabilitySessionPanel",
+          "setup": "he/light",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "surface": "UsabilitySessionPanel",
+          "setup": "he/dark",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "surface": "UsabilitySessionPanel",
+          "setup": "en/light",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "surface": "MarkdownTableEditor",
+          "setup": "he/light",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "surface": "MarkdownTableEditor",
+          "setup": "he/dark",
+          "impact": "serious",
+          "nodes": 2
+        },
+        {
+          "surface": "MarkdownTableEditor",
+          "setup": "en/light",
+          "impact": "serious",
+          "nodes": 2
+        }
+      ]
+    },
+    "td-headers-attr": {
+      "criteria": [
+        "1.3.1"
+      ],
+      "pass": 3,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "th-has-data-cells": {
+      "criteria": [
+        "1.3.1"
+      ],
+      "pass": 3,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    },
+    "valid-lang": {
+      "criteria": [
+        "3.1.2"
+      ],
+      "pass": 6,
+      "fail": 0,
+      "incomplete": 0,
+      "failures": []
+    }
+  }
+}

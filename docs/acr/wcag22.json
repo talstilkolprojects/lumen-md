@@ -6,10 +6,10 @@
     "A",
     "AA"
   ],
-  "reviewed": "2026-11-10",
+  "reviewed": "2026-11-14",
   "method": {
-    "en": "Automated: axe-core on six surfaces in Hebrew and English, light and dark (e2e/a11y.spec.ts); reflow at 320 and 640 px and forced colours (e2e/reflow.spec.ts); spoken announcements (e2e/sr-announce.spec.ts); unit tests of the focus trap, contrast and toasts. Manual: review of each criterion against the app's code and behaviour for this version.",
-    "he": "אוטומטי: axe-core בשישה מסכים בעברית ובאנגלית, בבהיר ובכהה (e2e/a11y.spec.ts); התאמה לרוחב 320 ו-640 פיקסלים וצבעים מאולצים (e2e/reflow.spec.ts); הכרזות קוליות (e2e/sr-announce.spec.ts); בדיקות יחידה של לכידת המיקוד, הניגודיות וההודעות. ידני: סקירה של כל קריטריון מול הקוד וההתנהגות של הגרסה הזו."
+    "en": "Automated: axe-core on six surfaces in Hebrew and English, light and dark (e2e/a11y.spec.ts); reflow at 320 and 640 px and forced colours (e2e/reflow.spec.ts); spoken announcements (e2e/sr-announce.spec.ts); unit tests of the focus trap, contrast and toasts. Manual: review of each criterion against the app's code and behaviour for this version. The automated part is generated from an axe-core run (docs/acr/axe.json, scripts/acr-axe.mjs): each criterion shows the axe rules that test it, and a criterion axe finds a violation of can't be reported as supported.",
+    "he": "אוטומטי: axe-core בשישה מסכים בעברית ובאנגלית, בבהיר ובכהה (e2e/a11y.spec.ts); התאמה לרוחב 320 ו-640 פיקסלים וצבעים מאולצים (e2e/reflow.spec.ts); הכרזות קוליות (e2e/sr-announce.spec.ts); בדיקות יחידה של לכידת המיקוד, הניגודיות וההודעות. ידני: סקירה של כל קריטריון מול הקוד וההתנהגות של הגרסה הזו. החלק האוטומטי נוצר מהרצת axe-core ‏(docs/acr/axe.json, ‏scripts/acr-axe.mjs): לכל קריטריון מוצגים כללי axe שבודקים אותו, וקריטריון ש-axe מוצא בו הפרה לא יכול להיות מדווח כנתמך."
   },
   "removed": [
     {
@@ -77,16 +77,21 @@
       "id": "1.3.1",
       "level": "A",
       "name": "Info and Relationships",
-      "status": "supports",
+      "status": "partially-supports",
       "remarks": {
-        "en": "Dialogs, menus, the palette (combobox + listbox), tabs, tables and forms use native elements or ARIA roles with names. In the editor, the structure of the line under the cursor (heading level, task state, code block, quote) is spoken.",
-        "he": "דיאלוגים, תפריטים, הפלטה (combobox ו-listbox), לשוניות, טבלאות וטפסים משתמשים ברכיבים מקוריים או בתפקידי ARIA עם שמות. בעורך, המבנה של השורה שבה הסמן (רמת כותרת, מצב משימה, בלוק קוד, ציטוט) מוקרא."
+        "en": "Dialogs, menus, the palette (combobox + listbox), tabs, tables and forms use native elements or ARIA roles with names. In the editor, the structure of the line under the cursor (heading level, task state, code block, quote) is spoken. axe (W3.8 run) finds one exception: the calendar's month grid has grid cells and column headers without rows (aria-required-children/-parent, critical).",
+        "he": "דיאלוגים, תפריטים, הפלטה (combobox ו-listbox), לשוניות, טבלאות וטפסים משתמשים ברכיבים מקוריים או בתפקידי ARIA עם שמות. בעורך, המבנה של השורה שבה הסמן (רמת כותרת, מצב משימה, בלוק קוד, ציטוט) מוקרא. axe (הרצת W3.8) מוצא חריג אחד: ברשת החודש של לוח השנה יש תאים וכותרות עמודה בלי שורות (aria-required-children/-parent, קריטי)."
       },
       "evidence": [
         "e2e/a11y.spec.ts",
         "e2e/sr-announce.spec.ts",
         "src/a11y/announce.ts"
-      ]
+      ],
+      "plan": {
+        "en": "Give the calendar grid real rows (role=row with display: contents) and the day button inside its cell — done in #522 (W6.30); the next axe run after it lands turns this back to supports.",
+        "he": "לתת לרשת של לוח השנה שורות אמיתיות (role=row עם display: contents) ואת כפתור היום בתוך התא — נעשה ב-#522 (W6.30); הרצת axe הבאה אחרי המיזוג תחזיר את זה ל״נתמך״.",
+        "target": "0.2.0"
+      }
     },
     {
       "id": "1.3.2",
@@ -485,15 +490,20 @@
       "id": "1.4.3",
       "level": "AA",
       "name": "Contrast (Minimum)",
-      "status": "supports",
+      "status": "partially-supports",
       "remarks": {
-        "en": "Text is at least 4.5:1 in light and dark mode, in all built-in themes; checked by axe in Hebrew and English.",
-        "he": "הטקסט לפחות 4.5:1 בבהיר ובכהה, בכל ערכות הנושא המובנות; נבדק ב-axe בעברית ובאנגלית."
+        "en": "Body text, controls and the built-in themes meet 4.5:1 in light and dark mode. axe (W3.8 run) finds status text below it: the status bar's privacy badge, the version history's storage warning, an onboarding and a collaboration note in dark mode (11 results on 5 surfaces), all coloured with the --success/--warning fill tokens (3.0–3.6:1).",
+        "he": "טקסט רגיל, פקדים וערכות הנושא המובנות עומדים ב-4.5:1 במצב בהיר וכהה. axe (הרצת W3.8) מוצא טקסט סטטוס מתחת לזה: תג הפרטיות בשורת המצב, אזהרת האחסון בהיסטוריית הגרסאות, הערה בסיור ההיכרות ובהגדרות שיתוף הפעולה במצב כהה (11 תוצאות ב-5 משטחים), כולם בצבעי המילוי --success/--warning ‏(3.0–3.6:1)."
       },
       "evidence": [
         "e2e/a11y.spec.ts",
         "src/__tests__/themeSettings.test.ts"
-      ]
+      ],
+      "plan": {
+        "en": "Colour status text with the text tokens --ok/--warn (≥ 4.5:1) instead of the fill tokens — done in #522 (W6.30); re-run axe after it lands.",
+        "he": "לצבוע טקסט סטטוס בטוקני הטקסט --ok/--warn ‏(≥ 4.5:1) במקום טוקני המילוי — נעשה ב-#522 (W6.30); להריץ axe שוב אחרי המיזוג.",
+        "target": "0.2.0"
+      }
     },
     {
       "id": "1.4.4",
@@ -661,13 +671,13 @@
       "name": "Target Size (Minimum)",
       "status": "partially-supports",
       "remarks": {
-        "en": "Most controls are 24×24 CSS px or larger, or spaced so a 24 px circle fits. A few icon buttons in dense panels (the calendar's arrows, a toast's close button) are smaller.",
-        "he": "רוב הפקדים בגודל 24×24 פיקסלים לפחות, או מרווחים כך שעיגול של 24 פיקסלים נכנס. כמה כפתורי אייקון בפאנלים צפופים (החיצים של לוח השנה, כפתור הסגירה של הודעה) קטנים יותר."
+        "en": "Most controls are 24×24 CSS px or larger, or spaced so a 24 px circle fits. A few icon buttons in dense panels (the calendar's arrows, a toast's close button) are smaller. axe (W3.8 run) confirms: 13 results on DocTabs' close buttons, the vault-encryption dialog's close, the calendar header and the usability panel.",
+        "he": "רוב הפקדים בגודל 24×24 פיקסלים לפחות, או מרווחים כך שעיגול של 24 פיקסלים נכנס. כמה כפתורי אייקון בפאנלים צפופים (החיצים של לוח השנה, כפתור הסגירה של הודעה) קטנים יותר. axe (הרצת W3.8) מאשר: 13 תוצאות בכפתורי הסגירה של הלשוניות, בסגירה של חלון הצפנת הכספת, בכותרת לוח השנה ובחלונית השימושיות."
       },
       "evidence": [],
       "plan": {
-        "en": "A check in the axe run for target size, and 24 px minimum for icon buttons.",
-        "he": "בדיקת גודל מטרה בהרצת axe, ומינימום 24 פיקסלים לכפתורי אייקון.",
+        "en": "Enlarge those buttons to 24 px — done in #522 (W6.30) — and keep the axe target-size rule in the run.",
+        "he": "להגדיל את הכפתורים האלה ל-24 פיקסלים — נעשה ב-#522 (W6.30) — ולהשאיר את כלל target-size של axe בהרצה.",
         "target": "0.2.0"
       }
     },
