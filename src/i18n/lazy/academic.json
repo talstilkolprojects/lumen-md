@@ -1,0 +1,9 @@
+{
+  "academic.pick": "Which institution and year?",
+  "academic.none": "None (stop showing it)",
+  "academic.unverified": "not yet checked against the official document",
+  "academic.chosen": "Academic calendar: {name}",
+  "academic.chosenUnverified": "{name} is chosen, but its dates are not checked yet, so Lumen shows nothing from it.",
+  "academic.noChoice": "Choose an institution first.",
+  "academic.exported": "Saved {file}"
+}

@@ -1,0 +1,19 @@
+{
+  "institution": {
+    "id": "oranim",
+    "he": "המכללה האקדמית אורנים",
+    "en": "Oranim Academic College"
+  },
+  "year": 5787,
+  "label": "תשפ״ז",
+  "source": {
+    "url": "https://www.oranim.ac.il/sites/heb/SiteCollectionImages/pictures/rector/docs/%D7%9C%D7%95%D7%97-%D7%AA%D7%A9%D7%A4%D7%96.pdf",
+    "title": "לוח תשפ״ז",
+    "retrieved": null
+  },
+  "verified": false,
+  "semesters": [],
+  "exams": [],
+  "breaks": [],
+  "makeupDays": []
+}

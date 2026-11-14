@@ -1,0 +1,19 @@
+{
+  "institution": {
+    "id": "biu",
+    "he": "אוניברסיטת בר-אילן",
+    "en": "Bar-Ilan University"
+  },
+  "year": 5787,
+  "label": "תשפ״ז",
+  "source": {
+    "url": "https://www.biu.ac.il/sites/default/files/inline-files/luzshulchani27-26.pdf",
+    "title": "לוח שולחני תשפ״ז",
+    "retrieved": null
+  },
+  "verified": false,
+  "semesters": [],
+  "exams": [],
+  "breaks": [],
+  "makeupDays": []
+}

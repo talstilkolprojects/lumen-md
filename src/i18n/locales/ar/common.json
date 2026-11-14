@@ -1,6 +1,13 @@
 {
   "a11y.sidebarResizer": "تغيير عرض الشريط الجانبي",
   "a11y.skipToContent": "تخطَّ إلى المحتوى",
+  "academic.chosen": "التقويم: {name}",
+  "academic.chosenUnverified": "اخترت {name}، لكن تواريخه لم تُتحقق بعد.",
+  "academic.exported": "حُفظ {file}",
+  "academic.noChoice": "اختر مؤسسة أولًا.",
+  "academic.none": "لا شيء",
+  "academic.pick": "أي مؤسسة وسنة؟",
+  "academic.unverified": "لم يُتحقق بعد",
   "agentReview.approve": "موافقة",
   "agentReview.approveAll": "الموافقة على الكل ({count})",
   "agentReview.badge": "للمراجعة: {count}",

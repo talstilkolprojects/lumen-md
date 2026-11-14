@@ -1,6 +1,13 @@
 {
   "a11y.sidebarResizer": "调整侧边栏宽度",
   "a11y.skipToContent": "跳到内容",
+  "academic.chosen": "学年历：{name}",
+  "academic.chosenUnverified": "已选择 {name}，但日期尚未核对，因此不显示。",
+  "academic.exported": "已保存 {file}",
+  "academic.noChoice": "请先选择院校。",
+  "academic.none": "无",
+  "academic.pick": "哪个院校和学年？",
+  "academic.unverified": "尚未核对",
   "agentReview.approve": "接受",
   "agentReview.approveAll": "全部接受（{count}）",
   "agentReview.badge": "待审阅 {count}",

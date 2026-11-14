@@ -1,6 +1,13 @@
 {
   "a11y.sidebarResizer": "שינוי רוחב סרגל הצד",
   "a11y.skipToContent": "דילוג לתוכן הראשי",
+  "academic.chosen": "לוח אקדמי: {name}",
+  "academic.chosenUnverified": "{name} נבחר, אבל התאריכים שלו עוד לא נבדקו, ולכן Lumen לא מציג ממנו כלום.",
+  "academic.exported": "נשמר {file}",
+  "academic.noChoice": "בחר קודם מוסד.",
+  "academic.none": "אף אחד (להפסיק להציג)",
+  "academic.pick": "איזה מוסד ואיזו שנה?",
+  "academic.unverified": "עוד לא נבדק מול המסמך הרשמי",
   "agentReview.approve": "אישור",
   "agentReview.approveAll": "לאשר הכול ({count})",
   "agentReview.badge": "{count} לאישור",

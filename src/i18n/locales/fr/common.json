@@ -1,6 +1,13 @@
 {
   "a11y.sidebarResizer": "Redimensionner la barre latérale",
   "a11y.skipToContent": "Aller au contenu",
+  "academic.chosen": "Calendrier : {name}",
+  "academic.chosenUnverified": "{name} est choisi, mais ses dates ne sont pas encore vérifiées.",
+  "academic.exported": "Enregistré : {file}",
+  "academic.noChoice": "Choisissez d’abord un établissement.",
+  "academic.none": "Aucun",
+  "academic.pick": "Quel établissement et quelle année ?",
+  "academic.unverified": "pas encore vérifié",
   "agentReview.approve": "Accepter",
   "agentReview.approveAll": "Tout accepter ({count})",
   "agentReview.badge": "{count} à examiner",

@@ -129,6 +129,7 @@ export default defineConfig({
             { label: "Literature review matrix", translations: { he: "מטריצת סקירת ספרות" }, slug: "workspace/literature-review" },
             { label: "Student mode", translations: { he: "מצב סטודנט" }, slug: "workspace/student-mode" },
             { label: "Jewish sources (Sefaria)", slug: "workspace/jewish-sources", translations: { he: "מקורות יהודיים (ספריא)" } },
+            { label: "Israeli academic calendar", slug: "workspace/academic-calendar", translations: { he: "לוח אקדמי ישראלי" } },
             { label: "Israeli time", slug: "workspace/israeli-time", translations: { he: "זמן ישראלי" } },
           ],
         },

@@ -26,6 +26,28 @@
       "vars": []
     },
     {
+      "key": "cmd.academic.choose",
+      "en": "Academic calendar: choose an institution…",
+      "vars": []
+    },
+    {
+      "key": "cmd.academic.choose.hint",
+      "en": "Semesters, Moed A and B and breaks in the daily note ({{academic}}) and for deadlines",
+      "vars": [
+        "academic"
+      ]
+    },
+    {
+      "key": "cmd.academic.ics",
+      "en": "Export the academic calendar (ICS)",
+      "vars": []
+    },
+    {
+      "key": "cmd.academic.ics.hint",
+      "en": "The chosen institution's year as a calendar file for Google Calendar or Apple Calendar",
+      "vars": []
+    },
+    {
       "key": "cmd.ai.actionItems",
       "en": "AI: Extract Action Items",
       "vars": []
