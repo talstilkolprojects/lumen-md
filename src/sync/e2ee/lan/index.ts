@@ -16,7 +16,7 @@ import { HEADER_NAME } from "../header";
 import type { VaultKeys } from "../keys";
 import { ProviderUnavailableError, type SyncProvider } from "../provider";
 import { hostBucket } from "./bucket";
-import { lanHost, remoteLanProvider, type LanHost, type RemoteLanProvider } from "./rpc";
+import { lanHost, remoteLanProvider, type LanHost, type LanService, type RemoteLanProvider } from "./rpc";
 import type { LanLink } from "./link";
 
 export type LanRole = "host" | "peer";
@@ -91,13 +91,23 @@ let peerKeys: VaultKeys | null = null;
 const peerListeners = new Set<() => void>();
 const changeListeners = new Set<() => void>();
 let offChanged: (() => void) | null = null;
+/** Services this device answers for the host it joins (W6.19), by op. */
+const peerSideServices = new Map<string, LanService>();
+/** What a link to the host serves for `op`: whatever is registered now (none: "unsupported"). */
+const peerSide =
+  (op: string): LanService =>
+  async (req) => {
+    const service = peerSideServices.get(op);
+    return service ? service(req) : { header: { error: "unsupported" } };
+  };
 
 /** Use `link` (just opened from the pairing dialog) as this device's way to its host. */
 export function adoptPeerLink(link: LanLink): RemoteLanProvider {
   peer?.link.close();
   offChanged?.();
-  const remote = remoteLanProvider(link.channel);
+  const remote = remoteLanProvider(link.channel, { address: link.remoteAddress ?? null });
   peer = { link, remote, auth: null };
+  for (const op of peerSideServices.keys()) remote.serve(op, peerSide(op));
   offChanged = remote.onChanged(() => {
     for (const l of [...changeListeners]) l();
   });
@@ -151,6 +161,46 @@ export function peerService(): { address: string | null; call: RemoteLanProvider
   };
 }
 
+/** The link to another of the user's devices that a feature can ask a service on (W6.19). */
+export interface LanServiceLink {
+  /** The other device's LAN address, when the link knows it. */
+  address: string | null;
+  /** "host": this device joined it; "peer": it joined this device's vault. */
+  role: LanRole;
+  call: RemoteLanProvider["service"];
+  keys: VaultKeys;
+}
+
+/**
+ * Every linked device a service can be asked on: the host this device joined,
+ * and the proven peers of the vault this device hosts (a phone that hosts can
+ * still send its dictation to the desktop that joined it). Only while the
+ * vault is unlocked here: a service needs the proof, and the proof the keys.
+ */
+export function serviceLinks(): LanServiceLink[] {
+  const out: LanServiceLink[] = [];
+  const up = peerService();
+  if (up) out.push({ ...up, role: "host" });
+  const keys = hostKeys;
+  if (host && keys) for (const p of host.peerLinks()) out.push({ address: p.info.address, role: "peer", keys, call: (op, h, payload, o) => p.call(op, h, payload, o) });
+  return out;
+}
+
+/**
+ * Answer `op` ("svc.…") on whichever side of a link this device is: for the
+ * peers of the vault it hosts, and for the host it joined (now and on every
+ * later link). Returns the function that stops serving it.
+ */
+export function serveOnLan(op: string, service: LanService): () => void {
+  const offHost = thisHost().serve(op, service);
+  peerSideServices.set(op, service);
+  peer?.remote.serve(op, peerSide(op));
+  return () => {
+    offHost();
+    if (peerSideServices.get(op) === service) peerSideServices.delete(op);
+  };
+}
+
 function peerProvider(): LiveProvider {
   return {
     id: "lan",
@@ -195,4 +245,5 @@ export function __resetLan(): void {
   offChanged = null;
   peerListeners.clear();
   changeListeners.clear();
+  peerSideServices.clear();
 }

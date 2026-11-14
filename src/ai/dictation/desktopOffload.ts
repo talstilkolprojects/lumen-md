@@ -31,6 +31,10 @@
  * Never costs the user their words: a sentence the desktop doesn't answer in
  * time (OFFLOAD_MS_PER_MINUTE) keeps this device's streaming text.
  *
+ * Either device may be the one that hosts the vault: the phone asks the
+ * desktop over whichever side of the link it has (LAN services run both
+ * ways, lan/rpc.ts).
+ *
  * Lazy: loaded by the dictation panel and by the LAN pairing dialog.
  */
 import { fromB64u, randomBytes, toB64u, utf8 } from "../../sync/e2ee/bytes";
@@ -39,6 +43,10 @@ import { isLanHost } from "../../sync/e2ee/lan/address";
 import type { LanService, LanServiceReply } from "../../sync/e2ee/lan/rpc";
 import { CORRECTION_MAX_SECONDS, pickText, type SegmentCorrector } from "./correction";
 import type { EngineId } from "./engines";
+import measuredWer from "./measuredWer.json";
+
+/** The engines a measurement may name (engines.ts EngineId). */
+const KNOWN_ENGINES: ReadonlySet<string> = new Set<EngineId>(["zipformer-he", "whisper-cpp-he", "whisper-turbo-he", "ozen-he", "whisper-base", "whisper-live", "web-speech"]);
 
 export const OFFLOAD_PROTOCOL = 1;
 export const OP_STATUS = "svc.dictation.status";
@@ -76,13 +84,24 @@ export interface WerFigure {
 }
 
 /**
- * WER per engine as measured, never guessed. Filled from the signed
- * models:cloud report (W6.18/W6.19) as runs land; an engine that is not here
- * has no measurement yet.
+ * WER per engine as measured, never guessed (measuredWer.json). `npm run
+ * models:cloud -- dictation` fills it from the signed report (W6.18/W6.19):
+ * the held-out asr-he number where there is one, else FLEURS-he validation.
+ * An engine that is not there has no measurement yet; a malformed entry is
+ * dropped rather than trusted.
  */
-export const MEASURED_WER: Partial<Record<EngineId, WerFigure>> = {
-  "zipformer-he": { wer: 0.236, split: "FLEURS-he validation", source: "plan 6.1, CI (WASM)" },
-};
+export const MEASURED_WER: Partial<Record<EngineId, WerFigure>> = readMeasured(measuredWer);
+
+export function readMeasured(raw: unknown): Partial<Record<EngineId, WerFigure>> {
+  const out: Partial<Record<EngineId, WerFigure>> = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [engine, v] of Object.entries(raw as Record<string, unknown>)) {
+    const f = v as Partial<WerFigure> | null;
+    if (!KNOWN_ENGINES.has(engine) || !f || typeof f.wer !== "number" || !Number.isFinite(f.wer) || f.wer < 0 || f.wer > 2) continue;
+    out[engine as EngineId] = { wer: f.wer, split: typeof f.split === "string" ? f.split : "?", source: typeof f.source === "string" ? f.source : "?" };
+  }
+  return out;
+}
 
 export type DeviceClass = "phone" | "computer";
 
@@ -185,6 +204,21 @@ export async function desktopStatus(link: DesktopLink | null, timeoutMs = 1500):
   } catch (e) {
     return { ready: false, engine: null, reason: e instanceof NotLocalError ? "not-local" : ((e as { code?: string }).code ?? "unreachable") };
   }
+}
+
+/**
+ * Of the devices linked over the LAN sync (lan/index.ts serviceLinks: the
+ * host this device joined and the peers of the vault it hosts), the first
+ * that is ready and gets the offer. The status checks run side by side, so a
+ * device that doesn't answer costs one timeout, not one each.
+ */
+export async function chooseDesktopLink<L extends DesktopLink>(links: readonly L[], ctx: { language: string; estimate: WerEstimate; table?: Partial<Record<EngineId, WerFigure>>; timeoutMs?: number }): Promise<{ link: L; decision: OfferDecision } | null> {
+  const statuses = await Promise.all(links.map((l) => desktopStatus(l, ctx.timeoutMs)));
+  for (let i = 0; i < links.length; i++) {
+    const decision = shouldOfferDesktop({ language: ctx.language, estimate: ctx.estimate, desktop: statuses[i], table: ctx.table });
+    if (decision.offer) return { link: links[i], decision };
+  }
+  return null;
 }
 
 /** 16 kHz float samples → 16-bit little-endian PCM (whisperDesktop.ts toPcm16, kept here so this module stays small). */

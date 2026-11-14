@@ -42,12 +42,14 @@ interface DesktopOffer {
 async function desktopOffer(lang: string, correction: CorrectionEngine): Promise<DesktopOffer | null> {
   if (baseLanguage(lang) !== "he") return null;
   try {
-    const [{ peerService }, off] = await Promise.all([import("../sync/e2ee/lan"), import("../ai/dictation/desktopOffload")]);
-    const link = peerService();
-    if (!link) return null;
+    const [{ serviceLinks }, off] = await Promise.all([import("../sync/e2ee/lan"), import("../ai/dictation/desktopOffload")]);
+    // The host this device joined, or a device that joined the vault this one hosts (a phone can host).
+    const links = serviceLinks();
+    if (!links.length) return null;
     const estimate = off.estimateDictationWer({ correction });
-    const decision = off.shouldOfferDesktop({ language: lang, estimate, desktop: await off.desktopStatus(link) });
-    if (!decision.offer || estimate.wer === null) return null;
+    const chosen = await off.chooseDesktopLink(links, { language: lang, estimate });
+    if (!chosen || estimate.wer === null) return null;
+    const { link } = chosen;
     let warned = false;
     const correct = off.makeDesktopCorrector(link, {
       onMiss: () => {
