@@ -14,6 +14,7 @@
 import {
   checkRename,
   compareVaultEntries,
+  PathLock,
   toBytes,
   VaultEmitter,
   vaultSegments,
@@ -71,6 +72,25 @@ export function createTauriBackend(invoke: TauriInvoke, root: string, opts: { av
     }
   };
   const norm = (path: string) => vaultSegments(path).join("/");
+  /** write / remove / writeIf / removeIf on one path, one at a time (2.28). */
+  const lock = new PathLock();
+  const pathHeaders = (p: string, extra: Record<string, string> = {}) => ({ headers: { "x-vault-root": encodeURIComponent(root), "x-vault-path": encodeURIComponent(p), ...extra } });
+  /**
+   * The file's bytes when they hash to `expect` (null: nothing there, and
+   * nothing expected); false otherwise. Rust then compares these exact bytes
+   * again and replaces the file in the same command, so the swap does not
+   * span a round trip.
+   */
+  const current = async (path: string, p: string, expect: string | null): Promise<Uint8Array | null | false> => {
+    const st = await call<VaultStat | null>(path, "vault_stat", { root, path: p });
+    if (st?.kind === "directory") return false;
+    if (!st) return expect === null ? null : false;
+    if (expect === null) return false;
+    const raw = await call<ArrayBuffer | number[]>(path, "vault_read", { root, path: p });
+    const bytes = raw instanceof ArrayBuffer ? new Uint8Array(raw) : new Uint8Array(raw);
+    const { sha256Hex } = await import("./cas");
+    return (await sha256Hex(bytes)) === expect ? bytes : false;
+  };
 
   return {
     id: "desktop",
@@ -97,8 +117,37 @@ export function createTauriBackend(invoke: TauriInvoke, root: string, opts: { av
 
     async write(path, data) {
       const p = norm(path);
-      await call(path, "vault_write", await toBytes(data), { headers: { "x-vault-root": encodeURIComponent(root), "x-vault-path": encodeURIComponent(p) } });
+      const bytes = await toBytes(data);
+      await lock.run(p, () => call(path, "vault_write", bytes, pathHeaders(p)));
       emit({ type: "write", path: p });
+    },
+
+    async writeIf(path, data, expect) {
+      const p = norm(path);
+      if (!p) throw new VaultError("EKIND", path, "Cannot write to the vault root");
+      const next = await toBytes(data);
+      const ok = await lock.run(p, async () => {
+        const before = await current(path, p, expect);
+        if (before === false) return false;
+        // Body: the expected bytes, then the new ones; `x-vault-expect` is the length of the first part ("none": nothing may be there).
+        const body = new Uint8Array((before?.byteLength ?? 0) + next.byteLength);
+        if (before) body.set(before, 0);
+        body.set(next, before?.byteLength ?? 0);
+        return !!(await call<boolean>(path, "vault_write_if", body, pathHeaders(p, { "x-vault-expect": before ? String(before.byteLength) : "none" })));
+      });
+      if (ok) emit({ type: "write", path: p });
+      return ok;
+    },
+
+    async removeIf(path, expect) {
+      const p = norm(path);
+      const ok = await lock.run(p, async () => {
+        const before = await current(path, p, expect);
+        if (!before) return false;
+        return !!(await call<boolean>(path, "vault_remove_if", before, pathHeaders(p)));
+      });
+      if (ok) emit({ type: "delete", path: p });
+      return ok;
     },
 
     async mkdir(path) {
@@ -124,7 +173,7 @@ export function createTauriBackend(invoke: TauriInvoke, root: string, opts: { av
 
     async remove(path) {
       const p = norm(path);
-      await call(path, "vault_remove", { root, path: p });
+      await lock.run(p, () => call(path, "vault_remove", { root, path: p }));
       emit({ type: "delete", path: p });
     },
 

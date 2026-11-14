@@ -15,6 +15,7 @@
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { lazyEnglishEntries } from "./lib/i18n-lazy.mjs";
 
 const PATH = resolve("src/i18n/index.ts");
 const text = readFileSync(PATH, "utf8");
@@ -45,13 +46,19 @@ while ((m = entryRe.exec(body)) !== null) {
   entries.push({ key, en, vars: [...new Set(vars)] });
 }
 
+// English of lazily loaded domains (src/i18n/lazy/*.json), after the bundle.
+for (const [key, en] of lazyEnglishEntries()) {
+  const vars = [...en.matchAll(/\{(\w+)\}/g)].map((mm) => mm[1]);
+  entries.push({ key, en, vars: [...new Set(vars)] });
+}
+
 // Output deterministically (key order from the bundle is preserved by
 // extraction order, so we don't sort).
 
 const out = {
   version: 1,
   generated_at: new Date().toISOString(),
-  source: "src/i18n/index.ts (en bundle)",
+  source: "src/i18n/index.ts (en bundle) + src/i18n/lazy/*.json",
   count: entries.length,
   entries,
 };

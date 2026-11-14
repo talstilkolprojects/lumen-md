@@ -80,6 +80,34 @@ export function fakeTauriVault(active: string | null = null): FakeTauriVault {
           case "vault_write":
             if (!ArrayBuffer.isView(args)) throw "EINVAL: vault_write expects raw bytes";
             return await vault(h("x-vault-root")).write(h("x-vault-path"), args as Uint8Array);
+          case "vault_write_if": {
+            // As Rust's Vault::write_if: the expected bytes (or none) are compared and the file replaced in one step.
+            if (!ArrayBuffer.isView(args)) throw "EINVAL: vault_write_if expects raw bytes";
+            const body = args as Uint8Array;
+            const lenH = h("x-vault-expect");
+            const expectLen = lenH === "none" ? null : Number(lenH);
+            const v = vault(h("x-vault-root"));
+            const p = h("x-vault-path");
+            const st = await v.stat(p);
+            if (st?.kind === "directory") return false;
+            const now = st ? new Uint8Array(await (await v.read(p)).arrayBuffer()) : null;
+            const want = expectLen === null ? null : body.slice(0, expectLen);
+            if ((now === null) !== (want === null) || (now && want && (now.length !== want.length || now.some((b, i) => b !== want[i])))) return false;
+            await v.write(p, body.slice(expectLen ?? 0));
+            return true;
+          }
+          case "vault_remove_if": {
+            if (!ArrayBuffer.isView(args)) throw "EINVAL: vault_remove_if expects raw bytes";
+            const want = args as Uint8Array;
+            const v = vault(h("x-vault-root"));
+            const p = h("x-vault-path");
+            const st = await v.stat(p);
+            if (st?.kind !== "file") return false;
+            const now = new Uint8Array(await (await v.read(p)).arrayBuffer());
+            if (now.length !== want.length || now.some((b, i) => b !== want[i])) return false;
+            await v.remove(p);
+            return true;
+          }
           case "vault_snapshot": {
             const out: { path: string; size: number; mtime: number }[] = [];
             const walk = async (dir: string) => {

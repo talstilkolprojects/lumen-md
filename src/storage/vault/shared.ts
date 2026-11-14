@@ -74,6 +74,30 @@ export async function toBytes(data: VaultData): Promise<Uint8Array> {
   return new Uint8Array(await (data as Blob).arrayBuffer());
 }
 
+// ── Per-path order ───────────────────────────────────────────────────────
+
+/**
+ * Runs operations on one path one after another (2.28): a backend's
+ * write / remove / writeIf / removeIf on the same path wait for each other,
+ * so a compare-and-swap is never split by the backend's own writes.
+ */
+export class PathLock {
+  private readonly tails = new Map<string, Promise<void>>();
+
+  run<T>(path: string, fn: () => Promise<T>): Promise<T> {
+    const next = (this.tails.get(path) ?? Promise.resolve()).then(fn);
+    const tail = next.then(
+      () => undefined,
+      () => undefined,
+    );
+    this.tails.set(path, tail);
+    void tail.then(() => {
+      if (this.tails.get(path) === tail) this.tails.delete(path);
+    });
+    return next;
+  }
+}
+
 // ── Events ───────────────────────────────────────────────────────────────
 
 /** The emitter behind `watch()` / `notifyExternal()`. A failing listener never fails the write. */

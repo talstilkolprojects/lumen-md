@@ -5,6 +5,7 @@
  */
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { lazyEnglishEntries } from "./lib/i18n-lazy.mjs";
 
 const SRC = resolve("src");
 
@@ -47,6 +48,7 @@ function parseKeys(body) {
 }
 
 const en = parseKeys(enBlock[1]);
+for (const [k] of lazyEnglishEntries()) en.add(k);
 const he = new Set(Object.keys(heJson));
 
 const missingEn = [...callKeys].filter((k) => !en.has(k)).sort();

@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-10-19T07:33:42.684Z",
-  "source": "src/i18n/index.ts (en bundle)",
-  "count": 1469,
+  "generated_at": "2026-10-20T19:56:34.410Z",
+  "source": "src/i18n/index.ts (en bundle) + src/i18n/lazy/*.json",
+  "count": 1487,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -7913,6 +7913,100 @@
     {
       "key": "chart.alternatives",
       "en": "Chart suggestions",
+      "vars": []
+    },
+    {
+      "key": "e2ee.conflict.title",
+      "en": "Sync conflict — {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "e2ee.conflict.body",
+      "en": "This note was also changed on another device. Choose what to keep; it is not synced until you decide.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.conflict.later",
+      "en": "Decide later",
+      "vars": []
+    },
+    {
+      "key": "e2ee.setup.title",
+      "en": "Encrypted sync",
+      "vars": []
+    },
+    {
+      "key": "e2ee.setup.note",
+      "en": "Notes are encrypted on this device before upload; the sync service sees only ciphertext. A lost passphrase cannot be recovered.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.setup.passphrase",
+      "en": "Passphrase",
+      "vars": []
+    },
+    {
+      "key": "e2ee.setup.repeat",
+      "en": "Repeat the passphrase",
+      "vars": []
+    },
+    {
+      "key": "e2ee.setup.create",
+      "en": "Encrypt and sync",
+      "vars": []
+    },
+    {
+      "key": "e2ee.setup.unlock",
+      "en": "Unlock",
+      "vars": []
+    },
+    {
+      "key": "e2ee.setup.tooShort",
+      "en": "At least {n} characters.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.setup.mismatch",
+      "en": "The passphrases do not match.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.setup.wrong",
+      "en": "Wrong passphrase.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.unverified",
+      "en": "Freshness not verified: this device cannot yet tell whether the sync service shows your newest notes. Pair it with a device you already use, or confirm after checking.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.code",
+      "en": "Pairing code from another device",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.pair",
+      "en": "Pair",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.confirm",
+      "en": "I checked — it is current",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.badCode",
+      "en": "This pairing code is not valid for this vault, or it has expired.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.verified",
+      "en": "Freshness verified",
       "vars": []
     }
   ]

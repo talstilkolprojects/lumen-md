@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { lazyEnglish } from "./helpers/i18nLazy";
 import { readFileSync } from "fs";
 import { join } from "path";
 
@@ -13,6 +14,7 @@ const content = readFileSync(indexPath, "utf8");
 const enBlock = content.slice(content.indexOf("const en: Strings = {"), content.indexOf("\n};\n", content.indexOf("const en: Strings = {")));
 const en: Record<string, string> = {};
 for (const m of enBlock.matchAll(/^\s+"([^"]+)":\s*"((?:[^"\\]|\\.)*)",?\s*$/gm)) en[m[1]] = JSON.parse(`"${m[2]}"`);
+Object.assign(en, lazyEnglish());
 
 /** Strings that are rightly identical in Hebrew. */
 const SAME_IN_HEBREW = new Set([

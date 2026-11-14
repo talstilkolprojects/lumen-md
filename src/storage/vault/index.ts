@@ -16,7 +16,7 @@ import { createOpfsBackend } from "./opfs";
 import type { VaultBackend, VaultEvent, VaultListener } from "./types";
 
 export * from "./types";
-export { checkRename, compareVaultEntries, toBytes, VaultEmitter, vaultSegments } from "./shared";
+export { checkRename, compareVaultEntries, PathLock, toBytes, VaultEmitter, vaultSegments } from "./shared";
 export { createDirectoryHandleBackend, type DirectoryHandleBackendOptions } from "./handleBackend";
 export { createMemoryBackend } from "./memory";
 export { createOpfsBackend, isOpfsSupported } from "./opfs";

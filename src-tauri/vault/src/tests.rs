@@ -289,3 +289,33 @@ fn snapshot_skips_temporary_files() {
     fs::write(t.0.join(".lumen-tmp-1-1"), b"half").unwrap();
     assert_eq!(v.snapshot().unwrap().len(), 1);
 }
+
+#[test]
+fn write_if_and_remove_if_compare_the_bytes_first() {
+    let (t, v) = vault();
+    // None: only while nothing is there.
+    assert_eq!(v.write_if("notes/a.md", None, b"one").unwrap(), true);
+    assert_eq!(v.read("notes/a.md").unwrap(), b"one");
+    assert_eq!(v.write_if("notes/a.md", None, b"again").unwrap(), false);
+    // The bytes it was, then a swap.
+    assert_eq!(v.write_if("notes/a.md", Some(b"one"), b"two").unwrap(), true);
+    assert_eq!(v.read("notes/a.md").unwrap(), b"two");
+    // Another program changed it in between: nothing is written.
+    fs::write(t.0.join("notes/a.md"), b"edited elsewhere").unwrap();
+    assert_eq!(v.write_if("notes/a.md", Some(b"two"), b"three").unwrap(), false);
+    assert_eq!(v.read("notes/a.md").unwrap(), b"edited elsewhere");
+    // Expected, but gone.
+    assert_eq!(v.write_if("gone.md", Some(b"x"), b"y").unwrap(), false);
+    assert!(v.stat("gone.md").unwrap().is_none());
+    // A folder is there.
+    v.mkdir("dir").unwrap();
+    assert_eq!(v.write_if("dir", None, b"x").unwrap(), false);
+    assert_eq!(code(v.write_if("../out.md", None, b"x")), "EINVAL");
+    // remove_if
+    assert_eq!(v.remove_if("notes/a.md", b"two").unwrap(), false);
+    assert_eq!(v.read("notes/a.md").unwrap(), b"edited elsewhere");
+    assert_eq!(v.remove_if("notes/a.md", b"edited elsewhere").unwrap(), true);
+    assert!(v.stat("notes/a.md").unwrap().is_none());
+    assert_eq!(v.remove_if("notes/a.md", b"").unwrap(), false);
+    assert_eq!(v.remove_if("dir", b"").unwrap(), false);
+}

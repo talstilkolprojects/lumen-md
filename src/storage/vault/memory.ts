@@ -115,6 +115,33 @@ export function createMemoryBackend(opts: { id?: string; now?: () => number } = 
       emit({ type: "write", path: parts.join("/") });
     },
 
+    async writeIf(path, data, expect) {
+      const parts = vaultSegments(path);
+      if (!parts.length) throw new VaultError("EKIND", path, "Cannot write to the vault root");
+      const bytes = await toBytes(data);
+      const was = nodeAt(parts);
+      if (was?.kind === "directory") return false;
+      if (expect === null ? !!was : !was || (await (await import("./cas")).sha256Hex(was.data)) !== expect) return false;
+      // Nothing awaits from here to the swap: a write during the hash is seen (a write replaces the node).
+      if (nodeAt(parts) !== was) return false;
+      const name = parts[parts.length - 1];
+      const dir = dirAt(parts.slice(0, -1), true);
+      if (!dir) throw new VaultError("EKIND", path, `Cannot write "${path}": a file or folder of that name is in the way`);
+      dir.children.set(name, { kind: "file", data: bytes, mtime: now() });
+      emit({ type: "write", path: parts.join("/") });
+      return true;
+    },
+
+    async removeIf(path, expect) {
+      const parts = vaultSegments(path);
+      const was = parts.length ? nodeAt(parts) : null;
+      if (!was || was.kind !== "file" || (await (await import("./cas")).sha256Hex(was.data)) !== expect) return false;
+      if (nodeAt(parts) !== was) return false;
+      dirAt(parts.slice(0, -1), false)!.children.delete(parts[parts.length - 1]);
+      emit({ type: "delete", path: parts.join("/") });
+      return true;
+    },
+
     async mkdir(path) {
       const parts = vaultSegments(path);
       if (!parts.length) return;

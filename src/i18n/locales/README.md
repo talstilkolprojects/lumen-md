@@ -33,3 +33,14 @@ so `en` stays the only synchronous load (Hebrew moved here too — A7
 lever 4; `initLocale()` in main.tsx preloads the persisted locale before
 the first render). TS bundles would
 inflate the main JS chunk by ~80 KB per locale.
+
+## English of lazily loaded domains
+
+A domain that only loads on demand (the encrypted sync, for one) keeps its
+English in `src/i18n/lazy/<domain>.json` instead of the `en` block, so it
+ships with that domain's chunk and not the startup bundle. The domain calls
+`registerEnglish()` when it loads (see `src/sync/e2ee/strings.ts`). The
+other locales keep these keys in their files as usual, and
+`extract-i18n-keys.mjs`, the drift / values / placeholder tests and
+`print-missing-i18n-keys.mjs` read the lazy files together with the `en`
+block. A key lives in exactly one of the two places.

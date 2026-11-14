@@ -80,6 +80,7 @@ export default defineConfig({
           items: [
             { label: "Git sync", slug: "sync/git" },
             { label: "Cloud sync (Dropbox, Drive)", slug: "sync/cloud" },
+            { label: "Encrypted sync (E2EE)", slug: "sync/e2ee" },
             { label: "Read-mode publishing", slug: "sync/publish" },
           ],
         },
