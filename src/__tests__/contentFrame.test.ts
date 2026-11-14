@@ -34,10 +34,10 @@ describe("the app policy (plan W4.15 acceptance)", () => {
     expect(d.get("media-src")).toEqual(["'self'", "blob:"]);
   });
 
-  it.each(WEB_HOSTS)("%s: frame-src is 'self' alone (≤ 3 sources)", (host) => {
+  it.each(WEB_HOSTS)("%s: frame-src is 'self' and the content frame's own site (≤ 3 sources, W6.40)", (host) => {
     const frame = directives("app", host).get("frame-src")!;
     expect(frame.length).toBeLessThanOrEqual(3);
-    expect(frame).toEqual(["'self'"]);
+    expect(frame).toEqual(["'self'", "https://lumen-md-frame.pages.dev"]);
   });
 
   it("connect-src no longer lists hosts the app does not use", () => {
@@ -96,6 +96,27 @@ describe("the content frame's own policy", () => {
     expect(d.get("script-src")).toEqual(["'self'", "'nonce-lumen-livejs-runner'", "https://gist.github.com"]);
     expect(d.get("img-src")).toContain("https:");
     expect(d.get("media-src")).toContain("https:");
+  });
+
+  it("on the app's hosts it is sandboxed by its own header, so it never runs with the app's origin, even opened top-level (W6.40)", () => {
+    for (const host of ["cloudflare", "vercel", "netlify", "deploy-nginx"]) {
+      const sandbox = directives("content-frame", host).get("sandbox");
+      expect(sandbox, host).toEqual(["allow-scripts", "allow-popups", "allow-popups-to-escape-sandbox"]);
+    }
+    // <meta> can't carry sandbox (CSP3 ignores it there): the header does it.
+    expect(directives("content-frame", "meta").has("sandbox")).toBe(false);
+  });
+
+  it("its own site serves it unsandboxed, framed only by the apps, with no frame denial (W6.40)", () => {
+    const d = directives("content-frame", "content-frame-site");
+    expect(d.has("sandbox")).toBe(false);
+    expect(d.get("frame-ancestors")).toEqual(["https://lumen-md.vercel.app", "https://lumen-md.pages.dev", "tauri://localhost", "http://tauri.localhost", "capacitor://localhost", "https://localhost"]);
+    expect(d.get("connect-src")).toEqual(["'none'"]);
+    const file = read("deploy/content-frame/_headers");
+    // One block for the whole site: it holds only the frame's page (served at /) and its script.
+    expect(file.match(/^[^\s#].*$/gm)).toEqual(["/*"]);
+    expect(/Content-Security-Policy: (.+)/.exec(file)![1]).toBe(renderCsp(policy, "content-frame", "content-frame-site"));
+    expect(file).not.toContain("X-Frame-Options");
   });
 
   it("frames every provider the embed block produces, and nothing open", () => {

@@ -73,3 +73,33 @@ origin, offline included. Both hosts are in `connect-src` for that download
 only. An operator who accepts distributing webR under GPL-3.0 can serve it
 instead: `npm run webr:local` before `npm run build` stages it in
 `public/webr/`, and the R block then uses it without asking.
+
+## The content frame's own site
+
+Images, video and audio from other sites, embeds and Gists render, after you
+allow them, inside Lumen's **content frame**. Since plan W6.40 that frame runs
+on a separate site, `https://lumen-md-frame.pages.dev/`. Code in the frame
+can't read the app's storage (your notes, keys and settings) or its pages,
+even if a future bug let a page inject a script into the frame. The frame site
+holds only two static files. What the frame shows travels in the URL's
+`#fragment`, and browsers never send that to a server.
+
+A deployment chooses its frame site when it builds:
+
+```bash
+# the official frame site (two static files; any static host on another site works)
+node scripts/content-frame-site.mjs
+npx wrangler pages deploy dist-frame --project-name lumen-md-frame
+# the app, built to use it
+VITE_CONTENT_FRAME_URL=https://lumen-md-frame.pages.dev/ npm run build
+```
+
+If you host your own frame site, add its origin to `frame-src` in
+`security/policy.json` (route `app`) and the origins of your app to the
+frame site's `frame-ancestors` (host `content-frame-site`). Then run
+`npm run headers:write`.
+
+A build without `VITE_CONTENT_FRAME_URL` still shows images, video, audio
+and Gists in a frame that has no origin at all, so nothing in it can reach
+the app. Embeds such as YouTube or Vimeo need an origin of their own to play,
+so in that build they appear as a link that opens the player in a new tab.

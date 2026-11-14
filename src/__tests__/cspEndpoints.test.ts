@@ -16,6 +16,8 @@ import {
   devServerOrigins,
   cspEndpointsPlugin,
   NGINX_PLACEHOLDER,
+  addFrameSrc,
+  contentFrameOrigins,
 } from "../build/cspEndpoints";
 
 const ROOT = resolve(__dirname, "..", "..");
@@ -146,5 +148,25 @@ describe("the error tracker (plan 12.4)", () => {
     for (const file of ["index.html", "public/_headers", "deploy/vercel.base.json", "deploy/nginx.conf"]) {
       expect(readFileSync(resolve(ROOT, file), "utf8"), file).not.toMatch(/sentry|glitchtip/i);
     }
+  });
+});
+
+describe("the content frame's own site (plan W6.40)", () => {
+  it("takes the origin of an https: page URL, or http: on loopback; nothing else", () => {
+    expect(contentFrameOrigins({ VITE_CONTENT_FRAME_URL: "https://lumen-md-frame.pages.dev/" })).toEqual(["https://lumen-md-frame.pages.dev"]);
+    expect(contentFrameOrigins({ VITE_CONTENT_FRAME_URL: "http://127.0.0.1:5173/content-frame.html" })).toEqual(["http://127.0.0.1:5173"]);
+    for (const bad of ["http://frame.example.org/", "https://frame.example.org/?x=1", "https://frame.example.org/#x", "https://u:p@frame.example.org/", "not a url", ""]) {
+      expect(contentFrameOrigins({ VITE_CONTENT_FRAME_URL: bad }), bad).toEqual([]);
+    }
+  });
+
+  it("adds it to frame-src where the policy frames the app itself, and nowhere else", () => {
+    expect(addFrameSrc("default-src 'self'; frame-src 'self'", ["http://127.0.0.1:5173"])).toBe("default-src 'self'; frame-src 'self' http://127.0.0.1:5173");
+    const html = '<meta http-equiv="Content-Security-Policy" content="frame-src \'self\'; connect-src \'self\'">';
+    expect(extendIndexHtmlCsp(html, [], ["http://127.0.0.1:5173"])).toContain("frame-src 'self' http://127.0.0.1:5173;");
+    const headers = "/*\n  Content-Security-Policy: frame-src 'self'\n/content-frame.html\n  Content-Security-Policy: frame-src https://www.youtube.com\n";
+    const out = extendHeadersFileCsp(headers, [], ["http://127.0.0.1:5173"]);
+    expect(out).toContain("frame-src 'self' http://127.0.0.1:5173\n");
+    expect(out).toContain("frame-src https://www.youtube.com\n");
   });
 });

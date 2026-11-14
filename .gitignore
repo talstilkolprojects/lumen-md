@@ -138,3 +138,4 @@ ci-docker-out/
 # Buildkite job output (plan W7.21): shard plans, blob reports, receipts — build artifacts
 /ci-out/
 /.vitest/
+dist-frame/

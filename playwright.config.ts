@@ -93,7 +93,11 @@ export default defineConfig({
         // webR is not part of the build (GPL-3.0, plan W1.34): the live-r specs
         // run against this deployment's own copy (`webr:local`), and the
         // download offer is tested with /webr/ answered 404.
-        command: "npm run webr:local && npm run dev",
+        // The content frame on its own origin (plan W6.40): the same dev
+        // server by its other loopback name, so e2e frames it cross-origin
+        // as production does (src/lib/contentFrame.ts).
+        command: "npm run webr:local && npm run dev -- --host 127.0.0.1",
+        env: { VITE_CONTENT_FRAME_URL: `http://127.0.0.1:${PORT}/content-frame.html` },
         url: BASE_URL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

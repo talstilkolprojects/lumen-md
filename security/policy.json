@@ -89,7 +89,8 @@
           "blob:"
         ],
         "frame-src": [
-          "'self'"
+          "'self'",
+          "https://lumen-md-frame.pages.dev"
         ],
         "object-src": [
           "'none'"
@@ -209,7 +210,7 @@
     "content-frame": {
       "kind": "document",
       "frameable": true,
-      "why": "Content frame (plan W4.15): the same-origin page in which the app shows what other sites serve into a note, after the user allowed it: an image, a video or audio file, a provider embed (the embed block, a raw <iframe>) or a GitHub Gist. It keeps https: in img-src / media-src and the embed providers in frame-src out of the app's own policy. The app frames it (src/lib/contentFrame.ts) with sandbox=\"allow-scripts\" (opaque origin) for images, media and Gists, and with the providers' old sandbox (allow-same-origin included, which the providers' own frames inherit and need) for embeds; its script (public/content-frame.js) only builds elements from the request in its #fragment — no HTML sink, no network of its own (connect-src 'none'). frame-src: the providers the embed block knows (src/plugins/EmbedBlock.tsx). script-src https://gist.github.com and style-src https://github.githubassets.com: a Gist embed is a script that document.write()s the gist and its stylesheet; the page writes it only in an opaque-origin frame. The nonce is the build's one public nonce, for WebKit, which does not match 'self' in an opaque-origin frame (as the runner pages).",
+      "why": "Content frame (plan W4.15, W6.40): the page in which the app shows what other sites serve into a note, after the user allowed it: an image, a video or audio file, a provider embed (the embed block, a raw <iframe>) or a GitHub Gist. It keeps https: in img-src / media-src and the embed providers in frame-src out of the app's own policy. The app frames it (src/lib/contentFrame.ts) with sandbox=\"allow-scripts\" (opaque origin) for images, media and Gists, and with the providers' old sandbox (allow-same-origin included, which the providers' own frames inherit and need) for embeds; its script (public/content-frame.js) only builds elements from the request in its #fragment — no HTML sink, no network of its own (connect-src 'none'). frame-src: the providers the embed block knows (src/plugins/EmbedBlock.tsx). script-src https://gist.github.com and style-src https://github.githubassets.com: a Gist embed is a script that document.write()s the gist and its stylesheet; the page writes it only in an opaque-origin frame. The nonce is the build's one public nonce, for WebKit, which does not match 'self' in an opaque-origin frame (as the runner pages). Plan W6.40 (review E52): the app frames it from its own site, https://lumen-md-frame.pages.dev/ (VITE_CONTENT_FRAME_URL; host content-frame-site, deploy/content-frame/_headers), where an embed's allow-same-origin is the frame site's origin, never the app's. On the app's hosts the page is the fallback for a build without a frame site: `sandbox` makes it opaque however it is opened, a top-level visit included, so nothing in it ever runs with the app's origin; embeds are a link there.",
       "samples": [
         "/content-frame.html"
       ],
@@ -270,6 +271,11 @@
         ],
         "form-action": [
           "'none'"
+        ],
+        "sandbox": [
+          "allow-scripts",
+          "allow-popups",
+          "allow-popups-to-escape-sandbox"
         ]
       }
     },
@@ -486,6 +492,13 @@
             "trusted-types"
           ],
           "why": "Trusted Types are enforced by the production response headers only; the dev server, Tauri and Capacitor webviews have not been verified under them."
+        },
+        {
+          "routes": "*",
+          "omit": [
+            "sandbox"
+          ],
+          "why": "Ignored in <meta> (CSP3). The header sandboxes the content frame on the app's hosts (plan W6.40)."
         }
       ]
     },
@@ -556,12 +569,48 @@
           "why": "Tauri sends this one policy with every .html asset, /content-frame.html included (it has no per-route header), so the providers that frame embeds need are here. The app's own windows never frame them: the embed block frames /content-frame.html. Images and media from other sites are not loaded on desktop (no https: in img-src / media-src): a per-user approval cannot widen a policy compiled into the app; Gists stay a link (no gist.github.com in script-src)."
         }
       ]
+    },
+    "content-frame-site": {
+      "why": "deploy/content-frame/_headers: the content frame's own static site (plan W6.40), a Cloudflare Pages project by Direct Upload (scripts/content-frame-site.mjs) at https://lumen-md-frame.pages.dev/. It holds only the frame's page, served at / (Cloudflare Pages redirects /x.html to /x), and its script, and sees no request's fragment.",
+      "csp": [
+        {
+          "routes": [
+            "content-frame"
+          ],
+          "omit": [
+            "sandbox"
+          ],
+          "remove": {
+            "frame-ancestors": [
+              "'self'"
+            ]
+          },
+          "add": {
+            "frame-ancestors": [
+              "https://lumen-md.vercel.app",
+              "https://lumen-md.pages.dev",
+              "tauri://localhost",
+              "http://tauri.localhost",
+              "capacitor://localhost",
+              "https://localhost"
+            ]
+          },
+          "why": "The web app on its two hosts, the desktop app (macOS/Linux, Windows) and the mobile app (iOS, Android) may frame it. Its origin is not the app's, so it needs no sandbox here: an embed's player keeps allow-same-origin, which is the frame site's origin."
+        }
+      ]
     }
   },
   "sources": {
     "public/_headers": {
       "format": "headers-file",
       "host": "cloudflare"
+    },
+    "deploy/content-frame/_headers": {
+      "format": "headers-file",
+      "host": "content-frame-site",
+      "only": [
+        "content-frame"
+      ]
     },
     "deploy/vercel.base.json": {
       "format": "vercel",
