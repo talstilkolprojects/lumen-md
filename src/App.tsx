@@ -522,6 +522,12 @@ export default function App() {
     return () => window.removeEventListener("lumen-open-file", onOpen);
   }, [handleOpenFromWorkspace]);
 
+  // Automations (W5.24): a lazy chunk that starts only when the vault has a rules file.
+  useEffect(() => {
+    const id = window.setTimeout(() => void import("./automations/app").then((m) => m.startAutomationsIfConfigured()).catch(() => undefined), 3000);
+    return () => window.clearTimeout(id);
+  }, []);
+
   // Today's daily note (plan 4.12): the command and ⌥⌘D. The daily-note code is its own chunk.
   useEffect(() => {
     const onToday = () => {

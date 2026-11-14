@@ -374,6 +374,36 @@
       "vars": []
     },
     {
+      "key": "cmd.automations.dryRun",
+      "en": "Automations: dry run on this note",
+      "vars": []
+    },
+    {
+      "key": "cmd.automations.dryRun.hint",
+      "en": "What the rules would change for this note — nothing is written",
+      "vars": []
+    },
+    {
+      "key": "cmd.automations.new",
+      "en": "Automations: new rule (when… then…)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.automations.new.hint",
+      "en": "A rule in a few choices: note created, tag added, property changed or daily → move, tag, template or a line in the daily note",
+      "vars": []
+    },
+    {
+      "key": "cmd.automations.undo",
+      "en": "Automations: undo the last run",
+      "vars": []
+    },
+    {
+      "key": "cmd.automations.undo.hint",
+      "en": "Puts back every file the last automation run changed, byte for byte",
+      "vars": []
+    },
+    {
       "key": "cmd.billing.manage",
       "en": "Billing: Manage subscription",
       "vars": []
