@@ -193,6 +193,29 @@ export function ocrImage(image: Blob | HTMLCanvasElement | OffscreenCanvas): Pro
   return job;
 }
 
+/**
+ * Read only these boxes of an image (plan W7.2: the marked lines of a
+ * photographed page), each with the Hebrew + English worker. Same queue and
+ * idle shutdown as ocrImage; nothing leaves the device.
+ */
+export function ocrBoxes(image: Blob | HTMLCanvasElement | OffscreenCanvas, boxes: ReadonlyArray<Box>): Promise<Array<{ text: string; confidence: number }>> {
+  const job = queue.then(async () => {
+    const w = await getWorker();
+    try {
+      const out: Array<{ text: string; confidence: number }> = [];
+      for (const b of boxes) {
+        const r = await w.recognize(image as Blob, { rectangle: rect(b) });
+        out.push({ text: cleanOcrText(r.data.text), confidence: r.data.confidence });
+      }
+      return out;
+    } finally {
+      scheduleIdle();
+    }
+  });
+  queue = job.catch(() => undefined);
+  return job;
+}
+
 /** Collapse OCR noise: trailing spaces, runs of blank lines, lone symbols. */
 export function cleanOcrText(text: string): string {
   return text

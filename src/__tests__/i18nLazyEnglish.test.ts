@@ -160,6 +160,8 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "relatedPanel.json": { module: "ui/relatedPanelStrings.ts", users: ["ui/RelatedPanel.tsx"], prefixes: ["related."] },
   "tasksBlock.json": { module: "plugins/tasksBlockStrings.ts", users: ["plugins/TasksBlock.tsx"], prefixes: ["tasks.count", "tasks.error.date", "tasks.error.query", "tasks.error.regex", "tasks.group.done", "tasks.group.none", "tasks.group.todo"] },
   "tts.json": { module: "ai/ttsStrings.ts", users: ["ai/tts.ts"], prefixes: ["tts.", "toast.tts."] },
+  // Scanning printed highlights (plan W7.2): the dialog the highlights panel opens with a dynamic import.
+  "scanHighlights.json": { module: "highlights/scan/strings.ts", users: ["highlights/scan/ScanHighlights.tsx"], prefixes: ["hlscan."] },
 };
 
 function sources(dir: string): string[] {

@@ -9,7 +9,7 @@
 import "./strings";
 import "../epub/strings";
 import "../pdf/strings";
-import { useEffect, useMemo, useState, type DragEvent } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type DragEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { t } from "../i18n";
 import { showAiToast } from "../ui/AiToast";
@@ -21,6 +21,8 @@ import { explainError } from "../lib/userError";
 import { EmptyState, runCommand } from "../ui/EmptyState";
 
 const SHOWN = 200;
+// Scan highlights from a printed page (W7.2): the dialog, detection and OCR load on the first click.
+const ScanHighlights = lazy(() => import("./scan/ScanHighlights"));
 const baseName = (p: string) => p.split("/").pop() ?? p;
 
 export function whereLabel(it: HighlightItem): string {
@@ -54,6 +56,7 @@ export function openHighlight(it: HighlightItem): void {
 
 export function HighlightsPanel({ onClose, load = loadIndex }: { onClose: () => void; load?: () => Promise<HighlightItem[]> }) {
   const [items, setItems] = useState<HighlightItem[] | null>(null);
+  const [scanning, setScanning] = useState(false);
   const [text, setText] = useState("");
   const [kind, setKind] = useState<HighlightKind | "">("");
   const [source, setSource] = useState("");
@@ -117,6 +120,9 @@ export function HighlightsPanel({ onClose, load = loadIndex }: { onClose: () => 
           {ms !== null && items ? ` · ${ms < 1 ? "<1" : Math.round(ms)} ms` : ""}
         </span>
         <span className="hl-spacer" />
+        <button type="button" onClick={() => setScanning(true)} data-testid="highlights-scan">
+          {t("hl.scan")}
+        </button>
         <button type="button" onClick={() => void exportResults()} disabled={!results.length} data-testid="highlights-export">
           {t("hl.export")}
         </button>
@@ -204,6 +210,16 @@ export function HighlightsPanel({ onClose, load = loadIndex }: { onClose: () => 
           </li>
         )}
       </ul>
+      {scanning && (
+        <Suspense fallback={null}>
+          <ScanHighlights
+            onClose={() => {
+              setScanning(false);
+              void load().then(setItems);
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
