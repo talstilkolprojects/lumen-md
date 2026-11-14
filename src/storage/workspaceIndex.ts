@@ -37,7 +37,7 @@ import {
   type WorkspaceEntry,
   type WorkspaceNode,
 } from "./workspace";
-import { getVaultBackend, vaultEncryptionReady, watchVault, type VaultEvent } from "./vault";
+import { getVaultBackend, refreshVaultEncryption, vaultEncryptionReady, watchVault, type VaultEvent } from "./vault";
 import type { BacklinkHit, IndexInput, IndexStats, SearchHit } from "./vaultIndexCore";
 import type { IndexEngine } from "./vaultIndexProtocol";
 import { log } from "../lib/logger";
@@ -86,6 +86,10 @@ const cache = {
   listing: null as { generation: number; tree: WorkspaceNode[] } | null,
   /** Review 12.11 S1: the index holds notes of an encrypted vault, so it is never saved in the clear. */
   filledEncrypted: false,
+  /** Review 14.11 T1: the vault (backend id) the index was filled from; another vault's index is never saved or answered. */
+  filledVault: null as string | null,
+  /** Review 14.11 T2: the last check of a trusted snapshot failed, so the next open waits for the listing. */
+  distrust: false,
   /** W6.36: the check of a trusted snapshot against the vault's listing, while it runs. */
   verify: null as Promise<void> | null,
 };
@@ -96,6 +100,50 @@ let epoch = 0;
 /** Until the check of the snapshot the index opened from is done (at once when there is none). */
 async function verified(): Promise<void> {
   while (cache.verify) await cache.verify;
+}
+
+/**
+ * For every query that answers from the notes (review 14.11 T2): the index
+ * is open and checked against the vault. A failed check drops the trusted
+ * notes, and the build that follows waits for the listing, so a query either
+ * answers from the vault as it is or fails; never from an unchecked snapshot.
+ */
+async function checkedIndex(): Promise<void> {
+  await ensureIndex();
+  await verified();
+  if (!cache.builtAt) await ensureIndex();
+}
+
+/**
+ * Forget everything the index holds, on this thread and in the worker:
+ * on lock (T4), on a vault switch (T1) and after a failed check (T2). The
+ * next use builds again, from the sealed snapshot when there is one.
+ */
+function dropIndex(): void {
+  epoch++;
+  cache.byPath = new Map();
+  cache.builtAt = 0;
+  cache.checkedAt = 0;
+  cache.verify = null;
+  cache.dirty.clear();
+  cache.ops = [];
+  cache.stale = false;
+  cache.listing = null;
+  cache.filledEncrypted = false;
+  cache.filledVault = null;
+  cache.version++;
+  if (snapshotTimer) clearTimeout(snapshotTimer);
+  snapshotTimer = null;
+  snapshotGen++;
+  void engine?.then((e) => e.clear()).catch(() => undefined);
+}
+
+/** Resolves when the encrypted vault is unlocked (./vault/encrypted/session UNLOCKED_EVENT). */
+function untilUnlocked(): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") return resolve();
+    window.addEventListener("lumen-vault-unlocked", () => resolve(), { once: true });
+  });
 }
 
 /**
@@ -273,8 +321,17 @@ async function snapshotMode(): Promise<{ keys?: SnapshotKeys } | null> {
   try {
     const backend = getVaultBackend();
     if (!backend.available()) return null;
-    const state = await vaultEncryptionReady();
-    if (state === "none") return cache.filledEncrypted ? null : {};
+    // T1: only an index filled from this very vault is this vault's snapshot (a dropped index has none).
+    if (cache.filledVault !== backend.id) return null;
+    let state = await vaultEncryptionReady();
+    if (state === "none") {
+      if (cache.filledEncrypted) return null;
+      // T3: before anything is written in the clear, look for the encryption header again: another tab may have
+      // turned encryption on, and this tab's gate would still say "plain".
+      refreshVaultEncryption();
+      state = await vaultEncryptionReady();
+      if (state === "none") return {};
+    }
     if (state !== "unlocked") return null;
     const { restSnapshotKeys } = await import("./vault/restStore");
     const keys = restSnapshotKeys();
@@ -294,6 +351,21 @@ async function fillingEncrypted(): Promise<boolean> {
   }
 }
 
+/**
+ * Save the snapshot in the mode the vault calls for now. T6: a plain save
+ * that lands after encryption was turned on (it was already queued in the
+ * worker when the conversion dropped the snapshot) is dropped again.
+ */
+async function saveSnapshotNow(): Promise<void> {
+  const mode = await snapshotMode();
+  if (!mode) return;
+  await withEngine((eng) => eng.saveSnapshot(snapshotVault(), mode.keys));
+  if (!mode.keys) {
+    const now = await snapshotMode();
+    if (!now || now.keys) await dropSnapshot();
+  }
+}
+
 /** Write the snapshot a little after the last change, while idle (never on the typing path). */
 function scheduleSnapshot(): void {
   if (snapshotTimer) clearTimeout(snapshotTimer);
@@ -302,9 +374,7 @@ function scheduleSnapshot(): void {
     snapshotTimer = null;
     scheduleIdle(() => {
       if (gen !== snapshotGen) return;
-      void snapshotMode()
-        .then((mode) => (mode ? withEngine((eng) => eng.saveSnapshot(snapshotVault(), mode.keys)) : undefined))
-        .catch(() => {});
+      void saveSnapshotNow().catch(() => {});
     });
   }, SNAPSHOT_DELAY_MS);
 }
@@ -349,6 +419,9 @@ async function fillEngine(eng: IndexEngine, entries: { path: string; name: strin
 async function build(trust = false): Promise<void> {
   if (!isOPFSAvailable()) return;
   await verified();
+  // T4: a locked vault is not read; the open continues on unlock (from its sealed snapshot).
+  if ((await vaultEncryptionReady().catch(() => "none")) === "locked") await untilUnlocked();
+  const at = epoch;
   // Clear before reading: a change announced while the build runs (it may
   // have read that file already) must survive for the next ensureIndex.
   cache.dirty.clear();
@@ -359,6 +432,8 @@ async function build(trust = false): Promise<void> {
   await snapshotReset;
   // Fixed when the index is filled (S1); it only ever turns on until the next build.
   cache.filledEncrypted = await fillingEncrypted();
+  cache.filledVault = snapshotVault();
+  if (cache.distrust) trust = false;
   const mode = await snapshotMode();
   const restored = trust && mode
     ? await withEngine(async (eng) => {
@@ -369,6 +444,7 @@ async function build(trust = false): Promise<void> {
   // The listing starts once the snapshot is open (W6.36): the open does not wait for it, nor share the CPU with it.
   const listing = listNotes(false);
   listing.catch(() => undefined);
+  if (at !== epoch) return;
   if (restored.length) {
     cache.byPath = new Map(restored.map((r) => [r.path, r] as const));
     snapshotCounters.fromSnapshot = restored.length;
@@ -389,6 +465,8 @@ async function build(trust = false): Promise<void> {
     await eng.clear();
     for (const [path, f] of await fillEngine(eng, list)) next.set(path, f);
   });
+  if (at !== epoch) return;
+  cache.distrust = false;
   cache.byPath = next;
   scheduleSnapshot();
   cache.builtAt = cache.checkedAt = Date.now();
@@ -419,8 +497,9 @@ async function verifySnapshot(listing: Promise<WorkspaceEntry[]>, body: Promise<
   } catch (err) {
     if (at !== epoch) return;
     log.warn("vault index: checking the snapshot against the vault failed; it is checked again on next use", err);
-    // Due now: the next ensureIndex lists the vault again.
-    cache.checkedAt = 0;
+    // T2: fail closed. The trusted notes go, and the next open waits for the listing.
+    dropIndex();
+    cache.distrust = true;
   }
 }
 
@@ -501,6 +580,8 @@ async function refresh(): Promise<void> {
 /** Read `toRead`, then send the removes, moves and new texts to the index, in order. Nothing when the index was reset meanwhile. */
 async function applyChanges(indexOps: IndexOp[], toRead: Map<string, ToRead>, at: number): Promise<void> {
   const toWrite: ReadNote[] = [];
+  // T1: notes read from an encrypted vault (or one that can't tell) make this index one that is never saved in the clear.
+  if (toRead.size && !cache.filledEncrypted && (await fillingEncrypted())) cache.filledEncrypted = true;
   await mapLimit([...toRead.values()], 16, async (e) => {
     const r = await indexFile(e);
     if (at !== epoch) return;
@@ -536,6 +617,8 @@ function pendingChanges(): boolean {
 
 export async function ensureIndex(force = false): Promise<void> {
   if (!isOPFSAvailable()) return;
+  // T1: another vault is active now; this index is not its index.
+  if (cache.builtAt && cache.filledVault !== snapshotVault()) dropIndex();
   // Wait for whatever runs now, whole (a build and its follow-up rounds):
   // a second caller must not query the worker between two of its steps.
   let waited = false;
@@ -587,7 +670,11 @@ function attachInvalidator() {
   if (listenerAttached || typeof window === "undefined") return;
   listenerAttached = true;
   watchVault(onVaultEvent);
+  // T4: locking forgets the index, here and in the worker (./vault/encrypted/session LOCKED_EVENT).
+  window.addEventListener("lumen-vault-locked", () => dropIndex());
   window.addEventListener(WORKSPACE_CHANGED, (e) => {
+    // T1: a vault switch announces a structural change; another vault's notes are dropped at once.
+    if (cache.builtAt && cache.filledVault !== snapshotVault()) dropIndex();
     const c = changeOf(e);
     if (c.kind === "content" && c.paths) {
       for (const p of c.paths) cache.dirty.add(p);
@@ -623,8 +710,7 @@ export async function workspaceTree(): Promise<WorkspaceNode[]> {
 
 /** Find files whose wiki-links point at the given target (path or basename). */
 export async function findBacklinks(targetPath: string): Promise<BacklinkHit[]> {
-  await ensureIndex();
-  await verified();
+  await checkedIndex();
   if (!cache.byPath.size) return [];
   return withEngine((e) => e.backlinks(targetPath));
 }
@@ -635,8 +721,7 @@ export async function searchWorkspace(
   /** `filter`: only these paths — applied before `limit`. */
   opts: { limit?: number; filter?: (path: string) => boolean } = {},
 ): Promise<SearchHit[]> {
-  await ensureIndex();
-  await verified();
+  await checkedIndex();
   if (!cache.byPath.size) return [];
   const filter = opts.filter;
   // A function cannot cross into the worker: send the paths it allows.
@@ -650,7 +735,7 @@ export async function searchWorkspace(
  * each note's summary with its `content`. All notes when `paths` is omitted.
  */
 export async function indexedNotes(paths?: readonly string[]): Promise<Array<IndexedFile & { content: string }>> {
-  await verified();
+  await checkedIndex();
   if (!cache.byPath.size) return [];
   const want = paths ? paths.filter((p) => cache.byPath.has(p)) : undefined;
   if (want && !want.length) return [];
@@ -670,8 +755,7 @@ export async function indexedNoteText(path: string): Promise<string | null> {
 
 /** Notes related to a paragraph (plan W2.2), ranked by the index's BM25 in the index worker. */
 export async function relatedInIndex(query: import("./vaultIndexProtocol").RelatedQuery): Promise<import("../related/related").RelatedHit[]> {
-  await ensureIndex();
-  await verified();
+  await checkedIndex();
   return withEngine((e) => e.related(query));
 }
 
@@ -680,8 +764,7 @@ export async function relatedInIndex(query: import("./vaultIndexProtocol").Relat
  * index worker. Dates in the query are relative to the user's local today.
  */
 export async function queryVaultTasks(query: string, today = new Date()): Promise<import("../tasks/taskQuery").QueryResult> {
-  await ensureIndex();
-  await verified();
+  await checkedIndex();
   const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   return withEngine((e) => e.tasks(query, iso));
 }
@@ -708,8 +791,7 @@ export async function indexStats(): Promise<IndexStats & { engine: IndexEngine["
 
 /** Test hook (W6.36): write the snapshot now, as the idle timer would. */
 export async function __saveSnapshotNow(): Promise<void> {
-  const mode = await snapshotMode();
-  if (mode) await withEngine((eng) => eng.saveSnapshot(snapshotVault(), mode.keys));
+  await saveSnapshotNow();
 }
 
 /**
@@ -728,6 +810,8 @@ export function __resetWorkspaceIndex(engineFactory?: () => IndexEngine, opts: {
   cache.listing = null;
   cache.verify = null;
   cache.filledEncrypted = false;
+  cache.filledVault = null;
+  cache.distrust = false;
   epoch++;
   void engine?.then((e) => e.dispose(), () => undefined);
   engine = null;
