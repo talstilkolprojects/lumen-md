@@ -152,6 +152,7 @@
   "base.saveSort": "Сохранить эту сортировку в {file}",
   "base.saved": "Сохранено в {file}",
   "base.timeline.empty": "Ни у одного элемента нет даты в {property}",
+  "benyehuda.cancel": "Отмена",
   "benyehuda.confirm": "Загрузить из архива на GitHub? Из заметок ничего не отправляется.",
   "benyehuda.copied": "Цитата скопирована",
   "benyehuda.downloadFirst": "Текста нет. Сначала загрузите произведения автора {author}.",

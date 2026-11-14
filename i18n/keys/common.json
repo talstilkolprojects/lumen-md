@@ -881,6 +881,11 @@
       ]
     },
     {
+      "key": "benyehuda.cancel",
+      "en": "Cancel",
+      "vars": []
+    },
+    {
       "key": "benyehuda.confirm",
       "en": "Download from the project's public-domain dump on GitHub? Nothing from your notes is sent.",
       "vars": []

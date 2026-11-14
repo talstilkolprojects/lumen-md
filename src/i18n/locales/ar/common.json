@@ -152,6 +152,7 @@
   "base.saveSort": "حفظ هذا الترتيب في {file}",
   "base.saved": "حُفظ في {file}",
   "base.timeline.empty": "لا يوجد عنصر له تاريخ في {property}",
+  "benyehuda.cancel": "إلغاء",
   "benyehuda.confirm": "التنزيل من أرشيف المشروع على GitHub؟ لا يُرسل شيء من ملاحظاتك.",
   "benyehuda.copied": "نُسخ الاقتباس",
   "benyehuda.downloadFirst": "نص هذا العمل غير موجود. نزّل أعمال {author} أولًا.",

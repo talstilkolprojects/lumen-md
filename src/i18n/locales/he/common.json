@@ -152,6 +152,7 @@
   "base.saveSort": "שמירת המיון הזה ב-{file}",
   "base.saved": "נשמר ב-{file}",
   "base.timeline.empty": "לאף פריט אין תאריך ב-{property}",
+  "benyehuda.cancel": "ביטול",
   "benyehuda.confirm": "להוריד מה-dump של היצירות שברשות הציבור ב-GitHub? שום דבר מהפתקים שלך לא נשלח.",
   "benyehuda.copied": "הציטוט הועתק: הדבק אותו בכל פתק",
   "benyehuda.downloadFirst": "הטקסט של היצירה לא נמצא במכשיר. הורד קודם את היצירות של {author}.",

@@ -13,5 +13,6 @@
   "benyehuda.downloadFirst": "This work's text is not on this device. Download the works of {author} first.",
   "benyehuda.selectInWork": "Open a work from the library and select a passage first.",
   "benyehuda.copied": "Quote copied: paste it into any note",
-  "benyehuda.highlighted": "Highlighted in {path}"
+  "benyehuda.highlighted": "Highlighted in {path}",
+  "benyehuda.cancel": "Cancel"
 }

@@ -58,9 +58,18 @@ export function buildBenYehudaCommands(ctx: CommandContext): Command[] {
           const pick = await uiSelect({ message: t("benyehuda.pickAuthor", { count: authors.length }), choices: authors.slice(0, 300).map((a) => ({ value: a.name, label: `${a.name} (${a.count})` })) });
           if (!pick) return;
           const toast = useToastStore.getState();
-          const r = await b.download([pick], confirm, (done, total) => {
-            if (done === total || done % 25 === 0) toast.push({ kind: "info", title: t("benyehuda.progress", { done, total }) });
-          });
+          // Cancellable (review 20, RR20-5): every progress toast offers Cancel.
+          const cancel = new AbortController();
+          const action = { label: t("benyehuda.cancel"), run: () => cancel.abort() };
+          toast.push({ kind: "info", title: t("benyehuda.progress", { done: 0, total: "…" }), action, ttlMs: 30_000 });
+          const r = await b.download(
+            [pick],
+            confirm,
+            (done, total) => {
+              if (done < total && done % 25 === 0) toast.push({ kind: "info", title: t("benyehuda.progress", { done, total }), action, ttlMs: 30_000 });
+            },
+            cancel.signal,
+          );
           if (!r) return;
           await b.library(true);
           toast.push({ kind: "success", title: t("benyehuda.downloaded", { count: r.works, author: pick }) });

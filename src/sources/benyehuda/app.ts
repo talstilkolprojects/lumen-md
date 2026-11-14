@@ -39,8 +39,8 @@ export function getCatalogue(confirm: () => Promise<boolean>): Promise<Work[] | 
   return withGate(gate(confirm), (f) => catalogue({ store: vault, fetch: f }));
 }
 
-export async function download(authors: string[], confirm: () => Promise<boolean>, onProgress: (done: number, total: number) => void): Promise<{ works: number; skipped: number } | null> {
-  const r = await withGate(gate(confirm), (f) => downloadAuthors(authors, { store: vault, fetch: f, onProgress }));
+export async function download(authors: string[], confirm: () => Promise<boolean>, onProgress: (done: number, total: number) => void, signal?: AbortSignal): Promise<{ works: number; skipped: number } | null> {
+  const r = await withGate(gate(confirm), (f) => downloadAuthors(authors, { store: vault, fetch: f, onProgress, signal }));
   window.dispatchEvent(new Event("lumen-workspace-changed"));
   return r;
 }

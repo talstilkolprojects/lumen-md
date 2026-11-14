@@ -152,6 +152,7 @@
   "base.saveSort": "Enregistrer ce tri dans {file}",
   "base.saved": "Enregistré dans {file}",
   "base.timeline.empty": "Aucun élément n'a de date dans {property}",
+  "benyehuda.cancel": "Annuler",
   "benyehuda.confirm": "Télécharger depuis l’archive du domaine public sur GitHub ? Rien de vos notes n’est envoyé.",
   "benyehuda.copied": "Citation copiée",
   "benyehuda.downloadFirst": "Le texte manque. Téléchargez d’abord les œuvres de {author}.",

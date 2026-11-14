@@ -152,6 +152,7 @@
   "base.saveSort": "将此排序保存到 {file}",
   "base.saved": "已保存到 {file}",
   "base.timeline.empty": "没有项目在 {property} 中有日期",
+  "benyehuda.cancel": "取消",
   "benyehuda.confirm": "从 GitHub 上的公有领域存档下载？不会发送您的笔记。",
   "benyehuda.copied": "引文已复制",
   "benyehuda.downloadFirst": "正文不在本设备上。请先下载 {author} 的作品。",
