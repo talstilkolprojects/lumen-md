@@ -131,4 +131,40 @@ describe("scripts/ci-doctor.mjs (fake gh)", () => {
     expect(by["e2e/old.spec.ts"].verdict).toBe("unknown");
     expect(by["e2e/old.spec.ts"].why).toMatch(/test-setup file differs there/);
   });
+
+  it("--around takes peers from a time window around the failing run, nearest first (plan 0.9: #189 vs #191)", () => {
+    // The newest 60 runs no longer hold the peer that ran the same test; the window does.
+    const oldPeer = run(300, "CI", 11, "success", S2, "feat/y", "2026-10-18T05:30:00Z");
+    const farPeer = run(301, "CI", 11, "success", S2, "feat/z", "2026-10-19T20:00:00Z");
+    const routes = join(dir, "routes-around.json");
+    const windowRe = esc("repos/o/r/actions/workflows/11/runs?status=completed&created=") + esc(encodeURIComponent("2026-10-16T05:00:00Z..2026-10-20T05:00:00Z"));
+    writeFileSync(
+      routes,
+      JSON.stringify([
+        [`^${windowRe}`, { workflow_runs: [farPeer, ciRun, oldPeer] }],
+        [`^${esc("repos/o/r/actions/workflows/11/runs?status=completed")}`, { workflow_runs: [] }],
+        ["^repos/o/r/actions/runs/30[01]/jobs", { jobs: [job(3000, "success")] }],
+        ["^repos/o/r/check-runs/3000/annotations", []],
+        ...ROUTES,
+      ]),
+    );
+    const r = spawnSync(process.execPath, [cli, "--around", "100", "--peers", "1", "--json"], {
+      encoding: "utf8",
+      env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, GH_REPO: "o/r", FAKE_GH_ROUTES: routes },
+    });
+    expect(r.stderr).toBe("");
+    const out = JSON.parse(r.stdout);
+    expect(out.run.id).toBe(100);
+    expect(out.peers).toBe(1);
+    expect(out.notes.some((n: string) => /peers: runs of this workflow from 2026-10-16 05:00 UTC to 2026-10-20 05:00 UTC/.test(n))).toBe(true);
+    // The old e2e test passed in the nearest run of the window.
+    expect(out.failures.find((f: Failure) => f.path === "e2e/old.spec.ts").verdict).toBe("flake?");
+    const plain = doctor("--run", "100");
+    expect(plain.notes.some((n: string) => n.startsWith("peers:"))).toBe(false);
+  });
+
+  it("--window must be positive", () => {
+    const r = spawnSync(process.execPath, [cli, "--around", "100", "--window", "0"], { encoding: "utf8", env: { ...process.env, GH_REPO: "o/r" } });
+    expect(r.status).toBe(2);
+  });
 });

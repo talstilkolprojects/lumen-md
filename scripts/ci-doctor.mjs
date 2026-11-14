@@ -22,6 +22,15 @@
  *   node scripts/ci-doctor.mjs 190 --peers 30 --max-distance 50 --json
  *   node scripts/ci-doctor.mjs --run 39085293928   # one particular run, not the latest
  *   node scripts/ci-doctor.mjs 190 --workflow tauri.yml
+ *   node scripts/ci-doctor.mjs --around 39082608120   # that run, peers from the hours around it
+ *   node scripts/ci-doctor.mjs 189 --around latest --window 24
+ *
+ * By default the peers are the newest ~60 completed runs of the workflow,
+ * which says nothing about an old failure: weeks later, the runs that ran
+ * the same code are no longer among them. --around takes the peers from a
+ * time window around the failing run instead (±--window hours, default 48),
+ * every page of them, nearest in time first. `--around <run id>` also
+ * diagnoses that run; `--around latest` keeps the branch's latest run.
  *
  * Exit codes: 0 done (with --json: no real failure), 1 a real failure (--json)
  * or a lookup error, 2 usage, 3 the diagnosed run's jobs could not be read.
@@ -36,7 +45,7 @@ import { execFile, execFileSync } from "node:child_process";
 import { promisify } from "node:util";
 import { classify, failureItems, isFailed, nextAction, observe, parseAnnotations, sameTestSetup } from "./lib/ci-doctor.mjs";
 
-const usage = "usage: node scripts/ci-doctor.mjs <branch|pr-number> [--run ID] [--workflow ci.yml] [--peers N] [--max-distance N] [--json]";
+const usage = "usage: node scripts/ci-doctor.mjs <branch|pr-number> [--run ID] [--around RUN_ID|latest] [--window HOURS] [--workflow ci.yml] [--peers N] [--max-distance N] [--json]";
 const argv = process.argv.slice(2);
 let target = null;
 let peersWanted = 20;
@@ -44,6 +53,8 @@ let maxDistance = 30;
 let asJson = false;
 let runId = null;
 let workflow = "ci.yml";
+let around = false;
+let windowHours = 48;
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
   if (a === "--peers") peersWanted = Number(argv[++i]);
@@ -51,13 +62,18 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === "--json") asJson = true;
   else if (a === "--run") runId = argv[++i];
   else if (a === "--workflow") workflow = argv[++i];
+  else if (a === "--around") {
+    around = true;
+    const v = argv[++i];
+    if (v !== "latest") runId = v;
+  } else if (a === "--window") windowHours = Number(argv[++i]);
   else if (!a.startsWith("--") && !target) target = a;
   else {
     console.error(`unknown argument: ${a}\n${usage}`);
     process.exit(2);
   }
 }
-if ((!target && !runId) || !(peersWanted > 0) || !(maxDistance >= 0) || (runId && !/^\d+$/.test(runId)) || !workflow) {
+if ((!target && !runId) || !(peersWanted > 0) || !(maxDistance >= 0) || (runId && !/^\d+$/.test(runId)) || !workflow || !(windowHours > 0)) {
   console.error(usage);
   process.exit(2);
 }
@@ -185,8 +201,30 @@ const items = failedJobs.flatMap((j) => failureItems(j, parsedByJob.get(j.id)));
 const retried = failedJobs.flatMap((j) => (parsedByJob.get(j.id)?.flaky ?? []).map((t) => ({ job: j.name, test: t })));
 
 // ── the same jobs on other branches ───────────────────────────────────
-const recent = (await api(`repos/${repo}/actions/workflows/${run.workflow_id}/runs?status=completed&per_page=60`)).workflow_runs ?? [];
-const peers = recent.filter((r) => r.head_branch !== branch && r.id !== run.id).slice(0, peersWanted);
+const peers = (around ? await runsAround(run, windowHours) : ((await api(`repos/${repo}/actions/workflows/${run.workflow_id}/runs?status=completed&per_page=60`)).workflow_runs ?? []))
+  .filter((r) => r.head_branch !== branch && r.id !== run.id)
+  .slice(0, peersWanted);
+if (around) notes.push(`peers: runs of this workflow from ${when(windowOf(run, windowHours).from)} to ${when(windowOf(run, windowHours).to)}, nearest in time first`);
+
+/** The ±hours window around a run. */
+function windowOf(r, hours) {
+  const t = Date.parse(r.created_at);
+  const iso = (ms) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, "Z");
+  return { from: iso(t - hours * 3600e3), to: iso(t + hours * 3600e3) };
+}
+/** Every completed run of the workflow created in the window (all pages), nearest in time to `r` first. */
+async function runsAround(r, hours) {
+  const { from, to } = windowOf(r, hours);
+  const route = `repos/${repo}/actions/workflows/${r.workflow_id}/runs?status=completed&created=${encodeURIComponent(`${from}..${to}`)}`;
+  const all = [];
+  for (let page = 1; page <= 10; page++) {
+    const items = (await api(`${route}&per_page=100&page=${page}`)).workflow_runs ?? [];
+    all.push(...items);
+    if (items.length < 100) break;
+  }
+  const t = Date.parse(r.created_at);
+  return all.sort((a, b) => Math.abs(Date.parse(a.created_at) - t) - Math.abs(Date.parse(b.created_at) - t));
+}
 /** `base...head`: commits apart and the files head changed since the merge base. */
 const compare = memo((basehead) =>
   api(`repos/${repo}/compare/${basehead}`, "{a: .ahead_by, b: .behind_by, n: ((.files // []) | length), files: [(.files // [])[] | .filename, (.previous_filename // empty)]}").catch(() => null),
