@@ -1,15 +1,12 @@
 <!doctype html>
-<html lang="en" dir="ltr">
+<html lang="he" dir="rtl">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Lumen — Roadmap</title>
-    <meta
-      name="description"
-      content="Lumen's open roadmap — what's shipped, what's next, what we'd love community input on."
-    />
-    <meta property="og:title" content="Lumen — Roadmap" />
-    <meta property="og:description" content="What's shipped and what's next." />
+    <title>Lumen — מפת דרכים</title>
+    <meta name="description" content="מפת הדרכים הפתוחה של Lumen: מה הושלם, מה בעבודה ומה מתוכנן. Lumen's open roadmap, generated from plan/plan.json." />
+    <meta property="og:title" content="Lumen — מפת דרכים" />
+    <meta property="og:description" content="61 מתוך 144 משימות הושלמו." />
     <meta name="theme-color" content="#0c0f17" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <style>
@@ -26,304 +23,64 @@
         --partial: hsl(40 90% 60%);
         --planned: hsl(220 14% 50%);
       }
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
       body {
         margin: 0;
         background: var(--bg);
         color: var(--fg);
-        font-family: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+        font-family: "Heebo", -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
         line-height: 1.6;
-        font-feature-settings: "ss01", "cv02";
       }
-      .hero {
-        padding: 80px 24px 40px;
-        text-align: center;
-        background:
-          radial-gradient(ellipse at top, hsl(258 92% 70% / 0.12), transparent 60%),
-          radial-gradient(ellipse at bottom, hsl(190 92% 60% / 0.08), transparent 60%);
-      }
-      .hero h1 {
-        margin: 0 0 12px;
-        font-size: clamp(2.2rem, 5vw, 3.5rem);
-        letter-spacing: -0.03em;
-        background: linear-gradient(135deg, #c4b5fd 0%, #67e8f9 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-      }
-      .hero p {
-        margin: 8px auto 28px;
-        max-width: 620px;
-        color: var(--fg-mute);
-        font-size: 1.05rem;
-      }
-      .hero .links {
-        display: flex;
-        gap: 12px;
-        justify-content: center;
-        flex-wrap: wrap;
-      }
-      .hero a {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 10px 18px;
-        border-radius: 999px;
-        text-decoration: none;
-        font-size: 14px;
-        font-weight: 500;
-        transition: transform 120ms ease;
-      }
-      .hero a:hover {
-        transform: translateY(-1px);
-      }
-      .hero a.primary {
-        background: linear-gradient(135deg, #7c5cff, #22d3ee);
-        color: white;
-      }
-      .hero a.secondary {
-        background: var(--bg-card);
-        color: var(--fg);
-        border: 1px solid var(--border);
-      }
-      main {
-        max-width: 980px;
-        margin: 0 auto;
-        padding: 0 24px 80px;
-      }
-      .legend {
-        display: flex;
-        gap: 16px;
-        flex-wrap: wrap;
-        padding: 16px 20px;
-        background: var(--bg-soft);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        margin-bottom: 28px;
-        font-size: 13px;
-      }
-      .legend-item {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 999px;
-        flex-shrink: 0;
-      }
-      .dot.done {
-        background: var(--done);
-      }
-      .dot.partial {
-        background: var(--partial);
-      }
-      .dot.planned {
-        background: var(--planned);
-      }
-      h2.phase {
-        margin: 40px 0 14px;
-        font-size: 1.4rem;
-        letter-spacing: -0.01em;
-      }
-      .phase-meta {
-        color: var(--fg-mute);
-        font-size: 13px;
-        margin-bottom: 16px;
-      }
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 12px;
-      }
-      .card {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 14px 16px;
-        position: relative;
-        transition:
-          transform 120ms ease,
-          border-color 120ms ease;
-      }
-      .card:hover {
-        transform: translateY(-1px);
-        border-color: hsl(258 60% 35%);
-      }
-      .card .tag {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        padding: 2px 7px;
-        border-radius: 4px;
-        font-weight: 600;
-      }
-      .card .tag.done {
-        background: hsl(140 60% 25%);
-        color: hsl(140 70% 80%);
-      }
-      .card .tag.partial {
-        background: hsl(40 70% 25%);
-        color: hsl(40 90% 80%);
-      }
-      .card .tag.planned {
-        background: hsl(220 14% 22%);
-        color: hsl(220 14% 70%);
-      }
-      .card .id {
-        font-family: "JetBrains Mono", ui-monospace, monospace;
-        font-size: 11px;
-        color: var(--fg-mute);
-        margin-bottom: 4px;
-      }
-      .card h3 {
-        margin: 0 0 4px;
-        font-size: 14.5px;
-        font-weight: 600;
-        line-height: 1.3;
-      }
-      .card p {
-        margin: 0;
-        font-size: 12.5px;
-        color: var(--fg-mute);
-        line-height: 1.5;
-      }
-      footer {
-        text-align: center;
-        padding: 30px 16px 60px;
-        color: var(--fg-mute);
-        font-size: 12px;
-      }
-      footer a {
-        color: var(--accent);
-        text-decoration: none;
-      }
+      .hero { padding: 56px 16px 28px; text-align: center; background: linear-gradient(180deg, var(--bg-soft), var(--bg)); border-block-end: 1px solid var(--border); }
+      .hero h1 { margin: 0 0 8px; font-size: clamp(26px, 4vw, 40px); letter-spacing: -0.01em; }
+      .hero p { margin: 0 auto; max-width: 60ch; color: var(--fg-mute); }
+      .hero .en { font-size: 13px; margin-block-start: 6px; }
+      .links { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-block-start: 18px; }
+      .links a { padding: 8px 14px; border-radius: 8px; text-decoration: none; font-size: 14px; border: 1px solid var(--border); color: var(--fg); }
+      .links a.primary { background: var(--accent); color: #0c0f17; border-color: transparent; font-weight: 600; }
+      main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 40px; }
+      .progress { height: 8px; border-radius: 999px; background: var(--bg-card); overflow: hidden; margin: 6px 0 18px; }
+      .progress span { display: block; height: 100%; background: var(--done); inline-size: 42%; }
+      .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--fg-mute); margin-block-end: 24px; }
+      .dot { display: inline-block; inline-size: 9px; block-size: 9px; border-radius: 50%; margin-inline-end: 6px; vertical-align: middle; }
+      .dot.done { background: var(--done); } .dot.partial { background: var(--partial); } .dot.planned { background: var(--planned); }
+      h2.phase { font-size: 18px; margin: 28px 0 10px; }
+      h2.phase .n { display: inline-grid; place-items: center; min-inline-size: 28px; block-size: 28px; border-radius: 8px; background: var(--fg); color: var(--bg); font-size: 14px; margin-inline-end: 8px; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+      .card { position: relative; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 12px 12px; padding-inline-end: 72px; min-block-size: 64px; }
+      .card .tag { position: absolute; inset-block-start: 10px; inset-inline-end: 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
+      .card .tag.done { background: hsl(140 60% 25%); color: hsl(140 70% 80%); }
+      .card .tag.partial { background: hsl(40 70% 25%); color: hsl(40 90% 80%); }
+      .card .tag.planned { background: hsl(220 14% 22%); color: hsl(220 14% 70%); }
+      .card .id { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; color: var(--fg-mute); direction: ltr; unicode-bidi: isolate; }
+      .card h3 { margin: 2px 0 0; font-size: 14px; font-weight: 600; line-height: 1.35; }
+      footer { text-align: center; padding: 30px 16px 60px; color: var(--fg-mute); font-size: 12px; }
+      footer a { color: var(--accent); text-decoration: none; }
     </style>
   </head>
   <body>
     <section class="hero">
-      <h1>Lumen — Open Roadmap</h1>
-      <p>
-        Three phases, fifty-two tasks. Hover anything to see the implementation
-        notes. Pull requests welcome on every <span style="color: var(--planned)">planned</span>
-        item.
-      </p>
+      <h1>Lumen — מפת דרכים</h1>
+      <p>144 משימות ב-15 שלבים: <span style="color: var(--done)">61 הושלמו</span>, <span style="color: var(--partial)">18 בעבודה</span>, <span style="color: var(--planned)">65 מתוכננות</span>. מתעדכן מ-<code>plan/plan.json</code> בכל שינוי בתוכנית (עודכן ד׳ 21.10 07:30).</p>
+      <p class="en">Lumen's open roadmap — 61 of 144 tasks done. Titles and status only; the full plan with its measured acceptance criteria is in the repository.</p>
       <div class="links">
-        <a class="primary" href="/">Open the editor</a>
-        <a class="secondary" href="https://github.com/" target="_blank" rel="noopener">GitHub</a>
-        <a class="secondary" href="/landing.html">Marketing site</a>
+        <a class="primary" href="/">לעורך</a>
+        <a href="https://github.com/talstilkol/lumen-md" target="_blank" rel="noopener">GitHub</a>
       </div>
     </section>
-
     <main>
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="144" aria-valuenow="61" aria-label="משימות שהושלמו"><span></span></div>
       <div class="legend" role="list">
-        <div class="legend-item" role="listitem">
-          <span class="dot done"></span> Shipped — in this build
-        </div>
-        <div class="legend-item" role="listitem">
-          <span class="dot partial"></span> Partial — usable, not feature-complete
-        </div>
-        <div class="legend-item" role="listitem">
-          <span class="dot planned"></span> Planned — open for contributions
-        </div>
+        <div role="listitem"><span class="dot done"></span>הושלם — PR עם CI ירוק</div>
+        <div role="listitem"><span class="dot partial"></span>בעבודה — נבנה, המדידה עוד פתוחה</div>
+        <div role="listitem"><span class="dot planned"></span>מתוכנן</div>
       </div>
-
-      <h2 class="phase">Phase 1 — Pre-Launch Hardening</h2>
-      <p class="phase-meta">
-        Quality + observability. Target score 7.6 / 10 — current 9.2 / 10 (a small
-        a11y + landing-page polish gap remains).
-      </p>
-      <div class="grid" id="phase-1"></div>
-
-      <h2 class="phase">Phase 2 — Public Launch</h2>
-      <p class="phase-meta">
-        Auth, persistent collab, cloud sync, billing, mobile, performance. Target
-        8.5 / 10 — current 7.4 / 10 (server-side bits skeletoned, need deploy).
-      </p>
-      <div class="grid" id="phase-2"></div>
-
-      <h2 class="phase">Phase 3 — World-Class</h2>
-      <p class="phase-meta">
-        AI agents, database views, whiteboard, MCP, local LLM, web clipper, voice,
-        enterprise. Target 9.5 / 10 — current 6.8 / 10 (8 of 20 shipped).
-      </p>
-      <div class="grid" id="phase-3"></div>
+      <div id="phases"></div>
     </main>
-
     <footer>
-      Got an idea? Open a discussion on
-      <a href="https://github.com/" target="_blank" rel="noopener">GitHub</a> or
-      ping us on social. Lumen is MIT-licensed and built in the open.
+      הדף נוצר על ידי <code>npm run plan</code> מ-<code>plan/plan.json</code>; CI נכשל כשהוא לא תואם. Lumen היא קוד פתוח ברישיון MIT.
     </footer>
-
-    <script type="application/json" id="roadmap-data">
-[
-  ["1", [
-    ["P1-01","done","Vitest .tsx","Test files with .tsx now run."],
-    ["P1-02","done","MIT LICENSE","License file + package.json metadata."],
-    ["P1-03","done","crypto.getRandomValues","Replaced Math.random for IDs in CRDT, asset names, color picks."],
-    ["P1-04","done","Repo cleanup","Removed node_modules_bad/, tightened .gitignore."],
-    ["P1-05","done","Logger wrapper","src/lib/logger.ts with Sentry sink + dev-only debug."],
-    ["P1-06","done","Silent catches","Every catch now logs or has a // intentional comment."],
-    ["P1-07","done","Toast UI","useToastStore + Toast.tsx, mounted in App."],
-    ["P1-08","done","Sentry telemetry","src/lib/telemetry.ts with opt-out toggle."],
-    ["P1-09","partial","Signaling server","Code + env wiring done; persistent server starter shipped, deployment is operator-side."],
-    ["P1-10","done","GitHub Actions CI","typecheck • test • build matrix on every PR."],
-    ["P1-11","done","TS strict","noUnusedLocals + noUnusedParameters now true."],
-    ["P1-12","done","as-any cleanup","8 → 4 (the rest are dynamic imports with no upstream types)."],
-    ["P1-13","done","Test coverage","@vitest/coverage-v8 wired; 202 tests over 22 files."],
-    ["P1-14","partial","PWA icons","Icons present; Lighthouse PWA ≥ 90 not yet verified."],
-    ["P1-15","partial","WCAG 2.1 AA","axe-core wired in CI test; a few panels still need ARIA polish."],
-    ["P1-16","done","Vault recovery","12-word recovery phrase + hash + Forgot-password flow."],
-    ["P1-17","done","Rate limiter","60 req/min + 5 concurrent, with toast on overrun."],
-    ["P1-18","partial","Landing page","Designed, screenshots placeholder, Lighthouse score not measured."],
-    ["P1-19","done","CHANGELOG / CONTRIBUTING / COC","Three files in repo root."],
-    ["P1-20","done","i18n strings","Hardcoded English in canvas/tabs/gallery → t()."]
-  ]],
-  ["2", [
-    ["P2-01","partial","Playwright E2E","8 scenarios scripted, full multi-browser run TBD on CI runner."],
-    ["P2-02","done","Auth framework","Local + Supabase providers, dynamic-imported."],
-    ["P2-03","partial","Persistent collab","y-websocket + y-leveldb starter; needs deploy + WSS cert."],
-    ["P2-04","partial","Cloud sync (Dropbox)","OAuth + sync engine + tests; needs Dropbox app key + bind UI."],
-    ["P2-05","partial","Stripe billing","Entitlement model + checkout sketch; needs price IDs + edge endpoint."],
-    ["P2-06","done","Tauri native menus","File / Edit / View / Help wired to palette commands."],
-    ["P2-07","partial","Mobile QA + stores","iOS Capacitor scaffold complete; TestFlight upload requires Apple ID."],
-    ["P2-08","partial","Plugin marketplace","Browse works; ratings + one-click install pending."],
-    ["P2-09","done","Performance budgets","Per-chunk gzip script + Lighthouse CI workflow."],
-    ["P2-10","planned","User docs site","Astro Starlight scaffold to be added under docs/."],
-    ["P2-11","done","Semantic search","OpenAI embeddings + RRF hybrid + IndexedDB cache."],
-    ["P2-12","planned","Languages (6 more)","On hold by user request — English + Hebrew only for now."]
-  ]],
-  ["3", [
-    ["P3-01","done","AI agents","Auto-tag, link-suggestions, Q&A with hybrid retrieval."],
-    ["P3-02","planned","WYSIWYG (Notion-grade)","Milkdown solid; slash menu polish + drag handle pending."],
-    ["P3-03","done","Database views","Table / Kanban / Gallery / Calendar over frontmatter."],
-    ["P3-04","done","Whiteboard","Canvas with OPFS persistence + name picker + auto-save."],
-    ["P3-05","planned","Knowledge Graph clusters","Louvain + AI insights pending."],
-    ["P3-06","planned","Templates marketplace","Hardcoded templates today; registry.json pending."],
-    ["P3-07","planned","Web Clipper","Chrome MV3 extension scaffold pending."],
-    ["P3-08","planned","Read-mode publishing","publish.ts + edge endpoint; Pro feature."],
-    ["P3-09","partial","Voice notes","Dictation works; hold-to-record + AI summary pending."],
-    ["P3-10","done","MCP integration","npx @lumen-md/mcp-server with 4 tools."],
-    ["P3-11","done","Live data URLs","src= + refresh= meta on chart/csv/json blocks."],
-    ["P3-12","done","Spell-check + grammar","Native squiggle toggle + LanguageTool client."],
-    ["P3-13","planned","E2E encryption","PBKDF2-wrapped Yjs ops pending."],
-    ["P3-14","done","Local LLM","web-llm bridge, automatic routing in chat()."],
-    ["P3-15","planned","Apple Watch","Quick capture from wrist."],
-    ["P3-16","planned","Mobile widget","iOS / Android home-screen widget."],
-    ["P3-17","planned","Enterprise (SSO)","SAML / OIDC + audit log pending."],
-    ["P3-18","planned","User-style fine-tune","Opt-in fine-tune of personal LLM."],
-    ["P3-19","done","Public roadmap","This page."],
-    ["P3-20","planned","Workshops + YouTube","Marketing channel."]
-  ]]
-]
-    </script>
+    <script type="application/json" id="roadmap-data">[[0,"יסודות ואוטומציה שחוסכים זמן",[["0.1","done","כלי מסלולים מקבילים ופרוטוקול"],["0.2","done","לפצל את useCommands.ts לפי תחומים"],["0.3","done","לפצל את קובצי התרגום לפי תחום"],["0.4","done","ESLint עם baseline"],["0.5","done","CI יציב: retries 0"],["0.6","done","התוכנית כנתונים בריפו"],["0.7","partial","בודק סיום (DoD)"],["0.8","done","סוכן review-triage ומענה"],["0.9","done","סוכן ci-doctor"],["0.10","done","שער רישיונות למודלים, נתונים וחבילות"],["0.11","done","ריצות לילה אוטונומיות"],["0.12","done","restack אוטומטי"],["0.13","done","מחולל מסירה (handoff)"],["0.14","done","CI מקומי בפקודה אחת"],["0.15","planned","mutation testing למודולים קריטיים"],["0.16","partial","knip: קוד מת ותלויות מיותרות"],["0.17","done","כותרות אבטחה ממקור אחד"],["0.18","done","docs-sync ו-README אמיתי"],["0.19","planned","שער PR עם Danger.js ו-size-limit"],["0.20","done","המשכי כותרות האבטחה"],["0.21","done","רשימת הפקודות מתעדכנת עם ה-store"]]],[1,"לסגור את מה שסומן ✅ ולא היה גמור",[["1.1","done","104 ממצאי Codex — מיזוג, מענה וסגירה"],["1.2","done","eval: לתייג את ה-baseline המזויף בכנות"],["1.3","done","הכתבה בלי דליפה"],["1.4","done","Esc מבטל באמת כל קריאת AI"],["1.5","done","הקראה רק בקולות מקומיים ב-local-only"],["1.6","done","הכספת המוצפנת: למחוק את המת, לתעד את האמת"],["1.7","done","קטלוג המודלים: רישיונות ומודל עברי"],["1.9","done","רישיון tldraw: אסור בייצור בלי מפתח"],["1.8","planned","ביקורת חוזרת עצמאית של שלב 1"]]],[2,"אבטחה ופרטיות",[["2.1","done","Tauri CSP הדוק"],["2.2","done","תמונות מרוחקות: חסימה ברנדרר"],["2.3","done","e2e/security.spec.ts"],["2.4","done","יומן פרטיות מלא (כולל workers)"],["2.5","done","סודות: לסגור את הפינות"],["2.6","planned","סוכן הסתרת מידע אישי לפני ענן"],["2.7","done","סוכן הגנה מ-prompt injection"],["2.8","done","סורקי אבטחה ב-CI"]]],[3,"בטיחות נתונים וסנכרון",[["3.1","done","Ctrl+Z אמיתי למחיקה"],["3.2","done","היסטוריה שלמה"],["3.3","partial","git בטוח"],["3.4","partial","פרוטוקול סנכרון מוצפן (E2EE)"],["3.5","planned","ספקי אחסון מוצפנים: הקיימים + WebDAV ו-S3"],["3.6","done","שיתוף בזמן אמת עם התמדה ואימות"],["3.7","planned","מטריצת e2e לכל מסלולי איבוד הנתונים"]]],[4,"יסודות ניהול ידע (מה שמשתמשים נוגעים בו מאות פעמים ביום)",[["4.1","done","שכבת כספת אחת (VaultBackend)"],["4.2","done","כספת בתיקייה אמיתית בדפדפן"],["4.3","done","שולחן עבודה: הכספת כתיקייה + הגירה"],["4.4","done","שינויים מבחוץ: מעקב ויישוב"],["4.5","done","`[[` עם השלמה"],["4.6","done","תצוגה מקדימה בריחוף ואזכורים לא מקושרים"],["4.7","done","הטמעות (`![[פתק]]`)"],["4.8","done","הפניות לבלוקים (`^id`)"],["4.9","done","עורך מאפיינים (frontmatter)"],["4.10","done","מסד נתונים שאפשר לערוך"],["4.11","partial","נוסחאות ותצוגת מפה"],["4.12","done","פתק יומי ולוח שנה"],["4.13","planned","משימות בכל הכספת"],["4.14","partial","קורא PDF עם הערות"],["4.15","planned","קוצץ רשת v2 (התוסף הקיים, עובד באמת)"],["4.16","partial","לכידה מהירה (inbox)"],["4.17","planned","תאימות JSON Canvas"],["4.18","planned","פרסום לאתר סטטי משלך"],["4.19","partial","קנבס: מעבר ל-Excalidraw (MIT)"],["4.20","planned","כספת בתיקייה במובייל"]]],[5,"סוכנים אמיתיים — המודל מציע, הכלים מבצעים",[["5.1","done","הכלים החסרים"],["5.2","done","BM25 אמיתי"],["5.3","done","לחבר כלים לכל 13 הסוכנים"],["5.4","planned","סוכן מחקר אמיתי"],["5.5","planned","כל פקודת AI דרך זמן הריצה"],["5.6","planned","מבקר שלם"],["5.7","partial","מנהל מודלים מלא"],["5.8","planned","אצווה: השהיה, המשך והתקדמות חיה"],["5.9","planned","סימון טקסט שנכתב ב-AI"],["5.10","planned","מילוי מאפיינים ב-AI עם תור אישור"],["5.11","done","מסך אישור לשינויים שסוכנים מציעים"]]],[6,"סוכנים מקומיים שמחליפים יכולות AI חיצוניות",[["6.0","done","צינור המרת מודלים ל-ONNX ואירוח"],["6.1","done","הכתבה חיה מקומית"],["6.2","planned","הקראה מקומית: החלטת רישוי וקול אנגלי"],["6.3","planned","סוכן ניקוד עברי מקומי"],["6.4","planned","תרגום מקומי בשלוש שכבות"],["6.5","partial","זיהוי שפה מקומי"],["6.6","planned","תיאור תמונות מקומי"],["6.7","planned","חיפוש תמונות לפי טקסט"],["6.8","planned","שיחה עם PDF מקומית"],["6.9","planned","השלמה אוטומטית מקומית (FIM)"],["6.10","planned","איות אנגלית מקומי"],["6.11","planned","סיכום מקומי בשכבות"],["6.12","planned","fine-tune מקומי (LoRA)"],["6.13","planned","ציטוטים: להרחיב את BibtexBlock הקיים"],["6.14","partial","כלי `run_python` לסוכנים (על Pyodide הקיים)"],["6.15","planned","סוכן ניתוח נתונים"],["6.16","planned","סיכום פגישה מקומי"],["6.17","planned","ענן רק בבחירה — ביקורת כל המסלולים"]]],[7,"אימות ואיכות מודלים",[["7.1","done","סטי זהב מוחזקים ומורשים"],["7.2","planned","מודל אמיתי זעיר ב-CI"],["7.3","planned","eval לכל 14 הסוכנים"],["7.4","planned","רופא AI שלם"],["7.5","partial","OCR ב-CI"],["7.6","planned","ה-reranker הקיים: למדוד ולהחליט, וספריית קריאה"],["7.7","partial","סיכום יומי: אימות שהתיקונים מ-1.1 סוגרים את T33"],["7.8","planned","רתמת מדידה בדפדפן אמיתי"],["7.9","planned","עיבוד ה-eval האמיתי של טל"],["7.10","done","סטי זהב קטנים לפיצ'רים"]]],[8,"ביצועים",[["8.1","partial","צינור ה-markdown ב-worker"],["8.2","partial","הפעלה ≤ 250KB"],["8.3","planned","שער Lighthouse על כל PR"],["8.4","partial","כספת גדולה ומסמך ארוך"],["8.5","done","PWA offline מלא"]]],[9,"עברית ו-i18n",[["9.1","done","אפס מחרוזות קשיחות"],["9.2","done","איות עברי בלי רשת"],["9.3","done","CSS לוגי ו-slug עברי"],["9.4","planned","סוכן ביקורת תרגומים"],["9.5","planned","מטריצת RTL מורחבת"],["9.6","planned","סוכן טיוטות תרגום"],["9.7","done","עריכה דו-כיוונית נכונה"],["9.8","done","יישור טבלאות RTL ב-DOCX"],["9.9","planned","RTL ברמת Obsidian 1.14"]]],[10,"בדיקות, נגישות ומובייל",[["10.1","planned","נגישות מלאה"],["10.2","planned","מגע ומובייל"],["10.3","planned","רגרסיה חזותית ב-CI"],["10.4","planned","כיסוי ≥ 60%"]]],[11,"מוצר שלם",[["11.1","planned","מסך הגדרות אחד"],["11.2","partial","תוספים אמיתיים ובטוחים"],["11.3","planned","#תגיות בגוף ואופרטורי חיפוש"],["11.4","planned","הצפנת כספת במנוחה (אופציה)"],["11.5","planned","שולחן עבודה: עדכון, חתימה, צמצום"]]],[12,"בריאות הקוד",[["12.1","planned","catch ריקים וקבצים גדולים"],["12.2","planned","ניקוי ועדכוני חבילות"],["12.3","partial","סגירת המגבלות הידועות A1–A9"],["12.4","planned","ניטור בהסכמה"]]],[13,"תיעוד, אירוח, מובייל ושחרור",[["13.1","planned","תיעוד: ביקורת שלמות (כל משימה כותבת את העמוד שלה כחלק מה-DoD)"],["13.2","planned","אירוח אחיד"],["13.3","planned","Android ו-iOS ב-CI"],["13.4","planned","צינור שחרור"],["13.5","planned","ביקורת שחרור עצמאית (כל ה-P0)"],["13.6","planned","ביקורת סופית מול כל יעדי §14"],["13.7","planned","הגשה לחנויות"]]],[14,"השקה ולולאת משוב",[["14.1","done","חוויית התחלה"],["14.2","planned","משוב בלי שרת"],["14.3","planned","סוכן מיון issues"],["14.4","planned","ערוץ בטא ודגלי פיצ'רים"],["14.5","planned","מפת דרכים ציבורית"],["14.6","planned","״מה חדש״ באפליקציה"]]]]</script>
     <script src="/roadmap.js" defer></script>
   </body>
 </html>

@@ -5,8 +5,9 @@
  * acceptance), the owner's items (15.x), milestones and the done table.
  * This script schedules it and renders:
  *
- *   MASTER_PLAN.md   the board section, from "## לוח משימות" up to "## נספח 0 ·"
- *   plan/board.html  the board as an HTML page (an Artifact fragment)
+ *   MASTER_PLAN.md      the board section, from "## לוח משימות" up to "## נספח 0 ·"
+ *   plan/board.html     the board as an HTML page (an Artifact fragment)
+ *   public/roadmap.html the public roadmap: phases, titles and statuses only (plan 14.5)
  *
  *   npm run plan             regenerate both
  *   npm run plan:check       exit 1 when either differs from plan.json (CI),
@@ -32,6 +33,8 @@ export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..")
 export const PLAN_FILE = "plan/plan.json";
 export const DOC_FILE = "MASTER_PLAN.md";
 export const HTML_FILE = "plan/board.html";
+/** The public roadmap (plan 14.5): phases, task titles and statuses only, served at /roadmap. */
+export const ROADMAP_FILE = "public/roadmap.html";
 export const BOARD_START = "## לוח משימות";
 export const BOARD_END = "## נספח 0 ·";
 
@@ -521,6 +524,118 @@ export function actualHours(M, { root = ROOT, base = "origin/main", remote = "or
   return out;
 }
 
+// ───────────────────────────── public roadmap ─────────────────────────────
+
+/** done · partial · planned, from a status mark (✅ and ✅* are done). */
+export const roadmapState = (status) => {
+  const mark = (status ?? "").trim().split(/\s+/)[0] ?? "";
+  return mark.startsWith("✅") ? "done" : mark.startsWith("⏳") ? "partial" : "planned";
+};
+
+/**
+ * public/roadmap.html: the plan's phases with every task's number, title and
+ * state, and nothing else — no steps, acceptance, estimates, dates, branches
+ * or the owner's items. The page renders the JSON block with /roadmap.js
+ * (an external script: the app's CSP allows no inline script).
+ */
+export function renderRoadmap(M) {
+  const states = { done: 0, partial: 0, planned: 0 };
+  const phases = M.phases.map((p, i) => [i, p.title, p.tasks.map((t) => {
+    const st = roadmapState(t.status);
+    states[st]++;
+    return [t.id, st, t.t];
+  })]);
+  const total = M.agent.length;
+  const pct = Math.round((states.done / total) * 100);
+  return `<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lumen — מפת דרכים</title>
+    <meta name="description" content="מפת הדרכים הפתוחה של Lumen: מה הושלם, מה בעבודה ומה מתוכנן. Lumen's open roadmap, generated from plan/plan.json." />
+    <meta property="og:title" content="Lumen — מפת דרכים" />
+    <meta property="og:description" content="${states.done} מתוך ${total} משימות הושלמו." />
+    <meta name="theme-color" content="#0c0f17" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: hsl(232 27% 8%);
+        --bg-soft: hsl(232 27% 11%);
+        --bg-card: hsl(232 25% 13%);
+        --fg: hsl(220 16% 92%);
+        --fg-mute: hsl(220 14% 68%);
+        --border: hsl(232 22% 22%);
+        --accent: hsl(258 92% 70%);
+        --done: hsl(140 60% 55%);
+        --partial: hsl(40 90% 60%);
+        --planned: hsl(220 14% 50%);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: "Heebo", -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+        line-height: 1.6;
+      }
+      .hero { padding: 56px 16px 28px; text-align: center; background: linear-gradient(180deg, var(--bg-soft), var(--bg)); border-block-end: 1px solid var(--border); }
+      .hero h1 { margin: 0 0 8px; font-size: clamp(26px, 4vw, 40px); letter-spacing: -0.01em; }
+      .hero p { margin: 0 auto; max-width: 60ch; color: var(--fg-mute); }
+      .hero .en { font-size: 13px; margin-block-start: 6px; }
+      .links { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-block-start: 18px; }
+      .links a { padding: 8px 14px; border-radius: 8px; text-decoration: none; font-size: 14px; border: 1px solid var(--border); color: var(--fg); }
+      .links a.primary { background: var(--accent); color: #0c0f17; border-color: transparent; font-weight: 600; }
+      main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 40px; }
+      .progress { height: 8px; border-radius: 999px; background: var(--bg-card); overflow: hidden; margin: 6px 0 18px; }
+      .progress span { display: block; height: 100%; background: var(--done); inline-size: ${pct}%; }
+      .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--fg-mute); margin-block-end: 24px; }
+      .dot { display: inline-block; inline-size: 9px; block-size: 9px; border-radius: 50%; margin-inline-end: 6px; vertical-align: middle; }
+      .dot.done { background: var(--done); } .dot.partial { background: var(--partial); } .dot.planned { background: var(--planned); }
+      h2.phase { font-size: 18px; margin: 28px 0 10px; }
+      h2.phase .n { display: inline-grid; place-items: center; min-inline-size: 28px; block-size: 28px; border-radius: 8px; background: var(--fg); color: var(--bg); font-size: 14px; margin-inline-end: 8px; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+      .card { position: relative; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 12px 12px; padding-inline-end: 72px; min-block-size: 64px; }
+      .card .tag { position: absolute; inset-block-start: 10px; inset-inline-end: 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
+      .card .tag.done { background: hsl(140 60% 25%); color: hsl(140 70% 80%); }
+      .card .tag.partial { background: hsl(40 70% 25%); color: hsl(40 90% 80%); }
+      .card .tag.planned { background: hsl(220 14% 22%); color: hsl(220 14% 70%); }
+      .card .id { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; color: var(--fg-mute); direction: ltr; unicode-bidi: isolate; }
+      .card h3 { margin: 2px 0 0; font-size: 14px; font-weight: 600; line-height: 1.35; }
+      footer { text-align: center; padding: 30px 16px 60px; color: var(--fg-mute); font-size: 12px; }
+      footer a { color: var(--accent); text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <section class="hero">
+      <h1>Lumen — מפת דרכים</h1>
+      <p>${total} משימות ב-${M.phases.length} שלבים: <span style="color: var(--done)">${states.done} הושלמו</span>, <span style="color: var(--partial)">${states.partial} בעבודה</span>, <span style="color: var(--planned)">${states.planned} מתוכננות</span>. מתעדכן מ-<code>plan/plan.json</code> בכל שינוי בתוכנית (עודכן ${fmt(M.UPDATED)}).</p>
+      <p class="en">Lumen's open roadmap — ${states.done} of ${total} tasks done. Titles and status only; the full plan with its measured acceptance criteria is in the repository.</p>
+      <div class="links">
+        <a class="primary" href="/">לעורך</a>
+        <a href="https://github.com/talstilkol/lumen-md" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </section>
+    <main>
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${states.done}" aria-label="משימות שהושלמו"><span></span></div>
+      <div class="legend" role="list">
+        <div role="listitem"><span class="dot done"></span>הושלם — PR עם CI ירוק</div>
+        <div role="listitem"><span class="dot partial"></span>בעבודה — נבנה, המדידה עוד פתוחה</div>
+        <div role="listitem"><span class="dot planned"></span>מתוכנן</div>
+      </div>
+      <div id="phases"></div>
+    </main>
+    <footer>
+      הדף נוצר על ידי <code>npm run plan</code> מ-<code>plan/plan.json</code>; CI נכשל כשהוא לא תואם. Lumen היא קוד פתוח ברישיון MIT.
+    </footer>
+    <script type="application/json" id="roadmap-data">${JSON.stringify(phases).replace(/</g, "\\u003c")}</script>
+    <script src="/roadmap.js" defer></script>
+  </body>
+</html>
+`;
+}
+
 // ───────────────────────────── CLI ─────────────────────────────
 
 export function run({ root = ROOT, check = false } = {}) {
@@ -534,12 +649,16 @@ export function run({ root = ROOT, check = false } = {}) {
   const doc = readFileSync(docPath, "utf8");
   const wantDoc = spliceBoard(doc, renderBoard(M));
   const wantHtml = renderHtml(M);
+  const roadmapPath = join(root, ROADMAP_FILE);
+  const wantRoadmap = renderRoadmap(M);
   const stale = [];
   if (doc !== wantDoc) stale.push(DOC_FILE);
   if (!existsSync(htmlPath) || readFileSync(htmlPath, "utf8") !== wantHtml) stale.push(HTML_FILE);
+  if (!existsSync(roadmapPath) || readFileSync(roadmapPath, "utf8") !== wantRoadmap) stale.push(ROADMAP_FILE);
   if (!check) {
     if (stale.includes(DOC_FILE)) writeFileSync(docPath, wantDoc);
     if (stale.includes(HTML_FILE)) writeFileSync(htmlPath, wantHtml);
+    if (stale.includes(ROADMAP_FILE)) writeFileSync(roadmapPath, wantRoadmap);
   }
   return { M, stale };
 }
@@ -558,7 +677,7 @@ function main(argv) {
       console.error(`plan: ${stale.join(" and ")} ${stale.length > 1 ? "differ" : "differs"} from ${PLAN_FILE}. Run \`npm run plan\` and commit the result.`);
       return 1;
     }
-    console.log(`plan: ${DOC_FILE} and ${HTML_FILE} match ${PLAN_FILE} (${summary})`);
+    console.log(`plan: ${DOC_FILE}, ${HTML_FILE} and ${ROADMAP_FILE} match ${PLAN_FILE} (${summary})`);
     return 0;
   }
   console.log(stale.length ? `plan: wrote ${stale.join(", ")} (${summary})` : `plan: up to date (${summary})`);

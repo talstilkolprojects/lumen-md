@@ -30,7 +30,8 @@ afterAll(() => rmSync(tmp, { recursive: true, force: true }));
 function copy(name: string): string {
   const dir = join(tmp, name);
   mkdirSync(join(dir, "plan"), { recursive: true });
-  for (const f of ["plan/plan.json", "plan/board.html", "MASTER_PLAN.md"]) cpSync(join(ROOT, f), join(dir, f));
+  mkdirSync(join(dir, "public"), { recursive: true });
+  for (const f of ["plan/plan.json", "plan/board.html", "public/roadmap.html", "MASTER_PLAN.md"]) cpSync(join(ROOT, f), join(dir, f));
   return dir;
 }
 type Task = { id: string; status?: string; priority: string; dep?: string[] };
@@ -62,8 +63,8 @@ describe("plan build", () => {
 
     const cli = (...args: string[]) => spawnSync(process.execPath, [join(ROOT, "scripts/plan/build.mjs"), ...args], { cwd: dir, encoding: "utf8" });
     // The CLI works on the repo it lives in, so drive run() for the copy.
-    expect(run({ root: dir, check: true }).stale).toEqual(["MASTER_PLAN.md", "plan/board.html"]);
-    expect(run({ root: dir }).stale.length).toBe(2);
+    expect(run({ root: dir, check: true }).stale).toEqual(["MASTER_PLAN.md", "plan/board.html", "public/roadmap.html"]);
+    expect(run({ root: dir }).stale.length).toBe(3);
     expect(run({ root: dir, check: true }).stale).toEqual([]);
     expect(readFileSync(join(dir, "MASTER_PLAN.md"), "utf8")).toContain(`| ⏳ בעבודה |`);
     expect(cli("--check").status).toBe(0); // the repo itself is untouched
