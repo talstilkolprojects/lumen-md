@@ -247,6 +247,17 @@ describe("model registry", () => {
     expect(validateEntry(unsaid)).toContain("a CC BY-SA entry must say whether it is unmodified (true or false)");
   });
 
+  it("a forbidden id still fails without the mention-only marker, and a marked line is not a reference", () => {
+    const unmarked = byName(checkModels(clone(registryFixture), [{ file: "src/x.ts", text: "// we can't ship nc-model:8b (non-commercial)\n" }]));
+    expect(unmarked["nc-model:8b"]).toMatchObject({ level: "fail", refs: [{ file: "src/x.ts", line: 1 }] });
+    const marked = byName(checkModels(clone(registryFixture), [{ file: "src/x.ts", text: "// we can't ship nc-model:8b (non-commercial)  (licence-gate: mention-only)\nconst ok = 1;\n" }]));
+    expect(marked["nc-model:8b"].level).toBe("ok");
+    expect(marked["nc-model:8b"].reason).toMatch(/licence-gate: mention-only/);
+    // The marker covers its own line only: a real use on the next line still fails.
+    const next = byName(checkModels(clone(registryFixture), [{ file: "src/x.ts", text: "// (licence-gate: mention-only)\npull(\"nc-model:8b\");\n" }]));
+    expect(next["nc-model:8b"]).toMatchObject({ level: "fail", refs: [{ file: "src/x.ts", line: 2 }] });
+  });
+
   it("matches ids as whole tokens, case-insensitively", () => {
     const hit = byName(checkModels(clone(registryFixture), [{ file: "x.ts", text: 'pull("qwen2.5-3b-instruct")' }]));
     expect(hit["Qwen2.5-3B"].level).toBe("fail");

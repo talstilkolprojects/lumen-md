@@ -412,12 +412,21 @@ export const tokenRegex = (token) => new RegExp(`(?<![A-Za-z0-9])${escapeRe(toke
 export const normalizeModelId = (id) => String(id).trim().toLowerCase().replace(/:latest$/, "");
 
 /** Where any of the entry's tokens (its id and `match`) occurs → [{ file, line }]. */
-export function findReferences(entry, sources) {
+/**
+ * A line that carries this marker only names a model (in prose: "MMS and
+ * SASPEECH are non-commercial") and is not counted as a reference to a
+ * forbidden one. Narrow on purpose: one line, the forbidden check only;
+ * comments without it still count.
+ */
+export const MENTION_ONLY_MARKER = "licence-gate: mention-only";
+
+export function findReferences(entry, sources, { skipMentionOnly = false } = {}) {
   const res = [entry.id, ...(entry.match ?? [])].map(tokenRegex);
   const refs = [];
   for (const { file, text } of sources) {
     const lines = text.split("\n");
     lines.forEach((l, i) => {
+      if (skipMentionOnly && l.includes(MENTION_ONLY_MARKER)) return;
       if (res.some((r) => r.test(l))) refs.push({ file, line: i + 1 });
     });
   }
@@ -478,13 +487,17 @@ export function checkModels(registry, sources, readText = () => null) {
       findings.push({ area: "model", name: e?.id ?? "(no id)", license: e?.license ?? "", class: e?.class, level: "fail", reason: `registry entry invalid: ${problems.join("; ")}`, refs: [], structural: true });
       continue;
     }
-    const refs = findReferences(e, sources);
+    let refs = findReferences(e, sources);
     let level = "ok";
     let reason = refs.length ? "" : "not referenced by app code";
     if (e.class === "forbidden") {
-      if (refs.length) {
+      const real = findReferences(e, sources, { skipMentionOnly: true });
+      if (real.length) {
         level = "fail";
         reason = "forbidden model referenced by app code";
+        refs = real;
+      } else if (refs.length) {
+        reason = `only named on lines marked "${MENTION_ONLY_MARKER}"`;
       }
     } else if (e.class === "unknown") {
       level = "warn";
