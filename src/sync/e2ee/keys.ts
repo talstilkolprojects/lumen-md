@@ -12,8 +12,18 @@
  *   blobs   — AES-256-GCM for file contents
  *   pairing — HMAC-SHA256 over a pairing code (pairing.ts)
  *
- * All sub-keys are non-extractable CryptoKeys; the master key bytes are wiped
- * once they are imported.
+ * All sub-keys are non-extractable CryptoKeys.
+ *
+ * Epochs (plan W1.7, ./keyring.ts): the manifest, blob and pairing keys come
+ * from the vault's current *epoch secret*. Epoch 0 is the passphrase-derived
+ * master itself (every vault before plan W1.7). A re-key starts epoch n + 1
+ * with a fresh random secret, wrapped for the passphrase and for each
+ * enrolled device in the keyring; the older secrets are sealed under the new
+ * epoch, so blobs written earlier stay readable without being uploaded again.
+ * The names key always comes from epoch 0 (blob names never change; each
+ * epoch's manifest has its own random label in the keyring), and the header
+ * and wrap keys from the current passphrase. Because a re-key
+ * needs the current secret, it is kept as bytes in `secret`, in memory only.
  *
  * Sealed object = 1 byte format version ‖ 12 byte random nonce ‖ AES-GCM
  * ciphertext+tag. The additional data binds the object to its vault and its
@@ -34,6 +44,55 @@ export interface VaultKeys {
   manifest: CryptoKey;
   blobs: CryptoKey;
   pairing: CryptoKey;
+  /** The current epoch (0: no keyring yet). */
+  epoch: number;
+  /** The current epoch's secret (epoch 0: the master), for a re-key. */
+  secret: Uint8Array;
+  /** The keyring's own key for the current epoch (seals the older secrets). */
+  keyring: CryptoKey;
+  /** Wraps the epoch secret for the passphrase; null when the vault was opened with a device key. */
+  wrap: CryptoKey | null;
+  /** Blob keys of older epochs, for blobs written before a re-key. */
+  olderBlobs: Map<number, CryptoKey>;
+  /** Secrets of older epochs (re-sealed into the next keyring at a re-key). */
+  olderSecrets: Map<number, Uint8Array>;
+  /** What the keyring's sealed part says about this epoch (absent at epoch 0). */
+  ring?: RingInfo;
+}
+
+/**
+ * The authenticated facts of a keyring epoch that the engine acts on
+ * (review 12.11). All of them come from the keyring's sealed part.
+ */
+export interface RingInfo {
+  /** The label of this epoch's manifest object: "manifest/<epoch>/<random>" (RR-3). */
+  manifest: string;
+  /** The keyring's revision at this epoch (0 for a new epoch, + 1 per same-epoch rewrite). */
+  rev: number;
+  /** SHA-256 hex of the keyring's bytes: what the next keyring's chain names. */
+  digest: string;
+  /** The frozen manifest of the previous epoch this epoch's manifest was made from. */
+  carry?: { label: string; epoch: number; digest: string };
+  /** SHA-256 hex of the vault header this epoch's passphrase wrap belongs to, while a passphrase change is written. */
+  header?: string;
+  /** Digests of this epoch's frozen manifests whose re-key was called off: any device may write over them. */
+  aborted: string[];
+  /** A pre-release keyring (no sealed device list): opened only to reset it. */
+  preRelease?: true;
+  /** This keyring's descent from the one the device verified last could not be proven (too far behind). */
+  unproven?: true;
+  /** The sealed device list (id → age recipient) and the revoked ids (fifth review 12.11, F2: a device checks its own revocations against them). */
+  enrolled?: Record<string, string>;
+  revoked?: Array<{ device: string; recipient?: string }>;
+}
+
+/** The blob key for a manifest entry's epoch (absent: 0). Throws when this device doesn't hold it. */
+export function blobKey(keys: VaultKeys, epoch: number | undefined): CryptoKey {
+  const e = epoch ?? 0;
+  if (e === keys.epoch) return keys.blobs;
+  const k = keys.olderBlobs.get(e);
+  if (!k) throw new DecryptError(`No key for epoch ${e}`);
+  return k;
 }
 
 async function hkdfKey(
@@ -52,20 +111,69 @@ async function hkdfKey(
   );
 }
 
-/** The five sub-keys of vault `vaultId`. Wipes `master`. */
-export async function deriveVaultKeys(master: Uint8Array, vaultId: string): Promise<VaultKeys> {
-  const base = await crypto.subtle.importKey("raw", bs(master), "HKDF", false, ["deriveKey"]);
-  master.fill(0);
-  const hmac: HmacKeyGenParams = { name: "HMAC", hash: "SHA-256", length: 256 };
-  const aes: AesKeyGenParams = { name: "AES-GCM", length: 256 };
-  const [header, names, manifest, blobs, pairing] = await Promise.all([
-    hkdfKey(base, vaultId, "header", hmac, ["sign", "verify"]),
-    hkdfKey(base, vaultId, "names", hmac, ["sign"]),
-    hkdfKey(base, vaultId, "manifest", aes, ["encrypt", "decrypt"]),
-    hkdfKey(base, vaultId, "blobs", aes, ["encrypt", "decrypt"]),
-    hkdfKey(base, vaultId, "pairing", hmac, ["sign", "verify"]),
+const HMAC_KEY: HmacKeyGenParams = { name: "HMAC", hash: "SHA-256", length: 256 };
+const AES_KEY: AesKeyGenParams = { name: "AES-GCM", length: 256 };
+
+const ikm = (secret: Uint8Array) => crypto.subtle.importKey("raw", bs(secret), "HKDF", false, ["deriveKey"]);
+
+/** The keys an epoch secret gives: manifest, blobs, pairing, keyring. */
+export async function epochKeys(secret: Uint8Array, vaultId: string): Promise<{ manifest: CryptoKey; blobs: CryptoKey; pairing: CryptoKey; keyring: CryptoKey }> {
+  const base = await ikm(secret);
+  const [manifest, blobs, pairing, keyring] = await Promise.all([
+    hkdfKey(base, vaultId, "manifest", AES_KEY, ["encrypt", "decrypt"]),
+    hkdfKey(base, vaultId, "blobs", AES_KEY, ["encrypt", "decrypt"]),
+    hkdfKey(base, vaultId, "pairing", HMAC_KEY, ["sign", "verify"]),
+    hkdfKey(base, vaultId, "keyring", AES_KEY, ["encrypt", "decrypt"]),
   ]);
-  return { vaultId, header, names, manifest, blobs, pairing };
+  return { manifest, blobs, pairing, keyring };
+}
+
+/**
+ * The anchor key of an epoch (third review 12.11, N1): HMAC-SHA256 from the
+ * epoch secret, under which a device seals the keyring anchor it remembers.
+ * Only holders of the epoch's secret can compute it, the provider can't.
+ */
+export async function anchorKey(secret: Uint8Array, vaultId: string): Promise<CryptoKey> {
+  return hkdfKey(await ikm(secret), vaultId, "anchor", HMAC_KEY, ["sign", "verify"]);
+}
+
+/**
+ * The key a dropped re-key's marker is authenticated with (fifth review
+ * 12.11, F4): HMAC-SHA256 from the secret of the epoch *before* the drop, so
+ * a device left out — which holds that secret, not the new one — can check
+ * that a member wrote the marker, and the provider can't.
+ */
+export async function droppedKey(secret: Uint8Array, vaultId: string): Promise<CryptoKey> {
+  return hkdfKey(await ikm(secret), vaultId, "dropped", HMAC_KEY, ["sign", "verify"]);
+}
+
+/**
+ * The key a device authenticates its own list of the devices it revoked with
+ * (fifth review 12.11, F2): from epoch 0's secret, which every keyring of the
+ * vault carries, so the list stays checkable across epochs.
+ */
+export async function revokedHereKey(secret0: Uint8Array, vaultId: string): Promise<CryptoKey> {
+  return hkdfKey(await ikm(secret0), vaultId, "revoked-here", HMAC_KEY, ["sign", "verify"]);
+}
+
+/** The names key: always from epoch 0's secret. */
+export async function namesKey(secret0: Uint8Array, vaultId: string): Promise<CryptoKey> {
+  return hkdfKey(await ikm(secret0), vaultId, "names", HMAC_KEY, ["sign"]);
+}
+
+/** The passphrase's own keys: the header MAC and the keyring wrap. */
+export async function passphraseKeys(master: Uint8Array, vaultId: string): Promise<{ header: CryptoKey; wrap: CryptoKey }> {
+  const base = await ikm(master);
+  const [header, wrap] = await Promise.all([hkdfKey(base, vaultId, "header", HMAC_KEY, ["sign", "verify"]), hkdfKey(base, vaultId, "keyring-wrap", AES_KEY, ["encrypt", "decrypt"])]);
+  return { header, wrap };
+}
+
+/** The keys of vault `vaultId` at epoch 0 (no keyring): everything from the passphrase-derived master. */
+export async function deriveVaultKeys(master: Uint8Array, vaultId: string): Promise<VaultKeys> {
+  const secret = master.slice();
+  const [p, e, names] = await Promise.all([passphraseKeys(secret, vaultId), epochKeys(secret, vaultId), namesKey(secret, vaultId)]);
+  master.fill(0);
+  return { vaultId, header: p.header, wrap: p.wrap, names, ...e, epoch: 0, secret, olderBlobs: new Map(), olderSecrets: new Map() };
 }
 
 export async function hmac(key: CryptoKey, data: Uint8Array): Promise<Uint8Array<ArrayBuffer>> {

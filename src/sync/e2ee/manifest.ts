@@ -38,6 +38,8 @@ export interface ManifestEntry {
   deleted?: true;
   /** The device that wrote this version (a random id, not a name). */
   by: string;
+  /** The key epoch the blob was sealed in (plan W1.7); absent: 0. */
+  e?: number;
 }
 
 export interface Manifest {
@@ -53,14 +55,44 @@ export interface Manifest {
    * branch is a fork, not an update.
    */
   history: Array<[number, string]>;
+  /**
+   * Set by a re-key (review 12.11): this is the last manifest of its epoch;
+   * its successor is the first manifest of `epoch`. Nobody writes over a
+   * frozen manifest until the keyring lists it as called off (re-review
+   * RR-4: a device that waited `FREEZE_TTL_MS` on its own clock does that).
+   * `at` is the re-keyer's clock, for information only.
+   */
+  frozen?: { epoch: number; at: number; by: string };
 }
+
+/** A frozen manifest's protocol: builds before the keyring refuse it instead of writing over it. */
+export const FROZEN_PROTOCOL = 2;
+/** How long a device waits on a frozen manifest (its own clock) before it calls the re-key off. */
+export const FREEZE_TTL_MS = 10 * 60_000;
 
 /** How many predecessors a manifest lists (about 7 KB of plaintext at most). */
 export const HISTORY_LENGTH = 100;
 
-/** The manifest object's name: the same for every version, so its name leaks nothing. */
+/**
+ * The manifest object's name: the same for every version, so its name leaks
+ * nothing. Each keyring epoch has its own, under a random label
+ * ("manifest/<epoch>/<16 random bytes>", named in the keyring's sealed
+ * part, re-review 12.11 RR-3): nobody without that epoch's secret can name
+ * the next manifest in advance, and a re-key writes it before the keyring,
+ * so the keyring write is the only commit.
+ */
 export function manifestName(keys: VaultKeys): Promise<string> {
-  return opaqueName(keys, "manifest");
+  return opaqueName(keys, keys.ring?.manifest ?? "manifest");
+}
+
+/** The manifest name for a `label` from a keyring ("manifest" at epoch 0, "manifest/<epoch>/<random>" after). */
+export function manifestNameFor(keys: VaultKeys, label: string): Promise<string> {
+  if (!isManifestLabel(label)) throw new DecryptError("Bad manifest label");
+  return opaqueName(keys, label);
+}
+
+export function isManifestLabel(label: unknown): label is string {
+  return label === "manifest" || (typeof label === "string" && /^manifest\/[1-9][0-9]{0,8}(\/[A-Za-z0-9_-]{22})?$/.test(label));
 }
 
 /** The object name of `path` at revision `rev`: HMAC of the path (and revision), never the path itself. */
@@ -86,7 +118,7 @@ export function emptyManifest(vaultId: string): Manifest {
 function canonical(m: Manifest): string {
   const files = pathRecord<ManifestEntry>();
   for (const p of Object.keys(m.files).sort()) files[p] = m.files[p];
-  return JSON.stringify({ protocol: m.protocol, vaultId: m.vaultId, counter: m.counter, files, history: m.history });
+  return JSON.stringify({ protocol: m.protocol, vaultId: m.vaultId, counter: m.counter, files, history: m.history, ...(m.frozen ? { frozen: m.frozen } : {}) });
 }
 
 export interface SealedManifest {
@@ -112,7 +144,8 @@ function isEntry(e: unknown): e is ManifestEntry {
     typeof o.hash === "string" &&
     Number.isSafeInteger(o.size) &&
     typeof o.by === "string" &&
-    (o.deleted === undefined || o.deleted === true)
+    (o.deleted === undefined || o.deleted === true) &&
+    (o.e === undefined || (Number.isSafeInteger(o.e) && (o.e as number) >= 1))
   );
 }
 
@@ -124,7 +157,12 @@ export async function openManifest(
 ): Promise<{ manifest: Manifest; digest: string }> {
   const { value, bytes } = await unsealJson(keys.manifest, keys.vaultId, "manifest", name ?? (await manifestName(keys)), sealed);
   const o = value as Record<string, unknown>;
-  if (!o || o.protocol !== PROTOCOL_VERSION) throw new DecryptError("Unsupported manifest protocol");
+  if (!o || (o.protocol !== PROTOCOL_VERSION && o.protocol !== FROZEN_PROTOCOL)) throw new DecryptError("Unsupported manifest protocol");
+  const fz = o.frozen as Record<string, unknown> | undefined;
+  if (fz !== undefined && (!fz || typeof fz !== "object" || !Number.isSafeInteger(fz.epoch) || (fz.epoch as number) < 1 || !Number.isSafeInteger(fz.at) || typeof fz.by !== "string")) {
+    throw new DecryptError("Bad manifest freeze");
+  }
+  if ((fz !== undefined) !== (o.protocol === FROZEN_PROTOCOL)) throw new DecryptError("Bad manifest freeze");
   if (o.vaultId !== keys.vaultId) throw new DecryptError("The manifest belongs to another vault");
   if (!Number.isSafeInteger(o.counter) || (o.counter as number) < 1) throw new DecryptError("Bad manifest counter");
   if (!o.files || typeof o.files !== "object") throw new DecryptError("Bad manifest files");
@@ -151,7 +189,14 @@ export async function openManifest(
     throw new DecryptError("Bad manifest history");
   }
   return {
-    manifest: { protocol: PROTOCOL_VERSION, vaultId: keys.vaultId, counter, files, history: history as Array<[number, string]> },
+    manifest: {
+      protocol: o.protocol as number,
+      vaultId: keys.vaultId,
+      counter,
+      files,
+      history: history as Array<[number, string]>,
+      ...(fz ? { frozen: { epoch: fz.epoch as number, at: fz.at as number, by: fz.by as string } } : {}),
+    },
     digest: await sha256Hex(bytes),
   };
 }

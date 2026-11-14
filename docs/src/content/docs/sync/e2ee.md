@@ -126,20 +126,26 @@ model.
 A device that has never seen the vault cannot know which manifest is the
 newest — the service could show it an old one from the start. So:
 
-- **Pairing (verified).** On a device you already use, create a pairing
-  code (shown as text or a QR code). Enter it on the new device. The code
-  carries the newest counter and manifest digest the existing device has
-  verified, authenticated with an HMAC under the vault's pairing key, valid
-  for 15 minutes. It goes from device to device, never through the sync
-  service, and contains no key: the new device still needs the passphrase.
-  From then on the new device rejects anything older.
+- **Pairing (verified).** The new device shows a pairing request (text or
+  a QR code) naming the keys and manifest it sees. Enter it on a device you
+  already use: that device checks it against the vault as it is right then,
+  refuses it if the new device is being shown older keys, and shows an
+  answer carrying the newest counter, manifest digest and keyring it has
+  verified, authenticated with an HMAC under the vault's pairing key. Enter
+  the answer on the new device within 5 minutes of showing the request. Both go from
+  device to device, never through the sync service, and contain no key: the
+  new device still needs the passphrase. From then on the new device rejects
+  anything older. A one-way code from the existing device also works, valid
+  for 2 minutes, and that device makes no key change meanwhile
+  ([keys](/sync/e2ee-keys/)).
 - **Without pairing (TOFU — not verified).** The new device accepts the
   first manifest it is shown (*trust on first use*). It does refuse
   anything older than that afterwards, but if the very first manifest was
   already stale it cannot notice. Lumen therefore shows **"Freshness not
   verified"** on that device and claims no rollback protection until you
   pair it or confirm by hand (for example after checking that a recent
-  note is there). A pairing code older than the state the new device already holds is
+  note is there). Until then it downloads but doesn't upload: its changes
+  wait on the device. A pairing code older than the state the new device already holds is
   refused (it cannot vouch for a newer manifest). An unverified device cannot issue pairing codes: it
   would pass a state nobody verified to the next device as "paired".
 
