@@ -160,6 +160,8 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "relatedPanel.json": { module: "ui/relatedPanelStrings.ts", users: ["ui/RelatedPanel.tsx"], prefixes: ["related."] },
   "tasksBlock.json": { module: "plugins/tasksBlockStrings.ts", users: ["plugins/TasksBlock.tsx"], prefixes: ["tasks.count", "tasks.error.date", "tasks.error.query", "tasks.error.regex", "tasks.group.done", "tasks.group.none", "tasks.group.todo"] },
   "tts.json": { module: "ai/ttsStrings.ts", users: ["ai/tts.ts"], prefixes: ["tts.", "toast.tts."] },
+  // The self-guided usability session (plan W4.25), opened from the palette.
+  "usabilitySelf.json": { module: "research/usability/selfStrings.ts", users: ["ui/UsabilitySelfPanel.tsx"], prefixes: ["usabilitySelf."] },
 };
 
 function sources(dir: string): string[] {

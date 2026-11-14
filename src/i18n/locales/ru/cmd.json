@@ -313,6 +313,8 @@
   "cmd.research.settings.hint": "Веб-поиск Claude или Brave / Tavily со своим ключом",
   "cmd.research.usability": "Юзабилити-исследование (модератор)…",
   "cmd.research.usability.hint": "Записать юзабилити-сессию на этом устройстве с согласия участника",
+  "cmd.research.usabilitySelf": "Тест удобства (самостоятельный)…",
+  "cmd.research.usabilitySelf.hint": "10 заданий самостоятельно; запись только на этом устройстве",
   "cmd.research.verify": "🔎 Исследование: проверить цитаты в заметке",
   "cmd.research.verify.hint": "Проверяет, что ссылки в сносках живы, а цитаты действительно есть на странице",
   "cmd.review.daily": "Ежедневное повторение",

@@ -313,6 +313,8 @@
   "cmd.research.settings.hint": "Claude-Websuche oder Brave / Tavily mit eigenem Schlüssel",
   "cmd.research.usability": "Usability-Studie (Moderation)…",
   "cmd.research.usability.hint": "Eine Usability-Sitzung auf diesem Gerät aufzeichnen, mit Einwilligung der Person",
+  "cmd.research.usabilitySelf": "Usability-Test (selbstständig)…",
+  "cmd.research.usabilitySelf.hint": "10 Aufgaben allein; nur auf diesem Gerät gespeichert",
   "cmd.research.verify": "🔎 Recherche: Zitate in dieser Notiz prüfen",
   "cmd.research.verify.hint": "Prüft, ob jeder Fußnoten-Link lebt und das Zitat wirklich auf der Seite steht",
   "cmd.review.daily": "Tägliche Wiederholung",

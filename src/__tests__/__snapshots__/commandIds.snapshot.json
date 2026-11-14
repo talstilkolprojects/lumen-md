@@ -662,6 +662,13 @@
       "icon": "Sparkles"
     },
     {
+      "id": "research.usabilitySelf",
+      "label": "Usability test (self-guided)…",
+      "group": "Tools",
+      "hint": "10 tasks on your own; recorded on this device only",
+      "icon": "Sparkles"
+    },
+    {
       "id": "vault.backups",
       "label": "Backups…",
       "group": "File",
@@ -2474,6 +2481,13 @@
       "icon": "Sparkles"
     },
     {
+      "id": "research.usabilitySelf",
+      "label": "Usability test (self-guided)…",
+      "group": "Tools",
+      "hint": "10 tasks on your own; recorded on this device only",
+      "icon": "Sparkles"
+    },
+    {
       "id": "vault.backups",
       "label": "Backups…",
       "group": "File",
@@ -3811,6 +3825,7 @@
     "lexicon.pack",
     "lexicon.lookup",
     "research.usability",
+    "research.usabilitySelf",
     "vault.backups",
     "vault.export",
     "vault.import",

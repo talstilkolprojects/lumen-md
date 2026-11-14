@@ -107,6 +107,8 @@ const OnboardingTour = lazy(() => import("./ui/OnboardingTour").then(m => ({ def
 const FirstRun = lazy(() => import("./onboarding/FirstRun"));
 // Plan W1.29: the moderator's usability-session panel, loaded only when a study runs.
 const UsabilitySessionPanel = lazy(() => import("./ui/UsabilitySessionPanel").then((m) => ({ default: m.UsabilitySessionPanel })));
+// Plan W4.25: the participant's self-guided session panel, loaded only when one runs.
+const UsabilitySelfPanel = lazy(() => import("./ui/UsabilitySelfPanel").then((m) => ({ default: m.UsabilitySelfPanel })));
 import { scrollToHeadingWhenRendered } from "./renderer/wikiLinks";
 import { notifyWorkspaceChanged } from "./storage/workspaceEvents";
 import { explainError } from "./lib/userError";
@@ -226,18 +228,25 @@ export default function App() {
     }, 5000);
     return () => clearTimeout(timer);
   }, []);
-  // A usability session (W1.29) survives a reload: reopen its panel.
-  const [usabilityOpen, setUsabilityOpen] = useState(() => {
+  // A usability session (W1.29, self-guided W4.25) survives a reload: reopen its panel.
+  const [usabilityOpen, setUsabilityOpen] = useState<null | "moderated" | "unmoderated">(() => {
     try {
-      return !!localStorage.getItem("lumen-usability-session");
+      const raw = localStorage.getItem("lumen-usability-session");
+      if (!raw) return null;
+      return (JSON.parse(raw) as { mode?: string }).mode === "unmoderated" ? "unmoderated" : "moderated";
     } catch {
-      return false;
+      return null;
     }
   });
   useEffect(() => {
-    const on = () => setUsabilityOpen(true);
+    const on = () => setUsabilityOpen("moderated");
+    const self = () => setUsabilityOpen("unmoderated");
     window.addEventListener("lumen-open-usability", on);
-    return () => window.removeEventListener("lumen-open-usability", on);
+    window.addEventListener("lumen-open-usability-self", self);
+    return () => {
+      window.removeEventListener("lumen-open-usability", on);
+      window.removeEventListener("lumen-open-usability-self", self);
+    };
   }, []);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -1432,7 +1441,7 @@ export default function App() {
       <MobileKeyboardBarHost />
       {usabilityOpen && (
         <Suspense fallback={null}>
-          <UsabilitySessionPanel onClose={() => setUsabilityOpen(false)} />
+          {usabilityOpen === "unmoderated" ? <UsabilitySelfPanel onClose={() => setUsabilityOpen(null)} /> : <UsabilitySessionPanel onClose={() => setUsabilityOpen(null)} />}
         </Suspense>
       )}
       <TagsPanel open={tagsPanelOpen} onClose={() => setTagsPanelOpen(false)} />
