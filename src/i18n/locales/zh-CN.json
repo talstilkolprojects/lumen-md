@@ -1572,5 +1572,12 @@
   "e2ee.lan.found.pick": "与 {name} 配对",
   "e2ee.lan.discovery.used": "该设备已与另一台设备配对。请在那里开始新的配对。",
   "e2ee.lan.discovery.failed": "无法连接到该设备。请改用下面的代码。",
+  "e2ee.lan.peer.code": "代码",
+  "e2ee.lan.compare.title": "比对代码",
+  "e2ee.lan.compare.ask": "继续之前，请确认另一台设备在本设备旁边显示的是同一个代码：",
+  "e2ee.lan.compare.same": "代码相同 — 继续",
+  "e2ee.lan.compare.differ": "不同 — 取消",
+  "e2ee.lan.compare.mismatch": "两个代码不同，因此已关闭连接。请重新配对；如果再次发生，可能有此网络上的另一台设备夹在中间。",
+  "e2ee.lan.found.duplicate": "有两台设备都自称 {name}。仅当配对后两个屏幕显示相同代码时才选择其中一台。",
   "cmd.sync.open": "加密同步…"
 }

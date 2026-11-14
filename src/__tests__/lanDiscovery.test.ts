@@ -66,6 +66,16 @@ describe("W2.19 discovery: the hosting device", () => {
     expect(app.hosted()).toBeNull();
   });
 
+  it("stops waiting when the app ends the offer by its own clock", async () => {
+    const app = fakeApp();
+    const invoke: Invoke = async <T,>(cmd: string, args?: Record<string, unknown>): Promise<T> => {
+      if (cmd === "lan_discovery_answer") throw new Error("expired");
+      return app.invoke<T>(cmd, args);
+    };
+    const { answer } = await announcePairing(OFFER, { signal: new AbortController().signal, invoke, pollMs: 5 });
+    expect(await answer).toBeNull();
+  });
+
   it("never announces something that is not a pairing code, and ignores an answer that isn't one", async () => {
     const app = fakeApp();
     await expect(announcePairing("hello", { signal: new AbortController().signal, invoke: app.invoke })).rejects.toBeInstanceOf(DiscoveryError);
@@ -80,10 +90,11 @@ describe("W2.19 discovery: the hosting device", () => {
 });
 
 describe("W2.19 discovery: the joining device", () => {
-  it("lists only Lumen names on local-network addresses, once each", async () => {
+  it("lists only Lumen names on local-network addresses, every device once, a repeated name flagged", async () => {
     const app = fakeApp({
       found: [
         { name: "Lumen-K7Q2", host: "192.168.1.20", port: 40123 },
+        { name: "Lumen-K7Q2", host: "192.168.1.21", port: 40124 },
         { name: "Lumen-K7Q2", host: "192.168.1.21", port: 40124 },
         { name: "Lumen-AB12", host: "fe80::1", port: 5000 },
         { name: "Lumen-WAN1", host: "8.8.8.8", port: 40123 },
@@ -93,8 +104,10 @@ describe("W2.19 discovery: the joining device", () => {
         null,
       ],
     });
+    // Every device is listed, and two that announce the same name are both flagged (review 28, L2).
     expect(await findDevices({ invoke: app.invoke })).toEqual([
-      { name: "Lumen-K7Q2", host: "192.168.1.20", port: 40123 },
+      { name: "Lumen-K7Q2", host: "192.168.1.20", port: 40123, duplicate: true },
+      { name: "Lumen-K7Q2", host: "192.168.1.21", port: 40124, duplicate: true },
       { name: "Lumen-AB12", host: "fe80::1", port: 5000 },
     ]);
     expect(app.calls[0]).toEqual({ cmd: "lan_discovery_browse", args: { ms: 2500 } });

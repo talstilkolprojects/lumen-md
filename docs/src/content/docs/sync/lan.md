@@ -94,6 +94,20 @@ that takes a code without the passphrase can't pass the vault's proof. A
 pairing is used up by the first answer, and the device stops announcing
 once it is paired or the dialog closes.
 
+Before anything syncs, both screens show the same **8-digit code** (on
+the hosting device it sits next to the new device in its list). Continue
+only when they match. The vault's passphrase proof is also bound to that
+connection: it includes both devices' encryption fingerprints. So a device
+on the network that tried to sit between your two devices fails the proof,
+even if it relayed the codes, and the two screens would show different
+codes.
+
+If two devices on the network announce the same name, both are listed with
+a warning. If another device answered a pairing first, the hosting device
+offers a fresh one under a new name, and the list refreshes. A pairing that
+isn't used closes on its own after 5 minutes, and the hosting device serves
+only a few connections at a time.
+
 A browser or a phone can't use mDNS: a web page can't send UDP or listen on
 a port. There you use the codes. On macOS the first search asks for the
 **local network** permission.

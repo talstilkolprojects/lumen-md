@@ -11,7 +11,7 @@ import "../strings";
 import { encodeQr, qrPath } from "../../../lib/qr";
 import { recordLanSync, setLanSyncBytes } from "../../../ai/privacyLedger";
 import { hostOffer, joinOffer, LanLinkError, type LanLink } from "../lan/link";
-import { LanAuthError } from "../lan/rpc";
+import { channelBinding, comparisonCode, LanAuthError } from "../lan/rpc";
 import { adoptPeerLink, LanNoVaultError, LanNotConnectedError, thisHost } from "../lan";
 import { announcePairing, discoveryAvailable, DiscoveryError, findDevices, joinFound, type FoundDevice } from "../lan/discovery";
 import type { LanPeerInfo } from "../lan/rpc";
@@ -95,6 +95,7 @@ export function LanJoin({ onLinked }: { onLinked: () => Promise<void> }) {
   const canFind = useMemo(() => discoveryAvailable(), []);
   const [found, setFound] = useState<FoundDevice[] | null>(null);
   const [finding, setFinding] = useState(false);
+  const [compare, setCompare] = useState<{ code: string; resolve: (same: boolean) => void } | null>(null);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -113,6 +114,10 @@ export function LanJoin({ onLinked }: { onLinked: () => Promise<void> }) {
         const j = await joinOffer(code);
         pending.current = j.cancel;
         return j;
+      }).catch(async (e) => {
+        // Review 28, L2: the pairing was used by someone else. The host makes a fresh one under a new name: look again.
+        if (e instanceof DiscoveryError && (e.reason === "used" || e.reason === "token")) void find();
+        throw e;
       }),
     );
   }
@@ -136,6 +141,16 @@ export function LanJoin({ onLinked }: { onLinked: () => Promise<void> }) {
       const j = await start();
       const link = await j.link;
       pending.current = null;
+      // Review 28, L1: before anything syncs, both screens show the channel's code; the user checks they match.
+      pending.current = () => link.close();
+      const code = await comparisonCode(channelBinding("peer", link.fingerprints));
+      if (code && !(await new Promise<boolean>((resolve) => setCompare({ code, resolve })))) {
+        link.close();
+        setCompare(null);
+        setError(t("e2ee.lan.compare.mismatch"));
+        return;
+      }
+      setCompare(null);
       trackInLedger(link);
       adoptPeerLink(link);
       await onLinked();
@@ -166,10 +181,16 @@ export function LanJoin({ onLinked }: { onLinked: () => Promise<void> }) {
           {found && found.length > 0 && (
             <ul style={{ margin: 0, paddingInlineStart: 18, display: "grid", gap: 4 }} data-testid="lan-found">
               {found.map((d) => (
-                <li key={d.name}>
+                <li key={`${d.name}|${d.host}|${d.port}`}>
                   <button type="button" onClick={() => void pick(d)} disabled={busy}>
                     {t("e2ee.lan.found.pick", { name: d.name })}
-                  </button>
+                  </button>{" "}
+                  <bdi dir="ltr" style={muted}>{d.host}</bdi>
+                  {d.duplicate && (
+                    <div role="alert" style={errorStyle}>
+                      {t("e2ee.lan.found.duplicate", { name: d.name })}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -185,7 +206,23 @@ export function LanJoin({ onLinked }: { onLinked: () => Promise<void> }) {
           {t("e2ee.lan.join.answer")}
         </button>
       )}
-      {answer && (
+      {compare && (
+        <div role="group" aria-label={t("e2ee.lan.compare.title")} style={{ display: "grid", gap: 6 }} data-testid="lan-compare">
+          <div style={{ fontSize: 13 }}>{t("e2ee.lan.compare.ask")}</div>
+          <bdi dir="ltr" style={{ fontFamily: "monospace", fontSize: 20, fontWeight: 700 }} data-testid="lan-compare-code">
+            {compare.code}
+          </bdi>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button type="button" onClick={() => compare.resolve(true)}>
+              {t("e2ee.lan.compare.same")}
+            </button>
+            <button type="button" onClick={() => compare.resolve(false)}>
+              {t("e2ee.lan.compare.differ")}
+            </button>
+          </div>
+        </div>
+      )}
+      {answer && !compare && (
         <>
           <div style={{ fontSize: 13 }}>{t("e2ee.lan.join.showBack")}</div>
           <CodeBox code={answer} testId="lan-answer-code" />
@@ -242,8 +279,12 @@ export function LanHostPairing() {
       .then(({ name, answer: came }) => {
         if (ctl.signal.aborted) return;
         setVisibleAs(name);
-        void came.then((a) => {
-          if (a && !ctl.signal.aborted) void accept(offer, a);
+        void came.then(async (a) => {
+          if (!a || ctl.signal.aborted) return;
+          await accept(offer, a);
+          // Review 28, L2: an answer from the network uses the pairing up, whoever sent it. Make a fresh
+          // offer under a new name, so the user's own device can still pair if another one got there first.
+          if (!ctl.signal.aborted) void start();
         });
       })
       .catch(() => setVisibleAs(null));
@@ -267,7 +308,7 @@ export function LanHostPairing() {
       const link = await o.accept(code);
       pending.current = null;
       trackInLedger(link);
-      thisHost().attach(link.channel, { address: link.remoteAddress });
+      thisHost().attach(link.channel, { address: link.remoteAddress, fingerprints: link.fingerprints });
       setOffer(null); // used up: the next pairing makes a new offer
     } catch (err) {
       setError(lanError(err));
@@ -287,6 +328,12 @@ export function LanHostPairing() {
             {peers.map((p) => (
               <li key={p.connectedAt} dir="auto">
                 <bdi dir="ltr">{p.address ?? t("e2ee.lan.addressHidden")}</bdi> · {p.authed ? t("e2ee.lan.peer.authed") : t("e2ee.lan.peer.pending")}
+                {p.code && (
+                  <>
+                    {" · "}
+                    {t("e2ee.lan.peer.code")} <bdi dir="ltr" data-testid="lan-peer-code" style={{ fontFamily: "monospace", fontWeight: 600 }}>{p.code}</bdi>
+                  </>
+                )}
               </li>
             ))}
           </ul>

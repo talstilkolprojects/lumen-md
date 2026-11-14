@@ -1572,5 +1572,12 @@
   "e2ee.lan.found.pick": "{name} とペアリング",
   "e2ee.lan.discovery.used": "そのデバイスはすでに別のデバイスとペアリングしました。そちらで新しいペアリングを開始してください。",
   "e2ee.lan.discovery.failed": "そのデバイスに接続できませんでした。代わりに下のコードを使ってください。",
+  "e2ee.lan.peer.code": "コード",
+  "e2ee.lan.compare.title": "照合コード",
+  "e2ee.lan.compare.ask": "続ける前に、もう一方のデバイスでこのデバイスの横に同じコードが表示されていることを確認してください：",
+  "e2ee.lan.compare.same": "同じコード — 続ける",
+  "e2ee.lan.compare.differ": "違う — キャンセル",
+  "e2ee.lan.compare.mismatch": "コードが一致しなかったため接続を閉じました。もう一度ペアリングしてください。再び起きる場合、このネットワーク上の別のデバイスが間に入っている可能性があります。",
+  "e2ee.lan.found.duplicate": "2 台のデバイスが {name} を名乗っています。ペアリング後に両方の画面に同じコードが表示される場合のみ選んでください。",
   "cmd.sync.open": "暗号化同期…"
 }

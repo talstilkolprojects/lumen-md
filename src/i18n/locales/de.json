@@ -1572,5 +1572,12 @@
   "e2ee.lan.found.pick": "Mit {name} koppeln",
   "e2ee.lan.discovery.used": "Dieses Gerät ist schon mit einem anderen gekoppelt. Dort eine neue Kopplung starten.",
   "e2ee.lan.discovery.failed": "Das Gerät war nicht erreichbar. Stattdessen den Code unten verwenden.",
+  "e2ee.lan.peer.code": "Code",
+  "e2ee.lan.compare.title": "Vergleichscode",
+  "e2ee.lan.compare.ask": "Prüfen Sie, dass das andere Gerät neben diesem Gerät denselben Code zeigt, bevor Sie fortfahren:",
+  "e2ee.lan.compare.same": "Gleicher Code — weiter",
+  "e2ee.lan.compare.differ": "Anders — abbrechen",
+  "e2ee.lan.compare.mismatch": "Die Codes waren verschieden, die Verbindung wurde getrennt. Koppeln Sie neu; passiert es wieder, steht vielleicht ein anderes Gerät in diesem Netzwerk dazwischen.",
+  "e2ee.lan.found.duplicate": "Zwei Geräte melden sich als {name}. Wählen Sie eines nur, wenn nach dem Koppeln beide Bildschirme denselben Code zeigen.",
   "cmd.sync.open": "Verschlüsselte Synchronisierung…"
 }

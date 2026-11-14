@@ -28,6 +28,8 @@ export interface FoundDevice {
   name: string;
   host: string;
   port: number;
+  /** Another device on the network announces the same name (review 28, L2): only the comparison code tells them apart. */
+  duplicate?: boolean;
 }
 
 export interface DiscoveryDeps {
@@ -95,7 +97,13 @@ export async function announcePairing(offer: string, opts: { signal: AbortSignal
   const stop = () => invoke("lan_discovery_stop").catch(() => undefined);
   const answer = (async () => {
     while (!opts.signal.aborted) {
-      const a = await invoke<unknown>("lan_discovery_answer").catch(() => null);
+      let a: unknown = null;
+      try {
+        a = await invoke<unknown>("lan_discovery_answer");
+      } catch (e) {
+        // The app ended the offer by its own clock (review 28, L3: 5 minutes): nothing will come.
+        if (/expired/.test(String((e as Error)?.message ?? e))) return null;
+      }
       if (isCode(a)) return a;
       await sleep(opts.pollMs ?? 400, opts.signal);
     }
@@ -105,7 +113,7 @@ export async function announcePairing(offer: string, opts: { signal: AbortSignal
   return { name, answer };
 }
 
-/** The devices announcing a pairing on this network: local addresses and Lumen names only. */
+/** The devices announcing a pairing on this network: local addresses and Lumen names only, every one listed, a repeated name flagged. */
 export async function findDevices(deps: DiscoveryDeps & { ms?: number } = {}): Promise<FoundDevice[]> {
   const invoke = await invokeOf(deps);
   let raw: unknown;
@@ -120,10 +128,10 @@ export async function findDevices(deps: DiscoveryDeps & { ms?: number } = {}): P
     if (!d || typeof d.name !== "string" || !NAME_RE.test(d.name)) continue;
     if (typeof d.host !== "string" || !isLanHost(d.host)) continue;
     if (typeof d.port !== "number" || !Number.isInteger(d.port) || d.port < 1 || d.port > 65535) continue;
-    if (out.some((x) => x.name === d.name)) continue;
+    if (out.some((x) => x.name === d.name && x.host === d.host && x.port === d.port)) continue;
     out.push({ name: d.name, host: d.host, port: d.port });
   }
-  return out;
+  return out.map((d) => (out.filter((x) => x.name === d.name).length > 1 ? { ...d, duplicate: true } : d));
 }
 
 /**

@@ -1572,5 +1572,12 @@
   "e2ee.lan.found.pick": "Associer avec {name}",
   "e2ee.lan.discovery.used": "Cet appareil s’est déjà associé à un autre. Lancez-y une nouvelle association.",
   "e2ee.lan.discovery.failed": "Impossible de joindre cet appareil. Utilisez plutôt le code ci-dessous.",
+  "e2ee.lan.peer.code": "code",
+  "e2ee.lan.compare.title": "Code de comparaison",
+  "e2ee.lan.compare.ask": "Vérifiez que l’autre appareil affiche ce même code à côté de cet appareil avant de continuer :",
+  "e2ee.lan.compare.same": "Même code — continuer",
+  "e2ee.lan.compare.differ": "Différent — annuler",
+  "e2ee.lan.compare.mismatch": "Les codes différaient, la liaison a donc été fermée. Associez à nouveau ; si cela se reproduit, un autre appareil de ce réseau est peut-être au milieu.",
+  "e2ee.lan.found.duplicate": "Deux appareils s’annoncent comme {name}. N’en choisissez un que si, après l’association, les deux écrans affichent le même code.",
   "cmd.sync.open": "Synchronisation chiffrée…"
 }
