@@ -174,7 +174,8 @@ describe("5.6.4 every failure reaches the panel", () => {
       ["src/commands/domains/batchActions.ts", "ai.batch"],
       ["src/ui/SearchDialog.tsx", "search.askWorkspace"],
       ["src/plugins/CsvBlock.tsx", "ai.chart"],
-      ["src/editor/WysiwygEditor.tsx", "wysiwyg.aiRewrite"],
+      // The selection tooltip is its own module (W6.25, train 5).
+      ["src/editor/wysiwygTooltip.ts", "wysiwyg.aiRewrite"],
       ["src/editor/WysiwygEditor.tsx", "wysiwyg.aiWrite"],
     ])
       expect(readFileSync(file, "utf8"), `${file} ${id}`).toMatch(new RegExp(`reportAgentFailure\\(e, "${id.replace(".", "\\.")}"\\)`));
