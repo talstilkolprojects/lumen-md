@@ -230,6 +230,10 @@
       {
         "file": "src/__tests__/agentRuntimeMutation.test.ts",
         "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/agentRuntimeRules.test.ts",
+        "runner": "harness"
       }
     ],
     "src/agents/runtimeText.ts": [
