@@ -119,6 +119,12 @@ export const SETTINGS: readonly SettingEntry[] = [
   app("themeSettings", { kind: "setting", tab: "appearance", label: "cmd.settings.theme.hint", type: "json" }),
   app("useFineTunedModel", { kind: "setting", tab: "fineTune", label: "fineTune.useToggle", type: "boolean" }),
   app("fineTunedModelId", { kind: "setting", tab: "fineTune", type: "text" }),
+  app("showLocalGraph", { kind: "setting", tab: "general", type: "boolean" }),
+  app("enabledSnippets", { kind: "setting", tab: "general", type: "json" }),
+  // Phones (plan W3.x): the keyboard bar's actions, and long notes opening in reading view.
+  app("mobileToolbar", { kind: "setting", tab: "general", type: "json" }),
+  app("readLongNotes", { kind: "setting", tab: "general", type: "boolean" }),
+  app("readingWords", { kind: "setting", tab: "general", type: "number", min: 0, max: 1_000_000 }),
   app("doc", { kind: "data" }),
   app("openTabs", { kind: "data" }),
 
@@ -236,6 +242,60 @@ export const SETTINGS: readonly SettingEntry[] = [
   data("lumen-vault-known"),
   data("lumen-config-health"),
   data("lumen-tour-done"),
+
+  // ── Train 5 (audit item 6): keys stored since the schema was last complete ──
+  // Display and reading preferences: user choices with no privacy effect.
+  local("lumen-sr-verbosity", { kind: "setting", tab: "general", type: "text" }),
+  local("lumen.grammar.he.level", { kind: "setting", tab: "general", type: "choice", options: [{ value: "everyday" }, { value: "academic" }, { value: "legal" }] }),
+  local("lumen.nikud.quality", { kind: "setting", tab: "general", type: "text" }),
+  local("lumen.tts.settings", { kind: "setting", tab: "general", type: "json" }),
+  local("lumen.bidiMarks", { kind: "setting", tab: "general", type: "boolean", values: ["", "1"] }),
+  local("lumen-reading", { kind: "setting", tab: "general", type: "json" }),
+  local("lumen-reading-aids", { kind: "setting", tab: "general", type: "json" }),
+  local("lumen-hebrew-typography", { kind: "setting", tab: "general", type: "json" }),
+  // Secrets: account passwords and tokens, never exported or imported.
+  secret("lumen.calendar.caldav.password", "sync"),
+  secret("lumen.zotero.apiKey", "general"),
+  secret("lumen.atproto.refreshJwt", "sync"),
+  secret("lumen.sync.relay.token", "sync"),
+  secret("lumen.collab.owner.*", "sync"),
+  // Trust, consent and privacy switches: like the trust anchors above, never taken from an imported file.
+  data("lumen.mcp.servers"),
+  data("lumen.agents.trustedRepos"),
+  data("lumen.skills.allowed"),
+  data("lumen.openSources"),
+  data("lumen.airplane"),
+  data("lumen.usage.counting"),
+  data("lumen.backup.enabled"),
+  data("lumen.beta.v1"),
+  // Accounts, servers and sync rules: they name where data goes, so they are not imported either.
+  data("lumen.calendar.caldav"),
+  data("lumen.calendar.subscriptions"),
+  data("lumen.atproto.account"),
+  data("lumen.sync.rules.v1"),
+  // Content, caches, history and bookkeeping.
+  data("lumen-usability-session"),
+  data("lumen.dict.ar.v1"),
+  data("lumen.lexicon.he"),
+  data("lumen.privacy.audit"),
+  data("lumen.backup.status.v1"),
+  data("lumen.calendar.caldav.state"),
+  data("lumen.cite.recent"),
+  data("lumen.namedVersions"),
+  data("lumen.collab.serverOnly.v1"),
+  data("lumen.collab.sharedWithMe.v1"),
+  data("lumen.morning.last"),
+  data("lumen.usage.v1"),
+  data("lumen.usage.weekly"),
+  data("lumen.usage.lastReport"),
+  data("lumen.atproto.published"),
+  data("lumen.hostMove.later"),
+  data("lumen.related.offFolders"),
+  data("lumen-saved-searches"),
+  data("lumen-last-import"),
+  data("lumen.sync.speed.v1"),
+  data("lumen.academicExport.v1"),
+  data("lumen.whatsNew.seen"),
 ];
 
 /** True when `key` is the entry's id, or matches it with `*` as a wildcard. */
