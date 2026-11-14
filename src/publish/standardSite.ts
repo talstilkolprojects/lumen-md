@@ -66,47 +66,93 @@ export function noteTitle(md: string, path: string): string {
 
 export const REDACTED = "█████";
 
+type SyncRedaction = { prepareForExportSync: (markdown: string, opts?: { keepImageMetadata?: boolean }) => string };
+type ExportDoor = { exportReadyText: (markdown: string, inlinePhotos?: boolean) => Promise<string> };
+// #473's export door, when this build has it (the share link's seam, src/share/shareReady.ts): the async
+// door for publishNote, and its synchronous core, eagerly, so the record builders use it on every call.
+const doors = import.meta.glob<ExportDoor>("../storage/exportReady*.ts");
+const syncDoors = import.meta.glob<SyncRedaction>("../lib/redaction*.ts", { eager: true });
+
+/** Did the build find #473's door? (A test fails when the file exists and this is false: review 23, RR23-587-2.) */
+export const exportDoorFound = (): { async: boolean; sync: boolean } => ({ async: "../storage/exportReady.ts" in doors, sync: "../lib/redaction.ts" in syncDoors });
+
+const CODE_OR_TRICK = /`|<!--|\{(?:>>|~~|\+\+|--|==)|<(?!\/?redact\b)[a-zA-Z!?/]/i;
+
 /**
- * What a public record may never carry, removed fail-closed (the rules of
- * #473's export door): a `<redact>` passage (any case, attributes allowed,
- * nested passages counted; one never closed runs to the end of the note, and a
- * mark inside code counts too) becomes `█████`; an HTML comment is dropped (to
- * the end when never closed); `%%…%%` comments are dropped in pairs (a lone
- * `%%` stays: it is common in text).
+ * Does this close really end the passage? Only when everything between the
+ * open and the close is plain: no code span, comment, CriticMarkup or other
+ * tag (each can hide a `</redact>` from the preview, or make the preview read
+ * past it: review 23's B5-B9), and, for a passage over several lines, the
+ * close alone on its line (a close inside a list item or a quote does not
+ * end an HTML block: B8). Otherwise the close is ignored, fail-closed.
  */
-export function privateRemoved(md: string): string {
+function closes(between: string, closeLine: string): boolean {
+  if (CODE_OR_TRICK.test(between)) return false;
+  return !between.includes("\n") || /^[ \t]*<\/redact\b[^>]*>[ \t]*$/i.test(closeLine);
+}
+
+/** The fallback rules (no #473 in the build). Fail-closed: when in doubt, more is removed. */
+function removeMarked(md: string): { text: string; unclosed: boolean } {
   const OPEN = /<redact\b[^>]*>/gi;
   const ANY = /<(\/?)redact\b[^>]*>/gi;
   let out = "";
   let at = 0;
+  let unclosed = false;
   for (;;) {
     OPEN.lastIndex = at;
     const o = OPEN.exec(md);
     if (!o) break;
     out += md.slice(at, o.index) + REDACTED;
+    const bodyStart = o.index + o[0].length;
     let depth = 1;
-    ANY.lastIndex = o.index + o[0].length;
-    let end = md.length;
+    ANY.lastIndex = bodyStart;
+    let end = -1;
     for (let m = ANY.exec(md); m; m = ANY.exec(md)) {
-      depth += m[1] ? -1 : 1;
-      if (depth === 0) {
+      if (!m[1]) {
+        depth++;
+        continue;
+      }
+      const lineStart = md.lastIndexOf("\n", m.index) + 1;
+      const lineEnd = md.indexOf("\n", m.index);
+      if (!closes(md.slice(bodyStart, m.index), md.slice(lineStart, lineEnd < 0 ? md.length : lineEnd))) continue;
+      if (--depth === 0) {
         end = m.index + m[0].length;
         break;
       }
+    }
+    if (end < 0) {
+      unclosed = true;
+      at = md.length;
+      break;
     }
     at = end;
   }
   out += md.slice(at);
   // A stray closing mark with no opening one: drop the mark, keep the text (nothing was hidden).
   out = out.replace(/<\/redact\b[^>]*>/gi, "");
+  // A passage still open at the end takes every footnote with it in the preview (RR8-473-2): drop their definitions.
+  if (unclosed) out = out.replace(/^[ \t>]*\[\^[^\]\s]+\]:.*(?:\n(?:[ \t]{2,}.*|[ \t]*$))*/gm, "");
+  return { text: out, unclosed };
+}
+
+/**
+ * What a public record may never carry, removed fail-closed on EVERY call,
+ * also when a record builder is called directly (review 23, RR23-587-1):
+ * #473's `prepareForExportSync` when the build has it (the rules the preview
+ * is checked against), then this file's own rules either way: `<redact>`
+ * passages (any case, attributes, nesting; a close that code, a comment,
+ * CriticMarkup or another tag could hide is ignored; one never closed runs to
+ * the end and takes the footnote definitions), HTML comments (to the end when
+ * unclosed) and `%%…%%` pairs (a lone `%%` stays).
+ */
+export function privateRemoved(md: string): string {
+  const door = syncDoors["../lib/redaction.ts"];
+  const first = door ? door.prepareForExportSync(md, { keepImageMetadata: true }) : md;
+  let out = removeMarked(first).text;
   out = out.replace(/<!--[\s\S]*?(?:-->|$)/g, "");
   out = out.replace(/%%[\s\S]*?%%/g, "");
   return out;
 }
-
-type ExportDoor = { exportReadyText: (markdown: string, inlinePhotos?: boolean) => Promise<string> };
-// #473's door, when this build has it (the share link's seam, src/share/shareReady.ts).
-const doors = import.meta.glob<ExportDoor>("../storage/exportReady*.ts");
 
 /** The text a public record is built from: #473's export door when present, then `privateRemoved` either way. */
 export async function publishReadyText(markdown: string): Promise<string> {
