@@ -29,7 +29,7 @@ export interface SnapshotFile {
   name: string;
   modified: number;
   content: string;
-  /** UTF-8 bytes of `content` (review 14.11 S3): checked with the mtime. Absent in a record written before it. */
+  /** UTF-8 bytes of `content` (review 14.11 S3): checked with the mtime. A snapshot always records it (V1). */
   size?: number;
 }
 
@@ -67,7 +67,7 @@ interface Stored {
   names: string[];
   modified: number[];
   contents: string[];
-  /** UTF-8 sizes (S3); optional so a record written before them still opens. */
+  /** UTF-8 sizes (S3). A record without them is refused (V1). */
   sizes?: number[];
 }
 
@@ -93,7 +93,9 @@ export function decodeSnapshot(raw: unknown, vault: string): Map<string, Snapsho
   if (!s || s.v !== SNAPSHOT_VERSION || s.vault !== vault) return null;
   const n = s.paths?.length;
   if (!Array.isArray(s.paths) || ![s.names, s.modified, s.contents].every((c) => Array.isArray(c) && c.length === n)) return null;
-  if (s.sizes !== undefined && !(Array.isArray(s.sizes) && s.sizes.length === n && s.sizes.every((x) => typeof x === "number"))) return null;
+  // Review 15 V1: a record without sizes (written before them) is refused like any other old format: its notes are
+  // read again once, so no note is trusted on its mtime alone.
+  if (!(Array.isArray(s.sizes) && s.sizes.length === n && s.sizes.every((x) => typeof x === "number"))) return null;
   const out = new Map<string, SnapshotFile>();
   for (let i = 0; i < n; i++) {
     const path = s.paths[i];
