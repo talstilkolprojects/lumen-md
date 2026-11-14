@@ -43,8 +43,9 @@ describe("narrow permissions (11.5.3)", () => {
 
   it("the updater is driven from Rust commands, not from the WebView", () => {
     const lib = readFileSync(join(root, "src-tauri/src/lib.rs"), "utf8");
-    expect(lib).toMatch(/updates::imp::update_check/);
-    expect(lib).toMatch(/updates::imp::update_install/);
+    expect(lib).toMatch(/updates::imp::lumen_check_update/);
+    expect(lib).toMatch(/updates::imp::lumen_install_update/);
+    expect(lib).not.toMatch(/updates::imp::update_(check|install)\b/);
   });
 });
 

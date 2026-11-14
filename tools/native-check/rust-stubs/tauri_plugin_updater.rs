@@ -11,11 +11,18 @@ impl<R: Runtime, T: Manager<R>> UpdaterExt<R> for T { fn updater_builder(&self) 
 pub struct UpdaterBuilder;
 impl UpdaterBuilder {
     pub fn pubkey<S: Into<String>>(self, pubkey: S) -> Self { unimplemented!() }
+    pub fn version_comparator<F: Fn(Version, RemoteRelease) -> bool + Send + Sync + 'static>(self, f: F) -> Self { unimplemented!() }
     pub fn endpoints(self, endpoints: Vec<Url>) -> Result<Self> { unimplemented!() }
     pub fn target(self, target: impl Into<String>) -> Self { unimplemented!() }
     pub fn timeout(self, timeout: std::time::Duration) -> Self { unimplemented!() }
     pub fn build(self) -> Result<Updater> { unimplemented!() }
 }
+/// semver::Version (re-exported by the plugin as the comparator's argument).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Version;
+impl std::fmt::Display for Version { fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result { f.write_str("0.0.0") } }
+#[derive(Debug, Clone)]
+pub struct RemoteRelease { pub version: Version, pub notes: Option<String>, pub pub_date: Option<String> }
 pub struct Updater;
 impl Updater { pub async fn check(&self) -> Result<Option<Update>> { unimplemented!() } }
 #[derive(Clone)]

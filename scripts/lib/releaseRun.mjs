@@ -115,6 +115,52 @@ export function verifyTauriSig(data, sigB64, pubkeyB64) {
   return verifyData(data, minisig, pubText);
 }
 
+/* ---------- the update manifest's own signature (W11.S3) ---------- */
+
+/**
+ * tauri-plugin-updater checks each bundle's signature but trusts latest.json
+ * itself (CVE-2026-95625). So the release also signs latest.json, with the
+ * same updater key and in the same format as a bundle's .sig: base64 of a
+ * minisign signature of the file's exact bytes. The app verifies it before it
+ * reads the manifest (src-tauri/src/manifest_sig.rs, W11.S2).
+ */
+export const MANIFEST = "latest.json";
+export const MANIFEST_SIG = "latest.json.sig";
+
+/**
+ * Sign the bytes of latest.json. A throwaway key (dry runs, tests) has its
+ * PEM and is signed here; the owner's key lives only in
+ * TAURI_SIGNING_PRIVATE_KEY, so `tauriSigner(file)` runs `tauri signer sign`
+ * on the file and returns the .sig it wrote. Either way the result is
+ * checked against the updater public key before it is returned.
+ */
+export function signManifest(data, updater, { file, tauriSigner, timestamp = 0 } = {}) {
+  let sig;
+  if (updater?.pem) sig = tauriSign(data, updater.pem, MANIFEST, { timestamp });
+  else if (tauriSigner) sig = String(tauriSigner(file)).trim();
+  else throw new Error("latest.json cannot be signed: no updater secret key (TAURI_SIGNING_PRIVATE_KEY)");
+  verifyTauriSig(data, sig, updater.pubkey);
+  return sig;
+}
+
+/**
+ * What stops a publish: `files` maps asset name → bytes (or is missing a
+ * name). With a latest.json, its latest.json.sig must be there, non-empty,
+ * and verify those exact bytes with the updater key. Empty = publishable.
+ */
+export function manifestProblems(files, pubkeyB64) {
+  const data = files.get(MANIFEST);
+  if (!data) return [];
+  const sig = files.get(MANIFEST_SIG);
+  if (!sig || !String(sig).trim()) return [`${MANIFEST_SIG} is missing: the app refuses an unsigned update manifest, so the release is not published`];
+  try {
+    verifyTauriSig(data, String(sig), pubkeyB64);
+  } catch (e) {
+    return [`${MANIFEST_SIG} does not verify ${MANIFEST} with the updater key: ${e.message}`];
+  }
+  return [];
+}
+
 /** The public key (base64, Tauri form) of a PEM secret key. */
 export function pubkeyOfPem(pem, passphrase) {
   return Buffer.from(formatPublicKey(rawPublicKey(readSecretKey(pem, passphrase)))).toString("base64");
@@ -395,6 +441,6 @@ export function publishCommands({ version, repo, assets }) {
   return [
     `git push origin HEAD ${tag}`,
     `gh release create ${tag} --repo ${repo} --title "Lumen ${version}" --notes-file release/RELEASE_NOTES.md --verify-tag${isBeta(version) ? " --prerelease --latest=false" : ""} ${assets.map((a) => `release/${a}`).join(" ")}`,
-    `gh release upload beta-channel --repo ${repo} release/latest.json --clobber   # the desktop beta channel (plan 14.4): every beta, and a stable release newer than the last beta`,
+    `gh release upload beta-channel --repo ${repo} release/latest.json release/latest.json.sig --clobber   # the desktop beta channel (plan 14.4): every beta, and a stable release newer than the last beta; the manifest is re-signed when merged (W11.S3)`,
   ];
 }

@@ -1,0 +1,73 @@
+{
+  "$comment": "Synthetic vectors made by scripts/supply-chain/manifest-sig-vectors.mjs with a throwaway key (only its public half is here). Checked by src/__tests__/updaterManifestSig.test.ts (Node) and src-tauri/src/updates.rs (Rust, minisign-verify).",
+  "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXkgVEVTVCA5OEFDREIyQzZDRkQ3MUM1ClJXVEZjZjFzTE51c21NODFGRkdzQ1I4eVQ1TlZXcVZ1ejJVZnlOU0g3ZFFNd1NudTVXVjNnVGRsCg==",
+  "cases": [
+    {
+      "name": "signed by the release signer",
+      "manifest": "{\n  \"version\": \"0.3.0\",\n  \"notes\": \"Synthetic test vector (W11.S2) — ניסוי\",\n  \"pub_date\": \"2026-11-15T00:00:00.000Z\",\n  \"platforms\": {\n    \"darwin-aarch64\": {\n      \"signature\": \"dW50cnVzdGVk\",\n      \"url\": \"https://github.com/talstilkol/lumen-md/releases/download/v0.3.0/Lumen_0.3.0_aarch64.app.tar.gz\"\n    }\n  }\n}\n",
+      "sig": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURmNmMXNMTnVzbUdNNjBISmRkR0tsZzgzNXVOWG5xenQ2dlNJM1QzeUVlcTdibU9QaVJiM2pQenNEZ3czNUF5UUVIS29Id1Ntc1VDSHJZYkR3aWxiTUVERzZxTFRoRXdFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzMTY0ODAwCWZpbGU6bGF0ZXN0Lmpzb24KZ3hOdXBmYTQ3cHNGdHQzUmNUeFVJVUpUamZZa1c1Zm54RlJ2cTdWRkI1ZU9nR2tUZ3hOUmpjdzM4UldXNW9Pd2FIOUp6Zkd0dS9QSjFTVTBiY2w2RHc9PQo=",
+      "expect": "ok"
+    },
+    {
+      "name": "an older manifest, validly signed (the version rule refuses it later)",
+      "manifest": "{\n  \"version\": \"0.1.0\",\n  \"notes\": \"Synthetic test vector (W11.S2) — ניסוי\",\n  \"pub_date\": \"2026-11-15T00:00:00.000Z\",\n  \"platforms\": {\n    \"darwin-aarch64\": {\n      \"signature\": \"dW50cnVzdGVk\",\n      \"url\": \"https://github.com/talstilkol/lumen-md/releases/download/v0.1.0/Lumen_0.1.0_aarch64.app.tar.gz\"\n    }\n  }\n}\n",
+      "sig": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURmNmMXNMTnVzbUJSZ0NUZWdqVStSci9BcHk4LzV5KzN4Nk0zUENLcjN1MitVNjNHcEtyY2NkM1YyV1Z5b1BZOG1rV2hCSzI5dkhTRjQwd1JLZjQzeGJDQmdqNnNoMEF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzMTY0ODAwCWZpbGU6bGF0ZXN0Lmpzb24KUmFJMGdOT3haVFRlczVHVC9hVkJKbWF0cmp4ZjhsVVh1UEVFSXJUK1FwYlNubTQ4bTZTelZYdEdQT2gvUEc3YmVxMVFtRnhvU1YvSkE1QU9HcHBSREE9PQo=",
+      "expect": "ok"
+    },
+    {
+      "name": "no latest.json.sig",
+      "manifest": "{\n  \"version\": \"0.3.0\",\n  \"notes\": \"Synthetic test vector (W11.S2) — ניסוי\",\n  \"pub_date\": \"2026-11-15T00:00:00.000Z\",\n  \"platforms\": {\n    \"darwin-aarch64\": {\n      \"signature\": \"dW50cnVzdGVk\",\n      \"url\": \"https://github.com/talstilkol/lumen-md/releases/download/v0.3.0/Lumen_0.3.0_aarch64.app.tar.gz\"\n    }\n  }\n}\n",
+      "sig": null,
+      "expect": "unsigned"
+    },
+    {
+      "name": "empty latest.json.sig",
+      "manifest": "{\n  \"version\": \"0.3.0\",\n  \"notes\": \"Synthetic test vector (W11.S2) — ניסוי\",\n  \"pub_date\": \"2026-11-15T00:00:00.000Z\",\n  \"platforms\": {\n    \"darwin-aarch64\": {\n      \"signature\": \"dW50cnVzdGVk\",\n      \"url\": \"https://github.com/talstilkol/lumen-md/releases/download/v0.3.0/Lumen_0.3.0_aarch64.app.tar.gz\"\n    }\n  }\n}\n",
+      "sig": "",
+      "expect": "unsigned"
+    },
+    {
+      "name": "one byte of the manifest changed",
+      "manifest": "{\n  \"version\": \"0.3.1\",\n  \"notes\": \"Synthetic test vector (W11.S2) — ניסוי\",\n  \"pub_date\": \"2026-11-15T00:00:00.000Z\",\n  \"platforms\": {\n    \"darwin-aarch64\": {\n      \"signature\": \"dW50cnVzdGVk\",\n      \"url\": \"https://github.com/talstilkol/lumen-md/releases/download/v0.3.0/Lumen_0.3.0_aarch64.app.tar.gz\"\n    }\n  }\n}\n",
+      "sig": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURmNmMXNMTnVzbUdNNjBISmRkR0tsZzgzNXVOWG5xenQ2dlNJM1QzeUVlcTdibU9QaVJiM2pQenNEZ3czNUF5UUVIS29Id1Ntc1VDSHJZYkR3aWxiTUVERzZxTFRoRXdFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzMTY0ODAwCWZpbGU6bGF0ZXN0Lmpzb24KZ3hOdXBmYTQ3cHNGdHQzUmNUeFVJVUpUamZZa1c1Zm54RlJ2cTdWRkI1ZU9nR2tUZ3hOUmpjdzM4UldXNW9Pd2FIOUp6Zkd0dS9QSjFTVTBiY2w2RHc9PQo=",
+      "expect": "bad-signature"
+    },
+    {
+      "name": "the old manifest's signature on the new manifest",
+      "manifest": "{\n  \"version\": \"0.3.0\",\n  \"notes\": \"Synthetic test vector (W11.S2) — ניסוי\",\n  \"pub_date\": \"2026-11-15T00:00:00.000Z\",\n  \"platforms\": {\n    \"darwin-aarch64\": {\n      \"signature\": \"dW50cnVzdGVk\",\n      \"url\": \"https://github.com/talstilkol/lumen-md/releases/download/v0.3.0/Lumen_0.3.0_aarch64.app.tar.gz\"\n    }\n  }\n}\n",
+      "sig": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURmNmMXNMTnVzbUJSZ0NUZWdqVStSci9BcHk4LzV5KzN4Nk0zUENLcjN1MitVNjNHcEtyY2NkM1YyV1Z5b1BZOG1rV2hCSzI5dkhTRjQwd1JLZjQzeGJDQmdqNnNoMEF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzMTY0ODAwCWZpbGU6bGF0ZXN0Lmpzb24KUmFJMGdOT3haVFRlczVHVC9hVkJKbWF0cmp4ZjhsVVh1UEVFSXJUK1FwYlNubTQ4bTZTelZYdEdQT2gvUEc3YmVxMVFtRnhvU1YvSkE1QU9HcHBSREE9PQo=",
+      "expect": "bad-signature"
+    },
+    {
+      "name": "signed by another key",
+      "manifest": "{\n  \"version\": \"0.3.0\",\n  \"notes\": \"Synthetic test vector (W11.S2) — ניסוי\",\n  \"pub_date\": \"2026-11-15T00:00:00.000Z\",\n  \"platforms\": {\n    \"darwin-aarch64\": {\n      \"signature\": \"dW50cnVzdGVk\",\n      \"url\": \"https://github.com/talstilkol/lumen-md/releases/download/v0.3.0/Lumen_0.3.0_aarch64.app.tar.gz\"\n    }\n  }\n}\n",
+      "sig": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTS0ZabzJUNWV4TUZOSFFaa0hLYS9oV3QzWkNwcm1yS3pQQnpMNTh2blN5UEpmVWIwdnRWWnpKTEhvWnpTbHhvaHlKd1hjZUVXRlpGL2pYRkRPMDNnYkYySVdONTgzUVFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzMTY0ODAwCWZpbGU6bGF0ZXN0Lmpzb24Kc2haMExrZEk0SmFsTVBiaUdoM3A0R2N6a3JOZmZOSlRhK2pyalpyQmRYWldTaFVQRDBwbUdvM21nRTh6Rno5Tjg1UXlpSm1SWVN6eTJ3Q3JzVzhtQkE9PQo=",
+      "expect": "bad-signature"
+    },
+    {
+      "name": "signature is not base64",
+      "manifest": "{\n  \"version\": \"0.3.0\",\n  \"notes\": \"Synthetic test vector (W11.S2) — ניסוי\",\n  \"pub_date\": \"2026-11-15T00:00:00.000Z\",\n  \"platforms\": {\n    \"darwin-aarch64\": {\n      \"signature\": \"dW50cnVzdGVk\",\n      \"url\": \"https://github.com/talstilkol/lumen-md/releases/download/v0.3.0/Lumen_0.3.0_aarch64.app.tar.gz\"\n    }\n  }\n}\n",
+      "sig": "%%% not base64 %%%",
+      "expect": "malformed"
+    },
+    {
+      "name": "signature decodes to something that is not minisign",
+      "manifest": "{\n  \"version\": \"0.3.0\",\n  \"notes\": \"Synthetic test vector (W11.S2) — ניסוי\",\n  \"pub_date\": \"2026-11-15T00:00:00.000Z\",\n  \"platforms\": {\n    \"darwin-aarch64\": {\n      \"signature\": \"dW50cnVzdGVk\",\n      \"url\": \"https://github.com/talstilkol/lumen-md/releases/download/v0.3.0/Lumen_0.3.0_aarch64.app.tar.gz\"\n    }\n  }\n}\n",
+      "sig": "dW50cnVzdGVkIGNvbW1lbnQ6IHgKbm90IGEgc2lnbmF0dXJlCg==",
+      "expect": "bad-signature"
+    },
+    {
+      "name": "signature with one character changed",
+      "manifest": "{\n  \"version\": \"0.3.0\",\n  \"notes\": \"Synthetic test vector (W11.S2) — ניסוי\",\n  \"pub_date\": \"2026-11-15T00:00:00.000Z\",\n  \"platforms\": {\n    \"darwin-aarch64\": {\n      \"signature\": \"dW50cnVzdGVk\",\n      \"url\": \"https://github.com/talstilkol/lumen-md/releases/download/v0.3.0/Lumen_0.3.0_aarch64.app.tar.gz\"\n    }\n  }\n}\n",
+      "sig": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURmNmMXNMTnVzbUdNNjBISmRBR0tsZzgzNXVOWG5xenQ2dlNJM1QzeUVlcTdibU9QaVJiM2pQenNEZ3czNUF5UUVIS29Id1Ntc1VDSHJZYkR3aWxiTUVERzZxTFRoRXdFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzMTY0ODAwCWZpbGU6bGF0ZXN0Lmpzb24KZ3hOdXBmYTQ3cHNGdHQzUmNUeFVJVUpUamZZa1c1Zm54RlJ2cTdWRkI1ZU9nR2tUZ3hOUmpjdzM4UldXNW9Pd2FIOUp6Zkd0dS9QSjFTVTBiY2w2RHc9PQo=",
+      "expect": "bad-signature"
+    },
+    {
+      "name": "no updater key in the build",
+      "manifest": "{\n  \"version\": \"0.3.0\",\n  \"notes\": \"Synthetic test vector (W11.S2) — ניסוי\",\n  \"pub_date\": \"2026-11-15T00:00:00.000Z\",\n  \"platforms\": {\n    \"darwin-aarch64\": {\n      \"signature\": \"dW50cnVzdGVk\",\n      \"url\": \"https://github.com/talstilkol/lumen-md/releases/download/v0.3.0/Lumen_0.3.0_aarch64.app.tar.gz\"\n    }\n  }\n}\n",
+      "sig": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURmNmMXNMTnVzbUdNNjBISmRkR0tsZzgzNXVOWG5xenQ2dlNJM1QzeUVlcTdibU9QaVJiM2pQenNEZ3czNUF5UUVIS29Id1Ntc1VDSHJZYkR3aWxiTUVERzZxTFRoRXdFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzMTY0ODAwCWZpbGU6bGF0ZXN0Lmpzb24KZ3hOdXBmYTQ3cHNGdHQzUmNUeFVJVUpUamZZa1c1Zm54RlJ2cTdWRkI1ZU9nR2tUZ3hOUmpjdzM4UldXNW9Pd2FIOUp6Zkd0dS9QSjFTVTBiY2w2RHc9PQo=",
+      "pubkey": "",
+      "expect": "malformed"
+    }
+  ]
+}

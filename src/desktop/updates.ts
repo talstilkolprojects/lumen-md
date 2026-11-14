@@ -1,14 +1,17 @@
 /**
  * Desktop updates, the WebView side (plans 11.5.1, 14.4). The Rust shell checks and
- * installs (`update_check`, `update_install`, signature verified by
- * tauri-plugin-updater); this file only asks it, after the privacy policy:
- * in "local only" nothing is checked, and every check is in the privacy log.
+ * installs (`lumen_check_update`, `lumen_install_update`: no parameters since
+ * W11.S2; the shell verifies latest.json's own signature before reading it,
+ * and the plugin each bundle's); this file only asks it, after the privacy
+ * policy: in "local only" nothing is checked, and every check is in the
+ * privacy log.
  *
  * Two update channels (plan 14.4): stable follows the latest release; beta
  * also gets beta releases, so new features reach testers first. The
- * channel is the user's choice (default: the build's own channel); the
- * shell maps it to its build-time endpoint and never accepts a URL from
- * here.
+ * channel is the user's choice (default: the build's own channel), handed
+ * to the shell with `lumen_set_update_channel` before a check; the shell
+ * maps it to one of its two build-time endpoints and never accepts a URL
+ * from here.
  */
 import { getAiPolicy } from "../ai/policy";
 import { recordAppUpdateCheck } from "../ai/privacyLedger";
@@ -63,15 +66,18 @@ export async function checkForUpdate(deps: { invoke?: Invoke; desktop?: boolean;
     recordAppUpdateCheck(RELEASE_HOST, "blocked");
     return { state: "blocked-local-only" };
   }
-  const status = await (deps.invoke ?? defaultInvoke)<UpdateStatus>("update_check", { channel: deps.channel ?? updateChannel() });
+  const invoke = deps.invoke ?? defaultInvoke;
+  await invoke("lumen_set_update_channel", { channel: deps.channel ?? updateChannel() });
+  const status = await invoke<UpdateStatus>("lumen_check_update");
   if (status.state !== "not-configured") recordAppUpdateCheck(RELEASE_HOST, "allowed");
   return status;
 }
 
-export async function installUpdate(deps: { invoke?: Invoke; channel?: Channel } = {}): Promise<void> {
+export async function installUpdate(deps: { invoke?: Invoke } = {}): Promise<void> {
   if (getAiPolicy() === "local-only") throw new Error("local-only");
   recordAppUpdateCheck(RELEASE_HOST, "allowed");
-  await (deps.invoke ?? defaultInvoke)("update_install", { channel: deps.channel ?? updateChannel() });
+  // W11.S2: installs the update the last check verified; nothing is passed.
+  await (deps.invoke ?? defaultInvoke)("lumen_install_update");
 }
 
 /** One automatic check a day at most. */

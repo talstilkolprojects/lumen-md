@@ -6,6 +6,7 @@ use tauri::{Emitter, Manager};
 mod shell;
 mod updates;
 mod update_guard;
+mod manifest_sig;
 
 mod whisper_core;
 
@@ -561,7 +562,7 @@ pub fn run() {
         shell::handle_args(app, argv.into_iter().skip(1).collect(), std::path::Path::new(&cwd));
     }));
     #[cfg(desktop)]
-    let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+    let builder = builder.plugin(tauri_plugin_updater::Builder::new().build()).manage(updates::imp::PendingUpdate::default());
     builder
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_dialog::init())
@@ -600,10 +601,13 @@ pub fn run() {
             shell::tab_cancel,
             shell::tray_set_menu,
             shell::capture_format,
+            // W11.S2: no parameters; the manifest is verified before it is read.
             #[cfg(desktop)]
-            updates::imp::update_check,
+            updates::imp::lumen_check_update,
             #[cfg(desktop)]
-            updates::imp::update_install,
+            updates::imp::lumen_install_update,
+            #[cfg(desktop)]
+            updates::imp::lumen_set_update_channel,
             // The presenter window (plan W2.17) is desktop-only.
             #[cfg(desktop)]
             open_presenter_window,

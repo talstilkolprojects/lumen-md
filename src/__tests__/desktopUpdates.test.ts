@@ -30,8 +30,16 @@ describe("desktop updates", () => {
     setAiPolicy("local-first");
     const invoke = vi.fn().mockResolvedValue({ state: "available", current: "0.1.0", version: "0.2.0", notes: null });
     expect(await checkForUpdate({ invoke, desktop: true })).toMatchObject({ state: "available", version: "0.2.0" });
-    expect(invoke).toHaveBeenCalledWith("update_check", { channel: "stable" });
+    // W11.S2: the channel is set on its own; the check itself takes no parameters.
+    expect(invoke.mock.calls).toEqual([["lumen_set_update_channel", { channel: "stable" }], ["lumen_check_update"]]);
     expect(ledgerEntries().at(-1)).toMatchObject({ host: "github.com", decision: "allowed", reason: expect.stringMatching(/update check/) });
+  });
+
+  it("install passes nothing: the shell installs the update its last check verified (W11.S2)", async () => {
+    setAiPolicy("local-first");
+    const invoke = vi.fn().mockResolvedValue(undefined);
+    await installUpdate({ invoke });
+    expect(invoke.mock.calls).toEqual([["lumen_install_update"]]);
   });
 
   it("a build without update keys sends nothing and logs nothing", async () => {
