@@ -104,12 +104,12 @@ describe("acceptance: the gold records in 3 styles, Hebrew and English, offline"
   it("APA in Hebrew: the conjunction and et al. change, the rest stays", () => {
     const watson = toRecord(records.find((r) => idOf(r) === "Watson1953")!);
     expect(runsToMarkdown(formatReference(watson, "apa", "he"))).toBe(
-      "Watson, J. D., ו-Crick, F. H. C. (1953). Molecular structure of nucleic acids: A structure for deoxyribose nucleic acid. *Nature*, *171*(4356), 737–738. https://doi.org/10.1038/171737a0",
+      "Watson, J. D. ו-Crick, F. H. C. (1953). Molecular structure of nucleic acids: A structure for deoxyribose nucleic acid. *Nature*, *171*(4356), 737–738. https://doi.org/10.1038/171737a0",
     );
     expect(formatInText(watson, "apa", "he")).toBe("(Watson ו-Crick, 1953)");
     const three: CitationRecord = { type: "book", authors: [{ family: "כהן", given: "דנה" }, { family: "לוי", given: "רון" }, { family: "מזרחי", given: "שי" }], year: "2020", title: "ספר", publisher: "הוצאה" };
     expect(formatInText(three, "apa", "he")).toBe("(כהן ואחרים, 2020)");
-    expect(runsToMarkdown(formatReference(three, "apa", "he"))).toBe("כהן, ד., לוי, ר., ומזרחי, ש. (2020). *ספר*. הוצאה.");
+    expect(runsToMarkdown(formatReference(three, "apa", "he"))).toBe("כהן, ד., לוי, ר. ומזרחי, ש. (2020). *ספר*. הוצאה.");
     expect(runsToMarkdown(formatReference(three, "mla", "he"))).toBe("כהן, דנה, ואחרים. *ספר*. הוצאה, 2020.");
   });
 });

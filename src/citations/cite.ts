@@ -8,6 +8,14 @@
  * or a, b; a title-first entry sorted by its first word without ה / The.
  *
  * Own templates, no citeproc (decision 15.10).
+ *
+ * W11.H15, from the Bar-Ilan (lib.biu.ac.il/en/Education/APA7) and Haifa
+ * (lib.haifa.ac.il apaheb.pdf) library guides: no comma before the ו of the
+ * last Hebrew author; three or more authors in the text are "X ואחרים";
+ * and in a right-to-left document every parenthetical — "(Austen, 1813)",
+ * "(2022א)" — is a first-strong isolate (FSI … PDI), so its brackets and
+ * an English name inside Hebrew text do not flip (the reversed ")2009("
+ * that Word and PDF exports show).
  */
 import { formatReference, plainTitle, type CitationLang, type CitationRecord, type Run } from "../data/citationStyles";
 import type { CiteItem, Cluster, LocatorLabel } from "./pandoc";
@@ -83,8 +91,46 @@ export interface CiteContext {
 
 const yearOf = (r: CitationRecord, key: string, ctx: CiteContext, lang: CitationLang) => `${r.year ?? TERMS[lang].nd}${ctx.suffix.get(key) ?? ""}`;
 
+const FSI = "\u2068";
+const PDI = "\u2069";
+
+/**
+ * Each top-level balanced "(…)" of `text` wrapped in FSI … PDI. One already
+ * wrapped is left alone, and an unbalanced bracket is not touched.
+ */
+export function isolateParentheticals(text: string): string {
+  let out = "";
+  let i = 0;
+  while (i < text.length) {
+    if (text[i] !== "(" || text[i - 1] === FSI) {
+      out += text[i++];
+      continue;
+    }
+    let depth = 0;
+    let j = i;
+    for (; j < text.length; j++) {
+      if (text[j] === "(") depth++;
+      else if (text[j] === ")" && --depth === 0) break;
+    }
+    if (j >= text.length) {
+      out += text[i++];
+      continue;
+    }
+    const inner = text.slice(i, j + 1);
+    out += text[j + 1] === PDI ? inner : `${FSI}${inner}${PDI}`;
+    i = j + 1;
+  }
+  return out;
+}
+
 /** One cluster as text: "(Doe, 2020, p. 10; Roe, 2019)" — or "Doe (2020, p. 10)" in-text. Unknown keys stay as written. */
 export function formatCluster(c: Cluster, ctx: CiteContext, original: string): string {
+  const out = formatClusterText(c, ctx, original);
+  // A Hebrew (right-to-left) document: the parentheticals are isolates (W11.H15).
+  return ctx.lang === "he" && out !== original ? isolateParentheticals(out) : out;
+}
+
+function formatClusterText(c: Cluster, ctx: CiteContext, original: string): string {
   const parts: string[] = [];
   for (const it of c.items) {
     const r = ctx.lookup(it.key);
@@ -140,6 +186,8 @@ export function bibliography(cited: ReadonlyArray<{ key: string; record: Citatio
     let runs = formatReference(x.record, base(ctx.style), lang);
     runs = withSuffix(runs, x.record, ctx.suffix.get(x.key));
     if (ctx.style === "il" && lang === "he") runs = hebrewInitials(runs);
+    // A Hebrew entry is read right to left: its parentheticals are isolates (W11.H15).
+    if (lang === "he") runs = runs.map((r) => ({ ...r, t: isolateParentheticals(r.t) }));
     return { key: x.key, lang, runs };
   };
   if (ctx.style !== "il") return [order([...cited]).map(entry)];

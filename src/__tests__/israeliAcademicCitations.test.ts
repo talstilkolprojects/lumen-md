@@ -28,18 +28,20 @@ const R: Record<string, CitationRecord> = {
 const cited = Object.entries(R).map(([key, record]) => ({ key, record }));
 const suffix = yearSuffixes(cited, "il");
 const ctx: CiteContext = { style: "il", lang: "he", lookup: (k) => R[k], suffix };
-const text = (runs: Run[]) => runs.map((r) => (r.i ? `_${r.t}_` : r.t)).join("");
+/** W11.H15 wraps parentheticals of Hebrew output in FSI … PDI (checked in apa7Hebrew.test.ts); these compare the visible text. */
+const noIso = (s: string) => s.replace(/[\u2068\u2069]/g, "");
+const text = (runs: Run[]) => noIso(runs.map((r) => (r.i ? `_${r.t}_` : r.t)).join(""));
 const lists = bibliography(cited, { style: "il", lang: "he", suffix });
 const ref = (key: string) => text(lists.flat().find((e) => e.key === key)!.runs);
 type Item = { key: string; locator?: CiteItem["locator"] };
 const cite = (items: Item[], inText = false) =>
-  formatCluster({ inText, items: items.map((i): CiteItem => ({ prefix: "", suffix: "", suppressAuthor: false, ...i, locator: i.locator ?? null })) } as unknown as Cluster, ctx, "?");
+  noIso(formatCluster({ inText, items: items.map((i): CiteItem => ({ prefix: "", suffix: "", suppressAuthor: false, ...i, locator: i.locator ?? null })) } as unknown as Cluster, ctx, "?"));
 
 const REFERENCES: Array<[string, string]> = [
   ["b1", "ברק, א׳ (1993). _פרשנות במשפט_. נבו."],
-  ["b2", "דרשן, ד׳, ולוי, מ׳ (2018). _מבוא לסטטיסטיקה_. האוניברסיטה הפתוחה."],
+  ["b2", "דרשן, ד׳ ולוי, מ׳ (2018). _מבוא לסטטיסטיקה_. האוניברסיטה הפתוחה."],
   ["a1", "כהן, ר׳ (2019). למידה מרחוק בעידן הקורונה. _דפים_, _72_, 11–35."],
-  ["a3", "לוי, א׳, כהן, ב׳, ומזרחי, ג׳ (2021). מחקר משותף. _מגמות_, _55_, 1–20."],
+  ["a3", "לוי, א׳, כהן, ב׳ ומזרחי, ג׳ (2021). מחקר משותף. _מגמות_, _55_, 1–20."],
   ["c1", "שמיר, י׳ (2015). חינוך והוראה. בתוך ע׳ פרידמן (עורך), _ספר החינוך_ (עמ׳ 100–120). מאגנס."],
   ["a2", "Smith, J., & Doe, J. (2019). Learning at a distance. _Journal of Education_, _12_(3), 45–67. https://doi.org/10.1000/xyz"],
   ["k2", "כהן, ר׳ (2020א). אתגרי ההערכה. _דפים_, _73_, 1–10."],
