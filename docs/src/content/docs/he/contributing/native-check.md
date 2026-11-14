@@ -41,8 +41,11 @@ NATIVE_CHECK_INDEX=~/crates.io-index bash tools/native-check/run.sh
 ```
 
 ‏`real-cargo.sh` מכוון `CARGO_HOME` זמני אל השיבוט כ-local registry, על עותק של
-`src-tauri/`. ‏`cargo check --locked` צריך לעצור רק בהורדה הראשונה של crate, וכל
-crate מקומי בלי תלויות (`desktop/`) מקומפל ונבדק על ידי cargo.
+`src-tauri/`. כל crate מקומי בלי תלויות (`desktop/`) מקומפל ונבדק על ידי cargo.
+‏`cargo check --locked` מדווח **ok** רק כשהוא מקמפל. בלי קוד המקור של ה-crates הוא
+עוצר בהורדה הראשונה של crate: זה מדווח **UNKNOWN** והסקריפט יוצא בקוד 3 (ו-`run.sh`
+מסתיים ב-"native check: UNKNOWN"). ה-manifest, ה-resolver ו-`Cargo.lock` נקראו,
+אבל שום דבר לא קומפל, אז זה לא מעבר.
 
 ## מה הבדיקה לא יכולה להוכיח
 
