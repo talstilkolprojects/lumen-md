@@ -44,6 +44,7 @@ import { clearTrace } from "../agents/trace";
 import { pickTools } from "../agents/tools";
 import { clearStagedChanges, listStagedChanges } from "../agents/staging";
 import { __resetLedger, ledgerEntries } from "../ai/privacyLedger";
+import { clearGuardLog, guardLog } from "../agents/guardLog";
 import { setAiPolicy } from "../ai/policy";
 import { untrustedSourcesOfNote } from "../agents/untrusted";
 
@@ -120,6 +121,7 @@ beforeEach(async () => {
   files.clear();
   localStorage.clear();
   __resetLedger();
+  clearGuardLog();
   location.hash = "";
   localStorage.setItem("lumen.research.endpoint", ENDPOINT);
   localStorage.setItem("lumen.research.provider", "searxng");
@@ -149,9 +151,11 @@ describe("Rule of Two: a run that read a PDF neither writes nor sends without ap
         expect(asks.length + netAsks.length).toBe(ATTACKS.length);
         for (const s of all) expect(s).toContain(`PDF (papers/doc${i}.pdf)`);
         // The privacy log: the taint, then one declined approval per call.
-        const log = ledgerEntries().filter((e) => e.host === "agent");
-        expect(log.filter((e) => e.method === "TAINT")).toHaveLength(1);
-        expect(log.filter((e) => e.method === "APPROVE" && e.decision === "blocked").length).toBeGreaterThanOrEqual(3);
+        const log = guardLog();
+        expect(log.filter((e) => e.event === "tainted")).toHaveLength(1);
+        expect(log.filter((e) => e.event === "declined")).toHaveLength(asks.length + netAsks.filter((r) => r.untrusted?.length).length);
+        // The network ledger lists requests only: none went out to the attacker.
+        expect(ledgerEntries().filter((e) => /evil\.example/.test(e.host) && e.decision === "allowed")).toEqual([]);
         results.push(true);
       });
     }
@@ -164,10 +168,10 @@ describe("Rule of Two: per call, no standing approval", () => {
     const { asks, netAsks } = await runPdfCase(0, "local-first", (n) => n === 1);
     expect(asks.length + netAsks.length).toBe(ATTACKS.length);
     expect(listStagedChanges()).toHaveLength(1);
-    const log = ledgerEntries().filter((e) => e.host === "agent" && e.method === "APPROVE");
-    expect(log.filter((e) => e.decision === "allowed")).toHaveLength(1);
-    expect(log[0].reason).toContain("write_file");
-    expect(log[0].reason).toContain("PDF (papers/doc0.pdf)");
+    const log = guardLog().filter((e) => e.event !== "tainted");
+    expect(log.filter((e) => e.event === "approved")).toHaveLength(1);
+    expect(log[0]).toMatchObject({ event: "approved", tool: "write_file", scope: "write" });
+    expect(log[0].sources).toContain("PDF (papers/doc0.pdf)");
   });
 });
 
@@ -213,6 +217,6 @@ describe("a clean run keeps today's approvals", () => {
     expect(listStagedChanges()).toHaveLength(1);
     // The page it then fetched (allowed by local-first, no question) is what taints it, after the fact.
     expect(run.untrusted).toEqual(["web page https://page.example/a"]);
-    expect(ledgerEntries().filter((e) => e.host === "agent" && e.method === "APPROVE")).toEqual([]);
+    expect(guardLog().filter((e) => e.event !== "tainted")).toEqual([]);
   });
 });

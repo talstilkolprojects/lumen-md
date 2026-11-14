@@ -162,6 +162,8 @@ export async function openNetworkGate(
   } catch {
     ok = false;
   }
+  // W11.I2: under local-only the per-call consent is also the Rule of Two approval: log it when the run is tainted.
+  if (guard?.untrusted.length) await (await import("./untrusted")).logRuleOfTwo({ event: ok ? "approved" : "declined", tool: tool.name, scope: "network", sources: guard.untrusted });
   if (!ok) throw recordBlockedRequest(url, "research", `${reason} (local-only, no consent)`);
   return opened({ fetch: boundFetch(ledgerFetch({ force: { category: "research", reason: `${reason} (user consent)` }, consent: true }), bound.endpoint), consented: true, bound });
 }

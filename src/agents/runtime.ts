@@ -313,6 +313,9 @@ export function inputKeyOf<I extends AgentInput>(def: AgentDefinition<I, unknown
 }
 
 export async function runAgent<I extends AgentInput, O = string>(def: AgentDefinition<I, O>, input: I, opts: RunOptions = {}): Promise<AgentRun<O>> {
+  // W11.I3, plan-then-execute: the tools are fixed before the run reads anything. A copy, frozen,
+  // so nothing the run reads (a page, a note, a tool that edits the definition) adds one.
+  def = { ...def, tools: def.tools ? (Object.freeze([...def.tools]) as AgentTool[]) : def.tools };
   // Before anything awaits: the document the caller just read is the active one now.
   const docKey = opts.docKey ?? currentDocumentKey();
   const run: AgentRun<O> = {
@@ -339,12 +342,15 @@ export async function runAgent<I extends AgentInput, O = string>(def: AgentDefin
   // A streamed answer is marked as it arrives, piece by piece (plan 5.9).
   let streamed = "";
   const onDelta = opts.onDelta
-    ? (d: string) => {
+    ? (raw: string) => {
+        // W11.I3: what streams to the user carries no data marks.
+        const d = toolEnvRef.current?.taint.length && unmarkGuard ? unmarkGuard.unmarkData(raw) : raw;
         streamed += d;
         noteAiOutput(run.id, streamed);
         opts.onDelta?.(d);
       }
     : undefined;
+  let unmarkGuard: Awaited<ReturnType<typeof loadGuard>> | null = null;
   const toolEnvRef: { current: ToolEnv | null } = { current: null };
   const finish = async (status: AgentRun["status"], extra: Partial<AgentRun<O>> = {}): Promise<AgentRun<O>> => {
     Object.assign(run, extra, { status, endedAt: Date.now() });
@@ -385,6 +391,7 @@ export async function runAgent<I extends AgentInput, O = string>(def: AgentDefin
   // pulled note, or what the caller says is untrusted) is cleaned and
   // delimited before the model sees it, and taints the run from the start.
   const guard = await loadGuard();
+  unmarkGuard = guard;
   const inputUntrusted = await guard.inputSources({ path: ctx.path, document: ctx.document, text: input.text, selection: input.selection, untrusted: opts.untrusted });
   if (inputUntrusted.length) ctx.documentUntrusted = inputUntrusted;
   const toolEnv: ToolEnv = {
@@ -587,7 +594,7 @@ export async function runAgent<I extends AgentInput, O = string>(def: AgentDefin
         // The chat adapter charges at dispatch, after its own checks.
         if (executor.id !== "chat") chargeOnce();
         const t0 = Date.now();
-        const res = await executor.chat({
+        const sent = await executor.chat({
           charge: chargeOnce,
           messages,
           tools: nativeTools ? offered : undefined,
@@ -599,6 +606,8 @@ export async function runAgent<I extends AgentInput, O = string>(def: AgentDefin
           signal: opts.signal,
           onDelta: def.streaming && !offered.length ? onDelta : undefined,
         });
+        // W11.I3: the data marks of untrusted blocks never reach the user, a tool or the parsed output.
+        const res = toolEnv.taint.length ? { ...sent, content: guard.unmarkData(sent.content), toolCalls: (sent.toolCalls ?? []).map((c) => ({ ...c, args: guard.unmarkValue(c.args) })) } : sent;
         run.model = res.model || run.model;
         if (res.usage) {
           run.tokens.input += res.usage.inputTokens;

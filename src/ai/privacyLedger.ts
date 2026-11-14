@@ -663,22 +663,6 @@ export function recordAppUpdateCheck(host: string, decision: "allowed" | "blocke
 }
 
 /**
- * The Rule of Two in the privacy log (W11.I2): an agent run took in outside
- * content (`tainted`), or the user answered an approval for a write or a
- * network call in such a run. Nothing leaves the device for this entry, so
- * it is listed on this device (`local-ai`, destination `agent`); the
- * network request an approval let through has its own entry.
- */
-export function recordAgentGuard(e: { event: "tainted"; sources: string } | { event: "approved" | "declined"; tool: string; scope: "write" | "network"; sources: string }): LedgerEntry | null {
-  const reason =
-    e.event === "tainted"
-      ? `Agent run holds outside content (${e.sources}): every write and network call now needs approval`
-      : `Agent ${e.scope === "write" ? "change" : "network call"} by ${e.tool} ${e.event} by the user (outside content in the run: ${e.sources})`;
-  const id = record({ host: "agent", method: e.event === "tainted" ? "TAINT" : "APPROVE", bytesOut: 0, bytesIn: null, category: "local-ai", reason, policy: getAiPolicy(), decision: e.event === "declined" ? "blocked" : "allowed" });
-  return entries.find((x) => x.id === id) ?? null;
-}
-
-/**
  * Record a LAN sync link (plan W2.19): the other device's address on the
  * local network, never a server. "On this device / LAN" in the panel; the
  * bytes are updated as the link carries them. Returns the entry's id.

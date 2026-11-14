@@ -707,6 +707,50 @@
       "vars": []
     },
     {
+      "key": "privacy.guard.approved",
+      "en": "{time} · approved: {what} by {tool} (outside content: {sources})",
+      "vars": [
+        "time",
+        "what",
+        "tool",
+        "sources"
+      ]
+    },
+    {
+      "key": "privacy.guard.declined",
+      "en": "{time} · declined: {what} by {tool} (outside content: {sources})",
+      "vars": [
+        "time",
+        "what",
+        "tool",
+        "sources"
+      ]
+    },
+    {
+      "key": "privacy.guard.scope.network",
+      "en": "a network call",
+      "vars": []
+    },
+    {
+      "key": "privacy.guard.scope.write",
+      "en": "a change",
+      "vars": []
+    },
+    {
+      "key": "privacy.guard.summary",
+      "en": "Agent runs with outside content: {tainted}; approvals asked: {asked}, declined: {declined}",
+      "vars": [
+        "tainted",
+        "asked",
+        "declined"
+      ]
+    },
+    {
+      "key": "privacy.guard.title",
+      "en": "Approvals in agent runs with outside content",
+      "vars": []
+    },
+    {
       "key": "privacy.localRequests",
       "en": "Local: {n}",
       "vars": [
