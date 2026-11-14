@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { testHooks, type LumenTestWindow } from "./_lumen";
 import { opfsWritable, vaultOrSkip } from "./_opfs";
+import { missingToolVerdict } from "./_gate";
 
 /**
  * Data safety (MASTER_PLAN v3 §14) — part A, the history store (T35):
@@ -388,8 +389,13 @@ test("G3: a public repository clones without a token, LFS pointers are named", a
   const { join } = await import("node:path");
   const { tmpdir } = await import("node:os");
   const backend = spawnSync("git", ["--exec-path"], { encoding: "utf8" }).stdout.trim() + "/git-http-backend";
-  // skip-reason: needs git's http-backend on the test machine to serve a real repository; git ships it on macOS and Ubuntu | task: 3.3 | until: 2027-05-12
-  test.skip(spawnSync(backend, [], { env: { REQUEST_METHOD: "GET" } }).error !== undefined, "git http-backend is not installed");
+  // On the gate a missing http-backend fails G3; only a local run may skip it (plan W10.B17, audit 3.7).
+  const backendVerdict = missingToolVerdict(spawnSync(backend, [], { env: { REQUEST_METHOD: "GET" } }).error === undefined, process.env);
+  if (backendVerdict === "fail") {
+    throw new Error(`G3 cannot run: git http-backend is not installed at ${backend}. The gate never skips G3; install git (it ships git-http-backend) on this machine.`);
+  }
+  // skip-reason: local runs only — needs git's http-backend to serve a real repository (git ships it on macOS and Ubuntu); the gate fails instead | task: 3.7 | until: 2027-05-12
+  test.skip(backendVerdict === "skip", "git http-backend is not installed (local run; the gate fails here instead)");
 
   const root = mkdtempSync(join(tmpdir(), `lumen-g3-${browserName}-`));
   const work = join(root, "work");
