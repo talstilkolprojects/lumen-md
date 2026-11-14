@@ -263,6 +263,8 @@
   "cmd.tools.writingGoal.hint": "A subtle progress banner above the editor",
   "cmd.tools.writingGoal.set": "✍️ Writing goal: {{words}} words/day",
   "cmd.tools.writingGoal.unset": "✍️ Set a daily writing goal",
+  "cmd.usage": "Help: Usage on this device",
+  "cmd.usage.hint": "Counts on this device and a weekly report you can send — nothing leaves without your click",
   "cmd.vault.digest": "Digest: what changed",
   "cmd.vault.digest.hint": "A note with every note changed since the last digest, and their open tasks",
   "cmd.vault.encryptAtRest": "🔐 Vault encryption…",

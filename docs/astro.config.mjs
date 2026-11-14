@@ -143,6 +143,7 @@ export default defineConfig({
             { label: "Secrets and encryption", slug: "security/vault" },
             { label: "Monitoring and web vitals", slug: "security/monitoring", translations: { he: "ניטור ומדדי ביצועים" } },
             { label: "Vault encryption at rest", slug: "security/vault-encryption", translations: { he: "הצפנת הכספת במנוחה" } },
+            { label: "Usage on this device", slug: "security/usage-metrics", translations: { he: "שימוש במכשיר הזה" } },
           ],
         },
         {

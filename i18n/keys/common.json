@@ -3905,6 +3905,164 @@
       ]
     },
     {
+      "key": "usage.activated",
+      "en": "Using Lumen since {date}",
+      "vars": [
+        "date"
+      ]
+    },
+    {
+      "key": "usage.clear",
+      "en": "Clear counts",
+      "vars": []
+    },
+    {
+      "key": "usage.cleared",
+      "en": "Counts cleared.",
+      "vars": []
+    },
+    {
+      "key": "usage.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "usage.copied",
+      "en": "Copied.",
+      "vars": []
+    },
+    {
+      "key": "usage.copy",
+      "en": "Copy",
+      "vars": []
+    },
+    {
+      "key": "usage.copyFailed",
+      "en": "Couldn't copy. Select the text and copy it.",
+      "vars": []
+    },
+    {
+      "key": "usage.counting",
+      "en": "Count usage on this device",
+      "vars": []
+    },
+    {
+      "key": "usage.countingOff",
+      "en": "Counting is off, so nothing is counted.",
+      "vars": []
+    },
+    {
+      "key": "usage.days",
+      "en": "Days used: {week} of the last 7, {month} of the last 30",
+      "vars": [
+        "week",
+        "month"
+      ]
+    },
+    {
+      "key": "usage.intro",
+      "en": "Lumen counts how often it starts, which commands you run and how many errors happen, on this device only. It keeps no note content, no names and no ids. Nothing is sent unless you click a button below.",
+      "vars": []
+    },
+    {
+      "key": "usage.no",
+      "en": "no",
+      "vars": []
+    },
+    {
+      "key": "usage.none",
+      "en": "None yet.",
+      "vars": []
+    },
+    {
+      "key": "usage.notYet",
+      "en": "Nothing counted yet.",
+      "vars": []
+    },
+    {
+      "key": "usage.opened",
+      "en": "The issue form is open in a new tab. Nothing is sent until you submit it there.",
+      "vars": []
+    },
+    {
+      "key": "usage.preview",
+      "en": "The whole report, exactly as it would be sent:",
+      "vars": []
+    },
+    {
+      "key": "usage.reminder",
+      "en": "Your weekly usage report is ready",
+      "vars": []
+    },
+    {
+      "key": "usage.reminder.body",
+      "en": "Counts only. You review it before anything is sent.",
+      "vars": []
+    },
+    {
+      "key": "usage.reminder.open",
+      "en": "Review",
+      "vars": []
+    },
+    {
+      "key": "usage.retention",
+      "en": "Came back after a week: {week} · after a month: {month}",
+      "vars": [
+        "week",
+        "month"
+      ]
+    },
+    {
+      "key": "usage.send",
+      "en": "Open on GitHub",
+      "vars": []
+    },
+    {
+      "key": "usage.send.hint",
+      "en": "Opens a GitHub issue form with the report in a new tab. Nothing is sent until you submit it there.",
+      "vars": []
+    },
+    {
+      "key": "usage.title",
+      "en": "Usage on this device",
+      "vars": []
+    },
+    {
+      "key": "usage.top",
+      "en": "Most used commands (last 30 days)",
+      "vars": []
+    },
+    {
+      "key": "usage.unknown",
+      "en": "not known yet",
+      "vars": []
+    },
+    {
+      "key": "usage.unused",
+      "en": "{count} commands not used in the last 30 days",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "usage.week",
+      "en": "Starts this week: {opens} · errors: {errors}",
+      "vars": [
+        "opens",
+        "errors"
+      ]
+    },
+    {
+      "key": "usage.weekly",
+      "en": "Remind me once a week to send this report",
+      "vars": []
+    },
+    {
+      "key": "usage.yes",
+      "en": "yes",
+      "vars": []
+    },
+    {
       "key": "vaultEnc.autoLock",
       "en": "Lock after inactivity",
       "vars": []

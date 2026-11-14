@@ -346,6 +346,19 @@ export function recordSpeechRecognition(decision: "allowed" | "blocked"): Ledger
   return entries.find((x) => x.id === id) ?? null;
 }
 
+/** How the usage report the user sends is listed (plan W4.26: counts only, sent by the user's click). */
+export const USAGE_REPORT_REASON = "Weekly usage report you sent (counts only, no content)";
+
+/**
+ * Record text the user sent by hand through a page they opened (the weekly
+ * usage report as a prefilled GitHub issue): the app fetched nothing, but
+ * the data left with the user's click, so it is listed with its size.
+ */
+export function recordUserShare(url: string, bytes: number, reason: string = USAGE_REPORT_REASON): LedgerEntry | null {
+  const id = record({ host: hostOf(url), method: "OPEN", bytesOut: bytes, bytesIn: null, category: "third-party", reason, policy: getAiPolicy(), decision: "allowed" });
+  return entries.find((x) => x.id === id) ?? null;
+}
+
 /**
  * Record a request that was refused before it was made (an agent network
  * tool under `local-only` without consent) and return the error to throw.

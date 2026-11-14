@@ -264,6 +264,8 @@
   "cmd.tools.writingGoal.hint": "在编辑器上方显示简洁的进度横幅",
   "cmd.tools.writingGoal.set": "✍️ 写作目标:每天 {{words}} 字",
   "cmd.tools.writingGoal.unset": "✍️ 设置每日写作目标",
+  "cmd.usage": "帮助：本设备上的使用情况",
+  "cmd.usage.hint": "本设备上的计数和可发送的每周报告 — 不点击就不会发出任何内容",
   "cmd.vault.digest": "摘要：有哪些变化",
   "cmd.vault.digest.hint": "一篇笔记，列出自上次摘要以来更改的所有笔记及其未完成任务",
   "cmd.vault.encryptAtRest": "🔐 资料库加密…",

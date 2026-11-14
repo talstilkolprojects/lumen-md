@@ -264,6 +264,8 @@
   "cmd.tools.writingGoal.hint": "Ein dezenter Fortschrittsbalken über dem Editor",
   "cmd.tools.writingGoal.set": "✍️ Schreibziel: {{words}} Wörter/Tag",
   "cmd.tools.writingGoal.unset": "✍️ Tägliches Schreibziel festlegen",
+  "cmd.usage": "Hilfe: Nutzung auf diesem Gerät",
+  "cmd.usage.hint": "Zähler auf diesem Gerät und ein Wochenbericht, den du senden kannst — nichts geht ohne deinen Klick hinaus",
   "cmd.vault.digest": "Zusammenfassung: was sich geändert hat",
   "cmd.vault.digest.hint": "Eine Notiz mit allen seit der letzten Zusammenfassung geänderten Notizen und ihren offenen Aufgaben",
   "cmd.vault.encryptAtRest": "🔐 Tresor-Verschlüsselung…",

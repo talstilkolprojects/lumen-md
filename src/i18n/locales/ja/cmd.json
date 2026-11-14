@@ -264,6 +264,8 @@
   "cmd.tools.writingGoal.hint": "エディタ上部に控えめな進捗バナーを表示します",
   "cmd.tools.writingGoal.set": "✍️ 執筆目標: 1日 {{words}} 語",
   "cmd.tools.writingGoal.unset": "✍️ 1日の執筆目標を設定",
+  "cmd.usage": "ヘルプ: このデバイスでの利用状況",
+  "cmd.usage.hint": "このデバイス上のカウンターと、送信できる週次レポート — クリックしない限り何も外に出ません",
   "cmd.vault.digest": "ダイジェスト: 変更点",
   "cmd.vault.digest.hint": "前回以降に変更されたノートと未完了タスクをまとめたノート",
   "cmd.vault.encryptAtRest": "🔐 保管庫の暗号化…",

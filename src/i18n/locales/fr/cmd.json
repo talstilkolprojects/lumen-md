@@ -264,6 +264,8 @@
   "cmd.tools.writingGoal.hint": "Une discrète bannière de progression au-dessus de l'éditeur",
   "cmd.tools.writingGoal.set": "✍️ Objectif d'écriture : {{words}} mots/jour",
   "cmd.tools.writingGoal.unset": "✍️ Définir un objectif d'écriture quotidien",
+  "cmd.usage": "Aide : utilisation sur cet appareil",
+  "cmd.usage.hint": "Des compteurs sur cet appareil et un rapport hebdomadaire que vous pouvez envoyer — rien ne sort sans votre clic",
   "cmd.vault.digest": "Résumé : ce qui a changé",
   "cmd.vault.digest.hint": "Une note listant les notes modifiées depuis le dernier résumé et leurs tâches ouvertes",
   "cmd.vault.encryptAtRest": "🔐 Chiffrement du coffre…",

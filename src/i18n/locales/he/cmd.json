@@ -264,6 +264,8 @@
   "cmd.tools.writingGoal.hint": "פס התקדמות עדין מעל העורך",
   "cmd.tools.writingGoal.set": "✍️ יעד כתיבה: {{words}} מילים ליום",
   "cmd.tools.writingGoal.unset": "✍️ הגדר יעד כתיבה יומי",
+  "cmd.usage": "עזרה: שימוש במכשיר הזה",
+  "cmd.usage.hint": "ספירות במכשיר הזה ודוח שבועי שאפשר לשלוח — שום דבר לא יוצא בלי לחיצה שלך",
   "cmd.vault.digest": "סיכום: מה השתנה",
   "cmd.vault.digest.hint": "פתק עם כל הפתקים שהשתנו מאז הסיכום הקודם, והמשימות הפתוחות בהם",
   "cmd.vault.encryptAtRest": "🔐 הצפנת הכספת…",

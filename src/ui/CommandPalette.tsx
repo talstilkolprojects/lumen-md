@@ -29,6 +29,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { t } from "../i18n";
 import "./CommandPalette.css";
+import { countCommand } from "../metrics/count";
 
 export interface Command {
   id: string;
@@ -276,6 +277,7 @@ export function CommandPalette({ open, onClose, commands }: Props) {
         }
         onClose();
         // Defer slightly so the palette unmounts before the action (e.g. file dialog) runs.
+        countCommand(cmd.id);
         setTimeout(() => cmd.action(), 0);
       }
     } else if (e.key === "Backspace" && !query) {
@@ -414,6 +416,7 @@ export function CommandPalette({ open, onClose, commands }: Props) {
                         return;
                       }
                       onClose();
+                      countCommand(cmd.id);
                       setTimeout(() => cmd.action(), 0);
                     }}
                   >

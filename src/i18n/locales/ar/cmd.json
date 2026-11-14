@@ -264,6 +264,8 @@
   "cmd.tools.writingGoal.hint": "شريط تقدّم خفيف فوق المحرر",
   "cmd.tools.writingGoal.set": "✍️ هدف الكتابة: {{words}} كلمة/يوم",
   "cmd.tools.writingGoal.unset": "✍️ تعيين هدف كتابة يومي",
+  "cmd.usage": "مساعدة: الاستخدام على هذا الجهاز",
+  "cmd.usage.hint": "عدّادات على هذا الجهاز وتقرير أسبوعي يمكنك إرساله — لا يخرج شيء دون نقرتك",
   "cmd.vault.digest": "ملخص: ما الذي تغيّر",
   "cmd.vault.digest.hint": "ملاحظة بكل الملاحظات التي تغيّرت منذ الملخص السابق ومهامها المفتوحة",
   "cmd.vault.encryptAtRest": "🔐 تشفير الخزنة…",

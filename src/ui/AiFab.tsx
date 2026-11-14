@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkles, X, Search } from "lucide-react";
 import type { Command } from "./CommandPalette";
 import { t } from "../i18n";
+import { countCommand } from "../metrics/count";
 
 /**
  * Floating "AI Prompts" button anchored beside the document body.
@@ -59,6 +60,7 @@ export function AiFab({ commands }: Props) {
   function run(cmd: Command) {
     setOpen(false);
     setQuery("");
+    countCommand(cmd.id);
     cmd.action();
   }
 

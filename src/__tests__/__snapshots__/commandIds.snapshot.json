@@ -641,6 +641,13 @@
       "icon": "Link"
     },
     {
+      "id": "help.usage",
+      "label": "Help: Usage on this device",
+      "group": "Tools",
+      "hint": "Counts on this device and a weekly report you can send — nothing leaves without your click",
+      "icon": "Link"
+    },
+    {
       "id": "ai.policy",
       "label": "AI: Local or Cloud Policy",
       "group": "Tools",
@@ -1917,6 +1924,13 @@
       "icon": "Link"
     },
     {
+      "id": "help.usage",
+      "label": "Help: Usage on this device",
+      "group": "Tools",
+      "hint": "Counts on this device and a weekly report you can send — nothing leaves without your click",
+      "icon": "Link"
+    },
+    {
       "id": "ai.policy",
       "label": "AI: Local or Cloud Policy",
       "group": "Tools",
@@ -2721,6 +2735,7 @@
     "ai.reviewChanges",
     "ai.doctor",
     "help.feedback",
+    "help.usage",
     "ai.policy",
     "ai.trace",
     "ai.cache",
