@@ -12,7 +12,8 @@ import * as path from "node:path";
 import { callTool, listToolsFor, TOOLS } from "../../mcp-server/src/vault/tools";
 import { enableClient, disableClient, readConfig, normalizeClientId } from "../../mcp-server/src/vault/config";
 import { readLedger } from "../../mcp-server/src/vault/ledger";
-import { approvePending, listPending, rejectPending } from "../../mcp-server/src/vault/pending";
+import { approvePending, listPending, proposeWrite, QueueFullError, rejectPending } from "../../mcp-server/src/vault/pending";
+import { proposeBatch } from "../../mcp-server/src/vault/bases";
 import { VaultIndex, wordTerms } from "../../mcp-server/src/vault/search";
 import { safeRel } from "../../mcp-server/src/vault/paths";
 import { runVaultCli } from "../../mcp-server/src/cli";
@@ -171,6 +172,20 @@ describe("writes from a client wait for approval", () => {
     const raw = readFileSync(path.join(vault, ".lumen/mcp/ledger.jsonl"), "utf8");
     expect(raw).not.toContain("TOP-SECRET-BODY");
     expect(raw).not.toContain("beta");
+  });
+
+  it("one client's waiting proposals are bounded; a batch is queued whole or not at all (review 21, M4)", async () => {
+    for (let i = 0; i < 3; i++) await proposeWrite(vault, { client: "noisy", tool: "create_note", path: `q/${i}.md`, before: null, after: "x" }, new Date(), 3);
+    await expect(proposeWrite(vault, { client: "noisy", tool: "create_note", path: "q/3.md", before: null, after: "x" }, new Date(), 3)).rejects.toBeInstanceOf(QueueFullError);
+    // Another client is not affected.
+    await proposeWrite(vault, { client: "quiet", tool: "create_note", path: "q/q.md", before: null, after: "x" }, new Date(), 3);
+    await expect(proposeBatch(vault, "quiet", "bases_update", [0, 1, 2].map((i) => ({ path: `b/${i}.md`, before: null, after: "y" })), new Date(), 3)).rejects.toBeInstanceOf(QueueFullError);
+    const queued = await listPending(vault);
+    expect(queued.filter((q) => q.client === "noisy")).toHaveLength(3);
+    expect(queued.filter((q) => q.client === "quiet").map((q) => q.path)).toEqual(["q/q.md"]);
+    // Through the tool: the default bound is far above an ordinary session, and a refusal is a tool error, not a crash.
+    const r = await callTool(ctx(), "create_note", { path: "inbox/ok", content: "# ok\n" });
+    expect(r.isError).toBeFalsy();
   });
 
   it("every tool has a scope", () => {

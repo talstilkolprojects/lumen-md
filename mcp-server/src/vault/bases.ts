@@ -16,7 +16,7 @@
 import { promises as fs } from "node:fs";
 import * as path from "node:path";
 import { lumenDir, writeFileAtomic } from "./config.js";
-import { newProposalId, proposeWrite, readNote } from "./pending.js";
+import { checkQueueRoom, MAX_PENDING_PER_CLIENT, newProposalId, proposeWrite, readNote } from "./pending.js";
 import { safeRel, VaultPathError } from "./paths.js";
 
 export interface BasesQueryResult {
@@ -158,11 +158,13 @@ function batchFile(vault: string, id: string): string {
 }
 
 /** Queue every change as a proposal under one batch id. */
-export async function proposeBatch(vault: string, client: string, tool: string, changes: PlannedUpdate["changes"], now = new Date()): Promise<BatchRecord> {
+export async function proposeBatch(vault: string, client: string, tool: string, changes: PlannedUpdate["changes"], now = new Date(), limit = MAX_PENDING_PER_CLIENT): Promise<BatchRecord> {
+  // The whole batch fits in the queue, or none of it is queued (review 21, M4).
+  await checkQueueRoom(vault, client, changes.length, limit);
   const ids: string[] = [];
   for (const c of changes) {
     if ((await readNote(vault, c.path)) !== c.before) throw new Error(`${c.path} changed while the update was computed; try again.`);
-    ids.push((await proposeWrite(vault, { client, tool, path: c.path, before: c.before, after: c.after }, now)).id);
+    ids.push((await proposeWrite(vault, { client, tool, path: c.path, before: c.before, after: c.after }, now, Infinity)).id); // checked for the whole batch above
   }
   const rec: BatchRecord = { id: newProposalId(now), client, tool, ids, createdAt: now.toISOString() };
   await writeFileAtomic(batchFile(vault, rec.id), JSON.stringify(rec, null, 2) + "\n");
