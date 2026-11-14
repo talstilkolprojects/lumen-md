@@ -1,0 +1,28 @@
+{
+  "$comment": "W10.D15 (plan W6.12): the vulnerability-reporting channels SECURITY.md may point to, and whether each works today. Checked with the GitHub REST API; re-check before changing a status. SECURITY.md may send reporters only to channels with status \"on\". When the owner turns a channel on, flip its status here and move it into SECURITY.md in the same commit.",
+  "checked": "2026-11-14",
+  "channels": [
+    {
+      "id": "contact-request-issue",
+      "status": "on",
+      "how": "A public issue titled \"Security contact request\", with no details; a maintainer answers with a private channel.",
+      "url": "https://github.com/talstilkol/lumen-md/issues/new?title=Security%20contact%20request",
+      "evidence": "GET repos/talstilkol/lumen-md -> has_issues: true (2026-11-14)"
+    },
+    {
+      "id": "github-private-reporting",
+      "status": "off",
+      "how": "GitHub private vulnerability reporting (Security -> Advisories -> Report a vulnerability).",
+      "url": "https://github.com/talstilkol/lumen-md/security/advisories/new",
+      "evidence": "GET repos/talstilkol/lumen-md/private-vulnerability-reporting -> {\"enabled\":false} (2026-11-14)",
+      "owner": "gh api -X PUT repos/talstilkol/lumen-md/private-vulnerability-reporting"
+    },
+    {
+      "id": "security-email",
+      "status": "owner",
+      "how": "A dedicated security mailbox with a published age or OpenPGP key.",
+      "evidence": "No address exists yet: none is in the repo, and none may be invented.",
+      "owner": "Create the mailbox and its key, add both to SECURITY.md and set this entry to \"on\" with its address and key fingerprint."
+    }
+  ]
+}
