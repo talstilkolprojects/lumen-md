@@ -384,6 +384,7 @@
   "capture.saved": "Zu {path} hinzugefügt",
   "capture.title": "Schnellerfassung",
   "capture.voice.keepAudio": "Aufnahme behalten",
+  "capture.voice.afterStop": "Keine Live-Transkription (das Diktatmodell ist nicht installiert oder die Sprache ist nicht Hebräisch): Die Aufnahme wird beim Stoppen auf diesem Gerät transkribiert.",
   "capture.voice.noMic": "Kein Mikrofon oder keine Berechtigung.",
   "capture.voice.noTranscript": "Transkription auf diesem Gerät fehlgeschlagen; die Aufnahme bleibt bei der Notiz.",
   "capture.voice.placeholderNote": "Sprachnotiz (nicht transkribiert)",

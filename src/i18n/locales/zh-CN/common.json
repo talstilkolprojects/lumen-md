@@ -384,6 +384,7 @@
   "capture.saved": "已添加到 {path}",
   "capture.title": "快速记录",
   "capture.voice.keepAudio": "保留录音",
+  "capture.voice.afterStop": "没有实时转写（未安装听写模型，或语言不是希伯来语）：停止后将在本设备上转写录音。",
   "capture.voice.noMic": "没有麦克风，或权限被拒绝。",
   "capture.voice.noTranscript": "无法在本机转写；录音已随笔记保存。",
   "capture.voice.placeholderNote": "语音笔记（未转写）",

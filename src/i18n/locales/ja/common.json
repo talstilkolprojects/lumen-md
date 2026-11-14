@@ -384,6 +384,7 @@
   "capture.saved": "{path} に追加しました",
   "capture.title": "クイックキャプチャ",
   "capture.voice.keepAudio": "録音を保存",
+  "capture.voice.afterStop": "ライブ文字起こしはありません（音声入力モデルが未インストールか、言語がヘブライ語ではありません）。停止すると、この端末で録音を文字起こしします。",
   "capture.voice.noMic": "マイクがないか、許可されませんでした。",
   "capture.voice.noTranscript": "この端末で文字起こしできませんでした。録音はノートと一緒に保存されます。",
   "capture.voice.placeholderNote": "音声メモ（未文字起こし）",

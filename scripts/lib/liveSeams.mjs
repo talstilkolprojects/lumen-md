@@ -77,7 +77,6 @@ export function deadSeams(srcDir) {
  * coordinator decides (wire or delete); it is never silently fine.
  */
 export const LIVE_SEAM_EXCEPTIONS = {
-  setVoiceTranscriber: { kind: "pending", task: "W10.C8", reason: "the live dictation engine in capture" },
   setLectureSummarizer: { kind: "pending", task: "W10.C9", reason: "the verified lecture summary" },
   setOrganizerModel: { kind: "pending", task: "W10.C16", reason: "the organizer's local model" },
   setToolPermission: { kind: "pending", task: "W10.C2", reason: "per-tool MCP permissions from the servers screen" },

@@ -116,6 +116,8 @@ function Panel({ initial, onBrowser, onClose, correction = null, desktop = null 
         return;
       }
       setPhase({ kind: "loading" });
+      // The model is on this device now: voice capture gets live transcription too (W10.C8).
+      void import("../capture/liveDictation").then((m) => m.registerLiveVoiceTranscriber()).catch(() => undefined);
       const started = await startDictationSession(files, {
         onReady: (info) => {
           log.info(`dictation ready: vad=${info.vad} load=${info.loadMs}ms`);

@@ -11,6 +11,7 @@
   "capture.voice.recording": "Stop · {time}",
   "capture.voice.transcribing": "Transcribing…",
   "capture.voice.keepAudio": "Keep audio",
+  "capture.voice.afterStop": "No live transcription (the dictation model is not installed, or the language is not Hebrew): the recording is transcribed on this device when you stop.",
   "capture.voice.noMic": "No microphone access.",
   "capture.voice.noTranscript": "Not transcribed; audio kept.",
   "capture.voice.placeholderNote": "Voice note (not transcribed)"

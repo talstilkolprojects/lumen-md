@@ -306,8 +306,13 @@ export default function App() {
   }, []);
 
   // Plan 14.6: after an update, that version's notes once (when the app is idle; nothing on a fresh install).
+  // The same idle moment registers voice capture's live engine (plan 6.1).
   useEffect(() => {
-    const run = () => void import("./whatsNew/check").then((m) => m.checkWhatsNew()).catch(() => undefined);
+    const run = () => {
+      void import("./whatsNew/check").then((m) => m.checkWhatsNew()).catch(() => undefined);
+      // W10.C8: voice capture's live transcription, when the dictation model is on this device.
+      void import("./capture/liveDictation").then((m) => m.registerLiveVoiceTranscriber()).catch(() => undefined);
+    };
     const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
     if (ric) ric(run, { timeout: 4000 });
     else setTimeout(run, 2000);
