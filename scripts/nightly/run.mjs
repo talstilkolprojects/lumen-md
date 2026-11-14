@@ -9,7 +9,8 @@
  *
  *   flake    e2e ×5 on chromium, firefox and webkit (npm run e2e:flake -- --all --times 5)
  *   perf     build + bundle budget, the @nightly perf project, Lighthouse (when installed)
- *   triage   review triage over the open PRs, the 0.14 count over the first 20 PRs, and live:meta (W6.2)
+ *   triage   review triage over the open PRs, the 0.14 count over the first 20 PRs, live:meta (W6.2)
+ *            and the GitHub ruleset drift check (W11.S4)
  *   weekly   dependency health (audit, outdated, licences) and mutation scores — Sundays
  *   sr       the Hebrew screen-reader journey under VoiceOver (Guidepup, W6.30) — on a
  *            Mac with @guidepup/* installed, every night; `--only sr` runs it alone
@@ -89,6 +90,8 @@ export function stepsFor(kind, has) {
         { id: "review-triage", cmd: ["node", "scripts/nightly/review-triage.mjs", REPO], timeoutMin: 15 },
         // Plan W6.2: production's metadata names only lumen-md.vercel.app, and the check still catches a planted foreign one.
         { id: "live-meta", cmd: ["node", "scripts/live-meta.mjs", "--self-test"], timeoutMin: 5 },
+        // Plan W11.S4: the rulesets on GitHub are the ones in security/github-ruleset.json (exit 1 drift, 2 API unreadable).
+        { id: "ruleset-drift", cmd: ["node", "scripts/security/ruleset-drift.mjs"], timeoutMin: 5 },
       ];
     case "weekly":
       return [
