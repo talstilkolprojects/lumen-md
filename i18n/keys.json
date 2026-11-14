@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-11-14T13:15:34.003Z",
+  "generated_at": "2026-11-14T17:51:55.958Z",
   "source": "src/i18n/index.ts (en bundle) + src/i18n/lazy/*.json",
-  "count": 1507,
+  "count": 1508,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -8112,6 +8112,11 @@
       "vars": [
         "devices"
       ]
+    },
+    {
+      "key": "e2ee.busy",
+      "en": "This device is syncing in another tab right now, so nothing was changed. Try again in a moment; if it keeps happening, reload or close the other tabs of Lumen.",
+      "vars": []
     }
   ]
 }

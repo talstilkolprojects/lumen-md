@@ -25,13 +25,18 @@
 /** What `tryDeviceLock` returns when the lock is held elsewhere. */
 export const LOCK_BUSY: unique symbol = Symbol("lock busy");
 
+/** What `withDeviceLockWithin` returns when the lock wasn't granted in time (review 34, K34-1). */
+export const LOCK_TIMEOUT: unique symbol = Symbol("lock timeout");
+
 /** Tail of the waiters on each lock name held in this realm (the fallback). */
-const local = new Map<string, Promise<void>>();
+const local = new Map<string, LocalQueue>();
 
 /** Whose lock: the vault, and the store holding this device's state. */
 export interface LockScope {
   vaultId: string;
   store: object;
+  /** A second lock beside the device's own, e.g. "keys": held while a key change runs (K34-2). */
+  part?: string;
 }
 
 const storeIds = new WeakMap<object, number>();
@@ -43,26 +48,52 @@ function localName(scope: LockScope): string {
   return `${webName(scope)}:${id}`;
 }
 
-const webName = (scope: LockScope) => `lumen-e2ee-device:${scope.vaultId}`;
+const webName = (scope: LockScope) => `lumen-e2ee-device:${scope.vaultId}${scope.part ? `:${scope.part}` : ""}`;
 
 function webLocks(): LockManager | null {
   const nav = (globalThis as { navigator?: { locks?: LockManager } }).navigator;
   return nav?.locks && typeof nav.locks.request === "function" ? nav.locks : null;
 }
 
-async function localLock<T>(name: string, ifAvailable: boolean, fn: () => Promise<T>): Promise<T | typeof LOCK_BUSY> {
-  if (ifAvailable && local.has(name)) return LOCK_BUSY;
-  const before = local.get(name) ?? Promise.resolve();
-  let release!: () => void;
-  const mine = new Promise<void>((r) => (release = r));
-  const tail = before.then(() => mine);
-  local.set(name, tail);
-  await before;
+/** One lock name held in this realm (the fallback): whether it is held, and who waits, first in first out. */
+interface LocalQueue {
+  held: boolean;
+  waiters: Array<() => void>;
+}
+
+async function localLock<T>(name: string, mode: { ifAvailable?: boolean; waitMs?: number }, fn: () => Promise<T>): Promise<T | typeof LOCK_BUSY | typeof LOCK_TIMEOUT> {
+  let q = local.get(name);
+  if (!q) local.set(name, (q = { held: false, waiters: [] }));
+  const queue = q;
+  if (queue.held || queue.waiters.length) {
+    if (mode.ifAvailable) return LOCK_BUSY;
+    const granted = await new Promise<boolean>((resolve) => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const grant = () => {
+        if (timer !== undefined) clearTimeout(timer);
+        resolve(true);
+      };
+      if (mode.waitMs !== undefined) {
+        timer = setTimeout(() => {
+          const i = queue.waiters.indexOf(grant);
+          if (i >= 0) queue.waiters.splice(i, 1);
+          resolve(false);
+        }, mode.waitMs);
+      }
+      queue.waiters.push(grant);
+    });
+    if (!granted) return LOCK_TIMEOUT;
+  }
+  queue.held = true;
   try {
     return await fn();
   } finally {
-    release();
-    if (local.get(name) === tail) local.delete(name);
+    const next = queue.waiters.shift();
+    if (next) next();
+    else {
+      queue.held = false;
+      local.delete(name);
+    }
   }
 }
 
@@ -70,12 +101,32 @@ async function localLock<T>(name: string, ifAvailable: boolean, fn: () => Promis
 export async function withDeviceLock<T>(scope: LockScope, fn: () => Promise<T>): Promise<T> {
   const locks = webLocks();
   if (locks) return locks.request(webName(scope), () => fn()) as Promise<T>;
-  return (await localLock(localName(scope), false, fn)) as T;
+  return (await localLock(localName(scope), {}, fn)) as T;
+}
+
+/**
+ * Run `fn` holding this device's lock, waiting at most `waitMs` for it
+ * (review 34, K34-1): `LOCK_TIMEOUT`, without running `fn`, when another
+ * tab still holds it then (a round stuck on a storage request, say).
+ */
+export async function withDeviceLockWithin<T>(scope: LockScope, waitMs: number, fn: () => Promise<T>): Promise<T | typeof LOCK_TIMEOUT> {
+  const locks = webLocks();
+  if (!locks) return localLock(localName(scope), { waitMs }, fn) as Promise<T | typeof LOCK_TIMEOUT>;
+  let started = false;
+  try {
+    return (await locks.request(webName(scope), { signal: AbortSignal.timeout(waitMs) }, () => {
+      started = true;
+      return fn();
+    })) as T;
+  } catch (e) {
+    if (!started && (e as Error)?.name !== undefined && ["TimeoutError", "AbortError"].includes((e as Error).name)) return LOCK_TIMEOUT;
+    throw e;
+  }
 }
 
 /** Run `fn` holding this device's lock if it is free now; `LOCK_BUSY` without running it if not. */
 export async function tryDeviceLock<T>(scope: LockScope, fn: () => Promise<T>): Promise<T | typeof LOCK_BUSY> {
   const locks = webLocks();
   if (locks) return locks.request(webName(scope), { ifAvailable: true }, (lock) => (lock ? fn() : LOCK_BUSY)) as Promise<T | typeof LOCK_BUSY>;
-  return localLock(localName(scope), true, fn);
+  return localLock(localName(scope), { ifAvailable: true }, fn) as Promise<T | typeof LOCK_BUSY>;
 }

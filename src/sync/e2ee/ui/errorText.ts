@@ -5,7 +5,7 @@
  */
 
 import { t } from "../../../i18n";
-import { DropDevicesRequiredError, KeyChangeInProgressError, PairingDuringKeyChangeError, PairingPendingError, RevocationContestedError } from "../engine";
+import { DeviceBusyError, DropDevicesRequiredError, KeyChangeInProgressError, PairingDuringKeyChangeError, PairingPendingError, RevocationContestedError } from "../engine";
 import { DroppedFromVaultError, KeyringCommitLostError, KeyringForkError, RevokedError, TamperedWrapError } from "../keyring";
 import { PairingEpochError } from "../pairing";
 import "../strings";
@@ -30,6 +30,7 @@ export function e2eeErrorText(e: unknown, side: "answer" | "pair" | "other" = "o
   if (e instanceof RevocationContestedError) return t("e2ee.rekey.contested", { devices: e.devices.join(", ") });
   if (e instanceof PairingPendingError) return t("e2ee.pair.pending");
   if (e instanceof PairingDuringKeyChangeError) return t("e2ee.pair.rekeying");
+  if (e instanceof DeviceBusyError) return t("e2ee.busy");
   if (e instanceof PairingEpochError) {
     if (side === "answer" && e.kind === "older") return t("e2ee.pair.stale");
     if (side === "pair" && e.kind === "newer") return t("e2ee.fresh.olderKeys");
