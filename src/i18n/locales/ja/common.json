@@ -1878,6 +1878,7 @@
   "settings.imported": "{n} 件の設定を読み込み、{skipped} 件をスキップしました",
   "settings.keepImageMetadata": "写真の位置・時刻・カメラ情報を残す(追加時とエクスポート時)",
   "settings.language": "言語",
+  "settings.privacy": "プライバシー",
   "settings.search": "設定を検索",
   "settings.telemetryOptOut": "エラーレポートを送信しない",
   "settings.title": "設定",

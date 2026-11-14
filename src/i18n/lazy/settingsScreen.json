@@ -3,5 +3,6 @@
   "settings.empty": "No setting matches",
   "settings.importFailed": "That file isn't a Lumen settings file.",
   "settings.importRefused": "Not imported, so this device keeps its privacy settings: {keys}",
-  "settings.imported": "{n} settings imported, {skipped} skipped"
+  "settings.imported": "{n} settings imported, {skipped} skipped",
+  "settings.privacy": "Privacy"
 }

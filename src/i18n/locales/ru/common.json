@@ -1878,6 +1878,7 @@
   "settings.imported": "Импортировано настроек: {n}, пропущено: {skipped}",
   "settings.keepImageMetadata": "Сохранять место, время и данные камеры фотографий (при добавлении и экспорте)",
   "settings.language": "Язык",
+  "settings.privacy": "Конфиденциальность",
   "settings.search": "Поиск по настройкам",
   "settings.telemetryOptOut": "Не отправлять отчёты об ошибках",
   "settings.title": "Настройки",

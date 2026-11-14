@@ -1878,6 +1878,7 @@
   "settings.imported": "已导入 {n} 项设置，跳过 {skipped} 项",
   "settings.keepImageMetadata": "保留照片的位置、时间和相机信息(添加和导出时)",
   "settings.language": "语言",
+  "settings.privacy": "隐私",
   "settings.search": "搜索设置",
   "settings.telemetryOptOut": "不发送错误报告",
   "settings.title": "设置",

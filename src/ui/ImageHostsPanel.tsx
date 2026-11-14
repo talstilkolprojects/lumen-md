@@ -5,8 +5,9 @@
  * the preview and the WYSIWYG editor show the placeholder, and nothing is
  * requested from it until the user allows it again.
  *
- * `ImageHostsList` is the list alone, for a Privacy section of the settings
- * screen; `ImageHostsPanel` is the dialog the palette opens. Lazy-loaded.
+ * `ImageHostsSection` (title, intro and list) is what the Privacy tab of the
+ * settings screen embeds (decision 2.41); `ImageHostsPanel` is the dialog the
+ * palette opens, with the same list. Lazy-loaded.
  */
 
 import { useEffect, useSyncExternalStore } from "react";
@@ -66,6 +67,21 @@ export function ImageHostsList() {
         </button>
       </div>
     </div>
+  );
+}
+
+/** The Privacy tab's section of the settings screen (decision 2.41). */
+export function ImageHostsSection() {
+  return (
+    <section data-testid="image-hosts-section" aria-labelledby="image-hosts-section-title">
+      <h3 id="image-hosts-section-title" style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 0 6px", fontSize: 14, fontWeight: 600 }}>
+        <ImageOff size={15} aria-hidden="true" style={{ opacity: 0.7 }} />
+        <span style={{ flex: 1 }}>{t("imageHosts.title")}</span>
+        <HelpButton topic="security/image-hosts" />
+      </h3>
+      <p style={{ margin: "0 0 10px", fontSize: 13, color: "hsl(var(--fg-muted))" }}>{t("imageHosts.intro")}</p>
+      <ImageHostsList />
+    </section>
   );
 }
 
