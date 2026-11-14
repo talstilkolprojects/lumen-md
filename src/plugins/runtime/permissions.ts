@@ -7,7 +7,7 @@ import { t } from "../../i18n";
 import type { ScanFinding } from "./scan";
 
 /** Permissions that reach beyond the plugin itself: the user's notes, the clipboard, the network. */
-const SENSITIVE = new Set(["document:write", "vault:read", "vault:write", "clipboard:write"]);
+const SENSITIVE = new Set(["document:write", "vault:read", "vault:write", "clipboard:write", "bases:read", "bases:write"]);
 
 const NETWORK = "network:";
 
@@ -20,6 +20,16 @@ export function describeCapability(cap: string): string {
   // The manifest check (manifest.ts) only lets an exact https origin through.
   if (cap.startsWith(NETWORK)) return t("pluginTrust.cap.network", { origin: cap.slice(NETWORK.length) });
   return t(`pluginTrust.cap.${cap.replace(/:/g, "-")}`);
+}
+
+/** The approval screen for one `lumen.bases.update` call (W6.46): who, how many notes, which properties, a few of them. */
+export function describeBasesUpdate(plugin: string, s: { notes: number; properties: readonly string[]; sample: readonly string[] }): { title: string; message: string; ok: string } {
+  const more = s.notes > s.sample.length ? `\n${t("pluginTrust.bases.more", { n: s.notes - s.sample.length })}` : "";
+  return {
+    title: t("pluginTrust.bases.title", { name: plugin, n: s.notes }),
+    message: `${t("pluginTrust.bases.body", { properties: s.properties.join(", ") })}\n${s.sample.map((p) => `• ${p}`).join("\n")}${more}`,
+    ok: t("pluginTrust.bases.ok", { n: s.notes }),
+  };
 }
 
 /** The scan findings as short notes for the card. */

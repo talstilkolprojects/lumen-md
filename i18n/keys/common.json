@@ -761,6 +761,11 @@
       "vars": []
     },
     {
+      "key": "automations.ask.base",
+      "en": "Base file (for example Projects/Tasks.base)",
+      "vars": []
+    },
+    {
       "key": "automations.ask.folder",
       "en": "Folder (empty: anywhere)",
       "vars": []
@@ -773,6 +778,11 @@
     {
       "key": "automations.ask.name",
       "en": "Rule name",
+      "vars": []
+    },
+    {
+      "key": "automations.ask.rowProperty",
+      "en": "Property to watch (empty: any property)",
       "vars": []
     },
     {
@@ -797,6 +807,11 @@
     {
       "key": "automations.ask.value",
       "en": "Value (empty: any change)",
+      "vars": []
+    },
+    {
+      "key": "automations.ask.view",
+      "en": "View name (empty: the first view)",
       "vars": []
     },
     {
@@ -860,6 +875,11 @@
     {
       "key": "automations.trigger.propertyChanged",
       "en": "a property changes",
+      "vars": []
+    },
+    {
+      "key": "automations.trigger.rowChanged",
+      "en": "a row of a base view changes",
       "vars": []
     },
     {
@@ -8140,6 +8160,45 @@
     {
       "key": "pluginDev.used",
       "en": "Calls",
+      "vars": []
+    },
+    {
+      "key": "pluginTrust.bases.body",
+      "en": "Properties: {properties}. Nothing is written unless you allow it.",
+      "vars": [
+        "properties"
+      ]
+    },
+    {
+      "key": "pluginTrust.bases.more",
+      "en": "…and {n} more",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "pluginTrust.bases.ok",
+      "en": "Change {n} notes",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "pluginTrust.bases.title",
+      "en": "“{name}” wants to change {n} notes",
+      "vars": [
+        "name",
+        "n"
+      ]
+    },
+    {
+      "key": "pluginTrust.cap.bases-read",
+      "en": "Read the rows of your bases (.base views) and the notes in them",
+      "vars": []
+    },
+    {
+      "key": "pluginTrust.cap.bases-write",
+      "en": "Change note properties through a base — each change asks you first",
       "vars": []
     },
     {

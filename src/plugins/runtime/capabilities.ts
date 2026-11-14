@@ -82,4 +82,6 @@ export const METHOD_CAPABILITY: Readonly<Record<string, Capability | "network">>
   "clipboard.writeText": "clipboard:write",
   "notifications.show": "notifications",
   "network.fetch": "network",
+  "bases.query": "bases:read",
+  "bases.update": "bases:write",
 };

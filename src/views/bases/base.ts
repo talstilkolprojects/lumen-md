@@ -27,9 +27,9 @@
 
 import YAML, { isMap, isScalar, isSeq, parseDocument, YAMLMap, YAMLSeq, type Document } from "yaml";
 import { FormulaError } from "../formula/ast";
-import { evaluateBases, parseBases, type BasesEvalOptions, type BasesScope, type BasesVault } from "./evaluate";
+import { evaluateBases, inFolder, parseBases, tagMatches, type BasesEvalOptions, type BasesScope, type BasesVault } from "./evaluate";
 import type { BasesNode } from "./expr";
-import { equalValues, fromYaml, isEmptyValue, isTagged, parseWikiLink, sortCompare, toDate, toText, truthy, type BasesFile, type BValue } from "./values";
+import { compareValues, equalValues, fromYaml, isEmptyValue, isTagged, parseWikiLink, sortCompare, toDate, toText, truthy, type BasesFile, type BValue } from "./values";
 
 export type BasesFilter = string | { and: BasesFilter[] } | { or: BasesFilter[] } | { not: BasesFilter[] };
 
@@ -322,15 +322,21 @@ export function basesFileFromText(path: string, text: string | null, meta: { siz
 export function buildVault(files: readonly BasesFile[]): BasesVault {
   const byPath = new Map<string, BasesFile>();
   const byName = new Map<string, BasesFile>();
-  const sorted = [...files].sort((a, b) => a.path.split("/").length - b.path.split("/").length || (a.path < b.path ? -1 : 1));
-  for (const f of sorted) {
-    const p = f.path.toLowerCase();
-    byPath.set(p, f);
-    if (f.ext === "md") byPath.set(p.replace(/\.md$/, ""), f);
-    const n = f.ext === "md" ? f.basename.toLowerCase() : f.name.toLowerCase();
-    if (!byName.has(n)) byName.set(n, f);
-  }
+  // Built on the first lookup (W6.46): a view without links never pays for it (10,000 files: ~14 ms a run).
+  let built = false;
+  const build = () => {
+    built = true;
+    const sorted = [...files].sort((a, b) => a.path.split("/").length - b.path.split("/").length || (a.path < b.path ? -1 : 1));
+    for (const f of sorted) {
+      const p = f.path.toLowerCase();
+      byPath.set(p, f);
+      if (f.ext === "md") byPath.set(p.replace(/\.md$/, ""), f);
+      const n = f.ext === "md" ? f.basename.toLowerCase() : f.name.toLowerCase();
+      if (!byName.has(n)) byName.set(n, f);
+    }
+  };
   const resolve = (target: string) => {
+    if (!built) build();
     const t = target.trim().replace(/^\/+/, "").toLowerCase();
     return byPath.get(t) ?? byName.get(t) ?? byName.get(t.slice(t.lastIndexOf("/") + 1)) ?? null;
   };
@@ -396,15 +402,19 @@ export function runBase(base: BaseModel, files: readonly BasesFile[], opts: RunO
   const viewIndex = typeof opts.view === "string" ? Math.max(0, base.views.findIndex((v) => v.name === opts.view)) : Math.min(Math.max(0, opts.view ?? 0), base.views.length - 1);
   const view = base.views[viewIndex];
   const vault = buildVault(files);
-  const parsed = new Map<string, BasesNode | null>();
+  // Parsed once per run, by place and source (two maps: no key string built per row).
+  const parsed = new Map<string, Map<string, BasesNode | null>>();
   const parse = (src: string, where: string): BasesNode | null => {
-    const key = `${where}\u0000${src}`;
-    if (parsed.has(key)) return parsed.get(key)!;
+    let at = parsed.get(where);
+    if (!at) parsed.set(where, (at = new Map()));
+    const hit = at.get(src);
+    if (hit !== undefined) return hit;
     const p = parseBases(src);
     if (!p.ok) errors.add(err(where, p.error));
-    parsed.set(key, p.ok ? p.tree : null);
+    at.set(src, p.ok ? p.tree : null);
     return p.ok ? p.tree : null;
   };
+  const compiled = new Map<BasesNode, ((file: BasesFile) => boolean) | null>();
   const formulaTrees = new Map<string, BasesNode | null>();
   // An empty formula (`name: ""`, as Obsidian saves a new column) is an empty column, not an error.
   for (const [name, src] of Object.entries(base.formulas)) formulaTrees.set(name, src.trim() ? parse(src, `formula ${name}`) : null);
@@ -418,6 +428,9 @@ export function runBase(base: BaseModel, files: readonly BasesFile[], opts: RunO
       file,
       thisFile: opts.thisFile ?? null,
       vault,
+      // W6.46: formulas reach relations and rollups (`relation.tasks.map(current.prop("Estimate"))`).
+      relation: (name: string): BValue => (base.relations[name] ? related(file, base.relations[name]).map((f): BValue => ({ $: "file", file: f })) : null),
+      rollup: (name: string): BValue => rollup(name, file),
       formula: (name: string): BValue => {
         memo ??= new Map();
         busy ??= new Set();
@@ -445,6 +458,9 @@ export function runBase(base: BaseModel, files: readonly BasesFile[], opts: RunO
     if (typeof f === "string") {
       const tree = parse(f, where);
       if (!tree) return false;
+      let fast = compiled.get(tree);
+      if (fast === undefined) compiled.set(tree, (fast = compileFilter(tree)));
+      if (fast) return fast(scope.file);
       const r = evaluateBases(tree, scope, evalOpts);
       if (!r.ok) {
         errors.add(err(where, r.error));
@@ -466,6 +482,28 @@ export function runBase(base: BaseModel, files: readonly BasesFile[], opts: RunO
     if (ns === "rollup") return rollup(key, scope.file);
     // note.x is read straight from the frontmatter (the same value the interpreter gives).
     if (ns === "note") return Object.prototype.hasOwnProperty.call(scope.file.fm, key) ? fromYaml(scope.file.fm[key]) : null;
+    // The plain file fields, without the interpreter (W6.46: 10,000 rows × every column).
+    if (ns === "file") {
+      const f = scope.file;
+      switch (key) {
+        case "name":
+          return f.name;
+        case "basename":
+          return f.basename;
+        case "path":
+          return f.path;
+        case "folder":
+          return f.folder;
+        case "ext":
+          return f.ext;
+        case "size":
+          return f.size;
+        case "ctime":
+          return f.ctime;
+        case "mtime":
+          return f.mtime;
+      }
+    }
     const tree = parse(id, `property ${id}`);
     return tree ? evaluateNode(tree, scope) : null;
   };
@@ -559,7 +597,8 @@ export function runBase(base: BaseModel, files: readonly BasesFile[], opts: RunO
 
   const keys = [...(view.groupBy ? [view.groupBy] : []), ...view.sort];
   // Dates parsed once per row, not once per comparison (10,000 rows: ~5× faster).
-  const decorated = matched.map((r) => ({ r, d: keys.map((k) => sortDate(r.cells[k.property])) }));
+  // …and emptiness once per row too (W6.46).
+  const decorated = matched.map((r) => ({ r, d: keys.map((k) => sortDate(r.cells[k.property])), e: keys.map((k) => isEmptyValue(r.cells[k.property])) }));
   decorated.sort((x, y) => {
     const a = x.r;
     const b = y.r;
@@ -569,9 +608,7 @@ export function runBase(base: BaseModel, files: readonly BasesFile[], opts: RunO
       const db = y.d[i];
       const d = da !== null && db !== null ? Math.sign(da - db) : sortCompare(a.cells[k.property], b.cells[k.property]);
       // Empty values stay last in both directions.
-      const ea = isEmptyValue(a.cells[k.property]);
-      const eb = isEmptyValue(b.cells[k.property]);
-      if (d) return ea || eb ? d : k.direction === "DESC" ? -d : d;
+      if (d) return x.e[i] || y.e[i] ? d : k.direction === "DESC" ? -d : d;
     }
     return a.file.path < b.file.path ? -1 : a.file.path > b.file.path ? 1 : 0;
   });
@@ -677,6 +714,92 @@ export function moveFilter(text: string, from: FilterScope & { index: number }, 
     const dst = andList(to, true);
     dst.items.splice(Math.max(0, Math.min(to.index, dst.items.length)), 0, item);
   });
+}
+
+/* ─── Fast filters (W6.46) ───────────────────────────────────────────── */
+
+type Getter = (file: BasesFile) => BValue;
+const FILE_FIELDS: Record<string, Getter> = {
+  name: (f) => f.name,
+  basename: (f) => f.basename,
+  path: (f) => f.path,
+  folder: (f) => f.folder,
+  ext: (f) => f.ext,
+  size: (f) => f.size,
+  ctime: (f) => f.ctime,
+  mtime: (f) => f.mtime,
+};
+const noteGetter = (key: string): Getter => (f) => (Object.prototype.hasOwnProperty.call(f.fm, key) ? fromYaml(f.fm[key]) : null);
+const RESERVED = new Set(["file", "note", "this", "formula"]);
+
+function getterOf(n: BasesNode): Getter | null {
+  if (n.kind === "name") return RESERVED.has(n.name) ? null : noteGetter(n.name);
+  if (n.kind === "member" && n.object.kind === "name") {
+    if (n.object.name === "note") return noteGetter(n.name);
+    if (n.object.name === "file") return FILE_FIELDS[n.name] ?? null;
+  }
+  return null;
+}
+
+function literalOf(n: BasesNode): { v: BValue } | null {
+  if (n.kind === "num" || n.kind === "str" || n.kind === "bool") return { v: n.value };
+  if (n.kind === "null") return { v: null };
+  return null;
+}
+
+const FLIP: Record<string, string> = { "<": ">", "<=": ">=", ">": "<", ">=": "<=", "==": "==", "!=": "!=" };
+
+/**
+ * The filter statements most real views are made of — a property compared
+ * with a literal, `file.inFolder("x")`, `file.hasTag("x")`, and `&&`, `||`,
+ * `!` of those — as plain functions, with the interpreter's own comparison
+ * rules (equalValues, compareValues). 10,000 rows: no interpreter, no budget
+ * object per row. Anything else returns null and goes through the interpreter.
+ */
+export function compileFilter(n: BasesNode): ((file: BasesFile) => boolean) | null {
+  if (n.kind === "binary") {
+    if (n.op === "&&" || n.op === "||") {
+      const a = compileFilter(n.left);
+      const b = compileFilter(n.right);
+      if (!a || !b) return null;
+      return n.op === "&&" ? (f) => a(f) && b(f) : (f) => a(f) || b(f);
+    }
+    if (!(n.op in FLIP)) return null;
+    let get = getterOf(n.left);
+    let lit = literalOf(n.right);
+    let op: string = n.op;
+    if (!get || !lit) {
+      get = getterOf(n.right);
+      lit = literalOf(n.left);
+      op = FLIP[n.op];
+    }
+    if (!get || !lit) return null;
+    const g = get;
+    const v = lit.v;
+    switch (op) {
+      case "==":
+        return (f) => equalValues(g(f), v);
+      case "!=":
+        return (f) => !equalValues(g(f), v);
+      default: {
+        const want = op === "<" ? (d: number) => d < 0 : op === "<=" ? (d: number) => d <= 0 : op === ">" ? (d: number) => d > 0 : (d: number) => d >= 0;
+        return (f) => {
+          const d = compareValues(g(f), v);
+          return d !== null && want(d);
+        };
+      }
+    }
+  }
+  if (n.kind === "unary" && n.op === "!") {
+    const a = compileFilter(n.arg);
+    return a ? (f) => !a(f) : null;
+  }
+  if (n.kind === "method" && n.object.kind === "name" && n.object.name === "file" && n.args.every((x) => x.kind === "str")) {
+    const args = n.args.map((x) => (x as { value: string }).value);
+    if (n.name === "inFolder" && args.length === 1) return (f) => inFolder(f, args[0]);
+    if (n.name === "hasTag" && args.length >= 1) return (f) => args.some((a) => f.tags.some((t) => tagMatches(t, a)));
+  }
+  return null;
 }
 
 /** A value's time for sorting, when sortCompare would order it as a date (a Date, or ISO date text). */

@@ -107,6 +107,7 @@ export default defineConfig({
             { label: "Note properties", translations: { he: "מאפייני פתק" }, slug: "workspace/properties" },
             { label: "Fill properties with AI", translations: { he: "מילוי מאפיינים ב-AI" }, slug: "workspace/ai-autofill" },
             { label: "Obsidian Bases (.base files)", slug: "workspace/obsidian-bases", translations: { he: "Obsidian Bases (קובצי ‎.base)" } },
+            { label: "Notion's formulas in Bases", slug: "workspace/notion-formulas", translations: { he: "הנוסחאות של Notion ב-Bases" } },
             { label: "Search operators and #tags", slug: "workspace/search-operators", translations: { he: "אופרטורי חיפוש ו-#תגיות" } },
             { label: "Embedded queries", slug: "workspace/embedded-queries", translations: { he: "שאילתות מוטמעות" } },
             { label: "Related notes while writing", translations: { he: "פתקים קשורים בזמן כתיבה" }, slug: "workspace/related" },

@@ -26,6 +26,9 @@ export const CAPABILITIES = [
   "storage",
   "clipboard:write",
   "notifications",
+  // W6.46: the Bases API — read a view's rows; change note properties behind one approval per call.
+  "bases:read",
+  "bases:write",
 ] as const;
 
 export type StaticCapability = (typeof CAPABILITIES)[number];

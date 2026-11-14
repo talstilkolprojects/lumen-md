@@ -44,6 +44,8 @@ export const METHODS = {
   "clipboard.writeText": "clipboard:write",
   "notifications.show": "notifications",
   "network.fetch": "network",
+  "bases.query": "bases:read",
+  "bases.update": "bases:write",
 };
 
 export class PluginDenied extends Error {
@@ -79,7 +81,7 @@ export async function loadPlugin(opts = {}) {
   const vault = new Map(Object.entries(opts.vault ?? {}));
   let settings = structuredClone(opts.settings ?? {});
   const storage = new Map(Object.entries(opts.storage ?? {}));
-  const state = { commands: new Map(), renderers: new Set(), panel: { open: false, title: null, tree: null }, rendered: [], notifications: [], clipboard: null, logs: [], calls: [], denied: new Map() };
+  const state = { commands: new Map(), renderers: new Set(), panel: { open: false, title: null, tree: null }, rendered: [], notifications: [], clipboard: null, logs: [], calls: [], denied: new Map(), basesUpdates: [] };
   const handlers = new Map();
   const renders = new Map();
   let renderSeq = 0;
@@ -147,6 +149,18 @@ export async function loadPlugin(opts = {}) {
     "network.fetch": (url, init) => {
       if (!opts.fetch) throw new Error("no fetch mock: pass opts.fetch");
       return opts.fetch(url, init);
+    },
+    // The Bases API (W6.46): pass opts.bases(path, view) for query; update records the edits and answers
+    // the approval with opts.approve (default yes), as the app's one approval screen per call does.
+    "bases.query": (path, view, page) => {
+      if (!opts.bases) throw new Error("no bases mock: pass opts.bases");
+      return opts.bases(path, view, page);
+    },
+    "bases.update": (edits) => {
+      if (!Array.isArray(edits)) throw new TypeError("edits: a list of { path, set }");
+      state.basesUpdates.push(edits);
+      if (opts.approve === false) return { written: 0, unchanged: 0, declined: true };
+      return { written: edits.length, unchanged: 0, declined: false };
     },
   };
 

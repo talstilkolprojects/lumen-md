@@ -5,7 +5,7 @@
  * each other forever.
  *
  *   when: note created (in a folder) · tag added · property changed (to a
- *         value) · daily (once a day)
+ *         value) · daily (once a day) · a row of a base view changes (W6.46)
  *   then: move to a folder · add a tag · apply a template · add a line to
  *         the daily note
  *
@@ -14,12 +14,19 @@
  */
 import YAML from "yaml";
 import { setProperty } from "../properties/frontmatter";
+import { basesFileFromText, parseBase, runBase } from "../views/bases/base";
 
 export type Trigger =
   | { kind: "created"; folder?: string }
   | { kind: "tagAdded"; tag: string }
   | { kind: "propertyChanged"; key: string; value?: string }
-  | { kind: "daily" };
+  | { kind: "daily" }
+  /**
+   * W6.46: a row of a `.base` view changes — a note that is in the view
+   * (after the change) has a property changed (`property`, or any), or a new
+   * note joins the view. The view's filters decide, as in the table itself.
+   */
+  | { kind: "rowChanged"; base: string; view?: string; property?: string };
 
 export type Action =
   | { kind: "move"; folder: string }
@@ -92,8 +99,30 @@ export function tagsOf(text: string): Set<string> {
 
 const scalar = (v: unknown) => (v === null || v === undefined ? "" : v instanceof Date ? v.toISOString().slice(0, 10) : Array.isArray(v) ? v.map(String).join(", ") : String(v));
 
+/**
+ * Is the note a row of the view? Its filters run over the note alone (a
+ * filter that looks at other notes — backlinks, a linked note's property —
+ * sees only this one). A base that is missing or broken has no rows.
+ */
+export function isRowOf(baseText: string | null, view: string | undefined, path: string, text: string): boolean {
+  if (baseText === null) return false;
+  const p = parseBase(baseText);
+  if (!p.ok) return false;
+  if (view !== undefined && !p.base.views.some((v) => v.name === view)) return false;
+  return runBase(p.base, [basesFileFromText(path, text)], { view }).total > 0;
+}
+
+/** The note's properties changed (`key`, or any of them). */
+function propsChanged(before: string, after: string, key?: string): boolean {
+  const a = frontmatter(before);
+  const b = frontmatter(after);
+  if (key) return scalar(a[key]) !== scalar(b[key]);
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  return [...keys].some((k) => JSON.stringify(a[k] ?? null) !== JSON.stringify(b[k] ?? null));
+}
+
 /** Does `rule` fire on `event`? */
-export function fires(rule: Rule, event: VaultEvent, ctx: Pick<PlanContext, "today" | "lastDaily">): boolean {
+export function fires(rule: Rule, event: VaultEvent, ctx: Pick<PlanContext, "today" | "lastDaily"> & { vault?: VaultView }): boolean {
   if (!rule.enabled) return false;
   const w = rule.when;
   switch (w.kind) {
@@ -113,6 +142,14 @@ export function fires(rule: Rule, event: VaultEvent, ctx: Pick<PlanContext, "tod
     }
     case "daily":
       return event.kind === "daily" && ctx.lastDaily?.[rule.id] !== event.date;
+    case "rowChanged": {
+      if (event.kind === "daily" || !event.path.endsWith(".md") || !ctx.vault) return false;
+      if (event.kind === "created") {
+        if (event.moved || w.property) return false;
+        return isRowOf(ctx.vault.read(w.base), w.view, event.path, event.text);
+      }
+      return propsChanged(event.before, event.after, w.property) && isRowOf(ctx.vault.read(w.base), w.view, event.path, event.after);
+    }
   }
 }
 
@@ -183,7 +220,7 @@ export function plan(rules: readonly Rule[], event: VaultEvent, ctx: PlanContext
     const { event: ev, depth } = queue.shift()!;
     const on = ev.kind === "daily" ? `daily:${ev.date}` : ev.path;
     for (const rule of rules) {
-      if (!fires(rule, ev, ctx)) continue;
+      if (!fires(rule, ev, { ...ctx, vault: { read, exists } })) continue;
       const key = `${rule.id}\u0000${on}`;
       if (seen.has(key)) {
         out.stopped.push({ rule: rule.id, on, reason: "repeat" });

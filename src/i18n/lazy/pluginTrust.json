@@ -49,5 +49,11 @@
   "pluginTrust.remove": "Remove",
   "pluginTrust.installedBadge": "Installed",
   "pluginTrust.removed": "“{name}” is removed, with the settings and data it kept.",
-  "pluginTrust.changed": "“{name}” was not installed: the code downloaded is not the code that was scanned."
+  "pluginTrust.changed": "“{name}” was not installed: the code downloaded is not the code that was scanned.",
+  "pluginTrust.cap.bases-read": "Read the rows of your bases (.base views) and the notes in them",
+  "pluginTrust.cap.bases-write": "Change note properties through a base — each change asks you first",
+  "pluginTrust.bases.title": "“{name}” wants to change {n} notes",
+  "pluginTrust.bases.body": "Properties: {properties}. Nothing is written unless you allow it.",
+  "pluginTrust.bases.more": "…and {n} more",
+  "pluginTrust.bases.ok": "Change {n} notes"
 }

@@ -40,6 +40,8 @@ const off = lumen.on(name, (payload) => { … }); // off() מבטל את ההר�
 | `clipboard.writeText(text)` | `clipboard:write` | — |
 | `notifications.show(text, "info" \| "success" \| "error")` | `notifications` | מוצג עם שם התוסף בהתחלה |
 | `network.fetch(url, { method?, headers?, body? })` | `network:<origin>` | רק למקור המדויק שאושר. בלי עוגיות, בלי הפניות, 30 שניות, עד 5MB. מחזיר `{ status, headers, body }`. נרשם ביומן הפרטיות; נחסם במצב מקומי בלבד |
+| `bases.query(path, view?, { offset?, limit? })` | `bases:read` | השורות של תצוגת `.base`, כמו שהאפליקציה מציגה אותן: `{ view, columns, rows: [{ path, cells }], total, errors }`. התאים הם JSON (תאריכים כטקסט ISO, קישורים כנתיבים). עד 10,000 שורות בקריאה |
+| `bases.update([{ path, set: { property: value } }])` | `bases:write` | משנה מאפיינים של פתקים. **מסך אישור אחד לכל הקריאה**: המשתמש רואה כמה פתקים, אילו מאפיינים ואת חמשת הראשונים, ושום דבר לא נכתב בלי שיאשר. עד 5,000 שורות. מחזיר `{ written, unchanged, declined }` |
 | `lumen.manifest` | — | המניפסט שלכם (קריאה בלבד) |
 
 מותר להשתמש ב-`console.log` / `warn` / `error`, עד 120 שורות בדקה.

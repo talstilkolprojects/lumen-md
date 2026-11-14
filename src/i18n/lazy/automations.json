@@ -24,5 +24,9 @@
   "automations.ask.template": "Template note path",
   "automations.ask.text": "Line to add ({{link}}, {{title}}, {{date}})",
   "automations.ask.name": "Rule name",
-  "automations.failed": "Automations: {error}"
+  "automations.failed": "Automations: {error}",
+  "automations.trigger.rowChanged": "a row of a base view changes",
+  "automations.ask.base": "Base file (for example Projects/Tasks.base)",
+  "automations.ask.view": "View name (empty: the first view)",
+  "automations.ask.rowProperty": "Property to watch (empty: any property)"
 }

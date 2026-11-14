@@ -18,6 +18,8 @@ import { loadPlugin, type HostServices, type PluginInstance } from "./pluginHost
 import type { Grants } from "./capabilities";
 import type { PluginManifest } from "./manifest";
 import type { UiNode } from "./uiTree";
+import { describeBasesUpdate } from "./permissions";
+import { listWorkspace, readWorkspaceFile, writeWorkspaceFile } from "../../storage/workspace";
 
 export const LIMITS = {
   commandsPerPlugin: 50,
@@ -92,6 +94,15 @@ export function pluginVaultPath(v: unknown): string {
 
 const settingsKey = (id: string) => `lumen.plugin.settings.${id}`;
 const storageKey = (id: string, key: string) => `lumen-plugin:${id}:${key}`;
+
+/** The vault as the Bases API reads and writes it: the workspace's notes and bases. */
+function basesDeps() {
+  return {
+    paths: async () => (await listWorkspace({ includeAssets: false })).map((e) => e.path).filter((p) => !p.split("/").some((s) => s.startsWith("."))),
+    readText: (path: string) => readWorkspaceFile(pluginVaultPath(path)),
+    write: async (path: string, text: string) => void (await writeWorkspaceFile(pluginVaultPath(path), str(text, "text", LIMITS.vaultWriteBytes))),
+  };
+}
 
 /** The app's services, by method. Exported for tests (they run the real services against the store). */
 export function appServices(): HostServices {
@@ -192,6 +203,26 @@ export function appServices(): HostServices {
       const json = JSON.stringify(value ?? {});
       if (json.length > LIMITS.settingsBytes) throw new RangeError(`settings are larger than ${LIMITS.settingsBytes} bytes`);
       localStorage.setItem(settingsKey(p.id), json);
+    },
+
+    // W6.46: the Bases API. Reads run the app's own engine; an update is one approval screen for all its rows.
+    "bases.query": async (_p, path, view, page) => {
+      const { queryBase } = await import("../../views/bases/api");
+      return queryBase(basesDeps(), str(path, "path", 1024), typeof view === "number" || typeof view === "string" ? view : undefined, page && typeof page === "object" ? (page as { offset?: number; limit?: number }) : {});
+    },
+    "bases.update": async (p, edits) => {
+      const { updateRows } = await import("../../views/bases/api");
+      return updateRows(
+        {
+          ...basesDeps(),
+          confirm: async (summary) => {
+            const { uiConfirm } = await import("../../ui/PromptDialog");
+            const d = describeBasesUpdate(p.manifest.name, summary);
+            return uiConfirm({ title: d.title, message: d.message, okLabel: d.ok });
+          },
+        },
+        edits,
+      );
     },
 
     "storage.get": async (p, key) => (await idbGet(storageKey(p.id, str(key, "key", 200)))) ?? null,
