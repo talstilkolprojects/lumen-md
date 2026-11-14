@@ -480,7 +480,7 @@ describe("review 2 fixes", () => {
     expect(guardedSandbox("allow-scripts allow-same-origin allow-popups", "https://www.youtube.com/embed/x", base, false)).toBe("allow-scripts allow-same-origin allow-popups");
     expect(guardedSandbox("allow-scripts allow-same-origin allow-popups", "https://example.com/widget", base, false)).toBe("allow-scripts allow-popups");
     // The embed block's providers are the known ones.
-    const src = readFileSync(resolve(process.cwd(), "src/plugins/EmbedBlock.tsx"), "utf8");
+    const src = readFileSync(resolve(process.cwd(), "src/plugins/embedUrl.ts"), "utf8");
     const origins = new Set([...src.matchAll(/src: `(https:\/\/[^/`$]+)/g)].map((m) => m[1]));
     expect(origins.size).toBeGreaterThan(10);
     for (const o of origins) expect(EMBED_ORIGINS.has(o), o).toBe(true);

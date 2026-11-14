@@ -48,6 +48,60 @@ export function loadPolicy(root = ROOT) {
 
 // ───────────────────────────── CSP model ─────────────────────────────
 
+/** The token a directive uses for the embed providers' list (plan W8.7). */
+export const EMBED_PROVIDERS = "@embedProviders";
+
+/**
+ * The sites whose embeds may load in a frame: `embedProviders` in the
+ * policy, the one list frame-src, src/plugins/EmbedBlock.tsx and the airplane
+ * switch read (plan W8.7; review 8, RR8-451-2).
+ */
+export function embedProviders(policy) {
+  return Array.isArray(policy.embedProviders) ? policy.embedProviders : [];
+}
+
+/** A directive's sources with `@embedProviders` replaced by the list. */
+function expandSources(policy, values) {
+  return values.flatMap((v) => (v === EMBED_PROVIDERS ? embedProviders(policy) : [v]));
+}
+
+/**
+ * What is wrong with the embed providers' list: not a list of bare https
+ * origins, a duplicate, or a frame-src that names an https site itself
+ * instead of through `@embedProviders` — a second list, the gap RR8-451-2
+ * found (four providers in the header and not in the block's list).
+ */
+export function embedProviderProblems(policy) {
+  const problems = [];
+  const list = policy.embedProviders;
+  if (!Array.isArray(list) || !list.length) return [`${POLICY_FILE}: embedProviders must be a non-empty list of https origins`];
+  const seen = new Set();
+  for (const o of list) {
+    let origin = null;
+    try {
+      origin = new URL(o).origin;
+    } catch {
+      /* reported below */
+    }
+    if (typeof o !== "string" || !o.startsWith("https://") || origin !== o) problems.push(`${POLICY_FILE}: embedProviders: "${o}" is not a bare https origin (https://host, no path)`);
+    if (seen.has(o)) problems.push(`${POLICY_FILE}: embedProviders lists "${o}" twice`);
+    seen.add(o);
+  }
+  for (const [route, def] of Object.entries(policy.routes ?? {})) {
+    const frame = def.csp?.["frame-src"];
+    if (!frame) continue;
+    for (const v of frame) {
+      if (/^https:\/\/[^*]/.test(v)) problems.push(`${POLICY_FILE}: route ${route} frame-src names ${v} itself; add it to embedProviders and keep ${EMBED_PROVIDERS} (plan W8.7: one list)`);
+    }
+  }
+  for (const rule of Object.values(policy.hosts ?? {}).flatMap((h) => h.csp ?? [])) {
+    for (const v of rule.add?.["frame-src"] ?? []) {
+      if (/^https:\/\/[^*]/.test(v)) problems.push(`${POLICY_FILE}: a host rule adds ${v} to frame-src; add it to embedProviders instead (plan W8.7: one list)`);
+    }
+  }
+  return problems;
+}
+
 /** Parse a CSP string into an ordered Map of directive → source list. */
 export function parseCsp(text) {
   const out = new Map();
@@ -72,7 +126,7 @@ function ruleApplies(rule, route) {
 export function directivesFor(policy, route, host) {
   const def = policy.routes[route];
   if (!def) throw new Error(`security/policy.json: unknown route "${route}"`);
-  const map = new Map(Object.entries(def.csp).map(([k, v]) => [k, [...v]]));
+  const map = new Map(Object.entries(def.csp).map(([k, v]) => [k, expandSources(policy, v)]));
   for (const rule of policy.hosts?.[host]?.csp ?? []) {
     if (!ruleApplies(rule, route)) continue;
     for (const name of rule.omit ?? []) map.delete(name);
@@ -348,7 +402,7 @@ export function scanMeta(text) {
  * Returns { problems: string[], fixes: number, files: string[] }.
  */
 export function run({ root = ROOT, write = false, policy = loadPolicy(root) } = {}) {
-  const problems = [];
+  const problems = embedProviderProblems(policy);
   const files = [];
   let fixes = 0;
 
