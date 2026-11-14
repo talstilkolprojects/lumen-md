@@ -17,7 +17,7 @@ npm run nightly -- --dry-run     # print the plan, run nothing
 |---|---|---|
 | `flake` | every night | `npm run e2e:flake -- --all --times 5` (chromium, firefox, webkit, 5 runs each, no retries) |
 | `perf` | every night | build, bundle budget, the `@nightly` perf project, Lighthouse when it is installed |
-| `triage` | every night | review triage of the open PRs, and the 0.14 count over the first 20 PRs since 12.11.2026 |
+| `triage` | every night | review triage of the open PRs, the 0.14 count over the first 20 PRs since 12.11.2026, and `live:meta --self-test` (below) |
 | `weekly` | Sundays (UTC) | dependency health (audit, outdated, licences), and mutation scores when `test:mutation` is there |
 
 `--only flake,perf` picks kinds. The scheduler passes `--scheduled`, which
@@ -112,3 +112,30 @@ or open a PR from it. Linux uses cron instead:
   has no browsers and can't install packages, so it can run only the
   `triage` kind (GitHub's REST API) and read the committed receipts. That is
   useful for a morning summary, not for the measurements themselves.
+
+## Live metadata check (plan W6.2)
+
+`npm run live:meta` fetches the production `index.html`, `robots.txt` and
+`sitemap.xml` and fails unless the canonical link, `og:url`, `og:image`,
+`twitter:image`, every URL in the JSON-LD, the `Sitemap:` line and every
+sitemap `<loc>` point at `lumen-md.vercel.app`, and the domain the project
+doesn't own appears nowhere in them. The pattern for that domain is built from
+parts in `scripts/lib/liveMeta.mjs`, the same way the PR gate builds it, so
+the repository never contains it.
+
+```bash
+npm run live:meta                                   # production, after every deploy
+npm run live:meta -- --url https://<deployment>.vercel.app
+npm run live:meta -- --dir dist                     # a build, before deploying it
+npm run live:meta -- --self-test --json live-meta.json
+```
+
+`--self-test` first checks a clean copy of the pages. Then it plants a
+foreign reference in each place (canonical, `og:image`, `og:url` on another
+host, body text, `Sitemap:`, `<loc>`) and fails if the check misses any of
+them.
+
+Run it **after every production deploy**: the owner's merge session runs it
+right after promoting. Every night the `triage` kind runs it too, so drift
+shows up within a day. The command exits 1 on any problem. It fetches with
+Node and falls back to `curl`, which follows `HTTPS_PROXY`.

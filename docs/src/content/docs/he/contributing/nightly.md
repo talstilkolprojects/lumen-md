@@ -21,7 +21,7 @@ npm run nightly -- --dry-run     # print the plan, run nothing
 |---|---|---|
 | `flake` | כל לילה | `npm run e2e:flake -- --all --times 5` (chromium, firefox, webkit, חמש ריצות לכל אחד, בלי retries) |
 | `perf` | כל לילה | build, תקציב החבילה, פרויקט הביצועים `@nightly`, ו-Lighthouse כשהוא מותקן |
-| `triage` | כל לילה | מיון הביקורות של ה-PR-ים הפתוחים, והספירה של 0.14 על 20 ה-PR-ים הראשונים מאז 12.11.2026 |
+| `triage` | כל לילה | מיון הביקורות של ה-PR-ים הפתוחים, הספירה של 0.14 על 20 ה-PR-ים הראשונים מאז 12.11.2026, ו-`live:meta --self-test` (למטה) |
 | `weekly` | בימי ראשון (UTC) | בריאות התלויות (audit, outdated, רישיונות), וציוני mutation כש-`test:mutation` קיים |
 
 `--only flake,perf` בוחר סוגים. המתזמן מעביר `--scheduled`, שמסמן את הדוחות
@@ -113,3 +113,28 @@ PR. בלינוקס משתמשים ב-cron:
   דפדפנים ואי אפשר להתקין חבילות, אז הוא יכול להריץ רק את הסוג `triage`
   (REST API של GitHub) ולקרוא את הקבלות ששמורות בריפו. זה שימושי לסיכום
   בוקר, לא למדידות עצמן.
+
+## בדיקת המטא-דאטה החיה (משימה W6.2)
+
+`npm run live:meta` מוריד מהייצור את `index.html`, ‏`robots.txt` ו-`sitemap.xml`,
+ונכשל אם אחד מאלה לא מצביע על `lumen-md.vercel.app`: הקישור ה-canonical,
+‏`og:url`, ‏`og:image`, ‏`twitter:image`, כל כתובת ב-JSON-LD, שורת ה-`Sitemap:`
+וכל `<loc>` במפת האתר. הוא נכשל גם אם הדומיין שאינו של הפרויקט מופיע בהם
+במקום כלשהו. את התבנית של הדומיין הזה בונים מחלקים ב-`scripts/lib/liveMeta.mjs`,
+כמו בשער ה-PR, כך שהיא לא כתובה בריפו.
+
+```bash
+npm run live:meta                                   # הייצור, אחרי כל פריסה
+npm run live:meta -- --url https://<deployment>.vercel.app
+npm run live:meta -- --dir dist                     # בנייה, לפני שפורסים אותה
+npm run live:meta -- --self-test --json live-meta.json
+```
+
+`--self-test` בודק קודם עותק נקי של הדפים. אחר כך הוא שותל הפניה זרה בכל
+מקום (canonical, ‏`og:image`, ‏`og:url` למארח אחר, טקסט בגוף הדף, `Sitemap:`,
+‏`<loc>`), ונכשל אם הבדיקה פספסה אחת מהן.
+
+מריצים אותה **אחרי כל פריסה לייצור**: ישיבת המיזוג של הבעלים מריצה אותה מיד
+אחרי הקידום. בכל לילה הסוג `triage` מריץ אותה גם כן, כך שסטייה מתגלה תוך
+יום. הפקודה יוצאת עם 1 על כל בעיה. היא מורידה עם Node, ואם זה לא עובד עוברת
+ל-`curl`, שמכבד את `HTTPS_PROXY`.

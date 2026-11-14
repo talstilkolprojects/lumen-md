@@ -128,7 +128,8 @@
     "docs:gifs": "playwright test -c playwright.gifs.config.ts",
     "ci:docker": "bash scripts/ci-docker.sh",
     "pages:check": "node scripts/pages-check.mjs",
-    "pages:deploy": "bash scripts/pages-deploy.sh"
+    "pages:deploy": "bash scripts/pages-deploy.sh",
+    "live:meta": "node scripts/live-meta.mjs"
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "0.4.2",

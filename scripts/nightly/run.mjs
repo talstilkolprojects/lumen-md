@@ -9,7 +9,7 @@
  *
  *   flake    e2e ×5 on chromium, firefox and webkit (npm run e2e:flake -- --all --times 5)
  *   perf     build + bundle budget, the @nightly perf project, Lighthouse (when installed)
- *   triage   review triage over the open PRs, and the 0.14 count over the first 20 PRs
+ *   triage   review triage over the open PRs, the 0.14 count over the first 20 PRs, and live:meta (W6.2)
  *   weekly   dependency health (audit, outdated, licences) and mutation scores — Sundays
  *
  *   npm run nightly                          # what is due today: flake, perf, triage (+ weekly on Sunday)
@@ -66,7 +66,11 @@ export function stepsFor(kind, has) {
         ...(has("lighthouse") ? [{ id: "lighthouse", cmd: ["npm", "run", "lighthouse"], timeoutMin: 20 }] : []),
       ];
     case "triage":
-      return [{ id: "review-triage", cmd: ["node", "scripts/nightly/review-triage.mjs", REPO], timeoutMin: 15 }];
+      return [
+        { id: "review-triage", cmd: ["node", "scripts/nightly/review-triage.mjs", REPO], timeoutMin: 15 },
+        // Plan W6.2: production's metadata names only lumen-md.vercel.app, and the check still catches a planted foreign one.
+        { id: "live-meta", cmd: ["node", "scripts/live-meta.mjs", "--self-test"], timeoutMin: 5 },
+      ];
     case "weekly":
       return [
         { id: "weekly-health", cmd: ["node", "scripts/nightly/weekly-health.mjs"], timeoutMin: 30 },
