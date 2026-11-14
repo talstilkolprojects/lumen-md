@@ -8,15 +8,19 @@
  *  - a kanban card dropped on another column writes the grouping property
  *    (dnd-kit, with the keyboard: Space, ← →, Space);
  *  - the toolbar filters (AND / OR expressions, databaseFilter), sorts and
- *    groups, live.
+ *    groups, live;
+ *  - `formulas:` add computed columns (plan 4.11, ./formula), and the
+ *    formula box tries one out — or writes one from a description with the
+ *    local `formulator` agent;
+ *  - the map view (Leaflet, lazy) shows the notes that have coordinates.
  *
  * Loaded lazily with the preview's code blocks; TanStack Table / Virtual and
  * dnd-kit come with it, never with the startup bundle. Re-runs the query on
  * `lumen-workspace-changed`.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { Table2, Columns3, LayoutGrid, List as ListIcon, Calendar as CalendarIcon, AlertCircle, GripVertical } from "lucide-react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Table2, Columns3, LayoutGrid, List as ListIcon, Calendar as CalendarIcon, AlertCircle, GripVertical, MapPin, Sparkles } from "lucide-react";
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
@@ -33,7 +37,9 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  applyFormulas,
   applyQuery,
+  compileFormulas,
   displayValue,
   groupRows,
   kanbanColumnValue,
@@ -45,9 +51,11 @@ import {
   specView,
   type DatabaseRow,
   type DatabaseSpec,
+  type CompiledFormula,
   type DatabaseView,
   type SortKey,
 } from "./database";
+import { formulaText, parseFormula } from "./formula";
 import { parseFilter, type FilterNode } from "./databaseFilter";
 import { cellInputText, columnType, parseCellInput, writeCell } from "./databaseEdit";
 import type { PropertyValue } from "../properties/frontmatter";
@@ -55,6 +63,9 @@ import { log } from "../lib/logger";
 import { onWorkspaceChanged } from "../storage/workspaceEvents";
 import { showAiToast } from "../ui/AiToast";
 import { t } from "../i18n";
+
+// Leaflet comes with the map view only, when it is first picked.
+const DatabaseMapView = lazy(() => import("./DatabaseMapView"));
 
 interface Props {
   source: string;
@@ -79,6 +90,8 @@ export default function DatabaseBlock({ source, meta }: Props) {
   const [where, setWhere] = useState(spec?.where ?? "");
   const [sort, setSort] = useState<SortKey[]>(() => parseSort(spec?.sort ?? spec?.sortBy));
   const [groupBy, setGroupBy] = useState(spec?.groupBy ?? "");
+  /** Formula columns tried out in the formula box (this session; the spec's `formulas:` keeps them). */
+  const [extraFormulas, setExtraFormulas] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!spec) return;
@@ -86,6 +99,7 @@ export default function DatabaseBlock({ source, meta }: Props) {
     setWhere(spec.where ?? "");
     setSort(parseSort(spec.sort ?? spec.sortBy));
     setGroupBy(spec.groupBy ?? "");
+    setExtraFormulas({});
   }, [spec]);
 
   // Re-run the query when the spec changes OR the workspace changes.
@@ -118,25 +132,61 @@ export default function DatabaseBlock({ source, meta }: Props) {
   const lastValid = useRef<FilterNode | null | undefined>(undefined);
   if (filter.ok) lastValid.current = filter.tree;
   const tree = filter.ok ? filter.tree : (lastValid.current ?? MATCH_NOTHING);
-  const shown = useMemo(() => applyQuery(rows, { where: tree, sort }), [rows, tree, sort]);
-  const fields = useMemo(() => (spec ? resolveFields(rows, spec) : []), [rows, spec]);
+  // Only a map merges with the formula box's columns: a scalar or a list under `formulas:` spread
+  // into an object would turn into columns named 0, 1, … (review #267); such a value is ignored.
+  const formulas = useMemo<CompiledFormula[]>(() => {
+    const own: unknown = spec?.formulas;
+    const isMap = !!own && typeof own === "object" && !Array.isArray(own);
+    return isMap ? compileFormulas({ ...(own as Record<string, unknown>), ...extraFormulas }) : [...compileFormulas(own), ...compileFormulas(extraFormulas)];
+  }, [spec, extraFormulas]);
+  // Formula columns are computed before the filter, so `where:`, sort and group can use them.
+  const computed = useMemo(() => applyFormulas(rows, formulas), [rows, formulas]);
+  const shown = useMemo(() => applyQuery(computed.rows, { where: tree, sort }), [computed, tree, sort]);
+  const fields = useMemo(() => {
+    if (!spec) return [];
+    // With `fields:`, those — then every formula column not already listed (the spec's `formulas:`
+    // and the ones added in the formula box), so a formula never needs listing twice.
+    if (spec.fields?.length) {
+      const listed = spec.fields;
+      return [...listed, ...formulas.map((f) => f.name).filter((f) => !listed.includes(f))];
+    }
+    // Without `fields:`: the notes' properties, then every formula column.
+    const own = resolveFields(rows, spec).filter((f) => !formulas.some((x) => x.name === f));
+    return [...own, ...formulas.map((f) => f.name)];
+  }, [rows, spec, formulas]);
   const allKeys = useMemo(() => {
     const keys = new Set(fields);
-    for (const r of rows) for (const k of Object.keys(r.fm)) keys.add(k);
+    for (const r of computed.rows) for (const k of Object.keys(r.fm)) keys.add(k);
     return [...keys];
-  }, [rows, fields]);
+  }, [computed, fields]);
+  const formulaNames = useMemo(() => new Set(formulas.map((f) => f.name)), [formulas]);
+  /** What a new formula can read: the notes' properties and the formula columns already defined (review #267). */
+  const propertyKeys = useMemo(() => {
+    const keys = new Set<string>();
+    for (const r of rows) for (const k of Object.keys(r.fm)) keys.add(k);
+    for (const f of formulas) keys.add(f.name);
+    return [...keys];
+  }, [rows, formulas]);
 
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
   /** Write one cell: shown at once, written behind; a failure puts the old value back. */
   const edit = useCallback(async (row: DatabaseRow, key: string, value: PropertyValue | undefined) => {
-    const before = row.fm;
-    const patched = { ...before };
-    if (value === undefined) delete patched[key];
-    else patched[key] = value;
-    setRows((rs) => rs.map((r) => (r.path === row.path ? { ...r, fm: patched } : r)));
+    // `row` carries the formula columns too: only the loaded property changes.
+    const loaded = rowsRef.current.find((r) => r.path === row.path)?.fm ?? {};
+    const had = Object.prototype.hasOwnProperty.call(loaded, key);
+    const old = loaded[key];
+    const put = (fm: Record<string, unknown>, v: unknown, present: boolean) => {
+      const next = { ...fm };
+      if (!present) delete next[key];
+      else next[key] = v;
+      return next;
+    };
+    setRows((rs) => rs.map((r) => (r.path === row.path ? { ...r, fm: put(r.fm, value, value !== undefined) } : r)));
     try {
       await writeCell(row.path, key, value);
     } catch (e) {
-      setRows((rs) => rs.map((r) => (r.path === row.path ? { ...r, fm: before } : r)));
+      setRows((rs) => rs.map((r) => (r.path === row.path ? { ...r, fm: put(r.fm, old, had) } : r)));
       showAiToast(t("db.saveFailed", { note: titleOf(row), error: (e as Error)?.message ?? String(e) }), "error");
     }
   }, []);
@@ -153,7 +203,8 @@ export default function DatabaseBlock({ source, meta }: Props) {
   }
 
   const titleLabel = spec.title ?? `${spec.type ?? t("db.all")} · ${t("db.count", { count: shown.length })}`;
-  const props: ViewProps = { rows: shown, allRows: rows, spec, fields, groupBy, edit };
+  const props: ViewProps = { rows: shown, allRows: computed.rows, spec, fields, groupBy, edit, formulaNames, formulaErrors: computed.errors };
+  const badFormulas = formulas.filter((f) => f.error);
 
   return (
     <div className="chart-block lumen-database" data-testid="database-block">
@@ -168,9 +219,18 @@ export default function DatabaseBlock({ source, meta }: Props) {
           <ViewTab cur={view} v="kanban" set={setView}><Columns3 size={12} /> {t("db.view.kanban")}</ViewTab>
           <ViewTab cur={view} v="list" set={setView}><ListIcon size={12} /> {t("db.view.list")}</ViewTab>
           <ViewTab cur={view} v="calendar" set={setView}><CalendarIcon size={12} /> {t("db.view.calendar")}</ViewTab>
+          <ViewTab cur={view} v="map" set={setView}><MapPin size={12} /> {t("db.view.map")}</ViewTab>
         </div>
       </div>
       <Toolbar where={where} setWhere={setWhere} filterError={filter.ok ? null : filter} sort={sort} setSort={setSort} groupBy={groupBy} setGroupBy={setGroupBy} keys={allKeys} />
+      <FormulaBox keys={propertyKeys} sample={computed.rows[0]} taken={formulaNames} onAdd={(name, formula) => setExtraFormulas((x) => ({ ...x, [name]: formula }))} />
+      {badFormulas.length > 0 && (
+        <div role="alert" style={{ paddingInline: 8, paddingBlockStart: 4, color: "hsl(0 80% 60%)", fontSize: 11 }} data-testid="database-formula-spec-error">
+          {badFormulas.map((f) => (
+            <div key={f.name} dir="auto">{t("db.formula.specError", { name: f.name, error: f.error?.message ?? "", at: (f.error?.at ?? 0) + 1 })}</div>
+          ))}
+        </div>
+      )}
       <div style={{ padding: 8 }}>
         {error && <div style={{ padding: 12, color: "hsl(0 80% 60%)" }}>{error}</div>}
         {!error && shown.length === 0 && !loading && (
@@ -185,6 +245,11 @@ export default function DatabaseBlock({ source, meta }: Props) {
         {!error && view === "kanban" && (shown.length > 0 || spec.columns?.length) ? <KanbanView {...props} /> : null}
         {!error && shown.length > 0 && view === "list" && <ListView {...props} />}
         {!error && shown.length > 0 && view === "calendar" && <CalendarView rows={shown} spec={spec} />}
+        {!error && shown.length > 0 && view === "map" && (
+          <Suspense fallback={<div style={{ padding: 12, fontSize: 12, color: "hsl(var(--fg-muted))" }}>{t("db.loading")}</div>}>
+            <DatabaseMapView rows={shown} spec={spec} fields={fields} />
+          </Suspense>
+        )}
       </div>
       {meta && <div style={{ padding: "0 8px 6px", fontSize: 10, color: "hsl(var(--fg-muted))" }}>{meta}</div>}
     </div>
@@ -199,6 +264,10 @@ interface ViewProps {
   fields: string[];
   groupBy: string;
   edit: (row: DatabaseRow, key: string, value: PropertyValue | undefined) => Promise<void>;
+  /** Columns computed by a formula: read-only. */
+  formulaNames: ReadonlySet<string>;
+  /** path → formula → error message. */
+  formulaErrors: ReadonlyMap<string, ReadonlyMap<string, string>>;
 }
 
 /* ─── Toolbar: filter, sort, group ───────────────────────────────────── */
@@ -390,6 +459,129 @@ function EditableCell({ row, field, type, edit }: { row: DatabaseRow; field: str
   );
 }
 
+/* ─── Formula cell and formula box (plan 4.11) ───────────────────────── */
+
+function FormulaCell({ value, error }: { value: unknown; error?: string }) {
+  if (error) {
+    return (
+      <span title={error} style={{ color: "hsl(0 80% 60%)" }} data-testid="database-formula-error" dir="auto">
+        <AlertCircle size={11} aria-hidden style={{ display: "inline", verticalAlign: "-1px", marginInlineEnd: 3 }} />
+        {t("db.formula.cellError")}
+        <span className="sr-only">{`: ${error}`}</span>
+      </span>
+    );
+  }
+  return (
+    <span title={t("db.formula.computed")} dir="auto" data-testid="database-formula-cell" style={{ fontVariantNumeric: "tabular-nums" }}>
+      {/* The formula formatter keeps a time that is not midnight (now(), dateadd(…, "hours")). */}
+      {value instanceof Date || Array.isArray(value) ? formulaText(value as Parameters<typeof formulaText>[0]) : displayValue(value)}
+    </span>
+  );
+}
+
+/**
+ * Try a formula column on this database, or describe one and let the local
+ * `formulator` agent write it (its answer is checked by the same parser).
+ */
+function FormulaBox({ keys, sample, taken, onAdd }: { keys: string[]; sample?: DatabaseRow; taken: ReadonlySet<string>; onAdd: (name: string, formula: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [added, setAdded] = useState<string | null>(null);
+  const abort = useRef<AbortController | null>(null);
+  useEffect(() => () => abort.current?.abort(), []);
+  const parsed = useMemo(() => (draft.trim() ? parseFormula(draft) : null), [draft]);
+  const cleanName = name.trim();
+  const field: CSSProperties = { fontSize: 12, padding: "3px 6px", border: "1px solid hsl(var(--border))", borderRadius: 4, background: "hsl(var(--bg))", color: "hsl(var(--fg))" };
+
+  const write = async () => {
+    if (!draft.trim() || busy) return;
+    abort.current?.abort();
+    const ctl = new AbortController();
+    abort.current = ctl;
+    setBusy(true);
+    try {
+      const { runAgentOrThrow } = await import("../agents/runtime");
+      const { formulatorAgent } = await import("../agents/defs/formulator");
+      const fields = keys.map((k) => ({ name: k, example: sample && sample.fm[k] !== undefined ? displayValue(sample.fm[k]).slice(0, 40) : undefined }));
+      const formula = await runAgentOrThrow(formulatorAgent, { text: draft, extra: { fields } }, { signal: ctl.signal, ownPrompt: true });
+      if (!ctl.signal.aborted) setDraft(formula);
+    } catch (e) {
+      if (!ctl.signal.aborted) {
+        log.warn("formula agent failed", e);
+        showAiToast(t("db.formula.aiFailed"), "error");
+      }
+    } finally {
+      if (abort.current === ctl) setBusy(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <div style={{ paddingInline: 8, paddingBlockStart: 6, fontSize: 12 }}>
+        <button type="button" style={{ ...field, cursor: "pointer" }} onClick={() => setOpen(true)} data-testid="database-formula-open">
+          ƒ {t("db.formula.open")}
+        </button>
+        {added && <span style={{ marginInlineStart: 8, color: "hsl(var(--fg-muted))", fontSize: 11 }} dir="auto">{t("db.formula.keepHint", { line: added })}</span>}
+      </div>
+    );
+  }
+  const error = parsed && !parsed.ok ? parsed.error : null;
+  const canAdd = !!cleanName && !!parsed?.ok && !taken.has(cleanName);
+  const submit = () => {
+    if (!canAdd) return;
+    onAdd(cleanName, draft.trim());
+    // Both sides as quoted YAML scalars: a formula with `: ` or ` #` must survive the copy (review #267).
+    setAdded(`${JSON.stringify(cleanName)}: ${JSON.stringify(draft.trim())}`);
+    setName("");
+    setDraft("");
+    setOpen(false);
+  };
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", paddingInline: 8, paddingBlockStart: 6, fontSize: 12 }} data-testid="database-formula-box">
+      <label style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+        <span>{t("db.formula.name")}</span>
+        <input type="text" dir="auto" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("db.formula.namePlaceholder")} style={{ ...field, inlineSize: "9em" }} data-testid="database-formula-name" />
+      </label>
+      <label style={{ display: "inline-flex", alignItems: "center", gap: 4, flex: "1 1 16em", minInlineSize: 0 }}>
+        <span>{t("db.formula.label")}</span>
+        <input
+          type="text"
+          dir="auto"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+          placeholder={t("db.formula.placeholder")}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? "db-formula-error" : undefined}
+          style={{ ...field, flex: 1, minInlineSize: 0, fontFamily: "var(--font-mono, monospace)" }}
+          data-testid="database-formula-input"
+        />
+      </label>
+      <button type="button" style={{ ...field, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }} onClick={() => void write()} disabled={busy || !draft.trim()} title={t("db.formula.aiHint")} data-testid="database-formula-ai">
+        <Sparkles size={12} aria-hidden /> {busy ? t("db.formula.aiRunning") : t("db.formula.ai")}
+      </button>
+      <button type="button" style={{ ...field, cursor: canAdd ? "pointer" : "default" }} onClick={submit} disabled={!canAdd} data-testid="database-formula-add">
+        {t("db.formula.add")}
+      </button>
+      <button type="button" style={{ ...field, cursor: "pointer" }} onClick={() => setOpen(false)}>
+        {t("db.formula.close")}
+      </button>
+      {error && (
+        <div id="db-formula-error" role="alert" style={{ flexBasis: "100%", color: "hsl(0 80% 60%)", fontSize: 11 }} dir="auto">
+          {t("db.formula.error", { error: error.message, at: error.at + 1 })}
+        </div>
+      )}
+      {cleanName && taken.has(cleanName) && (
+        <div role="alert" style={{ flexBasis: "100%", color: "hsl(0 80% 60%)", fontSize: 11 }} dir="auto">
+          {t("db.formula.nameTaken", { name: cleanName })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Table view ─────────────────────────────────────────────────────── */
 
 type Item = { kind: "group"; key: string; count: number } | { kind: "row"; row: DatabaseRow };
@@ -397,7 +589,7 @@ type Item = { kind: "group"; key: string; count: number } | { kind: "row"; row: 
 /** Above this many lines the table renders only what is on screen. */
 const VIRTUAL_FROM = 60;
 
-function TableView({ rows, allRows, fields, groupBy, edit }: ViewProps) {
+function TableView({ rows, allRows, fields, groupBy, edit, formulaNames, formulaErrors }: ViewProps) {
   const types = useMemo(() => Object.fromEntries(fields.map((f) => [f, columnType(allRows.map((r) => r.fm[f]), f)])), [allRows, fields]);
   const columns = useMemo<ColumnDef<DatabaseRow>[]>(
     () => [
@@ -406,11 +598,16 @@ function TableView({ rows, allRows, fields, groupBy, edit }: ViewProps) {
         (f): ColumnDef<DatabaseRow> => ({
           id: f,
           header: () => f,
-          cell: (c) => <EditableCell row={c.row.original} field={f} type={types[f]} edit={edit} />,
+          cell: (c) =>
+            formulaNames.has(f) ? (
+              <FormulaCell value={c.row.original.fm[f]} error={formulaErrors.get(c.row.original.path)?.get(f)} />
+            ) : (
+              <EditableCell row={c.row.original} field={f} type={types[f]} edit={edit} />
+            ),
         }),
       ),
     ],
-    [fields, types, edit],
+    [fields, types, edit, formulaNames, formulaErrors],
   );
   const table = useReactTable({ data: rows, columns, getCoreRowModel: getCoreRowModel(), getRowId: (r) => r.path });
   const byPath = new Map(table.getRowModel().rows.map((r) => [r.id, r]));
@@ -510,7 +707,7 @@ const cardStyle: CSSProperties = {
   alignItems: "flex-start",
 };
 
-function KanbanView({ rows, allRows, spec, fields, groupBy, edit }: ViewProps) {
+function KanbanView({ rows, allRows, spec, fields, groupBy, edit, formulaNames }: ViewProps) {
   const groups = useMemo(() => (groupBy ? groupRows(rows, groupBy) : new Map<string, DatabaseRow[]>()), [rows, groupBy]);
   // The spec's `columns:` come first and stay even when empty, so a card
   // can move into a status no note has yet.
@@ -576,6 +773,11 @@ function KanbanView({ rows, allRows, spec, fields, groupBy, edit }: ViewProps) {
     const path = String(active.id);
     const row = byPath.get(path);
     if (!row || columnOf(path) === to) return;
+    // A formula column is computed: there is no property to write.
+    if (formulaNames.has(groupBy)) {
+      showAiToast(t("db.formula.readOnly", { name: groupBy }), "info");
+      return;
+    }
     void edit(row, groupBy, valueFor(to));
   };
 

@@ -157,4 +157,14 @@ export const EVAL_CASES: EvalCase[] = [
     checks: [{ type: "minItems", path: "links", min: 1 }, { type: "contains", all: ["הפצה לאחור"] }, { type: "notContains", none: ["מתכון לעוגה"] }],
     example: '{"links": [{"phrase": "הפצה לאחור", "target": "הפצה לאחור", "reason": "הפתק מגדיר את המונח"}]}',
   },
+  {
+    id: "formulator-he",
+    agent: "formulator",
+    input: {
+      text: "כמה ימים נשארו עד תאריך היעד, ואם המשימה כבר הושלמה — כלום",
+      extra: { fields: [{ name: "סטטוס", example: "הושלם" }, { name: "יעד", example: "2026-11-01" }, { name: "מחיר" }] },
+    },
+    checks: [{ type: "contains", all: ["יעד", "סטטוס"] }, { type: "containsAny", any: ["datediff", "today()"] }, { type: "maxChars", max: 200 }],
+    example: 'if(סטטוס = "הושלם", null, datediff(יעד, today()))',
+  },
 ];

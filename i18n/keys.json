@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-10-18T08:37:10.560Z",
+  "generated_at": "2026-10-20T14:26:29.537Z",
   "source": "src/i18n/index.ts (en bundle)",
-  "count": 1473,
+  "count": 1495,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -6019,6 +6019,135 @@
       "en": "No notes have a date in {field}.",
       "vars": [
         "field"
+      ]
+    },
+    {
+      "key": "db.view.map",
+      "en": "Map",
+      "vars": []
+    },
+    {
+      "key": "db.map.label",
+      "en": "Map of {count} notes",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "db.map.noLocations",
+      "en": "No notes have coordinates. Add a {field} property like “32.08, 34.78”, or lat and lng.",
+      "vars": [
+        "field"
+      ]
+    },
+    {
+      "key": "db.map.missing",
+      "en": "{count} notes without coordinates are not shown.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "db.formula.open",
+      "en": "Formula column",
+      "vars": []
+    },
+    {
+      "key": "db.formula.name",
+      "en": "Name",
+      "vars": []
+    },
+    {
+      "key": "db.formula.namePlaceholder",
+      "en": "total",
+      "vars": []
+    },
+    {
+      "key": "db.formula.label",
+      "en": "Formula",
+      "vars": []
+    },
+    {
+      "key": "db.formula.placeholder",
+      "en": "price * qty — or describe it and press AI",
+      "vars": []
+    },
+    {
+      "key": "db.formula.ai",
+      "en": "Write with AI",
+      "vars": []
+    },
+    {
+      "key": "db.formula.aiHint",
+      "en": "Turn the description into a formula with the local model",
+      "vars": []
+    },
+    {
+      "key": "db.formula.aiRunning",
+      "en": "Writing…",
+      "vars": []
+    },
+    {
+      "key": "db.formula.aiFailed",
+      "en": "Couldn't write a formula that works. Try describing it differently.",
+      "vars": []
+    },
+    {
+      "key": "db.formula.add",
+      "en": "Add column",
+      "vars": []
+    },
+    {
+      "key": "db.formula.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "db.formula.error",
+      "en": "Formula: {error} (character {at})",
+      "vars": [
+        "error",
+        "at"
+      ]
+    },
+    {
+      "key": "db.formula.specError",
+      "en": "Formula {name}: {error} (character {at})",
+      "vars": [
+        "name",
+        "error",
+        "at"
+      ]
+    },
+    {
+      "key": "db.formula.nameTaken",
+      "en": "There is already a formula called {name}.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "db.formula.keepHint",
+      "en": "To keep it, add under formulas: in the spec — {line}",
+      "vars": [
+        "line"
+      ]
+    },
+    {
+      "key": "db.formula.cellError",
+      "en": "error",
+      "vars": []
+    },
+    {
+      "key": "db.formula.computed",
+      "en": "Computed by a formula",
+      "vars": []
+    },
+    {
+      "key": "db.formula.readOnly",
+      "en": "{name} is computed by a formula, so cards can't be moved between its columns.",
+      "vars": [
+        "name"
       ]
     },
     {

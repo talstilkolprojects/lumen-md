@@ -15,6 +15,9 @@
  *     sortBy: rating         # the older, single-column form of `sort`
  *     fields: [title, author, rating]   # which columns to show in table/gallery
  *     dateField: due         # which frontmatter key is the date for calendar
+ *     formulas:              # computed columns (plan 4.11, see ./formula)
+ *       total: price * qty
+ *     location: place        # coordinates for the map view ("32.08, 34.78", [lat, lng] or {lat, lng})
  *     ```
  *
  * The query runs over OPFS — every .md / .markdown file under `source`
@@ -32,8 +35,9 @@ import {
 import { extractFrontmatter } from "../renderer/pipeline";
 import { matchesFilter, parseFilter, type FilterNode } from "./databaseFilter";
 import type { PropertyType, PropertyValue } from "../properties/frontmatter";
+import { evaluate, parseFormula, type FormulaNode } from "./formula";
 
-export type DatabaseView = "table" | "cards" | "kanban" | "list" | "calendar";
+export type DatabaseView = "table" | "cards" | "kanban" | "list" | "calendar" | "map";
 
 export interface DatabaseSpec {
   source?: string;
@@ -53,6 +57,10 @@ export interface DatabaseSpec {
   cover?: string;
   /** Optional custom title for the rendered block. */
   title?: string;
+  /** Computed columns: name → formula, evaluated in this order (a formula may use the ones above it). */
+  formulas?: Record<string, string>;
+  /** Column with a note's coordinates, for the map view. Default: `location`, else `lat` + `lng`. */
+  location?: string;
 }
 
 export interface DatabaseRow {
@@ -68,7 +76,7 @@ export interface DatabaseRow {
 export function specView(spec: DatabaseSpec): DatabaseView {
   const v = spec.view;
   if (v === "gallery") return "cards";
-  return v === "table" || v === "cards" || v === "kanban" || v === "list" || v === "calendar" ? v : "table";
+  return v === "table" || v === "cards" || v === "kanban" || v === "list" || v === "calendar" || v === "map" ? v : "table";
 }
 
 export interface SortKey {
@@ -136,7 +144,9 @@ export function parseDatabaseSpec(source: string): {
 export async function runDatabaseQuery(spec: DatabaseSpec): Promise<DatabaseRow[]> {
   const where = parseFilter(spec.where ?? "");
   if (!where.ok) throw new Error(`where: ${where.error} (at ${where.at + 1})`);
-  return applyQuery(await loadDatabaseRows(spec), { where: where.tree, sort: parseSort(spec.sort ?? spec.sortBy) });
+  // Formula columns first, so `where:` and `sort:` can use them.
+  const { rows } = applyFormulas(await loadDatabaseRows(spec), compileFormulas(spec.formulas));
+  return applyQuery(rows, { where: where.tree, sort: parseSort(spec.sort ?? spec.sortBy) });
 }
 
 /** The notes under `source` (of `type`, when set), by name — before `where` and `sort`. */
@@ -242,4 +252,138 @@ export function resolveFields(
     }
   }
   return [...keys].slice(0, 6);
+}
+
+/* ─── Formulas (plan 4.11) ───────────────────────────────────────────── */
+
+export interface CompiledFormula {
+  name: string;
+  source: string;
+  tree: FormulaNode | null;
+  /** Why it does not parse, with the 0-based character. */
+  error?: { message: string; at: number };
+}
+
+/** The spec's `formulas:` (a map of name → text), parsed once. Non-text entries are skipped. */
+export function compileFormulas(formulas: unknown): CompiledFormula[] {
+  if (!formulas || typeof formulas !== "object" || Array.isArray(formulas)) return [];
+  const out: CompiledFormula[] = [];
+  for (const [name, raw] of Object.entries(formulas as Record<string, unknown>)) {
+    // `pair: [price, qty]` unquoted is a YAML list, not a formula: show it as a broken entry
+    // with the fix, instead of dropping the column without a word (review #267).
+    if (Array.isArray(raw)) {
+      out.push({ name, source: JSON.stringify(raw), tree: null, error: { message: "this is a YAML list — put the formula in quotes", at: 0 } });
+      continue;
+    }
+    // `blank: null` in YAML is the formula `null` (YAML already turned it into a value, as it does 3 and true).
+    if (raw !== null && typeof raw !== "string" && typeof raw !== "number" && typeof raw !== "boolean") continue;
+    // An unquoted `value: 1e309` reaches us as Infinity, which would parse as a field name: say why instead (review #267).
+    if (typeof raw === "number" && !Number.isFinite(raw)) {
+      out.push({ name, source: String(raw), tree: null, error: { message: "the number is too large — put the formula in quotes", at: 0 } });
+      continue;
+    }
+    const source = raw === null ? "null" : String(raw);
+    const p = parseFormula(source);
+    out.push(p.ok ? { name, source, tree: p.tree } : { name, source, tree: null, error: { message: p.error.message, at: p.error.at } });
+  }
+  return out;
+}
+
+export interface FormulaRows {
+  rows: DatabaseRow[];
+  /** path → formula name → error message, for the cells that could not be computed. */
+  errors: Map<string, Map<string, string>>;
+}
+
+/**
+ * Every row with its formula columns added to `fm` (so filter, sort, group
+ * and the views treat them like any property). A formula that fails leaves
+ * its column empty and records the message. `now` fixes today() for the run.
+ */
+export function applyFormulas(rows: readonly DatabaseRow[], formulas: readonly CompiledFormula[], now: Date = new Date()): FormulaRows {
+  const errors = new Map<string, Map<string, string>>();
+  if (!formulas.length) return { rows: [...rows], errors };
+  const out = rows.map((r) => {
+    const fm: Record<string, unknown> = { ...r.fm };
+    const file = rowFilter(r).file;
+    // An own data property even for a name like `__proto__` (plain assignment would hit the prototype setter).
+    const put = (name: string, v: unknown) => Object.defineProperty(fm, name, { value: v, writable: true, enumerable: true, configurable: true });
+    for (const f of formulas) {
+      if (!f.tree) {
+        put(f.name, null);
+        continue;
+      }
+      const res = evaluate(f.tree, { fm, file }, { now });
+      if (res.ok) put(f.name, res.value);
+      else {
+        put(f.name, null);
+        if (!errors.has(r.path)) errors.set(r.path, new Map());
+        errors.get(r.path)!.set(f.name, res.error.message);
+      }
+    }
+    return { ...r, fm };
+  });
+  return { rows: out, errors };
+}
+
+/* ─── Coordinates, for the map view ──────────────────────────────────── */
+
+export interface LatLng {
+  lat: number;
+  lng: number;
+}
+
+const inRange = (lat: number, lng: number) => Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+
+/** A coordinate member: a number, or numeric text — never empty, null or a boolean (which `Number` would make 0 or 1). */
+function coord(v: unknown): number {
+  if (typeof v === "number") return v;
+  if (typeof v === "string" && /^\s*-?\d+(?:\.\d+)?\s*$/.test(v)) return Number(v);
+  return Number.NaN;
+}
+
+/** `"32.08, 34.78"`, `[32.08, 34.78]`, `{lat, lng}` (or `lon` / `latitude` / `longitude`) → a point. */
+export function parseLatLng(v: unknown): LatLng | null {
+  let lat: number;
+  let lng: number;
+  if (typeof v === "string") {
+    const m = /^\s*(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)\s*$/.exec(v);
+    if (!m) return null;
+    lat = Number(m[1]);
+    lng = Number(m[2]);
+  } else if (Array.isArray(v) && v.length === 2) {
+    lat = coord(v[0]);
+    lng = coord(v[1]);
+  } else if (v && typeof v === "object" && !(v instanceof Date)) {
+    // Each alias on its own, first valid pair wins: `{lat: "", latitude: 32, …}` must not be
+    // rejected because an earlier alias is present but empty (as rowLatLng does for columns).
+    const o = v as Record<string, unknown>;
+    for (const latKey of ["lat", "latitude"]) {
+      for (const lngKey of ["lng", "lon", "long", "longitude"]) {
+        const a = coord(o[latKey]);
+        const b = coord(o[lngKey]);
+        if (inRange(a, b)) return { lat: a, lng: b };
+      }
+    }
+    return null;
+  } else return null;
+  return inRange(lat, lng) ? { lat, lng } : null;
+}
+
+/** A row's coordinates: the spec's `location:` column, else `location`, else `lat` + `lng` columns. */
+export function rowLatLng(row: DatabaseRow, spec: Pick<DatabaseSpec, "location">): LatLng | null {
+  if (spec.location) return parseLatLng(row.fm[spec.location]);
+  // Each alias on its own: `location: Tel Aviv` (a place name) must not hide valid `coordinates`.
+  for (const key of ["location", "coordinates"]) {
+    const p = parseLatLng(row.fm[key]);
+    if (p) return p;
+  }
+  for (const latKey of ["lat", "latitude"]) {
+    for (const lngKey of ["lng", "lon", "longitude"]) {
+      if (row.fm[latKey] === undefined || row.fm[lngKey] === undefined) continue;
+      const p = parseLatLng([row.fm[latKey], row.fm[lngKey]]);
+      if (p) return p;
+    }
+  }
+  return null;
 }

@@ -32,7 +32,7 @@ treats specially (it's the row filter).
 ```database
 source: books/         # folder under workspace root
 type: book             # filter by frontmatter.type
-view: kanban           # table | cards | kanban | list | calendar
+view: kanban           # table | cards | kanban | list | calendar | map
 where: status != "done" AND (rating >= 4 OR contains(tags, "fav"))
 groupBy: status        # kanban columns; sections in the other views
 columns: [want, reading, done]   # kanban columns shown even when empty
@@ -72,6 +72,15 @@ changing the spec.
   Space, ← / →, Space (Escape cancels).
 - **List** — titles with a few fields.
 - **Calendar** — agenda of every note with a parseable `dateField`.
+- **Map** — a marker per note with coordinates (`location: "32.08, 34.78"`,
+  or `lat` + `lng`). See [Database formulas and map view](/workspace/database-formulas/).
+
+## Formula columns
+
+`formulas:` adds computed columns — `total: price * qty`,
+`late: if(due < today(), "late", "")` — that the filter, sort and group can
+use too. Syntax and every function: [Database formulas and map
+view](/workspace/database-formulas/).
 
 ## Editing
 

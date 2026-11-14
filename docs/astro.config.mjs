@@ -44,6 +44,7 @@ export default defineConfig({
           label: "Workspace",
           items: [
             { label: "Database views", slug: "workspace/database-views" },
+            { label: "Database formulas + map", slug: "workspace/database-formulas" },
             { label: "Search (BM25 + Smart)", slug: "workspace/search" },
             { label: "Vault Doctor", slug: "workspace/doctor" },
           ],

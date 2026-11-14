@@ -49,6 +49,7 @@ const AGENT_HINTS = {
   charter: /echarts/i,
   committer: /commit/i,
   writer: /writing assistant|continue|ghostwriter/i,
+  formulator: /database column|formula/i,
 };
 
 function answerFor(messages, format) {
