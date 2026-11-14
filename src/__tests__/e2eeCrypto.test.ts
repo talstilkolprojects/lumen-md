@@ -74,8 +74,8 @@ describe("e2ee KDF", () => {
     expect(KDF_IDS).toContain("argon2id");
     const salt = toB64u(new Uint8Array(16));
     expect(() => validateKdfParams({ alg: "scrypt", salt })).toThrow(KdfUnavailableError);
-    const { argon2id } = await import("../sync/e2ee/primitives/argon2");
-    const tag = argon2id({ password: new Uint8Array(32).fill(1), salt: new Uint8Array(16).fill(2), secret: new Uint8Array(8).fill(3), associatedData: new Uint8Array(12).fill(4), memoryKiB: 32, iterations: 3, parallelism: 4, tagLength: 32 });
+    const { argon2id } = await import("../sync/e2ee/primitives");
+    const tag = await argon2id({ password: new Uint8Array(32).fill(1), salt: new Uint8Array(16).fill(2), secret: new Uint8Array(8).fill(3), associatedData: new Uint8Array(12).fill(4), memoryKiB: 32, iterations: 3, parallelism: 4, tagLength: 32 });
     expect(Buffer.from(tag).toString("hex")).toBe("0d640df58d78766c08c037a34a8b53c9d01ef0452d75b65eb52520e96b01e659");
     const k = await deriveMasterKey("שלום", { alg: "argon2id", memoryKiB: 64, iterations: 2, parallelism: 1, salt });
     expect(k).toHaveLength(32);

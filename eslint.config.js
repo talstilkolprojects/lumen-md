@@ -27,6 +27,10 @@ export default tseslint.config(
       "public/**",
       "src-tauri/**",
       "**/*.d.ts",
+      // W10.D13: the primitives over the audited libraries are outside tsconfig until the
+      // Mac run installs them (10.M); typed linting needs them in the project. Remove with the
+      // tsconfig exclude.
+      "src/sync/e2ee/primitives/lib/**",
     ],
   },
   {
