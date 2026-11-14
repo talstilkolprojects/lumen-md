@@ -6,7 +6,8 @@
  *
  * A and B are each one of:
  *   - a dist manifest (file path, or an https URL — the Cloudflare Worker's
- *     <worker>/__build/manifest.json, see scripts/supply-chain/cf-build.sh);
+ *     <worker>/lumen-build.json, see scripts/supply-chain/cf-build.sh; Vercel's
+ *     <site>/.well-known/lumen-build.json, written by its `manifest` gate);
  *   - a build directory (dist/), hashed here;
  *   - `origin:<https url>`: a deployed site (e.g. a Vercel deployment). Every
  *     path in the OTHER side's manifest is fetched from it and hashed, so the
@@ -45,6 +46,7 @@ if (!specA || !specB) {
 }
 
 async function fetchBytes(url) {
+  // privacy-ledger: a maintainer's script (not the app): the repo's own deployments and the Cloudflare rebuild, nothing else.
   const r = await fetch(url, { redirect: "follow", headers: { "accept-encoding": "identity" } });
   if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
   return Buffer.from(await r.arrayBuffer());

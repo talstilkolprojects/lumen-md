@@ -18,11 +18,16 @@ export const MANIFEST_SCHEMA = "lumen-dist-manifest/v1";
 /** The in-toto predicate for W7.22's attestation: "built identically on two infrastructures". */
 export const PREDICATE_TYPE = "https://lumen-md.vercel.app/attestations/two-infra-build/v1";
 
+/** Where a build carries its own manifest: Vercel's `manifest` gate writes it into dist/ (served at /.well-known/lumen-build.json). */
+export const MANIFEST_PATH = ".well-known/lumen-build.json";
+/** The plan's bar: this many consecutive commits with every file identical. */
+export const STREAK_TARGET = 10;
+
 /**
- * Files a builder adds next to the build and that the other builder never has:
- * the manifest itself and the Cloudflare Worker's served copy of it.
+ * Files a builder adds to the build and that are never compared: the manifest
+ * itself (in dist/ on Vercel) and the Cloudflare Worker's copy of it.
  */
-export const BUILDER_FILES = [/^__build\//];
+export const BUILDER_FILES = [/^\.well-known\/lumen-build\.json$/, /^lumen-build\.json$/];
 
 /** The commit a CI builder checked out: Cloudflare Workers Builds, Vercel, else git. */
 export function commitOf(env, git) {
@@ -86,7 +91,8 @@ export function compareManifests(a, b) {
     else if (x.sha256 !== y.sha256) differs.push({ path: p, sizeA: x.size, sizeB: y.size });
   }
   const same = paths.length - differs.length - onlyA.length - onlyB.length;
-  return { errors, notes, differs, onlyA, onlyB, same, total: paths.length, identical: !errors.length && !differs.length && !onlyA.length && !onlyB.length };
+  // Two empty builds prove nothing: identical needs at least one file.
+  return { errors, notes, differs, onlyA, onlyB, same, total: paths.length, identical: paths.length > 0 && !errors.length && !differs.length && !onlyA.length && !onlyB.length };
 }
 
 export function formatComparison(r, labelA = "A", labelB = "B") {
@@ -126,21 +132,29 @@ export function streak(entries) {
   return n;
 }
 
-/** The in-toto Statement W7.22 signs: subject = the files digest, predicate = both builders. */
+/**
+ * The in-toto Statement W7.22 signs: one subject per dist file (so any single
+ * file can be checked against it), predicate = both builders and the digest of
+ * the whole file list.
+ */
 export function attestationStatement(a, b, r) {
   if (!r.identical) throw new Error("only an identical comparison can be attested");
   return {
     _type: "https://in-toto.io/Statement/v1",
-    subject: [{ name: "dist", digest: { sha256: filesDigest(a) } }],
+    subject: Object.keys(a.files)
+      .sort()
+      .map((name) => ({ name, digest: { sha256: a.files[name].sha256 } })),
     predicateType: PREDICATE_TYPE,
     predicate: {
       commit: a.commit,
       lockfileSha256: a.lockfileSha256,
+      filesDigest: filesDigest(a),
       fileCount: r.total,
+      identical: true,
       builders: [a, b].map((m) => ({ id: m.builder, node: m.node, platform: m.platform, builtAt: m.builtAt })),
     },
   };
 }
 
-/** The Worker's URL for a manifest: `<base>/__build/manifest.json`. */
-export const manifestUrl = (base) => `${String(base).replace(/\/+$/, "")}/__build/manifest.json`;
+/** Where each host serves its manifest: Vercel inside the app's dist, the Cloudflare Worker at its root. */
+export const manifestUrl = (base, host = "vercel") => `${String(base).replace(/\/+$/, "")}/${host === "cloudflare" ? "lumen-build.json" : MANIFEST_PATH}`;

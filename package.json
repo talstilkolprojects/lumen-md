@@ -10,6 +10,7 @@
     "dev": "vite",
     "prebuild": "node scripts/copy-pyodide.mjs && node scripts/copy-ruby.mjs && node scripts/copy-ort.mjs && node scripts/copy-quickjs.mjs && node scripts/copy-vad.mjs && node scripts/copy-tesseract.mjs && node scripts/copy-excalidraw.mjs && node scripts/copy-playground-vendor.mjs",
     "build": "tsc -b && vite build",
+    "build:manifest": "node scripts/supply-chain/dist-manifest.mjs --out dist/.well-known/lumen-build.json",
     "webr:local": "node scripts/copy-webr.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

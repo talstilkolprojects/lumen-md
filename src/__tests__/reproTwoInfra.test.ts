@@ -36,8 +36,8 @@ const runAsync = (args: string[], cwd = ROOT) =>
 describe("two-infrastructure reproducible build", () => {
   const base = { "index.html": "<!doctype html><title>Lumen</title>", "assets/app-abc.js": "console.log('שלום')", "sw.js": "self.x=1" };
 
-  it("lists every file with its SHA-256 and leaves out the builder's own __build/ files", () => {
-    const d = dist({ ...base, "__build/manifest.json": "{}" });
+  it("lists every file with its SHA-256 and leaves out the build's own manifest", () => {
+    const d = dist({ ...base, ".well-known/lumen-build.json": "{}", "lumen-build.json": "{}" });
     const m = manifestOf(d, { commit: "c1" });
     expect(Object.keys(m.files)).toEqual(["assets/app-abc.js", "index.html", "sw.js"]);
     expect(m.files["index.html"].sha256).toMatch(/^[0-9a-f]{64}$/);
@@ -70,11 +70,13 @@ describe("two-infrastructure reproducible build", () => {
     expect(streak([e("a", "2026-11-01", true), e("b", "2026-11-02", false), e("b", "2026-11-05", true)])).toBe(2);
   });
 
-  it("attests only an identical comparison, with the files digest as subject", () => {
+  it("attests only an identical comparison: one subject per file, the files digest in the predicate", () => {
     const a = manifestOf(dist(base), { commit: "c1", builder: "cloudflare-workers-builds" });
     const b = manifestOf(dist(base), { commit: "c1", builder: "vercel" });
     const s = attestationStatement(a, b, compareManifests(a, b));
-    expect(s.subject[0].digest.sha256).toBe(filesDigest(a));
+    expect(s.subject.map((x: { name: string }) => x.name)).toEqual(["assets/app-abc.js", "index.html", "sw.js"]);
+    expect(s.subject[1].digest.sha256).toBe(a.files["index.html"].sha256);
+    expect(s.predicate.filesDigest).toBe(filesDigest(a));
     expect(s.predicate.builders.map((x: { id: string }) => x.id)).toEqual(["cloudflare-workers-builds", "vercel"]);
     const c = manifestOf(dist({ ...base, "sw.js": "x" }), { commit: "c1" });
     expect(() => attestationStatement(a, c, compareManifests(a, c))).toThrow(/identical/);

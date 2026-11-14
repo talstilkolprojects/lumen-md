@@ -75,8 +75,9 @@ npm run repro:compare -- <A> <B>
 - **Cloudflare Workers Builds rebuilds every commit of `main`**
   (`scripts/supply-chain/cf-build.sh`, the Worker `cloudflare/repro/wrangler.jsonc`).
   It runs `npm ci` and `npm run build` from the same `package-lock.json`, and
-  serves only the build's manifest at `<worker>/__build/manifest.json`. The app
-  stays on Vercel. The free plan gives 3,000 build minutes a month, one build at
+  serves only the build's manifest at `<worker>/lumen-build.json`. The app
+  stays on Vercel, whose `manifest` build gate writes the same manifest to
+  `/.well-known/lumen-build.json`. The free plan gives 3,000 build minutes a month, one build at
   a time and 20 minutes per build (developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing).
 - **The second host compares** (`scripts/supply-chain/repro-second-host.sh`). It
   hashes every file in the manifest as Vercel serves it for the same commit,

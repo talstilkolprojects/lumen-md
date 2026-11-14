@@ -7,11 +7,12 @@
  * result to GitHub as the "Vercel" commit status. A preview build therefore
  * runs the checks CI used to run, and any failing gate fails the build, so
  * a train with a failing test gets a red status. Production (main) builds as before:
- * the app and its bundle budget, nothing else.
+ * the app, its bundle budget and its build manifest (W7.23), nothing else.
  *
- *   VERCEL_ENV=preview      build, budget, vitest, e2e, i18n:check,
+ *   VERCEL_ENV=preview      build, budget, secrets, manifest, vitest, e2e, i18n:check,
  *                           hygiene, docs:sync, the licence gate
- *   VERCEL_ENV=production   build, budget
+ *   VERCEL_ENV=production   build, budget, manifest (after the scans: its
+ *                           hashes are not secrets, but they look like them)
  *   (not on Vercel)         the preview set, so `node scripts/vercel-build.mjs`
  *                           reproduces a preview build locally
  *
@@ -32,6 +33,8 @@ import { resolve } from "node:path";
 /** Every gate: its name and the npm script that runs it. */
 export const GATES = {
   build: ["run", "build"],
+  // W7.23: the manifest of this dist, which the second infrastructure's build is compared with.
+  manifest: ["run", "-s", "build:manifest"],
   budget: ["run", "budget"],
   vitest: ["run", "test"],
   e2e: ["run", "-s", "e2e:gate"],
@@ -79,8 +82,8 @@ export function vitestSummary(report, { maxFiles = 80 } = {}) {
   return out;
 }
 
-export const PRODUCTION_GATES = ["build", "budget"];
-export const PREVIEW_GATES = ["build", "budget", "secrets", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "licenses"];
+export const PRODUCTION_GATES = ["build", "budget", "manifest"];
+export const PREVIEW_GATES = ["build", "budget", "secrets", "manifest", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "licenses"];
 /**
  * `--e2e-only`: build and the e2e gate, nothing else. For a probe branch
  * that runs Playwright specs (LUMEN_E2E_SPECS, a longer LUMEN_E2E_MINUTES)

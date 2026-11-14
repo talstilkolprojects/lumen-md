@@ -69,8 +69,8 @@ npm run repro:compare -- <A> <B>
 - **‏Cloudflare Workers Builds בונה מחדש כל קומיט של `main`**
   (`scripts/supply-chain/cf-build.sh`, ה-Worker ב-`cloudflare/repro/wrangler.jsonc`).
   הוא מריץ `npm ci` ו-`npm run build` מאותו `package-lock.json`, ומגיש רק את
-  ה-manifest של הבנייה, ב-`<worker>/__build/manifest.json`. האפליקציה נשארת
-  ב-Vercel. המסלול החינמי נותן 3,000 דקות בנייה בחודש, בנייה אחת בכל פעם ו-20
+  ה-manifest של הבנייה, ב-`<worker>/lumen-build.json`. האפליקציה נשארת
+  ב-Vercel, ושער הבנייה `manifest` שלו כותב את אותו manifest ל-`/.well-known/lumen-build.json`. המסלול החינמי נותן 3,000 דקות בנייה בחודש, בנייה אחת בכל פעם ו-20
   דקות לבנייה (developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing).
 - **המארח השני משווה** (`scripts/supply-chain/repro-second-host.sh`). הוא מחשב
   hash לכל קובץ שב-manifest כפי ש-Vercel מגיש אותו לאותו קומיט, מוסיף את התוצאה
