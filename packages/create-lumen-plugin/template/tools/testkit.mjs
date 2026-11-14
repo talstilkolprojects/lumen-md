@@ -70,6 +70,11 @@ const granted = (grants, cap, args) => {
  * `grants`: "all" (default: every capability the manifest asks for) or a list.
  * Mock state: `document` { text, fileName, selection: [from, to] }, `vault` { "folder/note.md": text },
  * `settings`, `storage`, `fetch(url, init)` for granted network calls.
+ * `engine` (optional): what runs the code. The default is a fresh Node `vm` context. An engine is
+ * `async ({ manifest, code, grants, call, log }) => ({ dispatch(name, payload), denied?, dispose() })`:
+ * it runs `code` with a `lumen` object whose calls go to `call(method, args)` and returns how to
+ * deliver events. Lumen's own tests pass the app's QuickJS sandbox here, so the same cases run in
+ * the real engine (src/__tests__/helpers/quickjsEngine.ts).
  */
 export async function loadPlugin(opts = {}) {
   const manifest = opts.manifest ?? JSON.parse(readFileSync(join(opts.dir, "lumen-plugin.json"), "utf8"));
@@ -205,12 +210,19 @@ export async function loadPlugin(opts = {}) {
   const fmt = (args) => args.map((a) => (typeof a === "string" ? a : JSON.stringify(a))).join(" ");
   const consoleMock = Object.freeze(Object.fromEntries(["log", "info", "debug", "warn", "error"].map((k) => [k, (...a) => state.logs.push({ level: k === "warn" || k === "error" ? k : "log", text: fmt(a) })])));
 
-  // A fresh context: the plugin sees only lumen and console (and the language's own built-ins).
-  const context = vm.createContext({ lumen, console: consoleMock });
-  const fn = vm.runInContext(`(async function () { "use strict";\n${code}\n})`, context, { filename: manifest.main ?? "main.js" });
-  await fn();
+  let engine = null;
+  if (opts.engine) {
+    const log = (level, text) => void state.logs.push({ level: level === "warn" || level === "error" ? level : "log", text: String(text) });
+    engine = await opts.engine({ manifest, code, grants: [...grants], call, log });
+  } else {
+    // A fresh context: the plugin sees only lumen and console (and the language's own built-ins).
+    const context = vm.createContext({ lumen, console: consoleMock });
+    const fn = vm.runInContext(`(async function () { "use strict";\n${code}\n})`, context, { filename: manifest.main ?? "main.js" });
+    await fn();
+  }
 
   const emit = async (name, payload) => {
+    if (engine) return engine.dispatch(name, json(payload));
     const list = handlers.get(name) ?? [];
     await Promise.all(list.map((h) => Promise.resolve().then(() => h(json(payload)))));
   };
@@ -234,7 +246,12 @@ export async function loadPlugin(opts = {}) {
     },
     logs: state.logs,
     calls: state.calls,
-    denied: state.denied,
+    /** Refused calls by capability (an engine that checks grants itself reports its own count). */
+    denied: engine?.denied ?? state.denied,
+    /** Stop the plugin (an engine frees what it holds). */
+    dispose() {
+      engine?.dispose();
+    },
     /** Run a command the plugin registered (its handler gets `payload`). */
     async run(id, payload = {}) {
       if (!state.commands.has(id)) throw new Error(`the plugin registered no command "${id}" (it has: ${[...state.commands.keys()].join(", ") || "none"})`);

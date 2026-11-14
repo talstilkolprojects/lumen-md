@@ -114,6 +114,8 @@
     "acr:check": "node scripts/acr.mjs --check",
     "md:conformance": "vitest run src/__tests__/mdConformance.test.ts src/__tests__/mdRoundTrip.test.ts src/__tests__/sourcePreserve.test.ts",
     "help:bundle": "node scripts/help-bundle.mjs",
+    "registry:site": "node scripts/registry-site.mjs",
+    "registry:verify": "node scripts/registry-site.mjs --verify",
     "help:check": "node scripts/help-bundle.mjs --check",
     "help:merge-driver": "node scripts/help-merge-driver.mjs --install",
     "flags:check": "node scripts/check-flags.mjs",

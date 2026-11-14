@@ -20,7 +20,23 @@ export interface LoadOptions {
   settings?: Record<string, unknown>;
   storage?: Record<string, unknown>;
   fetch?: (url: string, init?: unknown) => unknown;
+  /** What runs the code: the default is a Node `vm` context (see testkit.mjs). */
+  engine?: PluginEngine;
 }
+
+export interface PluginEngineInstance {
+  dispatch(name: string, payload: unknown): Promise<void>;
+  readonly denied?: ReadonlyMap<string, number>;
+  dispose(): void;
+}
+
+export type PluginEngine = (opts: {
+  manifest: Record<string, unknown>;
+  code: string;
+  grants: string[];
+  call(method: string, args: unknown[]): Promise<unknown>;
+  log(level: "log" | "warn" | "error", text: string): void;
+}) => Promise<PluginEngineInstance>;
 
 export interface LoadedPlugin {
   manifest: Record<string, unknown>;
@@ -37,7 +53,8 @@ export interface LoadedPlugin {
   readonly clipboard: string | null;
   logs: { level: "log" | "warn" | "error"; text: string }[];
   calls: { method: string; args: unknown[]; outcome: "ok" | "denied" }[];
-  denied: Map<string, number>;
+  denied: ReadonlyMap<string, number>;
+  dispose(): void;
   run(id: string, payload?: unknown): Promise<void>;
   emit(name: string, payload?: unknown): Promise<void>;
   render(lang: string, source: string): Promise<UiTree>;

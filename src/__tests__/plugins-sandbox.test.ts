@@ -100,6 +100,32 @@ describe("plugin sandbox — default deny", () => {
     expect(h.calls.map((c) => c[1][0])).toEqual(["https://api.example.com/v1"]);
     sb.dispose();
   });
+  it("settling a call frees its value: 600 granted and denied calls leave the plugin's heap as it was (W6.35)", async () => {
+    // Found by running the ten registry plugins in real QuickJS: every settled call leaked its
+    // string or Error handle, so a chatty plugin's heap only grew and freeing the runtime failed.
+    const { sb, h } = await boot(
+      `
+      lumen.on("burst", async (n) => {
+        for (let i = 0; i < n; i++) {
+          await lumen.document.getText();
+          await lumen.vault.read("x").catch(() => {});
+        }
+        console.log("done " + n);
+      });
+    `,
+      grantsFrom(["document:read"]),
+    );
+    await sb.dispatch("burst", 50);
+    const before = sb.stats().memoryBytes;
+    await sb.dispatch("burst", 300);
+    const after = sb.stats().memoryBytes;
+    expect(h.logs).toEqual(["log:done 50", "log:done 300"]);
+    expect(sb.denied.get("vault:read")).toBe(350);
+    expect(before).not.toBeNull();
+    // 300 leaked strings and 300 leaked Errors are tens of KB; a heap that holds steady moves by a few.
+    expect(Math.abs((after ?? 0) - (before ?? 0))).toBeLessThan(4096);
+    sb.dispose();
+  });
   it("a host refusal is a PluginDenied inside the plugin as well", async () => {
     const h = host();
     h.call = vi.fn(async () => {
