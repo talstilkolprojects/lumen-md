@@ -55,6 +55,9 @@ const EXACT_SECRETS = new Set([
   "lumen.research.searchKey",
   "lumen.research.serviceToken",
   "lumen.git.token.v1",
+  // CalDAV password and the ICS subscription list (a private ICS address is a key), plan W7.20.
+  "lumen.calendar.caldav.password",
+  "lumen.calendar.subscriptions",
 ]);
 /** The git token used to live in idb-keyval's default store. */
 const LEGACY_IDB_SECRETS = ["lumen.git.token.v1"];
