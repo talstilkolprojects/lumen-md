@@ -156,7 +156,14 @@ export function parseBase(text: string): BaseParse {
     return { ok: false, error: (e as Error).message };
   }
   if (doc.errors.length) return { ok: false, error: doc.errors[0].message };
-  const raw: unknown = doc.toJS() ?? {};
+  let raw: unknown;
+  try {
+    // toJS throws on what parseDocument accepts, e.g. an alias used before its
+    // anchor (ReferenceError), and on alias bombs (the fuzz run, W4.16).
+    raw = doc.toJS({ maxAliasCount: 100 }) ?? {};
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
   if (!isRecord(raw)) return { ok: false, error: "a .base file is a YAML map (filters:, formulas:, views:)" };
   try {
     const formulas: Record<string, string> = {};

@@ -36,4 +36,11 @@ describe("parseBase nesting bound (W4.16)", () => {
     const atBound = parseBase(`views:\n  - order: ${"[".repeat(MAX_BASE_NESTING)}a${"]".repeat(MAX_BASE_NESTING)}\n`);
     expect(atBound.ok ? "" : atBound.error).not.toContain("nested deeper");
   });
+
+  it("never throws on YAML that parses but can't become values: an alias before its anchor, an alias bomb (fuzz, W4.16)", () => {
+    for (const text of ["views:\n  - name: *a\n    order: &a [x]\n", `a: &a [x, x]\nb: &b [*a, *a, *a, *a, *a, *a, *a, *a, *a]\nc: &c [*b, *b, *b, *b, *b, *b, *b, *b, *b]\nd: &d [*c, *c, *c, *c, *c, *c, *c, *c, *c]\ne: [*d, *d, *d, *d, *d, *d, *d, *d, *d]\n`]) {
+      const r = parseBase(text);
+      expect(r.ok).toBe(false);
+    }
+  });
 });
