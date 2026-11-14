@@ -55,6 +55,7 @@ counts as a failure.
 | `bench-models` | every browser engine in Chromium on WebGPU |
 | `meetings`, `canvas-draw`, `crosslingual`, `lit-review` | each feature's own eval |
 | `dictalm3` (optional: `--with dictalm3`) | DictaLM 3.0 against `qwen3:4b` |
+| `heldout` (when the evaluator key is set: `LUMEN_HELDOUT_KEY` or `--heldout-key-file`) | the six [held-out sets](/ai/heldout/), after the contamination scan |
 
 ## Stop and continue
 

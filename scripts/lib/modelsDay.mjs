@@ -244,6 +244,29 @@ export const STEPS = [
     parse: (dir) => ({ files: listFiles(dir).length }),
   },
   {
+    id: "heldout",
+    title: "Held-out sets (W6.17) — QA, OCR, dictation, grammar, cross-lingual, tool calls; scored by the evaluator, aggregates only",
+    plan: ["W6.17", "7.9", "W4.31", "W5.3"],
+    requires: { script: "heldout" },
+    models: ["qwen2.5:7b", "gemma3:12b"],
+    needs: ["python3", "ffmpeg", "chromium", "network"],
+    minutes: 40,
+    // Opt-in by key: models-day.mjs adds it whenever the evaluator key is present.
+    optional: true,
+    blockedUnless: { option: "heldoutKey", reason: "needs the evaluator key (LUMEN_HELDOUT_KEY or --heldout-key-file), which only Tal or the nightly host holds (plan W6.17)" },
+    commands: (c) => {
+      const model = join(c.cache, "zipformer2-66m-streaming-he");
+      const store = c.heldoutStore ?? null;
+      return [
+        { cmd: "bash", args: ["scripts/asr/fetch-model.sh", model] },
+        { ...npm("heldout", ["build"]), skipIf: () => !!store && HELDOUT_SETS.every((id) => existsSync(join(store, `${id}.lho`))) },
+        npm("heldout", ["scan", "--require-key", "--out", join(c.dir, "scan.json")]),
+        npm("heldout", ["run", "--models", "qwen2.5:7b,gemma3:12b", "--url", c.url, "--out", c.dir, "--asr-model", model]),
+      ];
+    },
+    parse: (dir) => heldoutMetrics(dir),
+  },
+  {
     id: "dictalm3",
     title: "DictaLM 3.0 1.7B against qwen3:4b, then the default decision",
     plan: ["W2.4"],
@@ -296,6 +319,7 @@ export const COVERAGE = [
   ["W5.13", "asr-web", "Whisper on WebGPU; the 90-minute lecture timing is a hand check"],
   ["W5.28", "crosslingual", "e5 nDCG never measured"],
   ["W5.20", "voice-commands", "the grammar's 200/200 is on its development set; the held-out score is the owner's recordings"],
+  ["W6.17", "heldout", "a held-out number beside every dev number: sets the authors never see, scored by the evaluator; the scan must find 0 items in the repo"],
 ].map(([task, step, note]) => ({ task, step, note }));
 
 // ── helpers that build commands ───────────────────────────────────────────
@@ -520,6 +544,39 @@ export function toolCallMetrics(dir) {
   return { share: shares.length ? Math.min(...shares) : 0, models };
 }
 
+/** The ids of the held-out sets (scripts/heldout/sets.mjs), for the build's skip check. */
+export const HELDOUT_SETS = ["qa-he", "ocr-he", "asr-he", "grammar-he", "xling", "toolcall-he"];
+
+/**
+ * The evaluator's aggregates (heldout-*.json) and the scan verdict
+ * (scan.json). `share` is the lowest valid-call share of the tool-call set,
+ * the one number with a plan target (W4.31: ≥ 95 %).
+ */
+export function heldoutMetrics(dir) {
+  const j = newest(dir, /^heldout-.*\.json$/);
+  const scan = readJson(join(dir, "scan.json"));
+  if (!j && !scan) return null;
+  const sets = {};
+  for (const [id, r] of Object.entries(j?.sets ?? {})) {
+    if (r.status) {
+      sets[id] = { status: r.status };
+      continue;
+    }
+    const per = {};
+    for (const [m, v] of Object.entries(r.models ?? {})) per[m] = v.status ? v.status : (v.share ?? null);
+    sets[id] = { version: r.version, locked: r.locked, n: r.n, ...(Object.keys(per).length ? { models: per } : {}), ...(r.engine ? { engine: r.engine.status ?? { wer: r.engine.wer, cer: r.engine.cer } } : {}) };
+  }
+  const tc = Object.values(j?.sets?.["toolcall-he"]?.models ?? {}).map((v) => v.valid).filter((x) => typeof x === "number");
+  return {
+    heldout: true,
+    kind: j?.kind ?? null,
+    scan: scan ? { verdict: scan.verdict, findings: (scan.canaryHits?.length ?? 0) + (scan.items?.length ?? 0) + (scan.keyLeaks?.length ?? 0), ngram: scan.ngram } : null,
+    sets,
+    ...(tc.length ? { share: Math.min(...tc) } : {}),
+    log: j?.log ? { seq: j.log.seq, requester: j.log.requester, at: j.log.at, hash: j.log.hash } : null,
+  };
+}
+
 export function benchMetrics(file) {
   const j = readJson(file);
   if (!j) return null;
@@ -604,6 +661,7 @@ const pct = (x) => (x === null || x === undefined ? "—" : `${(x * 100).toFixed
 function headline(s) {
   const m = s.metrics;
   if (!m) return s.reason ?? (s.exit ? `exit ${s.exit} — see ${s.id}/log.txt` : "");
+  if (m.heldout) return `${Object.keys(m.sets).length} sets (${Object.values(m.sets).filter((x) => x.locked).length} sealed), scan ${m.scan?.verdict ?? "—"}${m.share !== undefined ? `, tool calls ${pct(m.share)} valid` : ""}`;
   if (m.byAgent) return `${m.passed}/${m.total} cases (${pct(m.share)}), ${m.agents} agents`;
   if (m.p50Ms !== undefined && m.requests !== undefined) return `p50 ${m.p50Ms} ms, p95 ${m.p95Ms} ms (${m.requests} requests)`;
   if (m.wer !== undefined) return `WER ${pct(m.wer)}${m.werV1 !== undefined && m.werV1 !== m.wer ? ` (v1 ${pct(m.werV1)})` : ""}${m.devWer !== null && m.devWer !== undefined ? `, dev ${pct(m.devWer)}` : ""}`;
