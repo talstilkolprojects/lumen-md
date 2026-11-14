@@ -98,6 +98,7 @@ export default defineConfig({
             { label: "Research + citation checks", slug: "ai/research" },
             { label: "Local agents: tools, critic, suggestions", slug: "ai/local-agents", translations: { he: "סוכנים מקומיים: כלים, מבקר, הצעות" } },
             { label: "Agent eval: 14 agents, HTML report", slug: "ai/agent-eval", translations: { he: "הערכת סוכנים: 14 סוכנים, דוח HTML" } },
+            { label: "Real models day: every eval in one command", slug: "ai/models-day", translations: { he: "יום מודלים אמיתיים: כל ההערכות בפקודה אחת" } },
             { label: "Personal data before the cloud", slug: "ai/pii-redaction", translations: { he: "מידע אישי לפני הענן" } },
             { label: "Grounded summaries", translations: { he: "סיכומים מעוגנים" }, slug: "ai/summarize" },
             { label: "Search reranking, measured", translations: { he: "דירוג מחדש בחיפוש, במדידה" }, slug: "ai/reranker" },

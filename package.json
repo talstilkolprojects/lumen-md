@@ -68,6 +68,7 @@
     "ci:real-model": "node scripts/real-tiny-model.mjs",
     "docs:complete": "node scripts/docs-complete.mjs",
     "bench:fim": "node --experimental-strip-types scripts/bench-fim.mjs",
+    "models:day": "node scripts/models-day.mjs",
     "eval:pdf-chat": "LUMEN_EVAL_PDF=1 vitest run --config vitest.eval.config.ts src/agents/eval/pdfChat.eval.ts",
     "eval:summarize": "LUMEN_EVAL_SUMMARY=1 vitest run --config vitest.eval.config.ts src/agents/eval/summarize.eval.ts",
     "eval:rerank": "LUMEN_EVAL_RERANK=1 vitest run --config vitest.eval.config.ts src/agents/eval/rerank.eval.ts",
