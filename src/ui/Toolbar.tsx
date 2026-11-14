@@ -16,6 +16,7 @@ import {
   Copy,
   Scissors,
   Trash2,
+  ArrowRightLeft,
   CheckSquare,
   Undo2,
   Redo2,
@@ -177,6 +178,8 @@ export function Toolbar({
   const exportPdfCmd = commands.find((c) => c.id === "file.exportPdf");
   const exportPptxCmd = commands.find((c) => c.id === "file.exportPptx");
   const printCmd = commands.find((c) => c.id === "file.print");
+  // W11.H4: the format action for a paragraph's direction, from the central command list.
+  const toggleDirectionCmd = commands.find((c) => c.id === "edit.toggleDirection");
 
   return (
     <header className="titlebar">
@@ -295,6 +298,9 @@ export function Toolbar({
           <MenuSection label={t("toolbar.section.selection")} />
           <MenuItem icon={<CheckSquare size={14} />} label={t("toolbar.selectAll")} description={t("desc.selectAll")} hint="⌘A" onClick={() => exec(() => document.execCommand("selectAll"))} />
           <MenuItem icon={<Trash2 size={14} />} label={t("toolbar.delete")} description={t("desc.delete")} onClick={() => exec(() => document.execCommand("delete"))} />
+          {toggleDirectionCmd && (
+            <MenuItem icon={<ArrowRightLeft size={14} />} label={toggleDirectionCmd.label} description={toggleDirectionCmd.hint} hint={toggleDirectionCmd.shortcut} onClick={() => exec(() => void toggleDirectionCmd.action())} />
+          )}
         </MenuBarItem>
 
         {/* ─── Insert ─────────────────────────────────────────────────

@@ -63,7 +63,8 @@ export function firstStrong(text: string): LineDirection | null {
   return null;
 }
 
-const MARKERS = /^\s*(?:#{1,6}\s+|>\s*|[-*+]\s+(?:\[[ xX]\]\s+)?|\d+[.)]\s+)*/;
+/** Leading Markdown block markers (headings, quotes, list bullets and numbers, task boxes). */
+export const MARKERS = /^\s*(?:#{1,6}\s+|>\s*|[-*+]\s+(?:\[[ xX]\]\s+)?|\d+[.)]\s+)*/;
 
 /**
  * Drop `(destination "title")` after every `]`, so no part of a URL is left:

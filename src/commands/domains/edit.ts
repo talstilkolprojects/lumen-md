@@ -173,6 +173,26 @@ export function buildInsertCommands({ insertSnippet, getEditorView }: CommandCon
       action: () => insertSnippet(BLOCK_SNIPPETS.math),
     },
     {
+      // W11.H4 — switch the paragraph's direction, saved in the note as an invisible RLM / LRM.
+      id: "edit.toggleDirection",
+      label: t("cmd.edit.toggleDirection"),
+      hint: t("cmd.edit.toggleDirection.hint"),
+      shortcut: "⇧⌘X",
+      icon: cmdIcons.Pencil,
+      group: t("group.edit"),
+      action: () => {
+        const view = getEditorView?.();
+        if (!view) {
+          window.dispatchEvent(new CustomEvent("lumen-toggle-direction"));
+          return;
+        }
+        void import("../../editor/paragraphDirection").then((m) => {
+          m.toggleParagraphDirection(view);
+          view.focus();
+        });
+      },
+    },
+    {
       // W5.14 — a formula inside the sentence; Ctrl/⌘+M in the source editor.
       id: "insert.inlineMath",
       label: t("cmd.insert.inlineMath"),

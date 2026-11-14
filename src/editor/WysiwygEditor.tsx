@@ -19,6 +19,7 @@ import { setBlockType, wrapIn } from "@milkdown/prose/commands";
 import type { EditorView } from "@milkdown/prose/view";
 import { Plugin } from "@milkdown/prose/state";
 import { wysiwygBidiPlugin } from "./wysiwygBidi";
+import { frontmatterDir } from "../lib/paragraphDirection";
 import { remoteImagePlugin } from "./remoteImageView";
 import { wysiwygBidiMarksPlugin } from "./wysiwygBidiMarks";
 import { listSpreadFix } from "./milkdownListSpread";
@@ -698,7 +699,7 @@ const pasteCleanPlugin = $prose(
             wysiwygWikiComplete(),
             dragHandlePlugin,
             // T25 — every block reads in the direction of its own text.
-            wysiwygBidiPlugin(),
+            wysiwygBidiPlugin({ pinned: () => frontmatterDir(frontmatterRef.current) }),
             // Plan 2.2 — images from other sites wait for the user.
             remoteImagePlugin(),
             // 9.2 layer 1 — the browser / OS spellchecker, Hebrew included, no dictionary in the bundle.

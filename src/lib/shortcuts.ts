@@ -67,6 +67,8 @@ export const SHORTCUTS: readonly Shortcut[] = [
   { id: "edit.bold", combo: "Mod+B", scope: "editor" },
   { id: "edit.italic", combo: "Mod+I", scope: "editor" },
   { id: "edit.formatDocument", combo: "Shift+Alt+F", scope: "editor" },
+  // W11.H4: switch the paragraph's direction (both editors' keymaps).
+  { id: "edit.toggleDirection", combo: "Mod+Shift+X", scope: "editor" },
   { id: "edit.complete", combo: "Ctrl+Space", scope: "editor" },
   { id: "file.print", combo: "Mod+P", scope: "browser" },
 ];
