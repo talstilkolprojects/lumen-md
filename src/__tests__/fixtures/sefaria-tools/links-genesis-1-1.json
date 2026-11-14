@@ -1,0 +1,52 @@
+[
+  {
+    "_id": "1",
+    "index_title": "Rashi on Genesis",
+    "category": "Commentary",
+    "type": "commentary",
+    "ref": "Genesis 1:1",
+    "anchorRef": "Genesis 1:1",
+    "sourceRef": "Rashi on Genesis 1:1:1",
+    "sourceHeRef": "רש\"י על בראשית א׳:א׳:א׳",
+    "collectiveTitle": {
+      "en": "Rashi",
+      "he": "רש\"י"
+    }
+  },
+  {
+    "_id": "2",
+    "index_title": "Ramban on Genesis",
+    "category": "Commentary",
+    "type": "commentary",
+    "ref": "Genesis 1:1",
+    "anchorRef": "Genesis 1:1",
+    "sourceRef": "Ramban on Genesis 1:1:1",
+    "sourceHeRef": "רמב\"ן על בראשית א׳:א׳:א׳",
+    "collectiveTitle": {
+      "en": "Ramban",
+      "he": "רמב\"ן"
+    }
+  },
+  {
+    "_id": "3",
+    "index_title": "Rashi on Genesis",
+    "category": "Commentary",
+    "type": "commentary",
+    "ref": "Genesis 1:1",
+    "anchorRef": "Genesis 1:1",
+    "sourceRef": "Rashi on Genesis 1:1:1",
+    "collectiveTitle": {
+      "en": "Rashi",
+      "he": "רש\"י"
+    }
+  },
+  {
+    "_id": "4",
+    "index_title": "Bereshit Rabbah",
+    "category": "Midrash",
+    "type": "midrash",
+    "ref": "Genesis 1:1",
+    "anchorRef": "Genesis 1:1",
+    "sourceRef": "Bereshit Rabbah 1:1"
+  }
+]

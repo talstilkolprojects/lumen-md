@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-15",
+  "timezone": "Asia/Jerusalem",
+  "calendar_items": [
+    {
+      "title": {
+        "en": "Parashat Hashavua",
+        "he": "פרשת השבוע"
+      },
+      "displayValue": {
+        "en": "Vayera",
+        "he": "וירא"
+      },
+      "url": "Genesis.18.1-22.24",
+      "ref": "Genesis 18:1-22:24",
+      "heRef": "בראשית י״ח:א׳-כ״ב:כ״ד",
+      "order": 1,
+      "category": "Tanakh"
+    },
+    {
+      "title": {
+        "en": "Daf Yomi",
+        "he": "דף יומי"
+      },
+      "displayValue": {
+        "en": "Example 2",
+        "he": "דוגמה ב"
+      },
+      "url": "Example.2",
+      "ref": "Example 2",
+      "order": 3,
+      "category": "Talmud"
+    }
+  ]
+}

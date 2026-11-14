@@ -1,0 +1,53 @@
+{
+  "took": 5,
+  "timed_out": false,
+  "hits": {
+    "total": 2,
+    "max_score": 9.1,
+    "hits": [
+      {
+        "_index": "text",
+        "_id": "a",
+        "_score": 9.1,
+        "_source": {
+          "ref": "Leviticus 19:18",
+          "heRef": "ויקרא י״ט:י״ח",
+          "version": "Tanakh: The Holy Scriptures",
+          "lang": "en",
+          "categories": [
+            "Tanakh",
+            "Torah",
+            "Leviticus"
+          ],
+          "exact": "love your neighbour as yourself"
+        },
+        "highlight": {
+          "naive_lemmatizer": [
+            "you shall <b>love</b> your neighbour as yourself"
+          ]
+        }
+      },
+      {
+        "_index": "text",
+        "_id": "b",
+        "_score": 7.0,
+        "_source": {
+          "ref": "Deuteronomy 6:5",
+          "heRef": "דברים ו׳:ה׳",
+          "version": "Tanakh: The Holy Scriptures",
+          "lang": "en",
+          "categories": [
+            "Tanakh",
+            "Torah",
+            "Deuteronomy"
+          ]
+        },
+        "highlight": {
+          "naive_lemmatizer": [
+            "You shall <b>love</b> the LORD your God"
+          ]
+        }
+      }
+    ]
+  }
+}
