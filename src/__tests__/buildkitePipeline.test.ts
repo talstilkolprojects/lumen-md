@@ -29,7 +29,7 @@ type Ci = { jobs: Record<string, { steps: { name?: string; run?: string }[]; str
 type Step = { key: string; command: string; agents: { queue: string }; notify?: unknown[]; if?: string; parallelism?: number; soft_fail?: boolean; retry?: unknown; depends_on?: unknown };
 type Shard = { index: number; files: string[]; ms: number };
 
-const ci = (): Ci => parse(readFileSync(".github/workflows/ci.yml", "utf8"), { uniqueKeys: false }) as Ci;
+const ci = (): Ci => parse(readFileSync("docs/archive/workflows/ci.yml", "utf8"), { uniqueKeys: false }) as Ci;
 const committed = () => parse(readFileSync(".buildkite/pipeline.yml", "utf8")) as { steps: Step[]; notify: unknown[] };
 const sha = (c: string) => c.repeat(40);
 

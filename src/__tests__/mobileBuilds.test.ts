@@ -16,7 +16,7 @@ import { readLocale } from "../../scripts/lib/i18n-files.mjs";
 
 const ROOT = resolve(__dirname, "..", "..");
 const read = (f: string) => readFileSync(join(ROOT, f), "utf8");
-const wf = YAML.parse(read(".github/workflows/mobile.yml")) as {
+const wf = YAML.parse(read("docs/archive/workflows/mobile.yml")) as {
   on: Record<string, unknown>;
   jobs: Record<string, { "runs-on": string; env?: Record<string, string>; steps: { name?: string; uses?: string; run?: string; if?: string; with?: Record<string, string> }[] }>;
 };
@@ -31,7 +31,7 @@ describe("mobile.yml: APK and IPA on every pull request", () => {
   });
 
   it("every action is pinned to a full commit SHA with a version comment", () => {
-    const text = read(".github/workflows/mobile.yml");
+    const text = read("docs/archive/workflows/mobile.yml");
     for (const line of text.split("\n").filter((l) => /uses:/.test(l))) {
       expect(line, line).toMatch(/uses: [\w./-]+@[0-9a-f]{40} # v\d/);
     }
@@ -92,7 +92,7 @@ describe("mobile.yml: APK and IPA on every pull request", () => {
     const doc = read("docs/src/content/docs/self-hosting/mobile.md");
     for (const s of ["ANDROID_KEYSTORE_BASE64", "ANDROID_KEYSTORE_PASSWORD", "ANDROID_KEY_ALIAS", "ANDROID_KEY_PASSWORD", "IOS_CERTIFICATE_P12_BASE64", "IOS_CERTIFICATE_PASSWORD", "IOS_PROVISIONING_PROFILE_BASE64", "IOS_PROVISIONING_PROFILE_NAME", "APPLE_TEAM_ID"]) {
       expect(doc, s).toContain(s);
-      expect(read(".github/workflows/mobile.yml")).toContain(`secrets.${s}`);
+      expect(read("docs/archive/workflows/mobile.yml")).toContain(`secrets.${s}`);
     }
     expect(existsSync(join(ROOT, "docs/src/content/docs/he/self-hosting/mobile.md"))).toBe(true);
   });

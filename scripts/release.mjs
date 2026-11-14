@@ -8,7 +8,7 @@
  * The steps below remain for running one part at a time.
  *
  * The release pipeline (plan 13.4), runnable on a developer machine — no
- * GitHub Actions needed. .github/workflows/release.yml runs the same steps
+ * GitHub Actions needed. docs/archive/workflows/release.yml runs the same steps
  * on a tag push when Actions are on; every step here works without them.
  *
  *   node scripts/release.mjs plan [--beta]         next version + changelog preview (changes nothing)

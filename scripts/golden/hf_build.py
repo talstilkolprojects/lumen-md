@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Golden-set parts that come from Hugging Face, Tatoeba and Wikipedia (plan 7.1).
 
-The agent container cannot reach these hosts, so .github/workflows/golden-sets.yml
+The agent container cannot reach these hosts, so docs/archive/workflows/golden-sets.yml
 runs this script. It mirrors scripts/lib/golden.mjs exactly: the same seeds,
 the same sha256 ordering (splitPool), the same JSON layout and canaries.
 

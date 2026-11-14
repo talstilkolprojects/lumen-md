@@ -23,9 +23,9 @@ expect() { if eval "$2"; then ok "$1"; else no "$1"; fi; }
 # ci.yml parsed: the yaml package after npm ci, else python3's (a machine without node_modules)
 CI_JSON="$T/ci.json"
 if node -e 'require.resolve("yaml")' 2>/dev/null; then
-  node --input-type=module -e "import {parse} from 'yaml'; import {readFileSync,writeFileSync} from 'node:fs'; writeFileSync('$CI_JSON', JSON.stringify(parse(readFileSync('$TOOL/.github/workflows/ci.yml','utf8'), {uniqueKeys:false})))"
+  node --input-type=module -e "import {parse} from 'yaml'; import {readFileSync,writeFileSync} from 'node:fs'; writeFileSync('$CI_JSON', JSON.stringify(parse(readFileSync('$TOOL/docs/archive/workflows/ci.yml','utf8'), {uniqueKeys:false})))"
 else
-  python3 -I -c "import yaml,json,sys; json.dump(yaml.safe_load(open(sys.argv[1])), open(sys.argv[2],'w'))" "$TOOL/.github/workflows/ci.yml" "$CI_JSON"
+  python3 -I -c "import yaml,json,sys; json.dump(yaml.safe_load(open(sys.argv[1])), open(sys.argv[2],'w'))" "$TOOL/docs/archive/workflows/ci.yml" "$CI_JSON"
 fi
 # pipeline.yml as JSON, with Buildkite's upload-time interpolation of `$$` applied
 PIPE_JSON="$T/pipeline.json"

@@ -1,4 +1,4 @@
-# GENERATED from .github/workflows/ci.yml by scripts/buildkite/pipeline.mjs (plan W7.21). Do not edit by hand:
+# GENERATED from docs/archive/workflows/ci.yml by scripts/buildkite/pipeline.mjs (plan W7.21). Do not edit by hand:
 #   npm run ci:pipeline -- --write     regenerate after a change to ci.yml or scripts/buildkite/lib.mjs
 #   npm run ci:pipeline -- --check     fails when this file is stale or a ci.yml gate is missing
 # Buildkite's pipeline settings upload it with `buildkite-agent pipeline upload` (docs: self-hosting/buildkite).

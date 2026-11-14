@@ -92,7 +92,7 @@ function main() {
       ...current,
       size,
       notes:
-        `${from} by .github/workflows/model-convert.yml${runId ? ` run ${runId}` : ""} (plan 6.0); loads in transformers.js 4.3 in Chromium (q8${q4 ? `; q4f16 ${q4.ok ? "too" : "needs WebGPU, not tested in CI"}` : ""}). ` +
+        `${from} by docs/archive/workflows/model-convert.yml${runId ? ` run ${runId}` : ""} (plan 6.0); loads in transformers.js 4.3 in Chromium (q8${q4 ? `; q4f16 ${q4.ok ? "too" : "needs WebGPU, not tested in CI"}` : ""}). ` +
         `Downloaded only with consent, size shown first, verified against these checksums and cached in OPFS; not downloadable until the host is chosen (15.9).` +
         (t.license.startsWith("CC-BY") ? " CC BY 4.0: the attribution must be shown where the model is offered." : ""),
       build: { run: runId ?? undefined, revision: m.revision, via: m.via, ...(m.mirror ? { mirror: m.mirror } : {}) },

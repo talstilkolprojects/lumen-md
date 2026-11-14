@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * .buildkite/pipeline.yml from .github/workflows/ci.yml (plan W7.21).
+ * .buildkite/pipeline.yml from docs/archive/workflows/ci.yml (plan W7.21).
  *
  *   npm run ci:pipeline              --check: the gate list, the pipeline's rules, and that the committed file is current
  *   npm run ci:pipeline -- --write   regenerate .buildkite/pipeline.yml
@@ -27,7 +27,7 @@ const OUT = join(root, ".buildkite/pipeline.yml");
 async function loadCi() {
   const json = opt("ci-json");
   if (json) return JSON.parse(readFileSync(json, "utf8"));
-  const text = readFileSync(join(root, ".github/workflows/ci.yml"), "utf8");
+  const text = readFileSync(join(root, "docs/archive/workflows/ci.yml"), "utf8");
   // ci.yml repeats `env:` on its Build step; GitHub keeps the last one, and so does this parse.
   const { parse } = await import("yaml");
   return parse(text, { uniqueKeys: false });

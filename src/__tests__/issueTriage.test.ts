@@ -145,7 +145,7 @@ describe("the run and the daily report", () => {
 });
 
 describe("issue-triage.yml", () => {
-  const wf = YAML.parse(readFileSync(join(ROOT, ".github/workflows/issue-triage.yml"), "utf8"));
+  const wf = YAML.parse(readFileSync(join(ROOT, "docs/archive/workflows/issue-triage.yml"), "utf8"));
   it("runs when an issue is opened and every day, may write issues, and uploads the report", () => {
     expect(wf.on.issues.types).toEqual(["opened", "reopened"]);
     expect(wf.on.schedule[0].cron).toMatch(/^\d+ \d+ \* \* \*$/);
@@ -153,7 +153,7 @@ describe("issue-triage.yml", () => {
     expect(wf.jobs.triage["runs-on"]).toBe("ubuntu-24.04");
     const run = wf.jobs.triage.steps.find((s: { run?: string }) => s.run)!.run as string;
     expect(run).toContain("scripts/issue-triage.mjs --apply");
-    for (const line of readFileSync(join(ROOT, ".github/workflows/issue-triage.yml"), "utf8").split("\n").filter((l) => /uses:/.test(l))) {
+    for (const line of readFileSync(join(ROOT, "docs/archive/workflows/issue-triage.yml"), "utf8").split("\n").filter((l) => /uses:/.test(l))) {
       expect(line).toMatch(/uses: [\w./-]+@[0-9a-f]{40} # v\d/);
     }
   });

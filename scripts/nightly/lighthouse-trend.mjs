@@ -3,7 +3,7 @@
  * Lighthouse trend (plan 0.11): desktop and mobile, 3 runs each against the
  * built dist/, the median of each score and metric appended to a JSON
  * history. The history travels between nights in the Actions cache
- * (.github/workflows/lighthouse-trend.yml); nothing is committed.
+ * (docs/archive/workflows/lighthouse-trend.yml); nothing is committed.
  *
  *   node scripts/nightly/lighthouse-trend.mjs [history.json]
  *
