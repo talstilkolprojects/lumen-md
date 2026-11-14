@@ -298,6 +298,7 @@ export default defineConfig({
             { label: "The verification factory", slug: "self-hosting/verification-factory", translations: { he: "מפעל האימות" } },
             { label: "Moving production to another host", slug: "self-hosting/cut-over", translations: { he: "העברת הייצור למארח אחר" } },
             { label: "Native builds on free hosts", slug: "self-hosting/native-builds", translations: { he: "בנייה native במארחים חינמיים" } },
+            { label: "CI on Buildkite", slug: "self-hosting/buildkite", translations: { he: "CI ב-Buildkite" } },
           ],
         },
         {

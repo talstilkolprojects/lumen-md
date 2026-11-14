@@ -133,3 +133,6 @@ ci-docker-out/
 !/reports/perf/
 /reports/perf/*
 !/reports/perf/baselines/
+# Buildkite job output (plan W7.21): shard plans, blob reports, receipts — build artifacts
+/ci-out/
+/.vitest/

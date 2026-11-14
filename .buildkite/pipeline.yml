@@ -1,0 +1,552 @@
+# GENERATED from .github/workflows/ci.yml by scripts/buildkite/pipeline.mjs (plan W7.21). Do not edit by hand:
+#   npm run ci:pipeline -- --write     regenerate after a change to ci.yml or scripts/buildkite/lib.mjs
+#   npm run ci:pipeline -- --check     fails when this file is stale or a ci.yml gate is missing
+# Buildkite's pipeline settings upload it with `buildkite-agent pipeline upload` (docs: self-hosting/buildkite).
+env:
+  LUMEN_CI: "buildkite"
+notify:
+  - github_commit_status:
+      context: "lumen/buildkite"
+steps:
+  - label: ":scissors: vitest: plan the shards"
+    key: "vitest-plan"
+    command: |-
+      buildkite-agent meta-data set lumen:started-at "$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+      node scripts/buildkite/vitest-shards.mjs plan --shards 4 --timings "$${LUMEN_CI_CACHE:-.}/vitest-timings.json" --out ci-out/vitest-shards.json
+    agents:
+      queue: "linux"
+    artifact_paths:
+      - "ci-out/vitest-shards.json"
+    timeout_in_minutes: 5
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+  - label: ":vitest: vitest shard %n"
+    key: "vitest"
+    depends_on: "vitest-plan"
+    parallelism: 4
+    command: |-
+      buildkite-agent artifact download ci-out/vitest-shards.json .
+      LUMEN_CI_JOB=vitest bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate 'Vitest shard (of 4)' <<'LUMEN_STEP'
+      node scripts/buildkite/vitest-shards.mjs run --plan ci-out/vitest-shards.json
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+    agents:
+      queue: "linux"
+    artifact_paths:
+      - ".vitest/blob/*.json"
+    timeout_in_minutes: 45
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: vitest"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+  - label: ":vitest: vitest: merge + coverage gate"
+    key: "vitest-merge"
+    depends_on: "vitest"
+    command: |-
+      buildkite-agent artifact download ci-out/vitest-shards.json .
+      buildkite-agent artifact download '.vitest/blob/*.json' .
+      LUMEN_CI_JOB=vitest-merge bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate 'Merge the shard reports; every planned file ran' <<'LUMEN_STEP'
+      node scripts/buildkite/vitest-shards.mjs merge --plan ci-out/vitest-shards.json
+      LUMEN_STEP
+      gate 'Coverage gate (lines >= 65%)' <<'LUMEN_STEP'
+      pct=$$(node -e 'console.log(require("./coverage/coverage-summary.json").total.lines.pct)')
+      echo "Coverage lines: $$pct%"
+      echo "::notice title=coverage::total lines $$pct%"
+      node -e '
+        const s = require("./coverage/coverage-summary.json");
+        for (const part of ["/src/layouts/", "/src/components/", "/src/App.tsx", "/src/i18n/", "/src/plugins/", "/src/renderer/", "/src/views/"]) {
+          let total = 0, covered = 0;
+          for (const [file, m] of Object.entries(s)) {
+            if (file !== "total" && file.includes(part)) { total += m.lines.total; covered += m.lines.covered; }
+          }
+          const pct = total ? ((100 * covered) / total).toFixed(2) : "n/a";
+          console.log(`::notice title=coverage $${part}::$${pct}% ($${covered}/$${total} lines)`);
+        }
+      '
+      awk -v p="$$pct" 'BEGIN { exit (p < 65) }' || (echo "::error::Lines coverage $$pct% < 65% gate" && exit 1)
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+      if [ -n "$${LUMEN_CI_CACHE:-}" ] && [ -f ci-out/vitest-timings.json ]; then cp ci-out/vitest-timings.json "$$LUMEN_CI_CACHE/vitest-timings.json"; fi
+    agents:
+      queue: "linux"
+    artifact_paths:
+      - "ci-out/vitest-summary.json"
+      - "ci-out/vitest-timings.json"
+      - "coverage/coverage-summary.json"
+    timeout_in_minutes: 20
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: vitest-merge"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+  - label: ":white_check_mark: static gates"
+    key: "static"
+    command: |-
+      LUMEN_CI_JOB=static LUMEN_CI_KEEP_GOING=1 bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate Typecheck <<'LUMEN_STEP'
+      npm run typecheck
+      LUMEN_STEP
+      gate 'Code hygiene (no `as any` / console.log in production src)' <<'LUMEN_STEP'
+      npm run hygiene
+      LUMEN_STEP
+      gate 'Security headers match security/policy.json' <<'LUMEN_STEP'
+      npm run headers
+      LUMEN_STEP
+      gate 'Docs sync (docs name only commands and scripts that exist; no hand-typed counts in README)' <<'LUMEN_STEP'
+      npm run -s docs:sync
+      LUMEN_STEP
+      gate 'Plan matches plan/plan.json' <<'LUMEN_STEP'
+      npm run plan:check
+      LUMEN_STEP
+      gate 'No hard-coded UI strings (plan 9.1)' <<'LUMEN_STEP'
+      npm run -s i18n:hardcoded
+      LUMEN_STEP
+      gate 'Definition of done for every ✅ task' <<'LUMEN_STEP'
+      npm run dod -- --done
+      LUMEN_STEP
+      gate 'Unused files (no new src/ file that nothing imports — plan 0.16)' <<'LUMEN_STEP'
+      npm run unused
+      LUMEN_STEP
+      gate 'Docs complete (every sidebar page in en + he; 13.1.1 areas covered; links resolve)' <<'LUMEN_STEP'
+      npm run -s docs:complete
+      LUMEN_STEP
+      gate 'i18n drift gate' <<'LUMEN_STEP'
+      # Every string in its sorted domain file (plan 0.3), and the
+      # committed manifest (i18n/keys/) that feeds translation tooling.
+      node scripts/i18n-split.mjs --check
+      node scripts/extract-i18n-keys.mjs --check
+      count() { node --input-type=module -e "import { readLocale } from './scripts/lib/i18n-files.mjs'; console.log(Object.keys(readLocale('$$1')).length)"; }
+      en_count=$$(count en)
+      # Hebrew ships as lazy JSON chunks like the other locales.
+      he_count=$$(count he)
+      diff=$$(( en_count > he_count ? en_count - he_count : he_count - en_count ))
+      echo "i18n keys — en: $$en_count, he: $$he_count, diff: $$diff"
+      if [ "$$diff" -gt 10 ]; then
+        echo "::error::i18n drift > 10 keys; run `node scripts/print-missing-i18n-keys.mjs` and fix."
+        exit 1
+      fi
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+    agents:
+      queue: "linux"
+    timeout_in_minutes: 20
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: static"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+  - label: ":eslint: lint"
+    key: "lint"
+    command: |-
+      LUMEN_CI_JOB=lint bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate ESLint <<'LUMEN_STEP'
+      npm run lint
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+    agents:
+      queue: "linux"
+    timeout_in_minutes: 20
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: lint"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+  - label: ":scroll: licence gate"
+    key: "licenses"
+    command: |-
+      LUMEN_CI_JOB=licenses LUMEN_CI_INSTALL='npm ci --ignore-scripts' bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate 'Licence gate' <<'LUMEN_STEP'
+      status=0
+      npm run -s licenses > licenses.txt 2>&1 || status=$$?
+      cat licenses.txt
+      { echo '```'; cat licenses.txt; echo '```'; } >> "$$GITHUB_STEP_SUMMARY"
+      exit $$status
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+    agents:
+      queue: "linux"
+    timeout_in_minutes: 10
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: licenses"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+  - label: ":package: build + budget"
+    key: "build"
+    command: |-
+      LUMEN_CI_JOB=build bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate Build COLLAB_TOKEN_SECRET=ci-canary-collab-token-secret-7f3a9c2e1b COLLAB_ACCESS_KEY=ci-canary-collab-access-key-5d8e LUMEN_COLLAB_TOKEN=ci-canary-lumen-collab-token-2c4b <<'LUMEN_STEP'
+      npm run build
+      LUMEN_STEP
+      gate 'No collab secrets in the bundle' VITE_RESEARCH_TOKEN=ci-canary-research-token-4e9b1c VITE_CI_CANARY_SECRET=ci-canary-vite-secret-8d2f7a <<'LUMEN_STEP'
+      node scripts/check-bundle-secrets.mjs dist
+      LUMEN_STEP
+      gate 'No VITE_* secrets in the bundle' VITE_RESEARCH_TOKEN=ci-canary-research-token-4e9b1c VITE_CI_CANARY_SECRET=ci-canary-vite-secret-8d2f7a <<'LUMEN_STEP'
+      node scripts/check-vite-secrets.mjs dist
+      LUMEN_STEP
+      gate 'Bundle-size budget' <<'LUMEN_STEP'
+      npm run budget -- --json bundle-sizes.json
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+    agents:
+      queue: "linux"
+    timeout_in_minutes: 25
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: build"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+    artifact_paths:
+      - "bundle-sizes.json"
+  - label: ":playwright: e2e chromium"
+    key: "e2e-chromium"
+    command: |-
+      LUMEN_CI_JOB=e2e-chromium LUMEN_CI_BROWSERS=chromium bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate 'Run E2E (chromium)' LIBGL_ALWAYS_SOFTWARE='' GALLIUM_DRIVER='' PW_FIREFOX_HEADED='' <<'LUMEN_STEP'
+      if [ "chromium" = firefox ]; then
+        xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" \
+          npx playwright test --project=firefox --reporter=line,github,html
+      else
+        npx playwright test --project=chromium --reporter=line,github,html
+      fi
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+    agents:
+      queue: "linux"
+    timeout_in_minutes: 40
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: e2e-chromium"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+    artifact_paths:
+      - "playwright-report/**/*"
+  - label: ":playwright: e2e firefox"
+    key: "e2e-firefox"
+    command: |-
+      LUMEN_CI_JOB=e2e-firefox LUMEN_CI_BROWSERS=firefox bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate 'Run E2E (firefox)' LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe PW_FIREFOX_HEADED=1 <<'LUMEN_STEP'
+      if [ "firefox" = firefox ]; then
+        xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" \
+          npx playwright test --project=firefox --reporter=line,github,html
+      else
+        npx playwright test --project=firefox --reporter=line,github,html
+      fi
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+    agents:
+      queue: "linux"
+    timeout_in_minutes: 40
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: e2e-firefox"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+    artifact_paths:
+      - "playwright-report/**/*"
+  - label: ":playwright: e2e webkit (Mac)"
+    key: "e2e-webkit"
+    command: |-
+      LUMEN_CI_JOB=e2e-webkit LUMEN_CI_BROWSERS=webkit bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate 'Run E2E (webkit)' LIBGL_ALWAYS_SOFTWARE='' GALLIUM_DRIVER='' PW_FIREFOX_HEADED='' <<'LUMEN_STEP'
+      if [ "webkit" = firefox ]; then
+        xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" \
+          npx playwright test --project=firefox --reporter=line,github,html
+      else
+        npx playwright test --project=webkit --reporter=line,github,html
+      fi
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+    agents:
+      queue: "mac"
+    timeout_in_minutes: 40
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: e2e-webkit"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+    artifact_paths:
+      - "playwright-report/**/*"
+  - label: ":playwright: e2e on the production build"
+    key: "e2e-prod"
+    command: |-
+      LUMEN_CI_JOB=e2e-prod LUMEN_CI_BROWSERS=chromium bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate 'Build production bundle' <<'LUMEN_STEP'
+      npm run build
+      LUMEN_STEP
+      gate 'Serve dist with http-server' <<'LUMEN_STEP'
+      # --cors: the Web Playground runner is an opaque-origin iframe,
+      # so its module scripts need Access-Control-Allow-Origin (as the
+      # production `_headers` / nginx config sends for /assets/*).
+      npx -y http-server@14 dist -p 5180 -c-1 --cors --silent &
+      # Wait for server to come up.
+      for i in $$(seq 1 30); do
+        if curl -sf http://localhost:5180/ -o /dev/null; then
+          echo "Server up."
+          break
+        fi
+        sleep 1
+      done
+      LUMEN_STEP
+      gate 'Run E2E against prod bundle' PLAYWRIGHT_BASE_URL=http://localhost:5180 <<'LUMEN_STEP'
+      npx playwright test --project=chromium --reporter=line,github,html
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+    agents:
+      queue: "linux"
+    timeout_in_minutes: 35
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: e2e-prod"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+  - label: ":lock: e2e under deploy headers (nginx)"
+    key: "e2e-headers"
+    command: |-
+      LUMEN_CI_JOB=e2e-headers LUMEN_CI_BROWSERS=chromium,webkit bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate 'Build production bundle' VITE_PUBLISH_ENDPOINT=https://publish.lumen-test.dev/v1 <<'LUMEN_STEP'
+      npm run build
+      LUMEN_STEP
+      gate 'Serve dist with deploy/nginx.conf' <<'LUMEN_STEP'
+      nginx -v
+      scripts/serve-dist-nginx.sh deploy 8088
+      LUMEN_STEP
+      gate 'Headers on the routes 0.20 covers' <<'LUMEN_STEP'
+      set -euo pipefail
+      csp() { curl -sfI "http://localhost:8088$$1" | tr -d '\r' | sed -n 's/^content-security-policy: //Ip'; }
+      worker=$$(ls dist/assets | grep -E '^(search|lua)\.worker-.*\.js$$' | head -1)
+      for path in / "/assets/$$worker" /sw.js; do
+        c=$$(csp "$$path"); echo "$$path: $${c:0:80}…"
+        grep -q "https://publish.lumen-test.dev" <<<"$$c" || { echo "::error::$$path: endpoint origin missing from connect-src"; exit 1; }
+        ! grep -q "__CSP_CONNECT_EXTRA__" <<<"$$c" || { echo "::error::$$path: placeholder left"; exit 1; }
+      done
+      grep -q "'nonce-lumen-livejs-runner'" <<<"$$(csp /playground-runner.html)" || { echo "::error::playground runner: no nonce"; exit 1; }
+      grep -q 'nonce="lumen-livejs-runner"' dist/playground-runner.html || { echo "::error::playground runner script has no nonce"; exit 1; }
+      grep -q "'unsafe-eval'" <<<"$$(csp /webr/webr-worker.js)" || { echo "::error::webR worker: no eval policy"; exit 1; }
+      LUMEN_STEP
+      gate 'Run E2E under the headers' PLAYWRIGHT_BASE_URL=http://localhost:8088 <<'LUMEN_STEP'
+      npx playwright test e2e/playground.spec.ts e2e/csp-violations.spec.ts --project=chromium --project=webkit --reporter=line,github,html
+      npx playwright test e2e/live-exec.spec.ts -g "live-r |live-lua" --project=chromium --project=webkit --reporter=line,github,html
+      # The service worker under the app policy, offline. Chromium only:
+      # WebKit's offline emulation fails the reload itself ("WebKit
+      # encountered an internal error") after the online run passed.
+      npx playwright test e2e/live-exec.spec.ts -g "offline" --project=chromium --reporter=line,github,html
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+    agents:
+      queue: "linux"
+    timeout_in_minutes: 40
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: e2e-headers"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+  - label: ":robot_face: local agents (fake Ollama)"
+    key: "local-ai"
+    command: |-
+      LUMEN_CI_JOB=local-ai bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate 'Start the fake Ollama server' <<'LUMEN_STEP'
+      npm run -s fake-ollama -- --port 11434 > fake-ollama.log 2>&1 &
+      for i in $$(seq 1 20); do curl -sf http://localhost:11434/api/tags > /dev/null && break; sleep 0.5; done
+      cat fake-ollama.log
+      LUMEN_STEP
+      gate 'Every agent once, over real HTTP' LUMEN_EVAL_OLLAMA_URL=http://localhost:11434 LUMEN_EVAL_MODEL=qwen2.5:7b LUMEN_EVAL_OUT=eval/results LUMEN_EVAL_WIRING=1 <<'LUMEN_STEP'
+      npm run -s eval:agents
+      # Compare with the committed baseline of the fake server: a case
+      # that used to pass and fails now is a regression.
+      npm run -s eval:compare -- eval/results/agents-*.json --baseline eval/baseline/agents-fake.json
+      npm run -s eval:compare -- eval/results/prompts-*.json --baseline eval/baseline/prompts-fake.json
+      node -e '
+        const fs = require("fs");
+        const f = fs.readdirSync("eval/results").find((n) => n.startsWith("agents-") && n.endsWith(".json"));
+        const r = JSON.parse(fs.readFileSync("eval/results/" + f, "utf8"));
+        const bad = r.results.filter((x) => x.status !== "ok" || x.checks.some((c) => !c.ok));
+        console.log(`$${r.results.length - bad.length}/$${r.results.length} cases passed against the fake server`);
+        if (bad.length) { console.error(bad.map((x) => `$${x.id}: $${x.error ?? x.checks.filter((c) => !c.ok).map((c) => c.detail).join("; ")}`).join("\n")); process.exit(1); }
+      '
+      LUMEN_STEP
+      gate 'Model manager — Ollama pull with progress, over real HTTP' <<'LUMEN_STEP'
+      node --experimental-strip-types scripts/check-ollama-pull.mjs --url http://localhost:11434
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+    agents:
+      queue: "linux"
+    timeout_in_minutes: 20
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: local-ai"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+  - label: ":eye: OCR CER (Hebrew, English)"
+    key: "ocr-cer"
+    command: |-
+      LUMEN_CI_JOB=ocr-cer LUMEN_CI_BROWSERS=chromium bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate 'Build production bundle' <<'LUMEN_STEP'
+      npm run build
+      LUMEN_STEP
+      gate 'Serve dist' <<'LUMEN_STEP'
+      npx -y http-server@14 dist -p 5181 -c-1 --silent &
+      for i in $$(seq 1 30); do
+        if curl -sf http://localhost:5181/ -o /dev/null; then echo "Server up."; break; fi
+        sleep 1
+      done
+      LUMEN_STEP
+      gate 'Measure CER on ocr-he (dev split)' PLAYWRIGHT_BASE_URL=http://localhost:5181 OCR_CER=1 OCR_CER_OUT=reports/ocr-cer.json <<'LUMEN_STEP'
+      npx playwright test e2e/ocr-cer.spec.ts --project=chromium --reporter=line
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+    agents:
+      queue: "linux"
+    timeout_in_minutes: 30
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: ocr-cer"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+    artifact_paths:
+      - "reports/ocr-cer.json"
+  - label: ":lighthouse: Lighthouse CI"
+    key: "lighthouse"
+    command: |-
+      LUMEN_CI_JOB=lighthouse LUMEN_CI_BROWSERS=chromium bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate 'run: npm run build' <<'LUMEN_STEP'
+      npm run build
+      LUMEN_STEP
+      gate 'Lighthouse CI' LHCI_GITHUB_APP_TOKEN='' <<'LUMEN_STEP'
+      npx -y @lhci/cli@0.13.x autorun --config=./lighthouserc.json
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+    agents:
+      queue: "linux"
+    timeout_in_minutes: 35
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: lighthouse"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+    if: "build.branch == \"main\" || build.pull_request.labels includes \"lighthouse\""
+  - label: ":lock_with_ink_pen: signed receipt"
+    key: "receipt"
+    depends_on:
+      - step: "vitest"
+        allow_failure: true
+      - step: "vitest-merge"
+        allow_failure: true
+      - step: "static"
+        allow_failure: true
+      - step: "lint"
+        allow_failure: true
+      - step: "licenses"
+        allow_failure: true
+      - step: "build"
+        allow_failure: true
+      - step: "e2e-chromium"
+        allow_failure: true
+      - step: "e2e-firefox"
+        allow_failure: true
+      - step: "e2e-webkit"
+        allow_failure: true
+      - step: "e2e-prod"
+        allow_failure: true
+      - step: "e2e-headers"
+        allow_failure: true
+      - step: "local-ai"
+        allow_failure: true
+      - step: "ocr-cer"
+        allow_failure: true
+      - step: "lighthouse"
+        allow_failure: true
+    command: |-
+      buildkite-agent artifact download 'ci-out/vitest-summary.json' . || true
+      node scripts/buildkite/receipt.mjs --gates vitest,vitest-merge,static,lint,licenses,build,e2e-chromium,e2e-firefox,e2e-webkit,e2e-prod,e2e-headers,local-ai,ocr-cer,lighthouse
+    agents:
+      queue: "linux"
+    artifact_paths:
+      - "ci-out/receipt.json"
+    timeout_in_minutes: 10
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: receipt"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1

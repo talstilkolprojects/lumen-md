@@ -154,7 +154,9 @@
     "obsidian:compare": "node --experimental-transform-types --import ./scripts/lib/ts-register.mjs scripts/obsidian-compare.mjs",
     "codeowners:check": "node scripts/codeowners-coverage.mjs",
     "review:queue": "node scripts/review-queue.mjs",
-    "legal:packet": "node scripts/legal-packet.mjs"
+    "legal:packet": "node scripts/legal-packet.mjs",
+    "ci:pipeline": "node scripts/buildkite/pipeline.mjs --check",
+    "ci:selftest": "bash scripts/buildkite/selftest.sh"
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "0.4.2",
