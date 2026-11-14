@@ -324,5 +324,10 @@
   "e2ee.sas.w60": "Truck",
   "e2ee.sas.w61": "Headphones",
   "e2ee.sas.w62": "Kite",
-  "e2ee.sas.w63": "Rainbow"
+  "e2ee.sas.w63": "Rainbow",
+  "e2ee.unaudited.badge": "Experimental — not externally security-audited",
+  "e2ee.unaudited.body": "Lumen's encryption was written in this project and has not been reviewed by an outside security firm. Keep your own backup of anything you can't afford to lose.",
+  "e2ee.gate.title": "Turn on encrypted sync?",
+  "e2ee.gate.enable": "Turn on (experimental)",
+  "e2ee.gate.cancel": "Not now"
 }

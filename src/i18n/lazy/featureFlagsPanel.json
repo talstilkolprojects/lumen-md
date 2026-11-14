@@ -1,4 +1,6 @@
 {
+  "flag.sync.e2ee.desc": "End-to-end encrypted sync to a folder, WebDAV, S3 or the relay. Off by default in every build: its cryptography has not had an external security audit yet.",
+  "flag.sync.e2ee.name": "Encrypted sync (experimental)",
   "flag.update.checkOnLaunch.desc": "Desktop app: look for a new version once a day when Lumen starts, so beta fixes arrive quickly. Never in local-only mode; every check is in the privacy log.",
   "flag.update.checkOnLaunch.name": "Check for updates at launch",
   "flags.close": "Close",
@@ -10,6 +12,7 @@
   "flags.source.channel": "Default for this build",
   "flags.source.override": "Your choice (default here: {default})",
   "flags.stage.beta": "Beta",
+  "flags.stage.experimental": "Experimental",
   "flags.stage.stable": "Stable",
   "flags.title": "Feature flags",
   "flags.useDefault": "Use the default"

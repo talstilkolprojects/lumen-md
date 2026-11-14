@@ -28,6 +28,7 @@ import type { FileSyncState } from "../status";
 import { WrongPassphraseError } from "../header";
 import { explainError } from "../../../lib/userError";
 import { HelpButton } from "../../../ui/HelpButton";
+import { UnauditedNotice } from "./unaudited";
 
 const muted: React.CSSProperties = { fontSize: 13, color: "hsl(var(--fg-muted))" };
 const errorStyle: React.CSSProperties = { fontSize: 13, color: "hsl(var(--danger))" };
@@ -159,6 +160,7 @@ export function SetupWizard({
             ×
           </button>
         </div>
+        <UnauditedNotice />
 
         {step === "where" && (
           <>

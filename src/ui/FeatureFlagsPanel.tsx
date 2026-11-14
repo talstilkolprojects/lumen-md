@@ -67,7 +67,7 @@ export function FeatureFlagsPanel({ onClose }: { onClose: () => void }) {
                 <div style={{ flex: 1, minInlineSize: 0 }}>
                   <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                     <strong style={{ fontSize: 14 }}>{name}</strong>
-                    <span style={{ fontSize: 11, paddingInline: 5, borderRadius: 4, border: "1px solid hsl(var(--border))", color: "hsl(var(--fg-muted))" }}>{f.stage === "beta" ? t("flags.stage.beta") : t("flags.stage.stable")}</span>
+                    <span style={{ fontSize: 11, paddingInline: 5, borderRadius: 4, border: "1px solid hsl(var(--border))", color: "hsl(var(--fg-muted))" }}>{f.stage === "experimental" ? t("flags.stage.experimental") : f.stage === "beta" ? t("flags.stage.beta") : t("flags.stage.stable")}</span>
                   </div>
                   <div style={{ fontSize: 13, color: "hsl(var(--fg-muted))", marginBlockStart: 2 }}>{t(`flag.${f.id}.desc`)}</div>
                   <div style={{ fontSize: 12, color: "hsl(var(--fg-muted))", marginBlockStart: 4 }}>

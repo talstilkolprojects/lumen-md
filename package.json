@@ -130,6 +130,7 @@
     "help:check": "node scripts/help-bundle.mjs --check",
     "help:merge-driver": "node scripts/help-merge-driver.mjs --install",
     "flags:check": "node scripts/check-flags.mjs",
+    "security:audit-claims": "node scripts/security/audit-claims.mjs",
     "bench:models": "node scripts/bench-models.mjs",
     "pr:check": "node scripts/pr-check.mjs",
     "pr:triage": "node scripts/pr-triage.mjs",
