@@ -40,6 +40,13 @@ Features in beta now:
 |---|---|
 | Check for updates at launch | Desktop app: looks for a new version once a day when Lumen starts, so beta fixes arrive quickly. Never in *local only* mode; every check is in the privacy log. |
 
+Experimental features are **off in every build, the beta too**, until you
+turn them on here:
+
+| Flag | What it does |
+|---|---|
+| Encrypted sync (experimental) | Syncs your notes between devices through a storage service that sees only encrypted data. Off by default until an open item of its security review is fixed. With the flag off, *Encrypted sync…*, *Set up sync* and the classroom open this list instead. Back up your notes folder first. |
+
 ## How a feature graduates
 
 A feature ships first in a beta with its flag on. A later release promotes

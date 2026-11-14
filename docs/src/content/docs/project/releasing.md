@@ -97,6 +97,50 @@ cd lumen && minisign -Vm SHA256SUMS -p release-key.pub && sha256sum -c SHA256SUM
 node scripts/supply-chain/verify-release.mjs lumen --pub security/release-key.pub
 ```
 
+## The update drill: beta.1 → beta.2 (plan W6.43)
+
+The owner runs this once, on the Mac, before beta.1 is announced. It proves that an
+installed beta updates itself and refuses what it shouldn't.
+
+1. **Keys in the shell:**
+   - `TAURI_SIGNING_PRIVATE_KEY` (+ `_PASSWORD`), and `security/updater-key.pub` committed
+   - `LUMEN_RELEASE_KEY` (+ `LUMEN_RELEASE_PASSPHRASE`), and `security/release-key.pub` committed
+   - `LUMEN_BUILD_KEY` and `LUMEN_FACTORY_HOST=mac`, a builder that `security/provenance-policy.dsse.json` names
+   - the identity filled in in `security/sigstore-identity.json`, and `cosign` installed
+
+   See [Build provenance and Sigstore signatures](/security/provenance/).
+2. **On a clean `main`** with the release branch merged: `npm ci`, then
+   `npm run release -- 0.2.0-beta.1 --dry-run`. It must print `REPRODUCIBLE`
+   and `provenance gate: … files`, and `git status` must be empty afterwards.
+3. **Publish beta.1:** `npm run release -- 0.2.0-beta.1 --publish`.
+4. **Check it from a clean folder:**
+   ```bash
+   gh release download v0.2.0-beta.1 -D /tmp/b1
+   node scripts/supply-chain/verify-release.mjs /tmp/b1 --pub security/release-key.pub
+   node scripts/supply-chain/verify.mjs /tmp/b1
+   ```
+   Change one byte of a copy of the `.dmg`: both checks must fail.
+5. **The key is in the binary:** install `Lumen_0.2.0-beta.1_aarch64.dmg` and run
+   `strings /Applications/Lumen.app/Contents/MacOS/* | grep -c beta-channel`. It must be
+   at least 1 (the endpoint). The first 16 characters of `security/updater-key.pub`'s
+   key line must be found the same way (the pubkey is not empty).
+6. **Open beta.1.** Settings → Feature flags: *Encrypted sync (experimental)* is off.
+   Turn on *Check for updates at launch* if it is off.
+7. **Publish beta.2:** a small change on `main`, then `release-notes/0.2.0-beta.2.he.md` and
+   `.en.md` (Hebrew first), then `npm run release -- 0.2.0-beta.2 --publish`. The beta
+   channel's `latest.json` now names 0.2.0-beta.2.
+8. **In the installed beta.1:** run *Check for updates…*. It offers 0.2.0-beta.2. Install
+   it; Lumen restarts and *About* says 0.2.0-beta.2. Keep a screenshot of each step.
+9. **A changed update is refused:**
+   - download `latest.json` from the `beta-channel` release
+   - change one character of the darwin signature
+   - serve it with `npx http-server` and point a beta.1 build at it (`LUMEN_UPDATER_ENDPOINT_BETA` at build time)
+   - *Check for updates…* must refuse to install
+
+**Windows:** the same drill needs the Windows bundles in the same release. One
+`--publish` uploads only the machine's own bundles (see Limits), so the Windows half
+waits for that.
+
 ## Limits
 
 - One `--publish` run uploads the bundles of the machine it runs on: the
