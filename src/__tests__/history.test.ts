@@ -41,10 +41,14 @@ describe("history store", () => {
   });
 
   it("keeps each document's newest MAX_PER_DOC snapshots", async () => {
-    for (let i = 0; i < history.MAX_PER_DOC + 5; i++) await history.recordSnapshot("a.md", `v${i}`, "save", i);
+    // The real cap is 1000; a small one keeps the test fast (it must not
+    // still be writing when the next test starts).
+    const cap = 100;
+    history.__setMaxPerDoc(cap);
+    for (let i = 0; i < cap + 5; i++) await history.recordSnapshot("a.md", `v${i}`, "save", i);
     const list = await history.listSnapshots("a.md");
-    expect(list).toHaveLength(history.MAX_PER_DOC);
-    expect(list[0].content).toBe(`v${history.MAX_PER_DOC + 4}`);
+    expect(list).toHaveLength(cap);
+    expect(list[0].content).toBe(`v${cap + 4}`);
     expect(list.at(-1)!.content).toBe("v5");
   });
 

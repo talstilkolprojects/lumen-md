@@ -64,7 +64,7 @@ import { useAppStore, applyTheme } from "./store/useStore";
 import { applyLocale, t } from "./i18n";
 import { localLlmAvailable } from "./ai/localLlm";
 import { assessConfigHealth } from "./lib/configHealth";
-import { historyKey, isQuotaError, onHistoryQuota, recordSnapshot } from "./storage/history";
+import { historyKey, isQuotaError, onHistoryQuota, onQuotaWarning, recordSnapshot } from "./storage/history";
 import { log } from "./lib/logger";
 import { openFileDialog, saveFile } from "./storage/fs";
 import { exportToHtml } from "./storage/exportHtml";
@@ -520,6 +520,11 @@ export default function App() {
 
   // History quota: the store pruned its oldest quarter and still could not write.
   useEffect(() => onHistoryQuota(() => showAiToast(t("doc.history.quota"), "error")), []);
+  // Plan 3.2: warn before it comes to that — past 80 % of the browser's quota.
+  useEffect(
+    () => onQuotaWarning(({ usage, quota }) => showAiToast(t("doc.history.quotaWarn", { percent: String(Math.round((usage / quota) * 100)) }), "error")),
+    [],
+  );
 
   // Keyboard shortcuts
   useEffect(() => {

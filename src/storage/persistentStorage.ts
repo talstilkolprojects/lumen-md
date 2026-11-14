@@ -22,6 +22,37 @@ export function persistenceStatus(): PersistenceStatus | null {
   return lastStatus;
 }
 
+export interface StorageState {
+  /** null when the browser has no persist() API. */
+  persisted: boolean | null;
+  usage: number | null;
+  quota: number | null;
+}
+
+/** What the Version History panel shows: persisted or not, and how full. Never throws. */
+export async function storageState(
+  storage: Partial<Pick<StorageManager, "persisted" | "estimate">> | undefined = typeof navigator !== "undefined" ? navigator.storage : undefined,
+): Promise<StorageState> {
+  let persisted: boolean | null = null;
+  let usage: number | null = null;
+  let quota: number | null = null;
+  try {
+    if (storage && typeof storage.persisted === "function") persisted = await storage.persisted();
+  } catch {
+    persisted = false;
+  }
+  try {
+    const est = storage && typeof storage.estimate === "function" ? await storage.estimate() : undefined;
+    if (est?.quota) {
+      usage = est.usage ?? 0;
+      quota = est.quota;
+    }
+  } catch {
+    /* no estimate */
+  }
+  return { persisted, usage, quota };
+}
+
 /**
  * Request durable storage. Safe to call more than once: an origin that
  * is already persisted is reported without a second prompt. Never throws.

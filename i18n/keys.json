@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-10-18T03:18:44.238Z",
+  "generated_at": "2026-10-18T08:50:07.667Z",
   "source": "src/i18n/index.ts (en bundle)",
-  "count": 1411,
+  "count": 1420,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -2170,6 +2170,59 @@
       "key": "versionHistory.reason.manual",
       "en": "manual",
       "vars": []
+    },
+    {
+      "key": "versionHistory.reason.collab",
+      "en": "collab session",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.reason.migrated",
+      "en": "from old backups",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.by",
+      "en": "by {author}",
+      "vars": [
+        "author"
+      ]
+    },
+    {
+      "key": "doc.history.quotaWarn",
+      "en": "Storage is {percent}% full. The oldest versions will be removed when it runs out.",
+      "vars": [
+        "percent"
+      ]
+    },
+    {
+      "key": "versionHistory.storage.persisted",
+      "en": "Storage is persistent: the browser won't clear it on its own.",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.storage.notPersisted",
+      "en": "Storage is not persistent: the browser may clear it when the disk is low.",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.storage.unsupported",
+      "en": "This browser can't make storage persistent.",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.storage.request",
+      "en": "Keep my storage",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.storage.usage",
+      "en": "{used} of {quota} used ({percent}%)",
+      "vars": [
+        "used",
+        "quota",
+        "percent"
+      ]
     },
     {
       "key": "insertText.title",
