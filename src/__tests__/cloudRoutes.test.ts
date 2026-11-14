@@ -59,6 +59,8 @@ const ROUTES: Route[] = [
   { id: "knesset-odata", file: "sources/knesset/app.ts", marker: /withGate\(\{ source: "knesset", reason: LEDGER_REASON/, gate: /enabled: \(\) => isSourceEnabled\("knesset"\)/ },
   // W7.6: search words, a dataset id or a series id, after the user turns government data on and confirms.
   { id: "datagov-ckan", file: "sources/datagov/app.ts", marker: /withGate\(gate\(confirm\)/, gate: /enabled: \(\) => isSourceEnabled\("datagov"\)/ },
+  // W7.7: the public-domain dump (catalogue and chosen authors' works), once, after the user turns the library on and confirms.
+  { id: "benyehuda-dump", file: "sources/benyehuda/app.ts", marker: /withGate\(gate\(confirm\)/, gate: /enabled: \(\) => isSourceEnabled\("benyehuda"\)/ },
   { id: "sefaria-texts", file: "sources/sefaria/app.ts", marker: /ledgerFetch\(\{ force: \{ category: "cloud-text", reason: LEDGER_REASON \}, consent: true \}\)/, gate: /asked \?\?= await confirm\(\);\s*if \(!asked\) throw new DeclinedError\(\)/ },
 ];
 

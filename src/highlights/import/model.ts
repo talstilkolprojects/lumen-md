@@ -3,7 +3,8 @@
  * (Kindle, Kobo, Readwise, Zotero) before it is written into the vault.
  */
 
-export type ImportSource = "kindle" | "kobo" | "readwise" | "zotero";
+/** Where an entry came from: an import, or a passage highlighted in a Ben-Yehuda work (plan W7.7). */
+export type ImportSource = "kindle" | "kobo" | "readwise" | "zotero" | "benyehuda";
 export const IMPORT_SOURCES: readonly ImportSource[] = ["kindle", "kobo", "readwise", "zotero"];
 
 export interface ImportedHighlight {
