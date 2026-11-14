@@ -4,7 +4,7 @@
  *
  * Walks the import graph from every entry point and reports production files
  * under src/ that nothing reaches. Entry points:
- *   - <script type="module" src="/src/…"> in the root *.html and public/*.html pages
+ *   - <script type="module" src="/src/…"> in every *.html page (root, public/, bench/ …)
  *   - every test in src/ (__tests__, *.test.*, *.spec.*, *.eval.*)
  *   - every code file outside src/: e2e/, scripts/, eval/, the root configs, and the
  *     other executables and packages that reuse src/ (bin/, api-server/, mcp-server/,
@@ -21,7 +21,9 @@
  *
  * Today's orphans are in scripts/unused-files.baseline.json; the gate fails on a
  * NEW orphan, and on a baseline entry that is no longer an orphan (it was imported
- * or deleted — run with --prune to drop it). The baseline only shrinks.
+ * or deleted — run with --prune to drop it). The baseline only shrinks. A file
+ * that only baseline orphans import (a dead module's strings module) is listed as
+ * held by that entry rather than failing: it is the same dead code and goes with it.
  *
  * Usage:
  *   node scripts/check-unused-files.mjs            check (CI)
@@ -141,10 +143,11 @@ export function resolveSpecifier(spec, fromRel, files) {
 export const isEntryFile = (rel) => CODE_RE.test(rel) && !/\.d\.[cm]?ts$/.test(rel) && (!rel.startsWith("src/") || !isProduction(rel));
 
 /**
- * @param {{ root?: string }} [opts]
- * @returns {{ orphans: string[], production: number }}
+ * @param {{ root?: string, baseline?: string[] }} [opts]
+ * @returns {{ orphans: string[], production: number, held: Record<string, string> }}
+ *   held: orphan → the baseline entry it is reached from (only baseline orphans import it)
  */
-export function findOrphans({ root = ROOT } = {}) {
+export function findOrphans({ root = ROOT, baseline = [] } = {}) {
   const all = walk(root, "", []);
   const files = new Set(all.map(toPosix));
   const code = all.filter((f) => CODE_RE.test(f) && !/\.d\.[cm]?ts$/.test(f));
@@ -158,11 +161,37 @@ export function findOrphans({ root = ROOT } = {}) {
       queue.push(rel);
     }
   };
+  // Every HTML page is an entry: the root pages, public/, and the ones in
+  // folders of their own (bench/models.html → src/bench/page.ts, plan 7.8).
   for (const f of all) {
-    if (/^(public\/)?[^/]+\.html$/.test(f)) for (const e of htmlEntries(readFileSync(join(root, f), "utf8"))) reach(resolveSpecifier(`/${e}`, f, files));
+    if (/\.html$/.test(f)) for (const e of htmlEntries(readFileSync(join(root, f), "utf8"))) reach(resolveSpecifier(`/${e}`, f, files));
   }
   for (const f of code) if (isEntryFile(f)) reach(f);
+  walkFrom(root, files, code, queue, reach);
+  const orphans = production.filter((f) => !seen.has(f)).sort();
 
+  // A file that only baseline orphans import (a dead module's own strings
+  // module, say) is part of that dead code, not a new orphan: it is "held"
+  // by the baseline entry it hangs from, and goes when that entry goes.
+  // A file nothing imports at all is never held.
+  const held = {};
+  const orphanSet = new Set(orphans);
+  for (const parent of baseline.filter((f) => orphanSet.has(f))) {
+    const sub = new Set([parent]);
+    const q = [parent];
+    walkFrom(root, files, code, q, (rel) => {
+      if (rel && orphanSet.has(rel) && !sub.has(rel)) {
+        sub.add(rel);
+        q.push(rel);
+      }
+    });
+    for (const f of sub) if (f !== parent && !baseline.includes(f) && !(f in held)) held[f] = parent;
+  }
+  return { orphans, production: production.length, held };
+}
+
+/** Breadth-first over the import edges from `queue`, calling `reach` on every target. */
+function walkFrom(root, files, code, queue, reach) {
   while (queue.length) {
     const rel = queue.shift();
     const { specs, globs } = extractSpecifiers(readFileSync(join(root, rel), "utf8"));
@@ -180,17 +209,17 @@ export function findOrphans({ root = ROOT } = {}) {
       for (const f of code) if (include.some((re) => re.test(f)) && !exclude.some((re) => re.test(f))) reach(f);
     }
   }
-  return { orphans: production.filter((f) => !seen.has(f)).sort(), production: production.length };
 }
 
 /**
- * Compare today's orphans with the baseline.
+ * Compare today's orphans with the baseline. `held` (from findOrphans):
+ * orphans that only baseline entries import — not new, not failing.
  * @returns {{ added: string[], stale: string[] }}
  */
-export function compare(orphans, baseline) {
+export function compare(orphans, baseline, held = {}) {
   const now = new Set(orphans);
   const base = new Set(baseline);
-  return { added: orphans.filter((f) => !base.has(f)), stale: baseline.filter((f) => !now.has(f)) };
+  return { added: orphans.filter((f) => !base.has(f) && !(f in held)), stale: baseline.filter((f) => !now.has(f)) };
 }
 
 const readBaseline = (root) => {
@@ -212,23 +241,25 @@ const writeBaseline = (root, files) =>
 
 function main(argv) {
   const flags = new Set(argv);
-  const { orphans, production } = findOrphans();
+  const baseline = readBaseline(ROOT);
+  const { orphans, production, held } = findOrphans({ baseline });
   if (flags.has("--write")) {
-    writeBaseline(ROOT, orphans);
+    writeBaseline(ROOT, orphans.filter((f) => !(f in held)));
     console.log(`unused-files: baseline written — ${orphans.length} of ${production} production files`);
     return 0;
   }
-  const baseline = readBaseline(ROOT);
-  const { added, stale } = compare(orphans, baseline);
+  const { added, stale } = compare(orphans, baseline, held);
   if (flags.has("--prune")) {
     writeBaseline(ROOT, baseline.filter((f) => !stale.includes(f)));
     console.log(`unused-files: pruned ${stale.length} stale baseline entr${stale.length === 1 ? "y" : "ies"}`);
     return added.length ? 1 : 0;
   }
   if (flags.has("--json")) {
-    console.log(JSON.stringify({ production, orphans: orphans.length, baseline: baseline.length, added, stale }, null, 1));
+    console.log(JSON.stringify({ production, orphans: orphans.length, baseline: baseline.length, held, added, stale }, null, 1));
   } else {
-    console.log(`unused-files: ${production} production files, ${orphans.length} unreached (${baseline.length} in the baseline)`);
+    const nHeld = Object.keys(held).length;
+    console.log(`unused-files: ${production} production files, ${orphans.length} unreached (${baseline.length} in the baseline${nHeld ? `, ${nHeld} only imported by them` : ""})`);
+    for (const [f, parent] of Object.entries(held)) console.log(`  · ${f} — only ${parent} (baseline) imports it; it goes with that file`);
     for (const f of added) console.error(`  ✗ ${f} — nothing imports it. Import it from where it's used, or delete it.`);
     for (const f of stale) console.error(`  ✗ ${f} is in ${BASELINE} but is no longer an orphan — run: node scripts/check-unused-files.mjs --prune`);
   }
