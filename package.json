@@ -161,7 +161,8 @@
     "review:queue": "node scripts/review-queue.mjs",
     "legal:packet": "node scripts/legal-packet.mjs",
     "ci:pipeline": "node scripts/buildkite/pipeline.mjs --check",
-    "ci:selftest": "bash scripts/buildkite/selftest.sh"
+    "ci:selftest": "bash scripts/buildkite/selftest.sh",
+    "fuzz:redaction": "node scripts/fuzz/redaction-nightly.mjs"
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "0.4.2",

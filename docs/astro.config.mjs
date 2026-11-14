@@ -277,6 +277,7 @@ export default defineConfig({
             { label: "Visual regression", translations: { he: "רגרסיה חזותית" }, slug: "contributing/visual-regression" },
             { label: "The open Hebrew voice (recording kit)", translations: { he: "הקול העברי הפתוח (ערכת הקלטה)" }, slug: "contributing/hebrew-voice" },
             { label: "Skipped tests", translations: { he: "בדיקות מדולגות" }, slug: "contributing/skipped-tests" },
+            { label: "Nightly redaction fuzz", translations: { he: "fuzz השחרה כל לילה" }, slug: "contributing/redaction-fuzz" },
             { label: "Checks on every branch (Vercel)", translations: { he: "בדיקות בכל ענף (Vercel)" }, slug: "contributing/checks" },
             { label: "Every PR on the train head", translations: { he: "כל PR על ראש הרכבת" }, slug: "contributing/train-base" },
             { label: "Threat model", slug: "security/threat-model" },
