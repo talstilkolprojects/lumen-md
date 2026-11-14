@@ -99,3 +99,7 @@ public/excalidraw/
 
 # Reports written by the scheduled scripts (plan 0.11 / 14.3) — artifacts, never committed
 reports/
+
+# Signed release output and fuzzer findings (plan W1.27)
+/release/
+fuzz-findings/

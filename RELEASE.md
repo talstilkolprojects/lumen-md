@@ -238,3 +238,26 @@ After every build, before publishing:
 
 Add an entry to `CHANGELOG.md` for every version. Keep entries terse,
 group under `Added` / `Changed` / `Fixed` headings, and link to PRs.
+
+## Signatures, SBOM and reproducible builds (plan W1.27)
+
+Every release carries `SHA256SUMS` (each file of `dist/` and each desktop /
+mobile artifact), a CycloneDX SBOM `sbom.cdx.json`, and minisign signatures
+of both, made **on the release owner's machine** — no CI system holds the
+key. Full steps: docs → Security → Supply chain.
+
+```bash
+# once: make the key, commit only the public half
+LUMEN_RELEASE_PASSPHRASE=… node scripts/supply-chain/keys.mjs --out ~/.lumen-release
+cp ~/.lumen-release/lumen-release.pub security/release-key.pub
+
+# each release
+npm run repro                     # two clean builds, same SHA-256 per file
+npm run build
+LUMEN_RELEASE_PASSPHRASE=… npm run release:sign -- --key ~/.lumen-release/lumen-release.key \
+  --artifact src-tauri/target/release/bundle/dmg/Lumen_<version>_aarch64.dmg
+npm run release:verify            # what anyone can run with the public key
+```
+
+Upload `release/SHA256SUMS`, `release/sbom.cdx.json` and their `.minisig`
+files with the release.

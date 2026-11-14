@@ -27,6 +27,7 @@ import type { Root as HastRoot } from "hast";
 import { components } from "./components";
 import { rehypeShiki } from "./shiki";
 import { prepareCriticMarkup, rehypeCriticMarkup, stripCriticDelimiters } from "./criticMarkup";
+import { boundMarkdown } from "./boundMarkdown";
 import {
   remarkBreaks,
   remarkWikiLinks,
@@ -315,7 +316,8 @@ export interface RenderOptions {
 function input(markdownText: string, opts: RenderOptions) {
   const data: Record<string, unknown> = {};
   if (opts.embeds) data[EMBEDS_DATA_KEY] = opts.embeds;
-  return { value: prepareCriticMarkup(markdownText), data };
+  // A block that would take seconds to parse (plan W4.16) is shown as raw text.
+  return { value: prepareCriticMarkup(boundMarkdown(markdownText)), data };
 }
 
 export async function renderMarkdown(
