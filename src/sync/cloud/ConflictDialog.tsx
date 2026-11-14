@@ -44,10 +44,12 @@ interface Props {
   local: string;
   remote: string;
   labels?: Partial<ConflictLabels>;
+  /** Hunks computed by the caller's own merge (git uses diff3); default: `threeWayDiff`. */
+  hunks?: DiffHunk[];
   onResolve: (choice: ConflictChoice) => void;
 }
 
-function ConflictDialogImpl({ path, base, local, remote, labels, onResolve }: Props) {
+function ConflictDialogImpl({ path, base, local, remote, labels, hunks: given, onResolve }: Props) {
   const L: ConflictLabels = {
     title: `Sync conflict — ${path}`,
     description: "Both sides changed since the last sync. Pick what to keep, or take one side wholesale.",
@@ -60,8 +62,8 @@ function ConflictDialogImpl({ path, base, local, remote, labels, onResolve }: Pr
     ...labels,
   };
   const hunks = useMemo<DiffHunk[]>(
-    () => threeWayDiff(base, local, remote),
-    [base, local, remote],
+    () => given ?? threeWayDiff(base, local, remote),
+    [given, base, local, remote],
   );
   const conflictHunkIdxs = hunks
     .map((h, i) => ({ h, i }))
@@ -279,6 +281,7 @@ export function openConflictDialog(opts: {
   local: string;
   remote: string;
   labels?: Partial<ConflictLabels>;
+  hunks?: DiffHunk[];
 }): Promise<ConflictChoice> {
   return new Promise((resolve) => {
     const host = document.createElement("div");

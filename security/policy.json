@@ -37,6 +37,8 @@
           "http://127.0.0.1:8787",
           "http://localhost:8010",
           "http://127.0.0.1:8010",
+          "http://localhost:9999",
+          "http://127.0.0.1:9999",
           "https://api.languagetool.org",
           "https://kroki.io",
           "https://oauth2.googleapis.com",

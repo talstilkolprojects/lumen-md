@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createMemoryBackend, setVaultBackend } from "../storage/vault";
 
 // Mock idb-keyval to use a plain Map
 const store = new Map<string, unknown>();
@@ -17,15 +18,40 @@ vi.mock("../storage/workspace", () => ({
   createWorkspaceFolder: vi.fn(),
   deleteWorkspaceFile: vi.fn(),
   listWorkspace: vi.fn().mockResolvedValue([]),
+  readWorkspaceBlob: vi.fn().mockResolvedValue(new Blob([])),
   readWorkspaceFile: vi.fn().mockResolvedValue(""),
+  workspaceHasEntry: vi.fn().mockResolvedValue(false),
   workspaceHasFile: vi.fn().mockResolvedValue(false),
   writeWorkspaceBlob: vi.fn(),
+}));
+
+// Clone without the network: record what isomorphic-git is asked to do.
+const { cloneCalls } = vi.hoisted(() => ({ cloneCalls: [] as Array<Record<string, unknown>> }));
+vi.mock("isomorphic-git", () => ({
+  default: {
+    clone: async (o: Record<string, unknown>) => {
+      cloneCalls.push(o);
+    },
+  },
+}));
+vi.mock("isomorphic-git/http/web", () => ({ default: {} }));
+vi.mock("@isomorphic-git/lightning-fs", () => ({
+  default: class {
+    promises = {
+      mkdir: async () => undefined,
+      readdir: async () => [],
+      stat: async () => ({ isDirectory: () => false, isFile: () => false }),
+      readFile: async () => new Uint8Array(),
+      writeFile: async () => undefined,
+    };
+  },
 }));
 
 describe("git sync — helpers", () => {
   beforeEach(async () => {
     store.clear();
     localStorage.clear();
+    setVaultBackend(createMemoryBackend());
     // The token now lives in the secret store (T36); start each test empty.
     (await import("../lib/secretStore")).__resetSecretStore();
   });
@@ -73,10 +99,21 @@ describe("git sync — helpers", () => {
     expect(states).toHaveLength(4);
   });
 
-  it("cloneRepo throws without a token", async () => {
+  it("cloneRepo works without a token (public repository) and sends no credentials", async () => {
     const { cloneRepo } = await import("../sync/git");
-    await expect(
-      cloneRepo("https://github.com/user/repo.git", { token: "" }),
-    ).rejects.toThrow(/token/i);
+    cloneCalls.length = 0;
+    const r = await cloneRepo("https://github.com/user/repo.git", { token: "" });
+    expect(r.workspaceFolder).toBe("repo");
+    expect(cloneCalls).toHaveLength(1);
+    expect(cloneCalls[0].onAuth).toBeUndefined();
+    expect(cloneCalls[0].url).toBe("https://github.com/user/repo.git");
+  });
+
+  it("cloneRepo passes the token and the CORS proxy when they are set", async () => {
+    const { cloneRepo } = await import("../sync/git");
+    cloneCalls.length = 0;
+    await cloneRepo("https://github.com/user/private.git", { token: "ghp_x", corsProxy: "http://localhost:9999" });
+    expect(cloneCalls[0].corsProxy).toBe("http://localhost:9999");
+    expect((cloneCalls[0].onAuth as () => unknown)()).toEqual({ username: "ghp_x", password: "x-oauth-basic" });
   });
 });

@@ -11,8 +11,11 @@
  * Each tick:
  *   1. Read the active doc's `workspaceName` to find the repo folder.
  *   2. `git fetch` (delta-only, cheap) via isomorphic-git.
- *   3. If HEAD is behind, run `pullRepo()` and dispatch a workspace
- *      changed event so the UI refreshes.
+ *   3. If HEAD is behind, run `pullRepo()` — the safe pull (plan 3.3): a
+ *      three-way merge that never deletes and never overwrites a note
+ *      with unsaved edits — and dispatch a workspace changed event so the
+ *      UI refreshes. Conflicts are left marked in their files and reported
+ *      (`onConflicts`); the user resolves them with "Git: pull".
  *
  * Disabled when:
  *   • the user is offline (`navigator.onLine === false`)
@@ -36,6 +39,8 @@ export interface WatchOptions {
   intervalMs?: number;
   /** Called after a successful pull with the diff stat. */
   onPulled?: (stats: { changedFiles: number }) => void;
+  /** Called when a pull left conflicts (marked in the files, nothing lost). */
+  onConflicts?: (count: number) => void;
   /** Called on every tick that didn't pull (no upstream changes). */
   onIdle?: () => void;
 }
@@ -81,6 +86,7 @@ export function startGitWatch(opts: WatchOptions): () => void {
       if (result.changedFiles > 0) {
         window.dispatchEvent(new Event("lumen-workspace-changed"));
         opts.onPulled?.({ changedFiles: result.changedFiles });
+        if (result.conflicts.length) opts.onConflicts?.(result.conflicts.length);
       } else {
         opts.onIdle?.();
       }

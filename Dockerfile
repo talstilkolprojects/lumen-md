@@ -24,6 +24,8 @@ ARG VITE_MARKETPLACE_URL
 ARG VITE_LANGUAGETOOL_URL
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
+# CORS proxy for git in the browser (plan 3.3); empty = none.
+ARG VITE_GIT_CORS_PROXY
 # Collaboration servers (signaling, comma-separated; persistent y-websocket).
 ARG VITE_WEBRTC_SIGNALING_URL
 ARG VITE_YJS_WEBSOCKET_URL

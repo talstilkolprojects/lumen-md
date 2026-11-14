@@ -234,3 +234,112 @@ test("the whole vault exports as a zip", async ({ page }) => {
   expect(bytes.readUInt32LE(0)).toBe(0x04034b50);
   expect(bytes.includes(Buffer.from("Welcome.md"))).toBe(true);
 });
+
+/**
+ * Part D — safe git (plan 3.3): a pull is a three-way merge into the vault.
+ * Overlapping edits open the resolution screen, a note open with unsaved
+ * edits gets the merge in the editor (not overwritten), and nothing is deleted —
+ * not the file deleted upstream, not the file git never tracked.
+ *
+ * The remote commit is made in the browser's own git store (no network): the
+ * merge half of the pull (`integrateIntoVault`) and the real dialogs are
+ * what is tested. The modules are imported from the dev server.
+ */
+test("git pull merges three ways, opens the conflict screen, keeps unsaved edits, and deletes nothing", async ({ page }) => {
+  const dev = await page.evaluate(() => !!document.querySelector('script[src*="/@vite/client"]'));
+  test.skip(!dev, "imports the git modules from the dev server");
+  test.skip(!(await opfsWritable(page)), "OPFS writes are unavailable in this engine's test context");
+  const repo = `safe-git-${Date.now().toString(36)}`;
+  // The vault opens shortly after start-up.
+  await expect
+    .poll(() => page.evaluate(async () => (await import(/* @vite-ignore */ "/src/storage/workspace.ts")).isOPFSAvailable()), { timeout: 10_000 })
+    .toBe(true);
+
+  const before = await page.evaluate(async (repo) => {
+    const ws = await import(/* @vite-ignore */ "/src/storage/workspace.ts");
+    const g = await import(/* @vite-ignore */ "/src/sync/git.ts");
+    const { fs, git } = await g.__gitRuntime();
+    const dir = `/git/${repo}`;
+    const author = { name: "Test", email: "test@example.com" };
+    const base: Record<string, string> = {
+      "c.md": "x\ny\nz",
+      "open.md": "alpha\nbeta\ngamma",
+      "gone.md": "deleted upstream",
+    };
+    await fs.promises.mkdir("/git").catch(() => undefined);
+    await fs.promises.mkdir(dir);
+    await git.init({ fs, dir, defaultBranch: "main" });
+    for (const [p, text] of Object.entries(base)) {
+      await fs.promises.writeFile(`${dir}/${p}`, text);
+      await git.add({ fs, dir, filepath: p });
+      await ws.writeWorkspaceFile(`${repo}/${p}`, text);
+    }
+    const baseOid = await git.commit({ fs, dir, message: "base", author });
+    // Local work: an edit to c.md and a file git never tracked.
+    await ws.writeWorkspaceFile(`${repo}/c.md`, "x\nLOCAL\nz");
+    await ws.writeWorkspaceFile(`${repo}/untracked.md`, "mine, never committed");
+    // The remote moves on: same line of c.md, the end of open.md, gone.md deleted.
+    await fs.promises.writeFile(`${dir}/c.md`, "x\nREMOTE\nz");
+    await fs.promises.writeFile(`${dir}/open.md`, "alpha\nbeta\ngamma remote");
+    await git.add({ fs, dir, filepath: "c.md" });
+    await git.add({ fs, dir, filepath: "open.md" });
+    await fs.promises.unlink(`${dir}/gone.md`);
+    await git.remove({ fs, dir, filepath: "gone.md" });
+    const theirs = await git.commit({ fs, dir, message: "remote", author, ref: "refs/remotes/origin/main", parent: [baseOid] });
+    await git.checkout({ fs, dir, ref: "main", force: true });
+    (window as unknown as { __theirs: string }).__theirs = theirs;
+    return (await ws.listWorkspace({ includeHidden: true })).map((e: { path: string }) => e.path).filter((p: string) => p.startsWith(`${repo}/`)).sort();
+  }, repo);
+  expect(before).toEqual([`${repo}/c.md`, `${repo}/gone.md`, `${repo}/open.md`, `${repo}/untracked.md`]);
+  const editor = page.locator(".cm-content").first();
+
+  // open.md is open with an unsaved edit; pull at once (the merge half),
+  // then the summary and the resolution screen.
+  await page.evaluate(async (repo) => {
+    const g = await import(/* @vite-ignore */ "/src/sync/git.ts");
+    const docs = await import(/* @vite-ignore */ "/src/store/gitPullDocs.ts");
+    const { useAppStore } = await import(/* @vite-ignore */ "/src/store/useStore.ts");
+    const content = "ALPHA local\nbeta\ngamma";
+    useAppStore.setState({
+      doc: { name: "open.md", content, workspaceName: `${repo}/open.md`, dirty: true },
+      openTabs: [{ id: `${repo}/open.md`, name: "open.md", content, workspaceName: `${repo}/open.md`, dirty: true }],
+    });
+    const result = await g.integrateIntoVault(repo, (window as unknown as { __theirs: string }).__theirs);
+    (window as unknown as { __pull: unknown }).__pull = result;
+    void docs.reportPull(result);
+  }, repo);
+  const summary = page.getByRole("dialog").filter({ hasText: /Nothing deleted/ });
+  await expect(summary).toBeVisible({ timeout: 10_000 });
+  await expect(summary).toContainText(/Deleted upstream, kept here/);
+  await summary.getByRole("button", { name: "OK" }).click();
+
+  const conflict = page.getByRole("dialog").filter({ hasText: `Git conflict — ${repo}/c.md` });
+  await expect(conflict).toBeVisible({ timeout: 10_000 });
+  await expect(conflict).toContainText("LOCAL");
+  await expect(conflict).toContainText("REMOTE");
+  await conflict.getByRole("button", { name: "Take remote" }).click();
+  await expect(conflict).toBeHidden();
+
+  // The unsaved edit and the remote change are both in the editor, and
+  // reach the file through the normal save.
+  await expect(editor).toContainText("ALPHA local");
+  await expect(editor).toContainText("gamma remote");
+  await expect
+    .poll(() => page.evaluate(async (repo) => (await import(/* @vite-ignore */ "/src/storage/workspace.ts")).readWorkspaceFile(`${repo}/open.md`), repo), { timeout: 10_000 })
+    .toBe("ALPHA local\nbeta\ngamma remote");
+
+  const after = await page.evaluate(async (repo) => {
+    const ws = await import(/* @vite-ignore */ "/src/storage/workspace.ts");
+    const paths = (await ws.listWorkspace({ includeHidden: true })).map((e: { path: string }) => e.path).filter((p: string) => p.startsWith(`${repo}/`)).sort();
+    const read = (p: string) => ws.readWorkspaceFile(`${repo}/${p}`);
+    const pull = (window as unknown as { __pull: { deletedFiles: number; conflicts: unknown[] } }).__pull;
+    return { paths, c: await read("c.md"), gone: await read("gone.md"), untracked: await read("untracked.md"), deleted: pull.deletedFiles, conflicts: pull.conflicts.length };
+  }, repo);
+  // 0 files deleted on pull.
+  for (const p of before) expect(after.paths).toContain(p);
+  expect(after.deleted).toBe(0);
+  expect(after.conflicts).toBe(1);
+  expect(after.c).toBe("x\nREMOTE\nz");
+  expect(after.gone).toBe("deleted upstream");
+  expect(after.untracked).toBe("mine, never committed");
+});

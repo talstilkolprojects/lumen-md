@@ -9,7 +9,6 @@ import { useAppStore } from "../store/useStore";
 import { uiPrompt, uiAlert } from "../ui/PromptDialog";
 import { t } from "../i18n";
 import { log } from "../lib/logger";
-import { gitStatusSummary } from "../sync/git";
 import { showAiToast } from "../ui/AiToast";
 import { generateOutline, applyOutline } from "./outline";
 import { aiOperation, isAbort } from "./aiAbort";
@@ -54,6 +53,8 @@ export async function generateAiCommitMessage(
   signal?: AbortSignal,
 ): Promise<string> {
   try {
+    // Loaded on use: keeps the git modules out of the startup bundle.
+    const { gitStatusSummary } = await import("../sync/git");
     const summary = await gitStatusSummary(repoFolder);
     const changes = summary.entries
       .filter((e) => e.state !== "unmodified")

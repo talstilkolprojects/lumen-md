@@ -1,16 +1,22 @@
 /** Git commands for a repository cloned into the workspace. */
 import { cmdIcons, type Command } from "../../ui/CommandPalette";
 import { t } from "../../i18n";
-import { getGitIdentity, setGitIdentity, setGitToken, cloneRepo, pullRepo, commitAndPush, gitStatusSummary } from "../../sync/git";
 import { uiAlert, uiPrompt } from "../../ui/PromptDialog";
 import { generateAiCommitMessage } from "../../ai/commands";
 import { log } from "../../lib/logger";
 import { showAiToast } from "../../ui/AiToast";
-import { readWorkspaceFile } from "../../storage/workspace";
 import { cancellable, type CommandContext } from "./context";
 
+// The git modules (and isomorphic-git behind them) load on first use: the
+// palette lists these commands at start-up, so nothing here may pull them
+// into the startup bundle.
+const gitApi = () => import("../../sync/git");
+
+/** A failed clone / pull, with a hint when it looks like CORS (loaded on use). */
+const netError = async (e: unknown) => (await import("../../store/gitPullDocs")).netError(e);
+
 /** Clone, commit & push, pull, status, watch, token, identity. */
-export function buildGitCommands({ showWorkspace, setDoc, toggleWorkspace, liveDoc }: CommandContext): Command[] {
+export function buildGitCommands({ showWorkspace, toggleWorkspace, liveDoc }: CommandContext): Command[] {
   return [
     {
       id: "git.clone",
@@ -23,17 +29,16 @@ export function buildGitCommands({ showWorkspace, setDoc, toggleWorkspace, liveD
         if (!url) return;
         if (!showWorkspace) toggleWorkspace();
         try {
+          const { cloneRepo } = await gitApi();
           const result = await cloneRepo(url.trim());
           window.dispatchEvent(new Event("lumen-workspace-changed"));
-          await uiAlert({
-            message: t("git.alert.cloned", {
-              folder: result.workspaceFolder,
-              count: result.fileCount,
-            }),
-          });
+          const lines = [t("git.alert.cloned", { folder: result.workspaceFolder, count: result.fileCount })];
+          if (result.kept.length) lines.push(t("git.clone.kept", { count: result.kept.length }));
+          if (result.lfsPointers.length) lines.push(t("git.lfs.unsupported", { files: result.lfsPointers.slice(0, 5).join(", ") }));
+          await uiAlert({ message: lines.join("\n\n") });
         } catch (e) {
           await uiAlert({
-            message: t("git.alert.cloneFailed", { error: (e as Error).message }),
+            message: t("git.alert.cloneFailed", { error: await netError(e) }),
           });
         }
       },
@@ -64,11 +69,20 @@ export function buildGitCommands({ showWorkspace, setDoc, toggleWorkspace, liveD
            defaultValue: aiSuggestion 
         }))?.trim();
         if (!message) return;
+        const { getGitIdentity, commitAndPush, UnresolvedConflictsError } = await gitApi();
         const identity = await getGitIdentity();
         try {
-          await commitAndPush(repoFolder, message, identity);
-          await uiAlert({ message: t("git.alert.pushed") });
+          const { skipped, lfsKept, unsaved } = await commitAndPush(repoFolder, message, identity);
+          const notes = [t("git.alert.pushed")];
+          if (skipped.length) notes.push(t("git.commit.skipped", { files: skipped.slice(0, 5).join(", ") }));
+          if (lfsKept.length) notes.push(t("git.commit.lfsKept", { files: lfsKept.slice(0, 5).join(", ") }));
+          if (unsaved.length) notes.push(t("git.commit.unsaved", { files: unsaved.slice(0, 5).join(", ") }));
+          await uiAlert({ message: notes.join("\n\n") });
         } catch (e) {
+          if (e instanceof UnresolvedConflictsError) {
+            await uiAlert({ message: t("git.commit.unresolved", { files: e.paths.join(", ") }) });
+            return;
+          }
           await uiAlert({
             message: t("git.alert.commitFailed", { error: (e as Error).message }),
           });
@@ -88,25 +102,16 @@ export function buildGitCommands({ showWorkspace, setDoc, toggleWorkspace, liveD
         }
         const repoFolder = liveDoc().workspaceName!.split("/")[0];
         try {
+          // Safe pull (plan 3.3): merges into the vault, never deletes, never
+          // overwrites a note with unsaved edits; the open notes are updated by it.
+          const { pullRepo } = await gitApi();
           const result = await pullRepo(repoFolder);
           window.dispatchEvent(new Event("lumen-workspace-changed"));
-          await uiAlert({
-            message: t("git.alert.pulled", { changed: result.changedFiles }),
-          });
-          // If the active file's content changed on disk, reload it.
-          if (liveDoc().workspaceName) {
-            try {
-              const fresh = await readWorkspaceFile(liveDoc().workspaceName!);
-              if (fresh !== liveDoc().content) {
-                setDoc({ content: fresh, dirty: false });
-              }
-            } catch {
-              /* file may have been deleted upstream; ignore */
-            }
-          }
+          const { reportPull } = await import("../../store/gitPullDocs");
+          await reportPull(result);
         } catch (e) {
           await uiAlert({
-            message: t("git.alert.pullFailed", { error: (e as Error).message }),
+            message: t("git.alert.pullFailed", { error: await netError(e) }),
           });
         }
       },
@@ -123,6 +128,7 @@ export function buildGitCommands({ showWorkspace, setDoc, toggleWorkspace, liveD
         }
         const repoFolder = liveDoc().workspaceName!.split("/")[0];
         try {
+          const { gitStatusSummary } = await gitApi();
           const summary = await gitStatusSummary(repoFolder);
           const total = summary.added + summary.modified + summary.deleted;
           await uiAlert({
@@ -163,6 +169,7 @@ export function buildGitCommands({ showWorkspace, setDoc, toggleWorkspace, liveD
           repoFolder,
           onPulled: ({ changedFiles }) =>
             showAiToast(t("toast.pulledFile", { count: changedFiles }), "success"),
+          onConflicts: (count) => showAiToast(t("git.watch.conflicts", { count }), "info"),
         });
         showAiToast(t("toast.gitWatchOnPullingEvery"), "info");
       },
@@ -176,6 +183,7 @@ export function buildGitCommands({ showWorkspace, setDoc, toggleWorkspace, liveD
       action: async () => {
         const token = await uiPrompt({ message: t("git.prompt.token") });
         if (token === null) return;
+        const { setGitToken } = await gitApi();
         await setGitToken(token.trim() || null);
         await uiAlert({
           message: token.trim()
@@ -185,11 +193,20 @@ export function buildGitCommands({ showWorkspace, setDoc, toggleWorkspace, liveD
       },
     },
     {
+      id: "git.corsProxy",
+      label: t("cmd.git.corsProxy"),
+      hint: t("cmd.git.corsProxy.hint"),
+      icon: cmdIcons.Link,
+      group: t("group.git"),
+      action: async () => (await import("../../store/gitPullDocs")).promptCorsProxy(),
+    },
+    {
       id: "git.identity",
       label: t("cmd.git.identity"),
       icon: cmdIcons.Link,
       group: t("group.git"),
       action: async () => {
+        const { getGitIdentity, setGitIdentity } = await gitApi();
         const current = await getGitIdentity();
         const name = (await uiPrompt({
           message: t("git.prompt.identityName"),

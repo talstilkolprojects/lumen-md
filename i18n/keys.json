@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-10-19T07:33:42.684Z",
+  "generated_at": "2026-10-24T11:28:24.021Z",
   "source": "src/i18n/index.ts (en bundle)",
-  "count": 1469,
+  "count": 1501,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -2456,6 +2456,11 @@
     {
       "key": "versionHistory.reason.manual",
       "en": "manual",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.reason.git-pull",
+      "en": "before git pull",
       "vars": []
     },
     {
@@ -7914,6 +7919,193 @@
       "key": "chart.alternatives",
       "en": "Chart suggestions",
       "vars": []
+    },
+    {
+      "key": "cmd.git.corsProxy",
+      "en": "Git: set CORS proxy…",
+      "vars": []
+    },
+    {
+      "key": "cmd.git.corsProxy.hint",
+      "en": "needed to clone from GitHub in a browser",
+      "vars": []
+    },
+    {
+      "key": "git.prompt.corsProxy",
+      "en": "CORS proxy URL for git (empty: direct):",
+      "vars": []
+    },
+    {
+      "key": "git.alert.corsProxySaved",
+      "en": "CORS proxy saved.",
+      "vars": []
+    },
+    {
+      "key": "git.alert.corsProxyCleared",
+      "en": "CORS proxy cleared: git connects directly.",
+      "vars": []
+    },
+    {
+      "key": "git.alert.corsProxyInvalid",
+      "en": "That is not an http(s) URL. Nothing was changed.",
+      "vars": []
+    },
+    {
+      "key": "git.alert.corsHint",
+      "en": "The git host was not reached. In a browser it needs a CORS proxy: ⌘K → “Git: set CORS proxy…”.",
+      "vars": []
+    },
+    {
+      "key": "git.pull.upToDate",
+      "en": "Already up to date.",
+      "vars": []
+    },
+    {
+      "key": "git.pull.summary",
+      "en": "Pulled: {changed} files updated, {conflicts} conflicts. Nothing deleted.",
+      "vars": [
+        "changed",
+        "conflicts"
+      ]
+    },
+    {
+      "key": "git.pull.keptDeleted",
+      "en": "Deleted upstream, kept here ({count}): {files}",
+      "vars": [
+        "count",
+        "files"
+      ]
+    },
+    {
+      "key": "git.pull.mergedIntoOpen",
+      "en": "Merged into open notes with unsaved edits (not overwritten): {files}",
+      "vars": [
+        "files"
+      ]
+    },
+    {
+      "key": "git.pull.copies",
+      "en": "Versions that could not be merged are kept as copies: {files}",
+      "vars": [
+        "files"
+      ]
+    },
+    {
+      "key": "git.lfs.unsupported",
+      "en": "Git LFS is not supported; these are LFS pointers: {files}",
+      "vars": [
+        "files"
+      ]
+    },
+    {
+      "key": "git.clone.kept",
+      "en": "{count} existing files were kept (not overwritten).",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "git.commit.unresolved",
+      "en": "Not committed: resolve the conflicts first: {files}",
+      "vars": [
+        "files"
+      ]
+    },
+    {
+      "key": "git.conflict.title",
+      "en": "Git conflict — {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "git.conflict.body",
+      "en": "Both sides changed the same lines. Until you choose, the file keeps both between markers.",
+      "vars": []
+    },
+    {
+      "key": "git.conflict.mine",
+      "en": "mine",
+      "vars": []
+    },
+    {
+      "key": "git.conflict.theirs",
+      "en": "remote",
+      "vars": []
+    },
+    {
+      "key": "git.conflict.takeMine",
+      "en": "Keep mine",
+      "vars": []
+    },
+    {
+      "key": "git.conflict.takeTheirs",
+      "en": "Take remote",
+      "vars": []
+    },
+    {
+      "key": "git.conflict.merge",
+      "en": "Apply merge",
+      "vars": []
+    },
+    {
+      "key": "git.conflict.later",
+      "en": "Resolve later",
+      "vars": []
+    },
+    {
+      "key": "git.conflict.left",
+      "en": "{count} conflicts left, still marked in their files.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "git.conflict.allResolved",
+      "en": "All conflicts resolved.",
+      "vars": []
+    },
+    {
+      "key": "git.watch.conflicts",
+      "en": "Auto-pull: {count} conflicts marked in the files. Pull to resolve them.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "git.pull.kindClashes",
+      "en": "File/folder changed upstream, kept as is here: {files}",
+      "vars": [
+        "files"
+      ]
+    },
+    {
+      "key": "git.alert.corsProxyBlocked",
+      "en": "The app's security policy blocks {origin}. Use http://localhost:9999 or a proxy the deployment allows.",
+      "vars": [
+        "origin"
+      ]
+    },
+    {
+      "key": "git.commit.skipped",
+      "en": "Not committed (file/folder clash): {files}",
+      "vars": [
+        "files"
+      ]
+    },
+    {
+      "key": "git.commit.lfsKept",
+      "en": "Committed as the repository's Git LFS pointer, not as the file in the vault (LFS is not supported): {files}",
+      "vars": [
+        "files"
+      ]
+    },
+    {
+      "key": "git.commit.unsaved",
+      "en": "Not committed: these open notes have edits that could not be saved first (a change made outside Lumen is being resolved): {files}",
+      "vars": [
+        "files"
+      ]
     }
   ]
 }

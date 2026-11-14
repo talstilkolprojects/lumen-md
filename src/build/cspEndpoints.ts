@@ -27,6 +27,8 @@ export const ENDPOINT_ENV_VARS = [
   "VITE_MARKETPLACE_URL",
   "VITE_LANGUAGETOOL_URL",
   "VITE_SUPABASE_URL",
+  // Safe git (plan 3.3): the CORS proxy git requests go through.
+  "VITE_GIT_CORS_PROXY",
 ] as const;
 
 /**
