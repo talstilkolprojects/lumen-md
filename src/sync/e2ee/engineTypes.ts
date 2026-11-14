@@ -110,6 +110,23 @@ export class RevocationContestedError extends PreconditionFailedError {
 }
 
 /**
+ * This device is busy in another tab (review 34, K34-1 and K34-2): a round
+ * there holds the device lock, and a key change waited for it longer than
+ * `KEY_CHANGE_LOCK_WAIT_MS`, or a pairing code or answer was asked for
+ * meanwhile. Nothing was written. Try again in a moment; a round stuck on a
+ * storage request that never answers keeps the lock until its tab closes.
+ */
+export class DeviceBusyError extends Error {
+  constructor() {
+    super("This device is syncing in another tab right now (or that tab is stuck on the storage): try again in a moment, and if it keeps happening, reload or close the other tabs.");
+    this.name = "DeviceBusyError";
+  }
+}
+
+/** How long a key change waits for a round in another tab to let go of the device lock (K34-1). */
+export const KEY_CHANGE_LOCK_WAIT_MS = 8_000;
+
+/**
  * A re-key from a device that can't verify it has the latest keys would
  * leave `devices` out (fifth review 12.11, F3): it can't vouch for the device
  * list, so the new epoch would be wrapped for the passphrase and the devices

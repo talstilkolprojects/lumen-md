@@ -1321,6 +1321,7 @@
   "e2ee.pair.rekeying": "Cet appareil est en train de changer les clés du coffre. Créez le code d'appairage une fois le changement terminé.",
   "e2ee.revokedHere.reset": "La liste propre à cet appareil des appareils qu'il a retirés n'a pas pu être vérifiée ; elle a été mise de côté. Il vérifie désormais avec la liste scellée des appareils retirés du coffre. Vérifiez la liste des appareils sur un appareil de confiance.",
   "e2ee.rekey.contested": "Le retrait de {devices} n'a de nouveau pas abouti : à chaque fois, la liste des appareils du coffre a été réécrite au même moment par quelque chose qui a encore les clés du coffre et l'accès au stockage, très probablement l'appareil que vous retirez. Changez d'abord le mot de passe ou le jeton du stockage, pour que cet appareil ne puisse plus écrire, puis retirez-le à nouveau.",
+  "e2ee.busy": "Cet appareil se synchronise en ce moment dans un autre onglet, donc rien n'a été modifié. Réessayez dans un instant ; si cela se répète, rechargez ou fermez les autres onglets de Lumen.",
   "e2ee.sas.title": "Comparer les symboles",
   "e2ee.sas.prompt": "Ces cinq symboles, dans cet ordre, sont-ils identiques à ceux de l’autre appareil ?",
   "e2ee.sas.match": "Ils sont identiques",

@@ -27,28 +27,31 @@ import {
   rewriteKeyring,
   unwrapSecret,
 } from "./keyring";
-import { LOCK_BUSY, tryDeviceLock } from "./deviceLock";
+import { LOCK_BUSY, tryDeviceLock, withDeviceLock } from "./deviceLock";
 import { FREEZE_TTL_MS, FROZEN_PROTOCOL, manifestName, sealManifest, type FreshnessAnchor, type Manifest } from "./manifest";
 import { PAIRING_WINDOW_MAX_MS } from "./pairing";
 import { PreconditionFailedError, proveCas } from "./provider";
 import type { DeviceState, FreshnessSource } from "./state";
 import {
+  DeviceBusyError,
   DropDevicesRequiredError,
+  KEY_CHANGE_LOCK_WAIT_MS,
   KeyChangeInProgressError,
   PairingDuringKeyChangeError,
   PairingPendingError,
+  readmitted,
   REKEY_BLOCK_WINDOW_MS,
   RevocationContestedError,
-  UnverifiedDeviceError,
-  readmitted,
   sameAnchor,
   successor,
+  UnverifiedDeviceError,
   verifiedKdf,
   type RekeyRequest,
   type RekeyResult,
 } from "./engineTypes";
 import { E2eeSyncCore } from "./engineCore";
 
+/** @internal One of the engine's parts: use `E2eeSync`, never extend these (review 34). */
 export abstract class E2eeSyncKeys extends E2eeSyncCore {
   /**
    * Start a new key epoch (plan W1.7): re-key, revoke devices, enroll
@@ -70,7 +73,7 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
   rekey(opts: RekeyRequest = {}): Promise<RekeyResult> {
     // H3: under the device lock, from the state as stored (another tab of
     // this device may have changed it since this engine read it).
-    return this.exclusive(() => this.underDeviceLock(true, () => this.rekeyNow(opts)));
+    return this.exclusive(() => this.underDeviceLock(true, () => this.rekeyNow(opts), KEY_CHANGE_LOCK_WAIT_MS));
   }
 
   /**
@@ -78,6 +81,7 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
    * any tab (H3); `PairingDuringKeyChangeError` at once otherwise, as for a
    * key change in this engine (G3). The state is read again from the store
    * first, and keys another tab moved on to are taken up.
+   * @internal
    */
   protected async pairingUnderLock<T>(fn: (s: DeviceState) => Promise<T>): Promise<T> {
     const out = await tryDeviceLock(this.lockScope(), async () => {
@@ -90,7 +94,11 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
         this.lockHeld = false;
       }
     });
-    if (out === LOCK_BUSY) throw new PairingDuringKeyChangeError();
+    if (out === LOCK_BUSY) {
+      // K34-2 (review 34): changing keys, or only syncing in another tab?
+      const keys = await tryDeviceLock({ ...this.lockScope(), part: "keys" }, async () => true);
+      throw keys === LOCK_BUSY ? new PairingDuringKeyChangeError() : new DeviceBusyError();
+    }
     return out;
   }
 
@@ -104,6 +112,7 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
    * that started just now (t8). So does a refusal from an earlier epoch
    * (ninth review 12.11, H1): the key change that held this device back
    * has committed since, and the freeze now in the way is another one.
+   * @internal
    */
   protected async keyChangeBlockedSince(s: DeviceState, now: number): Promise<number> {
     const epoch = this.o.keys.epoch;
@@ -127,6 +136,7 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
    * `RevocationContestedError`: retrying can't win against a writer that
    * still holds the epoch's secret and the storage login, so the user is
    * told to take the storage login away first.
+   * @internal
    */
   protected async countContestedRevocation(s: DeviceState, previous: VaultKeys, revoke: string[]): Promise<void> {
     const epoch = previous.epoch;
@@ -158,6 +168,7 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
    * No key change while a pairing code or answer from this device is valid
    * (N3). `fromStore`: also the one another tab of this device saved since
    * this engine read the state (H3), which is then kept.
+   * @internal
    */
   protected async checkNoPairingPending(fromStore = false): Promise<void> {
     const s = await this.loadState();
@@ -181,17 +192,21 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
     if (until > 0 && this.o.now() < until) throw new PairingPendingError(until);
   }
 
+  /** @internal */
   protected async rekeyNow(opts: RekeyRequest): Promise<RekeyResult> {
     this.keyChanges++;
     try {
       // H3: also when a round re-applies a revocation (enforceRevocations,
       // reapplyRevocation): no other tab of this device makes a code meanwhile.
-      return await this.underDeviceLock(false, () => this.rekeyRunning(opts));
+      // K34-2: the "keys" lock beside the device's own tells a pairing code
+      // refused meanwhile, in any tab, that keys are changing (not a round).
+      return await this.underDeviceLock(false, () => withDeviceLock({ ...this.lockScope(), part: "keys" }, () => this.rekeyRunning(opts)));
     } finally {
       this.keyChanges--;
     }
   }
 
+  /** @internal */
   protected async rekeyRunning(opts: RekeyRequest): Promise<RekeyResult> {
     const s = await this.loadState();
     await this.refresh(false);
@@ -353,6 +368,7 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
    * and a holder of that epoch's secret made it), then throw a
    * `KeyringForkError` naming them: what was written in between may be
    * readable by them. Returns quietly when that isn't the case.
+   * @internal
    */
   protected async reapplyRevocation(fork: KeyringForkError): Promise<void> {
     const s = await this.loadState();
@@ -440,6 +456,7 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
    * commit fails from now on (RR-4). At epoch 0 there is no keyring to
    * rewrite: finish the re-key instead, for the passphrase alone (nobody
    * else is enrolled at epoch 0). False: the keyring changed meanwhile.
+   * @internal
    */
   protected async callOffFreeze(frozen: Manifest, digest: string): Promise<boolean> {
     const k = this.o.keys;
