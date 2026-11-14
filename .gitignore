@@ -99,3 +99,5 @@ public/excalidraw/
 
 # Reports written by the scheduled scripts (plan 0.11 / 14.3) — artifacts, never committed
 reports/
+# npm run ci:docker output (plan W4.27)
+ci-docker-out/

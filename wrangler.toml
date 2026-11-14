@@ -1,0 +1,9 @@
+# Cloudflare Pages: Lumen's second host (plan W4.27, docs self-hosting/second-host).
+# Used by `npm run pages:deploy` (Direct Upload from a machine that built dist/,
+# which uses none of Cloudflare's 500 builds a month) and, if the owner connects
+# the repository in the Cloudflare dashboard, by Cloudflare's own builds.
+# Security headers come from dist/_headers (public/_headers + build-time origins).
+# No Pages Functions: the app is static, unmatched routes fall back to index.html.
+name = "lumen-md"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-10-01"
