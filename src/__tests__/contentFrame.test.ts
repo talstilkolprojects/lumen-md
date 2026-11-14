@@ -12,7 +12,8 @@
  * src/lib/contentFrame.ts itself: contentFrameDom.test.ts.
  */
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 // @ts-expect-error — plain .mjs build script without types
 import { loadPolicy, renderCsp, renderMeta, parseCsp } from "../../scripts/headers.mjs";
@@ -24,6 +25,11 @@ const policy: Policy = loadPolicy(root);
 const directives = (route: string, host: string): Map<string, string[]> => parseCsp(renderCsp(policy, route, host));
 
 const WEB_HOSTS = ["cloudflare", "vercel", "deploy-nginx", "meta"];
+
+/** The inline scripts of an HTML page: [attributes, text]. */
+const inlineScripts = (html: string) => [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].map((m) => ({ attrs: m[1], text: m[2] }));
+/** A CSP hash-source of `text`, as a browser computes it (UTF-8, base64). */
+const sha256Source = (text: string) => `'sha256-${createHash("sha256").update(text, "utf8").digest("base64")}'`;
 
 describe("the app policy (plan W4.15 acceptance)", () => {
   it.each([...WEB_HOSTS, "tauri"])("%s: no https: in img-src or media-src", (host) => {
@@ -93,7 +99,9 @@ describe("the content frame's own policy", () => {
     expect(d.get("frame-ancestors")).toEqual(["'self'"]);
     expect(d.get("default-src")).toEqual(["'none'"]);
     expect(d.get("connect-src")).toEqual(["'none'"]);
-    expect(d.get("script-src")).toEqual(["'self'", "'nonce-lumen-livejs-runner'", "https://gist.github.com"]);
+    // Its one inline script by hash and the Gist host — no 'self', no nonce (W10.D1).
+    const html = read("public/content-frame.html");
+    expect(d.get("script-src")).toEqual([...inlineScripts(html).map((s) => sha256Source(s.text)), "https://gist.github.com"]);
     expect(d.get("img-src")).toContain("https:");
     expect(d.get("media-src")).toContain("https:");
   });
@@ -155,13 +163,33 @@ describe("the content frame's own policy", () => {
 
     const html = read("public/content-frame.html");
     expect(/<meta http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html)![1]).toBe(renderMeta(policy, "content-frame"));
-    // WebKit: the nonce, as on the runner pages; a classic script (a Gist needs document.write).
-    expect(html).toMatch(/<script src="\/content-frame\.js" nonce="lumen-livejs-runner"><\/script>/);
+    // One classic inline script (a Gist needs document.write), with no src and no nonce.
+    const scripts = inlineScripts(html);
+    expect(scripts).toHaveLength(1);
+    expect(scripts[0].attrs).toBe("");
+  });
+
+  it("allows its script by the script's own sha256 on every host and in the meta copy, and by no nonce (W10.D1)", () => {
+    const [script] = inlineScripts(read("public/content-frame.html"));
+    const hash = sha256Source(script.text);
+    for (const host of ["cloudflare", "vercel", "netlify", "deploy-nginx", "content-frame-site", "meta"]) {
+      const src = directives("content-frame", host).get("script-src")!;
+      expect(src, host).toContain(hash);
+      expect(src.filter((s) => s.startsWith("'nonce-")), host).toEqual([]);
+      // Nothing else of this origin: the hash is the only script of ours that runs.
+      expect(src, host).not.toContain("'self'");
+      expect(src.filter((s) => s.startsWith("'sha")), host).toEqual([hash]);
+    }
+    // A changed script no longer matches: the hash is of the text, byte for byte.
+    expect(sha256Source(script.text + " ")).not.toBe(hash);
+    // The frame site serves the page only; the script is not a file of its own any more.
+    expect(existsSync(join(root, "public/content-frame.js"))).toBe(false);
+    expect(read("scripts/content-frame-site.mjs")).not.toMatch(/content-frame\.js/);
   });
 
   it("its script builds elements, never HTML, and writes a Gist only in an opaque-origin frame", () => {
     // The code, without its comments (they describe document.write too).
-    const js = read("public/content-frame.js").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    const js = inlineScripts(read("public/content-frame.html"))[0].text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
     expect(js).not.toMatch(/innerHTML|outerHTML|insertAdjacentHTML|srcdoc|\beval\(|new Function/);
     // The one document.write is the Gist script, behind the opaque-origin check.
     expect(js.match(/document\.write\(/g)).toHaveLength(1);

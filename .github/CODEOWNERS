@@ -148,7 +148,6 @@
 /src/plugins/r/                          @talstilkol
 /src/theme/cssSanitizer.ts               @talstilkol
 #   Frame sandboxes
-/public/content-frame.js                 @talstilkol
 /src/agents/python/sandbox.ts            @talstilkol
 /src/lib/contentFrame.ts                 @talstilkol
 /src/plugins/EmbedBlock.tsx              @talstilkol
