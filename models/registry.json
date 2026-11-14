@@ -1374,6 +1374,37 @@
       "catalog": "whisper_cli (src-tauri/src/lib.rs), found via LUMEN_WHISPER_CLI, <app data>/whisper/ or PATH",
       "verified": false,
       "notes": "Runtime for desktop Whisper (plan W1.17). Lumen does not bundle the binary: the user installs it (e.g. Homebrew `whisper-cpp`, which provides `whisper-cli`) and Lumen runs it as a separate process. Licence read from the project's LICENSE file, not re-checked here."
+    },
+    {
+      "id": "gkour/israeli_law",
+      "kind": "other",
+      "source": "https://huggingface.co/datasets/gkour/israeli_law",
+      "license": "CC-BY-SA-4.0",
+      "class": "conditional",
+      "commercial": "conditional",
+      "attribution": "ספר החוקים הפתוח — ויקיטקסט העברי (he.wikisource.org), CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/); dataset gkour/israeli_law on Hugging Face. Not an official source.",
+      "size": "5,942 pages, ~25M tokens (dataset card, research R2 §1.10); the download size is set at the pin",
+      "runs": "browser",
+      "delivery": "download",
+      "unmodified": true,
+      "catalog": "OPEN_LAW_DATASET (src/sources/openlaw/book.ts)",
+      "verified": false,
+      "notes": "Plan W11.H16: an offline source for W7.5. Each law or section the user keeps is saved unmodified as a note tagged rights: cc-by-sa with Wikisource's credit and a link. Licence from the dataset card (verified: false until the card is re-read at the pinned revision); OPEN_LAW_REVISION stays null, so nothing downloads, until it is pinned."
+    },
+    {
+      "id": "LevMuchnik/SupremeCourtOfIsrael",
+      "kind": "other",
+      "source": "https://huggingface.co/datasets/LevMuchnik/SupremeCourtOfIsrael",
+      "license": "not stated (the card names OpenRAIL without its terms)",
+      "class": "unknown",
+      "commercial": "unknown",
+      "attribution": "",
+      "size": "751k documents (2022 snapshot)",
+      "runs": "browser",
+      "delivery": "none",
+      "verified": false,
+      "catalog": "VERDICTS_DATASET (src/sources/openlaw/book.ts)",
+      "notes": "Plan W11.H16: Supreme Court rulings are link only (verdictLink: a title and a link to the court's site, never the text) until the dataset's licence is clear. Nothing is downloaded."
     }
   ]
 }
