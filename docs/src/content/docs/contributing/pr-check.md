@@ -39,6 +39,13 @@ with 1 when a check fails. Warnings do not fail it.
   lockfile has an allowed licence (no copyleft, no non-commercial, not
   missing).
 - **Domain.** No added line names the project's domain.
+- **Human review (plan W4.28).** A change to a sensitive path — every path
+  in `.github/CODEOWNERS`: cryptography, vault writes, the privacy ledger,
+  CSP and security policy, native permissions — needs the `human-reviewed`
+  label, added by a person after the last commit. With `--pr <n>` the label
+  and its time are read from GitHub (`gh api`) and the check fails without
+  them; without `--pr` it only warns. Tal runs it with `--pr` before every
+  merge. See [Second maintainer](/contributing/second-maintainer/).
 
 It also warns:
 - when source changed and no test did;
@@ -53,4 +60,6 @@ It also warns:
 | `--base-sizes <file>`, `--head-sizes <file>` | Sizes already measured |
 | `--build-base` | Build the base to measure it |
 | `--no-size` | Skip the size check |
+| `--pr <n>` | The pull request number: read its labels, label events and reviews (human-review rule) |
+| `--repo <owner/name>` | The repository, when the `origin` remote does not name it |
 | `--out <file>` | Write the report |
