@@ -119,7 +119,9 @@ export function migrate(plan, { all = false } = {}) {
     ...p,
     tasks: p.tasks.map((t) => {
       if (!t.status) return t;
-      const verified = !all && t.verified ? t.verified : classify(t.status);
+      // W10.G7: a status over 200 characters was cut and its full text moved to `notes`;
+      // the level is read from that full text, so shortening a status never changes it.
+      const verified = !all && t.verified ? t.verified : classify(t.notes ?? t.status);
       const pr = prOf(t.status);
       const next = withVerified(t, verified, pr);
       if (JSON.stringify(next) !== JSON.stringify(t)) changed.push(t.id);

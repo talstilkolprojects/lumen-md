@@ -23,6 +23,9 @@ import {
   withVerified,
   VERIFIED_LEVELS,
   VERIFIED_LABEL,
+  checkDoneLevel,
+  checkStatusLength,
+  STATUS_MAX,
   // @ts-expect-error — plain .mjs script without type declarations
 } from "../../scripts/plan/build.mjs";
 // @ts-expect-error — plain .mjs script without type declarations
@@ -40,7 +43,7 @@ function copy(name: string): string {
   for (const f of ["plan/plan.json", "plan/board.html", "MASTER_PLAN.md"]) cpSync(join(ROOT, f), join(dir, f));
   return dir;
 }
-type Task = { id: string; status?: string; verified?: string; pr?: number; priority: string; dep?: string[] };
+type Task = { id: string; status?: string; verified?: string; pr?: number; priority: string; dep?: string[]; notes?: string };
 const tasks = (p: { phases: { tasks: Task[] }[] }) => p.phases.flatMap((ph) => ph.tasks);
 
 describe("plan build", () => {
@@ -153,9 +156,13 @@ describe("plan build", () => {
   it("non-P0 work backfills a lane that waits on P0 work elsewhere", () => {
     const M = buildModel(plan());
     const release = M.BYID.get("13.5");
-    const lane = M.agent.filter((t: { lane: string; done?: boolean }) => t.lane === release.lane && !t.done);
-    const before = lane.filter((t: { eff: string; end: number }) => t.eff !== "P0" && t.end <= release.start);
-    expect(before.length).toBeGreaterThan(0);
+    // Wave 10 fills the release's own lane (D) with P0 work up to the release, so it has no
+    // idle gap to backfill; the lanes that wait on that P0 work elsewhere must use theirs.
+    const others = M.agent.filter((t: { lane: string; done?: boolean }) => t.lane !== release.lane && !t.done);
+    for (const lane of new Set(others.map((t: { lane: string }) => t.lane))) {
+      const before = others.filter((t: { lane: string; eff: string; end: number }) => t.lane === lane && t.eff !== "P0" && t.end <= release.start);
+      expect(before.length, String(lane)).toBeGreaterThan(0);
+    }
   });
 
   it("P0 spreads to what P0 work waits on, and the release waits on every P0 item", () => {
@@ -276,5 +283,76 @@ describe("verification level (W4.24)", () => {
     t.verified = "real";
     expect(migrate(p).changed).toEqual([]);
     expect(migrate(p, { all: true }).changed).toEqual([t.id]);
+  });
+
+  it("a shortened status keeps its level: the migration reads the full text in notes (W10.G7)", () => {
+    const one = { id: "9.9", status: "⏳ #5 קצר…", notes: "⏳ #5 (ארוך; vitest ב-Chromium 12/12)" };
+    expect(classify(one.status)).toBe("built");
+    const p = { phases: [{ tasks: [one] }] };
+    expect(migrate(p, { all: true }).plan.phases[0].tasks[0].verified).toBe("browser");
+  });
+});
+
+describe("honest statuses (W10.G7, W10.G8, W10.G12)", () => {
+  const one = (t: Record<string, unknown>) => ({ phases: [{ title: "x", tasks: [{ id: "9.9", title: "t", lane: "D", minutes: 10, priority: "P1", steps: [], acceptance: [], ...t }] }] });
+
+  it("✅ needs a browser or real check: built, node and owner are refused (W10.G8)", () => {
+    for (const verified of ["built", "node", "owner", undefined]) {
+      expect(checkDoneLevel(one({ status: "✅ #1", verified }))[0], String(verified)).toMatch(/9\.9: marked ✅ but verified .* needs browser or real/);
+    }
+    expect(checkDoneLevel(one({ status: "✅* #1", verified: "owner" }))[0]).toMatch(/marked ✅\*/);
+    expect(checkDoneLevel(one({ status: "✅ #1", verified: "browser" }))).toEqual([]);
+    expect(checkDoneLevel(one({ status: "✅ #1", verified: "real" }))).toEqual([]);
+    expect(checkDoneLevel(one({ status: "⏳ #1", verified: "built" }))).toEqual([]);
+    expect(checkDoneLevel(plan())).toEqual([]);
+  });
+
+  it("a status is at most 200 characters; the detail goes in notes (W10.G7)", () => {
+    expect(STATUS_MAX).toBe(200);
+    expect(checkStatusLength(one({ status: "⏳ " + "א".repeat(198) }))).toEqual([]);
+    expect(checkStatusLength(one({ status: "⏳ " + "א".repeat(199) }))[0]).toMatch(/9\.9: status is 201 characters, over 200/);
+    expect(checkStatusLength(one({ status: "⏳", notes: " " }))[0]).toMatch(/notes must be a non-empty string/);
+    expect(checkStatusLength(plan())).toEqual([]);
+  });
+
+  it("plan:check fails on a long status or a ✅ below browser in the checked-in files", () => {
+    const dir = copy("honest");
+    const p = plan();
+    const t = tasks(p).find((x) => x.id === "0.6")! as Task & { verified?: string };
+    t.verified = "node";
+    writeFileSync(join(dir, "plan/plan.json"), JSON.stringify(p, null, 1) + "\n");
+    expect(() => run({ root: dir, check: true })).toThrow(/0\.6: marked ✅ but verified "node"/);
+    t.verified = "browser";
+    t.status = "⏳ " + "ב".repeat(STATUS_MAX);
+    writeFileSync(join(dir, "plan/plan.json"), JSON.stringify(p, null, 1) + "\n");
+    expect(() => run({ root: dir, check: true })).toThrow(/0\.6: status is \d+ characters/);
+  });
+
+  it("notes are shown under the task on the board and the page, never as \"undefined\"", () => {
+    const p = plan();
+    const t = tasks(p).find((x) => x.notes) as (Task & { notes?: string }) | undefined;
+    expect(t, "some task keeps its long status in notes").toBeDefined();
+    const M = buildModel(p);
+    const board = renderBoard(M);
+    const html = renderHtml(M);
+    expect(board).toContain(`**פירוט הסטטוס:** ${t!.notes}`);
+    expect(html).toContain("פירוט הסטטוס:");
+    // a task without a branch and a phase without a goal used to print the word "undefined"
+    expect(board).not.toContain("undefined");
+    expect(html).not.toContain("undefined");
+  });
+
+  it("wave 10 is in the plan, every task once, with a status and a known lane (W10.G12)", () => {
+    const p = plan();
+    const w10 = p.phases.find((ph: { title: string }) => ph.title === "גל 10 — השלמה כנה לפי ביקורת הקוד");
+    expect(w10).toBeDefined();
+    expect(w10.tasks).toHaveLength(241);
+    const ids = tasks(p).map((x) => x.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const x of w10.tasks) {
+      expect(x.id, x.id).toMatch(/^W10\.[A-Z]\d+$/);
+      expect(x.status, x.id).toBeTruthy();
+      expect(Object.keys(p.lanes), x.id).toContain(x.lane);
+    }
   });
 });
