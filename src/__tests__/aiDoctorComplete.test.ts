@@ -50,6 +50,23 @@ describe("AI doctor on an empty machine (plan 7.4)", () => {
     for (const f of report.findings) if (f.fix) expect(f.fix.command || f.fix.action || f.fix.url || f.fix.label, f.id).toBeTruthy();
   });
 
+  it("still reports when a browser check never settles: that row says it timed out (W4.2)", async () => {
+    const sw = navigator.serviceWorker as ServiceWorkerContainer | undefined;
+    const hadSw = !!sw;
+    const fake = { getRegistration: () => new Promise<undefined>(() => {}) };
+    Object.defineProperty(navigator, "serviceWorker", { value: fake, configurable: true });
+    try {
+      const { runDoctor } = await import("../agents/doctor");
+      const report = await runDoctor({ timeoutMs: 200, localTimeoutMs: 30, engines: EMPTY });
+      expect(report.findings.find((f) => f.id === "sw")).toMatchObject({ status: "skip", detail: "timed out after 30 ms" });
+      // Everything after it still ran.
+      for (const id of ["csp.local", "grammar", "engines.spellEn", "executor"]) expect(report.findings.map((f) => f.id), id).toContain(id);
+    } finally {
+      if (hadSw) Object.defineProperty(navigator, "serviceWorker", { value: sw, configurable: true });
+      else delete (navigator as unknown as { serviceWorker?: unknown }).serviceWorker;
+    }
+  });
+
   it("offers the local services in one click under local-only", async () => {
     const { runDoctor, LOCAL_SERVICES } = await import("../agents/doctor");
     const report = await runDoctor({ timeoutMs: 200, engines: EMPTY });
@@ -145,6 +162,13 @@ describe("stage-6 engines", () => {
     const { engineFindings } = await import("../agents/doctorEngines");
     const f = await engineFindings({ ...EMPTY, englishSpell: async () => { throw new Error("chunk failed"); } });
     expect(f.find((x) => x.id === "engines.spellEn")).toMatchObject({ status: "fail", detail: "chunk failed", fix: { action: "retry" } });
+  });
+
+  it("a probe that never settles becomes its own timed-out row; the others still report (W4.2)", async () => {
+    const { engineFindings } = await import("../agents/doctorEngines");
+    const f = await engineFindings({ ...EMPTY, englishSpell: () => new Promise<boolean>(() => {}) }, { timeoutMs: 30 });
+    expect(f.find((x) => x.id === "engines.spellEn")).toMatchObject({ status: "fail", detail: "timed out after 30 ms", fix: { action: "retry" } });
+    for (const id of ["engines.host", "engines.translate", "engines.spellHe", "engines.nikud", "engines.caption"]) expect(f.map((x) => x.id), id).toContain(id);
   });
 
   it("the real English check flags a known misspelling on the main thread", async () => {

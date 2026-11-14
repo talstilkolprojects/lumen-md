@@ -516,6 +516,10 @@ export function CanvasExcalidraw({ open, onClose, collab = null }: Props) {
             theme={isDark(theme) ? "dark" : "light"}
             langCode={excalidrawLangOf(locale)}
             aiEnabled={false}
+            // Focus the canvas when it opens: Excalidraw takes its shortcuts
+            // (T for text, R for rectangle…) only while focus is inside it, and
+            // opening from the palette left focus outside (e2e canvas-excalidraw).
+            autoFocus
             excalidrawAPI={(a: unknown) => {
               apiRef.current = a as CanvasApi;
               setApi(a as CanvasApi);

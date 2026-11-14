@@ -10,18 +10,7 @@
   flex-direction: column;
   overflow: hidden;
 }
-.sidebar-resizer {
-  width: 4px;
-  cursor: col-resize;
-  background: transparent;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 5;
-}
-.sidebar-resizer:hover,
-.sidebar-resizer.dragging {
-  background: hsl(var(--accent) / 0.4);
-}
+/* .sidebar-resizer lives in index.css (6 px, with its focus ring, plan 10.1.2). */
 .file-tree-header {
   display: flex;
   align-items: center;

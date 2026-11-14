@@ -19,7 +19,14 @@
  *
  * The gates run in that order; after the build, a failing gate no longer
  * stops the later ones, and the run exits at the end (exit code
- * 1), with one line per gate and its time. The e2e gate
+ * 1), with one line per gate and its time. A preview that runs past
+ * GATE_BUDGET_MIN (38) minutes fails too, so it never meets Vercel's
+ * 45-minute stop (W6.8); every gate's time goes into a receipt,
+ * reports/vercel-build.json, also served as /__build/receipt.json.
+ *
+ * Vitest runs with one worker per CPU the build may use (the cgroup quota,
+ * not the host's core count) and without the suites that run only nightly
+ * (scripts/test-tiers.mjs). LUMEN_VITEST_SHARD=i/n runs one shard (probes). The e2e gate
  * (scripts/e2e-gate.mjs) runs Playwright on chromium against `vite preview`
  * of this build: the specs that fit (the smoke spec today), time-boxed so
  * the build ends inside Vercel's 45 minutes.
@@ -27,9 +34,11 @@
  * Usage: node scripts/vercel-build.mjs [--production | --preview | --e2e-only] [--dry-run]
  */
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { availableParallelism } from "node:os";
 import { fileURLToPath } from "node:url";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { E2E_COLLAB_WS, GATE_BUDGET_MIN, VITEST_NIGHTLY_ONLY } from "./test-tiers.mjs";
 
 /** Every gate: its name and the npm script that runs it. */
 export const GATES = {
@@ -65,6 +74,62 @@ export const GATE_EXTRA = {
   vitest: ["--", "--reporter=default", "--reporter=json", `--outputFile.json=${VITEST_REPORT}`],
   budget: ["--", "--json", SIZES_REPORT],
 };
+
+/**
+ * CPUs from a cgroup v2 `cpu.max` ("<quota> <period>", or "max <period>"):
+ * the quota rounded up, or null when there is none. A container reports the
+ * host's cores to os.availableParallelism(), so a 2-CPU build box looked
+ * like a big one and vitest started a fork per host core (W6.8: 1019 s, of
+ * which 493 s was jsdom set-up).
+ */
+export function quotaFromCpuMax(text) {
+  const [quota, period] = String(text ?? "").trim().split(/\s+/);
+  const q = Number(quota);
+  const p = Number(period);
+  if (!Number.isFinite(q) || !Number.isFinite(p) || q <= 0 || p <= 0) return null;
+  return Math.max(1, Math.ceil(q / p));
+}
+
+/** CPUs this process may use: the cgroup quota when one is set, else the OS's count. */
+export function usableCpus(read = (f) => readFileSync(f, "utf8"), osCount = availableParallelism()) {
+  const tries = [
+    () => quotaFromCpuMax(read("/sys/fs/cgroup/cpu.max")),
+    () => quotaFromCpuMax(`${read("/sys/fs/cgroup/cpu/cpu.cfs_quota_us")} ${read("/sys/fs/cgroup/cpu/cpu.cfs_period_us")}`),
+  ];
+  for (const t of tries) {
+    try {
+      const n = t();
+      if (n) return { cpus: Math.min(n, osCount), os: osCount, quota: n };
+    } catch {
+      /* why: no such cgroup file on this system: try the next, then the OS's count */
+    }
+  }
+  return { cpus: osCount, os: osCount, quota: null };
+}
+
+/** The vitest gate's arguments on top of GATE_EXTRA: workers, the nightly-only suites left out, a shard. */
+export function vitestArgs(env = process.env, cpus = usableCpus().cpus) {
+  const args = [`--maxWorkers=${Math.max(1, cpus)}`, ...VITEST_NIGHTLY_ONLY.map((f) => `--exclude=${f}`)];
+  if (/^\d+\/\d+$/.test(env.LUMEN_VITEST_SHARD ?? "")) args.push(`--shard=${env.LUMEN_VITEST_SHARD}`);
+  return args;
+}
+
+/** The `n` slowest files of a vitest JSON report: [{ file, seconds }], slowest first. */
+export function slowestFiles(report, n = 25) {
+  if (!report || !Array.isArray(report.testResults)) return [];
+  const rel = (f) => String(f).replace(/^.*?(?=src\/|scripts\/|packages\/)/, "");
+  return report.testResults
+    .filter((f) => Number.isFinite(f.startTime) && Number.isFinite(f.endTime))
+    .map((f) => ({ file: rel(f.name), seconds: Math.round((f.endTime - f.startTime) / 100) / 10 }))
+    .sort((a, b) => b.seconds - a.seconds)
+    .slice(0, n);
+}
+
+/** Minutes since the build started past the budget: a failure line, or null. */
+export function budgetVerdict(startedMs, nowMs = Date.now(), budgetMin = GATE_BUDGET_MIN) {
+  const min = (nowMs - startedMs) / 60_000;
+  return min > budgetMin ? `the build took ${min.toFixed(1)} min, over the ${budgetMin}-minute budget (Vercel stops at 45)` : null;
+}
 
 /**
  * The end-of-log summary of a vitest JSON report (its jest-style shape):
@@ -129,21 +194,32 @@ function main() {
   process.env.LUMEN_BUILD_STARTED ??= String(Date.now());
   // A build the e2e gate tests carries window.__lumenTest (src/testing/e2eHooks.ts),
   // through which specs reach the app's modules; production builds never do.
-  if (gates.includes("e2e")) process.env.VITE_E2E ??= "1";
+  if (gates.includes("e2e")) {
+    process.env.VITE_E2E ??= "1";
+    // e2e/collab-persist.spec.ts starts a collab server on loopback
+    // (E2E_COLLAB_WS, scripts/test-tiers.mjs): this e2e build's page may reach
+    // it; a production build never runs this branch.
+    process.env.VITE_CSP_CONNECT_EXTRA = [process.env.VITE_CSP_CONNECT_EXTRA, E2E_COLLAB_WS].filter(Boolean).join(" ");
+  }
+  const cpu = usableCpus();
+  console.log(`vercel-build: ${cpu.cpus} CPU(s) to use (os ${cpu.os}, cgroup quota ${cpu.quota ?? "none"})`);
+  const receipt = { sha: process.env.VERCEL_GIT_COMMIT_SHA ?? null, ref: process.env.VERCEL_GIT_COMMIT_REF ?? null, env: where, cpus: cpu, budgetMin: GATE_BUDGET_MIN, gates: [], slowestVitestFiles: [] };
+  const buildStarted = Number(process.env.LUMEN_BUILD_STARTED);
   for (const gate of gates) {
     const started = Date.now();
     console.log(`\n▶ ${gate}`);
-    const r = spawnSync(npm, [...GATES[gate], ...(GATE_EXTRA[gate] ?? [])], { stdio: "inherit", env: process.env });
+    const extra = gate === "vitest" ? [...GATE_EXTRA.vitest, ...vitestArgs(process.env, cpu.cpus)] : (GATE_EXTRA[gate] ?? []);
+    const r = spawnSync(npm, [...GATES[gate], ...extra], { stdio: "inherit", env: process.env });
     const secs = ((Date.now() - started) / 1000).toFixed(1);
+    receipt.gates.push({ gate, seconds: Number(secs), ok: r.status === 0 });
+    if (gate === "vitest") {
+      const slow = slowestFiles(readJson(VITEST_REPORT));
+      receipt.slowestVitestFiles = slow;
+      if (slow.length) console.log(`\nvitest: the slowest files (move one to VITEST_NIGHTLY_ONLY only if it is not a correctness test of the vault, sync or encryption):\n${slow.map((f) => `  ${String(f.seconds).padStart(6)} s  ${f.file}`).join("\n")}`);
+    }
     if (r.status !== 0) {
       if (gate === "vitest") {
-        let report = null;
-        try {
-          report = JSON.parse(readFileSync(VITEST_REPORT, "utf8"));
-        } catch {
-          /* no report: vitest did not get that far */
-        }
-        const lines = vitestSummary(report);
+        const lines = vitestSummary(readJson(VITEST_REPORT));
         if (lines) console.error(`\n${lines.join("\n")}`);
       }
       console.error(`\n✗ vercel-build: the ${gate} gate failed (${secs} s, exit ${r.status ?? r.signal}).`);
@@ -153,11 +229,39 @@ function main() {
     }
     done.push(`${gate} ${secs} s`);
   }
+  const over = gates.length > 1 && Number.isFinite(buildStarted) ? budgetVerdict(buildStarted) : null;
+  if (over) {
+    console.error(`\n✗ vercel-build: ${over}.`);
+    failedGates.push("time budget");
+  }
+  receipt.totalMinutes = Number.isFinite(buildStarted) ? Math.round((Date.now() - buildStarted) / 6000) / 10 : null;
+  writeReceipt(receipt, where);
   if (failedGates.length) {
     console.error(`\n✗ vercel-build: failed: ${failedGates.join(" · ")}. Passed: ${done.join(" · ") || "none"}.`);
     process.exit(1);
   }
   console.log(`\n✓ vercel-build: ${done.join(" · ")}`);
+}
+
+function readJson(file) {
+  try {
+    return JSON.parse(readFileSync(file, "utf8"));
+  } catch {
+    return null; /* why: no report: the step did not get that far */
+  }
+}
+
+/** reports/vercel-build.json, and on a preview dist/__build/receipt.json too (read back from the deployment). */
+function writeReceipt(receipt, where) {
+  const files = ["reports/vercel-build.json", ...(where === "VERCEL_ENV=production" ? [] : ["dist/__build/receipt.json"])];
+  for (const f of files) {
+    try {
+      mkdirSync(dirname(f), { recursive: true });
+      writeFileSync(f, JSON.stringify(receipt, null, 2) + "\n");
+    } catch (e) {
+      console.error(`vercel-build: could not write ${f}: ${e instanceof Error ? e.message : e}`);
+    }
+  }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

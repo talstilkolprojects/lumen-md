@@ -12,18 +12,19 @@
  * 2023 has 2.34) and libraries AL2023 does not package (libwpe,
  * wpebackend-fdo). Safari coverage is owed to a Mac (plan W4.22).
  *
- * What runs: LUMEN_E2E_SPECS (space-separated). The default is the smoke
- * spec (9 tests in about 40 s) and, since W6.30, the Hebrew accessibility
+ * What runs: LUMEN_E2E_SPECS (space-separated), by default the curated fast
+ * set E2E_FAST of scripts/test-tiers.mjs (about 50 tests, about 5 min),
+ * which keeps the smoke spec and, since W6.30, the Hebrew accessibility
  * pair: axe on the key Hebrew flows, light and dark (a11y-hebrew-gate), and
- * the Hebrew aria snapshots (aria-hebrew, W4.21). The whole chromium project does not fit: on the
- * build machine (2 CPUs, 2 workers) it took 29.7 min for 327 tests
- * (verify/e2e-probe run 4: 291 passed, 32 failed, 4 skipped), and vitest
- * already takes about 12 of the 45 minutes. A spec joins the default list
- * once it passes there.
+ * the Hebrew aria snapshots (aria-hebrew, W4.21). The whole chromium project
+ * does not fit: on the build machine (2 CPUs, 2 workers) it took 29.7 min
+ * for 327 tests (verify/e2e-probe run 4: 291 passed, 32 failed, 4 skipped).
+ * Every spec runs nightly instead, in shards on three browsers
+ * (scripts/nightly/plan.mjs); a spec joins the fast set once it passes there.
  *
- * The run is time-boxed (LUMEN_E2E_MINUTES, default 8, and never past minute
- * 38 of the build). A box that runs out fails the gate: it means the specs
- * no longer fit, not that they passed.
+ * The run is time-boxed (LUMEN_E2E_MINUTES, default 10, and never past
+ * minute GATE_BUDGET_MIN = 38 of the build). A box that runs out fails the
+ * gate: it means the specs no longer fit, not that they passed.
  *
  * Specs that drive the app's modules from inside the page load them through
  * window.__lumenTest (e2e/_lumen.ts), which a build has only when made with
@@ -35,15 +36,15 @@ import { spawn, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { E2E_FAST, E2E_FIREFOX_FAST, GATE_BUDGET_MIN } from "./test-tiers.mjs";
 
 const PORT = 4173;
 const BASE = `http://127.0.0.1:${PORT}`;
-export const E2E_MINUTES = Number(process.env.LUMEN_E2E_MINUTES ?? 8);
-const list = (v, fallback) => (v ?? fallback).split(/\s+/).filter(Boolean);
-export const DEFAULT_E2E_SPECS = "e2e/smoke.spec.ts e2e/a11y-hebrew-gate.spec.ts e2e/aria-hebrew.spec.ts";
-export const E2E_SPECS = list(process.env.LUMEN_E2E_SPECS, DEFAULT_E2E_SPECS);
+export const E2E_MINUTES = Number(process.env.LUMEN_E2E_MINUTES ?? 10);
+const list = (v, fallback) => (v ?? fallback.join(" ")).split(/\s+/).filter(Boolean);
+export const E2E_SPECS = list(process.env.LUMEN_E2E_SPECS, E2E_FAST);
 /** Firefox runs too (LUMEN_E2E_FIREFOX_SPECS, default the smoke spec; empty turns it off). */
-export const FIREFOX_SPECS = list(process.env.LUMEN_E2E_FIREFOX_SPECS, "e2e/smoke.spec.ts");
+export const FIREFOX_SPECS = list(process.env.LUMEN_E2E_FIREFOX_SPECS, E2E_FIREFOX_FAST);
 /** What the gate runs, in order: each project with its specs. */
 export function e2eRuns(chromium = E2E_SPECS, firefox = FIREFOX_SPECS) {
   return [
@@ -53,12 +54,12 @@ export function e2eRuns(chromium = E2E_SPECS, firefox = FIREFOX_SPECS) {
 }
 /**
  * Vercel stops a build at 45 minutes. scripts/vercel-build.mjs sets
- * LUMEN_BUILD_STARTED; the box ends by minute 38 of the build, so the gates
- * after this one still get their 7 minutes.
+ * LUMEN_BUILD_STARTED; the box ends by minute GATE_BUDGET_MIN (38) of the
+ * build, so the gates after this one still get their 7 minutes.
  */
 export function boxMinutes(env = process.env, now = Date.now()) {
   const started = Number(env.LUMEN_BUILD_STARTED);
-  const left = Number.isFinite(started) && started > 0 ? 38 - (now - started) / 60_000 : Infinity;
+  const left = Number.isFinite(started) && started > 0 ? GATE_BUDGET_MIN - (now - started) / 60_000 : Infinity;
   return Math.max(0, Math.floor(Math.min(E2E_MINUTES, left)));
 }
 
