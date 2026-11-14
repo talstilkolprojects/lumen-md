@@ -1,7 +1,7 @@
 /** 0.14 — `npm run ci:local` runs what CI runs; --changed narrows it to what the diff can break. */
 import { describe, it, expect } from "vitest";
 // @ts-expect-error — plain .mjs helper without types
-import { planSteps, e2eSpecs, i18nDrift, summary, coverageGate, hookPlan, buildState, argErrors, isAppCode, isOcrInput, COVERAGE_MIN, HOOK_MARK, STEP_IDS, dynamicImportTargets } from "../../scripts/lib/ciLocal.mjs";
+import { planSteps, e2eSpecs, i18nDrift, summary, coverageGate, hookPlan, buildState, argErrors, isAppCode, isOcrInput, COVERAGE_MIN, HOOK_MARK, STEP_IDS, dynamicImportTargets, prCheckBase } from "../../scripts/lib/ciLocal.mjs";
 
 type Step = { id: string; cmd: string[]; skipReason?: string; coverageMin?: number };
 const pkg = { scripts: { hygiene: "x", budget: "x", licenses: "x" } };
@@ -10,9 +10,30 @@ const plan = (changed: string[] | null, flags: Record<string, unknown> = {}) => 
 const byId = (steps: Step[]) => Object.fromEntries(steps.map((s) => [s.id, s]));
 
 describe("ci:local steps", () => {
+  it("W10.D4: pr:check runs on every run, full or --changed, against the PR base with the body when given", () => {
+    const withGate = { scripts: { ...pkg.scripts, "pr:check": "node scripts/pr-check.mjs" } };
+    const steps = (changed: string[] | null, flags: Record<string, unknown> = {}) => byId(planSteps({ pkg: withGate, exists, changed, flags }) as Step[]);
+    for (const changed of [null, ["src/lib/x.ts"], ["docs/only.md"]]) {
+      const p = steps(changed, { base: "origin/verify/train-5" })["pr-check"];
+      expect(p.skipReason, String(changed)).toBeUndefined();
+      expect(p.cmd).toEqual(["node", "scripts/pr-check.mjs", "--base", "origin/verify/train-5", "--no-size"]);
+    }
+    expect(steps(null, { body: "pr-body.md" })["pr-check"].cmd).toEqual(["node", "scripts/pr-check.mjs", "--base", "origin/main", "--no-size", "--body", "pr-body.md"]);
+    // A branch without the script says so; --skip / --only apply as to every step.
+    expect(byId(plan(null))["pr-check"].skipReason).toMatch(/not here/);
+    expect(steps(null, { skip: ["pr-check"] })["pr-check"].skipReason).toMatch(/--skip/);
+    expect(steps(null, { only: ["pr-check"] })["pr-check"].skipReason).toBeUndefined();
+    expect(argErrors(["--only", "pr-check", "--body", "pr-body.md"])).toEqual([]);
+    expect(argErrors(["--body"])).toEqual(["--body needs a value"]);
+    // Its base: --base, else the highest train, else main — never the branch's own upstream.
+    expect(prCheckBase("origin/feat/x", ["origin/verify/train-5"])).toBe("origin/feat/x");
+    expect(prCheckBase(undefined, ["origin/verify/train", "origin/verify/train-10", "origin/verify/train-9", "origin/verify/other", ""])).toBe("origin/verify/train-10");
+    expect(prCheckBase(undefined, [])).toBe("origin/main");
+  });
+
   it("a full run has every CI step; tools this branch lacks are 'not here', not failures", () => {
     const s = byId(plan(null));
-    expect(Object.keys(s)).toEqual(["typecheck", "hygiene", "lint", "i18n", "licenses", "headers", "gitleaks", "semgrep", "cargo-audit", "test", "build", "budget", "ocr", "e2e"]);
+    expect(Object.keys(s)).toEqual(["typecheck", "hygiene", "lint", "i18n", "licenses", "headers", "pr-check", "gitleaks", "semgrep", "cargo-audit", "test", "build", "budget", "ocr", "e2e"]);
     for (const id of ["typecheck", "hygiene", "i18n", "licenses", "test", "build", "budget", "ocr", "e2e"]) expect(s[id].skipReason, id).toBeUndefined();
     expect(s.lint.skipReason).toMatch(/not here/);
     expect(s.headers.skipReason).toMatch(/not here/);

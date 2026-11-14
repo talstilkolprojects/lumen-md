@@ -46,6 +46,12 @@ The agent needs `gh` with a read token for `pr-check`, and `gitleaks`,
 `scorecard` and `syft` for the nightly run). `npm run ci:local` runs gitleaks,
 semgrep and cargo audit too, when they are installed.
 
+`pr-check` and `npm run ci:local` are where a pull request gets `pr:check`:
+`ci:local` runs it on every run, against the current train (or `--base`), with
+`--body <file>` for the body's sections. Vercel builds only `main` and
+`verify/*` (`scripts/vercel-ignore.sh`): the free plan allows 100 builds a day,
+and a PR's app is verified through the train.
+
 The steps ci.yml has that are not gates (installs, PR comments, the
 main-only size cache, diagnostics) are listed with a reason in
 `NOT_GATES` in `scripts/buildkite/lib.mjs`.

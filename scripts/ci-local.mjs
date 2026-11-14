@@ -5,6 +5,7 @@
  *   npm run ci:local                     every step, like the `check` job + e2e on Chromium
  *   npm run ci:local -- --changed        only what the diff can break (vs the upstream or --base)
  *   npm run ci:local -- --base origin/fix/codex-backlog --changed
+ *   npm run ci:local -- --only pr-check --body pr-body.md   the PR gate, with the body's sections
  *   npm run ci:local -- --skip e2e,build --only typecheck,test --coverage --bail
  *   npm run ci:local -- --install-hook   pre-push hook: `ci:local --changed --skip e2e`
  *                                         (an existing hook of yours is kept unless --force,
@@ -23,7 +24,7 @@ import { existsSync, readFileSync, readdirSync, writeFileSync, chmodSync, mkdirS
 import { createServer } from "node:net";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { planSteps, e2eSpecs, i18nDrift, summary, coverageGate, hookPlan, buildState, argErrors, dynamicImportTargets, onPath } from "./lib/ciLocal.mjs";
+import { planSteps, e2eSpecs, i18nDrift, summary, coverageGate, hookPlan, buildState, argErrors, dynamicImportTargets, onPath, prCheckBase } from "./lib/ciLocal.mjs";
 
 // fileURLToPath, not `.pathname`: a checkout in "lumen md/" is "lumen%20md/" in the URL.
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -199,7 +200,11 @@ function sourcesUnder(dir) {
   return out;
 }
 const dynamicTargets = changed === null ? undefined : dynamicImportTargets(sourcesUnder("src"));
-const steps = planSteps({ pkg, exists: existsSync, changed, dynamicTargets, hasBin: (b) => onPath(b, process.env), flags: { skip: list("skip"), only: list("only"), coverage: flag("coverage") } });
+// pr:check compares with the PR's base: --base, else the current train
+// (the highest origin/verify/train-N), else origin/main. Not @{upstream}:
+// that is the branch's own remote copy, and the diff against it is empty.
+const prBase = prCheckBase(opt("base"), (git("for-each-ref", "--format=%(refname:short)", "refs/remotes/origin/verify/") ?? "").split("\n"));
+const steps = planSteps({ pkg, exists: existsSync, changed, dynamicTargets, hasBin: (b) => onPath(b, process.env), flags: { skip: list("skip"), only: list("only"), coverage: flag("coverage"), base: prBase, body: opt("body") ?? undefined } });
 const results = [];
 let failed = false;
 for (const s of steps) {

@@ -25,6 +25,23 @@ export const SECURITY_STEPS = [
   { id: "cargo-audit", tool: "cargo-audit", bin: "cargo-audit", title: "cargo audit (with audit-lock)" },
 ];
 
+/**
+ * The base pr:check compares with in ci:local (W10.D4): `explicit` (--base),
+ * else the current train — the highest origin/verify/train-N among `remoteRefs`
+ * (as `git for-each-ref --format=%(refname:short)` prints them) — else
+ * origin/main. Never @{upstream}: that is the branch's own remote copy.
+ */
+export function prCheckBase(explicit, remoteRefs = []) {
+  if (explicit) return explicit;
+  let best = null;
+  for (const ref of remoteRefs) {
+    const m = /^origin\/verify\/train(?:-(\d+))?$/.exec(String(ref).trim());
+    const n = m ? Number(m[1] ?? 1) : null;
+    if (n != null && (best == null || n > best.n)) best = { n, ref: m[0] };
+  }
+  return best?.ref ?? "origin/main";
+}
+
 /** CI's coverage gate (.github/workflows/ci.yml "Coverage gate (lines >= 65%)"). */
 export const COVERAGE_MIN = 65;
 
@@ -76,7 +93,8 @@ export function dynamicImportTargets(sources) {
 const has = (pkg, name) => Boolean(pkg?.scripts?.[name]);
 
 /**
- * @param {{ pkg: any, exists: (path: string) => boolean, changed: string[] | null, flags: { skip?: string[], only?: string[], coverage?: boolean }, dynamicTargets?: Set<string> }} input
+ * @param {{ pkg: any, exists: (path: string) => boolean, changed: string[] | null, flags: { skip?: string[], only?: string[], coverage?: boolean, base?: string, body?: string }, dynamicTargets?: Set<string> }} input
+ *   `flags.base` / `flags.body`: what pr:check compares against (default origin/main) and the PR body file, if any.
  *   `changed` is the list of changed files for `--changed` (deleted ones included), or null for a full run.
  *   `dynamicTargets`: module stems some source loads with a dynamic import (dynamicImportTargets).
  * @returns {Step[]}
@@ -102,6 +120,13 @@ export function planSteps({ pkg, exists, changed, flags, dynamicTargets, hasBin 
     { id: "i18n", title: "i18n keys + drift", cmd: ["node", "scripts/extract-i18n-keys.mjs", "--check"], needs: ["scripts/extract-i18n-keys.mjs"] },
     has(pkg, "licenses") ? { id: "licenses", title: "Licence gate", cmd: ["npm", "run", "-s", "licenses"] } : { id: "licenses", title: "Licence gate", cmd: [], skipReason: "not here (plan 0.10)" },
     exists("scripts/headers.mjs") ? { id: "headers", title: "Security headers", cmd: ["node", "scripts/headers.mjs", "--check"] } : { id: "headers", title: "Security headers", cmd: [], skipReason: "not here (plan 0.17)" },
+    // pr:check, the PR gate (plan 0.19), on every run (W10.D4). Vercel builds only
+    // main and verify/* (100 builds a day on the free plan, and the builds are the
+    // Mac's now), so a PR gets it here and in Buildkite's pr-check job, not from a
+    // preview. No bundle size here: that needs two builds (--no-size).
+    has(pkg, "pr:check")
+      ? { id: "pr-check", title: "pr:check (the PR gate)", cmd: ["node", "scripts/pr-check.mjs", "--base", flags.base ?? "origin/main", "--no-size", ...(flags.body ? ["--body", flags.body] : [])] }
+      : { id: "pr-check", title: "pr:check (the PR gate)", cmd: [], skipReason: "not here (plan 0.19)" },
     // W10.D14: the scanners Buildkite runs on every PR, here when the binary is installed
     // (scripts/security-scan.mjs; npm audit needs the registry, so it stays Buildkite's).
     ...SECURITY_STEPS.map((t) => ({ id: t.id, title: t.title, cmd: ["node", "scripts/security-scan.mjs", t.tool], needs: ["scripts/security-scan.mjs"], needsBin: t.bin })),
@@ -178,9 +203,9 @@ export function buildState(results) {
 }
 
 /** Step ids, for --only / --skip. */
-export const STEP_IDS = ["typecheck", "hygiene", "lint", "i18n", "licenses", "headers", "gitleaks", "semgrep", "cargo-audit", "test", "build", "budget", "ocr", "e2e"];
+export const STEP_IDS = ["typecheck", "hygiene", "lint", "i18n", "licenses", "headers", "pr-check", "gitleaks", "semgrep", "cargo-audit", "test", "build", "budget", "ocr", "e2e"];
 const BOOL_FLAGS = ["--help", "--h", "-h", "--changed", "--coverage", "--bail", "--install-hook", "--force"];
-const VALUE_FLAGS = ["--base", "--skip", "--only"];
+const VALUE_FLAGS = ["--base", "--body", "--skip", "--only"];
 
 /** Problems with the command line: a typo must not turn into a green run without the requested checks. */
 export function argErrors(argv) {
@@ -194,7 +219,7 @@ export function argErrors(argv) {
         continue;
       }
       i++;
-      if (a === "--base") continue;
+      if (a === "--base" || a === "--body") continue;
       for (const id of v.split(",").map((x) => x.trim()).filter(Boolean)) if (!STEP_IDS.includes(id)) errors.push(`${a}: unknown step "${id}" (steps: ${STEP_IDS.join(", ")})`);
     } else if (!BOOL_FLAGS.includes(a)) errors.push(`unknown argument "${a}"`);
   }

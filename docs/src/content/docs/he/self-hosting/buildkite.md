@@ -42,6 +42,8 @@ Lumen לא משתמש ב-GitHub Actions. מפעל האימות
 
 הסוכן צריך `gh` עם טוקן קריאה בשביל `pr-check`, ואת `gitleaks`, ‏`semgrep` ו-`cargo-audit` בשביל `security` (ואת `osv-scanner`, ‏`cargo-deny`, ‏`scorecard` ו-`syft` להרצה הלילית). גם `npm run ci:local` מריץ את gitleaks, ‏semgrep ו-cargo audit כשהם מותקנים.
 
+ה-PR מקבל את `pr:check` דרך `pr-check` ודרך `npm run ci:local`: ‏`ci:local` מריץ אותו בכל הרצה, מול הרכבת הנוכחית (או `--base`), ועם `--body <file>` בשביל הסעיפים של גוף ה-PR. ‏Vercel בונה רק את `main` ואת `verify/*` (`scripts/vercel-ignore.sh`): בתוכנית החינמית יש 100 בניות ביום, והאפליקציה של PR נבדקת דרך הרכבת.
+
 ב-ci.yml יש צעדים שאינם שערים: התקנות, תגובות ל-PR, מטמון הגדלים של main
 ואבחון. כל אחד מהם מופיע עם הסיבה ב-`NOT_GATES` שב-`scripts/buildkite/lib.mjs`.
 
