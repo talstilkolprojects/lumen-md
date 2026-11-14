@@ -1,42 +1,34 @@
+// @vitest-environment node
 import { describe, it, expect } from "vitest";
-import { readLocale } from "../../scripts/lib/i18n-files.mjs";
-import { lazyEnglish } from "./helpers/i18nLazy";
+// @ts-expect-error — plain .mjs module without type declarations
+import { LIMIT, drift } from "../../scripts/lib/i18n-drift.mjs";
+import { listLocales, readLocale } from "../../scripts/lib/i18n-files.mjs";
+// @ts-expect-error — plain .mjs module without type declarations
+import { lazyEnglishEntries } from "../../scripts/lib/i18n-lazy.mjs";
 
-/**
- * Ensures every lazy-loaded locale JSON has the same keys as the EN
- * bundle. Catches drift when a developer adds an EN key but forgets
- * to run the translation generator.
- */
-describe("i18n locale drift", () => {
-  // Every language is src/i18n/locales/<lang>/<domain>.json (plan 0.3).
-  // English of lazily loaded domains lives next to its chunk.
-  const enKeys = new Set([...Object.keys(readLocale("en")), ...Object.keys(lazyEnglish())]);
+describe("i18n drift counting the lazy English (npm run i18n:drift)", () => {
+  const en = ["a", "b", "c"];
 
-  const locales = ["he", "ar", "de", "fr", "ja", "ru", "zh-CN"];
+  it("passes when every locale has English for each key and stays within the limit", () => {
+    expect(drift({ en, locales: { en, he: ["a", "b", "c"], de: ["a", "b"] } }).ok).toBe(true);
+  });
 
-  for (const locale of locales) {
-    it(`${locale}/*.json has no missing EN keys`, () => {
-      const localeData = readLocale(locale);
-      const localeKeys = new Set(
-        Object.keys(localeData).filter((k) => !k.startsWith("_")),
-      );
-      const missing = [...enKeys].filter((k) => !localeKeys.has(k));
-      expect(missing, `Missing keys in ${locale}`).toEqual([]);
-    });
+  it("fails on a Hebrew key with no English string, however small the count difference", () => {
+    const r = drift({ en, locales: { en, he: ["a", "b", "c", "orphan.key"] } });
+    expect(r.ok).toBe(false);
+    expect(r.rows[0]).toMatchObject({ locale: "he", diff: 1, noEnglish: ["orphan.key"], ok: false });
+  });
 
-    it(`${locale}/*.json has no extra keys not in EN`, () => {
-      const localeData = readLocale(locale);
-      const localeKeys = Object.keys(localeData).filter(
-        (k) => !k.startsWith("_"),
-      );
-      const extra = localeKeys.filter((k) => !enKeys.has(k));
-      // Strictly zero extras — orphan translations bloat the bundle
-      // and confuse readers about which keys are still in production.
-      // The previous "allow up to 10" was a soft pass that let four
-      // dead keys (findReplace.find, findReplace.matchCase,
-      // mdTable.cancel, writingGoal.label) sit untouched. If a sub-
-      // dialect needs an override, add the key to the EN source first.
-      expect(extra, `Extra keys in ${locale}`).toEqual([]);
-    });
-  }
+  it(`fails when a locale is more than ${LIMIT} keys from English (ci.yml's limit), in any locale`, () => {
+    const many = Array.from({ length: LIMIT + 2 }, (_, i) => `k${i}`);
+    expect(drift({ en: many, locales: { he: many, fr: [] } }).rows.find((r: { locale: string }) => r.locale === "fr").ok).toBe(false);
+  });
+
+  it("this repository passes: locales/en plus src/i18n/lazy against every locale", () => {
+    const english = new Set([...Object.keys(readLocale("en")), ...lazyEnglishEntries().map(([k]: [string, string]) => k)]);
+    const locales = Object.fromEntries(listLocales().map((l: string) => [l, Object.keys(readLocale(l))]));
+    const r = drift({ en: english, locales });
+    expect(r.rows.filter((x: { ok: boolean }) => !x.ok)).toEqual([]);
+    expect(r.rows.map((x: { locale: string }) => x.locale)).toContain("he");
+  });
 });

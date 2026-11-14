@@ -12,6 +12,8 @@
  * carries it.
  */
 
+import { createHash } from "node:crypto";
+
 export const REPO = "talstilkol/lumen-md";
 /** Agent queues: the Linux host runs every job in Playwright's image; the Mac runs WebKit on macOS itself. */
 export const QUEUES = ["linux", "mac"];
@@ -146,6 +148,21 @@ export const NOT_GATES = {
   "signal-health › *": "checks the deployed signaling server on main pushes, not the PR's code",
 };
 
+/**
+ * ci.yml steps whose text the pipeline replaces, each with the reason. `ciSha256` pins the
+ * exact ci.yml text the override was reviewed against: when ci.yml changes that step, the
+ * generator stops until the override is looked at again. An override must be equal to the
+ * ci.yml step or stricter, never looser.
+ */
+export const OVERRIDES = {
+  "check › i18n drift gate": {
+    ciSha256: "10c8b2c59801326979a5a30cb7d02782cb785dcd6d0cf4157e86d06652ef7123",
+    run: "node scripts/i18n-split.mjs --check\nnode scripts/extract-i18n-keys.mjs --check\nnode scripts/i18n-drift.mjs",
+    reason:
+      "ci.yml counts English from src/i18n/locales/en/ only, so the English of the lazy domains (src/i18n/lazy/*.json, out of the startup bundle by design) shows up as drift: en 2270 vs he 2493 on chore/verify-factory with no string missing. scripts/i18n-drift.mjs counts locales/en plus the lazy English, keeps the same 10-key limit for he and applies it to every locale, and fails on any key without English. The two --check lines are ci.yml's, unchanged. Equal or stricter.",
+  },
+};
+
 /** ci.yml's steps with a `run:` as { job, name, id: "<job> › <name>", run, env, if }. */
 export function ciSteps(ci) {
   const out = [];
@@ -232,7 +249,9 @@ export function jobScript(job, ci) {
     const env = { ...s.env };
     for (const [k, v] of Object.entries(env)) if (String(v).includes("${{") && !(job.env && k in job.env)) throw new Error(`${job.key}: env ${k} of "${name}" is a GitHub expression; add JOBS.${job.key}.env.${k}`);
     for (const [k, v] of Object.entries(job.env ?? {})) if (k in env) env[k] = v;
-    const run = substitute(s.run, job.matrix, `${job.key} › ${name}`).replace(/\s+$/, "");
+    const o = OVERRIDES[s.id];
+    if (o && createHash("sha256").update(s.run).digest("hex") !== o.ciSha256) throw new Error(`${s.id}: ci.yml changed this step since its override was reviewed; update OVERRIDES in scripts/buildkite/lib.mjs (and its ciSha256)`);
+    const run = substitute(o ? o.run : s.run, job.matrix, `${job.key} › ${name}`).replace(/\s+$/, "");
     const d = delimiter(run, "LUMEN_STEP");
     const title = substitute(name, job.matrix, job.key);
     parts.push(`gate ${shq(title)}${Object.entries(env).map(([k, v]) => ` ${k}=${shq(substitute(v, job.matrix, job.key))}`).join("")} <<'${d}'\n${run}\n${d}`);

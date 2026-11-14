@@ -123,7 +123,14 @@ rows=$(wc -l < ci-out/gates-static.tsv)
 expect "static gates: all 10 ci.yml steps ran although hygiene failed (keep going)" '[ "$rows" = 10 ] && grep -q "^Code hygiene.*	1	" ci-out/gates-static.tsv && [ "$(grep -c "	skipped	" ci-out/gates-static.tsv)" = 0 ]'
 expect "static gates: the job fails and names the failing gate" '[ $code = 1 ] && grep -q "✗ Code hygiene" "$T/static.log"'
 # The drift gate's verdict is this branch's own (real node, real locale files); here it must have run and printed its counts.
-expect "static gates: the i18n drift gate ran for real (ci.yml's own script)" 'grep -q "^i18n drift gate	" ci-out/gates-static.tsv && grep -q "i18n keys — en:" "$T/static.log"'
+expect "static gates: the drift gate ran for real through its override (lazy English counted) and passed" 'grep -q "^i18n drift gate	0	" ci-out/gates-static.tsv && grep -q "223 lazy" "$T/static.log"'
+node --input-type=module -e "
+import { readFileSync } from 'node:fs';
+import { JOBS, jobScript } from '$TOOL/scripts/buildkite/lib.mjs';
+const ci = JSON.parse(readFileSync('$CI_JSON', 'utf8'));
+ci.jobs.check.steps.find((s) => s.name === 'i18n drift gate').run += '\\necho changed';
+try { jobScript(JOBS.find((j) => j.key === 'static'), ci); console.log('no-throw'); } catch (e) { console.log(String(e.message)); }" > "$T/ovr.log"
+expect "an override stops the generator when ci.yml changes the step it replaces" 'grep -q "override was reviewed" "$T/ovr.log"'
 expect "the job ran in Playwright's image for the lockfile's version" 'grep -q "lumen-factory:pw-$(node -p "require(\"./package-lock.json\").packages[\"node_modules/@playwright/test\"].version")" "$T/state/docker.log"'
 code=0; FAKE_FAIL="build" bash -c "$(cmd build)" > "$T/build.log" 2>&1 || code=$?
 expect "build: a failed build stops the job; the secret and budget checks are reported as not run" '[ $code = 1 ] && [ "$(grep -c "	skipped	" ci-out/gates-build.tsv)" = 3 ]'

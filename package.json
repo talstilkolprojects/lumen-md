@@ -52,6 +52,7 @@
     "i18n:extract": "node scripts/extract-i18n-keys.mjs",
     "i18n:check": "node scripts/i18n-split.mjs --check && node scripts/extract-i18n-keys.mjs --check && node scripts/check-i18n-hardcoded.mjs",
     "i18n:hardcoded": "node scripts/check-i18n-hardcoded.mjs",
+    "i18n:drift": "node scripts/i18n-drift.mjs",
     "i18n:fix": "node scripts/i18n-split.mjs && node scripts/extract-i18n-keys.mjs > /dev/null",
     "i18n:split": "node scripts/i18n-split.mjs",
     "i18n:draft": "node scripts/i18n-draft.mjs",

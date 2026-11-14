@@ -128,20 +128,9 @@ steps:
       npm run -s docs:complete
       LUMEN_STEP
       gate 'i18n drift gate' <<'LUMEN_STEP'
-      # Every string in its sorted domain file (plan 0.3), and the
-      # committed manifest (i18n/keys/) that feeds translation tooling.
       node scripts/i18n-split.mjs --check
       node scripts/extract-i18n-keys.mjs --check
-      count() { node --input-type=module -e "import { readLocale } from './scripts/lib/i18n-files.mjs'; console.log(Object.keys(readLocale('$$1')).length)"; }
-      en_count=$$(count en)
-      # Hebrew ships as lazy JSON chunks like the other locales.
-      he_count=$$(count he)
-      diff=$$(( en_count > he_count ? en_count - he_count : he_count - en_count ))
-      echo "i18n keys — en: $$en_count, he: $$he_count, diff: $$diff"
-      if [ "$$diff" -gt 10 ]; then
-        echo "::error::i18n drift > 10 keys; run `node scripts/print-missing-i18n-keys.mjs` and fix."
-        exit 1
-      fi
+      node scripts/i18n-drift.mjs
       LUMEN_STEP
       gates_done
       LUMEN_JOB
