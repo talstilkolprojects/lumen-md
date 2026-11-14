@@ -25,6 +25,7 @@ import { isOPFSAvailable, listWorkspace, readWorkspaceFile, writeWorkspaceFile }
 import { onWorkspaceChanged } from "../../storage/workspaceEvents";
 import { useAppStore } from "../../store/useStore";
 import { editNote } from "../databaseEdit";
+import { selectRows } from "../bulkEdit";
 import { addDays, csvToNotes, daysBetween, monthWeeks, moveDateInText, pinnedProperties, resultToCsv, rowsByDay, timelineItems, visibleWindow, writableKey } from "./viewsData";
 import { showAiToast } from "../../ui/AiToast";
 import { log } from "../../lib/logger";
@@ -34,6 +35,8 @@ import { explainError } from "../../lib/userError";
 import { EmptyState, learnHow } from "../../ui/EmptyState";
 
 const DatabaseMapView = lazy(() => import("../DatabaseMapView"));
+// Bulk property editing (W7.4): the same bar as the database block, loaded on the first selection.
+const BulkEditBar = lazy(() => import("../BulkEditBar"));
 
 const muted = "hsl(var(--fg-muted))";
 const danger = "hsl(0 80% 60%)";
@@ -128,6 +131,9 @@ export default function BasesBlock({ source, meta }: { source: string; meta?: st
   const [loadError, setLoadError] = useState<string | null>(null);
   const [viewIndex, setViewIndex] = useState<number | null>(null);
   const [sortOverride, setSortOverride] = useState<BasesSort[] | null>(null);
+  /** Notes selected in the table for a bulk edit (W7.4); the .base file itself is never written by it. */
+  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
+  const anchorRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -200,6 +206,20 @@ export default function BasesBlock({ source, meta }: { source: string; meta?: st
   }
 
   const kind = viewKind(result.view);
+  const order = result.rows.map((r) => r.file.path);
+  const shownSelected = result.rows.filter((r) => selected.has(r.file.path) && r.file.ext === "md");
+  const select: TableSelect = {
+    has: (p) => selected.has(p),
+    click: (p, e) => {
+      const next = selectRows(order, selected, anchorRef.current, p, { shift: e.shiftKey, toggle: true });
+      anchorRef.current = next.anchor;
+      setSelected(next.selected);
+    },
+    toggleAll: () => setSelected(shownSelected.length === result.rows.length ? new Set() : new Set(order)),
+    count: shownSelected.length,
+    total: result.rows.length,
+  };
+  const noteKeys = [...new Set(result.columns.map((c) => writableKey(c.id)).filter((k): k is string => !!k))];
   const clickSort = (id: string) => {
     const cur = (sortOverride ?? result.view.sort)[0];
     setSortOverride([{ property: id, direction: cur?.property === id && cur.direction === "ASC" ? "DESC" : "ASC" }]);
@@ -276,9 +296,19 @@ export default function BasesBlock({ source, meta }: { source: string; meta?: st
           </button>
         </div>
       )}
+      {kind === "table" && shownSelected.length > 0 && (
+        <Suspense fallback={null}>
+          <BulkEditBar
+            selected={shownSelected.map((r) => ({ path: r.file.path, fm: r.file.fm }))}
+            allRows={files.filter((f) => f.ext === "md").map((f) => ({ path: f.path, fm: f.fm }))}
+            fields={noteKeys}
+            onClear={() => setSelected(new Set())}
+          />
+        </Suspense>
+      )}
       <div style={{ padding: 8 }}>
         {result.rows.length === 0 && !loading && <EmptyState style={{ padding: 24, alignItems: "center", fontSize: 13 }} message={t("db.empty")} action={learnHow("workspace/obsidian-bases#three-ways-to-show-a-base")} />}
-        {result.rows.length > 0 && kind === "table" && <TableView result={result} files={files} sort={sortOverride ?? result.view.sort} onSort={clickSort} />}
+        {result.rows.length > 0 && kind === "table" && <TableView result={result} files={files} sort={sortOverride ?? result.view.sort} onSort={clickSort} select={select} />}
         {result.rows.length > 0 && kind === "calendar" && <CalendarView result={result} files={files} />}
         {result.rows.length > 0 && kind === "timeline" && <TimelineView result={result} files={files} />}
         {result.rows.length > 0 && kind === "cards" && <CardsView result={result} files={files} />}
@@ -309,7 +339,16 @@ const VIRTUAL_FROM = 200;
 
 type TableItem = { kind: "group"; key: BValue; count: number } | { kind: "row"; row: BaseRow };
 
-function TableView({ result, files, sort, onSort }: ViewProps & { sort: BasesSort[]; onSort: (id: string) => void }) {
+/** The rows picked for a bulk edit (W7.4). */
+interface TableSelect {
+  has: (path: string) => boolean;
+  click: (path: string, e: { shiftKey: boolean }) => void;
+  toggleAll: () => void;
+  count: number;
+  total: number;
+}
+
+function TableView({ result, files, sort, onSort, select }: ViewProps & { sort: BasesSort[]; onSort: (id: string) => void; select: TableSelect }) {
   const cols = result.columns;
   const summaryIds = Object.keys(result.summaries);
   const items: TableItem[] = useMemo(() => {
@@ -332,6 +371,16 @@ function TableView({ result, files, sort, onSort }: ViewProps & { sort: BasesSor
       <table style={{ inlineSize: "100%", borderCollapse: "collapse", fontSize: 12 }} aria-rowcount={virtual ? items.length + 1 : undefined}>
         <thead style={virtual ? { position: "sticky", insetBlockStart: 0, background: "hsl(var(--bg))", zIndex: 1 } : undefined}>
           <tr>
+            <th scope="col" style={{ inlineSize: 24, padding: "4px 6px", borderBlockEnd: "1px solid hsl(var(--border))" }}>
+              <input
+                type="checkbox"
+                checked={select.total > 0 && select.count === select.total}
+                onChange={() => select.toggleAll()}
+                aria-label={t("base.select.all", { n: String(select.total) })}
+                data-testid="base-select-all"
+                style={{ margin: 0 }}
+              />
+            </th>
             {cols.map((c) => {
               const s = sort[0]?.property === c.id ? sort[0].direction : null;
               return (
@@ -350,12 +399,25 @@ function TableView({ result, files, sort, onSort }: ViewProps & { sort: BasesSor
           {items.slice(win.start, win.end).map((it, i) =>
             it.kind === "group" ? (
               <tr key={`g${win.start + i}`} aria-rowindex={virtual ? win.start + i + 2 : undefined}>
-                <th colSpan={cols.length} scope="colgroup" style={{ textAlign: "start", fontSize: 11, color: muted, padding: "8px 4px 4px", blockSize: virtual ? ROW_H - 12 : undefined }} dir="auto">
+                <th colSpan={cols.length + 1} scope="colgroup" style={{ textAlign: "start", fontSize: 11, color: muted, padding: "8px 4px 4px", blockSize: virtual ? ROW_H - 12 : undefined }} dir="auto">
                   {groupLabel(it.key)} <span style={{ fontWeight: 400, opacity: 0.7 }}>{it.count}</span>
                 </th>
               </tr>
             ) : (
-              <tr key={it.row.file.path} data-path={it.row.file.path} aria-rowindex={virtual ? win.start + i + 2 : undefined}>
+              <tr key={it.row.file.path} data-path={it.row.file.path} aria-rowindex={virtual ? win.start + i + 2 : undefined} aria-selected={select.has(it.row.file.path)}>
+                <td style={cell}>
+                  {it.row.file.ext === "md" && (
+                    <input
+                      type="checkbox"
+                      checked={select.has(it.row.file.path)}
+                      onChange={() => undefined}
+                      onClick={(e) => select.click(it.row.file.path, e)}
+                      aria-label={t("base.select.row", { note: it.row.file.basename })}
+                      data-testid="base-select-row"
+                      style={{ margin: 0 }}
+                    />
+                  )}
+                </td>
                 {cols.map((c) => (
                   <td key={c.id} style={cell}>
                     {nameCell(it.row, c.id, files)}
@@ -369,6 +431,7 @@ function TableView({ result, files, sort, onSort }: ViewProps & { sort: BasesSor
         {summaryIds.length > 0 && (
           <tfoot>
             <tr>
+              <td />
               {cols.map((c) => (
                 <td key={c.id} style={{ padding: "4px 6px", fontWeight: 600 }} data-testid={summaryIds.includes(c.id) ? `base-summary-${c.id}` : undefined}>
                   {summaryIds.includes(c.id) ? toText(result.summaries[c.id]) : null}

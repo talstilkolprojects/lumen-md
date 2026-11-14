@@ -5,7 +5,8 @@
  * focus is elsewhere: the file tree, a panel, the page itself.
  */
 import { t } from "../i18n";
-import { trashUndoDepth, undoLastTrash } from "../storage/fileOps";
+import { lastTrashUndoAt, trashUndoDepth, undoLastTrash } from "../storage/fileOps";
+import { newestAppUndo } from "../storage/appUndo";
 import { toast } from "../store/useToastStore";
 
 /**
@@ -42,6 +43,13 @@ export function isUndoKey(e: KeyboardEvent): boolean {
  */
 export function handleTrashUndoKey(e: KeyboardEvent): boolean {
   if (!isUndoKey(e) || e.defaultPrevented || isEditingTarget(e.target)) return false;
+  // A newer vault-wide action (a bulk property edit, plan W7.4) is undone first.
+  const other = newestAppUndo(trashUndoDepth() ? lastTrashUndoAt() : 0);
+  if (other) {
+    e.preventDefault();
+    other.undo();
+    return true;
+  }
   if (trashUndoDepth() === 0) return false;
   e.preventDefault();
   void undoLastTrash().then(

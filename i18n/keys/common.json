@@ -874,6 +874,20 @@
       ]
     },
     {
+      "key": "base.select.all",
+      "en": "Select all {n} notes in this view",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "base.select.row",
+      "en": "Select {note}",
+      "vars": [
+        "note"
+      ]
+    },
+    {
       "key": "base.timeline.empty",
       "en": "No item has a date in {property}",
       "vars": [
@@ -1025,6 +1039,176 @@
     {
       "key": "boot.reload",
       "en": "Reload Lumen",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.apply",
+      "en": "Change {n} notes",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "bulkEdit.applying",
+      "en": "Changing {done} of {n}…",
+      "vars": [
+        "done",
+        "n"
+      ]
+    },
+    {
+      "key": "bulkEdit.clearSelection",
+      "en": "Clear selection",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.done",
+      "en": "Changed {n} notes in {s} s",
+      "vars": [
+        "n",
+        "s"
+      ]
+    },
+    {
+      "key": "bulkEdit.field",
+      "en": "Field",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.op",
+      "en": "Action",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.op.addTag",
+      "en": "Add a tag",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.op.clear",
+      "en": "Clear the field",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.op.convert",
+      "en": "Change the type",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.op.removeTag",
+      "en": "Remove a tag",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.op.set",
+      "en": "Set a value",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.preview",
+      "en": "{n} of {total} selected notes will change",
+      "vars": [
+        "n",
+        "total"
+      ]
+    },
+    {
+      "key": "bulkEdit.selected",
+      "en": "{n} selected",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "bulkEdit.skipped",
+      "en": "{n} notes left as they were: {why}",
+      "vars": [
+        "n",
+        "why"
+      ]
+    },
+    {
+      "key": "bulkEdit.title",
+      "en": "Edit the selected notes",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.toType",
+      "en": "New type",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.type.checkbox",
+      "en": "Checkbox",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.type.date",
+      "en": "Date",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.type.link",
+      "en": "Link",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.type.list",
+      "en": "List",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.type.number",
+      "en": "Number",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.type.text",
+      "en": "Text",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.undo",
+      "en": "Undo",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.undoConflicts",
+      "en": "{n} notes changed again since, and were left as they are",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "bulkEdit.undone",
+      "en": "Put {n} notes back",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "bulkEdit.value",
+      "en": "Value",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.why.failed",
+      "en": "could not be written",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.why.invalid",
+      "en": "the frontmatter does not parse",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.why.lossy",
+      "en": "the value can't be converted without losing it",
+      "vars": []
+    },
+    {
+      "key": "bulkEdit.why.unchanged",
+      "en": "already so",
       "vars": []
     },
     {
@@ -1756,6 +1940,20 @@
       "vars": [
         "note",
         "error"
+      ]
+    },
+    {
+      "key": "db.select.all",
+      "en": "Select all {n} notes the filter shows",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "db.select.row",
+      "en": "Select {note}",
+      "vars": [
+        "note"
       ]
     },
     {

@@ -16,5 +16,7 @@
   "base.problems": "Some expressions could not run:",
   "base.saveSort": "Save this sort to {file}",
   "base.saved": "Saved to {file}",
+  "base.select.all": "Select all {n} notes in this view",
+  "base.select.row": "Select {note}",
   "base.timeline.empty": "No item has a date in {property}"
 }
