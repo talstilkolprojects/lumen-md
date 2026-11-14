@@ -154,6 +154,7 @@
     "safari:run": "node scripts/safari/run.mjs",
     "train:build": "node scripts/train/build.mjs",
     "train:status": "node scripts/train/status.mjs",
+    "train:missing": "node scripts/train-missing.mjs",
     "hosts:parity": "node scripts/host-parity.mjs",
     "hosting:gate": "node scripts/hosting-gate.mjs",
     "perf:responsiveness": "node scripts/perf/responsiveness.mjs",
