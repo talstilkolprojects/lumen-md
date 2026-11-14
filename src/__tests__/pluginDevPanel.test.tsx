@@ -8,7 +8,7 @@ import { createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react";
 import { DevPanel } from "../plugins/runtime/DevPanel";
-import type { DevConnection, DevStatus } from "../plugins/runtime/devPlugin";
+import { connectDevPlugin, type DevConnection, type DevStatus } from "../plugins/runtime/devPlugin";
 import type { PluginInstance } from "../plugins/runtime/pluginHost";
 
 (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -82,7 +82,8 @@ describe("plugin developer panel (W3.10)", () => {
     const host = document.createElement("div");
     document.body.appendChild(host);
     const root = createRoot(host);
-    await act(async () => root.render(createElement(DevPanel, { connect: async () => Promise.reject(new Error("developer mode connects only to this computer (localhost / 127.0.0.1)")) })));
+    // The real refusal (W3.2: a reason meant for the screen is a UserFacingError, shown as written).
+    await act(async () => root.render(createElement(DevPanel, { connect: () => connectDevPlugin("http://example.com:5173/") })));
     await act(async () => [...host.querySelectorAll("button")].find((b) => b.textContent === "Connect")!.click());
     expect(host.querySelector('[role="alert"]')!.textContent).toBe("Could not connect: developer mode connects only to this computer (localhost / 127.0.0.1)");
     await act(async () => root.unmount());

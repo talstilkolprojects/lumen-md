@@ -34,7 +34,7 @@ import { layerText, offsetsToRange, pageTextFromItems, rangePageRects, rangeToOf
 import { openPdf, type PdfDocument } from "./pdfjs";
 import "./PdfReader.css";
 import { HelpButton } from "../ui/HelpButton";
-import { explainError } from "../lib/userError";
+import { explainError, UserFacingError } from "../lib/userError";
 import { EmptyState, learnHow } from "../ui/EmptyState";
 import { PdfPageView } from "./PdfPageView";
 import type { PageSize } from "./PdfPageView";
@@ -233,7 +233,7 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
       const saved = readAnnotationsNote(note);
       // A highlights block that can't be read whole: open nothing for editing,
       // or the next save would replace it with only the new highlights.
-      if (!saved) throw new Error(t("pdf.notesUnreadable", { name: baseName(notePath) }));
+      if (!saved) throw new UserFacingError(t("pdf.notesUnreadable", { name: baseName(notePath) }));
       setAnnotations(saved.map((a) => (a.target.source === path ? a : { ...a, target: { ...a.target, source: path } })));
       fingerprint.current = fp;
       setOcrPages(cachedOcr);
@@ -370,7 +370,7 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
         } catch (e) {
           if (!isMissing(e)) throw e;
         }
-        if (existing !== null && !readAnnotationsNote(existing)) throw new Error(t("pdf.notesUnreadable", { name: baseName(notePath) }));
+        if (existing !== null && !readAnnotationsNote(existing)) throw new UserFacingError(t("pdf.notesUnreadable", { name: baseName(notePath) }));
         const labels = {
           title: t("pdf.noteTitle", { name: baseName(path) }),
           page: (n: number) => t("pdf.notePage", { n }),

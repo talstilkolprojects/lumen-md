@@ -10,6 +10,7 @@
 import type { PluginManifest } from "./manifest";
 import type { PluginInstance } from "./pluginHost";
 import type { ScanResult } from "./scan";
+import { UserFacingError } from "../../lib/userError";
 
 export const DEFAULT_DEV_URL = "http://127.0.0.1:5199";
 
@@ -69,7 +70,7 @@ export interface DevConnection {
 
 export async function connectDevPlugin(rawUrl: string, deps?: Partial<DevDeps>): Promise<DevConnection> {
   const url = rawUrl.trim().replace(/\/+$/, "");
-  if (!isLoopbackUrl(url)) throw new Error("developer mode connects only to this computer (localhost / 127.0.0.1)");
+  if (!isLoopbackUrl(url)) throw new UserFacingError("developer mode connects only to this computer (localhost / 127.0.0.1)");
   const d: DevDeps = { ...(await defaultDeps().catch(() => ({}) as DevDeps)), ...deps } as DevDeps;
   const status: DevStatus = { url, state: "connecting", manifest: null, instance: null, reloads: 0, lastReloadMs: null, scan: null, error: null };
   const listeners = new Set<(s: DevStatus) => void>();
