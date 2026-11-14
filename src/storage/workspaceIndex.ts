@@ -106,6 +106,8 @@ const cache = {
 
 /** Bumped by a reset (tests): work of an earlier index must not touch the new one. */
 let epoch = 0;
+/** Bumped only by `__resetWorkspaceIndex` (tests): a run of the index before it stops retrying. */
+let resets = 0;
 
 /** Until the check of the snapshot the index opened from is done (at once when there is none). */
 async function verified(): Promise<void> {
@@ -419,6 +421,21 @@ function snapshotVault(): string {
   }
 }
 
+/** The vault the index last saw active (review 22 Z1): any change of it is a vault switch. */
+let lastVault: string | null = null;
+
+/**
+ * Review 22 Z1: on every vault switch, whatever the index holds goes: the
+ * engine's texts, the summaries, `filledVault`/`filledEncrypted` and any
+ * scheduled save (dropIndex bumps `snapshotGen`). Not only when an index was
+ * filled: a stray refresh may have filled the engine with `filledVault` null.
+ */
+function noteVaultSwitch(): void {
+  const now = snapshotVault();
+  if (lastVault !== null && lastVault !== now) dropIndex();
+  lastVault = now;
+}
+
 /** Where a vault keeps its own random id (Y2): in its `.lumen` app data, hidden from the index and the tree. */
 export const VAULT_ID_PATH = ".lumen/vault-id";
 const recordIds = new WeakMap<object, string>();
@@ -508,8 +525,10 @@ async function fillingEncrypted(): Promise<boolean> {
  * worker when the conversion dropped the snapshot) is dropped again.
  */
 async function saveSnapshotNow(): Promise<void> {
+  const gen = snapshotGen;
   const mode = await snapshotMode();
-  if (!mode) return;
+  // Z1: a switch, a drop or a new build since this save was asked for: what the engine holds is not what was meant.
+  if (!mode || gen !== snapshotGen) return;
   await withEngine((eng) => eng.saveSnapshot(cache.recordVault, mode.keys));
   if (!mode.keys) {
     const now = await snapshotMode();
@@ -590,6 +609,12 @@ async function build(trust = false): Promise<void> {
     await wait.woke;
     if (moved(at, vault)) return;
   }
+  // Z1: no save scheduled for what the engine held before, and an empty engine, before this build labels the index.
+  if (snapshotTimer) clearTimeout(snapshotTimer);
+  snapshotTimer = null;
+  snapshotGen++;
+  await withEngine((eng) => eng.clear());
+  if (moved(at, vault)) return;
   // Clear before reading: a change announced while the build runs (it may
   // have read that file already) must survive for the next ensureIndex.
   cache.dirty.clear();
@@ -734,6 +759,9 @@ function diffListing(list: WorkspaceEntry[], indexOps: IndexOp[], toRead: Map<st
 async function refresh(): Promise<void> {
   // After the snapshot's check (W6.36): changes apply in the order they happened.
   await verified();
+  // Z1: an index that isn't built (dropped, or a build that gave way) is never filled by a refresh: it would hold
+  // notes no build labelled. The next ensureIndex builds it.
+  if (!cache.builtAt) return;
   // W2.22: the index holds the text, so moves happen inside it; this list
   // keeps removes and moves in the order they happened.
   const indexOps: IndexOp[] = [];
@@ -828,7 +856,8 @@ function pendingChanges(): boolean {
 export async function ensureIndex(force = false, opts: { checked?: boolean } = {}): Promise<void> {
   if (opts.checked) return checkedView(force);
   if (!isOPFSAvailable()) return;
-  // T1/U1: another vault is active now (even mid-build); this index is not its index.
+  // T1/U1/Z1: another vault is active now (even mid-build); this index is not its index.
+  noteVaultSwitch();
   if (cache.filledVault !== null && cache.filledVault !== snapshotVault()) dropIndex();
   // U2: a build waiting for an unlock gives way if the vault it waits for is no longer the active one.
   wakeBuilds();
@@ -841,14 +870,20 @@ export async function ensureIndex(force = false, opts: { checked?: boolean } = {
   }
   if (waited && !force && !pendingChanges()) return;
   let first: () => Promise<void>;
-  if (force || !cache.builtAt) first = () => build(!force);
+  const building = force || !cache.builtAt;
+  if (building) first = () => build(!force);
   else if (pendingChanges() || Date.now() - cache.checkedAt >= REVALIDATE_MS) first = refresh;
   else return;
   const run = (async () => {
+    const since = resets;
     await first();
+    // A build that gave way (a drop or a switch while it waited or ran) is run again for the vault active now,
+    // a few times at most: the caller asked for an index (Z1 no longer lets a refresh fill an unbuilt one).
+    for (let tries = 0; building && !cache.builtAt && isOPFSAvailable() && since === resets && tries < 5; tries++) await build(!force);
     // Changes that arrived while that ran (a save during the first build)
     // are in the answer too — a few rounds at most, then the next call.
-    for (let round = 0; round < 3 && pendingChanges(); round++) await refresh();
+    // Z1: not after a build that gave way (a drop, a switch): there is no index to refresh.
+    for (let round = 0; round < 3 && cache.builtAt && pendingChanges(); round++) await refresh();
   })();
   cache.inflight = run;
   try {
@@ -890,7 +925,8 @@ function attachInvalidator() {
   // T4: locking forgets the index, here and in the worker (./vault/encrypted/session LOCKED_EVENT).
   window.addEventListener("lumen-vault-locked", () => dropIndex());
   window.addEventListener(WORKSPACE_CHANGED, (e) => {
-    // T1: a vault switch announces a structural change; another vault's notes are dropped at once.
+    // T1/Z1: a vault switch announces a structural change; whatever the index holds is dropped at once.
+    noteVaultSwitch();
     if (cache.filledVault !== null && cache.filledVault !== snapshotVault()) dropIndex();
     // U2: a build waiting for an unlock looks at the active vault again.
     wakeBuilds();
@@ -1052,7 +1088,11 @@ export function __resetWorkspaceIndex(engineFactory?: () => IndexEngine, opts: {
   cache.distrust = false;
   cache.pendingListing = null;
   watching = null;
+  lastVault = null;
   epoch++;
+  resets++;
+  // A build waiting for an unlock gives way.
+  wakeBuilds();
   void engine?.then((e) => e.dispose(), () => undefined);
   engine = null;
   engineOverride = engineFactory ?? null;
