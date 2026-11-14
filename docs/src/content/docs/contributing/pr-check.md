@@ -47,6 +47,11 @@ with 1 when a check fails. Warnings do not fail it.
   them; without `--pr` it only warns. Tal runs it with `--pr` before every
   merge. See [Second maintainer](/contributing/second-maintainer/).
 
+The same sensitive paths also need an independent review receipt for the
+head commit, from a reviewer that did not write the change, with attack tests
+and no critical or high finding open (plan W6.11). See
+[Independent review](/contributing/independent-review/).
+
 It also warns:
 - when source changed and no test did;
 - when an AI agent wrote the PR (add the `ai-written` label).
@@ -60,6 +65,7 @@ It also warns:
 | `--base-sizes <file>`, `--head-sizes <file>` | Sizes already measured |
 | `--build-base` | Build the base to measure it |
 | `--no-size` | Skip the size check |
-| `--pr <n>` | The pull request number: read its labels, label events and reviews (human-review rule) |
+| `--pr <n>` | The pull request number: read its labels, label events, reviews and comments (human-review and independent-review rules) |
+| `--review <file>` | A review receipt file to check against this checkout's HEAD, offline; repeatable ([Independent review](/contributing/independent-review/)) |
 | `--repo <owner/name>` | The repository, when the `origin` remote does not name it |
 | `--out <file>` | Write the report |
