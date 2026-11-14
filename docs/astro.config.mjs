@@ -161,6 +161,7 @@ export default defineConfig({
             { label: "Local autocomplete (FIM)", translations: { he: "השלמה אוטומטית מקומית (FIM)" }, slug: "ai/autocomplete" },
             { label: "Translation review", translations: { he: "ביקורת תרגומים" }, slug: "ai/translation-review" },
             { label: "On-device OCR (Hebrew, English, columns)", translations: { he: "זיהוי טקסט במכשיר (OCR)" }, slug: "ai/ocr" },
+            { label: "External OCR benchmark (HebOCRBench)", translations: { he: "מדד OCR חיצוני (HebOCRBench)" }, slug: "ai/hebocrbench" },
             { label: "Read aloud (Hebrew included)", translations: { he: "הקראה (גם בעברית)" }, slug: "ai/read-aloud" },
             { label: "AI cost: usage meter + answer cache", slug: "ai/cost" },
             { label: "Batch jobs: pause, resume, progress", translations: { he: "משימות אצווה: השהיה, המשך, התקדמות" }, slug: "ai/batch" },
