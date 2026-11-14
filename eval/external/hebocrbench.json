@@ -1,0 +1,4 @@
+{
+ "about": "HebOCRBench (huggingface.co/datasets/ssdataanalysis/hebocrbench-v1) scores for Lumen's OCR, one record per accepted submission, as the organisers reported them (plan W7.12). Written by `node scripts/ocr/hebocrbench.mjs record`; never by hand. No image from the benchmark is in this repo or in dist.",
+ "records": []
+}
