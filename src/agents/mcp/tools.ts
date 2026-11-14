@@ -68,7 +68,11 @@ export async function serverAgentTools(server: McpServerConfig, makeTransport: (
   // gets them only for a server the user marked "trust its descriptions", and then cleaned and capped.
   const guard = server.trustDescriptions ? (await import("../untrusted")).sanitizeUntrusted : null;
   const seen = new Set<string>();
-  const scope = probe.reach === "remote" ? "network" : "read";
+  // A local program not marked offline may reach the network itself: it is remote here too, with its own
+  // destination at the network gate (consent, privacy ledger), not only blocked in airplane mode (review 24, C3r).
+  const reach = server.transport === "stdio" && !server.offline ? "remote" : probe.reach;
+  const scope = reach === "remote" ? "network" : "read";
+  const target = server.transport === "stdio" ? `stdio://${encodeURIComponent(server.id)}` : server.url;
   const out: AgentTool[] = [];
   for (const t of listed) {
     const perm = effectivePermission(server, t);
@@ -83,7 +87,7 @@ export async function serverAgentTools(server: McpServerConfig, makeTransport: (
       parameters: plainSchema(t.inputSchema) as AgentTool["parameters"],
       scope,
       offeredBy: [source],
-      ...(probe.reach === "remote" && server.url ? { networkTarget: server.url } : {}),
+      ...(reach === "remote" && target ? { networkTarget: target } : {}),
       untrusted: () => [source],
       async run(args: Record<string, unknown>, ctx: ToolContext) {
         const transport = makeTransport(ctx);

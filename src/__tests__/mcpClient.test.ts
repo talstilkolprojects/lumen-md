@@ -303,6 +303,18 @@ describe("review 21", () => {
     expect(init!.redirect).toBe("error");
   });
 
+  it("C3r: a stdio server not marked offline gets the network scope and its own destination; marked offline, it is local", async () => {
+    const t = () => legacyServer([{ name: "q", annotations: { readOnlyHint: true } }], () => "r");
+    const [net] = await serverAgentTools(server({ id: "knesset", transport: "stdio", url: undefined }), t, { reach: () => REACH, confirmCall: () => true });
+    expect(net!.scope).toBe("network");
+    expect(net!.networkTarget).toBe("stdio://knesset");
+    expect(net!.offeredBy).toEqual(["MCP server Test server"]);
+    expect((await describeNetworkCall(net!, { id: "x", name: net!.name, args: {} })).host).toBe("knesset");
+    const [off] = await serverAgentTools(server({ id: "files", transport: "stdio", url: undefined, offline: true }), t, { reach: () => REACH, confirmCall: () => true });
+    expect(off!.scope).toBe("read");
+    expect(off!.networkTarget).toBeUndefined();
+  });
+
   it("C5: names are unique per (server, tool), however they are spelled or cut", () => {
     expect(agentToolName("notes", "read__all")).not.toBe(agentToolName("notes__read", "all"));
     expect(agentToolName("srv", "x".repeat(70) + "_delete")).not.toBe(agentToolName("srv", "x".repeat(70) + "_read"));
