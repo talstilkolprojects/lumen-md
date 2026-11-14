@@ -53,6 +53,24 @@
         "file": "src/__tests__/e2eeKeyringAnchor.test.ts"
       }
     ],
+    "src/sync/e2ee/keyringErrors.ts": [
+      {
+        "file": "src/__tests__/e2eeKeyring.test.ts",
+        "filter": "rotates|rollback|revoked|passphrase"
+      },
+      {
+        "file": "src/__tests__/e2eeMutants.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeRekeyIntegrity.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeKeyringContents.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeKeyringAnchor.test.ts"
+      }
+    ],
     "src/sync/e2ee/conflict.ts": [
       {
         "file": "src/__tests__/e2eeSync.test.ts",
