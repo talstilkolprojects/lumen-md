@@ -1,6 +1,6 @@
 # Lumen Privacy Policy
 
-**Last updated:** 2026-11-12 · [עברית](PRIVACY.he.md) (the Hebrew version also covers Israel's Privacy Protection Law, Amendment 13, and the impact assessment of the share server)
+**Last updated:** 2026-11-14 · [עברית](PRIVACY.he.md) (the Hebrew version also covers Israel's Privacy Protection Law, Amendment 13, and the impact assessment of the share server)
 
 > **Not legal advice.** This document is written from the code and from public summaries
 > of the law. Tal should have a privacy lawyer review it before anyone relies on it.
@@ -64,8 +64,11 @@ Worker, and `(redirected from <host>)` for a redirected one.
 | Embeds (YouTube, Vimeo, …) and `<iframe>` in a note | In this version they load when the note is shown | The provider | When a note with an embed opens | The provider's policy |
 | Map tiles and profile pictures | A tile or image request | OpenStreetMap; GitHub / Google | In a map block; after sign-in | The host's logs |
 
-**Not in this version yet:** a weekly usage report (task W4.26), the encrypted share link
-(W5.10) and a public share server (W4.8). They join these tables when they land.
+**Not in this version yet:** a weekly usage report (task W4.26) and the encrypted share
+link (W5.10). They join these tables when they land. The public share server (W4.8) has
+code but isn't running yet. Its impact assessment in [PRIVACY.he.md](PRIVACY.he.md)
+covers what it keeps: encrypted rooms only, deleted 90 days after the last change, and no
+IP addresses in logs.
 
 ## Your rights
 

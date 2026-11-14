@@ -89,3 +89,44 @@ describe("PRIVACY.he.md / PRIVACY.md map every privacy-ledger route (plan W4.29)
     expect(DOCS["PRIVACY.he.md"]).toContain("הערכת השפעה על הפרטיות: שרת השיתוף (W4.8)");
   });
 });
+
+describe("PRIVACY.he.md: the share-server impact assessment matches #469's code (decision 2.46)", () => {
+  const he = DOCS["PRIVACY.he.md"];
+  const dpia = he.slice(he.indexOf("## הערכת השפעה על הפרטיות: שרת השיתוף (W4.8)"), he.indexOf("## יצירת קשר"));
+  const exists = (rel: string) => {
+    try {
+      return statSync(join(ROOT, rel)).isFile();
+    } catch {
+      return false;
+    }
+  };
+
+  it("states the three actions as done, by the code's own names, and no longer as owed", () => {
+    expect(dpia).toContain("90 יום אחרי השינוי האחרון");
+    expect(dpia).toContain("`COLLAB_RETENTION_DAYS` (ברירת מחדל 90");
+    expect(dpia).toContain("`[observability] enabled = false`");
+    expect(dpia).toContain("**רק חדרים מוצפנים**");
+    expect(dpia).toContain("(קוד 4403)");
+    expect(dpia).toContain("`COLLAB_E2EE_ONLY=1`");
+    // The earlier version's open items are gone.
+    expect(dpia).not.toContain("**פעולה נדרשת:**");
+    expect(dpia).not.toContain("**להחליט:**");
+    expect(dpia).not.toContain("ללא הגבלה כרגע");
+    // Not more than the code: no public server is running yet.
+    expect(dpia).toContain("אף שרת פומבי לא פועל");
+  });
+
+  it("the retention it states is the one the Worker and the Node server use, once #469 is in the tree", () => {
+    const toml = "edge-workers/collab/wrangler.toml";
+    if (!exists(toml)) return; // #469 not merged into this branch yet
+    expect(/RETENTION_DAYS = "(\d+)"/.exec(read(toml))?.[1]).toBe("90");
+    expect(read(toml)).toMatch(/\[observability\]\s*\nenabled = false/);
+    expect(read("sync-server/collab-server.mjs")).toMatch(/retentionDays = 90/);
+  });
+
+  it("the English policy points to the assessment and says the same three things", () => {
+    const en = DOCS["PRIVACY.md"];
+    expect(en).toContain("encrypted rooms only, deleted 90 days after the last change, and no\nIP addresses in logs");
+    expect(en).not.toContain("and a public share server (W4.8)");
+  });
+});
