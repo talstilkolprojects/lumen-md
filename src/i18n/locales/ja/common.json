@@ -436,6 +436,7 @@
   "credits.other": "その他のモデルとデータ",
   "credits.req.apache": "Apache 2.0：著作権表示とライセンス表示（NOTICE ファイルがあればそれも）を保持します。",
   "credits.req.ccBy": "CC BY 4.0：作者を表示し、ライセンスへのリンクを示し、変更点を明記します。",
+  "credits.req.ccBySa": "CC BY-SA 4.0：作者を表示し、ライセンスへのリンクを示します。改変版（重みやデータ）は同じライセンスで共有し、求めたときだけダウンロードされます。改変していないファイルは、この表示とともにアプリに同梱できます。",
   "credits.req.gemma": "Gemma 利用規約：規約をモデルに添付し、Google の禁止用途ポリシーが適用されます。",
   "credits.req.llama": "Llama Community License：ライセンス表示と「Built with Llama」を表示し、Meta の利用規定が適用されます。",
   "credits.req.mit": "MIT：著作権表示とライセンス表示を保持します。",

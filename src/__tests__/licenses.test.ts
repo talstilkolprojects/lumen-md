@@ -226,6 +226,27 @@ describe("model registry", () => {
     expect(r["mystery-tts"].level).toBe("warn");
   });
 
+  it("CC BY-SA: conditional, a download the user starts, or bundled only unmodified with its NOTICE (V4 sweep of train 4)", () => {
+    const good = registryFixture.models[0];
+    const sa = { ...clone(good), id: "sa-data", kind: "other", license: "CC-BY-SA-4.0", class: "conditional", commercial: "conditional", attribution: "X, CC BY-SA 4.0", unmodified: false };
+    const NOTICE = "X by Y. Licensed CC BY-SA 4.0: https://creativecommons.org/licenses/by-sa/4.0/ (unmodified)";
+    const files: Record<string, string> = { "public/x/NOTICE": NOTICE, "public/x/BARE": "X by Y." };
+    const one = (e: object) => checkModels({ models: [e] }, [], (p: string) => files[p] ?? null)[0];
+    // Modified or derived: a download the user starts, never bundled.
+    expect(one({ ...sa, delivery: "user-download" }).level).not.toBe("fail");
+    expect(one({ ...sa, delivery: "bundled" })).toMatchObject({ level: "fail", reason: "CC BY-SA bundled but not marked unmodified: modified or derived content is only a download the user starts" });
+    // Unmodified: bundled passes only with a NOTICE that names the licence and links it.
+    const asIs = { ...sa, unmodified: true, delivery: "bundled" };
+    expect(one({ ...asIs, notice: "public/x/NOTICE" }).level).not.toBe("fail");
+    expect(one({ ...asIs }).reason).toMatch(/needs its NOTICE/);
+    expect(one({ ...asIs, notice: "public/x/BARE" }).reason).toMatch(/needs its NOTICE/);
+    expect(one({ ...asIs, notice: "public/x/missing" }).level).toBe("fail");
+    // Classed like the other non-permissive families, and it must say whether it is modified.
+    expect(one({ ...sa, class: "allowed", commercial: "yes", delivery: "download" }).level).toBe("fail");
+    const { unmodified: _u, ...unsaid } = sa;
+    expect(validateEntry(unsaid)).toContain("a CC BY-SA entry must say whether it is unmodified (true or false)");
+  });
+
   it("matches ids as whole tokens, case-insensitively", () => {
     const hit = byName(checkModels(clone(registryFixture), [{ file: "x.ts", text: 'pull("qwen2.5-3b-instruct")' }]));
     expect(hit["Qwen2.5-3B"].level).toBe("fail");

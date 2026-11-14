@@ -436,6 +436,7 @@
   "credits.other": "Other models and data",
   "credits.req.apache": "Apache 2.0: the copyright and licence notice (and NOTICE file, if any) are kept.",
   "credits.req.ccBy": "CC BY 4.0: the creator is credited, the licence is linked, and changes are noted.",
+  "credits.req.ccBySa": "CC BY-SA 4.0: the creator is credited and the licence is linked; modified versions (changed weights or data) are shared under the same licence and are downloaded only when you ask. An unmodified file may ship with the app, with this credit.",
   "credits.req.gemma": "Gemma Terms of Use: the terms come with the model; Google's Prohibited Use Policy applies.",
   "credits.req.llama": "Llama Community License: the licence notice and “Built with Llama” are shown; Meta's Acceptable Use Policy applies.",
   "credits.req.mit": "MIT: the copyright and licence notice are kept.",

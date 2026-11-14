@@ -436,6 +436,7 @@
   "credits.other": "Weitere Modelle und Daten",
   "credits.req.apache": "Apache 2.0: Copyright- und Lizenzhinweis (und eine NOTICE-Datei, falls vorhanden) bleiben erhalten.",
   "credits.req.ccBy": "CC BY 4.0: Die Urheber werden genannt, die Lizenz verlinkt und Änderungen angegeben.",
+  "credits.req.ccBySa": "CC BY-SA 4.0: Die Urheber werden genannt und die Lizenz verlinkt; veränderte Fassungen (Gewichte oder Daten) werden unter derselben Lizenz weitergegeben und nur auf deinen Wunsch heruntergeladen. Eine unveränderte Datei darf mit dieser Nennung mitgeliefert werden.",
   "credits.req.gemma": "Gemma-Nutzungsbedingungen: Die Bedingungen liegen dem Modell bei; Googles Prohibited Use Policy gilt.",
   "credits.req.llama": "Llama Community License: Lizenzhinweis und „Built with Llama“ werden angezeigt; Metas Acceptable Use Policy gilt.",
   "credits.req.mit": "MIT: Copyright- und Lizenzhinweis bleiben erhalten.",

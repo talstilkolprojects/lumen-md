@@ -74,7 +74,7 @@ const sources = existsSync(srcDir) ? walk(srcDir).map((p) => ({ file: posix(rela
 const registryPath = join(root, "models", "registry.json");
 let modelFindings;
 try {
-  modelFindings = checkModels(readJson(registryPath), sources);
+  modelFindings = checkModels(readJson(registryPath), sources, (p) => (existsSync(join(root, p)) ? readFileSync(join(root, p), "utf8") : null));
 } catch (e) {
   modelFindings = [{ area: "model", name: "models/registry.json", license: "", level: "fail", reason: `cannot read the registry: ${e.message}`, refs: [] }];
 }

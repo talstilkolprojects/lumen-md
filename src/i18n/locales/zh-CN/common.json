@@ -436,6 +436,7 @@
   "credits.other": "其他模型和数据",
   "credits.req.apache": "Apache 2.0：保留版权和许可证声明（以及 NOTICE 文件，如有）。",
   "credits.req.ccBy": "CC BY 4.0：注明作者、附上许可证链接，并说明所作修改。",
+  "credits.req.ccBySa": "CC BY-SA 4.0：注明作者并附上许可证链接；修改后的版本（权重或数据）以相同许可证共享，仅在你请求时下载。未修改的文件可以随应用提供，并附上此署名。",
   "credits.req.gemma": "Gemma 使用条款：条款随模型提供；适用 Google 的禁止使用政策。",
   "credits.req.llama": "Llama 社区许可证：显示许可证声明和“Built with Llama”；适用 Meta 的可接受使用政策。",
   "credits.req.mit": "MIT：保留版权和许可证声明。",

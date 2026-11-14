@@ -372,6 +372,9 @@ export function validateEntry(e) {
   if (e.match !== undefined && !(Array.isArray(e.match) && e.match.every((m) => typeof m === "string" && m.length >= 3))) problems.push("match must be an array of strings (3+ chars)");
   // verified: false means "classified from the model card only" (a notice); a missing or "false" string must not read as verified.
   if (typeof e.verified !== "boolean") problems.push("verified must be true or false");
+  if (e.unmodified !== undefined && typeof e.unmodified !== "boolean") problems.push("unmodified must be true or false");
+  if (/^CC-BY-SA-\d/i.test(e.license) && typeof e.unmodified !== "boolean") problems.push("a CC BY-SA entry must say whether it is unmodified (true or false)");
+  if (e.notice !== undefined && (typeof e.notice !== "string" || e.notice.startsWith("/") || e.notice.split("/").includes(".."))) problems.push("notice must be a relative path in the repository");
   // Published files (plan 6.0): each has a checksum, a size, and the model's
   // licence and attribution, so a mirror or a cache can be verified and
   // credited file by file.
@@ -456,7 +459,12 @@ export function discoverCatalogIds(sources, patterns = CATALOG_PATTERNS) {
 }
 
 /** Check the registry against the app's source files → findings, one per entry (plus problems). */
-export function checkModels(registry, sources) {
+/**
+ * `readText(path)`: a repository file's text, or null (the runner passes a
+ * reader rooted at the repository; tests pass a map). Used for the NOTICE a
+ * bundled CC BY-SA file must carry.
+ */
+export function checkModels(registry, sources, readText = () => null) {
   const findings = [];
   const entries = Array.isArray(registry?.models) ? registry.models : null;
   if (!entries) return [{ area: "model", name: "models/registry.json", license: "", level: "fail", reason: "no `models` array", refs: [], structural: true }];
@@ -484,6 +492,23 @@ export function checkModels(registry, sources) {
     } else if (e.class === "conditional" && refs.length) {
       level = "notice";
       reason = "needs its licence notice in the UI; must not be a default";
+    }
+    // CC BY-SA (share-alike for modified weights or data): classed conditional like the other
+    // non-permissive families, and a download the user starts. A bundled entry passes only when it
+    // is marked unmodified (not an adaptation) and its NOTICE names the licence with its link
+    // (V4 sweep of train 4).
+    if (/^CC-BY-SA-\d/i.test(e.license)) {
+      const notice = typeof e.notice === "string" ? readText(e.notice) : null;
+      if (e.delivery === "bundled" && e.unmodified !== true) {
+        level = "fail";
+        reason = "CC BY-SA bundled but not marked unmodified: modified or derived content is only a download the user starts";
+      } else if (e.delivery === "bundled" && !(notice && /CC BY-SA 4\.0/.test(notice) && notice.includes("creativecommons.org/licenses/by-sa/4.0"))) {
+        level = "fail";
+        reason = "bundled CC BY-SA needs its NOTICE (`notice`: attribution, licence and link) next to the file";
+      } else if (e.class !== "conditional" && e.class !== "forbidden") {
+        level = "fail";
+        reason = `CC BY-SA must be class "conditional" (attribution; share-alike for modified weights), not "${e.class}"`;
+      }
     }
     if (e.verified === false && e.class !== "forbidden" && refs.length) {
       level = worst(level, "notice");

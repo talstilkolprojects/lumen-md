@@ -436,6 +436,7 @@
   "credits.other": "Autres modèles et données",
   "credits.req.apache": "Apache 2.0 : l’avis de droit d’auteur et de licence (et le fichier NOTICE, s’il existe) sont conservés.",
   "credits.req.ccBy": "CC BY 4.0 : l’auteur est crédité, la licence est liée et les modifications sont signalées.",
+  "credits.req.ccBySa": "CC BY-SA 4.0 : l’auteur est crédité et la licence est liée ; les versions modifiées (poids ou données) sont partagées sous la même licence et téléchargées seulement à votre demande. Un fichier non modifié peut être fourni avec l’application, avec ce crédit.",
   "credits.req.gemma": "Conditions d’utilisation de Gemma : les conditions accompagnent le modèle ; la politique d’utilisation interdite de Google s’applique.",
   "credits.req.llama": "Llama Community License : l’avis de licence et « Built with Llama » sont affichés ; la politique d’utilisation acceptable de Meta s’applique.",
   "credits.req.mit": "MIT : l’avis de droit d’auteur et de licence est conservé.",

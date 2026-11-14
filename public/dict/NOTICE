@@ -1,0 +1,10 @@
+he_50k.txt: FrequencyWords, Hebrew, 50 000 most frequent words (2018)
+by Hermit Dave, https://github.com/hermitdave/FrequencyWords
+(content/2018/he/he_50k.txt, commit 525f9b560de45753a5ea01069454e72e9aa541c6),
+built from OpenSubtitles 2018 (http://opus.nlpl.eu/OpenSubtitles2018.php).
+
+Licensed CC BY-SA 4.0: https://creativecommons.org/licenses/by-sa/4.0/
+
+Shipped unmodified (sha256 0069e931eb1ca0aaf638ea806b0d9d5810d787c51ada944da564a2fb213af41d);
+not an adaptation. If you redistribute this file or an adaptation of it, keep this
+attribution and share it under CC BY-SA 4.0. Details: LICENSE.md in this folder.
