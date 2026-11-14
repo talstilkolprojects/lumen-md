@@ -108,6 +108,7 @@ async function loadModel(m: ModelFile, signal?: AbortSignal): Promise<Uint8Array
     try {
       await cache?.put(url, new Response(bytes, { headers: { "content-type": "application/octet-stream" } }));
     } catch {
+      // why: the model cache is full or blocked: the model is used from memory and fetched again next time
       /* quota: it still works for this session */
     }
   }

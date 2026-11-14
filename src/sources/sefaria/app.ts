@@ -65,6 +65,7 @@ export async function notesOnVerse(ref: SourceRef): Promise<string[]> {
     try {
       notes.push({ path: f.path, content: await readWorkspaceFile(f.path) });
     } catch {
+      // why: a note that cannot be read is left out of the list
       /* unreadable: skip */
     }
   }

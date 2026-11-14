@@ -118,8 +118,8 @@ export function downloadBytes(f: ReadingFont): number {
 }
 
 function baseUrl(): string {
-  const env = (import.meta as unknown as { env?: { BASE_URL?: string } }).env;
-  return env?.BASE_URL ?? "/";
+  // One name at a time (src/lib/publicEnv.ts): a whole import.meta.env inlines every VITE_* name.
+  return (import.meta as unknown as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? "/";
 }
 
 /** The same-origin URL of a font file. */

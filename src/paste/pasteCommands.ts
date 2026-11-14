@@ -39,6 +39,7 @@ export async function readClipboard(): Promise<{ html?: string; text: string }> 
       }
       return { html, text };
     } catch {
+      // why: the async clipboard is refused or empty: the caller falls back to the paste event
       // Permission refused or unsupported type: fall back to the text.
     }
   }

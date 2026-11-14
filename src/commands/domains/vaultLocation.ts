@@ -8,8 +8,6 @@
  */
 import { cmdIcons, type Command } from "../../ui/CommandPalette";
 import { t } from "../../i18n";
-import { showAiToast } from "../../ui/AiToast";
-import { explainError } from "../../lib/userError";
 
 const actions = () => import("../../ui/vaultFolderActions");
 
@@ -75,21 +73,7 @@ export function buildDesktopUpdateCommands(): Command[] {
       hint: t("cmd.app.checkUpdates.hint"),
       icon: cmdIcons.Download,
       group: t("group.file"),
-      action: async () => {
-        const { checkForUpdate, installUpdate } = await import("../../desktop/updates");
-        const { uiConfirm } = await import("../../ui/PromptDialog");
-        try {
-          const r = await checkForUpdate();
-          if (r.state === "blocked-local-only") return showAiToast(t("update.localOnly"), "info");
-          if (r.state === "not-configured") return showAiToast(t("update.notConfigured"), "info");
-          if (r.state === "up-to-date") return showAiToast(t("update.upToDate", { version: r.current }), "success");
-          if (r.state !== "available") return;
-          const ok = await uiConfirm({ title: t("update.available.title", { version: r.version }), message: r.notes || t("update.available.body", { current: r.current, version: r.version }), okLabel: t("update.install") });
-          if (ok) await installUpdate();
-        } catch (e) {
-          showAiToast(t("update.failed", { message: explainError(e) }), "error");
-        }
-      },
+      action: () => import("./updateActions").then((m) => m.checkUpdates()),
     },
     {
       // Plan 14.4: stable follows releases; beta also gets betas. Switching back
@@ -99,12 +83,7 @@ export function buildDesktopUpdateCommands(): Command[] {
       hint: t("cmd.app.updateChannel.hint"),
       icon: cmdIcons.Download,
       group: t("group.file"),
-      action: async () => {
-        const { setUpdateChannel, updateChannel } = await import("../../desktop/updates");
-        const next = updateChannel() === "beta" ? "stable" : "beta";
-        setUpdateChannel(next);
-        showAiToast(next === "beta" ? t("update.channel.beta") : t("update.channel.stable"), "info");
-      },
+      action: () => import("./updateActions").then((m) => m.chooseUpdateChannel()),
     },
   ];
 }

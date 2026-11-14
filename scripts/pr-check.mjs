@@ -15,6 +15,7 @@
  *   - Production packages added or changed, with their licence.
  *   - Source changed with no test changed (a warning).
  *   - Added lines that name the project's domain (the owner's rule).
+ *   - The max-lines baseline (plan W6.25) raises no count and adds no file.
  *   - Written by an AI agent → the PR wants the `ai-written` label.
  *   - Sensitive paths (.github/CODEOWNERS) changed → a person reviews and
  *     adds the `human-reviewed` label (plan W4.28). With `--pr <n>` the
@@ -49,6 +50,7 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { addedLinesFromDiff, AI_LABEL, bodyProblems, domainMentions, licenceChanges, skipCiViolations, unregisteredNetworkCalls, untestedChanges, writtenByAi } from "./lib/prGate.mjs";
 import { bundleDiffMarkdown } from "./bundle-diff.mjs";
+import { BASELINE_PATH, baselineRaises } from "./lib/maxLines.mjs";
 import { HUMAN_REVIEW_LABEL, humanReviewVerdict, independentPatterns, parseCodeowners, sensitiveChanges } from "./lib/humanReview.mjs";
 import { extractReceipts, independentReviewVerdict } from "./lib/independentReview.mjs";
 import { RATCHET_FILES, raiseLine, raisesFor } from "./lib/budgetRatchet.mjs";
@@ -179,6 +181,19 @@ export function runChecks(opts) {
 
   const dom = domainMentions(added);
   add("The project's domain", dom.length ? "fail" : "ok", dom.length ? dom.map((x) => `- \`${x.file}:${x.line}\``) : ["Not named in any added line."]);
+
+  // Max-lines baseline (W6.25): it only goes down.
+  if (changed.includes(BASELINE_PATH) && existsSync(join(cwd, BASELINE_PATH))) {
+    let before = null;
+    try {
+      before = JSON.parse(git(cwd, "show", `${mergeBase}:${BASELINE_PATH}`));
+    } catch {
+      // why: the base has no baseline yet — this diff introduces it, so there is nothing to raise.
+    }
+    const after = JSON.parse(readFileSync(join(cwd, BASELINE_PATH), "utf8"));
+    const up = before ? baselineRaises(before, after) : [];
+    add("Max-lines baseline only goes down", up.length ? "fail" : "ok", up.length ? up.map((x) => `- \`${x.file}\`: ${x.before === null ? "added" : x.before} → ${x.after}. Split the file instead.`) : [before ? "No count raised, no file added." : "The baseline is new in this diff."]);
+  } else add("Max-lines baseline only goes down", "ok", ["The baseline is unchanged."]);
 
   // Human review of sensitive paths (plan W4.28)
   const ownersFile = join(cwd, ".github", "CODEOWNERS");

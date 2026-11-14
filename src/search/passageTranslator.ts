@@ -63,6 +63,7 @@ export async function translatePassage(text: string, from: string, to: string, o
     try {
       return { text: await registered.translate(clipped, from, to, opts.signal), engine: registered.name };
     } catch {
+      // why: the registered engine failed: the browser's translator is tried next
       /* fall through to the browser's translator */
     }
   }
@@ -71,6 +72,7 @@ export async function translatePassage(text: string, from: string, to: string, o
     try {
       return { text: await t.translate(clipped), engine: "browser" };
     } catch {
+      // why: the browser's translator failed: the caller says no translation is available
       /* not translated */
     }
   }

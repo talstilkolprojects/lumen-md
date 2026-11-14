@@ -298,6 +298,7 @@ export function openShareDialog(opts: { session: CollabSession | null; tab?: Tab
     try {
       root.unmount();
     } catch {
+      // why: the dialog root is already unmounted
       /* already gone */
     }
     host.remove();

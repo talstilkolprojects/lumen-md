@@ -698,6 +698,7 @@ export async function confirmCommit(provider: SyncProvider, keys: VaultKeys, byt
       await refreshKeys(provider, keys, access, anchorOf(keys));
       return;
     } catch {
+      // why: this refresh failed; the loop tries the next one and reports when none is left
       // not a descendant: lost
     }
   }

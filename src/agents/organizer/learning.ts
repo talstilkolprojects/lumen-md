@@ -77,6 +77,7 @@ export async function recordDecision(features: readonly string[], approved: bool
     try {
       await set(KEY, b, s);
     } catch {
+      // why: IndexedDB blocked or full: the learned preferences stay for this session only
       /* storage denied: learning stays for the session */
     }
   }

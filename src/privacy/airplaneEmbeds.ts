@@ -22,12 +22,15 @@ export function egressTarget(url: string, base: string = typeof location !== "un
  * src/plugins/EmbedBlock.tsx and the embed codes they hand out (review 8,
  * RR8-451-2: one list; a test keeps them equal). A frame from any other site
  * loses it, so it has no storage and no service worker of its own (review 6,
- * RR6-451-2).
+ * RR6-451-2). W6.40: the content frame's own site (src/lib/contentFrame.ts),
+ * another site by design, in whose frame an embed player keeps an origin
+ * that is never the app's; it is the app policy's frame-src entry.
  */
 export const EMBED_ORIGINS: ReadonlySet<string> = new Set([
   "https://codepen.io",
   "https://codesandbox.io",
   "https://gist.github.com",
+  "https://lumen-md-frame.pages.dev",
   "https://maps.google.com",
   "https://open.spotify.com",
   "https://platform.twitter.com",

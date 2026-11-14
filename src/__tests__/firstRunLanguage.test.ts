@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { languageOrder, languagePlan } from "../onboarding/setup";
 import { detectLocale, systemHasHebrew } from "../i18n/detect";
+import { localeStrings } from "./helpers/localeFiles";
 
 const root = process.cwd();
 const read = (p: string) => readFileSync(join(root, p), "utf8");
@@ -39,7 +40,7 @@ describe("the language plan", () => {
 describe("the dialog", () => {
   const src = read("src/onboarding/FirstRun.tsx");
   const en = read("src/i18n/index.ts");
-  const he = JSON.parse(read("src/i18n/locales/he.json")) as Record<string, string>;
+  const he = localeStrings("he");
 
   it("skips the language step when no question is asked, and keeps a way to change it", () => {
     expect(src).toMatch(/const STEPS = showLang \? ALL_STEPS : ALL_STEPS\.filter\(\(s\) => s !== "lang"\)/);

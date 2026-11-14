@@ -10,8 +10,8 @@
       "mutants": 246,
       "max": 80,
       "runner": "shim",
-      "sha256": "731d24f3df80a9c46d7326f718902b966b86d168f5c497bb714c30aaf5d7af65",
-      "tests": "7bf47fb29c04d99a0c160200e82ea79dbb5419139806f241d2de325a7e8d7caa",
+      "sha256": "d119e69bf4046333139cb9c728c64c335b27dc52ce6e334eb8a9403467f2e9fc",
+      "tests": "c73e3b95f5af296a419dae5fb42f080d80a9d14bd84f5738d61aa1e7fddd77e8",
       "date": "2026-11-14"
     },
     "src/lib/secretStore.ts": {
@@ -127,8 +127,8 @@
       "mutants": 440,
       "max": 80,
       "runner": "shim",
-      "sha256": "ba92c8bd3c7fb8d75ad8bedbafa9d659722729cc6f0a6adbc5d028810014ef6a",
-      "tests": "c1d8a19114eaf357ee82affdbe30eed3a2e56f24357948badf0e0e063fcdd998",
+      "sha256": "87d2895c6e86a57a0d34ced314b7fafa779e3242d9817048b2c5ae472b077224",
+      "tests": "94b6746a201638ffc6086f5a1efd401deeffc6a0bf90f791338190054d7d36f9",
       "date": "2026-11-14"
     },
     "src/sync/e2ee/manifest.ts": {

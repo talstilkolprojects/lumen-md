@@ -36,6 +36,7 @@ export function updateChannel(storage: Pick<Storage, "getItem"> | null = safeSto
     const v = storage?.getItem(CHANNEL_KEY);
     if (v === "beta" || v === "stable") return v;
   } catch {
+    // why: storage is blocked: the channel is stable
     /* storage blocked */
   }
   return buildChannel();
@@ -45,6 +46,7 @@ export function setUpdateChannel(channel: Channel, storage: Pick<Storage, "setIt
   try {
     storage?.setItem(CHANNEL_KEY, channel);
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* storage blocked: this session only */
   }
 }
@@ -98,12 +100,14 @@ export async function launchUpdateCheck(deps: { invoke?: Invoke; desktop?: boole
   try {
     last = storage?.getItem(LAST_CHECK_KEY) ?? null;
   } catch {
+    // why: storage is blocked: no last check, so the launch check runs
     /* storage blocked */
   }
   if (!shouldCheckOnLaunch(last, now)) return null;
   try {
     storage?.setItem(LAST_CHECK_KEY, new Date(now).toISOString());
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* storage blocked */
   }
   return checkForUpdate({ invoke: deps.invoke, desktop: true });

@@ -138,6 +138,7 @@ export async function speakNeural(voice: VoicePack, sentences: readonly Sentence
         try {
           src.stop();
         } catch {
+          // why: the source already stopped (it ended before the abort)
           /* not started */
         }
         resolve();

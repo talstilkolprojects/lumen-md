@@ -31,6 +31,7 @@ export function setGrammarLevel(level: GrammarLevel): void {
   try {
     localStorage.setItem(GRAMMAR_LEVEL_KEY, level);
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* storage denied: sessionLevel keeps it until the page closes */
   }
   announceDictionaryChange();

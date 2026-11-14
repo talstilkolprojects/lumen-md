@@ -67,7 +67,8 @@ async function lanPanel(page: Page, role: "host" | "peer") {
 const result = (page: Page) => page.getByTestId("sync-result");
 
 test("two devices on the local network pair, sync both ways on their own, and reach nothing else", async ({ browser, browserName, baseURL }) => {
-  test.skip(browserName !== "chromium", "the vault reads OPFS through Chromium's async iterator");
+  // skip-reason: the spec turns off Chromium's mDNS host-candidate hiding with a Chromium flag (above) to see LAN addresses; Firefox needs its own pref, not wired yet | task: W2.19 | until: 2027-05-12
+  test.skip(browserName !== "chromium", "real LAN addresses need the Chromium flag above");
   test.setTimeout(120_000);
   const appHost = new URL(baseURL ?? "http://localhost:5173").host;
   const ctxA = await browser.newContext();

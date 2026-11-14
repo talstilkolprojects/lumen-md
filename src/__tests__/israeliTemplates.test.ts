@@ -13,6 +13,7 @@ import { SAMPLE_VAULT_IDS, createSampleVault, sampleVault, type SampleVaultLang 
 import { SAMPLE_VAULT_BASES } from "../storage/sampleVaultBases";
 import { importTemplateFile, installTemplate, localizeTemplate, safeFileStem, type MarketplaceTemplate } from "../storage/templateMarketplace";
 import { listWorkspace, readWorkspaceFile, workspaceHasFile, writeWorkspaceFile } from "../storage/workspace";
+import { localeStrings } from "./helpers/localeFiles";
 
 const ROOT = join(__dirname, "..", "..");
 const PUBLIC = join(ROOT, "public");
@@ -20,7 +21,7 @@ const read = (p: string) => readFileSync(join(PUBLIC, p), "utf8");
 const registry = JSON.parse(read("templates/registry.json")) as { templates: MarketplaceTemplate[] };
 const israeli = registry.templates.filter((t) => t.id.startsWith("il-"));
 const lazyStrings = JSON.parse(readFileSync(join(ROOT, "src/i18n/lazy/templates.json"), "utf8")) as Record<string, string>;
-const he = JSON.parse(readFileSync(join(ROOT, "src/i18n/locales/he.json"), "utf8")) as Record<string, string>;
+const he = localeStrings("he", ROOT);
 const HEBREW = /[֐-׿]/;
 const FM = /^---\n([\s\S]*?)\n---\n/;
 const NOW = new Date(2026, 10, 10, 9, 30);

@@ -21,6 +21,7 @@ export function setFolderOff(folder: string, off: boolean): string[] {
   try {
     localStorage.setItem(KEY, JSON.stringify(list));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* storage denied: for this session only */
   }
   return list;

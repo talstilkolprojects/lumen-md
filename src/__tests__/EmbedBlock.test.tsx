@@ -4,13 +4,18 @@
  * "Load"; then the player runs inside the content frame (plan W4.15), whose
  * #fragment carries the request.
  */
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import { render, screen, cleanup, fireEvent, waitFor } from "@testing-library/react";
 import EmbedBlock from "../plugins/EmbedBlock";
-import { contentFrameRequest, CONTENT_FRAME_PATH, type ContentFrameRequest } from "../lib/contentFrame";
+import { __setContentFrameUrl, contentFrameRequest, type ContentFrameRequest } from "../lib/contentFrame";
 import { __resetRemoteImagesForTests } from "../lib/remoteImages";
 
+/** The content frame's own site (plan W6.40), as a deployment sets it. */
+const FRAME = "https://frame.example.org";
+
+beforeEach(() => __setContentFrameUrl(FRAME));
 afterEach(() => {
+  __setContentFrameUrl(undefined);
   cleanup();
   __resetRemoteImagesForTests();
   localStorage.clear();
@@ -26,7 +31,7 @@ async function loaded(source: string): Promise<{ el: HTMLIFrameElement; req: Con
   const el = container.querySelector("iframe");
   if (!el) throw new Error(`no iframe for ${source}`);
   const src = el.getAttribute("src") ?? "";
-  expect(src.startsWith(`${CONTENT_FRAME_PATH}#`)).toBe(true);
+  expect(src.startsWith(`${FRAME}/#`)).toBe(true);
   const req = contentFrameRequest(src);
   if (!req) throw new Error(`no request in ${src}`);
   return { el, req };
@@ -131,6 +136,18 @@ describe("EmbedBlock", () => {
     const open = screen.getByRole("link");
     expect(open.getAttribute("href")).toBe("https://vimeo.com/1");
     expect(open.getAttribute("rel")).toContain("noopener");
+  });
+
+  it("without a frame site an embed is a link, never a frame with the app's origin (W6.40)", async () => {
+    __setContentFrameUrl(null);
+    const { container } = render(<EmbedBlock source="https://vimeo.com/1" />);
+    fireEvent.click(await screen.findByRole("button", { name: "Load" }));
+    await waitFor(() => expect(container.querySelector("a[data-content-frame-link]")).not.toBeNull());
+    expect(container.querySelector("iframe")).toBeNull();
+    const a = container.querySelector<HTMLAnchorElement>("a[data-content-frame-link]")!;
+    expect(a.getAttribute("href")).toBe("https://player.vimeo.com/video/1");
+    expect(a.target).toBe("_blank");
+    expect(a.rel).toContain("noopener");
   });
 
   it("explains when the text is not a link", () => {

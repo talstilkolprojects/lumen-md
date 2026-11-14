@@ -29,7 +29,8 @@ const STORAGE_KEY = "lumen-flags";
 export const FLAGS_CHANGED = "lumen-flags-changed";
 
 /** The build's channel. Anything but "beta" is stable. */
-export function buildChannel(env: { VITE_LUMEN_CHANNEL?: string } | undefined = import.meta.env as { VITE_LUMEN_CHANNEL?: string } | undefined): Channel {
+// The default reads one name (src/lib/publicEnv.ts): a whole import.meta.env inlines every VITE_* name.
+export function buildChannel(env: { VITE_LUMEN_CHANNEL?: string } | undefined = { VITE_LUMEN_CHANNEL: (import.meta.env as { VITE_LUMEN_CHANNEL?: string } | undefined)?.VITE_LUMEN_CHANNEL }): Channel {
   return (env?.VITE_LUMEN_CHANNEL ?? "").trim().toLowerCase() === "beta" ? "beta" : "stable";
 }
 
@@ -93,6 +94,7 @@ export function setFlag(id: string, value: boolean | null, storage: Pick<Storage
     if (Object.keys(next).length) storage?.setItem(STORAGE_KEY, JSON.stringify(next));
     else storage?.removeItem(STORAGE_KEY);
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* storage blocked: the choice lasts for this page only */
   }
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(FLAGS_CHANGED, { detail: { id } }));
@@ -102,6 +104,7 @@ export function resetFlags(storage: Pick<Storage, "removeItem"> | null = safeSto
   try {
     storage?.removeItem(STORAGE_KEY);
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* nothing to reset */
   }
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(FLAGS_CHANGED, { detail: { id: null } }));

@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { analyzePdfHebrew, fixFinalForms, fixVisualLine, fixVisualText, suggestPdfHebrewFix } from "../paste/pdfHebrew";
+import { localeStrings } from "./helpers/localeFiles";
 
 interface Item {
   id: string;
@@ -111,10 +112,16 @@ describe("correct Hebrew is never changed", () => {
   });
 
   it("every Hebrew string of the app's interface: 0 suggestions", () => {
-    const he = JSON.parse(readFileSync(join(__dirname, "..", "i18n", "locales", "he.json"), "utf8")) as Record<string, string>;
+    const he = localeStrings("he");
     const strings = Object.values(he).filter((v) => typeof v === "string" && /[\u05d0-\u05ea]{2}/.test(v));
     expect(strings.length).toBeGreaterThan(1400);
     expect(strings.filter((v) => suggestPdfHebrewFix(v) !== null)).toEqual([]);
+  });
+
+  it("a word ending in a final letter before a maqaf is correct (train 5: בן־יהודה)", () => {
+    for (const s of ["ספריית בן־יהודה", "חיפוש בספריית בן־יהודה…", "הפריסה עוברת לימין־לשמאל.", "בית־ספר", "עם־ישראל"]) expect({ s, r: suggestPdfHebrewFix(s) }).toEqual({ s, r: null });
+    // A final letter really inside a word is still found.
+    expect(suggestPdfHebrewFix("גםאתר שלומ עלינו ולכמ")?.kind).toBe("finals");
   });
 
   it("short, odd and mixed text: 0 suggestions", () => {

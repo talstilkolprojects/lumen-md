@@ -1,4 +1,5 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
+import { opfsWritable, vaultOrSkip } from "./_opfs";
 import { fakeWebdav } from "../src/__tests__/helpers/fakeServers/webdav";
 
 /**
@@ -90,7 +91,6 @@ async function connect(page: Page) {
 }
 
 test("the panel shows a conflict within 5 s, and a folder left out stays on its device", async ({ browser, browserName }) => {
-  test.skip(browserName !== "chromium", "the vault reads OPFS through Chromium's async iterator");
   const server = fakeWebdav({ baseUrl: DAV, username: "tal", password: "app-password" });
   const ctxA = await browser.newContext();
   const ctxB = await browser.newContext();
@@ -98,6 +98,7 @@ test("the panel shows a conflict within 5 s, and a folder left out stays on its 
   await wire(ctxB, server);
   const a = await open(ctxA);
   const b = await open(ctxB);
+  vaultOrSkip(await opfsWritable(a), browserName);
 
   // A leaves Private/ out before its first round, then creates the vault.
   await writeNote(a, "shared.md", "# shared\n\nבסיס");

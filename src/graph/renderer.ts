@@ -332,6 +332,7 @@ export function createRenderer(canvas: HTMLCanvasElement, opts: { preferCanvas?:
       const gl = canvas.getContext("webgl", { antialias: true, premultipliedAlpha: false });
       if (gl) return new WebGLRenderer(gl, !!gl.getExtension("OES_element_index_uint"));
     } catch {
+      // why: no WebGL here: the canvas renderer below is used
       /* fall back */
     }
   }

@@ -40,7 +40,8 @@ export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const POLICY_FILE = "security/policy.json";
 export const CSP = "Content-Security-Policy";
 /** Hosts that send real response headers (meta / tauri carry only a CSP). */
-const HEADER_HOSTS = new Set(["cloudflare", "netlify", "vercel", "deploy-nginx"]);
+// content-frame-site: the content frame's own static site (plan W6.40).
+const HEADER_HOSTS = new Set(["cloudflare", "netlify", "vercel", "deploy-nginx", "content-frame-site"]);
 
 export function loadPolicy(root = ROOT) {
   return JSON.parse(readFileSync(join(root, POLICY_FILE), "utf8"));
@@ -574,6 +575,8 @@ export function run({ root = ROOT, write = false, policy = loadPolicy(root) } = 
       };
       const routesOfSlot = new Map(); // slot → Set(route)
       for (const [route, def] of Object.entries(policy.routes)) {
+        // A site that serves some routes only (the content frame's own site, W6.40).
+        if (src.only && !src.only.includes(route)) continue;
         for (const sample of samplesFor(policy, route, src.host)) {
           const eff = effective(sample);
           const csp = eff.get(CSP.toLowerCase());

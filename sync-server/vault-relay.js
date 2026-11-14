@@ -95,7 +95,14 @@ const BLOCK = 4096;
 const charge = (n) => Math.max(1, Math.ceil(n / BLOCK)) * BLOCK;
 
 const sha256 = (b) => crypto.createHash("sha256").update(b).digest("hex");
-const etagOf = (data) => `"${sha256(data).slice(0, 32)}"`;
+// Once per object (W6.23): a Worker's store and the answer both need it, and a
+// SHA-256 of a few MiB is most of a PUT's CPU time on the Workers Free plan.
+const etags = new WeakMap();
+const etagOf = (data) => {
+  let e = etags.get(data);
+  if (e === undefined) etags.set(data, (e = `"${sha256(data).slice(0, 32)}"`));
+  return e;
+};
 
 /** The drop box id that an owner token opens (the app derives the same with WebCrypto). */
 const dropIdOf = (ownerToken) => crypto.createHmac("sha256", ownerToken).update(DROP_LABEL).digest("base64url");
@@ -386,7 +393,7 @@ function sketch(width = 1 << 16, depth = 4) {
   return {
     get: (cells) => Math.min(...cells.map((c, d) => rows[d][c])),
     add: (cells, n) => cells.forEach((c, d) => (rows[d][c] += n)),
-    reset: () => rows.forEach((r) => r.fill(0)),
+    reset: (_day) => rows.forEach((r) => r.fill(0)),
     cells: (digest) => rows.map((_, d) => digest.readUInt32BE(d * 4) % width),
   };
 }
@@ -412,10 +419,15 @@ function createVaultRelay(opts = {}) {
   const clientAddress = typeof opts.clientAddress === "function" ? opts.clientAddress : addressReader(opts.trustProxy ?? env.VAULT_RELAY_TRUST_PROXY, env);
   /** Per address (as a daily HMAC, never the address): requests this minute, spaces opened and bytes written today. */
   const hits = sketch();
+  // The day's counts, and the day's key, can be kept by the host (W6.23: a Cloudflare
+  // Durable Object is evicted when idle, and an in-memory count would start again):
+  //   opts.daySketch(name, width) → a sketch whose reset(day) keeps the counts of `day`
+  //   opts.dayKey(day)            → the 32-byte key of that day
+  const daySketch = typeof opts.daySketch === "function" ? opts.daySketch : (_name, width) => sketch(width);
   // Sized for a busy day: 2^17 cells a row keeps collisions rare at a few hundred thousand new spaces.
-  const newSpaces = sketch(1 << 17);
-  const newSpaces48 = sketch(1 << 17);
-  const written = sketch();
+  const newSpaces = daySketch("spaces", 1 << 17);
+  const newSpaces48 = daySketch("spaces48", 1 << 17);
+  const written = daySketch("written", 1 << 16);
   let salt = { day: -1, key: Buffer.alloc(0) };
   let minute = -1;
   const addressId = (req) => {
@@ -423,10 +435,10 @@ function createVaultRelay(opts = {}) {
     const day = Math.floor(now / DAY);
     if (salt.day !== day) {
       // A new day: a new key, and the day's counts start again (the time bucket, not an eviction).
-      salt = { day, key: crypto.randomBytes(32) };
-      newSpaces.reset();
-      newSpaces48.reset();
-      written.reset();
+      salt = { day, key: typeof opts.dayKey === "function" ? opts.dayKey(day) : crypto.randomBytes(32) };
+      newSpaces.reset(day);
+      newSpaces48.reset(day);
+      written.reset(day);
     }
     if (minute !== Math.floor(now / 60000)) {
       minute = Math.floor(now / 60000);
@@ -677,7 +689,7 @@ function createVaultRelay(opts = {}) {
   };
 }
 
-module.exports = { createVaultRelay, memoryStore, diskStore, dropIdOf, powOk, zeroBits, addressKey, charge, MAX_POW_BITS };
+module.exports = { createVaultRelay, memoryStore, diskStore, dropIdOf, powOk, zeroBits, addressKey, charge, sketch, etagOf, MAX_POW_BITS };
 
 if (require.main === module) {
   const relay = createVaultRelay();

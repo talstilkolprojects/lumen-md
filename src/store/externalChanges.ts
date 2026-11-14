@@ -221,6 +221,7 @@ function conflict(path: string, local: string, remote: string): Promise<void> {
       // is a new conflict (with its own copy), never overwritten by the
       // answer given about the older one.
       if (next === "deleted") return onExternal({ type: "delete", path, origin: "external" });
+      if (next === "save") return saveKept(path);
       if (next) return conflict(path, next.local, next.remote);
     });
   resolving.set(path, run);
@@ -233,7 +234,30 @@ async function diskText(path: string): Promise<string | null> {
   return readWorkspaceFile(path).catch(() => null);
 }
 
-type Restart = { local: string; remote: string } | "deleted" | undefined;
+/** What follows an answer: a new conflict, the delete, saving the kept text, or nothing. */
+type Restart = { local: string; remote: string } | "deleted" | "save" | undefined;
+
+/**
+ * Save the text kept after a dialog (the user typed while it was open). The
+ * autosave that fired meanwhile was refused (the note was a conflict) and,
+ * with the same text and the same unsaved flag, nothing schedules another
+ * one — so it is saved here, once the note is no longer a conflict (2.84,
+ * Codex P2 on #258).
+ */
+async function saveKept(path: string): Promise<void> {
+  const note = openPaths().get(path);
+  if (!note?.dirty) return;
+  const content = note.content;
+  try {
+    if (!(await saveOpenNote(path, content))) return; // a new conflict, or the file went away: handled there
+    // Saved; unless the user typed again meanwhile, the note is clean.
+    if (openPaths().get(path)?.content === content) setLocal(path, content, false);
+    notifyWorkspaceChanged({ kind: "content", paths: [path] });
+  } catch (err) {
+    log.warn("saving the kept text failed", err);
+    toast(t("external.conflict.failed", { path }), "error");
+  }
+}
 
 async function resolveOne(path: string, local: string, remote: string): Promise<Restart> {
 /**
@@ -286,7 +310,7 @@ async function autoMerge(path: string, local: string, remote: string): Promise<b
       noteDisk(path, remote);
       setLocal(path, current, true);
       toast(t("external.conflict.keptTyping", { path: copy }));
-      return;
+      return "save";
     }
     if (choice?.kind === "remote") {
       noteDisk(path, remote);
@@ -368,7 +392,11 @@ export async function reconcileOpenNotes(): Promise<void> {
       continue;
     }
     if (textHash(disk) !== stored) {
-      known.delete(path);
+      // The text Lumen last saw stays the base of the conflict when it is the one the stored hash
+      // describes (a check during the session); only a base that does not match is dropped
+      // (train 5: the conflict dialog was given "" as the base).
+      const seen = known.get(path);
+      if (seen !== undefined && textHash(seen) !== stored) known.delete(path);
       await onExternal({ type: "write", path, origin: "external" });
     } else {
       noteDisk(path, disk);

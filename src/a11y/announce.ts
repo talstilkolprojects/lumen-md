@@ -25,6 +25,7 @@ export function setVerbosity(v: Verbosity): void {
   try {
     localStorage.setItem(KEY, v);
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     // Private mode: the choice lasts for this session only.
   }
   memory = v;

@@ -12,7 +12,6 @@ import { join } from "node:path";
  * Server and browsers as in collab-persist.spec.ts (WebRTC signaling points
  * at a closed port, so everything goes through the server).
  */
-test.skip(({ browserName }) => browserName !== "chromium", "server-backed flow, chromium only");
 
 const ACCESS_KEY = "e2e-collab-access-key";
 const SECRET = "e2e-collab-token-secret-0123456789abcdef";

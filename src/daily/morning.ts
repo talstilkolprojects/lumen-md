@@ -98,6 +98,7 @@ function rememberMorning(now: Date): void {
   try {
     localStorage.setItem(LAST_MORNING_KEY, String(now.getTime()));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* storage denied: the next morning lists the last 24 hours */
   }
 }

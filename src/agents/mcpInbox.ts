@@ -92,7 +92,9 @@ export function createMcpInbox(ws: InboxWorkspace, opts: { intervalMs?: number; 
 
   // One ledger write at a time: OPFS has no append, so each is read + write.
   let ledgerChain: Promise<void> = Promise.resolve();
-  const appendLedger = (p: McpProposal, decision: Decision, reason?: string): Promise<void> => (ledgerChain = ledgerChain.then(() => writeLedger(p, decision, reason)).catch(() => {}));
+  const appendLedger = (p: McpProposal, decision: Decision, reason?: string): Promise<void> => (ledgerChain = ledgerChain.then(() => writeLedger(p, decision, reason)).catch(() => {
+    // why: a ledger write that failed must not stop the next one; the proposal itself is still decided
+  }));
   const writeLedger = async (p: McpProposal, decision: Decision, reason?: string) => {
     const line = JSON.stringify({ ts: now().toISOString(), client: p.client, tool: p.tool, path: p.path, decision, bytesOut: 0, id: p.id, reason: reason ? `app: ${reason}` : "app" });
     const prev = (await ws.workspaceHasFile(MCP_LEDGER)) ? await ws.readWorkspaceFile(MCP_LEDGER) : "";
@@ -108,6 +110,7 @@ export function createMcpInbox(ws: InboxWorkspace, opts: { intervalMs?: number; 
     try {
       await ws.deleteWorkspaceFile(`${MCP_PENDING_DIR}/${p.id}.json`);
     } catch {
+      // why: the pending file may already be gone (another tab settled it); the proposal is settled either way
       /* already gone (the CLI decided it too) */
     }
     await appendLedger(p, decision, change.conflict);
@@ -146,7 +149,9 @@ export function createMcpInbox(ws: InboxWorkspace, opts: { intervalMs?: number; 
     return syncing;
   };
 
-  const onFocus = () => void sync().catch(() => {});
+  const onFocus = () => void sync().catch(() => {
+    // why: a failed sync on focus is retried on the next focus or interval
+  });
   const timer = setInterval(onFocus, opts.intervalMs ?? 10_000);
   if (typeof window !== "undefined") window.addEventListener("focus", onFocus);
   return {
@@ -164,6 +169,8 @@ export function createMcpInbox(ws: InboxWorkspace, opts: { intervalMs?: number; 
 export async function startMcpInbox(): Promise<McpInbox> {
   const ws = await import("../storage/workspace");
   const inbox = createMcpInbox(ws);
-  void inbox.sync().catch(() => {});
+  void inbox.sync().catch(() => {
+    // why: a failed first sync is retried on focus and on the interval
+  });
   return inbox;
 }

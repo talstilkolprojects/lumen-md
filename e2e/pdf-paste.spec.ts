@@ -58,7 +58,8 @@ test("a reversed paste is offered the fix, and one undo brings the original back
 
 test("correct Hebrew gets no offer", async ({ page }) => {
   await edit(page, SAMPLE.logical, "input.paste");
-  await page.waitForTimeout(500);
+  // The paste has been handled (and judged) once its text is in the note.
+  await expect.poll(() => text(page)).toBe(SAMPLE.logical);
   await expect(page.getByRole("status").filter({ hasText: /Looks reversed/i })).toHaveCount(0);
   expect(await text(page)).toBe(SAMPLE.logical);
 });

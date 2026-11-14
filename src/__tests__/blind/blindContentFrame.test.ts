@@ -150,11 +150,13 @@ describe("hostile requests fail closed (C6, adversarial)", () => {
 describe("sandbox (C7)", () => {
   it("images, media and Gists get an opaque origin; embeds keep their own", () => {
     for (const k of ["img", "video", "audio", "gist"] as const) {
-      const flags = contentFrameSandbox(k).split(/\s+/);
+      const flags = contentFrameSandbox(k)!.split(/\s+/);
       expect(flags).not.toContain("allow-same-origin");
       expect(flags).not.toContain("allow-top-navigation");
     }
-    expect(contentFrameSandbox("embed").split(/\s+/)).toContain("allow-same-origin");
-    expect(contentFrameSandbox("embed").split(/\s+/)).not.toContain("allow-top-navigation");
+    // W6.40 (#528): an embed keeps an origin only on the content frame's own site; without one it is not framed.
+    expect(contentFrameSandbox("embed", "https://frame.example.org")!.split(/\s+/)).toContain("allow-same-origin");
+    expect(contentFrameSandbox("embed", "https://frame.example.org")!.split(/\s+/)).not.toContain("allow-top-navigation");
+    expect(contentFrameSandbox("embed", null)).toBeNull();
   });
 });

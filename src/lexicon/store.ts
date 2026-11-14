@@ -41,8 +41,8 @@ export interface StoreDeps {
 }
 
 function baseUrl(): string {
-  const env = (import.meta as unknown as { env?: { BASE_URL?: string } }).env;
-  return env?.BASE_URL ?? "/";
+  // One name at a time (src/lib/publicEnv.ts): a whole import.meta.env inlines every VITE_* name.
+  return (import.meta as unknown as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? "/";
 }
 
 const urlOf = (path: string, deps: StoreDeps) => new URL(`${deps.base ?? baseUrl()}${path}`, typeof location !== "undefined" ? location.href : "https://example.com/").href;

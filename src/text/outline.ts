@@ -517,6 +517,7 @@ function writeMap(key: string, map: Record<string, string[]>): void {
     for (const k of keys.slice(0, Math.max(0, keys.length - MAX_NOTES))) delete map[k];
     localStorage.setItem(key, JSON.stringify(map));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* private mode / quota: folds just don't persist */
   }
 }

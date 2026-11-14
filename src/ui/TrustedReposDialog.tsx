@@ -150,6 +150,7 @@ export function openTrustedReposDialog(): void {
     try {
       root.unmount();
     } catch {
+      // why: the dialog root is already unmounted
       /* already gone */
     }
     host.remove();

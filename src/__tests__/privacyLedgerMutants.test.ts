@@ -27,6 +27,7 @@ describe("privacy ledger, mutant-killing cases", () => {
     try {
       localStorage.clear();
     } catch {
+      // why: no localStorage in this environment: nothing to clear
       /* no storage */
     }
     __resetLedger();

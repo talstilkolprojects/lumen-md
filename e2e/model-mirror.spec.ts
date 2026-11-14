@@ -1,8 +1,15 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { HF_HOSTS, MIRROR_PATH, mirrorScenario, syntheticMirror } from "./fixtures/modelMirror";
 import { isDefaultCandidate, silentHfOnly, type HostedModel } from "../src/ai/modelHosting";
+
+/** The scenarios import src/ai/modelHosting.ts from the dev server: a production build has no such module to load. */
+async function devServerOrSkip(page: Page): Promise<void> {
+  const dev = await page.evaluate(() => !!document.querySelector('script[src*="/@vite/client"]'));
+  // skip-reason: the scenarios import src/ai/modelHosting.ts from the Vite dev server, which a production build does not serve | task: W6.33 | until: 2027-05-12
+  test.skip(!dev, "imports src/ai/modelHosting.ts from the dev server");
+}
 
 /**
  * Plan W6.33: models without Hugging Face. huggingface.co is blocked for the
@@ -52,8 +59,7 @@ test("with huggingface.co blocked, every default model loads from the mirror", a
   await page.addInitScript(() => localStorage.setItem("lumen-tour-done", "1"));
   await page.goto("/");
   await expect(page.locator(".cm-content").first()).toBeVisible({ timeout: 15_000 });
-  const dev = await page.evaluate(() => !!document.querySelector('script[src*="/@vite/client"]'));
-  test.skip(!dev, "imports src/ai/modelHosting.ts from the dev server");
+  await devServerOrSkip(page);
 
   const models = REAL ? registry.models.filter((m) => isDefaultCandidate(m) && m.files?.length && m.hosting?.via !== "converted") : synthetic.models;
   if (REAL && process.env.MODEL_MIRROR_REQUIRE_ALL === "1") expect(registry.models.filter((m) => isDefaultCandidate(m) && m.files?.length).length).toBe(24);
@@ -80,8 +86,7 @@ test("a mirror that serves other bytes is refused with a clear error", async ({ 
   await page.addInitScript(() => localStorage.setItem("lumen-tour-done", "1"));
   await page.goto("/");
   await expect(page.locator(".cm-content").first()).toBeVisible({ timeout: 15_000 });
-  const dev = await page.evaluate(() => !!document.querySelector('script[src*="/@vite/client"]'));
-  test.skip(!dev, "imports src/ai/modelHosting.ts from the dev server");
+  await devServerOrSkip(page);
   const [r] = await page.evaluate(mirrorScenario, { modulePath: "/src/ai/modelHosting.ts", mirror: `${origin}${MIRROR_PATH}`, models: [one] });
   expect(r.error).toMatch(/no source gave the expected file .*mirror: sha256/);
 });

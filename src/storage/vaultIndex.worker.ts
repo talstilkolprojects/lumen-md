@@ -22,7 +22,11 @@ self.onmessage = (e: MessageEvent<IndexRequest>) => {
       // W6.36: work a request hands back runs after its answer, before the next request.
       const later: Array<() => Promise<void>> = [];
       (self as unknown as Worker).postMessage(await handleIndexRequest(index, req, (w) => later.push(w)));
-      for (const w of later) await w().catch(() => {});
+      for (const w of later) await w().catch(() => {
+        // why: follow-up work of an answered request (the snapshot save) is best effort; the answer was sent
+      });
     })
-    .catch(() => {});
+    .catch(() => {
+      // why: a request that throws is answered by handleIndexRequest itself; the queue goes on
+    });
 };

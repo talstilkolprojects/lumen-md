@@ -175,6 +175,7 @@ export async function initNativeBridge(h: NativeHandlers, plugin?: LumenNativePl
       const ids = await drainPending(items, h.captureText);
       if (ids.length) await p.removeCaptures({ ids });
     } catch {
+      // why: the pending captures stay with the native side and are drained on the next resume
       /* the plugin is missing in this build: nothing queued */
     }
   };
@@ -182,6 +183,7 @@ export async function initNativeBridge(h: NativeHandlers, plugin?: LumenNativePl
   try {
     onUrl((await p.getLaunchUrl()).url);
   } catch {
+    // why: no launch URL (the app was not opened by a link)
     /* no launch link */
   }
   await drain();

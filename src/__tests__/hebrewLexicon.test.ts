@@ -192,7 +192,11 @@ describe("lexicon pack on this device", () => {
 describe("lexicon credit (plan 1.7)", () => {
   it("the registry credits Hebrew Wiktionary, CC BY-SA 4.0, as a download the credits screen lists", () => {
     const e = (registry as { models: Array<Record<string, unknown>> }).models.find((m) => m.id === "hewiktionary-lexicon")!;
-    expect(e).toMatchObject({ license: "CC-BY-SA-4.0", class: "allowed", delivery: "user-download" });
+    // CC BY-SA 4.0 is not unconditional: attribution, and share-alike on adaptations, and the pack is one
+    // (definitions shortened, examples removed: "unmodified": false). scripts/lib/licenses.mjs classes every
+    // CC BY-SA entry "conditional" (V4 sweep, train 4), with commercial use "conditional" too; the credits
+    // screen lists conditional entries with their notice. So "conditional", not "allowed" (train 5, audit item 11).
+    expect(e).toMatchObject({ license: "CC-BY-SA-4.0", class: "conditional", commercial: "conditional", delivery: "user-download", unmodified: false });
     expect(String(e.attribution)).toMatch(/Hebrew Wiktionary.*CC BY-SA 4\.0/);
   });
 });

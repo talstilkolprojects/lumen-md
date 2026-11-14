@@ -104,6 +104,97 @@ describe("the folder watcher", () => {
   });
 });
 
+describe("a folder that cannot be listed (2.83, Codex P2 4311564686)", () => {
+  /** A folder backend whose `list` fails with `fail(dir)` while `failing` is set. */
+  function flaky(dir: FakeDir, fail: (d: string) => Error) {
+    const backend = createDirectoryHandleBackend({ id: "folder", root: async () => dir as unknown as FileSystemDirectoryHandle });
+    const plain = backend.list.bind(backend);
+    const state = { failing: false };
+    backend.list = async (d: string) => {
+      if (state.failing) throw fail(d);
+      return plain(d);
+    };
+    return { backend, state };
+  }
+
+  it("a refused root listing (permission revoked) reports nothing and keeps the baseline", async () => {
+    const dir = new FakeDir("V");
+    const { backend, state } = flaky(dir, () => new DOMException("permission revoked", "NotAllowedError"));
+    await backend.write("a.md", "one");
+    await backend.write("notes/b.md", "bee");
+    const got: VaultEvent[] = [];
+    backend.watch((e) => got.push(e));
+    const stop = watchExternalChanges(backend, { intervalMs: 40 });
+    try {
+      await new Promise((r) => setTimeout(r, 80)); // baseline
+      state.failing = true;
+      await new Promise((r) => setTimeout(r, 200)); // several failed comparisons
+      expect(got.filter((e) => e.origin === "external")).toEqual([]);
+      // Access back: only what really changed meanwhile is reported.
+      await writeOutside(dir, "c.md", "new");
+      state.failing = false;
+      await until(() => got.some((e) => e.origin === "external"), 2000);
+      await new Promise((r) => setTimeout(r, 100));
+      expect(got.filter((e) => e.origin === "external").map(({ type, path }) => ({ type, path }))).toEqual([{ type: "write", path: "c.md" }]);
+    } finally {
+      stop();
+    }
+  });
+
+  it("an I/O error in a sub-folder aborts the comparison: no deletes for its files", async () => {
+    const dir = new FakeDir("V");
+    const backend = createDirectoryHandleBackend({ id: "folder", root: async () => dir as unknown as FileSystemDirectoryHandle });
+    await backend.write("a.md", "one");
+    await backend.write("notes/b.md", "bee");
+    const plain = backend.list.bind(backend);
+    let failing = false;
+    backend.list = async (d: string) => {
+      if (failing && d === "notes") throw new DOMException("disk hiccup", "NotReadableError");
+      return plain(d);
+    };
+    const got: VaultEvent[] = [];
+    backend.watch((e) => got.push(e));
+    const stop = watchExternalChanges(backend, { intervalMs: 40 });
+    try {
+      await new Promise((r) => setTimeout(r, 80)); // baseline
+      failing = true; // only the sub-folder fails now
+      await new Promise((r) => setTimeout(r, 200));
+      expect(got.filter((e) => e.origin === "external")).toEqual([]);
+      // Readable again, nothing changed: still nothing to report.
+      failing = false;
+      await new Promise((r) => setTimeout(r, 150));
+      expect(got.filter((e) => e.origin === "external")).toEqual([]);
+    } finally {
+      stop();
+    }
+  });
+
+  it("a sub-folder that really vanished (NotFound) is still reported as deleted", async () => {
+    const dir = new FakeDir("V");
+    const backend = createDirectoryHandleBackend({ id: "folder", root: async () => dir as unknown as FileSystemDirectoryHandle });
+    await backend.write("a.md", "one");
+    await backend.write("notes/b.md", "bee");
+    const got: VaultEvent[] = [];
+    backend.watch((e) => got.push(e));
+    const plain = backend.list.bind(backend);
+    let gone = false;
+    // Listed at the root, gone by the time it is walked: what a delete mid-walk looks like.
+    backend.list = async (d: string) => {
+      if (gone && d === "notes") throw new DOMException("notes not found", "NotFoundError");
+      return plain(d);
+    };
+    const stop = watchExternalChanges(backend, { intervalMs: 40 });
+    try {
+      await new Promise((r) => setTimeout(r, 80)); // baseline
+      gone = true;
+      await until(() => got.some((e) => e.origin === "external"), 2000);
+      expect(got.filter((e) => e.origin === "external").map(({ type, path }) => ({ type, path }))).toEqual([{ type: "delete", path: "notes/b.md" }]);
+    } finally {
+      stop();
+    }
+  });
+});
+
 describe("own writes and external writes to the same path", () => {
   it("an edit by another program right after Lumen's own write is still reported", async () => {
     const dir = new FakeDir("V");

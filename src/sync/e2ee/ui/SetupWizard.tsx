@@ -37,9 +37,9 @@ const field: React.CSSProperties = { width: "100%", padding: "8px 10px", border:
 const STATE_ORDER: FileSyncState[] = ["conflict", "error", "pending", "excluded", "synced"];
 
 function relayUrl(): string | null {
-  const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
   // Only an explicit relay: its https origin must be in the build's connect-src (cspEndpoints.ts).
-  return relayOrigin(env?.VITE_SYNC_RELAY_URL);
+  // One name at a time (src/lib/publicEnv.ts): a whole import.meta.env inlines every VITE_* name.
+  return relayOrigin((import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env?.VITE_SYNC_RELAY_URL);
 }
 
 export function SetupWizard({

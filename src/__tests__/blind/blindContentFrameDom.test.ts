@@ -9,6 +9,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CONTENT_FRAME_PATH,
+  __setContentFrameUrl,
   applyContentFrameSize,
   contentFrameRequest,
   contentFrameSandbox,
@@ -24,7 +25,8 @@ const reqs: ContentFrameRequest[] = [
 ];
 
 describe("createContentFrame (C9)", () => {
-  for (const req of reqs) {
+  // W6.40 (#528): an embed is framed only from the content frame's own site; on the app's host it is a link.
+  for (const req of reqs.filter((r) => r.kind !== "embed")) {
     it(`${req.kind}: an iframe on the content frame page, with the kind's sandbox`, () => {
       const f = createContentFrame(req, document);
       expect(f.tagName).toBe("IFRAME");
@@ -35,6 +37,22 @@ describe("createContentFrame (C9)", () => {
       expect(f.hasAttribute("srcdoc")).toBe(false);
     });
   }
+  it("embed: a link on the app's host, an iframe on the content frame's own site (W6.40)", () => {
+    const embed = reqs.find((r) => r.kind === "embed")!;
+    __setContentFrameUrl(null);
+    expect(createContentFrame(embed, document).tagName).toBe("A");
+    __setContentFrameUrl("https://frame.example.org/");
+    try {
+      const f = createContentFrame(embed, document);
+      expect(f.tagName).toBe("IFRAME");
+      const src = f.getAttribute("src") ?? "";
+      expect(new URL(src).origin).toBe("https://frame.example.org");
+      expect(f.getAttribute("sandbox")).toBe(contentFrameSandbox("embed", "https://frame.example.org"));
+      expect(f.hasAttribute("srcdoc")).toBe(false);
+    } finally {
+      __setContentFrameUrl(undefined);
+    }
+  });
 });
 
 describe("applyContentFrameSize (C8)", () => {

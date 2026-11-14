@@ -22,6 +22,61 @@
 export const CONTENT_FRAME_PATH = "/content-frame.html";
 export const CONTENT_FRAME_MESSAGE = "lumen-content-frame";
 
+/**
+ * The content frame's own site (plan W6.40, review E52): the deployment's
+ * `VITE_CONTENT_FRAME_URL`, the page's URL on a second static site that
+ * serves only public/content-frame.{html,js} (scripts/content-frame-site.mjs;
+ * the official one is https://lumen-md-frame.pages.dev/, on the Public Suffix
+ * List, so it is another *site* as well as another origin). There the frame
+ * has its own storage and can't touch the app's: an embed's player keeps the
+ * `allow-same-origin` it needs, and that origin is the frame site's.
+ *
+ * Without one, the frame stays on the app's host, where it is always opaque:
+ * the iframe's sandbox has no allow-same-origin, and the host's policy for
+ * /content-frame.html adds `sandbox` (security/policy.json), so even a
+ * top-level visit can't run it with the app's origin. Embeds, which need an
+ * origin of their own, are then a link instead of a player.
+ */
+const ENV_URL: string | undefined = import.meta.env.VITE_CONTENT_FRAME_URL;
+let urlOverride: string | null | undefined;
+
+/** Tests: pretend the build was made with this frame site URL (undefined: back to the build's). */
+export function __setContentFrameUrl(url: string | null | undefined): void {
+  urlOverride = url;
+}
+
+export interface ContentFrameSite {
+  origin: string;
+  /** The page's URL without a fragment, e.g. `https://lumen-md-frame.pages.dev/`. */
+  page: string;
+}
+
+/**
+ * The frame site, or null when there is none to use: unset, not an https:
+ * URL (http: only on a loopback host, for dev and e2e), with a query or a
+ * fragment, or on the app's own origin (that would isolate nothing).
+ */
+export function contentFrameSite(appOrigin: string = typeof location === "undefined" ? "" : location.origin): ContentFrameSite | null {
+  const raw = (urlOverride !== undefined ? urlOverride : ENV_URL)?.trim();
+  if (!raw) return null;
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (url.search || url.hash || url.username || url.password || raw.includes("#") || raw.includes("?")) return null;
+  const loopback = url.hostname === "127.0.0.1" || url.hostname === "localhost" || url.hostname === "[::1]";
+  if (url.protocol !== "https:" && !(url.protocol === "http:" && loopback)) return null;
+  if (url.origin === appOrigin) return null;
+  return { origin: url.origin, page: url.origin + url.pathname };
+}
+
+/** The frame site's origin (see contentFrameSite). */
+export function contentFrameOrigin(appOrigin?: string): string | null {
+  return contentFrameSite(appOrigin)?.origin ?? null;
+}
+
 export type ContentFrameRequest =
   | { kind: "img"; src: string; srcset?: string; alt?: string; title?: string; width?: number; height?: number }
   | { kind: "video" | "audio"; src: string; title?: string; loop?: boolean; muted?: boolean }
@@ -41,15 +96,21 @@ export type ContentFrameRequest =
  * counts a frame that had it as a window that may have reached the network
  * (review 8 of #451, RR8-451-2).
  */
-export function contentFrameSandbox(kind: ContentFrameRequest["kind"]): string {
-  if (kind === "embed") return "allow-scripts allow-same-origin allow-popups allow-presentation allow-forms";
+export function contentFrameSandbox(kind: ContentFrameRequest["kind"], frameOrigin: string | null = contentFrameOrigin()): string | null {
+  // W6.40: the origin an embed keeps must be the frame site's, never the app's.
+  if (kind === "embed") return frameOrigin ? "allow-scripts allow-same-origin allow-popups allow-presentation allow-forms" : null;
   if (kind === "gist") return "allow-scripts";
   return "allow-scripts";
 }
 
-/** The frame's URL: the page plus the request in the fragment. */
-export function contentFrameSrc(req: ContentFrameRequest): string {
-  return `${CONTENT_FRAME_PATH}#${encodeURIComponent(JSON.stringify(req))}`;
+/**
+ * The frame's URL: the page (on the frame site when there is one) plus the
+ * request in the fragment. On the frame site the request also names the
+ * app's origin, the only one the page posts its size to.
+ */
+export function contentFrameSrc(req: ContentFrameRequest, site: ContentFrameSite | null = contentFrameSite()): string {
+  if (!site) return `${CONTENT_FRAME_PATH}#${encodeURIComponent(JSON.stringify(req))}`;
+  return `${site.page}#${encodeURIComponent(JSON.stringify({ ...req, parent: location.origin }))}`;
 }
 
 /** An https: URL, as the content frame's page accepts it (public/content-frame.js `httpsUrl`). */
@@ -102,7 +163,10 @@ export function validContentFrameRequest(v: unknown): ContentFrameRequest | null
 /** The request a content frame's URL carries (null when it is not one, or not one the frame would show). */
 export function contentFrameRequest(src: string): ContentFrameRequest | null {
   const i = src.indexOf("#");
-  if (i < 0 || !src.slice(0, i).endsWith(CONTENT_FRAME_PATH)) return null;
+  if (i < 0) return null;
+  const page = src.slice(0, i);
+  const site = contentFrameSite();
+  if (!page.endsWith(CONTENT_FRAME_PATH) && !(site && page === site.page)) return null;
   try {
     return validContentFrameRequest(JSON.parse(decodeURIComponent(src.slice(i + 1))));
   } catch {
@@ -186,9 +250,11 @@ function listen(win: Window) {
     const data = e.data as { type?: unknown; width?: unknown; height?: unknown } | null;
     if (!data || typeof data !== "object" || data.type !== CONTENT_FRAME_MESSAGE || !e.source) return;
     // Only a frame this module made, matched by its window — never by the
-    // message's claims (opaque frames post with origin "null").
+    // message's claims — and only from the origin that frame has: "null" for
+    // an opaque one, the frame site's for an embed there (W6.40).
     for (const frame of win.document.querySelectorAll<HTMLIFrameElement>("iframe[data-content-frame]")) {
       if (frame.contentWindow === e.source) {
+        if (e.origin !== frame.dataset.frameOrigin) return;
         applyContentFrameSize(frame, data);
         return;
       }
@@ -196,20 +262,42 @@ function listen(win: Window) {
   });
 }
 
+/**
+ * An embed with no frame site to play in (W6.40): a link that opens the
+ * player in a new tab, never a frame with the app's origin.
+ */
+function embedLink(req: Extract<ContentFrameRequest, { kind: "embed" }>, doc: Document): HTMLAnchorElement {
+  const a = doc.createElement("a");
+  a.href = req.src;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  a.dir = "auto";
+  a.dataset.contentFrameLink = "embed";
+  a.title = new URL(req.src).host;
+  a.textContent = `${req.title || a.title} ↗`;
+  return a;
+}
+
 /** A content frame for `req`, ready to insert (the preview and the WYSIWYG editor). */
-export function createContentFrame(req: ContentFrameRequest, doc: Document = document): HTMLIFrameElement {
+export function createContentFrame(req: ContentFrameRequest, doc: Document = document): HTMLIFrameElement | HTMLAnchorElement {
+  const site = contentFrameSite(doc.defaultView?.location.origin);
+  const frameOrigin = site?.origin ?? null;
+  const sandbox = contentFrameSandbox(req.kind, frameOrigin);
+  if (sandbox === null && req.kind === "embed") return embedLink(req, doc);
   if (doc.defaultView) listen(doc.defaultView);
   const frame = doc.createElement("iframe");
   frame.dataset.contentFrame = req.kind;
+  // The origin its messages come from: its own (frame site) only for an embed.
+  frame.dataset.frameOrigin = req.kind === "embed" && frameOrigin ? frameOrigin : "null";
   if (req.kind === "img" && req.width && req.height) frame.dataset.fixedSize = "1";
   frame.title = frameTitle(req);
-  frame.setAttribute("sandbox", contentFrameSandbox(req.kind));
+  frame.setAttribute("sandbox", sandbox ?? "allow-scripts");
   frame.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
   frame.setAttribute("loading", "lazy");
   // Permissions the provider's player gets are delegated through this frame.
   if (req.kind === "embed" && req.allow) frame.setAttribute("allow", req.allow);
   if (req.kind === "embed" || req.kind === "video") frame.setAttribute("allowfullscreen", "");
   initialSize(frame, req);
-  frame.src = contentFrameSrc(req);
+  frame.src = contentFrameSrc(req, site);
   return frame;
 }

@@ -67,12 +67,13 @@
  */
 
 import { isPopup, reachedNetwork, type EgressTally } from "./airplaneCertificate";
-import { __setAirplaneFlag, addAirplaneCsp, AIRPLANE_KEY, AIRPLANE_TAB, airplaneSinceStored, blankFrames, onSwitchedElsewhere, rootsOf, shadowRoots } from "./airplaneBoot";
+import { __setAirplaneFlag, addAirplaneCsp, AIRPLANE_KEY, AIRPLANE_TAB, airplaneSinceStored, blankFrames, onSwitchedElsewhere, shadowRoots } from "./airplaneBoot";
 import { AIRPLANE_CHANNEL, type AirplaneMessage } from "../ai/workerLedger";
 import { wrapLedgerTransport } from "../ai/privacyLedger";
 import { EMBED_ORIGINS, egressTarget, guardedSandbox as sandboxFor } from "./airplaneEmbeds";
+import { codeOrigin, popupFrames, sameOrigin } from "./airplaneHelpers";
 
-export { EMBED_ORIGINS, egressTarget };
+export { EMBED_ORIGINS, egressTarget, codeOrigin };
 
 export type EgressKind = "fetch" | "xhr" | "websocket" | "eventsource" | "beacon" | "webrtc" | "worker" | "resource" | "csp" | "frame";
 /** "in-flight": a request still waiting for its answer when the switch went on (counted, then aborted). */
@@ -142,24 +143,6 @@ export function subscribeEgress(fn: () => void): () => void {
   return () => listeners.delete(fn);
 }
 
-/**
- * The place in the code a request came from. `skip` is the number of this
- * module's own frames on top (the recording helper and the wrapper: 2), so
- * the answer does not depend on how the build names or merges chunks; any
- * later frame still in this module is skipped by name as well.
- */
-export function codeOrigin(stack: string | undefined, skip = 0): string {
-  const frames = (stack ?? "").split("\n").map((l) => l.trim()).filter((l) => /:\d+:\d+\)?$/.test(l));
-  const rest = frames.slice(skip);
-  const outside = rest.find((l) => !/privacy\/airplane|airplane[-.][\w-]*\.js/.test(l)) ?? rest[0] ?? frames[0] ?? "";
-  // "at fn (https://host/assets/x-abc.js:1:234)" / "fn@https://host/assets/x.js:1:234" → "fn x-abc.js:1:234"
-  const m = /^(?:at\s+)?(?:(.*?)\s*\(|(.*?)@)?(?:[a-z-]+:\/\/[^/]+)?\/?([^()]*?:\d+:\d+)\)?$/.exec(outside);
-  if (!m) return outside.slice(0, 160);
-  const fn = (m[1] ?? m[2] ?? "").replace(/^async\s+/, "").trim();
-  const file = m[3].split("/").pop() ?? m[3];
-  return `${fn ? `${fn} ` : ""}${file}`.slice(0, 160);
-}
-
 export function record(a: Omit<EgressAttempt, "id" | "ts"> & { ts?: number }): EgressAttempt {
   const entry: EgressAttempt = { ...a, id: nextId++, ts: a.ts ?? Date.now() };
   tally.attempts++;
@@ -204,14 +187,6 @@ export function verdict(url: string, base: string = typeof location !== "undefin
   }
   if (!on) return "network";
   return self ? "self" : "blocked";
-}
-
-function sameOrigin(url: string, base: string | undefined): boolean {
-  try {
-    return !!base && new URL(url, base).origin === new URL(base).origin;
-  } catch {
-    return false;
-  }
 }
 
 const isBlocked = (v: Verdict) => v === "blocked" || (v === "self" && on);
@@ -373,42 +348,6 @@ function latchPopups(f: HTMLIFrameElement, base: string): void {
     latched.shift();
     droppedLatches++;
   }
-}
-
-/**
- * Frames that may have opened a window this page can't close (review 8,
- * RR8-451-1, -2): a frame whose sandbox allows popups, or that has none,
- * unless its window is one whose window.open is tracked (`trackOpen`); and
- * the same in same-origin frames' documents.
- */
-function popupFrames(doc: Pick<Document, "querySelectorAll">, depth = 0, seen?: Set<HTMLIFrameElement>): string[] {
-  const out: string[] = [];
-  for (const root of rootsOf(doc)) {
-    let frames: HTMLIFrameElement[] = [];
-    try {
-      frames = Array.from(root.querySelectorAll("iframe"));
-    } catch {
-      /* why: a fake document */
-    }
-    for (const f of frames) {
-      let inner: Document | null = null;
-      let tracked = false;
-      try {
-        inner = f.contentDocument;
-        tracked = Boolean((f.contentWindow as (Window & { __lumenOpen?: boolean }) | null)?.__lumenOpen);
-      } catch {
-        /* why: another origin's page: its window.open is out of reach */
-      }
-      const sb = f.getAttribute("sandbox");
-      const may = sb === null || sb.split(/[\t\n\f\r ]+/).some((t) => t.toLowerCase() === "allow-popups");
-      if (may && !tracked) {
-        out.push(f.getAttribute("srcdoc") !== null ? "about:srcdoc" : f.getAttribute("src") || "about:blank");
-        seen?.add(f);
-      }
-      if (inner && depth < 8) out.push(...popupFrames(inner, depth + 1, seen));
-    }
-  }
-  return out;
 }
 
 /** Wrap one window's `open` so the window it returns can be closed at the switch (RR6-451-2). */

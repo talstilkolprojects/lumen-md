@@ -201,7 +201,7 @@ test("an iframe without a scheme is removed; an https embed waits for a click, t
   await expect(preview(page).locator("iframe")).toHaveCount(0);
   expect(traffic.left()).toEqual([]);
   await gate.getByRole("button", { name: "Load" }).click();
-  // Loaded: the content frame (same origin, its own policy), carrying the embed in its #fragment.
+  // Loaded: the content frame (its own origin since W6.40, its own policy), carrying the embed in its #fragment.
   const frames = preview(page).locator("iframe");
   await expect(frames).toHaveCount(1);
   const frame = frames.first();
@@ -213,7 +213,8 @@ test("an iframe without a scheme is removed; an https embed waits for a click, t
     const src = (f as HTMLIFrameElement).getAttribute("src") ?? "";
     return { path: src.split("#")[0], req: JSON.parse(decodeURIComponent(src.split("#")[1] ?? "null")) as { kind: string; src: string; referrerPolicy: string } };
   });
-  expect(req.path).toBe("/content-frame.html");
+  // The frame site (W6.40): in e2e the same dev server by its other loopback name.
+  expect(req.path).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/content-frame\.html$/);
   expect(req.req).toMatchObject({ kind: "embed", src: "https://frames.lumen-e2e.test/embed", referrerPolicy: "no-referrer" });
   // Inside it, the embed's frame exists, but the host is not one of the content
   // frame's providers (frame-src): it is refused there and never reached.

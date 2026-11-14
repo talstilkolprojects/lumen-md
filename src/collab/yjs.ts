@@ -631,6 +631,7 @@ export function connectCollab(
         if (commentsDoc !== doc) commentsDoc.destroy();
         commentsTransport?.destroy();
       } catch {
+        // why: tearing down: a part that is already destroyed throws, and nothing is left to clean
         /* */
       }
       onPersistentSettled = null;
@@ -656,6 +657,7 @@ export function connectCollab(
         plainAwareness?.destroy();
         transportAwareness?.destroy();
       } catch {
+        // why: tearing down: a part that is already destroyed throws, and nothing is left to clean
         /* */
       }
       try {

@@ -243,6 +243,34 @@ copy for the dev server and Capacitor.
 - **WebKit** does not match `'self'` in an opaque-origin frame, so the page's script
   carries the build's public nonce, as the runner pages do.
 
+### Its own site (plan W6.40, review E52)
+
+Embeds kept `allow-same-origin`, so the content frame ran with the app's origin: any
+future sink in `public/content-frame.js` would have been full XSS on the app. Now:
+
+- **The frame has its own site**: `VITE_CONTENT_FRAME_URL`, officially
+  `https://lumen-md-frame.pages.dev/` (Cloudflare Pages by Direct Upload,
+  `scripts/content-frame-site.mjs`; `pages.dev` is on the Public Suffix List, so it is
+  another *site*, not only another origin). Host `content-frame-site` in `policy.json`,
+  checked file `deploy/content-frame/_headers`: no `sandbox`, `frame-ancestors` = the apps.
+  The app's `frame-src` is `'self'` plus that origin. There an embed's `allow-same-origin`
+  is the frame site's origin.
+- **Without one** (a build with no `VITE_CONTENT_FRAME_URL`): images, media and Gists
+  still render in an opaque frame on the app's host, and the host's header adds
+  `sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox` to
+  `/content-frame.html`, so even a top-level visit runs it opaque. Embeds become a link.
+- **`postMessage`**: the app takes a size report only from the frame's own window *and*
+  the origin that frame has (`"null"` for an opaque one, the frame site's for an embed).
+  On the frame site the page posts only to the app origin named in the request.
+- **Why not a sandboxed `srcdoc` with a `<meta>` CSP.** A `srcdoc` (like `about:blank`,
+  `blob:` and `data:`) inherits the app's policy container, and policies only add up: it
+  can never allow what the app's `img-src` / `frame-src` refuse. Checked in Chromium: the
+  remote image in such a frame is refused by the app's `img-src 'self'`.
+- **e2e**: `playwright.config.ts` gives the dev server the frame URL
+  `http://127.0.0.1:5173/content-frame.html` (the app is `localhost:5173`, another
+  origin and site); `e2e/content-frame-origin.spec.ts` evaluates code inside each kind
+  of frame and checks it can't reach the app's `localStorage`, IndexedDB or document.
+
 **connect-src, also W4.15.** Dropped: `wss://y-webrtc-signaling-eu.herokuapp.com` (Heroku
 ended free dynos in November 2022; y-webrtc 10.3.0, the version in the lockfile, replaced
 it with `wss://y-webrtc-eu.fly.dev` as its own default, which is now the second opt-in

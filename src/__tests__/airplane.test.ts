@@ -275,7 +275,9 @@ describe("certificate", () => {
   it("states the window, counts 0 that left, and any change breaks it", async () => {
     enableAirplaneMode();
     const from = Date.now();
-    await fake.win.fetch("https://evil.example.com/a").catch(() => {});
+    await fake.win.fetch("https://evil.example.com/a").catch(() => {
+      // why: the blocked request rejects by design; the test reads the attempt log
+    });
     await fake.win.fetch("/assets/app.js");
     await fake.win.fetch("http://127.0.0.1:11434/api/tags");
     const cert = buildCertificate(egressAttempts(), from, Date.now() + 1, "test");
@@ -295,7 +297,9 @@ describe("certificate", () => {
     const from = Date.now();
     // One request that reached the network (the page let it through), then a flood of blocked ones.
     record({ kind: "fetch", target: "https://leak.example.com/up", method: "POST", decision: "allowed", origin: "test" });
-    for (let i = 0; i < 10_000; i++) await fake.win.fetch(`https://evil.example.com/${i}`).catch(() => {});
+    for (let i = 0; i < 10_000; i++) await fake.win.fetch(`https://evil.example.com/${i}`).catch(() => {
+      // why: each blocked request rejects by design; the test reads the attempt log
+    });
     const list = egressAttempts();
     expect(list.length).toBeLessThanOrEqual(501);
     expect(list.some((a) => a.target === "https://leak.example.com/up")).toBe(true);

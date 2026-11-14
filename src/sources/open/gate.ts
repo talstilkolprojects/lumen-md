@@ -83,6 +83,7 @@ export function setSourceEnabled(id: OpenSourceId, on: boolean, storage: Pick<St
   try {
     storage?.setItem(KEY, JSON.stringify(next));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* private mode: the choice lasts for this session only */
   }
 }

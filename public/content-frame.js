@@ -16,9 +16,11 @@
  * and the embed providers' frames, which the app's own policy does not.
  *
  * The page tells its parent the size its content wants:
- *   parent.postMessage({ type: "lumen-content-frame", width, height }, origin)
- * (the parent matches event.source to the frame; frame-ancestors 'self'
- * makes the app the only parent).
+ *   parent.postMessage({ type: "lumen-content-frame", width, height }, parentOrigin)
+ * (the parent matches event.source to the frame, and event.origin to the
+ * frame's). parentOrigin is the request's `parent` when the page is served
+ * from its own site (plan W6.40: the frame site's frame-ancestors lists the
+ * apps that may frame it), else this page's own URL origin — the app's.
  *
  * A classic script, not a module: a Gist's embed script document.write()s
  * the gist, which works only while this page is being parsed.
@@ -32,6 +34,17 @@
   function post(width, height) {
     if (window.parent === window) return;
     window.parent.postMessage({ type: TYPE, width: Math.round(width), height: Math.ceil(height) }, origin);
+  }
+
+  /** A bare http(s) origin, as the app writes it in the request (W6.40). */
+  function originOf(value) {
+    if (typeof value !== "string") return null;
+    try {
+      var url = new URL(value);
+      return (url.protocol === "https:" || url.protocol === "http:") && url.origin === value ? url.origin : null;
+    } catch (e) {
+      return null;
+    }
   }
 
   function httpsUrl(value) {
@@ -74,6 +87,8 @@
     req = null;
   }
   if (!req || typeof req !== "object") return fallback("");
+  // On the frame site the app is another origin: post the size to it only.
+  origin = originOf(req.parent) || origin;
   var opaque = self.origin === "null";
 
   if (req.kind === "img") {

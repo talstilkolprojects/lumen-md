@@ -85,7 +85,8 @@ test("WYSIWYG shows the callout and highlights and keeps their syntax after an e
   await pm.locator("p").last().click();
   await page.keyboard.press("End");
   await page.keyboard.type(" עוד");
-  await page.waitForTimeout(400);
+  // The edit is in the editor before the mode switch (which saves the pending WYSIWYG edits).
+  await expect(pm.locator("p").last()).toContainText("עוד");
   await page.keyboard.press("Meta+1");
   await expect
     .poll(() => source(page))

@@ -1,0 +1,44 @@
+# The encrypted vault relay (plans W4.19, W6.23): Cloudflare Workers + one
+# SQLite Durable Object on the Workers Free plan. Deploy: `npm run share:deploy`
+# (docs: sync/relay-server). The same relay as sync-server/vault-relay.js.
+name = "lumen-vault-relay"
+main = "worker.mjs"
+compatibility_date = "2025-06-01"
+# node:crypto (hashes, HMACs) and Buffer, used by sync-server/vault-relay.js.
+compatibility_flags = ["nodejs_compat"]
+
+# No request logs: the relay keeps no IP addresses (PRIVACY.he.md, W4.29).
+[observability]
+enabled = false
+
+[vars]
+# Sizes. The Free plan gives a request 10 ms of CPU, and a PUT reads, hashes
+# (SHA-256, the ETag) and stores its object: measured in the simulated Durable
+# Object (vaultRelayWorker.test.ts), 2 MiB took ~6 ms of CPU and 4 MiB ~12 ms,
+# so 2 MiB. Larger files: a self-hosted relay (sync-server, VAULT_RELAY=1)
+# takes 25 MiB.
+VAULT_RELAY_MAX_OBJECT = "2097152"
+VAULT_RELAY_MAX_SPACE = "134217728"
+# The global ceiling: all spaces together. The Free plan has 5 GB of Durable
+# Object storage per account, shared with lumen-collab (COLLAB_MAX_STORED_BYTES
+# = 4 GB): 4 GB + 768 MiB stays under it.
+VAULT_RELAY_MAX_TOTAL = "805306368"
+# Per address (IPv4, or IPv6 /64), per UTC day: new spaces and bytes written.
+VAULT_RELAY_NEW_SPACES_PER_DAY = "5"
+VAULT_RELAY_ADDRESS_BYTES_PER_DAY = "134217728"
+VAULT_RELAY_RATE = "600"
+VAULT_RELAY_RETENTION_DAYS = "180"
+# A new space costs a proof of work of this many bits (the app solves it; at most 24).
+VAULT_RELAY_POW_BITS = "18"
+
+[[durable_objects.bindings]]
+name = "RELAY"
+class_name = "VaultRelay"
+
+# SQLite-backed Durable Objects are the ones the Free plan includes.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["VaultRelay"]
+
+# Optional secret (`wrangler secret put VAULT_RELAY_INVITE`): only clients that
+# send `X-Lumen-Invite: <secret>` may open a space.

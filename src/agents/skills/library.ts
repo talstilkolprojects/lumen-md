@@ -100,6 +100,7 @@ export function allowedStore(storage: Pick<Storage, "getItem" | "setItem"> | nul
       try {
         storage?.setItem(ALLOWED_KEY, JSON.stringify([...new Set([...read(), fp])].slice(-200)));
       } catch {
+        // why: storage is blocked or full (private mode, quota): the setting holds for this session only
         /* storage full or blocked: the next run asks again */
       }
     },

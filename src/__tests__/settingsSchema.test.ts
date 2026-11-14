@@ -16,6 +16,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve, relative } from "node:path";
 import { SETTINGS, SETTINGS_TABS, entryForAppField, entryForLocalKey, matchesEntry } from "../settings/schema";
 import { t } from "../i18n";
+import { lazyEnglish } from "./helpers/i18nLazy";
 
 const ROOT = resolve(__dirname, "..", "..");
 const SRC = join(ROOT, "src");
@@ -66,7 +67,8 @@ function storedKeys(): Map<string, string> {
     }
     // A zustand `persist` store: `name: "…",` before `partialize` in the same options object
     // (comments and a `storage:` option may stand between them, as in useStore.ts since plan 8.4).
-    for (const m of src.matchAll(/\bname:\s*["'`]([^"'`]+)["'`],[^{}]*?\bpartialize:/g)) add(m[1], file);
+    // Since W3.9 the storage option holds nested braces ({ storage: () => … }): two levels are allowed.
+    for (const m of src.matchAll(/\bname:\s*["'`]([^"'`]+)["'`],(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*?\bpartialize:/g)) add(m[1], file);
   }
   return found;
 }
@@ -123,12 +125,15 @@ describe("settings schema (plan 11.1)", () => {
   });
 
   it("never lets a secret be a setting, and gives every shown entry a real label", () => {
+    // A label may live in a lazily loaded domain (src/i18n/lazy/*.json, e.g. fineTune.json): real too.
+    const lazy = lazyEnglish();
+    const real = (k: string) => t(k) !== k || typeof lazy[k] === "string";
     for (const e of SETTINGS) {
       if (/\.(key|token|refresh|password|pkce)\b|searchKey|wsToken/.test(e.id)) expect(e.kind, e.id).toBe("secret");
-      if (e.label) expect(t(e.label), e.label).not.toBe(e.label);
-      for (const o of e.options ?? []) if (o.label) expect(t(o.label), o.label).not.toBe(o.label);
+      if (e.label) expect(real(e.label), e.label).toBe(true);
+      for (const o of e.options ?? []) if (o.label) expect(real(o.label), o.label).toBe(true);
       if (e.kind === "setting") expect(e.type, e.id).toBeDefined();
     }
-    for (const tab of SETTINGS_TABS) expect(t(tab.label), tab.label).not.toBe(tab.label);
+    for (const tab of SETTINGS_TABS) expect(real(tab.label), tab.label).toBe(true);
   });
 });

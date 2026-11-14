@@ -47,6 +47,7 @@ export function savePrefs(docPath: string, prefs: ReaderPrefs & { chapter?: numb
   try {
     kv?.setItem(KEY + docPath, JSON.stringify(prefs));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* blocked: this session only */
   }
 }

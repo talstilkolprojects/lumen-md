@@ -169,7 +169,9 @@ export async function toggleRelatedPanel(getView: () => EditorView | null): Prom
             });
           });
         })
-        .catch(() => {});
+        .catch(() => {
+          // why: related notes are a hint: without them the panel shows none
+        });
       return hints;
     },
   };

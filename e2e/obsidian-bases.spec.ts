@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { VAULT } from "../src/__tests__/fixtures/bases/vault";
@@ -58,11 +59,11 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(".cm-content").first()).toContainText("Welcome to", { timeout: 15_000 });
 });
 
-test("an embedded .base shows the golden rows, and a saved sort changes only sort:", async ({ page }) => {
+test("an embedded .base shows the golden rows, and a saved sort changes only sort:", async ({ page, browserName }) => {
   test.setTimeout(60_000);
   const files: Record<string, string> = { "Books.base": BOOKS };
   for (const v of VAULT) if (v.text !== null) files[v.path] = v.text;
-  test.skip(!(await seed(page, files)), "OPFS writes are unavailable in this engine's test context");
+  vaultOrSkip(await seed(page, files), browserName);
 
   const editor = page.locator(".cm-content").first();
   await editor.click();

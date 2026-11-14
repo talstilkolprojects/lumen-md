@@ -95,6 +95,7 @@ export function saveAids(a: ReadingAids): void {
   try {
     localStorage.setItem(AIDS_KEY, JSON.stringify(normalizeAids(a)));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* private mode: the aids last for this visit */
   }
 }
@@ -203,8 +204,8 @@ html[data-reading-focus] .cm-editor .cm-activeLine {
 `;
 
 function baseUrl(): string {
-  const env = (import.meta as unknown as { env?: { BASE_URL?: string } }).env;
-  return env?.BASE_URL ?? "/";
+  // One name at a time (src/lib/publicEnv.ts): a whole import.meta.env inlines every VITE_* name.
+  return (import.meta as unknown as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? "/";
 }
 
 const loadingFaces = new Map<string, Promise<boolean>>();

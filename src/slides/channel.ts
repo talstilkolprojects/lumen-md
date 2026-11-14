@@ -41,6 +41,7 @@ export async function openPresenterWindow(): Promise<"desktop" | "popup" | "bloc
       await invoke("open_presenter_window");
       return "desktop";
     } catch {
+      // why: not the desktop app (or no presenter window): the browser window is used
       /* fall back to a pop-up */
     }
   }
@@ -55,6 +56,7 @@ export async function closePresenterWindow(): Promise<void> {
     const { invoke } = await import("@tauri-apps/api/core");
     await invoke("close_presenter_window");
   } catch {
+    // why: not the desktop app, or the presenter window is already closed
     /* nothing open */
   }
 }

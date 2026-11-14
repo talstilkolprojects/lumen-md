@@ -29,6 +29,7 @@ function write(list: SavedSearch[]): void {
   try {
     localStorage.setItem(KEY, JSON.stringify(list.slice(0, MAX)));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* private mode / quota: the list stays as it was */
   }
   window.dispatchEvent(new Event(SAVED_SEARCHES_CHANGED));

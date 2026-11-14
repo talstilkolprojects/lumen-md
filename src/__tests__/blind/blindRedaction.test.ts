@@ -38,6 +38,7 @@ const red = pick<Redaction>(import.meta.glob("../../lib/redact*.ts", { eager: tr
 const door = pick<Door>(import.meta.glob("../../storage/exportRead*.ts", { eager: true }), "/exportReady.ts");
 const S = "SECRET-מקור-0501234567";
 
+// skip-reason: a blind test (W6.15) written from #473's spec before its code; it runs wherever redaction.ts and exportReady.ts exist (every train has them) | task: W6.15 | until: 2027-05-12
 describe.skipIf(!red || !door)("redaction (#473)", () => {
   const r = red!;
   const exp = (md: string) => r.prepareForExportSync(md, { keepImageMetadata: false });

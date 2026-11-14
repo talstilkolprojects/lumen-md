@@ -28,7 +28,9 @@
  */
 
 const HEB_LETTER = /[א-ת]/;
-const HEB_WORD = /[א-ת][א-ת\u0591-\u05c7]*/g;
+// A maqaf (U+05BE, "בן־יהודה") joins two words; it is not part of either, so a final letter before it
+// is a word end, not a final letter inside a word (train 5: the Ben Yehuda strings were taken for wrong finals).
+const HEB_WORD = /[א-ת][א-ת\u0591-\u05bd\u05bf-\u05c7]*/g;
 const POINTS = /[\u0591-\u05c7]/g;
 const FINAL = "ךםןףץ";
 const REGULAR = "כמנפצ";

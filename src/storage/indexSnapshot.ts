@@ -255,7 +255,9 @@ export async function loadSnapshot(vault: string, keys?: SnapshotKeys): Promise<
     if (refused) {
       lastSnapshotOutcome = "refused";
       // A tampered, foreign or wrong-kind record is never tried again.
-      await del(KEY, db()).catch(() => {});
+      await del(KEY, db()).catch(() => {
+        // why: the record may already be gone; it is refused either way
+      });
     } else if (snap) lastSnapshotOutcome = "restored";
     return snap;
   } catch {
@@ -275,12 +277,16 @@ export async function saveSnapshot(vault: string, files: Iterable<SnapshotFile>,
     await set(KEY, await snapshotRecord(vault, files, keys), db());
   } catch {
     // Quota or private mode: the next open builds in full, as before.
-    await del(KEY, db()).catch(() => {});
+    await del(KEY, db()).catch(() => {
+      // why: dropping a snapshot that could not be saved; if that fails too the next open checks it
+    });
   }
 }
 
 export async function dropSnapshot(): Promise<void> {
-  await del(KEY, db()).catch(() => {});
+  await del(KEY, db()).catch(() => {
+    // why: no snapshot store (private mode): there is nothing to drop
+  });
 }
 
 /** Test hooks (W6.36): the stored record as it is, and a record put in its place. */

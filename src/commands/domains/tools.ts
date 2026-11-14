@@ -1,11 +1,9 @@
 /** Tools: the writing goal, the Hebrew dictionary and plugin commands. */
 import { cmdIcons, type Command } from "../../ui/CommandPalette";
 import { t } from "../../i18n";
-import { uiConfirm, uiPrompt } from "../../ui/PromptDialog";
+import { uiPrompt } from "../../ui/PromptDialog";
 import { getPluginCommands } from "../../plugins/pluginSystem";
-import { showAiToast } from "../../ui/AiToast";
 import type { CommandContext } from "./context";
-import { explainError } from "../../lib/userError";
 
 /** Daily writing goal. */
 export function buildWritingGoalCommands({ writingGoalWords, setWritingGoal }: CommandContext): Command[] {
@@ -16,14 +14,7 @@ export function buildWritingGoalCommands({ writingGoalWords, setWritingGoal }: C
       hint: t("cmd.view.hebrewGrammarLevel.hint"),
       icon: cmdIcons.Pencil,
       group: t("group.view"),
-      action: async () => {
-        const { getGrammarLevel, setGrammarLevel } = await import("../../ai/hebrewSpellService");
-        const { GRAMMAR_LEVELS } = await import("../../ai/hebrewGrammar");
-        const next = GRAMMAR_LEVELS[(GRAMMAR_LEVELS.indexOf(getGrammarLevel()) + 1) % GRAMMAR_LEVELS.length];
-        setGrammarLevel(next);
-        const name = { everyday: t("grammar.he.level.everyday"), academic: t("grammar.he.level.academic"), legal: t("grammar.he.level.legal") }[next];
-        showAiToast(t("grammar.he.levelSet", { level: name }), "success");
-      },
+      action: () => import("./toolsActions").then((m) => m.cycleHebrewGrammarLevel()),
     },
     {
       id: "tools.writingGoal",
@@ -55,22 +46,7 @@ export function buildHebrewDictionaryCommands({ getEditorView }: CommandContext)
       hint: t("cmd.spell.hebrewDictionary.hint"),
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
-      action: async () => {
-        const svc = await import("../../ai/hebrewSpellService");
-        if (await svc.hebrewDictionaryInstalled()) {
-          if (!(await uiConfirm({ message: t("spell.he.removeConfirm") }))) return;
-          await svc.removeHebrewDictionary();
-          showAiToast(t("spell.he.removed"), "info");
-          return;
-        }
-        if (!(await uiConfirm({ message: t("spell.he.downloadConfirm") }))) return;
-        try {
-          const n = await svc.downloadHebrewDictionary();
-          showAiToast(t("spell.he.installed", { n: n.toLocaleString() }), "info");
-        } catch (e) {
-          showAiToast(t("spell.he.failed", { error: explainError(e) }), "error");
-        }
-      },
+      action: () => import("./toolsActions").then((m) => m.toggleHebrewDictionary()),
     },
     {
       id: "lexicon.pack",

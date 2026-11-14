@@ -65,6 +65,7 @@ startAutoBackup();
 try {
   if (localStorage.getItem("lumen.backup.enabled") === "1") void import("./backup/start").then((m) => m.startBackups());
 } catch {
+  // why: storage is blocked: backups are not set up in this browser, so none start
   /* storage blocked: no backups to schedule */
 }
 startVaultSnapshots();

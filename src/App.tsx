@@ -1,8 +1,5 @@
-import { useCommands, openNewDoc } from "./commands/useCommands";
-import type { NoteEditDetail } from "./views/databaseEdit";
+import { useCommands } from "./commands/useCommands";
 import { baseAsMarkdown } from "./views/bases/embed";
-import { appShortcutFor } from "./lib/shortcuts";
-import { noteTypedKey } from "./lib/keyboardLayout";
 import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { EditorHandle } from "./editor/Editor";
 import type { SettingsTab } from "./settings/schema";
@@ -12,7 +9,6 @@ import { Outline } from "./ui/Outline";
 import { StatusBar } from "./ui/StatusBar";
 import { ScrollProgress } from "./ui/ScrollProgress";
 import { SearchReplace } from "./ui/SearchReplace";
-const GraphView = lazy(() => import("./ui/GraphView").then(m => ({ default: m.GraphView })));
 // Canvas on Excalidraw (plan 4.19; γ.2 had it on tldraw). The legacy custom-canvas component
 const LocalGraphPanel = lazy(() => import("./ui/LocalGraphPanel").then(m => ({ default: m.LocalGraphPanel })));
 // `CanvasWhiteboard.tsx` remains in tree as a fallback in case we ever
@@ -40,15 +36,14 @@ const MarkdownTableEditor = lazy(() => import("./ui/MarkdownTableEditor").then(m
 // PDF reader (plan 4.14): pdf.js and the reader load only when a PDF is opened.
 const PdfReader = lazy(() => import("./pdf/PdfReader").then(m => ({ default: m.PdfReaderOverlay })));
 const EpubReader = lazy(() => import("./epub/EpubReader").then(m => ({ default: m.EpubReaderOverlay })));
-import { wirePluginAPI, registerPlugin, unregisterPlugin, wordCountPlugin } from "./plugins/pluginSystem";
 import { CommandPalette } from "./ui/CommandPalette";
 import { AiFab } from "./ui/AiFab";
 import { FileTree } from "./ui/FileTree";
 import { SidebarResizer } from "./ui/SidebarResizer";
-import { uiAlert, uiConfirm, uiPrompt } from "./ui/PromptDialog";
-// The Insert-text dialog (and its smart detector) loads on first use, off the
-// startup path — it made room in the startup budget for the PDF reader (4.14).
-const openInsertTextDialog = () => import("./ui/InsertTextDialog").then((m) => m.openInsertTextDialog());
+import { uiAlert, uiPrompt } from "./ui/PromptDialog";
+// The Insert-text dialog loads on first use, off the startup path (4.14); train 5: so does the flow
+// around it (the startup budget after the W6.25 split).
+const insertTextFromDialog = (...a: Parameters<typeof import("./ui/insertTextFromDialog").insertTextFromDialog>) => import("./ui/insertTextFromDialog").then((m) => m.insertTextFromDialog(...a));
 import { BacklinksPanel } from "./ui/BacklinksPanel";
 // SearchDialog imports the CodeMirror search-highlight extension; lazy so
 // the boot path stays CodeMirror-free (the dialog opens on ⌘⇧F).
@@ -56,10 +51,8 @@ const SearchDialog = lazy(() =>
   import("./ui/SearchDialog").then((m) => ({ default: m.SearchDialog })),
 );
 import { AiToastContainer, showAiToast } from "./ui/AiToast";
-import { minimalChange, propertiesTransaction, trackedPropertiesText } from "./editor/propertiesEdit";
 import { HelpHost } from "./ui/HelpHost";
 import { AiSuggestionsPanel } from "./ui/AiSuggestionsPanel";
-import { ledgerEntries } from "./ai/privacyLedger";
 import { MobileKeyboardBarHost } from "./ui/MobileKeyboardBarHost";
 import { TagsPanel } from "./ui/TagsPanel";
 // CommentsPanel pulls collab/comments.ts → yjs; comments only exist inside a
@@ -79,28 +72,15 @@ import { EditorLayout } from "./layouts/EditorLayout";
 import { useAuth } from "./auth/useAuth";
 import { docIdentity } from "./renderer/previewDoc";
 import { auditScope } from "./ui/auditScope";
-import { useEntitlement, watchAuthForEntitlements } from "./billing/useEntitlement";
-import { useAppStore, applyTheme, flushPendingEdits, isNarrowScreen } from "./store/useStore";
-import { applyLocale, t } from "./i18n";
+import { useEntitlement } from "./billing/useEntitlement";
+import { useAppStore, isNarrowScreen } from "./store/useStore";
+import { t } from "./i18n";
 import { localLlmAvailable } from "./ai/localLlm";
 import { assessConfigHealth } from "./lib/configHealth";
-import { historyKey, isQuotaError, onHistoryQuota, onQuotaWarning, recordSnapshot } from "./storage/history";
-import { log } from "./lib/logger";
-import { openFileDialog, saveFile } from "./storage/fs";
-import { exportToHtml } from "./storage/exportHtml";
-import { getRecents, pushRecent, reopenRecent } from "./storage/recent";
-import type { RecentFile } from "./storage/recent";
-import {
-  isOPFSAvailable,
-  makeAssetName,
-  readWorkspaceFile,
-  uniqueWorkspaceName,
-  writeWorkspaceBlob,
-  writeWorkspaceFile,
-} from "./storage/workspace";
+import { historyKey } from "./storage/history";
+import { isOPFSAvailable, readWorkspaceFile } from "./storage/workspace";
 import { ErrorBoundary } from "./ui/ErrorBoundary";
 const KeyboardShortcuts = lazy(() => import("./ui/KeyboardShortcuts").then(m => ({ default: m.KeyboardShortcuts })));
-import { handleTrashUndoKey } from "./ui/trashUndoShortcut";
 import { FocusMode } from "./ui/FocusMode";
 const OnboardingTour = lazy(() => import("./ui/OnboardingTour").then(m => ({ default: m.OnboardingTour })));
 // First-run setup (plan 14.1): its own chunk, loaded only on a first visit or from ⌘K.
@@ -109,56 +89,34 @@ const FirstRun = lazy(() => import("./onboarding/FirstRun"));
 const UsabilitySessionPanel = lazy(() => import("./ui/UsabilitySessionPanel").then((m) => ({ default: m.UsabilitySessionPanel })));
 // Plan W4.25: the participant's self-guided session panel, loaded only when one runs.
 const UsabilitySelfPanel = lazy(() => import("./ui/UsabilitySelfPanel").then((m) => ({ default: m.UsabilitySelfPanel })));
-import { scrollToHeadingWhenRendered } from "./renderer/wikiLinks";
-import { notifyWorkspaceChanged } from "./storage/workspaceEvents";
 import { explainError } from "./lib/userError";
 import { useEdgeSwipes, useLongNotesOpenForReading } from "./mobile/useMobileGestures";
 import { FeatureFlagsHost } from "./ui/FeatureFlagsHost";
-import { announceCommand } from "./research/usability/commandEvents";
 import { useDesktopShell } from "./desktop/useDesktopShell";
-import { countCommand } from "./metrics/count";
+// W6.25: App.tsx split into hooks and components, behaviour unchanged.
+import { useAppBootEffects } from "./hooks/useAppBootEffects";
+import { useAppShortcuts } from "./hooks/useAppShortcuts";
+import { useAutosave } from "./hooks/useAutosave";
+import { useCommandEvents } from "./hooks/useCommandEvents";
+import { useDocFileActions } from "./hooks/useDocFileActions";
+import { useLaunchActions } from "./hooks/useLaunchActions";
+import { useOpenFileEvent } from "./hooks/useOpenFileEvent";
+import { usePropertiesEdit } from "./hooks/usePropertiesEdit";
+import { useWindowEvent } from "./hooks/useWindowEvent";
+import { GraphOverlay } from "./ui/GraphOverlay";
+import { DropHint } from "./ui/DropHint";
 
 export default function App() {
   const doc = useAppStore((s) => s.doc);
-  // Reading options (plan W3.5): the open note's face, size and spacing.
-  // The module (and any face) loads only once the person has set one.
-  const readingPath = doc.workspaceName ?? null;
-  useEffect(() => {
-    let live = true;
-    const apply = () => {
-      let stored = false;
-      try {
-        stored = localStorage.getItem("lumen-reading") !== null;
-      } catch {
-        /* no storage: nothing set */
-      }
-      if (!stored) return;
-      void import("./reading/settings").then((m) => {
-        if (live) void m.applyReading(m.effectiveReading(readingPath));
-      });
-    };
-    apply();
-    window.addEventListener("lumen-reading-changed", apply);
-    return () => {
-      live = false;
-      window.removeEventListener("lumen-reading-changed", apply);
-    };
-  }, [readingPath]);
-  useEffect(() => {
-    const onOpen = () => setReadingOpen(true);
-    window.addEventListener("lumen-open-reading", onOpen);
-    return () => window.removeEventListener("lumen-open-reading", onOpen);
-  }, []);
+  // Side effects that own no App state: reading options, snippets, update check, theme, locale, plugins… (W6.25)
+  useAppBootEffects();
   const setContent = useAppStore((s) => s.setContent);
   const setDoc = useAppStore((s) => s.setDoc);
-  const markSaved = useAppStore((s) => s.markSaved);
-  const adoptWorkspaceName = useAppStore((s) => s.adoptWorkspaceName);
   const openTabs = useAppStore((s) => s.openTabs);
   const openTabAction = useAppStore((s) => s.openTab);
   const closeTabAction = useAppStore((s) => s.closeTab);
   const reorderTabs = useAppStore((s) => s.reorderTabs);
   const mode = useAppStore((s) => s.mode);
-  const theme = useAppStore((s) => s.theme);
   const showOutline = useAppStore((s) => s.showOutline);
   const outlineSheet = useAppStore((s) => s.outlineSheet);
   // Phone width (plan 10.2.4): the outline shows as a bottom sheet, opened on demand.
@@ -174,27 +132,9 @@ export default function App() {
   useEdgeSwipes();
   useLongNotesOpenForReading(tabId(doc), doc.content);
   const showWorkspace = useAppStore((s) => s.showWorkspace);
-  const locale = useAppStore((s) => s.locale);
   const toggleWorkspace = useAppStore((s) => s.toggleWorkspace);
   const showBacklinks = useAppStore((s) => s.showBacklinks);
   const showLocalGraph = useAppStore((s) => s.showLocalGraph);
-  const enabledSnippets = useAppStore((s) => s.enabledSnippets);
-  // CSS snippets from the vault (plan W1.21): sanitized, applied, kept in step with the files.
-  useEffect(() => {
-    if (!enabledSnippets.length && !document.querySelector("style[data-lumen-snippet]")) return;
-    let off: (() => void) | undefined;
-    let cancelled = false;
-    void Promise.all([import("./theme/snippets"), import("./storage/workspaceEvents")]).then(([m, ev]) => {
-      if (cancelled) return;
-      const run = () => void m.refreshSnippets(useAppStore.getState().enabledSnippets).catch(() => undefined);
-      run();
-      off = ev.onWorkspaceChanged(run, { debounceMs: 300 });
-    });
-    return () => {
-      cancelled = true;
-      off?.();
-    };
-  }, [enabledSnippets]);
   const vimEnabled = useAppStore((s) => s.vimEnabled);
   const spellCheck = useAppStore((s) => s.spellCheck);
   const grammarCheck = useAppStore((s) => s.grammarCheck);
@@ -215,19 +155,6 @@ export default function App() {
     if (typeof window === "undefined" || typeof navigator === "undefined") return false;
     return localLlmAvailable().available;
   }, []);
-  // Plan 14.4: the beta flag update.checkOnLaunch — once a day, desktop only,
-  // never in local-only; says something only when there is an update.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      void import("./desktop/updates")
-        .then((m) => m.launchUpdateCheck())
-        .then((r) => {
-          if (r?.state === "available") showAiToast(t("update.launch.available", { version: r.version }), "info");
-        })
-        .catch(() => undefined);
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, []);
   // A usability session (W1.29, self-guided W4.25) survives a reload: reopen its panel.
   const [usabilityOpen, setUsabilityOpen] = useState<null | "moderated" | "unmoderated">(() => {
     try {
@@ -238,16 +165,8 @@ export default function App() {
       return null;
     }
   });
-  useEffect(() => {
-    const on = () => setUsabilityOpen("moderated");
-    const self = () => setUsabilityOpen("unmoderated");
-    window.addEventListener("lumen-open-usability", on);
-    window.addEventListener("lumen-open-usability-self", self);
-    return () => {
-      window.removeEventListener("lumen-open-usability", on);
-      window.removeEventListener("lumen-open-usability-self", self);
-    };
-  }, []);
+  useWindowEvent("lumen-open-usability", () => setUsabilityOpen("moderated"));
+  useWindowEvent("lumen-open-usability-self", () => setUsabilityOpen("unmoderated"));
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   useEffect(() => {
@@ -255,14 +174,6 @@ export default function App() {
   }, [searchOpen]);
   const [findReplaceOpen, setFindReplaceOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
-  /** The PDF open in the reader, with the link fragment that opened it (`page=N&highlight=ID`). */
-  const [pdfView, setPdfView] = useState<{ path: string; fragment: string | null; seq: number } | null>(null);
-  const [epubView, setEpubView] = useState<{ path: string; fragment: string | null; seq: number } | null>(null);
-  /** The open reader's save gate: replacing the reader waits until its highlights are saved. */
-  const pdfSaveGate = useRef<((then: () => void) => void) | null>(null);
-  const registerPdfSaveGate = useCallback((gate: ((then: () => void) => void) | null) => {
-    pdfSaveGate.current = gate;
-  }, []);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [tableEditorOpen, setTableEditorOpen] = useState(false);
   const [canvasOpen, setCanvasOpen] = useState(false);
@@ -276,6 +187,7 @@ export default function App() {
   const setTrustedKeysOpen = useCallback((open: boolean) => setSettingsTab(open ? "security" : null), []);
   const setThemeSettingsOpen = useCallback((open: boolean) => setSettingsTab(open ? "appearance" : null), []);
   const [readingOpen, setReadingOpen] = useState(false);
+  useWindowEvent("lumen-open-reading", () => setReadingOpen(true));
   const [aiDoctorOpen, setAiDoctorOpen] = useState(false);
   const [agentReviewOpen, setAgentReviewOpen] = useState(false);
   const openAgentReview = useCallback(() => setAgentReviewOpen(true), []);
@@ -295,196 +207,13 @@ export default function App() {
   const [focusMode, setFocusMode] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
-  const [recents, setRecents] = useState<RecentFile[]>([]);
 
   // ── Collaboration (extracted hook) ─────────────────────────────
   const { collab, collabPeers, handleStartCollab, handleStopCollab } = useCollab(doc.content);
 
-  // Load recents on mount.
-  useEffect(() => {
-    getRecents().then(setRecents).catch(() => setRecents([]));
-  }, []);
-
-  // Plan 14.6: after an update, that version's notes once (when the app is idle; nothing on a fresh install).
-  useEffect(() => {
-    const run = () => void import("./whatsNew/check").then((m) => m.checkWhatsNew()).catch(() => undefined);
-    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
-    if (ric) ric(run, { timeout: 4000 });
-    else setTimeout(run, 2000);
-  }, []);
-
-  useEffect(() => {
-    void useEntitlement.getState().refresh();
-    // Re-fetch when the user signs in/out or the session restore finishes.
-    return watchAuthForEntitlements();
-  }, []);
-
-  // Apply theme on mount
-  useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
-
-  // Plugin system init
-  useEffect(() => {
-    wirePluginAPI({
-      getContent: () => useAppStore.getState().doc.content,
-      setContent: (s: string) => useAppStore.getState().setContent(s),
-      getFileName: () => useAppStore.getState().doc.name,
-      showToast: (msg: string) => showAiToast(msg, "info"),
-    });
-    registerPlugin(wordCountPlugin);
-    // Expose a tiny test surface on window.__lumen for e2e specs. This
-    // lets the prod-build paste-html spec call htmlToMarkdown without
-    // importing /src/* at runtime (which only works against the dev
-    // server). The surface is intentionally minimal — only utilities
-    // the test suite needs. `ocr` is the app's own OCR path (plan 7.5:
-    // e2e/ocr-cer.spec.ts measures its CER on the production build); the
-    // module loads on the first call only.
-    (window as unknown as { __lumen?: unknown }).__lumen = {
-      // Async: the converters load on first use (startup budget); page.evaluate awaits it.
-      htmlToMarkdown: (html: string) => import("./storage/fileFormats").then((m) => m.htmlToMarkdown(html)),
-      // `agentReview` (plan 5.11 e2e) is added by agents/reviewBridge once it
-      // loads, in development and tests only (plan W1.31).
-      // The vault index, for e2e/perf-vault.spec.ts (a lazy chunk).
-      vaultIndex: () => import("./storage/vaultIndexProbe"),
-      ocr: (image: Blob) => import("./ai/ocr").then((m) => m.ocrImage(image)),
-      // live-exec spec: the run_python agent tool, called as the runtime
-      // calls it (read scope), and the privacy ledger it reports to.
-      runPython: async (args: { code: string; inputs?: Record<string, unknown>; timeoutMs?: number }) =>
-        (await import("./agents/tools/python")).runPythonTool.run(args, { grants: new Set(["read" as const]) }),
-      ledger: () => ledgerEntries(),
-      // W2.23 — the print document as HTML, for the print golden tests.
-      buildPrintHtml: (md: string, name: string) => import("./ui/PrintExport").then((m) => m.buildPrintHtml(md, name)),
-    };
-    return () => {
-      unregisterPlugin(wordCountPlugin.id);
-      delete (window as unknown as { __lumen?: unknown }).__lumen;
-    };
-  }, []);
-
-  // Apply locale (sets <html lang dir>) on mount and on change.
-  useEffect(() => {
-    applyLocale(locale);
-  }, [locale]);
-
-  // Launched from the installed app: share target, shortcut, or a file
-  // opened with Lumen (D3).
-  useEffect(() => {
-    void import("./pwa/launch").then(({ parseLaunch, sharedItem, clearLaunchParams, onLaunchFiles, onDesktopCapture }) => {
-      const l = parseLaunch(location.search);
-      const shared = sharedItem(location.search);
-      if (l.kind === "share") {
-        // A fresh tab name each time: two shares with the same title (or two
-        // links from one host) stay two notes.
-        const asNote = () => openNewDoc(l.title.replace(/[\\/:*?"<>|]+/g, " ").slice(0, 60).trim() || "Shared", l.body, true);
-        // Plan 4.16: shares go to the end of inbox.md; a new note only where
-        // the vault can't be written.
-        if (shared && isOPFSAvailable()) void import("./capture/quickCapture").then((m) => m.captureShared(shared)).catch(asNote);
-        else asNote();
-      } else if (l.kind === "action" && l.action === "capture") {
-        setCaptureOpen(true);
-      } else if (l.kind === "action" && l.action === "voice") {
-        setCaptureVoice(true);
-        setCaptureOpen(true);
-      } else if (l.kind === "action" && l.action === "new") {
-        openNewDoc(t("doc.untitled"), "", false);
-      } else if (l.kind === "action" && l.action === "palette") {
-        setPaletteOpen(true);
-      }
-      if (l.kind !== "none") clearLaunchParams();
-      onDesktopCapture();
-      // With the file's handle, so Save writes back to the file that was opened.
-      onLaunchFiles((name, content, handle) => openTabAction({ name, content, workspaceName: null, handle }));
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Web clipper v2 (plan 4.15.2): clips from the extension's bridge
-  // (postMessage), the desktop deep link, or `#clip=` in the address. The
-  // modules load only when a clip arrives; the listener itself is tiny.
-  useEffect(() => {
-    let stop: (() => void) | undefined;
-    let cancelled = false;
-    const save = (p: import("./research/clipV2").ClipPayload) =>
-      void import("./commands/useCommands").then(({ saveClipV2 }) => saveClipV2(p)).catch((e) => showAiToast(t("clip.failed", { message: explainError(e) }), "error"));
-    void import("./research/clipBridge").then(({ startClipBridge }) => {
-      if (!cancelled) stop = startClipBridge(save);
-    });
-    return () => {
-      cancelled = true;
-      stop?.();
-    };
-  }, []);
-
-  // Plan W3.4: home-screen widgets, App Shortcuts, Siri / Shortcuts and Spotlight
-  // reach the app as lumen:// action links and a queue of captures (iOS / Android only).
   const [searchQuery, setSearchQuery] = useState("");
-  useEffect(() => {
-    let stop: (() => void) | undefined;
-    void import("./mobile/nativeActions").then(async (m) => {
-      stop = await m.initNativeBridge({
-        capture: (mode, tappedAt) => {
-          m.noteTap(tappedAt);
-          setCaptureVoice(mode === "voice");
-          setCaptureOpen(true);
-        },
-        captureText: async (text, when) => {
-          const { captureToInbox } = await import("./capture/quickCapture");
-          await captureToInbox(text, when);
-          showAiToast(t("widgets.captured"), "success");
-        },
-        newNote: () => openNewDoc(t("doc.untitled"), "", false),
-        search: (query) => {
-          setSearchQuery(query);
-          setSearchOpen(true);
-        },
-        daily: () => window.dispatchEvent(new CustomEvent("lumen-open-today")),
-      });
-    });
-    return () => stop?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Check for a shared note from the iOS Share Extension.
-  useEffect(() => {
-    const pending = (window as unknown as Record<string, unknown>).__pendingSharedNote;
-    if (typeof pending === "string" && pending.length > 0) {
-      // Clear the pending note so we don't process it again.
-      delete (window as unknown as Record<string, unknown>).__pendingSharedNote;
-      openNewDoc("Shared Note", pending, true);
-      showAiToast(t("toast.openedSharedNoteFromIos"), "info");
-    }
-  }, []);
-
-  // Seed the Welcome document on first launch
-  useEffect(() => {
-    if (!doc.content) {
-      // Use openTab so the Welcome doc lands on the tab strip too. Its text
-      // (English and Hebrew) loads on demand, off the startup bundle; a note
-      // opened in the meantime wins.
-      void import("./welcomeDoc").then((m) => {
-        if (useAppStore.getState().doc.content) return;
-        openTabAction({ name: "Welcome.md", content: m.welcomeDoc(), workspaceName: null });
-      });
-    } else if (openTabs.length === 0) {
-      // Existing session before tabs existed — backfill a tab for the
-      // currently active doc so the strip shows up immediately.
-      openTabAction({
-        name: doc.name,
-        content: doc.content,
-        workspaceName: doc.workspaceName ?? null,
-      });
-    }
-    // First launch: the setup (plan 14.1), then its short tour. The flag is
-    // the old tour's, so anyone who finished that never sees setup.
-    try {
-      if (!localStorage.getItem("lumen-tour-done")) setSetupOpen(true);
-    } catch {
-      /* why: storage may be denied in private browsing — setup silently skips */
-    }
-    // run once
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Share targets, shortcuts, files opened with Lumen, phone widgets; the Welcome note and first-run setup (W6.25).
+  useLaunchActions({ setCaptureOpen, setCaptureVoice, setPaletteOpen, setSearchQuery, setSearchOpen, setSetupOpen });
 
   const configHealth = useMemo(
     () =>
@@ -514,171 +243,18 @@ export default function App() {
     ],
   );
 
-  // Beforeunload warning if dirty
-  useEffect(() => {
-    function onBeforeUnload(e: BeforeUnloadEvent) {
-      if (doc.dirty) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    }
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [doc.dirty]);
-
-  const handleOpen = useCallback(async () => {
-    const file = await openFileDialog();
-    if (!file) return;
-    setDoc({
-      name: file.name,
-      content: file.content,
-      handle: file.handle,
-      dirty: false,
-    });
-    if (file.handle) {
-      await pushRecent({ name: file.name, handle: file.handle });
-      setRecents(await getRecents());
-    }
-  }, [setDoc]);
-
-  const handleReopenRecent = useCallback(
-    async (entry: RecentFile) => {
-      const opened = await reopenRecent(entry);
-      if (!opened) {
-        await uiAlert({ message: t("doc.alert.reopenFailed") });
-        return;
-      }
-      setDoc({
-        name: opened.name,
-        content: opened.content,
-        handle: opened.handle,
-        dirty: false,
-      });
-      await pushRecent({ name: opened.name, handle: opened.handle });
-      setRecents(await getRecents());
-    },
-    [setDoc],
-  );
-
-  const handleSave = useCallback(
-    async (saveAs = false) => {
-      try {
-        const next = await saveFile(
-          { name: doc.name, content: doc.content, handle: doc.handle },
-          { saveAs },
-        );
-        setDoc({
-          name: next.name,
-          content: next.content,
-          handle: next.handle,
-          dirty: false,
-        });
-        markSaved();
-        void recordSnapshot(historyKey({ name: next.name, workspaceName: useAppStore.getState().doc.workspaceName }), next.content, "save").catch(() => false);
-      } catch (err) {
-        // User cancelled Save-As dialog or filesystem error
-        if ((err as DOMException)?.name !== "AbortError") {
-          await uiAlert({ message: t("doc.alert.saveFailed", { error: explainError(err) }) });
-        }
-      }
-    },
-    [doc.name, doc.content, doc.handle, setDoc, markSaved],
-  );
-
-  const handleNew = useCallback(async () => {
-    if (doc.dirty && !(await uiConfirm({ message: t("doc.confirm.discardUnsaved") }))) return;
-    
-    let baseName = `${t("doc.untitled")}.md`;
-    if (await isOPFSAvailable()) {
-      baseName = await uniqueWorkspaceName(baseName);
-    }
-    
-    setDoc({
-      name: baseName,
-      content: `# ${baseName.replace(/\.md$/, "")}\n\n`,
-      handle: undefined,
-      dirty: false,
-    });
-  }, [doc.dirty, setDoc]);
-
-  const handleExportHtml = useCallback(async () => {
-    try {
-      await exportToHtml(doc.content, doc.name);
-    } catch (e) {
-      await uiAlert({ message: t("doc.alert.exportFailed", { error: explainError(e) }) });
-    }
-  }, [doc.content, doc.name]);
+  // Open, save, new, export and workspace actions, and the recent files (W6.25).
+  const {
+    recents, setRecents, handleOpen, handleReopenRecent, handleSave, handleNew, handleExportHtml, handleAddAsset,
+    handleOpenFromWorkspace, handleActiveRenamed, handleActiveDeleted, adoptIntoWorkspace, handleSaveToWorkspace,
+  } = useDocFileActions();
 
   const insertSnippet = useCallback((snippet: string) => {
     editorRef.current?.insertText(snippet);
   }, []);
 
-  // ── Real-time collaboration (managed by useCollab hook) ──────────────
-
-  /**
-   * When the user pastes/drops an image into the editor, persist it under
-   * OPFS as a `lumen-asset-*` file (so the workspace owns the asset) and
-   * return the markdown link. Falls back to a data: URL when OPFS isn't
-   * available.
-   */
-  const handleAddAsset = useCallback(async (file: File): Promise<string | null> => {
-    if (!isOPFSAvailable()) return null;
-    try {
-      const name = makeAssetName(file.name);
-      await writeWorkspaceBlob(name, file);
-      window.dispatchEvent(new Event("lumen-workspace-changed"));
-      return name;
-    } catch {
-      return null;
-    }
-  }, []);
-
-  // Workspace: open a file from the file tree. Routed through `openTab` so
-  // re-opening an already-active doc just focuses its tab without losing
-  // unsaved edits in the previous one.
-  const handleOpenFromWorkspace = useCallback(
-    (name: string, content: string) => {
-      openTabAction({ name, content, workspaceName: name });
-    },
-    [openTabAction],
-  );
-
-  // Listen for `lumen-open-file` events fired by Database views, backlinks,
-  // graph view, and any other component that knows a workspace path. Single
-  // hub keeps the open path consistent (recents, dirty handling, etc).
-  useEffect(() => {
-    async function onOpen(e: Event) {
-      const detail = (e as CustomEvent<{ path: string; heading?: string; fragment?: string }>).detail;
-      if (!detail?.path) return;
-      // A book opens in the EPUB reader, at the chapter / highlight the link names (W1.14).
-      if (/\.epub$/i.test(detail.path)) {
-        setEpubView((prev) => ({ path: detail.path, fragment: detail.fragment ?? null, seq: (prev?.seq ?? 0) + 1 }));
-        return;
-      }
-      // A PDF opens in the reader, at the page / highlight the link names.
-      if (/\.pdf$/i.test(detail.path)) {
-        const open = () => setPdfView((prev) => ({ path: detail.path, fragment: detail.fragment ?? null, seq: (prev?.seq ?? 0) + 1 }));
-        // Another PDF replaces the open reader: only once its highlights are saved.
-        if (pdfSaveGate.current) pdfSaveGate.current(open);
-        else open();
-        return;
-      }
-      try {
-        const { readWorkspaceFile } = await import("./storage/workspace");
-        const content = await readWorkspaceFile(detail.path);
-        handleOpenFromWorkspace(detail.path, content);
-        // `[[Note#Heading]]`: scroll to the heading (by its slug id) once the
-        // opened note has rendered.
-        if (detail.heading) {
-          scrollToHeadingWhenRendered(detail.heading, { docKey: docIdentity(useAppStore.getState().doc) ?? undefined });
-        }
-      } catch {
-        /* why: the file was moved or deleted since the link was made; the click does nothing */
-      }
-    }
-    window.addEventListener("lumen-open-file", onOpen);
-    return () => window.removeEventListener("lumen-open-file", onOpen);
-  }, [handleOpenFromWorkspace]);
+  // PDF / EPUB readers and every `lumen-open-file` (W6.25).
+  const { pdfView, setPdfView, epubView, setEpubView, registerPdfSaveGate } = useOpenFileEvent(handleOpenFromWorkspace);
 
   // Automations (W5.24): a lazy chunk that starts only when the vault has a rules file.
   useEffect(() => {
@@ -687,280 +263,27 @@ export default function App() {
   }, []);
 
   // Today's daily note (plan 4.12): the command and ⌥⌘D. The daily-note code is its own chunk.
-  useEffect(() => {
-    const onToday = () => {
-      void import("./daily/dailyNote")
-        .then((m) => {
-          const s = useAppStore.getState();
-          return m.openDailyNote(m.dayOf(new Date()), s.dailyNotes, s.locale);
-        })
-        .catch((e: unknown) => showAiToast(t("daily.failed", { error: explainError(e) }), "error"));
-    };
-    window.addEventListener("lumen-open-today", onToday);
-    return () => window.removeEventListener("lumen-open-today", onToday);
-  }, []);
+  useWindowEvent("lumen-open-today", () => {
+    void import("./daily/dailyNote")
+      .then((m) => {
+        const s = useAppStore.getState();
+        return m.openDailyNote(m.dayOf(new Date()), s.dailyNotes, s.locale);
+      })
+      .catch((e: unknown) => showAiToast(t("daily.failed", { error: explainError(e) }), "error"));
+  });
 
   // ⌘K → "Set up Lumen…" (plan 14.1) reopens the first-run setup.
-  useEffect(() => {
-    const onSetup = () => setSetupOpen(true);
-    window.addEventListener("lumen-open-setup", onSetup);
-    return () => window.removeEventListener("lumen-open-setup", onSetup);
-  }, []);
+  useWindowEvent("lumen-open-setup", () => setSetupOpen(true));
 
   // Quick capture (plan 4.16): the command palette and the desktop
   // global shortcut (src/pwa/launch.ts) send this event.
-  useEffect(() => {
-    const onCapture = () => setCaptureOpen(true);
-    window.addEventListener("lumen-open-capture", onCapture);
-    return () => window.removeEventListener("lumen-open-capture", onCapture);
-  }, []);
+  useWindowEvent("lumen-open-capture", () => setCaptureOpen(true));
 
-  // Workspace: when active file is renamed (in the tree), keep doc.name in sync.
-  const handleActiveRenamed = useCallback(
-    (newName: string) => {
-      setDoc({ name: newName, workspaceName: newName, dirty: false });
-    },
-    [setDoc],
-  );
+  // Autosave: the open workspace file, files from disk, ad-hoc notes, and a flush on hide (W6.25).
+  useAutosave({ handleSave, adoptIntoWorkspace });
 
-  const handleActiveDeleted = useCallback(() => {
-    setDoc({
-      name: `${t("doc.untitled")}.md`,
-      content: "",
-      workspaceName: null,
-      handle: undefined,
-      dirty: false,
-    });
-  }, [setDoc]);
-
-  // Write the active ad-hoc document (no disk handle, not in the
-  // workspace) into the workspace under a free name derived from its own,
-  // and switch the document and its tab to that identity. Shared by the
-  // explicit "save to workspace" command and by autosave.
-  const adoptIntoWorkspace = useCallback(async (): Promise<string | null> => {
-    const d = useAppStore.getState().doc;
-    if (!isOPFSAvailable()) return null;
-    const base = d.name.replace(/\.[^./]+$/, "") + ".md";
-    const name = await uniqueWorkspaceName(base);
-    await writeWorkspaceFile(name, d.content);
-    adoptWorkspaceName(name);
-    window.dispatchEvent(new Event("lumen-workspace-changed"));
-    return name;
-  }, [adoptWorkspaceName]);
-
-  // Save the current doc into the workspace as a fresh file.
-  const handleSaveToWorkspace = useCallback(async () => {
-    if (!isOPFSAvailable()) {
-      await uiAlert({ message: t("doc.alert.workspaceUnavailable") });
-      return;
-    }
-    await adoptIntoWorkspace();
-    if (!showWorkspace) toggleWorkspace();
-  }, [adoptIntoWorkspace, showWorkspace, toggleWorkspace]);
-
-  // Autosave the active workspace file as the user types (debounced).
-  useEffect(() => {
-    if (!doc.workspaceName) return;
-    if (!doc.dirty) return;
-    const name = doc.workspaceName;
-    const content = doc.content;
-    let retry: ReturnType<typeof setTimeout> | undefined;
-    const write = (attempt: number) => {
-      // Compare-and-swap (plan 4.4): a file changed outside Lumen since it
-      // was opened becomes a conflict instead of being overwritten.
-      import("./store/externalChanges")
-        .then((m) => m.saveOpenNote(name, content))
-        .then((saved) => {
-          if (!saved) return;
-          // Only if nothing changed the note meanwhile (a quick capture into
-          // the open inbox, plan 4.16): otherwise its newer text stays dirty
-          // and the next autosave writes it.
-          const now = useAppStore.getState().doc;
-          if (now.workspaceName === name && now.content === content) markSaved();
-          // Only this file's text changed: listeners skip the full rescan (C3).
-          notifyWorkspaceChanged({ kind: "content", paths: [name] });
-          // Every save path feeds the one history store (T35).
-          void recordSnapshot(name, content, "autosave").catch(() => false);
-        })
-        .catch((err: unknown) => {
-          // A failed write used to vanish silently. Say so once, retry
-          // with back-off; the localStorage mirror still holds the text.
-          if (attempt === 0) showAiToast(t(isQuotaError(err) ? "doc.save.quota" : "doc.save.failedRetrying", { name }), "error");
-          if (attempt < 4) retry = setTimeout(() => write(attempt + 1), 2000 * 2 ** attempt);
-        });
-    };
-    const timer = setTimeout(() => write(0), 600);
-    return () => {
-      clearTimeout(timer);
-      if (retry) clearTimeout(retry);
-    };
-  }, [doc.workspaceName, doc.content, doc.dirty, markSaved]);
-
-  // History quota: the store pruned its oldest quarter and still could not write.
-  useEffect(() => onHistoryQuota(() => showAiToast(t("doc.history.quota"), "error")), []);
-  // Plan 3.2: warn before it comes to that — past 80 % of the browser's quota.
-  useEffect(
-    () => onQuotaWarning(({ usage, quota }) => showAiToast(t("doc.history.quotaWarn", { percent: String(Math.round((usage / quota) * 100)) }), "error")),
-    [],
-  );
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      noteTypedKey(e.key);
-      // F1 → in-app help (W3.7), as the palette shows.
-      if (e.key === "F1" && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-        e.preventDefault();
-        void import("./ui/HelpButton").then((m) => m.openHelp());
-        return;
-      }
-      if (!(e.metaKey || e.ctrlKey)) return;
-      // ⌘Z / Ctrl+Z outside the editor: restore the last delete (plan 3.1).
-      // In an editor or a text field it stays their own undo.
-      if (handleTrashUndoKey(e)) return;
-      // ⌥⌘D → today's daily note (e.code: Option changes e.key on a Mac).
-      if (e.altKey && e.code === "KeyD") {
-        e.preventDefault();
-        window.dispatchEvent(new CustomEvent("lumen-open-today"));
-        return;
-      }
-      // ⌥⌘N → quick capture to inbox.md (plan 4.16).
-      // Not AltGr (reported as Ctrl+Alt on Windows / Linux): AltGr+N types a letter (ń).
-      if (e.altKey && e.code === "KeyN" && !e.getModifierState("AltGraph")) {
-        e.preventDefault();
-        setCaptureOpen(true);
-        return;
-      }
-      // ⌥⌘S → the open-sources dialog (plan W7.24). Not AltGr: AltGr+S types a letter (ś).
-      if (e.altKey && e.code === "KeyS" && !e.getModifierState("AltGraph")) {
-        e.preventDefault();
-        void import("./sources/open/OpenSourcesDialog").then((m) => m.openSourcesDialog());
-        return;
-      }
-      // ⌥⌘C → the cite dialog (plan W2.16).
-      if (e.altKey && e.code === "KeyC") {
-        e.preventDefault();
-        void import("./citations/CiteDialog").then((m) => m.openCiteDialog());
-        return;
-      }
-      // Matched by the physical key, so the Hebrew layout works too (plan W2.8).
-      const id = appShortcutFor(e);
-      if (!id) return;
-      e.preventDefault();
-      switch (id) {
-        case "view.focusMode":
-          // ⇧⌘F → focus mode toggle
-          setFocusMode(!focusMode);
-          return;
-        case "palette.toggle":
-          setPaletteOpen((v) => !v);
-          return;
-        case "file.save":
-        case "file.saveAs":
-          handleSave(id === "file.saveAs");
-          return;
-        case "view.findReplace":
-          setFindReplaceOpen((v) => !v);
-          return;
-        case "file.open":
-          handleOpen();
-          return;
-        case "file.new":
-          handleNew();
-          return;
-        case "view.source":
-          useAppStore.getState().setMode("source");
-          return;
-        case "view.split":
-          useAppStore.getState().setMode("split");
-          return;
-        case "view.preview":
-          useAppStore.getState().setMode("preview");
-          return;
-        case "view.wysiwyg":
-          useAppStore.getState().setMode("wysiwyg");
-          return;
-        case "help.shortcuts":
-          setShortcutsOpen((v) => !v);
-          return;
-        case "insert.smart":
-          // ⌘⇧V — Smart Insert (paste anything → auto-detect → wrap).
-          (async () => {
-            const result = await openInsertTextDialog();
-            if (!result) return;
-            const cur = useAppStore.getState().doc.content;
-            const setter = useAppStore.getState().setContent;
-            if (result.mode === "replace") setter(result.markdown);
-            else if (result.mode === "atCursor" && editorRef.current) {
-              editorRef.current.insertText(result.markdown);
-            } else {
-              const trimmed = cur.endsWith("\n") ? cur : cur + "\n";
-              setter(trimmed + (result.mode === "append" ? "\n" : "") + result.markdown);
-            }
-          })();
-          return;
-      }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [handleOpen, handleSave, handleNew, focusMode]);
-
-  // Auto-save: save dirty documents on interval
-  const autoSave = useAppStore((s) => s.autoSave);
-  const autoSaveInterval = useAppStore((s) => s.autoSaveInterval);
-  useEffect(() => {
-    if (!autoSave || !doc.dirty) return;
-    const timer = setInterval(() => {
-      const d = useAppStore.getState().doc;
-      if (!d.dirty) return;
-      if (d.handle) {
-        // From disk: write back through the handle (workspace files are
-        // written by the debounced effect above).
-        handleSave(false);
-      } else if (!d.workspaceName && d.content.trim()) {
-        // Untitled / ad-hoc: until now these were never written anywhere
-        // but localStorage. Give them a home in the workspace; from then
-        // on the debounced workspace autosave owns them.
-        adoptIntoWorkspace().catch((err) => log.warn("[autosave] adopt failed", (err as Error).message));
-      }
-    }, autoSaveInterval);
-    return () => clearInterval(timer);
-  }, [autoSave, autoSaveInterval, doc.dirty, handleSave, adoptIntoWorkspace]);
-
-  // Flush the pending workspace write when the page is hidden or going
-  // away: the debounced effect above may still be waiting, and a closed
-  // tab (or a backgrounded phone) never runs it. `pagehide` is the last
-  // reliable moment; `visibilitychange` covers mobile, where pages are
-  // often frozen instead of unloaded. The localStorage mirror keeps the
-  // text either way; this keeps the workspace file current.
-  useEffect(() => {
-    const flush = () => {
-      const d = useAppStore.getState().doc;
-      void recordSnapshot(historyKey(d), d.content, "close").catch(() => false);
-      if (!d.dirty || !d.workspaceName) return;
-      const name = d.workspaceName;
-      const text = d.content;
-      import("./store/externalChanges")
-        .then((m) => m.saveOpenNote(name, text))
-        .then((saved) => {
-          // Only if nothing (a quick capture) changed the note meanwhile.
-          const now = useAppStore.getState().doc;
-          if (saved && now.workspaceName === name && now.content === text) markSaved();
-        })
-        .catch(() => {
-          /* why: best effort; the debounced autosave retries on the next edit */
-        });
-    };
-    const onVisibility = () => {
-      if (document.visibilityState === "hidden") flush();
-    };
-    window.addEventListener("pagehide", flush);
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      window.removeEventListener("pagehide", flush);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, [markSaved]);
+  // Keyboard shortcuts (W6.25: src/hooks/useAppShortcuts.ts)
+  useAppShortcuts({ editorRef, handleOpen, handleSave, handleNew, focusMode, setFocusMode, setPaletteOpen, setFindReplaceOpen, setShortcutsOpen, setCaptureOpen });
 
   const { dragHover } = useFileDragDrop(setDoc);
 
@@ -1014,127 +337,22 @@ export default function App() {
       : undefined,
   });
 
-  // The suggestions panel (and other UIs) re-run a palette command by id.
-  const commandsRef = useRef(commands);
-  commandsRef.current = commands;
-  useEffect(() => {
-    const onRun = (e: Event) => {
-      const id = (e as CustomEvent<{ id?: string }>).detail?.id;
-      const find = (list: typeof commands): (typeof commands)[number] | undefined => {
-        for (const c of list) {
-          if (c.id === id) return c;
-          const child = c.children ? find(c.children as typeof commands) : undefined;
-          if (child) return child;
-        }
-        return undefined;
-      };
-      const cmd = id ? find(commandsRef.current) : undefined;
-      if (cmd) {
-        announceCommand(cmd.id);
-        countCommand(cmd.id);
-        void cmd.action();
-      }
-    };
-    // The usage dialog (plan W4.26) needs every command id to name the unused ones; the beta panel's report (W6.31) names only these.
-    const commandIds = () => {
-      const ids: string[] = [];
-      const walk = (list: typeof commands) => {
-        for (const c of list) {
-          ids.push(c.id);
-          if (c.children) walk(c.children as typeof commands);
-        }
-      };
-      walk(commandsRef.current);
-      return ids;
-    };
-    const onUsage = () => void import("./ui/UsageDialog").then((m) => m.openUsage({ commandIds: commandIds() }));
-    const onBeta = () => void import("./ui/BetaPanel").then((m) => m.openBeta({ commandIds: commandIds() }));
-    window.addEventListener("lumen-run-command", onRun);
-    window.addEventListener("lumen-open-usage", onUsage);
-    window.addEventListener("lumen-open-beta", onBeta);
-    return () => {
-      window.removeEventListener("lumen-run-command", onRun);
-      window.removeEventListener("lumen-open-usage", onUsage);
-      window.removeEventListener("lumen-open-beta", onBeta);
-    };
-  }, []);
-  useEffect(() => {
-    const onOpenAi = () => setSettingsTab("ai");
-    const onOpen = (e: Event) => setSettingsTab((e as CustomEvent<{ tab?: SettingsTab }>).detail?.tab ?? "general");
-    window.addEventListener("lumen-open-ai-settings", onOpenAi);
-    window.addEventListener("lumen-open-settings", onOpen);
-    return () => {
-      window.removeEventListener("lumen-open-ai-settings", onOpenAi);
-      window.removeEventListener("lumen-open-settings", onOpen);
-    };
-  }, []);
-  useEffect(() => {
-    const onOpen = () => setPrivacyOpen(true);
-    window.addEventListener("lumen-open-privacy-ledger", onOpen);
-    return () => window.removeEventListener("lumen-open-privacy-ledger", onOpen);
-  }, []);
+  useCommandEvents(commands);
+  useWindowEvent("lumen-open-ai-settings", () => setSettingsTab("ai"));
+  useWindowEvent("lumen-open-settings", (e) => setSettingsTab((e as CustomEvent<{ tab?: SettingsTab }>).detail?.tab ?? "general"));
+  useWindowEvent("lumen-open-privacy-ledger", () => setPrivacyOpen(true));
   // A saved search in the sidebar (plan W2.12) opens the dialog on its query.
-  useEffect(() => {
-    const onOpen = (e: Event) => {
-      const query = (e as CustomEvent<{ query?: string }>).detail?.query;
-      (window as unknown as { __lumenSearchQuery?: string }).__lumenSearchQuery = typeof query === "string" ? query : undefined;
-      setSearchOpen(true);
-    };
-    window.addEventListener("lumen-open-search", onOpen);
-    return () => window.removeEventListener("lumen-open-search", onOpen);
-  }, []);
-  useEffect(() => {
-    const onOpen = () => setPropertiesOpen((v) => !v);
-    window.addEventListener("lumen-open-properties", onOpen);
-    return () => window.removeEventListener("lumen-open-properties", onOpen);
-  }, []);
-  // Properties panel edits: applied to the source editor's live text as one
-  // minimal change (cursor, undo history and collab stay intact); without a
-  // mounted source editor, to the store's text. In suggesting mode either way
-  // the edit is recorded as a tracked change, not applied directly.
-  const applyPropertiesEdit = useCallback((edit: (text: string) => string) => {
-    const view = editorRef.current?.getView();
-    if (view) {
-      const cur = view.state.doc.toString();
-      const change = minimalChange(cur, edit(cur));
-      if (change) view.dispatch(propertiesTransaction(change));
-      return;
-    }
-    flushPendingEdits();
-    const cur = useAppStore.getState().doc.content;
-    const change = minimalChange(cur, edit(cur));
-    if (!change) return;
-    if (!useAppStore.getState().suggestingMode) return setContent(cur.slice(0, change.from) + change.insert + cur.slice(change.to));
-    const user = useAuth.getState().user;
-    const next = trackedPropertiesText(cur, change, user?.name?.trim() || user?.email?.split("@")[0] || null);
-    if (next === null) return showAiToast(t("suggesting.untrackable"), "info");
-    if (next !== cur) setContent(next);
-  }, [setContent]);
-  // The database view edits the open note through here too (4.10), so the
-  // editor, not the file behind it, takes the change. The event name is
-  // NOTE_EDIT_EVENT of views/databaseEdit (not imported: it stays lazy).
-  useEffect(() => {
-    const onEdit = (e: Event) => {
-      const d = (e as CustomEvent<NoteEditDetail>).detail;
-      if (!d || useAppStore.getState().doc.workspaceName !== d.path) return;
-      let changed = false;
-      applyPropertiesEdit((cur) => {
-        const next = d.edit(cur);
-        changed = next !== cur;
-        return next;
-      });
-      d.done(changed);
-    };
-    window.addEventListener("lumen-note-edit", onEdit);
-    return () => window.removeEventListener("lumen-note-edit", onEdit);
-  }, [applyPropertiesEdit]);
+  useWindowEvent("lumen-open-search", (e) => {
+    const query = (e as CustomEvent<{ query?: string }>).detail?.query;
+    (window as unknown as { __lumenSearchQuery?: string }).__lumenSearchQuery = typeof query === "string" ? query : undefined;
+    setSearchOpen(true);
+  });
+  useWindowEvent("lumen-open-properties", () => setPropertiesOpen((v) => !v));
+  // Properties panel and database view edits of the open note (4.9, 4.10).
+  const applyPropertiesEdit = usePropertiesEdit(editorRef);
   // Allowed image hosts (plan W1.30), opened from the palette.
   const [imageHostsOpen, setImageHostsOpen] = useState(false);
-  useEffect(() => {
-    const onOpen = () => setImageHostsOpen(true);
-    window.addEventListener("lumen-open-image-hosts", onOpen);
-    return () => window.removeEventListener("lumen-open-image-hosts", onOpen);
-  }, []);
+  useWindowEvent("lumen-open-image-hosts", () => setImageHostsOpen(true));
   useEffect(() => {
     const onOpen = () => setTrashOpen(true);
     window.addEventListener("lumen-open-trash", onOpen);
@@ -1147,37 +365,18 @@ export default function App() {
       window.clearTimeout(purge);
     };
   }, []);
-  useEffect(() => {
-    const onOpen = () => setAiDoctorOpen(true);
-    window.addEventListener("lumen-open-ai-doctor", onOpen);
-    return () => window.removeEventListener("lumen-open-ai-doctor", onOpen);
-  }, []);
+  useWindowEvent("lumen-open-ai-doctor", () => setAiDoctorOpen(true));
   // Changes agents proposed (plan 5.11): the editor applies approved ones,
   // the status bar counts the waiting ones, a toast announces new ones.
   const agentReviewPending = useAgentReview(editorRef, openAgentReview);
-  useEffect(() => {
-    window.addEventListener("lumen-open-agent-review", openAgentReview);
-    return () => window.removeEventListener("lumen-open-agent-review", openAgentReview);
-  }, [openAgentReview]);
-  useEffect(() => {
-    const onOpen = () => setImportOpen(true);
-    window.addEventListener("lumen-open-import", onOpen);
-    return () => window.removeEventListener("lumen-open-import", onOpen);
-  }, []);
-  // Stage 2 of the improvement agent (a small local model proposes suggestions).
-  useEffect(() => {
-    void import("./agents/modelCritic").then((m) => m.installModelCritic());
-  }, []);
+  useWindowEvent("lumen-open-agent-review", openAgentReview);
+  useWindowEvent("lumen-open-import", () => setImportOpen(true));
 
   // Comment-anchor click in the editor → window event from
   // commentDecorations.ts. Open the side panel + jump the panel
   // scroll to the matching thread (the panel itself listens for the
   // same event to highlight the right row).
-  useEffect(() => {
-    const onCommentFocus = () => setCommentsPanelOpen(true);
-    window.addEventListener("lumen-comment-focus", onCommentFocus);
-    return () => window.removeEventListener("lumen-comment-focus", onCommentFocus);
-  }, []);
+  useWindowEvent("lumen-comment-focus", () => setCommentsPanelOpen(true));
 
   // Native Tauri menu wiring — no-op when running in a regular browser.
   // Plan W3.9: files from Finder / Explorer, lumen:// links, the tray, tabs between windows.
@@ -1187,16 +386,7 @@ export default function App() {
     onOpen: handleOpen,
     onSave: handleSave,
     onInsertText: async () => {
-      const result = await openInsertTextDialog();
-      if (!result) return;
-      const current = doc.content;
-      if (result.mode === "replace") setContent(result.markdown);
-      else if (result.mode === "atCursor" && editorRef.current) {
-        editorRef.current.insertText(result.markdown);
-      } else if (result.mode === "atCursor") {
-        const trimmed = current.endsWith("\n") ? current : current + "\n";
-        setContent(trimmed + result.markdown);
-      } else setContent(current + (current.endsWith("\n") ? "" : "\n") + "\n" + result.markdown);
+      await insertTextFromDialog(doc.content, setContent, () => editorRef.current);
     },
     onCommandPalette: () => setPaletteOpen(true),
     onFocusMode: () => setFocusMode(true),
@@ -1253,21 +443,7 @@ export default function App() {
         }}
         commands={commands}
         onInsertText={async () => {
-          const result = await openInsertTextDialog();
-          if (!result) return;
-          const current = doc.content;
-          if (result.mode === "replace") {
-            setContent(result.markdown);
-          } else if (result.mode === "atCursor" && editorRef.current) {
-            // Real cursor-aware insert via the Editor's exposed handle.
-            editorRef.current.insertText(result.markdown);
-          } else if (result.mode === "atCursor") {
-            // Fallback when the editor isn't mounted (e.g. preview-only mode).
-            const trimmed = current.endsWith("\n") ? current : current + "\n";
-            setContent(trimmed + result.markdown);
-          } else {
-            setContent(current + (current.endsWith("\n") ? "" : "\n") + "\n" + result.markdown);
-          }
+          if (!(await insertTextFromDialog(doc.content, setContent, () => editorRef.current))) return;
           showAiToast(`✅ ${t("toast.insertText.success")}`, "info");
         }}
         onPasteText={async () => {
@@ -1373,37 +549,13 @@ export default function App() {
                   const content = await readWorkspaceFile(path);
                   setDoc({ name: path.split("/").pop() ?? path, content, handle: undefined, workspaceName: path, dirty: false });
                 } catch {
-                  /* missing file */
+                  /* why: missing file */
                 }
               }}
             />
           </Suspense>
         )}
-        {dragHover && (
-          <div
-            className="absolute inset-0 flex items-center justify-center pointer-events-none animate-in"
-            style={{
-              background: "hsl(var(--accent) / 0.06)",
-              border: "2px dashed hsl(var(--accent))",
-              borderRadius: 12,
-              margin: 12,
-            }}
-          >
-            <div
-              style={{
-                background: "hsl(var(--bg))",
-                padding: "1rem 1.5rem",
-                borderRadius: 10,
-                fontSize: 14,
-                color: "hsl(var(--accent))",
-                border: "1px solid hsl(var(--accent) / 0.3)",
-                fontWeight: 600,
-              }}
-            >
-              {t("dnd.dropHint")}
-            </div>
-          </div>
-        )}
+        {dragHover && <DropHint />}
       </main>
       <StatusBar
         text={doc.content}
@@ -1498,27 +650,13 @@ export default function App() {
 
       {/* Graph View overlay */}
       {graphOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "hsl(var(--bg))" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px", borderBottom: "1px solid hsl(var(--border))" }}>
-            <h3 style={{ margin: 0, fontSize: 14, color: "hsl(var(--fg))" }}>{t("graphView.title")}</h3>
-            <button className="icon-btn" onClick={() => setGraphOpen(false)} style={{ width: "auto", padding: "4px 12px", fontSize: 12 }}>{t("dialog.cancel")}</button>
-          </div>
-          <div style={{ height: "calc(100vh - 42px)" }}>
-            <Suspense fallback={<div style={{padding:'2rem',color:'hsl(var(--fg-muted))'}}>{t("loading.generic")}</div>}>
-              <ErrorBoundary fallback={
-                <div style={{ padding: "3rem", textAlign: "center", color: "hsl(var(--danger))" }}>
-                  <strong>{t("graphView.renderFailed")}</strong>
-                  <p>{t("graphView.renderFailedDetail")}</p>
-                </div>
-              }>
-                <GraphView onOpenFile={(path, content) => {
-                  setDoc({ name: path.split("/").pop() ?? path, content, handle: undefined, workspaceName: path, dirty: false });
-                  setGraphOpen(false);
-                }} />
-              </ErrorBoundary>
-            </Suspense>
-          </div>
-        </div>
+        <GraphOverlay
+          onClose={() => setGraphOpen(false)}
+          onOpenFile={(path, content) => {
+            setDoc({ name: path.split("/").pop() ?? path, content, handle: undefined, workspaceName: path, dirty: false });
+            setGraphOpen(false);
+          }}
+        />
       )}
 
       {/* Canvas Whiteboard overlay */}

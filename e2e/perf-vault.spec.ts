@@ -231,9 +231,9 @@ test("typing in a 2 MB note keeps each keystroke under a frame", { tag: "@nightl
  * zooming. The frame rate is asserted only on a GPU: under SwiftShader
  * (software WebGL, as in headless CI) it is reported, not asserted.
  */
-test("graph: 10,000 notes and 50,000 links lay out < 3 s and zoom at ≥ 30 fps", { tag: "@nightly" }, async ({ page }) => {
+test("graph: 10,000 notes and 50,000 links lay out < 3 s and zoom at ≥ 30 fps", { tag: "@nightly" }, async ({ page, browserName }) => {
   test.setTimeout(300_000);
-  test.skip(!(await canSeed(page)), "OPFS createWritable is unavailable in this engine's test context");
+  vaultOrSkip(await canSeed(page), browserName);
   const seeded = await page.evaluate(async (n) => {
     const root = await navigator.storage.getDirectory();
     const dir = await root.getDirectoryHandle("graph", { create: true });

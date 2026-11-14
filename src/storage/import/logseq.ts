@@ -32,6 +32,7 @@ export function pageName(fileStem: string): string {
   try {
     s = decodeURIComponent(s.replace(/%(?![0-9a-f]{2})/gi, "%25"));
   } catch {
+    // why: not percent-encoded: the file name is the page name
     /* as written */
   }
   return s.replace(/___/g, "/");
@@ -157,6 +158,7 @@ export function convertLogseq(files: Map<string, Uint8Array>): ConvertedVault {
         try {
           decoded = decodeURIComponent(d);
         } catch {
+          // why: not percent-encoded: the link target is used as written
           /* as written */
         }
         const target = assetPaths.get(resolveRel(dirOf(page.src), decoded).normalize("NFC").toLowerCase());

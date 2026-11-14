@@ -77,6 +77,7 @@ function write(s: Stored): void {
   try {
     localStorage.setItem(KEY, JSON.stringify(s));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* private mode: the settings last for this visit */
   }
   if (typeof window !== "undefined") window.dispatchEvent(new Event("lumen-reading-changed"));

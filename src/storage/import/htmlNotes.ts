@@ -179,6 +179,7 @@ export function convertHtmlNotes(files: Map<string, Uint8Array>, source: ImportS
         try {
           rel = decodeURIComponent(src);
         } catch {
+          // why: not percent-encoded: the path is used as written
           /* as written */
         }
         const file = resolveRel(dirOf(page.src), rel);
@@ -197,6 +198,7 @@ export function convertHtmlNotes(files: Map<string, Uint8Array>, source: ImportS
         try {
           rel = decodeURIComponent(rel);
         } catch {
+          // why: not percent-encoded: the path is used as written
           /* as written */
         }
         const file = resolveRel(dirOf(page.src), rel);
