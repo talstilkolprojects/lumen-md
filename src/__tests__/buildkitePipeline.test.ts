@@ -5,6 +5,7 @@ import { parse } from "yaml";
 import {
   JOBS,
   NOT_GATES,
+  OVERRIDES,
   STATUS_PREFIX,
   VITEST_INCLUDE,
   buildPipeline,
@@ -102,6 +103,18 @@ describe("Buildkite pipeline against ci.yml (plan W7.21)", () => {
     for (const k of ["static", "lint", "licenses", "build", "vitest", "vitest-merge", "e2e-chromium", "e2e-firefox", "e2e-webkit"]) expect(keys).toContain(k);
     const receipt = p.steps.find((s: Step) => s.key === "receipt");
     expect(receipt.depends_on.map((d: { step: string }) => d.step).sort()).toEqual([...keys].sort());
+  });
+
+  it("the drift step runs scripts/i18n-drift.mjs (counts the lazy English), pinned to the ci.yml text it replaces", () => {
+    const script = jobScript(JOBS.find((j: { key: string }) => j.key === "static"), ci());
+    expect(script).toContain("node scripts/i18n-drift.mjs");
+    expect(script).toContain("node scripts/i18n-split.mjs --check");
+    expect(script).not.toContain("count() {");
+    expect(OVERRIDES["check › i18n drift gate"].reason).toMatch(/stricter/);
+    const changed = ci();
+    const step = changed.jobs.check.steps.find((s) => s.name === "i18n drift gate");
+    if (step) step.run = `${step.run}\necho more`;
+    expect(() => jobScript(JOBS.find((j: { key: string }) => j.key === "static"), changed)).toThrow(/changed this step since its override was reviewed/);
   });
 
   it("NOT_GATES has a reason for each entry", () => {

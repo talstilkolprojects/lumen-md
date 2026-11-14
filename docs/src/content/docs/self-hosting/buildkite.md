@@ -47,6 +47,20 @@ main-only size cache, diagnostics) are listed with a reason in
 
 After changing ci.yml: `npm run ci:pipeline -- --write` and commit the file.
 
+**One documented override.** ci.yml's i18n drift step counts English only in
+`src/i18n/locales/en/`. The English of the lazily loaded domains
+(`src/i18n/lazy/*.json`, kept out of the startup bundle) therefore looked like
+drift: en 2270 vs he 2493, with no string missing. The pipeline runs
+`npm run i18n:drift` in its place:
+
+- English is counted as `locales/en` plus the lazy files
+- ci.yml's 10-key limit applies to every locale, not only Hebrew
+- a key with no English string fails
+
+The step is equal to ci.yml's or stricter. `OVERRIDES` in
+`scripts/buildkite/lib.mjs` pins the sha256 of the ci.yml text it replaces, so
+a change to that step stops the generator until the override is reviewed again.
+
 ### Shards by time
 
 `vitest --shard` splits by file count, so one shard can get all the slow files.
