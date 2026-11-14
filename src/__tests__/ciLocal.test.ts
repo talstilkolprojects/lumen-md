@@ -1,7 +1,7 @@
 /** 0.14 — `npm run ci:local` runs what CI runs; --changed narrows it to what the diff can break. */
 import { describe, it, expect } from "vitest";
 // @ts-expect-error — plain .mjs helper without types
-import { planSteps, e2eSpecs, i18nDrift, summary, coverageGate, hookPlan, buildState, argErrors, isAppCode, COVERAGE_MIN, HOOK_MARK, STEP_IDS, dynamicImportTargets } from "../../scripts/lib/ciLocal.mjs";
+import { planSteps, e2eSpecs, i18nDrift, summary, coverageGate, hookPlan, buildState, argErrors, isAppCode, isOcrInput, COVERAGE_MIN, HOOK_MARK, STEP_IDS, dynamicImportTargets } from "../../scripts/lib/ciLocal.mjs";
 
 type Step = { id: string; cmd: string[]; skipReason?: string; coverageMin?: number };
 const pkg = { scripts: { hygiene: "x", budget: "x", licenses: "x" } };
@@ -12,8 +12,8 @@ const byId = (steps: Step[]) => Object.fromEntries(steps.map((s) => [s.id, s]));
 describe("ci:local steps", () => {
   it("a full run has every CI step; tools this branch lacks are 'not here', not failures", () => {
     const s = byId(plan(null));
-    expect(Object.keys(s)).toEqual(["typecheck", "hygiene", "lint", "i18n", "licenses", "headers", "test", "build", "budget", "e2e"]);
-    for (const id of ["typecheck", "hygiene", "i18n", "licenses", "test", "build", "budget", "e2e"]) expect(s[id].skipReason, id).toBeUndefined();
+    expect(Object.keys(s)).toEqual(["typecheck", "hygiene", "lint", "i18n", "licenses", "headers", "test", "build", "budget", "ocr", "e2e"]);
+    for (const id of ["typecheck", "hygiene", "i18n", "licenses", "test", "build", "budget", "ocr", "e2e"]) expect(s[id].skipReason, id).toBeUndefined();
     expect(s.lint.skipReason).toMatch(/not here/);
     expect(s.headers.skipReason).toMatch(/not here/);
     expect(s.test.cmd).toEqual(["npx", "vitest", "run"]);
@@ -31,6 +31,21 @@ describe("ci:local steps", () => {
     const s = byId(plan(["src/ai/tts.ts", "docs/a.md"]));
     expect(s.test.cmd).toEqual(["npx", "vitest", "related", "--run", "--passWithNoTests", "src/ai/tts.ts"]);
     expect(s.build.skipReason).toBeUndefined();
+  });
+
+  it("OCR CER (plan 7.5): every full run, and every diff that touches an OCR input", () => {
+    expect(byId(plan(null)).ocr.cmd).toEqual(["node", "scripts/ocr/cer-node.mjs"]);
+    for (const f of ["src/ai/ocr.ts", "src/ai/ocrMixed.ts", "public/tesseract/lang/heb.traineddata.gz", "eval/golden/ocr-he/dev/lines.json", "scripts/ocr/cer-node.mjs"]) {
+      expect(isOcrInput(f), f).toBe(true);
+      expect(byId(plan([f])).ocr.skipReason, f).toBeUndefined();
+    }
+    for (const f of ["src/ai/tts.ts", "docs/src/content/docs/ai/ocr.md", "src/__tests__/ocrCer.test.ts"]) {
+      expect(isOcrInput(f), f).toBe(false);
+      expect(byId(plan([f])).ocr.skipReason, f).toBe("diff touches no OCR input");
+    }
+    // A checkout without the script reports it as missing, not as a pass.
+    expect(byId(planSteps({ pkg, exists: (p: string) => p !== "scripts/ocr/cer-node.mjs", changed: null, flags: {} }) as Step[]).ocr.skipReason).toBe("not here");
+    expect(byId(plan(null, { skip: ["ocr"] })).ocr.skipReason).toMatch(/--skip/);
   });
 
   it("a docs-only diff skips tests, build and e2e but still type-checks", () => {
