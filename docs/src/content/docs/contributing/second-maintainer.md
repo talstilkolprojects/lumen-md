@@ -80,3 +80,78 @@ is an owner step (plan W4.7):
 Recommended: a sealed copy of each key in a password manager shared by both
 maintainers (1Password or Bitwarden "emergency access"), and admin rights for
 the second maintainer after six months of reviews.
+
+## 6. A second signing key
+
+Each signing key should have a second holder, or a second key that is just as
+valid, so that one lost laptop or one absent person stops nothing.
+
+| What is signed | Today | With two maintainers |
+|---|---|---|
+| Your review and your commits | — | Each maintainer signs commits and tags with their own SSH key: `git config gpg.format ssh`, `git config user.signingkey ~/.ssh/id_ed25519.pub`, `git config commit.gpgsign true`, and the key is added on GitHub as a **signing** key. Its fingerprint goes in the table in `SECURITY.md` ("Maintainers and keys"). |
+| Registry plugins (Ed25519, [Plugin signing keys](/plugins/signing/)) | Tal's key, if set | **A second key, not a copy.** `VITE_PLUGIN_TRUSTED_KEYS` is a JSON map of fingerprint → key, so both maintainers' public keys are trusted side by side. Each signs with their own key (`openssl genpkey -algorithm ed25519`), and either can revoke the other's by removing one entry. |
+| Desktop updates (minisign, `tauri.conf.json` `plugins.updater.pubkey`) | Tal's key and password | The updater trusts **one** public key, so a second key is not possible. The private key and its password go into the shared emergency vault (section 7). To rotate: ship one release signed with the old key whose config carries the new `pubkey`. After that, releases are signed with the new key. |
+| Android and iOS | Tal's accounts | The second maintainer is added to Google Play Console and App Store Connect with a release role. Signing keys go into the emergency vault. |
+
+When the second maintainer joins: generate the keys, put both fingerprints in
+`SECURITY.md`, and add `@<login>` to `.github/CODEOWNERS`. Both changes are
+sensitive paths, so the other maintainer reviews them.
+
+## 7. Emergency access
+
+If one maintainer disappears, the other must be able to keep users safe: ship
+a security fix, revoke a key, keep the site up.
+
+1. **A shared emergency vault.** Use a password manager with delegated
+   emergency access, for example Bitwarden's Emergency Access. A premium
+   account names a trusted contact (a free account is enough for the
+   contact). The contact requests access, and it is granted automatically
+   after a wait time the holder chooses, unless the holder rejects it
+   ([Bitwarden](https://bitwarden.com/help/emergency-access/)). Use **view**
+   access with a 7-day wait. It holds:
+   - the minisign key and its password;
+   - the Android upload key and its password;
+   - the Apple credentials;
+   - the Vercel and Cloudflare recovery codes;
+   - the GitHub recovery codes.
+2. **GitHub successor.** Tal names the second maintainer as the
+   **successor** of his personal account (Settings → Account → Successor
+   settings → Add successor), so that the repository can continue if the
+   account cannot
+   ([GitHub Docs](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/repository-access-and-collaboration/maintaining-ownership-continuity-of-your-personal-accounts-repositories)).
+3. **Security reports.** Both maintainers get every advisory. If one does not
+   answer within 48 hours, the other owns it (`SECURITY.md`).
+4. **A yearly drill.** Once a year, the second maintainer opens the
+   emergency vault in view mode, checks that every key decrypts, and signs a
+   test file with the minisign key. Then the holder rotates whatever was
+   opened.
+
+## 8. The weekly review queue
+
+Once a week, either maintainer runs:
+
+```sh
+npm run review:queue -- --base verify/train-2 --out queue.md
+```
+
+It lists at most **five** open pull requests that change a sensitive path
+and have not been human-reviewed since their last commit. They are ordered by
+area (cryptography first), then by age. For each one, the queue gives:
+
+- the sensitive files, by area;
+- the questions from section 3;
+- the tests in `src/__tests__` that import the changed modules;
+- **attack cases** to try (a flipped ciphertext byte, a reused nonce, a
+  `../` note name, `javascript:` links…);
+- the commands to run.
+
+It only reads from GitHub. Nothing is labelled or commented.
+
+The goal is a median review time of **3 days or less**. A PR still in the
+queue after a week goes first at the next sitting.
+
+**Cryptography needs someone else.** On a PR that changes a path in the
+*Cryptography* section of `.github/CODEOWNERS`, `npm run pr:check -- --pr <n>`
+counts the `human-reviewed` label only when it was added by someone who is
+**neither the repository owner nor the PR's author**. Tal and the agents have
+written and tested that code themselves, so the point is a second person.
