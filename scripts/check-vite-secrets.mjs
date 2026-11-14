@@ -52,7 +52,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   }
   const { findings, checked } = scanViteSecrets(dir);
   if (!checked.length) {
-    console.error("::error::No secret-named VITE_* variable is set: build with canaries (see .github/workflows/ci.yml).");
+    console.error("::error::No secret-named VITE_* variable is set: build with canaries (see docs/archive/workflows/ci.yml).");
     process.exit(2);
   }
   if (findings.length) {

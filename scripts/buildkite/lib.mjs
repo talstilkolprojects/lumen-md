@@ -4,7 +4,7 @@
  * natively for WebKit), and Buildkite's GitHub app posts one commit status per
  * gate. Pure functions; the CLIs next to this file do the I/O.
  *
- * The gates are not re-typed here. .github/workflows/ci.yml stays the one
+ * The gates are not re-typed here. docs/archive/workflows/ci.yml stays the one
  * list of what a PR must pass: buildPipeline() copies each gate's `run:`
  * text out of it, and gateCoverage() fails when a ci.yml step is neither in
  * the pipeline nor named in NOT_GATES with a reason. A new or renamed gate in
@@ -403,7 +403,7 @@ export function toYaml(value, indent = "") {
 }
 
 export const PIPELINE_HEADER = [
-  "# GENERATED from .github/workflows/ci.yml by scripts/buildkite/pipeline.mjs (plan W7.21). Do not edit by hand:",
+  "# GENERATED from docs/archive/workflows/ci.yml by scripts/buildkite/pipeline.mjs (plan W7.21). Do not edit by hand:",
   "#   npm run ci:pipeline -- --write     regenerate after a change to ci.yml or scripts/buildkite/lib.mjs",
   "#   npm run ci:pipeline -- --check     fails when this file is stale or a ci.yml gate is missing",
   "# Buildkite's pipeline settings upload it with `buildkite-agent pipeline upload` (docs: self-hosting/buildkite).",

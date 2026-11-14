@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Desktop release signing helpers (plan 11.5), used by .github/workflows/release.yml.
+ * Desktop release signing helpers (plan 11.5), used by docs/archive/workflows/release.yml.
  *
  *   node scripts/tauri-signing.mjs updater-config
  *       fill src-tauri/tauri.conf.json's updater from LUMEN_UPDATER_PUBKEY /

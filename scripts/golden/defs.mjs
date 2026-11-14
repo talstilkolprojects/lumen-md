@@ -184,7 +184,7 @@ export const SRC = {
   },
 };
 
-/** Hugging Face datasets: built by .github/workflows/golden-sets.yml (scripts/golden/hf_build.py). */
+/** Hugging Face datasets: built by docs/archive/workflows/golden-sets.yml (scripts/golden/hf_build.py). */
 export const HF = {
   fleurs: { id: "google/fleurs", config: "he_il", split: "test", license: "cc-by-4.0", gated: false },
   "common-voice": { id: "mozilla-foundation/common_voice_17_0", config: "he", split: "test", license: "cc0-1.0", gated: true },

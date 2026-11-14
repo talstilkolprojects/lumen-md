@@ -33,7 +33,7 @@ const HEX64 = /^[0-9a-f]{64}$/;
 /**
  * Where a part's data comes from:
  *   built            — a GitHub / npm source or a generator this repo runs: dev committed now, test rebuilt in CI
- *   workflow-pending — Hugging Face, Tatoeba, Wikipedia or S3: .github/workflows/golden-sets.yml builds dev and test
+ *   workflow-pending — Hugging Face, Tatoeba, Wikipedia or S3: docs/archive/workflows/golden-sets.yml builds dev and test
  *   local-only       — never committed (licence or contamination terms): dev and test are frozen as ids + sha256 only
  *   owner-pending    — the owner's own material (15.11): never in the repo; CI reads it from an encrypted bundle
  */

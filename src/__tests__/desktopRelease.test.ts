@@ -69,7 +69,7 @@ describe("signing is optional (11.5.2) and the updater stays off without keys (1
   });
 
   it("the release workflow skips signing steps without secrets instead of failing", () => {
-    const wf = readFileSync(join(root, ".github/workflows/release.yml"), "utf8");
+    const wf = readFileSync(join(root, "docs/archive/workflows/release.yml"), "utf8");
     expect(wf).toMatch(/WINDOWS_CERTIFICATE not set — the Windows installer is NOT signed/);
     expect(wf).toMatch(/TAURI_SIGNING_PRIVATE_KEY not set/);
     expect(wf).toMatch(/check-sourcemaps\.mjs dist/);

@@ -181,7 +181,7 @@ describe("the local pipeline (13.4) — no GitHub Actions needed", () => {
   });
 
   it("the workflow is kept, runs on a tag, and uses the script's notes", () => {
-    const wf = readFileSync(join(root, ".github/workflows/release.yml"), "utf8");
+    const wf = readFileSync(join(root, "docs/archive/workflows/release.yml"), "utf8");
     expect(wf).toMatch(/tags: \["v\*"\]/);
     expect(wf).toContain("node scripts/release.mjs notes");
     expect(wf).toContain("node scripts/release.mjs build");

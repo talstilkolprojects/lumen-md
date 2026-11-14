@@ -2,7 +2,7 @@
 /**
  * Build the golden sets' parts that come from GitHub, npm or a generator in
  * this repo (plan 7.1). Hugging Face, Tatoeba and Wikipedia parts are built
- * by scripts/golden/hf_build.py in .github/workflows/golden-sets.yml.
+ * by scripts/golden/hf_build.py in docs/archive/workflows/golden-sets.yml.
  *
  *   node scripts/golden/build.mjs [set ...] --split dev
  *       the public dev split, into eval/golden/<set>/dev/ (committed), then
