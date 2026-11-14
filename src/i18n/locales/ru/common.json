@@ -800,6 +800,19 @@
   "israeliTime.moved": "Выпадает на {reason}: предлагается {date}",
   "israeliTime.overdue.one": "Просрочено на {n} рабочий день",
   "israeliTime.overdue.other": "Просрочено рабочих дней: {n}",
+  "jewishLang.dict.downloadConfirm": "Скачать на это устройство список слов идиша (hunspell-yi, 2,4 МБ, GPL-3.0, авторы Рафаэль Финкель, Симхе Тауб и Андрей Розенберг) с GitHub? Он не входит в Lumen и хранится только здесь.",
+  "jewishLang.dict.failed": "Список слов идиша не скачался: {error}",
+  "jewishLang.dict.installed": "Проверка идиша включена ({count} слов).",
+  "jewishLang.dict.removeConfirm": "Удалить список слов идиша с этого устройства?",
+  "jewishLang.dict.removed": "Список слов идиша удалён.",
+  "jewishLang.translit.done": "Готово.",
+  "jewishLang.translit.guessed": "Готово. {count} гласных прочитаны из י или ו, которые могут обозначать два звука: проверьте их.",
+  "jewishLang.translit.ladToHebrew": "Ладино: латиница → еврейские буквы",
+  "jewishLang.translit.ladToLatin": "Ладино: еврейские буквы → латиница",
+  "jewishLang.translit.latinToYi": "Латиница YIVO → идиш",
+  "jewishLang.translit.noSelection": "Сначала выделите текст.",
+  "jewishLang.translit.title": "Транслитерировать выделенное",
+  "jewishLang.translit.yiToLatin": "Идиш → латиница YIVO",
   "legalCite.cancel": "Отмена",
   "legalCite.f.authors": "Authors (separated by commas)",
   "legalCite.f.collection": "Collection (ה\"ח הממשלה)",
@@ -1871,5 +1884,6 @@
   "wikiComplete.create": "Создать заметку «{name}»",
   "wikiComplete.createFailed": "Не удалось создать заметку «{name}»: {error}",
   "wikiComplete.created": "Заметка «{name}» создана",
-  "wikiComplete.listLabel": "Варианты ссылок"
+  "wikiComplete.listLabel": "Варианты ссылок",
+  "yiddish.spell.unknown": "Нет в списке слов идиша"
 }

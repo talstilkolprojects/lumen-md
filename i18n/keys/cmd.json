@@ -1725,6 +1725,16 @@
       "vars": []
     },
     {
+      "key": "cmd.spell.yiddishDictionary",
+      "en": "Yiddish spelling: word list (download / remove)",
+      "vars": []
+    },
+    {
+      "key": "cmd.spell.yiddishDictionary.hint",
+      "en": "Offline Yiddish spell check (hunspell-yi, 2.4 MB, GPL)",
+      "vars": []
+    },
+    {
       "key": "cmd.split",
       "en": "Split editor + preview",
       "vars": []
@@ -1848,6 +1858,16 @@
     {
       "key": "cmd.templates.open.hint",
       "en": "Browse + install community templates",
+      "vars": []
+    },
+    {
+      "key": "cmd.text.transliterate",
+      "en": "Transliterate the selection (Yiddish, Ladino)",
+      "vars": []
+    },
+    {
+      "key": "cmd.text.transliterate.hint",
+      "en": "Yiddish ↔ YIVO romanisation, Ladino Latin ↔ Hebrew letters",
       "vars": []
     },
     {

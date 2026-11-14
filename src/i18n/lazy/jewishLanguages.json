@@ -1,0 +1,16 @@
+{
+  "jewishLang.translit.title": "Transliterate the selection",
+  "jewishLang.translit.yiToLatin": "Yiddish → YIVO romanisation",
+  "jewishLang.translit.latinToYi": "YIVO romanisation → Yiddish",
+  "jewishLang.translit.ladToHebrew": "Ladino: Latin letters → Hebrew letters",
+  "jewishLang.translit.ladToLatin": "Ladino: Hebrew letters → Latin letters",
+  "jewishLang.translit.noSelection": "Select the text to transliterate first.",
+  "jewishLang.translit.done": "Transliterated.",
+  "jewishLang.translit.guessed": "Transliterated. {count} vowels were read from י or ו, which can stand for two vowels: please check them.",
+  "jewishLang.dict.downloadConfirm": "Download the Yiddish spelling list (hunspell-yi, 2.4 MB, GPL-3.0, by Raphael A. Finkel, Simche Taub and Andrey Rozenberg) from GitHub to this device? It is not part of Lumen; it is kept only here.",
+  "jewishLang.dict.installed": "Yiddish spelling is on ({count} words).",
+  "jewishLang.dict.removeConfirm": "Remove the Yiddish spelling list from this device?",
+  "jewishLang.dict.removed": "The Yiddish spelling list is removed.",
+  "jewishLang.dict.failed": "The Yiddish spelling list did not download: {error}",
+  "yiddish.spell.unknown": "Not in the Yiddish word list"
+}

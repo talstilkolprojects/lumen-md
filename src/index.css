@@ -50,6 +50,11 @@
   }
 }
 
+/* Yiddish and Hebrew-letter Ladino (plan W7.9): a Hebrew face with full pointing (אַ אָ פֿ), loaded on demand; Heebo lacks the points. */
+:is(.prose-lumen, .cm-content):is([lang="yi"], [lang="lad-Hebr"]) {
+  font-family: "Lumen Noto Sans Hebrew", var(--font-sans);
+}
+
 /*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still

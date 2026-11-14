@@ -1776,6 +1776,20 @@
       "group": "Insert",
       "hint": "Every note that cites the verse under the cursor",
       "icon": "Link"
+    },
+    {
+      "id": "text.transliterate",
+      "label": "Transliterate the selection (Yiddish, Ladino)",
+      "group": "Edit",
+      "hint": "Yiddish ↔ YIVO romanisation, Ladino Latin ↔ Hebrew letters",
+      "icon": "Pencil"
+    },
+    {
+      "id": "spell.yiddishDictionary",
+      "label": "Yiddish spelling: word list (download / remove)",
+      "group": "Tools",
+      "hint": "Offline Yiddish spell check (hunspell-yi, 2.4 MB, GPL)",
+      "icon": "Download"
     }
   ],
   "full": [
@@ -3704,6 +3718,20 @@
       "group": "Insert",
       "hint": "Every note that cites the verse under the cursor",
       "icon": "Link"
+    },
+    {
+      "id": "text.transliterate",
+      "label": "Transliterate the selection (Yiddish, Ladino)",
+      "group": "Edit",
+      "hint": "Yiddish ↔ YIVO romanisation, Ladino Latin ↔ Hebrew letters",
+      "icon": "Pencil"
+    },
+    {
+      "id": "spell.yiddishDictionary",
+      "label": "Yiddish spelling: word list (download / remove)",
+      "group": "Tools",
+      "hint": "Offline Yiddish spell check (hunspell-yi, 2.4 MB, GPL)",
+      "icon": "Download"
     }
   ],
   "autoSaveOn": [
@@ -3971,6 +3999,8 @@
     "help.a11yReport",
     "sources.insertSefaria",
     "sources.saveOffline",
-    "sources.notesOnVerse"
+    "sources.notesOnVerse",
+    "text.transliterate",
+    "spell.yiddishDictionary"
   ]
 }

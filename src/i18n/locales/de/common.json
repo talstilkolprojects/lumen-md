@@ -800,6 +800,19 @@
   "israeliTime.moved": "Fällt auf {reason}: vorgeschlagen {date}",
   "israeliTime.overdue.one": "{n} Arbeitstag überfällig",
   "israeliTime.overdue.other": "{n} Arbeitstage überfällig",
+  "jewishLang.dict.downloadConfirm": "Die jiddische Wortliste (hunspell-yi, 2,4 MB, GPL-3.0, von Raphael A. Finkel, Simche Taub und Andrey Rozenberg) von GitHub auf dieses Gerät laden? Sie ist nicht Teil von Lumen und wird nur hier gespeichert.",
+  "jewishLang.dict.failed": "Die jiddische Wortliste wurde nicht geladen: {error}",
+  "jewishLang.dict.installed": "Jiddische Rechtschreibung ist an ({count} Wörter).",
+  "jewishLang.dict.removeConfirm": "Die jiddische Wortliste von diesem Gerät entfernen?",
+  "jewishLang.dict.removed": "Die jiddische Wortliste ist entfernt.",
+  "jewishLang.translit.done": "Transliteriert.",
+  "jewishLang.translit.guessed": "Transliteriert. {count} Vokale wurden aus י oder ו gelesen, die für zwei Vokale stehen können: bitte prüfen.",
+  "jewishLang.translit.ladToHebrew": "Ladino: lateinische → hebräische Buchstaben",
+  "jewishLang.translit.ladToLatin": "Ladino: hebräische → lateinische Buchstaben",
+  "jewishLang.translit.latinToYi": "YIVO-Umschrift → Jiddisch",
+  "jewishLang.translit.noSelection": "Wählen Sie zuerst den Text aus.",
+  "jewishLang.translit.title": "Auswahl transliterieren",
+  "jewishLang.translit.yiToLatin": "Jiddisch → YIVO-Umschrift",
   "legalCite.cancel": "Abbrechen",
   "legalCite.f.authors": "Authors (separated by commas)",
   "legalCite.f.collection": "Collection (ה\"ח הממשלה)",
@@ -1871,5 +1884,6 @@
   "wikiComplete.create": "Notiz „{name}“ erstellen",
   "wikiComplete.createFailed": "Die Notiz „{name}“ konnte nicht erstellt werden: {error}",
   "wikiComplete.created": "Notiz „{name}“ erstellt",
-  "wikiComplete.listLabel": "Linkvorschläge"
+  "wikiComplete.listLabel": "Linkvorschläge",
+  "yiddish.spell.unknown": "Nicht in der jiddischen Wortliste"
 }
