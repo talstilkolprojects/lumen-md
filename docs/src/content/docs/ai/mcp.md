@@ -59,6 +59,12 @@ npx -p @lumen-md/mcp-server lumen mcp status
 Give each client its own `--client` name — the one you enabled. (Without
 it, the server uses the name the client reports when it connects.)
 
+The name is the client's own word, not a proof: a client that reports another
+client's name gets that client's tools, and the app that starts the server
+chooses `--client` anyway. So grants keep apart the apps you set up, not an app
+that lies about itself. Enable only apps you trust with the scopes you give,
+and writes still wait for your approval whatever the name.
+
 **Claude Desktop** — `~/Library/Application Support/Claude/claude_desktop_config.json`
 (macOS; `%APPDATA%\Claude\` on Windows):
 

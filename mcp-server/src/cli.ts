@@ -231,7 +231,8 @@ async function runCommand(argv: string[], io: CliIO): Promise<number> {
  * same edits as `lumen.bases.update` / the `bases_update` MCP tool and
  * queues them in the approval queue — `--dry-run` only shows what would
  * change, `--approve` shows each note's diff and writes the ones you
- * confirm (a TTY only: an agent's shell cannot approve).
+ * confirm (a TTY only, which stops an agent from approving by accident; an
+ * agent with a shell can open a terminal of its own, review 24 B1r).
  */
 async function runBases(vault: string, rest: string[], flags: Record<string, string>, io: CliIO): Promise<number> {
   const [sub, arg] = rest;
