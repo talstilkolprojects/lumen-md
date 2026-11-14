@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { productionWorkerOrSkip } from "./_serviceWorker";
 
 /**
  * REAL execution proof for the live code blocks (master-plan §3). Until now
@@ -269,12 +270,11 @@ test("live-ruby executes real Ruby via ruby.wasm in a sandboxed worker", async (
   await expect(after).toContainText("42", { timeout: 120_000 });
 });
 
-test("live-ruby runs offline once the runtime was loaded (service-worker runtime cache)", async ({ page, context }) => {
+test("live-ruby runs offline once the runtime was loaded (service-worker runtime cache)", async ({ page, context, browserName }) => {
   test.setTimeout(240_000);
   // Production builds only: the dev server registers no service worker.
   const dev = await page.evaluate(() => !!document.querySelector('script[src*="/@vite/client"]'));
-  // skip-reason: the dev server registers no service worker; the production-build run checks this | task: 0.5 | until: 2027-05-12
-  test.skip(dev, "the service worker runs on the production build only");
+  productionWorkerOrSkip(dev, browserName, { chromiumOnly: false });
   const hasSw = await page.evaluate(async () => {
     if (!("serviceWorker" in navigator)) return false;
     const reg = await Promise.race([

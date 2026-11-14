@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 import { keepExport, notionExport } from "../src/__tests__/fixtures/import/exports";
 
 /**
@@ -56,9 +57,9 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(".cm-content").first()).toContainText("Welcome to", { timeout: 15_000 });
 });
 
-test("Keep export: palette → wizard → review → import → undo leaves the vault as it was", async ({ page }) => {
+test("Keep export: palette → wizard → review → import → undo leaves the vault as it was", async ({ page, browserName }) => {
   test.setTimeout(60_000);
-  test.skip(!(await opfsWritable(page)), "OPFS writes are unavailable in this engine's test context");
+  vaultOrSkip(await opfsWritable(page), browserName);
   await page.locator("header").first().waitFor({ state: "visible" });
   await page.keyboard.press("Meta+K");
   await page.keyboard.type("Import notes from another app");
@@ -81,9 +82,9 @@ test("Keep export: palette → wizard → review → import → undo leaves the 
   await expect.poll(() => exists(page, "Imported")).toBe(false);
 });
 
-test("Notion export: the database arrives as a .base the app shows as a table", async ({ page }) => {
+test("Notion export: the database arrives as a .base the app shows as a table", async ({ page, browserName }) => {
   test.setTimeout(60_000);
-  test.skip(!(await opfsWritable(page)), "OPFS writes are unavailable in this engine's test context");
+  vaultOrSkip(await opfsWritable(page), browserName);
   await page.evaluate(() => window.dispatchEvent(new Event("lumen-open-import")));
   const wizard = page.getByTestId("import-wizard");
   await wizard.getByTestId("import-source-notion").click();

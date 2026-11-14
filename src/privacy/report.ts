@@ -104,8 +104,8 @@ export function toReportEntry(e: LedgerEntry): ReportEntry {
 }
 
 export function appVersion(): string {
-  const env = (import.meta as ImportMeta & { env?: { VITE_LUMEN_VERSION?: string } }).env;
-  return env?.VITE_LUMEN_VERSION?.trim() || "dev";
+  // One name at a time (src/lib/publicEnv.ts): a whole import.meta.env inlines every VITE_* name.
+  return (import.meta as ImportMeta & { env?: { VITE_LUMEN_VERSION?: string } }).env?.VITE_LUMEN_VERSION?.trim() || "dev";
 }
 
 /** The report of this session (entries since the ledger started in this tab). */

@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { opfsWritable, vaultOrSkip } from "./_opfs";
 
 /**
  * Plan W2.3: a change an MCP client proposes is not saved without the
@@ -48,7 +49,7 @@ function proposal(id: string, path: string, before: string | null, after: string
   return JSON.stringify({ id, client: "claude-desktop", tool, path, before, after, createdAt: "2026-11-10T09:00:00.000Z" });
 }
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, browserName }) => {
   await page.addInitScript(() => {
     localStorage.setItem("lumen-tour-done", "1");
     localStorage.removeItem("lumen-md");
@@ -56,7 +57,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await expect(page.locator(".cm-content").first()).toContainText("Welcome to", { timeout: 15_000 });
   // The workspace is OPFS; Playwright's Linux WebKit build has none (the app then has no vault to import into).
-  test.skip(!(await page.evaluate(() => typeof navigator.storage?.getDirectory === "function")), "no OPFS in this browser build");
+  vaultOrSkip(await opfsWritable(page), browserName);
 });
 
 test("an MCP client's proposals wait in the review panel; only the approved one is written", async ({ page }) => {

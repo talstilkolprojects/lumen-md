@@ -10,6 +10,7 @@ import {
   twoFrames,
   type InpEntry,
 } from "./perf/probes";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * Plan W6.45: INP and keypress → paint in both editors (source and WYSIWYG)
@@ -217,14 +218,13 @@ test.describe.configure({ mode: "serial" });
 
 test.beforeEach(async ({ page, browserName }, info) => {
   envOf = environment(info);
-  test.skip(envOf.cpuSlowdown > 1 && browserName !== "chromium", "CPU throttling needs Chromium");
   await page.addInitScript(() => {
     localStorage.setItem("lumen-tour-done", "1");
     localStorage.setItem("lumen-md", JSON.stringify({ state: { showWorkspace: true }, version: 0 }));
   });
   await page.goto("/");
   await expect(page.locator(".cm-content, .ProseMirror").first()).toBeVisible({ timeout: 60_000 });
-  test.skip(!(await seed(page)), "OPFS createWritable is unavailable in this engine's test context");
+  vaultOrSkip(await seed(page), browserName);
   await page.reload();
   await expect(page.locator(".cm-content, .ProseMirror").first()).toBeVisible({ timeout: 60_000 });
 });

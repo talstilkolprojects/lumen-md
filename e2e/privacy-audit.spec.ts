@@ -32,7 +32,6 @@ const run = (page: import("@playwright/test").Page, id: string) => page.evaluate
 const JOURNEY = ["view.source", "view.split", "view.preview", "view.wysiwyg", "view.outline", "view.source", "view.backlinks", "ai.diagram", "ai.actionItems", "ai.chart", "file.exportHtml"];
 
 test("audit mode: the local-only journey, the signed report and the request log agree on 0 non-local requests", async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== "chromium", "one browser is enough for the audit");
   test.setTimeout(180_000);
   const out = process.env.LUMEN_AUDIT_OUT ?? testInfo.outputPath("audit");
   mkdirSync(out, { recursive: true });

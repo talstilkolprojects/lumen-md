@@ -13,7 +13,6 @@ import { join } from "node:path";
  * stored the room and taken its backup, no file it wrote holds the text.
  * Server and browsers as in collab-sharing.spec.ts.
  */
-test.skip(({ browserName }) => browserName !== "chromium", "server-backed flow, chromium only");
 
 const ACCESS_KEY = "e2e-collab-access-key";
 const SECRET = "e2e-collab-token-secret-0123456789abcdef";

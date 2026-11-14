@@ -29,7 +29,8 @@ const STORAGE_KEY = "lumen-flags";
 export const FLAGS_CHANGED = "lumen-flags-changed";
 
 /** The build's channel. Anything but "beta" is stable. */
-export function buildChannel(env: { VITE_LUMEN_CHANNEL?: string } | undefined = import.meta.env as { VITE_LUMEN_CHANNEL?: string } | undefined): Channel {
+// The default reads one name (src/lib/publicEnv.ts): a whole import.meta.env inlines every VITE_* name.
+export function buildChannel(env: { VITE_LUMEN_CHANNEL?: string } | undefined = { VITE_LUMEN_CHANNEL: (import.meta.env as { VITE_LUMEN_CHANNEL?: string } | undefined)?.VITE_LUMEN_CHANNEL }): Channel {
   return (env?.VITE_LUMEN_CHANNEL ?? "").trim().toLowerCase() === "beta" ? "beta" : "stable";
 }
 

@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { opfsWritable, vaultOrSkip } from "./_opfs";
 
 /**
  * Plan W1.6, the restore drill in the browser: back up the vault from the
@@ -14,7 +15,6 @@ import { test, expect, type Page } from "@playwright/test";
 const run = (page: Page, id: string) => page.evaluate((cmd) => window.dispatchEvent(new CustomEvent("lumen-run-command", { detail: { id: cmd } })), id);
 
 test("back up, lose the vault, restore everything: every file identical", async ({ page, browserName }) => {
-  test.skip(browserName !== "chromium", "the File System Access API (and OPFS iteration) is Chromium's");
   test.setTimeout(90_000);
   await page.addInitScript(() => {
     localStorage.setItem("lumen-tour-done", "1");
@@ -26,6 +26,8 @@ test("back up, lose the vault, restore everything: every file identical", async 
   });
   await page.goto("/");
   await expect(page.locator(".cm-content").first()).toContainText("Welcome to", { timeout: 15_000 });
+  // The folder picker is the OPFS stand-in above, so this runs wherever OPFS does (W4.12).
+  vaultOrSkip(await opfsWritable(page), browserName);
 
   // A vault: notes in folders, Hebrew names, binary attachments.
   const before = await page.evaluate(async () => {

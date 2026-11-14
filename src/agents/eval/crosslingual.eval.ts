@@ -24,6 +24,7 @@ import { scoreCrossLingual, TARGET_NDCG } from "../../../scripts/search/crosslin
 const files = (process.env.LUMEN_EVAL_XL_FILES || "eval/probes/crosslingual-he-en.json").split(",").map((s) => s.trim()).filter(Boolean);
 const outDir = process.env.LUMEN_EVAL_OUT || "eval/results";
 
+// skip-reason: an opt-in eval against a real local model (LUMEN_EVAL_XL=1), not a unit test | task: W5.28 | until: 2027-05-12
 describe.skipIf(!process.env.LUMEN_EVAL_XL)(`cross-language eval — ${EMBEDDING_MODEL}`, () => {
   it("measures BM25, e5 and the fusion on Hebrew questions over English passages", async () => {
     const { pipeline } = await import("@huggingface/transformers");

@@ -82,6 +82,7 @@ async function serve(opts: Record<string, unknown> = {}) {
 
 afterEach(() => vi.restoreAllMocks());
 
+// skip-reason: a blind test (W6.15) written from #483's spec before its code; it runs wherever sync-server/vault-relay.js exists (every train has it) | task: W6.15 | until: 2027-05-12
 describe.skipIf(!relay)("vault relay (#483)", () => {
   describe("the four verbs (Q1–Q3)", () => {
     it("PUT, GET, list and DELETE over real HTTP; no token, no access", async () => {
@@ -263,6 +264,7 @@ describe.skipIf(!relay)("vault relay (#483)", () => {
       expect(relay!.powOk("space", "!!bad nonce!!", 1)).toBe(false);
     });
 
+    // skip-reason: a blind test (W6.15): this case needs the app's relay provider (src/sync/e2ee/providers/relay.ts), present on every train | task: W6.15 | until: 2027-05-12
     it.skipIf(!provider)("a new space asks for work (428); the app solves it once; a nonce is bound to its space", async () => {
       const p = provider!;
       const s = await serve({ powBits: 8 });

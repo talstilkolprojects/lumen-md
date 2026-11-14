@@ -47,8 +47,8 @@ const row: React.CSSProperties = { display: "flex", gap: 8, alignItems: "center"
 
 /** This build's relay origin (the same setting as the encrypted sync's relay). */
 export function buildRelay(): string | null {
-  const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
-  return relayOrigin(env?.VITE_SYNC_RELAY_URL);
+  // One name at a time (src/lib/publicEnv.ts): a whole import.meta.env inlines every VITE_* name.
+  return relayOrigin((import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env?.VITE_SYNC_RELAY_URL);
 }
 
 const when = (ms: number) => new Date(ms).toLocaleString(getLocale());
