@@ -3,6 +3,7 @@ node_modules
 node_modules_bad/
 dist/
 dist-registry/
+dist-legal-packet/
 
 # Build
 tsconfig.tsbuildinfo

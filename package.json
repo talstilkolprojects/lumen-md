@@ -153,7 +153,8 @@
     "perf:responsiveness": "node scripts/perf/responsiveness.mjs",
     "obsidian:compare": "node --experimental-transform-types --import ./scripts/lib/ts-register.mjs scripts/obsidian-compare.mjs",
     "codeowners:check": "node scripts/codeowners-coverage.mjs",
-    "review:queue": "node scripts/review-queue.mjs"
+    "review:queue": "node scripts/review-queue.mjs",
+    "legal:packet": "node scripts/legal-packet.mjs"
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "0.4.2",
