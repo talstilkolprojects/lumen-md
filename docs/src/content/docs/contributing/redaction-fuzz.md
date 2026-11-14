@@ -55,6 +55,7 @@ finding's name. The suite then checks that it *still* leaks, so whoever fixes
 it removes the field and the case stays a test. The first night (20261114)
 found two such leaks in the `tags` generator: `W8.8-F1` (a carriage return
 inside a tag) and `W8.8-F2` (a comment that opens inside a closing tag).
+Both were fixed in #473, and they are now ordinary regression cases.
 
 ## On the second host
 

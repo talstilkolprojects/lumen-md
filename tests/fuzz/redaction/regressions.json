@@ -119,14 +119,13 @@
   },
   {
    "id": "rdx-3db0825d",
-   "found": "2026-11-14",
+   "found": "2026-11-14 (fixed in #473 ece997f52c as W8.8-F2)",
    "generator": "tags",
    "seed": 20261114,
    "md": "<Redact > --->TK2Q</redact <redact   data-x=\"</redact>\">TK4Q<!--</redact-->TK5Q<b></redact></b>TK6Q</redact/> TK7Q",
    "leaked": [
     "TK7Q"
-   ],
-   "open": "W8.8-F2"
+   ]
   },
   {
    "id": "rdx-45ec2bbd",
@@ -232,14 +231,13 @@
   },
   {
    "id": "rdx-7ffb9935",
-   "found": "2026-11-14",
+   "found": "2026-11-14 (fixed in #473 ece997f52c as W8.8-F1)",
    "generator": "tags",
    "seed": 20261114,
    "md": "<REDACT\r a='>TK1Q<redact\t id=1>TK2Q<redact\n title='a>b'>TK3Q</REDACT>  TK12Q",
    "leaked": [
     "TK12Q"
-   ],
-   "open": "W8.8-F1"
+   ]
   },
   {
    "id": "rdx-92cfdd80",
