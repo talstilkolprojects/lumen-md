@@ -86,6 +86,31 @@ describe("pr:check", () => {
     }
   });
 
+  it("fails a diff that raises a max-lines baseline count or adds a file to it (W6.25), and passes one that lowers it", () => {
+    const r0 = repo();
+    try {
+      const write = (files: Record<string, number>) => writeFileSync(join(r0.dir, "scripts/max-lines-baseline.json"), JSON.stringify({ max: 800, files }));
+      write({ "src/big.ts": 900, "src/other.ts": 850 });
+      r0.git("add", "-A");
+      r0.git("commit", "-q", "-m", "chore: baseline [skip ci]");
+      write({ "src/big.ts": 950, "src/other.ts": 820, "src/new.ts": 801 });
+      r0.git("add", "-A");
+      r0.git("commit", "-q", "-m", "chore: raise [skip ci]");
+      const up = runChecks(parseArgs(["--cwd", r0.dir, "--base", "main~1", "--no-size"]));
+      const gate = up.sections.find((s: { title: string }) => s.title === "Max-lines baseline only goes down");
+      expect(gate.status).toBe("fail");
+      expect(gate.lines).toEqual(["- `src/big.ts`: 900 → 950. Split the file instead.", "- `src/new.ts`: added → 801. Split the file instead."]);
+      expect(up.failed).toBe(true);
+      write({ "src/big.ts": 899 });
+      r0.git("add", "-A");
+      r0.git("commit", "-q", "-m", "chore: lower [skip ci]");
+      const down = runChecks(parseArgs(["--cwd", r0.dir, "--base", "main~1", "--no-size"]));
+      expect(down.sections.find((s: { title: string }) => s.title === "Max-lines baseline only goes down").status).toBe("ok");
+    } finally {
+      r0.done();
+    }
+  });
+
   it("plan W4.28: a sensitive path fails with --pr until the human-reviewed label is newer than the last commit", () => {
     const r0 = repo();
     try {
