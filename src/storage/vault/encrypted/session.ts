@@ -107,7 +107,7 @@ function open(s: Session, keys: RestKeys, header: RestHeader): void {
   s.header = header;
   s.headerError = null;
   s.layer = createEncryptedBackend(s.inner, keys, { target: () => s.header?.target ?? "encrypted" });
-  setRestSealer({ seal: (label, value) => sealValue(keys, label, value), open: (label, sealed) => openValue(keys, label, sealed) });
+  setRestSealer({ seal: (label, value) => sealValue(keys, label, value), open: (label, sealed) => openValue(keys, label, sealed), snapshotKeys: keys.snapshot });
   setVaultEncryptionState("unlocked");
   const waiting = s.waiting.splice(0);
   for (const w of waiting) w(s.layer);

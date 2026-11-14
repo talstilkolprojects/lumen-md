@@ -103,7 +103,7 @@ class WikiMenu {
     if (key === this.shownFor && this.visible) return this.place(at);
     this.shownFor = key;
     const seq = ++this.seq;
-    void linkCatalog()
+    void linkCatalog(at.q, currentNote())
       .then((catalog) => {
         if (seq !== this.seq) return;
         const now = contextAt(this.view);

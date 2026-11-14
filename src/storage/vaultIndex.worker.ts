@@ -17,5 +17,12 @@ let queue: Promise<void> = Promise.resolve();
 
 self.onmessage = (e: MessageEvent<IndexRequest>) => {
   const req = e.data;
-  queue = queue.then(async () => (self as unknown as Worker).postMessage(await handleIndexRequest(index, req))).catch(() => {});
+  queue = queue
+    .then(async () => {
+      // W6.36: work a request hands back runs after its answer, before the next request.
+      const later: Array<() => Promise<void>> = [];
+      (self as unknown as Worker).postMessage(await handleIndexRequest(index, req, (w) => later.push(w)));
+      for (const w of later) await w().catch(() => {});
+    })
+    .catch(() => {});
 };

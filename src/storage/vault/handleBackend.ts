@@ -44,6 +44,8 @@ export interface DirectoryHandleBackendOptions {
 }
 
 /** Names an interrupted atomic save leaves (./atomic.ts, written by the OPFS worker). */
+/** Files whose size and time a listing asks for at once (W6.36). */
+const LIST_STAT_BATCH = 64;
 const isSaveLeftover = (name: string) => name.startsWith(".lumen-old~") || name.startsWith(".lumen-tmp~");
 
 type Found =
@@ -254,19 +256,23 @@ export function createDirectoryHandleBackend(o: DirectoryHandleBackendOptions): 
       }
       const out: VaultEntry[] = [];
       let leftovers = false;
+      const files: Array<{ name: string; path: string; handle: FileSystemFileHandle }> = [];
       for await (const [name, child] of handle.entries()) {
         if (isSaveLeftover(name)) leftovers = true;
         const path = [...parts, name].join("/");
-        if (child.kind === "directory") {
-          out.push({ name, path, kind: "directory" });
-          continue;
-        }
-        try {
-          const file = await (child as FileSystemFileHandle).getFile();
-          out.push({ name, path, kind: "file", size: file.size, mtime: file.lastModified });
-        } catch {
-          out.push({ name, path, kind: "file" });
-        }
+        if (child.kind === "directory") out.push({ name, path, kind: "directory" });
+        else files.push({ name, path, handle: child as FileSystemFileHandle });
+      }
+      // W6.36: the files' size and time are asked for in batches, not one
+      // after another (100 folders × 50 notes in Chromium's OPFS: 1.8–4.1 s
+      // one by one, 0.6–1.7 s in batches; scripts/perf/encrypted-vault-open).
+      for (let i = 0; i < files.length; i += LIST_STAT_BATCH) {
+        const batch = files.slice(i, i + LIST_STAT_BATCH);
+        const stats = await Promise.all(batch.map((f) => f.handle.getFile().then((file) => file, () => null)));
+        batch.forEach(({ name, path }, k) => {
+          const file = stats[k];
+          out.push(file ? { name, path, kind: "file", size: file.size, mtime: file.lastModified } : { name, path, kind: "file" });
+        });
       }
       // An interrupted save: finish or undo it, then list again.
       if (leftovers && (await recoverIn(parts))) return this.list(dir);

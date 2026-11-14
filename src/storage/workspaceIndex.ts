@@ -16,6 +16,15 @@
  *   - a structural event (or every REVALIDATE_MS) re-lists the vault and
  *     re-reads only the files whose mtime changed or that appeared — never
  *     the whole vault again after the first build.
+ *
+ * W6.36: with a snapshot, the open does not wait for the vault's listing
+ * (10,000 files' mtimes are 10,000 calls into the browser). It trusts the
+ * snapshot, which records every note's path and mtime, and checks it
+ * against a listing started at the same time (`cache.verify`). What changed
+ * while the app was closed comes in like any other change. Every query that
+ * answers from the notes' text (search, backlinks, related, tasks, the texts
+ * themselves) waits for that check, so its first answer is already right;
+ * `indexedFiles()` holds the snapshot's summaries until then.
  */
 
 import { WORKSPACE_CHANGED, changeOf } from "./workspaceEvents";
@@ -28,12 +37,13 @@ import {
   type WorkspaceEntry,
   type WorkspaceNode,
 } from "./workspace";
-import { getVaultBackend, watchVault, type VaultEvent } from "./vault";
+import { getVaultBackend, refreshVaultEncryption, vaultEncryptionReady, watchVault, type VaultEvent } from "./vault";
 import type { BacklinkHit, IndexInput, IndexStats, SearchHit } from "./vaultIndexCore";
 import type { IndexEngine } from "./vaultIndexProtocol";
 import { log } from "../lib/logger";
 import { scheduleIdle } from "../lib/idle";
 import { dropSnapshot } from "./indexSnapshot";
+import type { SnapshotKeys } from "./snapshotSeal";
 import { summarize, type NoteSummary } from "./noteSummary";
 
 export type { BacklinkHit, SearchHit } from "./vaultIndexCore";
@@ -74,7 +84,67 @@ const cache = {
   generation: 0,
   /** The file tree's last listing (`workspaceTree`), which the index reuses when nothing moved since. */
   listing: null as { generation: number; tree: WorkspaceNode[] } | null,
+  /** Review 12.11 S1: the index holds notes of an encrypted vault, so it is never saved in the clear. */
+  filledEncrypted: false,
+  /** Review 14.11 T1: the vault (backend id) the index was filled from; another vault's index is never saved or answered. */
+  filledVault: null as string | null,
+  /** Review 14.11 T2: the last check of a trusted snapshot failed, so the next open waits for the listing. */
+  distrust: false,
+  /** W6.36: the check of a trusted snapshot against the vault's listing, while it runs. */
+  verify: null as Promise<void> | null,
 };
+
+/** Bumped by a reset (tests): work of an earlier index must not touch the new one. */
+let epoch = 0;
+
+/** Until the check of the snapshot the index opened from is done (at once when there is none). */
+async function verified(): Promise<void> {
+  while (cache.verify) await cache.verify;
+}
+
+/**
+ * For every query that answers from the notes (review 14.11 T2): the index
+ * is open and checked against the vault. A failed check drops the trusted
+ * notes, and the build that follows waits for the listing, so a query either
+ * answers from the vault as it is or fails; never from an unchecked snapshot.
+ */
+async function checkedIndex(): Promise<void> {
+  await ensureIndex();
+  await verified();
+  if (!cache.builtAt) await ensureIndex();
+}
+
+/**
+ * Forget everything the index holds, on this thread and in the worker:
+ * on lock (T4), on a vault switch (T1) and after a failed check (T2). The
+ * next use builds again, from the sealed snapshot when there is one.
+ */
+function dropIndex(): void {
+  epoch++;
+  cache.byPath = new Map();
+  cache.builtAt = 0;
+  cache.checkedAt = 0;
+  cache.verify = null;
+  cache.dirty.clear();
+  cache.ops = [];
+  cache.stale = false;
+  cache.listing = null;
+  cache.filledEncrypted = false;
+  cache.filledVault = null;
+  cache.version++;
+  if (snapshotTimer) clearTimeout(snapshotTimer);
+  snapshotTimer = null;
+  snapshotGen++;
+  void engine?.then((e) => e.clear()).catch(() => undefined);
+}
+
+/** Resolves when the encrypted vault is unlocked (./vault/encrypted/session UNLOCKED_EVENT). */
+function untilUnlocked(): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") return resolve();
+    window.addEventListener("lumen-vault-unlocked", () => resolve(), { once: true });
+  });
+}
 
 /**
  * Not every change reaches the index as an event (another tab writing
@@ -121,11 +191,14 @@ function getEngine(): Promise<IndexEngine> {
  * engine, give it every indexed note again, and retry once.
  */
 async function withEngine<T>(fn: (e: IndexEngine) => Promise<T>): Promise<T> {
-  const e = await getEngine();
+  const current = getEngine();
+  const e = await current;
   try {
     return await fn(e);
   } catch (err) {
-    if (e.kind !== "worker") throw err;
+    // W6.36: a request to an engine that was replaced meanwhile (a reset) is
+    // not a dead worker: it must not swap the new engine for a local one.
+    if (e.kind !== "worker" || engine !== current) throw err;
     log.warn("vault index worker failed; indexing on the main thread", err);
     e.dispose();
     const local = await localIndexEngine();
@@ -232,16 +305,64 @@ function snapshotVault(): string {
 }
 
 /**
- * The snapshot holds note text in IndexedDB, written by the index worker,
- * which has no key to seal it with: in an encrypted vault (plan 11.4) there
- * is no snapshot at all, and the vault opens with a full build.
+ * Whether there is a snapshot now, and how it is kept. A plain vault: in
+ * the clear (`{}`). An encrypted, unlocked vault (plan 11.4): sealed and
+ * signed in the worker with the snapshot subkeys (W6.36, ./snapshotSeal.ts).
+ * A locked vault: none (null) — nothing is written, and the one on disk
+ * stays for the next unlock.
+ *
+ * Review 12.11 S1: a vault that is unavailable right now (a folder
+ * disconnected, a vault closing) can't say whether it is encrypted, so it
+ * gets none either; and an index filled from an encrypted vault
+ * (`cache.filledEncrypted`) is never saved in the clear, whatever the vault
+ * says later.
  */
-async function snapshotAllowed(): Promise<boolean> {
+async function snapshotMode(): Promise<{ keys?: SnapshotKeys } | null> {
   try {
-    const { storesMustSeal } = await import("./vault/restStore");
-    return !(await storesMustSeal());
+    const backend = getVaultBackend();
+    if (!backend.available()) return null;
+    // T1: only an index filled from this very vault is this vault's snapshot (a dropped index has none).
+    if (cache.filledVault !== backend.id) return null;
+    let state = await vaultEncryptionReady();
+    if (state === "none") {
+      if (cache.filledEncrypted) return null;
+      // T3: before anything is written in the clear, look for the encryption header again: another tab may have
+      // turned encryption on, and this tab's gate would still say "plain".
+      refreshVaultEncryption();
+      state = await vaultEncryptionReady();
+      if (state === "none") return {};
+    }
+    if (state !== "unlocked") return null;
+    const { restSnapshotKeys } = await import("./vault/restStore");
+    const keys = restSnapshotKeys();
+    return keys ? { keys } : null;
   } catch {
-    return false;
+    return null;
+  }
+}
+
+/** Whether the vault the index is about to be filled from is encrypted (or can't tell): its notes are never saved in the clear. */
+async function fillingEncrypted(): Promise<boolean> {
+  try {
+    if (!getVaultBackend().available()) return true;
+    return (await vaultEncryptionReady()) !== "none";
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Save the snapshot in the mode the vault calls for now. T6: a plain save
+ * that lands after encryption was turned on (it was already queued in the
+ * worker when the conversion dropped the snapshot) is dropped again.
+ */
+async function saveSnapshotNow(): Promise<void> {
+  const mode = await snapshotMode();
+  if (!mode) return;
+  await withEngine((eng) => eng.saveSnapshot(snapshotVault(), mode.keys));
+  if (!mode.keys) {
+    const now = await snapshotMode();
+    if (!now || now.keys) await dropSnapshot();
   }
 }
 
@@ -253,9 +374,7 @@ function scheduleSnapshot(): void {
     snapshotTimer = null;
     scheduleIdle(() => {
       if (gen !== snapshotGen) return;
-      void snapshotAllowed()
-        .then((ok) => (ok ? withEngine((eng) => eng.saveSnapshot(snapshotVault())) : dropSnapshot()))
-        .catch(() => {});
+      void saveSnapshotNow().catch(() => {});
     });
   }, SNAPSHOT_DELAY_MS);
 }
@@ -267,7 +386,8 @@ function scheduleSnapshot(): void {
  */
 async function fillEngine(eng: IndexEngine, entries: { path: string; name: string; modified: number }[]): Promise<Map<string, IndexedFile>> {
   const out = new Map<string, IndexedFile>();
-  const restored = (await snapshotAllowed()) ? await eng.restoreSnapshot(snapshotVault(), entries.map((e) => ({ path: e.path, name: e.name, modified: e.modified }))) : [];
+  const mode = await snapshotMode();
+  const restored = mode ? await eng.restoreSnapshot(snapshotVault(), entries.map((e) => ({ path: e.path, name: e.name, modified: e.modified })), mode.keys) : [];
   for (const r of restored) out.set(r.path, r);
   snapshotCounters.fromSnapshot += restored.length;
   let batch: ReadNote[] = [];
@@ -291,27 +411,96 @@ async function fillEngine(eng: IndexEngine, entries: { path: string; name: strin
   return out;
 }
 
-/** Build the whole index (first use, or `ensureIndex(true)`). */
-async function build(): Promise<void> {
+/**
+ * Build the whole index (first use, or `ensureIndex(true)`). `trust`: the
+ * first open may open from the snapshot without waiting for the listing
+ * (W6.36); a forced rebuild waits for it, as before.
+ */
+async function build(trust = false): Promise<void> {
   if (!isOPFSAvailable()) return;
+  await verified();
+  // T4: a locked vault is not read; the open continues on unlock (from its sealed snapshot).
+  if ((await vaultEncryptionReady().catch(() => "none")) === "locked") await untilUnlocked();
+  const at = epoch;
   // Clear before reading: a change announced while the build runs (it may
   // have read that file already) must survive for the next ensureIndex.
   cache.dirty.clear();
   cache.ops = [];
   cache.stale = false;
-  const list = await listNotes(false);
-  const next = new Map<string, IndexedFile>();
   snapshotCounters.fromSnapshot = 0;
   snapshotCounters.read = 0;
   await snapshotReset;
+  // Fixed when the index is filled (S1); it only ever turns on until the next build.
+  cache.filledEncrypted = await fillingEncrypted();
+  cache.filledVault = snapshotVault();
+  if (cache.distrust) trust = false;
+  const mode = await snapshotMode();
+  const restored = trust && mode
+    ? await withEngine(async (eng) => {
+        await eng.clear();
+        return eng.restoreSnapshot(snapshotVault(), null, mode.keys);
+      })
+    : [];
+  // The listing starts once the snapshot is open (W6.36): the open does not wait for it, nor share the CPU with it.
+  const listing = listNotes(false);
+  listing.catch(() => undefined);
+  if (at !== epoch) return;
+  if (restored.length) {
+    cache.byPath = new Map(restored.map((r) => [r.path, r] as const));
+    snapshotCounters.fromSnapshot = restored.length;
+    cache.builtAt = cache.checkedAt = Date.now();
+    cache.version++;
+    // Asked now, so the answer comes right after the worker has indexed the restored texts.
+    const body = withEngine((eng) => eng.snapshotBody());
+    body.catch(() => undefined);
+    const v = verifySnapshot(listing, body, epoch).finally(() => {
+      if (cache.verify === v) cache.verify = null;
+    });
+    cache.verify = v;
+    return;
+  }
+  const list = await listing;
+  const next = new Map<string, IndexedFile>();
   await withEngine(async (eng) => {
     await eng.clear();
     for (const [path, f] of await fillEngine(eng, list)) next.set(path, f);
   });
+  if (at !== epoch) return;
+  cache.distrust = false;
   cache.byPath = next;
   scheduleSnapshot();
   cache.builtAt = cache.checkedAt = Date.now();
   cache.version++;
+}
+
+/**
+ * W6.36: the notes the index opened with from the snapshot, checked against
+ * the vault's listing: a note gone is dropped, a note new or with another
+ * mtime is read — every note, if the worker refused the snapshot's texts
+ * (`body`) after it opened from its manifest. Never throws: when the vault can't be listed, the next use
+ * of the index lists it again.
+ */
+async function verifySnapshot(listing: Promise<WorkspaceEntry[]>, body: Promise<{ refused: boolean }>, at: number): Promise<void> {
+  try {
+    const [list, texts] = await Promise.all([listing, body]);
+    if (at !== epoch) return;
+    const indexOps: IndexOp[] = [];
+    const toRead = new Map<string, ToRead>();
+    // The texts were refused after the manifest was taken: every note is read from the vault.
+    if (texts.refused) for (const f of cache.byPath.values()) f.modified = 0;
+    diffListing(list, indexOps, toRead);
+    let fromSnapshotLost = indexOps.length;
+    for (const path of toRead.keys()) if (cache.byPath.has(path)) fromSnapshotLost++;
+    snapshotCounters.fromSnapshot -= fromSnapshotLost;
+    snapshotCounters.read += toRead.size;
+    await applyChanges(indexOps, toRead, at);
+  } catch (err) {
+    if (at !== epoch) return;
+    log.warn("vault index: checking the snapshot against the vault failed; it is checked again on next use", err);
+    // T2: fail closed. The trusted notes go, and the next open waits for the listing.
+    dropIndex();
+    cache.distrust = true;
+  }
 }
 
 /** Every indexed path at or under `path` (a deleted / moved folder takes its notes with it). */
@@ -321,16 +510,32 @@ function under(path: string): string[] {
   return [...cache.byPath.keys()].filter((p) => p.startsWith(prefix));
 }
 
+type IndexOp = { kind: "remove"; path: string } | { kind: "move"; from: string; to: string; name: string };
+type ToRead = { path: string; name: string; modified: number | null };
+
+/** A fresh listing against the index: notes gone are dropped (in `cache.byPath` and as `indexOps`), notes new or with another mtime go to `toRead`. */
+function diffListing(list: WorkspaceEntry[], indexOps: IndexOp[], toRead: Map<string, ToRead>): void {
+  const seen = new Set(list.map((e) => e.path));
+  for (const path of [...cache.byPath.keys()]) {
+    if (!seen.has(path)) {
+      cache.byPath.delete(path);
+      indexOps.push({ kind: "remove", path });
+    }
+  }
+  for (const e of list) if (cache.byPath.get(e.path)?.modified !== e.modified) toRead.set(e.path, e);
+}
+
 /**
  * C3 / 8.4: apply what changed since the last use — moves and deletes
  * without reading, then re-read only the dirty files (plus, after a
  * structural change, the ones whose mtime differs from the listing).
  */
 async function refresh(): Promise<void> {
+  // After the snapshot's check (W6.36): changes apply in the order they happened.
+  await verified();
   // W2.22: the index holds the text, so moves happen inside it; this list
   // keeps removes and moves in the order they happened.
-  const indexOps: ({ kind: "remove"; path: string } | { kind: "move"; from: string; to: string; name: string })[] = [];
-  const toWrite: ReadNote[] = [];
+  const indexOps: IndexOp[] = [];
   // In order: deleting A/x.md and then moving A to B must not bring x back as B/x.md.
   for (const op of cache.ops.splice(0)) {
     if (op.type === "remove") {
@@ -356,20 +561,12 @@ async function refresh(): Promise<void> {
     if (indexable(to) && !under(to).length) cache.stale = true;
   }
 
-  const toRead = new Map<string, { path: string; name: string; modified: number | null }>();
+  const toRead = new Map<string, ToRead>();
   if (cache.stale || Date.now() - cache.checkedAt >= REVALIDATE_MS) {
     const structural = cache.stale;
     cache.stale = false;
     cache.checkedAt = Date.now();
-    const list = await listNotes(structural);
-    const seen = new Set(list.map((e) => e.path));
-    for (const path of [...cache.byPath.keys()]) {
-      if (!seen.has(path)) {
-        cache.byPath.delete(path);
-        indexOps.push({ kind: "remove", path });
-      }
-    }
-    for (const e of list) if (cache.byPath.get(e.path)?.modified !== e.modified) toRead.set(e.path, e);
+    diffListing(await listNotes(structural), indexOps, toRead);
   }
   const dirty = [...cache.dirty];
   cache.dirty.clear();
@@ -377,14 +574,23 @@ async function refresh(): Promise<void> {
     if (!indexable(path) || toRead.has(path)) continue;
     toRead.set(path, { path, name: cache.byPath.get(path)?.name ?? nameOf(path), modified: null });
   }
+  await applyChanges(indexOps, toRead, epoch);
+}
+
+/** Read `toRead`, then send the removes, moves and new texts to the index, in order. Nothing when the index was reset meanwhile. */
+async function applyChanges(indexOps: IndexOp[], toRead: Map<string, ToRead>, at: number): Promise<void> {
+  const toWrite: ReadNote[] = [];
+  // T1: notes read from an encrypted vault (or one that can't tell) make this index one that is never saved in the clear.
+  if (toRead.size && !cache.filledEncrypted && (await fillingEncrypted())) cache.filledEncrypted = true;
   await mapLimit([...toRead.values()], 16, async (e) => {
     const r = await indexFile(e);
+    if (at !== epoch) return;
     if (r) {
       cache.byPath.set(e.path, r.file);
       toWrite.push(r);
     } else if (cache.byPath.delete(e.path)) indexOps.push({ kind: "remove", path: e.path });
   });
-  if (!indexOps.length && !toWrite.length) return;
+  if (at !== epoch || (!indexOps.length && !toWrite.length)) return;
   // Views that cache what they derive from the index (wiki-link completion) re-derive.
   cache.version++;
   scheduleSnapshot();
@@ -411,6 +617,8 @@ function pendingChanges(): boolean {
 
 export async function ensureIndex(force = false): Promise<void> {
   if (!isOPFSAvailable()) return;
+  // T1: another vault is active now; this index is not its index.
+  if (cache.builtAt && cache.filledVault !== snapshotVault()) dropIndex();
   // Wait for whatever runs now, whole (a build and its follow-up rounds):
   // a second caller must not query the worker between two of its steps.
   let waited = false;
@@ -420,7 +628,7 @@ export async function ensureIndex(force = false): Promise<void> {
   }
   if (waited && !force && !pendingChanges()) return;
   let first: () => Promise<void>;
-  if (force || !cache.builtAt) first = build;
+  if (force || !cache.builtAt) first = () => build(!force);
   else if (pendingChanges() || Date.now() - cache.checkedAt >= REVALIDATE_MS) first = refresh;
   else return;
   const run = (async () => {
@@ -462,7 +670,11 @@ function attachInvalidator() {
   if (listenerAttached || typeof window === "undefined") return;
   listenerAttached = true;
   watchVault(onVaultEvent);
+  // T4: locking forgets the index, here and in the worker (./vault/encrypted/session LOCKED_EVENT).
+  window.addEventListener("lumen-vault-locked", () => dropIndex());
   window.addEventListener(WORKSPACE_CHANGED, (e) => {
+    // T1: a vault switch announces a structural change; another vault's notes are dropped at once.
+    if (cache.builtAt && cache.filledVault !== snapshotVault()) dropIndex();
     const c = changeOf(e);
     if (c.kind === "content" && c.paths) {
       for (const p of c.paths) cache.dirty.add(p);
@@ -498,7 +710,7 @@ export async function workspaceTree(): Promise<WorkspaceNode[]> {
 
 /** Find files whose wiki-links point at the given target (path or basename). */
 export async function findBacklinks(targetPath: string): Promise<BacklinkHit[]> {
-  await ensureIndex();
+  await checkedIndex();
   if (!cache.byPath.size) return [];
   return withEngine((e) => e.backlinks(targetPath));
 }
@@ -509,7 +721,7 @@ export async function searchWorkspace(
   /** `filter`: only these paths — applied before `limit`. */
   opts: { limit?: number; filter?: (path: string) => boolean } = {},
 ): Promise<SearchHit[]> {
-  await ensureIndex();
+  await checkedIndex();
   if (!cache.byPath.size) return [];
   const filter = opts.filter;
   // A function cannot cross into the worker: send the paths it allows.
@@ -523,6 +735,7 @@ export async function searchWorkspace(
  * each note's summary with its `content`. All notes when `paths` is omitted.
  */
 export async function indexedNotes(paths?: readonly string[]): Promise<Array<IndexedFile & { content: string }>> {
+  await checkedIndex();
   if (!cache.byPath.size) return [];
   const want = paths ? paths.filter((p) => cache.byPath.has(p)) : undefined;
   if (want && !want.length) return [];
@@ -542,7 +755,7 @@ export async function indexedNoteText(path: string): Promise<string | null> {
 
 /** Notes related to a paragraph (plan W2.2), ranked by the index's BM25 in the index worker. */
 export async function relatedInIndex(query: import("./vaultIndexProtocol").RelatedQuery): Promise<import("../related/related").RelatedHit[]> {
-  await ensureIndex();
+  await checkedIndex();
   return withEngine((e) => e.related(query));
 }
 
@@ -551,9 +764,18 @@ export async function relatedInIndex(query: import("./vaultIndexProtocol").Relat
  * index worker. Dates in the query are relative to the user's local today.
  */
 export async function queryVaultTasks(query: string, today = new Date()): Promise<import("../tasks/taskQuery").QueryResult> {
-  await ensureIndex();
+  await checkedIndex();
   const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   return withEngine((e) => e.tasks(query, iso));
+}
+
+/**
+ * W6.36: resolves once the snapshot the index opened from has been checked
+ * against the vault (at once when it opened otherwise). Queries wait for it
+ * themselves; a view showing `indexedFiles()` can wait for it to re-derive.
+ */
+export function indexChecked(): Promise<void> {
+  return verified();
 }
 
 /** Changes whenever the indexed files do: a cache of something derived from them is good while it is the same. */
@@ -567,8 +789,16 @@ export async function indexStats(): Promise<IndexStats & { engine: IndexEngine["
   return { ...stats, engine: (await getEngine()).kind };
 }
 
-/** Test hook. `engineFactory` replaces the worker (e.g. with a fake one). */
-export function __resetWorkspaceIndex(engineFactory?: () => IndexEngine): void {
+/** Test hook (W6.36): write the snapshot now, as the idle timer would. */
+export async function __saveSnapshotNow(): Promise<void> {
+  await saveSnapshotNow();
+}
+
+/**
+ * Test hook. `engineFactory` replaces the worker (e.g. with a fake one).
+ * `keepSnapshot` keeps the stored snapshot, as a restart does (W6.36).
+ */
+export function __resetWorkspaceIndex(engineFactory?: () => IndexEngine, opts: { keepSnapshot?: boolean } = {}): void {
   cache.version++;
   cache.byPath = new Map();
   cache.builtAt = 0;
@@ -578,6 +808,11 @@ export function __resetWorkspaceIndex(engineFactory?: () => IndexEngine): void {
   cache.stale = false;
   cache.checkedAt = 0;
   cache.listing = null;
+  cache.verify = null;
+  cache.filledEncrypted = false;
+  cache.filledVault = null;
+  cache.distrust = false;
+  epoch++;
   void engine?.then((e) => e.dispose(), () => undefined);
   engine = null;
   engineOverride = engineFactory ?? null;
@@ -585,5 +820,5 @@ export function __resetWorkspaceIndex(engineFactory?: () => IndexEngine): void {
   if (snapshotTimer) clearTimeout(snapshotTimer);
   snapshotTimer = null;
   snapshotGen++;
-  snapshotReset = dropSnapshot();
+  snapshotReset = opts.keepSnapshot ? Promise.resolve() : dropSnapshot();
 }
