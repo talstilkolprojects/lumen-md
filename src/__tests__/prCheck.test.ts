@@ -5,7 +5,7 @@
  * @vitest-environment node
  */
 import { describe, expect, it } from "vitest";
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
@@ -27,7 +27,9 @@ function repo() {
   writeFileSync(join(dir, "src/ai/privacyLedger.ts"), 'const RULES = [{ host: "api.openai.com" }];\n');
   writeFileSync(join(dir, "src/a.ts"), "export const a = 1;\n");
   writeFileSync(join(dir, "package-lock.json"), JSON.stringify({ packages: { "node_modules/ok": { version: "1.0.0", license: "MIT" } } }));
-  cpSync(join(ROOT, "scripts/bundle-budget.mjs"), join(dir, "scripts/bundle-budget.mjs"));
+  // The budget script with what it loads: its budgets (W6.26) and libraries.
+  mkdirSync(join(dir, "scripts/lib"), { recursive: true });
+  for (const f of ["scripts/bundle-budget.mjs", "scripts/bundle-budgets.json", "scripts/lib/budgetRatchet.mjs", "scripts/lib/sourcemaps.mjs"]) cpSync(join(ROOT, f), join(dir, f));
   git("add", "-A");
   git("commit", "-q", "-m", "base [skip ci]");
   return { dir, git, done: () => rmSync(dir, { recursive: true, force: true }) };
@@ -113,6 +115,41 @@ describe("pr:check", () => {
     }
   });
 
+  it("fails a diff that raises a budget, extends an exception or loosens a perf limit (W6.26), and passes one that lowers them", () => {
+    const r0 = repo();
+    try {
+      const budgets = JSON.parse(readFileSync(join(r0.dir, "scripts/bundle-budgets.json"), "utf8"));
+      writeFileSync(join(r0.dir, "perf-gate.config.json"), JSON.stringify({ runs: 5, profiles: { desktop: { assert: { fcp: { error: 1200 }, lcp: { error: 3500 } } } } }));
+      r0.git("add", "-A");
+      r0.git("commit", "-q", "-m", "chore: perf config [skip ci]");
+      const set = (startup: number, exp: string, fcp: number) => {
+        const b = structuredClone(budgets);
+        b.startup.budgetKb = startup;
+        b.rules.find((r: { expires?: string }) => r.expires).expires = exp;
+        writeFileSync(join(r0.dir, "scripts/bundle-budgets.json"), JSON.stringify(b, null, 2));
+        writeFileSync(join(r0.dir, "perf-gate.config.json"), JSON.stringify({ runs: 5, profiles: { desktop: { assert: { fcp: { error: fcp }, lcp: { error: 3500 } } } } }));
+        r0.git("add", "-A");
+        r0.git("commit", "-q", "-m", "chore: budgets [skip ci]");
+      };
+      const exp = budgets.rules.find((r: { expires?: string }) => r.expires).expires;
+      set(budgets.startup.budgetKb + 10, "2099-01-01", 1500);
+      const up = runChecks(parseArgs(["--cwd", r0.dir, "--base", "main~1", "--no-size"]));
+      const gate = up.sections.find((s: { title: string }) => s.title === "Budgets only go down");
+      expect(gate.status).toBe("fail");
+      expect(gate.lines.slice(0, 3)).toEqual([
+        `- \`scripts/bundle-budgets.json\` startup total: ${budgets.startup.budgetKb} → ${budgets.startup.budgetKb + 10} (raised).`,
+        `- \`scripts/bundle-budgets.json\` vendor: excalidraw core: ${exp} → 2099-01-01 (an exception's expiry moved later).`,
+        "- `perf-gate.config.json` desktop fcp error: 1200 → 1500 (raised).",
+      ]);
+      expect(up.failed).toBe(true);
+      set(budgets.startup.budgetKb - 10, exp, 1100);
+      const down = runChecks(parseArgs(["--cwd", r0.dir, "--base", "main~1", "--no-size"]));
+      expect(down.sections.find((s: { title: string }) => s.title === "Budgets only go down")).toMatchObject({ status: "ok", lines: ["`scripts/bundle-budgets.json`, `perf-gate.config.json`: nothing raised."] });
+    } finally {
+      r0.done();
+    }
+  });
+
   it("plan W6.11: a sensitive path fails with --pr or --review until an independent receipt for the head is there", () => {
     const r0 = repo();
     try {
@@ -148,6 +185,22 @@ describe("pr:check", () => {
       expect(section({}, ["--review", "review.json"]).status).toBe("ok");
       writeFileSync(join(r0.dir, "review.json"), JSON.stringify(receipt({ files: ["src/other.ts"] })));
       expect(section({}, ["--review", "review.json"]).status).toBe("fail");
+    } finally {
+      r0.done();
+    }
+  });
+
+  it("fails a budget number written into bundle-budget.mjs itself (W6.26)", () => {
+    const r0 = repo();
+    try {
+      const f = join(r0.dir, "scripts/bundle-budget.mjs");
+      writeFileSync(f, readFileSync(f, "utf8").replace("const BUDGETS = compile(SPEC);", 'const BUDGETS = [{ name: "all", re: /x/, budgetKb: 9999 }, ...compile(SPEC)];'));
+      r0.git("add", "-A");
+      r0.git("commit", "-q", "-m", "chore: sneak [skip ci]");
+      const r = runChecks(parseArgs(["--cwd", r0.dir, "--base", "main~1", "--no-size"]));
+      const gate = r.sections.find((s: { title: string }) => s.title === "Budgets only go down");
+      expect(gate.status).toBe("fail");
+      expect(gate.lines[0]).toMatch(/^- `scripts\/bundle-budget\.mjs:\d+` sets a budget in code/);
     } finally {
       r0.done();
     }

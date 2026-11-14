@@ -46,14 +46,18 @@ export const GATES = {
 };
 
 /**
- * Arguments a gate's npm script gets on top. Vitest also writes its JSON
+ * Arguments a gate's npm script gets on top. The budget gate writes its
+ * sizes (and prints them as one `bundle-sizes:` line in the log). Vitest also writes its JSON
  * report, so a failed run ends with one short block naming every failing
  * file: the build log shows only its tail, and the failure dump of a big run
  * is thousands of lines (W1.1).
  */
 export const VITEST_REPORT = "reports/vitest.json";
+/** The budget gate's receipt (plan W6.26): what `npm run budget:ratchet -- --sizes` lowers the budgets to after a train. */
+export const SIZES_REPORT = "reports/bundle-sizes.json";
 export const GATE_EXTRA = {
   vitest: ["--", "--reporter=default", "--reporter=json", `--outputFile.json=${VITEST_REPORT}`],
+  budget: ["--", "--json", SIZES_REPORT],
 };
 
 /**

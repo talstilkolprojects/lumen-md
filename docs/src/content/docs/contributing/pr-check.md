@@ -51,6 +51,11 @@ The same sensitive paths also need an independent review receipt for the
 head commit, from a reviewer that did not write the change, with attack tests
 and no critical or high finding open (plan W6.11). See
 [Independent review](/contributing/independent-review/).
+- **Budgets only go down** (plan W6.26). A diff that raises a bundle
+  budget, the startup budget, an exception's expiry date, the ratchet
+  margin, a performance-gate FCP/LCP limit or a Lighthouse assertion
+  fails. So does a budget number written into `scripts/bundle-budget.mjs`
+  itself. See [Budgets that only go down](/contributing/budgets/).
 
 It also warns:
 - when source changed and no test did;

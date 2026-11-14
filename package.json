@@ -50,6 +50,8 @@
     "test:visual": "playwright test -c playwright.visual.config.ts",
     "test:visual:update": "playwright test -c playwright.visual.config.ts --update-snapshots",
     "budget": "node scripts/bundle-budget.mjs",
+    "budget:ratchet": "node scripts/budget-ratchet.mjs",
+    "budget:history": "node scripts/budget-ratchet.mjs --history",
     "ci:local": "node scripts/ci-local.mjs",
     "perf:vault100k": "node --expose-gc --max-old-space-size=4096 --import tsx scripts/perf/vault-100k.ts",
     "lighthouse": "lhci autorun --config=./lighthouserc.json",
