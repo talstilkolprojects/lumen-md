@@ -1,0 +1,38 @@
+name: Plugin pilot feedback / משוב על בניית תוסף
+description: You built a Lumen plugin with create-lumen-plugin. Tell us how long it took and where you got stuck. / בניתם תוסף ל-Lumen עם create-lumen-plugin. ספרו כמה זמן זה לקח ואיפה נתקעתם.
+title: "[plugin-pilot] "
+labels: ["plugins", "plugin-pilot"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Every problem you report becomes a task. Hebrew or English. The full form is in launch/plugin-pilot/feedback-template.md.
+        תודה. כל תקלה שתדווחו עליה הופכת למשימה. בעברית או באנגלית. הטופס המלא נמצא ב-launch/plugin-pilot/feedback-template.md.
+  - type: input
+    id: minutes
+    attributes:
+      label: Minutes from nothing installed to the plugin running in Lumen / דקות מאפס עד שהתוסף רץ ב-Lumen
+      placeholder: "25"
+    validations:
+      required: true
+  - type: textarea
+    id: timing
+    attributes:
+      label: Timing log / יומן זמנים
+      description: Clock time at each mark (start, scaffold done, ran in Lumen, test passed) and every place you were stuck for more than 2 minutes. / השעה בכל נקודה, וכל מקום שנתקעתם בו יותר מ-2 דקות.
+    validations:
+      required: true
+  - type: textarea
+    id: slowed
+    attributes:
+      label: What slowed you down most? What was missing in the docs or the API? / מה הכי האט אתכם? מה היה חסר בתיעוד או ב-API?
+    validations:
+      required: true
+  - type: input
+    id: pr
+    attributes:
+      label: Your plugin's pull request / בקשת המשיכה של התוסף
+  - type: input
+    id: env
+    attributes:
+      label: OS, Node version, browser / מערכת הפעלה, גרסת Node, דפדפן
