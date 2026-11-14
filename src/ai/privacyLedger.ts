@@ -407,6 +407,22 @@ export function recordUserShare(url: string, bytes: number, reason: string = USA
  * Record a request that was refused before it was made (an agent network
  * tool under `local-only` without consent) and return the error to throw.
  */
+/**
+ * A call to a local program that may reach the network (an MCP server on
+ * stdio, plan W7.18): it makes no fetch the ledger could see, so it is
+ * recorded here, under its `stdio://<server>` destination (review 24, C3r).
+ */
+export function recordProcessCall(url: string, reason: string, bytesOut: number, consent: boolean): LedgerEntry | null {
+  let host = url;
+  try {
+    host = `${new URL(url).protocol}//${new URL(url).hostname}`;
+  } catch {
+    /* keep the text */
+  }
+  const id = record({ host, method: "STDIO", bytesOut, bytesIn: null, category: "network", reason, policy: getAiPolicy(), decision: "allowed", ...(consent ? { consent: true } : {}) });
+  return entries.find((x) => x.id === id) ?? null;
+}
+
 export function recordBlockedRequest(url: string, category: LedgerCategory, reason: string, method = "GET"): PrivacyBlockedError {
   const host = hostOf(url);
   const id = record({ host, category, reason, method, bytesOut: 0, bytesIn: null, policy: getAiPolicy(), decision: "blocked" });

@@ -213,6 +213,14 @@ export interface AgentTool<A = Record<string, unknown>, R = unknown> {
    * any write or network call of the run.
    */
   untrusted?(args: A, result: R, ctx: ToolContext): string[] | Promise<string[]>;
+  /**
+   * The tool itself comes from outside (an MCP server, plan W7.18): offering
+   * it taints the run from its start, so every write or network call asks
+   * the user (review 21, C1).
+   */
+  offeredBy?: string[];
+  /** A network tool that talks to its own server (an MCP server's URL), not the research service (review 21, C2). */
+  networkTarget?: string;
 }
 
 export interface ToolCall {
