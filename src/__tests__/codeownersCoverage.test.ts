@@ -41,6 +41,16 @@ describe("which files are sensitive", () => {
     expect(classify("src/renderer/pipeline.ts", "")).toEqual(["pipeline"]);
     expect(classify("src/plugins/X.tsx", "<div dangerouslySetInnerHTML={{ __html: h }} />")).toEqual(["pipeline"]);
     expect(classify("src/plugins/Y.tsx", "el.innerHTML = html;")).toEqual(["pipeline"]);
+    // Agent tools and MCP (review 21): the MCP server and client, skills, the runtime and the trust boundary.
+    expect(classify("mcp-server/src/server.ts", "export const s = 1;")).toEqual(["agent"]);
+    expect(classify("src/agents/mcp/client.ts", "export const c = 1;")).toEqual(["agent"]);
+    expect(classify("src/agents/skills/summarise.ts", "export const k = 1;")).toEqual(["agent"]);
+    expect(classify("src/agents/untrusted.ts", "")).toEqual(["agent"]);
+    expect(classify("src/agents/tools/define.ts", "")).toEqual(["agent"]);
+    expect(classify("src/agents/mcpInbox.ts", "")).toEqual(["agent"]);
+    expect(classify("src/lib/bridge.ts", 'import { Client } from "@modelcontextprotocol/sdk/client/index.js";')).toEqual(["agent"]);
+    expect(classify("src/agents/tools/wordCount.ts", "export const n = 1;")).toEqual([]);
+    expect(inScope("mcp-server/test/stdio-smoke.mjs")).toBe(false);
   });
 
   it("leaves out tests, tooling, docs, UI strings and code that only mentions a rule in a comment", () => {

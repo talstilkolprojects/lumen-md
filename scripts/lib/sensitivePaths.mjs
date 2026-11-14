@@ -40,7 +40,7 @@ const SHIPPED = [
   /^scripts\/(?:headers\.mjs|tauri-signing\.mjs|lib\/tauriSigning\.mjs)$/,
 ];
 /** Not shipped even inside a shipped folder (and `*Strings.ts`, which by convention holds only UI text). */
-const NOT_SHIPPED = [/(?:^|\/)__tests__\//, /(?:^|\/)__mocks__\//, /(?:^|\/)fixtures?\//, /\.(?:test|spec|eval|bench|stories)\.[cm]?[jt]sx?$/, /\.d\.ts$/, /(?:^|\/)i18n\/(?:locales|lazy)\//, /^src\/help\/generated\//, /^src\/i18n\/[^/]+\.json$/, /[a-z]Strings\.ts$/];
+const NOT_SHIPPED = [/(?:^|\/)__tests__\//, /^[^/]+\/tests?\//, /(?:^|\/)__mocks__\//, /(?:^|\/)fixtures?\//, /\.(?:test|spec|eval|bench|stories)\.[cm]?[jt]sx?$/, /\.d\.ts$/, /(?:^|\/)i18n\/(?:locales|lazy)\//, /^src\/help\/generated\//, /^src\/i18n\/[^/]+\.json$/, /[a-z]Strings\.ts$/];
 /** Text and code files the content rules read. */
 const READABLE = /\.(?:[cm]?[jt]sx?|rs|java|kt|swift|html|json|toml)$|(?:^|\/)_headers$/;
 
@@ -94,6 +94,12 @@ export const RULES = [
     id: "criticMarkup",
     label: "criticMarkup (hidden edits in the preview)",
     path: /(?:^|\/)[^/]*criticMarkup[^/]*$/i,
+  },
+  {
+    id: "agent",
+    label: "Agent tools and MCP (what an agent may do, and what reaches it)",
+    path: /^(?:mcp-server\/src\/|src\/agents\/(?:mcp|skills)\/|src\/agents\/(?:runtime|untrusted|network)\.ts$|src\/agents\/tools\/define\.ts$)|^src\/agents\/(?:[^/]+\/)*[^/]*mcp[^/]*$/i,
+    content: /["']@modelcontextprotocol\/[\w-]+/,
   },
   {
     id: "pipeline",
