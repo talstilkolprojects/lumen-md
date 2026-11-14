@@ -81,13 +81,6 @@ export async function createFirstNote(start: StartChoice, locale: Locale): Promi
   return { path, content };
 }
 
-/** Import an Obsidian vault (a folder's files) or a Notion export (.zip) with the existing importers. */
-export async function importInto(kind: "obsidian" | "notion", files: ArrayLike<File>): Promise<{ notes: number; folder: string }> {
-  const { importZip, importFileList } = await import("../storage/exportAll");
-  const r = kind === "notion" ? await importZip(await files[0].arrayBuffer(), files[0].name) : await importFileList(files);
-  return { notes: r.notes, folder: r.folder };
-}
-
 /**
  * Plan W4.35: the language question. A system that lists Hebrew starts in
  * Hebrew with no question (the language step is skipped; it can be opened

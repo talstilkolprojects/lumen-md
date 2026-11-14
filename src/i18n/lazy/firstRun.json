@@ -34,5 +34,19 @@
   "onboard.vault.opfs": "In this browser",
   "onboard.vault.opfs.desc": "Private to this browser, works everywhere, nothing to set up.",
   "onboard.vault.title": "Where your notes live",
-  "onboard.working": "Setting up…"
+  "onboard.working": "Setting up…",
+  "onboard.start.import": "Bring your notes",
+  "onboard.start.import.desc": "From Notion, Evernote, Apple Notes, Google Keep, OneNote or Obsidian, into a new folder. Nothing you have changes, and one click takes it back.",
+  "onboard.start.folder": "Open an Obsidian folder",
+  "onboard.start.folder.desc": "Use an Obsidian vault where it already is. Nothing is copied, and no note is added to it.",
+  "onboard.start.folder.current": "“{folder}”, the folder you chose, opens as it is.",
+  "onboard.import.from": "Where are your notes now?",
+  "onboard.import.source.notion": "Notion",
+  "onboard.import.source.evernote": "Evernote",
+  "onboard.import.source.appleNotes": "Apple Notes",
+  "onboard.import.source.keep": "Google Keep",
+  "onboard.import.source.onenote": "OneNote",
+  "onboard.import.source.obsidian": "Obsidian",
+  "onboard.finish.import": "Choose the export",
+  "onboard.finish.folder": "Open the folder"
 }

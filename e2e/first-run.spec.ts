@@ -67,7 +67,7 @@ test("a new user reaches their first note in under 60 s: setup, sample vault, to
   await expect(page.locator("html")).toHaveAttribute("data-theme-preset", "sepia");
   await setup.getByRole("button", { name: "Next" }).click();
   await expect(setup.getByRole("radio", { name: /A sample vault/ })).toBeChecked();
-  await expect(setup.getByRole("button", { name: "Import a Notion export (.zip)" })).toBeVisible();
+  await expect(setup.getByRole("radio", { name: /Bring your notes/ })).toBeVisible();
   await setup.getByRole("button", { name: "Start writing" }).click();
 
   // The sample's start page is open, in the editor and in the file tree.

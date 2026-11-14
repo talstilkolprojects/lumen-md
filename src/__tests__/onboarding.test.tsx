@@ -132,7 +132,7 @@ describe("FirstRun", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Light" }));
     expect(useAppStore.getState().theme).toBe("light");
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(screen.getByRole("button", { name: "Import an Obsidian vault (folder)" })).toBeTruthy();
+    expect(screen.getByRole("radio", { name: /Bring your notes/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Start writing" })).toBeTruthy();
     useAppStore.getState().resetThemeSettings();
   });
@@ -224,7 +224,7 @@ describe("FirstRun", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Français" }));
     expect(screen.getByRole("radio", { name: "Français" })).toHaveProperty("checked", true);
     for (let i = 0; i < 3; i++) fireEvent.click(screen.getAllByRole("button").at(-1)!);
-    fireEvent.click(screen.getAllByRole("radio").at(-1)!); // the empty vault (labels may still be English or French)
+    fireEvent.click(screen.getAllByRole("radio")[1]); // the empty vault, second of the start paths (labels may still be English or French)
     fireEvent.click(screen.getAllByRole("button").at(-1)!);
     await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
     expect(onDone.mock.calls[0][0].note.path).toMatch(/^Première note( \d+)?\.md$/);

@@ -1,5 +1,8 @@
 {
   "importWizard.title": "Import notes",
+  "importWizard.search.button": "Search for “{query}”",
+  "importWizard.search.firstRun": "Your notes are here. Try a search:",
+  "importWizard.search.hint": "Find the imported notes:",
   "importWizard.intro": "Bring your notes from another app. Everything goes into a new folder: nothing you already have is changed, and one click takes the import back.",
   "importWizard.chooseSource": "Where are your notes now?",
   "importWizard.how.obsidian": "Pick the vault folder, or a .zip of it. Obsidian's own settings (.obsidian) are left out.",

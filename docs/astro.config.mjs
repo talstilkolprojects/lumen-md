@@ -47,6 +47,7 @@ export default defineConfig({
           label: "Moving to Lumen",
           translations: { he: "מעבר ל-Lumen" },
           items: [
+            { label: "Leaving Evernote or Notion?", slug: "getting-started/leaving", translations: { he: "עוזבים את Evernote או Notion?" } },
             { label: "From Obsidian", slug: "getting-started/from-obsidian", translations: { he: "מ-Obsidian" } },
             { label: "From Notion", slug: "getting-started/from-notion", translations: { he: "מ-Notion" } },
             { label: "From Evernote", slug: "getting-started/from-evernote", translations: { he: "מ-Evernote" } },

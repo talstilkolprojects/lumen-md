@@ -6498,6 +6498,23 @@
       ]
     },
     {
+      "key": "importWizard.search.button",
+      "en": "Search for “{query}”",
+      "vars": [
+        "query"
+      ]
+    },
+    {
+      "key": "importWizard.search.firstRun",
+      "en": "Your notes are here. Try a search:",
+      "vars": []
+    },
+    {
+      "key": "importWizard.search.hint",
+      "en": "Find the imported notes:",
+      "vars": []
+    },
+    {
       "key": "importWizard.start",
       "en": "Import",
       "vars": []
@@ -8045,6 +8062,16 @@
       "vars": []
     },
     {
+      "key": "onboard.finish.folder",
+      "en": "Open the folder",
+      "vars": []
+    },
+    {
+      "key": "onboard.finish.import",
+      "en": "Choose the export",
+      "vars": []
+    },
+    {
       "key": "onboard.firstNote.body",
       "en": "# My first note\n\nStart writing here. Type [[ to link to another note.",
       "vars": []
@@ -8070,6 +8097,11 @@
       ]
     },
     {
+      "key": "onboard.import.from",
+      "en": "Where are your notes now?",
+      "vars": []
+    },
+    {
       "key": "onboard.import.notion",
       "en": "Import a Notion export (.zip)",
       "vars": []
@@ -8077,6 +8109,36 @@
     {
       "key": "onboard.import.obsidian",
       "en": "Import an Obsidian vault (folder)",
+      "vars": []
+    },
+    {
+      "key": "onboard.import.source.appleNotes",
+      "en": "Apple Notes",
+      "vars": []
+    },
+    {
+      "key": "onboard.import.source.evernote",
+      "en": "Evernote",
+      "vars": []
+    },
+    {
+      "key": "onboard.import.source.keep",
+      "en": "Google Keep",
+      "vars": []
+    },
+    {
+      "key": "onboard.import.source.notion",
+      "en": "Notion",
+      "vars": []
+    },
+    {
+      "key": "onboard.import.source.obsidian",
+      "en": "Obsidian",
+      "vars": []
+    },
+    {
+      "key": "onboard.import.source.onenote",
+      "en": "OneNote",
       "vars": []
     },
     {
@@ -8134,6 +8196,33 @@
     {
       "key": "onboard.start.empty.desc",
       "en": "Just your first note.",
+      "vars": []
+    },
+    {
+      "key": "onboard.start.folder",
+      "en": "Open an Obsidian folder",
+      "vars": []
+    },
+    {
+      "key": "onboard.start.folder.current",
+      "en": "“{folder}”, the folder you chose, opens as it is.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "onboard.start.folder.desc",
+      "en": "Use an Obsidian vault where it already is. Nothing is copied, and no note is added to it.",
+      "vars": []
+    },
+    {
+      "key": "onboard.start.import",
+      "en": "Bring your notes",
+      "vars": []
+    },
+    {
+      "key": "onboard.start.import.desc",
+      "en": "From Notion, Evernote, Apple Notes, Google Keep, OneNote or Obsidian, into a new folder. Nothing you have changes, and one click takes it back.",
       "vars": []
     },
     {
