@@ -35,7 +35,7 @@ import {
   type BValue,
 } from "./values";
 import { BASES_DOCUMENTED, BASES_UNSUPPORTED } from "./catalogue";
-export { BASES_DOCUMENTED, BASES_UNSUPPORTED, BASES_LEGACY_GLOBALS, parseBases, BASES_GLOBALS } from "./catalogue";
+export { BASES_DOCUMENTED, BASES_UNSUPPORTED, BASES_LEGACY_GLOBALS, BASES_MAX_LENGTH, parseBases, BASES_GLOBALS } from "./catalogue";
 import { fileValue, toNumberOrNull, clean, formatMoment, escapeHtml } from "./evalHelpers";
 import { InterpreterBase } from "./evalBase";
 export { inFolder } from "./evalBase";

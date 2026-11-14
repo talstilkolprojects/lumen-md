@@ -1048,6 +1048,11 @@
       "vars": []
     },
     {
+      "key": "templates.category.Study",
+      "en": "Study",
+      "vars": []
+    },
+    {
       "key": "templates.category.Work",
       "en": "Work",
       "vars": []
