@@ -384,6 +384,7 @@
   "capture.saved": "Добавлено в {path}",
   "capture.title": "Быстрая запись",
   "capture.voice.keepAudio": "Сохранить запись",
+  "capture.globalShortcut.taken": "⌥⌘N занято другим приложением, поэтому оно не открывает Lumen из других приложений. Внутри Lumen ⌥⌘N и Файл ▸ Быстрая запись по-прежнему работают.",
   "capture.voice.noMic": "Нет микрофона или доступ запрещён.",
   "capture.voice.noTranscript": "Не удалось расшифровать на этом устройстве; запись сохранена с заметкой.",
   "capture.voice.placeholderNote": "Голосовая заметка (не расшифрована)",

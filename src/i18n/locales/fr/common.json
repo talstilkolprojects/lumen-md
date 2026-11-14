@@ -384,6 +384,7 @@
   "capture.saved": "Ajouté à {path}",
   "capture.title": "Capture rapide",
   "capture.voice.keepAudio": "Garder l’enregistrement",
+  "capture.globalShortcut.taken": "⌥⌘N est déjà pris par une autre app : il n’ouvre donc pas Lumen depuis les autres apps. Dans Lumen, ⌥⌘N et Fichier ▸ Capture rapide fonctionnent toujours.",
   "capture.voice.noMic": "Pas de micro, ou autorisation refusée.",
   "capture.voice.noTranscript": "Transcription impossible sur cet appareil ; l’enregistrement est gardé avec la note.",
   "capture.voice.placeholderNote": "Note vocale (non transcrite)",

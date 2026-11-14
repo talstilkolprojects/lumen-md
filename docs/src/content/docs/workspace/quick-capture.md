@@ -73,23 +73,15 @@ feature, planned with the native apps (plan 13.3).
 ## A system-wide shortcut on the desktop
 
 In a browser and the installed PWA, `⌥⌘N` works while Lumen's window has
-the focus. A shortcut that works from any app needs Tauri's
-global-shortcut plugin, which the desktop app doesn't bundle yet. The
-frontend already checks for it at startup
-(`src/capture/desktopShortcut.ts`). On macOS it registers `⌥⌘N`
-(`Alt+Command+N`) when the plugin is there, and otherwise does nothing.
-On Windows and Linux it registers nothing: there `Ctrl+Alt+N` is also
-what many keyboard layouts send for AltGr+N, and a system-wide shortcut
-can't tell them apart, so typing that letter in any app would open Lumen.
-To turn it on in your own build:
+the focus. In the desktop app on macOS, `⌥⌘N` (`Alt+Command+N`) works from
+any app: the app bundles Tauri's global-shortcut plugin, and
+`src/capture/desktopShortcut.ts` registers the shortcut at startup. If
+another app already holds `⌥⌘N`, Lumen says so in a message, and the
+in-window `⌥⌘N` and **File ▸ Quick capture** still work. On Windows and
+Linux it registers nothing: there `Ctrl+Alt+N` is also what many keyboard
+layouts send for AltGr+N, and a system-wide shortcut can't tell them apart,
+so typing that letter in any app would open Lumen.
 
-1. `src-tauri/Cargo.toml`, under the desktop dependencies:
-   `tauri-plugin-global-shortcut = "2"`
-2. `src-tauri/src/lib.rs`, in `run()` under `#[cfg(desktop)]`:
-   `app.handle().plugin(tauri_plugin_global_shortcut::Builder::new().build())?;`
-3. `src-tauri/capabilities/default.json`: add
-   `"global-shortcut:allow-register"` and `"global-shortcut:allow-unregister"`.
-
-After that, on a Mac, pressing `⌥⌘N` anywhere brings Lumen to the front with the
+On a Mac, pressing `⌥⌘N` anywhere brings Lumen to the front with the
 capture box open. The window permissions this needs (`show`,
 `unminimize`, `set-focus`) are already granted.

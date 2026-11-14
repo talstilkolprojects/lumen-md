@@ -66,22 +66,15 @@ description: הוספת מחשבה, משימה או קישור ל-inbox.md בש�
 
 ## קיצור מקלדת לכל המערכת בשולחן העבודה
 
-בדפדפן וב-PWA המותקנת, `⌥⌘N` עובד כשחלון Lumen בפוקוס. קיצור שעובד מכל
-אפליקציה דורש את התוסף global-shortcut של Tauri, שאפליקציית שולחן העבודה
-עוד לא כוללת. ממשק המשתמש כבר בודק אם הוא קיים בעלייה
-(`src/capture/desktopShortcut.ts`). ב-macOS הוא רושם `⌥⌘N`
-(`Alt+Command+N`) כשהתוסף קיים, ואחרת לא עושה כלום. ב-Windows וב-Linux הוא
-לא רושם כלום: שם `Ctrl+Alt+N` הוא גם מה שפריסות מקלדת רבות שולחות עבור
+בדפדפן וב-PWA המותקנת, `⌥⌘N` עובד כשחלון Lumen בפוקוס. באפליקציית שולחן
+העבודה ב-macOS, ‏`⌥⌘N` (`Alt+Command+N`) עובד מכל אפליקציה: האפליקציה כוללת
+את התוסף global-shortcut של Tauri, ו-`src/capture/desktopShortcut.ts` רושם את
+הקיצור בעלייה. אם אפליקציה אחרת כבר תופסת את `⌥⌘N`, ‏Lumen אומר את זה בהודעה,
+ו-`⌥⌘N` בתוך החלון ו-**קובץ ▸ לכידה מהירה** ממשיכים לעבוד. ב-Windows וב-Linux
+הוא לא רושם כלום: שם `Ctrl+Alt+N` הוא גם מה שפריסות מקלדת רבות שולחות עבור
 AltGr+N, וקיצור לכל המערכת לא יכול להבחין ביניהם, כך שהקלדת האות הזו בכל
-אפליקציה הייתה פותחת את Lumen. כדי להפעיל אותו בבנייה שלכם:
+אפליקציה הייתה פותחת את Lumen.
 
-1. `src-tauri/Cargo.toml`, תחת התלויות של שולחן העבודה:
-   `tauri-plugin-global-shortcut = "2"`
-2. `src-tauri/src/lib.rs`, ב-`run()` תחת `#[cfg(desktop)]`:
-   `app.handle().plugin(tauri_plugin_global_shortcut::Builder::new().build())?;`
-3. `src-tauri/capabilities/default.json`: הוסיפו
-   `"global-shortcut:allow-register"` ו-`"global-shortcut:allow-unregister"`.
-
-אחרי זה, ב-Mac, לחיצה על `⌥⌘N` בכל מקום מביאה את Lumen לחזית עם תיבת הלכידה
+ב-Mac, לחיצה על `⌥⌘N` בכל מקום מביאה את Lumen לחזית עם תיבת הלכידה
 פתוחה. הרשאות החלון שזה צריך (`show`, ‏`unminimize`, ‏`set-focus`) כבר
 ניתנו.

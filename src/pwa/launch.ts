@@ -101,6 +101,12 @@ export function onLaunchFiles(open: (name: string, content: string, handle: File
 export function onDesktopCapture(): void {
   if (typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) return;
   void import("../capture/desktopShortcut")
-    .then((m) => m.registerGlobalCapture(() => window.dispatchEvent(new CustomEvent("lumen-open-capture"))))
+    .then((m) =>
+      m.registerGlobalCapture(
+        () => window.dispatchEvent(new CustomEvent("lumen-open-capture")),
+        // W10.C13: a shortcut another app holds is said, not silent.
+        (why) => void m.reportGlobalCaptureFailure(why),
+      ),
+    )
     .catch(() => false);
 }

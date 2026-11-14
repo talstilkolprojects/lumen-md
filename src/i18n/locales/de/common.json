@@ -384,6 +384,7 @@
   "capture.saved": "Zu {path} hinzugefügt",
   "capture.title": "Schnellerfassung",
   "capture.voice.keepAudio": "Aufnahme behalten",
+  "capture.globalShortcut.taken": "⌥⌘N ist von einer anderen App belegt und öffnet Lumen daher nicht aus anderen Apps. In Lumen funktionieren ⌥⌘N und Datei ▸ Schnellerfassung weiterhin.",
   "capture.voice.noMic": "Kein Mikrofon oder keine Berechtigung.",
   "capture.voice.noTranscript": "Transkription auf diesem Gerät fehlgeschlagen; die Aufnahme bleibt bei der Notiz.",
   "capture.voice.placeholderNote": "Sprachnotiz (nicht transkribiert)",
