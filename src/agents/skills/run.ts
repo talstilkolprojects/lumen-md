@@ -114,6 +114,8 @@ export async function runSkill(skill: Skill, input: SkillInput, opts: RunSkillOp
   void _a;
   return runAgent(def, input, {
     ...run,
+    // The caller's cancel signal, named so Esc / "AI: Cancel" visibly reaches the skill's run (T55).
+    signal: run.signal,
     grants: (def.requires ?? []) as ToolScope[],
     ...(outside ? { untrusted: [...(run.untrusted ?? []), sourceLabel(skill.source)] } : {}),
   });
