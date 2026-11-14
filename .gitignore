@@ -2,6 +2,7 @@
 node_modules
 node_modules_bad/
 dist/
+dist-registry/
 
 # Build
 tsconfig.tsbuildinfo

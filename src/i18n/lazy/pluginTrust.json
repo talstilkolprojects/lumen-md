@@ -45,5 +45,9 @@
   "pluginTrust.rule.indirect-api": "calls the API indirectly",
   "pluginTrust.rule.dynamic-network": "builds network addresses while it runs",
   "pluginTrust.rule.unsigned": "not signed",
-  "pluginTrust.rule.untrusted-signer": "signed by an unknown key"
+  "pluginTrust.rule.untrusted-signer": "signed by an unknown key",
+  "pluginTrust.remove": "Remove",
+  "pluginTrust.installedBadge": "Installed",
+  "pluginTrust.removed": "“{name}” is removed, with the settings and data it kept.",
+  "pluginTrust.changed": "“{name}” was not installed: the code downloaded is not the code that was scanned."
 }

@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "id": "lumen.linter",
+  "name": "Markdown tidy",
+  "version": "1.0.0",
+  "description": "Fixes trailing spaces, extra blank lines, headings without a space or blank lines, mixed bullets and a missing final newline — never inside code or front matter.",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    {
+      "id": "commands",
+      "reason": "Adds the “Tidy Markdown” command"
+    },
+    {
+      "id": "document:read",
+      "reason": "Reads the open note"
+    },
+    {
+      "id": "document:write",
+      "reason": "Writes the tidied note back"
+    },
+    {
+      "id": "notifications",
+      "reason": "Tells you how many things it fixed"
+    },
+    {
+      "id": "settings",
+      "reason": "Remembers which rules you turned off"
+    }
+  ]
+}
