@@ -46,6 +46,7 @@ import {
   summarizePlaywright,
   summarizeVitest,
 } from "./lib.mjs";
+import { safariSuites } from "../safari/lib.mjs";
 
 const TOOL = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const env = process.env;
@@ -58,6 +59,9 @@ const DOCKER = env.DOCKER || "docker";
 const dirs = { repo: join(HOME, "repo"), receipts: join(HOME, "receipts"), work: join(HOME, "work"), cache: join(HOME, "cache"), logs: join(HOME, "logs") };
 
 const log = (...a) => console.log("[factory]", ...a);
+/** Run real Safari for this branch? Only with BrowserStack credentials, and only for LUMEN_FACTORY_SAFARI_BRANCHES (default: the trains). */
+const safariWanted = (branch) =>
+  Boolean(env.BROWSERSTACK_USERNAME && env.BROWSERSTACK_ACCESS_KEY) && (branch === undefined || new RegExp(env.LUMEN_FACTORY_SAFARI_BRANCHES || "^verify/train(-\\d+)?$").test(branch));
 
 function sh(cmd, args, opts = {}) {
   const r = spawnSync(cmd, args, { encoding: "utf8", maxBuffer: 256 << 20, ...opts });
@@ -155,7 +159,10 @@ function executor(kind, wt, sha) {
         "run", "-d", "--name", name, "--init", "--ipc=host", "-u", uid,
         "-e", "HOME=/tmp/home", "-e", "CI=1", "-e", "npm_config_cache=/cache/npm", "-e", "CARGO_HOME=/cache/cargo",
         // The worktree's .git file points into repo/.git by absolute path: mount it at that path so git works inside.
-        "-v", `${wt}:/lumen`, "-v", `${dirs.repo}:${dirs.repo}`, "-v", `${dirs.cache}:/cache`, "-w", "/lumen", tag, "sleep", "infinity",
+        "-v", `${wt}:/lumen`, "-v", `${dirs.repo}:${dirs.repo}`, "-v", `${dirs.cache}:/cache`, "-v", `${TOOL}:/tool:ro`,
+        // BrowserStack credentials by name only: the values come from this process's environment, never argv (W6.6).
+        ...(safariWanted() ? ["-e", "BROWSERSTACK_USERNAME", "-e", "BROWSERSTACK_ACCESS_KEY"] : []),
+        "-w", "/lumen", tag, "sleep", "infinity",
       ]);
     },
     argv: (s) => [DOCKER, ["exec", ...Object.entries(s.env ?? {}).flatMap(([k, v]) => ["-e", `${k}=${v}`]), "-w", "/lumen", name, ...s.cmd], {}],
@@ -225,6 +232,11 @@ async function fullRun(head, { privateKeyPem, startedNight, opts }) {
       const pkg = readJson(join(wt, "package.json")) ?? {};
       const all = [...plan.steps, ...extraSteps({ scripts: pkg.scripts ?? {}, hasCargo: existsSync(join(wt, "src-tauri/Cargo.toml")), date: new Date(startedNight) })];
       steps.push(...(await runGroups(exec, all, logDir)));
+      // W6.6: real Safari on BrowserStack, for the trains (the heads that get promoted), when credentials are set.
+      if (safariWanted(head.branch)) {
+        const tool = EXEC === "docker" ? "/tool" : TOOL;
+        steps.push(await runStep(exec, { id: "safari", group: "safari", cmd: ["node", `${tool}/scripts/safari/run.mjs`], timeoutMin: 90 }, logDir));
+      }
     }
   } finally {
     exec.stop();
@@ -234,6 +246,9 @@ async function fullRun(head, { privateKeyPem, startedNight, opts }) {
   const e2e = Object.fromEntries(steps.filter((s) => s.id.startsWith("e2e-")).map((s) => [s.id, summarizePlaywright(readJson(join(nightly, `${s.id}.json`)))]));
   const { suites, mustRun } = suiteVerdicts(steps, { vitest, e2e });
   if (steps[0]?.status !== 0) suites.install = { ok: false, detail: `npm ci: exit ${steps[0]?.status}` };
+  const safari = steps.some((x) => x.id === "safari") ? readJson(join(nightly, "safari.json")) : null;
+  if (safari) Object.assign(suites, safariSuites(safari.platforms ?? []));
+  else if (steps.some((x) => x.id === "safari")) suites["safari"] = { ok: false, detail: "the Safari run wrote no result" };
   const failures = { vitest: vitest.filter(Boolean).flatMap((v) => v.failedFiles) };
   for (const b of ["chromium", "firefox", "webkit"]) failures[`e2e ${b}`] = Object.entries(e2e).filter(([id, x]) => x && id.startsWith(`e2e-${b}-`)).flatMap(([, x]) => x.failed);
   const prs = lastPrs(wt, [...new Set(Object.values(failures).flat().map((x) => x.split(" › ")[0]))]);

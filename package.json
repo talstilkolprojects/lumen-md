@@ -136,7 +136,9 @@
     "heldout": "node scripts/heldout.mjs",
     "models:cloud": "node scripts/models-cloud.mjs",
     "factory:run": "node scripts/factory/run.mjs",
-    "factory:selftest": "bash scripts/factory/selftest.sh"
+    "factory:selftest": "bash scripts/factory/selftest.sh",
+    "promote:check": "node scripts/promote/check.mjs",
+    "safari:run": "node scripts/safari/run.mjs"
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "0.4.2",

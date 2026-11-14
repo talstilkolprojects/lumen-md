@@ -278,6 +278,7 @@ export default defineConfig({
             { label: "Mutation testing", slug: "security/mutation-testing", translations: { he: "בדיקות מוטציה" } },
             { label: "Nightly runs and receipts", translations: { he: "ריצות לילה וקבלות" }, slug: "contributing/nightly" },
             { label: "Compiling the native code offline", translations: { he: "קומפילציה של הקוד ה-native בלי רשת" }, slug: "contributing/native-check" },
+            { label: "Before main, WebKit and Safari", translations: { he: "לפני main, WebKit ו-Safari" }, slug: "contributing/promotion" },
           ],
         },
         {

@@ -12,8 +12,10 @@
 #   gh         records every call; answers the PR lookup with #455
 #   apt-get, systemctl, useradd, usermod, chown, sudo, launchctl, cargo, uname (for the Mac pass)
 #   the deploy key is a stand-in text (the receipts remote is a local path; ssh is never used)
+#   npx        `vite build` makes an empty dist; the BrowserStack SDK writes a Playwright JSON report
+#              with one project per Safari platform (iOS 17 fails on verify/train)
 # What does NOT run: a real Docker daemon or image, npm install, vitest,
-# Playwright and its browsers, cargo, systemd, launchd, GitHub's API.
+# Playwright and its browsers, BrowserStack, cargo, systemd, launchd, GitHub's API.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"; TOOL="$(cd "$HERE/../.." && pwd)"
 T="$(mktemp -d)"; if [ -n "${LUMEN_SELFTEST_KEEP:-}" ]; then echo "(keeping $T)"; else trap 'rm -rf "$T"' EXIT; fi
@@ -33,13 +35,14 @@ case "$1" in
   build) touch "$S/image-built" ;;
   info) echo "docker fake on $(uname -m)" ;;
   rm) exit 0 ;;
-  run) shift; name=""; dir=""
-       while [ $# -gt 0 ]; do case "$1" in --name) name="$2"; shift 2 ;; -v) case "$2" in *:/lumen) dir="${2%:/lumen}" ;; esac; shift 2 ;; -u|-e|-w) shift 2 ;; *) shift ;; esac; done
-       echo "$dir" > "$S/ctr-$name"; echo "fake-container-$name" ;;
+  run) shift; name=""; dir=""; tool=""
+       while [ $# -gt 0 ]; do case "$1" in --name) name="$2"; shift 2 ;; -v) case "$2" in *:/lumen) dir="${2%:/lumen}" ;; *:/tool:ro) tool="${2%:/tool:ro}" ;; esac; shift 2 ;; -u|-e|-w) shift 2 ;; *) shift ;; esac; done
+       echo "$dir" > "$S/ctr-$name"; echo "${tool:-}" > "$S/tool-$name"; echo "fake-container-$name" ;;
   exec) shift; envs=()
         while [ $# -gt 0 ]; do case "$1" in -e) envs+=("$2"); shift 2 ;; -w) shift 2 ;; *) break ;; esac; done
         name="$1"; shift; [ "${1:-}" = pkill ] && exit 0
-        cd "$(cat "$S/ctr-$name")" && exec env "${envs[@]}" "$@" ;;
+        tool="$(cat "$S/tool-$name")"; args=(); for a in "$@"; do args+=("${a/#\/tool\//$tool/}"); done   # the /tool mount
+        cd "$(cat "$S/ctr-$name")" && exec env "${envs[@]}" "${args[@]}" ;;
   *) echo "fake docker: unhandled $1" >&2; exit 3 ;;
 esac
 EOF
@@ -72,7 +75,7 @@ echo "▶ fixture repositories"
 "${G[@]}" init -q --bare "$T/lumen.git"; "${G[@]}" init -q --bare "$T/receipts.git"
 "${G[@]}" clone -q "$T/receipts.git" "$T/r0" 2>/dev/null; echo "# receipts" > "$T/r0/README.md"
 (cd "$T/r0" && "${G[@]}" add -A && "${G[@]}" commit -qm init && "${G[@]}" push -q origin HEAD:main)
-mkdir -p "$T/tool/scripts"; cp -r "$TOOL/scripts/factory" "$TOOL/scripts/nightly" "$T/tool/scripts/"
+mkdir -p "$T/tool/scripts"; cp -r "$TOOL/scripts/factory" "$TOOL/scripts/nightly" "$TOOL/scripts/safari" "$TOOL/scripts/promote" "$T/tool/scripts/"
 (cd "$T/tool" && "${G[@]}" init -q && "${G[@]}" add -A && "${G[@]}" commit -qm tool && "${G[@]}" push -q "$T/lumen.git" HEAD:refs/heads/chore/verify-factory)
 mk_head() { # mk_head <branch> <webkit fails 0|1>
   local d="$T/head-${1//\//-}"; mkdir -p "$d/scripts/nightly" "$d/src-tauri"
@@ -174,6 +177,56 @@ out="$(HOME="$T/mac" LUMEN_FACTORY_REMOTE="$T/lumen.git" bash "$HERE/bootstrap.s
 expect "loads a LaunchAgent instead of systemd" 'grep -q "launchctl bootstrap gui/" <<<"$out" && ! grep -q "systemctl enable" <<<"$out"'
 expect "no apt-get on the Mac" '! grep -q "apt-get install" <<<"$out"'
 expect "runs natively (no Docker)" 'grep -q "+ write .*dev.lumen-md.factory.plist" <<<"$out"'
+
+# ── 6. real Safari (BrowserStack emulated), then promote:check ─────────────
+echo "▶ 6. Safari on BrowserStack (emulated) and promote:check"
+rm -f "$T/bin/uname"
+cat > "$T/bin/npx" <<'NPX'
+#!/usr/bin/env bash
+echo "npx $*" >> "$FAKE_STATE/npx.log"
+if [ "$1" = vite ] && [ "$2" = build ]; then mkdir -p .factory/dist-safari && echo "<html></html>" > .factory/dist-safari/index.html; exit 0; fi
+if [ "$1" = -y ] && [ "$3" = playwright ]; then
+  [ -f browserstack.yml ] && [ -f .factory/playwright.browserstack.config.mjs ] || { echo "no browserstack.yml or config" >&2; exit 3; }
+  bad=0; git log -1 --format=%s | grep -q "verify/train" && bad=1
+  node -e '
+    const bad = process.argv[1] === "1";
+    const projects = ["iPhone 17 26 safari", "iPhone 16 18 safari", "iPhone 15 17 safari", "OS X Sequoia playwright-webkit"];
+    const specs = projects.map((p) => ({ title: "keeps the note", file: "data-safety.spec.ts", tests: [{ projectName: p, status: bad && p.startsWith("iPhone 15") ? "unexpected" : "expected" }] }));
+    require("fs").writeFileSync(process.env.PLAYWRIGHT_JSON_OUTPUT_NAME, JSON.stringify({ suites: [{ file: "data-safety.spec.ts", specs }] }));
+    process.exit(bad ? 1 : 0);' "$bad"
+  exit $?
+fi
+echo "fake npx: unhandled $*" >&2; exit 3
+NPX
+chmod +x "$T/bin/npx"
+export BROWSERSTACK_USERNAME=selftest BROWSERSTACK_ACCESS_KEY=selftest-secret-key LUMEN_FACTORY_SAFARI_BRANCHES='.*'
+code=0; node "$F/tool/scripts/factory/run.mjs" --scheduled --rerun > "$T/night3.log" 2>&1 || code=$?
+expect "the night ran both heads again (--rerun)" 'grep -q "2 to run" "$T/night3.log"'
+expect "the container gets the BrowserStack credentials by name, never the value in argv" 'grep -q -- "-e BROWSERSTACK_USERNAME -e BROWSERSTACK_ACCESS_KEY" "$T/state/docker.log" && ! grep -q selftest-secret-key "$T/state/docker.log"'
+expect "the SDK ran the five Safari specs on each head" '[ "$(grep -c "browserstack-node-sdk playwright test -c .factory/playwright.browserstack.config.mjs e2e/smoke.spec.ts e2e/rtl.spec.ts e2e/first-run.spec.ts e2e/locale-switch.spec.ts e2e/data-safety.spec.ts" "$T/state/npx.log")" = 2 ]'
+git clone -q "$T/receipts.git" "$T/rc2"
+PROBE=$(git -C "$T/lumen.git" rev-parse refs/heads/verify/e2e-probe-1)
+PF=$(ls -t "$T/rc2/commits/$PROBE"/full-*.json | head -1)
+nsafari=$(node -e 'const r=require(process.argv[1]);console.log(Object.entries(r.suites).filter(([n,s])=>n.startsWith("safari ")&&s.ok).length)' "$PF")
+expect "the probe's receipt has four passing Safari suites" '[ "$nsafari" = 4 ]'
+expect "a Safari commit status was posted" 'grep -q "context=lumen/factory: safari ios 17 (iPhone 15)" "$T/state/gh.log"'
+git clone -q "$T/lumen.git" "$T/cand" 2>/dev/null
+pcode() { local c=0; (cd "$T/cand" && node "$F/tool/scripts/promote/check.mjs" "$@") > "$T/pc.log" 2>&1 || c=$?; echo "$c"; }
+expect "promote:check passes the probe: WebKit and Safari passed on that commit" '[ "$(pcode "$PROBE" --receipts "$T/rc2")" = 0 ]'
+expect "promote:check refuses verify/train: WebKit failed" '[ "$(pcode "$TRAIN" --receipts "$T/rc2")" = 1 ] && grep -q "✗ WebKit" "$T/pc.log"'
+expect "it names the failing Safari platform too" 'grep -q "✗ safari ios 17 (iPhone 15)" "$T/pc.log"'
+(cd "$T/cand" && "${G[@]}" checkout -q --detach "$PROBE" && "${G[@]}" commit -q --allow-empty -m "merge into main, same tree")
+SAME=$(git -C "$T/cand" rev-parse HEAD)
+expect "a commit with the same tree as the probe passes" '[ "$(pcode "$SAME" --receipts "$T/rc2")" = 0 ]'
+echo "change" > "$T/cand/extra.txt"; (cd "$T/cand" && "${G[@]}" add extra.txt && "${G[@]}" commit -qm "one more change")
+expect "a commit with another tree is refused: no receipt" '[ "$(pcode HEAD --receipts "$T/rc2")" = 1 ] && grep -q "no receipt for" "$T/pc.log"'
+cp -r "$T/rc2" "$T/rc3"
+node -e 'const f=process.argv[1];const r=JSON.parse(require("fs").readFileSync(f,"utf8"));r.suites["e2e webkit"].detail="edited";require("fs").writeFileSync(f,JSON.stringify(r))' "${PF/rc2/rc3}"
+# The edited receipt no longer verifies; the probe's first receipt (night 1, no Safari) still does, so Safari is missing.
+expect "an edited receipt does not count" '[ "$(pcode "$PROBE" --receipts "$T/rc3")" = 1 ] && grep -q "digest does not match" "$T/pc.log"'
+expect "an unknown pinned key: cannot check (exit 2)" '[ "$(pcode "$PROBE" --receipts "$T/rc2" --pin 0000000000000000)" = 2 ]'
+KEYFP=$(node -e 'const c=require("crypto");console.log(c.createHash("sha256").update(require("fs").readFileSync(process.argv[1],"utf8")).digest("hex").slice(0,16))' "$T/rc2/keys/selftest.pem")
+expect "the right pinned key: passes" '[ "$(pcode "$PROBE" --receipts "$T/rc2" --pin "$KEYFP")" = 0 ]'
 
 echo
 echo "factory self-test: $pass passed, $fail failed"

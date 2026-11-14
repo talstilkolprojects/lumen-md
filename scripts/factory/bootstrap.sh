@@ -153,7 +153,7 @@ if [ "$OS" = Darwin ]; then
   <key>ProgramArguments</key>
   <array>
     <string>/bin/zsh</string><string>-lc</string>
-    <string>set -a; . '$ETC/env'; set +a; git -C '$FHOME/tool' pull -q --ff-only; node '$FHOME/tool/scripts/factory/run.mjs' --scheduled</string>
+    <string>set -a; . '$ETC/env'; [ -f '$ETC/browserstack.env' ] &amp;&amp; . '$ETC/browserstack.env'; set +a; git -C '$FHOME/tool' pull -q --ff-only; node '$FHOME/tool/scripts/factory/run.mjs' --scheduled</string>
   </array>
   <key>StartCalendarInterval</key><dict><key>Hour</key><integer>$((10#$H))</integer><key>Minute</key><integer>$((10#$M))</integer></dict>
   <key>StandardOutPath</key><string>$FHOME/logs/launchd.log</string>
@@ -177,6 +177,8 @@ After=network-online.target docker.service
 Type=oneshot
 User=$USER_NAME
 EnvironmentFile=$ETC/env
+# BrowserStack credentials for real Safari (W6.6), once the open-source plan is approved; mode 0600, optional.
+EnvironmentFile=-$ETC/browserstack.env
 WorkingDirectory=$FHOME/tool
 ExecStartPre=/usr/bin/git -C $FHOME/tool pull -q --ff-only
 ExecStart=/usr/bin/node $FHOME/tool/scripts/factory/run.mjs --scheduled
