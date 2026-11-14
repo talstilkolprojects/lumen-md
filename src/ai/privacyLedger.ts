@@ -381,6 +381,11 @@ export function addSpeechVoiceBytes(id: number, bytes: number): boolean {
   return true;
 }
 
+/** A prompt to a model built into the browser (Chrome's, plan W7.14): it runs on this device and sends nothing. */
+export function recordOnDeviceModel(name: string): void {
+  record({ host: `on-device: ${name}`, method: "PROMPT", bytesOut: 0, bytesIn: null, category: "local-ai", reason: "Runs on this device; nothing is sent", policy: getAiPolicy(), decision: "allowed" });
+}
+
 /**
  * Record use of the browser's speech recognition service (Chrome sends the audio
  * to Google). "blocked" when local-only refused it.
