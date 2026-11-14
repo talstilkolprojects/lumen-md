@@ -47,7 +47,7 @@ describe("the Kaggle job", () => {
   it("runs models:day without the WebGPU steps, with DictaLM, signed by the run's key", () => {
     const args = dayArgs({ runId: "r", url: "{url}", out: "{out}", signKey: "{signKey}" });
     // The desktop Whisper's file and CLI are the kernel's to fill (plan W6.19); asr-web runs in the cloud, bench-models does not.
-    expect(args).toEqual(["scripts/models-day.mjs", "--url", "{url}", "--out", "{out}", "--run", "r", "--yes", "--sign-key", "{signKey}", "--whisper-ggml", "{whisperGgml}", "--whisper-cli", "{whisperCli}", "--skip", MAC_ONLY_STEPS.join(","), "--with", "dictalm3"]);
+    expect(args).toEqual(["scripts/models-day.mjs", "--url", "{url}", "--out", "{out}", "--run", "r", "--yes", "--sign-key", "{signKey}", "--whisper-ggml", "{whisperGgml}", "--whisper-cli", "{whisperCli}", "--skip", MAC_ONLY_STEPS.join(","), "--with", "dictalm3,asr-whisper-cpp"]);
     expect(MAC_ONLY_STEPS).toEqual(["bench-models"]);
     expect(dayArgs({ runId: "r", url: "u", out: "o", signKey: "k", only: ["fim"] })).not.toContain("--skip");
   });

@@ -58,6 +58,14 @@ dictation panel offers **Send to my desktop**:
   waiting for is dropped on the desktop too, so it doesn't hold up the next one.
 - The desktop's vault must be unlocked, and the phone must have unlocked
   the same vault.
+- It works whichever device hosts the vault: the phone can join the
+  desktop's vault, or the desktop can join the phone's. Either way the phone
+  asks only a device that proved it knows the passphrase, and the desktop
+  answers only once it has checked the other side's proof too.
+- When it is offered: the phone's number comes from
+  `src/ai/dictation/measuredWer.json`, which holds only measured numbers.
+  `npm run models:cloud -- dictation` fills it (see
+  [models day in the cloud](/ai/models-cloud/)).
 
 ## How accuracy is measured
 

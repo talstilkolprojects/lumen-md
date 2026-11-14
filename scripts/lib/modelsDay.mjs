@@ -163,6 +163,9 @@ export const STEPS = [
     needs: ["python3", "ffmpeg", "network"],
     // 30 clips (~5 min of audio) at whisper.cpp's speed on a GPU or Apple silicon, plus the model load.
     minutes: 5,
+    // Optional (--with asr-whisper-cpp): the default day stays within its 3 hours with W5.20's
+    // voice-commands step beside it. models:cloud asks for it, since the kernel builds whisper.cpp.
+    optional: true,
     blockedUnless: { option: "whisperGgml", reason: "needs --whisper-ggml <ivrit.ai turbo ggml .bin> and whisper-cli (--whisper-cli); the cloud kernel builds whisper.cpp and fetches the file (plan W6.19)" },
     target: { metric: "wer", max: 0.1, text: "WER ≤ 10 % on FLEURS-he validation on the desktop (plan W6.19)" },
     commands: (c) => {

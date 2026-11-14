@@ -96,7 +96,10 @@ export function runSigningKey() {
 }
 
 /** The models:day arguments the kernel runs: everything but the WebGPU steps, DictaLM opted in. */
-export function dayArgs({ runId, url, out, signKey, only = [], skip = [], withOptional = ["dictalm3"], whisperGgml = "{whisperGgml}", whisperCli = "{whisperCli}" }) {
+/** The optional models:day steps the cloud run adds: DictaLM 3.0 and the desktop whisper.cpp WER (the kernel builds it). */
+export const CLOUD_OPTIONAL = ["dictalm3", "asr-whisper-cpp"];
+
+export function dayArgs({ runId, url, out, signKey, only = [], skip = [], withOptional = CLOUD_OPTIONAL, whisperGgml = "{whisperGgml}", whisperCli = "{whisperCli}" }) {
   const sk = [...new Set([...MAC_ONLY_STEPS, ...skip])].filter((s) => !only.includes(s));
   return ["scripts/models-day.mjs", "--url", url, "--out", out, "--run", runId, "--yes", "--sign-key", signKey, "--whisper-ggml", whisperGgml, "--whisper-cli", whisperCli, ...(only.length ? ["--only", only.join(",")] : []), ...(sk.length && !only.length ? ["--skip", sk.join(",")] : []), ...(withOptional.length && !only.length ? ["--with", withOptional.join(",")] : [])];
 }
@@ -124,7 +127,7 @@ export function fillDayArgs(args, values) {
  * the one-run secrets (the signing key, the held-out run copy's key) and
  * never the evaluator's own key.
  */
-export function runConfig({ runId, repo, commit, requester, signing, heldout = null, only = [], skip = [], withOptional = ["dictalm3"] }) {
+export function runConfig({ runId, repo, commit, requester, signing, heldout = null, only = [], skip = [], withOptional = CLOUD_OPTIONAL }) {
   // {url}, {out} and {signKey} are filled in by the kernel.
   const args = dayArgs({ runId, url: "{url}", out: "{out}", signKey: "{signKey}", only, skip, withOptional });
   return { schema: 1, plan: "W6.18", runId, repo, commit, requester, signKeyPem: signing.privatePem, heldout, dayArgs: args, macOnly: MAC_ONLY_STEPS, node: NODE_VERSION, whisper: WHISPER_BUILD };
@@ -195,6 +198,29 @@ export function dictationVerdict(report) {
   const desktop = rows[2];
   const desktopWer = desktop.heldout ?? desktop.fleurs;
   return { rows, desktopFallback: phone.met === false && desktopWer !== null && desktopWer <= phone.target, kind: report.kind ?? null };
+}
+
+/** The models:day steps a dictation-only run takes (`npm run models:cloud -- dictation`, plan W6.19). */
+export const DICTATION_STEPS = ["asr-zipformer", "asr-web", "asr-whisper-cpp", "heldout"];
+
+/** The app's engine id (src/ai/dictation/engines.ts) for each path's evaluator engine. */
+export const APP_ENGINE = { zipformer: "zipformer-he", "whisper-web": "whisper-turbo-he", "whisper-cpp": "whisper-cpp-he" };
+
+/**
+ * The measured WER per app engine, in the shape of src/ai/dictation/measuredWer.json
+ * (what "send to my desktop" reads, desktopOffload.ts MEASURED_WER): the held-out
+ * asr-he number where there is one, else FLEURS-he validation. A path with no
+ * number is left out — an estimate never invents one. Only a model run counts.
+ */
+export function measuredWerFrom(report, { runId, commit }) {
+  if (report.kind !== "model") return {};
+  const out = {};
+  for (const r of dictationVerdict(report).rows) {
+    const wer = r.heldout ?? r.fleurs;
+    if (wer === null) continue;
+    out[APP_ENGINE[r.engine]] = { wer: Math.round(wer * 10000) / 10000, split: r.heldout !== null ? "asr-he held-out" : "FLEURS-he validation", source: `models:cloud ${runId} @ ${String(commit).slice(0, 9)}` };
+  }
+  return out;
 }
 
 /** Kaggle's kernel status line → one of queued, running, complete, error, cancelled, unknown. */

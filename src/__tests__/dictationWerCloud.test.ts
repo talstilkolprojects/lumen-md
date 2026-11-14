@@ -14,9 +14,9 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 // @ts-expect-error — plain .mjs script without type declarations
-import { DICTATION_PATHS, MAC_ONLY_STEPS, WHISPER_BUILD, dayArgs, dictationVerdict, fillDayArgs, runConfig, runSigningKey } from "../../scripts/lib/modelsCloud.mjs";
+import { APP_ENGINE, CLOUD_OPTIONAL, DICTATION_PATHS, DICTATION_STEPS, MAC_ONLY_STEPS, WHISPER_BUILD, dayArgs, dictationVerdict, fillDayArgs, measuredWerFrom, runConfig, runSigningKey } from "../../scripts/lib/modelsCloud.mjs";
 // @ts-expect-error — plain .mjs script without type declarations
-import { COVERAGE, STEPS, availability, heldoutMetrics } from "../../scripts/lib/modelsDay.mjs";
+import { COVERAGE, STEPS, availability, declaredMinutes, heldoutMetrics, selectSteps } from "../../scripts/lib/modelsDay.mjs";
 // @ts-expect-error — plain .mjs script without type declarations
 import { ASR_ENGINES, scoreAsr } from "../../scripts/heldout/score.mjs";
 
@@ -167,3 +167,56 @@ describe("W6.19 the honest report: which path reaches its target, on which devic
     expect(v.desktopFallback).toBe(true);
   });
 });
+
+describe("W6.19 the measurement in one owner command (models:cloud -- dictation)", () => {
+  const report = {
+    kind: "model",
+    steps: [
+      { id: "asr-zipformer", status: "fail", metrics: { wer: 0.236 } },
+      { id: "asr-web", status: "pass", metrics: { wer: 0.131 } },
+      { id: "asr-whisper-cpp", status: "pass", metrics: { wer: 0.081 } },
+      { id: "heldout", status: "pass", metrics: { sets: { "asr-he": { engines: { zipformer: { wer: 0.25123 }, "whisper-web": "unavailable", "whisper-cpp": { wer: 0.094 } } } } } },
+    ],
+  };
+
+  it("runs only the dictation steps, the desktop's included, and nothing else", () => {
+    expect(DICTATION_STEPS).toEqual(["asr-zipformer", "asr-web", "asr-whisper-cpp", "heldout"]);
+    const args = dayArgs({ runId: "r", url: "{url}", out: "{out}", signKey: "{signKey}", only: DICTATION_STEPS });
+    expect(args.slice(args.indexOf("--only"), args.indexOf("--only") + 2)).toEqual(["--only", DICTATION_STEPS.join(",")]);
+    expect(args).not.toContain("--with");
+    expect(args).not.toContain("--skip");
+    const picked = selectSteps(STEPS, { only: DICTATION_STEPS }).map((x: { id: string }) => x.id);
+    expect(picked).toEqual(DICTATION_STEPS);
+  });
+
+  it("keeps the default day within its 3 hours: the desktop step is optional, and the cloud asks for it", () => {
+    expect(step("asr-whisper-cpp")).toMatchObject({ optional: true });
+    expect(selectSteps(STEPS).some((x: { id: string }) => x.id === "asr-whisper-cpp")).toBe(false);
+    expect(declaredMinutes(selectSteps(STEPS))).toBeLessThanOrEqual(180);
+    expect(CLOUD_OPTIONAL).toContain("asr-whisper-cpp");
+    expect(dayArgs({ runId: "r", url: "u", out: "o", signKey: "k" })).toContain(CLOUD_OPTIONAL.join(","));
+  });
+
+  it("turns the report into what the app reads: held-out first, FLEURS else, nothing for a path with no number", () => {
+    const m = measuredWerFrom(report, { runId: "cloud-x", commit: "0123456789abcdef" });
+    expect(m).toEqual({
+      [APP_ENGINE.zipformer]: { wer: 0.2512, split: "asr-he held-out", source: "models:cloud cloud-x @ 012345678" },
+      [APP_ENGINE["whisper-web"]]: { wer: 0.131, split: "FLEURS-he validation", source: "models:cloud cloud-x @ 012345678" },
+      [APP_ENGINE["whisper-cpp"]]: { wer: 0.094, split: "asr-he held-out", source: "models:cloud cloud-x @ 012345678" },
+    });
+    expect(Object.keys(m).sort()).toEqual(["whisper-cpp-he", "whisper-turbo-he", "zipformer-he"]);
+    // A wiring run (fake Ollama) never becomes a number the app trusts.
+    expect(measuredWerFrom({ ...report, kind: "wiring" }, { runId: "w", commit: "c" })).toEqual({});
+    const none = { kind: "model", steps: [{ id: "asr-web", status: "blocked" }] };
+    expect(measuredWerFrom(none, { runId: "n", commit: "c" })).toEqual({});
+  });
+
+  it("refuses to be narrowed or to run without the held-out set", () => {
+    const run = (extra: string[]) => spawnSync(process.execPath, ["scripts/models-cloud.mjs", "dictation", ...extra], { encoding: "utf8", env: { ...process.env, LUMEN_CLOUD_DIR: tmp(), KAGGLE_USERNAME: "", KAGGLE_CONFIG_DIR: tmp() } });
+    expect(run(["--only", "asr-web"]).stderr).toContain("dictation picks its own steps");
+    expect(run(["--no-heldout"]).stderr).toContain("needs the held-out asr-he set");
+    // With no Kaggle account it stops at the owner step, before anything is uploaded.
+    expect(run([]).stderr).toContain("No Kaggle account");
+  });
+});
+
