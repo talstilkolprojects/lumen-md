@@ -27,7 +27,7 @@
  * `.lumen-repair/<time>/<its path>`.
  */
 
-import { isTempName, parseLeftover, recoverDir, type AtomicFs } from "./atomic";
+import { isTempName, leftoversOf, parseLeftover, recoverDir, type AtomicFs, type SaveLeftover } from "./atomic";
 import { VaultNotFoundError, type VaultBackend } from "./types";
 
 export const INTEGRITY_KINDS = [
@@ -79,6 +79,12 @@ export interface CheckOptions {
   parseYaml?: (text: string) => unknown;
   /** Folders not to look into, by name (default: .git, .lumen-repair, .trash, node_modules). */
   skipFolders?: ReadonlySet<string>;
+  /**
+   * Trust the last check's result for a file whose size and mtime have not
+   * changed (and that did not change in the seconds before that check).
+   * Default true; false reads every file.
+   */
+  reuse?: boolean;
 }
 
 export const BACKUP_FOLDER = ".lumen-repair";
@@ -160,15 +166,54 @@ async function bytesOf(backend: VaultBackend, path: string): Promise<Uint8Array>
   return new Uint8Array(await (await backend.read(path)).arrayBuffer());
 }
 
+/** What the check found in one file, kept for the next check while the file's size and mtime stay the same. */
+interface FileResult {
+  size: number;
+  mtime: number;
+  findings: IntegrityFinding[];
+  /** A note's text, for the link check. */
+  text?: string;
+}
+
+/** Results of the last check per backend (path → result); a file whose size and mtime did not change is not read again. */
+const lastResults = new WeakMap<VaultBackend, Map<string, FileResult>>();
+/** Note text kept for the next check, per backend (UTF-16 code units). Above it notes are read again. */
+const KEEP_TEXT = 16 * 1024 * 1024;
+/**
+ * A file changed less than this long before the check started may change
+ * again within the same mtime tick (FAT and some phone folders keep 2 s), so
+ * it is read every time (git's "racily clean" rule).
+ */
+const MTIME_SLACK_MS = 3000;
+/**
+ * Reads in flight at once. The desktop and phone backends answer each read
+ * over an IPC bridge, so several overlap. The browser backends read a Blob,
+ * and Chromium serialises Blob reads: 8 at once took 1.7× as long as one at
+ * a time for 10,000 notes (offline Chromium harness), so they read one by one.
+ */
+const readConcurrency = (backend: VaultBackend) => (backend.id === "desktop" || backend.id.startsWith("mobile") ? 4 : 1);
+
+/** Run `task` over `items`, at most `limit` at a time. */
+async function pool<T>(items: readonly T[], limit: number, task: (item: T) => Promise<void>): Promise<void> {
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) await task(items[next++]);
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+}
+
 /** Check the whole vault. */
 export async function checkVault(backend: VaultBackend, opts: CheckOptions = {}): Promise<IntegrityReport> {
   const started = Date.now();
   const skip = opts.skipFolders ?? SKIP;
   let parseYaml = opts.parseYaml;
   const yaml = async () => (parseYaml ??= ((await import("yaml")) as { parse: (s: string) => unknown }).parse);
-  const findings: IntegrityFinding[] = [];
-  const notes: Array<{ path: string; text: string }> = [];
-  let files = 0;
+  // A caller's own YAML parser may judge differently: its results are not kept.
+  const reuse = opts.reuse !== false && !opts.parseYaml;
+  const previous = reuse ? lastResults.get(backend) : undefined;
+  const results = new Map<string, FileResult>();
+  // In walk order: a finding of the listing itself, or a file to read and check.
+  const slots: Array<IntegrityFinding | { file: string; name: string; size: number; mtime: number }> = [];
 
   const walk = async (dir: string): Promise<void> => {
     const entries = await backend.list(dir);
@@ -186,76 +231,117 @@ export async function checkVault(backend: VaultBackend, opts: CheckOptions = {})
       const [first, ...rest] = [...group].sort();
       for (const other of rest) {
         const kind = other.normalize("NFC") === first.normalize("NFC") ? "normalization-collision" : "case-collision";
-        findings.push({ kind, path: inDir(dir, other), detail: inDir(dir, first) });
+        slots.push({ kind, path: inDir(dir, other), detail: inDir(dir, first) });
       }
     }
+
+    // Leftovers of interrupted saves; a short-named one's note is in its journal.
+    const fileNames = entries.filter((e) => e.kind === "file").map((e) => e.name);
+    const leftovers: Map<string, SaveLeftover> = fileNames.some((n) => parseLeftover(n))
+      ? await leftoversOf(fileNames, (n) => bytesOf(backend, inDir(dir, n)))
+      : new Map();
+    // Notes whose save stopped between its steps: missing, with an old version there.
+    const interrupted = new Set<string>();
+    for (const l of leftovers.values()) if (l.kind === "old" && l.target !== null && !names.has(l.target)) interrupted.add(l.target);
 
     for (const e of entries) {
       if (e.kind === "directory") {
         if (!skip.has(e.name)) await walk(e.path);
         continue;
       }
-      const leftover = parseLeftover(e.name);
-      if (leftover?.kind === "old" && !names.has(leftover.target)) {
-        findings.push({ kind: "interrupted-write", path: inDir(dir, leftover.target), detail: e.path });
+      const leftover = leftovers.get(e.name);
+      if (leftover?.target != null && interrupted.has(leftover.target)) {
+        // The old version stands for the interrupted save; its temporary file and journal are part of it.
+        if (leftover.kind === "old") slots.push({ kind: "interrupted-write", path: inDir(dir, leftover.target), detail: e.path });
         continue;
       }
-      if (leftover?.kind === "tmp" && !names.has(leftover.target) && entries.some((x) => parseLeftover(x.name)?.kind === "old" && parseLeftover(x.name)?.target === leftover.target)) {
-        continue; // part of the interrupted save above
-      }
       if (isTempName(e.name)) {
-        findings.push({ kind: "orphan-temp", path: e.path });
+        slots.push({ kind: "orphan-temp", path: e.path });
         continue;
       }
       if (!TEXT.test(e.name)) continue;
-      files++;
-      let bytes: Uint8Array;
-      try {
-        bytes = await bytesOf(backend, e.path);
-      } catch (err) {
-        if (err instanceof VaultNotFoundError) continue; // removed meanwhile
-        throw err;
-      }
-      if (!bytes.length) {
-        findings.push({ kind: "empty-file", path: e.path });
-        continue;
-      }
-      if (isUtf16(bytes)) {
-        findings.push({ kind: "utf16", path: e.path });
-        continue;
-      }
-      const status = utf8Status(bytes);
-      if (status !== "ok") {
-        findings.push({ kind: status === "truncated" ? "truncated-utf8" : "invalid-utf8", path: e.path });
-        continue;
-      }
-      if (bytes.includes(0)) {
-        findings.push({ kind: "nul-bytes", path: e.path, detail: String(bytes.reduce((n, x) => n + (x === 0 ? 1 : 0), 0)) });
-        continue;
-      }
-      const text = new TextDecoder().decode(bytes);
-      if (JSON_DATA.test(e.name)) {
-        try {
-          JSON.parse(text);
-        } catch (err) {
-          findings.push({ kind: "bad-data", path: e.path, detail: (err as Error).message.slice(0, 120) });
-        }
-      } else if (YAML_DATA.test(e.name)) {
-        try {
-          (await yaml())(text);
-        } catch (err) {
-          findings.push({ kind: "bad-data", path: e.path, detail: (err instanceof Error ? err.message : String(err)).split("\n")[0].slice(0, 120) });
-        }
-      } else if (NOTE.test(e.name)) {
-        notes.push({ path: e.path, text });
-        if (text.startsWith("---")) {
-          const problem = frontmatterProblem(text, await yaml());
-          if (problem) findings.push({ kind: "bad-frontmatter", path: e.path, detail: problem });
-        }
-      }
+      slots.push({ file: e.path, name: e.name, size: e.size ?? -1, mtime: e.mtime ?? 0 });
     }
   };
   await walk("");
+
+  /** One file's findings, from its bytes. */
+  const checkBytes = async (name: string, path: string, bytes: Uint8Array): Promise<Omit<FileResult, "size" | "mtime">> => {
+    if (!bytes.length) return { findings: [{ kind: "empty-file", path }] };
+    if (isUtf16(bytes)) return { findings: [{ kind: "utf16", path }] };
+    const status = utf8Status(bytes);
+    if (status !== "ok") return { findings: [{ kind: status === "truncated" ? "truncated-utf8" : "invalid-utf8", path }] };
+    if (bytes.includes(0)) return { findings: [{ kind: "nul-bytes", path, detail: String(bytes.reduce((n, x) => n + (x === 0 ? 1 : 0), 0)) }] };
+    const text = new TextDecoder().decode(bytes);
+    if (JSON_DATA.test(name)) {
+      try {
+        JSON.parse(text);
+      } catch (err) {
+        return { findings: [{ kind: "bad-data", path, detail: (err as Error).message.slice(0, 120) }] };
+      }
+    } else if (YAML_DATA.test(name)) {
+      try {
+        (await yaml())(text);
+      } catch (err) {
+        return { findings: [{ kind: "bad-data", path, detail: (err instanceof Error ? err.message : String(err)).split("\n")[0].slice(0, 120) }] };
+      }
+    } else if (NOTE.test(name)) {
+      const problem = text.startsWith("---") ? frontmatterProblem(text, await yaml()) : null;
+      return { findings: problem ? [{ kind: "bad-frontmatter", path, detail: problem }] : [], text };
+    }
+    return { findings: [] };
+  };
+
+  // Read the files, several at a time; one that did not change since the last check is not read again.
+  const toRead: Array<{ file: string; name: string; size: number; mtime: number }> = [];
+  for (const slot of slots) {
+    if (!("file" in slot)) continue;
+    const before = previous?.get(slot.file);
+    if (before && slot.mtime > 0 && before.size === slot.size && before.mtime === slot.mtime && slot.mtime < started - MTIME_SLACK_MS) results.set(slot.file, before);
+    else toRead.push(slot);
+  }
+  await pool(toRead, readConcurrency(backend), async (slot) => {
+    let bytes: Uint8Array;
+    try {
+      bytes = await bytesOf(backend, slot.file);
+    } catch (err) {
+      if (err instanceof VaultNotFoundError) return; // removed meanwhile
+      throw err;
+    }
+    // The listing's size and mtime describe these bytes only when the size still matches.
+    const mtime = bytes.byteLength === slot.size ? slot.mtime : 0;
+    results.set(slot.file, { size: bytes.byteLength, mtime, ...(await checkBytes(slot.name, slot.file, bytes)) });
+  });
+
+  const findings: IntegrityFinding[] = [];
+  const notes: Array<{ path: string; text: string }> = [];
+  let files = 0;
+  for (const slot of slots) {
+    if (!("file" in slot)) {
+      findings.push(slot);
+      continue;
+    }
+    const r = results.get(slot.file);
+    if (!r) continue;
+    files++;
+    findings.push(...r.findings);
+    if (r.text !== undefined) notes.push({ path: slot.file, text: r.text });
+  }
+
+  if (reuse) {
+    // Keep what the next check can trust: files with a known mtime, notes only while their text fits.
+    const keep = new Map<string, FileResult>();
+    let kept = 0;
+    for (const [path, r] of results) {
+      if (r.mtime <= 0) continue;
+      if (r.text !== undefined) {
+        if (kept + r.text.length > KEEP_TEXT) continue;
+        kept += r.text.length;
+      }
+      keep.set(path, r);
+    }
+    lastResults.set(backend, keep);
+  }
 
   if (notes.length) {
     const { runVaultDoctor } = await import("../../lint/vaultDoctor");
@@ -299,6 +385,7 @@ function backendFs(backend: VaultBackend): AtomicFs {
     size: async (p) => (await backend.stat(p))?.size ?? null,
     rename: (a, b) => backend.rename(a, b),
     remove: (p) => backend.remove(p),
+    readFile: (p) => bytesOf(backend, p),
   };
 }
 

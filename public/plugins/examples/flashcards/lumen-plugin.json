@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "id": "lumen.flashcards",
+  "name": "Flashcards",
+  "version": "1.0.0",
+  "description": "Lines like “question :: answer” become flashcards. Review the ones that are due in a side panel; grading schedules the next review (SM-2). The note is never changed.",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    {
+      "id": "commands",
+      "reason": "Adds the “Review flashcards” command"
+    },
+    {
+      "id": "document:read",
+      "reason": "Reads the cards of the open note"
+    },
+    {
+      "id": "panel",
+      "reason": "Shows one card at a time with the grade buttons"
+    },
+    {
+      "id": "storage",
+      "reason": "Keeps each card’s review schedule on this device"
+    }
+  ]
+}

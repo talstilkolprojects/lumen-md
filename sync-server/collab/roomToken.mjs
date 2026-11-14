@@ -11,7 +11,10 @@
  * roles) — and, when it was bought with a share link, that link's id, so
  * the server can drop the connection the moment the link is revoked.
  */
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+
+// The new-room limits' pure part (review 2 RR2-469-1), for the Worker through this one module.
+export { addressParts, admit, charge, cleanIds, cleanOwner, dayBuckets, dayOf, evictionOrder, evictionPlan, needed, ownerOf, prefixOwnerOf, quotaBuckets, quotaIds, quotaLimits, storeFull } from "./roomQuota.mjs";
 
 export const DEFAULT_TOKEN_TTL_S = 10 * 60;
 
@@ -32,12 +35,14 @@ export const ROLES = ["view", "comment", "edit"];
 /**
  * Issue a token for `room`, valid for `ttlS` seconds from `nowMs` (never
  * past `notAfterMs`, a share link's expiry), for `role`, bought with `share`.
+ * With `verifier` (review 2, 12.11) the token also names the room secret it
+ * was issued for: the hash of the client's room proof (`proofVerifier`).
  */
-export function issueRoomToken(key, room, { ttlS = DEFAULT_TOKEN_TTL_S, nowMs = Date.now(), role = "edit", share = null, notAfterMs = null } = {}) {
+export function issueRoomToken(key, room, { ttlS = DEFAULT_TOKEN_TTL_S, nowMs = Date.now(), role = "edit", share = null, notAfterMs = null, verifier } = {}) {
   if (!ROLES.includes(role)) throw new Error(`unknown role ${role}`);
   let exp = Math.floor(nowMs / 1000) + ttlS;
   if (notAfterMs !== null) exp = Math.min(exp, Math.floor(notAfterMs / 1000));
-  const claims = { r: room, e: exp, ...(role !== "edit" ? { o: role } : {}), ...(share ? { s: share } : {}) };
+  const claims = { r: room, e: exp, ...(role !== "edit" ? { o: role } : {}), ...(share ? { s: share } : {}), ...(verifier ? { v: verifier } : {}) };
   const payload = b64url(JSON.stringify(claims));
   return { token: `${payload}.${b64url(mac(key, payload))}`, expiresAt: exp * 1000, role };
 }
@@ -91,4 +96,96 @@ export function accessKeyOk(given, expected) {
   const a = Buffer.from(String(given ?? ""));
   const b = Buffer.from(expected);
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/**
+ * The room proof (review 2, 12.11): the app derives it from the room's
+ * password in the share link, HMAC-SHA256(PBKDF2-SHA256(password,
+ * "lumen.collab.proof.v1|<room>", 200,000), "lumen-collab room v1|<room>"),
+ * as 43 base64url characters (src/collab/roomProof.ts). The server keeps
+ * only its SHA-256, the verifier, so it learns nothing it could open the
+ * room with, and guessing a password from it costs the same PBKDF2 as
+ * guessing it from the room's ciphertext.
+ */
+export const ROOM_PROOF = /^[A-Za-z0-9_-]{43}$/;
+
+/** The verifier of a room proof (hex SHA-256), or null for a malformed one. */
+export function proofVerifier(proof) {
+  if (typeof proof !== "string" || !ROOM_PROOF.test(proof)) return null;
+  return createHash("sha256").update(proof).digest("hex");
+}
+
+/** The verifier a (signature-checked) token was issued for, or null when it names none. */
+export function tokenVerifier(token) {
+  try {
+    const claims = JSON.parse(Buffer.from(String(token).split(".")[0], "base64url").toString("utf8"));
+    return typeof claims?.v === "string" ? claims.v : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The most proof-of-work bits the app solves (src/collab/roomProof.ts MAX_ROOM_POW_BITS). */
+export const MAX_ROOM_POW_BITS = 24;
+
+/** Does `nonce` prove `bits` of work for `room` under `verifier`? SHA-256("lumen-collab pow v1|<room>|<verifier>|<nonce>"). */
+export function roomPowOk(room, verifier, nonce, bits) {
+  if (typeof nonce !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(nonce)) return false;
+  const d = createHash("sha256").update(`lumen-collab pow v1|${room}|${verifier}|${nonce}`).digest();
+  let n = 0;
+  for (const b of d) {
+    if (b === 0) {
+      n += 8;
+      continue;
+    }
+    n += Math.clz32(b) - 24;
+    break;
+  }
+  return n >= bits;
+}
+
+/**
+ * Review 4 (RR4-469-1): a room's name can carry a commitment to its proof,
+ * `<base>_k<32 hex>`, where the 32 hex are the first 128 bits of
+ * SHA-256("lumen-collab commit v1|<base>|<verifier>"). The app derives it
+ * from the room's password (src/collab/roomProof.ts `committedRoomName`), so
+ * the first binding is not "whoever connects first": only a proof whose
+ * verifier matches the name gets a token for it, or is let into it.
+ */
+export const COMMITTED_ROOM = /^([\w-]{1,128})_k([0-9a-f]{32})$/;
+/** The names the app made before commitments: `lumen-` + 128 random bits (src/collab/yjs.ts makeRoomName). */
+export const APP_ROOM = /^lumen-[0-9a-f]{32}$/;
+
+/** The commitment (32 hex) to `verifier` for the room name `base`. */
+export function roomCommitment(base, verifier) {
+  return createHash("sha256").update(`lumen-collab commit v1|${base}|${verifier}`).digest("hex").slice(0, 32);
+}
+
+/** `<base>_k<commit>` → {base, commit}, or null for a name without a commitment. */
+export function splitCommittedRoom(name) {
+  const m = typeof name === "string" ? COMMITTED_ROOM.exec(name) : null;
+  return m ? { base: m[1], commit: m[2] } : null;
+}
+
+/** Does `verifier` match the commitment in the committed room name `name`? */
+export function commitmentOk(name, verifier) {
+  const c = splitCommittedRoom(name);
+  if (!c || typeof verifier !== "string") return false;
+  const a = Buffer.from(roomCommitment(c.base, verifier));
+  const b = Buffer.from(c.commit);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/**
+ * How a room binds its proof:
+ *   "committed"  the name commits to the proof: only the matching one is let in;
+ *   "app"        an app-made name from before commitments (128 random bits, and the
+ *                creator connects first): the first proof binds it;
+ *   "open"       any other name (typed, known in advance): it binds nothing, so whoever
+ *                connects first can't lock its owners out (the app never uses such a
+ *                name on the public server: it commits it first).
+ */
+export function roomKind(name) {
+  if (splitCommittedRoom(name)) return "committed";
+  return APP_ROOM.test(String(name)) ? "app" : "open";
 }

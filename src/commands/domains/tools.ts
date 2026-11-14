@@ -99,7 +99,7 @@ export function buildHebrewDictionaryCommands({ getEditorView }: CommandContext)
   ];
 }
 
-/** Plan W1.29: the moderator's usability-session recorder (local only, consent first). */
+/** Plan W1.29: the moderator's usability-session recorder; W4.25: the self-guided session (local only, consent first). */
 export function buildUsabilityStudyCommands(): Command[] {
   return [
     {
@@ -109,6 +109,48 @@ export function buildUsabilityStudyCommands(): Command[] {
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
       action: () => window.dispatchEvent(new CustomEvent("lumen-open-usability")),
+    },
+    // Plan W4.25: the participant runs the same tasks alone (opt-in, consent first, local only).
+    {
+      id: "research.usabilitySelf",
+      label: t("cmd.research.usabilitySelf"),
+      hint: t("cmd.research.usabilitySelf.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: () => window.dispatchEvent(new CustomEvent("lumen-open-usability-self")),
+    },
+  ];
+}
+
+/**
+ * Arabic (plan W5.17): download or remove the Arabic word list, hide or show
+ * tashkeel in the editor, remove it from the selection or the note. The
+ * bodies (./arabicActions.ts), the modules and their messages load on use.
+ */
+export function buildArabicCommands({ getEditorView }: CommandContext): Command[] {
+  const view = () => getEditorView?.() ?? null;
+  const actions = () => import("./arabicActions");
+  return [
+    {
+      id: "spell.arabicDictionary",
+      label: t("cmd.spell.arabicDictionary"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: async () => (await actions()).toggleArabicDictionary(),
+    },
+    {
+      id: "arabic.toggleTashkeel",
+      label: t("cmd.arabic.toggleTashkeel"),
+      icon: cmdIcons.Eye,
+      group: t("group.view"),
+      action: async () => (await actions()).toggleTashkeelView(view()),
+    },
+    {
+      id: "arabic.removeTashkeel",
+      label: t("cmd.arabic.removeTashkeel"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: async () => (await actions()).removeTashkeel(view()),
     },
   ];
 }

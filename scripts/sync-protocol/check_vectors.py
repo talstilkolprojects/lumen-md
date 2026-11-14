@@ -72,46 +72,119 @@ def unseal(key, vault_id, kind, name, sealed):
     return pt[4:4 + n]
 
 
+KEYRING_PROTOCOL = 2
+
+
 def keyring_open(key, field, vault_id, epoch, role):
-    aad = f"lumen-e2ee-keyring/1/{vault_id}/{epoch}/{role}".encode()
+    aad = f"lumen-e2ee-keyring/{KEYRING_PROTOCOL}/{vault_id}/{epoch}/{role}".encode()
     return AESGCM(key).decrypt(unb64u(field["n"]), unb64u(field["c"]), aad)
+
+
+def keyring_digest(ring):
+    """Spec §5: SHA-256 over the checkable fields, never the plaintext wraps."""
+    return hashlib.sha256(jdump([ring["format"], ring["protocol"], ring["vaultId"], ring["epoch"], ring["passphrase"]["n"], ring["passphrase"]["c"], ring["sealed"]["n"], ring["sealed"]["c"], ring.get("header"), ring.get("prev")]).encode()).hexdigest()
+
+
+def ordered_kdf(kdf):
+    order = ["alg", "iterations", "salt"] if kdf["alg"] == "pbkdf2-sha256" else ["alg", "memoryKiB", "iterations", "parallelism", "salt"]
+    return {k: kdf[k] for k in order}
+
+
+def header_master(header, passphrase):
+    """The master key, or None when the header's MAC doesn't verify with this passphrase (spec §2)."""
+    kdf = ordered_kdf(header["kdf"])
+    master = master_key(passphrase, kdf)
+    mac_in = jdump([header["format"], header["protocol"], header["vaultId"], kdf]).encode()
+    return master if hmac.compare_digest(hmac256(subkey(master, header["vaultId"], "header"), mac_in), unb64u(header["mac"])) else None
+
+
+def open_contents(ring, secret):
+    """Spec §5: protocol 2 only; the sealed part with its device list and chain."""
+    if ring["protocol"] != KEYRING_PROTOCOL:
+        raise ValueError("a pre-release keyring (protocol 1): refused")
+    vid, epoch = ring["vaultId"], ring["epoch"]
+    c = json.loads(keyring_open(subkey(secret, vid, "keyring"), ring["sealed"], vid, epoch, "sealed"))
+    if not isinstance(c.get("devices"), dict):
+        raise ValueError("no sealed device list: refused")
+    if not c["manifest"].startswith(f"manifest/{epoch}/"):
+        raise ValueError("bad manifest label")
+    chain = c["chain"]
+    if (c["parent"] is None) != (len(chain) == 0) or (chain and chain[-1][2] != c["parent"]):
+        raise ValueError("the chain doesn't end at the parent")
+    if c["rev"] > 0 and (chain[-1][0] != epoch or chain[-1][1] != c["rev"] - 1):
+        raise ValueError("a same-epoch revision whose parent isn't the revision before")
+    return c
+
+
+def open_manifest(key, vid, name, data):
+    """Spec §4: protocol 1, or 2 = frozen (with `frozen`), and this vault's id."""
+    m = json.loads(unseal(key, vid, "manifest", name, data))
+    if m.get("protocol") not in (1, 2) or (m.get("protocol") == 2) != ("frozen" in m):
+        raise ValueError("unsupported manifest protocol")
+    if m.get("vaultId") != vid:
+        raise ValueError("the manifest belongs to another vault")
+    return m
 
 
 # ── A whole vault ──────────────────────────────────────────────────────────
 
 def read_vault(objects, passphrase=None, device=None):
+    """Returns (epoch, files, secret, manifest) at the epoch this passphrase or device opens."""
     header = json.loads(objects["lumen-e2ee-vault"])
     vid = header["vaultId"]
-    kdf = header["kdf"]
-    order = ["alg", "iterations", "salt"] if kdf["alg"] == "pbkdf2-sha256" else ["alg", "memoryKiB", "iterations", "parallelism", "salt"]
-    kdf = {k: kdf[k] for k in order}
     ring = json.loads(objects["lumen-e2ee-keyring"]) if "lumen-e2ee-keyring" in objects else None
+    if ring is not None and ring["vaultId"] != vid:
+        raise ValueError("the keyring belongs to another vault")
+    contents = None
     if passphrase is not None:
-        master = master_key(passphrase, kdf)
-        mac_in = jdump([header["format"], header["protocol"], vid, kdf]).encode()
-        if not hmac.compare_digest(hmac256(subkey(master, vid, "header"), mac_in), unb64u(header["mac"])):
-            raise ValueError("header MAC: wrong passphrase or changed header")
-    if ring is None:
-        epoch, secret, older = 0, master, {}
+        master = header_master(header, passphrase)
+        if master is None:
+            # Spec §5, a passphrase change cut off: the keyring carries the new header.
+            if ring is None or "header" not in ring:
+                raise ValueError("header MAC: wrong passphrase or changed header")
+            pending = json.loads(unb64u(ring["header"]))
+            master = header_master(pending, passphrase)
+            if master is None or pending["vaultId"] != vid:
+                raise ValueError("header MAC: wrong passphrase or changed header")
+        if ring is None:
+            epoch, secret, older = 0, master, {}
+        else:
+            wrap_key = subkey(master, vid, "keyring-wrap")
+            try:
+                secret = keyring_open(wrap_key, ring["passphrase"], vid, ring["epoch"], "passphrase")
+            except Exception:
+                # The old passphrase while the change's header isn't written: `prev`, the epoch before.
+                if "header" not in ring or "prev" not in ring:
+                    raise ValueError("the keyring doesn't open with this passphrase")
+                prev = json.loads(unb64u(ring["prev"]))
+                if prev["vaultId"] != vid or prev["epoch"] != ring["epoch"] - 1:
+                    raise ValueError("prev is not the epoch before")
+                ring = prev
+                secret = keyring_open(wrap_key, ring["passphrase"], vid, ring["epoch"], "passphrase")
+            epoch = ring["epoch"]
+            contents = open_contents(ring, secret)
+            if "header" in ring and contents.get("header") != hashlib.sha256(unb64u(ring["header"])).hexdigest():
+                raise ValueError("the pending header doesn't match the sealed part")
+            if "prev" in ring and contents["parent"] != keyring_digest(json.loads(unb64u(ring["prev"]))):
+                raise ValueError("prev is not this keyring's parent")
     else:
         epoch = ring["epoch"]
-        if passphrase is not None:
-            secret = keyring_open(subkey(master, vid, "keyring-wrap"), ring["passphrase"], vid, epoch, "passphrase")
-        else:
-            wrap = ring["devices"][device["id"]]
-            secret = agepy.decrypt(unb64u(wrap["wrap"]), identity=device["identity"])
-        contents = json.loads(keyring_open(subkey(secret, vid, "keyring"), ring["sealed"], vid, epoch, "sealed"))
-        older = {int(k): unb64u(v) for k, v in contents["older"].items()}
-        # Spec §5: the enrolled devices are the sealed list; a device must be on it.
-        if device is not None and "devices" in contents and contents["devices"].get(device["id"]) != wrap["recipient"]:
+        wrap = ring["devices"][device["id"]]
+        secret = agepy.decrypt(unb64u(wrap["wrap"]), identity=device["identity"])
+        contents = open_contents(ring, secret)
+        # Spec §5: a device must be on the sealed list, with this recipient, and not revoked.
+        if contents["devices"].get(device["id"]) != wrap["recipient"] or any(r["device"] == device["id"] for r in contents["revoked"]):
             raise ValueError("the device is not on the sealed device list")
+    older = {int(k): unb64u(v) for k, v in contents["older"].items()} if contents else {}
+    if contents and older.get(epoch - 1) is None:
+        raise ValueError("the keyring lacks the epoch before")
     secrets = dict(older)
     secrets[epoch] = secret
     names = subkey(secrets[0], vid, "names")
-    # Spec §5: each re-keyed epoch names its own manifest object in the sealed part.
-    label = contents.get("manifest", "manifest") if ring is not None else "manifest"
+    # Spec §5: each re-keyed epoch names its own manifest object (a random label) in the sealed part.
+    label = contents["manifest"] if contents else "manifest"
     mname = object_name(names, label)
-    manifest = json.loads(unseal(subkey(secret, vid, "manifest"), vid, "manifest", mname, objects[mname]))
+    manifest = open_manifest(subkey(secret, vid, "manifest"), vid, mname, objects[mname])
     files = {}
     for path, e in manifest["files"].items():
         if e.get("deleted"):
@@ -121,7 +194,7 @@ def read_vault(objects, passphrase=None, device=None):
         if hashlib.sha256(data).hexdigest() != e["hash"]:
             raise ValueError(f"{path}: hash does not match the manifest")
         files[path] = data.decode()
-    return epoch, files, names
+    return epoch, files, secret, manifest, (keyring_digest(ring), contents["rev"]) if contents else None
 
 
 def main():
@@ -137,11 +210,17 @@ def main():
 
     for vault in v["vaults"]:
         objects = {n: base64.b64decode(d) for n, d in vault["objects"].items()}
-        epoch, files, _ = read_vault(objects, passphrase=vault["passphrase"])
+        epoch, files, _, manifest, _ = read_vault(objects, passphrase=vault["passphrase"])
         check(f"{vault['name']}: epoch {epoch} with the passphrase", epoch == vault["expect"]["epoch"])
         check(f"{vault['name']}: {len(files)} files identical", files == vault["expect"]["files"])
+        if vault.get("frozen"):
+            check(f"{vault['name']}: the manifest is frozen for the next epoch (protocol 2)", manifest["protocol"] == 2 and manifest["frozen"]["epoch"] == epoch + 1)
+        if "pending" in vault:
+            pend = vault["pending"]
+            e0, _, _, m0, _ = read_vault(objects, passphrase=pend["oldPassphrase"])
+            check(f"{vault['name']}: the old passphrase opens epoch {e0} through prev, never the new one", e0 == pend["oldEpoch"] and sorted(m0["files"]) == sorted(pend["oldFiles"]))
         if "device" in vault:
-            e2, f2, _ = read_vault(objects, device=vault["device"])
+            e2, f2, _, _, _ = read_vault(objects, device=vault["device"])
             check(f"{vault['name']}: the enrolled device opens it with its own key (age)", e2 == epoch and f2 == vault["expect"]["files"])
         try:
             read_vault(objects, passphrase=vault["passphrase"] + "x")
@@ -158,17 +237,56 @@ def main():
         pt = agepy.decrypt(data, identity=a.get("identity"), passphrase=a.get("passphrase"))
         check(f"age ({'scrypt' if 'passphrase' in a else 'X25519'}, {len(pt)} bytes)", base64.b64encode(pt).decode() == a["plaintext"])
 
-    pv = v["pairing"]
-    vault = v["vaults"][pv["vault"]]
-    objects = {n: base64.b64decode(d) for n, d in vault["objects"].items()}
-    header = json.loads(objects["lumen-e2ee-vault"])
-    epoch, _, _ = read_vault(objects, passphrase=vault["passphrase"])
-    kdf = header["kdf"]
-    order = ["alg", "iterations", "salt"] if kdf["alg"] == "pbkdf2-sha256" else ["alg", "memoryKiB", "iterations", "parallelism", "salt"]
-    master = master_key(vault["passphrase"], {k: kdf[k] for k in order})
-    raw = unb64u(pv["code"][len("lumen-pair:1:"):])
-    body = json.loads(raw[32:])
-    check("pairing code: HMAC verifies, body as stated", hmac.compare_digest(hmac256(subkey(master, header["vaultId"], "pairing"), raw[32:]), raw[:32]) and body["counter"] == pv["body"]["counter"] and body["digest"] == pv["body"]["digest"])
+    # Spec §6 (fifth review, F1): "<prefix><epoch>:" + b64u(HMAC(pairing_N, "lumen-pair/<kind>/<v>\0" ‖ body) ‖ body),
+    # the body says its kind and has exactly that kind's fields.
+    fields = {
+        "code": {"kind", "vaultId", "counter", "digest", "epoch", "ringRev", "ringDigest", "issuedAt", "nonce"},
+        "request": {"kind", "vaultId", "epoch", "ringRev", "ringDigest", "counter", "digest", "requestedAt", "nonce"},
+        "answer": {"kind", "vaultId", "request", "nonce", "counter", "digest", "epoch", "ringRev", "ringDigest", "answeredAt"},
+    }
+    versions = {"code": 3, "request": 2, "answer": 2}
+    prefixes = {"code": "lumen-pair:3:", "request": "lumen-pair-request:2:", "answer": "lumen-pair-answer:2:"}
+
+    def read_pairing(text, kind, epoch, key):
+        """The body of a pairing message of `kind`, or None when its MAC (with that kind's label) or shape is wrong."""
+        prefix = f"{prefixes[kind]}{epoch}:"
+        if not text.startswith(prefix):
+            return None
+        raw = unb64u(text[len(prefix):])
+        label = f"lumen-pair/{kind}/{versions[kind]}\0".encode()
+        if len(raw) < 33 or not hmac.compare_digest(hmac256(key, label + raw[32:]), raw[:32]):
+            return None
+        body = json.loads(raw[32:])
+        return body if body.get("kind") == kind and set(body) == fields[kind] else None
+
+    def vault_keys(index):
+        vault = v["vaults"][index]
+        objects = {n: base64.b64decode(d) for n, d in vault["objects"].items()}
+        vid = json.loads(objects["lumen-e2ee-vault"])["vaultId"]
+        epoch, _, secret, _, ring = read_vault(objects, passphrase=vault["passphrase"])
+        return vid, epoch, subkey(secret, vid, "pairing"), ring
+
+    def ring_ok(body, epoch, ring, want):
+        return body.get("epoch") == epoch and (ring is None or (body.get("ringDigest") == ring[0] and body.get("ringRev") == ring[1])) and body.get("ringDigest") == want["ring"]["digest"]
+
+    for pv in v["pairing"]:
+        vid, epoch, key, ring = vault_keys(pv["vault"])
+        body = read_pairing(pv["code"], "code", epoch, key) or {}
+        want = pv["body"]
+        check(f"pairing code at epoch {epoch}: HMAC with the code label under that epoch's key, body and keyring anchor as stated", body.get("vaultId") == vid and body.get("counter") == want["counter"] and body.get("digest") == want["digest"] and ring_ok(body, epoch, ring, want))
+
+    for pv in v.get("pairingTwoWay", []):
+        vid, epoch, key, ring = vault_keys(pv["vault"])
+        req = read_pairing(pv["request"], "request", epoch, key) or {}
+        rw = pv["requestBody"]
+        check(f"pairing request at epoch {epoch}: request label, nonce, manifest and keyring as stated", req.get("vaultId") == vid and req.get("nonce") == rw["nonce"] and req.get("counter") == (rw["manifest"] or {}).get("counter") and req.get("requestedAt") == rw["issuedAt"] and ring_ok(req, epoch, ring, rw))
+        ans = read_pairing(pv["answer"], "answer", epoch, key) or {}
+        want = pv["answerBody"]
+        sha = hashlib.sha256(pv["request"].strip().encode()).hexdigest()
+        check(f"pairing answer at epoch {epoch}: answer label, names the request's SHA-256 and nonce, anchors as stated", sha == rw["hash"] and ans.get("request") == sha and ans.get("nonce") == rw["nonce"] and ans.get("counter") == want["counter"] and ans.get("digest") == want["digest"] and ring_ok(ans, epoch, ring, want))
+        # Reflection (F1): the request's bytes under the answer's or the code's prefix don't verify.
+        tail = pv["request"][len(f"{prefixes['request']}{epoch}:"):]
+        check(f"pairing request at epoch {epoch} relabelled as an answer or a code is refused", read_pairing(f"{prefixes['answer']}{epoch}:{tail}", "answer", epoch, key) is None and read_pairing(f"{prefixes['code']}{epoch}:{tail}", "code", epoch, key) is None)
 
     print(f"\n{ok}/{total} vectors decoded identically")
     sys.exit(0 if ok == total else 1)

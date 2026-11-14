@@ -56,17 +56,18 @@ export interface Manifest {
    */
   history: Array<[number, string]>;
   /**
-   * Set by a re-key (review 12.11): this is the last manifest of its epoch,
-   * re-sealed under `epoch` once the keyring for it is written. Nobody
-   * writes over a frozen manifest unless it is older than `FREEZE_TTL_MS`
-   * and the keyring still has not moved (an abandoned re-key).
+   * Set by a re-key (review 12.11): this is the last manifest of its epoch;
+   * its successor is the first manifest of `epoch`. Nobody writes over a
+   * frozen manifest until the keyring lists it as called off (re-review
+   * RR-4: a device that waited `FREEZE_TTL_MS` on its own clock does that).
+   * `at` is the re-keyer's clock, for information only.
    */
   frozen?: { epoch: number; at: number; by: string };
 }
 
 /** A frozen manifest's protocol: builds before the keyring refuse it instead of writing over it. */
 export const FROZEN_PROTOCOL = 2;
-/** How long a re-key may hold the manifest frozen before another device may write over it. */
+/** How long a device waits on a frozen manifest (its own clock) before it calls the re-key off. */
 export const FREEZE_TTL_MS = 10 * 60_000;
 
 /** How many predecessors a manifest lists (about 7 KB of plaintext at most). */
@@ -74,22 +75,24 @@ export const HISTORY_LENGTH = 100;
 
 /**
  * The manifest object's name: the same for every version, so its name leaks
- * nothing. Each keyring epoch since review 12.11 has its own
- * ("manifest/<epoch>", named in the keyring's sealed part), so a re-key
- * commits with the keyring write alone.
+ * nothing. Each keyring epoch has its own, under a random label
+ * ("manifest/<epoch>/<16 random bytes>", named in the keyring's sealed
+ * part, re-review 12.11 RR-3): nobody without that epoch's secret can name
+ * the next manifest in advance, and a re-key writes it before the keyring,
+ * so the keyring write is the only commit.
  */
 export function manifestName(keys: VaultKeys): Promise<string> {
   return opaqueName(keys, keys.ring?.manifest ?? "manifest");
 }
 
-/** The manifest name for a `label` from a keyring ("manifest" or "manifest/<epoch>"). */
+/** The manifest name for a `label` from a keyring ("manifest" at epoch 0, "manifest/<epoch>/<random>" after). */
 export function manifestNameFor(keys: VaultKeys, label: string): Promise<string> {
   if (!isManifestLabel(label)) throw new DecryptError("Bad manifest label");
   return opaqueName(keys, label);
 }
 
 export function isManifestLabel(label: unknown): label is string {
-  return label === "manifest" || (typeof label === "string" && /^manifest\/[1-9][0-9]{0,8}$/.test(label));
+  return label === "manifest" || (typeof label === "string" && /^manifest\/[1-9][0-9]{0,8}(\/[A-Za-z0-9_-]{22})?$/.test(label));
 }
 
 /** The object name of `path` at revision `rev`: HMAC of the path (and revision), never the path itself. */

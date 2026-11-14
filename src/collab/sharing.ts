@@ -70,7 +70,9 @@ export function tokenRequest<T>(serverUrl: string, payload: Record<string, unkno
       }
       const m = msg as { error?: unknown };
       if (m && typeof m === "object" && typeof m.error !== "string") return finish(() => resolve(msg as T));
-      finish(() => reject(new RoomTokenError(typeof m?.error === "string" ? m.error : "bad-response")));
+      // With {error: "pow", bits} (review 2, #469) the caller solves the work and asks again.
+      const bits = (msg as { bits?: unknown } | null)?.bits;
+      finish(() => reject(new RoomTokenError(typeof m?.error === "string" ? m.error : "bad-response", typeof bits === "number" ? bits : undefined)));
     };
     ws.onerror = () => finish(() => reject(new RoomTokenError("unreachable")));
     ws.onclose = () => finish(() => reject(new RoomTokenError("closed")));

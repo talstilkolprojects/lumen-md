@@ -26,7 +26,7 @@ import { remoteImageHost, srcSetUrls } from "../lib/remoteImages";
 const DROP_ELEMENTS = new Set([
   "script", "style", "noscript", "template", "object", "embed", "applet",
   "form", "button", "select", "textarea", "option",
-  "meta", "base", "link", "frame", "frameset", "portal", "param",
+  "meta", "base", "link", "frame", "frameset", "portal", "fencedframe", "param",
 ]);
 
 const DROP_PROPS = new Set(["srcDoc", "formAction", "formMethod", "formTarget", "ping", "httpEquiv", "is"]);

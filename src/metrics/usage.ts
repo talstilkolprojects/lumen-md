@@ -78,6 +78,15 @@ export function dayKey(at: Date = new Date()): string {
 
 const emptyStore = (): UsageStore => ({ v: 1, firstDay: null, days: {} });
 
+/**
+ * A day's command counts: an object without a prototype, so an id named
+ * after an Object.prototype member ("constructor", "toString") is a counter
+ * like any other, not the inherited function (blind tests, F-3).
+ */
+const countMap = (from?: Record<string, number>): Record<string, number> => Object.assign(Object.create(null) as Record<string, number>, from);
+/** The count stored under `id`, from the object's own properties only. */
+const ownCount = (m: Record<string, number>, id: string): number => (Object.prototype.hasOwnProperty.call(m, id) ? m[id] : 0);
+
 /** Read the counts; a missing, unreadable or foreign value is an empty store. */
 export function loadUsage(storage: Pick<Storage, "getItem"> | null = safeStorage()): UsageStore {
   try {
@@ -88,7 +97,7 @@ export function loadUsage(storage: Pick<Storage, "getItem"> | null = safeStorage
     const days: Record<string, UsageDay> = {};
     for (const [d, x] of Object.entries(v.days)) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !x || typeof x !== "object") continue;
-      const features: Record<string, number> = {};
+      const features = countMap();
       for (const [id, n] of Object.entries(x.features ?? {})) if (FEATURE_ID.test(id) && Number.isFinite(n) && n > 0) features[id] = Math.floor(n);
       days[d] = { opens: count(x.opens), errors: count(x.errors), features };
     }
@@ -149,11 +158,11 @@ export function bump(store: UsageStore, event: Bump, today: string): UsageStore 
   if (event.kind === "feature") event = { kind: "feature", id: featureId(event.id) };
   if (event.kind === "feature" && !FEATURE_ID.test(event.id)) return store;
   const next = prune({ ...store, firstDay: store.firstDay ?? today, days: { ...store.days } }, today);
-  const day = { ...(next.days[today] ?? { opens: 0, errors: 0, features: {} }) };
-  day.features = { ...day.features };
+  const day = { ...(next.days[today] ?? { opens: 0, errors: 0, features: countMap() }) };
+  day.features = countMap(day.features);
   if (event.kind === "open") day.opens++;
   else if (event.kind === "error") day.errors++;
-  else day.features[event.id] = (day.features[event.id] ?? 0) + 1;
+  else day.features[event.id] = ownCount(day.features, event.id) + 1;
   next.days[today] = day;
   return next;
 }

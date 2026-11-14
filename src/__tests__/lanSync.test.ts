@@ -50,6 +50,9 @@ async function pair(opts: { latencyMs?: () => number } = {}) {
   const hostSync = new E2eeSync({ provider: host.provider, keys, local: hostFiles, store: memoryStateStore(), resolver: keepBothResolver });
   await hostSync.markCreated(anchor);
   const peerSync = new E2eeSync({ provider: remote, keys: peerKeys, local: peerFiles, store: memoryStateStore(), resolver: keepBothResolver });
+  // The peer is paired with the host (third review N6: an unverified device doesn't upload).
+  await peerSync.sync();
+  await peerSync.pair(await hostSync.pairingCode());
   return { bucket, host, remote, hostFiles, peerFiles, hostSync, peerSync, frames, lockHost: () => (hostKeys = null) };
 }
 

@@ -41,6 +41,8 @@ export const GATES = {
   licenses: ["run", "-s", "licenses"],
   // W4.4: token shapes and VITE_* values not on the allowlist in dist/.
   secrets: ["run", "-s", "secrets:dist"],
+  // The committed mutation scores of the critical modules, against their current source (W4.17).
+  mutation: ["run", "-s", "mutation:check"],
 };
 
 /**
@@ -80,7 +82,7 @@ export function vitestSummary(report, { maxFiles = 80 } = {}) {
 }
 
 export const PRODUCTION_GATES = ["build", "budget"];
-export const PREVIEW_GATES = ["build", "budget", "secrets", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "licenses"];
+export const PREVIEW_GATES = ["build", "budget", "secrets", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "licenses", "mutation"];
 /**
  * `--e2e-only`: build and the e2e gate, nothing else. For a probe branch
  * that runs Playwright specs (LUMEN_E2E_SPECS, a longer LUMEN_E2E_MINUTES)

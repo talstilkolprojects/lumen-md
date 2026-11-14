@@ -1,0 +1,34 @@
+# Category "Ideas · רעיונות" (default slug ideas). See docs/dev/github-discussions.md.
+title: "[רעיון] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        רעיון ל-Lumen? ספרו מה הבעיה לפני הפתרון — כך קל יותר למצוא את הדרך הנכונה.
+        An idea for Lumen? Describe the problem before the solution.
+  - type: textarea
+    id: problem
+    attributes:
+      label: מה הבעיה? · The problem
+      description: מתי זה קורה לכם, ולמי עוד זה קורה. · When it happens to you, and to whom else.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: מה היה עוזר? · What would help
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: תחום · Area
+      options:
+        - עורך וכתיבה · Editor
+        - עברית ומימין לשמאל · Hebrew and RTL
+        - בינה מקומית · Local AI
+        - סנכרון וגיבוי · Sync and backup
+        - תוספים · Plugins
+        - אחר · Other
+    validations:
+      required: false

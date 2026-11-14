@@ -109,6 +109,35 @@ describe("pr:check", () => {
     }
   });
 
+  it("plan W4.28: a sensitive path fails with --pr until the human-reviewed label is newer than the last commit", () => {
+    const r0 = repo();
+    try {
+      mkdirSync(join(r0.dir, ".github"));
+      writeFileSync(join(r0.dir, ".github/CODEOWNERS"), "/src/sync/e2ee/ @talstilkol\n");
+      r0.git("add", "-A");
+      r0.git("commit", "-q", "-m", "chore: owners [skip ci]");
+      mkdirSync(join(r0.dir, "src/sync/e2ee"), { recursive: true });
+      writeFileSync(join(r0.dir, "src/sync/e2ee/kdf.ts"), "export const iterations = 600000;\n");
+      r0.git("add", "-A");
+      r0.git("commit", "-q", "-m", "feat: kdf [skip ci]");
+      const head = r0.git("rev-parse", "HEAD").trim();
+      const pr = (labels: string[], labelledAt: string, sha = head) => () => ({
+        number: 9, labels, author: "a", headSha: sha, headDate: "2026-11-12T09:00:00Z", reviews: [],
+        events: labels.length ? [{ event: "labeled", label: "human-reviewed", created_at: labelledAt, actor: "a" }] : [],
+      });
+      const status = (o: Record<string, unknown>) => runChecks({ ...parseArgs(["--cwd", r0.dir, "--base", "main~1", "--no-size", ...(o.pr ? ["--pr", "9"] : [])]), ...o }).sections.find((s: { title: string }) => s.title === "Human review of sensitive paths");
+      expect(status({}).status).toBe("warn");
+      expect(status({ pr: "9", loadPr: pr([], "") }).status).toBe("fail");
+      expect(status({ pr: "9", loadPr: pr(["human-reviewed"], "2026-11-12T08:00:00Z") }).status).toBe("fail");
+      expect(status({ pr: "9", loadPr: pr(["human-reviewed"], "2026-11-12T10:00:00Z") }).status).toBe("ok");
+      const other = status({ pr: "9", loadPr: pr(["human-reviewed"], "2026-11-12T10:00:00Z", "f".repeat(40)) });
+      expect(other.status).toBe("fail");
+      expect(other.lines[0]).toMatch(/is not PR #9's head/);
+    } finally {
+      r0.done();
+    }
+  });
+
   it("no dist/: the size check is skipped with what to do", () => {
     const r0 = repo();
     try {

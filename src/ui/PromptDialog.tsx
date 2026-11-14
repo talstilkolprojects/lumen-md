@@ -32,6 +32,8 @@ interface DialogOpts {
    * of these options instead of a free-text input. Resolves the chosen value.
    */
   choices?: { value: string; label: string }[];
+  /** Prompt kind: a password field (hidden text, no autofill of saved logins). */
+  password?: boolean;
 }
 
 interface InternalProps extends DialogOpts {
@@ -48,6 +50,7 @@ function PromptDialogImpl({
   placeholder,
   title,
   choices,
+  password,
   onResolve,
 }: InternalProps) {
   const initialValue =
@@ -111,6 +114,8 @@ function PromptDialogImpl({
             ref={selectRef}
             className="prompt-input"
             aria-label={title ?? message}
+            type={password ? "password" : undefined}
+            autoComplete={password ? "new-password" : undefined}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => {

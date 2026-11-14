@@ -9,6 +9,7 @@ import { extractFrontmatter, renderMarkdown } from "../renderer/pipeline";
 import { applyPageBreaks, buildToc, contentDirection, contentLang, printCss, printFrontmatter } from "../print/printLayout";
 import { getLocale, t } from "../i18n";
 import { safeSetHtml, safeClearHtml } from "../lib/trustedTypes";
+import { exportReadyText } from "../storage/exportReady";
 
 /**
  * Generate a printable document from markdown content.
@@ -44,7 +45,9 @@ interface PreparedPrint {
 /** Render the note and lay it out for print (W2.23). Exposed for the print golden tests. */
 export async function preparePrint(markdownText: string, docName: string, opts: { appStyles?: boolean } = {}): Promise<PreparedPrint> {
   const isDark = () => document.documentElement.classList.contains("dark");
-  const tree = await renderMarkdown(markdownText, isDark);
+  // W5.11: the PDF gets the text without its marked passages (removed, not
+  // covered), and photos inlined without metadata (Chromium embeds a JPEG as is).
+  const tree = await renderMarkdown(await exportReadyText(markdownText, true), isDark);
 
   // Serialize the React tree through a temporary root.
   const { createRoot } = await import("react-dom/client");

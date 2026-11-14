@@ -104,7 +104,7 @@ describe("privacy ledger, mutant-killing cases", () => {
     recordSpeechVoice("Voice", "en", 30);
     recordSpeechVoice("Voice", "en", 12);
     recordWorkerRequest("https://huggingface.co/m.onnx");
-    recordWorkerRequest("https://cdn.tldraw.com/fonts/a.woff2");
+    recordWorkerRequest("https://cdn-lfs.huggingface.co/repo/model.bin");
     recordSpeechRecognition("blocked");
     const s = ledgerSummary();
     expect(s).toMatchObject({ total: 5, blocked: 1, cloudRequests: 2, cloudBytesOut: 42, downloads: 2, local: 0 });

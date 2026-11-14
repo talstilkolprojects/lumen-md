@@ -17,6 +17,29 @@ This document covers building and shipping Lumen across all targets:
 
 ---
 
+## The whole release in one command (plan W4.5)
+
+```bash
+npm run release -- 0.2.0-beta.1 --dry-run     # build, sign and check everything; publish nothing; the tree is put back
+npm run release -- 0.2.0-beta.1 --publish     # the owner: commit + tag, build, sign, push, GitHub release
+```
+
+It runs, in order: a preflight that names every missing key or tool with its
+fix · the version bump and the `CHANGELOG.md` section from the merged pull
+requests · the updater placeholder in `src-tauri/tauri.conf.json`
+(`${LUMEN_UPDATER_PUBKEY}`) filled with the key and the GitHub Releases
+endpoint, and refused when empty · two web builds compared file by file
+(`repro-check`) · `tauri build` with `TAURI_SIGNING_PRIVATE_KEY`, `latest.json`
+with every signature checked (and a changed byte refused) · `sbom.cdx.json` ·
+Hebrew + English notes from `release-notes/<version>.{he,en}.md` ·
+`SHA256SUMS` signed with minisign and verified · `gh release create` (a beta is
+a pre-release) and the `beta-channel` pointer. Without the owner's keys a dry
+run signs with throwaway TEST keys; `--fake-build` stands in for the build
+where `node_modules` or Rust are missing. Full page: docs *Project → Releasing
+a version* (`docs/src/content/docs/project/releasing.md`).
+
+The steps below run one part at a time.
+
 ## Versioning and the release pipeline (plan 13.4)
 
 One script runs the whole release on your machine — GitHub Actions are not

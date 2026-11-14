@@ -14,7 +14,8 @@ import { memoryFiles } from "../sync/e2ee/localFiles";
 import { memoryStateStore } from "../sync/e2ee/state";
 import { ageDecrypt } from "../sync/e2ee/age";
 import { argon2id } from "../sync/e2ee/primitives/argon2";
-import { readPairingCode } from "../sync/e2ee/pairing";
+import { readPairingAnswer, readPairingCode, readPairingRequest } from "../sync/e2ee/pairing";
+import { manifestName, openManifest } from "../sync/e2ee/manifest";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 interface Vault {
@@ -23,12 +24,24 @@ interface Vault {
   objects: Record<string, string>;
   expect: { epoch: number; files: Record<string, string> };
   device?: { id: string; identity: string };
+  /** The epoch's manifest is frozen (a re-key cut off before its commit). */
+  frozen?: boolean;
+  /** A passphrase change cut off before its header: the old passphrase still opens the epoch before. */
+  pending?: { oldPassphrase: string; oldEpoch: number; oldFiles: string[] };
 }
 const V = JSON.parse(readFileSync(join(root, "docs/sync-protocol-vectors.json"), "utf8")) as {
   vaults: Vault[];
   argon2id: Array<{ password: string; salt: string; memoryKiB: number; iterations: number; parallelism: number; tag: string }>;
   age: Array<{ identity?: string; passphrase?: string; plaintext: string; file: string }>;
-  pairing: { vault: number; code: string; body: { counter: number; digest: string } };
+  pairing: Array<{ vault: number; code: string; body: { counter: number; digest: string; ring: { epoch: number; rev: number; digest: string } } }>;
+  pairingTwoWay: Array<{
+    vault: number;
+    now: number;
+    request: string;
+    requestBody: { nonce: string; ring: { epoch: number; rev: number; digest: string }; manifest: { counter: number; digest: string } | null; issuedAt: number; hash: string };
+    answer: string;
+    answerBody: { counter: number; digest: string; ring: { epoch: number; rev: number; digest: string } };
+  }>;
 };
 const bytes = (b64: string) => new Uint8Array(Buffer.from(b64, "base64"));
 
@@ -51,6 +64,19 @@ describe("the sync protocol's test vectors", () => {
     it(`opens "${v.name}" with the passphrase${v.device ? " and with the device key" : ""}`, async () => {
       const got = await readAll(v, (p) => unlockVault(p, v.passphrase, { minPbkdf2Iterations: 1000 }));
       expect(got).toEqual(v.expect);
+      if (v.frozen) {
+        const p = await load(v);
+        const { keys } = await unlockVault(p, v.passphrase, { minPbkdf2Iterations: 1000 });
+        const name = await manifestName(keys);
+        expect((await openManifest(keys, p.objects.get(name)!.data, name)).manifest.frozen?.epoch).toBe(keys.epoch + 1);
+      }
+      if (v.pending) {
+        const p = await load(v);
+        const { keys } = await unlockVault(p, v.pending.oldPassphrase, { minPbkdf2Iterations: 1000 });
+        expect(keys.epoch).toBe(v.pending.oldEpoch);
+        const name = await manifestName(keys);
+        expect(Object.keys((await openManifest(keys, p.objects.get(name)!.data, name)).manifest.files)).toEqual(v.pending.oldFiles);
+      }
       if (v.device) {
         const d = v.device;
         expect(await readAll(v, async (p) => ({ ...(await unlockWithDevice(p, d.id, d.identity)), access: { device: d.id, identity: d.identity } }))).toEqual(v.expect);
@@ -58,7 +84,7 @@ describe("the sync protocol's test vectors", () => {
     }, 60_000);
   }
 
-  it("Argon2id, age (X25519 and scrypt) and the pairing code", async () => {
+  it("Argon2id, age (X25519 and scrypt), the one-way pairing code and the two-way request and answer", async () => {
     for (const a of V.argon2id) {
       expect(Buffer.from(argon2id({ password: bytes(a.password), salt: bytes(a.salt), memoryKiB: a.memoryKiB, iterations: a.iterations, parallelism: a.parallelism, tagLength: 32 })).toString("base64")).toBe(a.tag);
     }
@@ -66,8 +92,21 @@ describe("the sync protocol's test vectors", () => {
       const pt = await ageDecrypt(bytes(a.file), [a.identity ? { identity: a.identity } : { passphrase: a.passphrase! }]);
       expect(Buffer.from(pt).toString("base64")).toBe(a.plaintext);
     }
-    const v = V.vaults[V.pairing.vault];
-    const { keys } = await unlockVault(await load(v), v.passphrase, { minPbkdf2Iterations: 1000 });
-    expect(await readPairingCode(keys, V.pairing.code, 1_800_000_000_000)).toEqual(V.pairing.body);
+    for (const pv of V.pairing) {
+      const v = V.vaults[pv.vault];
+      const { keys } = await unlockVault(await load(v), v.passphrase, { minPbkdf2Iterations: 1000 });
+      expect(await readPairingCode(keys, pv.code, 1_800_000_000_000)).toEqual(pv.body);
+    }
+    expect(V.pairingTwoWay).toHaveLength(2);
+    for (const pv of V.pairingTwoWay) {
+      const v = V.vaults[pv.vault];
+      const { keys } = await unlockVault(await load(v), v.passphrase, { minPbkdf2Iterations: 1000 });
+      expect(await readPairingRequest(keys, pv.request)).toEqual(pv.requestBody);
+      expect(await readPairingAnswer(keys, pv.answer, pv.requestBody, pv.now + 1000)).toEqual(pv.answerBody);
+      // F1: the kind is inside the MAC — a request under another kind's prefix doesn't verify.
+      const body = pv.request.slice(pv.request.indexOf(":", "lumen-pair-request:2:".length));
+      await expect(readPairingAnswer(keys, `lumen-pair-answer:2:${pv.requestBody.ring.epoch}${body}`, pv.requestBody, pv.now + 1000)).rejects.toThrow(/not from this vault/);
+      await expect(readPairingCode(keys, `lumen-pair:3:${pv.requestBody.ring.epoch}${body}`, pv.now)).rejects.toThrow(/not from this vault/);
+    }
   }, 60_000);
 });

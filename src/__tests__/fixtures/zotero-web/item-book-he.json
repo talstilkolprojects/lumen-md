@@ -1,0 +1,31 @@
+{
+  "key": "ABCD2345",
+  "version": 1180,
+  "library": { "type": "user", "id": 475425, "name": "lumen-test" },
+  "meta": { "creatorSummary": "עוז", "parsedDate": "2002", "numChildren": 2 },
+  "data": {
+    "key": "ABCD2345",
+    "version": 1180,
+    "itemType": "book",
+    "title": "סיפור על אהבה וחושך",
+    "creators": [{ "creatorType": "author", "firstName": "עמוס", "lastName": "עוז" }],
+    "date": "2002",
+    "publisher": "כתר",
+    "place": "ירושלים",
+    "language": "he",
+    "extra": "Citation Key: oz2002",
+    "collections": ["COLL0001"],
+    "tags": [{ "tag": "ספרות" }]
+  },
+  "csljson": {
+    "id": "475425/ABCD2345",
+    "type": "book",
+    "title": "סיפור על אהבה וחושך",
+    "author": [{ "family": "עוז", "given": "עמוס" }],
+    "issued": { "date-parts": [["2002"]] },
+    "publisher": "כתר",
+    "publisher-place": "ירושלים",
+    "language": "he",
+    "note": "Citation Key: oz2002"
+  }
+}

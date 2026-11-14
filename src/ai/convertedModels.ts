@@ -32,11 +32,21 @@ export const CONVERTED_MODELS: ConvertedModel[] = [
 
 /**
  * Where the converted files are served from: `${base}${id}/${path}`.
- * TODO(15.9): Tal picks the host (GitHub Releases if the repo is public,
- * otherwise Hugging Face). Until then the models cannot be downloaded and
- * the features that need them say so.
+ * Decided in plan W4.14 (15.9): GitHub Releases of the repo, one release per
+ * model (tag `models-<id>`), read through Lumen's CORS proxy
+ * (edge-workers/model-mirror, VITE_MODEL_MIRROR_URL) — GitHub's release
+ * downloads carry no CORS header. Until the proxy is deployed the models
+ * cannot be downloaded and the features that need them say so.
  */
-export const CONVERTED_MODELS_BASE: string | null = null;
+const MIRROR = (() => {
+  try {
+    // why: a static name read — Vite inlines this one value, not the whole env
+    return String(import.meta.env.VITE_MODEL_MIRROR_URL ?? "").trim().replace(/\/+$/, "");
+  } catch {
+    return ""; // why: no import.meta.env outside Vite (plain Node scripts)
+  }
+})();
+export const CONVERTED_MODELS_BASE: string | null = /^https:\/\//.test(MIRROR) ? `${MIRROR}/models-` : null;
 
 export interface RegistryFile {
   path: string;

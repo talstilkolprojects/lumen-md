@@ -1,0 +1,23 @@
+# Plan W4.27: the full test pipeline in a container, as a fallback when the
+# Vercel build queue is jammed or its quota is spent. No GitHub Actions.
+#
+#   bash scripts/ci-docker.sh                 # every ci:local step, e2e on Chromium
+#   bash scripts/ci-docker.sh --only typecheck,test
+#
+# The base image is Playwright's own for the exact @playwright/test version in
+# package-lock.json (scripts/ci-docker.sh passes it), so the browsers match and
+# nothing is downloaded at test time. Node 22, as on Vercel and Netlify.
+ARG PW_VERSION=1.59.1
+FROM mcr.microsoft.com/playwright:v${PW_VERSION}-noble
+ARG NODE_MAJOR=22
+# The image ships a Node; pin the major the project builds with.
+RUN node -v | grep -q "^v${NODE_MAJOR}\." || (curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - && apt-get install -y nodejs)
+WORKDIR /lumen
+ENV CI=1 PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+# Dependencies first: this layer is reused until package-lock.json changes.
+COPY package.json package-lock.json .npmrc ./
+RUN npm ci --no-audit --no-fund
+# The whole checkout, .git included (Dockerfile.ci.dockerignore keeps it:
+# ci:local and several checks read git).
+COPY . .
+ENTRYPOINT ["bash", "scripts/ci-docker-entry.sh"]

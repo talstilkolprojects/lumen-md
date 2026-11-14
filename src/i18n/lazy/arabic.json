@@ -1,0 +1,10 @@
+{
+  "spell.ar.downloadConfirm": "Download the Arabic word list (Ayaspell) from GitHub to this device? It is licensed GPL / LGPL / MPL, so it is not built into the app. Your notes are never sent.",
+  "spell.ar.removeConfirm": "Remove the Arabic word list from this device? The punctuation and repeated-word checks keep working.",
+  "spell.ar.installed": "Arabic word list installed ({n} words). Arabic paragraphs are checked on this device.",
+  "spell.ar.removed": "Arabic word list removed.",
+  "spell.ar.failed": "The Arabic word list did not download: {error}",
+  "tashkeel.hidden": "Tashkeel hidden in this editor. The note still has it.",
+  "tashkeel.shown": "Tashkeel shown.",
+  "tashkeel.nothing": "No tashkeel to remove here."
+}

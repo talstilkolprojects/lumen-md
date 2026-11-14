@@ -26,7 +26,10 @@ describe("test kit", () => {
 
   it("lists every example in the registry", () => {
     const index = JSON.parse(readFileSync(join(EXAMPLES, "index.json"), "utf8")) as { plugins: { versions: { path: string }[] }[] };
-    expect(index.plugins.map((p) => p.versions[0].path).sort()).toEqual(["bidi-cleaner", "callout", "daily-quote", "hebrew-date", "tasks-overview", "text-format", "toc", "word-stats"]);
+    expect(index.plugins.map((p) => p.versions[0].path).sort()).toEqual([
+      "bidi-cleaner", "calendar", "callout", "daily-quote", "flashcards", "hebrew-date", "kanban", "linter", "natural-dates",
+      "note-refactor", "sort-lines", "table-format", "tags", "tasks-overview", "templates", "text-format", "toc", "word-stats",
+    ]);
   });
 });
 

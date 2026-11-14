@@ -1,0 +1,53 @@
+# Codemagic: the mobile builds without a Mac or an Android SDK (plan W4.22).
+#
+# The same one-command scripts as on the owner's machine (scripts/mobile-build.mjs),
+# run on Codemagic's macOS M2 machines. A personal Codemagic account gets 500 free
+# macOS M2 minutes a month (docs.codemagic.io/billing/pricing, checked 12.11.2026);
+# Linux and Windows have no free minutes, so both workflows use the Mac.
+#
+# There is no `triggering:` section, so nothing builds on a push: every build is
+# started by hand in the Codemagic UI (Start new build → pick the workflow).
+# This is not GitHub Actions.
+#
+# Environment groups (Codemagic UI → the app → Environment variables), all secure:
+#   lumen_ios:     APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY (the .p8 file's text)
+#   lumen_android: ANDROID_KEYSTORE_BASE64 (base64 -i upload.jks), ANDROID_KEYSTORE_PASSWORD,
+#                  ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+workflows:
+  ios-testflight:
+    name: iOS → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      groups:
+        - lumen_ios
+      node: 22
+      xcode: latest
+    scripts:
+      - name: Install
+        script: npm ci
+      - name: Build, archive and upload (npm run mobile:ios)
+        script: npm run mobile:ios
+    artifacts:
+      - release/mobile/*
+
+  android-aab:
+    name: Android AAB + APK
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    environment:
+      groups:
+        - lumen_android
+      node: 22
+      java: 21
+    scripts:
+      - name: Install
+        script: npm ci
+      - name: Upload keystore from the group
+        script: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$CM_BUILD_DIR/upload.jks"
+          echo "ANDROID_KEYSTORE_PATH=$CM_BUILD_DIR/upload.jks" >> "$CM_ENV"
+      - name: Build and sign (npm run mobile:android)
+        script: npm run mobile:android
+    artifacts:
+      - release/mobile/*

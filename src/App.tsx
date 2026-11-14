@@ -86,6 +86,8 @@ const OnboardingTour = lazy(() => import("./ui/OnboardingTour").then(m => ({ def
 const FirstRun = lazy(() => import("./onboarding/FirstRun"));
 // Plan W1.29: the moderator's usability-session panel, loaded only when a study runs.
 const UsabilitySessionPanel = lazy(() => import("./ui/UsabilitySessionPanel").then((m) => ({ default: m.UsabilitySessionPanel })));
+// Plan W4.25: the participant's self-guided session panel, loaded only when one runs.
+const UsabilitySelfPanel = lazy(() => import("./ui/UsabilitySelfPanel").then((m) => ({ default: m.UsabilitySelfPanel })));
 import { explainError } from "./lib/userError";
 import { useEdgeSwipes, useLongNotesOpenForReading } from "./mobile/useMobileGestures";
 import { FeatureFlagsHost } from "./ui/FeatureFlagsHost";
@@ -152,15 +154,18 @@ export default function App() {
     if (typeof window === "undefined" || typeof navigator === "undefined") return false;
     return localLlmAvailable().available;
   }, []);
-  // A usability session (W1.29) survives a reload: reopen its panel.
-  const [usabilityOpen, setUsabilityOpen] = useState(() => {
+  // A usability session (W1.29, self-guided W4.25) survives a reload: reopen its panel.
+  const [usabilityOpen, setUsabilityOpen] = useState<null | "moderated" | "unmoderated">(() => {
     try {
-      return !!localStorage.getItem("lumen-usability-session");
+      const raw = localStorage.getItem("lumen-usability-session");
+      if (!raw) return null;
+      return (JSON.parse(raw) as { mode?: string }).mode === "unmoderated" ? "unmoderated" : "moderated";
     } catch {
-      return false;
+      return null;
     }
   });
-  useWindowEvent("lumen-open-usability", () => setUsabilityOpen(true));
+  useWindowEvent("lumen-open-usability", () => setUsabilityOpen("moderated"));
+  useWindowEvent("lumen-open-usability-self", () => setUsabilityOpen("unmoderated"));
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   useEffect(() => {
@@ -249,6 +254,12 @@ export default function App() {
 
   // PDF / EPUB readers and every `lumen-open-file` (W6.25).
   const { pdfView, setPdfView, epubView, setEpubView, registerPdfSaveGate } = useOpenFileEvent(handleOpenFromWorkspace);
+
+  // Automations (W5.24): a lazy chunk that starts only when the vault has a rules file.
+  useEffect(() => {
+    const id = window.setTimeout(() => void import("./automations/app").then((m) => m.startAutomationsIfConfigured()).catch(() => undefined), 3000);
+    return () => window.clearTimeout(id);
+  }, []);
 
   // Today's daily note (plan 4.12): the command and ⌥⌘D. The daily-note code is its own chunk.
   useWindowEvent("lumen-open-today", () => {
@@ -597,7 +608,7 @@ export default function App() {
       <MobileKeyboardBarHost />
       {usabilityOpen && (
         <Suspense fallback={null}>
-          <UsabilitySessionPanel onClose={() => setUsabilityOpen(false)} />
+          {usabilityOpen === "unmoderated" ? <UsabilitySelfPanel onClose={() => setUsabilityOpen(null)} /> : <UsabilitySessionPanel onClose={() => setUsabilityOpen(null)} />}
         </Suspense>
       )}
       <TagsPanel open={tagsPanelOpen} onClose={() => setTagsPanelOpen(false)} />

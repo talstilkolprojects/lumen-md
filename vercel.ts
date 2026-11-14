@@ -31,6 +31,8 @@ export const ENDPOINT_ENV_VARS = [
   "VITE_GIT_CORS_PROXY",
   // The error tracker (Sentry / GlitchTip, plan 12.4): the DSN's host, never a wildcard.
   "VITE_SENTRY_DSN",
+  // Lumen's model mirror (plan W4.14): the CORS proxy in front of the model releases.
+  "VITE_MODEL_MIRROR_URL",
 ];
 /** WebSocket URLs (comma-separated) the app opens: collab signaling and the persistent collab server. */
 export const WEBSOCKET_ENV_VARS = ["VITE_WEBRTC_SIGNALING_URL", "VITE_YJS_WEBSOCKET_URL"];

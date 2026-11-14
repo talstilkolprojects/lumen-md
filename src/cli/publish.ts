@@ -17,11 +17,14 @@
  * Node-only (uses node:fs); bin/lumen.ts is the thin argv wrapper.
  */
 import {
+  closeSync,
   copyFileSync,
   lstatSync,
   mkdirSync,
+  openSync,
   readdirSync,
   readFileSync,
+  readSync,
   realpathSync,
   rmdirSync,
   statSync,
@@ -32,6 +35,19 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "nod
 import { renderHtmlDocument, escapeHtml } from "../storage/exportHtml";
 import { MD_RE, PUBLISH_CSS, encodePath, pageTitle, rewriteMarkdownLinks, rewriteWikiLinks } from "../publish/siteLinks";
 import { resolveWikiTarget, splitWikiTarget } from "../renderer/wikiLinks";
+import { prepareForExport } from "../lib/redaction";
+import { cleanPublishedFile, sniffMedia } from "../lib/imageMetadata";
+
+/** The first bytes of a file: enough to tell what it is without reading a video whole. */
+function fileHead(path: string, n = 4096): Uint8Array {
+  const fd = openSync(path, "r");
+  try {
+    const buf = new Uint8Array(n);
+    return buf.subarray(0, readSync(fd, buf, 0, n, 0));
+  } finally {
+    closeSync(fd);
+  }
+}
 
 export { PUBLISH_CSS, encodePath, pageTitle, rewriteMarkdownLinks, rewriteWikiLinks } from "../publish/siteLinks";
 
@@ -45,14 +61,15 @@ export interface PublishPage {
 
 export interface PublishResult {
   pages: PublishPage[];
-  /** Non-Markdown files copied verbatim (relative POSIX paths). */
+  /** Non-Markdown files copied (relative POSIX paths); photos without their metadata. */
   assets: string[];
   /** Absolute path of the written index.html. */
   index: string;
   /**
    * Source files that were NOT written because their output path collides
    * with a generated file (a page, the index or style.css). Generated
-   * targets always win so every Markdown page and the index survive.
+   * targets always win so every Markdown page and the index survive. A
+   * photo whose metadata can't be removed is skipped too.
    */
   skipped: { source: string; output: string; reason: string }[];
 }
@@ -315,7 +332,7 @@ const WIKI_RE = /\[\[([^\]\n]+)\]\]/g;
 export async function publishSite(
   input: string,
   outDir: string,
-  opts: { siteTitle?: string } = {},
+  opts: { siteTitle?: string; keepImageMetadata?: boolean } = {},
 ): Promise<PublishResult> {
   // Compare and write through canonical paths: a symlinked input or --out
   // must not let the containment check below be bypassed.
@@ -391,7 +408,8 @@ export async function publishSite(
       continue;
     }
     reserve(output, `the page generated from ${rel}`);
-    const md = readFileSync(f, "utf8");
+    // W5.11: the published text is the export text: no <redact> passage, no hidden comment.
+    const { text: md } = await prepareForExport(readFileSync(f, "utf8"), { keepImageMetadata: opts.keepImageMetadata ?? false });
     pages.push({ source: rel, output, title: pageTitle(md, rel), md });
   }
   if (!reserved.has(key("index.html"))) reserve("index.html", "the generated page index");
@@ -445,8 +463,26 @@ export async function publishSite(
       skipped.push({ source: rel, output: rel, reason: `collides with ${taken}` });
       continue;
     }
-    reserve(rel, `the asset ${rel}`);
-    copyFileSync(a, prepareOutputPath(outAbs, rel));
+    // Every file is judged by its content, not its extension (review 2): a photo goes out without its
+    // location, time and camera details; a HEIC, AVIF or TIFF photo, or a video, can't be cleaned here
+    // and stays out with a reason, unless the metadata is kept on purpose.
+    const kind = opts.keepImageMetadata ? null : sniffMedia(fileHead(a));
+    const r = kind === null ? ({ action: "copy" } as const) : kind === "video" ? ({ action: "refuse", kind } as const) : await cleanPublishedFile(new Uint8Array(readFileSync(a)));
+    if (r.action === "refuse") {
+      skipped.push({
+        source: rel,
+        output: rel,
+        reason: r.kind === "video" ? "a video's metadata (such as its location) can't be removed: not published (keep metadata to publish it)" : "its photo metadata could not be removed",
+      });
+      continue;
+    }
+    if (r.action === "clean") {
+      reserve(rel, `the asset ${rel}`);
+      writeFileSync(prepareOutputPath(outAbs, rel), r.bytes);
+    } else {
+      reserve(rel, `the asset ${rel}`);
+      copyFileSync(a, prepareOutputPath(outAbs, rel));
+    }
     assetRels.push(rel);
   }
 

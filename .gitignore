@@ -40,6 +40,8 @@ android/.gradle/
 android/build/
 android/local.properties
 android/app/release/
+# npm run mobile:ios works here: archive, export options, .ipa (plan W4.22)
+/build/ios/
 android/app/src/main/assets/public/
 **/xcuserdata/
 **/*.xcworkspace/xcuserdata/
@@ -117,3 +119,8 @@ fuzz-findings/
 # Python bytecode (scripts/sync-protocol)
 __pycache__/
 *.pyc
+
+# W4.21: Guidepup screen-reader results (sr/)
+sr-results/
+# npm run ci:docker output (plan W4.27)
+ci-docker-out/

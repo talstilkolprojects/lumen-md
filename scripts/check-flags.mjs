@@ -6,11 +6,12 @@
  */
 import { readFileSync } from "node:fs";
 import { checkFlags } from "./lib/flags.mjs";
+import { readLocale } from "./lib/i18n-files.mjs";
 
 const registry = JSON.parse(readFileSync("src/flags/flags.json", "utf8"));
-const en = readFileSync("src/i18n/index.ts", "utf8");
-const keys = new Set([...en.matchAll(/^\s*"([^"]+)":/gm)].map((m) => m[1]));
-const he = JSON.parse(readFileSync("src/i18n/locales/he.json", "utf8"));
+// Plan 0.3 split the strings into src/i18n/locales/<lang>/<domain>.json (W4.5 found this script still read he.json).
+const keys = new Set(Object.keys(readLocale("en")));
+const he = readLocale("he");
 const problems = checkFlags(registry, { keys, he });
 if (problems.length) {
   for (const p of problems) console.error(`✖ ${p}`);

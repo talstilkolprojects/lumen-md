@@ -17,9 +17,14 @@
  *   - Added lines that name the project's domain (the owner's rule).
  *   - The max-lines baseline (plan W6.25) raises no count and adds no file.
  *   - Written by an AI agent → the PR wants the `ai-written` label.
+ *   - Sensitive paths (.github/CODEOWNERS) changed → a person reviews and
+ *     adds the `human-reviewed` label (plan W4.28). With `--pr <n>` the
+ *     label is read from GitHub and must be newer than the last commit;
+ *     without it the rule only warns.
  *
  *   npm run pr:check -- --base origin/main --body pr-body.md
  *   npm run build && npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-check.md
+ *   npm run pr:check -- --base origin/main --pr 123 --no-size     # before merging
  *
  * Exit 1 when a check fails; warnings do not fail.
  */
@@ -31,6 +36,7 @@ import { pathToFileURL } from "node:url";
 import { addedLinesFromDiff, AI_LABEL, bodyProblems, domainMentions, licenceChanges, skipCiViolations, unregisteredNetworkCalls, untestedChanges, writtenByAi } from "./lib/prGate.mjs";
 import { bundleDiffMarkdown } from "./bundle-diff.mjs";
 import { BASELINE_PATH, baselineRaises } from "./lib/maxLines.mjs";
+import { HUMAN_REVIEW_LABEL, humanReviewVerdict, parseCodeowners, sensitiveChanges } from "./lib/humanReview.mjs";
 
 export function parseArgs(argv) {
   const opt = (n) => (argv.includes(n) ? argv[argv.indexOf(n) + 1] : undefined);
@@ -42,6 +48,8 @@ export function parseArgs(argv) {
     headSizes: opt("--head-sizes"),
     buildBase: argv.includes("--build-base"),
     noSize: argv.includes("--no-size"),
+    pr: opt("--pr"),
+    repo: opt("--repo"),
     cwd: resolve(opt("--cwd") ?? process.cwd()),
   };
 }
@@ -75,6 +83,27 @@ function buildBase(cwd, mergeBase) {
     spawnSync("git", ["worktree", "remove", "--force", dir], { cwd });
     rmSync(dir, { recursive: true, force: true });
   }
+}
+
+/** owner/name of the GitHub repository (from --repo, or the origin remote). */
+function repoOf(cwd, given) {
+  if (given) return given;
+  const url = git(cwd, "remote", "get-url", "origin").trim();
+  // github.com URLs, and proxies that keep owner/name as the last two segments.
+  const m = url.match(/github\.com[:/]+([^/]+\/[^/]+?)(?:\.git)?\/?$/) ?? url.match(/\/([^/:]+\/[^/]+?)(?:\.git)?\/?$/);
+  if (!m) throw new Error(`cannot tell the GitHub repository from the origin remote (${url}); pass --repo owner/name`);
+  return m[1];
+}
+
+const ghJson = (args) => JSON.parse(execFileSync("gh", ["api", ...args], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] }));
+
+/** What the human-review rule needs about PR `n`, read with `gh api` (REST only). */
+export function loadPr(repo, n) {
+  const pull = ghJson([`repos/${repo}/pulls/${n}`]);
+  const events = ghJson(["--paginate", `repos/${repo}/issues/${n}/events?per_page=100`]).map((e) => ({ event: e.event, label: e.label?.name, created_at: e.created_at, actor: e.actor?.login }));
+  const reviews = ghJson(["--paginate", `repos/${repo}/pulls/${n}/reviews?per_page=100`]).map((r) => ({ user: r.user?.login, state: r.state, submitted_at: r.submitted_at, commit_id: r.commit_id }));
+  const head = ghJson([`repos/${repo}/commits/${pull.head.sha}`]);
+  return { number: Number(n), labels: pull.labels.map((l) => l.name), events, reviews, author: pull.user?.login, headSha: pull.head.sha, headDate: head.commit?.committer?.date ?? null };
 }
 
 /** Every check → { sections: [{ title, status: "ok" | "warn" | "fail" | "skipped", lines }], failed }. */
@@ -123,6 +152,21 @@ export function runChecks(opts) {
     const up = before ? baselineRaises(before, after) : [];
     add("Max-lines baseline only goes down", up.length ? "fail" : "ok", up.length ? up.map((x) => `- \`${x.file}\`: ${x.before === null ? "added" : x.before} → ${x.after}. Split the file instead.`) : [before ? "No count raised, no file added." : "The baseline is new in this diff."]);
   } else add("Max-lines baseline only goes down", "ok", ["The baseline is unchanged."]);
+
+  // Human review of sensitive paths (plan W4.28)
+  const ownersFile = join(cwd, ".github", "CODEOWNERS");
+  if (existsSync(ownersFile)) {
+    const sensitive = sensitiveChanges(changed, parseCodeowners(readFileSync(ownersFile, "utf8")));
+    let pr = null;
+    let mismatch = null;
+    if (opts.pr && sensitive.length) {
+      pr = opts.loadPr ? opts.loadPr(opts.repo, opts.pr) : loadPr(repoOf(cwd, opts.repo), opts.pr);
+      const local = git(cwd, "rev-parse", "HEAD").trim();
+      if (pr.headSha && pr.headSha !== local) mismatch = `This checkout's HEAD (\`${local.slice(0, 9)}\`) is not PR #${pr.number}'s head (\`${pr.headSha.slice(0, 9)}\`): fetch the PR branch and run again.`;
+    }
+    const v = humanReviewVerdict(sensitive, pr, HUMAN_REVIEW_LABEL);
+    add("Human review of sensitive paths", mismatch ? "fail" : v.status, mismatch ? [mismatch, "", ...v.lines] : v.lines);
+  } else add("Human review of sensitive paths", "skipped", [".github/CODEOWNERS is not on this branch."]);
 
   const untested = untestedChanges(changed);
   add("Tests", untested.length ? "warn" : "ok", untested.length ? [`Source changed and no test changed: ${untested.slice(0, 10).map((f) => `\`${f}\``).join(", ")}${untested.length > 10 ? ` and ${untested.length - 10} more` : ""}.`] : ["Source changes come with test changes (or there are none)."]);

@@ -8,13 +8,17 @@
  * Tal's client ids (plan 15.5).
  */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { PreconditionFailedError, ProviderUnavailableError, type SyncProvider } from "../sync/e2ee/provider";
+import { CasUnsupportedError, PreconditionFailedError, proveCas, ProviderUnavailableError, type SyncProvider } from "../sync/e2ee/provider";
 import { ProviderAuthError, ProviderUnsupportedError } from "../sync/e2ee/providers/http";
 import { webdavProvider } from "../sync/e2ee/providers/webdav";
 import { s3Provider } from "../sync/e2ee/providers/s3";
 import { dropboxSyncProvider } from "../sync/e2ee/providers/dropbox";
 import { gdriveSyncProvider } from "../sync/e2ee/providers/gdrive";
+import { providerCapabilities } from "../sync/e2ee/providers";
 import { HEADER_NAME } from "../sync/e2ee/header";
+import { generateIdentity } from "../sync/e2ee/age";
+import { unlockWithDevice } from "../sync/e2ee/engine";
+import { RevokedError } from "../sync/e2ee/keyring";
 import { manifestName, openManifest } from "../sync/e2ee/manifest";
 import { setSecret, __resetSecretStore } from "../lib/secretStore";
 import { fakeFetch, text, utf8 } from "./helpers/fakeServers/http";
@@ -23,7 +27,7 @@ import { fakeS3 } from "./helpers/fakeServers/s3";
 import { fakeDropbox } from "./helpers/fakeServers/dropbox";
 import { fakeGdrive } from "./helpers/fakeServers/gdrive";
 import { gatedProvider } from "./helpers/gatedProvider";
-import { joinVault, newVault, snapshot } from "./helpers/e2ee";
+import { joinTrusted, joinVault, newVault, snapshot } from "./helpers/e2ee";
 
 interface Lab {
   provider: SyncProvider;
@@ -164,7 +168,7 @@ describe.each(labs)("sync provider: %s", (_name, makeLab) => {
     const a = await newVault(provider);
     a.files.set("shared.md", "base");
     await a.sync.sync();
-    const b = await joinVault("B", provider);
+    const b = await joinTrusted("B", provider); // a device the user confirmed: an unverified one doesn't upload (third review N6)
     await b.sync.sync();
     const mname = await manifestName(a.keys);
     provider.manifest = mname;
@@ -185,6 +189,29 @@ describe.each(labs)("sync provider: %s", (_name, makeLab) => {
       ]);
     }
   }, 30_000);
+
+  it("providers + keyring + proveCas together (third review N8): re-key, enroll, revoke, read back; Drive refuses them (sync-only)", async () => {
+    const a = await newVault(lab.provider);
+    a.files.set("a.md", "before");
+    await a.sync.sync();
+    const phone = await generateIdentity();
+    if (lab.provider.atomicCreate === false) {
+      await expect(a.sync.rekey({ enroll: { phone: phone.recipient } })).rejects.toBeInstanceOf(CasUnsupportedError);
+      return;
+    }
+    const r1 = await a.sync.rekey({ enroll: { phone: phone.recipient } });
+    expect(r1).toMatchObject({ epoch: 1, devices: ["phone"], confirmed: true });
+    const { keys } = await unlockWithDevice(lab.again(), "phone", phone.identity);
+    expect(keys.epoch).toBe(1);
+    const r2 = await a.sync.rekey({ revoke: ["phone"] });
+    expect(r2).toMatchObject({ epoch: 2, devices: [], confirmed: true });
+    await expect(unlockWithDevice(lab.again(), "phone", phone.identity)).rejects.toBeInstanceOf(RevokedError);
+    a.files.set("a.md", "after the revocation");
+    await a.sync.sync();
+    const b = await joinVault("B", lab.again());
+    await b.sync.sync();
+    expect(b.files.text("a.md")).toBe("after the revocation");
+  }, 60_000);
 
   it("the service sees only the header, opaque names and ciphertext", async () => {
     const a = await newVault(lab.provider);
@@ -211,6 +238,62 @@ describe("provider specifics", () => {
     server.noEtags = true;
     const p = webdavProvider({ url: "https://dav.example/d/" }, { fetch: fakeFetch(server.handle) });
     await expect(p.probe()).rejects.toBeInstanceOf(ProviderUnsupportedError);
+  });
+
+  it("webdav: a server that ignores If-Match / If-None-Match on PUT is refused at connect (re-review 12.11, RR-7)", async () => {
+    const server = fakeWebdav({ baseUrl: "https://dav.example/d/", preCreated: true });
+    server.ignorePreconditions = true;
+    const p = webdavProvider({ url: "https://dav.example/d/" }, { fetch: fakeFetch(server.handle) });
+    await expect(p.probe()).rejects.toThrow(/If-None-Match|If-Match/);
+    expect(server.files.size).toBe(0); // the probe's objects are gone
+    server.ignorePreconditions = false;
+    await p.probe();
+    expect(server.files.size).toBe(0);
+  });
+
+  it("dropbox and drive probe both conditions too; drive's put returns the metadata ETag a later get compares with", async () => {
+    const dbx = fakeDropbox({ token: "dbx-test-token" });
+    await token("lumen.cloud.dropbox.token", "dbx-test-token");
+    await dropboxSyncProvider({ folder: "/Apps/Lumen/vault" }, { fetch: fakeFetch(dbx.handle) }).probe();
+    const gd = fakeGdrive({ token: "gd-test-token" });
+    await token("lumen.cloud.gdrive.token", "gd-test-token");
+    const drive = gdriveSyncProvider({}, { fetch: fakeFetch(gd.handle) });
+    await drive.probe();
+    const { etag } = await drive.put("x", text("1"), { ifNoneMatch: "*" });
+    expect((await drive.get("x"))!.etag).toBe(etag);
+    const { etag: e2 } = await drive.put("x", text("2"), { ifMatch: etag });
+    expect((await drive.get("x"))!.etag).toBe(e2);
+    await expect(drive.put("x", text("3"), { ifMatch: etag })).rejects.toBeInstanceOf(PreconditionFailedError);
+  });
+
+  it("drive is sync-only (third review N7): it syncs, but key and device changes are refused — its create-only isn't atomic", async () => {
+    const gd = fakeGdrive({ token: "gd-test-token" });
+    await token("lumen.cloud.gdrive.token", "gd-test-token");
+    const drive = gdriveSyncProvider({}, { fetch: fakeFetch(gd.handle) });
+    expect(drive.atomicCreate).toBe(false);
+    await drive.probe(); // the conditions it does keep are still checked at connect
+    const a = await newVault(drive);
+    a.files.set("a.md", "on Drive");
+    expect((await a.sync.sync()).uploaded).toBe(1);
+    await expect(a.sync.rekey()).rejects.toBeInstanceOf(CasUnsupportedError);
+    await expect(proveCas(drive)).rejects.toThrow(/not atomic/);
+    const b = await joinVault("B", drive);
+    await b.sync.sync();
+    expect(b.files.text("a.md")).toBe("on Drive");
+    // Fifth review (info): the limits are in the capabilities, for the UI to say.
+    expect(providerCapabilities(drive)).toEqual({ sync: true, keyChanges: false, revokeDevice: false, changePassphrase: false, enrollDevice: false, limits: ["e2ee.drive.syncOnly", "e2ee.drive.limits"] });
+    expect(providerCapabilities("gdrive")).toEqual(providerCapabilities(drive));
+    for (const k of ["webdav", "s3", "dropbox"] as const) expect(providerCapabilities(k)).toMatchObject({ keyChanges: true, revokeDevice: true, changePassphrase: true, limits: [] });
+  }, 30_000);
+
+  it("the connect probe uses random, blob-like names and leaves nothing behind (third review N2)", async () => {
+    const server = fakeWebdav({ baseUrl: "https://dav.example/d/", preCreated: true });
+    const p = webdavProvider({ url: "https://dav.example/d/" }, { fetch: fakeFetch(server.handle) });
+    await p.probe();
+    const names = server.log.filter((l) => l.startsWith("PUT ")).map((l) => decodeURIComponent(l.split(" ")[1].split("/").pop()!));
+    expect(names.length).toBeGreaterThan(0);
+    for (const n of names) expect(n).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(server.files.size).toBe(0);
   });
 
   it("webdav: lists only the collection's files, names decoded", async () => {

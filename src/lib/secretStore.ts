@@ -55,6 +55,8 @@ const EXACT_SECRETS = new Set([
   "lumen.research.searchKey",
   "lumen.research.serviceToken",
   "lumen.git.token.v1",
+  // Plan W5.23: the user's own Zotero Web API key (read-only).
+  "lumen.zotero.apiKey",
 ]);
 /** The git token used to live in idb-keyval's default store. */
 const LEGACY_IDB_SECRETS = ["lumen.git.token.v1"];

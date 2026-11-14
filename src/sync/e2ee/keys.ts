@@ -20,8 +20,9 @@
  * with a fresh random secret, wrapped for the passphrase and for each
  * enrolled device in the keyring; the older secrets are sealed under the new
  * epoch, so blobs written earlier stay readable without being uploaded again.
- * The names key always comes from epoch 0 (object names never change), and
- * the header and wrap keys from the current passphrase. Because a re-key
+ * The names key always comes from epoch 0 (blob names never change; each
+ * epoch's manifest has its own random label in the keyring), and the header
+ * and wrap keys from the current passphrase. Because a re-key
  * needs the current secret, it is kept as bytes in `secret`, in memory only.
  *
  * Sealed object = 1 byte format version ‖ 12 byte random nonce ‖ AES-GCM
@@ -64,14 +65,25 @@ export interface VaultKeys {
  * (review 12.11). All of them come from the keyring's sealed part.
  */
 export interface RingInfo {
-  /** The label of this epoch's manifest object: "manifest" (epoch 0 and older keyrings) or "manifest/<epoch>". */
+  /** The label of this epoch's manifest object: "manifest/<epoch>/<random>" (RR-3). */
   manifest: string;
-  /** The frozen manifest of the previous epoch this epoch's manifest is re-sealed from. */
+  /** The keyring's revision at this epoch (0 for a new epoch, + 1 per same-epoch rewrite). */
+  rev: number;
+  /** SHA-256 hex of the keyring's bytes: what the next keyring's chain names. */
+  digest: string;
+  /** The frozen manifest of the previous epoch this epoch's manifest was made from. */
   carry?: { label: string; epoch: number; digest: string };
-  /** SHA-256 hex of the vault header this epoch's passphrase wrap belongs to (a passphrase change). */
+  /** SHA-256 hex of the vault header this epoch's passphrase wrap belongs to, while a passphrase change is written. */
   header?: string;
-  /** The keyring predates the sealed device list: re-seal it at the first unlock. */
-  legacyDevices?: boolean;
+  /** Digests of this epoch's frozen manifests whose re-key was called off: any device may write over them. */
+  aborted: string[];
+  /** A pre-release keyring (no sealed device list): opened only to reset it. */
+  preRelease?: true;
+  /** This keyring's descent from the one the device verified last could not be proven (too far behind). */
+  unproven?: true;
+  /** The sealed device list (id → age recipient) and the revoked ids (fifth review 12.11, F2: a device checks its own revocations against them). */
+  enrolled?: Record<string, string>;
+  revoked?: Array<{ device: string; recipient?: string }>;
 }
 
 /** The blob key for a manifest entry's epoch (absent: 0). Throws when this device doesn't hold it. */
@@ -114,6 +126,34 @@ export async function epochKeys(secret: Uint8Array, vaultId: string): Promise<{ 
     hkdfKey(base, vaultId, "keyring", AES_KEY, ["encrypt", "decrypt"]),
   ]);
   return { manifest, blobs, pairing, keyring };
+}
+
+/**
+ * The anchor key of an epoch (third review 12.11, N1): HMAC-SHA256 from the
+ * epoch secret, under which a device seals the keyring anchor it remembers.
+ * Only holders of the epoch's secret can compute it, the provider can't.
+ */
+export async function anchorKey(secret: Uint8Array, vaultId: string): Promise<CryptoKey> {
+  return hkdfKey(await ikm(secret), vaultId, "anchor", HMAC_KEY, ["sign", "verify"]);
+}
+
+/**
+ * The key a dropped re-key's marker is authenticated with (fifth review
+ * 12.11, F4): HMAC-SHA256 from the secret of the epoch *before* the drop, so
+ * a device left out — which holds that secret, not the new one — can check
+ * that a member wrote the marker, and the provider can't.
+ */
+export async function droppedKey(secret: Uint8Array, vaultId: string): Promise<CryptoKey> {
+  return hkdfKey(await ikm(secret), vaultId, "dropped", HMAC_KEY, ["sign", "verify"]);
+}
+
+/**
+ * The key a device authenticates its own list of the devices it revoked with
+ * (fifth review 12.11, F2): from epoch 0's secret, which every keyring of the
+ * vault carries, so the list stays checkable across epochs.
+ */
+export async function revokedHereKey(secret0: Uint8Array, vaultId: string): Promise<CryptoKey> {
+  return hkdfKey(await ikm(secret0), vaultId, "revoked-here", HMAC_KEY, ["sign", "verify"]);
 }
 
 /** The names key: always from epoch 0's secret. */

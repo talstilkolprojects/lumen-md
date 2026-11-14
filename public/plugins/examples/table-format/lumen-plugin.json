@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "id": "lumen.table-format",
+  "name": "Table formatter",
+  "version": "1.0.0",
+  "description": "Lines up the columns of every Markdown table in the note — Hebrew niqqud and wide characters measured right — and sorts a table by the column under the cursor.",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    {
+      "id": "commands",
+      "reason": "Adds “Format tables” and the two sort commands"
+    },
+    {
+      "id": "document:read",
+      "reason": "Reads the tables of the open note"
+    },
+    {
+      "id": "document:write",
+      "reason": "Writes the formatted or sorted tables back"
+    }
+  ]
+}

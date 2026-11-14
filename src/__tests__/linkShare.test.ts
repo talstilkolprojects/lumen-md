@@ -212,16 +212,34 @@ describe("review 12.11: inflation cap, public origin, the export door", () => {
     expect(shareOrigin(null, undefined)).toBe(PUBLIC_APP_ORIGIN);
   });
 
-  it("the share command sends the note through shareReadyText; with #473 in the build, that is the export door", async () => {
+  it("IPv4-mapped IPv6 hosts are judged as their IPv4 address, in the hex form the URL parser writes (review 4)", () => {
+    const at = (href: string) => {
+      const u = new URL(href);
+      return { protocol: u.protocol, hostname: u.hostname, origin: u.origin };
+    };
+    for (const href of ["https://[::ffff:192.168.1.10]/", "https://[::ffff:10.0.0.5]/", "https://[::ffff:127.0.0.1]/", "https://[::ffff:100.64.0.1]/"]) {
+      expect(at(href).hostname, href).toMatch(/^\[::ffff:[0-9a-f]+:[0-9a-f]+\]$/);
+      expect(shareOrigin(at(href), undefined), href).toBe(PUBLIC_APP_ORIGIN);
+    }
+    expect(shareOrigin(at("https://[::ffff:8.8.8.8]/"), undefined)).toBe("https://[::ffff:808:808]");
+  });
+
+  it("the share command sends the note through the export door (W5.11): redacted passages and hidden comments never reach the link", async () => {
     const cmd = readFileSync(join(__dirname, "..", "commands", "domains", "export.ts"), "utf8");
-    expect(cmd).toMatch(/markdown: await shareReadyText\(doc\.content\)/);
-    const { hasExportDoor, shareReadyText } = await import("../share/shareReady");
-    const { existsSync } = await import("node:fs");
-    expect(hasExportDoor()).toBe(existsSync(join(__dirname, "..", "storage", "exportReady.ts")));
-    const text = await shareReadyText("Public. <redact>Dana Levi</redact> <!-- hidden -->");
-    if (hasExportDoor()) {
-      expect(text).not.toContain("Dana Levi");
-      expect(text).not.toContain("hidden");
-    } else expect(text).toBe("Public. <redact>Dana Levi</redact> <!-- hidden -->");
+    const share = cmd.slice(cmd.indexOf('id: "file.shareLink"'), cmd.indexOf('id: "file.exportDocx"'));
+    expect(share).toMatch(/import\("\.\.\/\.\.\/storage\/exportReady"\)/);
+    expect(share).toMatch(/markdown: await exportReadyText\(doc\.content, false\)/);
+    expect(cmd).not.toMatch(/shareReady/);
+    const { exportReadyText } = await import("../storage/exportReady");
+    const text = await exportReadyText("Public. <redact>Dana Levi</redact> <!-- hidden -->", false);
+    expect(text).toContain("Public.");
+    expect(text).not.toContain("Dana Levi");
+    expect(text).not.toContain("hidden");
+    // What the link would carry: nothing of the redacted passage, in the link or in the opened note.
+    const link = await createShareLink({ title: "t", markdown: text, created: 1 }, ORIGIN);
+    const parsed = parseShareHash(new URL(link.url!).hash)!;
+    const opened = await openNote(fromBase64Url(parsed.data!), fromBase64Url(parsed.key!));
+    expect(opened.markdown).not.toContain("Dana Levi");
+    expect(opened.markdown).toContain("Public.");
   });
 });

@@ -158,5 +158,5 @@ test("an embed block makes 0 requests until Load; then the player runs in the co
   const g = page.frameLocator('.prose-lumen iframe[data-content-frame="gist"]');
   await expect(g.getByText("gist ok")).toBeVisible();
   expect(gist).toEqual(["https://gist.github.com/someone/abc123.js"]);
-  await expect(preview.locator('iframe[data-content-frame="gist"]')).toHaveAttribute("sandbox", "allow-scripts allow-popups allow-popups-to-escape-sandbox");
+  await expect(preview.locator('iframe[data-content-frame="gist"]')).toHaveAttribute("sandbox", "allow-scripts");
 });

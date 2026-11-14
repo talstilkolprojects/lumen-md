@@ -62,3 +62,68 @@ export async function chooseMobileFolder(): Promise<void> {
     await reportMoveError(e, "");
   }
 }
+
+// The vault-location commands' bodies (plan 4.2), here so the palette's startup list carries only their names.
+const actions = async () => ({ flushOpenNote, reportMoveError, chooseDesktopFolder, chooseMobileFolder });
+
+/** Move the vault into a real folder (desktop dialog, phone folder or the browser's folder picker). */
+export async function moveVaultToFolder(): Promise<void> {
+  const loc = await import("../storage/vault/location");
+  const { isDesktopApp } = await import("../storage/vault/tauri");
+  if (isDesktopApp()) return (await actions()).chooseDesktopFolder();
+  if (loc.isMobileApp()) return (await actions()).chooseMobileFolder();
+  if (!loc.isFolderVaultSupported()) return showAiToast(t("vault.folder.unsupported"), "info");
+  const handle = await loc.pickVaultFolder();
+  if (!handle) return;
+  try {
+    await (await actions()).flushOpenNote();
+    const r = await loc.moveVault({ kind: "folder", handle, name: handle.name });
+    showAiToast(t("vault.folder.moved", { folder: handle.name, n: String(r.files) }), "info");
+  } catch (e) {
+    await (await actions()).reportMoveError(e, handle.name);
+  }
+}
+
+/** Open an existing folder as the vault. */
+export async function openFolderAsVaultCommand(): Promise<void> {
+  const loc = await import("../storage/vault/location");
+  const { isDesktopApp } = await import("../storage/vault/tauri");
+  if (isDesktopApp()) {
+    await (await actions()).flushOpenNote();
+    const name = await loc.openDesktopFolderAsVault();
+    if (name) showAiToast(t("vault.folder.opened", { folder: name }), "info");
+    return;
+  }
+  if (loc.isMobileApp()) {
+    await (await actions()).flushOpenNote();
+    try {
+      const name = await loc.openMobileFolderAsVault();
+      if (name) showAiToast(t("vault.folder.opened", { folder: name }), "info");
+    } catch (e) {
+      await (await actions()).reportMoveError(e, "");
+    }
+    return;
+  }
+  if (!loc.isFolderVaultSupported()) return showAiToast(t("vault.folder.unsupported"), "info");
+  const handle = await loc.pickVaultFolder();
+  if (!handle) return;
+  await (await actions()).flushOpenNote();
+  if (await loc.openFolderAsVault(handle)) showAiToast(t("vault.folder.opened", { folder: handle.name }), "info");
+  else showAiToast(t("vault.folder.permissionDenied", { folder: handle.name }), "error");
+}
+
+/** Move the vault back to browser storage. */
+export async function moveVaultToBrowser(): Promise<void> {
+  const loc = await import("../storage/vault/location");
+  const status = loc.getVaultStatus();
+  if (status.location === "opfs") return showAiToast(t("vault.folder.alreadyBrowser"), "info");
+  if (status.location === "folder-disconnected") return showAiToast(t("vault.folder.reconnectBody", { folder: status.name }), "info");
+  if (status.location === "restoring") return showAiToast(t("vault.folder.restoring"), "info");
+  try {
+    await (await actions()).flushOpenNote();
+    const r = await loc.moveVault({ kind: "opfs" });
+    showAiToast(t("vault.folder.movedBack", { folder: status.name, n: String(r.files) }), "info");
+  } catch (e) {
+    await (await actions()).reportMoveError(e, status.name);
+  }
+}

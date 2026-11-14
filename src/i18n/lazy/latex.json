@@ -1,0 +1,5 @@
+{
+  "latex.exported": "{file}: main.tex, the references and the images. Compile with latexmk -lualatex (or -xelatex).",
+  "latex.missingKeys": "Not in any .bib in the vault: {keys}",
+  "latex.failed": "LaTeX export: {error}"
+}

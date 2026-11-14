@@ -13,13 +13,25 @@ import { memoryFiles } from "../../src/sync/e2ee/localFiles";
 import { memoryStateStore } from "../../src/sync/e2ee/state";
 import { generateIdentity, ageEncrypt } from "../../src/sync/e2ee/age";
 import { argon2id } from "../../src/sync/e2ee/primitives/argon2";
-import { createPairingCode } from "../../src/sync/e2ee/pairing";
+import { createPairingAnswer, createPairingCode, createPairingRequest } from "../../src/sync/e2ee/pairing";
+import type { VaultKeys } from "../../src/sync/e2ee/keys";
+import { HEADER_NAME } from "../../src/sync/e2ee/header";
+import { KEYRING_NAME } from "../../src/sync/e2ee/keyring";
 
 const b64 = (b: Uint8Array) => Buffer.from(b).toString("base64");
 const NOTES: Record<string, string> = { "שלום.md": "# שלום עולם\n\nנִקּוּד וגרש׳ 123", "notes/a.md": "plain ASCII", "notes/empty.md": "", "big.md": "x".repeat(5000) };
 
+/** `cut(name)` true: that write fails once (a re-key cut off), for the frozen and pending-header vaults. */
+let cut: ((name: string) => boolean) | null = null;
 async function vault(name: string, passphrase: string, kdf: { pbkdf2Iterations?: number }, steps: (s: E2eeSync, files: ReturnType<typeof memoryFiles>) => Promise<unknown>) {
-  const p = memoryProvider();
+  const p = memoryProvider({
+    fault(op, n, phase) {
+      if (cut && op === "put" && phase === "before" && cut(n)) {
+        cut = null;
+        throw new Error("cut off");
+      }
+    },
+  });
   const { keys, anchor } = await createVault(p, passphrase, kdf);
   const files = memoryFiles();
   const sync = new E2eeSync({ provider: p, keys, local: files, store: memoryStateStore() });
@@ -49,7 +61,26 @@ vaults.push(await vault("argon2id, keyring epoch 2, blobs from epochs 0–2", "c
   await s.rekey({ revoke: ["nobody"] });
   f.set("e2.md", "written at epoch 2 — שלום");
   await s.sync();
+  await s.enroll("device-2", (await generateIdentity()).recipient); // keyring 2.1: a same-epoch rewrite in the chain
   return { device: { id: "device-1", identity: dev.identity, recipient: dev.recipient } };
+}));
+// 3. A re-key cut off before its commit: epoch 1's manifest is frozen (protocol 2), the keyring is still epoch 1.
+vaults.push(await vault("pbkdf2, epoch 1, frozen manifest (re-key cut off before the keyring)", "frozen passphrase 2026", { pbkdf2Iterations: 1000 }, async (s, f) => {
+  f.set("a.md", "before the freeze");
+  await s.sync();
+  await s.rekey();
+  cut = (n) => n === KEYRING_NAME;
+  await s.rekey().catch(() => undefined);
+  return { frozen: true };
+}));
+// 4. A passphrase change cut off before its header: the keyring (epoch 2) carries the new header and `prev`.
+vaults.push(await vault("pbkdf2, epoch 2, passphrase change pending (header not written; prev kept)", "the old passphrase 2026", { pbkdf2Iterations: 1000 }, async (s, f) => {
+  f.set("a.md", "kept through the change");
+  await s.sync();
+  await s.rekey();
+  cut = (n) => n === HEADER_NAME;
+  await s.rekey({ newPassphrase: "the new passphrase 2026", pbkdf2Iterations: 1000 }).catch(() => undefined);
+  return { passphrase: "the new passphrase 2026", pending: { oldPassphrase: "the old passphrase 2026", oldEpoch: 1, oldFiles: ["a.md"] } };
 }));
 
 // 3. Primitives.
@@ -68,11 +99,27 @@ for (const len of [0, 1, 65536, 65537]) {
 const pp = new TextEncoder().encode("שלום age");
 ageVectors.push({ passphrase: "סיסמה", plaintext: b64(pp), file: b64(await ageEncrypt(pp, [{ passphrase: "סיסמה", logN: 12 }])) });
 
-// 4. A pairing code from vault 1.
-const p1 = memoryProvider();
-for (const [n, o] of Object.entries(vaults[0].objects)) await p1.put(n, Buffer.from(o, "base64"));
-const k1 = (await unlockVault(p1, vaults[0].passphrase, { minPbkdf2Iterations: 1000 })).keys;
-const pairing = { vault: 0, code: await createPairingCode(k1, { counter: 2, digest: "d".repeat(64) }, 1_800_000_000_000), body: { counter: 2, digest: "d".repeat(64) } };
+// 5. Pairing: one-way codes and two-way request/answer pairs (fifth review 12.11, F1: the
+//    kind is inside the MAC), for vault 1 (epoch 0) and vault 2 (epoch 2, the epoch's
+//    pairing key; the keyring anchor).
+const { pairing, pairingTwoWay } = await pairingVectors(vaults);
+async function pairingVectors(vs: Array<{ objects: Record<string, string>; passphrase: string }>) {
+  const pairing = [];
+  const pairingTwoWay = [];
+  const now = 1_800_000_000_000;
+  for (const i of [0, 1]) {
+    const p1 = memoryProvider();
+    for (const [n, o] of Object.entries(vs[i].objects)) await p1.put(n, Buffer.from(o, "base64"));
+    const k1: VaultKeys = (await unlockVault(p1, vs[i].passphrase, { minPbkdf2Iterations: 1000 })).keys;
+    const ring = k1.ring ? { epoch: k1.epoch, rev: k1.ring.rev, digest: k1.ring.digest } : { epoch: 0, rev: 0, digest: "" };
+    pairing.push({ vault: i, code: await createPairingCode(k1, { counter: 2, digest: "d".repeat(64) }, now), body: { counter: 2, digest: "d".repeat(64), ring } });
+    const manifest = { counter: 2, digest: "e".repeat(64) };
+    const { code: request, request: req } = await createPairingRequest(k1, manifest, now, ring);
+    const answer = await createPairingAnswer(k1, req, { counter: 3, digest: "f".repeat(64) }, now + 1000, ring);
+    pairingTwoWay.push({ vault: i, now, request, requestBody: { nonce: req.nonce, ring, manifest, issuedAt: now, hash: req.hash }, answer, answerBody: { counter: 3, digest: "f".repeat(64), ring } });
+  }
+  return { pairing, pairingTwoWay };
+}
 
-writeFileSync("docs/sync-protocol-vectors.json", JSON.stringify({ format: "lumen-sync-protocol-vectors/1", spec: "docs/sync-protocol.md", made: new Date().toISOString(), note: "Made by scripts/sync-protocol/make-vectors.mts; checked by src/__tests__/e2eeVectors.test.ts and, independently, scripts/sync-protocol/check_vectors.py.", vaults, argon2id: argon, age: ageVectors, pairing }, null, 1) + "\n");
+writeFileSync("docs/sync-protocol-vectors.json", JSON.stringify({ format: "lumen-sync-protocol-vectors/1", spec: "docs/sync-protocol.md", made: new Date().toISOString(), note: "Made by scripts/sync-protocol/make-vectors.mts; checked by src/__tests__/e2eeVectors.test.ts and, independently, scripts/sync-protocol/check_vectors.py.", vaults, argon2id: argon, age: ageVectors, pairing, pairingTwoWay }, null, 1) + "\n");
 console.log(`wrote ${vaults.length} vaults, ${argon.length} Argon2id, ${ageVectors.length} age vectors`);

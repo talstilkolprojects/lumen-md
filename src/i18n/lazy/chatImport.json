@@ -1,0 +1,13 @@
+{
+  "chatImport.grouping": "How should the chat be split into notes?",
+  "chatImport.byDay": "One note per day",
+  "chatImport.byChat": "One note for the whole chat",
+  "chatImport.done": "Imported {chats} chats: {messages} messages in {notes} notes, {files} files → {folder}",
+  "chatImport.missingSome": "{n} media files were not in the export; each is named in its note.",
+  "chatImport.none": "No WhatsApp or Telegram chat in these files. Pick the exported .txt or .zip (WhatsApp) or result.json (Telegram Desktop).",
+  "chatImport.failed": "Chat import failed: {error}",
+  "chatImport.missing": "(not in the export)",
+  "chatImport.omitted": "(media left out of the export)",
+  "chatImport.forwarded": "forwarded from {name}",
+  "chatImport.reply": "in reply to message {id}"
+}

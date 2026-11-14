@@ -36,10 +36,14 @@ export type ContentFrameRequest =
  * parent's sandbox, and the providers need their own origin (storage,
  * cookies, a referrer) to play. Only the content frame's own script runs
  * at the app's origin there, and it builds elements, never HTML.
+ * Embeds get allow-popups (a provider's "Watch on YouTube" link): airplane
+ * mode's frame guard takes it away while the switch is on, and at the switch
+ * counts a frame that had it as a window that may have reached the network
+ * (review 8 of #451, RR8-451-2).
  */
 export function contentFrameSandbox(kind: ContentFrameRequest["kind"]): string {
   if (kind === "embed") return "allow-scripts allow-same-origin allow-popups allow-presentation allow-forms";
-  if (kind === "gist") return "allow-scripts allow-popups allow-popups-to-escape-sandbox";
+  if (kind === "gist") return "allow-scripts";
   return "allow-scripts";
 }
 
@@ -48,12 +52,59 @@ export function contentFrameSrc(req: ContentFrameRequest): string {
   return `${CONTENT_FRAME_PATH}#${encodeURIComponent(JSON.stringify(req))}`;
 }
 
-/** The request a content frame's URL carries (null when it is not one). */
+/** An https: URL, as the content frame's page accepts it (public/content-frame.js `httpsUrl`). */
+const isHttps = (v: unknown): v is string => {
+  if (typeof v !== "string") return false;
+  try {
+    return new URL(v).protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+const optString = (v: unknown) => v === undefined || typeof v === "string";
+const optNumber = (v: unknown) => v === undefined || (typeof v === "number" && Number.isFinite(v) && v > 0);
+const optBoolean = (v: unknown) => v === undefined || typeof v === "boolean";
+/** Keep the fields that are there (so a request comes back equal to itself). */
+const present = <T extends object>(o: T): T => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T;
+
+/**
+ * A request as the content frame's page would show it, or null (blind tests,
+ * F-6): one of the five kinds, every source https: (the frame's page accepts
+ * nothing else, blob: and data: included), fields of the right types.
+ * Unknown fields are dropped.
+ */
+export function validContentFrameRequest(v: unknown): ContentFrameRequest | null {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+  const r = v as Record<string, unknown>;
+  switch (r.kind) {
+    case "img": {
+      if (!isHttps(r.src) || !optString(r.srcset) || !optString(r.alt) || !optString(r.title) || !optNumber(r.width) || !optNumber(r.height)) return null;
+      if (typeof r.srcset === "string" && !r.srcset.split(",").every((c) => !c.trim() || isHttps(c.trim().split(/\s+/)[0]))) return null;
+      return present({ kind: "img" as const, src: r.src, srcset: r.srcset as string | undefined, alt: r.alt as string | undefined, title: r.title as string | undefined, width: r.width as number | undefined, height: r.height as number | undefined });
+    }
+    case "video":
+    case "audio":
+      if (!isHttps(r.src) || !optString(r.title) || !optBoolean(r.loop) || !optBoolean(r.muted)) return null;
+      return present({ kind: r.kind as "video" | "audio", src: r.src, title: r.title as string | undefined, loop: r.loop as boolean | undefined, muted: r.muted as boolean | undefined });
+    case "embed":
+      if (!isHttps(r.src) || typeof r.title !== "string" || !optString(r.allow)) return null;
+      if (r.referrerPolicy !== undefined && r.referrerPolicy !== "no-referrer" && r.referrerPolicy !== "strict-origin-when-cross-origin") return null;
+      return present({ kind: "embed" as const, src: r.src, title: r.title, allow: r.allow as string | undefined, referrerPolicy: r.referrerPolicy as "no-referrer" | "strict-origin-when-cross-origin" | undefined });
+    case "gist":
+      // The same patterns as the frame's page.
+      if (typeof r.user !== "string" || !/^[\w-]{1,100}$/.test(r.user) || typeof r.id !== "string" || !/^\w{1,100}$/.test(r.id)) return null;
+      return { kind: "gist", user: r.user, id: r.id };
+    default:
+      return null;
+  }
+}
+
+/** The request a content frame's URL carries (null when it is not one, or not one the frame would show). */
 export function contentFrameRequest(src: string): ContentFrameRequest | null {
   const i = src.indexOf("#");
   if (i < 0 || !src.slice(0, i).endsWith(CONTENT_FRAME_PATH)) return null;
   try {
-    return JSON.parse(decodeURIComponent(src.slice(i + 1))) as ContentFrameRequest;
+    return validContentFrameRequest(JSON.parse(decodeURIComponent(src.slice(i + 1))));
   } catch {
     return null;
   }

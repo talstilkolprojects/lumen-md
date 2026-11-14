@@ -1,0 +1,12 @@
+# Plan W5.25: the "Sponsor" button on the repository page.
+# GitHub reads only the keys below: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+#
+# Live now: the support page, which loads no third-party script.
+custom: ["https://lumen-md.vercel.app/support.html"]
+#
+# Owner steps (docs: project/sustainability, "Owner steps"). Uncomment each
+# line once its account exists, so the button never points at an empty page:
+#   1. GitHub Sponsors for the personal account (0% fees; Israel is a supported region):
+# github: [talstilkol]
+#   2. Open Source Collective accepted the collective "lumen-md" (10% host fee):
+# open_collective: lumen-md

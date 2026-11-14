@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { createMemoryBackend, type VaultBackend } from "../storage/vault";
-import { oldNameFor, tempNameFor } from "../storage/vault/atomic";
+import { journalBytes, journalNameFor, oldNameFor, saveId, tempNameFor } from "../storage/vault/atomic";
 import { BACKUP_FOLDER, checkVault, INTEGRITY_KINDS, REPAIRABLE, repairVault, utf8Status, type IntegrityKind } from "../storage/vault/integrity";
 
 const enc = (s: string) => new TextEncoder().encode(s);
@@ -153,4 +153,58 @@ describe("vault integrity check", () => {
     expect(r.findings).toEqual([]);
     expect(r.ms).toBeLessThan(5000);
   }, 60_000);
+  it("a second check reads only what changed (size or mtime), and nothing changed in the seconds before the last check", async () => {
+    const b = createMemoryBackend();
+    for (let i = 0; i < 50; i++) await b.write(`n${i}.md`, `# ${i}\n[[n${(i + 1) % 50}]]\n`);
+    const reads: string[] = [];
+    const counted: VaultBackend = { ...b, read: (p) => (reads.push(p), b.read(p)), list: (d) => b.list(d) };
+    const realNow = Date.now;
+    try {
+      // The files are "an hour old" for both checks.
+      Date.now = () => realNow() + 3_600_000;
+      expect((await checkVault(counted)).findings).toEqual([]);
+      expect(reads.length).toBe(50);
+      reads.length = 0;
+      expect((await checkVault(counted)).files).toBe(50);
+      expect(reads).toEqual([]);
+      // A file that changed (another size) is read again, and its new damage is found.
+      await b.write("n3.md", new Uint8Array([0x23, 0x20, 0xd7]));
+      const r = await checkVault(counted);
+      expect(reads).toEqual(["n3.md"]);
+      expect(r.findings[0]).toEqual({ kind: "truncated-utf8", path: "n3.md" });
+      reads.length = 0;
+      // In real time every file changed less than 3 s ago: none is trusted, all are read.
+      Date.now = realNow;
+      await checkVault(counted);
+      expect(reads.length).toBe(50);
+      reads.length = 0;
+      await checkVault(counted, { reuse: false });
+      expect(reads.length).toBe(50);
+    } finally {
+      Date.now = realNow;
+    }
+  });
+});
+
+describe("vault integrity check: saves with short names (255-byte note names)", () => {
+  const LONG = "א".repeat(126) + ".md";
+  it("an interrupted save is traced to its note through the journal and finished; without a journal its old version is an orphan, kept in the backup", async () => {
+    const b = createMemoryBackend();
+    const id = saveId();
+    await b.write(`notes/${journalNameFor(LONG, id)}`, journalBytes(LONG));
+    await b.write(`notes/${oldNameFor(LONG, id)}`, "old");
+    await b.write(`notes/${tempNameFor(LONG, id)}`, "new");
+    const lone = saveId();
+    await b.write(oldNameFor(LONG, lone), "old, note unknown");
+    const report = await checkVault(b);
+    expect(report.findings).toEqual([
+      { kind: "interrupted-write", path: `notes/${LONG}`, detail: `notes/${oldNameFor(LONG, id)}` },
+      { kind: "orphan-temp", path: oldNameFor(LONG, lone) },
+    ]);
+    const res = await repairVault(b, report.findings, { stamp: "t" });
+    expect(res.skipped).toEqual([]);
+    expect(await b.readText(`notes/${LONG}`)).toBe("new");
+    expect((await b.list("notes")).map((e) => e.name)).toEqual([LONG]);
+    expect(await b.readText(`${BACKUP_FOLDER}/t/${oldNameFor(LONG, lone)}`)).toBe("old, note unknown");
+  });
 });

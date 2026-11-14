@@ -126,7 +126,7 @@ describe("EmbedBlock", () => {
     expect(playerSrc(el.req)).toBe("https://player.vimeo.com/video/1");
     expect(el.req.kind === "embed" && el.req.referrerPolicy).toBe("strict-origin-when-cross-origin");
     expect(el.getAttribute("loading")).toBe("lazy");
-    // The providers' players need their own origin: the flags the embed block always gave them.
+    // The providers' players need their own origin; no frame opens windows (review 6 of #451).
     expect(el.getAttribute("sandbox")).toBe("allow-scripts allow-same-origin allow-popups allow-presentation allow-forms");
     const open = screen.getByRole("link");
     expect(open.getAttribute("href")).toBe("https://vimeo.com/1");

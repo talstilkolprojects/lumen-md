@@ -68,6 +68,18 @@ describe("secret store", () => {
     expect(await get("lumen.ai.key.a", kv())).toBe(undefined);
   });
 
+  it("updates memory at once, before the encrypted write lands", async () => {
+    await initSecretStore();
+    const write = setSecret("lumen.ai.key.now", "v1");
+    expect(getSecret("lumen.ai.key.now")).toBe("v1");
+    const clear = removeSecret("lumen.ai.key.now");
+    expect(getSecret("lumen.ai.key.now")).toBe(null);
+    await Promise.all([write, clear]);
+    await flushSecrets();
+    expect(getSecret("lumen.ai.key.now")).toBe(null);
+    expect(await get("lumen.ai.key.now", kv())).toBe(undefined);
+  });
+
   it("moves plaintext secrets out of localStorage and leaves other settings", async () => {
     localStorage.setItem("lumen.ai.key.openai", "sk-old");
     localStorage.setItem("lumen.theme", "dark");

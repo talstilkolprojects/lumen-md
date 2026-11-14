@@ -22,12 +22,15 @@ export const CERTIFICATE_COUNTS: readonly string[] = [
   "Every request this page made through fetch, XMLHttpRequest, WebSocket, EventSource, sendBeacon or RTCPeerConnection after airplane mode's wrappers loaded, and every fetch of its workers: each attempt counts once, whatever its size.",
   "Every resource load (image, font, style sheet, script) the browser lists in Resource Timing: a load from another origin counts as reaching the network even when the browser reports 0 bytes; a load from the app's own origin counts when it transferred bytes (it did not come from a cache).",
   "Every request, socket and peer still open when the switch went on: counted as having reached the network, then aborted or closed at that moment.",
+  "Every frame open when the switch went on with something in it, whatever its sandbox (playground and live-js runners, HTML and Live CSS previews, embeds, frames in shadow roots, frames a script navigated, <object> and <embed>): counted as having reached the network, then stopped at that moment (its page replaced by about:blank).",
+  "Every window the app or a frame of its own origin opened (window.open): counted, then closed at that moment. Every frame open when the switch went on that could open windows (its sandbox allows popups, or it has none) and whose windows this page can't reach: counted as a window that may have reached the network. Every service worker of the app's origin other than the app's own: counted, then unregistered.",
 ];
 
 /** What it does not prove, said plainly. */
 export const CERTIFICATE_NOT_COUNTED: readonly string[] = [
   "Requests made through a reference to fetch taken before airplane mode's wrappers loaded are not listed; the browser's Content-Security-Policy still refuses them to any other site.",
-  "Frames load nothing from a URL while the switch is on (frame-src allows blob: only); a frame open before it went on is not counted.",
+  "Frames load nothing from a URL while the switch is on (frame-src allows blob: only). What a frame open before the switch sent, before it was stopped, is counted once as that frame, not request by request.",
+  "While the switch is on, no frame gets allow-popups, however it is made, so none can open a window. A window a frame opened before the switch is out of this page's reach: it is counted (above), not closed, and may keep loading. A frame from another site, unless it is one of the known embed providers, has no storage or service worker of its own. A service worker that a known provider (YouTube, Vimeo and the others of the embed block) registered before the switch is outside this page and may keep running. A frame inside a closed shadow root made before airplane mode loaded is out of reach.",
   "What other apps, browser extensions or the operating system send is outside this page.",
 ];
 

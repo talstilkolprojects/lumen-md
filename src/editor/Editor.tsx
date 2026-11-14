@@ -535,7 +535,33 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
       extensions: baseExtensions,
     });
 
-    async function handleAssetFiles(view: EditorView, files: File[]) {
+    async function handleAssetFiles(view: EditorView, dropped: File[]) {
+      // Plan W5.11: a photo's GPS position, time and device are removed before
+      // it is stored or inlined (src/lib/imageMetadata.ts), unless kept. Fail
+      // closed (review 12.11): a photo that can't be cleaned is not added.
+      const isPhoto = (f: File) => /^image\/(jpeg|png|webp)$/.test(f.type);
+      let refused = 0;
+      const files = dropped.some(isPhoto)
+        ? await import("../lib/imageMetadata").then(
+            async (m) =>
+              (await Promise.all(dropped.map((f) => m.cleanImageFile(f).catch(() => null)))).filter((f): f is File => {
+                if (f === null) refused++;
+                return f !== null;
+              }),
+            () => {
+              // why: the cleaner didn't load, so no photo can be cleaned: none is added
+              const kept = dropped.filter((f) => !isPhoto(f));
+              refused += dropped.length - kept.length;
+              return kept;
+            },
+          )
+        : dropped;
+      if (refused > 0) {
+        void Promise.all([import("../ui/PromptDialog"), import("../lib/journalistStrings")]).then(([{ uiAlert }]) =>
+          uiAlert({ message: i18nT("photoMeta.refused", { count: refused }) }),
+        );
+      }
+      if (!files.length) return;
       const onAsset = onAddAssetRef.current;
       const inserts: string[] = [];
       const placed: Array<{ file: File; url: string; alt: string }> = [];

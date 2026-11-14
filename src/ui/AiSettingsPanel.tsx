@@ -12,7 +12,7 @@
  * so nothing here is a second source of truth.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { useFocusTrap } from "./useFocusTrap";
 import { Cpu, X } from "lucide-react";
 import { t } from "../i18n";
@@ -39,6 +39,9 @@ interface Props {
 }
 
 type RunnerId = Exclude<ExecutorId, "transformers">;
+
+// Where models download from (plan W4.14): its strings travel with it.
+const ModelSourcesSection = lazy(() => import("./ModelSourcesSection").then((m) => ({ default: m.ModelSourcesSection })));
 type Status = { available: boolean; detail?: string } | "checking";
 
 const box: React.CSSProperties = {
@@ -586,6 +589,12 @@ export function AiSettingsPanel({ open, onClose, embedded = false }: Props) {
               <button type="button" style={ghost} onClick={() => void clearCaches("webllm")}>{t("ai.settings.storage.clearWebllm")}</button>
               <button type="button" style={ghost} onClick={() => void clearCaches("transformers")}>{t("ai.settings.storage.clearWasm")}</button>
             </div>
+          </section>
+
+          <section style={box} aria-labelledby="ai-set-sources" data-testid="ai-set-sources">
+            <Suspense fallback={null}>
+              <ModelSourcesSection captionStyle={caption} />
+            </Suspense>
           </section>
 
           <section style={box} aria-labelledby="ai-set-endpoints">

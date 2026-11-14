@@ -74,6 +74,7 @@ export function atomicFsOf(fs: MobileFs): AtomicFs {
     },
     rename: (from, to) => fs.rename(from, to),
     remove: (path) => fs.remove(path),
+    readFile: (path) => fs.readFile(path),
   };
 }
 

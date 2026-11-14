@@ -34,7 +34,7 @@
  * says whether the room is sealed.
  */
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import { accessKeyOk, issueRoomToken, ROLES } from "./roomToken.mjs";
+import { accessKeyOk, issueRoomToken, ROLES, splitCommittedRoom } from "./roomToken.mjs";
 
 export const COMMENTS_SUFFIX = "~comments";
 export const ROOM_NAME = /^[\w-]{1,128}$/;
@@ -43,11 +43,20 @@ export const MAX_SHARE_TTL_S = 365 * 24 * 3600;
 export const DEFAULT_SHARE_TTL_S = 7 * 24 * 3600;
 const MIN_OWNER_SECRET = 22;
 
-/** `<room>` or `<room>~comments` → {room, kind}, or null for any other name. */
+/**
+ * The room a name means on this server. The app names a password room
+ * `<room>_k<32 hex>` (a commitment to its proof, for the public server:
+ * roomToken.mjs `COMMITTED_ROOM`, review 4 of #469). This server ignores the
+ * proof (access key, owner secret, share links), so the committed name is the
+ * same room as its plain name: its shares, owner and seal stay where they were.
+ */
+export const roomOf = (name) => splitCommittedRoom(name)?.base ?? name;
+
+/** `<room>` or `<room>~comments` (either with a commitment) → {room, kind}, or null for any other name. */
 export function parseDocumentName(name) {
   if (typeof name !== "string") return null;
   const comments = name.endsWith(COMMENTS_SUFFIX);
-  const room = comments ? name.slice(0, -COMMENTS_SUFFIX.length) : name;
+  const room = roomOf(comments ? name.slice(0, -COMMENTS_SUFFIX.length) : name);
   return ROOM_NAME.test(room) ? { room, kind: comments ? "comments" : "text" } : null;
 }
 
@@ -85,8 +94,8 @@ const publicShare = (s, nowMs) => ({ id: s.id, role: s.role, label: s.label, cre
  *   {action: "status", room, share}              → {role, expiresAt, state}
  */
 export function handleTokenRequest(req, { store, key, accessKey = "", tokenTtlS, nowMs = Date.now(), requireE2ee = false, sealable = () => true }) {
-  if (!req || typeof req !== "object" || typeof req.room !== "string" || !ROOM_NAME.test(req.room)) return { error: "bad-room" };
-  const room = req.room;
+  if (!req || typeof req !== "object" || typeof req.room !== "string" || !ROOM_NAME.test(roomOf(req.room))) return { error: "bad-room" };
+  const room = roomOf(req.room);
   const action = req.action ?? "token";
   /** Seal the room when an end-to-end client asks (only once it holds no readable content). */
   const seal = () => {

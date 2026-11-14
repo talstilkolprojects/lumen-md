@@ -7,7 +7,8 @@
  * `window.fetch` sees every request, and a test can hand in a fake server.
  */
 
-import { PreconditionFailedError, ProviderUnavailableError } from "../provider";
+import { randomBytes, toB64u } from "../bytes";
+import { PreconditionFailedError, ProviderUnavailableError, type PutCondition, type SyncProvider } from "../provider";
 
 export type FetchLike = (input: Request | string, init?: RequestInit) => Promise<Response>;
 
@@ -104,6 +105,84 @@ export function basicAuth(username: string, password: string): string {
 /** Only the vault's object names reach a provider: the fixed header name or a 43-character HMAC name. */
 export function checkObjectName(name: string): void {
   if (!/^[A-Za-z0-9_.-]{1,64}$/.test(name)) throw new Error(`Invalid object name "${name}"`);
+}
+
+
+/**
+ * An object for a probe (third review 12.11, N2): a random 43-character
+ * name and random bytes the size of the smallest sealed blob, so a probe
+ * looks like any blob upload and a provider can't single it out by its name.
+ */
+export function probeObject(): { name: string; data: () => Uint8Array } {
+  const name = toB64u(randomBytes(32));
+  return {
+    name,
+    data: () => {
+      const d = randomBytes(1 + 12 + 256 + 16);
+      d[0] = 1;
+      return d;
+    },
+  };
+}
+
+/**
+ * Prove a provider's conditional writes when it is connected, through its
+ * own `put` (re-review 12.11, RR-7): a create-only write succeeds on a new
+ * object and is refused on an existing one; a write with the current etag
+ * succeeds and one with the stale etag is refused, leaving the object as it
+ * was, and the etag read back is the one the write returned. A provider
+ * that fails is refused (`ProviderUnsupportedError`): without these, two
+ * devices saving at once can lose a change. The engine runs the same check
+ * again before any key or device change.
+ */
+export async function checkConditionalWrites(p: SyncProvider): Promise<void> {
+  const ignored = await conditionalWriteGap(p);
+  if (ignored) throw new ProviderUnsupportedError(p.id, `${ignored}, so it cannot do safe conditional writes`);
+}
+
+/** Which condition `p` ignores, or null when both hold. */
+async function conditionalWriteGap(p: SyncProvider): Promise<string | null> {
+  const probe = probeObject();
+  const race = probeObject();
+  const name = probe.name;
+  const refused = async (cond: PutCondition): Promise<boolean> => {
+    try {
+      await p.put(name, probe.data(), cond);
+      return false;
+    } catch (e) {
+      if (e instanceof PreconditionFailedError) return true;
+      throw e;
+    }
+  };
+  try {
+    const a = await p.put(name, probe.data(), { ifNoneMatch: "*" });
+    if (!(await refused({ ifNoneMatch: "*" }))) return "it accepted If-None-Match: * on an existing object";
+    let b: { etag: string };
+    const third = probe.data();
+    try {
+      b = await p.put(name, third, { ifMatch: a.etag });
+    } catch (e) {
+      if (e instanceof PreconditionFailedError) return "it refused If-Match with the current ETag";
+      throw e;
+    }
+    if (!(await refused({ ifMatch: a.etag }))) return "it accepted If-Match with a stale ETag";
+    const now = await p.get(name);
+    if (!now || !sameBytes(now.data, third) || now.etag !== b.etag) return "the ETag read back is not the one the write returned";
+    // Two creates at once: exactly one may win. A provider that says its
+    // create-only isn't atomic (Drive) is sync-only anyway (N7).
+    if (p.atomicCreate !== false) {
+      const wins = await Promise.all([race.data(), race.data()].map((d) => p.put(race.name, d, { ifNoneMatch: "*" }).then(() => 1, (e) => (e instanceof PreconditionFailedError ? 0 : Promise.reject(e)))));
+      if (wins[0] + wins[1] !== 1) return "two create-only writes racing on one name both succeeded";
+    }
+    return null;
+  } finally {
+    await p.delete(name).catch(() => undefined);
+    await p.delete(race.name).catch(() => undefined);
+  }
+}
+
+function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+  return a.length === b.length && a.every((x, i) => x === b[i]);
 }
 
 /** XML without a dependency: the browser's (and jsdom's) DOMParser. */
