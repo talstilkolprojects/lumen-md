@@ -36,13 +36,13 @@ markdown link are skipped automatically.
 
 ## Ask Workspace
 
-Inside `⇧⌘F` → **Ask Workspace** tab. Hybrid retrieval over your notes
-plus a chat model on top of the matched context. Multi-turn — the
+Inside `⌘K → Search workspace…` → **Ask Workspace** tab. Hybrid retrieval
+over your notes plus a chat model on top of the matched context. Multi-turn — the
 conversation persists for the open dialog.
 
 ## Privacy
 
 All three agents go through the same `chat()` pipeline and respect the
-**Local AI** toggle (`⌘K → Switch to local AI`). When local AI is on,
-prompts stay on your device — `web-llm` runs the model via WebGPU and
+**Local AI** toggle (`⌘K → Switch to local AI (WebGPU)`) and the
+[AI policy](/ai/privacy/). When local AI is on, prompts stay on your device — `web-llm` runs the model via WebGPU and
 the workspace never leaves your browser.

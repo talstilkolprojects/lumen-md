@@ -6,13 +6,13 @@ description: Get to your first beautiful Lumen document in 60 seconds.
 ## 1. Open Lumen
 
 Either visit [lumen.app](https://lumen.app) (the hosted PWA), install the
-[macOS .dmg](https://github.com/your-org/lumen/releases/latest), or run
+desktop app (see [Install Lumen](/getting-started/install/)), or run
 locally:
 
 ```bash
-git clone https://github.com/your-org/lumen
-cd lumen
-npm install
+git clone https://github.com/talstilkol/lumen-md
+cd lumen-md
+npm ci
 npm run dev
 ```
 
@@ -30,20 +30,23 @@ Hit `⌘N` for a fresh document. Try the smart paste — `⌘⇧V` opens an
 
 ## 3. Save it
 
-`⌘S` saves to your local OPFS workspace. Open the workspace pane (`⇧⌘E`)
-to browse / rename / move files. Everything is just markdown — your notes
-remain portable.
+`⌘S` saves to your local OPFS workspace. Open the workspace pane
+(`⌘K → Toggle workspace`) to browse / rename / move files. Everything is
+just markdown — your notes remain portable.
 
 ## 4. Power-user keys
 
 | Key | Action |
 | --- | --- |
 | `⌘K` | Command palette (everything is here) |
-| `⌘⇧F` | Workspace search — Smart tab does hybrid BM25 + embeddings |
+| `⇧⌘F` | Focus mode |
 | `⌘⇧V` | Smart Insert (auto-detect) |
 | `⌘1`–`⌘4` | Source / Split / Preview / WYSIWYG |
-| `⌘P` | Print → preserves colour for PDF |
+| `⌘H` | Find and replace |
 | `⌘O` / `⌘N` | Open / New |
+
+Workspace search is `⌘K → Search workspace…`; the full list is on
+[Keyboard shortcuts](/getting-started/shortcuts/).
 
 Now start writing — and explore the [Editor modes](/editor/modes/) for the
 heavier surfaces.

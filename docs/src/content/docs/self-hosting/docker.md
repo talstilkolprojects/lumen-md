@@ -34,16 +34,15 @@ persist outside container lifecycles.
 
 ```bash
 # 1. Clone Lumen
-git clone https://github.com/lumen-md/lumen.git
-cd lumen
+git clone https://github.com/talstilkol/lumen-md.git
+cd lumen-md
 
 # 2. Copy + edit the env template
 cp .env.onprem.example .env.onprem
 $EDITOR .env.onprem
 #   set LUMEN_PG_PASSWORD to a strong value
 #   set LUMEN_BASE_URL to your domain
-#   set LUMEN_COLLAB_TOKEN (openssl rand -hex 32) — clients enter it in
-#   Collab settings → "Server access token"
+#   leave LUMEN_COLLAB_TOKEN empty for now (see the note below)
 #   leave Stripe / Sentry / WorkOS empty for now
 
 # 3. Build + start
@@ -52,6 +51,16 @@ make onprem-up
 
 After ~60 s of image build + container start, visit
 `http://<vm-ip>` and you should see the Lumen editor.
+
+:::caution[`LUMEN_COLLAB_TOKEN` in this bundle]
+The bundle passes `LUMEN_COLLAB_TOKEN` to the collab server, but not to the
+app it builds (`docker/Dockerfile.web` has no `VITE_YJS_WEBSOCKET_TOKEN`
+argument), and the app has no screen for entering one yet. With a token
+set, the app's own clients are refused by the collab server. Keep it
+empty, or build the web image yourself with `VITE_YJS_WEBSOCKET_TOKEN`
+(see [Persistent rooms](/collab/persistent/)). New rooms are end-to-end
+encrypted either way.
+:::
 
 ## DNS setup (recommended)
 
@@ -132,8 +141,8 @@ docker run --rm -v lumen_collab-data:/data -v "$(pwd)":/backup alpine \
 
 User documents themselves never leave the browser — they live in OPFS
 (Origin Private File System) per browser, per origin. Encourage users
-to use the built-in **Export workspace** command to back up their
-local content.
+to back up their local content with `⌘K → Export the whole vault…`
+(see [Export and import](/workspace/export-import/)).
 
 ## Updating Lumen
 

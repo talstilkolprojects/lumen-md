@@ -10,9 +10,14 @@ searches — from inside the chat, with no extra UI.
 
 ## Install
 
+The server isn't published to npm yet, so build it from the repository
+(Node 22 or later):
+
 ```bash
-# No install at all — the server runs via npx:
-npx @lumen-md/mcp-server
+git clone https://github.com/talstilkol/lumen-md
+cd lumen-md/mcp-server
+npm ci
+npm run build          # → mcp-server/dist/index.js
 ```
 
 ## Configure Claude Desktop
@@ -23,8 +28,8 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 {
   "mcpServers": {
     "lumen": {
-      "command": "npx",
-      "args": ["-y", "@lumen-md/mcp-server"],
+      "command": "node",
+      "args": ["/path/to/lumen-md/mcp-server/dist/index.js"],
       "env": {
         "LUMEN_WORKSPACE": "/Users/you/Documents/Lumen"
       }
@@ -44,6 +49,7 @@ Lumen workspace is now part of Claude's context.
 | `write_note` | `path`, `content` | Confirmation string |
 | `list_notes` | — | Newline-separated list of every `.md` / `.txt` |
 | `search_workspace` | `query`, `limit?` | Substring matches with line numbers |
+| `append_note` | `path`, `content` | Adds to the end of an existing note |
 | `delete_note` | `path`, `confirm: true` | Refuses without `confirm: true` (safety guard) |
 | `update_frontmatter` | `path`, `set?`, `unset?` | Patch YAML keys; body untouched |
 | `list_tags` | — | Tag → count map across the whole workspace |
@@ -59,7 +65,8 @@ on each → composes a summary with citations linking back to your notes.
 > *Capture my last 5 messages as a new note titled "Meeting prep — Q3".*
 
 Claude calls `write_note("meetings/2026-q3-prep.md", "...")` — your note
-appears in OPFS instantly (after the next `cap sync` or Git pull).
+is written to `LUMEN_WORKSPACE` at once; the web app sees it after the
+next Git pull (see below).
 
 > *Tag every note under `2024/` as archived.*
 
@@ -82,5 +89,5 @@ against directories you'd be comfortable showing the agent.
 
 The MCP server is a Node process — it can't reach OPFS in your browser
 directly. The standard pattern: bind your Lumen workspace to a Git repo
-(`⌘K → Git: Clone`), clone the same repo to the path you set in
-`LUMEN_WORKSPACE`, and use `git pull` / push to keep both sides in sync.
+(`⌘K → Git: clone repository…`), clone the same repo to the path you set
+in `LUMEN_WORKSPACE`, and use `git pull` / push to keep both sides in sync.

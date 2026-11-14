@@ -5,9 +5,7 @@
 A production-grade markdown editor built on the open web platform: CodeMirror 6,
 unified/remark/rehype, Yjs, OPFS, and WebRTC. Zero server required by default.
 
-[![Tests](https://img.shields.io/badge/tests-2196%20passing-brightgreen)](MASTER_PLAN.md)
-[![TypeScript](https://img.shields.io/badge/TypeScript-clean-blue)](tsconfig.json)
-[![E2E](https://img.shields.io/badge/e2e-33%2F33-brightgreen)](e2e/)
+[![CI](https://github.com/talstilkol/lumen-md/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/talstilkol/lumen-md/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Privacy](https://img.shields.io/badge/privacy-local--first-blue)](PRIVACY.md)
 
@@ -21,9 +19,9 @@ unified/remark/rehype, Yjs, OPFS, and WebRTC. Zero server required by default.
 | **Smart Search** | BM25+ keyword index fused with OpenAI vector embeddings (Reciprocal-Rank Fusion) inside `⇧⌘F` |
 | **Voice Dictation** | Two modes: Quick (Web Speech API, real-time) and AI Memo (MediaRecorder → Whisper transcription) |
 | **Live Collaboration** | Yjs CRDT over WebRTC — peer-to-peer, zero server required for P2P rooms |
-| **MCP Server** | `npx @lumen-md/mcp-server` gives Claude Desktop / Cursor direct access to your workspace |
-| **Privacy-first** | AES-256-GCM secrets vault, telemetry opt-out, full offline capability (PWA) |
-| **i18n + RTL** | 8 languages (en, he, ar, de, fr, ja, ru, zh-CN) with 638-key full coverage; RTL-safe layout, LTR code/math islands; strict zero-drift CI guard |
+| **MCP Server** | `mcp-server/` gives Claude Desktop / Cursor direct access to your workspace (build from source; not on npm yet) |
+| **Privacy-first** | AES-256-GCM encrypted secrets (OS keychain in the macOS and Windows desktop apps), telemetry opt-out, full offline capability (PWA) |
+| **i18n + RTL** | 8 languages (en, he, ar, de, fr, ja, ru, zh-CN) with full key coverage; RTL-safe layout, LTR code/math islands; strict zero-drift CI guard |
 
 ---
 
@@ -52,7 +50,7 @@ Or try the online version at [lumen.md](https://lumen.md) — no install needed.
 
 | Shortcut | Action |
 |---|---|
-| `⌘K` | Command palette (100+ commands) |
+| `⌘K` | Command palette (every command) |
 | `⇧⌘F` | Workspace search (fuzzy + semantic) |
 | `⌘N` / `⌘O` / `⌘S` / `⇧⌘S` | New / Open / Save / Save As |
 | `⌘1` – `⌘4` | Editor mode switching |
@@ -85,19 +83,19 @@ Or try the online version at [lumen.md](https://lumen.md) — no install needed.
 
 - **Inline AI prompt** — select text → `⌘⇧A` → describe the change → streamed diff applied
 - **Rewrite / Summarize / Translate / Explain** via command palette
-- **AI commit messages** — `⌘K → Git: AI Commit Message` generates a commit from the diff
+- **AI commit messages** — `⌘K → Git: commit & push current repo…` suggests a message from the diff
 - **Voice AI Memo** — record speech → Whisper transcribes → AI cleans + inserts
-- **Smart Search** — hybrid BM25+vector retrieval (`⌘K → Smart search`)
+- **Smart Search** — hybrid BM25+vector retrieval (`⌘K → Smart search (semantic + keyword)`)
 - **On-device LLM** — toggle `useLocalAi` to route prompts to WebGPU via `@mlc-ai/web-llm`
-- **Custom fine-tune** — `⌘K → AI: Fine-tune` exports JSONL training pairs from your notes
+- **Custom fine-tune** — `⌘K → AI fine-tune settings…` exports JSONL training pairs from your notes
 
 ### Workspace & files
 
 - **OPFS workspace** — multi-file tree with subfolders, autosave, rename/delete (recursive)
-- **Recents** — `⌘K → Recent files`
+- **Recents** — recent files are listed in the command palette (`⌘K`, “Open: …”)
 - **Image paste & drag-drop** — saves to OPFS, inserts markdown `![](…)`
 - **Frontmatter editor** — structured panel for YAML/TOML metadata
-- **Templates** — 20+ starter templates + template marketplace
+- **Templates** — starter templates + template marketplace
 - **Version history** — per-file undo history with timeline scrubber
 - **Wiki-links** `[[Page|label]]` + backlinks panel + graph view
 - **Tags panel** — workspace-wide tag index from frontmatter `tags:`
@@ -136,7 +134,7 @@ src/
 ├── data/            CSV/JSON/YAML parsing, type inference, chart suggestions
 ├── editor/          CodeMirror 6 extensions (typewriter, lint, embed hints…)
 ├── hooks/           React hooks (collab, git, drag-drop, Tauri menu…)
-├── i18n/            i18next setup + 8 locale JSON files (595 keys each)
+├── i18n/            i18next setup + 8 locale JSON files (same keys in each)
 ├── lib/             Utilities: logger, cryptoRandom, debounce, telemetry, audit
 ├── lint/            Markdown lint rules (markdownlint-rule-remark compatible)
 ├── mcp-server/      Model Context Protocol server (9 tools)
@@ -157,19 +155,20 @@ src/
 ## 🧪 Testing
 
 ```bash
-npm test              # vitest (992 unit tests across 123 files)
-npm run test:e2e      # playwright (11 e2e specs)
-npm run typecheck     # tsc --noEmit (0 errors)
-npm run bundle-budget # verify all chunks within size limits
+npm test              # vitest unit tests
+npm run test:e2e      # playwright e2e specs
+npm run typecheck     # tsc --noEmit
+npm run budget        # verify all chunks within size limits
+npm run docs:sync     # the docs name only commands and scripts that exist
 ```
 
-**Coverage**: lines 97.24 % · statements 97.24 % · branches 69.56 %
+**Coverage**: CI fails a PR below the line-coverage floor set in `.github/workflows/ci.yml` (step “Coverage gate”).
 
 ---
 
 ## 🌍 Internationalisation
 
-8 languages with full key coverage (595 keys each):
+8 languages with full key coverage (the i18n drift gate in CI keeps them equal):
 
 | Language | Code | Direction |
 |---|---|---|
@@ -190,8 +189,10 @@ Switch via `⌘K → Language: …`. Adding a new locale: create `src/i18n/local
 
 Expose your Lumen workspace to Claude Desktop, Cursor, or any MCP client:
 
+It isn't published to npm yet; build it from this repository (Node 22+):
+
 ```bash
-npx @lumen-md/mcp-server
+cd mcp-server && npm ci && npm run build   # → mcp-server/dist/index.js
 ```
 
 Available tools: `read_note`, `write_note`, `list_notes`, `search_workspace`, `delete_note`, `update_frontmatter`, `list_tags`, `get_backlinks`, `append_note`.
@@ -202,8 +203,9 @@ Configure in Claude Desktop (`~/Library/Application Support/Claude/claude_deskto
 {
   "mcpServers": {
     "lumen": {
-      "command": "npx",
-      "args": ["@lumen-md/mcp-server"]
+      "command": "node",
+      "args": ["/path/to/lumen-md/mcp-server/dist/index.js"],
+      "env": { "LUMEN_WORKSPACE": "/Users/you/Documents/Lumen" }
     }
   }
 }
@@ -229,7 +231,7 @@ VITE_SUPABASE_ANON_KEY=eyJ...
 VITE_SENTRY_DSN=https://xxx@o123.ingest.sentry.io/456
 ```
 
-Users can opt out via `⌘K → Privacy → Disable telemetry`. The Sentry SDK is never loaded when the DSN is absent or the user has opted out.
+Users can opt out with the **Telemetry** toggle in the status bar. The Sentry SDK is never loaded when the DSN is absent or the user has opted out.
 
 ### Enterprise audit log
 

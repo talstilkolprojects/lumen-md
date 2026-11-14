@@ -1,0 +1,23 @@
+{
+  "$comment": "Plan 13.1: every feature has a docs page in English and Hebrew. `areas`: the areas 13.1.1 names, each mapped to its page slug. `pending`: pages whose content is written by another open PR (named here); the check fails once such a page exists on this branch, so the entry must then be removed. Checked by scripts/docs-complete.mjs (npm run docs:complete). `hebrewPending`: English page exists here, its Hebrew twin comes with another open PR.",
+  "areas": {
+    "git sync": "sync/git",
+    "encrypted sync": "sync/e2ee",
+    "export / import": "workspace/export-import",
+    "Hebrew": "editor/hebrew",
+    "shortcuts": "getting-started/shortcuts",
+    "installation": "getting-started/install",
+    "local models": "ai/local-llm",
+    "privacy": "ai/privacy",
+    "plugins": "plugins/sdk"
+  },
+  "pending": {
+    "sync/git": "#269 feat/safe-git (plan 3.3)",
+    "sync/e2ee": "#275 feat/e2ee-sync-core / #291 feat/e2ee-sync-providers (plan 3.4, 3.5)",
+    "sync/cloud": "#291 feat/e2ee-sync-providers (plan 3.5)",
+    "plugins/gallery": "feat/plugins-install (plan 11.2 part 3, S5b)"
+  },
+  "hebrewPending": {
+    "plugins/sdk": "feat/plugins-install (plan 11.2 part 3, S5b) rewrites this page with its Hebrew twin"
+  }
+}

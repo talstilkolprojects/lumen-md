@@ -49,6 +49,13 @@ jobs:
       - name: Definition of done for every ✅ task
         run: npm run dod -- --done
 
+      - name: Docs sync (docs name only commands and scripts that exist; no hand-typed counts in README)
+        run: npm run -s docs:sync
+
+      # Plan 13.1: every feature has a docs page, in English and Hebrew; no orphan pages or dead internal links.
+      - name: Docs complete (every sidebar page in en + he; 13.1.1 areas covered; links resolve)
+        run: npm run -s docs:complete
+
       - name: Test
         run: npm run test
 

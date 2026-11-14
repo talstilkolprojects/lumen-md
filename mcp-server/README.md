@@ -7,10 +7,12 @@ and the agent finds, reads, or writes files in your workspace transparently.
 
 ## Install
 
+Not published to npm yet — build it from the repository (Node 22+):
+
 ```bash
-npm install -g @lumen-md/mcp-server
-# or, no install:
-npx @lumen-md/mcp-server
+cd mcp-server
+npm ci
+npm run build          # → dist/index.js
 ```
 
 ## Configure Claude Desktop
@@ -22,8 +24,8 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
 {
   "mcpServers": {
     "lumen": {
-      "command": "npx",
-      "args": ["-y", "@lumen-md/mcp-server"],
+      "command": "node",
+      "args": ["/path/to/lumen-md/mcp-server/dist/index.js"],
       "env": { "LUMEN_WORKSPACE": "/Users/you/Documents/Lumen" }
     }
   }

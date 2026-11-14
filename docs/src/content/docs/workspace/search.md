@@ -3,7 +3,8 @@ title: Workspace search (BM25 + Smart)
 description: Fast keyword search by default, semantic embeddings on demand.
 ---
 
-`⇧⌘F` opens the workspace search dialog. Three tabs:
+`⌘K → Search workspace…` opens the workspace search dialog (the palette
+shows `⇧⌘F` next to it, but that key toggles focus mode today). Three tabs:
 
 ## Search (BM25)
 
