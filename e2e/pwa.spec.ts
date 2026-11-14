@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { swOfflineOrSkip } from "./_engines";
 
 /**
  * D1 / D3 — the installed app keeps the manifest's promises:
@@ -30,8 +31,7 @@ test("production build opens offline after the first visit", async ({ page, cont
   await page.goto("/");
   await expect(page.locator(".cm-content").first()).toBeVisible({ timeout: 15_000 });
   const dev = await page.evaluate(() => !!document.querySelector('script[src*="/@vite/client"]'));
-  // skip-reason: the service worker exists on the production build only, and Playwright can take only Chromium offline with a worker in control | task: 0.5 | until: 2027-05-12
-  test.skip(dev || browserName !== "chromium", "the service-worker offline check runs on the production build in Chromium");
+  swOfflineOrSkip(dev, browserName, "the service-worker offline check runs on the production build in Chromium");
   // Chromium has service workers: their absence on a production build is a regression, not a skip.
   expect(await page.evaluate(() => "serviceWorker" in navigator)).toBe(true);
   await page.evaluate(async () => {

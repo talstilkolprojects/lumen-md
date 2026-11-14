@@ -78,8 +78,9 @@ function noteOfSize(bytes: number): string {
 
 test.describe.configure({ mode: "serial" });
 
-test.beforeEach(async ({ page, browserName }) => {
-  test.skip(browserName !== "chromium", "CPU throttling and Event Timing need Chromium");
+// Every test here is tagged @inp, and only the "inp" project (Desktop Chrome) runs @inp,
+// so CPU throttling and Event Timing always have Chromium (W4.12: the engine skip was dead code).
+test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem("lumen-tour-done", "1");
     localStorage.setItem("lumen-md", JSON.stringify({ state: { showWorkspace: true }, version: 0 }));

@@ -1,4 +1,6 @@
 import { test, expect, type Page, type TestInfo } from "@playwright/test";
+import { chromiumOnly } from "./_engines";
+import { vaultOrSkip } from "./_opfs";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -217,14 +219,14 @@ test.describe.configure({ mode: "serial" });
 
 test.beforeEach(async ({ page, browserName }, info) => {
   envOf = environment(info);
-  test.skip(envOf.cpuSlowdown > 1 && browserName !== "chromium", "CPU throttling needs Chromium");
+  if (envOf.cpuSlowdown > 1) chromiumOnly(browserName, "CPU throttling");
   await page.addInitScript(() => {
     localStorage.setItem("lumen-tour-done", "1");
     localStorage.setItem("lumen-md", JSON.stringify({ state: { showWorkspace: true }, version: 0 }));
   });
   await page.goto("/");
   await expect(page.locator(".cm-content, .ProseMirror").first()).toBeVisible({ timeout: 60_000 });
-  test.skip(!(await seed(page)), "OPFS createWritable is unavailable in this engine's test context");
+  vaultOrSkip(await seed(page), browserName);
   await page.reload();
   await expect(page.locator(".cm-content, .ProseMirror").first()).toBeVisible({ timeout: 60_000 });
 });

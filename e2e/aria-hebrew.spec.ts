@@ -30,6 +30,7 @@ async function open(page: Page, mode: "preview" | "source" = "preview") {
 }
 
 test.describe("aria snapshots, Hebrew interface", () => {
+  // skip-reason: the aria snapshots pin Chromium's accessibility tree; each engine builds its own, and the real screen readers run in sr/ (W6.30) | task: W4.21 | until: 2027-05-12
   test.skip(({ browserName }) => browserName !== "chromium", "the accessibility tree is pinned on Chromium; the real readers are in sr/");
 
   test("shell: the skip link comes first, then the main landmark", async ({ page }) => {

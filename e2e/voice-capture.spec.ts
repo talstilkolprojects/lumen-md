@@ -11,6 +11,7 @@ import { test, expect } from "@playwright/test";
  */
 
 // Chromium's fake microphone; Firefox and WebKit have no equivalent permission in Playwright.
+// skip-reason: Playwright gives a fake microphone only to Chromium (--use-fake-device-for-media-stream); Firefox and WebKit have none | task: W1.13 | until: 2027-05-12
 test.skip(({ browserName }) => browserName !== "chromium", "fake microphone: Chromium only");
 test.use({
   permissions: ["microphone"],
@@ -33,7 +34,6 @@ test("record a voice note into inbox.md with the recording attached; nothing lea
   await page.goto("/?capture=1");
   const box = page.getByTestId("quick-capture");
   await expect(box).toBeVisible({ timeout: 15_000 });
-  test.skip(!(await page.evaluate(() => typeof navigator.storage?.getDirectory === "function" && typeof MediaRecorder !== "undefined")), "no OPFS or MediaRecorder");
 
   const mic = box.getByTestId("capture-voice");
   const pressed = Date.now();

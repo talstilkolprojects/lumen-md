@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 import { makeEpub } from "../src/__tests__/helpers/epubFixture";
 
 /**
@@ -53,9 +54,9 @@ const readVaultFile = (page: Page, name: string) =>
     }
   }, name);
 
-test("an EPUB highlight reopens at the right place, and the reader fetches nothing", async ({ page }) => {
+test("an EPUB highlight reopens at the right place, and the reader fetches nothing", async ({ page, browserName }) => {
   test.setTimeout(60_000);
-  test.skip(!(await putInVault(page, "book.epub", await makeEpub({ hebrew: true, deflate: true }))), "this engine refuses OPFS writes here, so there is no vault to keep the book in");
+  vaultOrSkip(await putInVault(page, "book.epub", await makeEpub({ hebrew: true, deflate: true })), browserName);
   const outside: string[] = [];
   page.on("request", (r) => {
     const u = new URL(r.url());
@@ -106,6 +107,7 @@ test("an EPUB highlight reopens at the right place, and the reader fetches nothi
 
 test("golden EPUBs open in under 2 s with a table of contents (LUMEN_EPUB_GOLDEN)", async ({ page }) => {
   const dir = process.env.LUMEN_EPUB_GOLDEN;
+  // skip-reason: an opt-in measurement over golden EPUB books that are not in the repo (set LUMEN_EPUB_GOLDEN) | task: W1.14 | until: 2027-05-12
   test.skip(!dir, "set LUMEN_EPUB_GOLDEN to a folder of golden .epub files");
   test.setTimeout(10 * 60_000);
   const { readdirSync, readFileSync } = await import("node:fs");

@@ -1,4 +1,5 @@
 import { test, expect, type BrowserContext, type Page, type Request } from "@playwright/test";
+import { chromiumOnly } from "./_engines";
 
 /**
  * Plan W2.19: two devices on one local network, no cloud. Two browser
@@ -67,7 +68,8 @@ async function lanPanel(page: Page, role: "host" | "peer") {
 const result = (page: Page) => page.getByTestId("sync-result");
 
 test("two devices on the local network pair, sync both ways on their own, and reach nothing else", async ({ browser, browserName, baseURL }) => {
-  test.skip(browserName !== "chromium", "the vault reads OPFS through Chromium's async iterator");
+  // Real LAN addresses need the Chromium flag above; Firefox needs its own pref, not wired yet (W2.19).
+  chromiumOnly(browserName, "the mDNS flag");
   test.setTimeout(120_000);
   const appHost = new URL(baseURL ?? "http://localhost:5173").host;
   const ctxA = await browser.newContext();

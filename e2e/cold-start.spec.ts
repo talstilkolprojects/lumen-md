@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * Plan W2.21 — a cold start, measured from navigation to the last note
@@ -102,7 +103,7 @@ test.beforeEach(async ({ page }, info) => {
   }
 });
 
-test("cold start: the last note is editable within budget, without layout shifts", { tag: "@coldstart" }, async ({ page }, info) => {
+test("cold start: the last note is editable within budget, without layout shifts", { tag: "@coldstart" }, async ({ page, browserName }, info) => {
   test.setTimeout(300_000);
   const phone = info.project.name === "coldstart-phone";
   const budget = phone ? 1500 : 800;
@@ -114,7 +115,7 @@ test("cold start: the last note is editable within budget, without layout shifts
   expect(small.cls).toBeLessThan(0.05);
   if (PROD) expect(small.editableMs).toBeLessThan(budget);
 
-  test.skip(!(await canSeed(page)), "OPFS createWritable is unavailable in this engine's test context");
+  vaultOrSkip(await canSeed(page), browserName);
   await seedVault(page, 100);
   const hundred = await coldStart(page);
   await seedVault(page, 10_000);
