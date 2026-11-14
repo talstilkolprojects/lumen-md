@@ -14,6 +14,7 @@ import type { ImportReport, ImportSourceId } from "./types";
 import { toast } from "../../store/useToastStore";
 import { HelpButton } from "../../ui/HelpButton";
 import { explainError } from "../../lib/userError";
+import { markActivation } from "../../metrics/count";
 
 interface Props {
   open: boolean;
@@ -95,6 +96,7 @@ export function ImportWizard({ open, onClose }: Props) {
     try {
       const { report, undo } = await commitImport(prep);
       window.dispatchEvent(new Event("lumen-workspace-changed"));
+      markActivation("import.complete", report.notes); // W11.P4, local only
       setSavedReport(null);
       setStep({ kind: "done", report, undo });
     } catch (e) {

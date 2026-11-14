@@ -67,6 +67,7 @@ import { setSuggesting, suggestingAuthor, suggestingExtension, suggestingSkip } 
 import { useAuth } from "../auth/useAuth";
 import type { CollabSession } from "../collab/yjs";
 import { joinTextEnvelope, splitTextEnvelope, type TextEnvelope } from "../storage/textCodec";
+import { markActivation } from "../metrics/count";
 
 const mdHighlight = HighlightStyle.define([
   { tag: t.heading1, class: "tok-heading tok-heading1" },
@@ -487,6 +488,8 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
     const view = new EditorView({ state: startState, parent: hostRef.current });
     viewRef.current = view;
     assetFilesRef.current = handleAssetFiles;
+    // W11.P4: TTFV-1, launch to an editable cursor (the first editor of this page load; local only).
+    markActivation("editor.ready");
 
 
 

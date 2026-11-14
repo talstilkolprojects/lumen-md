@@ -57,3 +57,27 @@ check this (`src/__tests__/usageMetrics.test.ts`): counting, errors, the
 dashboard and the report make 0 requests and add 0 ledger entries. A report
 built after secrets were planted in the vault's storage contains none of
 them.
+
+## Activation and time to first value
+
+To know whether a first visit works, Lumen also keeps a few marks of its own
+on your device (`lumen.activation.v1`, plan W11.P4):
+
+| Mark | What it holds |
+|---|---|
+| First run | the day setup first opened |
+| Editor ready | how long the last 20 starts took from opening to an editable cursor (TTFV-1), in ms |
+| First note of your own | the day it was saved, and how long after setup opened when that was in the same session (TTFV-2) |
+| Import | the first day an import finished with at least one note, and how many have |
+| Second day | the first later day Lumen opened |
+
+Only days, yes/no facts and durations: no time of day, no note names, no
+text. You count as *activated* after a note of your own or an import, plus a
+return on another day within 7 days of the first run. Turning counting off
+clears these marks too.
+
+If you joined the beta and send the weekly beta report, it carries only the
+summary: activated or not, the mean TTFV-1 (rounded to 100 ms), TTFV-2
+(rounded to the second), and the yes/no facts. Never the individual starts.
+The tests check this (`src/__tests__/activationTtfv.test.ts`): the marks and
+the report make 0 requests and add 0 ledger entries.
