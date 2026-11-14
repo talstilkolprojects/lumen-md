@@ -442,6 +442,7 @@ describe("re-review 12.11: who may change keys", () => {
     const a2 = device("A2", p, a.sync.keys());
     a2.store.state = JSON.parse(JSON.stringify(a.store.state));
     delete a2.store.state!.pairingUntil;
+    delete a2.store.state!.pairingKept; // W8.5: nor the hold of the comparison A confirmed
     await a2.sync.enroll("y", (await generateIdentity()).recipient);
     await expect(x.sync.pair(await codeFrom(p, a2))).rejects.toBeInstanceOf(KeyringForkError);
   });
