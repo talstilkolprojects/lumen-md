@@ -22,7 +22,8 @@ import { McpClient, httpTransport, isLoopbackUrl, type JsonRpcMessage, type McpT
 import { addServer, blockedReason, effectivePermission, readServers, setToolPermission, SUGGESTED_SERVERS, type McpServerConfig, type ReachContext } from "../agents/mcp/servers";
 import { agentToolName, serverAgentTools } from "../agents/mcp/tools";
 import { CredentialStore, authorizationRequest, checkAuthorizationResponse, checkAuthServerMetadata, CLIENT_ID } from "../agents/mcp/oauth";
-import { describeNetworkCall } from "../agents/network";
+import { describeNetworkCall, openNetworkGate } from "../agents/network";
+import { ledgerEntries } from "../ai/privacyLedger";
 import { registerExecutor, resetExecutors } from "../agents/executors";
 import { runAgent } from "../agents/runtime";
 import { clearStagedChanges, listStagedChanges } from "../agents/staging";
@@ -310,6 +311,11 @@ describe("review 21", () => {
     expect(net!.networkTarget).toBe("stdio://knesset");
     expect(net!.offeredBy).toEqual(["MCP server Test server"]);
     expect((await describeNetworkCall(net!, { id: "x", name: net!.name, args: {} })).host).toBe("knesset");
+    // It makes no fetch, so the gate records it in the privacy ledger itself, under stdio://knesset.
+    const before = ledgerEntries().length;
+    await openNetworkGate(net!, { id: "y", name: net!.name, args: { q: "חוק" } }, () => true);
+    const added = ledgerEntries().slice(before);
+    expect(added.map((e) => [e.host, e.method, e.decision])).toEqual([["stdio://knesset", "STDIO", "allowed"]]);
     const [off] = await serverAgentTools(server({ id: "files", transport: "stdio", url: undefined, offline: true }), t, { reach: () => REACH, confirmCall: () => true });
     expect(off!.scope).toBe("read");
     expect(off!.networkTarget).toBeUndefined();

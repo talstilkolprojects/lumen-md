@@ -18,7 +18,7 @@
 
 import type { AgentTool, NetworkConsentRequest, ToolCall } from "./types";
 import { getAiPolicy } from "../ai/policy";
-import { ledgerFetch, recordBlockedRequest } from "../ai/privacyLedger";
+import { ledgerFetch, recordBlockedRequest, recordProcessCall } from "../ai/privacyLedger";
 import { ToolError } from "./tools/define";
 import "./networkStrings";
 
@@ -129,6 +129,13 @@ export async function openNetworkGate(
 ): Promise<{ fetch: typeof fetch; consented: boolean; bound: NetworkBinding }> {
   const reason = `Agent tool ${tool.name}`;
   const { url, bound, ...described } = await describeNetworkCall(tool, call);
+  // A local program (an MCP server on stdio) makes no fetch: its call gets its own ledger entry once allowed (review 24, C3r).
+  const opened = async <T extends { consented: boolean }>(r: T): Promise<T> => {
+    if (url.startsWith("stdio://")) {
+      recordProcessCall(url, `${reason}${r.consented ? " (user consent)" : ""}`, JSON.stringify(call.args ?? {}).length, r.consented);
+    }
+    return r;
+  };
   const req = guard?.untrusted.length ? { ...described, untrusted: guard.untrusted } : described;
   if (getAiPolicy() !== "local-only") {
     // Plan 2.7: with untrusted content in the run, the call needs the user's
@@ -145,9 +152,9 @@ export async function openNetworkGate(
         recordBlockedRequest(url, "research", `${reason} (untrusted content in the run, not approved)`);
         throw new ToolError("denied", (await import("./untrusted")).UNTRUSTED_DENIED);
       }
-      return { fetch: boundFetch(ledgerFetch({ force: { category: "research", reason: `${reason} (approved: untrusted content in the run)` }, consent: true }), bound.endpoint), consented: true, bound };
+      return opened({ fetch: boundFetch(ledgerFetch({ force: { category: "research", reason: `${reason} (approved: untrusted content in the run)` }, consent: true }), bound.endpoint), consented: true, bound });
     }
-    return { fetch: boundFetch(ledgerFetch({ force: { category: "research", reason } }), bound.endpoint), consented: false, bound };
+    return opened({ fetch: boundFetch(ledgerFetch({ force: { category: "research", reason } }), bound.endpoint), consented: false, bound });
   }
   let ok = false;
   try {
@@ -156,7 +163,7 @@ export async function openNetworkGate(
     ok = false;
   }
   if (!ok) throw recordBlockedRequest(url, "research", `${reason} (local-only, no consent)`);
-  return { fetch: boundFetch(ledgerFetch({ force: { category: "research", reason: `${reason} (user consent)` }, consent: true }), bound.endpoint), consented: true, bound };
+  return opened({ fetch: boundFetch(ledgerFetch({ force: { category: "research", reason: `${reason} (user consent)` }, consent: true }), bound.endpoint), consented: true, bound });
 }
 
 /** A fetch that reaches only the research service the call was approved for. */
