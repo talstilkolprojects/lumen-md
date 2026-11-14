@@ -239,7 +239,7 @@ describe("npm run budget:history and budget:ratchet", () => {
       g.commit(base().map((r) => (r.name === "main bundle" ? { ...r, budgetKb: 182 } : r)), "chore: ratchet [skip ci]", 455);
       const lines: string[] = [];
       expect(run(parseArgs(["--history", "--cwd", g.dir]), (l: string) => lines.push(l))).toBe(0);
-      expect(lines).toEqual(["budget history since the first commit:", "✓ budget history: 2 commits of scripts/bundle-budgets.json, perf-gate.config.json, lighthouserc.json, 0 raises."]);
+      expect(lines).toEqual(["budget history since the first commit:", "✓ budget history: 2 commits of scripts/bundle-budgets.json, perf-gate.config.json, lighthouserc.json, lighthouserc.mobile.json, 0 raises."]);
       const bad = g.commit(base(), "feat: more room [skip ci]", 455);
       const h = checkHistory(g.dir);
       expect(h.raises).toEqual([{ sha: bad, subject: "feat: more room [skip ci]", path: "scripts/bundle-budgets.json", line: "- `scripts/bundle-budgets.json` main bundle: 182 → 195 (raised)." }]);

@@ -488,7 +488,8 @@ steps:
       npm run build
       LUMEN_STEP
       gate 'Lighthouse CI' LHCI_GITHUB_APP_TOKEN='' <<'LUMEN_STEP'
-      npx -y @lhci/cli@0.13.x autorun --config=./lighthouserc.json
+      npx -y @lhci/cli@0.16.1 autorun --config=./lighthouserc.json
+      npx -y @lhci/cli@0.16.1 autorun --config=./lighthouserc.mobile.json
       LUMEN_STEP
       gates_done
       LUMEN_JOB
@@ -504,7 +505,8 @@ steps:
           limit: 2
         - exit_status: 255
           limit: 1
-    if: "build.branch == \"main\" || build.pull_request.labels includes \"lighthouse\""
+    artifact_paths:
+      - "reports/lh/**/*"
   - label: ":lock_with_ink_pen: signed receipt"
     key: "receipt"
     depends_on:

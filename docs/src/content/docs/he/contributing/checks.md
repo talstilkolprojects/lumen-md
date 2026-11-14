@@ -60,7 +60,7 @@ node scripts/vercel-build.mjs --dry-run    # print the gates, run nothing
 
 | משימה בתוכנית | היה | עכשיו |
 |---|---|---|
-| 8.3 שער Lighthouse | משימת LHCI בכל PR | `npm run lighthouse` (חציון של 5 ריצות, הספים ב-`lighthouserc.json`) ב-Sandbox, מול הבנייה של ה-preview; לא שלב בבנייה, כי הוא צריך Chromium |
+| 8.3 שער Lighthouse | משימת LHCI בכל PR | שלב Lighthouse ב-Buildkite רץ על כל PR, בלי תנאי תווית או ענף: `npm run lighthouse` מריץ את Lighthouse CI 0.16.1 ‏(Lighthouse 13) במחשב (`lighthouserc.json`: ביצועים ≥ 0.9, ‏LCP ≤ 2.5 שניות, ‏TBT ≤ 200 ms, ‏CLS ≤ 0.1) ובטלפון (`lighthouserc.mobile.json`: ביצועים ≥ 0.8, ‏LCP ≤ 2.5 שניות), 5 ריצות בכל אחד, הריצה החציונית, וכל סף הוא שגיאה. הדוחות נשמרים בדיסק תחת `reports/lh/` וכתוצרי בנייה, אף פעם לא באחסון ציבורי. בניית preview ב-Vercel מריצה גם את `npm run perf:gate` אחרי ה-e2e. ‏`src/__tests__/perfGate.test.ts` נכשל כשסף כלשהו רפוי מהתוכנית. ‏INP נמדד ב-`e2e/inp-budget.spec.ts`. |
 | 0.19 שער PR ‏(Danger.js, ‏size-limit) | תגובת Danger ו-size-limit בכל PR | חלק הגודל הוא שער **תקציב החבילה** (לכל chunk ראשי יש תקציב, `scripts/bundle-budget.mjs`); קריאת רשת שלא רשומה מכשילה את **vitest** ‏(`src/__tests__/cloudRoutes.test.ts` בודק כל נתיב ענן); הפרש הרישיונות הוא **שער הרישיונות**. לתגובה עצמה ב-PR עוד אין תחליף |
 | 13.3 בניות Android ו-iOS | בניות מובייל ב-CI | `npm run android:sync` / `npm run ios:sync` במחשב עם ה-SDK (‏iOS דורש macOS); חלק הרשת שהן כוללות הוא מה שבניית ה-preview בודקת |
 | 13.4 צינור שחרור | workflow של שחרור | סקריפט שחרור מקומי, ארטיפקטים חתומים ו-rollback במחשב של מפתח; השחרור של אפליקציית הרשת הוא בניית ה-production |

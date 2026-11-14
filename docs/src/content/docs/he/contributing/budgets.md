@@ -12,7 +12,8 @@ description: תקציבי החבילה וספי ה־FCP וה־LCP של שער ה
 |---|---|---|
 | `scripts/bundle-budgets.json` | כל סוג chunk (KB דחוס, לכל קובץ) ואת סך ה־startup | `npm run budget` |
 | `perf-gate.config.json` | ‏FCP ו־LCP של כל פרופיל, ושאר המדדים | `npm run perf:gate` |
-| `lighthouserc.json` | הציונים והמדדים של Lighthouse | `npm run lighthouse` |
+| `lighthouserc.json` | הציונים והמדדים של Lighthouse, מחשב | `npm run lighthouse` |
+| `lighthouserc.mobile.json` | הציונים והמדדים של Lighthouse, טלפון | `npm run lighthouse` |
 
 הכלל הראשון ב־`bundle-budgets.json` שהתבנית שלו מתאימה לשם הקובץ קובע את
 התקציב של הקובץ, ולכן תבניות צרות באות קודם.

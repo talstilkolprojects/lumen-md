@@ -19,8 +19,10 @@
 export const BUDGETS_PATH = "scripts/bundle-budgets.json";
 export const PERF_CONFIG_PATH = "perf-gate.config.json";
 export const LIGHTHOUSE_PATH = "lighthouserc.json";
+/** Lighthouse's mobile run (W10.E9): the same rules as the desktop file. */
+export const LIGHTHOUSE_MOBILE_PATH = "lighthouserc.mobile.json";
 /** The files whose history must only go down (`npm run budget:history`). */
-export const RATCHET_FILES = [BUDGETS_PATH, PERF_CONFIG_PATH, LIGHTHOUSE_PATH];
+export const RATCHET_FILES = [BUDGETS_PATH, PERF_CONFIG_PATH, LIGHTHOUSE_PATH, LIGHTHOUSE_MOBILE_PATH];
 /** The performance metrics in the ratchet (W6.26 step 4). */
 export const PERF_METRICS = ["fcp", "lcp"];
 
@@ -270,7 +272,7 @@ export function raisesFor(path, beforeText, afterText) {
   }
   if (path === BUDGETS_PATH) return budgetRaises(before, after);
   if (path === PERF_CONFIG_PATH) return perfRaises(before, after);
-  if (path === LIGHTHOUSE_PATH) return lighthouseRaises(before, after);
+  if (path === LIGHTHOUSE_PATH || path === LIGHTHOUSE_MOBILE_PATH) return lighthouseRaises(before, after);
   return [];
 }
 
