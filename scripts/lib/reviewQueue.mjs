@@ -80,6 +80,25 @@ export const AREAS = [
     attacks: ["Inside each changed frame: `top.location`, `parent.document` and `window.open` are blocked."],
   },
   {
+    key: "Review",
+    weight: 3,
+    ask: "Does every redaction pass still read the same input (suggesting marks included), does the preview still parse as redaction does, and is every frame and sink still sandboxed behind Trusted Types?",
+    attacks: [
+      "A redacted span inside a suggestion and inside an embedded note: absent from the preview's export and from every export door.",
+      "In each changed runner or plugin frame: `parent.document` and `top.location` are blocked, and a string assigned to innerHTML is refused by Trusted Types.",
+      "Diff index.html's frame-src against EMBED_ORIGINS: equal.",
+    ],
+  },
+  {
+    key: "Found",
+    weight: 3,
+    ask: "What made the gate call this file sensitive (crypto, a network call, an export door, a sanitizer, CSP, a frame, redaction)? Does the change keep that rule's guarantee?",
+    attacks: [
+      "Run `npm run codeowners:check`: the file's rules, then the matching area's attack cases above.",
+      "A new network call: it names a ledger host or carries its `// privacy-ledger:` note (ledgerGaps).",
+    ],
+  },
+  {
     key: "Native",
     weight: 3,
     ask: "No broader fs:/shell: permission? Updates still signed and from the release host only?",
