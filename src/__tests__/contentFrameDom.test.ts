@@ -71,7 +71,7 @@ describe("src/lib/contentFrame.ts", () => {
   });
 
   it("createContentFrame: attributes and a size from the frame's report", () => {
-    const img = createContentFrame(reqs[0]);
+    const img = createContentFrame(reqs[0]) as HTMLIFrameElement;
     expect(img.getAttribute("sandbox")).toBe("allow-scripts");
     expect(img.dataset.contentFrame).toBe("img");
     expect(img.title).toBe("שלום");
@@ -84,19 +84,51 @@ describe("src/lib/contentFrame.ts", () => {
     applyContentFrameSize(img, { width: "1e9", height: -1 });
     expect(img.style.width).toBe("640px");
 
-    const fixed = createContentFrame({ kind: "img", src: "https://img.example.com/x.png", width: 100, height: 50 });
+    const fixed = createContentFrame({ kind: "img", src: "https://img.example.com/x.png", width: 100, height: 50 }) as HTMLIFrameElement;
     expect(fixed.style.width).toBe("100px");
     applyContentFrameSize(fixed, { width: 640, height: 480 });
     expect(fixed.style.width).toBe("100px");
 
-    const gist = createContentFrame(reqs[4]);
-    applyContentFrameSize(gist, { width: 500, height: 333.2 });
-    expect(gist.style.height).toBe("333px");
+    // W10.D2: a Gist is a link to GitHub, not a frame running GitHub's script.
+    const gist = createContentFrame(reqs[4]) as HTMLAnchorElement;
+    expect(gist.tagName).toBe("A");
+    expect(gist.href).toBe("https://gist.github.com/someone/abc123");
+    expect(gist.rel).toBe("noopener noreferrer");
+    expect(gist.target).toBe("_blank");
+    expect(gist.textContent).toBe("gist.github.com/someone/abc123");
 
-    const embed = createContentFrame(reqs[3]);
+    const embed = createContentFrame(reqs[3]) as HTMLIFrameElement;
     expect(embed.getAttribute("allow")).toBe("fullscreen");
     expect(embed.style.height).toBe("100%");
     applyContentFrameSize(embed, { width: 10, height: 10 });
     expect(embed.style.height).toBe("100%");
+  });
+});
+
+/**
+ * W10.D2 acceptance: no third-party code runs at the app's origin. Every page
+ * the app can show a Gist or an embed in, and the app's own policy, have no
+ * gist.github.com in script-src, so GitHub's script can reach neither
+ * IndexedDB nor OPFS of the app; the preview renders a Gist as a link.
+ */
+describe("W10.D2: no Gist script at the app's origin", () => {
+  it("no policy of a page at the app's origin allows gist.github.com scripts", async () => {
+    const { readFileSync } = await import("node:fs");
+    const policy = JSON.parse(readFileSync("security/policy.json", "utf8")) as { routes: Record<string, { csp?: Record<string, string[]> }> };
+    for (const [route, def] of Object.entries(policy.routes)) expect(def.csp?.["script-src"] ?? [], route).not.toContain("https://gist.github.com");
+    for (const f of ["public/_headers", "deploy/vercel.base.json", "deploy/nginx.conf", "public/content-frame.html", "index.html"]) {
+      const text = readFileSync(f, "utf8");
+      for (const m of text.matchAll(/script-src[^;"]*/g)) expect(m[0], f).not.toContain("gist.github.com");
+    }
+  });
+
+  it("the preview renders a Gist as a link: nothing is framed, no script element is made", () => {
+    const before = document.querySelectorAll("script").length;
+    const el = createContentFrame({ kind: "gist", user: "someone", id: "abc123" });
+    document.body.appendChild(el);
+    expect(el.tagName).toBe("A");
+    expect(document.querySelectorAll('iframe[data-content-frame="gist"]').length).toBe(0);
+    expect(document.querySelectorAll("script").length).toBe(before);
+    el.remove();
   });
 });

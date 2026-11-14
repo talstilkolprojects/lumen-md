@@ -6,27 +6,24 @@
          route content-frame, by `npm run headers:write`), also for the contexts
          that serve no header for this page: Vite dev, Capacitor (plan W4.15).
          The app frames this page to show what another site serves into a note
-         once the user allowed it: an image, a video / audio file, a provider
-         embed or a Gist. It keeps https: images and the embed providers out of
-         the app's own policy. The nonce is for WebKit, which does not match
-         'self' in an opaque-origin (sandboxed) frame; it is fixed and public,
-         as on the runner pages — nothing writes markup into this page except
-         the Gist script it was asked for. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'nonce-lumen-livejs-runner' https://gist.github.com; style-src 'self' 'unsafe-inline' https://github.githubassets.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.loom.com https://codepen.io https://codesandbox.io https://www.figma.com https://open.spotify.com https://www.google.com https://maps.google.com https://www.openstreetmap.org https://platform.twitter.com https://www.facebook.com https://www.instagram.com https://www.tiktok.com https://www.redditmedia.com https://www.reddit.com https://www.linkedin.com https://w.soundcloud.com; connect-src 'none'; base-uri 'none'; form-action 'none'" />
+         once the user allowed it: an image, a video / audio file or a provider
+         embed. It keeps https: images and the embed providers out of the
+         app's own policy. No third-party script runs here (W10.D2): a Gist is
+         a link, so this page has no gist.github.com. The nonce is for
+         WebKit, which does not match 'self' in an opaque-origin (sandboxed)
+         frame; it is fixed and public, as on the runner pages (W10.D1). -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'nonce-lumen-livejs-runner'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.loom.com https://codepen.io https://codesandbox.io https://www.figma.com https://open.spotify.com https://www.google.com https://maps.google.com https://www.openstreetmap.org https://platform.twitter.com https://www.facebook.com https://www.instagram.com https://www.tiktok.com https://www.redditmedia.com https://www.reddit.com https://www.linkedin.com https://w.soundcloud.com; connect-src 'none'; base-uri 'none'; form-action 'none'" />
     <meta name="robots" content="noindex" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <title>Lumen content frame</title>
     <style>
       html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
-      body.lumen-cf-gist { overflow: auto; font-size: 12px; }
       img, video, iframe { display: block; width: 100%; height: 100%; border: 0; }
       audio { display: block; width: 100%; }
       html, body.lumen-cf-fill { height: 100%; }
     </style>
   </head>
   <body>
-    <!-- A classic (parser-blocking) script: a Gist's embed script uses
-         document.write, which works only while the page is being parsed. -->
     <script src="/content-frame.js" nonce="lumen-livejs-runner"></script>
   </body>
 </html>

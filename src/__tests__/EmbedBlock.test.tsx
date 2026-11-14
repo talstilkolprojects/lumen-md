@@ -107,11 +107,18 @@ describe("EmbedBlock", () => {
     );
   });
 
-  it("a GitHub gist runs its embed script in an opaque-origin content frame", async () => {
-    const el = await frame("https://gist.github.com/someone/abc123");
-    expect(el.req).toEqual({ kind: "gist", user: "someone", id: "abc123" });
-    expect(el.getAttribute("sandbox")?.split(" ")).not.toContain("allow-same-origin");
-    expect(el.getAttribute("sandbox")?.split(" ")).toContain("allow-scripts");
+  it("W10.D2: a GitHub gist is a link: no frame, no script, nothing to approve", async () => {
+    const { container } = render(<EmbedBlock source={"https://gist.github.com/someone/abc123"} />);
+    const link = await waitFor(() => {
+      const a = container.querySelector<HTMLAnchorElement>("a[data-gist-link]");
+      if (!a) throw new Error("no gist link yet");
+      return a;
+    });
+    expect(link.getAttribute("href")).toBe("https://gist.github.com/someone/abc123");
+    expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+    expect(container.querySelector("iframe")).toBeNull();
+    expect(container.querySelector("script")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Load" })).toBeNull();
   });
 
   it("SoundCloud gets the audio-only permissions, delegated through the content frame", async () => {

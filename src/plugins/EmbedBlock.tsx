@@ -231,8 +231,8 @@ function parse(line: string): Embed | null {
       allow: ALLOW,
     };
   }
-  // GitHub Gist: its embed script (document.write) runs in an opaque-origin
-  // content frame — the only page whose policy allows gist.github.com.
+  // GitHub Gist: shown as a link (W10.D2). Its embed is GitHub's script
+  // document.write()ing into the page, and no page of ours runs it.
   m = url.match(/gist\.github\.com\/([\w-]+)\/(\w+)/);
   if (m) {
     return {
@@ -306,12 +306,14 @@ function EmbedBody({ embed }: { embed: Embed }) {
     return <div style={notice} dir="auto">{t("block.embed.notEmbeddable", { host })}</div>;
   }
   if (embed.gist) {
-    // The desktop app's policy runs no script from gist.github.com.
+    // W10.D2: a link, everywhere. Nothing loads, so nothing needs the user's approval first.
     if (remoteImagesUnavailable()) return <div style={notice} dir="auto">{t("block.embed.gistDesktop")}</div>;
     return (
-      <Suspense fallback={null}>
-        <RemoteFrameGate gateUrl={embed.src} request={{ kind: "gist", ...embed.gist }} />
-      </Suspense>
+      <div style={notice} dir="ltr">
+        <a href={embed.src} target="_blank" rel="noopener noreferrer" data-gist-link="">
+          {`gist.github.com/${embed.gist.user}/${embed.gist.id}`}
+        </a>
+      </div>
     );
   }
   return (
