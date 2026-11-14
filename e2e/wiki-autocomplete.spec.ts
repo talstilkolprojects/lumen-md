@@ -34,13 +34,22 @@ async function seedVault(page: Page): Promise<boolean> {
       return false;
     }
     for (const [path, text] of Object.entries(notes)) {
-      const parts = path.split("/");
-      let dir = root;
-      for (const p of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(p, { create: true });
-      const file = await dir.getFileHandle(parts[parts.length - 1], { create: true });
-      const w = await file.createWritable();
-      await w.write(text);
-      await w.close();
+      try {
+        const parts = path.split("/");
+        let dir = root;
+        for (const p of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(p, { create: true });
+        const file = await dir.getFileHandle(parts[parts.length - 1], { create: true });
+        const w = await file.createWritable();
+        await w.write(text);
+        await w.close();
+      } catch (e) {
+        // Run 4 (dpl_5uyX5tvs) failed here with a TypeMismatchError (a name that
+        // exists as the other kind) that a fresh context should never have:
+        // say which path, and what the vault's root held, so the next run tells.
+        const held: string[] = [];
+        for await (const [name, h] of (root as unknown as { entries(): AsyncIterable<[string, FileSystemHandle]> }).entries()) held.push(`${name} (${h.kind})`);
+        throw new Error(`seeding ${path}: ${(e as Error).name}: ${(e as Error).message}; the OPFS root holds: ${held.join(", ") || "nothing"}`);
+      }
     }
     window.dispatchEvent(new CustomEvent("lumen-workspace-changed", { detail: { kind: "structure" } }));
     return true;

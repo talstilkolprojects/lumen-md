@@ -26,7 +26,7 @@ describe("e2e test hooks", () => {
   it("every module a spec loads is one the hook knows", () => {
     const target: { __lumenTest?: LumenTestHooks } = {};
     installE2eHooks(target);
-    const known = new Set(target.__lumenTest!.modules);
+    const known = new Set<string>(target.__lumenTest!.modules);
     const used = new Set(specs.flatMap(({ text }) => [...text.matchAll(/__lumenTest\.load\("([^"]+)"\)/g)].map((m) => m[1])));
     expect(used.size).toBeGreaterThan(0);
     expect([...used].filter((n) => !known.has(n))).toEqual([]);

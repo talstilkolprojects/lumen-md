@@ -11,6 +11,8 @@ import { GATES, GATE_EXTRA, PREVIEW_GATES, PRODUCTION_GATES, gatesFor, vitestSum
 import { E2E_SPECS, FIREFOX_SPECS, boxMinutes, e2eRuns } from "../../scripts/e2e-gate.mjs";
 // @ts-expect-error — plain .mjs script without type declarations
 import { failureLines } from "../../scripts/e2e-report.mjs";
+// @ts-expect-error — plain .mjs script without type declarations
+import { E2E_FAST } from "../../scripts/test-tiers.mjs";
 
 const ROOT = resolve(__dirname, "..", "..");
 const pkg = JSON.parse(readFileSync(resolve(ROOT, "package.json"), "utf8")) as { scripts: Record<string, string> };
@@ -64,14 +66,16 @@ describe("scripts/vercel-build.mjs", () => {
   it("the e2e gate's time box ends by minute 38 of the build (Vercel stops at 45)", () => {
     const t0 = 1_000_000_000_000;
     const min = 60_000;
-    expect(boxMinutes({}, t0)).toBe(8); // not inside vercel-build: the default box
-    expect(boxMinutes({ LUMEN_BUILD_STARTED: String(t0) }, t0 + 5 * min)).toBe(8);
+    expect(boxMinutes({}, t0)).toBe(10); // not inside vercel-build: the default box
+    expect(boxMinutes({ LUMEN_BUILD_STARTED: String(t0) }, t0 + 5 * min)).toBe(10);
     expect(boxMinutes({ LUMEN_BUILD_STARTED: String(t0) }, t0 + 32.5 * min)).toBe(5);
     expect(boxMinutes({ LUMEN_BUILD_STARTED: String(t0) }, t0 + 40 * min)).toBe(0);
     expect(GATES.e2e).toEqual(["run", "-s", "e2e:gate"]);
-    // The whole chromium project took 29.7 min on the build machine; the gate runs the specs that fit.
-    // W6.30: axe and the aria snapshots on the Hebrew flows join the smoke spec.
-    expect(E2E_SPECS).toEqual(["e2e/smoke.spec.ts", "e2e/a11y-hebrew-gate.spec.ts", "e2e/aria-hebrew.spec.ts"]);
+    // The whole chromium project took 29.7 min on the build machine; the gate runs the curated fast set
+    // (scripts/test-tiers.mjs) and every spec runs nightly (src/__tests__/testTiers.test.ts pins both).
+    expect(E2E_SPECS).toEqual(E2E_FAST);
+    // W6.30: axe and the aria snapshots on the Hebrew flows stay in the gate beside the smoke spec.
+    for (const f of ["e2e/smoke.spec.ts", "e2e/a11y-hebrew-gate.spec.ts", "e2e/aria-hebrew.spec.ts"]) expect(E2E_SPECS).toContain(f);
     for (const f of E2E_SPECS) expect(existsSync(resolve(ROOT, f)), f).toBe(true);
     // Firefox runs the smoke spec too; WebKit cannot run on the build image (glibc 2.34).
     expect(FIREFOX_SPECS).toEqual(["e2e/smoke.spec.ts"]);
