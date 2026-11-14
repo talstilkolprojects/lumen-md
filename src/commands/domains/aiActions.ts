@@ -8,6 +8,7 @@ import { t } from "../../i18n";
 import { showAiToast } from "../../ui/AiToast";
 import { useAppStore } from "../../store/useStore";
 import { getSecret, setSecret } from "../../lib/secretStore";
+import "./commandBodiesStrings";
 
 /** `ai.usage` (moved from ai.ts, which loads this module when the command runs). */
 export const aiUsage = async () => {

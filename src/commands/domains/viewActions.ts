@@ -7,6 +7,7 @@ import { showAiToast } from "../../ui/AiToast";
 import { t } from "../../i18n";
 import { explainError } from "../../lib/userError";
 import { useAppStore } from "../../store/useStore";
+import "./commandBodiesStrings";
 
 /** `research.litReview` (moved from view.ts, which loads this module when the command runs). */
 export const researchLitReview = async () => {

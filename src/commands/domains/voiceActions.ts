@@ -9,6 +9,7 @@ import { showAiToast } from "../../ui/AiToast";
 import { getAiPolicy } from "../../ai/policy";
 import { uiConfirm, uiSelect, uiPrompt } from "../../ui/PromptDialog";
 import { explainError } from "../../lib/userError";
+import "./commandBodiesStrings";
 
 /** `note.read` (moved from voice.ts, which loads this module when the command runs). */
 export const noteRead = async () => {

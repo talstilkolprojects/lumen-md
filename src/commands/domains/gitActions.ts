@@ -12,6 +12,7 @@ import { explainError } from "../../lib/userError";
 import { showAiToast } from "../../ui/AiToast";
 import type { CommandContext } from "./context";
 import { gitApi, describeNetError } from "./git";
+import "./commandBodiesStrings";
 
 /** `git.clone` (moved from git.ts, which loads this module when the command runs). */
 export const gitClone = async ({ showWorkspace, toggleWorkspace }: Pick<CommandContext, "showWorkspace" | "toggleWorkspace">) => {

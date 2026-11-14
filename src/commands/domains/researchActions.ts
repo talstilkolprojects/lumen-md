@@ -10,6 +10,7 @@ import { explainError } from "../../lib/userError";
 import { openTemplateDoc } from "../openDoc";
 import type { CommandContext } from "./context";
 import { saveClip } from "./research";
+import "./commandBodiesStrings";
 
 /** `clip.url` (moved from research.ts, which loads this module when the command runs). */
 export const clipUrl = async () => {
