@@ -1,0 +1,5 @@
+{
+  "identity": "${LUMEN_SIGSTORE_IDENTITY}",
+  "issuer": "https://github.com/login/oauth",
+  "why": "Who signs lumen-md releases with keyless Sigstore (plan W7.22). identity: the email Tal's Sigstore login puts in the Fulcio certificate (cosign prints it when signing); issuer: the OIDC issuer of that login (GitHub). Until identity is filled in, scripts/supply-chain/verify.mjs and sign.sh refuse to run."
+}
