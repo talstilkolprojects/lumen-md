@@ -50,7 +50,7 @@ with 1 when a check fails. Warnings do not fail it.
   is worked out from the code, not kept by hand
   (`scripts/lib/sensitivePaths.mjs`): shipped code whose path or text shows
   cryptography, an export or publish door, a sanitizer, a frame sandbox,
-  CSP or security headers, a network call, redaction, criticMarkup, or the
+  CSP or security headers, a network call, redaction, criticMarkup, agent tools and MCP, or the
   Markdown-to-HTML pipeline and its raw-HTML sinks. Each changed file of
   that kind needs a line in `.github/CODEOWNERS`, or an entry in
   `security/codeowners-exceptions.json` with a reason and an expiry date

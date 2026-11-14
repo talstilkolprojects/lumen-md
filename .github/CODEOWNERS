@@ -218,6 +218,19 @@
 /src/renderer/pipeline.ts                @talstilkol
 /vite.config.ts                          @talstilkol
 
+# ── Agent tools and MCP: what an agent may do, and what reaches it (review 21) ──
+/mcp-server/src/                         @talstilkol
+/src/agents/mcp/                         @talstilkol
+/src/agents/skills/                      @talstilkol
+/src/agents/runtime.ts                   @talstilkol
+/src/agents/untrusted.ts                 @talstilkol
+/src/agents/network.ts                   @talstilkol
+/src/agents/tools/define.ts              @talstilkol
+#   found by the coverage gate's agent rule: the MCP inbox, and the MCP server's dependencies
+/src/agents/mcpInbox.ts                  @talstilkol
+/mcp-server/package.json                 @talstilkol
+/mcp-server/package-lock.json            @talstilkol
+
 # ── This rule itself ──
 /.github/CODEOWNERS                      @talstilkol
 /scripts/lib/humanReview.mjs             @talstilkol

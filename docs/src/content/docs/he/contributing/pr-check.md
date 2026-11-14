@@ -53,7 +53,7 @@ npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-c
 - **לכל קובץ רגיש יש בעלים (משימה W8.6).** אילו קבצים רגישים מחושב מהקוד,
   ולא נשמר ביד (`scripts/lib/sensitivePaths.mjs`): קוד שנשלח למשתמשים
   שהנתיב או הטקסט שלו מראים הצפנה, דלת ייצוא או פרסום, sanitizer, ‏sandbox
-  של מסגרת, CSP או כותרות אבטחה, קריאת רשת, השחרה, ‏criticMarkup, או צינור
+  של מסגרת, CSP או כותרות אבטחה, קריאת רשת, השחרה, ‏criticMarkup, כלי סוכנים ו־MCP, או צינור
   ה־Markdown ל־HTML והמקומות שמכניסים HTML גולמי. כל קובץ כזה שהשתנה צריך
   שורה ב־`.github/CODEOWNERS`, או רשומה ב־`security/codeowners-exceptions.json`
   עם סיבה ותאריך תפוגה (לכל היותר 90 יום קדימה). חריגה שפג תוקפה או שאין לה
