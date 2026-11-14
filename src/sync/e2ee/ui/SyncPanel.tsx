@@ -512,6 +512,15 @@ export function SyncPanel({ onClose, session = syncSession() }: { onClose: () =>
   );
 }
 
+/** Before an OAuth sign-in leaves the page: the provider to connect on return (the guided setup uses it too). */
+export function savePendingOAuth(settings: ProviderSettings): void {
+  try {
+    sessionStorage.setItem(PENDING_OAUTH, JSON.stringify(settings));
+  } catch {
+    /* why: private mode: the user connects again after signing in */
+  }
+}
+
 /** After an OAuth sign-in returns: the provider the user chose before leaving. */
 export function takePendingOAuth(): ProviderSettings | null {
   try {

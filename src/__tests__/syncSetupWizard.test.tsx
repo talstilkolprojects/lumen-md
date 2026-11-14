@@ -3,7 +3,8 @@
  * in-memory relay (the same protocol as sync-server/vault-relay.js). Counts
  * the clicks each device needs, and checks the key-loss warning comes first.
  */
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { encodeQr, qrPath } from "../lib/qr";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { SetupWizard } from "../sync/e2ee/ui/SetupWizard";
 import { createSession } from "../sync/e2ee/ui/session";
@@ -119,4 +120,30 @@ describe("SetupWizard", () => {
     const stored = [...relay.spaces.values()].flatMap((s) => [...s.values()]).map((o) => new TextDecoder().decode(o.data)).join("");
     expect(stored).not.toContain("שלום");
   });
+
+  it("shows the key's words as a QR code only when asked, and never logs them (W10.C20)", async () => {
+    const relay = memoryRelay();
+    const a = device(relay.fetch);
+    const logged: string[] = [];
+    const spies = (["log", "info", "warn", "error", "debug"] as const).map((k) => vi.spyOn(console, k).mockImplementation((...args: unknown[]) => void logged.push(args.map(String).join(" "))));
+    try {
+      render(<SetupWizard folderAccess={false} relay={RELAY} session={a.session} onClose={() => undefined} onAdvanced={() => undefined} />);
+      fireEvent.click(screen.getByTestId("sync-setup-continue"));
+      const list = await waitFor(() => screen.getByTestId("sync-setup-words"));
+      const words = [...list.querySelectorAll("li")].map((li) => li.textContent ?? "");
+      expect(screen.queryByTestId("sync-setup-qr")).toBeNull();
+      fireEvent.click(screen.getByTestId("sync-setup-qr-toggle"));
+      const fig = screen.getByTestId("sync-setup-qr");
+      // The symbol is the encoder's for exactly the words the other device types.
+      const expected = qrPath(encodeQr(words.join(" "), "M"));
+      expect(fig.querySelector("path")!.getAttribute("d")).toBe(expected);
+      expect(fig.querySelector("svg")!.getAttribute("aria-label")).toMatch(/QR/);
+      fireEvent.click(screen.getByTestId("sync-setup-qr-toggle"));
+      expect(screen.queryByTestId("sync-setup-qr")).toBeNull();
+      for (const w of words) expect(logged.join("\n")).not.toContain(w);
+    } finally {
+      for (const s of spies) s.mockRestore();
+    }
+  });
 });
+

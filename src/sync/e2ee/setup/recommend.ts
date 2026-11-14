@@ -11,8 +11,11 @@
  *   3. WebDAV (Nextcloud, a NAS…): always possible, needs an address and a
  *      password, so it is last for a non-technical user.
  *
- * Google Drive and Dropbox through their APIs need OAuth apps that are not
- * registered yet (an owner step); the setup offers them only when they are.
+ * Google Drive and Dropbox through their APIs (W10.C19): a non-technical
+ * user knows them, not WebDAV, so the setup always lists them. They need
+ * OAuth apps the owner registers (plan 15.5); until a build has one, the
+ * option is listed as not available in this build (`unready`), never
+ * offered as if it worked.
  */
 
 export type SetupBackend = "folder" | "relay" | "webdav" | "dropbox" | "gdrive";
@@ -33,6 +36,8 @@ export interface SetupChoices {
   recommended: SetupBackend;
   /** Every place this device can use, the recommended one first. */
   available: SetupBackend[];
+  /** Listed, but not usable in this build (Drive / Dropbox without their OAuth app). */
+  unready: SetupBackend[];
 }
 
 export function setupChoices(c: SetupCapabilities): SetupChoices {
@@ -42,7 +47,10 @@ export function setupChoices(c: SetupCapabilities): SetupChoices {
   if (c.gdriveOAuth) available.push("gdrive");
   if (c.dropboxOAuth) available.push("dropbox");
   available.push("webdav");
-  return { recommended: available[0], available };
+  const unready: SetupBackend[] = [];
+  if (!c.gdriveOAuth) unready.push("gdrive");
+  if (!c.dropboxOAuth) unready.push("dropbox");
+  return { recommended: available[0], available, unready };
 }
 
 /** Is this a phone or a tablet? (Coarse pointer and no hover, or a mobile user agent.) */
