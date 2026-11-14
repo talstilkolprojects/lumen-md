@@ -460,6 +460,9 @@ export async function moveVault(
   const source = getVaultBackend();
   if (!source.available()) throw new Error("The current vault is not available.");
   if (await sameLocation(fromLoc, to)) throw new Error("The vault is already there.");
+  // A folder inside the vault (or the vault inside the folder): copying
+  // would write into the source itself, and the move could never finish.
+  if (await nested(fromLoc, to)) throw new Error("The vault cannot move into a folder inside itself, or into a folder that contains it.");
   // The vault keeps its identity where it goes: its history follows it.
   const fromId = activeId ?? (await identityOrNull(fromLoc));
   const target = backendFor(to);
@@ -561,6 +564,17 @@ export async function moveVault(
       const there = await targetBytes(target, path);
       if (!there || !same(there, await bytes(source, path))) throw new Error(`“${path}” changed or went missing during the move; resume to copy it again.`);
     }
+    // A file an interrupted run copied and that has left the source since
+    // (deleted or renamed before Resume) would come back in the new vault:
+    // the move's own copy goes, if it still holds what the move wrote. The
+    // source's trash, if the note went there, was copied with the rest.
+    for (const [path, hash] of Object.entries(written)) {
+      if (copied[path]) continue;
+      const there = await targetBytes(target, path).catch(() => null);
+      if (there && (await sha256(there)) === hash) await target.remove(path);
+      delete written[path];
+    }
+    await kv.set(MOVE_KEY, record);
     await kv.set(LOCATION_KEY, to);
     await kv.set(LAST_MOVE_KEY, { from: fromLoc, to, copied } satisfies LastMove);
     await kv.del(MOVE_KEY);
@@ -633,6 +647,19 @@ export async function cancelPendingMove(): Promise<void> {
   await kv.del(MOVE_KEY);
   pending = null;
   changed();
+}
+
+/** One folder location inside the other (FileSystemDirectoryHandle.resolve). */
+async function nested(a: StoredLocation, b: StoredLocation): Promise<boolean> {
+  if (a.kind !== "folder" || b.kind !== "folder") return false;
+  type Resolving = { resolve?: (o: FileSystemHandle) => Promise<string[] | null> };
+  const inside = async (outer: FileSystemDirectoryHandle, inner: FileSystemDirectoryHandle) => {
+    const r = (outer as Resolving).resolve;
+    if (typeof r !== "function") return false;
+    const path = await r.call(outer, inner).catch(() => null);
+    return !!path && path.length > 0;
+  };
+  return (await inside(a.handle, b.handle)) || (await inside(b.handle, a.handle));
 }
 
 async function sameLocation(a: StoredLocation, b: StoredLocation): Promise<boolean> {

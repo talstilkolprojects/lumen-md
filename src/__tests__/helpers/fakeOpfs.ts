@@ -55,6 +55,16 @@ export class FakeDir {
     }
     return new FakeFileHandle(name, f);
   }
+  /** FileSystemDirectoryHandle.resolve: the names from here to a descendant, or null. */
+  async resolve(other: unknown): Promise<string[] | null> {
+    if (other === this) return [];
+    for (const [n, d] of this.dirs) {
+      const r = await d.resolve(other);
+      if (r) return [n, ...r];
+    }
+    for (const [n, f] of this.files) if ((other as { file?: unknown })?.file === f) return [n];
+    return null;
+  }
   async removeEntry(name: string): Promise<void> {
     if (!this.files.delete(name) && !this.dirs.delete(name)) throw new DOMException(`${name} not found`, "NotFoundError");
   }

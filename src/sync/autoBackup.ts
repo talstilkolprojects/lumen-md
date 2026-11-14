@@ -134,13 +134,21 @@ export async function snapshotVault(): Promise<number> {
   if (!ws.isOPFSAvailable()) return 0;
   const vault = getHistoryVault();
   if (vault === null) return 0;
+  // The pass belongs to the vault it started in: every read goes through
+  // that vault's backend, and the pass stops if the active vault changes,
+  // so one vault's text is never filed in another's history.
+  const { getVaultBackend } = await import("../storage/vault");
+  const backend = getVaultBackend();
+  const still = () => getVaultBackend() === backend && getHistoryVault() === vault;
   let written = 0;
   const list = await ws.listWorkspace({ includeAssets: false });
   for (const e of list) {
+    if (!still()) break;
     const seen = `${vault}|${e.path}`;
     if (ws.isAssetName(e.path) || vaultSeen.get(seen) === e.modified) continue;
     try {
-      const content = await ws.readWorkspaceFile(e.path);
+      const content = await backend.readText(e.path);
+      if (!still()) break;
       if (await recordSnapshot(e.path, content, "vault", Date.now(), vault)) written++;
       vaultSeen.set(seen, e.modified);
     } catch (err) {

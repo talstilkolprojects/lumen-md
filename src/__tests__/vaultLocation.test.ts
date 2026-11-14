@@ -136,6 +136,65 @@ describe("moving the vault into a folder", () => {
     expect(getVaultStatus()).toEqual({ location: "folder", name: "My Vault" });
   });
 
+  it("a note the interrupted run copied and that was deleted before Resume does not come back (Codex P2 4575404801)", async () => {
+    await seed();
+    const f = folder();
+    const plain = f.dir.getDirectoryHandle.bind(f.dir);
+    let fail = true;
+    f.dir.getDirectoryHandle = (async (n: string, o?: { create?: boolean }) => {
+      if (fail && n === "פרויקטים" && o?.create) throw new DOMException("quota", "QuotaExceededError");
+      return plain(n, o);
+    }) as typeof f.dir.getDirectoryHandle;
+    await expect(moveVault(loc(f))).rejects.toThrow(/quota/);
+    expect(getPendingMove()?.written["a.md"]).toBeTruthy();
+    expect(f.dir.files.has("a.md")).toBe(true);
+    // a.md is deleted (or renamed away) in the source before Resume.
+    await getVaultBackend().remove("a.md");
+    fail = false;
+    const r = await moveVault(loc(f));
+    expect(r.files).toBe(3);
+    expect(f.dir.files.has("a.md")).toBe(false);
+    expect(getVaultStatus()).toEqual({ location: "folder", name: "My Vault" });
+    expect(getPendingMove()).toBeNull();
+  });
+
+  it("a deleted note's copy that was edited in the folder since stays: it is not the move's any more", async () => {
+    await seed();
+    const f = folder();
+    const plain = f.dir.getDirectoryHandle.bind(f.dir);
+    let fail = true;
+    f.dir.getDirectoryHandle = (async (n: string, o?: { create?: boolean }) => {
+      if (fail && n === "פרויקטים" && o?.create) throw new DOMException("quota", "QuotaExceededError");
+      return plain(n, o);
+    }) as typeof f.dir.getDirectoryHandle;
+    await expect(moveVault(loc(f))).rejects.toThrow(/quota/);
+    await getVaultBackend().remove("a.md");
+    const w = await (await f.dir.getFileHandle("a.md")).createWritable();
+    await w.write("edited in the folder");
+    await w.close();
+    fail = false;
+    await moveVault(loc(f));
+    expect(await bytesAt(f.dir, "a.md")).toEqual([...new TextEncoder().encode("edited in the folder")]);
+  });
+
+  it("refuses a folder inside the vault, and a folder that contains it, before writing (Codex P2 4575404797)", async () => {
+    await seed();
+    const outer = folder("Outer");
+    expect(await openFolderAsVault(outer.handle)).toBe(true);
+    await writeWorkspaceFile("note.md", "text");
+    const inner = await outer.dir.getDirectoryHandle("archive", { create: true });
+    const innerLoc: StoredLocation = { kind: "folder", handle: inner as unknown as FileSystemDirectoryHandle, name: "archive" };
+    (inner as unknown as { queryPermission: () => Promise<Perm> }).queryPermission = async () => "granted";
+    await expect(moveVault(innerLoc)).rejects.toThrow(/inside itself/);
+    expect(inner.files.size + inner.dirs.size).toBe(0);
+    expect(getPendingMove()).toBeNull();
+    expect(getVaultStatus()).toEqual({ location: "folder", name: "Outer" });
+    // The other way round: the vault in archive/, moved to the folder holding it.
+    expect(await openFolderAsVault(inner as unknown as FileSystemDirectoryHandle)).toBe(true);
+    await expect(moveVault(loc(outer))).rejects.toThrow(/contains it/);
+    expect(getPendingMove()).toBeNull();
+  });
+
   it("a resume does not overwrite a copied file that was edited in the folder since", async () => {
     await seed();
     const f = folder();

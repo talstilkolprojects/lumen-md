@@ -6,6 +6,8 @@
  */
 import { beforeEach, describe, expect, it } from "vitest";
 import * as history from "../storage/history";
+import { createMemoryBackend, setVaultBackend } from "../storage/vault";
+import { snapshotVault } from "../sync/autoBackup";
 
 beforeEach(async () => {
   history.__resetHistoryDb();
@@ -67,5 +69,38 @@ describe("history per vault", () => {
     expect(await history.listDocuments()).toEqual([]);
     history.setHistoryVault("");
     expect((await history.listSnapshots("a.md")).map((s) => s.content)).toEqual(["legacy"]);
+  });
+
+  it("a vault snapshot pass stops when the vault switches under it (Codex P2 4575404796)", async () => {
+    const a = createMemoryBackend({ id: "A" });
+    const b = createMemoryBackend({ id: "B" });
+    for (const [vault, text] of [[a, "A"], [b, "B"]] as const) {
+      await vault.write("1.md", `${text} one`);
+      await vault.write("2.md", `${text} two`);
+    }
+    const read = a.readText.bind(a);
+    let switched = false;
+    // The switch lands while the pass is reading its first note.
+    a.readText = async (path: string) => {
+      const text = await read(path);
+      if (!switched) {
+        switched = true;
+        setVaultBackend(b);
+        history.setHistoryVault("vault-b");
+      }
+      return text;
+    };
+    const previous = setVaultBackend(a);
+    try {
+      history.setHistoryVault("vault-a");
+      await snapshotVault();
+      history.setHistoryVault("vault-a");
+      const filed = [...(await history.listSnapshots("1.md")), ...(await history.listSnapshots("2.md"))].map((s) => s.content);
+      expect(filed.some((t) => t.startsWith("B"))).toBe(false);
+      history.setHistoryVault("vault-b");
+      expect(await history.listSnapshots("2.md")).toEqual([]);
+    } finally {
+      setVaultBackend(previous);
+    }
   });
 });
