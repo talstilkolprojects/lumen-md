@@ -1870,6 +1870,16 @@
       "vars": []
     },
     {
+      "key": "cmd.sources.askLaw",
+      "en": "Ask the law…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.askLaw.hint",
+      "en": "Search the laws you saved, on this device; every answer is an exact, verified section",
+      "vars": []
+    },
+    {
       "key": "cmd.sources.insert",
       "en": "Insert a source from Sefaria…",
       "vars": []
@@ -1877,6 +1887,36 @@
     {
       "key": "cmd.sources.insert.hint",
       "en": "The Hebrew and a translation of a verse, mishnah or folio (בראשית א:א, ב״ר א, א, Berakhot 2a), with each text's licence",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.knessetBill",
+      "en": "Cite a bill (Knesset)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.knessetBill.hint",
+      "en": "Find a bill by a word of its name and cite its Knesset record",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.knessetLaw",
+      "en": "Cite a law (Knesset)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.knessetLaw.hint",
+      "en": "חוק הגנת הפרטיות, [[חוק:חופש המידע]] or a Basic Law becomes a cited source; a saved law opens offline",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.knessetProtocol",
+      "en": "Quote from this committee protocol",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.knessetProtocol.hint",
+      "en": "The selected words with the speaker, the session date and the page, read from the open protocol",
       "vars": []
     },
     {

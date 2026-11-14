@@ -69,6 +69,7 @@
 import { isPopup, reachedNetwork, type EgressTally } from "./airplaneCertificate";
 import { __setAirplaneFlag, addAirplaneCsp, AIRPLANE_KEY, AIRPLANE_TAB, airplaneSinceStored, blankFrames, onSwitchedElsewhere, rootsOf, shadowRoots } from "./airplaneBoot";
 import { AIRPLANE_CHANNEL, type AirplaneMessage } from "../ai/workerLedger";
+import { wrapLedgerTransport } from "../ai/privacyLedger";
 
 export type EgressKind = "fetch" | "xhr" | "websocket" | "eventsource" | "beacon" | "webrtc" | "worker" | "resource" | "csp" | "frame";
 /** "in-flight": a request still waiting for its answer when the switch went on (counted, then aborted). */
@@ -733,37 +734,41 @@ export function installAirplaneMode(win: W = window as W): void {
     /* why: no document here */
   }
 
-  const innerFetch = win.fetch.bind(win);
-  win.fetch = function airplaneFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-    const method = (init?.method ?? (typeof Request !== "undefined" && input instanceof Request ? input.method : "GET")).toUpperCase();
-    const v = verdict(url, win.location?.href);
-    if (v === "blocked" || (v === "self" && method !== "GET")) return Promise.reject(blockedAttempt("fetch", url, method));
-    const origin = note("fetch", url, method, v);
-    // The app's own files, from a cache only: the service worker passes the mode on.
-    if (v === "self") return innerFetch(input, { ...init, cache: "only-if-cached", mode: "same-origin" });
-    if (v !== "network" || typeof AbortController === "undefined") return innerFetch(input, init);
-    // On the network: kept in reach, so turning the switch on counts it and aborts it.
-    const ctrl = new AbortController();
-    const outer = init?.signal ?? (typeof Request !== "undefined" && input instanceof Request ? input.signal : undefined);
-    if (outer) {
-      if (outer.aborted) ctrl.abort(outer.reason);
-      else outer.addEventListener("abort", () => ctrl.abort(outer.reason), { once: true });
-    }
-    const flight: Flight = { kind: "fetch", url, method, origin, abort: () => ctrl.abort(new AirplaneBlockedError(egressTarget(url))) };
-    inFlight.add(flight);
-    return innerFetch(input, { ...init, signal: ctrl.signal }).then(
-      (res) => {
-        inFlight.delete(flight);
-        bodies = [...bodies, ctrl].slice(-MAX_BODIES);
-        return res;
-      },
-      (err: unknown) => {
-        inFlight.delete(flight);
-        throw err;
-      },
-    );
-  } as typeof fetch;
+  const guard = (innerFetch: typeof fetch): typeof fetch =>
+  function airplaneFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      const method = (init?.method ?? (typeof Request !== "undefined" && input instanceof Request ? input.method : "GET")).toUpperCase();
+      const v = verdict(url, win.location?.href);
+      if (v === "blocked" || (v === "self" && method !== "GET")) return Promise.reject(blockedAttempt("fetch", url, method));
+      const origin = note("fetch", url, method, v);
+      // The app's own files, from a cache only: the service worker passes the mode on.
+      if (v === "self") return innerFetch(input, { ...init, cache: "only-if-cached", mode: "same-origin" });
+      if (v !== "network" || typeof AbortController === "undefined") return innerFetch(input, init);
+      // On the network: kept in reach, so turning the switch on counts it and aborts it.
+      const ctrl = new AbortController();
+      const outer = init?.signal ?? (typeof Request !== "undefined" && input instanceof Request ? input.signal : undefined);
+      if (outer) {
+        if (outer.aborted) ctrl.abort(outer.reason);
+        else outer.addEventListener("abort", () => ctrl.abort(outer.reason), { once: true });
+      }
+      const flight: Flight = { kind: "fetch", url, method, origin, abort: () => ctrl.abort(new AirplaneBlockedError(egressTarget(url))) };
+      inFlight.add(flight);
+      return innerFetch(input, { ...init, signal: ctrl.signal }).then(
+        (res) => {
+          inFlight.delete(flight);
+          bodies = [...bodies, ctrl].slice(-MAX_BODIES);
+          return res;
+        },
+        (err: unknown) => {
+          inFlight.delete(flight);
+          throw err;
+        },
+      );
+    } as typeof fetch;
+  win.fetch = guard(win.fetch.bind(win));
+  // The ledger's own transport too (RR20-1): consented requests (open sources, Sefaria, the clipper) go
+  // through the captured fetch, which would otherwise bypass this guard. Only for the real window.
+  if (typeof window !== "undefined" && (win as unknown) === window) wrapLedgerTransport(guard);
 
   const XHR = win.XMLHttpRequest;
   if (XHR) {

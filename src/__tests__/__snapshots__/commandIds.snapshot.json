@@ -1917,6 +1917,34 @@
       "group": "Tools",
       "hint": "Puts back every file the last automation run changed, byte for byte",
       "icon": "Workflow"
+    },
+    {
+      "id": "sources.knessetLaw",
+      "label": "Cite a law (Knesset)…",
+      "group": "Insert",
+      "hint": "חוק הגנת הפרטיות, [[חוק:חופש המידע]] or a Basic Law becomes a cited source; a saved law opens offline",
+      "icon": "Quote"
+    },
+    {
+      "id": "sources.knessetBill",
+      "label": "Cite a bill (Knesset)…",
+      "group": "Insert",
+      "hint": "Find a bill by a word of its name and cite its Knesset record",
+      "icon": "FileText"
+    },
+    {
+      "id": "sources.knessetProtocol",
+      "label": "Quote from this committee protocol",
+      "group": "Insert",
+      "hint": "The selected words with the speaker, the session date and the page, read from the open protocol",
+      "icon": "Quote"
+    },
+    {
+      "id": "sources.askLaw",
+      "label": "Ask the law…",
+      "group": "Insert",
+      "hint": "Search the laws you saved, on this device; every answer is an exact, verified section",
+      "icon": "FileText"
     }
   ],
   "full": [
@@ -3986,6 +4014,34 @@
       "group": "Tools",
       "hint": "Puts back every file the last automation run changed, byte for byte",
       "icon": "Workflow"
+    },
+    {
+      "id": "sources.knessetLaw",
+      "label": "Cite a law (Knesset)…",
+      "group": "Insert",
+      "hint": "חוק הגנת הפרטיות, [[חוק:חופש המידע]] or a Basic Law becomes a cited source; a saved law opens offline",
+      "icon": "Quote"
+    },
+    {
+      "id": "sources.knessetBill",
+      "label": "Cite a bill (Knesset)…",
+      "group": "Insert",
+      "hint": "Find a bill by a word of its name and cite its Knesset record",
+      "icon": "FileText"
+    },
+    {
+      "id": "sources.knessetProtocol",
+      "label": "Quote from this committee protocol",
+      "group": "Insert",
+      "hint": "The selected words with the speaker, the session date and the page, read from the open protocol",
+      "icon": "Quote"
+    },
+    {
+      "id": "sources.askLaw",
+      "label": "Ask the law…",
+      "group": "Insert",
+      "hint": "Search the laws you saved, on this device; every answer is an exact, verified section",
+      "icon": "FileText"
     }
   ],
   "autoSaveOn": [

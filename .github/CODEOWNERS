@@ -28,6 +28,7 @@
 
 # ── Privacy: what may leave the device ──
 /src/ai/privacyLedger.ts                 @talstilkol
+/src/sources/open/gate.ts                @talstilkol
 /src/ai/workerLedger.ts                  @talstilkol
 /src/ai/workerLedgerInstall.ts           @talstilkol
 /src/ai/policy.ts                        @talstilkol
