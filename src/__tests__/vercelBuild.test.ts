@@ -6,7 +6,7 @@ import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 // @ts-expect-error — plain .mjs script without type declarations
-import { GATES, GATE_EXTRA, PREVIEW_GATES, PRODUCTION_GATES, gatesFor, vitestSummary } from "../../scripts/vercel-build.mjs";
+import { GATES, GATE_EXTRA, PREVIEW_GATES, PRODUCTION_GATES, gateEnv, gatesFor, vitestSummary } from "../../scripts/vercel-build.mjs";
 // @ts-expect-error — plain .mjs script without type declarations
 import { E2E_SPECS, FIREFOX_SPECS, boxMinutes, e2eRuns } from "../../scripts/e2e-gate.mjs";
 // @ts-expect-error — plain .mjs script without type declarations
@@ -26,6 +26,18 @@ describe("scripts/vercel-build.mjs", () => {
     expect(gatesFor({ VERCEL_ENV: "preview" }, ["--production"])).toEqual(PRODUCTION_GATES);
     // A probe branch's e2e-only build: the specs without vitest.
     expect(gatesFor({ VERCEL_ENV: "preview" }, ["--e2e-only"])).toEqual(["build", "e2e"]);
+  });
+
+  it("the e2e build's extras reach the build and e2e gates, never vitest or a production build (W4.2)", () => {
+    const env = { PATH: "/bin", VITE_CSP_CONNECT_EXTRA: "https://relay.example.com" };
+    const build = gateEnv("build", env, PREVIEW_GATES);
+    expect(build.VITE_E2E).toBe("1");
+    expect(build.VITE_CSP_CONNECT_EXTRA).toBe("https://relay.example.com ws://127.0.0.1:4455");
+    expect(gateEnv("e2e", env, PREVIEW_GATES).VITE_CSP_CONNECT_EXTRA).toContain("ws://127.0.0.1:4455");
+    // vitest's own tests check what a plain build allows (cspEndpoints.test.ts: "a build never does").
+    expect(gateEnv("vitest", env, PREVIEW_GATES)).toEqual(env);
+    expect(gateEnv("build", env, PRODUCTION_GATES)).toEqual(env);
+    expect(env).toEqual({ PATH: "/bin", VITE_CSP_CONNECT_EXTRA: "https://relay.example.com" });
   });
 
   it("every gate is an npm script that exists", () => {
