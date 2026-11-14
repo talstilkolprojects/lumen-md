@@ -1,0 +1,30 @@
+{
+  "versions": [
+    {
+      "text": [
+        "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ׃"
+      ],
+      "language": "he",
+      "actualLanguage": "he",
+      "direction": "rtl",
+      "versionTitle": "Miqra according to the Masorah",
+      "versionSource": "https://example.org/miqra",
+      "license": "CC-BY-SA",
+      "isSource": true
+    },
+    {
+      "text": [
+        "When God began to create heaven and earth—"
+      ],
+      "language": "en",
+      "actualLanguage": "en",
+      "direction": "ltr",
+      "versionTitle": "Example copyrighted translation",
+      "versionSource": "https://example.org/translation",
+      "license": "Copyright: Example Publisher",
+      "isSource": false
+    }
+  ],
+  "ref": "Genesis 1:1",
+  "heRef": "בראשית א׳:א׳"
+}

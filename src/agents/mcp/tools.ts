@@ -59,6 +59,8 @@ function plainSchema(schema: unknown, depth = 0): Record<string, unknown> {
 export const SOURCE_PREFIX = "MCP server ";
 
 export async function serverAgentTools(server: McpServerConfig, makeTransport: (ctx?: ToolContext) => McpTransport, o: BridgeOptions): Promise<AgentTool[]> {
+  // A built-in server (W11.H17 Sefaria) has no MCP connection: its tools are Lumen's own, under the same rules.
+  if (server.builtin) return server.id === "sefaria" ? (await import("./sefariaTools")).sefariaAgentTools(server, o) : [];
   const probe = makeTransport();
   const why = blockedReason(server, probe.reach, o.reach());
   if (why) return [];
