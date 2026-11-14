@@ -240,6 +240,7 @@ export default defineConfig({
             { label: "Languages in beta, and how to help", translations: { he: "שפות בבטא, ואיך לעזור" }, slug: "contributing/translations" },
             { label: "Translation drafts", translations: { he: "טיוטות תרגום" }, slug: "contributing/translation-drafts" },
             { label: "Visual regression", translations: { he: "רגרסיה חזותית" }, slug: "contributing/visual-regression" },
+            { label: "The open Hebrew voice (recording kit)", translations: { he: "הקול העברי הפתוח (ערכת הקלטה)" }, slug: "contributing/hebrew-voice" },
             { label: "Skipped tests", translations: { he: "בדיקות מדולגות" }, slug: "contributing/skipped-tests" },
             { label: "Checks on every branch (Vercel)", translations: { he: "בדיקות בכל ענף (Vercel)" }, slug: "contributing/checks" },
             { label: "Threat model", slug: "security/threat-model" },
