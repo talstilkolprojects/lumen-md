@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
 import { tRich } from "../i18n/rich";
+// block.insights.freqSummary is lazy English (startup budget, train 2): registered when the insights block's strings load.
+import "../plugins/insightsBlockStrings";
 
 describe("tRich", () => {
   it("puts React nodes where the sentence has placeholders", () => {

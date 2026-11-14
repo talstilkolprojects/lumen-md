@@ -3,6 +3,8 @@
  */
 import { describe, it, expect, beforeAll } from "vitest";
 import { t, applyLocale, getLocale, loadLocale } from "../i18n";
+// graphView.stats is lazy English (startup budget, train 2): registered when the graph view's strings load.
+import "../ui/graphViewStrings";
 
 describe("t() function", () => {
   // Hebrew is a lazy chunk since A7 lever 4; main.tsx preloads it via
