@@ -11,7 +11,7 @@
 import { describe, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
-import { atomicWrite, isTempName, oldNameFor, parseLeftover, recoverDir, tempNameFor, type AtomicFs } from "../storage/vault/atomic";
+import { atomicWrite, isTempName, journalBytes, journalNameFor, journalTarget, oldNameFor, parseLeftover, recoverDir, saveId, tempNameFor, type AtomicFs } from "../storage/vault/atomic";
 import { createDirectoryHandleBackend } from "../storage/vault";
 import { capacitorFs, createMobileBackend, safFs } from "../storage/vault/mobile";
 import { fakeCapacitorFilesystem, fakeSafPlugin } from "./helpers/fakeMobile";
@@ -62,6 +62,11 @@ class CrashFs implements AtomicFs {
     this.step();
     if (!this.files.delete(path)) throw new Error(`missing ${path}`);
   }
+  async readFile(path: string) {
+    const d = this.files.get(path);
+    if (!d) throw new Error(`missing ${path}`);
+    return d.slice();
+  }
   restart(): void {
     this.steps = 0;
     this.crashAt = Infinity;
@@ -91,6 +96,115 @@ describe("atomic saves: names", () => {
     expect(parseLeftover(".lumen-tmp~")).toBeNull();
     for (const n of [".lumen-tmp~a.md~x", ".lumen-old~a.md~x", ".lumen-tmp-123-4", ".lumen-rename-abc123", "note.md.crswap"]) expect(isTempName(n), n).toBe(true);
     for (const n of ["a.md", ".lumen-tmp", ".trash", "crswap.md"]) expect(isTempName(n), n).toBe(false);
+  });
+});
+
+describe("atomic saves: names that fill a file name (255 bytes)", () => {
+  const bytes = (s: string) => enc(s).byteLength;
+  /** 126 Hebrew letters + ".md": 255 bytes of UTF-8, the most ext4, f2fs, APFS and OPFS take. */
+  const LONG = "א".repeat(126) + ".md";
+  /** 118 letters + ".md" = 239 bytes: its long temporary name would be 266 bytes. */
+  const LONGISH = "א".repeat(118) + ".md";
+  /** A folder that refuses any name over 255 bytes, as the phones' file systems do. */
+  const strict = (fs: CrashFs): AtomicFs => {
+    const check = (p: string) => {
+      for (const part of p.split("/")) if (bytes(part) > 255) throw new Error(`ENAMETOOLONG ${part.slice(0, 12)}…`);
+    };
+    return {
+      readdir: (d) => fs.readdir(d),
+      exists: (p) => fs.exists(p),
+      size: (p) => fs.size(p),
+      readFile: (p) => fs.readFile(p),
+      writeFile: async (p, d) => (check(p), fs.writeFile(p, d)),
+      rename: async (a, b) => (check(b), fs.rename(a, b)),
+      remove: (p) => fs.remove(p),
+    };
+  };
+
+  it("every file of the save fits in 255 bytes; short names carry a journal that names the note", () => {
+    expect(bytes(LONG)).toBe(255);
+    for (const name of [LONG, LONGISH]) {
+      const id = saveId();
+      for (const n of [tempNameFor(name, id), oldNameFor(name, id), journalNameFor(name, id)!]) {
+        expect(bytes(n)).toBeLessThanOrEqual(255);
+        expect(isTempName(n), n).toBe(true);
+        expect(parseLeftover(n)).toMatchObject({ target: null, id });
+      }
+      expect(journalTarget(journalBytes(name))).toBe(name);
+    }
+    // A name whose long names fit keeps them (no journal, nothing changes for it).
+    expect(journalNameFor("note.md", "k1")).toBeNull();
+    expect(tempNameFor("note.md", "k1")).toBe(".lumen-tmp~note.md~k1");
+    // A cut or foreign journal names nothing.
+    const j = journalBytes(LONG);
+    for (const bad of [j.slice(0, j.length - 1), j.slice(0, 5), enc("a.md"), enc("lumen-save 1 6\na/b.md"), enc("lumen-save 1 0\n"), enc("lumen-save 1\na.md")]) expect(journalTarget(bad)).toBeNull();
+  });
+
+  it("saves a note with a 255-byte name (and a 239-byte one) in a folder that refuses longer names", async () => {
+    const fs = new CrashFs();
+    for (const path of [LONG, `dir/${LONGISH}`]) {
+      await atomicWrite(strict(fs), path, enc("one"));
+      await atomicWrite(strict(fs), path, enc("two — שתיים"));
+      expect(dec(fs.files.get(path))).toBe("two — שתיים");
+    }
+    expect([...fs.files.keys()].sort()).toEqual([LONG, `dir/${LONGISH}`].sort());
+  });
+
+  it("a crash at every step of a save of a 255-byte name: the note is old or new, whole, and nothing is left", async () => {
+    const steps = new CrashFs();
+    steps.files.set(LONG, enc("old"));
+    await atomicWrite(steps, LONG, enc("new"));
+    const n = steps.steps;
+    expect(n).toBeGreaterThan(8);
+    const seen = new Set<string | undefined>();
+    for (const existing of [true, false]) {
+      for (let k = 0; k <= n; k++) {
+        for (const tear of [0, 0.5]) {
+          const fs = new CrashFs();
+          if (existing) fs.files.set(`d/${LONG}`, enc("old " + "ישן ".repeat(50)));
+          fs.crashAt = k;
+          fs.tear = tear;
+          await atomicWrite(strict(fs), `d/${LONG}`, enc("new " + "חדש ".repeat(80))).catch((e) => {
+            if (!(e instanceof Crash)) throw e;
+          });
+          fs.restart();
+          await recoverDir(fs, "d");
+          const got = dec(fs.files.get(`d/${LONG}`));
+          if (existing) expect(got?.startsWith("old ") || got?.startsWith("new "), `crash at ${k}: ${got?.slice(0, 8)}`).toBe(true);
+          else expect(got === undefined || got.startsWith("new "), `crash at ${k}`).toBe(true);
+          if (got !== undefined) expect(got.endsWith("ישן ") || got.endsWith("חדש ")).toBe(true);
+          expect([...fs.files.keys()].filter((p) => isTempName(p.split("/").pop()!))).toEqual([]);
+          if (existing) seen.add(got?.slice(0, 4));
+        }
+      }
+    }
+    expect([...seen].sort()).toEqual(["new ", "old "]);
+  });
+
+  it("fails closed without a journal: an old version whose note is unknown is kept, a lone temporary file goes", async () => {
+    const fs = new CrashFs();
+    const a = saveId();
+    const b = saveId();
+    fs.files.set(oldNameFor(LONG, a), enc("old"));
+    fs.files.set(tempNameFor(LONG, a), enc("new"));
+    fs.files.set(tempNameFor(LONGISH, b), enc("torn"));
+    fs.files.set(journalNameFor(LONGISH, b)!, journalBytes(LONGISH).slice(0, 40)); // cut: names nothing
+    expect(await recoverDir(fs, "")).toEqual([]);
+    expect([...fs.files.keys()].sort()).toEqual([oldNameFor(LONG, a), tempNameFor(LONG, a)].sort());
+    // Once its journal is back the save is finished.
+    fs.files.set(journalNameFor(LONG, a)!, journalBytes(LONG));
+    expect(await recoverDir(fs, "")).toEqual([{ path: LONG, action: "promoted" }]);
+    expect([...fs.files.keys()]).toEqual([LONG]);
+    expect(dec(fs.files.get(LONG))).toBe("new");
+  });
+
+  it("leaves a running save with short names alone", async () => {
+    const fs = new CrashFs();
+    const id = saveId();
+    fs.files.set(journalNameFor(LONG, id)!, journalBytes(LONG));
+    fs.files.set(tempNameFor(LONG, id), enc("new"));
+    expect(await recoverDir(fs, "", { busy: new Set([id]) })).toEqual([]);
+    expect(fs.files.size).toBe(2);
   });
 });
 

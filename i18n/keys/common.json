@@ -14,6 +14,140 @@
       "vars": []
     },
     {
+      "key": "academic.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "academic.cover",
+      "en": "Title page",
+      "vars": []
+    },
+    {
+      "key": "academic.done",
+      "en": "Exported {name}. Open it in Word and press F9 on the table of contents to fill in the page numbers.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "academic.export",
+      "en": "Export .docx",
+      "vars": []
+    },
+    {
+      "key": "academic.failed",
+      "en": "The export did not finish: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "academic.field.author",
+      "en": "Your name",
+      "vars": []
+    },
+    {
+      "key": "academic.field.course",
+      "en": "Course",
+      "vars": []
+    },
+    {
+      "key": "academic.field.courseNumber",
+      "en": "Course number",
+      "vars": []
+    },
+    {
+      "key": "academic.field.date",
+      "en": "Submission date",
+      "vars": []
+    },
+    {
+      "key": "academic.field.department",
+      "en": "Department",
+      "vars": []
+    },
+    {
+      "key": "academic.field.faculty",
+      "en": "Faculty",
+      "vars": []
+    },
+    {
+      "key": "academic.field.lecturer",
+      "en": "Lecturer",
+      "vars": []
+    },
+    {
+      "key": "academic.field.studentId",
+      "en": "ID number",
+      "vars": []
+    },
+    {
+      "key": "academic.field.subtitle",
+      "en": "Kind of work",
+      "vars": []
+    },
+    {
+      "key": "academic.field.title",
+      "en": "Title",
+      "vars": []
+    },
+    {
+      "key": "academic.front",
+      "en": "Page numbers on the table of contents",
+      "vars": []
+    },
+    {
+      "key": "academic.front.hebrew1",
+      "en": "Hebrew letters (א, ב, ג)",
+      "vars": []
+    },
+    {
+      "key": "academic.front.lowerRoman",
+      "en": "Roman numerals (i, ii, iii)",
+      "vars": []
+    },
+    {
+      "key": "academic.front.none",
+      "en": "No numbers",
+      "vars": []
+    },
+    {
+      "key": "academic.institution",
+      "en": "Institution",
+      "vars": []
+    },
+    {
+      "key": "academic.intro",
+      "en": "A Word file formatted to the institution's written guideline: margins, font, spacing, title page, table of contents and page numbers. Departments can have their own rules, so check yours before you submit.",
+      "vars": []
+    },
+    {
+      "key": "academic.source",
+      "en": "The guideline",
+      "vars": []
+    },
+    {
+      "key": "academic.summary",
+      "en": "{font} {size} pt, {spacing} lines, margins right / left / top / bottom {margins} cm",
+      "vars": [
+        "font",
+        "size",
+        "spacing",
+        "margins"
+      ]
+    },
+    {
+      "key": "academic.title",
+      "en": "Export for academic submission",
+      "vars": []
+    },
+    {
+      "key": "academic.toc",
+      "en": "Table of contents",
+      "vars": []
+    },
+    {
       "key": "agentReview.approve",
       "en": "Approve",
       "vars": []
@@ -607,6 +741,152 @@
       ]
     },
     {
+      "key": "automations.action.appendDaily",
+      "en": "add a line to the daily note",
+      "vars": []
+    },
+    {
+      "key": "automations.action.move",
+      "en": "move it to a folder",
+      "vars": []
+    },
+    {
+      "key": "automations.action.tag",
+      "en": "add a tag",
+      "vars": []
+    },
+    {
+      "key": "automations.action.template",
+      "en": "apply a template",
+      "vars": []
+    },
+    {
+      "key": "automations.ask.folder",
+      "en": "Folder (empty: anywhere)",
+      "vars": []
+    },
+    {
+      "key": "automations.ask.key",
+      "en": "Property name",
+      "vars": []
+    },
+    {
+      "key": "automations.ask.name",
+      "en": "Rule name",
+      "vars": []
+    },
+    {
+      "key": "automations.ask.tag",
+      "en": "Tag",
+      "vars": []
+    },
+    {
+      "key": "automations.ask.template",
+      "en": "Template note path",
+      "vars": []
+    },
+    {
+      "key": "automations.ask.text",
+      "en": "Line to add ({{link}}, {{title}}, {{date}})",
+      "vars": [
+        "link",
+        "title",
+        "date"
+      ]
+    },
+    {
+      "key": "automations.ask.value",
+      "en": "Value (empty: any change)",
+      "vars": []
+    },
+    {
+      "key": "automations.created",
+      "en": "Rule saved: {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "automations.dryRun.none",
+      "en": "No rule would change anything for this note.",
+      "vars": []
+    },
+    {
+      "key": "automations.dryRun.stopped",
+      "en": "{count} repeats stopped by the loop guard",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "automations.dryRun.title",
+      "en": "Dry run — nothing was written. These rules would run:",
+      "vars": []
+    },
+    {
+      "key": "automations.failed",
+      "en": "Automations: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "automations.pick.action",
+      "en": "Then…",
+      "vars": []
+    },
+    {
+      "key": "automations.pick.trigger",
+      "en": "When…",
+      "vars": []
+    },
+    {
+      "key": "automations.ran",
+      "en": "Automations: {count} changes",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "automations.trigger.created",
+      "en": "a note is created (in a folder)",
+      "vars": []
+    },
+    {
+      "key": "automations.trigger.daily",
+      "en": "every day",
+      "vars": []
+    },
+    {
+      "key": "automations.trigger.propertyChanged",
+      "en": "a property changes",
+      "vars": []
+    },
+    {
+      "key": "automations.trigger.tagAdded",
+      "en": "a tag is added",
+      "vars": []
+    },
+    {
+      "key": "automations.undo.changed",
+      "en": "{path} was edited after the run, so the run was not undone.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "automations.undo.none",
+      "en": "No automation run to undo.",
+      "vars": []
+    },
+    {
+      "key": "automations.undone",
+      "en": "Undone: {event}",
+      "vars": [
+        "event"
+      ]
+    },
+    {
       "key": "backup.choose.age",
       "en": "Back up encrypted to a folder or drive…",
       "vars": []
@@ -1008,6 +1288,178 @@
       "vars": []
     },
     {
+      "key": "book.chapter.down",
+      "en": "Move down",
+      "vars": []
+    },
+    {
+      "key": "book.chapter.missing",
+      "en": "Missing note",
+      "vars": []
+    },
+    {
+      "key": "book.chapter.ofGoal",
+      "en": "{words} of {goal} words",
+      "vars": [
+        "words",
+        "goal"
+      ]
+    },
+    {
+      "key": "book.chapter.open",
+      "en": "Open {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "book.chapter.up",
+      "en": "Move up",
+      "vars": []
+    },
+    {
+      "key": "book.chapter.words",
+      "en": "{words} words",
+      "vars": [
+        "words"
+      ]
+    },
+    {
+      "key": "book.chapters",
+      "en": "Chapters",
+      "vars": []
+    },
+    {
+      "key": "book.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "book.create",
+      "en": "Make a book from this folder",
+      "vars": []
+    },
+    {
+      "key": "book.create.prompt",
+      "en": "The book's title",
+      "vars": []
+    },
+    {
+      "key": "book.created",
+      "en": "Book created: {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "book.exists",
+      "en": "{path} already exists",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "book.exportEpub",
+      "en": "Export EPUB",
+      "vars": []
+    },
+    {
+      "key": "book.exported",
+      "en": "{name}.epub: {chapters} chapters in {seconds} s",
+      "vars": [
+        "name",
+        "chapters",
+        "seconds"
+      ]
+    },
+    {
+      "key": "book.failed",
+      "en": "Book: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "book.goalHint",
+      "en": "Goals: word-goal and daily-goal in the index note's frontmatter; a chapter's goal is word-goal in its own frontmatter.",
+      "vars": []
+    },
+    {
+      "key": "book.missing",
+      "en": "{count} chapters are missing and were left out",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "book.none",
+      "en": "This note is not part of a book. A book is an index note that lists its chapters in order (the Longform format, so it opens in Obsidian too).",
+      "vars": []
+    },
+    {
+      "key": "book.popupBlocked",
+      "en": "The browser blocked the print window. Allow pop-ups for Lumen and try again.",
+      "vars": []
+    },
+    {
+      "key": "book.print",
+      "en": "Print / PDF",
+      "vars": []
+    },
+    {
+      "key": "book.streak",
+      "en": "Streak: {days} days",
+      "vars": [
+        "days"
+      ]
+    },
+    {
+      "key": "book.title",
+      "en": "Book",
+      "vars": []
+    },
+    {
+      "key": "book.titlePage",
+      "en": "Title page",
+      "vars": []
+    },
+    {
+      "key": "book.toc",
+      "en": "Contents",
+      "vars": []
+    },
+    {
+      "key": "book.today",
+      "en": "Today: {words} words",
+      "vars": [
+        "words"
+      ]
+    },
+    {
+      "key": "book.today.ofGoal",
+      "en": "Today: {words} of {goal} words",
+      "vars": [
+        "words",
+        "goal"
+      ]
+    },
+    {
+      "key": "book.total",
+      "en": "Book: {words} words",
+      "vars": [
+        "words"
+      ]
+    },
+    {
+      "key": "book.total.ofGoal",
+      "en": "Book: {words} of {goal} words ({percent}%)",
+      "vars": [
+        "words",
+        "goal",
+        "percent"
+      ]
+    },
+    {
       "key": "boot.crashBody",
       "en": "Lumen encountered an unexpected error.",
       "vars": []
@@ -1316,6 +1768,75 @@
       "vars": []
     },
     {
+      "key": "chatImport.byChat",
+      "en": "One note for the whole chat",
+      "vars": []
+    },
+    {
+      "key": "chatImport.byDay",
+      "en": "One note per day",
+      "vars": []
+    },
+    {
+      "key": "chatImport.done",
+      "en": "Imported {chats} chats: {messages} messages in {notes} notes, {files} files → {folder}",
+      "vars": [
+        "chats",
+        "messages",
+        "notes",
+        "files",
+        "folder"
+      ]
+    },
+    {
+      "key": "chatImport.failed",
+      "en": "Chat import failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "chatImport.forwarded",
+      "en": "forwarded from {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "chatImport.grouping",
+      "en": "How should the chat be split into notes?",
+      "vars": []
+    },
+    {
+      "key": "chatImport.missing",
+      "en": "(not in the export)",
+      "vars": []
+    },
+    {
+      "key": "chatImport.missingSome",
+      "en": "{n} media files were not in the export; each is named in its note.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "chatImport.none",
+      "en": "No WhatsApp or Telegram chat in these files. Pick the exported .txt or .zip (WhatsApp) or result.json (Telegram Desktop).",
+      "vars": []
+    },
+    {
+      "key": "chatImport.omitted",
+      "en": "(media left out of the export)",
+      "vars": []
+    },
+    {
+      "key": "chatImport.reply",
+      "en": "in reply to message {id}",
+      "vars": [
+        "id"
+      ]
+    },
+    {
       "key": "cite.keys",
       "en": "Enter [@key] · ⇧Enter @key · Tab locator · Esc",
       "vars": []
@@ -1386,6 +1907,60 @@
       "key": "cite.title",
       "en": "Insert a citation",
       "vars": []
+    },
+    {
+      "key": "cite.web.blocked",
+      "en": "The AI and privacy policy is local-only, so Lumen doesn't contact zotero.org.",
+      "vars": []
+    },
+    {
+      "key": "cite.web.failed",
+      "en": "Couldn't sync from zotero.org: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "cite.web.forbidden",
+      "en": "Zotero refused the key. Run the sync again and enter a key from zotero.org → Settings → Security → Applications.",
+      "vars": []
+    },
+    {
+      "key": "cite.web.keyBody",
+      "en": "Lumen reads your Zotero library from api.zotero.org with a key you create at zotero.org → Settings → Security → Applications (read-only library access is enough). The key stays in this device's secret store and is sent only to api.zotero.org; every request shows in the privacy ledger. Nothing is written to Zotero.",
+      "vars": []
+    },
+    {
+      "key": "cite.web.keyTitle",
+      "en": "Zotero API key",
+      "vars": []
+    },
+    {
+      "key": "cite.web.noAccess",
+      "en": "This key can't read your library: edit it on zotero.org and allow library access.",
+      "vars": []
+    },
+    {
+      "key": "cite.web.rateLimited",
+      "en": "Zotero asked to slow down; try again in a few minutes.",
+      "vars": []
+    },
+    {
+      "key": "cite.web.synced",
+      "en": "Zotero library synced from zotero.org: {n} sources ({changed} changed, {deleted} removed, {notes} notes).",
+      "vars": [
+        "n",
+        "changed",
+        "deleted",
+        "notes"
+      ]
+    },
+    {
+      "key": "cite.web.upToDate",
+      "en": "The Zotero library is up to date ({n} sources).",
+      "vars": [
+        "n"
+      ]
     },
     {
       "key": "cite.zotero.browser",
@@ -2127,6 +2702,222 @@
       ]
     },
     {
+      "key": "e2ee.class.assignmentTitle",
+      "en": "Assignment title",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.check",
+      "en": "Check submissions",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.close",
+      "en": "Delete from the relay",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.closeConfirm",
+      "en": "Delete every submission and comment of \"{title}\" from the relay? Copies you opened into tabs stay.",
+      "vars": [
+        "title"
+      ]
+    },
+    {
+      "key": "e2ee.class.commentHeading",
+      "en": "Teacher's comment, {date}",
+      "vars": [
+        "date"
+      ]
+    },
+    {
+      "key": "e2ee.class.commentLabel",
+      "en": "Comment to {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.class.commentSent",
+      "en": "Sent — only this student can open it.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.commentsAdded",
+      "en": "{n} new comments added to the open note",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.class.copy",
+      "en": "Copy",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.create",
+      "en": "New assignment from the open note",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.error.link.malformed",
+      "en": "This classroom link is broken or incomplete.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.error.link.tooLarge",
+      "en": "The note is too large for a classroom link (32 KB).",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.error.link.unsupported",
+      "en": "This browser cannot open classroom links.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.error.relay",
+      "en": "The relay did not answer: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "e2ee.class.error.tooLong",
+      "en": "Too long to hand in.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.getComments",
+      "en": "Get comments",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.getCopy",
+      "en": "Get my copy",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.handIn",
+      "en": "Hand in \"{name}\"",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.class.handedIn",
+      "en": "Handed in: version {n}, {date}",
+      "vars": [
+        "n",
+        "date"
+      ]
+    },
+    {
+      "key": "e2ee.class.intro",
+      "en": "Hand out a template, collect sealed work, send comments back. Only the teacher opens a student's work, only that student opens the teacher's comments; the relay holds sealed boxes it cannot read.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.joinNote",
+      "en": "You get your own copy of the template in a new tab. Nothing is sent until you choose \"Hand in\".",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.joinTitle",
+      "en": "Assignment: {title}",
+      "vars": [
+        "title"
+      ]
+    },
+    {
+      "key": "e2ee.class.learn",
+      "en": "My assignments as a student",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.link",
+      "en": "Link for the class",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.linkNote",
+      "en": "Send this link to the class. It holds the template and what is needed to hand in, not your key: only this device can open the work.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.noName",
+      "en": "(no name)",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.noRelay",
+      "en": "This build has no relay (VITE_SYNC_RELAY_URL). A school can run its own on the school network: see the docs, \"Private classroom\".",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.notHandedIn",
+      "en": "Not handed in yet. Your copy stays on this device until you hand it in.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.openTab",
+      "en": "Open in a tab",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.otherRelay",
+      "en": "This link uses another relay ({relay}) than this copy of Lumen. Ask your teacher for a link from your school's Lumen.",
+      "vars": [
+        "relay"
+      ]
+    },
+    {
+      "key": "e2ee.class.received",
+      "en": "{n} received",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.class.sendComment",
+      "en": "Send comment (sealed)",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.teach",
+      "en": "Teach",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.title",
+      "en": "Private classroom",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.unreadable",
+      "en": "{n} unreadable objects skipped",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.class.untitled",
+      "en": "Assignment",
+      "vars": []
+    },
+    {
+      "key": "e2ee.class.version",
+      "en": "version {n} · {date}",
+      "vars": [
+        "n",
+        "date"
+      ]
+    },
+    {
+      "key": "e2ee.class.yourName",
+      "en": "Your name (only the teacher sees it)",
+      "vars": []
+    },
+    {
       "key": "e2ee.conflict.body",
       "en": "This note was also changed on another device. Choose what to keep; it is not synced until you decide.",
       "vars": []
@@ -2142,6 +2933,21 @@
       "vars": [
         "path"
       ]
+    },
+    {
+      "key": "e2ee.drive.limits",
+      "en": "With Google Drive, you can't remove a lost device or change a leaked passphrase in this vault. To do either, move the vault to WebDAV, S3 or Dropbox first.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.drive.syncOnly",
+      "en": "Google Drive can't refuse a second \"create\" of the same file atomically, so with Drive this vault syncs, but keys and devices can't be changed here (no re-key, no revocation, no new device key). Make those changes with another storage, or move the vault.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.dropped",
+      "en": "A device that couldn't verify the vault's device list changed the keys, and this device wasn't carried over. It wasn't removed, and nothing on it was changed: pair it again from a device you trust, or unlock it with the passphrase.",
+      "vars": []
     },
     {
       "key": "e2ee.eta.hours",
@@ -2175,6 +2981,21 @@
       "vars": []
     },
     {
+      "key": "e2ee.fork.atRisk",
+      "en": "The sync service returned keys that don't follow from the ones this device verified, and they may let back in a device you removed here. This device stopped; nothing on it was changed. Once every device agrees, remove that device again from a device you trust, and don't use this service for key changes.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fork.reapplied",
+      "en": "The sync service replaced this device's key change with another device's. The revocation may not have taken effect for what was written in between; this device has made it again. Sync every device, and don't use this service for key changes.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fork.refused",
+      "en": "The sync service returned keys that don't follow from the ones this device verified, so this device stopped (nothing on it was changed). Don't change keys or add devices until every device agrees; pair this device again from one you trust.",
+      "vars": []
+    },
+    {
       "key": "e2ee.fresh.badCode",
       "en": "This pairing code is not valid for this vault, or it has expired.",
       "vars": []
@@ -2190,8 +3011,28 @@
       "vars": []
     },
     {
+      "key": "e2ee.fresh.held",
+      "en": "Until then, changes made on this device stay on it and are not uploaded: it can't tell yet whether it has the vault's latest keys, and a device removed meanwhile could read what it uploads.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.olderKeys",
+      "en": "The other device is at a newer key epoch than this one sees: the sync service may be showing this device old keys. Sync both devices and try again; if it stays like this, don't trust this service.",
+      "vars": []
+    },
+    {
       "key": "e2ee.fresh.pair",
       "en": "Pair",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.request",
+      "en": "Show a pairing request",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.requestHint",
+      "en": "Enter this request on a device you already use. It checks it against the vault as it is now and shows an answer: enter that answer above.",
       "vars": []
     },
     {
@@ -2202,6 +3043,199 @@
     {
       "key": "e2ee.fresh.verified",
       "en": "Freshness verified",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.advanced",
+      "en": "Advanced: S3, Dropbox, Google Drive and every detail",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.checkAsk",
+      "en": "To show you saved them, type word number {n}:",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.guide.checkWrong",
+      "en": "Word {n} doesn't match. Look at the list again.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.guide.continue",
+      "en": "Continue",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.copy",
+      "en": "Copy the words",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.done",
+      "en": "Syncing is on. Every file's state:",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.existing",
+      "en": "This place already holds a synced vault. Enter the 13 words from the device that set it up.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.finish",
+      "en": "Done",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.haveKey",
+      "en": "I already have a key from another device",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.join",
+      "en": "Connect this device",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.joinAsk",
+      "en": "Paste or type the 13 words from your first device:",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.keyIntro",
+      "en": "This is your sync key: 13 words. Write them down or keep them in your password manager. Every other device needs them.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.lossWarning",
+      "en": "Without these words nobody can open the encrypted copy — not you on a new device, not Lumen. If you lose them and this device, the synced copy is lost. Your notes on this device stay.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.newKey",
+      "en": "I need a new key",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.pickFolder",
+      "en": "Choose the folder",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.recommended",
+      "en": "recommended",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.secondDevice",
+      "en": "On your next device: open Lumen, run “Set up sync”, choose the same place and paste the 13 words.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.start",
+      "en": "Start syncing",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.statusTitle",
+      "en": "Files",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.title",
+      "en": "Sync in two clicks",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.webdavUrl",
+      "en": "The address must start with https://",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.dropbox",
+      "en": "Dropbox",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.dropbox.about",
+      "en": "Sign in to Dropbox.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.folder",
+      "en": "A folder of iCloud Drive, Dropbox, Google Drive or OneDrive",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.folder.about",
+      "en": "Pick the folder your sync app already syncs on this computer. Lumen puts only encrypted files there, in “Lumen sync”.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.gdrive",
+      "en": "Google Drive",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.gdrive.about",
+      "en": "Sign in to Google.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.relay",
+      "en": "Lumen's encrypted relay",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.relay.about",
+      "en": "Works on phones and every browser. The relay stores only encrypted files and can't read them.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.webdav",
+      "en": "WebDAV (Nextcloud, a NAS)",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.where.webdav.about",
+      "en": "Your own server: its address, user name and password.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.whereIntro",
+      "en": "Your notes are encrypted on this device before they leave it. Choose where the encrypted copy is kept; the best place for this device is already chosen.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.whereTitle",
+      "en": "Where to keep the encrypted copy",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.wordCheck",
+      "en": "One of the words is wrong (the last word checks the others).",
+      "vars": []
+    },
+    {
+      "key": "e2ee.guide.wordCount",
+      "en": "A key has {n} words.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.guide.wordUnknown",
+      "en": "Word {n} isn't one of the key's words. Check its spelling.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.guide.wrongKey",
+      "en": "These words don't open the vault in this place.",
       "vars": []
     },
     {
@@ -2377,6 +3411,46 @@
       "vars": []
     },
     {
+      "key": "e2ee.pair.answer",
+      "en": "Answer",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.answerHint",
+      "en": "Paste the request the new device shows. This device checks it against the vault as it is now; enter the answer on the new device within 5 minutes.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.answerTitle",
+      "en": "Pairing request from a new device",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.cancel",
+      "en": "Cancel pairing",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.cancelled",
+      "en": "Pairing cancelled: this device can change keys again. Don't use that answer or code on the other device; pair it again after the key change.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.pending",
+      "en": "A pairing code from this device is still valid, so it makes no key change for now: a device paired with that code wouldn't learn of the change. Try again in a couple of minutes.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.rekeying",
+      "en": "This device is changing the vault's keys right now. Make the pairing code once the change has finished.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.stale",
+      "en": "The new device is being shown older keys than this one has: the sync service may be showing it an old state. Don't pair it; sync it and try again, and if it stays like this, don't trust this service.",
+      "vars": []
+    },
+    {
       "key": "e2ee.progress",
       "en": "{done} of {total} files · {bytesDone} of {bytes}",
       "vars": [
@@ -2385,6 +3459,33 @@
         "bytesDone",
         "bytes"
       ]
+    },
+    {
+      "key": "e2ee.rekey.busy",
+      "en": "Another device is changing the vault's keys right now. Sync, and try again once it has finished (10 minutes at most).",
+      "vars": []
+    },
+    {
+      "key": "e2ee.rekey.dropConfirm",
+      "en": "This device can't verify it has the vault's latest keys, so a key change from it would leave out {devices}: they would have to be paired again. Pair this device from one you trust first, or confirm to leave them out.",
+      "vars": [
+        "devices"
+      ]
+    },
+    {
+      "key": "e2ee.rekey.unconfirmed",
+      "en": "The revocation may not have taken effect: right after this key change was written, the sync service returned another device's instead (it ignored a conditional write). Sync this device: it revokes again, or says why it can't. If this happens again, don't use this service for key changes.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.revoked",
+      "en": "This device was removed from the vault, so it can't open the current keys. The notes already on it stay.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.revokedHere.reset",
+      "en": "This device's own list of the devices it removed couldn't be verified, so it was set aside. It now checks against the vault's sealed list of removed devices. Check the device list on a device you trust.",
+      "vars": []
     },
     {
       "key": "e2ee.rule.folder",
@@ -2690,7 +3791,7 @@
     },
     {
       "key": "e2ee.sync.pairCodeNote",
-      "en": "Enter it on the other device within 15 minutes. It proves to that device which state is current.",
+      "en": "Enter it on the other device within 2 minutes. It proves to that device which state is current; this device changes no keys meanwhile. Pairing from the new device's request (two-way) is safer.",
       "vars": []
     },
     {
@@ -2770,6 +3871,11 @@
     {
       "key": "e2ee.sync.username",
       "en": "User name",
+      "vars": []
+    },
+    {
+      "key": "e2ee.wrap.tampered",
+      "en": "This device's key in the vault's keyring doesn't open it: the sync service changed it or put back an old one. Nothing on this device was changed. Try again later; if it stays like this, pair this device again from one you trust.",
       "vars": []
     },
     {
@@ -4443,6 +5549,136 @@
       "vars": []
     },
     {
+      "key": "ink.cancel",
+      "en": "Cancel",
+      "vars": []
+    },
+    {
+      "key": "ink.clear",
+      "en": "Clear",
+      "vars": []
+    },
+    {
+      "key": "ink.color.black",
+      "en": "Black",
+      "vars": []
+    },
+    {
+      "key": "ink.color.blue",
+      "en": "Blue",
+      "vars": []
+    },
+    {
+      "key": "ink.color.green",
+      "en": "Green",
+      "vars": []
+    },
+    {
+      "key": "ink.color.red",
+      "en": "Red",
+      "vars": []
+    },
+    {
+      "key": "ink.eraser",
+      "en": "Eraser",
+      "vars": []
+    },
+    {
+      "key": "ink.fingers",
+      "en": "Draw with a finger",
+      "vars": []
+    },
+    {
+      "key": "ink.gone",
+      "en": "That handwriting is no longer in the note.",
+      "vars": []
+    },
+    {
+      "key": "ink.hint",
+      "en": "Write or draw with a pen, Apple Pencil, finger or mouse. While a pen is on the screen, your palm is ignored.",
+      "vars": []
+    },
+    {
+      "key": "ink.label",
+      "en": "Handwriting",
+      "vars": []
+    },
+    {
+      "key": "ink.noEditor",
+      "en": "Open the note in an editing mode to add handwriting.",
+      "vars": []
+    },
+    {
+      "key": "ink.pen",
+      "en": "Pen",
+      "vars": []
+    },
+    {
+      "key": "ink.place",
+      "en": "Place",
+      "vars": []
+    },
+    {
+      "key": "ink.place.block",
+      "en": "On its own line",
+      "vars": []
+    },
+    {
+      "key": "ink.place.side",
+      "en": "Beside the text (study page)",
+      "vars": []
+    },
+    {
+      "key": "ink.removed",
+      "en": "Handwriting removed.",
+      "vars": []
+    },
+    {
+      "key": "ink.save",
+      "en": "Insert",
+      "vars": []
+    },
+    {
+      "key": "ink.saveEdit",
+      "en": "Save",
+      "vars": []
+    },
+    {
+      "key": "ink.size.medium",
+      "en": "Medium",
+      "vars": []
+    },
+    {
+      "key": "ink.size.thick",
+      "en": "Thick",
+      "vars": []
+    },
+    {
+      "key": "ink.size.thin",
+      "en": "Thin",
+      "vars": []
+    },
+    {
+      "key": "ink.surface",
+      "en": "Drawing area",
+      "vars": []
+    },
+    {
+      "key": "ink.title",
+      "en": "Handwriting",
+      "vars": []
+    },
+    {
+      "key": "ink.undo",
+      "en": "Undo",
+      "vars": []
+    },
+    {
+      "key": "ink.updated",
+      "en": "Handwriting updated.",
+      "vars": []
+    },
+    {
       "key": "israeliTime.dayOff",
       "en": "Falls on {reason}",
       "vars": [
@@ -4488,6 +5724,27 @@
       "en": "{n} working days overdue",
       "vars": [
         "n"
+      ]
+    },
+    {
+      "key": "latex.exported",
+      "en": "{file}: main.tex, the references and the images. Compile with latexmk -lualatex (or -xelatex).",
+      "vars": [
+        "file"
+      ]
+    },
+    {
+      "key": "latex.failed",
+      "en": "LaTeX export: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "latex.missingKeys",
+      "en": "Not in any .bib in the vault: {keys}",
+      "vars": [
+        "keys"
       ]
     },
     {
@@ -4991,6 +6248,59 @@
       ]
     },
     {
+      "key": "mailImport.allLabels",
+      "en": "All mail ({n})",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "mailImport.done",
+      "en": "Imported {messages} messages in {threads} threads, {keep} Keep notes, {docs} documents and {files} files → {folders}",
+      "vars": [
+        "messages",
+        "threads",
+        "keep",
+        "docs",
+        "files",
+        "folders"
+      ]
+    },
+    {
+      "key": "mailImport.failed",
+      "en": "Mail import failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "mailImport.label",
+      "en": "Which Gmail label should be imported?",
+      "vars": []
+    },
+    {
+      "key": "mailImport.missing",
+      "en": "(not in the export)",
+      "vars": []
+    },
+    {
+      "key": "mailImport.noSubject",
+      "en": "(no subject)",
+      "vars": []
+    },
+    {
+      "key": "mailImport.none",
+      "en": "No mail (.eml, .mbox) or Google Takeout data in these files.",
+      "vars": []
+    },
+    {
+      "key": "mailImport.trashSkipped",
+      "en": "{n} Keep notes in Keep's trash were left out.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
       "key": "meeting.decisions",
       "en": "Decisions",
       "vars": []
@@ -5190,6 +6500,66 @@
     {
       "key": "mobileBar.wikilink",
       "en": "Link to a note",
+      "vars": []
+    },
+    {
+      "key": "modelSources.about",
+      "en": "Models download from Hugging Face first, then from Lumen's mirror, then from your own copy. Every file is checked against its checksum in the model registry, whichever source it came from.",
+      "vars": []
+    },
+    {
+      "key": "modelSources.importFiles",
+      "en": "Add model files from this device…",
+      "vars": []
+    },
+    {
+      "key": "modelSources.imported",
+      "en": "{stored} files added, {unknown} not recognised.",
+      "vars": [
+        "stored",
+        "unknown"
+      ]
+    },
+    {
+      "key": "modelSources.invalid",
+      "en": "Enter an http(s) address, or leave it empty.",
+      "vars": []
+    },
+    {
+      "key": "modelSources.mirrorOff",
+      "en": "Lumen's mirror: not set up on this deployment",
+      "vars": []
+    },
+    {
+      "key": "modelSources.mirrorOn",
+      "en": "Lumen's mirror: on ({host})",
+      "vars": [
+        "host"
+      ]
+    },
+    {
+      "key": "modelSources.save",
+      "en": "Save",
+      "vars": []
+    },
+    {
+      "key": "modelSources.saved",
+      "en": "Saved.",
+      "vars": []
+    },
+    {
+      "key": "modelSources.title",
+      "en": "Model download sources",
+      "vars": []
+    },
+    {
+      "key": "modelSources.userHint",
+      "en": "A web address laid out like the mirror's releases: <address>/<release tag>/<file>. This deployment's security policy must allow it.",
+      "vars": []
+    },
+    {
+      "key": "modelSources.userLabel",
+      "en": "Your own copy",
       "vars": []
     },
     {
@@ -5412,6 +6782,102 @@
     {
       "key": "nikud.alt.title",
       "en": "Other readings",
+      "vars": []
+    },
+    {
+      "key": "notePw.change",
+      "en": "Change the password",
+      "vars": []
+    },
+    {
+      "key": "notePw.failed",
+      "en": "The note could not be opened: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "notePw.lockNow",
+      "en": "Lock now",
+      "vars": []
+    },
+    {
+      "key": "notePw.lockWarning",
+      "en": "This note will be locked with a password of its own. Nobody can open it without that password: not Lumen, not a backup, not sync. If you forget it, the note is lost — there is no recovery key. Its earlier versions in history are deleted, because they are plain text.",
+      "vars": []
+    },
+    {
+      "key": "notePw.locked",
+      "en": "The note is locked. It stays open until you lock it again or close Lumen.",
+      "vars": []
+    },
+    {
+      "key": "notePw.mismatch",
+      "en": "The two passwords are different. Try again.",
+      "vars": []
+    },
+    {
+      "key": "notePw.needsVault",
+      "en": "Only a note saved in the vault can have its own password. Save it to the vault first.",
+      "vars": []
+    },
+    {
+      "key": "notePw.newMessage",
+      "en": "At least {n} characters. Keep it somewhere safe: it can't be recovered.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "notePw.newTitle",
+      "en": "New note password",
+      "vars": []
+    },
+    {
+      "key": "notePw.openMessage",
+      "en": "This note is locked with its own password and is open now.",
+      "vars": []
+    },
+    {
+      "key": "notePw.remove",
+      "en": "Remove the password (save as plain text)",
+      "vars": []
+    },
+    {
+      "key": "notePw.removeConfirm",
+      "en": "The note will be saved as plain text again, readable by anyone who can open the vault. Continue?",
+      "vars": []
+    },
+    {
+      "key": "notePw.repeat",
+      "en": "Type the password again",
+      "vars": []
+    },
+    {
+      "key": "notePw.title",
+      "en": "Note password",
+      "vars": []
+    },
+    {
+      "key": "notePw.tooShort",
+      "en": "The password needs at least {n} characters.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "notePw.unlockMessage",
+      "en": "This note has its own password.",
+      "vars": []
+    },
+    {
+      "key": "notePw.unlockTitle",
+      "en": "Open a locked note",
+      "vars": []
+    },
+    {
+      "key": "notePw.wrong",
+      "en": "Wrong password, or the note was changed outside Lumen.",
       "vars": []
     },
     {
@@ -6102,6 +7568,13 @@
       "vars": []
     },
     {
+      "key": "photoMeta.refused",
+      "en": "{count} photo(s) were not added: their location, time and camera details could not be removed. Save a copy from an image editor and add that instead.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
       "key": "pii.ledger.redacted",
       "en": "Hidden before sending: {n} in {requests} requests",
       "vars": [
@@ -6435,6 +7908,13 @@
       ]
     },
     {
+      "key": "pluginTrust.changed",
+      "en": "“{name}” was not installed: the code downloaded is not the code that was scanned.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
       "key": "pluginTrust.dialog.asks",
       "en": "{name} {version} by {author} asks to:",
       "vars": [
@@ -6503,6 +7983,11 @@
       ]
     },
     {
+      "key": "pluginTrust.installedBadge",
+      "en": "Installed",
+      "vars": []
+    },
+    {
       "key": "pluginTrust.loadFailed",
       "en": "Could not load the sandboxed plugin list.",
       "vars": []
@@ -6511,6 +7996,18 @@
       "key": "pluginTrust.loading",
       "en": "Loading sandboxed plugins…",
       "vars": []
+    },
+    {
+      "key": "pluginTrust.remove",
+      "en": "Remove",
+      "vars": []
+    },
+    {
+      "key": "pluginTrust.removed",
+      "en": "“{name}” is removed, with the settings and data it kept.",
+      "vars": [
+        "name"
+      ]
     },
     {
       "key": "pluginTrust.report",
@@ -6931,6 +8428,13 @@
       "vars": []
     },
     {
+      "key": "publish.withheld",
+      "en": "{count} photo(s) were left out of the site: their location, time and camera details could not be removed.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
       "key": "pwa.dismiss",
       "en": "Dismiss",
       "vars": []
@@ -7249,6 +8753,11 @@
       "vars": []
     },
     {
+      "key": "redact.empty",
+      "en": "Select the text to redact first.",
+      "vars": []
+    },
+    {
       "key": "related.close",
       "en": "Close",
       "vars": []
@@ -7416,6 +8925,11 @@
         "n",
         "skipped"
       ]
+    },
+    {
+      "key": "settings.keepImageMetadata",
+      "en": "Keep photos' location, time and camera details (when adding photos and when exporting)",
+      "vars": []
     },
     {
       "key": "settings.language",
@@ -8634,6 +10148,21 @@
       ]
     },
     {
+      "key": "tashkeel.hidden",
+      "en": "Tashkeel hidden in this editor. The note still has it.",
+      "vars": []
+    },
+    {
+      "key": "tashkeel.nothing",
+      "en": "No tashkeel to remove here.",
+      "vars": []
+    },
+    {
+      "key": "tashkeel.shown",
+      "en": "Tashkeel shown.",
+      "vars": []
+    },
+    {
       "key": "tasks.changed",
       "en": "The note changed since this list was made — nothing was written. Try again.",
       "vars": []
@@ -9623,6 +11152,167 @@
     {
       "key": "usability.toSus",
       "en": "Tasks done: SUS questionnaire",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.begin",
+      "en": "Start the task",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.code",
+      "en": "Your code: {code}. No names are recorded.",
+      "vars": [
+        "code"
+      ]
+    },
+    {
+      "key": "usabilitySelf.consent",
+      "en": "I have read this and agree to take part.",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.delete",
+      "en": "Delete my session data",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.delete.confirm",
+      "en": "Delete everything this session recorded on this device?",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.done",
+      "en": "Done",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.finish",
+      "en": "Finish",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.gaveUp",
+      "en": "I couldn’t do it",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.hide",
+      "en": "Hide the panel",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.intro",
+      "en": "Thank you for helping. You will do 10 short tasks in Lumen on your own, about 30 minutes. We are testing Lumen, not you: if something is unclear, that is exactly what we want to find.",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.overLimit",
+      "en": "This is taking longer than planned. You can keep going, or press “I couldn’t do it”.",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.privacy",
+      "en": "Nothing is sent anywhere. At the end you save one file and decide whether to send it. You can stop at any time.",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.readme",
+      "en": "This file holds one Lumen usability session (code {code}): task times, the names of the buttons and commands used, key counts, whether each task's result was in the practice notes, and the questionnaire answers. It holds no note text and no names.",
+      "vars": [
+        "code"
+      ]
+    },
+    {
+      "key": "usabilitySelf.records",
+      "en": "What is recorded, on this device only:",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.records.answers",
+      "en": "your answers to the short questions after each task and at the end",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.records.check",
+      "en": "whether a task’s result is in the practice notes (yes or no) — never the notes’ text",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.records.clicks",
+      "en": "the buttons and commands you use (their names in the app) and how many keys you press — never what you type",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.records.time",
+      "en": "which task you are on, and how long it takes",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.save",
+      "en": "Save the file (.zip)",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.seedFailed",
+      "en": "The practice notes could not be added ({error}). You can still do the tasks.",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "usabilitySelf.send",
+      "en": "To send it: open the link in your invitation and attach the file, or reply to the invitation with the file attached.",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.setupNote",
+      "en": "Please use a private window or a separate browser profile. The practice notes go into a folder named “{folder}”.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "usabilitySelf.show",
+      "en": "Show the task",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.start",
+      "en": "Start",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.stop",
+      "en": "Stop the session",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.stop.confirm",
+      "en": "Stop now? What was recorded so far can still be saved and sent.",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.sus.intro",
+      "en": "Last step: 10 statements about Lumen. Choose how much you agree with each.",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.taskOf",
+      "en": "Task {n} of {total}",
+      "vars": [
+        "n",
+        "total"
+      ]
+    },
+    {
+      "key": "usabilitySelf.thanks",
+      "en": "Thank you! Save the file and send it as your invitation explains.",
+      "vars": []
+    },
+    {
+      "key": "usabilitySelf.title",
+      "en": "Usability test (self-guided)",
       "vars": []
     },
     {

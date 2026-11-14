@@ -6,6 +6,8 @@
 import { createRoot, type Root } from "react-dom/client";
 import { SyncPanel, takePendingOAuth, describeConnectError } from "./SyncPanel";
 import { syncSession } from "./session";
+import { SetupWizard } from "./SetupWizard";
+import { syncFolderSupported } from "../setup/folderHandle";
 
 let root: Root | null = null;
 let host: HTMLElement | null = null;
@@ -24,6 +26,25 @@ export function openSyncPanel(): void {
   document.body.appendChild(host);
   root = createRoot(host);
   root.render(<SyncPanel onClose={closeSyncPanel} />);
+}
+
+/** Plan W4.19: the guided two-click setup; "Advanced" switches to the full panel. */
+export function openSyncSetup(): void {
+  if (root) return;
+  host = document.createElement("div");
+  host.dataset.lumenSyncPanel = "";
+  document.body.appendChild(host);
+  root = createRoot(host);
+  root.render(
+    <SetupWizard
+      folderAccess={syncFolderSupported()}
+      onClose={closeSyncPanel}
+      onAdvanced={() => {
+        closeSyncPanel();
+        openSyncPanel();
+      }}
+    />,
+  );
 }
 
 /**

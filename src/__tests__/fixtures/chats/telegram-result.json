@@ -1,0 +1,135 @@
+{
+ "name": "קבוצת לימוד",
+ "type": "private_supergroup",
+ "id": 123,
+ "messages": [
+  {
+   "id": 1,
+   "type": "service",
+   "date": "2026-11-12T10:00:00",
+   "date_unixtime": "1794477600",
+   "actor": "טל",
+   "actor_id": "user1",
+   "action": "create_group",
+   "title": "קבוצת לימוד",
+   "members": [
+    "טל"
+   ],
+   "text": "",
+   "text_entities": []
+  },
+  {
+   "id": 2,
+   "type": "message",
+   "date": "2026-11-12T10:01:30",
+   "date_unixtime": "1794477690",
+   "from": "טל",
+   "from_id": "user1",
+   "text": "שלום לכולם",
+   "text_entities": [
+    {
+     "type": "plain",
+     "text": "שלום לכולם"
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "type": "message",
+   "date": "2026-11-12T10:02:00",
+   "from": "מיכל",
+   "from_id": "user2",
+   "reply_to_message_id": 2,
+   "text": [
+    "היי! ראו ",
+    {
+     "type": "bold",
+     "text": "כאן"
+    },
+    ": ",
+    {
+     "type": "text_link",
+     "text": "הסיכום",
+     "href": "https://example.com/sum"
+    },
+    " וגם ",
+    {
+     "type": "link",
+     "text": "https://example.com/x"
+    }
+   ],
+   "text_entities": []
+  },
+  {
+   "id": 4,
+   "type": "message",
+   "date": "2026-11-12T10:03:00",
+   "from": "מיכל",
+   "from_id": "user2",
+   "photo": "photos/photo_1@12-11-2026_10-03-00.jpg",
+   "width": 800,
+   "height": 600,
+   "text": "לוח",
+   "text_entities": []
+  },
+  {
+   "id": 5,
+   "type": "message",
+   "date": "2026-11-13T08:00:00",
+   "from": "טל",
+   "from_id": "user1",
+   "file": "files/syllabus.pdf",
+   "mime_type": "application/pdf",
+   "text": "",
+   "text_entities": []
+  },
+  {
+   "id": 6,
+   "type": "message",
+   "date": "2026-11-13T08:05:00",
+   "from": "טל",
+   "from_id": "user1",
+   "forwarded_from": "ערוץ החדשות",
+   "text": "הודעה מועברת",
+   "text_entities": []
+  },
+  {
+   "id": 7,
+   "type": "message",
+   "date": "2026-11-13T08:06:00",
+   "from": "מיכל",
+   "from_id": "user2",
+   "file": "(File not included. Change data exporting settings to download.)",
+   "media_type": "video_file",
+   "text": "",
+   "text_entities": []
+  },
+  {
+   "id": 8,
+   "type": "message",
+   "date": "2026-11-13T08:07:00",
+   "from": "מיכל",
+   "from_id": "user2",
+   "media_type": "sticker",
+   "sticker_emoji": "👍",
+   "file": "stickers/sticker.webp",
+   "text": "",
+   "text_entities": []
+  },
+  {
+   "id": 9,
+   "type": "message",
+   "date": "2026-11-13T08:08:00",
+   "from": "טל",
+   "from_id": "user1",
+   "text": [
+    {
+     "type": "pre",
+     "text": "x = 1",
+     "language": "python"
+    }
+   ],
+   "text_entities": []
+  }
+ ]
+}

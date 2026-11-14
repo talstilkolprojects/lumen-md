@@ -87,6 +87,19 @@
       "icon": "FileText"
     },
     {
+      "id": "file.exportAcademic",
+      "label": "Export for academic submission (Word)…",
+      "group": "File",
+      "hint": "Title page, table of contents, page numbers and the institution's formatting",
+      "icon": "Download"
+    },
+    {
+      "id": "cite.syncZoteroWeb",
+      "label": "Citations: sync the Zotero library from zotero.org (read-only)",
+      "group": "Tools",
+      "icon": "FileText"
+    },
+    {
       "id": "file.exportRtf",
       "label": "Export to RTF",
       "group": "File",
@@ -175,6 +188,27 @@
       "group": "File",
       "hint": "colorful, exactly as shown",
       "icon": "Download"
+    },
+    {
+      "id": "file.exportMarkdown",
+      "label": "Export Markdown",
+      "group": "File",
+      "hint": "without the redacted passages",
+      "icon": "Download"
+    },
+    {
+      "id": "edit.redact",
+      "label": "Redact selection",
+      "group": "Edit",
+      "hint": "removed from every export",
+      "icon": "Pencil"
+    },
+    {
+      "id": "file.notePassword",
+      "label": "Note password…",
+      "group": "File",
+      "hint": "lock this note with its own password",
+      "icon": "FileText"
     },
     {
       "id": "file.print",
@@ -662,6 +696,31 @@
       "icon": "Sparkles"
     },
     {
+      "id": "research.usabilitySelf",
+      "label": "Usability test (self-guided)…",
+      "group": "Tools",
+      "hint": "10 tasks on your own; recorded on this device only",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "spell.arabicDictionary",
+      "label": "Arabic spelling: download or remove the word list",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "arabic.toggleTashkeel",
+      "label": "Hide or show Arabic tashkeel",
+      "group": "View",
+      "icon": "Eye"
+    },
+    {
+      "id": "arabic.removeTashkeel",
+      "label": "Remove Arabic tashkeel (selection or note)",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
       "id": "vault.backups",
       "label": "Backups…",
       "group": "File",
@@ -687,6 +746,20 @@
       "label": "Undo the last import",
       "group": "File",
       "hint": "Removes the folder the last import created",
+      "icon": "Save"
+    },
+    {
+      "id": "vault.importChat",
+      "label": "Import a WhatsApp or Telegram chat…",
+      "group": "File",
+      "hint": "Exported chat → notes per day, with its media; on this device only",
+      "icon": "Save"
+    },
+    {
+      "id": "vault.importMail",
+      "label": "Import mail (.eml, .mbox) or Google Takeout…",
+      "group": "File",
+      "hint": "A note per thread with attachments, Keep notes and Docs; files only, on this device",
       "icon": "Save"
     },
     {
@@ -747,6 +820,18 @@
     {
       "id": "sync.open",
       "label": "Encrypted sync…",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "sync.setup",
+      "label": "Set up sync (two clicks)",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "classroom.open",
+      "label": "Private classroom…",
       "group": "Tools",
       "icon": "Sparkles"
     },
@@ -1722,6 +1807,13 @@
       "icon": "Link"
     },
     {
+      "id": "insert.ink",
+      "label": "Handwriting: draw or edit",
+      "group": "Insert",
+      "hint": "Pen, Apple Pencil or finger; saved as SVG in the note",
+      "icon": "Pencil"
+    },
+    {
       "id": "a11y.srVerbosity",
       "label": "Screen reader announcements: headings and structure",
       "group": "View",
@@ -1776,6 +1868,48 @@
       "group": "Insert",
       "hint": "Every note that cites the verse under the cursor",
       "icon": "Link"
+    },
+    {
+      "id": "book.open",
+      "label": "Book: chapters, goals and export",
+      "group": "View",
+      "hint": "Chapter order, word goals, today's words and streak; export a Hebrew EPUB or print to PDF",
+      "icon": "FileText"
+    },
+    {
+      "id": "book.addChapter",
+      "label": "Book: add this note as a chapter",
+      "group": "View",
+      "hint": "Adds the note to the end of the book whose index is in the same folder",
+      "icon": "FileText"
+    },
+    {
+      "id": "export.latexProject",
+      "label": "Export LaTeX project (academic, Hebrew)…",
+      "group": "File",
+      "hint": "main.tex for LuaLaTeX / XeLaTeX with Hebrew right to left, math, [@key] citations from the vault's .bib, and the images, in a ZIP",
+      "icon": "Download"
+    },
+    {
+      "id": "automations.new",
+      "label": "Automations: new rule (when… then…)…",
+      "group": "Tools",
+      "hint": "A rule in a few choices: note created, tag added, property changed or daily → move, tag, template or a line in the daily note",
+      "icon": "Workflow"
+    },
+    {
+      "id": "automations.dryRun",
+      "label": "Automations: dry run on this note",
+      "group": "Tools",
+      "hint": "What the rules would change for this note — nothing is written",
+      "icon": "Workflow"
+    },
+    {
+      "id": "automations.undo",
+      "label": "Automations: undo the last run",
+      "group": "Tools",
+      "hint": "Puts back every file the last automation run changed, byte for byte",
+      "icon": "Workflow"
     }
   ],
   "full": [
@@ -1892,6 +2026,19 @@
       "icon": "FileText"
     },
     {
+      "id": "file.exportAcademic",
+      "label": "Export for academic submission (Word)…",
+      "group": "File",
+      "hint": "Title page, table of contents, page numbers and the institution's formatting",
+      "icon": "Download"
+    },
+    {
+      "id": "cite.syncZoteroWeb",
+      "label": "Citations: sync the Zotero library from zotero.org (read-only)",
+      "group": "Tools",
+      "icon": "FileText"
+    },
+    {
       "id": "file.exportRtf",
       "label": "Export to RTF",
       "group": "File",
@@ -1980,6 +2127,27 @@
       "group": "File",
       "hint": "colorful, exactly as shown",
       "icon": "Download"
+    },
+    {
+      "id": "file.exportMarkdown",
+      "label": "Export Markdown",
+      "group": "File",
+      "hint": "without the redacted passages",
+      "icon": "Download"
+    },
+    {
+      "id": "edit.redact",
+      "label": "Redact selection",
+      "group": "Edit",
+      "hint": "removed from every export",
+      "icon": "Pencil"
+    },
+    {
+      "id": "file.notePassword",
+      "label": "Note password…",
+      "group": "File",
+      "hint": "lock this note with its own password",
+      "icon": "FileText"
     },
     {
       "id": "file.print",
@@ -2474,6 +2642,31 @@
       "icon": "Sparkles"
     },
     {
+      "id": "research.usabilitySelf",
+      "label": "Usability test (self-guided)…",
+      "group": "Tools",
+      "hint": "10 tasks on your own; recorded on this device only",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "spell.arabicDictionary",
+      "label": "Arabic spelling: download or remove the word list",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "arabic.toggleTashkeel",
+      "label": "Hide or show Arabic tashkeel",
+      "group": "View",
+      "icon": "Eye"
+    },
+    {
+      "id": "arabic.removeTashkeel",
+      "label": "Remove Arabic tashkeel (selection or note)",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
       "id": "vault.backups",
       "label": "Backups…",
       "group": "File",
@@ -2499,6 +2692,20 @@
       "label": "Undo the last import",
       "group": "File",
       "hint": "Removes the folder the last import created",
+      "icon": "Save"
+    },
+    {
+      "id": "vault.importChat",
+      "label": "Import a WhatsApp or Telegram chat…",
+      "group": "File",
+      "hint": "Exported chat → notes per day, with its media; on this device only",
+      "icon": "Save"
+    },
+    {
+      "id": "vault.importMail",
+      "label": "Import mail (.eml, .mbox) or Google Takeout…",
+      "group": "File",
+      "hint": "A note per thread with attachments, Keep notes and Docs; files only, on this device",
       "icon": "Save"
     },
     {
@@ -2559,6 +2766,18 @@
     {
       "id": "sync.open",
       "label": "Encrypted sync…",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "sync.setup",
+      "label": "Set up sync (two clicks)",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "classroom.open",
+      "label": "Private classroom…",
       "group": "Tools",
       "icon": "Sparkles"
     },
@@ -3650,6 +3869,13 @@
       "icon": "Link"
     },
     {
+      "id": "insert.ink",
+      "label": "Handwriting: draw or edit",
+      "group": "Insert",
+      "hint": "Pen, Apple Pencil or finger; saved as SVG in the note",
+      "icon": "Pencil"
+    },
+    {
       "id": "a11y.srVerbosity",
       "label": "Screen reader announcements: headings and structure",
       "group": "View",
@@ -3704,6 +3930,48 @@
       "group": "Insert",
       "hint": "Every note that cites the verse under the cursor",
       "icon": "Link"
+    },
+    {
+      "id": "book.open",
+      "label": "Book: chapters, goals and export",
+      "group": "View",
+      "hint": "Chapter order, word goals, today's words and streak; export a Hebrew EPUB or print to PDF",
+      "icon": "FileText"
+    },
+    {
+      "id": "book.addChapter",
+      "label": "Book: add this note as a chapter",
+      "group": "View",
+      "hint": "Adds the note to the end of the book whose index is in the same folder",
+      "icon": "FileText"
+    },
+    {
+      "id": "export.latexProject",
+      "label": "Export LaTeX project (academic, Hebrew)…",
+      "group": "File",
+      "hint": "main.tex for LuaLaTeX / XeLaTeX with Hebrew right to left, math, [@key] citations from the vault's .bib, and the images, in a ZIP",
+      "icon": "Download"
+    },
+    {
+      "id": "automations.new",
+      "label": "Automations: new rule (when… then…)…",
+      "group": "Tools",
+      "hint": "A rule in a few choices: note created, tag added, property changed or daily → move, tag, template or a line in the daily note",
+      "icon": "Workflow"
+    },
+    {
+      "id": "automations.dryRun",
+      "label": "Automations: dry run on this note",
+      "group": "Tools",
+      "hint": "What the rules would change for this note — nothing is written",
+      "icon": "Workflow"
+    },
+    {
+      "id": "automations.undo",
+      "label": "Automations: undo the last run",
+      "group": "Tools",
+      "hint": "Puts back every file the last automation run changed, byte for byte",
+      "icon": "Workflow"
     }
   ],
   "autoSaveOn": [
@@ -3729,6 +3997,8 @@
     "cite.legal",
     "cite.legalFromCase",
     "cite.syncZotero",
+    "file.exportAcademic",
+    "cite.syncZoteroWeb",
     "file.exportRtf",
     "file.exportMarkdownAiMarks",
     "file.exportLatex",
@@ -3742,6 +4012,9 @@
     "file.exportSite",
     "file.exportPptx",
     "file.exportPdf",
+    "file.exportMarkdown",
+    "edit.redact",
+    "file.notePassword",
     "file.print",
     "view.source",
     "view.split",
@@ -3811,10 +4084,16 @@
     "lexicon.pack",
     "lexicon.lookup",
     "research.usability",
+    "research.usabilitySelf",
+    "spell.arabicDictionary",
+    "arabic.toggleTashkeel",
+    "arabic.removeTashkeel",
     "vault.backups",
     "vault.export",
     "vault.import",
     "vault.importUndo",
+    "vault.importChat",
+    "vault.importMail",
     "vault.toFolder",
     "vault.openFolder",
     "vault.toBrowser",
@@ -3824,6 +4103,8 @@
     "privacy.imageHosts",
     "file.trash",
     "sync.open",
+    "sync.setup",
+    "classroom.open",
     "tasks.open",
     "ai.cancel",
     "note.read",
@@ -3964,6 +4245,7 @@
     "insert.htmlpreview",
     "insert.bibtex",
     "insert.wikilink",
+    "insert.ink",
     "a11y.srVerbosity",
     "a11y.whereAmI",
     "help.a11yStatement",
@@ -3971,6 +4253,12 @@
     "help.a11yReport",
     "sources.insertSefaria",
     "sources.saveOffline",
-    "sources.notesOnVerse"
+    "sources.notesOnVerse",
+    "book.open",
+    "book.addChapter",
+    "export.latexProject",
+    "automations.new",
+    "automations.dryRun",
+    "automations.undo"
   ]
 }

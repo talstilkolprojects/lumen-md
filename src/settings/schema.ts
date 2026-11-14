@@ -128,6 +128,8 @@ export const SETTINGS: readonly SettingEntry[] = [
   local("lumen.marketplace.url", { kind: "setting", tab: "general", type: "text" }),
   local("lumen.digest.folder", { kind: "setting", tab: "general", type: "text" }),
   local("lumen.tasks.reminders", { kind: "setting", tab: "general", type: "boolean", values: ["", "1"] }),
+  // W5.11: photos keep their GPS, time and camera details (pasting and exporting) only when this is on.
+  local("lumen.images.keepMetadata", { kind: "setting", tab: "general", label: "settings.keepImageMetadata", type: "boolean", values: ["", "1"] }),
 
   // ── AI (the AI settings panel, model manager included) ────────────────
   local("lumen.ai.policy", { kind: "setting", tab: "ai", label: "cmd.ai.policy", type: "choice", options: [{ value: "local-only" }, { value: "local-first" }, { value: "cloud" }] }),

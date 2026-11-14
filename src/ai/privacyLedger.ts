@@ -70,6 +70,16 @@ interface Rule {
   reason: string;
 }
 
+/** The model mirror's host from the build, or "" (no mirror deployed). */
+const MODEL_MIRROR_HOST = (() => {
+  try {
+    // why: a static name read — Vite inlines this one value, not the whole env
+    return new URL(String(import.meta.env.VITE_MODEL_MIRROR_URL ?? "")).hostname;
+  } catch {
+    return "";
+  }
+})();
+
 const RULES: Rule[] = [
   { test: (h) => h === "api.openai.com", category: "cloud-ai", reason: "OpenAI" },
   { test: (h) => h === "api.anthropic.com", category: "cloud-ai", reason: "Anthropic (Claude)" },
@@ -79,11 +89,18 @@ const RULES: Rule[] = [
   { test: (h) => h === "kroki.io", category: "cloud-text", reason: "PlantUML rendering (kroki.io)" },
   // Jewish sources (plan W5.1): the reference the user asked for, nothing else.
   { test: (h) => h === "www.sefaria.org" || h === "sefaria.org", category: "cloud-text", reason: "Jewish sources (Sefaria): the reference only" },
+  // Plan W5.23: the Zotero Web API, read-only, with the user's own key. A
+  // cloud route: a local-only policy blocks it like the research service.
+  { test: (h) => h === "api.zotero.org", category: "research", reason: "Zotero Web API (your library, read-only)" },
   {
     test: (h) => h === "huggingface.co" || h.endsWith(".huggingface.co") || h.endsWith(".hf.co") || h === "hf.co",
     category: "model-download",
     reason: "Model download (Hugging Face)",
   },
+  // Lumen's model mirror (plan W4.14): GitHub releases behind the
+  // deployment's CORS proxy (VITE_MODEL_MIRROR_URL), tried when Hugging Face
+  // does not serve a model file. Every file is checked by sha256.
+  { test: (h) => !!MODEL_MIRROR_HOST && h === MODEL_MIRROR_HOST, category: "model-download", reason: "Model download (Lumen's mirror)" },
   // Excalidraw (the canvas, plan 4.19) names esm.sh as the fallback for its
   // fonts. Lumen serves them from its own origin (EXCALIDRAW_ASSET_PATH), so
   // this host is never needed; a request to it would be third-party traffic.

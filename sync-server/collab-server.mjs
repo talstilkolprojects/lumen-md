@@ -46,6 +46,16 @@
  *   COLLAB_LEGACY_LEVELDB_DIR (the Docker image sets /data/yjs) are imported
  *   once at start, never overwriting a room SQLite already has.
  *
+ * ── Privacy (plan W4.8, PRIVACY.he.md) ───────────────────────────────────
+ *   COLLAB_E2EE_ONLY=1   refuse every update that is not an encrypted
+ *                        envelope (collab/relay.mjs, checkE2eeUpdate): the
+ *                        connection is closed (4403) before the update is
+ *                        applied, so the server only ever holds ciphertext.
+ *                        The public server (edge-workers/collab) always does.
+ *   COLLAB_RETENTION_DAYS  delete rooms nobody changed for this many days
+ *                        (default 90; 0 keeps them). Swept at start and daily.
+ *   Logs name no IP address.
+ *
  * ── Health ────────────────────────────────────────────────────────────────
  *   GET /healthz → 200 {"ok":true,"service":"lumen-collab","persistence":"sqlite"}
  *
@@ -62,6 +72,7 @@ import { importLegacyDir } from "./collab/legacyImport.mjs";
 import { DEFAULT_TOKEN_TTL_S, readRoomToken, signingKey } from "./collab/roomToken.mjs";
 import { canWrite, handleTokenRequest, isDocumentWrite, parseDocumentName, shareState } from "./collab/sharing.mjs";
 import { isSealedDocument, isSealedState, sealedMessageProblem } from "./collab/sealed.mjs";
+import { checkE2eeUpdate, updateInMessage } from "./collab/relay.mjs";
 
 /**
  * Build (not start) a collab server. `listen()` resolves with the bound
@@ -84,6 +95,8 @@ export function createCollabServer(opts = {}) {
     quiet = true,
     revokeCheckMs = 1000,
     requireE2ee = false,
+    e2eeOnly = false,
+    retentionDays = 90,
     log = () => {},
   } = opts;
   /** Live connections bought with a share link: closed when the link is revoked or expires. */
@@ -92,6 +105,11 @@ export function createCollabServer(opts = {}) {
   const store = openStore(dataDir, { keepBackups });
   const sealed = (room) => requireE2ee || store.isSealed(room);
   /** A room may be sealed while it stores no readable content (a new room, or one that was always encrypted). */
+  /** The stored name of a document: its room's plain name (+ `~comments`). */
+  const storedName = (documentName) => {
+    const d = parseDocumentName(documentName);
+    return d ? (d.kind === "comments" ? `${d.room}~comments` : d.room) : documentName;
+  };
   const sealable = (room) =>
     [room, `${room}~comments`].every((name) => {
       const state = store.load(name);
@@ -176,7 +194,17 @@ export function createCollabServer(opts = {}) {
     async onDisconnect({ connection }) {
       for (const c of shared) if (c.connection === connection) shared.delete(c);
     },
-    async beforeHandleMessage({ context, update, documentName }) {
+    async beforeHandleMessage({ context, update, documentName, document }) {
+      // COLLAB_E2EE_ONLY (plan W4.8): nothing but encrypted envelopes is ever applied.
+      if (e2eeOnly && update) {
+        const yjsUpdate = updateInMessage(update);
+        const why = yjsUpdate ? checkE2eeUpdate(document, yjsUpdate) : null;
+        if (why) {
+          log(`update refused (e2ee-only: ${why})`);
+          // A CloseEvent-like object: Hocuspocus closes the connection with it.
+          throw { code: 4403, reason: `e2ee-only: ${why}` };
+        }
+      }
       // Second guard after the read-only flag: a change sent by hand on a
       // connection that may not write ends that connection.
       if (context && context.writable === false && update && isDocumentWrite(update)) {
@@ -195,7 +223,10 @@ export function createCollabServer(opts = {}) {
       }
     },
     async onLoadDocument({ document, documentName }) {
-      const state = store.load(documentName);
+      // The app now names a password room `<name>_k<commit>` (review 4 of #469). This
+      // server reads that as `<name>` (sharing.mjs roomOf), so it is stored under the plain
+      // name: rooms stored before are found there, and the seal check sees every copy.
+      const state = store.load(storedName(documentName));
       if (state) Y.applyUpdate(document, state);
     },
     async onStoreDocument({ document, documentName }) {
@@ -205,7 +236,7 @@ export function createCollabServer(opts = {}) {
         log("store refused: a sealed room's document is not ciphertext-only");
         return;
       }
-      store.save(documentName, Y.encodeStateAsUpdate(document));
+      store.save(storedName(documentName), Y.encodeStateAsUpdate(document));
     },
   });
 
@@ -223,7 +254,7 @@ export function createCollabServer(opts = {}) {
   backupTimer?.unref?.();
 
   /** Close every live connection whose share link was revoked or has expired. */
-  const sweep = () => {
+  const revokeSweep = () => {
     const now = Date.now();
     const live = new Map();
     const ended = (share) => {
@@ -253,7 +284,17 @@ export function createCollabServer(opts = {}) {
       close(c.connection);
     }
   };
-  const sweepTimer = revokeCheckMs > 0 ? setInterval(sweep, revokeCheckMs) : null;
+  const revokeTimer = revokeCheckMs > 0 ? setInterval(revokeSweep, revokeCheckMs) : null;
+  revokeTimer?.unref?.();
+
+  /** Retention (plan W4.8): rooms not changed for `retentionDays` are deleted. */
+  const sweep = (nowMs = Date.now()) => {
+    if (!(retentionDays > 0)) return 0;
+    const n = store.sweep(nowMs - retentionDays * 24 * 60 * 60 * 1000);
+    if (n) log(`retention: deleted ${n} room(s) unchanged for ${retentionDays} days`);
+    return n;
+  };
+  const sweepTimer = retentionDays > 0 ? setInterval(sweep, 24 * 60 * 60 * 1000) : null;
   sweepTimer?.unref?.();
 
   let closing = null;
@@ -265,6 +306,7 @@ export function createCollabServer(opts = {}) {
     async listen() {
       // Before accepting connections, so nobody opens an "empty" legacy room.
       if (legacyLeveldbDir) await importLegacyDir(store, legacyLeveldbDir, { log });
+      sweep();
       await server.listen();
       return server.address.port;
     },
@@ -272,6 +314,7 @@ export function createCollabServer(opts = {}) {
       closing ??= (async () => {
         if (backupTimer) clearInterval(backupTimer);
         if (sweepTimer) clearInterval(sweepTimer);
+        if (revokeTimer) clearInterval(revokeTimer);
         for (const c of tokenWss.clients) c.terminate();
         tokenWss.close();
         await server.destroy();
@@ -300,6 +343,8 @@ function fromEnv(env) {
     keepBackups: num(env.COLLAB_BACKUP_KEEP, 24),
     revokeCheckMs: num(env.COLLAB_REVOKE_CHECK_MS, 1000),
     requireE2ee: env.COLLAB_REQUIRE_E2EE === "1" || env.COLLAB_REQUIRE_E2EE === "true",
+    e2eeOnly: env.COLLAB_E2EE_ONLY === "1",
+    retentionDays: num(env.COLLAB_RETENTION_DAYS, 90),
     log: (m) => console.log(`[collab] ${m}`),
   };
 }

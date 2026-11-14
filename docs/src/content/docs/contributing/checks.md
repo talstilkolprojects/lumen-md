@@ -14,7 +14,7 @@ No GitHub Actions minutes are used.
 
 | Build | What runs, in order |
 |---|---|
-| Preview (the `verify/…` trains) | build, bundle budget, the secret scan of `dist/`, vitest, e2e (smoke on chromium and firefox), `i18n:check`, hygiene, `docs:sync`, the licence gate |
+| Preview (the `verify/…` trains) | build, bundle budget, the secret scan of `dist/`, vitest, e2e (smoke on chromium and firefox), `i18n:check`, hygiene, `docs:sync`, the licence gate, the mutation floor (`mutation:check`) |
 | Production (`main`) | build, bundle budget — as before |
 
 The gates stop at the first failure. The build log ends with the gate that

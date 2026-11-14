@@ -252,7 +252,7 @@ function Manage({ onDone }: { onDone: () => void }) {
             });
           }}
         >
-          <div role="note" style={{ fontSize: 13, padding: "8px 10px", borderInlineStart: "3px solid hsl(40 90% 50%)", background: "hsl(40 90% 50% / 0.08)" }}>
+          <div role="note" style={{ fontSize: 13, padding: "8px 10px", borderInlineStart: "3px solid hsl(var(--warning))", background: "hsl(var(--warning) / 0.08)" }}>
             {t("vaultEnc.kdfUpgradeNote")}
           </div>
           <Field label={t("vaultEnc.current")} value={cur} onChange={setCur} autoComplete="current-password" />

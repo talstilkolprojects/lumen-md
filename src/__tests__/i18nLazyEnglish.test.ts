@@ -33,7 +33,7 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   // imported from outside, and must not reach the strings.
   "e2ee.json": {
     module: "sync/e2ee/strings.ts",
-    users: ["sync/e2ee/conflict.ts", "sync/e2ee/ui/FreshnessBanner.tsx", "sync/e2ee/ui/LanPairing.tsx", "sync/e2ee/ui/PassphraseForm.tsx", "sync/e2ee/ui/SyncActivity.tsx", "sync/e2ee/ui/SyncPanel.tsx", "sync/e2ee/ui/SyncRulesForm.tsx", "sync/e2ee/ui/treeBadges.ts"],
+    users: ["sync/e2ee/classroom/ClassroomPanel.tsx", "sync/e2ee/conflict.ts", "sync/e2ee/ui/FreshnessBanner.tsx", "sync/e2ee/ui/LanPairing.tsx", "sync/e2ee/ui/PassphraseForm.tsx", "sync/e2ee/ui/SetupWizard.tsx", "sync/e2ee/ui/SyncActivity.tsx", "sync/e2ee/ui/SyncPanel.tsx", "sync/e2ee/ui/SyncRulesForm.tsx", "sync/e2ee/ui/errorText.ts", "sync/e2ee/ui/treeBadges.ts"],
     prefixes: ["e2ee."],
     within: "sync/e2ee/",
     shared: ["sync/e2ee/age.ts", "sync/e2ee/bytes.ts", "sync/e2ee/kdf.ts", "sync/e2ee/kdfCalibrate.ts", "sync/e2ee/primitives/argon2.ts", "sync/e2ee/primitives/blake2b.ts", "sync/e2ee/primitives/chacha20poly1305.ts", "sync/e2ee/primitives/scrypt.ts"],
@@ -160,6 +160,33 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "relatedPanel.json": { module: "ui/relatedPanelStrings.ts", users: ["ui/RelatedPanel.tsx"], prefixes: ["related."] },
   "tasksBlock.json": { module: "plugins/tasksBlockStrings.ts", users: ["plugins/TasksBlock.tsx"], prefixes: ["tasks.count", "tasks.error.date", "tasks.error.query", "tasks.error.regex", "tasks.group.done", "tasks.group.none", "tasks.group.todo"] },
   "tts.json": { module: "ai/ttsStrings.ts", users: ["ai/tts.ts"], prefixes: ["tts.", "toast.tts."] },
+  // Journalist mode (plan W5.11): the note-password flow, the redact command, the settings switch,
+  // and the photo-metadata refusals of the editor and Publish site, all behind a dynamic import.
+  "journalist.json": {
+    module: "lib/journalistStrings.ts",
+    users: ["ui/SettingsScreen.tsx", "ui/notePassword.ts"],
+    prefixes: ["notePw.", "redact.", "settings.keepImageMetadata", "photoMeta.", "publish.withheld"],
+  },
+  // The handwriting pad (plan W5.27): the palette command and the preview's double-click load it.
+  "ink.json": { module: "ink/inkStrings.ts", users: ["ink/InkPad.tsx", "ink/inkCommand.ts"], prefixes: ["ink."] },
+  // Where models download from (plan W4.14), a lazy section of the AI settings.
+  "modelSources.json": { module: "ai/modelSourcesStrings.ts", users: ["ui/ModelSourcesSection.tsx"], prefixes: ["modelSources."] },
+  // Chat import (plan W5.7): the command loads its module with a dynamic import.
+  "chatImport.json": { module: "capture/chats/strings.ts", users: ["capture/chats/runImport.ts"], prefixes: ["chatImport."] },
+  // Mail and Takeout import (plan W5.18), loaded the same way.
+  "mailImport.json": { module: "capture/mail/strings.ts", users: ["capture/mail/runImport.ts"], prefixes: ["mailImport."] },
+  // Academic submission export (plan W5.16): the dialog loads from the palette.
+  "academic.json": { module: "ui/academicStrings.ts", users: ["ui/AcademicExportDialog.tsx"], prefixes: ["academic."] },
+  // Arabic (plan W5.17): the word list and the tashkeel view, both loaded on use.
+  "arabic.json": { module: "ai/arabicStrings.ts", users: ["ai/arabicSpellService.ts", "editor/tashkeelView.ts"], prefixes: ["spell.ar.", "tashkeel."] },
+  // No-code automations (plan W5.24): the engine's app layer and the palette's command bodies.
+  "automations.json": { module: "automations/automationStrings.ts", users: ["automations/app.ts", "commands/domains/automationsActions.ts"], prefixes: ["automations."] },
+  // Book-writing mode (plan W5.8): the book's app layer and the palette's command bodies.
+  "book.json": { module: "book/bookStrings.ts", users: ["book/app.ts", "commands/domains/bookActions.ts"], prefixes: ["book."] },
+  // Academic LaTeX export (plan W5.22), loaded with the export.
+  "latex.json": { module: "latex/latexStrings.ts", users: ["latex/app.ts"], prefixes: ["latex."] },
+  // The self-guided usability session (plan W4.25), opened from the palette.
+  "usabilitySelf.json": { module: "research/usability/selfStrings.ts", users: ["ui/UsabilitySelfPanel.tsx"], prefixes: ["usabilitySelf."] },
 };
 
 function sources(dir: string): string[] {

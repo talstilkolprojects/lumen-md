@@ -10,6 +10,8 @@ export const TASK_COUNT = 10;
 
 /** Plan acceptance (round 2). */
 export const TARGETS = { sus: 80, unaidedSuccess: 0.9, severeClosed: 10 };
+/** Plan W4.25 (first round, moderated and self-guided together). */
+export const TARGETS_MIXED = { participants: 12, moderated: 5, unmoderated: 7, sus: 75 };
 
 /** SUS score, 0–100 (same rule as src/research/usability/study.ts). */
 export function susScore(answers) {
@@ -26,7 +28,7 @@ export function parseSession(text, name = "session") {
     throw new Error(`${name}: not JSON`);
   }
   if (s?.schema !== SCHEMA) throw new Error(`${name}: not a Lumen usability session (schema ${s?.schema})`);
-  if (!/^P\d{1,2}$/.test(s.participant ?? "")) throw new Error(`${name}: participant must be a code like P3`);
+  if (!/^(P\d{1,2}|U-[A-Z0-9]{4})$/.test(s.participant ?? "")) throw new Error(`${name}: participant must be a code like P3 or U-7K3F`);
   if (!Array.isArray(s.events)) throw new Error(`${name}: no events`);
   return s;
 }
@@ -67,7 +69,7 @@ export function attempts(session) {
       if (open) out.push({ ...open, outcome: "gave-up", assisted: false, seconds: (e.t - open.t0) / 1000, unfinished: true });
       open = { task: e.task, t0: e.t, errors: 0, help: 0, notes: [] };
     } else if (open && e.type === "task-end" && e.task === open.task) {
-      out.push({ ...open, outcome: e.outcome, assisted: !!e.assisted, seconds: (e.t - open.t0) / 1000 });
+      out.push({ ...open, outcome: e.outcome, assisted: !!e.assisted, seconds: (e.t - open.t0) / 1000, ...(e.verified !== undefined ? { verified: e.verified } : {}) });
       open = null;
     } else if (open && e.type === "error") open.errors++;
     else if (open && e.type === "command" && /^help\./.test(e.id)) open.help++;
@@ -106,8 +108,15 @@ export function analyze(sessions) {
   const scores = sus.map((x) => x.score).filter((x) => x !== null);
   const attempted = all.length;
   const unaidedAll = all.filter((x) => x.outcome === "success" && !x.assisted).length;
+  const checked = all.filter((x) => x.verified === true || x.verified === false);
   return {
     participants: sessions.map((s) => s.participant),
+    modes: {
+      moderated: sessions.filter((s) => (s.mode ?? "moderated") === "moderated").length,
+      unmoderated: sessions.filter((s) => s.mode === "unmoderated").length,
+    },
+    /** Self-guided attempts the app could check: how many reports of "done" the notes confirmed. */
+    verified: checked.length ? { checked: checked.length, confirmed: checked.filter((x) => x.verified === true).length } : null,
     rounds: [...new Set(sessions.map((s) => s.round))],
     tasks,
     sus,
@@ -140,7 +149,7 @@ export function parseFindings(md) {
     if (!/^U\d+/.test(id)) continue;
     const severity = Number(/\d/.exec(col(/חומרה|severity/i))?.[0] ?? NaN);
     const status = col(/סטטוס|status/i);
-    rows.push({ id, severity, closed: /^(סגור|closed|fixed|תוקן)/i.test(status) });
+    rows.push({ id, severity, closed: /^(סגור|closed|fixed|תוקן)/i.test(status), planTask: col(/משימה בתוכנית|plan task/i) });
   }
   return rows;
 }
@@ -156,6 +165,18 @@ export function acceptance(result, findings = []) {
   ];
 }
 
+/** Plan W4.25's acceptance: ≥ 12 participants (≥ 5 moderated, ≥ 7 self-guided), mean SUS ≥ 75, every severe finding has a plan task. */
+export function acceptanceMixed(result, findings = []) {
+  const severe = findings.filter((f) => f.severity >= 3);
+  const withTask = severe.filter((f) => f.planTask && f.planTask.trim()).length;
+  const { moderated, unmoderated } = result.modes;
+  return [
+    { name: `≥ ${TARGETS_MIXED.participants} participants (≥ ${TARGETS_MIXED.moderated} moderated, ≥ ${TARGETS_MIXED.unmoderated} self-guided)`, ok: moderated + unmoderated >= TARGETS_MIXED.participants && moderated >= TARGETS_MIXED.moderated && unmoderated >= TARGETS_MIXED.unmoderated, value: `${moderated + unmoderated} (${moderated} + ${unmoderated})` },
+    { name: `SUS ≥ ${TARGETS_MIXED.sus}`, ok: result.susCI ? result.susCI.mean >= TARGETS_MIXED.sus : false, value: result.susCI ? result.susCI.mean.toFixed(1) : "—" },
+    { name: "every severe finding → a plan task", ok: withTask === severe.length, value: `${withTask}/${severe.length}` },
+  ];
+}
+
 const pct = (x) => (x === null ? "—" : `${Math.round(x * 100)}%`);
 const num = (x, d = 1) => (x === null || x === undefined ? "—" : x.toFixed(d));
 
@@ -164,6 +185,10 @@ export function report(result, { round, taskNames = [], findings = null } = {}) 
   const L = [];
   L.push(`# דוח בדיקות שימושיות — סבב ${round ?? result.rounds.join(", ")}`, "");
   L.push(`משתתפים: ${result.participants.length} (${result.participants.join(", ")})`, "");
+  if (result.modes?.unmoderated) {
+    L.push(`מונחים: ${result.modes.moderated} · עצמאיים: ${result.modes.unmoderated}`, "");
+    if (result.verified) L.push(`בדיקות עצמאיות שהאפליקציה יכלה לאמת: ${result.verified.confirmed} מתוך ${result.verified.checked} דיווחי „סיימתי” אושרו בפתקים.`, "");
+  }
   L.push("## משימות", "", "| # | משימה | ניסיונות | הצלחה | הצלחה בלי עזרה | כולל חלקית | זמן חציוני (שנ׳) | SEQ (1–7) | שגיאות | עזרה |", "|---|---|---|---|---|---|---|---|---|---|");
   for (const t of result.tasks) L.push(`| ${t.task} | ${taskNames[t.task - 1] ?? ""} | ${t.n} | ${pct(t.success)} | ${pct(t.unaidedSuccess)} | ${pct(t.lenient)} | ${num(t.medianSeconds, 0)} | ${num(t.seq)} | ${t.errors} | ${t.help} |`);
   L.push("", "## SUS", "", "| משתתף/ת | ציון |", "|---|---|");
@@ -171,11 +196,51 @@ export function report(result, { round, taskNames = [], findings = null } = {}) 
   const ci = result.susCI;
   L.push("", ci ? `ממוצע: **${ci.mean.toFixed(1)}**${ci.low !== null ? ` (רווח סמך 95%: ${Math.max(0, ci.low).toFixed(1)}–${Math.min(100, ci.high).toFixed(1)}, n=${ci.n})` : ` (n=${ci.n})`}` : "אין תשובות SUS.", "");
   L.push(`הצלחה בלי עזרה, בכל המשימות: **${pct(result.unaidedSuccess)}**`, "");
-  if (round === 2 || findings) {
+  if (result.modes?.unmoderated) {
+    L.push("## קריטריוני קבלה (W4.25: סבב מונחה ועצמאי)", "", "| קריטריון | ערך | עומד? |", "|---|---|---|");
+    for (const a of acceptanceMixed(result, findings ?? [])) L.push(`| ${a.name} | ${a.value} | ${a.ok ? "✓" : "✗"} |`);
+    L.push("");
+  }
+  if (round === 2 || (findings && !result.modes?.unmoderated)) {
     L.push("## קריטריוני קבלה (סבב 2)", "", "| קריטריון | ערך | עומד? |", "|---|---|---|");
     for (const a of acceptance(result, findings ?? [])) L.push(`| ${a.name} | ${a.value} | ${a.ok ? "✓" : "✗"} |`);
     L.push("");
   }
   L.push("> עם 5–8 משתתפים המספרים מראים כיוון, לא מובהקות. רווחי הסמך רחבים, וכל בעיה שחזרה אצל שניים או יותר שווה בדיקה.", "");
   return L.join("\n");
+}
+
+/**
+ * The session files inside a .zip the self-guided panel saved (stored or
+ * deflated entries; `inflateRaw` is node:zlib's inflateRawSync). Returns
+ * [name, text] for every .json entry.
+ */
+export function zipJsonEntries(buf, inflateRaw) {
+  const u8 = new Uint8Array(buf.buffer ?? buf, buf.byteOffset ?? 0, buf.byteLength ?? buf.length);
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  let eocd = -1;
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error("not a zip file");
+  const count = dv.getUint16(eocd + 10, true);
+  let p = dv.getUint32(eocd + 16, true);
+  const dec = new TextDecoder();
+  const out = [];
+  for (let n = 0; n < count; n++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) throw new Error("broken zip central directory");
+    const method = dv.getUint16(p + 10, true);
+    const size = dv.getUint32(p + 20, true);
+    const nameLen = dv.getUint16(p + 28, true);
+    const extra = dv.getUint16(p + 30, true);
+    const comment = dv.getUint16(p + 32, true);
+    const local = dv.getUint32(p + 42, true);
+    const name = dec.decode(u8.subarray(p + 46, p + 46 + nameLen));
+    p += 46 + nameLen + extra + comment;
+    if (!/\.json$/i.test(name)) continue;
+    const start = local + 30 + dv.getUint16(local + 26, true) + dv.getUint16(local + 28, true);
+    const body = u8.subarray(start, start + size);
+    if (method === 0) out.push([name, dec.decode(body)]);
+    else if (method === 8) out.push([name, dec.decode(inflateRaw(body))]);
+    else throw new Error(`${name}: unsupported zip method ${method}`);
+  }
+  return out;
 }

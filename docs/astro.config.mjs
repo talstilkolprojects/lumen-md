@@ -14,6 +14,12 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "Lumen Docs",
+      // Pagefind (Starlight's search, MIT) indexes dist/ at the end of every
+      // `astro build` (plan W4.34). scripts/docs-pagefind.mjs is the fallback
+      // that runs the pinned release binary when an install skipped
+      // Pagefind's platform binary; scripts/docs-search.mjs --site checks the
+      // 20 golden Hebrew queries against the index.
+      pagefind: true,
       description: "Markdown, illuminated. The user manual.",
       social: [
         { icon: "github", label: "GitHub", href: "https://github.com/talstilkol/lumen-md" },
@@ -61,6 +67,7 @@ export default defineConfig({
             { label: "Reading aids", slug: "editor/reading-aids", translations: { he: "עזרי קריאה" } },
             { label: "Touch and phones", slug: "editor/touch", translations: { he: "מגע וטלפונים" } },
             { label: "Writing tools", slug: "editor/tools", translations: { he: "כלי כתיבה" } },
+            { label: "Handwriting and ink", slug: "editor/handwriting", translations: { he: "כתב יד ודיו" } },
             { label: "Hebrew and right-to-left", slug: "editor/hebrew", translations: { he: "עברית ומימין לשמאל" } },
             { label: "Hebrew dictionary and synonyms", slug: "editor/hebrew-dictionary", translations: { he: "מילון עברי ומילים נרדפות" } },
             { label: "Settings", translations: { he: "הגדרות" }, slug: "editor/settings" },
@@ -82,6 +89,8 @@ export default defineConfig({
             { label: "Direction marks (bidi)", translations: { he: "סימני כיוון (בידי)" }, slug: "editor/direction-marks" },
             { label: "Hebrew pasted from a PDF", slug: "editor/pdf-paste", translations: { he: "הדבקת עברית מ-PDF" } },
             { label: "Legal citations (Israel)", slug: "editor/legal-citations", translations: { he: "אזכורים משפטיים (ישראל)" } },
+            { label: "Arabic (beta)", translations: { he: "ערבית (בטא)" }, slug: "editor/arabic" },
+            { label: "Screen readers, automated", translations: { he: "קוראי מסך, אוטומטית" }, slug: "editor/screen-reader-automation" },
           ],
         },
         {
@@ -103,11 +112,14 @@ export default defineConfig({
             { label: "Import from other apps", slug: "workspace/import", translations: { he: "ייבוא מאפליקציות אחרות" } },
             { label: "Vault Doctor", slug: "workspace/doctor" },
             { label: "Quick capture (inbox)", slug: "workspace/quick-capture", translations: { he: "לכידה מהירה (תיבת דואר נכנס)" } },
+            { label: "WhatsApp and Telegram chats into notes", slug: "workspace/chat-import", translations: { he: "שיחות WhatsApp ו-Telegram לפתקים" } },
+            { label: "Mail and Google Takeout into notes", slug: "workspace/mail-import", translations: { he: "דואר ו-Google Takeout לפתקים" } },
             { label: "PDF reader and highlights", slug: "workspace/pdf-reader", translations: { he: "קורא PDF והדגשות" } },
             { label: "Large vaults and long notes", slug: "workspace/large-vaults", translations: { he: "כספות גדולות ופתקים ארוכים" } },
             { label: "Canvas (Excalidraw)", slug: "workspace/canvas", translations: { he: "קנבס (Excalidraw)" } },
             { label: "Side panels", slug: "workspace/panels", translations: { he: "חלוניות צד" } },
             { label: "Export and import", slug: "workspace/export-import", translations: { he: "ייצוא וייבוא" } },
+            { label: "Academic submission (Word)", slug: "workspace/academic-docx", translations: { he: "הגשה אקדמית (Word)" } },
             { label: "Tasks across the vault", slug: "workspace/tasks" },
             { label: "Ask a PDF", translations: { he: "שאלו את ה-PDF" }, slug: "workspace/pdf-chat" },
             { label: "Vault in a folder on the phone", slug: "workspace/mobile-vault-folder" },
@@ -130,6 +142,9 @@ export default defineConfig({
             { label: "Student mode", translations: { he: "מצב סטודנט" }, slug: "workspace/student-mode" },
             { label: "Jewish sources (Sefaria)", slug: "workspace/jewish-sources", translations: { he: "מקורות יהודיים (ספריא)" } },
             { label: "Israeli time", slug: "workspace/israeli-time", translations: { he: "זמן ישראלי" } },
+            { label: "Writing a book", slug: "workspace/book", translations: { he: "כתיבת ספר" } },
+            { label: "Academic LaTeX export (Hebrew)", slug: "workspace/latex-export", translations: { he: "ייצוא LaTeX אקדמי (עברית)" } },
+            { label: "Automations (when… then…)", slug: "workspace/automations", translations: { he: "אוטומציות (כש… אז…)" } },
           ],
         },
         {
@@ -142,6 +157,7 @@ export default defineConfig({
             { label: "Encrypted live sharing", slug: "collab/e2ee-sharing", translations: { he: "שיתוף חי מוצפן" } },
             { label: "Suggestions and named versions", slug: "collab/suggestions-versions", translations: { he: "הצעות וגרסאות בשם" } },
             { label: "Encrypted share link", slug: "collab/share-link", translations: { he: "קישור שיתוף מוצפן" } },
+            { label: "The public server", slug: "collab/public-server", translations: { he: "השרת הציבורי" } },
           ],
         },
         {
@@ -153,6 +169,7 @@ export default defineConfig({
             { label: "English spelling on this device", slug: "ai/spelling" },
             { label: "Image descriptions on this device", slug: "ai/image-captions" },
             { label: "Hebrew niqqud on this device", slug: "ai/nikud" },
+            { label: "Where models download from", translations: { he: "מאיפה המודלים יורדים" }, slug: "ai/model-hosting" },
             { label: "AI doctor", slug: "ai/doctor" },
             { label: "Image search by description", slug: "ai/image-search" },
             { label: "Data analyst", slug: "ai/data-analyst" },
@@ -196,6 +213,7 @@ export default defineConfig({
             { label: "Plugin API", slug: "plugins/api" },
             { label: "Permissions and safety scan", slug: "plugins/permissions" },
             { label: "Plugin gallery", slug: "plugins/gallery" },
+            { label: "Plugin registry and the built-in ten", slug: "plugins/registry", translations: { he: "רישום התוספים ועשרת התוספים" } },
             { label: "Plugin signing keys", slug: "plugins/signing" },
             { label: "Templates and sample vaults", slug: "plugins/templates", translations: { he: "תבניות וכספות לדוגמה" } },
             { label: "Web Clipper extension", slug: "plugins/web-clipper" },
@@ -207,10 +225,12 @@ export default defineConfig({
             { label: "Git sync", slug: "sync/git", translations: { he: "סנכרון Git" } },
             { label: "Sync providers (WebDAV, S3, Dropbox, Drive)", slug: "sync/cloud", translations: { he: "ספקי סנכרון (WebDAV, ‏S3, ‏Dropbox, ‏Drive)" } },
             { label: "Encrypted sync (E2EE)", slug: "sync/e2ee", translations: { he: "סנכרון מוצפן (E2EE)" } },
+            { label: "Sync in two clicks", slug: "sync/two-clicks", translations: { he: "סנכרון בשתי לחיצות" } },
             { label: "Keys, rotation and revocation", slug: "sync/e2ee-keys", translations: { he: "מפתחות, החלפה וביטול" } },
             { label: "Read-mode publishing", slug: "sync/publish", translations: { he: "פרסום לקריאה" } },
             { label: "Publish to your own site", slug: "sync/own-site", translations: { he: "פרסום לאתר משלך" } },
             { label: "Automatic merging", slug: "sync/merge" },
+            { label: "Private classroom", slug: "sync/classroom", translations: { he: "כיתה פרטית" } },
             { label: "Sync status, selective sync, time left", slug: "sync/status", translations: { he: "מצב הסנכרון וסנכרון סלקטיבי" } },
             { label: "Sync on the local network", slug: "sync/lan", translations: { he: "סנכרון ברשת המקומית" } },
           ],
@@ -231,6 +251,9 @@ export default defineConfig({
             { label: "Vault encryption at rest", slug: "security/vault-encryption", translations: { he: "הצפנת הכספת במנוחה" } },
             { label: "Secret scan of the build", slug: "security/secret-scan", translations: { he: "סריקת סודות בבנייה" } },
             { label: "Usage on this device", slug: "security/usage-metrics", translations: { he: "שימוש במכשיר הזה" } },
+            { label: "Data-safety drill", slug: "security/data-safety-drill", translations: { he: "תרגיל בטיחות נתונים" } },
+            { label: "Photo metadata", slug: "security/photo-metadata", translations: { he: "מטא-נתונים של תמונות" } },
+            { label: "Journalist mode: redaction and locked notes", slug: "security/journalist-mode", translations: { he: "מצב עיתונאי: השחרה ופתקים נעולים" } },
           ],
         },
         {
@@ -251,6 +274,7 @@ export default defineConfig({
             { label: "A privacy report you can prove", slug: "security/privacy-report", translations: { he: "דוח פרטיות שאפשר להוכיח" } },
             { label: "Mutation testing", slug: "security/mutation-testing", translations: { he: "בדיקות מוטציה" } },
             { label: "Nightly runs and receipts", translations: { he: "ריצות לילה וקבלות" }, slug: "contributing/nightly" },
+            { label: "Compiling the native code offline", translations: { he: "קומפילציה של הקוד ה-native בלי רשת" }, slug: "contributing/native-check" },
           ],
         },
         {
@@ -259,6 +283,7 @@ export default defineConfig({
             { label: "Docker compose bundle", slug: "self-hosting/docker" },
             { label: "Where Lumen runs", slug: "self-hosting/hosting", translations: { he: "איפה Lumen רץ" } },
             { label: "Android and iOS builds", slug: "self-hosting/mobile", translations: { he: "בניית Android ו-iOS" } },
+            { label: "A second host and tests without Vercel", slug: "self-hosting/second-host", translations: { he: "אירוח שני ובדיקות בלי Vercel" } },
           ],
         },
         {
@@ -266,6 +291,7 @@ export default defineConfig({
           translations: { he: "הפרויקט" },
           items: [
             { label: "Issue triage", slug: "project/issue-triage", translations: { he: "מיון issues" } },
+            { label: "Releasing a version", slug: "project/releasing", translations: { he: "שחרור גרסה" } },
           ],
         },
         {
@@ -280,7 +306,10 @@ export default defineConfig({
         {
           label: "Contributing",
           translations: { he: "תרומה לפרויקט" },
-          items: [{ label: "The PR check", slug: "contributing/pr-check", translations: { he: "בדיקת ה־PR" } }],
+          items: [
+            { label: "The PR check", slug: "contributing/pr-check", translations: { he: "בדיקת ה־PR" } },
+            { label: "Second maintainer", slug: "contributing/second-maintainer", translations: { he: "מתחזק שני" } },
+          ],
         },
         {
           label: "Project",
@@ -288,6 +317,8 @@ export default defineConfig({
           items: [
             { label: "Lumen, Obsidian, Notion and Google Docs", slug: "project/compare", translations: { he: "Lumen, ‏Obsidian, ‏Notion ו-Google Docs" } },
             { label: "Community and the beta", slug: "project/community", translations: { he: "הקהילה והבטא" } },
+            { label: "Owner sessions", slug: "project/owner-sessions", translations: { he: "ישיבות הבעלים" } },
+            { label: "Sustainability", slug: "project/sustainability", translations: { he: "קיימות" } },
           ],
         },
       ],

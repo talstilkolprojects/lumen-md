@@ -137,6 +137,30 @@ function progressFor(id: number) {
 }
 
 /**
+ * Before transformers.js loads a model whose files models/registry.json pins
+ * (plan W4.14), put them into its cache from the first source that serves
+ * the right bytes: Hugging Face, Lumen's mirror, the user's own URL. Each
+ * file is checked against its sha256; the library then reads them from the
+ * cache and makes no request of its own. Nothing pinned: nothing happens.
+ */
+async function verifiedPrefill(id: number, model: string, dtype: string | Record<string, string> | undefined): Promise<void> {
+  const { prefillFor, loadHostedModels, findHosted, hostedBytes, wantsFile } = await import("./modelHosting");
+  const models = await loadHostedModels();
+  const filter = (f: { path: string }) => wantsFile(f.path, dtype);
+  const entry = findHosted(models, model);
+  const total = entry ? hostedBytes(entry, filter) : 0;
+  let loaded = 0;
+  await prefillFor(model, {
+    models,
+    filter,
+    onBytes: (n) => {
+      loaded += n;
+      if (total > 0) post({ id, type: "progress", file: "", progress: Math.min(100, Math.round((loaded / total) * 100)), loaded, total });
+    },
+  });
+}
+
+/**
  * Whisper on WebGPU: fp32 encoder + q4 decoder is the library's recommended
  * split; ivrit.ai's Hebrew turbo ships q4f16 for both (≈ 563 MB); wasm: q8.
  */
@@ -153,6 +177,7 @@ async function getAsr(id: number, model: string, device: Device): Promise<Automa
   if (asr?.key === key) return asr.pipe;
   if (asr) await asr.pipe.dispose();
   asr = null;
+  await verifiedPrefill(id, model, asrOptions(device, model).dtype);
   const pipe = (await pipeline("automatic-speech-recognition", model, { ...asrOptions(device, model), progress_callback: progressFor(id) } as never)) as AutomaticSpeechRecognitionPipeline;
   asr = { key, pipe };
   return pipe;
@@ -163,7 +188,9 @@ async function getEmbedder(id: number, model: string, device: Device): Promise<F
   if (embedder?.key === key) return embedder.pipe;
   if (embedder) await embedder.pipe.dispose();
   embedder = null;
-  const pipe = (await pipeline("feature-extraction", model, { device, dtype: device === "webgpu" ? "fp32" : "q8", progress_callback: progressFor(id) } as never)) as FeatureExtractionPipeline;
+  const dtype = device === "webgpu" ? "fp32" : "q8";
+  await verifiedPrefill(id, model, dtype);
+  const pipe = (await pipeline("feature-extraction", model, { device, dtype, progress_callback: progressFor(id) } as never)) as FeatureExtractionPipeline;
   embedder = { key, pipe };
   return pipe;
 }
@@ -234,7 +261,9 @@ async function rerank(id: number, msg: Extract<WorkerIn, { type: "rerank" }>): P
   if (reranker?.key !== key) {
     if (reranker) await reranker.model.dispose();
     reranker = null;
-    const opts = { device: msg.device, dtype: msg.device === "webgpu" ? "fp16" : "q8", progress_callback: progressFor(id) } as never;
+    const dtype = msg.device === "webgpu" ? "fp16" : "q8";
+    await verifiedPrefill(id, msg.model, dtype);
+    const opts = { device: msg.device, dtype, progress_callback: progressFor(id) } as never;
     const [tokenizer, model] = await Promise.all([
       AutoTokenizer.from_pretrained(msg.model, { progress_callback: progressFor(id) } as never),
       AutoModelForSequenceClassification.from_pretrained(msg.model, opts),
@@ -339,6 +368,7 @@ async function getCaptioner(id: number, msg: { model: string; device: Device; fa
   if (captioner?.key === key) return captioner;
   if (captioner) await captioner.model.dispose();
   captioner = null;
+  await verifiedPrefill(id, msg.model, captionDtype(msg.family, msg.device));
   const opts = { device: msg.device, dtype: captionDtype(msg.family, msg.device), progress_callback: progressFor(id) } as never;
   const Model = msg.family === "florence2" ? Florence2ForConditionalGeneration : AutoModelForVision2Seq;
   const [processor, model] = await Promise.all([

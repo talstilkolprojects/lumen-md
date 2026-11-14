@@ -13,9 +13,10 @@ import { PassphraseForm } from "./PassphraseForm";
 import { FreshnessBanner } from "./FreshnessBanner";
 import { SyncActivity } from "./SyncActivity";
 import { SyncRulesForm } from "./SyncRulesForm";
+import { e2eeErrorText, e2eeResultNotices } from "./errorText";
 import { syncSession, type SyncSession } from "./session";
 import { ProviderAuthError, ProviderUnreachableError, ProviderUnsupportedError } from "../providers/http";
-import { defaultSettings, hasProviderSecret, legacyStore, oauthAvailable, PROVIDER_KINDS, providerHosts, SECRET_NAMES, type ProviderKind, type ProviderSettings } from "../providers";
+import { defaultSettings, hasProviderSecret, legacyStore, oauthAvailable, PROVIDER_KINDS, providerCapabilities, providerHosts, SECRET_NAMES, type ProviderKind, type ProviderSettings } from "../providers";
 import { LanHostPairing, LanJoin, describeLanError } from "./LanPairing";
 import { LanAuthError } from "../lan/rpc";
 import { LanLinkError } from "../lan/link";
@@ -24,7 +25,7 @@ import { loadMigrationRecord, migratePlaintext, planPlaintextMigration, revertPl
 import { HelpButton } from "../../../ui/HelpButton";
 import { explainError } from "../../../lib/userError";
 
-const NAMES: Record<ProviderKind, string> = { webdav: "WebDAV", s3: "S3", dropbox: "Dropbox", gdrive: "Google Drive", lan: "LAN" };
+const NAMES: Record<ProviderKind, string> = { webdav: "WebDAV", s3: "S3", dropbox: "Dropbox", gdrive: "Google Drive", lan: "LAN", folder: "📁", relay: "Lumen relay" };
 const PENDING_OAUTH = "lumen-sync-pending-oauth";
 
 const field: React.CSSProperties = {
@@ -295,7 +296,27 @@ function Unlocked({ session }: { session: SyncSession }) {
   const s = useSyncExternalStore(session.subscribe, session.get);
   const engine = session.engine();
   const [code, setCode] = useState<string | null>(null);
+  const [request, setRequest] = useState("");
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [pairError, setPairError] = useState<string | null>(null);
+  const [cancelled, setCancelled] = useState(false);
   const last = s.last;
+  // I3: an answer or a code holds this device's key changes back for minutes; the user can call it off.
+  const cancelPairing = () => {
+    if (!engine) return;
+    void engine.cancelPairing().then(() => {
+      setAnswer(null);
+      setCode(null);
+      setCancelled(true);
+    });
+  };
+  const answerRequest = () => {
+    if (!engine) return;
+    setPairError(null);
+    setAnswer(null);
+    setCancelled(false);
+    void engine.answerPairing(request).then(setAnswer, (e) => setPairError(e2eeErrorText(e, "answer", explainError)));
+  };
   return (
     <div style={{ display: "grid", gap: 10 }}>
       {engine && <FreshnessBanner sync={engine} />}
@@ -313,6 +334,12 @@ function Unlocked({ session }: { session: SyncSession }) {
           {last.held.length > 0 && <> · {t("e2ee.sync.held", { n: last.held.length })}</>}
         </div>
       )}
+      {last &&
+        e2eeResultNotices(last).map((n) => (
+          <div key={n} role="alert" style={errorStyle} data-testid="sync-notice">
+            {n}
+          </div>
+        ))}
       {s.error && (
         <div role="alert" style={errorStyle}>
           {s.error}
@@ -328,9 +355,48 @@ function Unlocked({ session }: { session: SyncSession }) {
       )}
       <SyncActivity session={session} />
       <SyncRulesForm session={session} />
+      {s.settings &&
+        providerCapabilities(s.settings.kind).limits.map((key) => (
+          <div key={key} style={muted} data-testid="provider-limit">
+            {t(key)}
+          </div>
+        ))}
       {engine && (
         <div style={{ display: "grid", gap: 4 }}>
-          <button type="button" style={{ justifySelf: "start" }} onClick={() => void engine.pairingCode().then(setCode, (e) => setCode(String((e as Error).message)))}>
+          <Field label={t("e2ee.pair.answerTitle")}>
+            <textarea value={request} onChange={(e) => setRequest(e.target.value)} dir="ltr" rows={2} spellCheck={false} style={{ ...field, fontFamily: "JetBrains Mono, ui-monospace, monospace", fontSize: 12 }} />
+          </Field>
+          <div style={muted}>{t("e2ee.pair.answerHint")}</div>
+          <button type="button" style={{ justifySelf: "start" }} disabled={!request.trim()} onClick={answerRequest}>
+            {t("e2ee.pair.answer")}
+          </button>
+          {answer && (
+            <code dir="ltr" data-testid="pair-answer" style={{ userSelect: "all", wordBreak: "break-all", fontSize: 12 }}>
+              {answer}
+            </code>
+          )}
+          {pairError && (
+            <div role="alert" style={errorStyle}>
+              {pairError}
+            </div>
+          )}
+        </div>
+      )}
+      {engine && (
+        <div style={{ display: "grid", gap: 4 }}>
+          <button
+            type="button"
+            style={{ justifySelf: "start" }}
+            onClick={() =>
+              void engine.pairingCode().then(
+                (c) => {
+                  setCode(c);
+                  setCancelled(false);
+                },
+                (e) => setCode(e2eeErrorText(e, "other", explainError)),
+              )
+            }
+          >
             {t("e2ee.sync.pairCode")}
           </button>
           {code && (
@@ -340,6 +406,16 @@ function Unlocked({ session }: { session: SyncSession }) {
               </code>
               <div style={muted}>{t("e2ee.sync.pairCodeNote")}</div>
             </>
+          )}
+          {(answer || code) && (
+            <button type="button" style={{ justifySelf: "start" }} onClick={cancelPairing}>
+              {t("e2ee.pair.cancel")}
+            </button>
+          )}
+          {cancelled && (
+            <div role="status" style={muted}>
+              {t("e2ee.pair.cancelled")}
+            </div>
           )}
         </div>
       )}
@@ -363,7 +439,7 @@ export function SyncPanel({ onClose, session = syncSession() }: { onClose: () =>
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const where = !s.settings ? "" : s.settings.kind === "lan" ? t(`e2ee.lan.where.${s.settings.role}`) : `${NAMES[s.settings.kind]} — ${providerHosts(s.settings)[0] ?? ""}`;
+  const where = !s.settings ? "" : s.settings.kind === "lan" ? t(`e2ee.lan.where.${s.settings.role}`) : s.settings.kind === "folder" ? `${NAMES.folder} ${s.settings.name}` : `${NAMES[s.settings.kind]} — ${providerHosts(s.settings)[0] ?? ""}`;
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "hsl(0 0% 0% / 0.4)", display: "grid", placeItems: "center", zIndex: 1000 }} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>

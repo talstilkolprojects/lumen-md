@@ -1761,6 +1761,35 @@
       ]
     },
     {
+      "key": "spell.ar.downloadConfirm",
+      "en": "Download the Arabic word list (Ayaspell) from GitHub to this device? It is licensed GPL / LGPL / MPL, so it is not built into the app. Your notes are never sent.",
+      "vars": []
+    },
+    {
+      "key": "spell.ar.failed",
+      "en": "The Arabic word list did not download: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "spell.ar.installed",
+      "en": "Arabic word list installed ({n} words). Arabic paragraphs are checked on this device.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "spell.ar.removeConfirm",
+      "en": "Remove the Arabic word list from this device? The punctuation and repeated-word checks keep working.",
+      "vars": []
+    },
+    {
+      "key": "spell.ar.removed",
+      "en": "Arabic word list removed.",
+      "vars": []
+    },
+    {
       "key": "spell.en.unknown",
       "en": "“{word}”: unknown word (English dictionary on this device)",
       "vars": [

@@ -1,5 +1,12 @@
 #!/usr/bin/env node
 /**
+ * The whole release in one command (plan W4.5) — see scripts/release-run.mjs:
+ *
+ *   npm run release -- 0.2.0-beta.1 --dry-run      build, sign and check everything; publish nothing
+ *   npm run release -- 0.2.0-beta.1 --publish      the owner's: commit, tag, build, sign, push, GitHub release
+ *
+ * The steps below remain for running one part at a time.
+ *
  * The release pipeline (plan 13.4), runnable on a developer machine — no
  * GitHub Actions needed. .github/workflows/release.yml runs the same steps
  * on a tag push when Actions are on; every step here works without them.
@@ -324,8 +331,19 @@ Web app: redeploy the good tag —
   },
 };
 
+// Plan W4.5: `npm run release -- <version> --dry-run | --publish` runs the whole release (scripts/release-run.mjs).
+if (/^v?\d+\.\d+\.\d+/.test(cmd ?? "")) {
+  try {
+    const { main } = await import("./release-run.mjs");
+    await main([cmd, ...args]);
+    process.exit(0);
+  } catch (e) {
+    console.error(`release: ${e.message}`);
+    process.exit(1);
+  }
+}
 if (!commands[cmd]) {
-  console.error("usage: node scripts/release.mjs plan | prepare | build | publish | deploy-beta | verify | rollback <bad> | notes <version> | packages");
+  console.error("usage: node scripts/release.mjs <version> --dry-run | --publish  (the whole release, plan W4.5)\n       node scripts/release.mjs plan | prepare | build | publish | deploy-beta | verify | rollback <bad> | notes <version> | packages");
   process.exit(2);
 }
 try {

@@ -1,0 +1,43 @@
+{
+ "about": "...",
+ "chats": {
+  "about": "...",
+  "list": [
+   {
+    "name": "Sam",
+    "type": "personal_chat",
+    "id": 1,
+    "messages": [
+     {
+      "id": 1,
+      "type": "message",
+      "date": "2026-11-12T09:00:00",
+      "from": "Sam",
+      "text": "hi"
+     },
+     {
+      "id": 2,
+      "type": "message",
+      "date": "2026-11-12T09:01:00",
+      "from": "Tal",
+      "text": "hello"
+     }
+    ]
+   },
+   {
+    "name": null,
+    "type": "saved_messages",
+    "id": 2,
+    "messages": [
+     {
+      "id": 1,
+      "type": "message",
+      "date": "2026-11-14T20:00:00",
+      "from": "Tal",
+      "text": "note to self"
+     }
+    ]
+   }
+  ]
+ }
+}

@@ -2,7 +2,9 @@
  * The gallery's sandboxed plugins (plan W1.20): each listed version with
  * its safety card from the registry scan (public/plugins/examples/scan.json);
  * versions that failed are not shown. Install opens the permission screen,
- * which scans the version again before anything is granted.
+ * which scans the version again before anything is granted, and refuses
+ * code that is not byte for byte the code the registry scanned (W4.32).
+ * An installed plugin can be removed here, with what it stored.
  */
 import { lazy, Suspense, useEffect, useState } from "react";
 import { t } from "../../i18n";
@@ -55,6 +57,7 @@ export function SandboxedPlugins() {
   const [asking, setAsking] = useState<Listed | null>(null);
   const [busy, setBusy] = useState(false);
   const [devOpen, setDevOpen] = useState(false);
+  const [installed, setInstalled] = useState<ReadonlySet<string>>(new Set());
 
   useEffect(() => {
     const ac = new AbortController();
@@ -62,6 +65,20 @@ export function SandboxedPlugins() {
       if (!ac.signal.aborted) setFailed(true);
     });
     return () => ac.abort();
+  }, []);
+
+  // Plugins already running (installed earlier in this session) show "Remove".
+  useEffect(() => {
+    let live = true;
+    import("./manager").then(
+      (m) => {
+        if (live) setInstalled(new Set(m.runningPlugins().map((p) => p.id)));
+      },
+      () => undefined, // why: without the runtime nothing is installed; the cards show "Install"
+    );
+    return () => {
+      live = false;
+    };
   }, []);
 
   async function install(item: Listed): Promise<void> {
@@ -75,11 +92,29 @@ export function SandboxedPlugins() {
         showAiToast(t("pluginTrust.scanFailed", { name: item.manifest.name }), "error");
         return;
       }
+      if (scan.sha256 !== item.scan.sha256) {
+        showAiToast(t("pluginTrust.changed", { name: item.manifest.name }), "error");
+        return;
+      }
       await startPlugin({ manifest: item.manifest, code, grants: new Set(item.manifest.capabilities.map((c) => c.id)) });
       showAiToast(t("pluginTrust.installed", { name: item.manifest.name }), "success");
+      setInstalled((cur) => new Set([...cur, item.manifest.id]));
       setAsking(null);
     } catch (e) {
       showAiToast(t("pluginTrust.installFailed", { name: item.manifest.name, error: explainError(e) }), "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(item: Listed): Promise<void> {
+    setBusy(true);
+    try {
+      const { stopPlugin, clearPluginData } = await import("./manager");
+      await stopPlugin(item.manifest.id);
+      await clearPluginData(item.manifest.id);
+      setInstalled((cur) => new Set([...cur].filter((id) => id !== item.manifest.id)));
+      showAiToast(t("pluginTrust.removed", { name: item.manifest.name }), "success");
     } finally {
       setBusy(false);
     }
@@ -106,9 +141,20 @@ export function SandboxedPlugins() {
               </span>
               <span style={{ fontSize: 11, color: "hsl(var(--fg-muted))" }}>{it.scan.findings.length ? t("pluginTrust.card.notes", { list: describeFindings(it.scan.findings) }) : t("pluginTrust.card.clean")}</span>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <button type="button" className="btn btn-primary" onClick={() => setAsking(it)}>
-                  {t("pluginTrust.install")}
-                </button>
+                {installed.has(it.manifest.id) ? (
+                  <>
+                    <span data-testid="plugin-installed" style={{ fontSize: 12 }}>
+                      {t("pluginTrust.installedBadge")}
+                    </span>
+                    <button type="button" className="btn" disabled={busy} onClick={() => void remove(it)}>
+                      {t("pluginTrust.remove")}
+                    </button>
+                  </>
+                ) : (
+                  <button type="button" className="btn btn-primary" onClick={() => setAsking(it)}>
+                    {t("pluginTrust.install")}
+                  </button>
+                )}
                 <a href={reportUrl(it.manifest.id, it.manifest.version)} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "hsl(var(--accent))" }}>
                   {t("pluginTrust.report")}
                 </a>

@@ -29,7 +29,8 @@
  *   stays usable in browsers and messengers. A larger note is offered as an
  *   encrypted file instead (`.lumenshare`, the same bytes), opened through
  *   `#view-file&key=<key>`. Opening inflates at most MAX_INFLATE_RATIO times
- *   the compressed size (and at least MAX_LINK_DATA × that), then stops: a
+ *   the compressed size (and at least MAX_LINK_DATA × that, and never more
+ *   than MAX_INFLATED_BYTES, 64 MiB, review 2), then stops: a
  *   crafted link or file can't make the viewer inflate gigabytes (review
  *   12.11). sealNote refuses a note that would not open under that bound.
  * - Origin: a link made in the desktop or mobile app, or on localhost, would
@@ -48,16 +49,33 @@ export const MAX_INFLATE_RATIO = 100;
 /** The public app that links open on, unless the page is a public https one (build-time: VITE_SHARE_ORIGIN). */
 export const PUBLIC_APP_ORIGIN = "https://lumen-md.vercel.app";
 
+/** The most any note may inflate to, whatever its size (review 2: a 20 MB file may not inflate to 2 GB). */
+export const MAX_INFLATED_BYTES = 64 * 1024 * 1024;
+
 /** The most bytes a note of `compressed` bytes may inflate to. */
 export function maxInflated(compressed: number): number {
-  return Math.max(MAX_LINK_DATA, compressed) * MAX_INFLATE_RATIO;
+  return Math.min(MAX_INFLATED_BYTES, Math.max(MAX_LINK_DATA, compressed) * MAX_INFLATE_RATIO);
 }
 
-/** Is `host` a name others can reach (not loopback, not a local-network name)? */
+/** Is `host` a name others can reach (not loopback, not a local-network name or address)? */
 function publicHost(host: string): boolean {
-  const h = host.replace(/^\[|\]$/g, "").toLowerCase();
-  if (!h || h === "localhost" || h.endsWith(".localhost") || h.endsWith(".local") || h === "::1" || h === "0.0.0.0") return false;
-  if (/^127\./.test(h) || /^10\./.test(h) || /^192\.168\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h) || /^169\.254\./.test(h)) return false;
+  let h = host.replace(/^\[|\]$/g, "").toLowerCase().replace(/\.$/, "");
+  // An IPv4 address written as IPv6 is judged as the IPv4 address: dotted (::ffff:a.b.c.d), or in
+  // hex, as the URL parser and so `location.hostname` write it (::ffff:c0a8:10a, review 4 RR4-448-1).
+  h = h.replace(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/, "$1");
+  const mapped = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(h);
+  if (mapped) {
+    const [hi, lo] = [parseInt(mapped[1], 16), parseInt(mapped[2], 16)];
+    h = `${hi >> 8}.${hi & 0xff}.${lo >> 8}.${lo & 0xff}`;
+  }
+  if (!h || h === "localhost" || h === "::1" || h === "::" || h === "0.0.0.0") return false;
+  // Names that only a local network resolves (review 2).
+  if (/\.(localhost|local|lan|internal|intranet|home|corp|home\.arpa)$/.test(h)) return false;
+  // Loopback, RFC 1918, link-local and CGNAT (100.64/10) IPv4.
+  if (/^(127|10|0)\./.test(h) || /^192\.168\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h) || /^169\.254\./.test(h)) return false;
+  if (/^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(h)) return false;
+  // IPv6 unique-local (fc00::/7) and link-local (fe80::/10).
+  if (h.includes(":") && (/^f[cd][0-9a-f]{0,2}:/.test(h) || /^fe[89ab][0-9a-f]?:/.test(h))) return false;
   return h.includes(".") || h.includes(":");
 }
 

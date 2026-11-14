@@ -8,6 +8,8 @@
  * in the live list (synchronously: well inside the 1 s of the acceptance)
  * with the place in the code it came from.
  */
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, it, expect, beforeEach } from "vitest";
 import {
   __resetAirplane,
@@ -18,11 +20,15 @@ import {
   egressAttempts,
   egressTarget,
   enableAirplaneMode,
+  EMBED_ORIGINS,
+  guardedSandbox,
   installAirplaneMode,
+  stopFrames,
+  trackOpen,
   subscribeEgress,
   verdict,
 } from "../privacy/airplane";
-import { AIRPLANE_CSP, AIRPLANE_KEY, answerWorkers, __setAirplaneFlag } from "../privacy/airplaneBoot";
+import { AIRPLANE_CSP, AIRPLANE_KEY, AIRPLANE_TAB, airplaneFlagOn, airplaneWorkerName, answerWorkers, followOtherTab, __setAirplaneFlag } from "../privacy/airplaneBoot";
 import { buildCertificate, reachedNetwork, sealCertificate, verifyCertificate } from "../privacy/airplaneCertificate";
 import { AIRPLANE_WAIT_MS, installWorkerLedger, type AirplaneMessage } from "../ai/workerLedger";
 
@@ -370,5 +376,147 @@ describe("review 12.11 fixes", () => {
     const base = { id: 1, ts: 1, method: "img", origin: "img", target: "https://tracker.example.com/p.gif" };
     expect(reachedNetwork({ ...base, kind: "resource", decision: "allowed" })).toBe(true);
     expect(reachedNetwork({ ...base, kind: "fetch", decision: "in-flight" })).toBe(true);
+  });
+});
+
+describe("review 2 fixes", () => {
+  beforeEach(() => __resetAirplane());
+
+  it("a worker named for its window takes answers only from that window, and on sticks until a reload", async () => {
+    const inner: string[] = [];
+    const scope = { fetch: (async (u: string) => (inner.push(u), new Response(""))) as unknown as typeof fetch, name: airplaneWorkerName("transformers"), location: { href: "https://lumen-md.vercel.app/assets/w.js" } };
+    const hellos: AirplaneMessage[] = [];
+    let listener: ((e: MessageEvent<AirplaneMessage>) => void) | null = null;
+    const air = {
+      postMessage: (m: AirplaneMessage) => hellos.push(m),
+      addEventListener(_t: string, fn: EventListenerOrEventListenerObject) {
+        listener = fn as unknown as (e: MessageEvent<AirplaneMessage>) => void;
+      },
+    } as unknown as BroadcastChannel;
+    installWorkerLedger(scope, { postMessage() {} } as unknown as BroadcastChannel, air);
+    expect(hellos[0]).toEqual({ kind: "hello", tab: AIRPLANE_TAB });
+    const say = (data: AirplaneMessage) => listener!({ data } as MessageEvent<AirplaneMessage>);
+    // Another tab, still off, answers first; then a message with no window at all: neither counts.
+    say({ kind: "state", on: false, tab: "another-tab" });
+    say({ kind: "state", on: false });
+    say({ kind: "state", on: true, tab: AIRPLANE_TAB });
+    await expect(scope.fetch("https://huggingface.co/model.onnx")).rejects.toThrow(/airplane mode is on/);
+    // Even this window saying off does not lift it: turning off reloads the page.
+    say({ kind: "state", on: false, tab: AIRPLANE_TAB });
+    await expect(scope.fetch("https://huggingface.co/model.onnx")).rejects.toThrow(/airplane mode is on/);
+    expect(inner).toEqual([]);
+  });
+
+  it("the startup half answers only its own window's workers (and those that name none)", () => {
+    const posted: unknown[] = [];
+    let fn: ((e: MessageEvent) => void) | null = null;
+    const ch = { postMessage: (m: unknown) => posted.push(m), addEventListener: (_t: string, f: EventListener) => (fn = f as unknown as (e: MessageEvent) => void) };
+    __setAirplaneFlag(true);
+    answerWorkers(() => ch as unknown as BroadcastChannel);
+    fn!({ data: { kind: "hello", tab: "another-tab" } } as MessageEvent);
+    fn!({ data: { kind: "hello", tab: AIRPLANE_TAB } } as MessageEvent);
+    __setAirplaneFlag(false);
+    expect(posted).toEqual([{ kind: "state", on: true, tab: AIRPLANE_TAB }]);
+  });
+
+  it("every frame that can make requests is stopped and recorded when the switch goes on (reviews 2 and 4)", () => {
+    const frame = (attrs: Record<string, string>, title = "") => {
+      const a = new Map(Object.entries(attrs));
+      const f = {
+        title,
+        contentDocument: null,
+        getAttribute: (k: string) => a.get(k) ?? null,
+        setAttribute: (k: string, v: string) => void a.set(k, v),
+        removeAttribute: (k: string) => void a.delete(k),
+        attr: (k: string) => a.get(k) ?? null,
+      };
+      return f;
+    };
+    const runner = frame({ src: "https://lumen-md.vercel.app/playground-runner.html", sandbox: "allow-scripts" });
+    const live = frame({ src: "https://lumen-md.vercel.app/livejs-runner.html#x" });
+    const blob = frame({ src: "blob:https://lumen-md.vercel.app/1" });
+    const preview = frame({ srcdoc: "<script>setInterval(() => new Image().src = 'https://example.com/x', 200)</script>", sandbox: "allow-scripts" }, "HTML preview");
+    const embed = frame({ src: "https://example.com/embed", sandbox: "allow-scripts allow-same-origin allow-popups" });
+    const inert = frame({ srcdoc: "<p>no scripts</p>", sandbox: "" });
+    const empty = frame({});
+    const doc = { querySelectorAll: () => [runner, live, blob, preview, embed, inert, empty] } as unknown as Document;
+    expect(stopFrames(doc, 1000)).toBe(6);
+    expect([runner, live, blob, preview, embed, inert].map((f) => f.attr("src"))).toEqual(Array(6).fill("about:blank"));
+    expect(preview.attr("srcdoc")).toBeNull();
+    // Sandboxed without scripts, it still loads what its CSS asks for (review 6): stopped too.
+    expect(inert.attr("srcdoc")).toBeNull();
+    // An empty frame has nothing to stop.
+    expect(empty.attr("src")).toBeNull();
+    const frames = egressAttempts().filter((a) => a.kind === "frame" && a.method === "FRAME");
+    // Frames that could have opened a window this page can't reach (allow-popups, or no sandbox) are counted
+    // as possible windows too (review 8, RR8-451-1, -2): the embed, and the frames with no sandbox.
+    const windows = egressAttempts().filter((a) => a.kind === "frame" && a.method === "POPUP");
+    expect(windows.map((a) => a.target)).toEqual([
+      "https://lumen-md.vercel.app/livejs-runner.html",
+      "blob:…",
+      "https://example.com/embed",
+      "about:blank",
+    ]);
+    expect(windows.every((a) => reachedNetwork(a))).toBe(true);
+    expect(frames.map((a) => a.target)).toEqual([
+      "https://lumen-md.vercel.app/playground-runner.html",
+      "https://lumen-md.vercel.app/livejs-runner.html",
+      "blob:…",
+      "about:srcdoc",
+      "https://example.com/embed",
+      "about:srcdoc",
+    ]);
+    expect(frames.map((a) => a.origin)).toContain("HTML preview");
+    expect(frames.every((a) => a.decision === "in-flight" && reachedNetwork(a))).toBe(true);
+  });
+
+  it("no frame gets allow-popups while the switch is on; a frame from another site keeps same-origin powers only as a known embed (review 6, RR6-451-2; review 8, RR8-451-2)", () => {
+    const base = "https://lumen-md.vercel.app/note";
+    expect(guardedSandbox("allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox", "https://www.youtube-nocookie.com/embed/x", base, true)).toBe("allow-scripts allow-same-origin");
+    expect(guardedSandbox("allow-scripts allow-same-origin", "https://example.com/widget", base, true)).toBe("allow-scripts");
+    expect(guardedSandbox("allow-scripts allow-same-origin", "/livejs-runner.html", base, true)).toBe("allow-scripts allow-same-origin");
+    expect(guardedSandbox("allow-forms ALLOW-POPUPS", null, base, true)).toBe("allow-forms");
+    // Off: an embed's links still open their page; another site still loses same-origin powers.
+    expect(guardedSandbox("allow-scripts allow-same-origin allow-popups", "https://www.youtube.com/embed/x", base, false)).toBe("allow-scripts allow-same-origin allow-popups");
+    expect(guardedSandbox("allow-scripts allow-same-origin allow-popups", "https://example.com/widget", base, false)).toBe("allow-scripts allow-popups");
+    // The embed block's providers are the known ones.
+    const src = readFileSync(resolve(process.cwd(), "src/plugins/EmbedBlock.tsx"), "utf8");
+    // On the train a Gist is shown by the content frame with an opaque origin (src/lib/contentFrame.ts),
+    // never framed from gist.github.com with same-origin powers, so it needs no place in EMBED_ORIGINS.
+    const origins = new Set([...src.matchAll(/src: `(https:\/\/[^/`$]+)/g)].map((m) => m[1]).filter((o) => o !== "https://gist.github.com"));
+    expect(origins.size).toBeGreaterThan(10);
+    for (const o of origins) expect(EMBED_ORIGINS.has(o), o).toBe(true);
+    // One list (RR8-451-2): the known embeds are exactly the https origins public/_headers lets the content
+    // frame (W4.15) load: its frame-src providers, and the Gist script.
+    const headers = readFileSync(resolve(process.cwd(), "public/_headers"), "utf8");
+    const allowed = new Set<string>();
+    for (const m of headers.matchAll(/(?:frame-src|script-src) ([^;]+);/g)) for (const t of m[1].split(" ")) if (t.startsWith("https://")) allowed.add(t);
+    expect([...EMBED_ORIGINS].sort()).toEqual([...allowed].sort());
+  });
+
+  it("windows opened through window.open are closed and counted when the switch goes on (RR6-451-2)", () => {
+    const closed: string[] = [];
+    const win = { open: (url: string) => ({ closed: false, close: () => closed.push(url) }) } as unknown as Window;
+    trackOpen(win);
+    trackOpen(win); // once
+    win.open("https://example.com/popup", "_blank");
+    expect(stopFrames({ querySelectorAll: () => [] } as unknown as Document, 1000)).toBe(0);
+    expect(closed).toEqual(["https://example.com/popup"]);
+    expect(egressAttempts().filter((a) => a.method === "POPUP").map((a) => a.target)).toEqual(["https://example.com/popup"]);
+  });
+
+  it("the startup half follows another tab's switch even without this chunk (review 4)", () => {
+    const head = { children: [] as unknown[], appendChild: (m: unknown) => head.children.push(m) };
+    const live = { title: "", contentDocument: null, a: new Map([["src", "/livejs-runner.html"]]), getAttribute(k: string) { return this.a.get(k) ?? null; }, setAttribute(k: string, v: string) { this.a.set(k, v); }, removeAttribute(k: string) { this.a.delete(k); } };
+    const doc = { head, getElementById: () => null, createElement: () => ({}), querySelectorAll: () => [live] } as unknown as Document;
+    __setAirplaneFlag(false);
+    followOtherTab({ key: "something.else", newValue: "x" }, doc, []);
+    followOtherTab({ key: AIRPLANE_KEY, newValue: null }, doc, []);
+    expect(airplaneFlagOn()).toBe(false);
+    followOtherTab({ key: AIRPLANE_KEY, newValue: JSON.stringify({ since: 1 }) }, doc, []);
+    expect(airplaneFlagOn()).toBe(true);
+    expect(head.children).toHaveLength(1);
+    expect(live.a.get("src")).toBe("about:blank");
+    __setAirplaneFlag(false);
   });
 });

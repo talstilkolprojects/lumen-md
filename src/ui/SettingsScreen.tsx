@@ -25,6 +25,8 @@ import { isBetaLocale } from "../i18n/review";
 import { useFocusTrap } from "./useFocusTrap";
 import "./settingsScreenStrings";
 import { HelpButton } from "./HelpButton";
+// W5.11: the "keep photo metadata" switch's label ships with this lazy screen.
+import "../lib/journalistStrings";
 
 const ThemeSettings = lazy(() => import("./ThemeSettings").then((m) => ({ default: m.ThemeSettings })));
 const AiSettingsPanel = lazy(() => import("./AiSettingsPanel").then((m) => ({ default: m.AiSettingsPanel })));

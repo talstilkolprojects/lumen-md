@@ -15,7 +15,7 @@
  */
 
 import { PreconditionFailedError, type PutCondition, type StoredObject, type SyncProvider } from "../provider";
-import { basicAuth, checkObjectName, defaultFetch, elements, failed, parseXml, ProviderUnsupportedError, request, type FetchLike } from "./http";
+import { basicAuth, checkConditionalWrites, checkObjectName, defaultFetch, elements, failed, parseXml, probeObject, ProviderUnsupportedError, request, type FetchLike } from "./http";
 
 export interface WebdavConfig {
   /** The folder's URL, e.g. `https://cloud.example.com/remote.php/dav/files/me/Lumen/`. */
@@ -26,7 +26,12 @@ export interface WebdavConfig {
 }
 
 export interface WebdavProvider extends SyncProvider {
-  /** Create the folder when missing and check the server returns ETags; `ProviderUnsupportedError` when it does not. */
+  /**
+   * Create the folder when missing, check the server returns ETags
+   * (`ProviderUnsupportedError` when it does not), and that it refuses a
+   * stale If-Match and a second If-None-Match: * (RR-7): servers that don't
+   * evaluate preconditions on PUT accept every write, and are refused too.
+   */
   probe(): Promise<void>;
 }
 
@@ -62,19 +67,20 @@ export function webdavProvider(cfg: WebdavConfig, deps: { fetch?: FetchLike } = 
     return normEtag(tag || null);
   }
 
-  return {
+  const provider: WebdavProvider = {
     id: "webdav",
 
     async probe() {
       // MKCOL: 201 created, 405 already there, 409 parent missing.
       const mk = await go(base, { method: "MKCOL", headers: headers() });
       if (!mk.ok && mk.status !== 405) throw await failed(mk, "webdav", "");
-      const probeName = ".lumen-probe";
-      const put = await go(url(probeName), { method: "PUT", headers: headers({ "Content-Type": "application/octet-stream" }), body: new Uint8Array([1]) });
-      if (!put.ok) throw await failed(put, "webdav", probeName);
-      const etag = normEtag(put.headers.get("ETag")) ?? (await etagOf(probeName));
-      await go(url(probeName), { method: "DELETE", headers: headers() }).catch(() => undefined);
+      const probe = probeObject(); // a random, blob-like name and size (third review N2)
+      const put = await go(url(probe.name), { method: "PUT", headers: headers({ "Content-Type": "application/octet-stream" }), body: probe.data() as BodyInit });
+      if (!put.ok) throw await failed(put, "webdav", probe.name);
+      const etag = normEtag(put.headers.get("ETag")) ?? (await etagOf(probe.name));
+      await go(url(probe.name), { method: "DELETE", headers: headers() }).catch(() => undefined);
       if (!etag) throw new ProviderUnsupportedError("webdav", "the server returns no ETags, so it cannot do conditional writes");
+      await checkConditionalWrites(provider);
     },
 
     async get(name): Promise<StoredObject | null> {
@@ -133,4 +139,5 @@ export function webdavProvider(cfg: WebdavConfig, deps: { fetch?: FetchLike } = 
       return out;
     },
   };
+  return provider;
 }

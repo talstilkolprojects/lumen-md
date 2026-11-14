@@ -255,6 +255,7 @@ async function attachWebsocketProvider(
     // The server's optional access key (Collab settings → "Server access
     // token"), kept in the secret store. It only buys a short-lived token
     // for this room; there is no build-time token (no secret in the bundle).
+    // The room password proves to the public server that this person holds the room (review 2).
     return await createPersistentProvider(url, roomName, doc, getSecret("lumen.collab.wsToken"), popts);
   } catch (err) {
     log.warn("persistent collab attach failed", err);
@@ -430,12 +431,12 @@ export function connectCollab(
   };
   const startPersistent = (url: string) => {
     if (serverOnly) {
-      void attachWebsocketProvider(url, roomName, commentsSynced, { share, docName: commentsDocName(roomName), e2ee: !!password }).then((p) => {
+      void attachWebsocketProvider(url, roomName, commentsSynced, { share, docName: commentsDocName(roomName), e2ee: !!password, password }).then((p) => {
         if (destroyed) p?.destroy();
         else commentsWebsocket = p;
       });
     }
-    void attachWebsocketProvider(url, roomName, syncedDoc, { share, onRole: setRole, e2ee: !!password, ...(serverOnly ? { awareness: transportAwareness ?? provider.awareness } : transportAwareness ? { awareness: transportAwareness } : {}) }).then((p) => {
+    void attachWebsocketProvider(url, roomName, syncedDoc, { share, onRole: setRole, e2ee: !!password, password, ...(serverOnly ? { awareness: transportAwareness ?? provider.awareness } : transportAwareness ? { awareness: transportAwareness } : {}) }).then((p) => {
       if (destroyed) {
         p?.destroy();
         return;

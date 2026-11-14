@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "id": "lumen.sort-lines",
+  "name": "Sort lines",
+  "version": "1.0.0",
+  "description": "Sorts the selected lines A→Z, Z→A or by length, reverses them or removes duplicates. List items keep their sub-items; Hebrew sorts by its letters, numbers by value.",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    {
+      "id": "commands",
+      "reason": "Adds the sort, reverse and remove-duplicates commands"
+    },
+    {
+      "id": "document:read",
+      "reason": "Reads the selected lines"
+    },
+    {
+      "id": "document:write",
+      "reason": "Writes them back in the new order"
+    },
+    {
+      "id": "notifications",
+      "reason": "Tells you how many duplicates it removed"
+    }
+  ]
+}

@@ -24,6 +24,7 @@
 
 import { hasHebrew, normalizeForMatch, prefixVariants, words } from "./hebrew";
 import { englishOf, ktivKey, lemmaKeys, synonymsOf } from "./hebrewMorph";
+import { arabicPrefixVariants, hasArabic } from "./arabic";
 
 export const STEM = "~";
 /** Full/defective spelling key of a Hebrew word (W2.11), marked with a leading `≈`. */
@@ -55,6 +56,8 @@ export function stemTerms(token: string): string[] {
   const out = new Set<string>();
   if (!token.includes("-")) {
     if (hasHebrew(token)) for (const v of prefixVariants(token)) out.add(STEM + v);
+    // W5.17: an Arabic word meets its forms without و ف ب ك ل س and the article.
+    else if (hasArabic(token)) for (const v of arabicPrefixVariants(token)) out.add(STEM + v);
   } else {
     out.add(STEM + token);
     for (const part of hyphenParts(token)) {

@@ -13,6 +13,7 @@ import { join } from "node:path";
 import { compareVersions, isBeta, nextBetaVersion, nextVersion, parseCommits } from "../../scripts/lib/release.mjs";
 // @ts-expect-error — plain .mjs helpers without types
 import { betaFlags, checkFlags } from "../../scripts/lib/flags.mjs";
+import { readLocale } from "../../scripts/lib/i18n-files.mjs";
 import { buildChannel, defaultFor, FLAGS, flagState, isEnabled, readOverrides, resetFlags, setFlag, type FlagDef } from "../flags/flags";
 import { setAiPolicy } from "../ai/policy";
 import { checkForUpdate, launchUpdateCheck, LAUNCH_CHECK_EVERY_MS, setUpdateChannel, shouldCheckOnLaunch, updateChannel } from "../desktop/updates";
@@ -74,9 +75,8 @@ describe("versions: betas come before their release", () => {
 
 describe("the flag registry: nothing reaches stable without a beta", () => {
   const registry = JSON.parse(readFileSync(join(root, "src/flags/flags.json"), "utf8"));
-  const en = readFileSync(join(root, "src/i18n/index.ts"), "utf8");
-  const keys = new Set([...en.matchAll(/^\s*"([^"]+)":/gm)].map((m) => m[1]));
-  const he = JSON.parse(readFileSync(join(root, "src/i18n/locales/he.json"), "utf8"));
+  const keys = new Set(Object.keys(readLocale("en")));
+  const he = readLocale("he");
 
   it("the shipped registry passes, with strings in English and Hebrew", () => {
     expect(checkFlags(registry, { keys, he })).toEqual([]);
@@ -196,10 +196,10 @@ describe("docs", () => {
     expect(sidebar).toContain('slug: "getting-started/beta"');
     const en = readFileSync(join(root, "docs/src/content/docs/getting-started/beta.md"), "utf8");
     const heDoc = readFileSync(join(root, "docs/src/content/docs/he/getting-started/beta.md"), "utf8");
-    const enStrings = readFileSync(join(root, "src/i18n/index.ts"), "utf8");
-    const he = JSON.parse(readFileSync(join(root, "src/i18n/locales/he.json"), "utf8")) as Record<string, string>;
+    const enStrings = readLocale("en");
+    const he = readLocale("he");
     for (const f of FLAGS.filter((x) => x.stage === "beta")) {
-      const name = new RegExp(`"flag\\.${f.id.replace(/\./g, "\\.")}\\.name": "([^"]+)"`).exec(enStrings)![1];
+      const name = enStrings[`flag.${f.id}.name`];
       expect(en).toContain(`| ${name} |`);
       expect(heDoc).toContain(`| ${he[`flag.${f.id}.name`]} |`);
     }

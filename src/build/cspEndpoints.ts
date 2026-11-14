@@ -33,6 +33,11 @@ export const ENDPOINT_ENV_VARS = [
   // DSN's host; the key in the DSN's user part is dropped by URL.origin.
   // No DSN, no ingest host in the policy — never a wildcard.
   "VITE_SENTRY_DSN",
+  // Lumen's model mirror (plan W4.14): the CORS proxy in front of the
+  // GitHub releases that hold a copy of every model file.
+  "VITE_MODEL_MIRROR_URL",
+  // Plan W4.19: the encrypted vault relay (sync-server/vault-relay.js).
+  "VITE_SYNC_RELAY_URL",
 ] as const;
 
 /**

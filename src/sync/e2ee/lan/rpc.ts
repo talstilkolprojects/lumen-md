@@ -15,8 +15,12 @@
  *   host → peer, unasked: {ev: "changed"} after any write by someone else.
  *
  * ── Who may do what ────────────────────────────────────────────────────────
- * Before the proof, a peer may read only the vault header (it needs it to
- * derive the keys from the passphrase; any storage provider sees it too).
+ * Before the proof, a peer may read only what a passphrase unlock reads: the
+ * vault header and the keyring without its plaintext device map (see
+ * `preAuthKeyring`). Both only let a stranger test passphrases at the
+ * header's KDF cost, which any storage provider can do too. The `.prev`
+ * keyring of a passphrase change is not served before the proof: the old
+ * passphrase does not open the vault over the LAN while a change is cut off.
  * The proof is mutual, under the vault's pairing key (from the passphrase):
  *   peer: HMAC(pairing, "lumen-lan:1|peer|<host nonce>|<peer nonce>")
  *   host: HMAC(pairing, "lumen-lan:1|host|<peer nonce>|<host nonce>")
@@ -27,13 +31,54 @@
 
 import { fromB64u, randomBytes, toB64u, utf8 } from "../bytes";
 import { HEADER_NAME } from "../header";
-import { KEYRING_NAME } from "../keyring";
+import { decodeKeyring, KEYRING_NAME, type KeyringFile } from "../keyring";
 import { hmac, verifyHmac, type VaultKeys } from "../keys";
 import { PreconditionFailedError, ProviderUnavailableError, type PutCondition, type StoredObject, type SyncProvider } from "../provider";
 import { messenger, type LanChannel, type Message } from "./channel";
 
 /** The objects a peer may read before it has proved it belongs to the vault: what unlocking reads. */
 const PRE_AUTH: ReadonlySet<string> = new Set([HEADER_NAME, KEYRING_NAME]);
+
+/**
+ * Review W6.11 (E56): before the proof, the keyring goes out with only the
+ * fields a passphrase unlock reads (engine.ts `unlockVault`): the passphrase
+ * wrap, the sealed contents, the epoch and a pending header. The plaintext
+ * device map (ids, age recipients, how many devices) stays with the proven
+ * peers: the vault header never told a stranger that, so neither does this.
+ * Any field added later is left out by default. The etag is marked, so a
+ * compare-and-swap made with a pre-proof copy can only fail.
+ */
+const PRE_AUTH_ETAG = "pre-auth:";
+
+function preAuthKeyring(bytes: Uint8Array, depth = 0): Uint8Array | null {
+  let f: KeyringFile;
+  try {
+    f = decodeKeyring(bytes);
+  } catch {
+    return null;
+  }
+  // Keyring protocol 2: during a passphrase change `prev` carries the keyring it replaced (the old
+  // passphrase's way back, engine.ts unlockVault). It goes out the same way, without its device map
+  // (keyringDigest does not cover the devices, so the chain still checks).
+  let prev: string | undefined;
+  if (f.prev !== undefined) {
+    const p = depth < 1 ? preAuthKeyring(fromB64u(f.prev), depth + 1) : null;
+    if (!p) return null;
+    prev = toB64u(p);
+  }
+  const out: KeyringFile = {
+    format: f.format,
+    protocol: f.protocol,
+    vaultId: f.vaultId,
+    epoch: f.epoch,
+    passphrase: f.passphrase,
+    devices: {},
+    sealed: f.sealed,
+    ...(f.header !== undefined ? { header: f.header } : {}),
+    ...(prev !== undefined ? { prev } : {}),
+  };
+  return utf8(JSON.stringify(out));
+}
 
 export const LAN_PROTOCOL = 1;
 export const REQUEST_TIMEOUT_MS = 15_000;
@@ -152,7 +197,12 @@ export function lanHost(opts: LanHostOptions): LanHost {
       // and the header already lets anyone holding it test passphrases, so the keyring adds nothing to that.
       if (!c.authed && !PRE_AUTH.has(header.name)) return reply({ error: "auth" });
       const o = await inner.get(header.name);
-      return o ? reply({ etag: o.etag }, o.data) : reply({ missing: true });
+      if (!o) return reply({ missing: true });
+      if (!c.authed && header.name === KEYRING_NAME) {
+        const pre = preAuthKeyring(o.data);
+        return pre ? reply({ etag: PRE_AUTH_ETAG + o.etag }, pre) : reply({ error: "unavailable" });
+      }
+      return reply({ etag: o.etag }, o.data);
     }
     if (!c.authed) return reply({ error: "auth" });
     if (op === "put") {

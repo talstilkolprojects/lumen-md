@@ -11,7 +11,7 @@ import { asText, conflictCopyPath, dialogResolver } from "../sync/e2ee/conflict"
 
 const enc = (o: unknown) => new TextEncoder().encode(JSON.stringify(o));
 const sealed = { n: "bm9uY2U", c: "Y2lwaGVy" };
-const valid = { format: "lumen-e2ee-keyring", protocol: 1, vaultId: "v1", epoch: 1, passphrase: sealed, sealed, devices: {} };
+const valid = { format: "lumen-e2ee-keyring", protocol: 2, vaultId: "v1", epoch: 1, passphrase: sealed, sealed, devices: {} };
 
 describe("decodeKeyring refuses anything but a well-formed keyring", () => {
   it("accepts a well-formed one", () => {
@@ -22,7 +22,7 @@ describe("decodeKeyring refuses anything but a well-formed keyring", () => {
   const bad: [string, unknown][] = [
     ["not JSON", null],
     ["another format", { ...valid, format: "other" }],
-    ["another protocol", { ...valid, protocol: 2 }],
+    ["another protocol", { ...valid, protocol: 3 }],
     ["protocol 0", { ...valid, protocol: 0 }],
     ["no vault id", { ...valid, vaultId: 5 }],
     ["fractional epoch", { ...valid, epoch: 1.5 }],

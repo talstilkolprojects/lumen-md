@@ -24,6 +24,14 @@ version after it, complete.
 | **Phone folder (iOS, Android)** | Temporary file `.lumen-tmp~…`, checked for its full size, then renamed; Android syncs the bytes to disk first. |
 | **Browser storage on Safari** | The same temporary-file steps inside the write worker. |
 
+A file name holds at most 255 bytes, and a Hebrew letter takes two. When
+the temporary name of a long note name would not fit, the save uses short
+names (`.lumen-tmp-<16 hex digits>`) and first writes a small journal
+(`.lumen-jnl-…`) that records which note they belong to. The journal is
+removed last, so a save stopped at any step can still be finished. If a
+journal is lost, the old version is kept, never used to replace a note, and
+the integrity check reports it.
+
 This is tested by killing a process with `kill -9` in the middle of
 saving, 1,000 times: `npm run test:crash`. After every kill each note is
 whole and is its old or its new version.
@@ -59,5 +67,8 @@ When something can be repaired, Lumen asks once and then repairs it.
 undone by copying the file back. Notes that are open in a tab are left
 alone, and a file that changed since the check is not touched.
 
-The check takes a few seconds even for a large vault: 10,000 notes are
-checked in under five seconds.
+The first check of a large vault takes a while: 10,000 notes took about
+ten seconds in a browser (measured in Chromium) and two to three seconds
+outside one. After that, a check reads again only the files whose size or
+modification time changed, so the same 10,000 notes take under a second.
+A file changed in the few seconds before a check is always read again.

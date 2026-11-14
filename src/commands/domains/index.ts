@@ -8,7 +8,7 @@ import { buildFileCommands, buildRecentCommands, buildSyncCommands, buildTemplat
 import { buildExportCommands } from "./export";
 import { buildLanguageCommands, buildPanelCommands, buildThemeToggleCommands, buildViewCommands } from "./view";
 import { buildEditCommands, buildInsertCommands } from "./edit";
-import { buildHebrewDictionaryCommands, buildPluginCommands, buildUsabilityStudyCommands, buildWritingGoalCommands } from "./tools";
+import { buildHebrewDictionaryCommands, buildPluginCommands, buildUsabilityStudyCommands, buildWritingGoalCommands, buildArabicCommands } from "./tools";
 import { buildAiCancelCommands, buildAiCapabilityCommands, buildAiControlCommands, buildAiModelCommands, buildAiProviderCommands, buildPrivacyModeCommands } from "./ai";
 import { buildAltTextCommands, buildDocumentAgentCommands, buildGrammarCommands, buildNikudCommands, buildPromptTemplateCommands } from "./agents";
 import { buildBatchCommands } from "./batch";
@@ -21,6 +21,9 @@ import { buildCollabCommands, buildCommentCommands } from "./collab";
 import { buildBillingCommands, buildOptionalPanelCommands, buildAirplaneCommands } from "./settings";
 import { buildAccessibilityCommands } from "./a11y";
 import { buildSourceCommands } from "./sources";
+import { buildBookCommands } from "./book";
+import { buildLatexCommands } from "./latex";
+import { buildAutomationCommands } from "./automations";
 
 export const COMMAND_SECTIONS: ReadonlyArray<(ctx: CommandContext) => Command[]> = [
   buildRecentCommands,
@@ -37,6 +40,7 @@ export const COMMAND_SECTIONS: ReadonlyArray<(ctx: CommandContext) => Command[]>
   buildAiModelCommands,
   buildHebrewDictionaryCommands,
   buildUsabilityStudyCommands,
+  buildArabicCommands,
   buildVaultTransferCommands,
   buildVaultLocationCommands,
   buildDesktopUpdateCommands,
@@ -73,4 +77,7 @@ export const COMMAND_SECTIONS: ReadonlyArray<(ctx: CommandContext) => Command[]>
   // Appended (plan W1.23) so the earlier order stays as pinned.
   buildAccessibilityCommands,
   buildSourceCommands,
+  buildBookCommands,
+  buildLatexCommands,
+  buildAutomationCommands,
 ];

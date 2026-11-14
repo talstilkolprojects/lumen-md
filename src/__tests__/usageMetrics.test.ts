@@ -272,3 +272,18 @@ describe("ids made from vault names never reach the report (review 12.11)", () =
     expect(weeklyReport(loadUsage(), "2026-11-12", [], "0.0.0-test").topFeatures).toEqual({});
   });
 });
+
+describe("counter names of Object.prototype (blind tests, F-3)", () => {
+  it("constructor, toString, hasOwnProperty and valueOf count from 0, also after a reload, and reach the report as numbers", () => {
+    const names = ["constructor", "toString", "hasOwnProperty", "valueOf"];
+    let s: UsageStore = { v: 1, firstDay: null, days: {} };
+    for (const id of names) for (let i = 0; i < 2; i++) s = bump(s, { kind: "feature", id }, "2026-11-10");
+    for (const id of names) expect(s.days["2026-11-10"].features[id]).toBe(2);
+    localStorage.setItem(USAGE_KEY, JSON.stringify(s));
+    const back = bump(loadUsage(), { kind: "feature", id: "constructor" }, "2026-11-10");
+    expect(back.days["2026-11-10"].features.constructor).toBe(3);
+    expect(JSON.parse(JSON.stringify(back)).days["2026-11-10"].features.toString).toBe(2);
+    expect(summarize(back, "2026-11-10").features30).toContainEqual(["constructor", 3]);
+    expect(weeklyReport(back, "2026-11-10", names, "0.0.0-test").topFeatures).toMatchObject({ constructor: 3, valueOf: 2 });
+  });
+});

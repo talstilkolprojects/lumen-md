@@ -12,7 +12,7 @@ description: השערים של Lumen רצים בבניית Vercel של כל ענ
 
 | בנייה | מה רץ, לפי הסדר |
 |---|---|
-| ‏Preview (רכבות `verify/…`) | build, תקציב החבילה, סריקת הסודות של `dist/`, vitest, ‏e2e (smoke ב-chromium וב-firefox), ‏`i18n:check`, ‏hygiene, ‏`docs:sync`, שער הרישיונות |
+| ‏Preview (רכבות `verify/…`) | build, תקציב החבילה, סריקת הסודות של `dist/`, vitest, ‏e2e (smoke ב-chromium וב-firefox), ‏`i18n:check`, ‏hygiene, ‏`docs:sync`, שער הרישיונות, רצפת ה-mutation (‏`mutation:check`) |
 | ‏Production (`main`) | build, תקציב החבילה — כמו קודם |
 
 השערים נעצרים בכישלון הראשון. יומן הבנייה מסתיים בשער שנכשל ובאלה שעברו

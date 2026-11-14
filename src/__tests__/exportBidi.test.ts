@@ -25,7 +25,8 @@ describe("DOCX", () => {
     // heading, list item and table cell too
     expect(paras.find((p) => p.includes("כותרת בעברית"))).toMatch(/<w:pStyle w:val="Heading1"\/><w:bidi\/>/);
     expect(paras.find((p) => p.includes("פריט"))).toContain("<w:bidi/>");
-    expect(doc).toMatch(/<w:p><w:pPr><w:bidi\/><\/w:pPr><w:r><w:rPr><w:b\/><w:rtl\/><\/w:rPr><w:t xml:space="preserve">א<\/w:t>/);
+    // W5.16: Word bolds Hebrew through the complex-script toggle, so <w:bCs/> rides with <w:b/>.
+    expect(doc).toMatch(/<w:p><w:pPr><w:bidi\/><\/w:pPr><w:r><w:rPr><w:b\/><w:bCs\/><w:rtl\/><\/w:rPr><w:t xml:space="preserve">א<\/w:t>/);
   });
 });
 

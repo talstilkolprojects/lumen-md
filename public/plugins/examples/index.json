@@ -1,13 +1,203 @@
 {
-  "about": "Sandboxed plugin registry (plan 11.2, W1.20): every version listed here is scanned (scripts/scan-plugins.mjs → scan.json); a version whose scan fails is not shown.",
+  "about": "Static plugin registry (plan 11.2, W1.20, W4.32), built by scripts/build-plugin-registry.mjs: one folder per version; every version listed here is scanned (scripts/scan-plugins.mjs → scan.json); a version whose scan fails is not shown.",
   "plugins": [
-    { "id": "lumen.example.word-stats", "versions": [{ "version": "1.0.0", "path": "word-stats" }] },
-    { "id": "lumen.example.callout", "versions": [{ "version": "1.0.0", "path": "callout" }] },
-    { "id": "lumen.example.daily-quote", "versions": [{ "version": "1.0.0", "path": "daily-quote" }] },
-    { "id": "lumen.example.toc", "versions": [{ "version": "1.0.0", "path": "toc" }] },
-    { "id": "lumen.example.hebrew-date", "versions": [{ "version": "1.0.0", "path": "hebrew-date" }] },
-    { "id": "lumen.example.tasks-overview", "versions": [{ "version": "1.0.0", "path": "tasks-overview" }] },
-    { "id": "lumen.example.bidi-cleaner", "versions": [{ "version": "1.0.0", "path": "bidi-cleaner" }] },
-    { "id": "lumen.example.text-format", "versions": [{ "version": "1.0.0", "path": "text-format" }] }
+    {
+      "id": "lumen.example.word-stats",
+      "name": "Word stats",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "word-stats",
+          "sha256": "e249d2e40943eaf4ae190f0653192bf8308823949793b1af9cf2bd6557001e5b"
+        }
+      ]
+    },
+    {
+      "id": "lumen.example.callout",
+      "name": "Callout cards",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "callout",
+          "sha256": "76b1af447d0dbad4880395b8b5bce98c03261dbc91f0994176446d403f7d23c3"
+        }
+      ]
+    },
+    {
+      "id": "lumen.example.daily-quote",
+      "name": "Quote of the day",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "daily-quote",
+          "sha256": "d7fcb0ab47cd437dcf2b5cdb700709395bd685058768eb595337c9c125c84e1c"
+        }
+      ]
+    },
+    {
+      "id": "lumen.example.toc",
+      "name": "Table of contents",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "toc",
+          "sha256": "5530d82a93715204ba7b2f2440e5363ca4f92c2c62f1a82d02121197f1fd8db7"
+        }
+      ]
+    },
+    {
+      "id": "lumen.example.hebrew-date",
+      "name": "Hebrew date",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "hebrew-date",
+          "sha256": "a1f352ee7dcaa5be525104c1e1ddd91c2e99a6e6a4de41327095d3e3742d9a9f"
+        }
+      ]
+    },
+    {
+      "id": "lumen.example.tasks-overview",
+      "name": "Tasks overview",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "tasks-overview",
+          "sha256": "51ef8fb4dd5e63d5456e537fe736b23feaf74f8e791b4632f0758de6c981e418"
+        }
+      ]
+    },
+    {
+      "id": "lumen.example.bidi-cleaner",
+      "name": "Bidi cleaner",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "bidi-cleaner",
+          "sha256": "4086260fcea7540f08bcb46136f7352162260b00156d0041b3d21b1928f18f3a"
+        }
+      ]
+    },
+    {
+      "id": "lumen.example.text-format",
+      "name": "Text format",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "text-format",
+          "sha256": "ceeef72d9cde1334d6017505ba97d4a150a1e2f12b62e829b15e24b5ee00682f"
+        }
+      ]
+    },
+    {
+      "id": "lumen.calendar",
+      "name": "Calendar",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "calendar",
+          "sha256": "bf3fe19e3d5de5f95202ac9b087c92bd72426db0b001e72774e4160f3570cd5f"
+        }
+      ]
+    },
+    {
+      "id": "lumen.flashcards",
+      "name": "Flashcards",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "flashcards",
+          "sha256": "c777aa00184b89e9e6561636efc707eca675d0122b9526dcb072e26e9498fe59"
+        }
+      ]
+    },
+    {
+      "id": "lumen.kanban",
+      "name": "Kanban board",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "kanban",
+          "sha256": "24a8c57eb9059e58a5dabd831d0b27f820a4d6c8342f20d55f0425f841835739"
+        }
+      ]
+    },
+    {
+      "id": "lumen.linter",
+      "name": "Markdown tidy",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "linter",
+          "sha256": "45d507f34f48fa7a73cbcaa02e9c0f2c4847b9d74f07970be20493289ea61619"
+        }
+      ]
+    },
+    {
+      "id": "lumen.natural-dates",
+      "name": "Natural dates",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "natural-dates",
+          "sha256": "81f1b25d0396bb18d6c031f88f2d50190d1713d6ccc06aa417453f178b9ec411"
+        }
+      ]
+    },
+    {
+      "id": "lumen.note-refactor",
+      "name": "Note refactor",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "note-refactor",
+          "sha256": "1584f5fdffe749c0b5d900b0bdf03deaa5f0e1b996d4d8fa6aeb1f6e885413ea"
+        }
+      ]
+    },
+    {
+      "id": "lumen.sort-lines",
+      "name": "Sort lines",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "sort-lines",
+          "sha256": "510f873e88ee6eba6d08063bf29e6044e4f5e27f33d2e2bb9f1519f5b4d297e4"
+        }
+      ]
+    },
+    {
+      "id": "lumen.table-format",
+      "name": "Table formatter",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "table-format",
+          "sha256": "d929d4756d24821fa76c81b038781d5b2d64d3c6b8ab9a97b2ee9041086b6849"
+        }
+      ]
+    },
+    {
+      "id": "lumen.tags",
+      "name": "Tag manager",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "tags",
+          "sha256": "a922d8b7541817cd80cb89f6bf101fdd387d2d24935b7d61f84a703ccbbac9cf"
+        }
+      ]
+    },
+    {
+      "id": "lumen.templates",
+      "name": "Templates",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "templates",
+          "sha256": "9b7bb8b978ccc758dc354403fe42a82180ab457c6c3c3e452dbf1c9b6160f0aa"
+        }
+      ]
+    }
   ]
 }

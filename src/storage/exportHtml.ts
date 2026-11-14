@@ -2,6 +2,7 @@ import { renderMarkdown } from "../renderer/pipeline";
 import { fetchWithRetry } from "../lib/fetchRetry";
 import { markdownBaseDirection, scriptLanguage, type BaseDirection } from "../lib/textDirection";
 import { escapeHtml } from "../lib/escapeHtml";
+import { exportReadyText } from "./exportReady";
 
 export interface HtmlDocumentOptions {
   /** <title> text. */
@@ -98,7 +99,9 @@ export async function exportToHtml(
   const isDark = document.documentElement.classList.contains("dark");
   const styles = await collectStyles();
   const docTitle = (filename.replace(/\.(md|markdown|html)$/i, "") || "Document").trim();
-  const html = await renderHtmlDocument(markdown, { title: docTitle, isDark, styles });
+  // W5.11: marked passages and hidden comments leave the file; photos are inlined without metadata.
+  const text = await exportReadyText(markdown, true);
+  const html = await renderHtmlDocument(text, { title: docTitle, isDark, styles });
 
   const blob = new Blob([html], { type: "text/html;charset=utf-8" });
   const url = URL.createObjectURL(blob);

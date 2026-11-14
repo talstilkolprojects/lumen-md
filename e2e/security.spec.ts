@@ -206,6 +206,8 @@ test("an iframe without a scheme is removed; an https embed waits for a click, t
   await expect(frames).toHaveCount(1);
   const frame = frames.first();
   await expect(frame).toHaveAttribute("data-content-frame", "embed");
+  // Popups only while airplane mode is off (its frame guard takes them while it is on, review 8 RR8-451-2);
+  // the content frame is the app's own page, so it keeps its origin.
   await expect(frame).toHaveAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-presentation allow-forms");
   const req = await frame.evaluate((f) => {
     const src = (f as HTMLIFrameElement).getAttribute("src") ?? "";
@@ -218,6 +220,7 @@ test("an iframe without a scheme is removed; an https embed waits for a click, t
   const inner = page.frameLocator('.prose-lumen iframe[data-content-frame="embed"]').locator("iframe");
   await expect(inner).toHaveAttribute("src", "https://frames.lumen-e2e.test/embed");
   await expect(inner).toHaveAttribute("referrerpolicy", "no-referrer");
+  await expect(inner).toHaveAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-presentation allow-forms");
   await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
   expect(traffic.left()).toEqual([]);
   expect(traffic.left().filter((u) => u.includes(EVIL))).toEqual([]);

@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "id": "lumen.note-refactor",
+  "name": "Note refactor",
+  "version": "1.0.0",
+  "description": "Moves the selected text into a new note and leaves a [[link]] in its place, or splits a note into one note per heading. Never overwrites a note.",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    {
+      "id": "commands",
+      "reason": "Adds “Extract selection to a new note” and “Split note by headings”"
+    },
+    {
+      "id": "document:read",
+      "reason": "Reads the selection or the headings of the open note"
+    },
+    {
+      "id": "document:write",
+      "reason": "Puts the [[link]] in place of what moved"
+    },
+    {
+      "id": "vault:read",
+      "reason": "Checks which note names are taken"
+    },
+    {
+      "id": "vault:write",
+      "reason": "Creates the new notes"
+    },
+    {
+      "id": "notifications",
+      "reason": "Tells you where the text went"
+    },
+    {
+      "id": "settings",
+      "reason": "Remembers the heading level to split at"
+    }
+  ]
+}

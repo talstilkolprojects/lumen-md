@@ -8,6 +8,10 @@
  *
  * The dispatch is a pure function (tested in src/__tests__/cliConvert.test.ts);
  * bin/lumen.ts is the thin file-I/O wrapper.
+ *
+ * Markdown going out goes through the export door first (plan W5.11, review
+ * 12.11): `<redact>` passages and hidden comments are removed, inline photos
+ * lose their metadata. Imports are not touched.
  */
 import {
   markdownToLatex,
@@ -30,6 +34,7 @@ import {
   jsonToMarkdown,
   ipynbToMarkdown,
 } from "../storage/fileFormats";
+import { prepareForExport, prepareForExportSync } from "../lib/redaction";
 
 const EXPORTERS: Record<string, (md: string) => string> = {
   tex: markdownToLatex,
@@ -94,7 +99,7 @@ export function convert(
       throw new Error(
         `Unknown export target ".${to}". Supported: ${Object.keys(EXPORTERS).join(", ")}`,
       );
-    return { outName: `${base}.${to}`, outText: fn(inText) };
+    return { outName: `${base}.${to}`, outText: fn(prepareForExportSync(inText)) };
   }
 
   const fn = IMPORTERS[inExt];
@@ -141,5 +146,6 @@ export async function convertBinary(
       `Unknown binary target ".${to}". Supported: ${Object.keys(BINARY_EXPORTERS).join(", ")}`,
     );
   const base = inName.replace(/\.[^.]+$/, "");
-  return { outName: `${base}.${to}`, bytes: await fn(inText, base.split(/[\\/]/).pop() || base) };
+  const { text } = await prepareForExport(inText);
+  return { outName: `${base}.${to}`, bytes: await fn(text, base.split(/[\\/]/).pop() || base) };
 }

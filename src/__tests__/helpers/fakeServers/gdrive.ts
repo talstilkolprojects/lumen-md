@@ -25,6 +25,12 @@ export interface FakeGdrive extends FakeServer {
   token: string;
   pageSize: number;
   outage: number | null;
+  /**
+   * Upload answers carry their own representation's ETag, not the
+   * metadata's (Google API ETags are per representation): a client must
+   * not compare one with the other (re-review 12.11, RR-7). On by default.
+   */
+  uploadEtagDiffers: boolean;
 }
 
 
@@ -64,7 +70,8 @@ function matcher(q: string): (f: DriveFile) => boolean {
 
 export function fakeGdrive(opts: { token: string } = { token: "gd-test-token" }): FakeGdrive {
   let seq = 0;
-  const server: FakeGdrive = { files: new Map(), token: opts.token, pageSize: 1000, outage: null, log: [], handle: (req) => handle(req) };
+  const server: FakeGdrive = { files: new Map(), token: opts.token, pageSize: 1000, outage: null, uploadEtagDiffers: true, log: [], handle: (req) => handle(req) };
+  const uploadEtag = (f: DriveFile) => (server.uploadEtagDiffers ? `"upload-${f.etag.replace(/"/g, "")}"` : f.etag);
   const json = (status: number, body: unknown, headers: Record<string, string> = {}) => ({ status, headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
   const meta = (f: DriveFile) => ({ id: f.id, name: f.name, mimeType: f.mimeType, parents: f.parents, appProperties: f.appProperties, size: String(f.data.length), headRevisionId: f.etag.replace(/"/g, ""), createdTime: f.createdTime });
   const bump = (f: DriveFile) => (f.etag = `"g${++seq}"`);
@@ -112,7 +119,7 @@ export function fakeGdrive(opts: { token: string } = { token: "gd-test-token" })
       const raw = bodyPart.slice(start, bodyPart.lastIndexOf("\r\n"));
       const data = Uint8Array.from(raw, (c) => c.charCodeAt(0));
       const f = create(JSON.parse(metaJson) as Partial<DriveFile>, data);
-      return json(200, meta(f), { ETag: f.etag });
+      return json(200, meta(f), { ETag: uploadEtag(f) });
     }
     if ((m = /^\/upload\/drive\/v3\/files\/([^/]+)$/.exec(p)) && req.method === "PATCH") {
       const f = server.files.get(m[1]);
@@ -121,7 +128,7 @@ export function fakeGdrive(opts: { token: string } = { token: "gd-test-token" })
       if (ifMatch !== null && ifMatch !== f.etag) return json(412, { error: { code: 412, message: "Precondition Failed" } });
       f.data = req.body.slice();
       bump(f);
-      return json(200, meta(f), { ETag: f.etag });
+      return json(200, meta(f), { ETag: uploadEtag(f) });
     }
     if ((m = /^\/drive\/v3\/files\/([^/]+)$/.exec(p))) {
       const f = server.files.get(m[1]);

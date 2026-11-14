@@ -177,6 +177,8 @@ const vaultReady = Promise.race([
 ]);
 // The Dropbox / Google sign-in of the encrypted sync returns here (plan 3.5).
 if (location.pathname.startsWith("/oauth/")) void import("./sync/e2ee/ui/launch").then((m) => m.oauthReturn(Promise.all([secretsReady, vaultReady])));
+// Plan W5.21: a classroom link (`#class=…`, never sent to any server) offers to join once the app is up.
+if (location.hash.startsWith("#class=")) void import("./sync/e2ee/classroom/launch").then((m) => m.classLinkReturn(Promise.all([secretsReady, vaultReady])));
 void Promise.all([initLocale(), secretsReady, vaultReady])
   .then(([applied]) => {
     // initLocale falls back to English when the saved locale's chunk can't

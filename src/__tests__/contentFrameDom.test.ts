@@ -38,10 +38,35 @@ describe("src/lib/contentFrame.ts", () => {
     expect(contentFrameRequest(CONTENT_FRAME_PATH)).toBeNull();
   });
 
+  it("is null for an unknown kind, a source that is not https:, or fields of the wrong type (blind tests, F-6)", () => {
+    const frag = (o: unknown) => `${CONTENT_FRAME_PATH}#${encodeURIComponent(JSON.stringify(o))}`;
+    for (const bad of [
+      { kind: "nope" },
+      { kind: "nope", src: "https://img.example.com/a.png" },
+      { kind: "img", src: "javascript:alert(1)" },
+      { kind: "img", src: "http://img.example.com/a.png" },
+      { kind: "img", src: "blob:https://app.example/1" },
+      { kind: "img", src: "https://img.example.com/a.png", srcset: "data:image/png;base64,AA 2x" },
+      { kind: "video", src: "data:text/html,<script>alert(1)</script>" },
+      { kind: "audio", src: "https://media.example.com/a.mp3", loop: "yes" },
+      { kind: "embed", src: "javascript:alert(document.domain)", title: "x" },
+      { kind: "embed", src: "http://www.youtube.com/embed/x", title: "x" },
+      { kind: "embed", src: "https://www.youtube.com/embed/x" },
+      { kind: "embed", src: "https://www.youtube.com/embed/x", title: "x", referrerPolicy: "unsafe-url" },
+      { kind: "gist", user: "a/b", id: "1" },
+      ["img"],
+      null,
+    ]) {
+      expect(contentFrameRequest(frag(bad)), JSON.stringify(bad)).toBeNull();
+    }
+    // Unknown fields are dropped from a valid request.
+    expect(contentFrameRequest(frag({ kind: "audio", src: "https://media.example.com/a.mp3", onload: "x" }))).toEqual({ kind: "audio", src: "https://media.example.com/a.mp3" });
+  });
+
   it("only embeds keep the app's origin; images, media and Gists are opaque", () => {
     for (const k of ["img", "video", "audio", "gist"] as const) expect(contentFrameSandbox(k).split(" "), k).not.toContain("allow-same-origin");
     expect(contentFrameSandbox("img")).toBe("allow-scripts");
-    expect(contentFrameSandbox("gist")).toBe("allow-scripts allow-popups allow-popups-to-escape-sandbox");
+    expect(contentFrameSandbox("gist")).toBe("allow-scripts");
     expect(contentFrameSandbox("embed")).toBe("allow-scripts allow-same-origin allow-popups allow-presentation allow-forms");
   });
 

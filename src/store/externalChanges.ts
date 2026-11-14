@@ -32,6 +32,7 @@ import { flushPendingEdits, tabIdOf, useAppStore } from "./useStore";
 import { syncOpenDocsAfterMove } from "./openDocs";
 import { movedPath } from "../storage/fileOps";
 import "./externalChangesStrings";
+import { isSealedNote, lockedNotes } from "../storage/lockedNotesRegistry";
 
 /** What Lumen last saw in each open note's file (read or written). */
 const known = new Map<string, string>();
@@ -81,6 +82,8 @@ function persistHashes(): void {
 
 /** `content` is what the file at `path` holds now. */
 function noteDisk(path: string, content: string): void {
+  // W5.11: an unlocked note with its own password is sealed on disk; the base is the sealed text.
+  if (lockedNotes.has(path) && !isSealedNote(content)) content = lockedNotes.sealed(path) ?? content;
   known.set(path, content);
   diskHashes()[path] = textHash(content);
   persistHashes();

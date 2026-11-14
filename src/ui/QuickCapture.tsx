@@ -130,7 +130,11 @@ export function QuickCapture({ open, onClose, voice: voiceOnOpen }: Props) {
       if (voiceTake && (keepAudio || voiceTake.untranscribed)) {
         const m = await voiceMod();
         await m.captureVoice(text.trim() || null, { placeholder: t("capture.voice.placeholderNote"), audio: voiceTake.audio, durationMs: voiceTake.durationMs });
-      } else await (await captureMod()).captureToInbox(text);
+      } else {
+        // A message pasted from WhatsApp or Telegram keeps its app, author and time (plan W5.7).
+        const { chatShareText } = await import("../capture/chats/share");
+        await (await captureMod()).captureToInbox(chatShareText(text) ?? text);
+      }
       take.current = null;
       setText("");
       toast.success(t("capture.saved", { path: (await captureMod()).INBOX_PATH }));

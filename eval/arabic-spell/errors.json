@@ -1,0 +1,1211 @@
+{
+ "set": "spell-ar",
+ "license": "CC0-1.0",
+ "source": "Written for this test (plan W5.17): 100 common Modern Standard Arabic words, two misspellings each — a transposition or deletion in the middle, and a close-letter substitution (ض/ظ, س/ص, ت/ط, ذ/ز, ق/ك, hamza seats …). A substitution can land on another real word; the eval counts it as missed, so recall is not flattered.",
+ "metric": "recall: share of the 200 wrong forms the checker flags; also the share of the 100 right forms it flags (false alarms)",
+ "target": {
+  "recall": 0.7
+ },
+ "items": [
+  {
+   "id": "ar-001",
+   "wrong": "مردسة",
+   "right": "مدرسة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-002",
+   "wrong": "مذرسة",
+   "right": "مدرسة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-003",
+   "wrong": "كاتب",
+   "right": "كتاب",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-004",
+   "wrong": "كطاب",
+   "right": "كتاب",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-005",
+   "wrong": "جماعة",
+   "right": "جامعة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-006",
+   "wrong": "جىمعة",
+   "right": "جامعة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-007",
+   "wrong": "طلاب",
+   "right": "طالب",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-008",
+   "wrong": "طىلب",
+   "right": "طالب",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-009",
+   "wrong": "ملعم",
+   "right": "معلم",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-010",
+   "wrong": "مغلم",
+   "right": "معلم",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-011",
+   "wrong": "متكبة",
+   "right": "مكتبة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-012",
+   "wrong": "مقتبة",
+   "right": "مكتبة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-013",
+   "wrong": "حوكمة",
+   "right": "حكومة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-014",
+   "wrong": "حقومة",
+   "right": "حكومة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-015",
+   "wrong": "مسشتفى",
+   "right": "مستشفى",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-016",
+   "wrong": "مصتشفى",
+   "right": "مستشفى",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-017",
+   "wrong": "ميدنة",
+   "right": "مدينة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-018",
+   "wrong": "مذينة",
+   "right": "مدينة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-019",
+   "wrong": "قيرة",
+   "right": "قرية",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-020",
+   "wrong": "قزية",
+   "right": "قرية",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-021",
+   "wrong": "شراع",
+   "right": "شارع",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-022",
+   "wrong": "شىرع",
+   "right": "شارع",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-023",
+   "wrong": "سايرة",
+   "right": "سيارة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-024",
+   "wrong": "سئارة",
+   "right": "سيارة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-025",
+   "wrong": "طئارة",
+   "right": "طائرة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-026",
+   "wrong": "طىئرة",
+   "right": "طائرة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-027",
+   "wrong": "ماطر",
+   "right": "مطار",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-028",
+   "wrong": "متار",
+   "right": "مطار",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-029",
+   "wrong": "مطحة",
+   "right": "محطة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-030",
+   "wrong": "مهطة",
+   "right": "محطة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-031",
+   "wrong": "بت",
+   "right": "بيت",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-032",
+   "wrong": "بئت",
+   "right": "بيت",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-033",
+   "wrong": "غفرة",
+   "right": "غرفة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-034",
+   "wrong": "غزفة",
+   "right": "غرفة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-035",
+   "wrong": "مبطخ",
+   "right": "مطبخ",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-036",
+   "wrong": "متبخ",
+   "right": "مطبخ",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-037",
+   "wrong": "نفاذة",
+   "right": "نافذة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-038",
+   "wrong": "نىفذة",
+   "right": "نافذة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-039",
+   "wrong": "بب",
+   "right": "باب",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-040",
+   "wrong": "بىب",
+   "right": "باب",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-041",
+   "wrong": "حيدقة",
+   "right": "حديقة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-042",
+   "wrong": "حذيقة",
+   "right": "حديقة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-043",
+   "wrong": "شرجة",
+   "right": "شجرة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-044",
+   "wrong": "شغرة",
+   "right": "شجرة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-045",
+   "wrong": "زرهة",
+   "right": "زهرة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-046",
+   "wrong": "زحرة",
+   "right": "زهرة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-047",
+   "wrong": "سامء",
+   "right": "سماء",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-048",
+   "wrong": "سناء",
+   "right": "سماء",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-049",
+   "wrong": "شس",
+   "right": "شمس",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-050",
+   "wrong": "شنس",
+   "right": "شمس",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-051",
+   "wrong": "قر",
+   "right": "قمر",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-052",
+   "wrong": "قنر",
+   "right": "قمر",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-053",
+   "wrong": "نمجة",
+   "right": "نجمة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-054",
+   "wrong": "نغمة",
+   "right": "نجمة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-055",
+   "wrong": "بر",
+   "right": "بحر",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-056",
+   "wrong": "بهر",
+   "right": "بحر",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-057",
+   "wrong": "نر",
+   "right": "نهر",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-058",
+   "wrong": "نحر",
+   "right": "نهر",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-059",
+   "wrong": "جل",
+   "right": "جبل",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-060",
+   "wrong": "جتل",
+   "right": "جبل",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-061",
+   "wrong": "صرحاء",
+   "right": "صحراء",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-062",
+   "wrong": "صهراء",
+   "right": "صحراء",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-063",
+   "wrong": "مر",
+   "right": "مطر",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-064",
+   "wrong": "متر",
+   "right": "مطر",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-065",
+   "wrong": "ثج",
+   "right": "ثلج",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-066",
+   "wrong": "ثنج",
+   "right": "ثلج",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-067",
+   "wrong": "رايح",
+   "right": "رياح",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-068",
+   "wrong": "رئاح",
+   "right": "رياح",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-069",
+   "wrong": "طس",
+   "right": "طقس",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-070",
+   "wrong": "طكس",
+   "right": "طقس",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-071",
+   "wrong": "صابح",
+   "right": "صباح",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-072",
+   "wrong": "صتاح",
+   "right": "صباح",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-073",
+   "wrong": "ماسء",
+   "right": "مساء",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-074",
+   "wrong": "مصاء",
+   "right": "مساء",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-075",
+   "wrong": "أبسوع",
+   "right": "أسبوع",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-076",
+   "wrong": "أصبوع",
+   "right": "أسبوع",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-077",
+   "wrong": "شر",
+   "right": "شهر",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-078",
+   "wrong": "شحر",
+   "right": "شهر",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-079",
+   "wrong": "سة",
+   "right": "سنة",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-080",
+   "wrong": "سمة",
+   "right": "سنة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-081",
+   "wrong": "عئالة",
+   "right": "عائلة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-082",
+   "wrong": "عىئلة",
+   "right": "عائلة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-083",
+   "wrong": "ولاد",
+   "right": "والد",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-084",
+   "wrong": "وىلد",
+   "right": "والد",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-085",
+   "wrong": "ولادة",
+   "right": "والدة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-086",
+   "wrong": "وىلدة",
+   "right": "والدة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-087",
+   "wrong": "أت",
+   "right": "أخت",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-088",
+   "wrong": "أحت",
+   "right": "أخت",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-089",
+   "wrong": "صيدق",
+   "right": "صديق",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-090",
+   "wrong": "صذيق",
+   "right": "صديق",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-091",
+   "wrong": "جر",
+   "right": "جار",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-092",
+   "wrong": "جىر",
+   "right": "جار",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-093",
+   "wrong": "طيبب",
+   "right": "طبيب",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-094",
+   "wrong": "طتيب",
+   "right": "طبيب",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-095",
+   "wrong": "منهدس",
+   "right": "مهندس",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-096",
+   "wrong": "محندس",
+   "right": "مهندس",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-097",
+   "wrong": "ماحمي",
+   "right": "محامي",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-098",
+   "wrong": "مهامي",
+   "right": "محامي",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-099",
+   "wrong": "صفحي",
+   "right": "صحفي",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-100",
+   "wrong": "صهفي",
+   "right": "صحفي",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-101",
+   "wrong": "شطرة",
+   "right": "شرطة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-102",
+   "wrong": "شزطة",
+   "right": "شرطة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-103",
+   "wrong": "جش",
+   "right": "جيش",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-104",
+   "wrong": "جئش",
+   "right": "جيش",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-105",
+   "wrong": "ريئس",
+   "right": "رئيس",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-106",
+   "wrong": "رئئس",
+   "right": "رئيس",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-107",
+   "wrong": "ويزر",
+   "right": "وزير",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-108",
+   "wrong": "وذير",
+   "right": "وزير",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-109",
+   "wrong": "برملان",
+   "right": "برلمان",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-110",
+   "wrong": "بزلمان",
+   "right": "برلمان",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-111",
+   "wrong": "انتاخبات",
+   "right": "انتخابات",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-112",
+   "wrong": "امتخابات",
+   "right": "انتخابات",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-113",
+   "wrong": "ديمرقاطية",
+   "right": "ديمقراطية",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-114",
+   "wrong": "دئمقراطية",
+   "right": "ديمقراطية",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-115",
+   "wrong": "سايسة",
+   "right": "سياسة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-116",
+   "wrong": "سئاسة",
+   "right": "سياسة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-117",
+   "wrong": "اقصتاد",
+   "right": "اقتصاد",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-118",
+   "wrong": "اكتصاد",
+   "right": "اقتصاد",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-119",
+   "wrong": "تاجرة",
+   "right": "تجارة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-120",
+   "wrong": "تغارة",
+   "right": "تجارة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-121",
+   "wrong": "شكرة",
+   "right": "شركة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-122",
+   "wrong": "شزكة",
+   "right": "شركة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-123",
+   "wrong": "منصع",
+   "right": "مصنع",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-124",
+   "wrong": "مسنع",
+   "right": "مصنع",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-125",
+   "wrong": "عمال",
+   "right": "عامل",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-126",
+   "wrong": "عىمل",
+   "right": "عامل",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-127",
+   "wrong": "مظوف",
+   "right": "موظف",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-128",
+   "wrong": "مؤظف",
+   "right": "موظف",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-129",
+   "wrong": "رتاب",
+   "right": "راتب",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-130",
+   "wrong": "رىتب",
+   "right": "راتب",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-131",
+   "wrong": "سق",
+   "right": "سوق",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-132",
+   "wrong": "سؤق",
+   "right": "سوق",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-133",
+   "wrong": "ثن",
+   "right": "ثمن",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-134",
+   "wrong": "ثنن",
+   "right": "ثمن",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-135",
+   "wrong": "مل",
+   "right": "مال",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-136",
+   "wrong": "مىل",
+   "right": "مال",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-137",
+   "wrong": "بك",
+   "right": "بنك",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-138",
+   "wrong": "بمك",
+   "right": "بنك",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-139",
+   "wrong": "حاسب",
+   "right": "حساب",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-140",
+   "wrong": "حصاب",
+   "right": "حساب",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-141",
+   "wrong": "تلعيم",
+   "right": "تعليم",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-142",
+   "wrong": "تغليم",
+   "right": "تعليم",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-143",
+   "wrong": "امحتان",
+   "right": "امتحان",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-144",
+   "wrong": "انتحان",
+   "right": "امتحان",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-145",
+   "wrong": "دس",
+   "right": "درس",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-146",
+   "wrong": "دزس",
+   "right": "درس",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-147",
+   "wrong": "وجاب",
+   "right": "واجب",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-148",
+   "wrong": "وىجب",
+   "right": "واجب",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-149",
+   "wrong": "ساؤل",
+   "right": "سؤال",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-150",
+   "wrong": "سؤىل",
+   "right": "سؤال",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-151",
+   "wrong": "جاوب",
+   "right": "جواب",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-152",
+   "wrong": "جؤاب",
+   "right": "جواب",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-153",
+   "wrong": "لة",
+   "right": "لغة",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-154",
+   "wrong": "لعة",
+   "right": "لغة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-155",
+   "wrong": "تجرمة",
+   "right": "ترجمة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-156",
+   "wrong": "تزجمة",
+   "right": "ترجمة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-157",
+   "wrong": "قماوس",
+   "right": "قاموس",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-158",
+   "wrong": "قىموس",
+   "right": "قاموس",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-159",
+   "wrong": "راسلة",
+   "right": "رسالة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-160",
+   "wrong": "رصالة",
+   "right": "رسالة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-161",
+   "wrong": "حساوب",
+   "right": "حاسوب",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-162",
+   "wrong": "حىسوب",
+   "right": "حاسوب",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-163",
+   "wrong": "هتاف",
+   "right": "هاتف",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-164",
+   "wrong": "هىتف",
+   "right": "هاتف",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-165",
+   "wrong": "برانمج",
+   "right": "برنامج",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-166",
+   "wrong": "بزنامج",
+   "right": "برنامج",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-167",
+   "wrong": "شكبة",
+   "right": "شبكة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-168",
+   "wrong": "شتكة",
+   "right": "شبكة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-169",
+   "wrong": "معولمات",
+   "right": "معلومات",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-170",
+   "wrong": "مغلومات",
+   "right": "معلومات",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-171",
+   "wrong": "بث",
+   "right": "بحث",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-172",
+   "wrong": "بهث",
+   "right": "بحث",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-173",
+   "wrong": "دارسة",
+   "right": "دراسة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-174",
+   "wrong": "دزاسة",
+   "right": "دراسة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-175",
+   "wrong": "نيتجة",
+   "right": "نتيجة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-176",
+   "wrong": "نطيجة",
+   "right": "نتيجة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-177",
+   "wrong": "مكشلة",
+   "right": "مشكلة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-178",
+   "wrong": "مسكلة",
+   "right": "مشكلة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-179",
+   "wrong": "ح",
+   "right": "حل",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-180",
+   "wrong": "حن",
+   "right": "حل",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-181",
+   "wrong": "فركة",
+   "right": "فكرة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-182",
+   "wrong": "فقرة",
+   "right": "فكرة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-183",
+   "wrong": "ري",
+   "right": "رأي",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-184",
+   "wrong": "رأئ",
+   "right": "رأي",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-185",
+   "wrong": "حيققة",
+   "right": "حقيقة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-186",
+   "wrong": "حكيقة",
+   "right": "حقيقة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-187",
+   "wrong": "ترايخ",
+   "right": "تاريخ",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-188",
+   "wrong": "تىريخ",
+   "right": "تاريخ",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-189",
+   "wrong": "ثاقفة",
+   "right": "ثقافة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-190",
+   "wrong": "ثكافة",
+   "right": "ثقافة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-191",
+   "wrong": "متجمع",
+   "right": "مجتمع",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-192",
+   "wrong": "مغتمع",
+   "right": "مجتمع",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-193",
+   "wrong": "حاضرة",
+   "right": "حضارة",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-194",
+   "wrong": "حظارة",
+   "right": "حضارة",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-195",
+   "wrong": "تارث",
+   "right": "تراث",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-196",
+   "wrong": "تزاث",
+   "right": "تراث",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-197",
+   "wrong": "ف",
+   "right": "فن",
+   "kind": "deletion"
+  },
+  {
+   "id": "ar-198",
+   "wrong": "فم",
+   "right": "فن",
+   "kind": "substitution"
+  },
+  {
+   "id": "ar-199",
+   "wrong": "مويسقى",
+   "right": "موسيقى",
+   "kind": "transposition"
+  },
+  {
+   "id": "ar-200",
+   "wrong": "مؤسيقى",
+   "right": "موسيقى",
+   "kind": "substitution"
+  }
+ ]
+}

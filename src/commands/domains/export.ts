@@ -2,8 +2,11 @@
 import { cmdIcons, type Command } from "../../ui/CommandPalette";
 import { useAppStore } from "../../store/useStore";
 import { t } from "../../i18n";
-import { showAiToast } from "../../ui/AiToast";
 import type { CommandContext } from "./context";
+import type { ExportKind } from "./exportActions";
+
+/** A text-format export: the body (./exportActions.ts, through the export door) loads on use. */
+const exportAs = (doc: { name: string; content: string }, kind: ExportKind) => import("./exportActions").then((m) => m.exportAs(doc, kind));
 
 /** Export the open note to each format (exporters load on first use), and print. */
 export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }: CommandContext): Command[] {
@@ -37,9 +40,10 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       action: async () => {
         // Snapshot before any await: a tab switch while the chunk loads must not share another note.
         const doc = liveDoc();
-        // Review 12.11: the link carries the export text (through #473's door once it is in the build).
-        const [{ openShareLink }, { shareReadyText }] = await Promise.all([import("../../share/ShareLinkDialog"), import("../../share/shareReady")]);
-        openShareLink({ title: doc.name, markdown: await shareReadyText(doc.content) });
+        // Review 12.11 + W5.11: a link is an export, so it carries the export door's text (<redact>
+        // passages and hidden comments removed; photos are not inlined: a link has no room for them).
+        const [{ openShareLink }, { exportReadyText }] = await Promise.all([import("../../share/ShareLinkDialog"), import("../../storage/exportReady")]);
+        openShareLink({ title: doc.name, markdown: await exportReadyText(doc.content, false) });
       },
     },
     {
@@ -79,20 +83,10 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       hint: t("cmd.cite.legalFromCase.hint"),
       icon: cmdIcons.FileText,
       group: t("group.tools"),
-      action: async () => {
+      // The body loads on use (./citeActions.ts).
+      action: () => {
         const view = getEditorView?.();
-        if (!view) return;
-        const [{ caseNumberAt, rulingFromMatch }, dialog] = await Promise.all([import("../../citations/legal"), import("../../citations/LegalCiteDialog")]);
-        const line = view.state.doc.lineAt(view.state.selection.main.head);
-        const m = caseNumberAt(line.text, view.state.selection.main.head - line.from);
-        if (!m) {
-          showAiToast(t("toast.cite.noCaseNumber"), "info");
-          dialog.openLegalCiteDialog();
-          return;
-        }
-        // why: the citation replaces the case number it was made from
-        view.dispatch({ selection: { anchor: line.from + m.from, head: line.from + m.to } });
-        dialog.openLegalCiteDialog(rulingFromMatch(m));
+        if (view) void import("./citeActions").then((m) => m.legalCiteFromCase(view));
       },
     },
     {
@@ -103,33 +97,45 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       action: () => void import("../../citations/run").then((m) => m.syncZoteroLibrary()),
     },
     {
+      // W5.16: the institution's formatting, title page and table of contents; the dialog loads on use.
+      id: "file.exportAcademic",
+      label: t("cmd.file.exportAcademic"),
+      hint: t("cmd.file.exportAcademic.hint"),
+      icon: cmdIcons.Download,
+      group: t("group.file"),
+      action: () => {
+        // Snapshot before the import: a tab switch while the chunk loads must not export another note.
+        const doc = liveDoc();
+        void import("../../ui/AcademicExportDialog").then((m) => m.openAcademicExport({ content: doc.content, name: doc.name }));
+      },
+    },
+    {
+      // Plan W5.23: the Web API, for the browser and phones (no Zotero Desktop).
+      id: "cite.syncZoteroWeb",
+      label: t("cmd.cite.syncZoteroWeb"),
+      icon: cmdIcons.FileText,
+      group: t("group.tools"),
+      action: () => void import("../../citations/run").then((m) => m.syncZoteroWebLibrary()),
+    },
+    {
       id: "file.exportRtf",
       label: t("cmd.file.exportRtf"),
       hint: t("cmd.file.exportRtf.hint"),
       icon: cmdIcons.Download,
       group: t("group.file"),
-      action: async () => {
-        // Snapshot before any await: a tab switch while the chunk loads must not export another note.
-        const doc = liveDoc();
-        const { markdownToRtf, downloadText } = await import("../../storage/exportFormats");
-        const baseName = doc.name.replace(/\.[^.]+$/, "");
-        downloadText(`${baseName}.rtf`, markdownToRtf(doc.content), "application/rtf");
-      },
+      // Snapshot first: a tab switch while the chunk loads must not export another note.
+      action: () => exportAs(liveDoc(), "rtf"),
     },
     {
       id: "file.exportMarkdownAiMarks",
       label: t("cmd.ai.marks.export"),
       icon: cmdIcons.Download,
       group: t("group.file"),
-      action: async () => {
-        // Snapshot before any await (as above).
+      // Snapshot before any await (as above); the body loads on use (./exportActions.ts).
+      action: () => {
         const doc = liveDoc();
         const view = getEditorView?.() ?? null;
-        const [{ withAuthorshipFooter, loadSpans }, { downloadText }] = await Promise.all([import("../../ai/authorship"), import("../../storage/exportFormats")]);
-        // The open source editor has the live marks; otherwise the saved ones.
-        const spans = view ? (await import("../../editor/aiAuthorship")).aiSpansOf(view) : loadSpans(doc.workspaceName ?? `file:${doc.name}`, doc.content);
-        const text = view ? view.state.doc.toString() : doc.content;
-        downloadText(doc.name.endsWith(".md") ? doc.name : `${doc.name}.md`, withAuthorshipFooter(text, spans), "text/markdown");
+        void import("./exportActions").then((m) => m.exportWithAiMarks(doc, view));
       },
     },
     {
@@ -138,13 +144,8 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       hint: t("cmd.file.exportLatex.hint"),
       icon: cmdIcons.Download,
       group: t("group.file"),
-      action: async () => {
-        // Snapshot before any await: a tab switch while the chunk loads must not export another note.
-        const doc = liveDoc();
-        const { markdownToLatex, downloadText } = await import("../../storage/exportFormats");
-        const baseName = doc.name.replace(/\.[^.]+$/, "");
-        downloadText(`${baseName}.tex`, markdownToLatex(doc.content), "application/x-latex");
-      },
+      // Snapshot first: a tab switch while the chunk loads must not export another note.
+      action: () => exportAs(liveDoc(), "latex"),
     },
     {
       id: "file.exportRst",
@@ -152,13 +153,8 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       hint: t("cmd.file.exportRst.hint"),
       icon: cmdIcons.Download,
       group: t("group.file"),
-      action: async () => {
-        // Snapshot before any await: a tab switch while the chunk loads must not export another note.
-        const doc = liveDoc();
-        const { markdownToRst, downloadText } = await import("../../storage/exportFormats");
-        const baseName = doc.name.replace(/\.[^.]+$/, "");
-        downloadText(`${baseName}.rst`, markdownToRst(doc.content), "text/x-rst");
-      },
+      // Snapshot first: a tab switch while the chunk loads must not export another note.
+      action: () => exportAs(liveDoc(), "rst"),
     },
     {
       id: "file.exportAdoc",
@@ -166,13 +162,8 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       hint: t("cmd.file.exportAdoc.hint"),
       icon: cmdIcons.Download,
       group: t("group.file"),
-      action: async () => {
-        // Snapshot before any await: a tab switch while the chunk loads must not export another note.
-        const doc = liveDoc();
-        const { markdownToAdoc, downloadText } = await import("../../storage/exportFormats");
-        const baseName = doc.name.replace(/\.[^.]+$/, "");
-        downloadText(`${baseName}.adoc`, markdownToAdoc(doc.content), "text/asciidoc");
-      },
+      // Snapshot first: a tab switch while the chunk loads must not export another note.
+      action: () => exportAs(liveDoc(), "adoc"),
     },
     {
       id: "file.exportOrg",
@@ -180,13 +171,8 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       hint: t("cmd.file.exportOrg.hint"),
       icon: cmdIcons.Download,
       group: t("group.file"),
-      action: async () => {
-        // Snapshot before any await: a tab switch while the chunk loads must not export another note.
-        const doc = liveDoc();
-        const { markdownToOrg, downloadText } = await import("../../storage/exportFormats");
-        const baseName = doc.name.replace(/\.[^.]+$/, "");
-        downloadText(`${baseName}.org`, markdownToOrg(doc.content), "text/x-org");
-      },
+      // Snapshot first: a tab switch while the chunk loads must not export another note.
+      action: () => exportAs(liveDoc(), "org"),
     },
     {
       id: "file.exportOpml",
@@ -194,13 +180,8 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       hint: t("cmd.file.exportOpml.hint"),
       icon: cmdIcons.Download,
       group: t("group.file"),
-      action: async () => {
-        // Snapshot before any await: a tab switch while the chunk loads must not export another note.
-        const doc = liveDoc();
-        const { markdownToOpml, downloadText } = await import("../../storage/exportFormats");
-        const baseName = doc.name.replace(/\.[^.]+$/, "");
-        downloadText(`${baseName}.opml`, markdownToOpml(doc.content, baseName), "text/x-opml");
-      },
+      // Snapshot first: a tab switch while the chunk loads must not export another note.
+      action: () => exportAs(liveDoc(), "opml"),
     },
     {
       id: "file.exportReveal",
@@ -208,17 +189,8 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       hint: t("cmd.file.exportReveal.hint"),
       icon: cmdIcons.Download,
       group: t("group.file"),
-      action: async () => {
-        // Snapshot before any await: a tab switch while the chunk loads must not export another note.
-        const doc = liveDoc();
-        const { markdownToRevealHtml, downloadText } = await import("../../storage/exportFormats");
-        const baseName = doc.name.replace(/\.[^.]+$/, "");
-        downloadText(
-          `${baseName}.slides.html`,
-          markdownToRevealHtml(doc.content, baseName),
-          "text/html",
-        );
-      },
+      // Snapshot first: a tab switch while the chunk loads must not export another note.
+      action: () => exportAs(liveDoc(), "reveal"),
     },
     {
       id: "file.exportEpub",
@@ -226,14 +198,8 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       hint: t("cmd.file.exportEpub.hint"),
       icon: cmdIcons.Download,
       group: t("group.file"),
-      action: async () => {
-        // Snapshot before any await: a tab switch while the chunk loads must not export another note.
-        const doc = liveDoc();
-        const { markdownToEpubBytes, downloadBytes } = await import("../../storage/exportFormats");
-        const baseName = doc.name.replace(/\.[^.]+$/, "");
-        const bytes = await markdownToEpubBytes(doc.content, baseName);
-        downloadBytes(`${baseName}.epub`, bytes, "application/epub+zip");
-      },
+      // Snapshot first: a tab switch while the chunk loads must not export another note.
+      action: () => exportAs(liveDoc(), "epub"),
     },
     {
       id: "file.exportIpynb",
@@ -241,13 +207,8 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       hint: t("cmd.file.exportIpynb.hint"),
       icon: cmdIcons.Download,
       group: t("group.file"),
-      action: async () => {
-        // Snapshot before any await: a tab switch while the chunk loads must not export another note.
-        const doc = liveDoc();
-        const { markdownToIpynb, downloadText } = await import("../../storage/exportFormats");
-        const baseName = doc.name.replace(/\.[^.]+$/, "");
-        downloadText(`${baseName}.ipynb`, markdownToIpynb(doc.content), "application/x-ipynb+json");
-      },
+      // Snapshot first: a tab switch while the chunk loads must not export another note.
+      action: () => exportAs(liveDoc(), "ipynb"),
     },
     {
       id: "file.exportSite",
@@ -255,14 +216,8 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       hint: t("cmd.file.exportSite.hint"),
       icon: cmdIcons.Download,
       group: t("group.file"),
-      action: async () => {
-        // Snapshot before any await: a tab switch while the chunk loads must not export another note.
-        const doc = liveDoc();
-        const { markdownToStaticSiteBytes, downloadBytes } = await import("../../storage/exportFormats");
-        const baseName = doc.name.replace(/\.[^.]+$/, "");
-        const bytes = await markdownToStaticSiteBytes(doc.content, baseName);
-        downloadBytes(`${baseName}-site.zip`, bytes, "application/zip");
-      },
+      // Snapshot first: a tab switch while the chunk loads must not export another note.
+      action: () => exportAs(liveDoc(), "site"),
     },
     {
       id: "file.exportPptx",
@@ -270,15 +225,8 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       hint: t("cmd.file.exportPptx.hint"),
       icon: cmdIcons.Download,
       group: t("group.file"),
-      action: async () => {
-        // Snapshot before any await: a tab switch while the chunk loads must not export another note.
-        const doc = liveDoc();
-        const { markdownToPptxBytes, PPTX_MIME } = await import("../../storage/exportPptx");
-        const { downloadBytes } = await import("../../storage/exportFormats");
-        const baseName = doc.name.replace(/\.[^.]+$/, "");
-        const bytes = await markdownToPptxBytes(doc.content, baseName);
-        downloadBytes(`${baseName}.pptx`, bytes, PPTX_MIME);
-      },
+      // Snapshot first: a tab switch while the chunk loads must not export another note.
+      action: () => exportAs(liveDoc(), "pptx"),
     },
     {
       id: "file.exportPdf",
@@ -294,13 +242,54 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       },
     },
     {
+      // W5.11: the note as Markdown, without what is marked <redact> and without hidden comments.
+      id: "file.exportMarkdown",
+      label: t("cmd.file.exportMarkdown"),
+      hint: t("cmd.file.exportMarkdown.hint"),
+      icon: cmdIcons.Download,
+      group: t("group.file"),
+      action: async () => {
+        // Snapshot before any await: a tab switch while the chunk loads must not export another note.
+        const doc = liveDoc();
+        await (await import("./journalistActions")).exportRedactedMarkdown(doc);
+      },
+    },
+    {
+      // W5.11: wrap the selection in <redact>; it stays in the note and leaves every export.
+      id: "edit.redact",
+      label: t("cmd.edit.redact"),
+      hint: t("cmd.edit.redact.hint"),
+      icon: cmdIcons.Pencil,
+      group: t("group.edit"),
+      action: async () => (await import("./journalistActions")).redactSelection(getEditorView?.() ?? null),
+    },
+    {
+      // W5.11: lock the open note with a password of its own (or open, re-lock, change, remove).
+      id: "file.notePassword",
+      label: t("cmd.file.notePassword"),
+      hint: t("cmd.file.notePassword.hint"),
+      icon: cmdIcons.FileText,
+      group: t("group.file"),
+      action: async () => {
+        const { notePasswordFlow } = await import("../../ui/notePassword");
+        await notePasswordFlow();
+      },
+    },
+    {
       id: "file.print",
       label: t("cmd.file.print"),
       hint: t("cmd.file.print.hint"),
       shortcut: "⌘P",
       icon: cmdIcons.Printer,
       group: t("group.file"),
-      action: () => {
+      action: async () => {
+        // W5.11: a note with redacted passages prints through the export, which removes them.
+        const doc = liveDoc();
+        if (/<redact\s*>/i.test(doc.content)) {
+          const { printDocument } = await import("../../ui/PrintExport");
+          await printDocument(doc.content, doc.name);
+          return;
+        }
         // Make sure preview is visible before printing.
         useAppStore.getState().setMode("preview");
         setTimeout(() => window.print(), 50);

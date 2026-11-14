@@ -295,6 +295,451 @@
       ],
       "sha256": "ceeef72d9cde1334d6017505ba97d4a150a1e2f12b62e829b15e24b5ee00682f",
       "path": "text-format"
+    },
+    {
+      "id": "lumen.calendar",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "commands",
+          "reason": "Adds the “Calendar of daily notes” command"
+        },
+        {
+          "id": "panel",
+          "reason": "Shows the month in a side panel"
+        },
+        {
+          "id": "vault:read",
+          "reason": "Finds your daily notes by their file names"
+        },
+        {
+          "id": "settings",
+          "reason": "Remembers the daily-notes folder and the first day of the week"
+        }
+      ],
+      "used": [
+        "commands",
+        "panel",
+        "settings",
+        "vault:read"
+      ],
+      "sha256": "bf3fe19e3d5de5f95202ac9b087c92bd72426db0b001e72774e4160f3570cd5f",
+      "path": "calendar"
+    },
+    {
+      "id": "lumen.flashcards",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "commands",
+          "reason": "Adds the “Review flashcards” command"
+        },
+        {
+          "id": "document:read",
+          "reason": "Reads the cards of the open note"
+        },
+        {
+          "id": "panel",
+          "reason": "Shows one card at a time with the grade buttons"
+        },
+        {
+          "id": "storage",
+          "reason": "Keeps each card’s review schedule on this device"
+        }
+      ],
+      "used": [
+        "commands",
+        "document:read",
+        "panel",
+        "storage"
+      ],
+      "sha256": "c777aa00184b89e9e6561636efc707eca675d0122b9526dcb072e26e9498fe59",
+      "path": "flashcards"
+    },
+    {
+      "id": "lumen.kanban",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "renderer",
+          "reason": "Draws the `kanban` code-block language"
+        },
+        {
+          "id": "commands",
+          "reason": "Adds “New Kanban board” and “Copy Kanban board as a table”"
+        },
+        {
+          "id": "document:read",
+          "reason": "Finds the board in the open note to export it"
+        },
+        {
+          "id": "document:write",
+          "reason": "Inserts a new board at the cursor"
+        },
+        {
+          "id": "clipboard:write",
+          "reason": "Copies the board as a table"
+        },
+        {
+          "id": "notifications",
+          "reason": "Tells you the board was copied, or that there is none"
+        }
+      ],
+      "used": [
+        "clipboard:write",
+        "commands",
+        "document:read",
+        "document:write",
+        "notifications",
+        "renderer"
+      ],
+      "sha256": "24a8c57eb9059e58a5dabd831d0b27f820a4d6c8342f20d55f0425f841835739",
+      "path": "kanban"
+    },
+    {
+      "id": "lumen.linter",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "commands",
+          "reason": "Adds the “Tidy Markdown” command"
+        },
+        {
+          "id": "document:read",
+          "reason": "Reads the open note"
+        },
+        {
+          "id": "document:write",
+          "reason": "Writes the tidied note back"
+        },
+        {
+          "id": "notifications",
+          "reason": "Tells you how many things it fixed"
+        },
+        {
+          "id": "settings",
+          "reason": "Remembers which rules you turned off"
+        }
+      ],
+      "used": [
+        "commands",
+        "document:read",
+        "document:write",
+        "notifications",
+        "settings"
+      ],
+      "sha256": "45d507f34f48fa7a73cbcaa02e9c0f2c4847b9d74f07970be20493289ea61619",
+      "path": "linter"
+    },
+    {
+      "id": "lumen.natural-dates",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "commands",
+          "reason": "Adds “Date from words” and “Insert today’s date”"
+        },
+        {
+          "id": "document:read",
+          "reason": "Reads the words you selected"
+        },
+        {
+          "id": "document:write",
+          "reason": "Replaces them with the date"
+        },
+        {
+          "id": "notifications",
+          "reason": "Tells you when the words are not a date it knows"
+        },
+        {
+          "id": "settings",
+          "reason": "Remembers whether to write a [[link]] or a plain date"
+        }
+      ],
+      "used": [
+        "commands",
+        "document:read",
+        "document:write",
+        "notifications",
+        "settings"
+      ],
+      "sha256": "81f1b25d0396bb18d6c031f88f2d50190d1713d6ccc06aa417453f178b9ec411",
+      "path": "natural-dates"
+    },
+    {
+      "id": "lumen.note-refactor",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "commands",
+          "reason": "Adds “Extract selection to a new note” and “Split note by headings”"
+        },
+        {
+          "id": "document:read",
+          "reason": "Reads the selection or the headings of the open note"
+        },
+        {
+          "id": "document:write",
+          "reason": "Puts the [[link]] in place of what moved"
+        },
+        {
+          "id": "vault:read",
+          "reason": "Checks which note names are taken"
+        },
+        {
+          "id": "vault:write",
+          "reason": "Creates the new notes"
+        },
+        {
+          "id": "notifications",
+          "reason": "Tells you where the text went"
+        },
+        {
+          "id": "settings",
+          "reason": "Remembers the heading level to split at"
+        }
+      ],
+      "used": [
+        "commands",
+        "document:read",
+        "document:write",
+        "notifications",
+        "settings",
+        "vault:read",
+        "vault:write"
+      ],
+      "sha256": "1584f5fdffe749c0b5d900b0bdf03deaa5f0e1b996d4d8fa6aeb1f6e885413ea",
+      "path": "note-refactor"
+    },
+    {
+      "id": "lumen.sort-lines",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "commands",
+          "reason": "Adds the sort, reverse and remove-duplicates commands"
+        },
+        {
+          "id": "document:read",
+          "reason": "Reads the selected lines"
+        },
+        {
+          "id": "document:write",
+          "reason": "Writes them back in the new order"
+        },
+        {
+          "id": "notifications",
+          "reason": "Tells you how many duplicates it removed"
+        }
+      ],
+      "used": [
+        "commands",
+        "document:read",
+        "document:write",
+        "notifications"
+      ],
+      "sha256": "510f873e88ee6eba6d08063bf29e6044e4f5e27f33d2e2bb9f1519f5b4d297e4",
+      "path": "sort-lines"
+    },
+    {
+      "id": "lumen.table-format",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "commands",
+          "reason": "Adds “Format tables” and the two sort commands"
+        },
+        {
+          "id": "document:read",
+          "reason": "Reads the tables of the open note"
+        },
+        {
+          "id": "document:write",
+          "reason": "Writes the formatted or sorted tables back"
+        }
+      ],
+      "used": [
+        "commands",
+        "document:read",
+        "document:write"
+      ],
+      "sha256": "d929d4756d24821fa76c81b038781d5b2d64d3c6b8ab9a97b2ee9041086b6849",
+      "path": "table-format"
+    },
+    {
+      "id": "lumen.tags",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "commands",
+          "reason": "Adds the “Tags: list and rename” command"
+        },
+        {
+          "id": "panel",
+          "reason": "Shows the tags and the rename form"
+        },
+        {
+          "id": "vault:read",
+          "reason": "Reads your notes to find their tags"
+        },
+        {
+          "id": "vault:write",
+          "reason": "Writes the notes whose tag you rename"
+        },
+        {
+          "id": "notifications",
+          "reason": "Tells you how many notes changed"
+        }
+      ],
+      "used": [
+        "commands",
+        "notifications",
+        "panel",
+        "vault:read",
+        "vault:write"
+      ],
+      "sha256": "a922d8b7541817cd80cb89f6bf101fdd387d2d24935b7d61f84a703ccbbac9cf",
+      "path": "tags"
+    },
+    {
+      "id": "lumen.templates",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "commands",
+          "reason": "Adds the “Insert template” command"
+        },
+        {
+          "id": "vault:read",
+          "reason": "Reads the notes in your Templates folder"
+        },
+        {
+          "id": "document:read",
+          "reason": "Uses the note’s name for {{title}} and the selection for {{selection}}"
+        },
+        {
+          "id": "document:write",
+          "reason": "Inserts the filled template at the cursor"
+        },
+        {
+          "id": "panel",
+          "reason": "Lets you choose a template when there are several"
+        },
+        {
+          "id": "settings",
+          "reason": "Remembers which folder holds your templates"
+        }
+      ],
+      "used": [
+        "commands",
+        "document:read",
+        "document:write",
+        "panel",
+        "settings",
+        "vault:read"
+      ],
+      "sha256": "9b7bb8b978ccc758dc354403fe42a82180ab457c6c3c3e452dbf1c9b6160f0aa",
+      "path": "templates"
     }
   ]
 }
