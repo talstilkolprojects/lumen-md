@@ -13,10 +13,14 @@
  * snapshot subkeys (./snapshotSeal.ts) — given `keys`, only a sealed record
  * is written or accepted. Without `keys` (a plain vault) only a plain one
  * is. A record of the other kind, or one that fails its checks, is refused
- * and deleted: the open builds in full, as with no snapshot.
+ * and deleted: the open builds in full, as with no snapshot. A sealed record
+ * has two parts (round 2): a manifest (every note's path, name, mtime and
+ * summary) and a body (the texts), so the open can answer from the manifest
+ * and index the texts right after.
  */
 import { createStore, get, set, del } from "idb-keyval";
 import { isSealedSnapshot, openSnapshot, sealSnapshot, type SnapshotKeys } from "./snapshotSeal";
+import { summarize, type NoteSummary } from "./noteSummary";
 
 export const SNAPSHOT_VERSION = 1;
 
@@ -73,10 +77,108 @@ export function decodeSnapshot(raw: unknown, vault: string): Map<string, Snapsho
 export type SnapshotOutcome = "none" | "restored" | "refused";
 export let lastSnapshotOutcome: SnapshotOutcome = "none";
 
+/** A note as the manifest of a sealed snapshot records it: no text. */
+export interface SnapshotEntry extends NoteSummary {
+  path: string;
+  name: string;
+  modified: number;
+}
+
+interface Manifest {
+  v: number;
+  vault: string;
+  paths: string[];
+  names: string[];
+  modified: number[];
+  summaries: NoteSummary[];
+}
+
+interface Body {
+  v: number;
+  vault: string;
+  contents: string[];
+}
+
+const utf8 = (o: unknown) => new TextEncoder().encode(JSON.stringify(o));
+const parseUtf8 = (u: Uint8Array): unknown => JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(u));
+const strings = (a: unknown): a is string[] => Array.isArray(a) && a.every((x) => typeof x === "string");
+
+/** The two parts of a sealed snapshot, encoded (W6.36). */
+export function encodeSnapshotParts(vault: string, files: Iterable<SnapshotFile>): { manifest: Uint8Array; body: Uint8Array } {
+  const m: Manifest = { v: SNAPSHOT_VERSION, vault, paths: [], names: [], modified: [], summaries: [] };
+  const b: Body = { v: SNAPSHOT_VERSION, vault, contents: [] };
+  for (const f of files) {
+    m.paths.push(f.path);
+    m.names.push(f.name);
+    m.modified.push(f.modified);
+    m.summaries.push(summarize(f.content));
+    b.contents.push(f.content);
+  }
+  return { manifest: utf8(m), body: utf8(b) };
+}
+
+function isSummary(v: unknown): v is NoteSummary {
+  const s = v as NoteSummary | null;
+  return (
+    !!s &&
+    typeof s === "object" &&
+    strings(s.wikiTargets) &&
+    !!s.meta &&
+    typeof s.meta === "object" &&
+    strings(s.meta.tags) &&
+    !!s.meta.props &&
+    typeof s.meta.props === "object" &&
+    (s.frontmatter === null || typeof s.frontmatter === "string") &&
+    strings(s.noteTags) &&
+    typeof s.chars === "number" &&
+    strings(s.aliases)
+  );
+}
+
+function decodeManifest(raw: unknown, vault: string): SnapshotEntry[] | null {
+  const m = raw as Manifest | null;
+  if (!m || m.v !== SNAPSHOT_VERSION || m.vault !== vault || !strings(m.paths)) return null;
+  const n = m.paths.length;
+  if (!strings(m.names) || m.names.length !== n || !Array.isArray(m.modified) || m.modified.length !== n || !Array.isArray(m.summaries) || m.summaries.length !== n) return null;
+  const out: SnapshotEntry[] = [];
+  for (let i = 0; i < n; i++) {
+    const modified = m.modified[i];
+    const summary = m.summaries[i];
+    if (typeof modified !== "number" || !isSummary(summary)) return null;
+    out.push({ ...summary, path: m.paths[i], name: m.names[i], modified });
+  }
+  return out;
+}
+
+function decodeBody(raw: unknown, vault: string, n: number): string[] | null {
+  const b = raw as Body | null;
+  return b && b.v === SNAPSHOT_VERSION && b.vault === vault && strings(b.contents) && b.contents.length === n ? b.contents : null;
+}
+
+/** The manifest of a sealed record (W6.36): every note without its text. Refused like a whole snapshot. */
+export async function readSnapshotManifest(raw: unknown, vault: string, keys: SnapshotKeys): Promise<{ entries: SnapshotEntry[] | null; refused: boolean }> {
+  if (raw === undefined) return { entries: null, refused: false };
+  try {
+    const entries = decodeManifest(parseUtf8(await openSnapshot(keys, vault, raw, "manifest")), vault);
+    return { entries, refused: !entries };
+  } catch {
+    return { entries: null, refused: true };
+  }
+}
+
+/** The texts of a sealed record, in its manifest's order; null when the body is refused. */
+export async function readSnapshotBody(raw: unknown, vault: string, keys: SnapshotKeys, n: number): Promise<string[] | null> {
+  try {
+    return decodeBody(parseUtf8(await openSnapshot(keys, vault, raw, "body")), vault, n);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * The stored record as a snapshot. Given `keys` it must be sealed by them
- * for this vault; without, it must be plain. Anything else is refused
- * (null), and `refused` is set when a record was there but not taken.
+ * for this vault (both parts); without, it must be plain. Anything else is
+ * refused (null), and `refused` is set when a record was there but not taken.
  */
 export async function readSnapshotRecord(raw: unknown, vault: string, keys?: SnapshotKeys): Promise<{ snap: Map<string, SnapshotFile> | null; refused: boolean }> {
   if (raw === undefined) return { snap: null, refused: false };
@@ -84,20 +186,21 @@ export async function readSnapshotRecord(raw: unknown, vault: string, keys?: Sna
     const snap = isSealedSnapshot(raw) ? null : decodeSnapshot(raw, vault);
     return { snap, refused: !snap };
   }
-  let plain: Uint8Array;
+  const { entries } = await readSnapshotManifest(raw, vault, keys);
+  const contents = entries && (await readSnapshotBody(raw, vault, keys, entries.length));
+  if (!entries || !contents) return { snap: null, refused: true };
+  const snap = new Map<string, SnapshotFile>();
+  entries.forEach((e, i) => snap.set(e.path, { path: e.path, name: e.name, modified: e.modified, content: contents[i] }));
+  return { snap, refused: false };
+}
+
+/** The stored record, as it is (the worker opens its parts itself). */
+export async function snapshotRaw(): Promise<unknown> {
   try {
-    plain = await openSnapshot(keys, vault, raw);
+    return await get(KEY, db());
   } catch {
-    return { snap: null, refused: true };
+    return undefined;
   }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(plain));
-  } catch {
-    return { snap: null, refused: true };
-  }
-  const snap = decodeSnapshot(parsed, vault);
-  return { snap, refused: !snap };
 }
 
 export async function loadSnapshot(vault: string, keys?: SnapshotKeys): Promise<Map<string, SnapshotFile> | null> {
@@ -117,9 +220,9 @@ export async function loadSnapshot(vault: string, keys?: SnapshotKeys): Promise<
 
 /** The record to store: plain, or sealed with `keys` (W6.36). */
 export async function snapshotRecord(vault: string, files: Iterable<SnapshotFile>, keys?: SnapshotKeys): Promise<unknown> {
-  const plain = encodeSnapshot(vault, files);
-  if (!keys) return plain;
-  return sealSnapshot(keys, vault, new TextEncoder().encode(JSON.stringify(plain)));
+  if (!keys) return encodeSnapshot(vault, files);
+  const parts = encodeSnapshotParts(vault, files);
+  return sealSnapshot(keys, vault, parts.manifest, parts.body);
 }
 
 export async function saveSnapshot(vault: string, files: Iterable<SnapshotFile>, keys?: SnapshotKeys): Promise<void> {

@@ -10,8 +10,13 @@
  * "before" is a reopen with no snapshot: what every open of an encrypted
  * vault did until W6.36 (#420 turned the snapshot off there) — every note
  * read from OPFS, decrypted and sent to the worker. "after" is a reopen in a
- * fresh worker from the sealed snapshot. Unlocking (the passphrase KDF, ≤ 1 s
- * by W4.20's calibration) comes before both and is not counted.
+ * fresh worker from the sealed snapshot: `ensureIndex()` resolves once the
+ * worker has opened it (the vault is checked behind the open), and
+ * "firstSearch" is when the first search answers, which waits for that
+ * check, so it is right. "changedFirstSearch": the same with one note edited
+ * while the app was closed; the first search must find its new text.
+ * Unlocking (the passphrase KDF, ≤ 1 s by W4.20's calibration) comes before
+ * all of them and is not counted.
  *
  * Also times what an embed render asks the index for: every note's text
  * (W2.22) against only the embedded notes (W6.36).
@@ -82,16 +87,35 @@ describe(`reopen a ${N}-note encrypted vault`, () => {
         const hits = await wsIndex.searchWorkspace(`unique${N - 1}`, { limit: 5 });
         firstSearch.push(performance.now() - t);
         expect(hits.map((h) => h.path)).toContain(`f${(N - 1) % 100}/note-${N - 1}.md`);
-        await wsIndex.ensureIndex();
+        await wsIndex.indexChecked();
         checked.push(performance.now() - t);
+        expect(wsIndex.snapshotCounters).toEqual({ fromSnapshot: N, read: 0 });
       }
-      // "after": the index is open; "firstSearch": the first search answered (it
-      // waits for the worker to finish indexing the restored notes).
+      // One note edited while the app was closed (its events die with the reset, as with a closed app).
+      const changedOpen: number[] = [];
+      const changedFirstSearch: number[] = [];
+      for (let r = 0; r < RUNS; r++) {
+        const i = 17 + r;
+        await writeWorkspaceFile(`f${i % 100}/note-${i}.md`, `# Note ${i}\n\nedited while closed ${r}\n`);
+        hooks.__resetWorkspaceIndex(worker, { keepSnapshot: true });
+        t = performance.now();
+        await wsIndex.ensureIndex();
+        changedOpen.push(performance.now() - t);
+        const hits = await wsIndex.searchWorkspace(`edited while closed ${r}`, { limit: 5 });
+        changedFirstSearch.push(performance.now() - t);
+        expect(hits[0]?.path).toBe(`f${i % 100}/note-${i}.md`);
+        expect(wsIndex.snapshotCounters).toEqual({ fromSnapshot: N - 1, read: 1 });
+        // The next open starts from a snapshot that has this edit.
+        await hooks.__saveSnapshotNow!();
+      }
       out.afterMs = after.map(Math.round);
       out.afterMedianMs = Math.round(median(after));
       out.firstSearchMs = firstSearch.map(Math.round);
       out.firstSearchMedianMs = Math.round(median(firstSearch));
       out.checkedMedianMs = Math.round(median(checked));
+      out.changedOpenMs = changedOpen.map(Math.round);
+      out.changedFirstSearchMs = changedFirstSearch.map(Math.round);
+      out.changedFirstSearchMedianMs = Math.round(median(changedFirstSearch));
       out.speedup = Math.round((median(before) / median(after)) * 10) / 10;
     }
 

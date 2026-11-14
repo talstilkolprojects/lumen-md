@@ -43,7 +43,8 @@ export type IndexRequestBody =
   | { op: "related"; query: RelatedQuery }
   // W6.36: `keys` (an encrypted vault) seals / opens the snapshot in the worker.
   | { op: "snapshotSave"; vault: string; keys?: SnapshotKeys }
-  | { op: "snapshotRestore"; vault: string; listing: { path: string; name: string; modified: number }[]; keys?: SnapshotKeys };
+  | { op: "snapshotBody" }
+  | { op: "snapshotRestore"; vault: string; listing: { path: string; name: string; modified: number }[] | null; keys?: SnapshotKeys };
 
 export type IndexRequest = IndexRequestBody & { id: number };
 
@@ -70,9 +71,18 @@ export interface IndexEngine {
   saveSnapshot(vault: string, keys?: SnapshotKeys): Promise<void>;
   /**
    * Index every listed note the snapshot holds with the same mtime; returns
-   * their summaries (the caller reads only the others).
+   * their summaries (the caller reads only the others). W6.36: `listing`
+   * null takes every note the snapshot holds, with the mtime it recorded
+   * (the snapshot is its own manifest); the caller then checks them
+   * against the vault.
    */
-  restoreSnapshot(vault: string, listing: { path: string; name: string; modified: number }[], keys?: SnapshotKeys): Promise<RestoredNote[]>;
+  restoreSnapshot(vault: string, listing: { path: string; name: string; modified: number }[] | null, keys?: SnapshotKeys): Promise<RestoredNote[]>;
+  /**
+   * W6.36: after a restore without a listing, whether the snapshot's body
+   * (the texts) was refused after its manifest was taken; answered once the
+   * restored texts are indexed.
+   */
+  snapshotBody(): Promise<{ refused: boolean }>;
   dispose(): void;
 }
 
@@ -91,6 +101,7 @@ export function engineOver(kind: IndexEngine["kind"], send: (req: IndexRequestBo
     related: (query) => send({ op: "related", query }) as Promise<RelatedHit[]>,
     saveSnapshot: async (vault, keys) => void (await send(keys ? { op: "snapshotSave", vault, keys } : { op: "snapshotSave", vault })),
     restoreSnapshot: (vault, listing, keys) => send(keys ? { op: "snapshotRestore", vault, listing, keys } : { op: "snapshotRestore", vault, listing }) as Promise<RestoredNote[]>,
+    snapshotBody: () => send({ op: "snapshotBody" }) as Promise<{ refused: boolean }>,
     dispose,
   };
 }
