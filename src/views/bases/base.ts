@@ -125,16 +125,45 @@ function readSort(v: unknown): BasesSort | null {
   return { property, direction: String(v.direction ?? "ASC").toUpperCase() === "DESC" ? "DESC" : "ASC" };
 }
 
+/**
+ * The deepest a `.base` file's flow collections (`[…]`, `{…}`) may nest. Real
+ * files nest two or three levels; the YAML parser's cost grows steeply with
+ * depth (a 3 KB file of nested `[` took 0.6–2 s in the fuzz run, W4.16), so a
+ * deeper file is refused before it is parsed, like any other invalid file.
+ */
+export const MAX_BASE_NESTING = 64;
+
+/** The deepest run of unclosed `[` / `{` in `text` (quotes not considered: an over-count only). */
+function flowDepth(text: string): number {
+  let depth = 0;
+  let max = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if (c === 91 || c === 123) {
+      if (++depth > max) max = depth;
+    } else if ((c === 93 || c === 125) && depth > 0) depth--;
+  }
+  return max;
+}
+
 /** Parse a `.base` file. Never throws. */
 export function parseBase(text: string): BaseParse {
   let doc: Document;
+  if (flowDepth(text) > MAX_BASE_NESTING) return { ok: false, error: `nested deeper than ${MAX_BASE_NESTING} levels` };
   try {
     doc = parseDocument(text, { prettyErrors: false });
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }
   if (doc.errors.length) return { ok: false, error: doc.errors[0].message };
-  const raw: unknown = doc.toJS() ?? {};
+  let raw: unknown;
+  try {
+    // toJS throws on what parseDocument accepts, e.g. an alias used before its
+    // anchor (ReferenceError), and on alias bombs (the fuzz run, W4.16).
+    raw = doc.toJS({ maxAliasCount: 100 }) ?? {};
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
   if (!isRecord(raw)) return { ok: false, error: "a .base file is a YAML map (filters:, formulas:, views:)" };
   try {
     const formulas: Record<string, string> = {};

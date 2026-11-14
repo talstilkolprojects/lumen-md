@@ -133,12 +133,69 @@ export const TARGETS = [
       };
     },
   },
-  // Formats whose decoders arrive with later tasks; each is fuzzed as soon
-  // as its module is on the branch (add its `load` with the module).
-  { name: "base", gen: "yaml", module: null, about: ".base database views (plan 4.11)", lands: "4.11" },
-  { name: "excalidraw", gen: "json", module: null, about: ".excalidraw drawings (plan 4.19)", lands: "4.19" },
-  { name: "pdf-annotations", gen: "json", module: null, about: "PDF annotations (plan 4.14)", lands: "4.14" },
-  { name: "plugin-manifest", gen: "manifest", module: null, about: "Plugin manifests (plan 11.2)", lands: "11.2" },
+  // The four formats W1.27 registered ahead of their tasks (4.11, 4.19,
+  // 4.14, 11.2), now that their modules are on the train (W4.16).
+  {
+    name: "base",
+    gen: "yaml",
+    module: "src/views/bases/base.ts",
+    about: ".base database views (plan 4.11): YAML parse, validation and re-serialisation",
+    async load(root) {
+      const { parseBase, setViewSort } = await imp(root, "src/views/bases/base.ts");
+      return (s) => {
+        parseBase(s);
+        setViewSort(s, 0, [{ property: "file.name", direction: "ASC" }]);
+      };
+    },
+  },
+  {
+    name: "excalidraw",
+    gen: "json",
+    module: "src/canvas/excalidrawFile.ts",
+    about: ".excalidraw drawings (plan 4.19): envelope and element validation, then serialise",
+    // parseExcalidrawFile refuses a file it can't open with ExcalidrawFileError (documented).
+    expected: (e) => e instanceof Error && e.name === "ExcalidrawFileError",
+    async load(root) {
+      const { parseExcalidrawFile, serializeExcalidrawFile } = await imp(root, "src/canvas/excalidrawFile.ts");
+      return (s) => serializeExcalidrawFile(parseExcalidrawFile(s));
+    },
+  },
+  {
+    name: "pdf-annotations",
+    gen: "markdown",
+    module: "src/pdf/annotations.ts",
+    about: "PDF annotations (plan 4.14): the companion note's annotation block, PDF #fragments and quote anchoring",
+    async load(root) {
+      const m = await imp(root, "src/pdf/annotations.ts");
+      return (s) => {
+        const list = m.parseAnnotationsNote(s);
+        m.readAnnotationsNote(s);
+        m.parsePdfFragment(s.slice(0, 200));
+        for (const a of list.slice(0, 5)) m.anchorAnnotation(a, s);
+        m.findAll(s, s.slice(0, 3));
+      };
+    },
+  },
+  {
+    name: "plugin-manifest",
+    gen: "manifest",
+    module: "src/plugins/runtime/manifest.ts",
+    about: "Plugin manifests (plan 11.2): parse and validate, capabilities and network origins",
+    // parseManifest refuses an invalid manifest with ManifestError (documented).
+    expected: (e) => e instanceof Error && e.name === "ManifestError",
+    async load(root) {
+      const { parseManifest, networkOrigin } = await imp(root, "src/plugins/runtime/manifest.ts");
+      return (s) => {
+        try {
+          parseManifest(JSON.parse(s));
+        } catch (e) {
+          if (e instanceof SyntaxError) parseManifest(s);
+          else throw e;
+        }
+        networkOrigin(s.slice(0, 300));
+      };
+    },
+  },
 ];
 
 /** Is the target's decoder on this branch? */

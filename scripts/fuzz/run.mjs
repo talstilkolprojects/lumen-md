@@ -35,9 +35,11 @@ const SELF = fileURLToPath(import.meta.url);
 const ROOT = resolve(dirname(SELF), "..", "..");
 const REGISTER = pathToFileURL(join(dirname(SELF), "register.mjs")).href;
 
-// The decoders are TypeScript: run with type stripping and the resolver hook.
-if (!process.execArgv.includes("--import") || !(process.features?.typescript || process.execArgv.includes("--experimental-strip-types"))) {
-  const flags = ["--no-warnings", "--experimental-strip-types", "--import", REGISTER];
+// The decoders are TypeScript: run with type transformation and the resolver
+// hook. Not strip-only: the .base and .excalidraw modules use parameter
+// properties, which type stripping refuses (W4.16).
+if (!process.execArgv.includes("--import") || !(process.features?.typescript === "transform" || process.execArgv.includes("--experimental-transform-types"))) {
+  const flags = ["--no-warnings", "--experimental-transform-types", "--import", REGISTER];
   const r = spawnSync(process.execPath, [...flags, SELF, ...process.argv.slice(2)], { stdio: "inherit" });
   process.exit(r.status ?? 1);
 }
