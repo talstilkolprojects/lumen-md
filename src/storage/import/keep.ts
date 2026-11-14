@@ -180,6 +180,9 @@ export function convertKeep(files: Map<string, Uint8Array>): ConvertedVault {
       const src = findAttachment(files, dirOf(path), a.filePath);
       if (!src) {
         vault.warnings.push({ path: notePath, reason: "missingAttachment", detail: a.filePath });
+        // W11.P2 (import:diff against Obsidian Importer): the note keeps its reference, so the missing
+        // file shows where it was instead of disappearing without a trace. It is not claimed: nothing is written there.
+        embeds.push(mdEmbed(`attachments/${safeName(stemOf(a.filePath))}${a.filePath.match(/\.[^./]+$/)?.[0]?.toLowerCase() ?? ""}`, dirOf(notePath)));
         continue;
       }
       used.add(src);
