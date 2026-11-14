@@ -1,1521 +1,1774 @@
 {
- "$comment": "Plan W6.38: the real import/paste corpus. Regenerate with node scripts/real-corpus/manifest.mjs.",
+ "$comment": "Plan W6.38: the import/paste corpus. Not a real-world corpus (plan W10.B5): 7 of the 8 formats are ours (origin ours-synthetic: written by render.py / notion_wa.py; converted-from-ours: our documents through LibreOffice). Only evernote is third-party (yarle's test data). Regenerate with node scripts/real-corpus/manifest.mjs.",
  "formats": {
   "word-docx": {
+   "origin": "converted-from-ours",
    "licence": "CC0-1.0 (written for this corpus)",
-   "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML",
+   "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote",
    "files": [
     {
      "path": "docx/doc01.docx",
      "sha256": "fb8a456086653ba8314f851218e8221f16dd09e9634aafd15d5d3df80223576d",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc02.docx",
      "sha256": "4cb59f389ab24f5809891b438ac44b097f7499c12f4809877923240e0152abe5",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc03.docx",
      "sha256": "b35db70bb5a88de32aef6951e21b954645229f92e20d6b3683288473efbff04a",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc04.docx",
      "sha256": "3b18b7c90d304b0bb07191be0bede01252af128ece2651adaef2adf159e86be0",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc05.docx",
      "sha256": "212de437596102e31007e566574874272908eae1f6febf07bead249d860d87b5",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc06.docx",
      "sha256": "801e3b2565a7f428c13cf1d18b89623f2768081dfcf0c465ea112730e80a3060",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc07.docx",
      "sha256": "8f8a4a5a2bb56adfb93b780f2e4f155b0a302a37f3c9a7e5f88abd98288de1ad",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc08.docx",
      "sha256": "e43529eac6eef4f945f833a207bda9117ee24b3d155acde521e4621c3209aecb",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc09.docx",
      "sha256": "2e7c39bba90d93cc6fd29652c44cf5de158a3ca69dc89326b4f6430aa0789f46",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc10.docx",
      "sha256": "71f32ba4bf1e9a8f6602aad227792576436e0bc933c92684e42756c2cb0c202a",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc11.docx",
      "sha256": "d6b92aa78ff8f75a4328d5178ce5b88bb6b7d152a38fd6256599e82682345105",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc12.docx",
      "sha256": "72682d31bc8c90a577ba0c4acfdde323af943b0c9c892e1934dd49dc3c71c7fb",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc13.docx",
      "sha256": "a1a17f09849484e159358fec3e1faa7077e71340d6f75cb6922aba7dbc5fdfaa",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc14.docx",
      "sha256": "50414b5d0cfd2a8b65ddf0cde106f0a300fdece6535d33f3b5a94731fe5b8121",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc15.docx",
      "sha256": "47049126c72af0c54ea7e598cc5c3d1b4caa7c053263591c65cb56d7837823c6",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc16.docx",
      "sha256": "8746f3421b2712383d498c2bde54d22f9a1c5c41a04e6a199c43ab8680f2fa7f",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc17.docx",
      "sha256": "46608e3b71ffd131c07cb2e07941426adc1e690bca2e0f0b1176093cd5d8e33e",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc18.docx",
      "sha256": "d4a21a8136722f7cb4ea104ec25d6523e8ae386c072a5293414321ceceadf0a5",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc19.docx",
      "sha256": "2d36acfc68c32bb087fd350682cd46f075345074fddf60b70703fbc9dcf55961",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc20.docx",
      "sha256": "dcd9a59da13f654abe94eb39da78109a9954d3a199d48bc891207e0f14515773",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc21.docx",
      "sha256": "20d1e37950a70b75c0790b354eb85f5a092254699717a60a7783489386dc82ec",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc22.docx",
      "sha256": "89e022b75a75d6b35325beb8fb20724fe6462ad2a4ef8822168f71185372fecc",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc23.docx",
      "sha256": "dd61edb6d163779f122d29ba8925c7dabab677ea5dbe4790762766c9eeb60d38",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc24.docx",
      "sha256": "458baa70cbe1d61f93cbebc9e2b3e6cf039e3bd8a8d54ddc9d63f6ce0d6b40e6",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc25.docx",
      "sha256": "8df4b12b62912b4da1cab712d56c5fb0f3c50540000db4ef82dc817ce13142f6",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc26.docx",
      "sha256": "e72acf49b7047932fa1a7d700fff73283a9e8593d9f1e838f8e6d260c499e257",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc27.docx",
      "sha256": "fc4f1c394c36b9821b3f4def08255014dd9d5d6548a62c419bbf56314c87a94b",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc28.docx",
      "sha256": "33f5f060b928f1b15830b8763dc33cc79eda705574147542f3b73d38fe9f5d4a",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc29.docx",
      "sha256": "1edb83272d2617094a5ce189f4edcc76cdca8d091cff7d89add48109f095383f",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     },
     {
      "path": "docx/doc30.docx",
      "sha256": "ec807d97fc7ee8d4417992d1a5c174168e07180c3f873503b54758fcb8b52a27",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the source HTML saved as MS Word 2007 XML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our source HTML (render.py) saved as MS Word 2007 XML — not a file Word wrote"
     }
    ]
   },
   "word-paste": {
+   "origin": "ours-synthetic",
    "licence": "CC0-1.0 (written for this corpus)",
-   "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py",
+   "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word",
    "files": [
     {
      "path": "paste-word/doc01.html",
      "sha256": "3fcd37e11b73f474268936e3f9c8655096ce8ccc443fe25c57300ea357421385",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc02.html",
      "sha256": "4db77284384e4b900fa64ec1baec1863fd4cd85ce6caf9d674b92cd76b12638d",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc03.html",
      "sha256": "c08d1d24f4a3702b180282cf62b00a02a853439d2955e4f62ad48a0c8b68cad0",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc04.html",
      "sha256": "976255b94ab8c7ca1d6d96eff9b416e0eb16a3246328193c3329921031796d6c",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc05.html",
      "sha256": "0cb73d97139711077242f40f471cb0457fca3de9a0247a45373823ed04cfc724",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc06.html",
      "sha256": "028c0259f00e8fd31b9514ba33538f0e81c8f2ad3ff3d3947354f01b176abce0",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc07.html",
      "sha256": "8255015adc7a221e1e9f5e1b10bf373d5558deb447373b88f0a75507ba8ca9e2",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc08.html",
      "sha256": "7a4f6b981d6b64b0fa0c583641d520360fd31a8caaaa1eefcccdb64aebc24296",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc09.html",
      "sha256": "bb6de60214bb462bd5ba33d5af19715b97625aedad5ee4eb1762668885f5eec9",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc10.html",
      "sha256": "5065794dd29041eace5a25296a5b0e0bd2ea61638eb83bce7ca5c6d727a0361b",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc11.html",
      "sha256": "3bcca8920f1e0d6ae72cd472df84ffb51d43687af18779a3631a37b22f1df72a",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc12.html",
      "sha256": "58e7af91b48bac7f3194a069fb0e0adaf14ef98d03ebcf1c7506404618de89a6",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc13.html",
      "sha256": "7635f352648c629ad8a05cee2b485afe13dd73e095e0567c5473a8a043ef9fac",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc14.html",
      "sha256": "929de71c3ac63c0107209dcdc7c5782ca9672c9c7a997528da7c24f4d5c5bde5",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc15.html",
      "sha256": "f6c3b5f7855927b98dd0281d32555833ce81806315fa2977f68307dcabd1c3a4",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc16.html",
      "sha256": "15c5fa2a21fbccfec905221a9cee2f6c8b1aa172ae5c12322e93b5c159fd4365",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc17.html",
      "sha256": "4943dfc7dba1088d2113030777ba70c3221db8fb5a85855cdf6797c4c703d162",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc18.html",
      "sha256": "3b03c27d047d5c7871d1e93188b265bdc76c11f60a91be6df3ff4ffb56c6b711",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc19.html",
      "sha256": "77a420f6d5bd9a528c55559f161f36320200fc7e8e4129743c06176206cd9141",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc20.html",
      "sha256": "11b9acd8a04862efa36f445435c35ab7df9d8031b74537142717b79453a32fd8",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc21.html",
      "sha256": "3d9203c178ca665fd981b65b039be06066a96da6a7c4d237c2053129bb13ca4b",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc22.html",
      "sha256": "5e0ce3d0a2fdb4ff69cde497df3ea35a8dc187500814146f70c5207639ba8793",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc23.html",
      "sha256": "a050a92fc09d9c63e5424c21c49585811b27edbcdf35843362f4f8a43a47a2ad",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc24.html",
      "sha256": "324eb02f9246f6104b296c18ef4814172038370204a5961b590ad716364635ef",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc25.html",
      "sha256": "dce6de6387f9764a378820fd40ff0f671526bd05f8c5e61e26dbe03ffe2940a4",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc26.html",
      "sha256": "a8f095893a3de3d47413376599f6a43d13a3e63010bafe968428b337e87d8b40",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc27.html",
      "sha256": "44ae0699cf289fd039003843901ca85dbd9918812bcd1263d2d9d9807ae40687",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc28.html",
      "sha256": "de3e36a81fbfe70f75bb7be67fa69136cba727bbf5e766b85d2127eb1af8ba24",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc29.html",
      "sha256": "1b0db6bc3152309955ebfdaa856375d759c9102b25fec278a2ebf6e544aa613b",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     },
     {
      "path": "paste-word/doc30.html",
      "sha256": "bfb0cd3e91c8564bb8516bccb50d4cee2ea54687dec4f015059de2a246a439f4",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py"
+     "source": "our imitation of Word 2016+ clipboard HTML (MsoNormal, mso-list, conditional comments, VML images), rendered by render.py — not captured from Word"
     }
    ]
   },
   "gdocs-paste": {
+   "origin": "ours-synthetic",
    "licence": "CC0-1.0 (written for this corpus)",
-   "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py",
+   "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs",
    "files": [
     {
      "path": "paste-gdocs/doc01.html",
      "sha256": "92022883fde6ec4c6aa91ccc93adbe5683614cc4788007eaee10085d11447d47",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc02.html",
      "sha256": "83e3be7cabecfb3e2e6539dc9a16c885d8663775cb738b781f6d245d2fd1b03a",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc03.html",
      "sha256": "ea5021a0d2f71b0986fd61683e5b10025a5a602b0fda3d35400ad9c2f7aef6c2",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc04.html",
      "sha256": "ee4ebd446c70f25eeb94593ee85c7c145ac6663a1db34db1c80480b9ab4bc7d9",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc05.html",
      "sha256": "56ca1903344ddb5fbc2af881dacc85faefcb6ac848b7e99546a0495b41189adc",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc06.html",
      "sha256": "e8eef87b3622feb6495b21d1ebd2274daaf2b78635af67c10858a2d6c28f607f",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc07.html",
      "sha256": "153c8ec9111fb32843c01f9bf3557466afd9e35cbf3e36dc547cdf32c6556d0f",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc08.html",
      "sha256": "84b7ff42d295ba97643da8539015d6338eec5173108e44c70816c1042f70cc91",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc09.html",
      "sha256": "5de02ab5db1187b0c9f5c639017f3f0d6dbae06f91d2b4ae1a4ffd13792b5855",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc10.html",
      "sha256": "a7419bb70c185ec5fbc1690abedf7126fdad2739f094962f69664505594a77af",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc11.html",
      "sha256": "5874a3942f92650ff862f8da1f785012d5cd4e8ed151f6e20766f9b31a0f5381",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc12.html",
      "sha256": "3b53cdeafc44fb8ec0bb505de7adad43637ab1bb5a87ea5c96c9238881fae55c",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc13.html",
      "sha256": "5125c9138ef1ad5914065af019f899a14196b32f0d16822f605eabd5ee854307",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc14.html",
      "sha256": "29534f35dddcf1c933b818965b83c8b19553544bd1b0aa46ce38cb08248261c5",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc15.html",
      "sha256": "27890fbe5f56df6a0c3f00231b61818a657a7d2f0af35be57f5601acdc4b4c7d",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc16.html",
      "sha256": "f81f6e91360ff5feb1e54b14ee2c99807a1cbaa5100c14f35b534c2505c0f73a",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc17.html",
      "sha256": "eb4193e8d8d03639439428ce49c75b73a272173cdb899560dffda9687a1579fc",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc18.html",
      "sha256": "4e6ed3b2653d811a8c4a9ffc17c27691244bc75f59a57274c48ea4b544391c33",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc19.html",
      "sha256": "95ce5ed03707fbb09b1cd288bc53cf885ef79b636479277b5e393e14ba53d5bd",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc20.html",
      "sha256": "e3740f0e44e67b8055bc58fad5a035bee4998e81a8c968f37f1688d2699bb56b",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc21.html",
      "sha256": "3315064d08b3afa22770c4674e896e6d20bbe0660dc82d0a2cc4b5c8e54091db",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc22.html",
      "sha256": "9c4fa1084ace69176fe04e6d91f1d32eac615c55b3d85681e5ae9242313b7bdc",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc23.html",
      "sha256": "bc6373d34cf8fd6070ecc89bb67ef4e908da471f84ac2eac43d16e424e203f5e",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc24.html",
      "sha256": "5aea69aa89085d1b1bf5593504afc364d602b8ee7ddb7e28c4458d24c781921f",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc25.html",
      "sha256": "fcf719ba0f70ee463fe35eae306e0acf1b9465c21849e63df9d0ec2579838da9",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc26.html",
      "sha256": "5d4ae08d20a8f867f7e99212ddb024bbf7bff06627e53d0e19cf008955ca964b",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc27.html",
      "sha256": "2a7dfbf9dc326aa08044162ee90bfa2e74dbe4587e62cfe13a4db7b444f93636",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc28.html",
      "sha256": "382752b5de0b877fc5909b47ad514d16c96d2ba7c1fc38dc4ae93d927c84a0c6",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc29.html",
      "sha256": "e65745b0f82da814794b9dee23f240ef1d734cb6903fbe302c0d6686c2e3d406",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     },
     {
      "path": "paste-gdocs/doc30.html",
      "sha256": "886d31efebbb13bbfc3a2d9481de9695155ab54e669bab3bf9b5caafca80438e",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py"
+     "source": "our imitation of Google Docs clipboard HTML (docs-internal-guid wrapper, styled spans, aria-level lists, Docs tables), rendered by render.py — not captured from Google Docs"
     }
    ]
   },
   "libreoffice-paste": {
+   "origin": "converted-from-ours",
    "licence": "CC0-1.0 (written for this corpus)",
-   "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML",
+   "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML",
    "files": [
     {
      "path": "paste-libreoffice/doc01.html",
      "sha256": "1a5074bff7bb0edfaf8b2891e619fc862a8cf7c645f44b70c9f3a22533c19796",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc02.html",
      "sha256": "65f6eb2ba628ecec52fa79df3e345d1a732d780993c04e429f941337a281b99a",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc03.html",
      "sha256": "2489bfaf35702827e20aba8f0f9f5fd8f59f3f223ad1d9c7d32fc4ef86625d7b",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc04.html",
      "sha256": "f63cce314a2d407122f5c1179c34386df72d6a1e1af9a3d0cc4121ec2f2a26e7",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc05.html",
      "sha256": "25a30176b6078238b70849232c4b46e4bce0280e9ed0d7ffd3949f36ed14b0fe",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc06.html",
      "sha256": "7f10838e733c666831355e47c393572eef527978b784f912658520b29bcaa615",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc07.html",
      "sha256": "288404d4a0d6a24767c964fa351d7e17886dd61accd59f6f35a0aa7ae06d1465",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc08.html",
      "sha256": "e3c39c55baf5b75d9370d4e2c469c1d121dd685504d46c25b8c3a451ba9c0547",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc09.html",
      "sha256": "355e79c5d16c8a42159ed8c731729f0a0ab95b7c7e8e95200a7af92b6b8f2d94",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc10.html",
      "sha256": "58f222f97713130928e7ecb4cb1f4e7a8f55bf2d453e2a35e9631ece0ceaead5",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc11.html",
      "sha256": "5fa7446a99f7092d0ccb3a3b753231770aaf8d1996e2080e4e5ec5c795c3d1f2",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc12.html",
      "sha256": "d543ffa54f7202d866eaab7d6ce551ca5b48fe20bcb1eaa3a0123cea3a0b1845",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc13.html",
      "sha256": "16b9c0825fd50a1e6f19bf6fcf3aa605b8a4dcc9df48c1d9eec298757320edba",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc14.html",
      "sha256": "f7e3eab9321ee911f618ee0b3aae70a5ae78732784c8d2ad5af9bf3e169bd19e",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc15.html",
      "sha256": "57b0c63186f8498eae5efb415951b87829dedd8e0c29b58c6d0889c1035f72d2",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc16.html",
      "sha256": "16a4dbd011338a64512470bdaadcee1f1f31f3ddc1c5a11c92066bce546a5334",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc17.html",
      "sha256": "252063d4ab9bc50e45647f412e34b718cc1434e0ee0da670013833c196de97a8",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc18.html",
      "sha256": "832df3f70f710320067b57b93755492db7ee1eabffab2ccda858898be1410720",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc19.html",
      "sha256": "13e9e6def59bb04c8390a6e2f7bc94e6b7187533e238d1d3861a165f0e066a15",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc20.html",
      "sha256": "70a560d4566a197f824b6f9c4f6a0695a721e61519025c973868122d456cf0d9",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc21.html",
      "sha256": "366a78dd416a7ebaf74fa5e9dfba993f8d3b2633a73722c976a618d3a9dec7bc",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc22.html",
      "sha256": "2c2c170f0196ef6bf36da9d967f272d18e2b6709c82992fd9e01974e51587df2",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc23.html",
      "sha256": "254e6dbe71d46fe1c2dc78b0206a1342c1fb978abd67d31fe19735af9b72b9e0",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc24.html",
      "sha256": "13ce0a8c73788157516fcd71b65aba4a72c3a90d38891395cf1ee532383c77db",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc25.html",
      "sha256": "0b80d96785670fca0f9e12159645735c81d41c178031dd8bbea567de77c01f54",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc26.html",
      "sha256": "1f2175361f09ee5fd863a8e65fd746ef1e17b31286314999d6ec126ac376e96c",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc27.html",
      "sha256": "7fd04fa63e63b46d3bf6d2c1c3c7ff8776e1a57134e5c4ebedd6320febd2aa52",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc28.html",
      "sha256": "6d072e857ec9990175226337b97b05919ad0ff72445f3fa78464ab47d3db9149",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc29.html",
      "sha256": "b7ddb059b22ea1b0de4e977ef4930011b3c113b5f9a506f2392eb33ad59db2b8",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     },
     {
      "path": "paste-libreoffice/doc30.html",
      "sha256": "74aad97adca19d3f70b04bebad3a53bba3039a67af60e367224a3efb925dd5ed",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx saved as HTML (StarWriter), Writer's own clipboard HTML"
     }
    ]
   },
   "pdf-hebrew": {
+   "origin": "converted-from-ours",
    "licence": "CC0-1.0 (written for this corpus)",
-   "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it",
+   "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it",
    "files": [
     {
      "path": "pdf/doc01.pdf",
      "sha256": "95f8691fdcf3cf674c48b54dff1e68aefe4b05851c94e9c52df3dcec6a0f7dca",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc02.pdf",
      "sha256": "47cf4ea28e9d9f1683cde8f9e61fbdd87389f8d1d97d015481da7d299654a220",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc03.pdf",
      "sha256": "fa1324e9a2f3d019e94f51717827e97673df063f655558a76e885ad1ce5670bd",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc04.pdf",
      "sha256": "52d6c939d838a74098c56c5f6c9c139e1c34eac6a424ffd10702dfea8f11ce63",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc05.pdf",
      "sha256": "de2735ecfa105c289da830c8de0e233534d32eb5f2b2e939fee46a0e7c57a9bb",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc06.pdf",
      "sha256": "cff275613435566a91211b01da6693756d35876eeab61388dbd127caba5abc74",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc07.pdf",
      "sha256": "559d32881638868e0ca6ee809af20f5a7824471b15f1189797b179aac5217ab8",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc08.pdf",
      "sha256": "232e72874f3d03a891b6b7df46f4be89e7c46a20233be392523a29834d782388",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc09.pdf",
      "sha256": "a8bb1383e111144805e5cb2062cecf696fc2302d7150743e11054d35b110801c",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc10.pdf",
      "sha256": "82b78092bca527722f571fa1a1f04c12941bd74e312f826cf6505883a47df292",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc11.pdf",
      "sha256": "c20d3674d265a9db262f28ae4ef1c262a9dcc622af183d2d8fd4cef2cd2483a8",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc12.pdf",
      "sha256": "33522a3e601a68431b61ce5503ac0a2f17a783b856b89ba91d430f07528835fb",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc13.pdf",
      "sha256": "8365035660117c80b7d54101ad53488664e9fa3cca309c75a0fb81981d3f989a",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc14.pdf",
      "sha256": "81c26fdc3248fe7603de1e6455958dd7ba2b722f7ff3d4ef03b1a7dd134d4ba8",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc15.pdf",
      "sha256": "946454192a1684a8faae4f27a32d78576e2cbc94a3034f708531087e8da1cde7",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc16.pdf",
      "sha256": "8a8a3a20a8540ebd4d3773c2b36dab132b5a669aab0fb5fdb91b0d0d39fa99dc",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc17.pdf",
      "sha256": "8a5f2765dde0b0af7241cb8df1812825fea0330c2c9cf45fcc3e47dd907da3fc",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc18.pdf",
      "sha256": "787bcb3a08d84fcad40714709f0d85019a029d3c7455e1ca3645c81612e2bb0a",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc19.pdf",
      "sha256": "4896efa8c085aa63c1fd11606e7f7c80e5194b2159f43f3abab8997ff9469ec8",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc20.pdf",
      "sha256": "962ecbfb5853166db6bb62bb331e12653f8f77fb87c1a7c3579acb49bc13677b",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc21.pdf",
      "sha256": "71dd1c1416fbaf17b3d74099e5ba62a2aed2da950955c4cff1281ffe547920e0",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc22.pdf",
      "sha256": "cca4289dab03f9038487b5c1780e0d0d895272e73810cf5983f22d7cbd2e1afe",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc23.pdf",
      "sha256": "bc3e3a0d62ad62ca5076a2d914a68f8634624ab0aa6232b32f5c7ca04b1bc48b",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc24.pdf",
      "sha256": "33fc088fd9bd1edcf0a1b0fe02b894e625f9685f8ffedf8b8886947310ce1bc7",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc25.pdf",
      "sha256": "1963bf6a5c7e3f9942e0dcf8ed6e12acb9354ef52bd562311a02484eefed430b",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc26.pdf",
      "sha256": "b66b727c4707129a6100d55989d54bf26f83240c9d6eacfa83be18bd06a5848d",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc27.pdf",
      "sha256": "037a959aaa7daa2be996bdf0e1215fc0e911d781af2d77e9490aa15ee2da9cc5",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc28.pdf",
      "sha256": "d2807326defd6ed46bc0b39408d6a48875a111690485866376065bf5176c75dc",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc29.pdf",
      "sha256": "9169dfffedfdcd8c29aedf6f72175bcfa6836368650316a133e9bdf41ed51b9d",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     },
     {
      "path": "pdf/doc30.pdf",
      "sha256": "23871d0392385f0b2c1ab3fcfc96c90b01ac155778d9111c2094335708a17465",
+     "origin": "converted-from-ours",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "LibreOffice 24.2.7.2 (Linux): the .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
+     "source": "LibreOffice 24.2.7.2 (Linux): our .docx exported to PDF; pdf-copy/ holds the text pdf.js 6.2 and poppler copy out of it"
     }
    ]
   },
   "notion": {
+   "origin": "ours-synthetic",
    "licence": "CC0-1.0 (written for this corpus)",
-   "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout",
+   "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion",
    "files": [
     {
      "path": "notion/notion-doc01-md.zip",
      "sha256": "62a2c9f2145d149d41062c7164850960e90affb95f271dfcea99fda5511198a9",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc02-html.zip",
      "sha256": "6f0daefdd788dbffb622f7e159ed60dd30c442e37c452ee5cef62ee0fd30e25e",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc03-md.zip",
      "sha256": "6f5670caebdd54c11b57cbaa2a4add7fe8d404fd60efc8261bafb8779e07f40c",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc04-html.zip",
      "sha256": "f6c1d4148a7bb4aec5c16cc4077dc822a100a391b0be7674841d3e7094ffa4d3",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc05-md.zip",
      "sha256": "8ca2cc157ac5c9aa0daa50bb7c3c66eaa3c3f6318a50f2616ff11e73e404023b",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc06-html.zip",
      "sha256": "e079b750ccc71bbcd0f1dd95ea0edbd3bf09fa46415f1c6f05b17625b97cb7c4",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc07-md.zip",
      "sha256": "651736b33d73428494677d8dc4eed924be003982e935cacd6987096a4f18f9d4",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc08-html.zip",
      "sha256": "075a261ad634c8103ec21ed87415931813c74821d4cd99a4a162e1b430d424ba",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc09-md.zip",
      "sha256": "387c7592a9f25043d5267188102a5060d91aec083da63dd75e6f29afc6115ee9",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc10-html.zip",
      "sha256": "a425b89c61297d10c20fca415e3a1a0b2957a736c9e593fc12c368e4e62483a7",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc11-md.zip",
      "sha256": "b094df89a88fa2b34e26e60d86dcd68bed8ad2085fb338c21374007ab0910292",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc12-html.zip",
      "sha256": "e506948225913e1388c9073741a015949dc8546a41da4ed215127c98b1effad9",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc13-md.zip",
      "sha256": "86b603c17593035f42ad87a7c740ee34cd02f5600cd9ca5f1e4753dcc675a515",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc14-html.zip",
      "sha256": "e790c965218c2194068fa80f1132e6b72e4aa57e66eb6be08d84dae29be60a28",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc15-md.zip",
      "sha256": "466bbaabf28a5879f2bcd1c91932f17d04e5c6e6bae0683deaf85194c09a0822",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc16-html.zip",
      "sha256": "9fef351e64048a293c74e7df2621def65fe5b1b71c4916d06b8001640cc22708",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc17-md.zip",
      "sha256": "19bcc75deff7aaf509593e6560f9c59a4f12e729e2db58c4fc860120158c8151",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc18-html.zip",
      "sha256": "be379f742133365c6276c70927a18b0da9b36c447dc37bcbba5b33bc63a80a93",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc19-md.zip",
      "sha256": "232f513a73d01a17b6360ff996259d1404dd9693b1e0f1c89a9bc2ffd60d3df1",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc20-html.zip",
      "sha256": "f1cf03cf850ab4cd3408ac6819ed7b3febcf9806ef5a336f53be0484142c3db3",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc21-md.zip",
      "sha256": "2f6f171ebb498c78039a5e0f2a6746ea263f9a2e2807e381b38b4fb66140718a",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc22-html.zip",
      "sha256": "1766a95a63073efb8938d6d2e29038490c107f2e701d862deee23b0da633e243",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc23-md.zip",
      "sha256": "939d78b97b07b913474a25037a710a123e30a864361989199908b6cb5f10ce7a",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc24-html.zip",
      "sha256": "cdbbfad6bd6a8e60fdd182a4f6bcd08e2c02929e546d248035b992f4615084d0",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc25-md.zip",
      "sha256": "ed77edaf3c2e35ea8b87403b4011d64ed82fb0da4a156f403447ba221ca05d0d",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc26-html.zip",
      "sha256": "41f11c873b5da9f5bdd6fe952118e7ae428466662e73da31611f5f9564398397",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc27-md.zip",
      "sha256": "d29b8ea27369ff996ab692b6183802a8e56330c8f7aefaf58423503021be22ea",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc28-html.zip",
      "sha256": "1257c20e2effcbdb296b6b96eeb3774fab8219218477f4d33c9ad2a14908e8da",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc29-md.zip",
      "sha256": "758ada4e861db8ec3f76b3827e41fc7903d6b31da03cebc11b017e45b4094ffd",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     },
     {
      "path": "notion/notion-doc30-html.zip",
      "sha256": "ece533ce8f1794168359ac33508663fbf5abe22c469fea77df1b376608be6f55",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout"
+     "source": "our imitation of a Notion export (Markdown & CSV with _all.csv, and HTML), written by notion_wa.py in Notion's file layout — not exported from Notion"
     }
    ]
   },
   "evernote": {
+   "origin": "third-party",
    "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
    "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows",
    "files": [
     {
      "path": "evernote/Colors.enex",
      "sha256": "b947063d6a212c5ab29aeeeda60bfa963affa974d8932e8a18051384619c9caa",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/charmapNotebookTest.enex",
      "sha256": "60bae4f112246c469f44c6745886846c54f2758948651ebfa73e762bc15e3b6d",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/sanitize_fulltest.enex",
      "sha256": "e667c319d05758b202b8a6dd5e904ea9d39babd08306c35cf619388ef17e6b89",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-URLEncodingLinksAndFiles.enex",
      "sha256": "a09acbd9a10cd854c1644c2e9148cd7b77e647af2d5d6fb2321ad66387e90a13",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-checkboxes.enex",
      "sha256": "8ee8c36f709eb9f180601a1d01903872df82267057c14c525895ee03bb726e63",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-checklist.enex",
      "sha256": "baf40c5981e94d994675cf60bba5fcf9c938cb81598f37ad3623858d6cdca1c2",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-externalLink-escape.enex",
      "sha256": "17ac64044e23fb935ed7b8fd7468c4b3cc9423a10b13cea4b82f8666234b2219",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-externalLink.enex",
      "sha256": "1f4d1b6e64ab1b04bd454a2fd0e341c13033879e6451e2bbff053f3bd335968b",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-externalLinkWithPicture.enex",
      "sha256": "0bb2e6536a7416b42dd688718001debc4cbbcfdc92ef1a8f11731a994304bee9",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-highlights.enex",
      "sha256": "14469a84e547893281b4e8186291680837f5c0fdedfd882a4377df1d26362b4e",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-image-dataUrl.enex",
      "sha256": "ea7242e14aafb51d3d439601ece508e66825b0022b07c3932cca789b1cc643bc",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-imageWithoutSrc.enex",
      "sha256": "38b96ab82217072eaf931a6f17e0bec41e08063b48f7031ce1f3e2d847088889",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-intend-newlines.enex",
      "sha256": "1a23e90eff310d278c22ec7391e2da5279eb6336b4d5d6e609eca2d17acaa0fe",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-links.enex",
      "sha256": "9dde768dec78b06a2fd43f215da938e4ff12835a497eccdeded4e2aac806def3",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-links_underline_within.enex",
      "sha256": "4fb3322a1d40ae00ff16ab4214f386118a8c65305da8bdc8aa36177b55fd04b4",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-list.enex",
      "sha256": "fb9b6de464517daea9ee7da408daeaf808ede8706b58c5b253b61318a7f4c344",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-long-note.enex",
      "sha256": "62aad0ae342aec68fd5325a1bb9375af1448eda451f88726030363271fd9f000",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-monospace-codeblocks.enex",
      "sha256": "506ab8f3423853a8f1f6e1f8318755f70747a554f60b8ad94c5913c45e8fdfcb",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-newlines.enex",
      "sha256": "c346fa41c8ce2f1a484e95cdb2a08ef4b667571c5900c7a7b0becf13ad6da840",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-note-attributes.enex",
      "sha256": "b53a87949a8aed01a5b901eadfb9e20cac96495a362d06f8d48c353349d69477",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-noteWithCodeBlock.enex",
      "sha256": "e75a88c0bfeee3486fd4ad2bb5cbf7ce07529c8228ac8786da0c4a4b0caf5ba4",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-noteWithPdf.enex",
      "sha256": "a14127bd6e76232339c9404bcf5fda6a75db229adace3cc0bc9a00fa4e71f435",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-reminder.enex",
      "sha256": "87a7da85c5cf4980ab9dad3f18b49275aeb9a71b8c925b6818dcc4de6200f3c7",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-specialItems.enex",
      "sha256": "b1a1b666f1f37f7d6da815630632c4498034c978651155021e7f0934621c4258",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-sublists-invalid.enex",
      "sha256": "64625e35f4a986b742c81da32183bd89e73ca8ab2d3f6e9e41bbc9fc7d005369",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-sublists-multiple.enex",
      "sha256": "9d8d6bb91b58fac1e14bc272fc66ab574a6766a6c781ac45720fc865663fdb7d",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-sublists-valid.enex",
      "sha256": "1a4aad6ef9062dc9b9ea9c792dfa537b600b74a5b3537e12b5634c4cb12ba911",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-sublists.enex",
      "sha256": "3902e0a31d200ec352cf11ce27a3ef05f30b5d2ec135066915209c93e7c43a33",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-table.enex",
      "sha256": "e761cab07efa514198c9dc0171e084ceddf3591175bfe8237ecb2f6ee3dc4728",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-tana-table.enex",
      "sha256": "5ce1d6c678740f136e66745968be0c883d15bbb050455e4d9d072731631beffe",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-things-to-do.enex",
      "sha256": "65ce0aedaed4d29b411d8935500a251c1a05191690319b813e356bf8d93aa6a1",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-webclip_article.enex",
      "sha256": "3f19f8f92e9e53bdba51735ec8255a1ee30ce4436ab8c9af22f87f64fe710972",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test-webclip_simplifiedarticle.enex",
      "sha256": "1a21ba673c953367bd5dbc71362cc7391dad123e3b032df79cc3398538e44bcd",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/test.enex",
      "sha256": "875c4efe2fc0edb2838c9f3fe92f2239f46132d6195d4a32d89e2b5859ff5e82",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     },
     {
      "path": "evernote/text styles.enex",
      "sha256": "b38ceda058db1e6392484411ac4b6d52ef1e3e70c537b3a73bb74cab24ce8c9b",
+     "origin": "third-party",
      "licence": "MIT (yarle, Copyright (c) 2018 Akos Balasko; LICENSE-yarle.txt)",
      "source": "github.com/akosbalasko/yarle test/data @ 1ab3ef4a7: ENEX exported by Evernote Mac/Windows"
     }
    ]
   },
   "whatsapp": {
+   "origin": "ours-synthetic",
    "licence": "CC0-1.0 (written for this corpus)",
-   "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py",
+   "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp",
    "files": [
     {
      "path": "whatsapp/wa01-android-he-WhatsApp Chat with נועה.txt",
      "sha256": "2f36bb1b57dad3c4f99fe6ae7f857ef87053baf3e72c4c375d08d1f2f0cdff9f",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa02-android-en12-WhatsApp Chat with אבי כהן.txt",
      "sha256": "c3e1f513362a3e69cfc44f5e5a0629d789cd91d0f4e1ccb22c44749c9b1dc003",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa03-ios-he-_chat.txt",
      "sha256": "6ef386c387ce8432aaa8a808bca16811218c07fdbd6a117a877ea7effc43303a",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa04-ios-en-_chat.txt",
      "sha256": "561a758b35e7879d3f9e0748b6c2c65be89fbc6901697a5612d360bb852aba43",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa05-android-he12-WhatsApp Chat with Dana.txt",
      "sha256": "7fa4570cddab453f8e9e63f0419b53d74bdfbe79373e489d5a2d5f92e336dab0",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa06-ios-ar-_chat.txt",
      "sha256": "36d4c6b1ce5fac045bdb3d252b9023df2c7f9c5a1fc0a4947408138152ddc094",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa07-android-ar-digits-WhatsApp Chat with أحمد.txt",
      "sha256": "a9fc061c1e02c09da219f8fd65033333ab524e5cd891fd2be980f820bbc5ccb7",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa08-android-en24-slash-WhatsApp Chat with ‏מיכל‏.txt",
      "sha256": "4ff39f251d11d15b0153888cd89296c631afc485e0c81df3f9a81ef8112b0d79",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa09-ios-he-12-_chat.txt",
      "sha256": "43cbe7c9059422a34f378dec2b49f79620653e5dc8a3234832e5fe6388b760e8",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa10-android-de-WhatsApp Chat with ‏מיכל‏.txt",
      "sha256": "5876c91a90e8de4a48190b8264f9a08fd62ff129b213baeef725fff8b859cbe2",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa11-android-he-WhatsApp Chat with יוסי.txt",
      "sha256": "71352a68c383613379aa8b61e1c2a9b7a9910c60c9ddd21b7cb29dac6286dd5d",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa12-android-en12-WhatsApp Chat with יוסי.txt",
      "sha256": "892110dae305eb43251dd5a4bf1a2df9980c5b51474cc83bb3419024efd4f10f",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa13-ios-he-_chat.txt",
      "sha256": "345d991fe379b7b6fcfc2063f957938c320fd3e6fc6253737f78355c6fe58f21",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa14-ios-en-_chat.txt",
      "sha256": "f31ef673f1f327dfa3b35319d1707c6c8ebe9cd52ab326bd6a4cb425f2ccff67",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa15-android-he12-WhatsApp Chat with אבי כהן.txt",
      "sha256": "f203c6bcbdc2a497abc55bed45bcf7bf8122517c3112d3a521dc6facd900a739",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa16-ios-ar-_chat.txt",
      "sha256": "7f162be8c439d2b58c7dc4dbca5cfc63758b46c33e5be830524b6b9efccc766a",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa17-android-ar-digits-WhatsApp Chat with أحمد.txt",
      "sha256": "078ce2528a8cae251eaab3680365cef0d0ca9dc2441ece729afe7bb9623715d7",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa18-android-en24-slash-WhatsApp Chat with יוסי.txt",
      "sha256": "9c09ae8df49814b4200c00abfb366f22e713ac2fe52bde0d3388485b7ed584c8",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa19-ios-he-12-_chat.txt",
      "sha256": "4c6c1d7c597773032d41513abfa565fb4cded3a653d6d6b3dc97accb65d6c1d2",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa20-android-de-WhatsApp Chat with Dana.txt",
      "sha256": "f7e02633e0dae8fe6195ab64fca087cf0494aee41462c567fa37b98086bde8b9",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa21-android-he-WhatsApp Chat with אבי כהן.txt",
      "sha256": "68d83784266106cb7f8cddf8002067c04bc091546cc301aabdd631431a6ae177",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa22-android-en12-WhatsApp Chat with יוסי.txt",
      "sha256": "a910c8af75d7369ef3508a5cd5b54cbb22379564669b032c11879c7a6f97748d",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa23-ios-he-_chat.txt",
      "sha256": "19314095ac8387db0666c88c372b50e5ada17b2dfdee4284a1918aeb2e37e465",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa24-ios-en-_chat.txt",
      "sha256": "ce3136ca55fef81270f21f9cb393ba234b61abf47e37f16c17ef0ad57f1709fc",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa25-android-he12-WhatsApp Chat with אבי כהן.txt",
      "sha256": "b222857e7d2406920817d1a2d0296d88271437020c795b97ac5c1d6f320d1e4e",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa26-ios-ar-_chat.txt",
      "sha256": "314c441ca13fc0da1356e62fca0c6a2ac47dc19095412258d88bce18efeb2a79",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa27-android-ar-digits-WhatsApp Chat with أحمد.txt",
      "sha256": "3b62f66500347b45a71ba01f474904a65208548c59c63482b6b1cabf7a2ee423",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa28-android-en24-slash-WhatsApp Chat with נועה.txt",
      "sha256": "ee11be794c6d170ba45529e5818094e957fd1b113cf5c9a642781036f5b5c0f0",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa29-ios-he-12-_chat.txt",
      "sha256": "ae18e768cfc62c24bc319ef0c1523dbff9634cc929df093dd34698c4663d1f42",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     },
     {
      "path": "whatsapp/wa30-android-de-WhatsApp Chat with Dana.txt",
      "sha256": "f89fd4f5197fa50b2b202b8467f7b75972a10a93c69e8a7e9a299d91772a75de",
+     "origin": "ours-synthetic",
      "licence": "CC0-1.0 (written for this corpus)",
-     "source": "WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py"
+     "source": "our imitation of WhatsApp 'Export chat' text, Android and iPhone, he/en/ar/de locales, written by notion_wa.py — not exported from WhatsApp"
     }
    ]
   }

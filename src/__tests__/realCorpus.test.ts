@@ -1,20 +1,32 @@
 /**
- * Plan W6.38 — import and paste against a real corpus
- * (fixtures/real-corpus, manifest.json lists every file, its source,
- * licence and sha256):
+ * Plan W6.38 — import and paste against a corpus (fixtures/real-corpus,
+ * manifest.json lists every file, its origin, source, licence and sha256).
  *
- * - docx/: 30 Word documents written by LibreOffice 24.2 (MS Word 2007 XML)
- * - pdf/ and pdf-copy/: the same 30 documents printed to PDF by LibreOffice,
- *   and the text a person copies out of each with pdf.js (Firefox's viewer)
- *   and poppler (Evince, Okular)
- * - paste-libreoffice/: LibreOffice Writer's clipboard HTML of each document
- * - paste-gdocs/, paste-word/: Google Docs' and Word's clipboard HTML of the
- *   same 30 documents, in the shape each writes
- * - notion/: 30 Notion exports (Markdown & CSV, and HTML)
- * - evernote/: 35 real ENEX exports (Evernote Mac and Windows) from yarle's
- *   test data (MIT)
- * - whatsapp/: 30 chat exports, Android and iPhone, Hebrew, English, Arabic
- *   (the parser is plan W5.7's; it is scored where it lives)
+ * The folder is called "real-corpus", but the corpus is SYNTHETIC except
+ * for Evernote (plan W10.B5, audit W6.38). Its origins:
+ *   ours-synthetic: written by our scripts (render.py, notion_wa.py) in the
+ *     shape the real app writes;
+ *   converted-from-ours: our documents run through LibreOffice;
+ *   third-party: Evernote's ENEX from yarle's test data.
+ * Scores on our own imitations measure our converter against our idea of
+ * the format. So the summary at the end reports the two groups separately.
+ * Real files from contributors are plan 10.O.
+ *
+ * - docx/ (converted-from-ours): our 30 documents saved by LibreOffice 24.2
+ *   as MS Word 2007 XML, not files Word wrote
+ * - pdf/ and pdf-copy/ (converted-from-ours): the same 30 documents printed
+ *   to PDF by LibreOffice, and the text a person copies out of each with
+ *   pdf.js (Firefox's viewer) and poppler (Evince, Okular)
+ * - paste-libreoffice/ (converted-from-ours): LibreOffice Writer's
+ *   clipboard HTML of each document
+ * - paste-gdocs/, paste-word/ (ours-synthetic): our imitation of Google
+ *   Docs' and Word's clipboard HTML of the same 30 documents (render.py)
+ * - notion/ (ours-synthetic): 30 Notion-shaped exports written by notion_wa.py
+ * - evernote/ (third-party): 35 ENEX exports (Evernote Mac and Windows) from
+ *   yarle's test data (MIT)
+ * - whatsapp/ (ours-synthetic): 30 chat exports written by notion_wa.py,
+ *   Android and iPhone, Hebrew, English, Arabic (the parser is plan W5.7's;
+ *   it is scored where it lives)
  *
  * Each converted document is scored on headings, list items (depth and
  * kind), table rows, links, images and right-to-left text (every Hebrew word
@@ -43,11 +55,15 @@ const bytes = (sub: string, f: string) => new Uint8Array(readFileSync(join(DIR, 
 const text = (sub: string, f: string) => readFileSync(join(DIR, sub, f), "utf8");
 const idOf = (f: string) => /doc\d\d/.exec(f)![0];
 
+type Origin = "ours-synthetic" | "converted-from-ours" | "third-party";
 interface Run {
   name: string;
+  origin: Origin;
   scores: Score[];
   failed: string[];
 }
+/** Every run, for the summary that reports ours and third-party apart (W10.B5). */
+const RUNS: Run[] = [];
 const rate = (r: Run) => (r.scores.length - r.failed.length) / r.scores.length;
 const report = (r: Run) => {
   const t = total(r.scores);
@@ -55,8 +71,9 @@ const report = (r: Run) => {
   return `${r.name}: ${r.scores.length - r.failed.length}/${r.scores.length} whole · ${(["headings", "lists", "tables", "links", "images", "rtl"] as const).map(pct).join(" · ")}${r.failed.length ? ` · failed: ${r.failed.join(", ")}` : ""}`;
 };
 
-async function run(name: string, list: string[], one: (f: string) => Promise<{ md: string; s: Score }>): Promise<Run> {
-  const r: Run = { name, scores: [], failed: [] };
+async function run(name: string, list: string[], one: (f: string) => Promise<{ md: string; s: Score }>, origin: Origin): Promise<Run> {
+  const r: Run = { name, origin, scores: [], failed: [] };
+  RUNS.push(r);
   for (const f of list) {
     const { s } = await one(f);
     r.scores.push(s);
@@ -66,15 +83,30 @@ async function run(name: string, list: string[], one: (f: string) => Promise<{ m
   return r;
 }
 
+const PASTE_ORIGIN: Record<string, Origin> = { "paste-gdocs": "ours-synthetic", "paste-word": "ours-synthetic", "paste-libreoffice": "converted-from-ours" };
 const paste = (sub: string) => run(`paste ${sub}`, files(sub, /\.html$/), async (f) => {
   const md = pastedHtmlToMarkdown(text(sub, f));
   return { md, s: score(md, expectOf(byId.get(idOf(f))!)) };
-});
+}, PASTE_ORIGIN[sub]);
 
 describe("the corpus (manifest)", () => {
-  const manifest = JSON.parse(readFileSync(join(DIR, "manifest.json"), "utf8")) as { formats: Record<string, { files: { path: string; sha256: string; licence: string; source: string }[] }> };
+  const manifest = JSON.parse(readFileSync(join(DIR, "manifest.json"), "utf8")) as { $comment: string; formats: Record<string, { origin: Origin; source: string; files: { path: string; sha256: string; origin: Origin; licence: string; source: string }[] }> };
 
-  it("≥ 30 real files for each of the 8 formats, each with its licence and source", () => {
+  it("every format and file has an origin; nothing our scripts wrote is called real (W10.B5)", () => {
+    const allowed: Origin[] = ["ours-synthetic", "converted-from-ours", "third-party"];
+    for (const [name, f] of Object.entries(manifest.formats)) {
+      expect(allowed, name).toContain(f.origin);
+      for (const x of f.files) expect(x.origin, x.path).toBe(f.origin);
+      // Written by render.py or notion_wa.py → ours-synthetic, never third-party.
+      if (/render\.py|notion_wa\.py/.test(f.source) && !/LibreOffice/.test(f.source)) expect(f.origin, name).toBe("ours-synthetic");
+      if (/^LibreOffice/.test(f.source)) expect(f.origin, name).toBe("converted-from-ours");
+    }
+    expect(Object.entries(manifest.formats).filter(([, f]) => f.origin === "third-party").map(([n]) => n)).toEqual(["evernote"]);
+    expect(manifest.$comment).not.toMatch(/the real import\/paste corpus/);
+    expect(manifest.$comment).toMatch(/Not a real-world corpus/);
+  });
+
+  it("≥ 30 files for each of the 8 formats, each with its licence and source", () => {
     const formats = Object.entries(manifest.formats);
     expect(formats).toHaveLength(8);
     for (const [name, f] of formats) {
@@ -137,7 +169,7 @@ describe("paste (plan: ≥ 95% kept whole; held at 100%)", () => {
         const ok = !/[\u202A-\u202E\u2066-\u2069]/.test(md) && backward === 0 && forward > 0;
         const none = { want: 0, got: 0 };
         return { md, s: { headings: none, lists: none, tables: none, links: none, images: none, rtl: { want: forward + backward, got: ok ? forward + backward : forward } } };
-      });
+      }, "converted-from-ours");
       console.info(`pdf copy (${viewer}): a fix offered on ${offered}/30 correct texts; ${fused}/${words} Hebrew words run together by the reader; ${(100 * order).toFixed(1)}% of the letters in the document's order`);
       expect(offered, viewer).toBe(0);
       expect(rate(r), viewer).toBe(1);
@@ -150,7 +182,7 @@ describe("import (plan: ≥ 90% kept whole; held at 100%)", () => {
     const r = await run("import docx", files("docx", /\.docx$/), async (f) => {
       const md = await docxToMarkdown(new File([bytes("docx", f)], f));
       return { md, s: score(md, expectOf(byId.get(idOf(f))!)) };
-    });
+    }, "converted-from-ours");
     expect(rate(r)).toBe(1);
   });
 
@@ -164,7 +196,7 @@ describe("import (plan: ≥ 90% kept whole; held at 100%)", () => {
       // An image embed counts only when its file came along.
       const embeds = [...md.matchAll(/!\[[^\]]*\]\(<?([^)>]+)>?\)|!\[\[([^\]|]+)/g)].filter((m) => [...vault.attachments.keys()].some((a) => a.endsWith(decodeURI(m[1] ?? m[2]).split("/").pop()!)));
       return { md, s: { ...s, images: { want: s.images.want, got: Math.min(s.images.want, embeds.length) } } };
-    });
+    }, "ours-synthetic");
     expect(rate(r)).toBe(1);
   });
 
@@ -178,8 +210,24 @@ describe("import (plan: ≥ 90% kept whole; held at 100%)", () => {
       const want = notes.map((n) => expectOfEnml(n, parse));
       const e = { headings: want.flatMap((w) => w.headings), items: want.flatMap((w) => w.items), rows: want.flatMap((w) => w.rows), links: want.flatMap((w) => w.links), images: want.reduce((a, w) => a + w.images, 0), hebrew: want.flatMap((w) => w.hebrew) };
       return { md, s: score(md, e) };
-    });
+    }, "third-party");
     expect(rate(r)).toBe(1);
+  });
+});
+
+describe("the report: ours and third-party apart (plan W10.B5)", () => {
+  it("states the whole-document rate for our own files and for third-party files separately", () => {
+    // Runs above have pushed their results; this test only reads them.
+    const ours = RUNS.filter((r) => r.origin !== "third-party");
+    const theirs = RUNS.filter((r) => r.origin === "third-party");
+    const sum = (rs: Run[]) => ({ whole: rs.reduce((a, r) => a + r.scores.length - r.failed.length, 0), n: rs.reduce((a, r) => a + r.scores.length, 0) });
+    const o = sum(ours);
+    const t = sum(theirs);
+    console.info(`SYNTHETIC (ours: written by our scripts, or our documents through LibreOffice): ${o.whole}/${o.n} whole — measures our converters against our own imitation of each format`);
+    console.info(`THIRD-PARTY (Evernote ENEX, yarle test data): ${t.whole}/${t.n} whole${theirs.flatMap((r) => r.failed).length ? ` · failed: ${theirs.flatMap((r) => r.failed).join(", ")}` : ""}`);
+    expect(ours.length).toBeGreaterThan(0);
+    expect(theirs.map((r) => r.name)).toEqual(["import evernote"]);
+    expect(t.n).toBe(35);
   });
 });
 
