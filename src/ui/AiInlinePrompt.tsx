@@ -50,8 +50,37 @@ export function AiInlinePromptOverlay() {
     return () => { listeners.delete(show); };
   }, []);
 
+  // "/" lists the agent skills (plan W7.1); "/name request" runs one instead of the prompt.
+  const [skills, setSkills] = useState<Array<{ id: string; label: string; hint: string }>>([]);
+  useEffect(() => {
+    if (!visible || !value.startsWith("/")) {
+      setSkills([]);
+      return;
+    }
+    let live = true;
+    void import("../agents/skills/ui")
+      .then((m) => m.skillPaletteItems(value))
+      .then((items) => live && setSkills(items.slice(0, 8).map(({ id, label, hint }) => ({ id, label, hint }))))
+      .catch(() => live && setSkills([]));
+    return () => {
+      live = false;
+    };
+  }, [visible, value]);
+
   const submit = useCallback(() => {
     const v = value.trim();
+    if (v.startsWith("/")) {
+      void import("../agents/skills/ui").then(async (m) => {
+        if (await m.runSlashCommand(v)) {
+          setVisible(false);
+          if (pendingResolve) {
+            pendingResolve(null);
+            pendingResolve = null;
+          }
+        }
+      });
+      return;
+    }
     if (v) rememberAiPrompt(v);
     setVisible(false);
     if (pendingResolve) {
@@ -173,6 +202,15 @@ export function AiInlinePromptOverlay() {
               outline: "none",
             }}
           />
+          {skills.length > 0 && (
+            <ul role="listbox" aria-label={t("skills.heading")} data-testid="ai-prompt-skills" style={{ position: "absolute", marginTop: 40, listStyle: "none", padding: 4, background: "hsl(var(--bg))", border: "1px solid hsl(var(--border))", borderRadius: 8, maxHeight: 240, overflow: "auto", zIndex: 1 }}>
+              {skills.map((s) => (
+                <li key={s.id} role="option" aria-selected={false} title={s.hint} style={{ padding: "4px 8px", cursor: "pointer", fontSize: 13 }} onMouseDown={(e) => { e.preventDefault(); setValue(s.label.split(" ")[0] + " "); inputRef.current?.focus(); }}>
+                  {s.label}
+                </li>
+              ))}
+            </ul>
+          )}
           <button
             onClick={submit}
             aria-label={t("ai.prompt.submit")}

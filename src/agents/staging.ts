@@ -36,6 +36,7 @@
  */
 
 import type { ChangeProposal, RangeContext, StagedChange, StagedConflict, StagedReceipt } from "./types";
+import { writeTargetProblem } from "./writeTarget";
 
 const MAX_CHANGES = 200;
 
@@ -90,6 +91,12 @@ function update(id: string, patch: Partial<StagedChange>): StagedChange | undefi
 }
 
 export function stageChange(proposal: ChangeProposal, meta: { tool: string; runId?: string; agentId?: string }): StagedChange {
+  // Every agent-made change, whoever proposes it (the runtime's tools, the organizer, the MCP inbox): never a
+  // dot folder or a file that steers other agents (review 30, RR30-2).
+  if (proposal.path) {
+    const problem = writeTargetProblem(proposal.path);
+    if (problem) throw new Error(`Not staged: ${problem}`);
+  }
   const change = { ...proposal, ...meta, id: `chg_${Date.now().toString(36)}_${(++seq).toString(36)}`, createdAt: Date.now(), status: "pending" } as StagedChange;
   // Settled changes go first when the cap is reached. A pending one is never dropped:
   // when every entry is pending, the new proposal is refused instead.

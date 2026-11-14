@@ -1,0 +1,8 @@
+{
+  "name": "lumen-skills",
+  "version": "0.1.0",
+  "description": "Agent Skills that teach coding agents (Claude Code, Codex …) Lumen's file formats: .base views, niqqud, Sefaria references, Israeli legal citation and frontmatter.",
+  "license": "MIT",
+  "files": ["skills", "README.md", "LICENSE"],
+  "keywords": ["lumen", "agent-skills", "claude-code", "codex", "markdown", "hebrew", "obsidian-bases"]
+}

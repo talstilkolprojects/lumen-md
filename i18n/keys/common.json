@@ -7828,6 +7828,71 @@
       "vars": []
     },
     {
+      "key": "skills.answerSummary",
+      "en": "The answer of the skill “{name}”",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "skills.done",
+      "en": "“{name}” finished: {n} change(s) wait for your review.",
+      "vars": [
+        "name",
+        "n"
+      ]
+    },
+    {
+      "key": "skills.empty",
+      "en": "No skill matches.",
+      "vars": []
+    },
+    {
+      "key": "skills.failed",
+      "en": "“{name}” did not finish: {error}",
+      "vars": [
+        "name",
+        "error"
+      ]
+    },
+    {
+      "key": "skills.heading",
+      "en": "Skills",
+      "vars": []
+    },
+    {
+      "key": "skills.running",
+      "en": "Running “{name}”…",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "skills.untrusted.message",
+      "en": "This skill comes from {source}, not from your own vault. It may ask to use: {tools}. Every change it proposes still waits for your approval, and outside content in it is checked for injected instructions. Allow this version to run?",
+      "vars": [
+        "source",
+        "tools"
+      ]
+    },
+    {
+      "key": "skills.untrusted.ok",
+      "en": "Allow and run",
+      "vars": []
+    },
+    {
+      "key": "skills.untrusted.title",
+      "en": "Run the untrusted skill “{name}”?",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "skills.untrustedBadge",
+      "en": "Untrusted",
+      "vars": []
+    },
+    {
       "key": "slides.close",
       "en": "End",
       "vars": []

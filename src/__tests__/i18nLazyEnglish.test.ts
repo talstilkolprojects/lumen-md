@@ -38,6 +38,8 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
     within: "sync/e2ee/",
     shared: ["sync/e2ee/age.ts", "sync/e2ee/bytes.ts", "sync/e2ee/kdf.ts", "sync/e2ee/kdfCalibrate.ts", "sync/e2ee/primitives/argon2.ts", "sync/e2ee/primitives/blake2b.ts", "sync/e2ee/primitives/chacha20poly1305.ts", "sync/e2ee/primitives/scrypt.ts"],
   },
+  // Agent skills (plan W7.1): "/" in the AI prompt and the palette loads src/agents/skills/ with a dynamic import.
+  "skills.json": { module: "agents/skills/strings.ts", users: ["agents/skills/ui.ts"], prefixes: ["skills."], within: "agents/skills/" },
   "feedback.json": { module: "feedback/strings.ts", users: ["ui/FeedbackDialog.tsx"], prefixes: ["feedback."] },
   // The encrypted vault's dialogs (plan 11.4), opened with a dynamic import.
   "vaultEncryption.json": { module: "storage/vault/encrypted/strings.ts", users: ["ui/VaultEncryptionDialog.tsx", "ui/VaultUnlock.tsx"], prefixes: ["vaultEnc."] },

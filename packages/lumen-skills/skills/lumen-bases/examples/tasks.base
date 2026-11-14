@@ -1,0 +1,16 @@
+filters:
+  and:
+    - file.inFolder("Tasks")
+formulas:
+  score: 'priority * 2'
+views:
+  - type: table
+    name: Open
+    filters: 'status != "done"'
+    order: [file.name, status, priority, formula.score]
+    sort:
+      - property: priority
+        direction: DESC
+  - type: cards
+    name: All
+    order: [file.name, status]

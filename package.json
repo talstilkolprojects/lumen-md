@@ -84,6 +84,7 @@
     "eval:voice-commands": "node --experimental-strip-types scripts/voice-commands-eval.mjs",
     "eval:pdf-chat": "LUMEN_EVAL_PDF=1 vitest run --config vitest.eval.config.ts src/agents/eval/pdfChat.eval.ts",
     "eval:summarize": "LUMEN_EVAL_SUMMARY=1 vitest run --config vitest.eval.config.ts src/agents/eval/summarize.eval.ts",
+    "eval:skills": "LUMEN_EVAL_SKILLS=1 vitest run --config vitest.eval.config.ts src/agents/eval/skills.eval.ts",
     "eval:rerank": "LUMEN_EVAL_RERANK=1 vitest run --config vitest.eval.config.ts src/agents/eval/rerank.eval.ts",
     "eval:meetings": "LUMEN_EVAL_MEETINGS=1 vitest run --config vitest.eval.config.ts src/agents/eval/meetings.eval.ts",
     "release": "node scripts/release.mjs",

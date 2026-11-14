@@ -167,6 +167,7 @@ export default defineConfig({
             { label: "Organize the vault", translations: { he: "סידור הכספת" }, slug: "ai/organizer" },
             { label: "Research + citation checks", slug: "ai/research" },
             { label: "MCP and the lumen CLI", translations: { he: "MCP וה-CLI של lumen" }, slug: "ai/mcp" },
+            { label: "Agent skills", translations: { he: "מיומנויות סוכן" }, slug: "ai/skills" },
             { label: "Local agents: tools, critic, suggestions", slug: "ai/local-agents", translations: { he: "סוכנים מקומיים: כלים, מבקר, הצעות" } },
             { label: "Agent eval: 14 agents, HTML report", slug: "ai/agent-eval", translations: { he: "הערכת סוכנים: 14 סוכנים, דוח HTML" } },
             { label: "Real models day: every eval in one command", slug: "ai/models-day", translations: { he: "יום מודלים אמיתיים: כל ההערכות בפקודה אחת" } },

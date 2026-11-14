@@ -5,7 +5,7 @@
  * for the user's approval and never touches the buffer itself.
  */
 
-import { defineTool, optionalNumber, stageChange, ToolError } from "./define";
+import { defineTool, optionalNumber, safeWriteTarget, stageChange, ToolError } from "./define";
 import { rangeContext } from "../staging";
 import type { StagedReceipt } from "../types";
 
@@ -104,6 +104,8 @@ export const replaceRangeTool = defineTool<
       throw new ToolError("bad-args", `The range holds ${JSON.stringify(before.slice(0, 120))}, not the expected text`);
     }
     if (before === args.text) throw new ToolError("bad-args", "The replacement is identical to the current text");
+    // The open note is a write target too (review 24): no agent edits an open control file.
+    if (ctx.path) safeWriteTarget(ctx.path);
     const lines = (s: string) => (s ? s.split("\n").length : 0);
     const receipt = stageChange(ctx, "replace_range", {
       kind: "range",

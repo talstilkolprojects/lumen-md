@@ -1,4 +1,5 @@
 import type { AgentTool, ChangeProposal, JsonSchema, StagedReceipt, ToolContext, ToolScope } from "../types";
+import { writeTargetProblem } from "../writeTarget";
 
 export class ToolError extends Error {
   constructor(
@@ -85,6 +86,20 @@ export function safeWorkspacePath(path: string): string {
   const p = path.replace(/\\/g, "/").replace(/^\/+/, "");
   if (!p || p.split("/").some((seg) => seg === "..")) throw new ToolError("bad-args", `Invalid workspace path: ${path}`);
   return p;
+}
+
+export { AGENT_CONTROL_FILES, canonicalSegment } from "../writeTarget";
+
+/**
+ * A path an agent may WRITE (reviews 21 D3, 24, 30): `safeWorkspacePath`
+ * plus the one deny-list (agents/writeTarget.ts), which `stageChange`
+ * applies again to every agent-made change. The MCP server applies the
+ * same rule to outside clients.
+ */
+export function safeWriteTarget(path: string): string {
+  const problem = writeTargetProblem(path);
+  if (problem) throw new ToolError("denied", problem.charAt(0).toUpperCase() + problem.slice(1));
+  return safeWorkspacePath(path);
 }
 
 /**
