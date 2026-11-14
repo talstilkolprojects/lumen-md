@@ -43,9 +43,12 @@ NATIVE_CHECK_INDEX=~/crates.io-index bash tools/native-check/run.sh
 ```
 
 `real-cargo.sh` points a throwaway `CARGO_HOME` at the clone as a local registry,
-on a copy of `src-tauri/`. `cargo check --locked` must stop only at the first
-crate download, and every path crate with no dependencies (`desktop/`) is
-compiled and tested by cargo.
+on a copy of `src-tauri/`. Every path crate with no dependencies (`desktop/`)
+is compiled and tested by cargo. `cargo check --locked` reports **ok** only
+when it compiles. Without crate sources it stops at the first crate download:
+that is reported as **UNKNOWN** and the script exits 3 (and `run.sh` ends
+"native check: UNKNOWN"). The manifest, resolver and `Cargo.lock` were read,
+but nothing was compiled, so it is not a pass.
 
 ## What it cannot prove
 

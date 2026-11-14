@@ -55,7 +55,9 @@ echo; echo "## 2. src-tauri against tauri 2 signatures"
 
 echo; echo "## 2b. Real cargo (manifest, resolver, --locked; no crate downloads)"
 if [ -n "${NATIVE_CHECK_INDEX:-}" ]; then
-  "$D/real-cargo.sh" "$REPO/src-tauri" "$NATIVE_CHECK_INDEX" || status=1
+  "$D/real-cargo.sh" "$REPO/src-tauri" "$NATIVE_CHECK_INDEX"; rc=$?
+  # 3 = stopped at a crate download: not a pass, not a compile error (plan W10.B15).
+  if [ $rc = 3 ]; then unknown=1; elif [ $rc != 0 ]; then status=1; fi
 else
   echo "—    skipped: set NATIVE_CHECK_INDEX to a clone of github.com/rust-lang/crates.io-index"
 fi
@@ -69,5 +71,8 @@ fi
 
 echo; echo "## 4. Not compiled here (need Xcode on a Mac)"
 (cd "$REPO" && git ls-files '*.swift' | sed 's/^/     /')
-echo; [ $status = 0 ] && echo "native check: PASS" || echo "native check: FAIL"
-exit $status
+echo
+if [ $status != 0 ]; then echo "native check: FAIL"; exit $status; fi
+if [ "${unknown:-0}" = 1 ]; then echo "native check: UNKNOWN (real cargo stopped at a crate download; nothing compiled)"; exit 3; fi
+echo "native check: PASS"
+exit 0
