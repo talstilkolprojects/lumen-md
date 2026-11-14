@@ -9,7 +9,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { desktopWhisperStatus, downloadUrl, isPinned, toPcm16, transcribeDesktop, WHISPER_GGML, type GgmlModel, type Invoke } from "../ai/dictation/whisperDesktop";
 import { clock, sentencesOf, timedChunks, timeFragment, transcriptMarkdown } from "../ai/dictation/longform";
-import { chooseEngine, type EngineContext, type EngineId } from "../ai/dictation/engines";
+import { chooseEngine, OZEN_LICENSE_APPROVED, type EngineContext, type EngineId } from "../ai/dictation/engines";
 import { attachmentName } from "../ui/TranscribeFile";
 import { t } from "../i18n";
 import { readLocale } from "../../scripts/lib/i18n-files.mjs";
@@ -77,9 +77,10 @@ describe("desktop Whisper model seam (W1.17)", () => {
 describe("engine choice for files (W1.17)", () => {
   const ctx = (over: Partial<EngineContext>): EngineContext => ({ language: "he-IL", policy: "local-only", mode: "file", webgpu: true, f16: true, vramMB: 4000, webSpeech: false, downloaded: new Set<EngineId>(), ...over });
 
-  it("Hebrew files go to whisper.cpp on the desktop when it is ready, then the browser engines", () => {
-    expect(chooseEngine(ctx({ desktopWhisper: true })).candidates).toEqual(["whisper-cpp-he", "whisper-turbo-he", "ozen-he", "whisper-base"]);
-    expect(chooseEngine(ctx({ desktopWhisper: false })).candidates).toEqual(["whisper-turbo-he", "ozen-he", "whisper-base"]);
+  it("Hebrew files go to whisper.cpp on the desktop when it is ready, then the browser engines; Ozen v1 stays off until its licence is approved (W6.19)", () => {
+    expect(OZEN_LICENSE_APPROVED).toBe(false);
+    expect(chooseEngine(ctx({ desktopWhisper: true })).candidates).toEqual(["whisper-cpp-he", "whisper-turbo-he", "whisper-base"]);
+    expect(chooseEngine(ctx({ desktopWhisper: false })).candidates).toEqual(["whisper-turbo-he", "whisper-base"]);
     expect(chooseEngine(ctx({ desktopWhisper: true, language: "en" })).candidates).toEqual(["whisper-base"]);
     expect(chooseEngine(ctx({ desktopWhisper: true })).needsDownload).toBeNull();
   });
