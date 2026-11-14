@@ -41,7 +41,7 @@ import { pathToFileURL } from "node:url";
 import { addedLinesFromDiff, AI_LABEL, bodyProblems, domainMentions, licenceChanges, skipCiViolations, unregisteredNetworkCalls, untestedChanges, writtenByAi } from "./lib/prGate.mjs";
 import { bundleDiffMarkdown } from "./bundle-diff.mjs";
 import { HUMAN_REVIEW_LABEL, humanReviewVerdict, parseCodeowners, sensitiveChanges } from "./lib/humanReview.mjs";
-import { extractReceipts, independentReviewVerdict } from "./lib/independentReview.mjs";
+import { commentReceipts, independentReviewVerdict, parseReviewers } from "./lib/independentReview.mjs";
 
 export function parseArgs(argv) {
   const opt = (n) => (argv.includes(n) ? argv[argv.indexOf(n) + 1] : undefined);
@@ -108,7 +108,7 @@ export function loadPr(repo, n) {
   const pull = ghJson([`repos/${repo}/pulls/${n}`]);
   const events = ghJson(["--paginate", `repos/${repo}/issues/${n}/events?per_page=100`]).map((e) => ({ event: e.event, label: e.label?.name, created_at: e.created_at, actor: e.actor?.login }));
   const reviews = ghJson(["--paginate", `repos/${repo}/pulls/${n}/reviews?per_page=100`]).map((r) => ({ user: r.user?.login, state: r.state, submitted_at: r.submitted_at, commit_id: r.commit_id }));
-  const comments = ghJson(["--paginate", `repos/${repo}/issues/${n}/comments?per_page=100`]).map((c) => ({ id: c.id, user: c.user?.login, created_at: c.created_at, body: c.body ?? "" }));
+  const comments = ghJson(["--paginate", `repos/${repo}/issues/${n}/comments?per_page=100`]).map((c) => ({ id: c.id, user: c.user?.login, association: c.author_association, created_at: c.created_at, body: c.body ?? "" }));
   const head = ghJson([`repos/${repo}/commits/${pull.head.sha}`]);
   return { number: Number(n), labels: pull.labels.map((l) => l.name), events, reviews, comments, author: pull.user?.login, headSha: pull.head.sha, headDate: head.commit?.committer?.date ?? null };
 }
@@ -162,8 +162,7 @@ export function runChecks(opts) {
     add("Human review of sensitive paths", mismatch ? "fail" : v.status, mismatch ? [mismatch, "", ...v.lines] : v.lines);
 
     // Independent review receipt for the head (plan W6.11)
-    const receipts = [];
-    for (const c of pr?.comments ?? []) for (const receipt of extractReceipts(c.body)) receipts.push({ source: `comment${c.id ? ` ${c.id}` : ""} by @${c.user ?? "?"}`, receipt });
+    const receipts = commentReceipts(pr?.comments);
     for (const f of opts.review ?? []) {
       let receipt;
       try {
@@ -174,7 +173,10 @@ export function runChecks(opts) {
       receipts.push({ source: `\`${f}\``, receipt });
     }
     const head = pr?.headSha ?? git(cwd, "rev-parse", "HEAD").trim();
-    const iv = independentReviewVerdict(sensitive, receipts, { head, strict: !!opts.pr || (opts.review ?? []).length > 0 });
+    const reviewersFile = join(cwd, "security", "reviewers.json");
+    const reviewers = existsSync(reviewersFile) ? parseReviewers(readFileSync(reviewersFile, "utf8")) : null;
+    const iv = independentReviewVerdict(sensitive, receipts, { head, strict: !!opts.pr || (opts.review ?? []).length > 0, reviewers });
+    if (reviewers?.problems.length) iv.lines.push("", ...reviewers.problems.map((x) => `- ${x}`));
     add("Independent review of sensitive paths", mismatch ? "fail" : iv.status, mismatch ? [mismatch, "", ...iv.lines] : iv.lines);
   } else {
     add("Human review of sensitive paths", "skipped", [".github/CODEOWNERS is not on this branch."]);
