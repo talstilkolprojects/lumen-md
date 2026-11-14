@@ -25,7 +25,7 @@ import { spawnSync } from "node:child_process";
 import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, hostname, tmpdir, userInfo } from "node:os";
 import { join, resolve } from "node:path";
-import { acceptance, checkCloudReport, datasetId, datasetMetadata, kernelId, kernelMetadata, parseStatus, runConfig, runSigningKey } from "./lib/modelsCloud.mjs";
+import { acceptance, checkCloudReport, datasetId, datasetMetadata, dictationVerdict, kernelId, kernelMetadata, parseStatus, runConfig, runSigningKey } from "./lib/modelsCloud.mjs";
 import { generateKey } from "./lib/heldout.mjs";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -209,6 +209,15 @@ function fetchRun(runId) {
     const a = acceptance(report);
     console.log(`✓ ${runId}: receipt intact, signed by this run's key, commit ${st.commit.slice(0, 9)}${report.kind === "model" ? `, GPU ${report.host?.gpu}` : " — WIRING run (fake Ollama), not a model score"}`);
     console.log(`  steps: ${a.pass} pass, ${a.fail} fail · models with a digest: ${a.modelsWithDigest} (${a.fourModels ? "≥ 4 ✓" : "< 4"}) · tool calls: ${a.toolCallTarget} · tasks measured: ${a.tasksMeasured.length}${a.tenTasks ? " (≥ 10 ✓)" : ""}`);
+    // Plan W6.19: which dictation path reaches its target, on which device, in plain numbers.
+    const dv = dictationVerdict(report);
+    console.log("  dictation (W6.19), held-out asr-he else FLEURS-he validation:");
+    for (const r of dv.rows) console.log(`    ${r.path}: ${r.verdict}${r.fleurs !== null && r.heldout !== null ? ` (FLEURS ${(r.fleurs * 100).toFixed(1)} %)` : ""}`);
+    if (dv.desktopFallback) console.log("    → the phone misses 15 % and the desktop meets it: \"send to my desktop\" is the phone's way to the target");
+    if (cloud?.whisperGgml?.sha256) {
+      const g = cloud.whisperGgml;
+      console.log(`  the ggml file measured (pin it with: npm run whisper:desktop -- pin --repo ${g.repo} --revision ${g.revision} --file ${g.file} --bytes ${g.bytes} --sha256 ${g.sha256}; licence ${g.license ?? "?"})`);
+    }
     console.log(`  → ${out}`);
     const branch = `eval/day-${runId}`;
     const rel = `eval/results/day/${runId}`;

@@ -55,11 +55,41 @@ It prints the W6.18 acceptance as it was measured:
 - the tool-call share against the 95 % target, with any gap stated as is;
 - the AI tasks that now have a real number.
 
+## Hebrew dictation, every path
+
+The run measures Hebrew dictation the way each device runs it, on FLEURS-he
+validation and on the held-out `asr-he` set:
+
+| Path | Engine | Step | Target |
+|---|---|---|---|
+| Phone and browser, live | Zipformer2 streaming | `asr-zipformer` | ≤ 15 % |
+| Browser, each sentence or file | ivrit.ai turbo (the app's ONNX files, q4f16) | `asr-web` | ≤ 15 % |
+| Desktop | whisper.cpp with the ivrit.ai turbo ggml | `asr-whisper-cpp` | ≤ 10 % |
+
+The held-out step scores `asr-he` through all three on the same clips.
+`fetch` prints each path's number, met or missed, or why it wasn't
+measured, and says when "send to my desktop" is the phone's way to the
+target (the phone misses 15 % and the desktop meets it).
+
+- `asr-web` runs the app's model files on the CPU (onnxruntime-node), so
+  its WER is the model's and it runs in the cloud. Only its WebGPU
+  latency comes from `bench-models` on the Mac. Ozen v1 isn't measured
+  while it is off (its training data's licence isn't cleared).
+- For the desktop, the kernel builds whisper.cpp at a release tag (CUDA on
+  the T4, the CPU if that fails) and downloads the ivrit.ai turbo ggml
+  file. The app doesn't pin that file yet, so `cloud.json` records the
+  repository, revision, size, sha256 and licence it measured, and `fetch`
+  prints the `pin` command of the desktop Whisper script (`whisper:desktop`, W1.17) with those values.
+  If whisper.cpp doesn't build or there is no file, the step is reported
+  as blocked.
+- Outside the kernel, pass `--whisper-ggml <file>` (and `--whisper-cli`)
+  to `npm run models:day`.
+
 ## What stays on Tal's Mac
 
-The steps that need WebGPU in a real browser: `asr-web` (Whisper in the
-browser) and `bench-models`. The kernel skips them. `npm run models:cloud --
-mac` runs the whole day locally, as before.
+The step that needs WebGPU in a real browser: `bench-models`. The kernel
+skips it. `npm run models:cloud -- mac` runs the whole day locally, as
+before.
 
 ## Why Kaggle
 

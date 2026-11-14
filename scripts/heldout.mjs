@@ -7,6 +7,7 @@
  *   npm run heldout -- build [--record] [--rotate] [--sets a,b]
  *                                             fetch the public pools, draw the sets with the key, encrypt them
  *   npm run heldout -- run --models a,b [--url U] [--out DIR] [--sets a,b] [--asr-model DIR]
+ *                          [--whisper-ggml FILE] [--whisper-cli PATH] [--asr-engines zipformer,whisper-web,whisper-cpp]
  *                                             score the sets; writes aggregate numbers only and logs who asked
  *   npm run heldout -- scan [--diff REV] [--prs 12,34|open] [--paths a,b] [--require-key] [--out FILE]
  *                                             contamination check: canaries anywhere, item n-grams with the key
@@ -327,8 +328,13 @@ if (command === "run") {
         console.log(`  the app's checker: ${summary(r.checker)}`);
       }
     } else if (set.engine === "asr") {
-      r.engine = S.scoreAsr(b.items, { revision: b.source.revisions.fleurs, canary: b.canary, asrModel: opts["asr-model"] });
-      console.log(`  zipformer: ${summary(r.engine)}`);
+      // The browser path downloads its model on first use, so it runs when asked (models:day asks for all three).
+      const engines = (opts["asr-engines"] ? String(opts["asr-engines"]).split(",") : ["zipformer", "whisper-cpp"]).map((s) => s.trim()).filter(Boolean);
+      const scored = S.scoreAsr(b.items, { revision: b.source.revisions.fleurs, canary: b.canary, asrModel: opts["asr-model"], whisperGgml: opts["whisper-ggml"], whisperCli: opts["whisper-cli"], engines });
+      const { engines: per, ...zipformer } = scored;
+      r.engine = zipformer;
+      if (per) r.engines = per;
+      for (const [id, m] of Object.entries(per ?? { zipformer })) console.log(`  ${id}: ${summary(m)}`);
     } else if (set.engine === "ocr") {
       r.engine = await S.scoreOcr(b.items, { fonts: b.source.fonts, canary: b.canary, cache: join(store, "cache") });
       console.log(`  tesseract.js: ${summary(r.engine)}`);

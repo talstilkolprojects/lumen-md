@@ -18,8 +18,36 @@
 import { generateKeyPairSync } from "node:crypto";
 import { verifyReport } from "./modelsDay.mjs";
 
-/** Steps that need WebGPU in a real browser stay on Tal's Mac (plan W6.18 step 4). */
-export const MAC_ONLY_STEPS = ["asr-web", "bench-models"];
+/**
+ * Steps that need WebGPU in a real browser stay on Tal's Mac (plan W6.18
+ * step 4). asr-web is not one of them (plan W6.19): it runs the app's ONNX
+ * files on onnxruntime-node (CPU), so its WER is the model's anywhere; only
+ * the WebGPU latency is bench-models'.
+ */
+export const MAC_ONLY_STEPS = ["bench-models"];
+
+/**
+ * Desktop dictation in the cloud (plan W1.17, W6.19): the kernel builds
+ * whisper.cpp at a release tag (CUDA on the T4, else CPU) and fetches the
+ * ivrit.ai turbo ggml file. The file is not pinned in the app yet
+ * (WHISPER_GGML), so the kernel records the repository, revision, size,
+ * sha256 and licence it measured; `npm run whisper:desktop -- pin` takes
+ * exactly those values.
+ */
+export const WHISPER_BUILD = {
+  repo: "https://github.com/ggml-org/whisper.cpp",
+  tag: "v1.7.6",
+  ggmlRepos: ["ivrit-ai/whisper-large-v3-turbo-ggml"],
+  ggmlSearch: { author: "ivrit-ai", search: "ggml" },
+  preferFile: "ggml-model.bin",
+};
+
+/** The plan's dictation targets per path (W4.13, W6.19): phone and browser ≤ 15 %, desktop ≤ 10 %. */
+export const DICTATION_PATHS = [
+  { path: "phone (Zipformer2 streaming)", step: "asr-zipformer", engine: "zipformer", target: 0.15 },
+  { path: "browser (ivrit.ai turbo ONNX)", step: "asr-web", engine: "whisper-web", target: 0.15 },
+  { path: "desktop (whisper.cpp, ivrit.ai turbo ggml)", step: "asr-whisper-cpp", engine: "whisper-cpp", target: 0.1 },
+];
 
 /** The accelerator: Kaggle's default GPU, 2× T4 with 16 GB each (gemma3:12b fits on one). */
 export const ACCELERATOR = "NvidiaTeslaT4";
@@ -68,9 +96,27 @@ export function runSigningKey() {
 }
 
 /** The models:day arguments the kernel runs: everything but the WebGPU steps, DictaLM opted in. */
-export function dayArgs({ runId, url, out, signKey, only = [], skip = [], withOptional = ["dictalm3"] }) {
+export function dayArgs({ runId, url, out, signKey, only = [], skip = [], withOptional = ["dictalm3"], whisperGgml = "{whisperGgml}", whisperCli = "{whisperCli}" }) {
   const sk = [...new Set([...MAC_ONLY_STEPS, ...skip])].filter((s) => !only.includes(s));
-  return ["scripts/models-day.mjs", "--url", url, "--out", out, "--run", runId, "--yes", "--sign-key", signKey, ...(only.length ? ["--only", only.join(",")] : []), ...(sk.length && !only.length ? ["--skip", sk.join(",")] : []), ...(withOptional.length && !only.length ? ["--with", withOptional.join(",")] : [])];
+  return ["scripts/models-day.mjs", "--url", url, "--out", out, "--run", runId, "--yes", "--sign-key", signKey, "--whisper-ggml", whisperGgml, "--whisper-cli", whisperCli, ...(only.length ? ["--only", only.join(",")] : []), ...(sk.length && !only.length ? ["--skip", sk.join(",")] : []), ...(withOptional.length && !only.length ? ["--with", withOptional.join(",")] : [])];
+}
+
+/**
+ * The kernel's placeholders filled in. A value the kernel does not have
+ * (whisper.cpp did not build, no ggml file) drops its flag, so the step is
+ * reported blocked rather than run against a missing file.
+ */
+export function fillDayArgs(args, values) {
+  const out = [];
+  for (let i = 0; i < args.length; i++) {
+    const m = /^\{(\w+)\}$/.exec(args[i + 1] ?? "");
+    if (args[i].startsWith("--") && m && !(m[1] in values && values[m[1]])) {
+      i++;
+      continue;
+    }
+    out.push(args[i].replace(/\{(\w+)\}/g, (all, k) => values[k] ?? all));
+  }
+  return out;
 }
 
 /**
@@ -81,7 +127,7 @@ export function dayArgs({ runId, url, out, signKey, only = [], skip = [], withOp
 export function runConfig({ runId, repo, commit, requester, signing, heldout = null, only = [], skip = [], withOptional = ["dictalm3"] }) {
   // {url}, {out} and {signKey} are filled in by the kernel.
   const args = dayArgs({ runId, url: "{url}", out: "{out}", signKey: "{signKey}", only, skip, withOptional });
-  return { schema: 1, plan: "W6.18", runId, repo, commit, requester, signKeyPem: signing.privatePem, heldout, dayArgs: args, macOnly: MAC_ONLY_STEPS, node: NODE_VERSION };
+  return { schema: 1, plan: "W6.18", runId, repo, commit, requester, signKeyPem: signing.privatePem, heldout, dayArgs: args, macOnly: MAC_ONLY_STEPS, node: NODE_VERSION, whisper: WHISPER_BUILD };
 }
 
 /**
@@ -117,6 +163,38 @@ export function acceptance(report) {
     pass: steps.filter((s) => s.status === "pass").length,
     fail: steps.filter((s) => s.status === "fail").length,
   };
+}
+
+/**
+ * Plan W6.19's honest report: for each dictation path, its WER on FLEURS-he
+ * validation and on the held-out asr-he set, against its target, and the
+ * verdict — met, missed (with the number), or not measured (with why).
+ * `desktopFallback` says whether "send to my desktop" is the phone's way to
+ * the target: the phone misses it and the desktop meets the phone's.
+ */
+export function dictationVerdict(report) {
+  const steps = report.steps ?? [];
+  const asrHe = steps.find((s) => s.id === "heldout")?.metrics?.sets?.["asr-he"] ?? null;
+  const rows = DICTATION_PATHS.map((p) => {
+    const st = steps.find((s) => s.id === p.step);
+    const fleurs = typeof st?.metrics?.wer === "number" ? st.metrics.wer : null;
+    const h = asrHe?.engines?.[p.engine];
+    const heldout = h && typeof h === "object" && typeof h.wer === "number" ? h.wer : null;
+    const headline = heldout ?? fleurs;
+    const why = headline === null ? (typeof h === "string" ? `held-out: ${h}` : st ? `${p.step}: ${st.status}${st.reason ? ` (${st.reason})` : ""}` : `${p.step} did not run`) : null;
+    const pct = (x) => `${(x * 100).toFixed(1)} %`;
+    return {
+      ...p,
+      fleurs,
+      heldout,
+      verdict: headline === null ? `not measured — ${why}` : headline <= p.target ? `met: ${pct(headline)} ≤ ${pct(p.target)}` : `missed: ${pct(headline)} > ${pct(p.target)}`,
+      met: headline === null ? null : headline <= p.target,
+    };
+  });
+  const phone = rows[0];
+  const desktop = rows[2];
+  const desktopWer = desktop.heldout ?? desktop.fleurs;
+  return { rows, desktopFallback: phone.met === false && desktopWer !== null && desktopWer <= phone.target, kind: report.kind ?? null };
 }
 
 /** Kaggle's kernel status line → one of queued, running, complete, error, cancelled, unknown. */

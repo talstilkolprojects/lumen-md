@@ -3,9 +3,12 @@
  * numbers only; no item text, prompt or model answer leaves this file.
  *
  * Ollama sets (qa-he, xling, grammar-he, toolcall-he) run per model through
- * /api/chat at temperature 0. asr-he runs the repo's streaming engine
- * (scripts/asr/eval.mjs) on clips written to a temporary folder outside the
- * repo, and ocr-he renders its lines in Chromium and reads them with the
+ * /api/chat at temperature 0. asr-he runs each dictation path the app has
+ * (plan W6.19) on the same clips, written to a temporary folder outside the
+ * repo: the streaming Zipformer (scripts/asr/eval.mjs, the phone), ivrit.ai
+ * turbo as the browser runs it (scripts/asr/web-eval.mjs, W4.13) and
+ * whisper.cpp with the turbo ggml (scripts/whisper-desktop.mjs, W1.17, the
+ * desktop). Each prints numbers only, never a transcript. ocr-he renders its lines in Chromium and reads them with the
  * app's tesseract.js pipeline (scripts/heldout/ocr.mjs). Both folders are
  * deleted when the set is scored.
  */
@@ -132,20 +135,89 @@ export function scratch(prefix) {
   return dir;
 }
 
-/** asr-he: the clips are fetched from the pinned FLEURS revision into a scratch folder, scored, and deleted. */
-export function scoreAsr(items, { revision, canary, asrModel }) {
-  if (!asrModel || !existsSync(join(asrModel, "tokens.txt"))) return { status: "unavailable", reason: "no ASR model (--asr-model: the folder scripts/asr/fetch-model.sh fills)" };
-  const dir = scratch("lumen-heldout-asr-");
+/** The dictation paths asr-he scores (plan W6.19), and the target each is held to. */
+export const ASR_ENGINES = {
+  zipformer: { path: "phone and browser, live (Zipformer2 streaming, WASM)", target: 0.15, script: "scripts/asr/eval.mjs" },
+  "whisper-web": { path: "browser (ivrit.ai turbo ONNX q4f16, as transformers.js runs it)", target: 0.15, script: "scripts/asr/web-eval.mjs" },
+  "whisper-cpp": { path: "desktop (whisper.cpp, ivrit.ai turbo ggml)", target: 0.1, script: "scripts/whisper-desktop.mjs" },
+};
+
+const pick4 = (x) => (typeof x === "number" ? round(x) : null);
+
+/**
+ * Run one dictation path over the clips in `dir` (fleurs.json + audio, as
+ * fetch.py writes them). Returns aggregates, or { status, reason }. The
+ * script paths can be replaced (tests run fakes).
+ */
+/** Why `engine` cannot run here (null: it can), checked before any clip is fetched. */
+export function asrEngineMissing(engine, ctx = {}) {
+  const meta = ASR_ENGINES[engine];
+  if (!meta) return `unknown engine ${engine}`;
+  if (!existsSync(ctx.scripts?.[engine] ?? join(ROOT, meta.script))) return `${meta.script} is not on this branch`;
+  if (engine === "zipformer" && (!ctx.asrModel || !existsSync(join(ctx.asrModel, "tokens.txt")))) return "no ASR model (--asr-model: the folder scripts/asr/fetch-model.sh fills)";
+  if (engine === "whisper-cpp" && (!ctx.whisperGgml || !existsSync(ctx.whisperGgml))) return "no whisper.cpp model (--whisper-ggml: the ivrit.ai turbo ggml file)";
+  return null;
+}
+
+export function scoreAsrEngine(engine, dir, ctx = {}) {
+  const meta = ASR_ENGINES[engine];
+  const missing = asrEngineMissing(engine, ctx);
+  if (missing) return { status: "unavailable", reason: missing };
+  const script = ctx.scripts?.[engine] ?? join(ROOT, meta.script);
+  const out = join(dir, `scores-${engine}.json`);
+  const env = { ...process.env, GITHUB_STEP_SUMMARY: "" };
+  let args;
+  if (engine === "zipformer") {
+    env.LUMEN_ASR_MODEL_DIR = ctx.asrModel;
+    args = ["--split", `heldout=${dir}`, "--out", out];
+  } else if (engine === "whisper-web") {
+    // Ozen v1 is not measured: it stays off until its licence is approved (plan W6.19).
+    args = ["--fleurs", dir, "--models", "turbo", "--out", out];
+  } else {
+    args = ["wer", "--split", `heldout=${dir}`, "--model", ctx.whisperGgml, "--cli", ctx.whisperCli ?? "whisper-cli", "--out", out];
+  }
+  const r = spawnSync(process.execPath, [script, ...args], { cwd: ROOT, env, stdio: ["ignore", "ignore", "pipe"], encoding: "utf8", maxBuffer: 1 << 24 });
+  if (!existsSync(out)) return { status: "error", reason: `${meta.script} exited ${r.status}` };
+  const j = JSON.parse(readFileSync(out, "utf8"));
+  // web-eval keys its split by the folder's role ("fleurs-validation"); the others by the name given.
+  const s = j.splits?.heldout ?? j.splits?.["fleurs-validation"] ?? null;
+  if (!s || s.status) return { status: "error", reason: `${meta.script}: no score for the clips${s?.status ? ` (${s.status})` : ""}` };
+  return {
+    wer: pick4(s.wer),
+    cer: pick4(s.cer),
+    ...(typeof s["wer.v2"] === "number" ? { werV2: pick4(s["wer.v2"]) } : {}),
+    p95Ms: s["latency.p95Ms"] ?? s.p95Ms ?? null,
+    ...(typeof s.rtf === "number" ? { rtf: s.rtf } : {}),
+    target: meta.target,
+    met: typeof s.wer === "number" ? s.wer <= meta.target : null,
+  };
+}
+
+/**
+ * asr-he: the clips are fetched from the pinned FLEURS revision into a
+ * scratch folder once, scored by every dictation path asked for, and deleted.
+ * `engine` (the Zipformer's numbers) stays for older readers of the report.
+ */
+export function scoreAsr(items, { revision, canary, asrModel, whisperGgml, whisperCli, engines = ["zipformer", "whisper-cpp"], scripts, clipsDir }) {
+  const ctx = { asrModel, whisperGgml, whisperCli, scripts };
+  // Nothing to run: say why, without fetching a clip.
+  if (engines.every((e) => asrEngineMissing(e, ctx))) {
+    const per = Object.fromEntries(engines.map((e) => [e, { status: "unavailable", reason: asrEngineMissing(e, ctx) }]));
+    return { n: items.length, status: "unavailable", reason: per.zipformer?.reason ?? Object.values(per)[0]?.reason ?? "no engine asked", engines: per };
+  }
+  const dir = clipsDir ?? scratch("lumen-heldout-asr-");
   try {
-    const py = spawnSync("python3", ["-I", join(ROOT, "scripts/heldout/fetch.py"), "fleurs-audio", "--revision", revision, "--out", dir, "--canary", canary], { input: JSON.stringify(items), encoding: "utf8", stdio: ["pipe", "ignore", "pipe"], maxBuffer: 1 << 26 });
-    if (py.status !== 0) return { status: "error", reason: `fetch.py fleurs-audio exited ${py.status}` };
-    const out = join(dir, "scores.json");
-    const r = spawnSync(process.execPath, [join(ROOT, "scripts/asr/eval.mjs"), "--split", `heldout=${dir}`, "--out", out], { cwd: ROOT, env: { ...process.env, LUMEN_ASR_MODEL_DIR: asrModel, GITHUB_STEP_SUMMARY: "" }, stdio: ["ignore", "ignore", "pipe"], encoding: "utf8" });
-    if (r.status !== 0 || !existsSync(out)) return { status: "error", reason: `scripts/asr/eval.mjs exited ${r.status}` };
-    const s = JSON.parse(readFileSync(out, "utf8")).splits?.heldout ?? {};
-    return { n: items.length, wer: s.wer ?? null, cer: s.cer ?? null, p95Ms: s["latency.p95Ms"] ?? s.p95Ms ?? null };
+    if (!clipsDir) {
+      const py = spawnSync("python3", ["-I", join(ROOT, "scripts/heldout/fetch.py"), "fleurs-audio", "--revision", revision, "--out", dir, "--canary", canary], { input: JSON.stringify(items), encoding: "utf8", stdio: ["pipe", "ignore", "pipe"], maxBuffer: 1 << 26 });
+      if (py.status !== 0) return { status: "error", reason: `fetch.py fleurs-audio exited ${py.status}` };
+    }
+    const per = {};
+    for (const e of engines) per[e] = scoreAsrEngine(e, dir, ctx);
+    const z = per.zipformer;
+    const head = z && !z.status ? { wer: z.wer, cer: z.cer, p95Ms: z.p95Ms } : { status: z?.status ?? "unavailable", reason: z?.reason ?? "not asked" };
+    return { n: items.length, ...head, engines: per };
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    if (!clipsDir) rmSync(dir, { recursive: true, force: true });
   }
 }
 
