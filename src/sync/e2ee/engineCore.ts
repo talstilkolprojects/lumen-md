@@ -24,7 +24,7 @@ import {
   verifyDropped,
   type KeyAccess,
 } from "./keyring";
-import { withDeviceLock } from "./deviceLock";
+import { withDeviceLock, type LockScope } from "./deviceLock";
 import { isSyncedPath, type LocalFile } from "./localFiles";
 import {
   blobName,
@@ -387,9 +387,9 @@ export abstract class E2eeSyncCore {
     }
   }
 
-  /** The lock shared by every engine (every tab) of this device on this vault (H3). */
-  protected lockName(s: DeviceState): string {
-    return `lumen-e2ee-device:${this.o.keys.vaultId}:${s.deviceId}`;
+  /** This device's lock (H3), named by the vault and the state store, never by a cached device id (K6-3). */
+  protected lockScope(): LockScope {
+    return { vaultId: this.o.keys.vaultId, store: this.o.store };
   }
 
   /**
@@ -400,7 +400,7 @@ export abstract class E2eeSyncCore {
    */
   protected async underDeviceLock<T>(reload: boolean, fn: () => Promise<T>): Promise<T> {
     if (this.lockHeld) return fn();
-    return withDeviceLock(this.lockName(await this.loadState()), async () => {
+    return withDeviceLock(this.lockScope(), async () => {
       this.lockHeld = true;
       try {
         if (reload) await this.reloadState();

@@ -105,7 +105,9 @@ export class E2eeSync extends E2eeSyncKeys {
   }
 
   sync(): Promise<SyncResult> {
-    return this.exclusive(async () => {
+    // K6-1 (review 16): under the device lock, from the state as stored, so a
+    // tab with an older cached state doesn't save it over another tab's.
+    return this.exclusive(() => this.underDeviceLock(true, async () => {
       this.emit({ kind: "start", at: this.o.now() });
       try {
         const r = await this.round();
@@ -115,7 +117,7 @@ export class E2eeSync extends E2eeSyncKeys {
         this.emit({ kind: "error", at: this.o.now(), message: (e as Error)?.message ?? String(e) });
         throw e;
       }
-    });
+    }));
   }
 
   private async round(): Promise<SyncResult> {
