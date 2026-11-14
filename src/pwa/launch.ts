@@ -6,12 +6,17 @@
  *  - share_target (GET): `/?title=…&text=…&url=…` → appended to inbox.md
  *    (plan 4.16; `sharedItem`), or a new note with the shared text and link
  *    where the vault can't be written (Android share sheet, desktop share).
+ *    A message shared from WhatsApp or Telegram goes through the chat
+ *    parser first (`sharedChat`, plan W5.7, audit W10.C10), on both paths:
+ *    it keeps its app, author and time.
  *  - shortcuts: `/?action=new` → a new note, `/?action=palette` → ⌘K,
  *    `/?capture=1` → the quick-capture box (plan 4.16).
  *    `/?capture=voice` → the box, already recording a voice note (plan W1.13).
  *  - file_handlers: files opened with the installed app (Chrome / Edge
  *    "Open with Lumen") arrive through `launchQueue` → one tab each.
  */
+
+import { chatShareText, parseSharedChatMessage } from "../capture/chats/share";
 
 export type Launch =
   | { kind: "share"; title: string; body: string }
@@ -45,6 +50,15 @@ export function sharedItem(search: string): SharedItem | null {
   return { title, text: link && text === link ? "" : text, link };
 }
 
+/**
+ * A shared chat message (WhatsApp or Telegram, as their share sheet or
+ * "copy" sends it) as the inbox text "WhatsApp · Tal · 2026-11-12 14:03"
+ * then the message; null when the share is a link or not a chat message.
+ */
+export function sharedChat(item: SharedItem): string | null {
+  return !item.link && item.text ? chatShareText(item.text) : null;
+}
+
 /** Read (and describe) the launch parameters from a URL search string. */
 export function parseLaunch(search: string): Launch {
   const q = new URLSearchParams(search);
@@ -55,6 +69,12 @@ export function parseLaunch(search: string): Launch {
   const shared = sharedItem(search);
   if (!shared) return { kind: "none" };
   const { title, link, text: rest } = shared;
+  // A chat message: the note is named after the app and the author, and keeps the time.
+  const chat = !link && rest ? parseSharedChatMessage(rest) : null;
+  if (chat) {
+    const heading = `${chat.app} · ${chat.author}`;
+    return { kind: "share", title: heading, body: [`# ${heading}`, "", sharedChat(shared)!, ""].join("\n") };
+  }
   const heading = title || (link ? hostOf(link) : rest.split("\n")[0].slice(0, 60)) || "Shared";
   const parts = [`# ${heading}`, ""];
   if (rest) parts.push(rest, "");

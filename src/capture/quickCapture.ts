@@ -168,9 +168,8 @@ export async function openInbox(): Promise<void> {
  * inbox path, or null when nothing was shared.
  */
 export async function captureShared(item: SharedItem): Promise<string | null> {
-  // A message shared from WhatsApp or Telegram keeps its app, author and time (plan W5.7).
-  const chat = !item.link && item.text ? (await import("./chats/share")).chatShareText(item.text) : null;
-  const path = await captureToInbox(chat ?? sharedText(item));
+  // A message shared from WhatsApp or Telegram keeps its app, author and time (plan W5.7): the launch's own parser.
+  const path = await captureToInbox((await import("../pwa/launch")).sharedChat(item) ?? sharedText(item));
   if (path) {
     toast.success(t("capture.saved", { path }));
     await openInbox().catch(() => undefined);
