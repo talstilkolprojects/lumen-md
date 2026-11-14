@@ -519,6 +519,8 @@
   "pwa.updateAvailable": "新しいバージョンがあります",
   "search.empty": "ワークスペースは空です。",
   "search.noMatches": "一致するものがありません。",
+  "search.regexSkipped": "/regex/ は非常に長いノート {count} 件をスキップしました（{limit} 文字超）。",
+  "search.regexTimedOut": "/regex/ の処理に時間がかかりすぎたため停止しました。より単純なパターンをお試しください。",
   "search.placeholder": "ファイルとコンテンツを検索…",
   "search.operatorsHint": "演算子: tag:名前  path:フォルダー  \"完全一致\"  /regex/  -除外",
   "search.unavailable": "このブラウザではストレージが利用できません。",

@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-10-24T18:35:31.033Z",
+  "generated_at": "2026-11-14T19:49:15.018Z",
   "source": "src/i18n/index.ts (en bundle)",
-  "count": 1431,
+  "count": 1433,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -315,6 +315,19 @@
     {
       "key": "search.noMatches",
       "en": "No matches.",
+      "vars": []
+    },
+    {
+      "key": "search.regexSkipped",
+      "en": "/regex/ skipped {count} very long notes (over {limit} characters).",
+      "vars": [
+        "count",
+        "limit"
+      ]
+    },
+    {
+      "key": "search.regexTimedOut",
+      "en": "The /regex/ took too long and was stopped. Try a simpler pattern.",
       "vars": []
     },
     {

@@ -519,6 +519,8 @@
   "pwa.updateAvailable": "有新版本可用",
   "search.empty": "工作区为空。",
   "search.noMatches": "无匹配结果。",
+  "search.regexSkipped": "/regex/ 跳过了 {count} 条过长的笔记（超过 {limit} 个字符）。",
+  "search.regexTimedOut": "/regex/ 运行时间过长，已停止。请尝试更简单的模式。",
   "search.placeholder": "搜索文件和内容…",
   "search.operatorsHint": "运算符：tag:名称  path:文件夹  \"精确短语\"  /regex/  -排除",
   "search.unavailable": "此浏览器不支持存储功能。",

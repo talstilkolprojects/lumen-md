@@ -26,7 +26,7 @@ import { noteKey } from "../lib/slug";
 import { hasHebrew, hebrewFind, normalizeForMatch, prefixVariants } from "../text/hebrew";
 import { WIKI_RE } from "./wikiTargets";
 import { Bm25Index } from "../search/bm25";
-import { matchesOps, noteTags, opLocation, parseQuery } from "../search/queryOps";
+import { matchesOps, noteTags, opLocation, parseQuery, REGEX_MAX_CHARS } from "../search/queryOps";
 
 export interface IndexInput {
   /** Full workspace path. */
@@ -59,6 +59,17 @@ export interface SearchHit {
   snippet: string | null;
   /** Highlight range inside the snippet for the matched substring. */
   match?: { start: number; end: number };
+}
+
+/** A search's hits, and what it could not check (2.39). */
+export interface SearchResult {
+  hits: SearchHit[];
+  /** Notes left out because they are too long for the query's /regex/ (`REGEX_MAX_CHARS`). */
+  regexSkipped: number;
+  /** With `regexSkipped`: the length limit (characters) those notes are over. */
+  regexMaxChars?: number;
+  /** The /regex/ ran past `REGEX_TIME_LIMIT_MS` and was stopped: no hits (set by the main thread). */
+  regexTimedOut?: true;
 }
 
 export interface SearchOptions {
@@ -314,6 +325,17 @@ export class VaultIndex {
    * snippet around the phrase, or around its best-matching word.
    */
   search(rawQuery: string, opts: SearchOptions = {}): SearchHit[] {
+    return this.query(rawQuery, opts).hits;
+  }
+
+  /** `search`, and how many notes a /regex/ skipped because they are too long (2.39). */
+  query(rawQuery: string, opts: SearchOptions = {}): SearchResult {
+    let regexSkipped = 0;
+    const hits = this.rank(rawQuery, opts, () => regexSkipped++);
+    return regexSkipped ? { hits, regexSkipped, regexMaxChars: REGEX_MAX_CHARS } : { hits, regexSkipped };
+  }
+
+  private rank(rawQuery: string, opts: SearchOptions, onRegexSkip: () => void): SearchHit[] {
     const limit = opts.limit ?? 30;
     // Operators (plan 11.3): tag:, path:, "phrase", /regex/, -term. The rest ranks.
     const { text: query, ops, invalid } = parseQuery(rawQuery);
@@ -321,7 +343,7 @@ export class VaultIndex {
     if (invalid.length) return [];
     const q = query.trim().toLowerCase();
     const scope = opts.paths ? new Set(opts.paths) : null;
-    const pass = (e: Entry) => (!scope || scope.has(e.path)) && (!ops.length || matchesOps(ops, e));
+    const pass = (e: Entry) => (!scope || scope.has(e.path)) && (!ops.length || matchesOps(ops, e, onRegexSkip));
     const allow = scope || ops.length ? new Set([...this.files.values()].filter(pass).map((e) => e.path)) : null;
     if (!q) {
       return [...this.files.values()]

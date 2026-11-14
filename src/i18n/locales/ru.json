@@ -519,6 +519,8 @@
   "pwa.updateAvailable": "Доступна новая версия",
   "search.empty": "Рабочая область пуста.",
   "search.noMatches": "Нет совпадений.",
+  "search.regexSkipped": "/regex/ пропустил очень длинные заметки: {count} (длиннее {limit} символов).",
+  "search.regexTimedOut": "/regex/ выполнялся слишком долго и был остановлен. Попробуйте более простой шаблон.",
   "search.placeholder": "Поиск по файлам и содержимому…",
   "search.operatorsHint": "Операторы: tag:имя  path:папка  \"точная фраза\"  /regex/  -исключить",
   "search.unavailable": "Хранилище недоступно в этом браузере.",

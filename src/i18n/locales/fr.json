@@ -519,6 +519,8 @@
   "pwa.updateAvailable": "Une nouvelle version est disponible",
   "search.empty": "L'espace de travail est vide.",
   "search.noMatches": "Aucun résultat.",
+  "search.regexSkipped": "/regex/ a ignoré {count} notes très longues (plus de {limit} caractères).",
+  "search.regexTimedOut": "Le /regex/ a pris trop de temps et a été arrêté. Essayez un motif plus simple.",
   "search.placeholder": "Rechercher dans les fichiers…",
   "search.operatorsHint": "Opérateurs : tag:nom  path:dossier  \"phrase exacte\"  /regex/  -exclure",
   "search.unavailable": "Le stockage n'est pas disponible dans ce navigateur.",

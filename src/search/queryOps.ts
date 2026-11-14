@@ -10,6 +10,13 @@
  *   /regex/i         the text matches the regular expression (flags: i, m, s, u)
  *   -term            the note does NOT match `term` — any of the above, or a word
  *
+ * A /regex/ is bounded (2.39): a note longer than REGEX_MAX_CHARS is not
+ * matched against it (it is left out of the results, with or without `-`,
+ * and the search says how many were skipped), and the main thread stops
+ * the index worker when a regex search runs past its time limit
+ * (REGEX_TIME_LIMIT_MS in ../storage/workspaceIndex.ts), so a runaway pattern cannot freeze
+ * search for the session.
+ *
  * Words outside operators go to the ranked search as before (BM25 in
  * ../storage/vaultIndexCore.ts). A query that is only operators lists the
  * matching notes, newest first.
@@ -29,6 +36,8 @@ export type Op =
   /** A bare word with `-` in front: excluded as a word of the text, name or path. */
   | { kind: "word"; value: string; negate: true };
 
+/** Notes longer than this (characters) are not matched against a /regex/ (2.39). */
+export const REGEX_MAX_CHARS = 500_000;
 export interface ParsedQuery {
   /** The free text for ranking (operators removed, positive phrases kept as words). */
   text: string;
@@ -190,9 +199,29 @@ function test(op: Op, n: Matchable): boolean {
   }
 }
 
-/** True when the note passes every operator. */
-export function matchesOps(ops: Op[], n: Matchable): boolean {
-  for (const op of ops) if (test(op, n) === op.negate) return false;
+/** Is this note too long to match against a /regex/? */
+function regexSkips(n: Pick<Matchable, "content">): boolean {
+  return n.content.length > REGEX_MAX_CHARS;
+}
+
+/**
+ * True when the note passes every operator. A note too long for a /regex/
+ * operator (`regexSkips`) does not pass, whether or not the regex is
+ * negated — it was not checked — and `onRegexSkip` is told.
+ */
+export function matchesOps(ops: Op[], n: Matchable, onRegexSkip?: () => void): boolean {
+  let regex = false;
+  for (const op of ops) {
+    if (op.kind === "regex") regex = true;
+    else if (test(op, n) === op.negate) return false;
+  }
+  if (!regex) return true;
+  // Only a note every other operator lets through counts as skipped.
+  if (regexSkips(n)) {
+    onRegexSkip?.();
+    return false;
+  }
+  for (const op of ops) if (op.kind === "regex" && test(op, n) === op.negate) return false;
   return true;
 }
 
@@ -206,6 +235,7 @@ export function opLocation(ops: Op[], n: Matchable): { start: number; end: numbe
       const h = hasHebrew(op.value) ? hebrewFind(n.content, op.value) : null;
       if (h) return h;
     } else if (op.kind === "regex") {
+      if (regexSkips(n)) continue;
       const re = new RegExp(op.re.source, op.re.flags.replace(/[gy]/g, ""));
       const m = re.exec(n.content);
       if (m && m[0].length) return { start: m.index, end: m.index + m[0].length };

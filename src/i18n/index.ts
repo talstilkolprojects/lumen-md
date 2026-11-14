@@ -137,6 +137,8 @@ const en: Strings = {
   "search.unavailable": "Workspace storage isn't available in this browser.",
   "search.empty": "Workspace is empty.",
   "search.noMatches": "No matches.",
+  "search.regexSkipped": "/regex/ skipped {count} very long notes (over {limit} characters).",
+  "search.regexTimedOut": "The /regex/ took too long and was stopped. Try a simpler pattern.",
   "search.results.one": "{n} result",
   "search.results.other": "{n} results",
   // Generic dialog

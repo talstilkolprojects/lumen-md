@@ -26,6 +26,8 @@ export function handleIndexRequest(index: VaultIndex, req: IndexRequest): IndexR
         return { id: req.id, ok: true, result: 0 };
       case "search":
         return { id: req.id, ok: true, result: index.search(req.query, req.opts) };
+      case "query":
+        return { id: req.id, ok: true, result: index.query(req.query, req.opts) };
       case "backlinks":
         return { id: req.id, ok: true, result: index.backlinks(req.target) };
       case "stats":

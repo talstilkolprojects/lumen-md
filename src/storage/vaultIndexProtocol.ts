@@ -7,13 +7,14 @@
  * Both answer through `handleIndexRequest`, so they answer the same.
  */
 
-import type { BacklinkHit, IndexInput, IndexStats, SearchHit, SearchOptions } from "./vaultIndexCore";
+import type { BacklinkHit, IndexInput, IndexStats, SearchHit, SearchOptions, SearchResult } from "./vaultIndexCore";
 
 export type IndexRequestBody =
   | { op: "upsert"; files: IndexInput[] }
   | { op: "remove"; paths: string[] }
   | { op: "clear" }
   | { op: "search"; query: string; opts: SearchOptions }
+  | { op: "query"; query: string; opts: SearchOptions }
   | { op: "backlinks"; target: string }
   | { op: "stats" };
 
@@ -28,6 +29,8 @@ export interface IndexEngine {
   remove(paths: string[]): Promise<void>;
   clear(): Promise<void>;
   search(query: string, opts: SearchOptions): Promise<SearchHit[]>;
+  /** `search`, with what a /regex/ could not check (2.39). */
+  query(query: string, opts: SearchOptions): Promise<SearchResult>;
   backlinks(target: string): Promise<BacklinkHit[]>;
   stats(): Promise<IndexStats>;
   dispose(): void;
@@ -40,6 +43,7 @@ export function engineOver(kind: IndexEngine["kind"], send: (req: IndexRequestBo
     remove: async (paths) => void (await send({ op: "remove", paths })),
     clear: async () => void (await send({ op: "clear" })),
     search: (query, opts) => send({ op: "search", query, opts }) as Promise<SearchHit[]>,
+    query: (query, opts) => send({ op: "query", query, opts }) as Promise<SearchResult>,
     backlinks: (target) => send({ op: "backlinks", target }) as Promise<BacklinkHit[]>,
     stats: () => send({ op: "stats" }) as Promise<IndexStats>,
     dispose,

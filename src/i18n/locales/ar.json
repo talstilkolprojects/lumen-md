@@ -519,6 +519,8 @@
   "pwa.updateAvailable": "يتوفر إصدار جديد",
   "search.empty": "مساحة العمل فارغة.",
   "search.noMatches": "لا توجد نتائج.",
+  "search.regexSkipped": "تخطّى /regex/ عدد {count} من الملاحظات الطويلة جدًا (أكثر من {limit} حرف).",
+  "search.regexTimedOut": "استغرق /regex/ وقتًا طويلًا جدًا فأُوقف. جرّب نمطًا أبسط.",
   "search.placeholder": "البحث في الملفات والمحتوى…",
   "search.operatorsHint": "عوامل التصفية: tag:اسم  path:مجلد  \"عبارة مطابقة\"  /regex/  -استبعاد",
   "search.unavailable": "التخزين غير متوفر في هذا المتصفح.",

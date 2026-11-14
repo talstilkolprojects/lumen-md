@@ -68,6 +68,8 @@
   "update.reload": "טען מחדש",
   "update.dismiss": "סגור",
   "search.noMatches": "אין התאמות.",
+  "search.regexSkipped": "/regex/ דילג על {count} פתקים ארוכים מאוד (מעל {limit} תווים).",
+  "search.regexTimedOut": "ה־/regex/ רץ זמן רב מדי ונעצר. נסו תבנית פשוטה יותר.",
   "palette.placeholder": "הקלד פקודה, או חפש…",
   "palette.noMatch": "אין פקודות תואמות",
   "palette.navigate": "ניווט",
