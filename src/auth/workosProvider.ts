@@ -34,12 +34,7 @@ interface WorkOSConfig {
 
 function readEndpoint(): string | null {
   try {
-    const env = (
-      import.meta as ImportMeta & {
-        env?: { VITE_WORKOS_ENDPOINT?: string };
-      }
-    ).env;
-    const url = env?.VITE_WORKOS_ENDPOINT;
+    const url = import.meta.env.VITE_WORKOS_ENDPOINT as string | undefined;
     return url && url.length > 0 ? url.replace(/\/+$/, "") : null;
   } catch {
     return null;

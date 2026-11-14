@@ -1139,6 +1139,8 @@
   "ai.settings.endpoints": "Локальные сервисы",
   "ai.settings.grammar": "Грамматика",
   "ai.settings.research": "Исследование",
+  "ai.settings.researchToken": "Токен исследования",
+  "ai.settings.researchToken.placeholder": "Общий токен, если сервис исследования его требует",
   "ai.settings.endpoints.hint": "Запуск обоих: docker compose -f docker/local-ai.yml up -d. Пусто = по умолчанию.",
   "ai.settings.style": "Мой стиль письма",
   "ai.settings.style.use": "Писать в моём стиле",

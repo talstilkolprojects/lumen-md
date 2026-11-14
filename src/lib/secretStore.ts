@@ -39,6 +39,7 @@ const EXACT_SECRETS = new Set([
   "lumen.collab.password",
   "lumen.collab.wsToken",
   "lumen.research.searchKey",
+  "lumen.research.serviceToken",
   "lumen.git.token.v1",
 ]);
 /** The git token used to live in idb-keyval's default store. */

@@ -18,13 +18,11 @@ interface SupabaseEnv {
 
 function readEnv(): SupabaseEnv | null {
   try {
-    const env = (
-      import.meta as ImportMeta & {
-        env?: { VITE_SUPABASE_URL?: string; VITE_SUPABASE_ANON_KEY?: string };
-      }
-    ).env;
-    if (!env?.VITE_SUPABASE_URL || !env.VITE_SUPABASE_ANON_KEY) return null;
-    return { url: env.VITE_SUPABASE_URL, anonKey: env.VITE_SUPABASE_ANON_KEY };
+    // One name at a time: a whole import.meta.env read inlines every VITE_* value.
+    const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+    if (!url || !anonKey) return null;
+    return { url, anonKey };
   } catch {
     return null;
   }

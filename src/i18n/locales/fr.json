@@ -1139,6 +1139,8 @@
   "ai.settings.endpoints": "Services locaux",
   "ai.settings.grammar": "Grammaire",
   "ai.settings.research": "Recherche",
+  "ai.settings.researchToken": "Jeton de recherche",
+  "ai.settings.researchToken.placeholder": "Jeton partagé, si le service de recherche en demande un",
   "ai.settings.endpoints.hint": "Lancez les deux avec : docker compose -f docker/local-ai.yml up -d. Vide = valeur par défaut.",
   "ai.settings.style": "Mon style d’écriture",
   "ai.settings.style.use": "Écrire dans mon style",

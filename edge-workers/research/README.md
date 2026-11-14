@@ -14,7 +14,7 @@ npx wrangler deploy
 Then:
 1. Add a route on the app's domain (see `wrangler.toml`).
 2. Set `ALLOWED_ORIGINS`.
-3. Optional: set a shared token with `npx wrangler secret put RESEARCH_TOKEN`, and build the app with the same value in `VITE_RESEARCH_TOKEN`.
+3. Optional: set a shared token with `npx wrangler secret put RESEARCH_TOKEN`, and give it to your users to enter in AI settings → Research token. The app keeps it in its secret store and never builds it in.
 4. Build the app with `VITE_RESEARCH_ENDPOINT=https://research.<your-domain>`.
 
 **Production:** also add a Cloudflare rate-limiting rule on the route, for example 120 requests per minute per IP. The worker's own per-isolate limit is only a best-effort backstop.
@@ -24,7 +24,7 @@ Then:
 The worker has no user accounts, so it can't tell who is calling. It applies these checks:
 
 - **Origin.** Requests must carry an `Origin` listed in `ALLOWED_ORIGINS`, and requests without one are refused. This keeps other websites from using the worker from their pages. It is **not** authentication: a script outside a browser can send any `Origin`.
-- **Shared token (optional).** When the `RESEARCH_TOKEN` secret is set, every request (except the CORS preflight and `/healthz`) must send it in the `X-Lumen-Research-Token` header, or it gets 401. The app sends it when built with `VITE_RESEARCH_TOKEN`. For a public web app, the token is part of the shipped JavaScript, so it only stops casual reuse of the endpoint. It is a real secret only when the app build itself is private, for example an internal deployment.
+- **Shared token (optional).** When the `RESEARCH_TOKEN` secret is set, every request (except the CORS preflight and `/healthz`) must send it in the `X-Lumen-Research-Token` header, or it gets 401. The app sends the token the user entered in AI settings → Research token; it is kept in the app's secret store, not in the build. It is a shared token, so anyone you give it to can use the endpoint.
 - **Rate limits.** The worker keeps a best-effort per-IP limit in each isolate (60 requests per minute).
 
 To actually restrict who can use the worker, put it behind [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/) for internal deployments, and add a Cloudflare rate-limiting rule on the route for public ones (see Deploy).

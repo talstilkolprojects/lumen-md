@@ -7,6 +7,7 @@
 
 import type { AuthStatus } from "../auth/types";
 import type { Entitlement } from "../billing/types";
+import { publicEnv, type PublicEnvName } from "./publicEnv";
 
 type HealthState = "ready" | "partial" | "blocked";
 
@@ -43,15 +44,13 @@ export interface ConfigHealthReport {
   partial: ConfigHealthItem[];
 }
 
-type Env = { [key: string]: string | undefined };
-
 function priceIdFromEnv(tier: "pro" | "team"): string {
-  return readEnvVar(`VITE_PRICE_ID_${tier.toUpperCase()}`);
+  return readEnvVar(tier === "pro" ? "VITE_PRICE_ID_PRO" : "VITE_PRICE_ID_TEAM");
 }
 
-function readEnvVar(key: string): string {
-  const env = (import.meta as ImportMeta & { env?: Env }).env;
-  return env?.[key]?.trim() ?? "";
+/** One name at a time (see lib/publicEnv): a whole-object read inlines every VITE_* value. */
+function readEnvVar(key: PublicEnvName): string {
+  return publicEnv(key);
 }
 
 function hasWritableLocalStorage(): boolean {

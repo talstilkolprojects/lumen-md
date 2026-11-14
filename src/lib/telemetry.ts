@@ -44,10 +44,7 @@ export function getTelemetryOptOut(): boolean {
 
 function readEnvDsn(): string | undefined {
   try {
-    const env = (
-      import.meta as ImportMeta & { env?: { VITE_SENTRY_DSN?: string } }
-    ).env;
-    return env?.VITE_SENTRY_DSN;
+    return import.meta.env.VITE_SENTRY_DSN as string | undefined;
   } catch {
     return undefined;
   }

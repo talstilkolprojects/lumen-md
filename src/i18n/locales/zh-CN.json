@@ -1139,6 +1139,8 @@
   "ai.settings.endpoints": "本地服务",
   "ai.settings.grammar": "语法",
   "ai.settings.research": "研究",
+  "ai.settings.researchToken": "研究令牌",
+  "ai.settings.researchToken.placeholder": "研究服务要求时使用的共享令牌",
   "ai.settings.endpoints.hint": "同时启动：docker compose -f docker/local-ai.yml up -d。留空 = 默认值。",
   "ai.settings.style": "我的写作风格",
   "ai.settings.style.use": "按我的风格写作",

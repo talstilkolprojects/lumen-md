@@ -60,12 +60,10 @@ function publishEndpoint(): string | null {
 }
 
 function mockPublishEnabled(): boolean {
-  const env = (
-    import.meta as ImportMeta & { env?: { VITE_PUBLISH_MOCK_ENABLED?: string; DEV?: boolean } }
-  ).env;
-  const explicit = env?.VITE_PUBLISH_MOCK_ENABLED?.trim().toLowerCase();
+  // One name at a time: a whole import.meta.env read inlines every VITE_* value.
+  const explicit = (import.meta.env.VITE_PUBLISH_MOCK_ENABLED as string | undefined)?.trim().toLowerCase();
   if (explicit === "1" || explicit === "true" || explicit === "yes") return true;
-  if (env?.DEV) return true;
+  if (import.meta.env.DEV) return true;
   try {
     return ["localhost", "127.0.0.1", "0.0.0.0"].includes(window.location.hostname);
   } catch {

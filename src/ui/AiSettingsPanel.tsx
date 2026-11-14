@@ -12,6 +12,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Cpu, X } from "lucide-react";
 import { t } from "../i18n";
+import { getSecret, setSecret } from "../lib/secretStore";
+import { RESEARCH_SERVICE_TOKEN } from "../research/client";
 import type { AgentRun, ExecutorId } from "../agents/types";
 import type { AiPolicy } from "../ai/policy";
 import type { Hardware } from "../ai/modelManager";
@@ -72,6 +74,7 @@ export function AiSettingsPanel({ open, onClose }: Props) {
   const [catalog, setCatalog] = useState<Array<{ id: string; label: string; vram: number }>>([]);
   const [grammarUrl, setGrammarUrl] = useState("");
   const [researchUrl, setResearchUrl] = useState("");
+  const [researchToken, setResearchToken] = useState("");
   const [endpointError, setEndpointError] = useState("");
   const [styleOn, setStyleOn] = useState(false);
   const [hasStyle, setHasStyle] = useState(false);
@@ -135,6 +138,7 @@ export function AiSettingsPanel({ open, onClose }: Props) {
       setOllamaModel(ls("lumen.ollama.model") || getOllamaConfigModel());
       setGrammarUrl(ls("lumen.grammar.endpoint") || grammarEndpoint());
       setResearchUrl(ls("lumen.research.endpoint"));
+      setResearchToken(getSecret(RESEARCH_SERVICE_TOKEN) ?? "");
       setHasStyle(!!style.getStyleProfile());
       setStyleOn(style.styleProfileActive());
       setWebModel(mm.selectedWebLlmModel() ?? "");
@@ -205,6 +209,7 @@ export function AiSettingsPanel({ open, onClose }: Props) {
     setEndpointError("");
     setLs("lumen.grammar.endpoint", grammarUrl);
     setLs("lumen.research.endpoint", research);
+    setSecret(RESEARCH_SERVICE_TOKEN, researchToken.trim() || null);
     const { clearGrammarCache } = await import("../ai/grammar");
     clearGrammarCache();
     flash();
@@ -335,6 +340,17 @@ export function AiSettingsPanel({ open, onClose }: Props) {
             <label style={row}>
               <span style={{ minWidth: 90 }}>{t("ai.settings.research")}</span>
               <input style={input} value={researchUrl} onChange={(e) => setResearchUrl(e.target.value)} placeholder="http://localhost:8787" />
+            </label>
+            <label style={row}>
+              <span style={{ minWidth: 90 }}>{t("ai.settings.researchToken")}</span>
+              <input
+                style={input}
+                type="password"
+                autoComplete="off"
+                value={researchToken}
+                onChange={(e) => setResearchToken(e.target.value)}
+                placeholder={t("ai.settings.researchToken.placeholder")}
+              />
             </label>
             <div style={muted}>{t("ai.settings.endpoints.hint")}</div>
             {endpointError && (

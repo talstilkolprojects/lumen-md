@@ -63,13 +63,18 @@ export function researchEndpoint(): string | null {
   return connectAllowedByCsp(url) ? url.replace(/\/+$/, "") : null;
 }
 
+/** Secret-store name of the research worker's shared token (AI settings → research service token). */
+export const RESEARCH_SERVICE_TOKEN = "lumen.research.serviceToken";
+
 /**
  * Headers for research-service requests: the optional shared token the
  * worker requires when its RESEARCH_TOKEN is set (see the worker README).
+ * The user enters it in AI settings and it lives in the secret store; it is
+ * never a build variable, because every VITE_* value ships in the bundle.
  * Sent only when configured, so a plain GET stays a simple CORS request.
  */
 function serviceHeaders(extra: Record<string, string> = {}): Record<string, string> {
-  const token = (import.meta.env?.VITE_RESEARCH_TOKEN as string | undefined)?.trim();
+  const token = getSecret(RESEARCH_SERVICE_TOKEN)?.trim();
   return token ? { ...extra, "X-Lumen-Research-Token": token } : extra;
 }
 

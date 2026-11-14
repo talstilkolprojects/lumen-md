@@ -1139,6 +1139,8 @@
   "ai.settings.endpoints": "שירותים מקומיים",
   "ai.settings.grammar": "דקדוק",
   "ai.settings.research": "מחקר",
+  "ai.settings.researchToken": "אסימון מחקר",
+  "ai.settings.researchToken.placeholder": "אסימון משותף, אם שירות המחקר דורש אחד",
   "ai.settings.endpoints.hint": "הפעל את שניהם עם: docker compose -f docker/local-ai.yml up -d. ריק = ברירת המחדל.",
   "ai.settings.style": "סגנון הכתיבה שלי",
   "ai.settings.style.use": "כתוב בסגנון שלי",

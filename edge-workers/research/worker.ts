@@ -14,9 +14,9 @@
  *    a request without an Origin is refused). That keeps other sites'
  *    pages from using it, but a non-browser client can send any Origin, so
  *    it is not authentication. With RESEARCH_TOKEN set, every request must
- *    also carry it in X-Lumen-Research-Token; the app sends it when built
- *    with VITE_RESEARCH_TOKEN. In a public web app that value ships in the
- *    bundle, so it only stops casual reuse; see README.md.
+ *    also carry it in X-Lumen-Research-Token; the app sends the token the
+ *    user entered in AI settings (kept in its secret store, never in the
+ *    build); see README.md.
  *  - Public http(s) URLs only, re-checked on every redirect (max 5); no
  *    cookies or credentials are forwarded; 10 s timeout; at most 2 MB read;
  *    HTML / plain text only; returned text capped at 200K characters.

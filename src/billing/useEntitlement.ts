@@ -16,6 +16,7 @@ import { capabilitiesFor, type Capabilities, type Entitlement, FREE_CAPS } from 
 import { log } from "../lib/logger";
 import { useAuth } from "../auth/useAuth";
 import { fetchWithRetry } from "../lib/fetchRetry";
+import { publicEnv } from "../lib/publicEnv";
 
 interface EntitlementStore {
   entitlement: Entitlement | null;
@@ -39,8 +40,6 @@ type EnvShape = {
   VITE_ENTITLEMENT_ENDPOINT?: string;
 };
 
-type Env = { env?: EnvShape };
-
 let endpointOverride: string | null = null;
 
 /**
@@ -53,12 +52,7 @@ export function __setEntitlementEndpointForTesting(url: string | null): void {
 
 function readEnvVar(key: keyof EnvShape): string {
   if (key === "VITE_ENTITLEMENT_ENDPOINT" && endpointOverride !== null) return endpointOverride;
-  try {
-    const env = (import.meta as ImportMeta & Env).env;
-    return env?.[key]?.trim() ?? "";
-  } catch {
-    return "";
-  }
+  return publicEnv(key);
 }
 
 function normalizeStatus(value: unknown): value is Entitlement["status"] {

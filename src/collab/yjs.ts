@@ -192,6 +192,7 @@ function configuredWebsocketUrl(): string | null {
 
 function configuredWebsocketToken(): string {
   const env = typeof import.meta !== "undefined"
+    // hygiene-allow: build-time collab token; #237 (plan 3.6) removes it with the room-token server
     ? (import.meta as ImportMeta & { env?: { VITE_YJS_WEBSOCKET_TOKEN?: string } }).env?.VITE_YJS_WEBSOCKET_TOKEN
     : undefined;
   return env?.trim() ?? "";

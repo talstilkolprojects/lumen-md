@@ -16,9 +16,15 @@
 
 import type { PlanTier } from "./types";
 import { fetchWithRetry } from "../lib/fetchRetry";
+import { publicEnv } from "../lib/publicEnv";
 
 type EnvShape = { VITE_BILLING_ENDPOINT?: string; VITE_PRICE_ID_PRO?: string; VITE_PRICE_ID_TEAM?: string };
-const env = () => (import.meta as ImportMeta & { env?: EnvShape }).env ?? {};
+// One name at a time (see lib/publicEnv): a whole-object read inlines every VITE_* value.
+const env = (): EnvShape => ({
+  VITE_BILLING_ENDPOINT: publicEnv("VITE_BILLING_ENDPOINT") || undefined,
+  VITE_PRICE_ID_PRO: publicEnv("VITE_PRICE_ID_PRO") || undefined,
+  VITE_PRICE_ID_TEAM: publicEnv("VITE_PRICE_ID_TEAM") || undefined,
+});
 
 function endpoint(): string {
   const value = env().VITE_BILLING_ENDPOINT;

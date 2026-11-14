@@ -1139,6 +1139,8 @@
   "ai.settings.endpoints": "الخدمات المحلية",
   "ai.settings.grammar": "القواعد",
   "ai.settings.research": "البحث",
+  "ai.settings.researchToken": "رمز البحث",
+  "ai.settings.researchToken.placeholder": "الرمز المشترك، إذا طلبته خدمة البحث",
   "ai.settings.endpoints.hint": "شغّل الاثنين بالأمر: docker compose -f docker/local-ai.yml up -d. فارغ = الافتراضي.",
   "ai.settings.style": "أسلوب كتابتي",
   "ai.settings.style.use": "اكتب بأسلوبي",
