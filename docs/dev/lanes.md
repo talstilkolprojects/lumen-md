@@ -175,3 +175,11 @@ threads are answered and left open for the reviewer.
 Run it at the end of every PR. The file is gitignored on purpose: every lane would otherwise conflict on it. The coordinator copies it to the claude.ai project doc so the next session reads it there.
 
 `--stdout` prints the file instead of writing it. `--no-github` skips the GitHub calls (no PRs).
+
+## Stopping and resuming
+
+A session can stop at any point. Each lane keeps a `STATE.md` (branches and
+the heads origin has, tasks, pushes, what it waits on, the next step), and a
+resumed lane starts with `node scripts/lane-state.mjs resume <STATE.md>`,
+which says per branch whether to push, open a PR, or push nothing. The
+template and the resume steps are in [lane-state.md](lane-state.md).
