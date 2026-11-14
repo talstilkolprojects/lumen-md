@@ -18,7 +18,7 @@
 
 import type { AgentTool, NetworkConsentRequest, ToolCall } from "./types";
 import { getAiPolicy } from "../ai/policy";
-import { ledgerFetch, recordBlockedRequest } from "../ai/privacyLedger";
+import { ledgerFetch, recordBlockedRequest, recordProcessCall } from "../ai/privacyLedger";
 import { ToolError } from "./tools/define";
 import "./networkStrings";
 
@@ -38,6 +38,16 @@ export interface NetworkBinding {
  */
 export async function describeNetworkCall(tool: AgentTool, call: ToolCall): Promise<NetworkConsentRequest & { url: string; bound: NetworkBinding }> {
   const { researchEndpoint, getResearchSettings } = await import("../research/client");
+  // A tool with its own server (an MCP server): the prompt, the ledger and the bound fetch name that server (review 21, C2).
+  if (tool.networkTarget) {
+    let host = "";
+    try {
+      host = new URL(tool.networkTarget).hostname;
+    } catch {
+      throw new ToolError("failed", `"${tool.name}" has no valid server address`);
+    }
+    return { tool: tool.name, host, sends: "the tool's arguments", what: "tool-args", args: call.args, url: tool.networkTarget, bound: { endpoint: tool.networkTarget, settings: getResearchSettings() } };
+  }
   const endpoint = researchEndpoint();
   if (!endpoint) throw new ToolError("failed", "The research service isn't configured (VITE_RESEARCH_ENDPOINT or a local SearXNG in AI settings), so there is no way to reach the web");
   const hostOf = (u: string) => {
@@ -119,6 +129,13 @@ export async function openNetworkGate(
 ): Promise<{ fetch: typeof fetch; consented: boolean; bound: NetworkBinding }> {
   const reason = `Agent tool ${tool.name}`;
   const { url, bound, ...described } = await describeNetworkCall(tool, call);
+  // A local program (an MCP server on stdio) makes no fetch: its call gets its own ledger entry once allowed (review 24, C3r).
+  const opened = async <T extends { consented: boolean }>(r: T): Promise<T> => {
+    if (url.startsWith("stdio://")) {
+      recordProcessCall(url, `${reason}${r.consented ? " (user consent)" : ""}`, JSON.stringify(call.args ?? {}).length, r.consented);
+    }
+    return r;
+  };
   const req = guard?.untrusted.length ? { ...described, untrusted: guard.untrusted } : described;
   if (getAiPolicy() !== "local-only") {
     // Plan 2.7: with untrusted content in the run, the call needs the user's
@@ -135,9 +152,9 @@ export async function openNetworkGate(
         recordBlockedRequest(url, "research", `${reason} (untrusted content in the run, not approved)`);
         throw new ToolError("denied", (await import("./untrusted")).UNTRUSTED_DENIED);
       }
-      return { fetch: boundFetch(ledgerFetch({ force: { category: "research", reason: `${reason} (approved: untrusted content in the run)` }, consent: true }), bound.endpoint), consented: true, bound };
+      return opened({ fetch: boundFetch(ledgerFetch({ force: { category: "research", reason: `${reason} (approved: untrusted content in the run)` }, consent: true }), bound.endpoint), consented: true, bound });
     }
-    return { fetch: boundFetch(ledgerFetch({ force: { category: "research", reason } }), bound.endpoint), consented: false, bound };
+    return opened({ fetch: boundFetch(ledgerFetch({ force: { category: "research", reason } }), bound.endpoint), consented: false, bound });
   }
   let ok = false;
   try {
@@ -146,7 +163,7 @@ export async function openNetworkGate(
     ok = false;
   }
   if (!ok) throw recordBlockedRequest(url, "research", `${reason} (local-only, no consent)`);
-  return { fetch: boundFetch(ledgerFetch({ force: { category: "research", reason: `${reason} (user consent)` }, consent: true }), bound.endpoint), consented: true, bound };
+  return opened({ fetch: boundFetch(ledgerFetch({ force: { category: "research", reason: `${reason} (user consent)` }, consent: true }), bound.endpoint), consented: true, bound });
 }
 
 /** A fetch that reaches only the research service the call was approved for. */

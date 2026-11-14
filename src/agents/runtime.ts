@@ -462,7 +462,8 @@ export async function runAgent<I extends AgentInput, O = string>(def: AgentDefin
     docKey,
     consent: opts.consentNetwork,
     staged,
-    taint: [...inputUntrusted],
+    // Outside tools (MCP servers, review 21 C1): offering them already puts outside text in the context.
+    taint: [...inputUntrusted, ...new Set((def.tools ?? []).flatMap((t) => t.offeredBy ?? []))],
     // What the run was given is the user's own, unless the user asked for it to go out (a research question).
     private: !opts.inputMayLeave && !!(ctx.document || ctx.selection || input.text),
     consentUntrusted: opts.consentUntrusted,
