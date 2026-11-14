@@ -14,6 +14,11 @@ const PORT = 5173;
  * the production build — never in the per-browser PR jobs.
  */
 const NIGHTLY = /@nightly/;
+/** Plan W1.22: the responsiveness budget (e2e/inp-budget.spec.ts), only in the "inp" project. */
+const INP = /@inp/;
+/** Plan W6.45: INP and keypress → paint per environment (e2e/inp-devices.spec.ts), only in the inp-* projects. */
+const RESPONSIVENESS = /@responsiveness/;
+const NOT_IN_PR_RUNS = /@nightly|@inp|@responsiveness/;
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`;
 /** A Chromium executable to use when Playwright's own is not installed (docs/dev/ci-local.md). */
 const CHROMIUM = process.env.PW_CHROMIUM;
@@ -37,10 +42,10 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   projects: [
-    { name: "chromium", grepInvert: NIGHTLY, use: { ...devices["Desktop Chrome"], ...(CHROMIUM ? { launchOptions: { executablePath: CHROMIUM } } : {}) } },
+    { name: "chromium", grepInvert: NOT_IN_PR_RUNS, use: { ...devices["Desktop Chrome"], ...(CHROMIUM ? { launchOptions: { executablePath: CHROMIUM } } : {}) } },
     {
       name: "firefox",
-      grepInvert: NIGHTLY,
+      grepInvert: NOT_IN_PR_RUNS,
       use: {
         ...devices["Desktop Firefox"],
         // Headless Firefox on CI runners (no GPU) blocks WebGL by default,
@@ -57,9 +62,25 @@ export default defineConfig({
         },
       },
     },
-    { name: "webkit", grepInvert: NIGHTLY, use: { ...devices["Desktop Safari"] } },
+    { name: "webkit", grepInvert: NOT_IN_PR_RUNS, use: { ...devices["Desktop Safari"] } },
     // `npx playwright test --project=perf` (.github/workflows/nightly-perf.yml).
     { name: "perf", grep: NIGHTLY, use: { ...devices["Desktop Chrome"] } },
+    // `npm run perf:inp`: 20 interactions and keypress → paint with the CPU 4× slower (plan W1.22).
+    { name: "inp", grep: INP, use: { ...devices["Desktop Chrome"] } },
+    // `npm run perf:responsiveness` (plan W6.45): both editors on a 10,000-note vault, desktop and a
+    // mid-range phone. `metadata` names the environment for the report, the baseline and the receipt.
+    {
+      name: "inp-desktop",
+      grep: RESPONSIVENESS,
+      use: { ...devices["Desktop Chrome"], ...(CHROMIUM ? { launchOptions: { executablePath: CHROMIUM } } : {}) },
+      metadata: { env: "desktop-chromium", device: "Desktop Chrome (this machine)", cpuSlowdown: 1, scored: true, inpBudget: 100 },
+    },
+    {
+      name: "inp-phone",
+      grep: RESPONSIVENESS,
+      use: { ...devices["Pixel 7"], ...(CHROMIUM ? { launchOptions: { executablePath: CHROMIUM } } : {}) },
+      metadata: { env: "mid-phone-emulated", device: "Pixel 7 emulation, CPU 4× slower", cpuSlowdown: 4, scored: true, inpBudget: 200 },
+    },
   ],
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined

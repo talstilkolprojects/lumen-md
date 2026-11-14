@@ -105,6 +105,8 @@ export function extraSteps({ scripts = {}, hasCargo = false, date = new Date() }
   const out = [];
   if (scripts["drill:data-safety"]) out.push({ id: "drill-data-safety", group: "drill", cmd: ["npm", "run", "drill:data-safety"], timeoutMin: 60 });
   if (hasCargo) out.push({ id: "cargo-check", group: "cargo", cmd: ["cargo", "check", "--locked", "--manifest-path", "src-tauri/Cargo.toml"], timeoutMin: 45 });
+  // Plan W6.45: the responsiveness run on the factory's CPU, gated against that environment's baseline.
+  if (scripts["perf:responsiveness"]) out.push({ id: "perf-responsiveness", group: "perf", cmd: ["npm", "run", "perf:responsiveness", "--", "--seal"], timeoutMin: 45 });
   if (scripts["test:mutation"] && date.getUTCDay() === 0) out.push({ id: "mutation", group: "weekly", cmd: ["npm", "run", "test:mutation"], timeoutMin: 240 });
   return out;
 }
