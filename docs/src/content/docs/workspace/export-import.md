@@ -51,10 +51,15 @@ detection, Notion's link rewrite and the duplicate-name numbering are unit
 tests over `src/storage/exportAll.ts`. Each format converter has its own
 tests.
 
-A real corpus (`src/__tests__/fixtures/real-corpus`, with a manifest of
-each file's source, licence and sha256) checks the importers end to end: 30
-Word files written by LibreOffice, 30 Notion exports (Markdown & CSV, and
-HTML) and 35 real Evernote exports. Each note must keep its headings,
+A corpus (`src/__tests__/fixtures/real-corpus`, with a manifest of each
+file's origin, source, licence and sha256) checks the importers end to end.
+Most of it is **ours**:
+- 30 Word files that LibreOffice wrote from our documents;
+- 30 Notion-shaped exports (Markdown & CSV, and HTML) written by our script.
+
+The **third-party** part is 35 Evernote exports from yarle's test data. The
+test reports the two groups separately: a score on our own imitation of a
+format is not a score on real files. Each note must keep its headings,
 nested lists, tables, links, images and right-to-left text. Word imports
 bring numbered and nested lists, links, Hebrew bold and italic, and images
 (inline, up to 512 KB each).
