@@ -1873,6 +1873,7 @@
   "scroll.page": "עמוד {current}/{total}",
   "settings.empty": "אין הגדרה שמתאימה",
   "settings.general": "כללי",
+  "settings.privacy": "פרטיות",
   "settings.importFailed": "הקובץ הזה אינו קובץ הגדרות של Lumen.",
   "settings.importRefused": "לא יובאו, כדי שהמכשיר ישמור על הגדרות הפרטיות שלו: {keys}",
   "settings.imported": "יובאו {n} הגדרות, {skipped} דולגו",

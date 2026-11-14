@@ -1873,6 +1873,7 @@
   "scroll.page": "صفحة {current}/{total}",
   "settings.empty": "لا يوجد إعداد مطابق",
   "settings.general": "عام",
+  "settings.privacy": "الخصوصية",
   "settings.importFailed": "هذا الملف ليس ملف إعدادات Lumen.",
   "settings.importRefused": "لم تُستورد، ليحتفظ هذا الجهاز بإعدادات الخصوصية الخاصة به: {keys}",
   "settings.imported": "تم استيراد {n} من الإعدادات، وتخطي {skipped}",

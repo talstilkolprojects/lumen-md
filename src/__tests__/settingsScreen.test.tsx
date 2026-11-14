@@ -13,6 +13,7 @@ import { SettingsScreen } from "../ui/SettingsScreen";
 import { useAppStore } from "../store/useStore";
 import { downloadText } from "../storage/exportFormats";
 import { showAiToast } from "../ui/AiToast";
+import { __resetRemoteImagesForTests, allowRemoteImageHosts, allowedRemoteImageHosts } from "../lib/remoteImages";
 
 function file(text: string): File {
   const f = new File([text], "lumen-settings.json", { type: "application/json" });
@@ -37,12 +38,33 @@ describe("SettingsScreen", () => {
       "General",
       "Theme",
       "AI settings",
+      "Privacy",
       "Collaboration settings",
       "Train AI on my style",
       "Trusted signing keys",
       "Organization",
     ]);
     expect(screen.getByRole("tab", { name: "General" }).getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("the Privacy tab lists the allowed image hosts, and revoking one there blocks it again (W10.C18)", async () => {
+    __resetRemoteImagesForTests();
+    allowRemoteImageHosts(["images.example.org", "cdn.example.net"]);
+    render(<SettingsScreen onClose={() => {}} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Privacy" }));
+    await waitFor(() => expect(screen.getByTestId("image-hosts")).toBeTruthy());
+    expect(screen.getByRole("heading", { name: /Allowed image hosts/ })).toBeTruthy();
+    expect(screen.getByTestId("image-hosts").textContent).toContain("images.example.org");
+    fireEvent.click(screen.getByRole("button", { name: /images\.example\.org/ }));
+    await waitFor(() => expect(allowedRemoteImageHosts()).toEqual(["cdn.example.net"]));
+    expect(screen.getByTestId("image-hosts").textContent).not.toContain("images.example.org");
+    __resetRemoteImagesForTests();
+  });
+
+  it("search finds the Privacy tab by name", () => {
+    render(<SettingsScreen onClose={() => {}} />);
+    fireEvent.change(screen.getByTestId("settings-search"), { target: { value: "privacy" } });
+    expect(screen.getAllByRole("tab").map((x) => x.textContent)).toContain("Privacy");
   });
 
   it("search narrows the settings, and a change writes the store", () => {
