@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { memoryProvider, PreconditionFailedError, type PutCondition } from "../sync/e2ee/provider";
-import { createVault, E2eeSync, KeyChangeInProgressError, PairingDuringKeyChangeError, RevocationContestedError, unlockVault, unlockWithDevice } from "../sync/e2ee/engine";
+import { createVault, DeviceBusyError, E2eeSync, KEY_CHANGE_LOCK_WAIT_MS, KeyChangeInProgressError, PairingDuringKeyChangeError, RevocationContestedError, unlockVault, unlockWithDevice } from "../sync/e2ee/engine";
 import { generateIdentity } from "../sync/e2ee/age";
 import { fromUtf8 } from "../sync/e2ee/bytes";
 import type { VaultKeys } from "../sync/e2ee/keys";
@@ -310,5 +310,68 @@ describe("review 16 follow-ups (K6-1, K6-2, K6-3)", () => {
     }
     refuse = false;
     expect((await tab.rekey({ revoke: ["phone"] })).epoch).toBe(2);
+  });
+});
+
+describe("review 34 follow-ups (K34-1, K34-2)", () => {
+  /** `base`, with the next GET held until `release()`: a storage request that hangs. */
+  function hangNextGet(base: Provider) {
+    let hang = false;
+    const hold = gate();
+    const reached = gate();
+    const p = { ...base, id: "hanging", objects: base.objects, put: (n: string, d: Uint8Array, c?: PutCondition) => base.put(n, d, c), delete: (n: string) => base.delete(n), list: () => base.list(),
+      async get(n: string) {
+        if (hang) {
+          hang = false;
+          reached.open();
+          await hold.wait();
+        }
+        return base.get(n);
+      } };
+    return { p, arm: () => (hang = true), reached: reached.wait(), release: hold.open };
+  }
+
+  it("K34-1: a revocation fails clearly, within the bound, while another tab's round hangs on the storage; then it goes through", async () => {
+    const base = memoryProvider();
+    const a = await newVault(base);
+    a.files.set("a.md", "hello");
+    await a.sync.sync();
+    const phone = await generateIdentity();
+    await a.sync.rekey({ enroll: { phone: phone.recipient } });
+    await a.sync.sync();
+    const h = hangNextGet(base);
+    const tab1 = new E2eeSync({ provider: h.p, keys: a.sync.keys(), local: a.files, store: a.store });
+    const tab2 = new E2eeSync({ provider: base, keys: a.sync.keys(), local: a.files, store: a.store });
+    h.arm();
+    const round = tab1.sync();
+    await h.reached;
+    const t0 = Date.now();
+    await expect(tab2.rekey({ revoke: ["phone"] })).rejects.toBeInstanceOf(DeviceBusyError);
+    const waited = Date.now() - t0;
+    expect(waited).toBeGreaterThanOrEqual(KEY_CHANGE_LOCK_WAIT_MS - 50);
+    expect(waited).toBeLessThan(KEY_CHANGE_LOCK_WAIT_MS + 5_000);
+    expect(e2eeErrorText(new DeviceBusyError())).toBe(t("e2ee.busy"));
+    h.release();
+    await round;
+    expect((await tab2.rekey({ revoke: ["phone"] })).epoch).toBe(2); // the round let go: it goes through
+  }, 60_000);
+
+  it("K34-2: a code asked for while another tab only syncs says 'busy', not 'changing keys'", async () => {
+    const base = memoryProvider();
+    const a = await newVault(base);
+    a.files.set("a.md", "hello");
+    await a.sync.sync();
+    await a.sync.rekey({});
+    await a.sync.sync();
+    const h = hangNextGet(base);
+    const tab1 = new E2eeSync({ provider: h.p, keys: a.sync.keys(), local: a.files, store: a.store });
+    const tab2 = new E2eeSync({ provider: base, keys: a.sync.keys(), local: a.files, store: a.store });
+    h.arm();
+    const round = tab1.sync();
+    await h.reached;
+    await expect(tab2.pairingCode()).rejects.toBeInstanceOf(DeviceBusyError);
+    h.release();
+    await round;
+    expect((await tab2.pairingCode()).split(":")[2]).toBe("1"); // the round let go: a code for epoch 1
   });
 });

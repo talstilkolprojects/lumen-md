@@ -63,6 +63,7 @@ import { E2eeSyncPairing } from "./enginePairing";
 // W4.11: the engine is split into engineTypes.ts, vaultOpen.ts,
 // engineCore.ts, engineKeys.ts and enginePairing.ts (W8.5); everything is still imported from here.
 export {
+  DeviceBusyError,
   DropDevicesRequiredError,
   KeyChangeInProgressError,
   NoVaultError,
@@ -72,6 +73,7 @@ export {
   RevocationContestedError,
   UnverifiedDeviceError,
   VaultExistsError,
+  KEY_CHANGE_LOCK_WAIT_MS,
   type E2eeSyncOptions,
   type PairingComparison,
   type RekeyRequest,

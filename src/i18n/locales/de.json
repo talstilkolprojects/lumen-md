@@ -1321,6 +1321,7 @@
   "e2ee.pair.rekeying": "Dieses Gerät ändert gerade die Schlüssel des Tresors. Erstelle den Kopplungscode, sobald die Änderung abgeschlossen ist.",
   "e2ee.revokedHere.reset": "Die eigene Liste dieses Geräts mit den von ihm entfernten Geräten ließ sich nicht prüfen und wurde beiseitegelegt. Es prüft jetzt gegen die versiegelte Liste entfernter Geräte des Tresors. Prüfe die Geräteliste auf einem Gerät, dem du vertraust.",
   "e2ee.rekey.contested": "Das Entfernen von {devices} ist wieder nicht durchgegangen: Jedes Mal wurde die Geräteliste des Tresors im selben Moment neu geschrieben, von etwas, das noch die Schlüssel des Tresors und den Speicherzugang hat, sehr wahrscheinlich das Gerät, das Sie entfernen. Ändern Sie zuerst das Passwort oder Token des Speichers, damit dieses Gerät nicht mehr schreiben kann, und entfernen Sie es dann erneut.",
+  "e2ee.busy": "Dieses Gerät synchronisiert gerade in einem anderen Tab, daher wurde nichts geändert. Versuchen Sie es gleich noch einmal; wenn das wiederholt passiert, laden Sie die anderen Lumen-Tabs neu oder schließen Sie sie.",
   "vault.import.what": "Importieren aus…",
   "vault.import.zip": "Einer .zip-Datei",
   "vault.import.folder": "Einem Ordner",
