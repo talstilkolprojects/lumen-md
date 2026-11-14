@@ -7,6 +7,7 @@
  * Obsidian.
  */
 import { stringify } from "yaml";
+import { inferOrder, parseNotionDate, type DateOrder } from "./notionDates";
 import { stripNotionIds } from "../exportAll";
 import { claimPath, dirOf, mdDest, mdEmbed, relativeTo, resolveRel, safePath, stemOf } from "./names";
 import { decodeEntities, htmlToNote } from "./html";
@@ -51,23 +52,13 @@ export function parseCsv(text: string): string[][] {
 
 /* ─── Cell values ────────────────────────────────────────────────────── */
 
-const MONTH = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
-
-/** Notion's `January 31, 2024` / `January 31, 2024 10:00 AM` / `2024/01/31` → `2024-01-31` / `2024-01-31T10:00`; else null. */
-export function notionDate(s: string): string | null {
-  const v = s.trim().replace(/^@/, "");
-  let m = /^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/.exec(v);
-  if (m) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
-  m = /^([A-Za-z]+) (\d{1,2}), (\d{4})(?: (\d{1,2}):(\d{2}) ?(AM|PM)?)?(?: \([^)]*\))?$/i.exec(v);
-  if (!m) return null;
-  const mo = MONTH.indexOf(m[1].toLowerCase());
-  if (mo < 0) return null;
-  const date = `${m[3]}-${String(mo + 1).padStart(2, "0")}-${m[2].padStart(2, "0")}`;
-  if (!m[4]) return date;
-  let h = Number(m[4]) % 12;
-  if (m[6]?.toUpperCase() === "PM") h += 12;
-  if (!m[6]) h = Number(m[4]);
-  return `${date}T${String(h).padStart(2, "0")}:${m[5]}`;
+/**
+ * A Notion date cell → `2024-01-31` / `2024-01-31T10:00`, else null. Any of
+ * the export languages (./notionDates.ts, plan W11.P1), not only English;
+ * `order` settles a numeric `03/04/2026` the way its column does.
+ */
+export function notionDate(s: string, order?: DateOrder): string | null {
+  return parseNotionDate(s, { order });
 }
 
 /** `Page (Page%20<id>.md)` or `Page (https://www.notion.so/…)` → the page title. */
@@ -78,7 +69,9 @@ export function typeColumn(cells: string[]): (string | number | boolean | string
   const filled = cells.filter((c) => c.trim() !== "");
   if (filled.length && filled.every((c) => /^(Yes|No)$/.test(c.trim()))) return cells.map((c) => (c.trim() === "" ? null : c.trim() === "Yes"));
   if (filled.length && filled.every((c) => /^-?\d+(\.\d+)?$/.test(c.trim().replace(/,/g, "")))) return cells.map((c) => (c.trim() === "" ? null : Number(c.trim().replace(/,/g, ""))));
-  if (filled.length && filled.every((c) => notionDate(c) !== null)) return cells.map((c) => (c.trim() === "" ? null : notionDate(c)));
+  // A numeric date column settles day-first or month-first together (one 23/09/2026 makes 03/04/2026 the 3rd of April).
+  const order = inferOrder(filled);
+  if (filled.length && filled.every((c) => notionDate(c, order) !== null)) return cells.map((c) => (c.trim() === "" ? null : notionDate(c, order)));
   if (filled.length && filled.every((c) => c.split(/, (?=[^,]+ \()/).every((p) => RELATION.test(p.trim())))) {
     return cells.map((c) => (c.trim() === "" ? null : c.split(/, (?=[^,]+ \()/).map((p) => `[[${RELATION.exec(p.trim())![1]}]]`)));
   }
