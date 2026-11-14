@@ -170,7 +170,8 @@ describe("5.6.4 every failure reaches the panel", () => {
     for (const [file, id] of [
       // useCommands.ts is split into per-domain builders (#208).
       ["src/commands/domains/research.ts", "research.ask"],
-      ["src/commands/domains/batch.ts", "ai.batch"],
+      // The batch bodies load on use (044e87aa, train 3): batchActions.ts.
+      ["src/commands/domains/batchActions.ts", "ai.batch"],
       ["src/ui/SearchDialog.tsx", "search.askWorkspace"],
       ["src/plugins/CsvBlock.tsx", "ai.chart"],
       ["src/editor/WysiwygEditor.tsx", "wysiwyg.aiRewrite"],
