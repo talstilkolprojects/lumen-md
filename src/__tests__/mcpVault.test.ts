@@ -6,13 +6,14 @@
  * stdio session is `npm --prefix mcp-server run test:stdio`.
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync, mkdirSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync, mkdirSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { callTool, listToolsFor, TOOLS } from "../../mcp-server/src/vault/tools";
 import { enableClient, disableClient, readConfig, normalizeClientId } from "../../mcp-server/src/vault/config";
 import { readLedger } from "../../mcp-server/src/vault/ledger";
-import { approvePending, listPending, rejectPending } from "../../mcp-server/src/vault/pending";
+import { approvePending, listPending, proposeWrite, QueueFullError, rejectPending } from "../../mcp-server/src/vault/pending";
+import { proposeBatch } from "../../mcp-server/src/vault/bases";
 import { VaultIndex, wordTerms } from "../../mcp-server/src/vault/search";
 import { safeRel } from "../../mcp-server/src/vault/paths";
 import { runVaultCli } from "../../mcp-server/src/cli";
@@ -83,6 +84,39 @@ describe("paths stay in the vault and out of .lumen", () => {
     expect(safeRel("./a/b.md")).toBe("a/b.md");
     expect(await listPending(vault)).toEqual([]);
   });
+
+  it("follows no link out of the vault or into .lumen, for reads and approved writes (review 21, M1)", async () => {
+    await enableClient(vault, "c", ["read", "propose"]);
+    const outside = mkdtempSync(path.join(tmpdir(), "lumen-mcp-out-"));
+    try {
+      writeFileSync(path.join(outside, "secret.md"), "OUTSIDE-SECRET\n", "utf8");
+      symlinkSync(path.join(vault, ".lumen"), path.join(vault, "cfg"), "dir");
+      symlinkSync(outside, path.join(vault, "elsewhere"), "dir");
+      symlinkSync(path.join(outside, "secret.md"), path.join(vault, "alias.md"), "file");
+      symlinkSync(path.join(vault, "projects"), path.join(vault, "inside"), "dir");
+      for (const p of ["cfg/mcp.json", "elsewhere/secret.md", "alias.md"]) {
+        const r = await callTool(ctx("c"), "read_note", { path: p });
+        expect(r.isError, p).toBe(true);
+        expect(textOf(r), p).not.toContain("OUTSIDE-SECRET");
+        expect(textOf(r), p).not.toContain("\"enabled\"");
+        expect((await callTool(ctx("c"), "write_note", { path: p, content: "x" })).isError, p).toBe(true);
+      }
+      // A link that stays inside the vault is an ordinary note.
+      expect(textOf(await callTool(ctx("c"), "read_note", { path: "inside/launch.md" }))).toContain("Launch plan");
+      // A link made after the proposal: the approval refuses and writes nothing outside.
+      expect((await callTool(ctx("c"), "create_note", { path: "later/x", content: "PLANTED\n" })).isError).toBeFalsy();
+      const [p] = await listPending(vault);
+      symlinkSync(outside, path.join(vault, "later"), "dir");
+      await expect(approvePending(vault, p.id)).rejects.toThrow(/outside the vault/);
+      expect(existsSync(path.join(outside, "x.md"))).toBe(false);
+      // The CLI's direct write takes the same path.
+      const io = { cwd: vault, env: {}, out: () => undefined, err: () => undefined, isTTY: false } as unknown as Parameters<typeof runVaultCli>[1];
+      expect(await runVaultCli(["new", "elsewhere/y", "--vault", vault], io).catch(() => 1)).not.toBe(0);
+      expect(existsSync(path.join(outside, "y.md"))).toBe(false);
+    } finally {
+      rmSync(outside, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("writes from a client wait for approval", () => {
@@ -138,6 +172,20 @@ describe("writes from a client wait for approval", () => {
     const raw = readFileSync(path.join(vault, ".lumen/mcp/ledger.jsonl"), "utf8");
     expect(raw).not.toContain("TOP-SECRET-BODY");
     expect(raw).not.toContain("beta");
+  });
+
+  it("one client's waiting proposals are bounded; a batch is queued whole or not at all (review 21, M4)", async () => {
+    for (let i = 0; i < 3; i++) await proposeWrite(vault, { client: "noisy", tool: "create_note", path: `q/${i}.md`, before: null, after: "x" }, new Date(), 3);
+    await expect(proposeWrite(vault, { client: "noisy", tool: "create_note", path: "q/3.md", before: null, after: "x" }, new Date(), 3)).rejects.toBeInstanceOf(QueueFullError);
+    // Another client is not affected.
+    await proposeWrite(vault, { client: "quiet", tool: "create_note", path: "q/q.md", before: null, after: "x" }, new Date(), 3);
+    await expect(proposeBatch(vault, "quiet", "bases_update", [0, 1, 2].map((i) => ({ path: `b/${i}.md`, before: "", after: "y" })), new Date(), 3)).rejects.toBeInstanceOf(QueueFullError);
+    const queued = await listPending(vault);
+    expect(queued.filter((q) => q.client === "noisy")).toHaveLength(3);
+    expect(queued.filter((q) => q.client === "quiet").map((q) => q.path)).toEqual(["q/q.md"]);
+    // Through the tool: the default bound is far above an ordinary session, and a refusal is a tool error, not a crash.
+    const r = await callTool(ctx(), "create_note", { path: "inbox/ok", content: "# ok\n" });
+    expect(r.isError).toBeFalsy();
   });
 
   it("every tool has a scope", () => {
