@@ -53,6 +53,12 @@ exact commands `--publish` would run.
 9. **Checksums.** `SHA256SUMS` lists every asset. It is signed with minisign
    (`SHA256SUMS.minisig`), and so is the SBOM. The whole folder is then
    verified, and a changed `SHA256SUMS` must fail.
+   Then the provenance gate runs ([Build provenance and Sigstore signatures](/security/provenance/)):
+   - SLSA provenance over the exact files, signed with the build key
+   - a keyless Sigstore bundle per file, from Tal's login
+   - `verify.mjs` checks both for every file; nothing is pushed unless it passes
+
+   A dry run uses TEST keys and a local Sigstore stand-in instead.
 10. **Publish** (`--publish` only): `git push origin HEAD vX`, then
     `gh release create`. A beta is a pre-release and is never "latest", so
     stable users never get it. Then `latest.json` is uploaded to the
