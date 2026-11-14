@@ -38,7 +38,7 @@
     "test": "vitest run",
     "lumen": "tsx bin/lumen.ts",
     "test:coverage": "vitest run --coverage",
-    "test:mutation": "node scripts/mutation/run.mjs --min 70",
+    "test:mutation": "node scripts/mutation/run.mjs --min 80",
     "test:watch": "vitest",
     "test:crash": "node scripts/vault-crash-test.mjs --kills 1000",
     "test:e2e": "playwright test",

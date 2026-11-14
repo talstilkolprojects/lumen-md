@@ -42,13 +42,13 @@ description: איך Lumen בודק שהבדיקות של הקוד הקריטי �
 ## הרצה
 
 ```sh
-npm run test:mutation                          # כל המודולים, נכשל מתחת ל-70%
+npm run test:mutation                          # כל המודולים, נכשל מתחת ל-80%
 node scripts/mutation/run.mjs --module keyring # מודול אחד
-node scripts/mutation/run.mjs --max 200        # מדגם גדול יותר לכל מודול
+node scripts/mutation/run.mjs --max 200        # מדגם גדול יותר לכל מודול (עדיין הערכה)
 ```
 
 הדוח, עם הציון לכל מודול והשורה של כל מוטציה ששרדה, נכתב
-ל-`reports/mutation/`. היעד בתוכנית הוא ציון של 70% לפחות בכל מודול.
+ל-`reports/mutation/`. הרצפה היא ציון של 80% לפחות בכל מודול, בהרצה מלאה ב-vitest (מדגם הוא רק הערכה).
 מוטציה ששורדת במודול אבטחה צריכה לקבל בדיקה שתופסת אותה.
 ---
 title: בדיקות מוטציה
@@ -94,13 +94,13 @@ description: איך Lumen בודק שהבדיקות של הקוד הקריטי �
 ## הרצה
 
 ```sh
-npm run test:mutation                          # כל המודולים, נכשל מתחת ל-70%
+npm run test:mutation                          # כל המודולים, נכשל מתחת ל-80%
 node scripts/mutation/run.mjs --module keyring # מודול אחד
-node scripts/mutation/run.mjs --max 200        # מדגם גדול יותר לכל מודול
+node scripts/mutation/run.mjs --max 200        # מדגם גדול יותר לכל מודול (עדיין הערכה)
 ```
 
 הדוח, עם הציון לכל מודול והשורה של כל מוטציה ששרדה, נכתב
-ל-`reports/mutation/`. היעד בתוכנית הוא ציון של 70% לפחות בכל מודול.
+ל-`reports/mutation/`. הרצפה היא ציון של 80% לפחות בכל מודול, בהרצה מלאה ב-vitest (מדגם הוא רק הערכה).
 מוטציה ששורדת במודול אבטחה צריכה לקבל בדיקה שתופסת אותה.
 
 ## רצפה של 80% בכל build של preview
@@ -115,8 +115,7 @@ node scripts/mutation/run.mjs --max 200        # מדגם גדול יותר לכ
 - מאגר הסודות
 - כתיבה לכספת: `storage/vault/shared` ו-`handleBackend`
 
-`npm run test:mutation` נכשל כשאחד מהם מתחת ל-80%, וכשמודול אחר כלשהו מתחת
-ל-70%.
+`npm run test:mutation` נכשל כשמודול כלשהו מתחת ל-80%.
 
 הרצה מלאה ארוכה מדי ל-build של preview, ולכן ה-build בודק **קבלה**.
 `scripts/mutation/receipt.json` מתעד לכל מודול קריטי את הציון האחרון שלו ואת
@@ -124,13 +123,20 @@ node scripts/mutation/run.mjs --max 200        # מדגם גדול יותר לכ
 preview, נכשל כשמודול קריטי בענף:
 
 - אין לו ציון בקבלה,
-- הציון שלו מתחת ל-80%, או
-- הוא השתנה מאז שהציון שלו נמדד.
+- הציון שלו מתחת ל-80%,
+- הוא השתנה מאז שהציון שלו נמדד, או
+- יש לו רק **הערכה**.
 
-אחרי שמשנים מודול קריטי, מודדים אותו שוב ושומרים את הקבלה בקומיט:
+ציון נחשב רק כשהוא מגיע מ-vitest אמיתי על **כל** המוטציות (`runner: "vitest"`
+ו-`sampled` שווה ל-`mutants` בקבלה). הרצה ב-shim הלא-מקוון, או מדגם כמו 80
+מתוך 502 מוטציות, מוצגת כ-`~90% estimated (80/502 mutants, runner shim)`,
+והשער לא מעביר אותה. עד שנשמרת בקומיט הרצה מלאה ב-vitest, השער נשאר אדום.
+
+אחרי שמשנים מודול קריטי, מודדים אותו שוב ב-vitest, על כל המוטציות, ושומרים
+את הקבלה בקומיט:
 
 ```sh
-node scripts/mutation/run.mjs --critical --module privacyLedger --receipt
+node scripts/mutation/run.mjs --critical --module privacyLedger --receipt --max 100000
 ```
 
 מודול שעוד לא נמצא בענף (הוא מגיע עם pull request אחר) מופיע ברשימה ומדולג.
