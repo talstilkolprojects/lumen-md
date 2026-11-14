@@ -53,6 +53,32 @@ npm run repro
 (‏`LUMEN_SOURCEMAP=1`): ‏`node scripts/supply-chain/repro-check.mjs --sourcemap`
 בונה איתן ומראה אילו שדות שונים בכל מפה שאינה זהה.
 
+### על שתי מכונות ושתי תשתיות (תוכנית W7.23)
+
+בנייה שחוזרת על עצמה רק במכונה שבנתה אותה לא מוכיחה הרבה. יש עוד שתי בדיקות:
+
+```bash
+npm run repro:two-paths      # שני checkouts נקיים של אותו קומיט, שונים בכל דבר אחר
+npm run repro:compare -- <A> <B>
+```
+
+- **‏`repro:two-paths`** בונה את הקומיט פעמיים. שתי הבניות שונות בנתיב המוחלט
+  (נתיב ארוך ומקונן עם רווח), בזמן השינוי של כל קובץ מקור, ב-`TZ`, ב-`LANG`,
+  ב-`umask` ובשעון (תחת `faketime +400d` כשהוא מותקן). אחר כך הסקריפט משווה את
+  ה-SHA-256 של כל קובץ.
+- **‏Cloudflare Workers Builds בונה מחדש כל קומיט של `main`**
+  (`scripts/supply-chain/cf-build.sh`, ה-Worker ב-`cloudflare/repro/wrangler.jsonc`).
+  הוא מריץ `npm ci` ו-`npm run build` מאותו `package-lock.json`, ומגיש רק את
+  ה-manifest של הבנייה, ב-`<worker>/__build/manifest.json`. האפליקציה נשארת
+  ב-Vercel. המסלול החינמי נותן 3,000 דקות בנייה בחודש, בנייה אחת בכל פעם ו-20
+  דקות לבנייה (developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing).
+- **המארח השני משווה** (`scripts/supply-chain/repro-second-host.sh`). הוא מחשב
+  hash לכל קובץ שב-manifest כפי ש-Vercel מגיש אותו לאותו קומיט, מוסיף את התוצאה
+  ל-`reports/repro/ledger.jsonl`, ומריץ diffoscope על כל קובץ שונה. כשהבנייה זהה,
+  הוא כותב הצהרת in-toto ("נבנה זהה בשתי תשתיות") שחתימת השחרור חותמת עליה.
+- היעד: 0 קבצים שונים, כולל קובצי `.map`, ב-10 קומיטים ברצף, ובניית Cloudflare
+  מתחת ל-15 דקות.
+
 ## ‏3. לכל שחרור יש SBOM
 
 ```bash
