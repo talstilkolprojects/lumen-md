@@ -258,8 +258,10 @@ export const STEPS = [
       const model = join(c.cache, "zipformer2-66m-streaming-he");
       const store = c.heldoutStore ?? null;
       return [
-        { cmd: "bash", args: ["scripts/asr/fetch-model.sh", model] },
-        { ...npm("heldout", ["build"]), skipIf: () => !!store && HELDOUT_SETS.every((id) => existsSync(join(store, `${id}.lho`))) },
+        // Without the dictation model only asr-he is unavailable; the other five sets still run.
+        { cmd: "bash", args: ["scripts/asr/fetch-model.sh", model], allowFail: true },
+        // A run copy (LUMEN_HELDOUT_EXPORT, plan W6.18) scores only: nothing to build.
+        { ...npm("heldout", ["build"]), skipIf: () => !!process.env.LUMEN_HELDOUT_EXPORT || (!!store && HELDOUT_SETS.every((id) => existsSync(join(store, `${id}.lho`)))) },
         npm("heldout", ["scan", "--require-key", "--out", join(c.dir, "scan.json")]),
         npm("heldout", ["run", "--models", "qwen2.5:7b,gemma3:12b", "--url", c.url, "--out", c.dir, "--asr-model", model]),
       ];

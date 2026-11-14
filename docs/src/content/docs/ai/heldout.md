@@ -49,7 +49,12 @@ npm run heldout -- build --record               # fetch the pools, draw, encrypt
 npm run heldout -- run --models qwen2.5:7b,gemma3:12b --asr-model <dir>
 npm run heldout -- scan --require-key --prs open
 npm run heldout -- log --verify
+npm run heldout -- export --to <run recipient> --out <file>   # a one-run copy for a cloud GPU
 ```
+
+`export` re-encrypts the sets to a key made for one run of
+[models:cloud](/ai/models-cloud/). The copy can score, but it cannot build
+or export, and it carries no part of the evaluator's key.
 
 `build` needs Python 3 with `pip install -r scripts/golden/requirements.txt`
 and network access to Hugging Face, GitHub and npm. It checks each licence

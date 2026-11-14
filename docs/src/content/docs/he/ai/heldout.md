@@ -45,7 +45,12 @@ npm run heldout -- build --record               # הורדת המאגרים, ה�
 npm run heldout -- run --models qwen2.5:7b,gemma3:12b --asr-model <dir>
 npm run heldout -- scan --require-key --prs open
 npm run heldout -- log --verify
+npm run heldout -- export --to <run recipient> --out <file>   # עותק לריצה אחת על GPU בענן
 ```
+
+`export` מצפין מחדש את הסטים למפתח שנוצר לריצה אחת של
+[models:cloud](/he/ai/models-cloud/). העותק יכול לתת ציון, אבל לא לבנות
+ולא לייצא, ואין בו שום חלק מהמפתח של המעריך.
 
 `build` צריך Python 3 עם `pip install -r scripts/golden/requirements.txt`
 וגישה ל-Hugging Face, ל-GitHub ול-npm. הוא בודק שוב כל רישיון במקור, ונעצר

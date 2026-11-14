@@ -191,6 +191,7 @@ export default defineConfig({
             { label: "Hebrew dictation: models and accuracy", slug: "ai/hebrew-dictation", translations: { he: "הכתבה בעברית: מודלים ודיוק" } },
             { label: "Voice commands, on this device", slug: "ai/voice-commands", translations: { he: "פקודות קוליות, במכשיר הזה" } },
             { label: "Held-out sets: what the authors never see", slug: "ai/heldout", translations: { he: "סטים מוחזקים: מה שהכותבים לא רואים" } },
+            { label: "Models day on a free cloud GPU", slug: "ai/models-cloud", translations: { he: "יום מודלים על GPU חינמי בענן" } },
             { label: "Personal data before the cloud", slug: "ai/pii-redaction", translations: { he: "מידע אישי לפני הענן" } },
             { label: "Grounded summaries", translations: { he: "סיכומים מעוגנים" }, slug: "ai/summarize" },
             { label: "Measuring the local models", slug: "ai/model-bench", translations: { he: "מדידת המודלים המקומיים" } },

@@ -131,7 +131,8 @@
     "pages:check": "node scripts/pages-check.mjs",
     "pages:deploy": "bash scripts/pages-deploy.sh",
     "live:meta": "node scripts/live-meta.mjs",
-    "heldout": "node scripts/heldout.mjs"
+    "heldout": "node scripts/heldout.mjs",
+    "models:cloud": "node scripts/models-cloud.mjs"
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "0.4.2",

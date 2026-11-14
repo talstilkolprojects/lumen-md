@@ -275,6 +275,12 @@ for (const step of selected) {
     for (const c of step.commands({ url, dir, cache, meetingsDir: opts["meetings-dir"], voiceDir: opts["voice-dir"], heldoutStore })) {
       if (c.skipIf?.()) continue;
       exit = await exec(c, log);
+      // A command marked allowFail (a download the later commands can do without) does not stop the step.
+      if (exit !== 0 && c.allowFail && !stopping) {
+        log.write(`\n(exit ${exit}, allowed: the step goes on without it)\n`);
+        exit = 0;
+        continue;
+      }
       if (exit !== 0 || stopping) break;
     }
   }

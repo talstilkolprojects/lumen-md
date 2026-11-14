@@ -11,6 +11,8 @@
  *   npm run heldout -- scan [--diff REV] [--prs 12,34|open] [--paths a,b] [--require-key] [--out FILE]
  *                                             contamination check: canaries anywhere, item n-grams with the key
  *   npm run heldout -- log [--verify]         who asked for a score, when, on which versions
+ *   npm run heldout -- export --to R --out F  a copy of the sets for one run on a cloud GPU (plan W6.18), encrypted to
+ *                                             that run's key; the cloud scores it with LUMEN_HELDOUT_EXPORT=F and the run key
  *
  * The key: $LUMEN_HELDOUT_KEY, or --key-file FILE, or ~/.config/lumen-heldout/key. It comes from
  * Tal or the nightly host and never from the repo: a key file inside the checkout is refused.
@@ -96,6 +98,13 @@ function loadKey({ required }) {
     return null;
   }
   const recipient = recipientOf(secret);
+  // A run copy (plan W6.18): the sets re-encrypted by the evaluator to a one-run key, for a cloud GPU.
+  // It carries the commit secret (to check the digests), never the split secret or the evaluator's key.
+  if (process.env.LUMEN_HELDOUT_EXPORT) {
+    const ex = decrypt(readFileSync(process.env.LUMEN_HELDOUT_EXPORT), secret);
+    if (manifest.recipient && ex.from !== manifest.recipient) die(`the run copy was made with another evaluator key (${fingerprint(ex.from)}, the manifest's is ${fingerprint(manifest.recipient)})`);
+    return { secret, recipient, exported: ex, secrets: { commit: Buffer.from(ex.commitKey, "hex"), split: null } };
+  }
   if (manifest.recipient && manifest.recipient !== recipient) die(`this key (${fingerprint(recipient)}) is not the evaluator's key of the manifest (${fingerprint(manifest.recipient)})`);
   return { secret, recipient, secrets: deriveSecrets(secret) };
 }
@@ -105,9 +114,13 @@ const bundlePath = (id) => join(store, `${id}.lho`);
 const setMeta = (id) => manifest.sets.find((s) => s.id === id);
 
 function loadBundle(id, key) {
-  const p = bundlePath(id);
-  if (!existsSync(p)) return null;
-  const b = decrypt(readFileSync(p), key.secret);
+  let b = key.exported ? (key.exported.sets[id] ?? null) : null;
+  if (!key.exported) {
+    const p = bundlePath(id);
+    if (!existsSync(p)) return null;
+    b = decrypt(readFileSync(p), key.secret);
+  }
+  if (!b) return null;
   const cs = b.items.map((it) => commitment(key.secrets.commit, id, it));
   const digest = setDigest(cs);
   if (digest !== b.digest) throw new Error(`${id}: the bundle's items do not match its digest`);
@@ -192,8 +205,29 @@ async function pool(name, revision) {
   return { meta, rows };
 }
 
+// ── export: a one-run copy for a cloud GPU (plan W6.18) ───────────────────
+
+if (command === "export") {
+  const key = loadKey({ required: true });
+  if (key.exported) die("export needs the evaluator's own key, not a run copy");
+  if (!opts.to || !opts.out) die("usage: npm run heldout -- export --to <lumen-heldout-1… recipient> --out FILE [--sets a,b]");
+  if (insideRepo(opts.out)) die("the run copy must be written outside the repo");
+  const sets = {};
+  for (const id of selected) {
+    const b = loadBundle(id, key);
+    if (!b) die(`${id}: no bundle in ${store} (npm run heldout -- build)`);
+    const { commitments: _c, used: _u, retired: _r, ...rest } = b;
+    sets[id] = rest;
+  }
+  writeFileSync(resolve(opts.out), encrypt({ schema: 1, from: key.recipient, commitKey: key.secrets.commit.toString("hex"), sets }, opts.to, "run copy"));
+  const entry = appendLog({ action: "export", to: fingerprint(opts.to), sets: Object.values(sets).map((b) => ({ id: b.set, version: b.version, digest: b.digest })) });
+  console.log(`Run copy of ${Object.keys(sets).length} sets for ${fingerprint(opts.to)} → ${resolve(opts.out)} (logged as #${entry.seq})`);
+  process.exit(0);
+}
+
 if (command === "build") {
   const key = loadKey({ required: true });
+  if (key.exported) die("build needs the evaluator's own key; a run copy can only score");
   const sets = selected.map(setById);
   const needSets = [...new Set(sets.flatMap((s) => [...(s.after ?? []), s.id]))].map(setById);
   const pools = {};
@@ -388,7 +422,7 @@ if (command === "scan") {
     for (const d of docs) if (forms.some((f) => d.raw.includes(f))) report.keyLeaks.push(d.name);
     const units = [];
     for (const id of SETS.map((s) => s.id)) {
-      const b = existsSync(bundlePath(id)) ? loadBundle(id, key) : null;
+      const b = loadBundle(id, key);
       if (!b) continue;
       b.items.forEach((it, i) => setById(id).fields(it).forEach((text, j) => units.push({ id: `${publicId(id, b.commitments[i])}#${j}`, text })));
     }
@@ -419,4 +453,4 @@ if (command === "scan") {
   process.exit(bad ? 1 : 0);
 }
 
-die(`unknown command "${command}" — status, keygen, build, run, scan or log`);
+die(`unknown command "${command}" — status, keygen, build, run, scan, log or export`);
