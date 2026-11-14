@@ -5,7 +5,10 @@
 #   exit 1 → build
 #
 # Vercel limits `ignoreCommand` to 256 characters, so the logic lives here
-# and vercel.json only calls this script. Usage:
+# and the config only calls this script. The config is vercel.ts, compiled
+# after the ignore step has run, so its ignoreCommand is never read: the
+# Vercel project setting (Settings → Git → Ignored Build Step) must be
+# `bash scripts/vercel-ignore.sh` for any of this to apply. Usage:
 #
 #   scripts/vercel-ignore.sh [BASE] [HEAD]      (defaults: HEAD^ HEAD)
 #
