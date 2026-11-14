@@ -124,7 +124,7 @@ function frame(address, type, write) {
 }
 
 /**
- * One room. `state` is what was stored (or null); `onChange(doc)` follows
+ * One room. `state` is what was stored (or null); `onChange(doc, origin)` follows
  * every change, for the host to store (debounced).
  * `authorize(token, documentName, socket)` resolves true to let a connection in;
  * `onAuthenticated(socket, address)` follows (the Worker stores it with the
@@ -149,7 +149,7 @@ export function createRelayRoom({ name, state = null, authorize, onChange = () =
       encoding.writeVarUint8Array(e, update);
     }));
     bytes = Y.encodeStateAsUpdate(doc).byteLength;
-    onChange(doc);
+    onChange(doc, origin); // origin: the peer whose update it was (its socket), or null
   });
   awareness.on("update", ({ added, updated, removed }, origin) => {
     const changed = added.concat(updated, removed);

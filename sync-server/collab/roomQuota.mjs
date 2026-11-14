@@ -198,6 +198,44 @@ export function admit(counts, keys, day, limits, owner = null, owner48 = null) {
   return null;
 }
 
+/** At most this many writers are kept per room; the rest of a room's growth goes to its creator. */
+export const MAX_WRITERS = 16;
+
+/** A room's writers as the Quota accepts them: {"o:p": bytes}, owner values of 20 bits, at most MAX_WRITERS (the biggest). */
+export function cleanWriters(w) {
+  if (!w || typeof w !== "object") return {};
+  const ok = Object.entries(w).filter(([k, v]) => {
+    const m = /^(\d{1,7}):(\d{1,7})?$/.exec(k);
+    return m && Number.isFinite(v) && v > 0 && Number(m[1]) < 1 << 20 && (m[2] === undefined || Number(m[2]) < 1 << 20);
+  });
+  return Object.fromEntries(ok.sort((x, y) => y[1] - x[1]).slice(0, MAX_WRITERS).map(([k, v]) => [k, Math.floor(v)]));
+}
+
+/**
+ * Who a room's bytes count against (review 18, RR18-469-1): its stored bytes
+ * shared out by how much each writer made it grow, so what a co-editor writes
+ * counts against the co-editor, not the creator. A room with no writers
+ * recorded (or bytes no write accounts for) counts against its creator.
+ * Returns [o, p, bytes] triples.
+ */
+export function ownerShares(r) {
+  const b = r.b ?? 0;
+  const c = r.c && typeof r.c === "object" ? Object.entries(r.c).filter(([, v]) => v > 0) : [];
+  const sum = c.reduce((n, [, v]) => n + v, 0);
+  const own = [typeof r.o === "number" ? r.o : null, typeof r.p === "number" ? r.p : null];
+  if (!sum || !b) return [[own[0], own[1], b]];
+  // A room's state can be smaller than the writes that made it: shares then scale down. Bytes no recorded write
+  // accounts for (stored before writers were counted) stay the creator's.
+  const scale = sum > b ? b / sum : 1;
+  const out = c.map(([k, v]) => {
+    const [o, p] = k.split(":");
+    return [Number(o), p === "" ? null : Number(p), v * scale];
+  });
+  const rest = b - out.reduce((n, x) => n + x[2], 0);
+  if (rest > 0) out.push([own[0], own[1], rest]);
+  return out;
+}
+
 /**
  * A refused attempt still costs the client one of its new rooms for the day
  * (review 8, RR8-469-1): asking again and again for a room the full store
@@ -226,10 +264,17 @@ export function evictionOrder(rooms, nowMs, limits) {
   const byO = new Map();
   const byP = new Map();
   for (const r of rooms.values()) {
-    if (typeof r.o === "number") byO.set(r.o, (byO.get(r.o) ?? 0) + (r.b ?? 0));
-    if (typeof r.p === "number") byP.set(r.p, (byP.get(r.p) ?? 0) + (r.b ?? 0));
+    for (const [o, p, n] of ownerShares(r)) {
+      if (o !== null) byO.set(o, (byO.get(o) ?? 0) + n);
+      if (p !== null) byP.set(p, (byP.get(p) ?? 0) + n);
+    }
   }
-  const over = (r) => (typeof r.o === "number" && byO.get(r.o) > cap) || (typeof r.p === "number" && byP.get(r.p) > cap);
+  // A room is over when a writer holding half of it or more is past its cap (RR18-469-1): a co-editor past its
+  // cap doesn't strip a room it wrote little of, and others' writes don't push the creator over.
+  const over = (r) => {
+    const b = r.b ?? 0;
+    return ownerShares(r).some(([o, p, n]) => n * 2 >= b && ((o !== null && byO.get(o) > cap) || (p !== null && byP.get(p) > cap)));
+  };
   return [...rooms]
     .filter(([, r]) => over(r) || !(r.a && nowMs - r.a < limits.protectMs))
     .sort(([, x], [, y]) => busy(x) - busy(y) || Number(over(y)) - Number(over(x)) || (over(x) ? (y.b ?? 0) - (x.b ?? 0) : (x.b ?? 0) - (y.b ?? 0)) || (x.w ?? 0) - (y.w ?? 0))

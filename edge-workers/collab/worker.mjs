@@ -65,6 +65,8 @@ import {
   charge,
   cleanIds,
   cleanOwner,
+  cleanWriters,
+  ownerShares,
   dayBuckets,
   dayOf,
   BUSY_MS,
@@ -175,6 +177,10 @@ export class CollabRoom {
     this.joinedAt = 0;
     /** The admitted creator's owner values ({o, p}, 20-bit hashes, no address), stored with the first write (review 8, RR8-469-3). */
     this.owner = null;
+    /** Bytes of growth per writer ("o:p" of owner values), stored with the room (review 18, RR18-469-1). */
+    this.writers = {};
+    /** The room's size when the last change was counted. */
+    this.lastSize = 0;
   }
 
   /** This room's id at the quota: its Durable Object id (no name), or a keyed hash of the name. */
@@ -209,7 +215,8 @@ export class CollabRoom {
 
   async loadRoom(name) {
     if (this.room) return this.room;
-    const stored = await this.state.storage.get(["name", "chunks", "verifier", "owner"]);
+    const stored = await this.state.storage.get(["name", "chunks", "verifier", "owner", "writers"]);
+    this.writers = cleanWriters(stored.get("writers"));
     const chunks = stored.get("chunks") ?? 0;
     this.stored = chunks > 0;
     this.verifier = typeof stored.get("verifier") === "string" ? stored.get("verifier") : null;
@@ -255,7 +262,10 @@ export class CollabRoom {
       onAuthenticated: (socket, address) => {
         const before = socket.ws.deserializeAttachment?.() ?? {};
         // The owner rides with the socket until the first write, so the room's hibernation doesn't lose it either.
-        socket.ws.serializeAttachment({ ready: true, address, room: name, ...(this.owner && !this.stored ? { owner: this.owner } : {}) });
+        const ids0 = Array.isArray(before.q?.ids) ? before.q.ids : null;
+        // Who this socket is (two 20-bit owner values, no address): its writes count against it (RR18-469-1).
+        const who = ids0 ? { o: ownerOf(this.env.COLLAB_TOKEN_SECRET, ids0), p: prefixOwnerOf(this.env.COLLAB_TOKEN_SECRET, ids0) } : null;
+        socket.ws.serializeAttachment({ ready: true, address, room: name, ...(who ? { who } : {}), ...(this.owner && !this.stored ? { owner: this.owner } : {}) });
         // Someone else came back to a stored room: the quota never evicts it while that is recent. The creator's
         // own return doesn't count, or anyone could protect every room they make (review 11, RR11-469-1).
         // "Someone other" (review 14, RR14-469-1b): another owner value, and not the creator's IPv6 /48 either.
@@ -268,11 +278,27 @@ export class CollabRoom {
           void this.quotaStub()?.joined(this.rid(name).rid, joiner).catch(() => {});
         }
       },
-      onChange: () => {
+      onChange: (_doc, origin) => {
+        // The growth goes to whoever wrote it, not to the creator alone (review 18, RR18-469-1).
+        const size = this.room?.size ?? 0;
+        const grew = size - this.lastSize;
+        this.lastSize = size;
+        if (grew > 0) {
+          let who = null;
+          try {
+            who = origin?.socket?.ws?.deserializeAttachment?.()?.who ?? null;
+          } catch {
+            /* why: no attachment: the creator's */
+          }
+          const key = who && cleanOwner(who.o) !== null ? `${who.o}:${cleanOwner(who.p) ?? ""}` : this.owner?.o != null ? `${this.owner.o}:${this.owner.p ?? ""}` : null;
+          if (key) this.writers[key] = (this.writers[key] ?? 0) + grew;
+          this.writers = cleanWriters(this.writers);
+        }
         this.dirty = true;
         this.scheduleSave(name);
       },
     });
+    this.lastSize = this.room.size ?? 0;
     // Sockets that were already in the room before the object hibernated.
     for (const ws of this.state.getWebSockets()) {
       if (this.peers.has(ws)) continue;
@@ -317,7 +343,7 @@ export class CollabRoom {
     this.dirty = false;
     const state = this.room.state();
     const chunks = Math.max(1, Math.ceil(state.byteLength / CHUNK));
-    const entries = { name, chunks, lastWrite: Date.now(), ...(this.verifier ? { verifier: this.verifier } : {}), ...(this.owner ? { owner: this.owner } : {}) };
+    const entries = { name, chunks, lastWrite: Date.now(), writers: this.writers, ...(this.verifier ? { verifier: this.verifier } : {}), ...(this.owner ? { owner: this.owner } : {}) };
     for (let i = 0; i < chunks; i++) entries[`s${i}`] = state.slice(i * CHUNK, (i + 1) * CHUNK);
     try {
       const old = (await this.state.storage.get("chunks")) ?? 0;
@@ -327,7 +353,7 @@ export class CollabRoom {
       this.stored = true;
       // Size and time, every save: the quota caps bytes too (review 6, RR6-469-2).
       const { rid, did } = this.rid(name);
-      await this.quotaStub()?.saved(rid, state.byteLength, did, this.owner).catch(() => {}); // why: a count that drifts is not a reason to lose the room
+      await this.quotaStub()?.saved(rid, state.byteLength, did, this.owner, this.writers).catch(() => {}); // why: a count that drifts is not a reason to lose the room
     } catch (e) {
       this.dirty = true; // why: not stored: the next save tries again
       throw e;
@@ -423,6 +449,8 @@ export class CollabRoom {
     this.stored = false;
     this.verifier = null;
     this.owner = null;
+    this.writers = {};
+    this.lastSize = 0;
     this.dirty = false;
     return true;
   }
@@ -551,13 +579,12 @@ export class Quota {
     c.owner48Bytes = new Map();
     for (const r of c.registry.values()) {
       c.bytes += r.b ?? 0;
-      if (typeof r.o === "number") {
-        c.owners.set(r.o, (c.owners.get(r.o) ?? 0) + 1);
-        c.ownerBytes.set(r.o, (c.ownerBytes.get(r.o) ?? 0) + (r.b ?? 0));
-      }
-      if (typeof r.p === "number") {
-        c.owners48.set(r.p, (c.owners48.get(r.p) ?? 0) + 1);
-        c.owner48Bytes.set(r.p, (c.owner48Bytes.get(r.p) ?? 0) + (r.b ?? 0));
+      if (typeof r.o === "number") c.owners.set(r.o, (c.owners.get(r.o) ?? 0) + 1);
+      if (typeof r.p === "number") c.owners48.set(r.p, (c.owners48.get(r.p) ?? 0) + 1);
+      // Bytes go to whoever wrote them (RR18-469-1): rooms count, bytes are shared out.
+      for (const [o, p, n] of ownerShares(r)) {
+        if (o !== null) c.ownerBytes.set(o, (c.ownerBytes.get(o) ?? 0) + n);
+        if (p !== null) c.owner48Bytes.set(p, (c.owner48Bytes.get(p) ?? 0) + n);
       }
     }
   }
@@ -690,7 +717,7 @@ export class Quota {
   }
 
   /** RPC: a room was stored (first time) or stored again: its size and time. */
-  async saved(rid, bytes, did = "", owner = null) {
+  async saved(rid, bytes, did = "", owner = null, writers = null) {
     if (typeof rid !== "string" || !rid || rid.length > 128) return null;
     const c = await this.load();
     const old = c.registry.get(rid);
@@ -698,7 +725,8 @@ export class Quota {
     const mine = this.pending.get(rid);
     const o = old?.o ?? mine?.o ?? cleanOwner(owner?.o);
     const p = old?.p ?? mine?.p ?? cleanOwner(owner?.p);
-    const r = { o, p, b: Math.max(0, Math.floor(Number(bytes) || 0)), w: Date.now(), a: old?.a ?? 0, u: old?.u ?? 0, d: typeof did === "string" ? did.slice(0, 128) : "" };
+    const c2 = cleanWriters(writers);
+    const r = { o, p, b: Math.max(0, Math.floor(Number(bytes) || 0)), w: Date.now(), a: old?.a ?? 0, u: old?.u ?? 0, d: typeof did === "string" ? did.slice(0, 128) : "", ...(Object.keys(c2).length ? { c: c2 } : old?.c ? { c: old.c } : {}) };
     this.pending.delete(rid);
     c.registry.set(rid, r);
     this.recount();
