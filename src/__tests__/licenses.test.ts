@@ -13,6 +13,7 @@ import registryFixture from "./fixtures/licenses/registry.json";
 import {
   applyAllowlist,
   checkDatasets,
+  isModelScanSource,
   checkModels,
   checkNpm,
   classifyLicense,
@@ -376,6 +377,17 @@ describe("datasets", () => {
     expect(r["eval/golden/bare"]).toMatchObject({ level: "fail", reason: "missing SOURCES.md and LICENSE" });
   });
 
+  it("an empty placeholder LICENSE fails: it states no terms (Codex on #199)", () => {
+    const r = byName(
+      checkDatasets([
+        { name: "empty", files: ["SOURCES.md", "LICENSE"], sources: table("| a | 10 | built | CC0-1.0 | 2026 |"), license: "" },
+        { name: "blank", files: ["SOURCES.md", "LICENSE.md"], sources: table("| a | 10 | built | CC0-1.0 | 2026 |"), license: " \n\t\n" },
+      ]),
+    );
+    expect(r["eval/golden/empty"]).toMatchObject({ level: "fail", reason: expect.stringMatching(/LICENSE is empty/) });
+    expect(r["eval/golden/blank"]).toMatchObject({ level: "fail", reason: expect.stringMatching(/LICENSE is empty/) });
+  });
+
   it("reads every licence in the parts table of SOURCES.md (7.1)", () => {
     const files = ["SOURCES.md", "LICENSE"];
     const r = byName(
@@ -545,5 +557,25 @@ describe("scripts/licenses.mjs (CLI)", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("the sources the model check reads", () => {
+  it("app code under src/, not tests, fixtures, eval suites or the packed help docs", () => {
+    for (const f of ["src/ai/modelCatalog.ts", "src/ui/ModelPicker.tsx", "src/ai/models.json", "src/workers/x.mjs"]) expect(isModelScanSource(f), f).toBe(true);
+    for (const f of [
+      "src/__tests__/licenses.test.ts",
+      "src/ai/x.test.ts",
+      "src/agents/eval/x.eval.ts",
+      "src/ai/fixtures/models.json",
+      // The docs site packed for the in-app help: "jina-reranker-v2 is not used" is prose, not a reference.
+      "src/help/generated/help.en.0.json",
+      "src/help/generated/help.he.0.json",
+      "src/styles/app.css",
+      "docs/src/content/docs/ai/reranker.md",
+    ])
+      expect(isModelScanSource(f), f).toBe(false);
+    // The help module itself is still app code.
+    expect(isModelScanSource("src/help/helpSearch.ts")).toBe(true);
   });
 });
