@@ -232,6 +232,40 @@
         "runner": "harness"
       }
     ],
+    "src/agents/runtimeText.ts": [
+      {
+        "file": "src/__tests__/agentRuntime.test.ts",
+        "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/agentDefsB1.test.ts",
+        "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/agentDefsB3.test.ts",
+        "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/agentReviewFixesB1.test.ts",
+        "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/agentReviewFixesB3.test.ts",
+        "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/oneAi.test.ts",
+        "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/hebrewModels.test.ts",
+        "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/agentRuntimeMutation.test.ts",
+        "runner": "harness"
+      }
+    ],
     "src/storage/vault/shared.ts": [
       {
         "file": "src/__tests__/vaultBackend.contract.test.ts"
