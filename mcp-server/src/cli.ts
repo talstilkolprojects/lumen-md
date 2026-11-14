@@ -30,7 +30,7 @@ import { spawn } from "node:child_process";
 import { ALL_SCOPES, DEFAULT_SCOPES, disableClient, enableClient, normalizeClientId, parseScopes, readConfig, writeFileAtomic } from "./vault/config.js";
 import { appendLedger, readLedger } from "./vault/ledger.js";
 import { approvePending, lineDiff, listPending, readNote, rejectPending } from "./vault/pending.js";
-import { absPath, notePath } from "./vault/paths.js";
+import { notePath, realVaultPath } from "./vault/paths.js";
 import { VaultIndex } from "./vault/search.js";
 import { planBasesUpdate, proposeBatch, queryVaultBase, relForCli } from "./vault/bases.js";
 
@@ -119,7 +119,7 @@ async function exists(file: string): Promise<boolean> {
 async function resolveNote(vault: string, name: string): Promise<string | null> {
   try {
     const rel = notePath(name);
-    if (await exists(absPath(vault, rel))) return rel;
+    if (await exists(await realVaultPath(vault, rel))) return rel;
   } catch {
     /* not a usable path: look it up by name */
   }
@@ -132,7 +132,7 @@ async function resolveNote(vault: string, name: string): Promise<string | null> 
 }
 
 async function writeDirect(vault: string, tool: string, rel: string, text: string): Promise<void> {
-  await writeFileAtomic(absPath(vault, rel), text);
+  await writeFileAtomic(await realVaultPath(vault, rel), text); // M1
   await appendLedger(vault, { client: "cli", tool, path: rel, decision: "written", bytesOut: 0 });
 }
 
@@ -180,7 +180,7 @@ async function runCommand(argv: string[], io: CliIO): Promise<number> {
       }
       if (flags.print) io.out((await readNote(vault, rel)) ?? "");
       else {
-        (io.openFile ?? defaultOpen)(absPath(vault, rel));
+        (io.openFile ?? defaultOpen)(await realVaultPath(vault, rel));
         io.out(rel);
       }
       return 0;

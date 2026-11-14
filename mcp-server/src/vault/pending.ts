@@ -17,7 +17,7 @@ import * as path from "node:path";
 import { randomBytes } from "node:crypto";
 import { lumenDir, writeFileAtomic } from "./config.js";
 import { appendLedger } from "./ledger.js";
-import { absPath, safeRel } from "./paths.js";
+import { realVaultPath, safeRel } from "./paths.js";
 
 export interface PendingWrite {
   id: string;
@@ -71,7 +71,7 @@ function fileOf(vault: string, id: string): string {
 /** The note's current text, or null when it does not exist. */
 export async function readNote(vault: string, rel: string): Promise<string | null> {
   try {
-    return await fs.readFile(absPath(vault, rel), "utf8");
+    return await fs.readFile(await realVaultPath(vault, rel), "utf8"); // M1: never through a link out of the vault or into .lumen
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code === "ENOENT") return null;
     throw e;
@@ -133,7 +133,7 @@ export async function approvePending(vault: string, id: string, by = "cli"): Pro
     await appendLedger(vault, { client: p.client, tool: p.tool, path: p.path, decision: "conflict", bytesOut: 0, id, reason: `${reason} (${by})` });
     return { status: "conflict", pending: p, reason };
   }
-  await writeFileAtomic(absPath(vault, p.path), p.after);
+  await writeFileAtomic(await realVaultPath(vault, p.path), p.after); // M1: an approved write follows no link out of the vault
   await fs.rm(fileOf(vault, id), { force: true });
   await appendLedger(vault, { client: p.client, tool: p.tool, path: p.path, decision: "approved", bytesOut: 0, id, reason: by });
   return { status: "applied", pending: p };

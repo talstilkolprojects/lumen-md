@@ -6,7 +6,7 @@
  * stdio session is `npm --prefix mcp-server run test:stdio`.
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync, mkdirSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync, mkdirSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { callTool, listToolsFor, TOOLS } from "../../mcp-server/src/vault/tools";
@@ -82,6 +82,39 @@ describe("paths stay in the vault and out of .lumen", () => {
     }
     expect(safeRel("./a/b.md")).toBe("a/b.md");
     expect(await listPending(vault)).toEqual([]);
+  });
+
+  it("follows no link out of the vault or into .lumen, for reads and approved writes (review 21, M1)", async () => {
+    await enableClient(vault, "c", ["read", "propose"]);
+    const outside = mkdtempSync(path.join(tmpdir(), "lumen-mcp-out-"));
+    try {
+      writeFileSync(path.join(outside, "secret.md"), "OUTSIDE-SECRET\n", "utf8");
+      symlinkSync(path.join(vault, ".lumen"), path.join(vault, "cfg"), "dir");
+      symlinkSync(outside, path.join(vault, "elsewhere"), "dir");
+      symlinkSync(path.join(outside, "secret.md"), path.join(vault, "alias.md"), "file");
+      symlinkSync(path.join(vault, "projects"), path.join(vault, "inside"), "dir");
+      for (const p of ["cfg/mcp.json", "elsewhere/secret.md", "alias.md"]) {
+        const r = await callTool(ctx("c"), "read_note", { path: p });
+        expect(r.isError, p).toBe(true);
+        expect(textOf(r), p).not.toContain("OUTSIDE-SECRET");
+        expect(textOf(r), p).not.toContain("\"enabled\"");
+        expect((await callTool(ctx("c"), "write_note", { path: p, content: "x" })).isError, p).toBe(true);
+      }
+      // A link that stays inside the vault is an ordinary note.
+      expect(textOf(await callTool(ctx("c"), "read_note", { path: "inside/launch.md" }))).toContain("Launch plan");
+      // A link made after the proposal: the approval refuses and writes nothing outside.
+      expect((await callTool(ctx("c"), "create_note", { path: "later/x", content: "PLANTED\n" })).isError).toBeFalsy();
+      const [p] = await listPending(vault);
+      symlinkSync(outside, path.join(vault, "later"), "dir");
+      await expect(approvePending(vault, p.id)).rejects.toThrow(/outside the vault/);
+      expect(existsSync(path.join(outside, "x.md"))).toBe(false);
+      // The CLI's direct write takes the same path.
+      const io = { cwd: vault, env: {}, out: () => undefined, err: () => undefined, isTTY: false } as unknown as Parameters<typeof runVaultCli>[1];
+      expect(await runVaultCli(["new", "elsewhere/y", "--vault", vault], io).catch(() => 1)).not.toBe(0);
+      expect(existsSync(path.join(outside, "y.md"))).toBe(false);
+    } finally {
+      rmSync(outside, { recursive: true, force: true });
+    }
   });
 });
 
