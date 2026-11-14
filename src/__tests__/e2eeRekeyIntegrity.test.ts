@@ -27,7 +27,7 @@ import {
 import { memoryFiles } from "../sync/e2ee/localFiles";
 import { FREEZE_TTL_MS, manifestName, manifestNameFor, openManifest, sealManifest } from "../sync/e2ee/manifest";
 import { memoryStateStore } from "../sync/e2ee/state";
-import { pairConfirmed, relayBetween, device, joinTrusted, joinVault, newVault, PASSPHRASE, TEST_ITERATIONS, TEST_POLICY, type Device } from "./helpers/e2ee";
+import { device, joinTrusted, joinVault, newVault, PASSPHRASE, TEST_ITERATIONS, TEST_POLICY, type Device } from "./helpers/e2ee";
 
 type Provider = ReturnType<typeof memoryProvider>;
 
@@ -39,11 +39,8 @@ type Provider = ReturnType<typeof memoryProvider>;
 async function codeFrom(p: SyncProvider, d: Device): Promise<string> {
   const issuer = device(`${d.name}-issuer`, p, d.sync.keys());
   issuer.store.state = JSON.parse(JSON.stringify(d.store.state));
-  codeIssuer = issuer;
   return issuer.sync.pairingCode();
 }
-/** The device `codeFrom` made its last code on (it confirms the comparison, plan W8.5). */
-let codeIssuer: Device | null = null;
 
 /** The provider edits the keyring's plaintext JSON (it can't touch the sealed part). */
 function tamper(p: Provider, edit: (ring: { devices: Record<string, { recipient: string; wrap: string }> }) => void) {
@@ -202,8 +199,7 @@ describe("RR-2: the keyring chain", () => {
     for (const [k, v] of p.objects) fork.objects.set(k, { data: v.data.slice(), etag: v.etag });
     const b = device("B", fork, a.sync.keys());
     await b.sync.sync();
-    const forB = await codeFrom(p, a);
-    await pairConfirmed(b, codeIssuer!, forB, relayBetween(p, fork));
+    await b.sync.pair(await codeFrom(p, a));
     await b.sync.rekey();
     await a.sync.rekey();
     p.objects.set(KEYRING_NAME, fork.objects.get(KEYRING_NAME)!);
@@ -342,7 +338,7 @@ describe("finding 2: a re-key cut off at any write", () => {
     };
     const a2 = device("A2", held, a.sync.keys());
     await a2.sync.sync();
-    await pairConfirmed(a2, a, await a.sync.pairingCode());
+    await a2.sync.pair(await a.sync.pairingCode());
     await expect(a2.sync.rekey()).rejects.toBeInstanceOf(PreconditionFailedError);
     expect(ringJson(p).epoch).toBe(1);
     expect((await keyringContents(ringJson(p), b.sync.keys())).aborted).toHaveLength(1);
@@ -415,7 +411,7 @@ describe("re-review 12.11: who may change keys", () => {
     expect(await wrapsFor(p, "phone", phone.identity)).toBeNull();
     // Paired (two-way), it uploads what waited, and its re-keys carry the device list again.
     await a.sync.sync();
-    await pairConfirmed(b, a, await a.sync.answerPairing(await b.sync.pairingRequest()));
+    await b.sync.pair(await a.sync.answerPairing(await b.sync.pairingRequest()));
     expect((await b.sync.sync()).uploaded).toBe(1);
     await a.sync.sync();
     expect(a.files.text("b.md")).toBe("from B");
@@ -430,19 +426,18 @@ describe("re-review 12.11: who may change keys", () => {
     await a.sync.sync();
     await a.sync.rekey();
     const code = await a.sync.pairingCode();
-    expect(code).toMatch(/^lumen-pair:4:1:/);
+    expect(code).toMatch(/^lumen-pair:3:1:/);
     // The same vault on a withheld copy, re-sealed at 1.1 differently on each side.
     const other = memoryProvider();
     for (const [k, v] of p.objects) other.objects.set(k, { data: v.data.slice(), etag: v.etag });
     const x = device("X", other, a.sync.keys());
     await x.sync.sync();
-    await pairConfirmed(x, a, code, relayBetween(p, other));
+    await x.sync.pair(code);
     await x.sync.enroll("x", (await generateIdentity()).recipient);
     await expect(a.sync.enroll("y", (await generateIdentity()).recipient)).rejects.toBeInstanceOf(PairingPendingError); // its own code is still valid (N3)
     const a2 = device("A2", p, a.sync.keys());
     a2.store.state = JSON.parse(JSON.stringify(a.store.state));
     delete a2.store.state!.pairingUntil;
-    delete a2.store.state!.pairingKept; // W8.5: nor the hold of the comparison A confirmed
     await a2.sync.enroll("y", (await generateIdentity()).recipient);
     await expect(x.sync.pair(await codeFrom(p, a2))).rejects.toBeInstanceOf(KeyringForkError);
   });
@@ -456,7 +451,7 @@ describe("re-review 12.11: who may change keys", () => {
     await a.sync.rekey();
     const b = device("B", loose, a.sync.keys());
     await b.sync.sync();
-    await pairConfirmed(b, a, await a.sync.pairingCode());
+    await b.sync.pair(await a.sync.pairingCode());
     b.files.set("b.md", "y");
     expect((await b.sync.sync()).uploaded).toBe(1);
     const names = new Set(base.objects.keys());

@@ -191,7 +191,7 @@ describe("G3: no pairing code while this device changes keys", () => {
     expect(e2eeErrorText(err)).toBe(t("e2ee.pair.rekeying"));
     release();
     expect((await rk).epoch).toBe(2);
-    expect(await a2.sync.pairingCode()).toMatch(/^lumen-pair:4:2:/);
+    expect(await a2.sync.pairingCode()).toMatch(/^lumen-pair:3:2:/);
     expect(ringJson(p).epoch).toBe(2);
   });
 

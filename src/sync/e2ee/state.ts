@@ -77,13 +77,6 @@ export interface DeviceState {
    */
   pairingUntil?: number;
   /**
-   * Until when (this device's clock) a pairing this device has confirmed
-   * may still commit on the new device (plan W8.5, review 13 S13-1): no key
-   * change before then, and cancelling doesn't release it, since the new
-   * device already holds this device's confirmation.
-   */
-  pairingKept?: number;
-  /**
    * A frozen manifest this device has been waiting on, and when it first saw
    * it on its own clock (RR-4): the wait is measured on one clock only.
    */

@@ -14,8 +14,6 @@ import { PreconditionFailedError, type StoredObject, type SyncProvider } from ".
 import type { SyncStateStore } from "./state";
 import type { SyncEventListener } from "./activity";
 import { type ExcludeRule } from "./status";
-import { PairingError } from "./pairing";
-import type { PairingRole } from "./sas";
 
 export class VaultExistsError extends Error {
   constructor() {
@@ -68,27 +66,6 @@ export class PairingDuringKeyChangeError extends Error {
     super("This device is changing the vault's keys right now: make the pairing code once the change has finished.");
     this.name = "PairingDuringKeyChangeError";
   }
-}
-
-/**
- * The comparison failed or can't go on (plan W8.5): the user said the
- * symbols differ, the other device's confirmation doesn't verify, or this
- * side's pairing ended (cancelled, expired, keys changed, app restarted).
- * Nothing was committed on this device; start pairing again.
- */
-export class PairingAbortedError extends PairingError {
-  constructor(message: string) {
-    super(message);
-    this.name = "PairingAbortedError";
-  }
-}
-
-/** What a device shows while two devices pair (plan W8.5): the symbols to compare. */
-export interface PairingComparison {
-  role: PairingRole;
-  /** SAS_LENGTH indices into SAS_EMOJI; the UI shows each emoji with its name (`e2ee.sas.w<index>`). */
-  symbols: number[];
-  emoji: string[];
 }
 
 /**

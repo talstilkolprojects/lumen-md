@@ -21,7 +21,7 @@ import { FREEZE_TTL_MS, FROZEN_PROTOCOL, HISTORY_LENGTH, manifestName, openManif
 import { memoryStateStore } from "../sync/e2ee/state";
 import { e2eeErrorText } from "../sync/e2ee/ui/errorText";
 import { t } from "../i18n";
-import { device, newVault, PASSPHRASE, TEST_ITERATIONS, TEST_POLICY, pairConfirmed } from "./helpers/e2ee";
+import { device, newVault, PASSPHRASE, TEST_ITERATIONS, TEST_POLICY } from "./helpers/e2ee";
 
 type Provider = ReturnType<typeof memoryProvider>;
 const ringEpoch = (p: Provider) => JSON.parse(fromUtf8(p.objects.get(KEYRING_NAME)!.data)).epoch as number;
@@ -92,12 +92,7 @@ async function twoDevices() {
   const { keys: bKeys } = await unlockVault(p, PASSPHRASE, TEST_POLICY);
   const b = device("B", hb.p, bKeys, undefined, now);
   await b.sync.sync();
-  // W8.5: B is paired through the comparison. A copy of A issues the code, so A itself stays
-  // free to change keys (a device that confirmed a comparison holds key changes for the new
-  // device's window, cancel or not: review 13, S13-1).
-  const issuer = device("A-issuer", p, a.sync.keys(), undefined, now);
-  issuer.store.state = JSON.parse(JSON.stringify(a.store.state));
-  await pairConfirmed(b, issuer, await issuer.sync.pairingCode());
+  await b.sync.pair(await a.sync.pairingCode());
   await a.sync.cancelPairing();
   /** B starts an honest re-key and stalls at its keyring PUT. */
   const bStarts = async () => {

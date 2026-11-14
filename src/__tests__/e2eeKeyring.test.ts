@@ -13,7 +13,7 @@ import { DecryptError } from "../sync/e2ee/keys";
 import { WrongPassphraseError, HEADER_NAME } from "../sync/e2ee/header";
 import { memoryFiles } from "../sync/e2ee/localFiles";
 import { memoryStateStore } from "../sync/e2ee/state";
-import { pairConfirmed, device, joinTrusted, joinVault, mulberry32, newVault, PASSPHRASE, snapshot, TEST_ITERATIONS, TEST_POLICY } from "./helpers/e2ee";
+import { device, joinTrusted, joinVault, mulberry32, newVault, PASSPHRASE, snapshot, TEST_ITERATIONS, TEST_POLICY } from "./helpers/e2ee";
 
 /** A provider that records the names written (not the conditional-write probe a re-key runs first: it runs here, before recording starts). */
 async function recording(inner: SyncProvider) {
@@ -139,7 +139,7 @@ describe("re-key under load", () => {
     // code, so A itself stays free to change keys (a device makes none while its own code is valid, N3).
     const issuer = device("A-issuer", p, a.sync.keys());
     issuer.store.state = JSON.parse(JSON.stringify(a.store.state));
-    await pairConfirmed(b, issuer, await issuer.sync.pairingCode());
+    await b.sync.pair(await issuer.sync.pairingCode());
     const truth = new Map<string, string | null>();
     let rekeys = 0;
     for (let round = 0; round < 10_000; round++) {

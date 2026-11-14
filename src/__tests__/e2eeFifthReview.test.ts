@@ -23,7 +23,7 @@ import { createPairingCode, createPairingRequest, pairingLabel, PairingError, re
 import { memoryStateStore } from "../sync/e2ee/state";
 import { e2eeErrorText } from "../sync/e2ee/ui/errorText";
 import { t } from "../i18n";
-import { pairConfirmed, device, joinVault, newVault, PASSPHRASE, TEST_POLICY } from "./helpers/e2ee";
+import { device, joinVault, newVault, PASSPHRASE, TEST_POLICY } from "./helpers/e2ee";
 
 type Provider = ReturnType<typeof memoryProvider>;
 const ringJson = (p: Provider) => JSON.parse(fromUtf8(p.objects.get(KEYRING_NAME)!.data));
@@ -100,14 +100,14 @@ describe("F1: pairing messages are domain-separated", () => {
     const laptop = await joinVault("laptop", p);
     await laptop.sync.sync();
     const request = await laptop.sync.pairingRequest();
-    expect(request).toMatch(/^lumen-pair-request:3:1:/);
-    const tail = request.slice("lumen-pair-request:3:".length);
-    for (const prefix of ["lumen-pair-answer:3:", "lumen-pair:4:", "lumen-pair-answer:2:", "lumen-pair:3:", "lumen-pair-answer:1:", "lumen-pair:2:"]) {
+    expect(request).toMatch(/^lumen-pair-request:2:1:/);
+    const tail = request.slice("lumen-pair-request:2:".length);
+    for (const prefix of ["lumen-pair-answer:2:", "lumen-pair:3:", "lumen-pair-answer:1:", "lumen-pair:2:"]) {
       await expect(laptop.sync.pair(prefix + tail)).rejects.toBeInstanceOf(PairingError);
     }
     expect((await laptop.sync.freshness()).source).toBe("unverified");
     // The honest answer still pairs it.
-    await pairConfirmed(laptop, a, await a.sync.answerPairing(request));
+    await laptop.sync.pair(await a.sync.answerPairing(request));
     expect((await laptop.sync.freshness()).source).toBe("paired");
   });
 
@@ -130,9 +130,9 @@ describe("F1: pairing messages are domain-separated", () => {
     const ring = anchorOf(keys);
     const make = async (body: object) => {
       const json = utf8(JSON.stringify(body));
-      return `lumen-pair-answer:3:${keys.epoch}:${toB64u(concat(await hmac(keys.pairing, concat(pairingLabel("answer"), json)), json))}`;
+      return `lumen-pair-answer:2:${keys.epoch}:${toB64u(concat(await hmac(keys.pairing, concat(pairingLabel("answer"), json)), json))}`;
     };
-    const body = { kind: "answer", vaultId: keys.vaultId, request: request.hash, nonce: request.nonce, counter: 1, digest: "d".repeat(64), epoch: keys.epoch, ringRev: ring.rev, ringDigest: ring.digest, answeredAt: now, pub: toB64u(new Uint8Array(32).fill(9)) };
+    const body = { kind: "answer", vaultId: keys.vaultId, request: request.hash, nonce: request.nonce, counter: 1, digest: "d".repeat(64), epoch: keys.epoch, ringRev: ring.rev, ringDigest: ring.digest, answeredAt: now };
     await expect(readPairingAnswer(keys, await make(body), request, now)).resolves.toMatchObject({ counter: 1 });
     await expect(readPairingAnswer(keys, await make({ ...body, issuedAt: now }), request, now)).rejects.toThrow(/damaged/); // a one-way code's field
     await expect(readPairingAnswer(keys, await make({ ...body, kind: "request" }), request, now)).rejects.toThrow(/damaged/);
@@ -172,7 +172,7 @@ describe("Q2: a re-key waits out another device's fresh freeze, on its own clock
     const { keys: bKeys } = await unlockVault(p, PASSPHRASE, TEST_POLICY);
     const b = device("B", pb, bKeys);
     await b.sync.sync();
-    await pairConfirmed(b, a, await a.sync.pairingCode());
+    await b.sync.pair(await a.sync.pairingCode());
     let bPromise: Promise<unknown> | null = null;
     const pa = hooked(
       async (n) => {
@@ -193,7 +193,7 @@ describe("Q2: a re-key waits out another device's fresh freeze, on its own clock
     );
     const a2 = device("A2", pa, a.sync.keys());
     await a2.sync.sync();
-    await pairConfirmed(a2, a, await a.sync.pairingCode());
+    await a2.sync.pair(await a.sync.pairingCode());
     const ra = await a2.sync.rekey({ revoke: ["phone"] }).then((r) => r, (e) => e);
     if (!bPromise) aDone.open();
     const rb = bPromise ? await bPromise : await b.sync.rekey({ enroll: { laptop: laptop.recipient } }).then((x) => x, (e) => e);
@@ -365,7 +365,7 @@ describe("F3: no demotion while the anchor verifies; no drop without consent", (
     await a.sync.sync();
     const laptop = await joinVault("laptop", p);
     await laptop.sync.sync();
-    await pairConfirmed(laptop, a, await a.sync.pairingCode());
+    await laptop.sync.pair(await a.sync.pairingCode());
     for (let i = 0; i < 101; i++) {
       a.files.set("a.md", `edit ${i}`);
       await a.sync.sync();
@@ -387,7 +387,7 @@ describe("F3: no demotion while the anchor verifies; no drop without consent", (
     await a.sync.sync();
     const laptop = await joinVault("laptop", p);
     await laptop.sync.sync();
-    await pairConfirmed(laptop, a, await a.sync.pairingCode());
+    await laptop.sync.pair(await a.sync.pairingCode());
     let keys = a.sync.keys();
     for (let i = 0; i < 66; i++) keys = await rewriteKeyring(p, keys, { wrap: keys.wrap! }, (c, f) => ({ contents: c, file: f }));
     laptop.files.set("l.md", "x");
@@ -479,7 +479,7 @@ describe("F6 and F7: the anchor first", () => {
     const files = memoryFiles();
     const d1 = await enrolled(p, "phone", phone.identity, store, files);
     await d1.sync.sync();
-    await pairConfirmed(d1, a, await a.sync.pairingCode());
+    await d1.sync.pair(await a.sync.pairingCode());
     const forged = await forgeFor(p, a.sync.keys().vaultId, "phone", phone.recipient, store.state!.ring!, true);
     const { keys } = await unlockWithDevice(p, "phone", phone.identity); // a restart without its state
     const d2 = new E2eeSync({ provider: p, keys, local: files, store, access: { device: "phone", identity: phone.identity } });
@@ -494,7 +494,7 @@ describe("F6 and F7: the anchor first", () => {
     const store = memoryStateStore();
     const d = await enrolled(p, "phone", phone.identity, store);
     await d.sync.sync();
-    await pairConfirmed(d, a, await a.sync.pairingCode());
+    await d.sync.pair(await a.sync.pairingCode());
     await forgeFor(p, a.sync.keys().vaultId, "phone", phone.recipient, store.state!.ring!, false);
     await expect(unlockWithDevice(p, "phone", phone.identity, store.state)).rejects.toBeInstanceOf(KeyringForkError);
     await expect(unlockWithDevice(p, "phone", phone.identity)).rejects.toBeInstanceOf(RevokedError); // without state it can't tell

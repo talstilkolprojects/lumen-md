@@ -17,7 +17,7 @@ import { utf8 } from "../sync/e2ee/bytes";
 import { chunk, decodeMessage, encodeMessage, memoryChannelPair, reassembler, CHUNK } from "../sync/e2ee/lan/channel";
 import { lanHost, liveSync, remoteLanProvider, LanAuthError } from "../sync/e2ee/lan/rpc";
 import { candidateIsLan, isLanHost, lanOnlySdp } from "../sync/e2ee/lan/address";
-import { mulberry32, pairConfirmed, PASSPHRASE, TEST_ITERATIONS, TEST_POLICY } from "./helpers/e2ee";
+import { mulberry32, PASSPHRASE, TEST_ITERATIONS, TEST_POLICY } from "./helpers/e2ee";
 
 const realFetch = globalThis.fetch;
 afterEach(() => {
@@ -52,8 +52,7 @@ async function pair(opts: { latencyMs?: () => number } = {}) {
   const peerSync = new E2eeSync({ provider: remote, keys: peerKeys, local: peerFiles, store: memoryStateStore(), resolver: keepBothResolver });
   // The peer is paired with the host (third review N6: an unverified device doesn't upload).
   await peerSync.sync();
-  // W8.5: through the comparison, the user confirming on both devices.
-  await pairConfirmed({ sync: peerSync }, { sync: hostSync }, await hostSync.pairingCode());
+  await peerSync.pair(await hostSync.pairingCode());
   return { bucket, host, remote, hostFiles, peerFiles, hostSync, peerSync, frames, lockHost: () => (hostKeys = null) };
 }
 

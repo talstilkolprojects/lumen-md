@@ -1,7 +1,7 @@
 {
  "format": "lumen-sync-protocol-vectors/1",
  "spec": "docs/sync-protocol.md",
- "made": "2026-11-14T16:46:44.283Z",
+ "made": "2026-11-12T19:02:16.791Z",
  "note": "Made by scripts/sync-protocol/make-vectors.mts; checked by src/__tests__/e2eeVectors.test.ts and, independently, scripts/sync-protocol/check_vectors.py.",
  "vaults": [
   {
@@ -153,7 +153,7 @@
  "pairing": [
   {
    "vault": 0,
-   "code": "lumen-pair:4:0:OQ1n1Ilfh4iAwz_6QHBwXme7uJany7YQfXnbXxMc9-N7ImtpbmQiOiJjb2RlIiwidmF1bHRJZCI6ImRhT3l0alVsakRIb2FEd3UydGdpQ1EiLCJjb3VudGVyIjoyLCJkaWdlc3QiOiJkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkIiwiZXBvY2giOjAsInJpbmdSZXYiOjAsInJpbmdEaWdlc3QiOiIiLCJpc3N1ZWRBdCI6MTgwMDAwMDAwMDAwMCwibm9uY2UiOiJ4cDFTMlJhYnByd3FnWHJyIiwiY29tbWl0IjoiNDYxZGViMjRiM2JjY2JkNTY1N2NhMWMzM2IwNzQ0MjAwNzUxYWExMTM4ZGZmYzIxZWVhZWUwMWZjMmEyNzdkOCJ9",
+   "code": "lumen-pair:3:0:2zNwNK1kgaSGfwkh7cmL5g99vmz6tW6MoEp5rL33UHZ7ImtpbmQiOiJjb2RlIiwidmF1bHRJZCI6ImRhT3l0alVsakRIb2FEd3UydGdpQ1EiLCJjb3VudGVyIjoyLCJkaWdlc3QiOiJkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkIiwiZXBvY2giOjAsInJpbmdSZXYiOjAsInJpbmdEaWdlc3QiOiIiLCJpc3N1ZWRBdCI6MTgwMDAwMDAwMDAwMCwibm9uY2UiOiItNHg5Zy1mWDZlSU9ycEdIIn0",
    "body": {
     "counter": 2,
     "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
@@ -161,19 +161,12 @@
      "epoch": 0,
      "rev": 0,
      "digest": ""
-    },
-    "sas": {
-     "session": "2642a03b1c4ff644abdeed4467123f785a544bb6e0e66c92200f23fb9324f004",
-     "answer": "",
-     "nonce": "xp1S2RabprwqgXrr",
-     "expires": 1800000120000,
-     "commit": "461deb24b3bccbd5657ca1c33b0744200751aa1138dffc21eeaee01fc2a277d8"
     }
    }
   },
   {
    "vault": 1,
-   "code": "lumen-pair:4:2:cxAGRvjIr84YuymZ2oH5_PVD0Ba9IUHdrq2xhygUXZF7ImtpbmQiOiJjb2RlIiwidmF1bHRJZCI6InN0YkJuZWxEMDBSTGFBUktoZ2dLLUEiLCJjb3VudGVyIjoyLCJkaWdlc3QiOiJkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkIiwiZXBvY2giOjIsInJpbmdSZXYiOjEsInJpbmdEaWdlc3QiOiI3MGI3NDliYmY5NTc1N2U1Y2JmYTViMGZkYzM4NTEzYTkyMzBlNzg5YTUxZGQ5YmRhYmU4NjczMzY3YmE3MGMxIiwiaXNzdWVkQXQiOjE4MDAwMDAwMDAwMDAsIm5vbmNlIjoiOVdyWVlxT2NxZ0RuQXdNUCIsImNvbW1pdCI6ImUzYWE4ODNkMmRiZDFkZWI2OWY0NGRjYmVlMWZiMDQ4ODE0MTdmOThjZWQyMmYwYzRkMmI1NjY1YWNhZDRlMTgifQ",
+   "code": "lumen-pair:3:2:UuHP9dxoKDCCb7-a311n_4xfHxqt3nOkGAunAw1Itx97ImtpbmQiOiJjb2RlIiwidmF1bHRJZCI6InN0YkJuZWxEMDBSTGFBUktoZ2dLLUEiLCJjb3VudGVyIjoyLCJkaWdlc3QiOiJkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkIiwiZXBvY2giOjIsInJpbmdSZXYiOjEsInJpbmdEaWdlc3QiOiI3MGI3NDliYmY5NTc1N2U1Y2JmYTViMGZkYzM4NTEzYTkyMzBlNzg5YTUxZGQ5YmRhYmU4NjczMzY3YmE3MGMxIiwiaXNzdWVkQXQiOjE4MDAwMDAwMDAwMDAsIm5vbmNlIjoibHkwQmk5UGxJUEZsWGFudyJ9",
    "body": {
     "counter": 2,
     "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
@@ -181,13 +174,6 @@
      "epoch": 2,
      "rev": 1,
      "digest": "70b749bbf95757e5cbfa5b0fdc38513a9230e789a51dd9bdabe8673367ba70c1"
-    },
-    "sas": {
-     "session": "35a25cc332a7ee7b1a781ac04243464f2604c7e6702e01d5a136c573daf2662b",
-     "answer": "",
-     "nonce": "9WrYYqOcqgDnAwMP",
-     "expires": 1800000120000,
-     "commit": "e3aa883d2dbd1deb69f44dcbee1fb04881417f98ced22f0c4d2b5665acad4e18"
     }
    }
   }
@@ -196,9 +182,9 @@
   {
    "vault": 0,
    "now": 1800000000000,
-   "request": "lumen-pair-request:3:0:ZiGzkQxQ_f_8r02_58Kx5drfHd6Z9OTWoaaVqwdCF8t7ImtpbmQiOiJyZXF1ZXN0IiwidmF1bHRJZCI6ImRhT3l0alVsakRIb2FEd3UydGdpQ1EiLCJlcG9jaCI6MCwicmluZ1JldiI6MCwicmluZ0RpZ2VzdCI6IiIsImNvdW50ZXIiOjIsImRpZ2VzdCI6ImVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWUiLCJyZXF1ZXN0ZWRBdCI6MTgwMDAwMDAwMDAwMCwibm9uY2UiOiI0M0dQaWNCUGFidTVnYms4ZkhxVEd3IiwiY29tbWl0IjoiYWYwM2E3MTRjNTgwMjg4NmYwMDc0ZTY4NmRiYWU1MGYyMzgxNjhlMDgzYzBlMWNmNTNhYjk4ZTY5YWM5MzYyYiJ9",
+   "request": "lumen-pair-request:2:0:Xl0SHWsG3SVmclS5f1_VCOKy2qCk0aT8l-g3OA2up-57ImtpbmQiOiJyZXF1ZXN0IiwidmF1bHRJZCI6ImRhT3l0alVsakRIb2FEd3UydGdpQ1EiLCJlcG9jaCI6MCwicmluZ1JldiI6MCwicmluZ0RpZ2VzdCI6IiIsImNvdW50ZXIiOjIsImRpZ2VzdCI6ImVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWUiLCJyZXF1ZXN0ZWRBdCI6MTgwMDAwMDAwMDAwMCwibm9uY2UiOiJWdlg5QjdHV2Z1d1ZpaE9lZV9Vb25BIn0",
    "requestBody": {
-    "nonce": "43GPicBPabu5gbk8fHqTGw",
+    "nonce": "VvX9B7GWfuwVihOee_UonA",
     "ring": {
      "epoch": 0,
      "rev": 0,
@@ -209,10 +195,9 @@
      "digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
     },
     "issuedAt": 1800000000000,
-    "hash": "7f38d43fbdef9ff123916ba8e0c3a5f944beef4a690844a82b77ac2a1cf7274d",
-    "commit": "af03a714c5802886f0074e686dbae50f238168e083c0e1cf53ab98e69ac9362b"
+    "hash": "8cc15bfd0bc8793dc96efbf0fd87b98022188b805027dcd3ed2abbb0a50cae60"
    },
-   "answer": "lumen-pair-answer:3:0:DSDdSdM1-DG50jkYltocI84QJtfuRY_Aby9vAY_4jy97ImtpbmQiOiJhbnN3ZXIiLCJ2YXVsdElkIjoiZGFPeXRqVWxqREhvYUR3dTJ0Z2lDUSIsInJlcXVlc3QiOiI3ZjM4ZDQzZmJkZWY5ZmYxMjM5MTZiYThlMGMzYTVmOTQ0YmVlZjRhNjkwODQ0YTgyYjc3YWMyYTFjZjcyNzRkIiwibm9uY2UiOiI0M0dQaWNCUGFidTVnYms4ZkhxVEd3IiwiY291bnRlciI6MywiZGlnZXN0IjoiZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZiIsImVwb2NoIjowLCJyaW5nUmV2IjowLCJyaW5nRGlnZXN0IjoiIiwiYW5zd2VyZWRBdCI6MTgwMDAwMDAwMTAwMCwicHViIjoiZTA2UW03NV9fa1RFWmFJZ0EzMWdqdU5ZbDlNZS1YTHdmM1NKTExEM1B4TSJ9",
+   "answer": "lumen-pair-answer:2:0:bZaqpaMILl_uN7BAUwo-fi5-qFX628kiQcW38zRY5mx7ImtpbmQiOiJhbnN3ZXIiLCJ2YXVsdElkIjoiZGFPeXRqVWxqREhvYUR3dTJ0Z2lDUSIsInJlcXVlc3QiOiI4Y2MxNWJmZDBiYzg3OTNkYzk2ZWZiZjBmZDg3Yjk4MDIyMTg4YjgwNTAyN2RjZDNlZDJhYmJiMGE1MGNhZTYwIiwibm9uY2UiOiJWdlg5QjdHV2Z1d1ZpaE9lZV9Vb25BIiwiY291bnRlciI6MywiZGlnZXN0IjoiZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZiIsImVwb2NoIjowLCJyaW5nUmV2IjowLCJyaW5nRGlnZXN0IjoiIiwiYW5zd2VyZWRBdCI6MTgwMDAwMDAwMTAwMH0",
    "answerBody": {
     "counter": 3,
     "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -220,22 +205,15 @@
      "epoch": 0,
      "rev": 0,
      "digest": ""
-    },
-    "sas": {
-     "session": "7f38d43fbdef9ff123916ba8e0c3a5f944beef4a690844a82b77ac2a1cf7274d",
-     "answer": "73cdb43c0cdaf581b64c5ad714fb8275067fe90ddc7882d9b0cb246661418012",
-     "nonce": "43GPicBPabu5gbk8fHqTGw",
-     "expires": 1800000301000,
-     "pub": "e06Qm75__kTEZaIgA31gjuNYl9Me-XLwf3SJLLD3PxM"
     }
    }
   },
   {
    "vault": 1,
    "now": 1800000000000,
-   "request": "lumen-pair-request:3:2:7vMvi14tgadtdb1yzc119TZR9P4kpWPpaxB8yYvgYn57ImtpbmQiOiJyZXF1ZXN0IiwidmF1bHRJZCI6InN0YkJuZWxEMDBSTGFBUktoZ2dLLUEiLCJlcG9jaCI6MiwicmluZ1JldiI6MSwicmluZ0RpZ2VzdCI6IjcwYjc0OWJiZjk1NzU3ZTVjYmZhNWIwZmRjMzg1MTNhOTIzMGU3ODlhNTFkZDliZGFiZTg2NzMzNjdiYTcwYzEiLCJjb3VudGVyIjoyLCJkaWdlc3QiOiJlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlIiwicmVxdWVzdGVkQXQiOjE4MDAwMDAwMDAwMDAsIm5vbmNlIjoiZy1vVFh0SkdXY2ItNmNNMTdFLXhzQSIsImNvbW1pdCI6IjMyYzQ5YWU3NGRjYmMxOWM0ZTJkZDYyMTcwMmZjYjhkYTQwMDE1ZjkyNzQyMTJmNDkyMDM4MjM2ZGU2OWFhNmYifQ",
+   "request": "lumen-pair-request:2:2:DQdG19mJT7fyNM9KdpTuaVVLFsqlQUWbpBIFIhP8qUB7ImtpbmQiOiJyZXF1ZXN0IiwidmF1bHRJZCI6InN0YkJuZWxEMDBSTGFBUktoZ2dLLUEiLCJlcG9jaCI6MiwicmluZ1JldiI6MSwicmluZ0RpZ2VzdCI6IjcwYjc0OWJiZjk1NzU3ZTVjYmZhNWIwZmRjMzg1MTNhOTIzMGU3ODlhNTFkZDliZGFiZTg2NzMzNjdiYTcwYzEiLCJjb3VudGVyIjoyLCJkaWdlc3QiOiJlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlIiwicmVxdWVzdGVkQXQiOjE4MDAwMDAwMDAwMDAsIm5vbmNlIjoiSEdnQklLSHFfbUNrSE50TDlPbWdnQSJ9",
    "requestBody": {
-    "nonce": "g-oTXtJGWcb-6cM17E-xsA",
+    "nonce": "HGgBIKHq_mCkHNtL9OmggA",
     "ring": {
      "epoch": 2,
      "rev": 1,
@@ -246,10 +224,9 @@
      "digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
     },
     "issuedAt": 1800000000000,
-    "hash": "920226328a00087f10a6303c3c0adabfb7b7b813681f6a06e2afba6acffae3b7",
-    "commit": "32c49ae74dcbc19c4e2dd621702fcb8da40015f9274212f492038236de69aa6f"
+    "hash": "8015effd7b1ad76939be8fc9f38905ab4e53df343157833ca12fce0b30f8ae23"
    },
-   "answer": "lumen-pair-answer:3:2:a_aFvQ7aXeBhfiCoNywCn92uonZvf39rS3A7wTxie7x7ImtpbmQiOiJhbnN3ZXIiLCJ2YXVsdElkIjoic3RiQm5lbEQwMFJMYUFSS2hnZ0stQSIsInJlcXVlc3QiOiI5MjAyMjYzMjhhMDAwODdmMTBhNjMwM2MzYzBhZGFiZmI3YjdiODEzNjgxZjZhMDZlMmFmYmE2YWNmZmFlM2I3Iiwibm9uY2UiOiJnLW9UWHRKR1djYi02Y00xN0UteHNBIiwiY291bnRlciI6MywiZGlnZXN0IjoiZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZiIsImVwb2NoIjoyLCJyaW5nUmV2IjoxLCJyaW5nRGlnZXN0IjoiNzBiNzQ5YmJmOTU3NTdlNWNiZmE1YjBmZGMzODUxM2E5MjMwZTc4OWE1MWRkOWJkYWJlODY3MzM2N2JhNzBjMSIsImFuc3dlcmVkQXQiOjE4MDAwMDAwMDEwMDAsInB1YiI6IkJTcFFkenJJMlJkejh0eVdZdUV2RGVfcEZlUVZ1S0hJNGdwYVBXcXl1RU0ifQ",
+   "answer": "lumen-pair-answer:2:2:KueWC8uPNpbUaGBrO0FZe2-Fa7EOvsdGO-bFtDgdp717ImtpbmQiOiJhbnN3ZXIiLCJ2YXVsdElkIjoic3RiQm5lbEQwMFJMYUFSS2hnZ0stQSIsInJlcXVlc3QiOiI4MDE1ZWZmZDdiMWFkNzY5MzliZThmYzlmMzg5MDVhYjRlNTNkZjM0MzE1NzgzM2NhMTJmY2UwYjMwZjhhZTIzIiwibm9uY2UiOiJIR2dCSUtIcV9tQ2tITnRMOU9tZ2dBIiwiY291bnRlciI6MywiZGlnZXN0IjoiZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZiIsImVwb2NoIjoyLCJyaW5nUmV2IjoxLCJyaW5nRGlnZXN0IjoiNzBiNzQ5YmJmOTU3NTdlNWNiZmE1YjBmZGMzODUxM2E5MjMwZTc4OWE1MWRkOWJkYWJlODY3MzM2N2JhNzBjMSIsImFuc3dlcmVkQXQiOjE4MDAwMDAwMDEwMDB9",
    "answerBody": {
     "counter": 3,
     "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -257,93 +234,8 @@
      "epoch": 2,
      "rev": 1,
      "digest": "70b749bbf95757e5cbfa5b0fdc38513a9230e789a51dd9bdabe8673367ba70c1"
-    },
-    "sas": {
-     "session": "920226328a00087f10a6303c3c0adabfb7b7b813681f6a06e2afba6acffae3b7",
-     "answer": "3d01530d5cf6be5ebb2a8ec29dc30897c41affb121fa71d9c90fb06f8c10ac07",
-     "nonce": "g-oTXtJGWcb-6cM17E-xsA",
-     "expires": 1800000301000,
-     "pub": "BSpQdzrI2Rdz8tyWYuEvDe_pFeQVuKHI4gpaPWqyuEM"
     }
    }
-  }
- ],
- "sas": [
-  {
-   "vault": 0,
-   "flow": "one-way",
-   "issuerKey": "1111111111111111111111111111111111111111111111111111111111111111",
-   "joinerKey": "2222222222222222222222222222222222222222222222222222222222222222",
-   "transcript": "[\"lumen-pair-sas/1\",\"one-way\",\"daOytjUljDHoaDwu2tgiCQ\",0,0,\"\",2,\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"2642a03b1c4ff644abdeed4467123f785a544bb6e0e66c92200f23fb9324f004\",\"\",\"xp1S2RabprwqgXrr\",\"e06Qm75__kTEZaIgA31gjuNYl9Me-XLwf3SJLLD3PxM\",\"D6poTtKIZ7l_Smot7l34zpdOdrcBjj8iocTPJnhXDyA\"]",
-   "commitI": "461deb24b3bccbd5657ca1c33b0744200751aa1138dffc21eeaee01fc2a277d8",
-   "symbols": [
-    38,
-    50,
-    49,
-    12,
-    0
-   ],
-   "windowIssuer": 80000,
-   "windowJoiner": 120000,
-   "confirmIssuer": "h1cYm8EoxXLf6VkrmuznYiFhfQ618xIvV3UrVyn1L0s",
-   "confirmJoiner": "6KGA_zSOHLoVIEEEAJm8ncqM6m5vFPb3GmrYLZAvI-U"
-  },
-  {
-   "vault": 0,
-   "flow": "two-way",
-   "issuerKey": "1111111111111111111111111111111111111111111111111111111111111111",
-   "joinerKey": "2222222222222222222222222222222222222222222222222222222222222222",
-   "transcript": "[\"lumen-pair-sas/1\",\"two-way\",\"daOytjUljDHoaDwu2tgiCQ\",0,0,\"\",3,\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"7f38d43fbdef9ff123916ba8e0c3a5f944beef4a690844a82b77ac2a1cf7274d\",\"73cdb43c0cdaf581b64c5ad714fb8275067fe90ddc7882d9b0cb246661418012\",\"43GPicBPabu5gbk8fHqTGw\",\"e06Qm75__kTEZaIgA31gjuNYl9Me-XLwf3SJLLD3PxM\",\"D6poTtKIZ7l_Smot7l34zpdOdrcBjj8iocTPJnhXDyA\"]",
-   "commitJ": "af03a714c5802886f0074e686dbae50f238168e083c0e1cf53ab98e69ac9362b",
-   "symbols": [
-    48,
-    31,
-    8,
-    52,
-    22
-   ],
-   "windowIssuer": 80000,
-   "windowJoiner": 120000,
-   "confirmIssuer": "WzV8dVK_67yCnqLknEswB3Mros0QWyvaUEYDCoxG2G0",
-   "confirmJoiner": "WbXWDyshTdCjrdsnFQQM4PLHX7nltr5YSTwjP1sWmZs"
-  },
-  {
-   "vault": 1,
-   "flow": "one-way",
-   "issuerKey": "1212121212121212121212121212121212121212121212121212121212121212",
-   "joinerKey": "2323232323232323232323232323232323232323232323232323232323232323",
-   "transcript": "[\"lumen-pair-sas/1\",\"one-way\",\"stbBnelD00RLaARKhggK-A\",2,1,\"70b749bbf95757e5cbfa5b0fdc38513a9230e789a51dd9bdabe8673367ba70c1\",2,\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"35a25cc332a7ee7b1a781ac04243464f2604c7e6702e01d5a136c573daf2662b\",\"\",\"9WrYYqOcqgDnAwMP\",\"BSpQdzrI2Rdz8tyWYuEvDe_pFeQVuKHI4gpaPWqyuEM\",\"mkUDqYqxD-jTVMnELL0MnXlE9S59FNjqWXdefcnjv0s\"]",
-   "commitI": "e3aa883d2dbd1deb69f44dcbee1fb04881417f98ced22f0c4d2b5665acad4e18",
-   "symbols": [
-    31,
-    37,
-    31,
-    8,
-    12
-   ],
-   "windowIssuer": 80000,
-   "windowJoiner": 120000,
-   "confirmIssuer": "X4-CDmNfF2hghFiO6LeF8nzbkkMotsRaT4OB86h6Xqo",
-   "confirmJoiner": "GUtt9vVVprNO3qXVoKDfFdB8BoFVHD_Wh5H0VX76eJs"
-  },
-  {
-   "vault": 1,
-   "flow": "two-way",
-   "issuerKey": "1212121212121212121212121212121212121212121212121212121212121212",
-   "joinerKey": "2323232323232323232323232323232323232323232323232323232323232323",
-   "transcript": "[\"lumen-pair-sas/1\",\"two-way\",\"stbBnelD00RLaARKhggK-A\",2,1,\"70b749bbf95757e5cbfa5b0fdc38513a9230e789a51dd9bdabe8673367ba70c1\",3,\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"920226328a00087f10a6303c3c0adabfb7b7b813681f6a06e2afba6acffae3b7\",\"3d01530d5cf6be5ebb2a8ec29dc30897c41affb121fa71d9c90fb06f8c10ac07\",\"g-oTXtJGWcb-6cM17E-xsA\",\"BSpQdzrI2Rdz8tyWYuEvDe_pFeQVuKHI4gpaPWqyuEM\",\"mkUDqYqxD-jTVMnELL0MnXlE9S59FNjqWXdefcnjv0s\"]",
-   "commitJ": "32c49ae74dcbc19c4e2dd621702fcb8da40015f9274212f492038236de69aa6f",
-   "symbols": [
-    59,
-    53,
-    50,
-    4,
-    2
-   ],
-   "windowIssuer": 80000,
-   "windowJoiner": 120000,
-   "confirmIssuer": "TQTWrlNBynu8XqNAM8t0zdNyb4A_Snr_h8jJah_Qk5o",
-   "confirmJoiner": "WTiZC7ZN4katc3b-XUvTp0yaOAVj7BdBjbh6auh3tUM"
   }
  ]
 }

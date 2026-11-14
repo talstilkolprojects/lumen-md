@@ -1,8 +1,7 @@
 /**
  * The encrypted sync engine, part 2 of 3 (split out of engine.ts, W4.11; no
  * behaviour change): key changes (freeze, commit, revocation, calling a
- * freeze off), enrolment and freshness. Pairing is in enginePairing.ts
- * (plan W8.5).
+ * freeze off), enrolment, freshness and pairing.
  */
 
 import { equalBytes } from "./bytes";
@@ -25,11 +24,26 @@ import {
   readKeyring,
   RevokedDeviceEnrollError,
   rewriteKeyring,
+  sealAnchor,
   unwrapSecret,
+  verifyAnchor,
 } from "./keyring";
 import { LOCK_BUSY, tryDeviceLock } from "./deviceLock";
-import { FREEZE_TTL_MS, FROZEN_PROTOCOL, manifestName, sealManifest, type FreshnessAnchor, type Manifest } from "./manifest";
-import { PAIRING_WINDOW_MAX_MS } from "./pairing";
+import { FREEZE_TTL_MS, FROZEN_PROTOCOL, manifestName, RollbackError, sealManifest, type FreshnessAnchor, type Manifest } from "./manifest";
+import {
+  createPairingAnswer,
+  createPairingCode,
+  createPairingRequest,
+  isPairingAnswer,
+  PAIRING_REQUEST_TTL_MS,
+  PAIRING_TTL_MS,
+  PairingEpochError,
+  PairingError,
+  readPairingAnswer,
+  readPairingCode,
+  readPairingRequest,
+  type PairingAnchor,
+} from "./pairing";
 import { PreconditionFailedError, proveCas } from "./provider";
 import type { DeviceState, FreshnessSource } from "./state";
 import {
@@ -164,21 +178,8 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
     if (fromStore) {
       const stored = await this.o.store.load().catch(() => null);
       if (stored?.pairingUntil !== undefined && stored.pairingUntil > (s.pairingUntil ?? 0)) s.pairingUntil = stored.pairingUntil;
-      if (stored?.pairingKept !== undefined && stored.pairingKept > (s.pairingKept ?? 0)) s.pairingKept = stored.pairingKept;
     }
-    // Review 27, S27-2: no pairing holds longer than an answer's life plus the
-    // clock allowance; a hold stored further ahead (a clock that was fast,
-    // then corrected) is void, and cleared.
-    const max = this.o.now() + PAIRING_WINDOW_MAX_MS;
-    if ((s.pairingUntil ?? 0) > max || (s.pairingKept ?? 0) > max) {
-      if ((s.pairingUntil ?? 0) > max) delete s.pairingUntil;
-      if ((s.pairingKept ?? 0) > max) delete s.pairingKept;
-      await this.save();
-    }
-    // W8.5 (review 13, S13-1): a pairing this device confirmed holds key
-    // changes for the new device's whole window, cancel or not.
-    const until = Math.max(s.pairingUntil ?? 0, s.pairingKept ?? 0);
-    if (until > 0 && this.o.now() < until) throw new PairingPendingError(until);
+    if (s.pairingUntil !== undefined && this.o.now() < s.pairingUntil) throw new PairingPendingError(s.pairingUntil);
   }
 
   protected async rekeyNow(opts: RekeyRequest): Promise<RekeyResult> {
@@ -430,6 +431,142 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
       const s = await this.loadState();
       s.anchor = anchor;
       s.freshness = "created";
+      await this.save();
+    }));
+  }
+
+  /**
+   * A pairing code for a new device, carrying this device's newest verified
+   * anchors: the manifest and the keyring. An unverified (TOFU) device cannot
+   * issue one: it would pass on a state nobody verified as if it had been.
+   */
+  pairingCode(): Promise<string> {
+    // Seventh review 12.11, G3: serialised with key changes. A key change
+    // running now (its keyring write may be stalled) would make the code
+    // vouch for the epoch it is replacing: refused at once, not queued.
+    if (this.keyChanges > 0) return Promise.reject(new PairingDuringKeyChangeError());
+    // H3: nor while another tab of this device changes keys (the device lock).
+    return this.exclusive(() => this.pairingUnderLock(async (s) => {
+      if (!s.anchor) throw new PairingError("Sync once before pairing another device");
+      if (s.freshness === "unverified") {
+        throw new PairingError("This device's freshness is not verified: pair it or confirm it before pairing others");
+      }
+      const now = this.o.now();
+      const code = await createPairingCode(this.o.keys, s.anchor, now, anchorOf(this.o.keys));
+      s.pairingUntil = Math.max(s.pairingUntil ?? 0, now + PAIRING_TTL_MS); // N3: no key change while it is valid
+      await this.save();
+      return code;
+    }));
+  }
+
+  /**
+   * Two-way pairing, step 1, on the new device (third review 12.11, N3): a
+   * request naming the keyring and manifest this device sees now. The user
+   * enters it on an existing device (`answerPairing`), and that device's
+   * answer here (`pair`).
+   */
+  pairingRequest(): Promise<string> {
+    return this.exclusive(() => this.underDeviceLock(true, async () => {
+      await this.refresh();
+      const s = await this.loadState();
+      const { code, request } = await createPairingRequest(this.o.keys, s.anchor, this.o.now(), anchorOf(this.o.keys));
+      s.pairRequest = request;
+      await this.save();
+      return code;
+    }));
+  }
+
+  /**
+   * Two-way pairing, step 2, on an existing, verified device: check the new
+   * device's request against this device's *current* keyring and manifest —
+   * read now, not when anything was issued — and answer with them, bound to
+   * the request. A new device shown an older epoch or revision is refused
+   * here (`PairingEpochError("older")`), whichever device made the newer one.
+   */
+  answerPairing(request: string): Promise<string> {
+    // H3: not while another tab of this device changes keys (the device lock).
+    return this.exclusive(() => this.pairingUnderLock(async (s) => {
+      if (s.freshness === "unverified") throw new PairingError("This device's freshness is not verified: pair it or confirm it before pairing others");
+      await this.refresh();
+      await this.readManifest();
+      if (!s.anchor) throw new PairingError("Sync once before pairing another device");
+      const req = await readPairingRequest(this.o.keys, request);
+      const mine = anchorOf(this.o.keys);
+      if (req.ring.epoch === mine.epoch && req.ring.digest !== mine.digest) {
+        if (req.ring.rev < mine.rev) {
+          throw new PairingEpochError("older", `The new device is shown an older version of the keys (${mine.epoch}.${req.ring.rev}; this device is at ${mine.epoch}.${mine.rev}): the storage is showing it old keys. Don't pair it; sync it and try again.`);
+        }
+        if (req.ring.rev === mine.rev) throw new KeyringForkError(`the new device sees another keyring at ${mine.epoch}.${mine.rev}`);
+        throw new PairingEpochError("newer", "The new device sees newer keys than this one: sync this device, then enter the request again");
+      }
+      if (req.manifest && req.manifest.counter > s.anchor.counter) throw new PairingEpochError("newer", "The new device sees newer notes than this one: sync this device, then enter the request again");
+      const now = this.o.now();
+      const answer = await createPairingAnswer(this.o.keys, req, s.anchor, now, mine);
+      s.pairingUntil = Math.max(s.pairingUntil ?? 0, now + PAIRING_REQUEST_TTL_MS);
+      await this.save();
+      return answer;
+    }));
+  }
+
+  /**
+   * Call off this device's pairing (info I3): the codes and answers it gave
+   * out stop holding back its key changes, so an urgent revocation needn't
+   * wait up to 5 minutes, and a request it is waiting to have answered is
+   * forgotten (its answer is refused from now on). A code or answer already
+   * given out still verifies on the device it was given to, so tell that
+   * device not to use it — pair it again after the key change.
+   */
+  cancelPairing(): Promise<void> {
+    return this.exclusive(() => this.underDeviceLock(true, async () => {
+      const s = await this.loadState();
+      delete s.pairingUntil;
+      delete s.pairRequest;
+      await this.save();
+    }));
+  }
+
+  /** Accept a pairing code from an existing device: anchors the rollback guards (manifest and keyring). */
+  pair(code: string): Promise<void> {
+    return this.exclusive(() => this.underDeviceLock(true, async () => {
+      const s = await this.loadState();
+      // F6: the keys must reproduce the anchor this device verified before
+      // anything is sealed with them (a state from before N1 has no check:
+      // the refresh seals it, as every other entry point does).
+      if (s.ring && !(await verifyAnchor(this.o.keys, s.ring))) await this.refresh();
+      const answer = isPairingAnswer(code);
+      // A one-way code, or the answer to this device's own request (N3).
+      const got: PairingAnchor = answer ? await readPairingAnswer(this.o.keys, code, s.pairRequest ?? null, this.o.now()) : await readPairingCode(this.o.keys, code, this.o.now());
+      // The keyring: same epoch (readPairingCode checks it); the same revision must be the same keyring.
+      const mine = s.ring ?? anchorOf(this.o.keys);
+      if (got.ring.epoch === mine.epoch && got.ring.rev === mine.rev && mine.digest && got.ring.digest !== mine.digest) {
+        throw new KeyringForkError(`the pairing code names another keyring at ${mine.epoch}.${mine.rev}`);
+      }
+      const ringNewer = got.ring.epoch > mine.epoch || (got.ring.epoch === mine.epoch && got.ring.rev > mine.rev);
+      // Never move the anchor backwards; equal counters must be the same manifest.
+      if (s.anchor && got.counter === s.anchor.counter && got.digest !== s.anchor.digest) {
+        throw new RollbackError(s.anchor.counter, got.counter, "fork");
+      }
+      if (s.anchor && got.counter < s.anchor.counter) {
+        // An older code cannot vouch for the newer state this device already
+        // holds (it may come from another fork). A verified device needs
+        // nothing from it; an unverified one needs a current code.
+        if (s.freshness !== "unverified") return;
+        throw new PairingError("The pairing code is older than this device's state; create a new code on the other device");
+      }
+      s.anchor = { counter: got.counter, digest: got.digest };
+      if (got.ring.epoch > 0 && (ringNewer || !s.ring)) s.ring = await sealAnchor(got.ring, this.o.keys.secret, this.o.keys.vaultId);
+      s.freshness = "paired";
+      if (answer) delete s.pairRequest;
+      await this.save();
+    }));
+  }
+
+  /** The user confirmed by hand (e.g. compared with another device) that the vault is current. */
+  confirmFreshness(): Promise<void> {
+    return this.exclusive(() => this.underDeviceLock(true, async () => {
+      const s = await this.loadState();
+      if (!s.anchor) throw new Error("Nothing to confirm yet: sync once first");
+      if (s.freshness === "unverified") s.freshness = "confirmed";
       await this.save();
     }));
   }

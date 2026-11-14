@@ -44,7 +44,7 @@ import { unlockVault, unlockWithDevice, E2eeSync } from "../sync/e2ee/engine";
 import { memoryFiles } from "../sync/e2ee/localFiles";
 import { memoryStateStore } from "../sync/e2ee/state";
 import { setSecret } from "../lib/secretStore";
-import { device, newVault, pairConfirmed, PASSPHRASE, TEST_POLICY } from "./helpers/e2ee";
+import { device, newVault, PASSPHRASE, TEST_POLICY } from "./helpers/e2ee";
 
 type ServerConfig =
   | { name: string; kind: "webdav"; url: string; username?: string; password?: string }
@@ -305,7 +305,7 @@ async function t8(cfg: ServerConfig, supported: boolean): Promise<Outcome> {
   const { keys: bKeys } = await unlockVault(pb, PASSPHRASE, TEST_POLICY);
   const b = device("B", pb, bKeys);
   await b.sync.sync();
-  await pairConfirmed(b, a, await a.sync.pairingCode()); // W8.5
+  await b.sync.pair(await a.sync.pairingCode());
   const bRun: { p: Promise<unknown> | null } = { p: null };
   let fired = false;
   const pa = hooked(
@@ -325,7 +325,7 @@ async function t8(cfg: ServerConfig, supported: boolean): Promise<Outcome> {
   );
   const a2 = device("A2", pa, a.sync.keys());
   await a2.sync.sync();
-  await pairConfirmed(a2, a, await a.sync.pairingCode()); // W8.5
+  await a2.sync.pair(await a.sync.pairingCode());
   const ra = await a2.sync.rekey({ revoke: ["phone"] }).then((r) => r, (e: unknown) => e);
   if (!fired) aDone.open();
   const rb: unknown = bRun.p ? await bRun.p : null;
