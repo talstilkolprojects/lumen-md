@@ -1175,6 +1175,25 @@
       "notes": "Converted to ONNX by .github/workflows/model-convert.yml (plan 6.0). Downloaded only with consent, size shown first, cached in OPFS; not downloadable until the host is chosen (15.9). CC BY 4.0: the attribution must be shown where the model is offered."
     },
     {
+      "id": "bert-base-ner",
+      "kind": "other",
+      "source": "https://huggingface.co/dslim/bert-base-NER",
+      "license": "MIT",
+      "class": "allowed",
+      "commercial": "yes",
+      "attribution": "bert-base-NER by David S. Lim (dslim), fine-tuned BERT on CoNLL-2003, MIT licence. Converted to ONNX and quantised by Lumen.",
+      "size": "set from the first conversion run (q8 / q4f16)",
+      "runs": "browser",
+      "delivery": "download",
+      "hosting": {
+        "via": "converted",
+        "tag": "models-bert-base-ner"
+      },
+      "catalog": "CONVERTED_MODELS (src/ai/convertedModels.ts)",
+      "verified": false,
+      "notes": "English names for the PII redactor (plan 2.6, audit W10.C23), next to DictaBERT-NER for Hebrew. Converted by .github/workflows/model-convert.yml (plan 6.0); its sha256 is recorded from the first conversion run on the Mac (10.M). Downloaded only with consent; not downloadable until the host is chosen (15.9)."
+    },
+    {
       "id": "siglip-base-patch16-256-multilingual",
       "kind": "vision",
       "source": "https://huggingface.co/google/siglip-base-patch16-256-multilingual",
