@@ -56,3 +56,30 @@ moves the toolbar by 3 px and checks that the comparison fails.
 `visual/rtl.visual.ts` adds six shots of the RTL matrix note
 (`e2e/rtl-note.ts`): the preview and WYSIWYG in Hebrew, light and dark, and
 the preview on an iPhone 14 and a Pixel 7.
+
+## Real Safari, Firefox and Edge (Percy)
+
+The local baselines are taken in Chromium. RTL layout bugs show up most in
+Safari, so main's promotions are also checked with Percy, which is free under
+BrowserStack's open-source plan. Percy takes 30 screens, each in Hebrew and
+English and in light and dark:
+
+- the ten surfaces above;
+- the RTL matrix note;
+- nineteen views opened by their palette commands: settings, graph, canvas,
+  search, version history and others (`visual/percy-surfaces.ts`).
+
+Playwright captures each screen's DOM in Chromium (`visual/percy.percy.ts`).
+Percy then renders that DOM in real Chrome, Firefox and Safari (and Edge) and
+compares it with main's approved baseline. The local baselines stay as they
+are.
+
+```sh
+PERCY_TOKEN=… npm run visual:percy             # 30 screens × 4 variants
+PERCY_TOKEN=… npm run visual:percy -- --canary # self-test: RTL text moved 2px
+```
+
+The canary build adds a 2px shift to RTL text in the preview. It must show
+changes in every browser and is never approved. Outside `percy exec` the
+suite skips itself. The token lives in the agent's secret store, and the run
+is part of the release pipeline (W7.21), not GitHub Actions.

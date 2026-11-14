@@ -50,6 +50,7 @@
     "preview:visual": "node scripts/preview-visual.mjs",
     "test:visual": "playwright test -c playwright.visual.config.ts",
     "test:visual:update": "playwright test -c playwright.visual.config.ts --update-snapshots",
+    "visual:percy": "node scripts/visual/percy-run.mjs",
     "budget": "node scripts/bundle-budget.mjs",
     "budget:ratchet": "node scripts/budget-ratchet.mjs",
     "budget:history": "node scripts/budget-ratchet.mjs --history",

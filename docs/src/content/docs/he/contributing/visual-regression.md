@@ -54,3 +54,30 @@ npm run test:visual
 `visual/rtl.visual.ts` מוסיף שישה צילומים של פתק מטריצת ה-RTL
 (`e2e/rtl-note.ts`): התצוגה ו-WYSIWYG בעברית, בהיר וכהה, והתצוגה על iPhone 14
 ועל Pixel 7.
+
+## ‏Safari, ‏Firefox ו-Edge אמיתיים (Percy)
+
+ה-baselines המקומיים מצולמים ב-Chromium. באגים של פריסת RTL מופיעים בעיקר
+ב-Safari, ולכן כל קידום של main נבדק גם ב-Percy, שזמין בחינם בתוכנית הקוד
+הפתוח של BrowserStack. ‏Percy מצלם 30 מסכים, כל אחד בעברית ובאנגלית, בהיר
+וכהה:
+
+- עשרת המשטחים שלמעלה;
+- פתק מטריצת ה-RTL;
+- תשע-עשרה תצוגות שנפתחות בפקודות שלהן: הגדרות, גרף, קנבס, חיפוש,
+  היסטוריית גרסאות ועוד (`visual/percy-surfaces.ts`).
+
+‏Playwright לוכד ב-Chromium את ה-DOM של כל מסך (`visual/percy.percy.ts`).
+אחר כך Percy מרנדר את ה-DOM הזה ב-Chrome, ‏Firefox ו-Safari אמיתיים (וגם
+ב-Edge), ומשווה ל-baseline המאושר של main. ה-baselines המקומיים נשארים כמו
+שהם.
+
+```sh
+PERCY_TOKEN=… npm run visual:percy             # ‏30 מסכים × 4 מצבים
+PERCY_TOKEN=… npm run visual:percy -- --canary # בדיקה עצמית: טקסט RTL זז ב-2px
+```
+
+בניית הקנרית מזיזה ב-2px את טקסט ה-RTL בתצוגה. היא חייבת להראות שינויים
+בכל דפדפן, ואף פעם לא מאושרת. מחוץ ל-`percy exec` החבילה מדלגת על עצמה.
+הטוקן נשמר במאגר הסודות של הסוכן, וההרצה היא חלק מצינור השחרור (W7.21), לא
+GitHub Actions.
