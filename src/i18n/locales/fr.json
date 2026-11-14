@@ -1565,5 +1565,12 @@
   "e2ee.lan.error.not-lan": "L’autre extrémité n’est pas sur le réseau local, la liaison a donc été fermée.",
   "e2ee.lan.error.timeout": "L’autre appareil ne s’est pas connecté à temps. Créez un nouveau code et réessayez.",
   "e2ee.lan.error.closed": "La liaison s’est fermée.",
+  "e2ee.lan.visibleAs": "Également visible sur ce réseau sous le nom {name} : sur l’autre appareil, choisissez « Trouver des appareils sur ce réseau » puis sélectionnez-le.",
+  "e2ee.lan.find": "Trouver des appareils sur ce réseau",
+  "e2ee.lan.finding": "Recherche sur ce réseau…",
+  "e2ee.lan.found.none": "Aucun appareil trouvé. Sur l’appareil hôte, lancez « Associer un appareil » et laissez la fenêtre ouverte, ou utilisez le code ci-dessous.",
+  "e2ee.lan.found.pick": "Associer avec {name}",
+  "e2ee.lan.discovery.used": "Cet appareil s’est déjà associé à un autre. Lancez-y une nouvelle association.",
+  "e2ee.lan.discovery.failed": "Impossible de joindre cet appareil. Utilisez plutôt le code ci-dessous.",
   "cmd.sync.open": "Synchronisation chiffrée…"
 }

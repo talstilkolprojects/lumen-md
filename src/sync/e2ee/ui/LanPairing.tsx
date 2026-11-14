@@ -13,6 +13,7 @@ import { recordLanSync, setLanSyncBytes } from "../../../ai/privacyLedger";
 import { hostOffer, joinOffer, LanLinkError, type LanLink } from "../lan/link";
 import { LanAuthError } from "../lan/rpc";
 import { adoptPeerLink, LanNoVaultError, LanNotConnectedError, thisHost } from "../lan";
+import { announcePairing, discoveryAvailable, DiscoveryError, findDevices, joinFound, type FoundDevice } from "../lan/discovery";
 import type { LanPeerInfo } from "../lan/rpc";
 
 const field: React.CSSProperties = { width: "100%", padding: "6px 8px", border: "1px solid hsl(var(--border))", borderRadius: 6, background: "transparent", color: "inherit", font: "inherit", fontSize: 12 };
@@ -25,6 +26,7 @@ export function lanError(e: unknown): string {
   if (e instanceof LanNoVaultError) return t("e2ee.lan.noVault");
   if (e instanceof LanNotConnectedError) return t("e2ee.lan.notConnected");
   if (e instanceof LanAuthError) return t("e2ee.lan.authFailed");
+  if (e instanceof DiscoveryError) return t(e.reason === "used" || e.reason === "token" ? "e2ee.lan.discovery.used" : e.reason === "not-lan" ? "e2ee.lan.error.not-lan" : "e2ee.lan.discovery.failed");
   return String((e as Error)?.message ?? e);
 }
 
@@ -90,15 +92,48 @@ export function LanJoin({ onLinked }: { onLinked: () => Promise<void> }) {
   /** A pairing still waiting for the host: given up when the form goes away. */
   const pending = useRef<(() => void) | null>(null);
   useEffect(() => () => pending.current?.(), []);
+  const canFind = useMemo(() => discoveryAvailable(), []);
+  const [found, setFound] = useState<FoundDevice[] | null>(null);
+  const [finding, setFinding] = useState(false);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
-    setBusy(true);
-    try {
+    await join(async () => {
       const j = await joinOffer(offer);
       setAnswer(j.code);
       pending.current = j.cancel;
+      return j;
+    });
+  }
+
+  /** Plan W2.19 mDNS: pair with a device found on the network, no code to copy. */
+  async function pick(device: FoundDevice) {
+    await join(() =>
+      joinFound(device, async (code) => {
+        const j = await joinOffer(code);
+        pending.current = j.cancel;
+        return j;
+      }),
+    );
+  }
+
+  async function find() {
+    setError(null);
+    setFinding(true);
+    try {
+      setFound(await findDevices());
+    } catch (err) {
+      setError(lanError(err));
+    } finally {
+      setFinding(false);
+    }
+  }
+
+  async function join(start: () => Promise<{ link: Promise<LanLink> }>) {
+    setError(null);
+    setBusy(true);
+    try {
+      const j = await start();
       const link = await j.link;
       pending.current = null;
       trackInLedger(link);
@@ -113,6 +148,34 @@ export function LanJoin({ onLinked }: { onLinked: () => Promise<void> }) {
 
   return (
     <form onSubmit={submit} style={{ display: "grid", gap: 8 }} aria-label={t("e2ee.lan.join.title")}>
+      {canFind && !answer && (
+        <div style={{ display: "grid", gap: 6 }}>
+          <button type="button" onClick={() => void find()} disabled={finding || busy} style={{ justifySelf: "start" }} data-testid="lan-find">
+            {t("e2ee.lan.find")}
+          </button>
+          {finding && (
+            <div role="status" style={muted}>
+              {t("e2ee.lan.finding")}
+            </div>
+          )}
+          {found && !finding && found.length === 0 && (
+            <div role="status" style={muted}>
+              {t("e2ee.lan.found.none")}
+            </div>
+          )}
+          {found && found.length > 0 && (
+            <ul style={{ margin: 0, paddingInlineStart: 18, display: "grid", gap: 4 }} data-testid="lan-found">
+              {found.map((d) => (
+                <li key={d.name}>
+                  <button type="button" onClick={() => void pick(d)} disabled={busy}>
+                    {t("e2ee.lan.found.pick", { name: d.name })}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       <label style={{ display: "grid", gap: 4, fontSize: 13 }}>
         {t("e2ee.lan.join.paste")}
         <textarea dir="ltr" required rows={3} value={offer} onChange={(e) => setOffer(e.target.value)} data-testid="lan-offer-input" style={{ ...field, fontFamily: "monospace" }} />
@@ -170,13 +233,38 @@ export function LanHostPairing() {
     }
   }
 
+  // Plan W2.19 mDNS: in the desktop app, this pairing is also visible on the network until it is used.
+  const [visibleAs, setVisibleAs] = useState<string | null>(null);
+  useEffect(() => {
+    if (!offer || !discoveryAvailable()) return;
+    const ctl = new AbortController();
+    void announcePairing(offer.code, { signal: ctl.signal })
+      .then(({ name, answer: came }) => {
+        if (ctl.signal.aborted) return;
+        setVisibleAs(name);
+        void came.then((a) => {
+          if (a && !ctl.signal.aborted) void accept(offer, a);
+        });
+      })
+      .catch(() => setVisibleAs(null));
+    return () => {
+      ctl.abort();
+      setVisibleAs(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one announcement per offer
+  }, [offer]);
+
   async function connect(e: FormEvent) {
     e.preventDefault();
     if (!offer) return;
+    await accept(offer, answer);
+  }
+
+  async function accept(o: NonNullable<typeof offer>, code: string) {
     setError(null);
     setBusy(true);
     try {
-      const link = await offer.accept(answer);
+      const link = await o.accept(code);
       pending.current = null;
       trackInLedger(link);
       thisHost().attach(link.channel, { address: link.remoteAddress });
@@ -213,6 +301,11 @@ export function LanHostPairing() {
         <form onSubmit={connect} style={{ display: "grid", gap: 8 }}>
           <div style={{ fontSize: 13 }}>{t("e2ee.lan.pair.show")}</div>
           <CodeBox code={offer.code} testId="lan-offer-code" />
+          {visibleAs && (
+            <div role="status" style={muted} data-testid="lan-visible-as">
+              {t("e2ee.lan.visibleAs", { name: visibleAs })}
+            </div>
+          )}
           <label style={{ display: "grid", gap: 4, fontSize: 13 }}>
             {t("e2ee.lan.pair.paste")}
             <textarea dir="ltr" required rows={3} value={answer} onChange={(e) => setAnswer(e.target.value)} data-testid="lan-answer-input" style={{ ...field, fontFamily: "monospace" }} />

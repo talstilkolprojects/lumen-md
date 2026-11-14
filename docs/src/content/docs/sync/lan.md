@@ -70,8 +70,33 @@ address outside your network.
 The web app can't open the camera: its permissions policy turns the camera
 off. To bring a code across, scan the QR code with another device's camera
 app, or copy and paste the text, for example through a note-to-self or
-AirDrop. Native scanning and automatic discovery of devices (mDNS) belong
-to the desktop and mobile apps, and are not part of this version.
+AirDrop. Native scanning belongs to the mobile apps and is not part of this
+version.
+
+## Finding the device without a code (desktop app)
+
+In the desktop app, there's no code to bring across:
+
+1. On the device that keeps the vault, choose **Pair a device**. While the
+   dialog is open, the device is also visible on the network under a
+   random name such as **Lumen-K7Q2**, and the dialog shows that name.
+2. On the other desktop, choose **Find devices on this network**, then
+   **Pair with Lumen-K7Q2**. The two swap their codes by themselves and
+   connect as usual. You still unlock with the vault's passphrase.
+
+How it works: the hosting device announces the service `_lumen-lan._tcp`
+over multicast DNS (mDNS, the way printers and AirPlay are found), and
+serves its pairing code on a local port. The joining device fetches it and
+sends its answer back. Only local-network addresses are answered or
+contacted. Nothing about you or the vault is announced: only the random
+name and the port. The codes carry no key, as with the QR code. A device
+that takes a code without the passphrase can't pass the vault's proof. A
+pairing is used up by the first answer, and the device stops announcing
+once it is paired or the dialog closes.
+
+A browser or a phone can't use mDNS: a web page can't send UDP or listen on
+a port. There you use the codes. On macOS the first search asks for the
+**local network** permission.
 
 ## How it's checked
 
@@ -85,3 +110,12 @@ to the desktop and mobile apps, and are not part of this version.
 - `e2e/lan-sync.spec.ts`: two browsers pair with the codes, unlock and sync
   both ways on their own. They make no request except to the app's own
   server, and the ledger shows local-network addresses only.
+- `cargo test --manifest-path src-tauri/lan-mdns/Cargo.toml`: two
+  processes find each other over real multicast DNS and swap the codes
+  through the rendezvous, in both directions. Hostile packets (compression
+  loops, truncation) are refused. A second answer, a wrong token or an
+  address off the local network is refused too.
+- `src/__tests__/lanDiscovery.test.ts`: the app passes through only Lumen
+  names on local addresses, announces a pairing until it is answered or
+  given up, and cancels a half-made link when its answer can't be
+  delivered.

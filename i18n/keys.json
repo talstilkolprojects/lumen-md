@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-11-10T01:44:44.817Z",
+  "generated_at": "2026-11-14T15:58:35.923Z",
   "source": "src/i18n/index.ts (en bundle) + src/i18n/lazy/*.json",
-  "count": 1567,
+  "count": 1574,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -8437,6 +8437,45 @@
     {
       "key": "e2ee.lan.error.closed",
       "en": "The link closed.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.visibleAs",
+      "en": "Also visible on this network as {name}: on the other device, choose Find devices on this network and pick it.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.lan.find",
+      "en": "Find devices on this network",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.finding",
+      "en": "Looking on this network…",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.found.none",
+      "en": "No device found. On the hosting device, start Pair a device and keep the dialog open, or use the code below.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.found.pick",
+      "en": "Pair with {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.lan.discovery.used",
+      "en": "That device already paired with another one. Start a new pairing there.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.discovery.failed",
+      "en": "Couldn't reach that device. Use the code below instead.",
       "vars": []
     }
   ]

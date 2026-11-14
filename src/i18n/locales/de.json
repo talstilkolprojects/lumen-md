@@ -1565,5 +1565,12 @@
   "e2ee.lan.error.not-lan": "Die Gegenseite ist nicht im lokalen Netzwerk, daher wurde die Verbindung getrennt.",
   "e2ee.lan.error.timeout": "Das andere Gerät hat sich nicht rechtzeitig verbunden. Erstelle einen neuen Code und versuche es erneut.",
   "e2ee.lan.error.closed": "Die Verbindung wurde getrennt.",
+  "e2ee.lan.visibleAs": "Auch in diesem Netzwerk sichtbar als {name}: Auf dem anderen Gerät „Geräte in diesem Netzwerk suchen“ wählen und es auswählen.",
+  "e2ee.lan.find": "Geräte in diesem Netzwerk suchen",
+  "e2ee.lan.finding": "Suche in diesem Netzwerk …",
+  "e2ee.lan.found.none": "Kein Gerät gefunden. Auf dem gastgebenden Gerät „Gerät koppeln“ starten und den Dialog offen lassen, oder den Code unten verwenden.",
+  "e2ee.lan.found.pick": "Mit {name} koppeln",
+  "e2ee.lan.discovery.used": "Dieses Gerät ist schon mit einem anderen gekoppelt. Dort eine neue Kopplung starten.",
+  "e2ee.lan.discovery.failed": "Das Gerät war nicht erreichbar. Stattdessen den Code unten verwenden.",
   "cmd.sync.open": "Verschlüsselte Synchronisierung…"
 }
