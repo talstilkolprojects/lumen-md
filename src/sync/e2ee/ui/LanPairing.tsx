@@ -12,7 +12,7 @@ import { encodeQr, qrPath } from "../../../lib/qr";
 import { recordLanSync, setLanSyncBytes } from "../../../ai/privacyLedger";
 import { hostOffer, joinOffer, LanLinkError, type LanLink } from "../lan/link";
 import { LanAuthError } from "../lan/rpc";
-import { adoptPeerLink, LanNoVaultError, LanNotConnectedError, thisHost } from "../lan";
+import { adoptPeerLink, LanNoVaultError, LanNotConnectedError, serveOnLan, thisHost } from "../lan";
 import type { LanPeerInfo } from "../lan/rpc";
 import { explainError } from "../../../lib/userError";
 
@@ -24,14 +24,15 @@ let dictationServed = false;
 
 /**
  * Plan W6.19: a phone linked to this device may send its Hebrew dictation
- * here, to the bigger model. Lazy: nothing loads until a device is linked,
- * and the model is only looked for when a phone asks.
+ * here, to the bigger model, whichever of the two hosts the vault. Lazy:
+ * nothing loads until a device is linked, and the model is only looked for
+ * when a phone asks.
  */
 function serveDictationOnce(): void {
   if (dictationServed) return;
   dictationServed = true;
   void import("../../../ai/dictation/desktopOffload")
-    .then((m) => m.serveDesktopDictation(thisHost(), m.appDesktopEngine()))
+    .then((m) => m.serveDesktopDictation({ serve: serveOnLan }, m.appDesktopEngine()))
     .catch(() => {
       dictationServed = false;
     });
@@ -122,6 +123,7 @@ export function LanJoin({ onLinked }: { onLinked: () => Promise<void> }) {
       pending.current = null;
       trackInLedger(link);
       adoptPeerLink(link);
+      serveDictationOnce();
       await onLinked();
     } catch (err) {
       setError(describeLanError(err));

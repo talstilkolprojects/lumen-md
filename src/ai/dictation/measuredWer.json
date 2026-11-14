@@ -1,0 +1,7 @@
+{
+  "zipformer-he": {
+    "wer": 0.236,
+    "split": "FLEURS-he validation",
+    "source": "plan 6.1, CI (WASM)"
+  }
+}

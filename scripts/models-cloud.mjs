@@ -10,6 +10,10 @@
  *                                             (--results DIR elsewhere; --push: commit it to the branch eval/day-<run>)
  *   npm run models:cloud -- status <run>
  *   npm run models:cloud -- mac [models:day options]   the backup: the same day on Tal's Mac, WebGPU steps included
+ *   npm run models:cloud -- dictation [--ref R] [--no-push]
+ *                                             plan W6.19 in one command: only the Hebrew dictation steps (phone, browser,
+ *                                             desktop, and the held-out asr-he), wait, verify, and push eval/day-<run>
+ *                                             with src/ai/dictation/measuredWer.json filled from the measurement
  *
  * The run's secrets (a one-run signing key, a one-run key for the held-out
  * copy) go into a private Kaggle dataset that only the account owner can
@@ -25,12 +29,12 @@ import { spawnSync } from "node:child_process";
 import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, hostname, tmpdir, userInfo } from "node:os";
 import { join, resolve } from "node:path";
-import { acceptance, checkCloudReport, datasetId, datasetMetadata, dictationVerdict, kernelId, kernelMetadata, parseStatus, runConfig, runSigningKey } from "./lib/modelsCloud.mjs";
+import { DICTATION_STEPS, acceptance, checkCloudReport, datasetId, datasetMetadata, dictationVerdict, kernelId, kernelMetadata, measuredWerFrom, parseStatus, runConfig, runSigningKey } from "./lib/modelsCloud.mjs";
 import { generateKey } from "./lib/heldout.mjs";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const argv = process.argv.slice(2);
-const FLAGS = new Set(["--no-heldout", "--no-wait", "--push", "--allow-wiring", "--force"]);
+const FLAGS = new Set(["--no-heldout", "--no-wait", "--push", "--no-push", "--allow-wiring", "--force"]);
 const opts = {};
 const positional = [];
 for (let i = 0; i < argv.length; i++) {
@@ -40,7 +44,16 @@ for (let i = 0; i < argv.length; i++) {
   else if (a.includes("=")) opts[a.slice(2, a.indexOf("="))] = a.slice(a.indexOf("=") + 1);
   else opts[a.slice(2)] = argv[++i];
 }
-const command = positional[0] ?? "run";
+let command = positional[0] ?? "run";
+// Plan W6.19: the dictation measurement is a run of just its steps, pushed unless --no-push.
+const dictation = command === "dictation";
+if (dictation) {
+  if (opts.only || opts.skip) die("dictation picks its own steps; drop --only / --skip");
+  if (opts["no-heldout"]) die("dictation needs the held-out asr-he set (plan W6.17): run where the evaluator key is");
+  opts.only = DICTATION_STEPS.join(",");
+  if (!opts["no-push"]) opts.push = true;
+  command = "run";
+}
 const list = (v) => (v ? String(v).split(",").map((s) => s.trim()).filter(Boolean) : []);
 const die = (msg, code = 2) => {
   console.error(msg);
@@ -142,7 +155,7 @@ if (command === "run") {
   writeFileSync(join(stage, "dataset-metadata.json"), JSON.stringify(datasetMetadata(user, runId), null, 2) + "\n");
   copyFileSync(join(ROOT, "scripts/cloud/kaggle_kernel.py"), join(kdir, "run.py"));
   writeFileSync(join(kdir, "kernel-metadata.json"), JSON.stringify(kernelMetadata(user, runId), null, 2) + "\n");
-  writeFileSync(join(dir, "run-local.json"), JSON.stringify({ runId, user, commit, ref, repo, kernel: kernelId(user), dataset: datasetId(user, runId), publicPem: signing.publicPem, heldout: !!heldout, startedAt: new Date().toISOString() }, null, 2) + "\n");
+  writeFileSync(join(dir, "run-local.json"), JSON.stringify({ runId, user, commit, ref, repo, kernel: kernelId(user), dataset: datasetId(user, runId), publicPem: signing.publicPem, heldout: !!heldout, dictation, startedAt: new Date().toISOString() }, null, 2) + "\n");
 
   console.log(`Run ${runId}: commit ${commit.slice(0, 9)} (${ref}) on Kaggle as ${user}${heldout ? ", with the held-out sets" : ""}`);
   kaggle(["datasets", "create", "-p", stage, "--dir-mode", "zip", "-q"]);
@@ -218,6 +231,12 @@ function fetchRun(runId) {
       const g = cloud.whisperGgml;
       console.log(`  the ggml file measured (pin it with: npm run whisper:desktop -- pin --repo ${g.repo} --revision ${g.revision} --file ${g.file} --bytes ${g.bytes} --sha256 ${g.sha256}; licence ${g.license ?? "?"})`);
     }
+    // What "send to my desktop" reads (desktopOffload.ts MEASURED_WER): measured numbers only.
+    const measured = measuredWerFrom(report, st);
+    if (Object.keys(measured).length) {
+      writeFileSync(join(out, "measuredWer.json"), JSON.stringify(measured, null, 2) + "\n");
+      console.log(`  measured WER for the app: ${Object.entries(measured).map(([e, m]) => `${e} ${(m.wer * 100).toFixed(1)} % (${m.split})`).join(" · ")}`);
+    }
     console.log(`  → ${out}`);
     const branch = `eval/day-${runId}`;
     const rel = `eval/results/day/${runId}`;
@@ -230,7 +249,14 @@ function fetchRun(runId) {
       if (git(steps[0]).status !== 0) die(`git worktree add ${branch} failed`, 1);
       cpSync(out, join(wt, rel), { recursive: true });
       spawnSync("git", steps[1], { encoding: "utf8" });
-      const msg = `eval: real models day ${runId} on a Kaggle GPU (plan W6.18) [skip ci]`;
+      // A dictation run also updates the numbers the app reads, so the branch is ready for review as it is.
+      const appFile = join(wt, "src/ai/dictation/measuredWer.json");
+      if (st.dictation && Object.keys(measured).length && existsSync(appFile)) {
+        const merged = { ...JSON.parse(readFileSync(appFile, "utf8")), ...measured };
+        writeFileSync(appFile, JSON.stringify(merged, null, 2) + "\n");
+        spawnSync("git", ["-C", wt, "add", "src/ai/dictation/measuredWer.json"], { encoding: "utf8" });
+      }
+      const msg = st.dictation ? `eval: Hebrew dictation WER ${runId} on a Kaggle GPU, measuredWer.json from it (plan W6.19) [skip ci]` : `eval: real models day ${runId} on a Kaggle GPU (plan W6.18) [skip ci]`;
       const c = spawnSync("git", ["-C", wt, "-c", "core.hooksPath=/dev/null", "commit", "-q", "-m", msg], { encoding: "utf8" });
       const p = c.status === 0 ? spawnSync("git", ["-C", wt, "push", "-q", "-u", "origin", branch], { encoding: "utf8" }) : c;
       console.log(p.status === 0 ? `  pushed ${branch}` : `  could not commit or push ${branch}: ${(p.stderr || "").trim()}`);
@@ -250,4 +276,4 @@ if (command === "status") {
   console.log(`${st.runId}: ${parseStatus(kaggle(["kernels", "status", st.kernel], { quiet: true }).stdout)} (${st.kernel}, commit ${st.commit.slice(0, 9)})`);
   process.exit(0);
 }
-if (!["run", "setup", "mac", "fetch", "status"].includes(command)) die(`unknown command "${command}" — setup, run, fetch, status or mac`);
+if (!["run", "setup", "mac", "fetch", "status"].includes(command)) die(`unknown command "${command}" — setup, run, dictation, fetch, status or mac`);

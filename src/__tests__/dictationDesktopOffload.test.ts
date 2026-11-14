@@ -13,11 +13,12 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { deriveVaultKeys, seal, type VaultKeys } from "../sync/e2ee/keys";
 import { memoryProvider } from "../sync/e2ee/provider";
-import { memoryChannelPair } from "../sync/e2ee/lan/channel";
+import { memoryChannelPair, messenger } from "../sync/e2ee/lan/channel";
 import { lanHost, remoteLanProvider, LanAuthError, LanHostLockedError } from "../sync/e2ee/lan/rpc";
 import { randomBytes, toB64u, utf8 } from "../sync/e2ee/bytes";
 import {
   MEASURED_WER,
+  chooseDesktopLink,
   MOBILE_WER_TARGET,
   NotLocalError,
   OFFLOAD_MS_PER_MINUTE,
@@ -29,6 +30,7 @@ import {
   makeDesktopCorrector,
   offloadDeadlineMs,
   pcm16,
+  readMeasured,
   sealedAudioBytes,
   serveDesktopDictation,
   shouldOfferDesktop,
@@ -38,6 +40,8 @@ import {
 } from "../ai/dictation/desktopOffload";
 
 const realFetch = globalThis.fetch;
+/** The table as it stood before the first cloud run (plan 6.1's Zipformer only), so these tests don't move when measuredWer.json is filled. */
+const TABLE = { "zipformer-he": { wer: 0.236, split: "FLEURS-he validation", source: "plan 6.1, CI (WASM)" } };
 afterEach(() => {
   globalThis.fetch = realFetch;
 });
@@ -98,28 +102,40 @@ const has = (hay: Uint8Array, needle: Uint8Array) => {
   return false;
 };
 
+describe("W6.19 the measured table (measuredWer.json)", () => {
+  it("holds only measured, well-formed numbers for known engines; the Zipformer's is always there", () => {
+    expect(MEASURED_WER["zipformer-he"]?.wer).toBeGreaterThan(0);
+    for (const [engine, f] of Object.entries(MEASURED_WER)) {
+      expect(["zipformer-he", "whisper-cpp-he", "whisper-turbo-he"], engine).toContain(engine);
+      expect(f!.wer).toBeGreaterThanOrEqual(0);
+      expect(f!.split.length).toBeGreaterThan(0);
+    }
+    expect(readMeasured({ "whisper-cpp-he": { wer: 0.081, split: "asr-he held-out", source: "models:cloud r @ abc" }, "made-up": { wer: 0.01 }, "whisper-turbo-he": { wer: "0.1" }, "zipformer-he": { wer: Number.NaN } })).toEqual({ "whisper-cpp-he": { wer: 0.081, split: "asr-he held-out", source: "models:cloud r @ abc" } });
+    expect(readMeasured(null)).toEqual({});
+  });
+});
+
 describe("W6.19 when to offer the desktop", () => {
   it("estimates this device's WER: a number measured here wins, else the re-reading Whisper's measured WER, else the streaming Zipformer's 23.6 % (plan 6.1)", () => {
-    expect(estimateDictationWer({ measuredHere: 0.31, correction: null })).toEqual({ wer: 0.31, basis: "measured-here", engine: "zipformer-he" });
+    expect(estimateDictationWer({ table: TABLE, measuredHere: 0.31, correction: null })).toEqual({ wer: 0.31, basis: "measured-here", engine: "zipformer-he" });
     // A phone without a turbo on the device: the streaming engine's number.
-    expect(estimateDictationWer({ correction: null })).toEqual({ wer: 0.236, basis: "streaming-floor", engine: "zipformer-he" });
+    expect(estimateDictationWer({ table: TABLE, correction: null })).toEqual({ wer: 0.236, basis: "streaming-floor", engine: "zipformer-he" });
     // Turbo re-reads, but nobody measured it yet: still the streaming floor, never a guess.
-    expect(MEASURED_WER["whisper-turbo-he"]).toBeUndefined();
-    expect(estimateDictationWer({ correction: "whisper-turbo-he" }).basis).toBe("streaming-floor");
+    expect(estimateDictationWer({ table: TABLE, correction: "whisper-turbo-he" }).basis).toBe("streaming-floor");
     // Once the cloud run measures it, its number counts.
-    expect(estimateDictationWer({ correction: "whisper-turbo-he", table: { ...MEASURED_WER, "whisper-turbo-he": { wer: 0.12, split: "held-out asr-he", source: "models:cloud" } } })).toEqual({ wer: 0.12, basis: "measured-engine", engine: "whisper-turbo-he" });
+    expect(estimateDictationWer({ correction: "whisper-turbo-he", table: { ...TABLE, "whisper-turbo-he": { wer: 0.12, split: "held-out asr-he", source: "models:cloud" } } })).toEqual({ wer: 0.12, basis: "measured-engine", engine: "whisper-turbo-he" });
   });
 
   it("offers it only for Hebrew over 15 %, with a linked desktop that is ready and not known to be worse", () => {
-    const over = estimateDictationWer({ correction: null });
+    const over = estimateDictationWer({ table: TABLE, correction: null });
     const ready = { ready: true, engine: "whisper-cpp-he" as const };
-    expect(shouldOfferDesktop({ language: "he-IL", estimate: over, desktop: ready })).toMatchObject({ offer: true, reason: "offer" });
-    expect(shouldOfferDesktop({ language: "en", estimate: over, desktop: ready }).reason).toBe("not-hebrew");
-    expect(shouldOfferDesktop({ language: "he", estimate: { wer: MOBILE_WER_TARGET, basis: "measured-here", engine: "zipformer-he" }, desktop: ready }).reason).toBe("meets-target");
-    expect(shouldOfferDesktop({ language: "he", estimate: { wer: null, basis: "unknown", engine: null }, desktop: ready }).reason).toBe("unknown-wer");
-    expect(shouldOfferDesktop({ language: "he", estimate: over, desktop: null }).reason).toBe("no-desktop");
-    expect(shouldOfferDesktop({ language: "he", estimate: over, desktop: { ready: false, engine: null, reason: "no-model" } }).reason).toBe("desktop-not-ready");
-    expect(shouldOfferDesktop({ language: "he", estimate: over, desktop: ready, table: { ...MEASURED_WER, "whisper-cpp-he": { wer: 0.3, split: "x", source: "y" } } }).reason).toBe("desktop-not-better");
+    expect(shouldOfferDesktop({ language: "he-IL", estimate: over, desktop: ready, table: TABLE })).toMatchObject({ offer: true, reason: "offer" });
+    expect(shouldOfferDesktop({ language: "en", estimate: over, desktop: ready, table: TABLE }).reason).toBe("not-hebrew");
+    expect(shouldOfferDesktop({ language: "he", estimate: { wer: MOBILE_WER_TARGET, basis: "measured-here", engine: "zipformer-he" }, desktop: ready, table: TABLE }).reason).toBe("meets-target");
+    expect(shouldOfferDesktop({ language: "he", estimate: { wer: null, basis: "unknown", engine: null }, desktop: ready, table: TABLE }).reason).toBe("unknown-wer");
+    expect(shouldOfferDesktop({ language: "he", estimate: over, desktop: null, table: TABLE }).reason).toBe("no-desktop");
+    expect(shouldOfferDesktop({ language: "he", estimate: over, desktop: { ready: false, engine: null, reason: "no-model" }, table: TABLE }).reason).toBe("desktop-not-ready");
+    expect(shouldOfferDesktop({ language: "he", estimate: over, desktop: ready, table: { ...TABLE, "whisper-cpp-he": { wer: 0.3, split: "x", source: "y" } } }).reason).toBe("desktop-not-better");
   });
 
   it("gives a sentence 10 s per minute of audio (at least 2.5 s for the round trip)", () => {
@@ -253,7 +269,100 @@ describe("W6.19 a sentence to the desktop and back, over the LAN link", () => {
     const d = await linked({ desktop: fakeDesktop({ ready: false }) });
     const status = await desktopStatus(d.link);
     expect(status).toEqual({ ready: false, engine: null, reason: "no-model" });
-    expect(shouldOfferDesktop({ language: "he", estimate: estimateDictationWer({ correction: null }), desktop: status }).offer).toBe(false);
+    expect(shouldOfferDesktop({ language: "he", estimate: estimateDictationWer({ table: TABLE, correction: null }), desktop: status, table: TABLE }).offer).toBe(false);
     d.stop();
+  });
+});
+
+/** The other way round: the phone hosts the vault, the desktop joined it (services host → peer, lan/rpc.ts). */
+async function phoneHosts(opts: { address?: string | null; desktopKeys?: VaultKeys; desktopProves?: boolean; desktop?: ReturnType<typeof fakeDesktop> } = {}) {
+  const keys = await vault();
+  const phoneHost = lanHost({ bucket: memoryProvider(), keys: () => keys });
+  const frames: Uint8Array[] = [];
+  const [hostEnd, deskEnd] = memoryChannelPair({ latencyMs: 2, onFrame: (_f, d) => frames.push(d) });
+  const address = opts.address === undefined ? "192.168.1.20" : opts.address;
+  phoneHost.attach(hostEnd, { address });
+  // The desktop joined the phone's vault: it serves dictation to its host.
+  const desk = remoteLanProvider(deskEnd, { address: "192.168.1.30" });
+  const desktop = opts.desktop ?? fakeDesktop();
+  const stop = serveDesktopDictation(desk, desktop.engine);
+  if (opts.desktopProves !== false) await desk.authenticate(opts.desktopKeys ?? keys);
+  const links = phoneHost.peerLinks().map((p): DesktopLink => ({ address: p.info.address, keys, call: (op, h, pl, o) => p.call(op, h, pl, o) }));
+  return { phoneHost, desk, desktop, links, frames, stop, keys };
+}
+
+describe("W6.19 a phone that hosts the vault sends its dictation to the desktop that joined it", () => {
+  it("the desktop (a peer) transcribes, the text comes back sealed, and the vault's sync on the link is untouched", async () => {
+    const fetches = forbidFetch();
+    const d = await phoneHosts();
+    expect(d.links).toHaveLength(1);
+    const chosen = await chooseDesktopLink(d.links, { language: "he", estimate: estimateDictationWer({ table: TABLE, correction: null }), table: TABLE });
+    expect(chosen?.decision.reason).toBe("offer");
+    const audio = tone(2);
+    expect(await makeDesktopCorrector(chosen!.link)(audio, "הפגישה נדחית")).toBe("הפגישה נדחתה ליום חמישי.");
+    expect(d.desktop.seen).toEqual([{ samples: audio.length, language: "he" }]);
+    const wire = d.frames.reduce((acc, f) => {
+      const n = new Uint8Array(acc.length + f.length);
+      n.set(acc);
+      n.set(f, acc.length);
+      return n;
+    }, new Uint8Array());
+    expect(has(wire, pcm16(audio).subarray(4000, 4032))).toBe(false);
+    expect(has(wire, utf8("הפגישה נדחתה"))).toBe(false);
+    // The desktop still syncs against the phone's bucket on the same link.
+    await d.desk.put("obj-1", new Uint8Array([1, 2, 3]));
+    expect(await d.phoneHost.provider.list()).toContain("obj-1");
+    expect(fetches).toEqual([]);
+    d.stop();
+  });
+
+  it("asks only a desktop that proved it knows the passphrase, and the desktop answers only a host that proved it too", async () => {
+    // Not proven: the host has no link to ask on.
+    const unproven = await phoneHosts({ desktopProves: false });
+    expect(unproven.links).toEqual([]);
+    // A desktop that hasn't checked the host's proof refuses anything the "host" asks: here a raw end that never proved itself.
+    const keys = await vault();
+    const [a, b] = memoryChannelPair({ latencyMs: 1 });
+    const fakeHost = messenger(a);
+    const desk = remoteLanProvider(b, { address: "192.168.1.30" });
+    const seen = fakeDesktop();
+    serveDesktopDictation(desk, seen.engine);
+    const answer = new Promise<Record<string, unknown>>((resolve) => fakeHost.onMessage((m) => resolve(m.header)));
+    fakeHost.send({ rq: 1, op: OP_STATUS, v: 1 });
+    expect(await answer).toMatchObject({ rs: 1, error: "auth" });
+    expect(seen.seen).toEqual([]);
+    // The real host, proven both ways.
+    const h = lanHost({ bucket: memoryProvider(), keys: () => keys });
+    const [c, e] = memoryChannelPair({ latencyMs: 1 });
+    h.attach(c, { address: "192.168.1.20" });
+    const desk2 = remoteLanProvider(e, { address: "192.168.1.30" });
+    serveDesktopDictation(desk2, seen.engine);
+    await desk2.authenticate(keys);
+    // Proven both ways: the host may ask, the desktop answers.
+    expect(await desktopStatus({ address: "192.168.1.20", keys, call: (op, hd, pl, o) => h.peerLinks()[0].call(op, hd, pl, o) })).toEqual({ ready: true, engine: "whisper-cpp-he" });
+    // A service the desktop doesn't serve: "unsupported", never a bucket op.
+    await expect(h.peerLinks()[0].call("svc.nothing", {})).rejects.toMatchObject({ code: "unsupported" });
+    await expect(h.peerLinks()[0].call("list", {})).rejects.toThrow(/svc\./);
+    expect(seen.seen).toEqual([]);
+  });
+
+  it("refuses a desktop whose address is not on the local network, on both sides", async () => {
+    const d = await phoneHosts({ address: "8.8.8.8" });
+    await expect(transcribeOnDesktop(d.links[0], tone(1))).rejects.toBeInstanceOf(NotLocalError);
+    expect((await desktopStatus(d.links[0]))?.reason).toBe("not-local");
+    expect(d.desktop.seen).toEqual([]);
+    d.stop();
+  });
+
+  it("of several linked devices, offers the first that is ready", async () => {
+    const notReady = await phoneHosts({ desktop: fakeDesktop({ ready: false }) });
+    const ready = await phoneHosts();
+    const est = estimateDictationWer({ table: TABLE, correction: null });
+    const chosen = await chooseDesktopLink([...notReady.links, ...ready.links], { language: "he", estimate: est, table: TABLE });
+    expect(chosen?.link).toBe(ready.links[0]);
+    expect(await chooseDesktopLink(notReady.links, { language: "he", estimate: est, table: TABLE })).toBeNull();
+    expect(await chooseDesktopLink(ready.links, { language: "en", estimate: est, table: TABLE })).toBeNull();
+    notReady.stop();
+    ready.stop();
   });
 });

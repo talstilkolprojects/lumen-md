@@ -82,6 +82,25 @@ npm run models:cloud -- fetch <run> --push # אחר כך; ‏--push שומר א�
 - מחוץ ל-kernel, מעבירים ל-`npm run models:day` את
   `--whisper-ggml <file>` (ואת `--whisper-cli`).
 
+## רק הכתבה, בפקודה אחת
+
+```sh
+npm run models:cloud -- dictation
+```
+
+הפקודה מריצה רק את שלבי ההכתבה בעברית (`asr-zipformer`, `asr-web`,
+`asr-whisper-cpp`, והסט המוחזק `asr-he` דרך שלושתם), מחכה ל-Kaggle, בודקת
+את הדוח החתום כמו למעלה, ודוחפת את `eval/day-<run>`. הענף הזה גם מעדכן את
+`src/ai/dictation/measuredWer.json`, המספרים ש״שליחה למחשב שלי״ קוראת
+([הכתבה בעברית](/he/ai/hebrew-dictation/)), כך שהוא מוכן לבדיקה כמו שהוא.
+צריך את הצעד של הבעלים שלמעלה ואת המפתח של הסט המוחזק; `--no-push` משאיר
+את התוצאה מקומית, ו-`--ref` בוחר commit אחר שנדחף. `fetch` עדיין מדפיס את
+הפקודה `whisper:desktop -- pin` לקובץ ה-ggml שנמדד.
+
+`asr-whisper-cpp` הוא שלב רשות של models:day ‏(`--with asr-whisper-cpp`),
+כך שיום ברירת המחדל נשאר בתוך שלוש השעות. ההרצה בענן תמיד מוסיפה אותו, כי
+ה-kernel בונה את whisper.cpp.
+
 ## מה נשאר ל-Mac של טל
 
 השלב שצריך WebGPU בדפדפן אמיתי: `bench-models`. ה-kernel מדלג עליו.

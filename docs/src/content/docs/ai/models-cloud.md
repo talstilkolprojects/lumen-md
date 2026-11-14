@@ -85,6 +85,26 @@ target (the phone misses 15 % and the desktop meets it).
 - Outside the kernel, pass `--whisper-ggml <file>` (and `--whisper-cli`)
   to `npm run models:day`.
 
+## Dictation only, in one command
+
+```sh
+npm run models:cloud -- dictation
+```
+
+This runs only the Hebrew dictation steps (`asr-zipformer`, `asr-web`,
+`asr-whisper-cpp` and the held-out `asr-he` through all three), waits for
+Kaggle, checks the signed report as above, and pushes `eval/day-<run>`.
+That branch also updates `src/ai/dictation/measuredWer.json`, the numbers
+"send to my desktop" reads ([Hebrew dictation](/ai/hebrew-dictation/)), so
+it is ready for review as it is. It needs the owner step above and the
+held-out key; `--no-push` keeps the result local, `--ref` picks another
+pushed commit. `fetch` still prints the `whisper:desktop -- pin` command for
+the ggml file it measured.
+
+`asr-whisper-cpp` is an optional models:day step (`--with asr-whisper-cpp`),
+so the default day stays within its three hours. The cloud run always adds
+it, because the kernel builds whisper.cpp.
+
 ## What stays on Tal's Mac
 
 The step that needs WebGPU in a real browser: `bench-models`. The kernel

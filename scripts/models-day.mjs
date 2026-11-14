@@ -148,7 +148,7 @@ const heldoutStore = resolve(process.env.LUMEN_HELDOUT_DIR ?? join(homedir(), ".
 // Desktop Whisper (plan W1.17, W6.19): a whisper.cpp build and the ivrit.ai turbo ggml file, when this machine has them.
 const whisperGgml = opts["whisper-ggml"] ?? process.env.LUMEN_WHISPER_GGML ?? null;
 const whisperCli = opts["whisper-cli"] ?? process.env.LUMEN_WHISPER_CLI ?? "whisper-cli";
-const withOptional = [...list(opts.with), ...(heldoutKey && !list(opts.skip).includes("heldout") ? ["heldout"] : []), ...(whisperGgml && !list(opts.skip).includes("asr-whisper-cpp") ? ["asr-whisper-cpp"] : [])];
+const withOptional = [...list(opts.with), ...(heldoutKey && !list(opts.skip).includes("heldout") ? ["heldout"] : [])];
 const selected = selectSteps(STEPS, { only: list(opts.only), skip: list(opts.skip), withOptional }).map((s) => ({ ...s, available: availability(s, { scripts, root, options: { meetingsDir: opts["meetings-dir"], voiceDir: opts["voice-dir"], heldoutKey, whisperGgml: whisperGgml && existsSync(whisperGgml) ? whisperGgml : null } }) }));
 const items = checklist(selected, env);
 const open = items.filter((i) => !i.ok);
