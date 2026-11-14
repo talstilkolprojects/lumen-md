@@ -45,6 +45,11 @@ interface Session {
 }
 
 const sessions = new WeakMap<VaultBackend, Session>();
+/**
+ * Every session that holds keys now, of any vault opened in this run, not
+ * only the current one (#529 re-review 14.11, T5): `lock()` forgets them all.
+ */
+const unlockedSessions = new Set<Session>();
 let current: Session | null = null;
 /** Tests only: accept cheap KDF parameters (production keeps the 600,000-iteration floor). */
 let policy: KdfPolicy = {};
@@ -104,6 +109,7 @@ function unlocked(s: Session): Promise<VaultBackend> {
 
 function open(s: Session, keys: RestKeys, header: RestHeader): void {
   s.keys = keys;
+  unlockedSessions.add(s);
   s.header = header;
   s.headerError = null;
   s.layer = createEncryptedBackend(s.inner, keys, { target: () => s.header?.target ?? "encrypted" });
@@ -205,12 +211,18 @@ export async function changePassphrase(currentPassphrase: string, newPassphrase:
   open(s, next.keys, next.header);
 }
 
-/** Forget the keys; the unlock screen comes up. */
+/**
+ * Forget the keys of every encrypted vault opened in this run, not only the
+ * current one (T5): switching back to another vault afterwards asks for its
+ * passphrase. The unlock screen comes up.
+ */
 export function lock(): void {
-  const s = current;
-  if (!s || !s.keys) return;
-  s.keys = null;
-  s.layer = null;
+  if (!unlockedSessions.size && !current?.keys) return;
+  for (const s of [...unlockedSessions, ...(current ? [current] : [])]) {
+    s.keys = null;
+    s.layer = null;
+  }
+  unlockedSessions.clear();
   setRestSealer(null);
   setVaultEncryptionState("locked");
   stopAutoLock();
@@ -251,7 +263,7 @@ function touch(): void {
 /** One auto-lock check (exported for tests): locks when idle for too long. */
 export function checkAutoLock(now = Date.now()): boolean {
   const m = autoLockMinutes();
-  if (!m || !current?.keys || now - lastActivity < m * 60_000) return false;
+  if (!m || !unlockedSessions.size || now - lastActivity < m * 60_000) return false;
   lock();
   return true;
 }
@@ -362,6 +374,7 @@ async function finishDisable(s: Session, scan: ScanReport): Promise<boolean> {
   await migrateStores("open");
   await removeHeader(s.inner);
   sessions.delete(s.inner);
+  unlockedSessions.delete(s);
   if (current === s) current = null;
   setRestSealer(null);
   stopAutoLock();
