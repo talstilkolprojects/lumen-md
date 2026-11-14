@@ -9,7 +9,8 @@
  * a train with a failing test gets a red status. Production (main) builds as before:
  * the app, its bundle budget and its build manifest (W7.23), nothing else.
  *
- *   VERCEL_ENV=preview      build, budget, secrets, manifest, vitest, e2e, i18n:check,
+ *   VERCEL_ENV=preview      lockfile, build, budget, secrets, manifest,
+ *                           vitest, e2e, i18n:check,
  *                           hygiene, docs:sync, docs:complete (with the
  *                           strict Hebrew parity), the licence gate, the mutation floor
  *   VERCEL_ENV=production   build, budget, manifest (after the scans: its
@@ -33,6 +34,8 @@ import { resolve } from "node:path";
 
 /** Every gate: its name and the npm script that runs it. */
 export const GATES = {
+  // W8.9: what the gates test is what package-lock.json names (scripts/lockfile-drift.mjs).
+  lockfile: ["run", "-s", "lockfile:drift"],
   build: ["run", "build"],
   // W7.23: the manifest of this dist, which the second infrastructure's build is compared with.
   manifest: ["run", "-s", "build:manifest"],
@@ -92,7 +95,7 @@ export function vitestSummary(report, { maxFiles = 80 } = {}) {
 }
 
 export const PRODUCTION_GATES = ["build", "budget", "manifest"];
-export const PREVIEW_GATES = ["build", "budget", "secrets", "manifest", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "docs:complete", "licenses", "mutation"];
+export const PREVIEW_GATES = ["lockfile", "build", "budget", "secrets", "manifest", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "docs:complete", "licenses", "mutation"];
 /**
  * `--e2e-only`: build and the e2e gate, nothing else. For a probe branch
  * that runs Playwright specs (LUMEN_E2E_SPECS, a longer LUMEN_E2E_MINUTES)
