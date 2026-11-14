@@ -19,9 +19,12 @@ import {
   hostingGaps,
   importLocalModelFiles,
   libraryKey,
+  mirrorGap,
+  mirrorMessages,
   pathFromAsset,
   readUserSource,
   releaseTag,
+  silentHfOnly,
   wantsFile,
   writeUserSource,
   type CacheStore,
@@ -263,5 +266,48 @@ describe("W4.14 the registry", () => {
     expect(said.includes("Qwen3-0.6B: Hugging Face revision not pinned")).toBe(true);
     // The zipformer's three pinned files are not listed: they are verifiable already.
     expect(said.filter((s) => s.startsWith("ivrit-ai/zipformer2-66m-streaming-he"))).toHaveLength(1);
+  });
+});
+
+describe("W6.33 no model is only on Hugging Face without a message", () => {
+  const read = (p: string) => JSON.parse(readFileSync(join(__dirname, "../..", p), "utf8")) as Record<string, string>;
+  const models = (read("models/registry.json") as unknown as { models: HostedModel[] }).models;
+  const sha = "a".repeat(64);
+  const pinned: HostedModel = {
+    id: "x/m",
+    class: "allowed",
+    delivery: "download",
+    runs: "browser",
+    hosting: { hf: "x/m", revision: "b".repeat(40), cache: "transformers-cache" },
+    files: [{ path: "config.json", sha256: sha, bytes: 10 }],
+  };
+
+  it("names why a model can't come from the mirror", () => {
+    expect(mirrorGap(pinned)).toBeNull();
+    expect(mirrorGap({ ...pinned, hosting: undefined })).toBe("no-hosting");
+    expect(mirrorGap({ ...pinned, files: [] })).toBe("not-pinned");
+    expect(mirrorGap({ ...pinned, hosting: { ...pinned.hosting, revision: null } })).toBe("not-pinned");
+    expect(mirrorGap({ ...pinned, hosting: { ...pinned.hosting, unpinned: ["tokens.txt"] } })).toBe("unhashed");
+    expect(mirrorGap({ ...pinned, files: [{ path: "w.onnx", sha256: sha, bytes: GITHUB_RELEASE_MAX_BYTES + 1 }] })).toBe("over-2gib");
+  });
+
+  it("every one of the 24 default models with a gap, and every variant left out, has its message in English and Hebrew", () => {
+    const en = read("src/i18n/lazy/modelSources.json");
+    const he = read("src/i18n/locales/he/common.json");
+    const msgs = mirrorMessages(models);
+    expect(msgs.length).toBeGreaterThan(0);
+    expect(silentHfOnly(models, en)).toEqual([]);
+    expect(silentHfOnly(models, he)).toEqual([]);
+    // A missing string is caught.
+    expect(silentHfOnly(models, {}).length).toBe(msgs.length);
+  });
+
+  it("large-v3-turbo leaves out its fp32 encoder (over 2 GiB) and says it loads fp16 instead", () => {
+    const turbo = models.find((m) => m.id === "onnx-community/whisper-large-v3-turbo")!;
+    expect(turbo.hosting?.dtypes).not.toContain("fp32");
+    expect(turbo.hosting?.omitted).toEqual([{ dtype: "fp32", reason: "over-2gib", instead: "fp16" }]);
+    expect(mirrorMessages(models).filter((x) => x.gap === "omitted")).toEqual([
+      { id: turbo.id, gap: "omitted", key: "modelSources.omitted.over2gib", params: { model: turbo.id, dtype: "fp32", instead: "fp16" } },
+    ]);
   });
 });

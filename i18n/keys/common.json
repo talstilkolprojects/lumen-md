@@ -6760,6 +6760,39 @@
       "vars": []
     },
     {
+      "key": "modelSources.gap.noHosting",
+      "en": "{model}: downloads only from Hugging Face; Lumen's mirror has no entry for it.",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "modelSources.gap.notPinned",
+      "en": "{model}: not on Lumen's mirror yet, so it downloads only from Hugging Face. If Hugging Face is blocked on your network, add your own copy above or pick its files from this device.",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "modelSources.gap.over2gib",
+      "en": "{model}: one of its files is over 2 GiB, more than the mirror holds per file, so it downloads only from Hugging Face.",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "modelSources.gap.unhashed",
+      "en": "{model}: some of its files have no checksum yet, so they come only from Hugging Face, at a fixed version.",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "modelSources.hfOnlyTitle",
+      "en": "Only on Hugging Face for now",
+      "vars": []
+    },
+    {
       "key": "modelSources.importFiles",
       "en": "Add model files from this device…",
       "vars": []
@@ -6787,6 +6820,15 @@
       "en": "Lumen's mirror: on ({host})",
       "vars": [
         "host"
+      ]
+    },
+    {
+      "key": "modelSources.omitted.over2gib",
+      "en": "{model}: the {dtype} version has a file over 2 GiB, more than the mirror holds per file, so Lumen loads the {instead} version instead.",
+      "vars": [
+        "model",
+        "dtype",
+        "instead"
       ]
     },
     {

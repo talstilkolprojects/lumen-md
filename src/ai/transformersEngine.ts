@@ -168,10 +168,14 @@ export async function transformersDevice(hw?: Hardware): Promise<Device> {
   return h.webgpu && !isWebKit() ? "webgpu" : "wasm";
 }
 
-/** The Whisper model for this device: turbo needs a real GPU budget, small fits most laptops, tiny for wasm. */
+/**
+ * The Whisper model for this device: turbo needs a real GPU budget and f16
+ * (its encoder loads as fp16: the fp32 one is over the mirror's 2 GiB per
+ * file, plan W6.33), small fits most laptops, tiny for wasm.
+ */
 export function whisperModelFor(hw: Hardware, device: Device = hw.webgpu ? "webgpu" : "wasm"): string {
   if (device !== "webgpu") return WHISPER_MODELS.tiny;
-  return vramBudgetMB(hw) >= 6_000 && !hw.mobile ? WHISPER_MODELS.turbo : WHISPER_MODELS.small;
+  return vramBudgetMB(hw) >= 6_000 && !hw.mobile && hw.f16 ? WHISPER_MODELS.turbo : WHISPER_MODELS.small;
 }
 
 /**

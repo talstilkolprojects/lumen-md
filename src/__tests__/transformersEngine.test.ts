@@ -65,6 +65,8 @@ describe("transformersEngine (worker client)", () => {
     expect(whisperModelFor({ ...hardware, deviceMemoryGB: 4 })).toBe(WHISPER_MODELS.small);
     expect(whisperModelFor({ ...hardware, mobile: true })).toBe(WHISPER_MODELS.small);
     expect(whisperModelFor({ ...hardware, webgpu: false })).toBe(WHISPER_MODELS.tiny);
+    // Turbo loads its fp16 encoder (the fp32 one is over the mirror's 2 GiB, W6.33): no f16, no turbo.
+    expect(whisperModelFor({ ...hardware, f16: false })).toBe(WHISPER_MODELS.small);
     expect(await transformersDevice()).toBe("webgpu");
     hardware = { ...hardware, webgpu: false };
     expect(await transformersDevice()).toBe("wasm");
