@@ -268,6 +268,7 @@ export default defineConfig({
           translations: { he: "תרומה לפרויקט" },
           items: [
             { label: "Languages in beta, and how to help", translations: { he: "שפות בבטא, ואיך לעזור" }, slug: "contributing/translations" },
+            { label: "Translating on Weblate", translations: { he: "תרגום ב-Weblate" }, slug: "contributing/weblate" },
             { label: "Translation drafts", translations: { he: "טיוטות תרגום" }, slug: "contributing/translation-drafts" },
             { label: "Visual regression", translations: { he: "רגרסיה חזותית" }, slug: "contributing/visual-regression" },
             { label: "Skipped tests", translations: { he: "בדיקות מדולגות" }, slug: "contributing/skipped-tests" },
