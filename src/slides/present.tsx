@@ -83,6 +83,7 @@ export async function presentCanvas(
   const base = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/excalidraw/fonts/Assistant/Assistant-`;
   const font = async (bold: boolean) => {
     try {
+      // privacy-ledger: not tracked — the app's own font file (BASE_URL/excalidraw/fonts, this origin).
       const blob = await (await fetch(`${base}${bold ? "Bold" : "Regular"}.woff2`)).blob();
       return await new Promise<string>((res) => {
         const r = new FileReader();

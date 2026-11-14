@@ -758,7 +758,7 @@ export function SearchDialog({ open, onClose, onOpenFile, initialQuery = "" }: P
                 {aiCitations && (
                   <div data-testid="vault-citations" style={{ borderTop: "1px solid hsl(var(--border))", paddingTop: 8, marginTop: 4, fontSize: 11.5 }}>
                     {aiCitations.verifiedCount === 0 ? (
-                      <div role="alert" style={{ color: "hsl(var(--warning))", fontWeight: 600, marginBottom: 4 }}>{t("vaultCite.unsupported")}</div>
+                      <div role="alert" style={{ color: "hsl(var(--warn))", fontWeight: 600, marginBottom: 4 }}>{t("vaultCite.unsupported")}</div>
                     ) : (
                       <div style={{ color: "hsl(var(--fg-muted))", fontWeight: 600, marginBottom: 4 }}>
                         {t("vaultCite.summary", { ok: aiCitations.verifiedCount, total: aiCitations.citations.length })}

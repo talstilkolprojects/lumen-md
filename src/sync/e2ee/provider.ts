@@ -68,6 +68,16 @@ export class CasUnsupportedError extends Error {
 
 const proven = new WeakSet<object>();
 
+/**
+ * How hard the probes push (W6.27, measured against real servers): three
+ * If-Match replacements in a row, and three rounds of four racing creates.
+ * With one replacement and one race of two, the probe accepted WsgiDAV 4.4.0
+ * 11 times in 200 and sabre/dav 4.7.1's FS backend 6 in 200.
+ */
+export const PROBE_REPLACEMENTS = 3;
+export const PROBE_RACE_ROUNDS = 3;
+export const PROBE_RACE_WRITERS = 4;
+
 /** A random 43-character name and sealed-blob-sized random bytes: what a blob upload looks like (N2). */
 function probeObject(): { name: string; data: () => Uint8Array } {
   const name = toB64u(randomBytes(32));
@@ -112,22 +122,33 @@ export async function proveCas(provider: SyncProvider): Promise<void> {
       throw e;
     }
   };
+  const races: string[] = [];
   try {
     const first = probe.data();
-    const a = await provider.put(name, first, { ifNoneMatch: "*" });
+    let cur = await provider.put(name, first, { ifNoneMatch: "*" });
     if (!(await refused(probe.data(), { ifNoneMatch: "*" }))) throw new CasUnsupportedError(provider.id, "If-None-Match: * on an existing object was accepted");
-    const third = probe.data();
-    const b = await provider.put(name, third, { ifMatch: a.etag });
-    if (b.etag === a.etag) throw new CasUnsupportedError(provider.id, "a write kept the same etag");
-    if (!(await refused(probe.data(), { ifMatch: a.etag }))) throw new CasUnsupportedError(provider.id, "If-Match with a stale etag was accepted");
-    const now = await provider.get(name);
-    if (!now || !sameBytes(now.data, third) || now.etag !== b.etag) throw new CasUnsupportedError(provider.id, "a refused write changed the object");
-    // Two creates at once: exactly one may win (where the storage lets a race show).
-    const wins = await Promise.all([race.data(), race.data()].map((d) => provider.put(race.name, d, { ifNoneMatch: "*" }).then(() => 1, (e) => (e instanceof PreconditionFailedError ? 0 : Promise.reject(e)))));
-    if (wins[0] + wins[1] !== 1) throw new CasUnsupportedError(provider.id, "two racing create-only writes both succeeded");
+    // Several replacements back to back (W6.27): on a server whose ETag is the
+    // file's mtime in seconds (WsgiDAV, sabre/dav's FS backend), one
+    // replacement that happens to straddle a second passes; three in a row don't.
+    for (let i = 0; i < PROBE_REPLACEMENTS; i++) {
+      const next = probe.data();
+      const b = await provider.put(name, next, { ifMatch: cur.etag });
+      if (b.etag === cur.etag) throw new CasUnsupportedError(provider.id, "a write kept the same etag");
+      if (!(await refused(probe.data(), { ifMatch: cur.etag }))) throw new CasUnsupportedError(provider.id, "If-Match with a stale etag was accepted");
+      const now = await provider.get(name);
+      if (!now || !sameBytes(now.data, next) || now.etag !== b.etag) throw new CasUnsupportedError(provider.id, "a refused write changed the object");
+      cur = b;
+    }
+    // Creates at once: exactly one may win (where the storage lets a race show).
+    for (let round = 0; round < PROBE_RACE_ROUNDS; round++) {
+      const r = round === 0 ? race : probeObject();
+      races.push(r.name);
+      const wins = await Promise.all(Array.from({ length: PROBE_RACE_WRITERS }, () => r.data()).map((d) => provider.put(r.name, d, { ifNoneMatch: "*" }).then(() => 1, (e) => (e instanceof PreconditionFailedError ? 0 : Promise.reject(e)))));
+      if (wins.reduce((x, y) => x + y, 0) !== 1) throw new CasUnsupportedError(provider.id, "racing create-only writes both succeeded");
+    }
   } finally {
     await provider.delete(name).catch(() => undefined);
-    await provider.delete(race.name).catch(() => undefined);
+    for (const r of races.length ? races : [race.name]) await provider.delete(r).catch(() => undefined);
   }
   proven.add(provider);
 }

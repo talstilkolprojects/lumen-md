@@ -2,17 +2,17 @@
   "$comment": "Plan W4.17: mutation scores of the critical modules, written by `node scripts/mutation/run.mjs --critical --receipt`. sha256 is the module source each score was measured on; scripts/mutation/check.mjs (npm run mutation:check, a preview-build gate) fails when a critical module scores under the minimum or has changed since its run.",
   "modules": {
     "src/ai/privacyLedger.ts": {
-      "score": 87.5,
-      "caught": 70,
-      "survived": 10,
+      "score": 82.5,
+      "caught": 66,
+      "survived": 14,
       "invalid": 0,
       "sampled": 80,
-      "mutants": 232,
+      "mutants": 246,
       "max": 80,
       "runner": "shim",
-      "sha256": "08a0a1348ce1b5e5b7bd5cff2506c1d99f288870178d2ac40ffaf1a52be888c4",
-      "tests": "97c846563737ec60b7e9bcbdde7149e25c58980d90016b8622979661831f08d8",
-      "date": "2026-11-12"
+      "sha256": "731d24f3df80a9c46d7326f718902b966b86d168f5c497bb714c30aaf5d7af65",
+      "tests": "7bf47fb29c04d99a0c160200e82ea79dbb5419139806f241d2de325a7e8d7caa",
+      "date": "2026-11-14"
     },
     "src/lib/secretStore.ts": {
       "score": 91.3,
@@ -23,9 +23,9 @@
       "mutants": 93,
       "max": 80,
       "runner": "shim",
-      "sha256": "ce3627f212da7ddd83197268a4b286994ef9a210d0d5214ab7c2ce4dc10589c3",
+      "sha256": "50f83fad50e11fa3f38ef86171974f6be6441a9db761b96665537d0124e86f43",
       "tests": "d3c04b431dc4a0f9da2d3b6217bbfc140e4f67c054f3de047891f0e7c97cf1b5",
-      "date": "2026-11-12"
+      "date": "2026-11-14"
     },
     "src/renderer/rehypeSanitizeRaw.ts": {
       "score": 93.8,
@@ -54,17 +54,17 @@
       "date": "2026-11-12"
     },
     "src/storage/vault/handleBackend.ts": {
-      "score": 92.5,
-      "caught": 74,
-      "survived": 6,
+      "score": 88.8,
+      "caught": 71,
+      "survived": 9,
       "invalid": 0,
       "sampled": 80,
-      "mutants": 149,
+      "mutants": 154,
       "max": 80,
       "runner": "shim",
-      "sha256": "71c8fad764d10439cf2eba313309b7c01a3e7f0275088cb709bc7782cc6e8e70",
+      "sha256": "38c8addbb765d6860dd2a2d9abb290b429a6fc3e68d6840a640fe0284682b443",
       "tests": "f75c4ca87974529390e262a54811fa8289ae4b081fc4b79ddedcdba91b20c100",
-      "date": "2026-11-12"
+      "date": "2026-11-14"
     },
     "src/storage/vault/shared.ts": {
       "score": 86.7,
@@ -119,16 +119,16 @@
       "date": "2026-11-14"
     },
     "src/sync/e2ee/keyring.ts": {
-      "score": 81.3,
-      "caught": 65,
-      "survived": 15,
+      "score": 83.8,
+      "caught": 67,
+      "survived": 13,
       "invalid": 0,
       "sampled": 80,
-      "mutants": 441,
+      "mutants": 440,
       "max": 80,
       "runner": "shim",
-      "sha256": "964fd218fb5b54b9d3e54568bedd2c9be073c990aba877cf88d5ccb98c2e3ed8",
-      "tests": "e060760eec0bc971b9215e34c4b0433c61234ef9c7c008ac019ac9b05788e541",
+      "sha256": "ba92c8bd3c7fb8d75ad8bedbafa9d659722729cc6f0a6adbc5d028810014ef6a",
+      "tests": "c1d8a19114eaf357ee82affdbe30eed3a2e56f24357948badf0e0e063fcdd998",
       "date": "2026-11-14"
     },
     "src/sync/e2ee/manifest.ts": {

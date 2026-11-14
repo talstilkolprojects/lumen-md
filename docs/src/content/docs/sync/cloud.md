@@ -61,6 +61,10 @@ accept every write; Lumen refuses to sync with them. The test catches a
 misconfigured server, not a dishonest one: Lumen also reads every key change
 back right after writing it ([keys](/sync/e2ee-keys/)).
 
+Which servers pass, measured against the real ones (WsgiDAV, sabre/dav,
+golang.org/x/net/webdav and nginx are refused; an S3 API passes), and how to
+run the same check against yours: [real servers](/sync/real-servers/).
+
 ### S3-compatible
 
 - **Endpoint:** for example `https://s3.eu-central-1.amazonaws.com`,
@@ -118,7 +122,7 @@ mechanism:
 
 | Provider | Mechanism |
 |---|---|
-| WebDAV | `If-Match: <ETag>` / `If-None-Match: *` → `412` |
+| WebDAV | `If-Match: <ETag>` / `If-None-Match: *` → `412`. Some servers answer a write that overlaps another one with `423 Locked` (Go's `x/net/webdav`, Nextcloud's file locking) or `409 Conflict`. Lumen waits and retries up to 3 times (about 0.2, 0.4 and 0.8 s, plus a random part). If the file is still locked, a conditional write counts as lost, and Lumen re-reads and merges as for a `412`. A `409` because the vault's folder is gone is reported as an error |
 | S3 | `If-Match: <ETag>` / `If-None-Match: *` → `412` (or `409` during a concurrent write) |
 | Dropbox | `mode: update` with the file's `rev` / `mode: add`, `strict_conflict` → `409 conflict` |
 | Google Drive | `If-Match` with the file's metadata ETag → `412`. Lumen always takes that ETag from the file's metadata, also after an upload, never the upload answer's own (Google's ETags differ per representation). Drive has no "only if absent" for a new file, so Lumen creates the file and then looks again. If another device created the same file first, Lumen removes its own copy and counts the write as lost. This relies on Drive listing a new file as soon as it has been created, and two devices creating the same file at once can both seem to win, so a vault on Drive is **sync-only**: it syncs, but Lumen makes no key or device change through Drive (no re-key, no removing a device, no new device key). Make those with another storage. The sync panel says so whenever the vault is on Drive: you can't remove a lost device or change a leaked passphrase there without moving the vault first (for developers: `providerCapabilities("gdrive")` reports `keyChanges: false` and the messages to show). Untested against the real Drive (see Status) |

@@ -1,0 +1,6 @@
+{
+  "servers": [
+    { "name": "Dropbox", "kind": "dropbox", "folder": "", "tokenEnv": "LUMEN_REAL_DROPBOX_TOKEN" },
+    { "name": "Google Drive", "kind": "gdrive", "tokenEnv": "LUMEN_REAL_GDRIVE_TOKEN" }
+  ]
+}

@@ -27,7 +27,7 @@ import { HelpButton } from "./HelpButton";
 import { explainError } from "../lib/userError";
 
 const field: React.CSSProperties = { width: "100%", padding: "6px 8px", border: "1px solid hsl(var(--border))", borderRadius: 6, background: "transparent", color: "inherit", font: "inherit" };
-const primary: React.CSSProperties = { padding: "6px 14px", border: "none", borderRadius: 6, background: "hsl(var(--accent))", color: "white", cursor: "pointer", justifySelf: "start" };
+const primary: React.CSSProperties = { padding: "6px 14px", border: "none", borderRadius: 6, background: "hsl(var(--accent))", color: "hsl(var(--accent-fg))", cursor: "pointer", justifySelf: "start" };
 const secondary: React.CSSProperties = { padding: "6px 14px", border: "1px solid hsl(var(--border))", borderRadius: 6, background: "transparent", color: "inherit", cursor: "pointer", justifySelf: "start" };
 const muted: React.CSSProperties = { fontSize: 12, color: "hsl(var(--fg-muted))" };
 
@@ -336,7 +336,7 @@ export function VaultEncryptionDialog({ onClose }: { onClose: () => void }) {
             🔐 {t("vaultEnc.title")}
           </strong>
           <HelpButton topic="security/vault-encryption" />
-          <button type="button" onClick={onClose} aria-label={t("vaultEnc.close")} style={{ background: "none", border: 0, cursor: "pointer", color: "inherit" }}>
+          <button type="button" onClick={onClose} aria-label={t("vaultEnc.close")} style={{ background: "none", border: 0, cursor: "pointer", color: "inherit", minInlineSize: 24, minBlockSize: 24, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
             ✕
           </button>
         </div>

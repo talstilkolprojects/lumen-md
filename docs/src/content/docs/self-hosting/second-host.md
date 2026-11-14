@@ -41,7 +41,7 @@ docs.github.com/pages (GitHub Pages limits).
   so it uses none of Cloudflare's 500 builds and none of Vercel's 100
   deployments. Connecting the repository in the Cloudflare dashboard is
   optional; it gives a second build slot for branches (build command
-  `npm run build && npm run pages:check -- --drop-oversize`, output `dist`,
+  `npm run build && npm run pages:check -- --prepare`, output `dist`,
   `NODE_VERSION=22`).
 - **Not Netlify** for a mirror: running out of credits pauses every site, and
   20 production deploys a month is too few. `netlify.toml` stays for anyone
@@ -57,7 +57,7 @@ docs.github.com/pages (GitHub Pages limits).
 
 `ruby+stdlib.wasm` (ruby.wasm, about 30.6 MB) is larger than Cloudflare's
 25 MiB per file. `npm run pages:check` reports every such file;
-`--drop-oversize` (which `pages:deploy` uses) removes them from that upload
+`--prepare` (which `pages:deploy` uses) removes them from that upload
 and lists them in `dist/pages-dropped.json`. On the Cloudflare copy, live-ruby
 blocks then say their runtime is not installed — like the Docker image's
 `slim` variant. Everything else is the same build.
@@ -108,3 +108,21 @@ nothing is downloaded during the tests. It installs with `npm ci`, copies the
 checkout (git history included: `Dockerfile.ci.dockerignore`) and runs
 `npm run ci:local`. The log and the Playwright report land in
 `ci-docker-out/`. It works with Podman too: `DOCKER=podman npm run ci:docker`.
+
+## Production-ready on both hosts
+
+The same build serves the same headers and routes on both hosts (plan W6.9).
+`npm run hosts:parity` emulates each host from its own configuration and
+compares 17 probe paths; `pages:deploy` runs it on the real `dist/` before
+every upload. Three Cloudflare details it covers:
+
+- **2,000 characters a line.** Cloudflare skips a longer `_headers` line
+  without failing the deploy. The app policy is therefore two lines that
+  the host joins into two policies, enforced together as exactly one.
+- **`/x.html` answers 308 to `/x`.** The runner pages have rules at both
+  paths.
+- **A missing chunk is a 404.** `pages:check --prepare` writes
+  `assets/404.html`, so a chunk of the previous deploy is not answered with
+  the app's HTML.
+
+Moving production between hosts: [the cut-over runbook](/self-hosting/cut-over/).

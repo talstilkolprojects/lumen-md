@@ -62,7 +62,8 @@ suggests a lane for each review finding from its path with this same split.
 6. **Generated files are regenerated, not edited:** `i18n/keys.json` with
    `node scripts/extract-i18n-keys.mjs` (it carries no timestamp, so two
    regenerations of the same strings are identical), `package-lock.json`
-   with `npm install --package-lock-only`.
+   with `npm install --package-lock-only`, the in-app help bundle
+   (`src/help/generated/*.json`) with `node scripts/help-bundle.mjs`.
 7. **Leave the lane green:** `npx tsc --noEmit -p .` no worse than the
    baseline, and the vitest files you touched passing.
 
@@ -138,6 +139,18 @@ itself (it changes the node_modules the lanes link to). The checks are
 `npx tsc --noEmit -p .`, the i18n staleness check and `npx vitest run`; the
 run prints one line per branch plus the check results. Then the coordinator
 pushes and opens or updates the PR.
+
+The help bundle (plan W8.11) is built from `docs/src/content/docs`, so two
+lanes that change different docs pages merge cleanly in `docs/` and still
+collide in a shard. `lane-merge.sh` sets the `lumen-help` merge driver in the
+checkout's git config (`.gitattributes` routes `src/help/generated/*.json` to
+it): the driver keeps our side instead of writing conflict markers, and after
+each merge `node scripts/help-bundle.mjs --check` decides whether the shards
+are rebuilt inside that merge ("Generated files: rebuilt src/help/generated/").
+A shard conflict without the driver is regenerated the same way. A conflict in
+the docs themselves still stops the run. The summary prints a `help:` line.
+Merging by hand: `npm run help:merge-driver` once per checkout, then
+`node scripts/help-bundle.mjs` after the merge and `npm run help:check`.
 
 ## Answering review comments
 

@@ -1,4 +1,8 @@
 {
+  "dictation.desktop.missed": "Your desktop didn't answer in time, so this device's text was kept.",
+  "dictation.desktop.send": "Send to my desktop",
+  "dictation.desktop.sending": "Each sentence goes to your desktop and back over your local network.",
+  "dictation.desktop.why": "Dictation on this device makes about {wer}% word errors. Your desktop can transcribe each sentence with a bigger model, over your local network, end-to-end encrypted.",
   "dictation.download.body": "Hebrew dictation runs entirely on this device — no audio leaves it. It needs a one-time download of {size}, kept for offline use.",
   "dictation.download.browser": "Use the browser's speech service instead (the audio goes to the browser's vendor)",
   "dictation.download.cancel": "Cancel",

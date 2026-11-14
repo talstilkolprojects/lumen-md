@@ -106,7 +106,13 @@ describe("index snapshot (W2.22)", () => {
       { path: "b/c.md", name: "c.md", modified: 7, content: "x" },
     ];
     const enc = encodeSnapshot("opfs", files);
-    expect([...decodeSnapshot(enc, "opfs")!.values()]).toEqual(files);
+    // Review 14.11 S3: each note's UTF-8 size is kept with its mtime ("שלום" is 8 bytes).
+    expect([...decodeSnapshot(enc, "opfs")!.values()]).toEqual(files.map((f, i) => ({ ...f, size: [8, 1][i] })));
+    // Review 15 V1: a record written before the sizes is refused (its notes are read again once).
+    const { sizes: _sizes, ...old } = enc;
+    void _sizes;
+    expect(decodeSnapshot(old, "opfs")).toBe(null);
+    expect(decodeSnapshot({ ...enc, sizes: [1] }, "opfs")).toBe(null);
     expect(decodeSnapshot(enc, "folder")).toBe(null);
     expect(decodeSnapshot({ ...enc, v: 99 }, "opfs")).toBe(null);
     expect(decodeSnapshot({ ...enc, contents: ["only one"] }, "opfs")).toBe(null);

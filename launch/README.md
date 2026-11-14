@@ -12,6 +12,7 @@ reports) need people, so they are Tal's to reach.
 | [`press-kit.md`](press-kit.md) | One line, one paragraph, checkable facts, the screenshot list, name and logo use |
 | [`comparison.json`](comparison.json) | The comparison with Obsidian, Notion and Google Docs: every claim with its source and the date it was checked. `npm run launch:check` generates `docs/project/compare` from it, and `--strict` fails while any claim is unverified |
 | [`survey.md`](survey.md) | The voluntary weekly survey, the only way active testers are counted |
+| [`beta-recruitment.he.md`](beta-recruitment.he.md), [`beta-recruitment.en.md`](beta-recruitment.en.md) | W6.31: where to find 50 beta testers and 12 self-guided testers (communities, with sources), drafts, and the weekly funnel command |
 
 Also part of the launch:
 - [`public/beta.html`](../public/beta.html): the beta page, Hebrew-first;

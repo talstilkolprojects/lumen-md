@@ -1,10 +1,12 @@
 /** The bodies of the tag, link, product, diagram, action-item and translation agents (./agents.ts), loaded on first use. */
-import { t } from "../../i18n";
-import { uiAlert, uiPrompt } from "../../ui/PromptDialog";
+import { t, getLocale } from "../../i18n";
+import { uiAlert, uiConfirm, uiPrompt } from "../../ui/PromptDialog";
+import { useAppStore } from "../../store/useStore";
 import { showAiToast } from "../../ui/AiToast";
 import { isAbort } from "../../ai/aiAbort";
 import { cancellable, type CommandContext } from "./context";
 import { explainError } from "../../lib/userError";
+import "./commandBodiesStrings";
 
 type Ctx = Pick<CommandContext, "setContent" | "liveDoc">;
 
@@ -160,3 +162,33 @@ export async function translateFlow({ setContent, liveDoc }: Ctx): Promise<void>
     showAiToast(t("toast.translationFailed", { error: explainError(e) }), "error");
   }
 }
+
+/** `image.altText` (moved from agents.ts, which loads this module when the command runs; W4.9). */
+export const imageAltText = async (): Promise<void> => {
+const { imageText, withImageText, imagesNeedingAlt, documentLanguage } = await import("../../ai/vision");
+const { readWorkspaceBlob } = await import("../../storage/workspace");
+const doc = useAppStore.getState().doc.content;
+// Images with no alt, or still named after their file — a real
+// one-word description ("logo") is kept.
+const targets = imagesNeedingAlt(doc);
+if (!targets.length) {
+  showAiToast(t("toast.imageAlt.none"), "info");
+  return;
+}
+showAiToast(t("toast.imageAlt.working", { count: targets.length }), "info");
+let next = doc;
+let done = 0;
+// The user asked: the browser captioner may offer its download (plan 6.6).
+const lang = await documentLanguage(doc, getLocale());
+const consent = { confirm: uiConfirm, t, locale: getLocale() };
+for (const m of targets) {
+  const blob = await readWorkspaceBlob(m.url).catch(() => null);
+  if (!blob) continue;
+  const res = await imageText(blob, lang, { name: m.url, consent }).catch(() => null);
+  if (!res || res.source === "none") continue;
+  next = withImageText(next, m.url, m.alt, res);
+  done++;
+}
+if (next !== useAppStore.getState().doc.content && useAppStore.getState().doc.content === doc) useAppStore.getState().setContent(next);
+showAiToast(t("toast.imageAlt.done", { done, count: targets.length }), done ? "success" : "info");
+};

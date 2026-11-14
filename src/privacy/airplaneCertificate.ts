@@ -14,8 +14,15 @@
  */
 import type { EgressAttempt } from "./airplane";
 
-/** /2 (review 12.11): attempts, not bytes; requests in flight at the switch; the stated scope. */
-export const CERTIFICATE_FORMAT = "lumen-airplane-certificate/2";
+/**
+ * /3 (review 14): the summary counts every attempt from the page's own
+ * tally, which no flood of attempts can push out; the list holds every
+ * attempt that reached the network and the last 500 others (`listed`,
+ * `dropped`). /2 (review 12.11): attempts, not bytes; requests in flight at
+ * the switch; the stated scope. A /2 certificate is still read and checked.
+ */
+export const CERTIFICATE_FORMAT = "lumen-airplane-certificate/3";
+export const CERTIFICATE_FORMAT_V2 = "lumen-airplane-certificate/2";
 
 /** What the certificate counts: every one of these that reached the network is in `left`. */
 export const CERTIFICATE_COUNTS: readonly string[] = [
@@ -23,14 +30,15 @@ export const CERTIFICATE_COUNTS: readonly string[] = [
   "Every resource load (image, font, style sheet, script) the browser lists in Resource Timing: a load from another origin counts as reaching the network even when the browser reports 0 bytes; a load from the app's own origin counts when it transferred bytes (it did not come from a cache).",
   "Every request, socket and peer still open when the switch went on: counted as having reached the network, then aborted or closed at that moment.",
   "Every frame open when the switch went on with something in it, whatever its sandbox (playground and live-js runners, HTML and Live CSS previews, embeds, frames in shadow roots, frames a script navigated, <object> and <embed>): counted as having reached the network, then stopped at that moment (its page replaced by about:blank).",
-  "Every window the app or a frame of its own origin opened (window.open): counted, then closed at that moment. Every frame open when the switch went on that could open windows (its sandbox allows popups, or it has none) and whose windows this page can't reach: counted as a window that may have reached the network. Every service worker of the app's origin other than the app's own: counted, then unregistered.",
+  "Every window the app or a frame of its own origin opened (window.open): counted, then closed at that moment. Every frame that could open windows while the switch was off (its sandbox allowed popups, or it had none and held another site's page) and whose windows this page can't reach, from the moment it was made, whether it is still open at the switch or not: counted as a window that may have reached the network (the last 500 such frames one by one, any before them as one more). Every service worker of the app's origin other than the app's own: counted, then unregistered.",
 ];
 
 /** What it does not prove, said plainly. */
 export const CERTIFICATE_NOT_COUNTED: readonly string[] = [
   "Requests made through a reference to fetch taken before airplane mode's wrappers loaded are not listed; the browser's Content-Security-Policy still refuses them to any other site.",
   "Frames load nothing from a URL while the switch is on (frame-src allows blob: only). What a frame open before the switch sent, before it was stopped, is counted once as that frame, not request by request.",
-  "While the switch is on, no frame gets allow-popups, however it is made, so none can open a window. A window a frame opened before the switch is out of this page's reach: it is counted (above), not closed, and may keep loading. A frame from another site, unless it is one of the known embed providers, has no storage or service worker of its own. A service worker that a known provider (YouTube, Vimeo and the others of the embed block) registered before the switch is outside this page and may keep running. A frame inside a closed shadow root made before airplane mode loaded is out of reach.",
+  "While the switch is on, no frame gets allow-popups, however it is made, so none can open a window. A window a frame opened before the switch is out of this page's reach: it is counted (above), not closed, and may keep loading. A frame from another site, unless it is one of the known embed providers, has no storage or service worker of its own. A service worker that a known provider (YouTube, Vimeo and the others of the embed block) registered before the switch is outside this page and may keep running. A frame inside a closed shadow root made before airplane mode loaded, or inside a closed declarative shadow root (setHTMLUnsafe, parseHTMLUnsafe), is out of reach.",
+  "The certificate counts every attempt of the window. It lists every one that reached the network, and of the others (blocked, local, cache-only) the last 500: `dropped` says how many are counted but not listed.",
   "What other apps, browser extensions or the operating system send is outside this page.",
 ];
 
@@ -45,10 +53,28 @@ export interface CertificateSummary {
   inFlight: number;
   /** Attempts that reached the network (attempts, not bytes). The claim is that this is 0. */
   left: number;
+  /** Of those, windows that may have opened (POPUP, review 8): counted, not closed. */
+  popups: number;
+  /** Attempts in `attempts` (every one that reached the network is among them). */
+  listed: number;
+  /** Attempts counted here but not listed: the oldest blocked, local and cache-only ones past the list's 500. */
+  dropped: number;
+}
+
+/** The page's running count of attempts, by decision, since `from` (the switch, or the page's start). */
+export interface EgressTally {
+  from: number;
+  attempts: number;
+  blocked: number;
+  local: number;
+  cacheOnly: number;
+  inFlight: number;
+  left: number;
+  popups: number;
 }
 
 export interface AirplaneCertificate {
-  format: typeof CERTIFICATE_FORMAT;
+  format: typeof CERTIFICATE_FORMAT | typeof CERTIFICATE_FORMAT_V2;
   app: string;
   from: number;
   to: number;
@@ -91,7 +117,11 @@ export function reachedNetwork(a: EgressAttempt): boolean {
   return true;
 }
 
-export function summarize(attempts: readonly EgressAttempt[]): CertificateSummary {
+/** A window opened (or that may have) outside the page's reach: counted, never closed by it. */
+export const isPopup = (a: EgressAttempt): boolean => a.kind === "frame" && a.method === "POPUP";
+
+/** The /2 summary: the listed attempts only. */
+function summarizeV2(attempts: readonly EgressAttempt[]) {
   return {
     attempts: attempts.length,
     blocked: attempts.filter((a) => a.decision === "blocked").length,
@@ -102,15 +132,36 @@ export function summarize(attempts: readonly EgressAttempt[]): CertificateSummar
   };
 }
 
+/**
+ * The summary of a window: from the page's tally when it covers the whole
+ * window (review 14: a list bounded at 500 lost a real leak's record under a
+ * flood of blocked attempts), else from the listed attempts alone.
+ */
+export function summarize(attempts: readonly EgressAttempt[], tally?: EgressTally | null, from = Number.NEGATIVE_INFINITY): CertificateSummary {
+  const l = { ...summarizeV2(attempts), popups: attempts.filter(isPopup).length, listed: attempts.length, dropped: 0 };
+  if (!tally || tally.from > from || tally.attempts < l.attempts || tally.left < l.left) return l;
+  return {
+    attempts: tally.attempts,
+    blocked: tally.blocked,
+    local: tally.local,
+    cacheOnly: tally.cacheOnly,
+    inFlight: tally.inFlight,
+    left: tally.left,
+    popups: tally.popups,
+    listed: l.listed,
+    dropped: tally.attempts - l.listed,
+  };
+}
+
 export function appVersion(): string {
   const v = import.meta.env?.VITE_LUMEN_VERSION as string | undefined;
   return v?.trim() || "dev";
 }
 
-/** The certificate of the window [from, to]: every attempt in it. */
-export function buildCertificate(all: readonly EgressAttempt[], from: number, to: number, app: string = appVersion()): AirplaneCertificate {
+/** The certificate of the window [from, to]: every attempt in it the page still lists, counted with its tally (`egressTally()`). */
+export function buildCertificate(all: readonly EgressAttempt[], from: number, to: number, app: string = appVersion(), tally: EgressTally | null = null): AirplaneCertificate {
   const attempts = all.filter((a) => a.ts >= from && a.ts <= to);
-  return { format: CERTIFICATE_FORMAT, app, from, to, summary: summarize(attempts), counts: CERTIFICATE_COUNTS, notCounted: CERTIFICATE_NOT_COUNTED, attempts };
+  return { format: CERTIFICATE_FORMAT, app, from, to, summary: summarize(attempts, tally, from), counts: CERTIFICATE_COUNTS, notCounted: CERTIFICATE_NOT_COUNTED, attempts };
 }
 
 async function sha256Hex(text: string): Promise<string> {
@@ -133,10 +184,30 @@ export async function verifyCertificate(sealed: SealedCertificate): Promise<{ ok
   } catch {
     return { ok: false, cert: null };
   }
-  const ok =
-    cert?.format === CERTIFICATE_FORMAT &&
-    (await sha256Hex(sealed.text)) === sealed.sha256 &&
-    canonicalJson(cert) === sealed.text &&
-    canonicalJson(summarize(cert.attempts.filter((a) => a.ts >= cert!.from && a.ts <= cert!.to))) === canonicalJson(cert.summary);
+  if (!cert || typeof cert !== "object" || !Array.isArray(cert.attempts)) return { ok: false, cert: null };
+  const sealedOk = (await sha256Hex(sealed.text)) === sealed.sha256 && canonicalJson(cert) === sealed.text;
+  const listed = cert.attempts.filter((a) => a.ts >= cert!.from && a.ts <= cert!.to);
+  let ok = false;
+  if (cert.format === CERTIFICATE_FORMAT_V2) {
+    // A /2 certificate: its summary is its listed attempts'.
+    ok = sealedOk && canonicalJson(summarizeV2(listed)) === canonicalJson(cert.summary);
+  } else if (cert.format === CERTIFICATE_FORMAT) {
+    // /3: every attempt that reached the network is listed, so those counts must match the list exactly; the
+    // others may count more than the list holds, by `dropped`.
+    const l = summarize(listed);
+    const s = cert.summary;
+    ok =
+      sealedOk &&
+      s.listed === listed.length &&
+      s.dropped >= 0 &&
+      s.attempts === s.listed + s.dropped &&
+      s.left === l.left &&
+      s.inFlight === l.inFlight &&
+      s.popups === l.popups &&
+      s.blocked >= l.blocked &&
+      s.local >= l.local &&
+      s.cacheOnly >= l.cacheOnly &&
+      s.blocked - l.blocked + (s.local - l.local) + (s.cacheOnly - l.cacheOnly) === s.dropped;
+  }
   return { ok, cert };
 }

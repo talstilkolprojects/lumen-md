@@ -11,7 +11,10 @@
 #    stub crates (rust-stubs/) that copy the signatures of tauri 2 and the
 #    plugins Lumen uses; `#[tauri::command]` enforces argument, return-value
 #    and Send rules as the real macro does. Cargo.lock is checked against
-#    Cargo.toml (what `cargo check --locked` refuses).
+#    Cargo.toml (what `cargo check --locked` refuses), and Cargo.toml for
+#    duplicate keys and tables (cargo refuses the manifest).
+# 2b. With NATIVE_CHECK_INDEX=<clone of rust-lang/crates.io-index>: the real
+#    cargo resolves against it (real-cargo.sh) and tests dependency-free crates.
 # 3. android/app/src/main/java and mobile/android are compiled with javac
 #    -Xlint:all -Werror against stub android/Capacitor classes (java-stubs/)
 #    and an R class generated from res/; every @resource reference is checked.
@@ -49,6 +52,13 @@ t whisper src-tauri/src/whisper_core.rs
 echo; echo "## 2. src-tauri against tauri 2 signatures"
 "$D/check-tauri.sh" "$REPO/src-tauri" 2>&1 | grep -vE 'never (read|used)|warnings emitted' || status=1
 [ "${PIPESTATUS[0]}" = 0 ] || status=1
+
+echo; echo "## 2b. Real cargo (manifest, resolver, --locked; no crate downloads)"
+if [ -n "${NATIVE_CHECK_INDEX:-}" ]; then
+  "$D/real-cargo.sh" "$REPO/src-tauri" "$NATIVE_CHECK_INDEX" || status=1
+else
+  echo "—    skipped: set NATIVE_CHECK_INDEX to a clone of github.com/rust-lang/crates.io-index"
+fi
 
 echo; echo "## 3. Android (javac + resources)"
 if [ -d "$REPO/android/app/src/main/java" ]; then

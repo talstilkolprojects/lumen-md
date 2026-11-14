@@ -1,0 +1,12 @@
+// Plan W7.23: the second infrastructure that rebuilds every commit of main.
+// Cloudflare Workers Builds runs scripts/supply-chain/cf-build.sh (npm ci,
+// npm run build, the dist manifest), then deploys this assets-only Worker,
+// which serves nothing but the manifest: <worker>/lumen-build.json.
+// The app itself stays on Vercel (and the 25 MiB per-asset limit never applies:
+// only a JSON file is uploaded).
+{
+  "name": "lumen-md-repro",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "assets": { "directory": "../../.repro-out" }
+}

@@ -83,8 +83,9 @@ describe("FineTuneSettings", () => {
     // OpenAI's first status for a new job: still active, so the id must be kept (review: #194)
     vi.mocked(ft.startFineTune).mockResolvedValueOnce({ id: "ftjob-1", status: "validating_files", createdAt: 1, chunks: 3, estimatedTokens: 900 });
     cleanup();
-    const { getAllByRole, unmount } = render(<FineTuneSettings open={true} onClose={() => {}} />);
-    getAllByRole("button")[0].click(); // Train on my style
+    const { getByRole, unmount } = render(<FineTuneSettings open={true} onClose={() => {}} />);
+    // By its name: the header's help button (W3.7) and the local LoRA section (6.12) come before it now.
+    (await waitFor(() => getByRole("button", { name: "Train" }))).click(); // Train on my style
     await waitFor(() => expect(localStorage.getItem("lumen.fineTune.activeJob")).toContain("ftjob-1"));
     unmount(); // the dialog closes
     cleanup();

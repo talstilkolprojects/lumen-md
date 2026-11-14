@@ -13,11 +13,11 @@
 
    | Category | Type | Linked to the user | Used for tracking | Only when |
    |---|---|---|---|---|
-   | Diagnostics | Crash Data | **No** | **No** | Only in a build made with a crash-reporting key (VITE_SENTRY_DSN), and only until the user opts out (Settings). Personal data is scrubbed before sending (src/lib/telemetry.ts). |
+   | Diagnostics | Crash Data | **No** | **No** | Only in a build made with a crash-reporting key (VITE_SENTRY_DSN), and only after the user turns error reports on (Settings; off by default, refused under the local-only policy). A report holds the error's class name and where in the code, never its message, note text, titles, paths or the page address (src/lib/telemetry.ts). |
 
    **The store build is made without `VITE_SENTRY_DSN`**, so the answer to question 1 stays *No*. If a build ever ships with it, declare *Crash Data*: not linked, not used for tracking, *App Functionality*.
 
-*Note:* Everything under optionalFeatures is sent by the user's own choice to the service the user set up (their own key or account); the developer receives none of it.
+*Note:* Everything under optionalFeatures is sent by the user's own choice to the service the user set up (their own key or account); the developer receives none of it, except error reports, which go to whoever runs the error tracker the build names (VITE_SENTRY_DSN).
 
 ## Google Play Console → Data safety
 
@@ -27,7 +27,7 @@
 
    Only in a differently configured build:
 
-   - **App info and performance: Crash logs** (optional for the user): Only in a build made with a crash-reporting key (VITE_SENTRY_DSN), and only until the user opts out.
+   - **App info and performance: Crash logs** (optional for the user): Only in a build made with a crash-reporting key (VITE_SENTRY_DSN), and only after the user turns error reports on (off by default, refused under the local-only policy).
 
 ## Features the user turns on (not collection by the developer)
 
@@ -41,6 +41,8 @@ Both stores ask about data *the developer* collects. These go only where the use
 | Canvas (tldraw) licence check | The page address | Opening a canvas in a production build; refused under local-only |
 | Model and dictionary downloads (Hugging Face, GitHub) | Nothing of yours (a download) | Choosing a local model or a dictionary |
 | Canvas fonts, icons and translations | Nothing of yours (static files) | Opening a canvas |
+| Error reports (Sentry / GlitchTip) | The error's class name and where in the code it happened; no error message, note text, titles, paths or page address | Turning error reports on in Settings (off by default), in a build made with VITE_SENTRY_DSN; refused under local-only |
+| Plugins' network requests | Whatever the plugin's request carries, to the destination the plugin names | Installing a plugin and granting it network access; refused under local-only |
 | Other requests in audit mode | Whatever that request carries; listed so an audit can compare | Audit mode only (lumen.privacy.audit) |
 | Encrypted sync (WebDAV, S3, Dropbox, Google Drive) | Ciphertext only, to the storage you chose | Connecting a sync provider |
 | Live collaboration | End-to-end encrypted edits, to your collaborators (and a collab server, if configured) | Starting or joining a session |

@@ -39,7 +39,7 @@ docs.netlify.com ("How credits work"),‏ docs.github.com/pages (GitHub Pages li
   משתמשת באף אחת מ-500 הבניות של Cloudflare ובאף אחת מ-100 הפריסות של Vercel.
   חיבור הריפו בלוח הבקרה של Cloudflare הוא אופציונלי; הוא נותן משבצת בנייה
   שנייה לענפים (פקודת בנייה
-  `npm run build && npm run pages:check -- --drop-oversize`, תיקיית פלט
+  `npm run build && npm run pages:check -- --prepare`, תיקיית פלט
   `dist`, ‏`NODE_VERSION=22`).
 - **לא Netlify** כמראה: כשהקרדיטים נגמרים כל האתרים מושהים, ו-20 פריסות
   production בחודש זה מעט מדי. ‏`netlify.toml` נשאר למי שמארח שם בעצמו.
@@ -52,7 +52,7 @@ docs.netlify.com ("How credits work"),‏ docs.github.com/pages (GitHub Pages li
 ### מגבלה אחת שכדאי להכיר: ‏25MiB לקובץ
 
 ‏`ruby+stdlib.wasm` ‏(ruby.wasm, כ-30.6MB) גדול מ-25MiB לקובץ של Cloudflare.
-‏`npm run pages:check` מדווח על כל קובץ כזה; ‏`--drop-oversize` (שבו
+‏`npm run pages:check` מדווח על כל קובץ כזה; ‏`--prepare` (שבו
 ‏`pages:deploy` משתמש) מסיר אותם מההעלאה הזו ורושם אותם
 ב-`dist/pages-dropped.json`. בעותק של Cloudflare בלוקי live-ruby אומרים שאין
 להם runtime מותקן — כמו גרסת ה-`slim` של תמונת ה-Docker. כל השאר אותה בנייה.
@@ -103,3 +103,19 @@ npm run ci:docker -- --skip e2e
 git: ‏`Dockerfile.ci.dockerignore`) ומריץ `npm run ci:local`. הלוג ודוח
 Playwright נשמרים ב-`ci-docker-out/`. זה עובד גם עם Podman:
 ‏`DOCKER=podman npm run ci:docker`.
+
+## מוכן לייצור בשני המארחים
+
+אותה בנייה מגישה את אותן כותרות ואותם נתיבים בשני המארחים (תוכנית W6.9).
+‏`npm run hosts:parity` מדמה כל מארח מתוך ההגדרות שלו ומשווה 17 נתיבי
+בדיקה; ‏`pages:deploy` מריץ אותו על ה-`dist/` האמיתי לפני כל העלאה. שלושה
+פרטים של Cloudflare שהוא מכסה:
+
+- **2,000 תווים לשורה.** ‏Cloudflare מדלג על שורה ארוכה יותר ב-`_headers`
+  בלי להכשיל את הפריסה. לכן מדיניות האפליקציה כתובה בשתי שורות, שהמארח
+  מחבר לשתי מדיניויות, והדפדפן אוכף את שתיהן יחד כמדיניות אחת בדיוק.
+- **‏`/x.html` עונה 308 אל `/x`.** לדפי ה-runner יש כללים בשני הנתיבים.
+- **קטע קוד חסר מחזיר 404.** ‏`pages:check --prepare` כותב את
+  `assets/404.html`, כך שקטע קוד מהפריסה הקודמת לא מקבל את ה-HTML של האפליקציה.
+
+העברת הייצור בין מארחים: [מדריך המעבר](/he/self-hosting/cut-over/).

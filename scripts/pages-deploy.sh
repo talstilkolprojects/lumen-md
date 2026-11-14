@@ -16,7 +16,9 @@ branch=$(git rev-parse --abbrev-ref HEAD)
 [ "${1:-}" = "--prod" ] && branch=main
 sha=$(git rev-parse HEAD)
 dirty=false; git diff --quiet HEAD || dirty=true
+node scripts/hosting-gate.mjs --host cloudflare-pages
 npm run build
-node scripts/pages-check.mjs --drop-oversize
+node scripts/pages-check.mjs --prepare
+node scripts/host-parity.mjs --dist dist
 npx --yes wrangler@4 pages deploy dist --project-name "$PROJECT" --branch "$branch" --commit-hash "$sha" --commit-message "$(git log -1 --format=%s)" --commit-dirty="$dirty"
 echo "Deployed $sha ($branch) to Cloudflare Pages project $PROJECT"

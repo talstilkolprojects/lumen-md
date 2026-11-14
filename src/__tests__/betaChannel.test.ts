@@ -14,6 +14,8 @@ import { compareVersions, isBeta, nextBetaVersion, nextVersion, parseCommits } f
 // @ts-expect-error — plain .mjs helpers without types
 import { betaFlags, checkFlags } from "../../scripts/lib/flags.mjs";
 import { readLocale } from "../../scripts/lib/i18n-files.mjs";
+// @ts-expect-error — plain .mjs helpers without types
+import { lazyEnglishEntries } from "../../scripts/lib/i18n-lazy.mjs";
 import { buildChannel, defaultFor, FLAGS, flagState, isEnabled, readOverrides, resetFlags, setFlag, type FlagDef } from "../flags/flags";
 import { setAiPolicy } from "../ai/policy";
 import { checkForUpdate, launchUpdateCheck, LAUNCH_CHECK_EVERY_MS, setUpdateChannel, shouldCheckOnLaunch, updateChannel } from "../desktop/updates";
@@ -75,7 +77,8 @@ describe("versions: betas come before their release", () => {
 
 describe("the flag registry: nothing reaches stable without a beta", () => {
   const registry = JSON.parse(readFileSync(join(root, "src/flags/flags.json"), "utf8"));
-  const keys = new Set(Object.keys(readLocale("en")));
+  // The flags' English travels with the Feature flags panel (src/i18n/lazy/featureFlagsPanel.json, train 2).
+  const keys = new Set([...Object.keys(readLocale("en")), ...(lazyEnglishEntries() as [string, string][]).map(([k]) => k)]);
   const he = readLocale("he");
 
   it("the shipped registry passes, with strings in English and Hebrew", () => {
@@ -196,7 +199,7 @@ describe("docs", () => {
     expect(sidebar).toContain('slug: "getting-started/beta"');
     const en = readFileSync(join(root, "docs/src/content/docs/getting-started/beta.md"), "utf8");
     const heDoc = readFileSync(join(root, "docs/src/content/docs/he/getting-started/beta.md"), "utf8");
-    const enStrings = readLocale("en");
+    const enStrings: Record<string, string> = { ...readLocale("en"), ...Object.fromEntries(lazyEnglishEntries() as [string, string][]) };
     const he = readLocale("he");
     for (const f of FLAGS.filter((x) => x.stage === "beta")) {
       const name = enStrings[`flag.${f.id}.name`];

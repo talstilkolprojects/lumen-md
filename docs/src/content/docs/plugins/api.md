@@ -41,6 +41,8 @@ Your handlers get 250 ms of CPU each time they are called. Waiting for a
 | `clipboard.writeText(text)` | `clipboard:write` | — |
 | `notifications.show(text, "info" \| "success" \| "error")` | `notifications` | Shown with your name in front |
 | `network.fetch(url, { method?, headers?, body? })` | `network:<origin>` | Only to the exact origin you were granted. No cookies, no redirects, 30 s timeout, 5 MB at most. Returns `{ status, headers, body }`. Recorded in the privacy ledger; blocked under local-only |
+| `bases.query(path, view?, { offset?, limit? })` | `bases:read` | A `.base` view's rows, as the app shows them: `{ view, columns, rows: [{ path, cells }], total, errors }`. Cells are JSON (dates as ISO text, links as paths). At most 10,000 rows per call |
+| `bases.update([{ path, set: { property: value } }])` | `bases:write` | Changes note properties. **One approval screen covers the whole call**: the user sees how many notes, which properties and the first five, and nothing is written unless they allow it. At most 5,000 rows. Returns `{ written, unchanged, declined }` |
 | `lumen.manifest` | — | Your manifest (read-only) |
 
 `console.log` / `warn` / `error` are allowed, up to 120 lines a minute.

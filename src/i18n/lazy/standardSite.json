@@ -1,0 +1,18 @@
+{
+  "atproto.handle": "Your Bluesky handle (or another AT Protocol account)",
+  "atproto.siteUrl": "Your site's address (https), where the note is published",
+  "atproto.siteName": "Your site's name",
+  "atproto.password": "An App Password for this account (Bluesky → Settings → Privacy and security → App passwords). It is used for this sign-in only and is not stored.",
+  "atproto.confirm.title": "Publish publicly?",
+  "atproto.confirm.publish": "“{title}” will be written to {handle}'s AT Protocol account as a public record. Anyone can read it, and relays and apps keep their own copies: removing it later can't take those back. Marked passages (<redact>) and hidden comments are removed first.",
+  "atproto.confirm.update": "The public record of “{title}” in {handle}'s account will be replaced with this version. Copies relays already made of the old version stay.",
+  "atproto.confirm.ok": "Publish publicly",
+  "atproto.unpublish.title": "Remove the public record?",
+  "atproto.unpublish.confirm": "The record of “{title}” will be deleted from {handle}'s account. Copies relays and apps already made stay.",
+  "atproto.unpublish.ok": "Remove",
+  "atproto.done": "Published: {url}",
+  "atproto.updated": "Updated: {url}",
+  "atproto.removed": "The record was removed from your account.",
+  "atproto.notPublished": "This note isn't published.",
+  "atproto.failed": "Publishing failed: {error}"
+}

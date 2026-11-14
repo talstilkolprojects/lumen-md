@@ -28,9 +28,13 @@ cannot read `var()`: use `resolvedColor("fg", 0.15)` when drawing.
 
 ## Rules
 
-1. **No hard-coded colour in `src/ui`** — no hex, `rgb()` or `hsl()` with
-   numbers. Colours a person picks for their content (the note colours of
-   the canvas) are content, marked `design-allow`.
+1. **No hard-coded colour in the interface** — no hex, `rgb()` or `hsl()`
+   with numbers in `src/ui`, nor in the other folders that draw dialogs,
+   panels and blocks (`COLOR_SCOPE` in `scripts/check-design.mjs`: sign-in,
+   sync, backup, tasks, views, plugins, and more). Colours a person picks
+   for their content (the note colours of the canvas) are content, and so
+   is a QR code, which stays black on white for the camera; both are marked
+   `design-allow`.
 2. **Only `transform` and `opacity` move**, with the three durations.
    Nothing animates width, height, top/left or margins: a progress bar
    scales (`transform: scaleX()`), a menu slides (`translateY`), a hover
@@ -44,9 +48,12 @@ cannot read `var()`: use `resolvedColor("fg", 0.15)` when drawing.
 5. **A modal backdrop is `var(--overlay)`; a shadow is a step of the scale.**
 
 `npm run design:check` runs both gates: `scripts/check-design.mjs` (rules
-1–2 on all of `src/ui`, and no layout animation anywhere in `src`) and
-`scripts/design-audit.mjs`, which runs the checklist (rules 1, 2, 4, 5) on
-the 40 surfaces listed in `scripts/design-surfaces.json`. A real exception is
+1 on the interface folders, rule 2 on all of `src/ui`, and no layout
+animation anywhere in `src`) and `scripts/design-audit.mjs`, which runs the
+checklist (rules 1, 2, 4, 5) on the 43 surfaces listed in
+`scripts/design-surfaces.json`. A bare name there is `src/ui/<name>.tsx`; a
+name with a folder, such as `sync/cloud/ConflictDialog`, is a surface outside
+`src/ui`. A real exception is
 marked `design-allow: <reason>` in the code.
 
 ## Shared components

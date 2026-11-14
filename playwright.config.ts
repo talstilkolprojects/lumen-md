@@ -18,7 +18,9 @@ const NIGHTLY = /@nightly/;
 const INP = /@inp/;
 /** Plan W2.21: cold-start budgets (e2e/cold-start.spec.ts), only in the "coldstart" projects. */
 const COLD = /@coldstart/;
-const NOT_IN_PR_RUNS = /@nightly|@inp|@coldstart/;
+/** Plan W6.45: INP and keypress → paint per environment (e2e/inp-devices.spec.ts), only in the inp-* projects. */
+const RESPONSIVENESS = /@responsiveness/;
+const NOT_IN_PR_RUNS = /@nightly|@inp|@coldstart|@responsiveness/;
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`;
 /** A Chromium executable to use when Playwright's own is not installed (docs/dev/ci-local.md). */
 const CHROMIUM = process.env.PW_CHROMIUM;
@@ -70,6 +72,20 @@ export default defineConfig({
     // `npm run perf:coldstart` against a production build (PLAYWRIGHT_BASE_URL): the desktop and a phone profile.
     { name: "coldstart", grep: COLD, use: { ...devices["Desktop Chrome"] } },
     { name: "coldstart-phone", grep: COLD, use: { ...devices["Pixel 7"] } },
+    // `npm run perf:responsiveness` (plan W6.45): both editors on a 10,000-note vault, desktop and a
+    // mid-range phone. `metadata` names the environment for the report, the baseline and the receipt.
+    {
+      name: "inp-desktop",
+      grep: RESPONSIVENESS,
+      use: { ...devices["Desktop Chrome"], ...(CHROMIUM ? { launchOptions: { executablePath: CHROMIUM } } : {}) },
+      metadata: { env: "desktop-chromium", device: "Desktop Chrome (this machine)", cpuSlowdown: 1, scored: true, inpBudget: 100 },
+    },
+    {
+      name: "inp-phone",
+      grep: RESPONSIVENESS,
+      use: { ...devices["Pixel 7"], ...(CHROMIUM ? { launchOptions: { executablePath: CHROMIUM } } : {}) },
+      metadata: { env: "mid-phone-emulated", device: "Pixel 7 emulation, CPU 4× slower", cpuSlowdown: 4, scored: true, inpBudget: 200 },
+    },
   ],
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined

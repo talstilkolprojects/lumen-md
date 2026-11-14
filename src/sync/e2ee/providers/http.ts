@@ -8,7 +8,7 @@
  */
 
 import { randomBytes, toB64u } from "../bytes";
-import { PreconditionFailedError, ProviderUnavailableError, type PutCondition, type SyncProvider } from "../provider";
+import { PreconditionFailedError, PROBE_RACE_ROUNDS, PROBE_RACE_WRITERS, PROBE_REPLACEMENTS, ProviderUnavailableError, type PutCondition, type SyncProvider } from "../provider";
 
 export type FetchLike = (input: Request | string, init?: RequestInit) => Promise<Response>;
 
@@ -154,30 +154,41 @@ async function conditionalWriteGap(p: SyncProvider): Promise<string | null> {
       throw e;
     }
   };
+  const races: string[] = [];
   try {
-    const a = await p.put(name, probe.data(), { ifNoneMatch: "*" });
+    let cur = await p.put(name, probe.data(), { ifNoneMatch: "*" });
     if (!(await refused({ ifNoneMatch: "*" }))) return "it accepted If-None-Match: * on an existing object";
-    let b: { etag: string };
-    const third = probe.data();
-    try {
-      b = await p.put(name, third, { ifMatch: a.etag });
-    } catch (e) {
-      if (e instanceof PreconditionFailedError) return "it refused If-Match with the current ETag";
-      throw e;
+    // Several replacements in a row (W6.27): an ETag that is the file's mtime
+    // in seconds passes one replacement that straddles a second, not three.
+    for (let i = 0; i < PROBE_REPLACEMENTS; i++) {
+      let b: { etag: string };
+      const next = probe.data();
+      try {
+        b = await p.put(name, next, { ifMatch: cur.etag });
+      } catch (e) {
+        if (e instanceof PreconditionFailedError) return "it refused If-Match with the current ETag";
+        throw e;
+      }
+      if (b.etag === cur.etag) return "a write kept the same ETag";
+      if (!(await refused({ ifMatch: cur.etag }))) return "it accepted If-Match with a stale ETag";
+      const now = await p.get(name);
+      if (!now || !sameBytes(now.data, next) || now.etag !== b.etag) return "the ETag read back is not the one the write returned";
+      cur = b;
     }
-    if (!(await refused({ ifMatch: a.etag }))) return "it accepted If-Match with a stale ETag";
-    const now = await p.get(name);
-    if (!now || !sameBytes(now.data, third) || now.etag !== b.etag) return "the ETag read back is not the one the write returned";
-    // Two creates at once: exactly one may win. A provider that says its
+    // Creates at once: exactly one may win. A provider that says its
     // create-only isn't atomic (Drive) is sync-only anyway (N7).
     if (p.atomicCreate !== false) {
-      const wins = await Promise.all([race.data(), race.data()].map((d) => p.put(race.name, d, { ifNoneMatch: "*" }).then(() => 1, (e) => (e instanceof PreconditionFailedError ? 0 : Promise.reject(e)))));
-      if (wins[0] + wins[1] !== 1) return "two create-only writes racing on one name both succeeded";
+      for (let round = 0; round < PROBE_RACE_ROUNDS; round++) {
+        const r = round === 0 ? race : probeObject();
+        races.push(r.name);
+        const wins = await Promise.all(Array.from({ length: PROBE_RACE_WRITERS }, () => r.data()).map((d) => p.put(r.name, d, { ifNoneMatch: "*" }).then(() => 1, (e) => (e instanceof PreconditionFailedError ? 0 : Promise.reject(e)))));
+        if (wins.reduce((x, y) => x + y, 0) !== 1) return "create-only writes racing on one name both succeeded";
+      }
     }
     return null;
   } finally {
     await p.delete(name).catch(() => undefined);
-    await p.delete(race.name).catch(() => undefined);
+    for (const r of races.length ? races : [race.name]) await p.delete(r).catch(() => undefined);
   }
 }
 

@@ -142,7 +142,7 @@ describe("writes from a client wait for approval", () => {
 
   it("every tool has a scope", () => {
     for (const t of TOOLS) expect(["search", "read", "propose"]).toContain(t.scope);
-    expect(TOOLS.filter((t) => t.scope === "propose").map((t) => t.name).sort()).toEqual(["append_note", "create_note", "update_frontmatter", "write_note"]);
+    expect(TOOLS.filter((t) => t.scope === "propose").map((t) => t.name).sort()).toEqual(["append_note", "bases_update", "create_note", "update_frontmatter", "write_note"]);
   });
 });
 
@@ -185,11 +185,21 @@ describe("search", () => {
 });
 
 describe("lumen CLI", () => {
-  const run = async (args: string[], now = new Date(2026, 10, 10, 9, 5)) => {
+  const run = async (args: string[], now = new Date(2026, 10, 10, 9, 5), person: { tty?: boolean; answer?: string } = { tty: true, answer: "yes" }) => {
     const out: string[] = [];
     const err: string[] = [];
     const opened: string[] = [];
-    const code = await runVaultCli([...args, "--vault", vault], { out: (l) => out.push(l), err: (l) => err.push(l), env: {}, cwd: "/", now: () => now, openFile: (f) => opened.push(f) });
+    const asked: string[] = [];
+    const code = await runVaultCli([...args, "--vault", vault], {
+      out: (l) => out.push(l),
+      err: (l) => err.push(l),
+      env: {},
+      cwd: "/",
+      now: () => now,
+      openFile: (f) => opened.push(f),
+      tty: person.tty,
+      ask: async (q) => (asked.push(q), person.answer ?? ""),
+    });
     return { code, out, err, opened };
   };
 
@@ -220,7 +230,14 @@ describe("lumen CLI", () => {
     const review = await run(["mcp", "review"]);
     expect(review.out.join("\n")).toContain("+ added");
     const [first, second] = await listPending(vault);
-    expect((await run(["mcp", "approve", first.id])).out[0]).toBe(`wrote links.md (${first.id})`);
+    // Review 21 (B1): no TTY, or anything but "yes", writes nothing; --all is gone.
+    expect((await run(["mcp", "approve", first.id], undefined, { tty: false })).code).toBe(1);
+    expect((await run(["mcp", "approve", first.id], undefined, { tty: true, answer: "y" })).out.at(-1)).toContain("left in the queue");
+    expect((await run(["mcp", "approve", "--all"])).code).toBe(1);
+    expect(read("links.md")).not.toContain("added");
+    const ok = await run(["mcp", "approve", first.id]);
+    expect(ok.out.some((l) => l === "+ added")).toBe(true); // the diff came first
+    expect(ok.out.at(-1)).toBe(`wrote links.md (${first.id})`);
     expect(read("links.md")).toContain("added");
     await run(["mcp", "reject", "--all"]);
     expect(existsSync(path.join(vault, "x.md"))).toBe(false);

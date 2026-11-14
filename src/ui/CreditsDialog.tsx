@@ -29,6 +29,7 @@ export function creditEntries(list: readonly Entry[] = (registry as { models: En
 /** What each licence asks of whoever ships the model. */
 const REQUIREMENT: Record<LicenceFamily, string> = {
   "cc-by": "credits.req.ccBy",
+  "cc-by-sa": "credits.req.ccBySa",
   apache: "credits.req.apache",
   mit: "credits.req.mit",
   mpl: "credits.req.mpl",

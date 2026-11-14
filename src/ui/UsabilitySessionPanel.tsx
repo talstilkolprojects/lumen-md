@@ -18,6 +18,8 @@ import "./usabilitySessionPanelStrings";
 
 
 const box: React.CSSProperties = { position: "fixed", insetBlockEnd: 12, insetInlineEnd: 12, zIndex: 80, inlineSize: "min(380px, calc(100vw - 24px))", maxBlockSize: "70vh", overflowY: "auto", background: "hsl(var(--bg))", color: "hsl(var(--fg))", border: "1px solid hsl(var(--border))", borderRadius: 10, boxShadow: "var(--shadow-md)", padding: 12, fontSize: 13 };
+/** 24 px: the WCAG 2.2 minimum target (2.5.8), for the text-glyph buttons. */
+const target: React.CSSProperties = { minInlineSize: 24, minBlockSize: 24, display: "inline-flex", alignItems: "center", justifyContent: "center" };
 const row: React.CSSProperties = { display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBlock: 6 };
 
 type View = "setup" | "tasks" | "sus" | "done";
@@ -117,11 +119,11 @@ export function UsabilitySessionPanel({ onClose }: { onClose: () => void }) {
           {t("usability.title")}
           {session && ` · ${session.participant} · ${t("usability.round", { n: session.round })}`}
         </h2>
-        <button type="button" className="btn" onClick={() => setCollapsed(true)} aria-label={t("usability.collapse")}>
+        <button type="button" className="btn" style={target} onClick={() => setCollapsed(true)} aria-label={t("usability.collapse")}>
           –
         </button>
         {!session && (
-          <button type="button" className="btn" onClick={onClose} aria-label={t("usability.close")}>
+          <button type="button" className="btn" style={target} onClick={onClose} aria-label={t("usability.close")}>
             ✕
           </button>
         )}

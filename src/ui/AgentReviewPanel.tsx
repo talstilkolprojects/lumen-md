@@ -218,7 +218,7 @@ export function AgentReviewPanel({ open, onClose }: Props) {
         <header style={{ padding: "14px 18px", borderBottom: "1px solid hsl(var(--border))", display: "flex", gap: 10, alignItems: "center" }}>
           <FileDiff size={18} style={{ color: "hsl(var(--accent))" }} />
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, flex: 1 }}>{t("agentReview.title")}</h2>
-          <HelpButton topic="ai/local-agents" />
+          <HelpButton topic="ai/local-agents#reviewing-proposed-changes" />
           {model.pendingCount > 0 && (
             <>
               <button type="button" style={ghost} disabled={busy} onClick={() => void run(() => rejectAll(pendingChanges))} data-testid="agent-review-reject-all">
@@ -237,7 +237,7 @@ export function AgentReviewPanel({ open, onClose }: Props) {
         <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12, fontSize: 13, lineHeight: 1.5, overflowY: "auto" }}>
           <p style={{ ...muted, margin: 0 }}>{t("agentReview.intro")}</p>
           {model.pendingCount === 0 && (
-            <EmptyState testId="agent-review-empty" style={{ padding: "12px 0" }} message={t("agentReview.empty")} action={learnHow("ai/local-agents")} />
+            <EmptyState testId="agent-review-empty" style={{ padding: "12px 0" }} message={t("agentReview.empty")} action={learnHow("ai/local-agents#reviewing-proposed-changes")} />
           )}
           {model.pending.map((g) => (
             <section key={g.key} style={{ display: "flex", flexDirection: "column", gap: 8 }} data-testid="agent-review-group">

@@ -35,9 +35,10 @@ import {
 } from "./classroom";
 import { classLinkHash, ClassLinkError, type ClassLink } from "./link";
 import { listAssignments, removeAssignment, saveAssignment } from "./store";
+import { HelpButton } from "../../../ui/HelpButton";
 
 const muted: React.CSSProperties = { fontSize: 13, color: "hsl(var(--fg-muted))" };
-const errorStyle: React.CSSProperties = { fontSize: 13, color: "hsl(0 70% 50%)" };
+const errorStyle: React.CSSProperties = { fontSize: 13, color: "hsl(var(--danger))" };
 const field: React.CSSProperties = { width: "100%", boxSizing: "border-box", padding: "8px 10px", border: "1px solid hsl(var(--border))", borderRadius: 6, background: "transparent", color: "inherit", font: "inherit" };
 const ghost: React.CSSProperties = { padding: "5px 12px", fontSize: 13, borderRadius: 6, border: "1px solid hsl(var(--border))", background: "transparent", color: "inherit", cursor: "pointer" };
 const primary: React.CSSProperties = { ...ghost, background: "hsl(var(--accent))", borderColor: "hsl(var(--accent))", color: "white" };
@@ -268,7 +269,7 @@ export function ClassroomPanel({ onClose, joining = null, deps = {}, relay = bui
   const otherRelay = invite !== null && invite.relay !== relay;
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "hsl(0 0% 0% / 0.4)", display: "grid", placeItems: "center", zIndex: 1000 }} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div style={{ position: "fixed", inset: 0, background: "var(--overlay)", display: "grid", placeItems: "center", zIndex: 1000 }} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div
         role="dialog"
         aria-modal="true"
@@ -281,6 +282,8 @@ export function ClassroomPanel({ onClose, joining = null, deps = {}, relay = bui
           <h2 id="classroom-title" style={{ margin: 0, fontSize: 18 }}>
             {t("e2ee.class.title")}
           </h2>
+          <span style={{ flex: 1 }} />
+          <HelpButton topic="sync/classroom" />
           <button type="button" aria-label={t("e2ee.sync.close")} onClick={onClose} style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", fontSize: 20 }}>
             ×
           </button>

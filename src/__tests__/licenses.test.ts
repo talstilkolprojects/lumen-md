@@ -13,6 +13,7 @@ import registryFixture from "./fixtures/licenses/registry.json";
 import {
   applyAllowlist,
   checkDatasets,
+  isModelScanSource,
   checkModels,
   checkNpm,
   classifyLicense,
@@ -225,6 +226,38 @@ describe("model registry", () => {
     expect(r["mystery-tts"].level).toBe("warn");
   });
 
+  it("CC BY-SA: conditional, a download the user starts, or bundled only unmodified with its NOTICE (V4 sweep of train 4)", () => {
+    const good = registryFixture.models[0];
+    const sa = { ...clone(good), id: "sa-data", kind: "other", license: "CC-BY-SA-4.0", class: "conditional", commercial: "conditional", attribution: "X, CC BY-SA 4.0", unmodified: false };
+    const NOTICE = "X by Y. Licensed CC BY-SA 4.0: https://creativecommons.org/licenses/by-sa/4.0/ (unmodified)";
+    const files: Record<string, string> = { "public/x/NOTICE": NOTICE, "public/x/BARE": "X by Y." };
+    const one = (e: object) => checkModels({ models: [e] }, [], (p: string) => files[p] ?? null)[0];
+    // Modified or derived: a download the user starts, never bundled.
+    expect(one({ ...sa, delivery: "user-download" }).level).not.toBe("fail");
+    expect(one({ ...sa, delivery: "bundled" })).toMatchObject({ level: "fail", reason: "CC BY-SA bundled but not marked unmodified: modified or derived content is only a download the user starts" });
+    // Unmodified: bundled passes only with a NOTICE that names the licence and links it.
+    const asIs = { ...sa, unmodified: true, delivery: "bundled" };
+    expect(one({ ...asIs, notice: "public/x/NOTICE" }).level).not.toBe("fail");
+    expect(one({ ...asIs }).reason).toMatch(/needs its NOTICE/);
+    expect(one({ ...asIs, notice: "public/x/BARE" }).reason).toMatch(/needs its NOTICE/);
+    expect(one({ ...asIs, notice: "public/x/missing" }).level).toBe("fail");
+    // Classed like the other non-permissive families, and it must say whether it is modified.
+    expect(one({ ...sa, class: "allowed", commercial: "yes", delivery: "download" }).level).toBe("fail");
+    const { unmodified: _u, ...unsaid } = sa;
+    expect(validateEntry(unsaid)).toContain("a CC BY-SA entry must say whether it is unmodified (true or false)");
+  });
+
+  it("a forbidden id still fails without the mention-only marker, and a marked line is not a reference", () => {
+    const unmarked = byName(checkModels(clone(registryFixture), [{ file: "src/x.ts", text: "// we can't ship nc-model:8b (non-commercial)\n" }]));
+    expect(unmarked["nc-model:8b"]).toMatchObject({ level: "fail", refs: [{ file: "src/x.ts", line: 1 }] });
+    const marked = byName(checkModels(clone(registryFixture), [{ file: "src/x.ts", text: "// we can't ship nc-model:8b (non-commercial)  (licence-gate: mention-only)\nconst ok = 1;\n" }]));
+    expect(marked["nc-model:8b"].level).toBe("ok");
+    expect(marked["nc-model:8b"].reason).toMatch(/licence-gate: mention-only/);
+    // The marker covers its own line only: a real use on the next line still fails.
+    const next = byName(checkModels(clone(registryFixture), [{ file: "src/x.ts", text: "// (licence-gate: mention-only)\npull(\"nc-model:8b\");\n" }]));
+    expect(next["nc-model:8b"]).toMatchObject({ level: "fail", refs: [{ file: "src/x.ts", line: 2 }] });
+  });
+
   it("matches ids as whole tokens, case-insensitively", () => {
     const hit = byName(checkModels(clone(registryFixture), [{ file: "x.ts", text: 'pull("qwen2.5-3b-instruct")' }]));
     expect(hit["Qwen2.5-3B"].level).toBe("fail");
@@ -374,6 +407,17 @@ describe("datasets", () => {
     expect(r["eval/golden/ok"].level).toBe("ok");
     expect(r["eval/golden/md"].level).toBe("ok");
     expect(r["eval/golden/bare"]).toMatchObject({ level: "fail", reason: "missing SOURCES.md and LICENSE" });
+  });
+
+  it("an empty placeholder LICENSE fails: it states no terms (Codex on #199)", () => {
+    const r = byName(
+      checkDatasets([
+        { name: "empty", files: ["SOURCES.md", "LICENSE"], sources: table("| a | 10 | built | CC0-1.0 | 2026 |"), license: "" },
+        { name: "blank", files: ["SOURCES.md", "LICENSE.md"], sources: table("| a | 10 | built | CC0-1.0 | 2026 |"), license: " \n\t\n" },
+      ]),
+    );
+    expect(r["eval/golden/empty"]).toMatchObject({ level: "fail", reason: expect.stringMatching(/LICENSE is empty/) });
+    expect(r["eval/golden/blank"]).toMatchObject({ level: "fail", reason: expect.stringMatching(/LICENSE is empty/) });
   });
 
   it("reads every licence in the parts table of SOURCES.md (7.1)", () => {
@@ -545,5 +589,25 @@ describe("scripts/licenses.mjs (CLI)", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("the sources the model check reads", () => {
+  it("app code under src/, not tests, fixtures, eval suites or the packed help docs", () => {
+    for (const f of ["src/ai/modelCatalog.ts", "src/ui/ModelPicker.tsx", "src/ai/models.json", "src/workers/x.mjs"]) expect(isModelScanSource(f), f).toBe(true);
+    for (const f of [
+      "src/__tests__/licenses.test.ts",
+      "src/ai/x.test.ts",
+      "src/agents/eval/x.eval.ts",
+      "src/ai/fixtures/models.json",
+      // The docs site packed for the in-app help: "jina-reranker-v2 is not used" is prose, not a reference.
+      "src/help/generated/help.en.0.json",
+      "src/help/generated/help.he.0.json",
+      "src/styles/app.css",
+      "docs/src/content/docs/ai/reranker.md",
+    ])
+      expect(isModelScanSource(f), f).toBe(false);
+    // The help module itself is still app code.
+    expect(isModelScanSource("src/help/helpSearch.ts")).toBe(true);
   });
 });

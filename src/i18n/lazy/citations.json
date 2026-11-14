@@ -60,7 +60,7 @@
   "legalCite.cancel": "Cancel",
   "legalCite.insert": "Insert",
   "cite.web.keyTitle": "Zotero API key",
-  "cite.web.keyBody": "Lumen reads your Zotero library from api.zotero.org with a key you create at zotero.org → Settings → Security → Applications (read-only library access is enough). The key stays in this device's secret store and is sent only to api.zotero.org; every request shows in the privacy ledger. Nothing is written to Zotero.",
+  "cite.web.keyBody": "Lumen reads your Zotero library from api.zotero.org with a key you create at zotero.org → Settings → Security → Applications (read-only library access is enough). The key stays in this device's secret store and is sent only to api.zotero.org; every request shows in the privacy ledger. Lumen writes to Zotero only when you send PDF highlights and confirm (that needs a key with write access).",
   "cite.web.synced": "Zotero library synced from zotero.org: {n} sources ({changed} changed, {deleted} removed, {notes} notes).",
   "cite.web.upToDate": "The Zotero library is up to date ({n} sources).",
   "cite.web.forbidden": "Zotero refused the key. Run the sync again and enter a key from zotero.org → Settings → Security → Applications.",

@@ -41,6 +41,8 @@ exists only once you post it.
 
 ## Review a whole language
 
+The easiest way is in the browser, on [Weblate](/contributing/weblate/): every fix comes back as a pull request.
+
 If you are a native speaker and want to review a whole language, the strings are in
 `src/i18n/locales/<lang>/*.json`, one file per area. Open a pull request with your fixes.
 New strings drafted by a model are listed in `i18n/needs-review/` until a person approves

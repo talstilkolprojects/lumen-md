@@ -1,12 +1,12 @@
 /**
- * Plan W3.1 — the design system: tokens, the colour and motion gate, and
- * the 40-surface audit.
+ * Plans W3.1 and W6.41 — the design system: tokens, the colour and motion
+ * gate, and the 43-surface audit.
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 // @ts-expect-error — plain .mjs scripts without types
-import { keyframesOf, parseTransition, scan, scanAll } from "../../scripts/check-design.mjs";
+import { COLOR_SCOPE, keyframesOf, parseTransition, scan, scanAll } from "../../scripts/check-design.mjs";
 // @ts-expect-error — plain .mjs scripts without types
 import { audit, auditSource } from "../../scripts/design-audit.mjs";
 import { color, enter, shadow, transition, withAlpha } from "../ui/tokens";
@@ -45,8 +45,12 @@ describe("the gate (scripts/check-design.mjs)", () => {
     expect([...keyframesOf("@keyframes a { 0% { opacity: 0 } 100% { opacity: 1; transform: none } }").get("a").props]).toEqual(["opacity", "transform"]);
   });
 
-  it("src/: 0 hard-coded colours in src/ui, 0 layout animations, motion on the scale", () => {
+  it("src/: 0 hard-coded colours in the interface folders, 0 layout animations, motion on the scale", () => {
     expect(scanAll()).toEqual([]);
+  });
+
+  it("the colour rule covers the interface outside src/ui too (W6.41)", () => {
+    for (const p of ["src/ui/", "src/components/", "src/sync/", "src/backup/", "src/tasks/", "src/views/", "src/plugins/runtime/", "src/App.tsx"]) expect(COLOR_SCOPE).toContain(p);
   });
 });
 
@@ -61,9 +65,11 @@ const B = () => <div style={{ position: "fixed", inset: 0, background: "hsl(var(
     expect(auditSource("y.tsx", `const A = () => <div style={{ marginInlineStart: 4, boxShadow: "var(--shadow-lg), 0 0 0 1px hsl(var(--accent) / 0.15)" }} />;`)).toEqual({ direction: [], overlay: [], elevation: [] });
   });
 
-  it("40/40 surfaces pass the checklist", () => {
-    const rows = audit() as { name: string; pass: boolean }[];
-    expect(rows).toHaveLength(40);
+  it("43/43 surfaces pass the checklist, three of them outside src/ui", () => {
+    const rows = audit() as { name: string; pass: boolean; missing?: boolean }[];
+    expect(rows).toHaveLength(43);
+    expect(rows.filter((r) => r.missing).map((r) => r.name)).toEqual([]);
+    for (const outside of ["components/AuthDialog", "sync/cloud/ConflictDialog", "sync/e2ee/ui/SyncPanel"]) expect(rows.map((r) => r.name)).toContain(outside);
     expect(rows.filter((r) => !r.pass).map((r) => r.name)).toEqual([]);
   });
 });

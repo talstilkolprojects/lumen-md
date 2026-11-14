@@ -2117,7 +2117,9 @@ checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 name = "lumen"
 version = "0.1.0"
 dependencies = [
+ "lumen-desktop",
  "lumen-keychain",
+ "lumen-lan-mdns",
  "lumen-vault",
  "serde",
  "serde_json",
@@ -2130,11 +2132,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "lumen-desktop"
+version = "0.1.0"
+
+[[package]]
 name = "lumen-keychain"
 version = "0.1.0"
 dependencies = [
  "keyring",
 ]
+
+[[package]]
+name = "lumen-lan-mdns"
+version = "0.1.0"
 
 [[package]]
 name = "lumen-vault"

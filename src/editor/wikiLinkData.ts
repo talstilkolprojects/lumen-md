@@ -5,29 +5,40 @@
  * one backlinks, search and tags read — never from an index of its own.
  */
 
-import { ensureIndex, indexVersion, indexedFiles, indexedNotes } from "../storage/workspaceIndex";
+import { ensureIndex, indexVersion, indexedFiles, indexedNoteText } from "../storage/workspaceIndex";
 import { basename, createWorkspaceFile, isOPFSAvailable } from "../storage/workspace";
 import { notifyWorkspaceChanged } from "../storage/workspaceEvents";
 import { useAppStore } from "../store/useStore";
 import { showAiToast } from "../ui/AiToast";
 import { t } from "../i18n";
-import { noteCatalog, type CurrentNote, type NoteCatalog, type WikiSuggestion } from "./wikiComplete";
+import { findNote, noteCatalog, type CurrentNote, type NoteCatalog, type WikiQuery, type WikiSuggestion } from "./wikiComplete";
 import { explainError } from "../lib/userError";
 
 /**
  * The notes to complete. Once the index is built, answers from it at once
  * and lets the refresh (re-reading files that changed) run behind; only
  * the very first use waits for the build.
+ *
+ * W6.36: the catalog is made from the index summaries (name, path, aliases),
+ * not from every note's text. A `[[Note#` or `[[Note^` completion needs one
+ * note's headings or blocks: pass the `query`, and that note's text alone is
+ * read from the index.
  */
-export async function linkCatalog(): Promise<NoteCatalog> {
+export async function linkCatalog(query?: WikiQuery | null, current?: CurrentNote): Promise<NoteCatalog> {
   if (!isOPFSAvailable()) return noteCatalog([]);
-  const refresh = ensureIndex().catch(() => undefined);
+  const refresh = ensureIndex(false, { checked: true }).catch(() => undefined);
   if (!indexedFiles().length) await refresh;
   // Rebuilt only when the index changed — not on every keystroke.
   const version = indexVersion();
-  // W2.22: the notes' text (aliases, headings, blocks) comes from the index.
-  if (memo?.version !== version) memo = { version, catalog: noteCatalog(await indexedNotes()) };
-  return memo.catalog;
+  if (memo?.version !== version) memo = { version, catalog: noteCatalog(indexedFiles()) };
+  const catalog = memo.catalog;
+  if (!query || query.kind === "note" || !query.note.trim()) return catalog;
+  const e = findNote(catalog, query.note);
+  if (!e || e.path === current?.path) return catalog;
+  const content = await indexedNoteText(e.path);
+  if (content === null) return catalog;
+  const filled = { ...e, content };
+  return { ...catalog, notes: catalog.notes.map((n) => (n === e ? filled : n)) };
 }
 
 let memo: { version: number; catalog: NoteCatalog } | null = null;

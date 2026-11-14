@@ -18,6 +18,7 @@ import type { CaptionFamily, Device, EmbedResult, TranscribeResult, WorkerIn, Wo
 import { detectHardware, vramBudgetMB, type Hardware } from "./modelManager";
 // The window id on the airplane channel (review 2): only this window answers this worker.
 import { airplaneWorkerName } from "../privacy/airplaneBoot";
+import { OZEN_LICENSE_APPROVED } from "./dictation/engines";
 
 export type { TranscribeResult, EmbedResult, TimedSegment };
 
@@ -167,10 +168,14 @@ export async function transformersDevice(hw?: Hardware): Promise<Device> {
   return h.webgpu && !isWebKit() ? "webgpu" : "wasm";
 }
 
-/** The Whisper model for this device: turbo needs a real GPU budget, small fits most laptops, tiny for wasm. */
+/**
+ * The Whisper model for this device: turbo needs a real GPU budget and f16
+ * (its encoder loads as fp16: the fp32 one is over the mirror's 2 GiB per
+ * file, plan W6.33), small fits most laptops, tiny for wasm.
+ */
 export function whisperModelFor(hw: Hardware, device: Device = hw.webgpu ? "webgpu" : "wasm"): string {
   if (device !== "webgpu") return WHISPER_MODELS.tiny;
-  return vramBudgetMB(hw) >= 6_000 && !hw.mobile ? WHISPER_MODELS.turbo : WHISPER_MODELS.small;
+  return vramBudgetMB(hw) >= 6_000 && !hw.mobile && hw.f16 ? WHISPER_MODELS.turbo : WHISPER_MODELS.small;
 }
 
 /**
@@ -178,12 +183,14 @@ export function whisperModelFor(hw: Hardware, device: Device = hw.webgpu ? "webg
  * Hebrew gets ivrit.ai's turbo on a GPU with f16 and the VRAM for it, else
  * Ozen v1 (164 MB, WebGPU or wasm, plan W4.13) — whisper-base and tiny are too
  * weak for Hebrew (Ozen's card: 48 % WER for whisper-base vs 8.6 % on
- * ivrit-ai/eval-d1). Other languages keep whisperModelFor.
+ * ivrit-ai/eval-d1). Ozen stays off until its licence is approved (plan
+ * W6.19, OZEN_LICENSE_APPROVED); until then Hebrew without the turbo's GPU
+ * gets whisperModelFor, like other languages.
  */
 export function whisperModelForLanguage(hw: Hardware, device: Device, language: string | undefined): string {
   if (language !== "he") return whisperModelFor(hw, device);
   if (device === "webgpu" && hw.f16 && !hw.mobile && vramBudgetMB(hw) >= TURBO_HE_VRAM_MB) return WHISPER_MODELS.turboHe;
-  return WHISPER_MODELS.ozenHe;
+  return OZEN_LICENSE_APPROVED ? WHISPER_MODELS.ozenHe : whisperModelFor(hw, device);
 }
 
 /** Transcribe 16 kHz mono PCM. `language` is an ISO-639-1 code ("he", "en"); omitted = auto-detect. */

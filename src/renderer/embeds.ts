@@ -62,14 +62,18 @@ export interface EmbedContext extends EmbedExpander {
   version(path: string): number | undefined;
 }
 
-/** Build a context from `{path, content, modified?}` entries (the workspace index). */
+/**
+ * Build a context from `{path, content, modified?}` entries (the workspace
+ * index). An entry without `content` is a path embeds may resolve to whose
+ * text was not loaded (W6.36: the preview loads only what it embeds).
+ */
 export function createEmbedContext(opts: {
   hostPath: string | null;
   hostText: string;
-  files: Iterable<{ path: string; content: string; modified?: number }>;
+  files: Iterable<{ path: string; content?: string; modified?: number }>;
   notice: EmbedContext["notice"];
 }): EmbedContext {
-  const byPath = new Map<string, { content: string; modified?: number }>();
+  const byPath = new Map<string, { content?: string; modified?: number }>();
   for (const f of opts.files) byPath.set(f.path, f);
   const ctx: EmbedContext = {
     hostPath: opts.hostPath,
@@ -184,7 +188,22 @@ export function resolveEmbedTarget(
  * host would get for it. Over-inclusive (code is not skipped) — harmless.
  */
 export function embeddedTexts(markdown: string, ctx: EmbedContext): string[] {
+  return visitEmbedded(markdown, ctx).texts;
+}
+
+/**
+ * W6.36 — the notes the render would read that `ctx` holds no text for yet.
+ * The preview asks the index for these alone (and again for what they
+ * embed), instead of every note in the vault. A superset of what the render
+ * reads, for the same reason as `embeddedTexts`.
+ */
+export function missingEmbedded(markdown: string, ctx: EmbedContext): string[] {
+  return visitEmbedded(markdown, ctx).missing;
+}
+
+function visitEmbedded(markdown: string, ctx: EmbedContext): { texts: string[]; missing: string[] } {
   const out: string[] = [];
+  const missing = new Set<string>();
   // The shallowest depth each note was reached at: a note met first deep in
   // one branch (its own embeds cut off by the depth limit) is walked again
   // when another branch embeds it higher up, where its embeds do render.
@@ -199,14 +218,17 @@ export function embeddedTexts(markdown: string, ctx: EmbedContext): string[] {
       const before = shallowest.get(path);
       if (before !== undefined && before <= depth) continue;
       const t = ctx.read(path);
-      if (t === undefined) continue;
+      if (t === undefined) {
+        missing.add(path);
+        continue;
+      }
       if (before === undefined) out.push(t);
       shallowest.set(path, depth);
       visit(t, path, depth + 1);
     }
   };
   visit(markdown, ctx.hostPath, 0);
-  return out;
+  return { texts: out, missing: [...missing] };
 }
 
 // ── mdast helpers ────────────────────────────────────────────────────────

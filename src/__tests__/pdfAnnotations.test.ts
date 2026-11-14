@@ -365,3 +365,24 @@ describe("readAnnotationsNote (strict)", () => {
     expect(readAnnotationsNote("```json lumen-pdf-annotations\n{\"not\": \"a list\"}\n```")).toBeNull();
   });
 });
+
+describe("findAll, loose (W6.47: text OCR read off a scanned page)", () => {
+  const OCR = "= == המחקר בדק איךר משפיעה שעת השינה-על הריכוז בבוקר.\nמילאו שאלון קצר כל יום";
+  it("finds a phrase OCR misread by a letter, at the misread place", () => {
+    expect(findAll(OCR, "בדק איך משפיעה")).toEqual([]);
+    const [hit, ...rest] = findAll(OCR, "בדק איך משפיעה", { loose: true });
+    expect(rest).toEqual([]);
+    expect(OCR.slice(hit.start, hit.end)).toBe("בדק איךר משפיעה");
+  });
+  it("folds Hebrew final letters", () => {
+    const [hit] = findAll("ובדרכ עצרו ליד מעיין", "ובדרך עצרו", { loose: true });
+    expect(hit).toEqual({ start: 0, end: 10 });
+  });
+  it("keeps exact matches when there are any, and short queries exact", () => {
+    expect(findAll(OCR, "שאלון קצר", { loose: true })).toEqual(findAll(OCR, "שאלון קצר"));
+    expect(findAll(OCR, "כל יוס", { loose: true })).toEqual([]);
+  });
+  it("does not match unrelated text", () => {
+    expect(findAll(OCR, "תלמידי הכיתה יצאו", { loose: true })).toEqual([]);
+  });
+});

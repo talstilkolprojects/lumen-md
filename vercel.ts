@@ -33,6 +33,8 @@ export const ENDPOINT_ENV_VARS = [
   "VITE_SENTRY_DSN",
   // Lumen's model mirror (plan W4.14): the CORS proxy in front of the model releases.
   "VITE_MODEL_MIRROR_URL",
+  // Plan W4.19: the encrypted vault relay (sync-server/vault-relay.js).
+  "VITE_SYNC_RELAY_URL",
 ];
 /** WebSocket URLs (comma-separated) the app opens: collab signaling and the persistent collab server. */
 export const WEBSOCKET_ENV_VARS = ["VITE_WEBRTC_SIGNALING_URL", "VITE_YJS_WEBSOCKET_URL"];

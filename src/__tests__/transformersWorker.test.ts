@@ -20,7 +20,7 @@ vi.mock("@huggingface/transformers", () => ({ env, pipeline: pipelineFn }));
 const posted: unknown[] = [];
 vi.stubGlobal("postMessage", (m: unknown) => posted.push(m));
 
-import { handle, configureOrt, windowsOf } from "../ai/transformers.worker";
+import { handle, configureOrt, windowsOf, asrOptions } from "../ai/transformers.worker";
 
 describe("transformers worker", () => {
   beforeEach(() => {
@@ -95,6 +95,12 @@ describe("transformers worker", () => {
     expect(second.end).toBeCloseTo(40, 0);
   });
 
+  it("loads large-v3-turbo with its fp16 encoder on WebGPU: the fp32 one is over the mirror's 2 GiB (W6.33)", () => {
+    expect(asrOptions("webgpu", "onnx-community/whisper-large-v3-turbo")).toEqual({ device: "webgpu", dtype: { encoder_model: "fp16", decoder_model_merged: "q4" } });
+    expect(asrOptions("webgpu", "onnx-community/whisper-small").dtype).toEqual({ encoder_model: "fp32", decoder_model_merged: "q4" });
+    expect(asrOptions("wasm", "onnx-community/whisper-large-v3-turbo").dtype).toBe("q8");
+  });
+
   it("cuts windows at the quietest point near the boundary and keeps every sample", () => {
     const audio = new Float32Array(16_000 * 65).fill(0.5);
     // Silence at 29 s and at 58 s (inside the ±2 s slack of each 30 s target): the cuts land there.
@@ -113,7 +119,8 @@ describe("transformers worker", () => {
     embedCall.mockImplementationOnce(() => new Promise((r) => (release = () => r({ tolist: () => [[1]] }))));
     const running = handle({ id: 30, type: "embed", model: "m", device: "wasm", texts: ["a"] });
     const queued = handle({ id: 31, type: "embed", model: "m", device: "wasm", texts: ["b"] });
-    await new Promise((r) => setTimeout(r, 0));
+    // Job 30 is running once the model call has started; since W4.14 it first prefills the verified files (two dynamic imports).
+    await vi.waitFor(() => expect(release).not.toBeNull());
     await handle({ id: 32, type: "cancel", target: 30 });
     await handle({ id: 33, type: "cancel", target: 31 });
     release!();

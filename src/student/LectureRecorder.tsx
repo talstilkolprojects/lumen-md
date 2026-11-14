@@ -94,7 +94,7 @@ export function LectureRecorder({ onClose, deps }: { onClose: () => void; deps?:
   }
 
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby="lecture-title" data-testid="lecture-recorder" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "hsl(0 0% 0% / 0.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+    <div role="dialog" aria-modal="true" aria-labelledby="lecture-title" data-testid="lecture-recorder" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div style={{ background: "hsl(var(--bg))", color: "hsl(var(--fg))", border: "1px solid hsl(var(--border-strong))", borderRadius: 12, padding: 20, width: "min(440px, 100%)", display: "grid", gap: 12 }}>
         <h2 id="lecture-title" style={{ margin: 0, fontSize: 17 }}>{t("student.title")}</h2>
         <HelpButton topic="workspace/student-mode#the-lecture-note" />

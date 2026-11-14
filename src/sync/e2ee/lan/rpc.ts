@@ -12,7 +12,25 @@
  *   {id, op: "put", name, cond?} + bytes   → {etag} | {error: "precondition"}
  *   {id, op: "delete", name}               → {}
  *   {id, op: "list"}                       → {names}
+ *   {id, op: "svc.<name>", …} + bytes      → what the service answers, or {error: "unsupported"}
  *   host → peer, unasked: {ev: "changed"} after any write by someone else.
+ *   host → peer: {rq, op: "svc.<name>", …} + bytes → {rs, …}   a service on the peer (below)
+ *
+ * ── Services (plan W6.19) ──────────────────────────────────────────────────
+ * A feature on the host may answer its own requests on the same link
+ * (`LanHost.serve`), e.g. "send this dictation to my desktop". Services are
+ * for proven peers only: before the proof every "svc." request is refused
+ * like any other, so PRE_AUTH below is unchanged. A service runs beside the
+ * bucket's request queue, not in it, so a slow one never holds up a sync
+ * round; each service orders its own work. What a service carries is sealed
+ * by the feature with the vault's keys, on top of the link's own encryption.
+ *
+ * Services run the other way too (W6.19: a phone that hosts the vault, a
+ * desktop that joined it): the host may ask a service on a peer
+ * (`LanHost.peerLinks`, requests numbered `rq`, answers `rs`), but only a
+ * peer that proved itself, and the peer answers only once it checked the
+ * host's own proof (`authenticate`). Before that, or for an op it doesn't
+ * serve, it refuses. Bucket ops never go host → peer.
  *
  * ── Who may do what ────────────────────────────────────────────────────────
  * Before the proof, a peer may read only what a passphrase unlock reads: the
@@ -27,6 +45,15 @@
  * so only a device that knows the passphrase can write, list or delete, and
  * the peer knows it reached the vault's own host. The role label keeps one
  * side's proof from being reflected as the other's.
+ *
+ * Both proofs are also bound to the channel (review 28, L1): the data each
+ * side signs ends with the two DTLS fingerprints of the connection it is
+ * actually on, host's first, `|fp=<host>,<peer>`. Once the pairing codes
+ * travel over the network (mDNS, ./discovery.ts), a device in the middle
+ * holds two different DTLS connections, so the fingerprints the host sees
+ * and the ones the peer sees differ, and the proof fails even though each
+ * half was relayed intact. `comparisonCode` turns the same pair into the
+ * 8-digit code both screens show before the first sync.
  */
 
 import { fromB64u, randomBytes, toB64u, utf8 } from "../bytes";
@@ -84,7 +111,36 @@ export const LAN_PROTOCOL = 1;
 export const REQUEST_TIMEOUT_MS = 15_000;
 const MAX_NAME = 256;
 
-const proofData = (role: "host" | "peer", theirs: string, mine: string) => utf8(`lumen-lan:${LAN_PROTOCOL}|${role}|${theirs}|${mine}`);
+/** The DTLS fingerprints of a link: this device's and the other one's (./link.ts). Null where a channel has none (in-memory tests). */
+export interface LinkFingerprints {
+  local: string;
+  remote: string;
+}
+
+/** The channel as both sides name it: the host's fingerprint, then the peer's ("-" without fingerprints). */
+export function channelBinding(role: "host" | "peer", fp: LinkFingerprints | null | undefined): string {
+  if (!fp) return "-";
+  return role === "host" ? `${fp.local},${fp.remote}` : `${fp.remote},${fp.local}`;
+}
+
+/** What one side signs: its role, both nonces, and the channel it is on. */
+export const proofData = (role: "host" | "peer", theirs: string, mine: string, binding: string) => utf8(`lumen-lan:${LAN_PROTOCOL}|${role}|${theirs}|${mine}|fp=${binding}`);
+
+/**
+ * The code both screens show (review 28, L1): 8 digits from the channel's
+ * two fingerprints, the same pair the proof is bound to. It exists before
+ * the vault is unlocked here (the joining device has no key yet), so the
+ * user compares it before the first sync. Eight digits: a device in the
+ * middle would have to make two connections agree on it by generating
+ * certificates within the pairing's timeout, about 10^8 tries.
+ */
+export async function comparisonCode(binding: string): Promise<string | null> {
+  if (binding === "-") return null;
+  const d = new Uint8Array(await crypto.subtle.digest("SHA-256", utf8(`lumen-lan:${LAN_PROTOCOL}|compare|${binding}`)));
+  const n = (((d[0] << 24) | (d[1] << 16) | (d[2] << 8) | d[3]) >>> 0) % 100_000_000;
+  const s = String(n).padStart(8, "0");
+  return `${s.slice(0, 4)} ${s.slice(4)}`;
+}
 
 export class LanAuthError extends Error {
   constructor(message = "The other device is not part of this vault") {
@@ -119,6 +175,8 @@ export interface LanPeerInfo {
   address: string | null;
   authed: boolean;
   connectedAt: number;
+  /** The comparison code of this peer's channel (review 28, L1), once computed; null without fingerprints. */
+  code?: string | null;
 }
 
 export interface LanHostOptions {
@@ -128,11 +186,41 @@ export interface LanHostOptions {
   keys: () => VaultKeys | null;
 }
 
+/** A request to a service on the host, from a proven peer. */
+export interface LanServiceRequest {
+  header: Record<string, unknown>;
+  payload: Uint8Array;
+  peer: LanPeerInfo;
+  /** The vault's keys on the host (the peer proved it holds the same). */
+  keys: VaultKeys;
+}
+
+export interface LanServiceReply {
+  header: Record<string, unknown>;
+  payload?: Uint8Array;
+}
+
+export type LanService = (req: LanServiceRequest) => Promise<LanServiceReply>;
+
+/** Service ops are namespaced so they can never shadow a bucket op. */
+export const SERVICE_PREFIX = "svc.";
+
+/** A proven peer, as seen from the host: ask a service on it (host → peer, W6.19). */
+export interface LanPeerLink {
+  info: LanPeerInfo;
+  /** Rejects with LanServiceError (or LanAuthError, LanHostLockedError) on a refusal, ProviderUnavailableError on a timeout. */
+  call(op: string, header: Record<string, unknown>, payload?: Uint8Array, opts?: { timeoutMs?: number }): Promise<Message>;
+}
+
 export interface LanHost {
+  /** Answer `op` ("svc.…") for proven peers. Returns the function that stops serving it. */
+  serve(op: string, service: LanService): () => void;
+  /** The peers that proved themselves, each with a way to ask its services. */
+  peerLinks(): LanPeerLink[];
   /** The bucket for this device's own sync engine: its writes tell the peers. */
   readonly provider: SyncProvider;
   /** Serve one peer over `channel`. Returns the detach function. */
-  attach(channel: LanChannel, info?: { address?: string | null }): () => void;
+  attach(channel: LanChannel, info?: { address?: string | null; fingerprints?: LinkFingerprints | null }): () => void;
   peers(): LanPeerInfo[];
   /** Called after a peer wrote (this device should sync). */
   onPeerWrite(fn: () => void): () => void;
@@ -147,10 +235,26 @@ interface Conn {
   nonce: string;
   authed: boolean;
   info: LanPeerInfo;
+  /** Host → peer service requests waiting for their answer, by `rq`. */
+  asked: Map<number, Waiting>;
+  nextRq: number;
+  /** The channel this peer is on, as both proofs name it. */
+  binding: string;
+}
+
+type Waiting = { resolve: (m: Message) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> };
+
+/** A service answer → the message, or the error it names. */
+function serviceResult(r: Message): Message {
+  if (r.header.error === "auth") throw new LanAuthError();
+  if (r.header.error === "locked") throw new LanHostLockedError();
+  if (r.header.error !== undefined) throw new LanServiceError(String(r.header.error));
+  return r;
 }
 
 export function lanHost(opts: LanHostOptions): LanHost {
   const conns = new Set<Conn>();
+  const services = new Map<string, LanService>();
   const writeListeners = new Set<() => void>();
   const peerListeners = new Set<() => void>();
   const inner = opts.bucket;
@@ -163,6 +267,20 @@ export function lanHost(opts: LanHostOptions): LanHost {
     for (const c of conns) if (c !== except && c.authed) c.send({ ev: "changed" });
     if (except) for (const l of [...writeListeners]) l();
   };
+
+  /** A "svc." request: proven peers only, answered by the service registered for it. */
+  async function handleService(c: Conn, { header, payload }: Message): Promise<void> {
+    const id = header.id;
+    const reply = (h: Record<string, unknown>, p?: Uint8Array) => c.send({ ...h, id }, p);
+    if (!c.authed) return reply({ error: "auth" });
+    const keys = opts.keys();
+    if (!keys) return reply({ error: "locked" });
+    const service = services.get(String(header.op));
+    if (!service) return reply({ error: "unsupported" });
+    const r = await service({ header, payload, peer: { ...c.info }, keys });
+    // Never `rq`: that would read as a host → peer request on the other side.
+    return reply({ ...r.header, rq: undefined }, r.payload);
+  }
 
   async function handle(c: Conn, { header, payload }: Message): Promise<void> {
     const id = header.id;
@@ -179,7 +297,7 @@ export function lanHost(opts: LanHostOptions): LanHost {
         tag = new Uint8Array();
       }
       const theirNonce = typeof header.nonce === "string" ? header.nonce : "";
-      if (theirNonce.length < 16 || !(await verifyHmac(keys.pairing, tag, proofData("peer", c.nonce, theirNonce)))) {
+      if (theirNonce.length < 16 || !(await verifyHmac(keys.pairing, tag, proofData("peer", c.nonce, theirNonce, c.binding)))) {
         reply({ error: "auth" });
         // After the answer has left: the peer learns why before the link drops.
         setTimeout(() => c.channel.close(), 100);
@@ -188,7 +306,7 @@ export function lanHost(opts: LanHostOptions): LanHost {
       c.authed = true;
       c.info.authed = true;
       peersChanged();
-      return reply({ tag: toB64u(await hmac(keys.pairing, proofData("host", theirNonce, c.nonce))) });
+      return reply({ tag: toB64u(await hmac(keys.pairing, proofData("host", theirNonce, c.nonce, c.binding))) });
     }
     if (op === "get") {
       if (!isName(header.name)) return reply({ error: "bad-request" });
@@ -244,13 +362,37 @@ export function lanHost(opts: LanHostOptions): LanHost {
 
   return {
     provider,
+    serve(op, service) {
+      if (!op.startsWith(SERVICE_PREFIX)) throw new Error(`a LAN service op starts with "${SERVICE_PREFIX}"`);
+      services.set(op, service);
+      return () => {
+        if (services.get(op) === service) services.delete(op);
+      };
+    },
     attach(channel, info = {}) {
       const m = messenger(channel);
-      const c: Conn = { send: m.send, channel, nonce: toB64u(randomBytes(16)), authed: false, info: { address: info.address ?? null, authed: false, connectedAt: Date.now() } };
+      const c: Conn = { send: m.send, channel, nonce: toB64u(randomBytes(16)), authed: false, info: { address: info.address ?? null, authed: false, connectedAt: Date.now() }, asked: new Map(), nextRq: 1, binding: channelBinding("host", info.fingerprints) };
       conns.add(c);
+      void comparisonCode(c.binding).then((code) => {
+        c.info.code = code;
+        if (conns.has(c)) peersChanged();
+      });
       // One request at a time per peer, in order (a sync round is sequential anyway).
       let chain: Promise<void> = Promise.resolve();
       const off = m.onMessage((msg) => {
+        // An answer to a service this host asked on the peer: only one it is waiting for.
+        if (msg.header.rs !== undefined) {
+          const w = typeof msg.header.rs === "number" ? c.asked.get(msg.header.rs) : undefined;
+          if (!w) return;
+          c.asked.delete(msg.header.rs as number);
+          clearTimeout(w.timer);
+          w.resolve(msg);
+          return;
+        }
+        if (typeof msg.header.op === "string" && msg.header.op.startsWith(SERVICE_PREFIX)) {
+          void handleService(c, msg).catch(() => c.send({ id: msg.header.id, error: "unavailable" }));
+          return;
+        }
         chain = chain.then(() =>
           handle(c, msg).catch(() => {
             c.send({ id: msg.header.id, error: "unavailable" });
@@ -259,6 +401,11 @@ export function lanHost(opts: LanHostOptions): LanHost {
       });
       const detach = () => {
         off();
+        for (const w of c.asked.values()) {
+          clearTimeout(w.timer);
+          w.reject(new ProviderUnavailableError("The link to the other device closed"));
+        }
+        c.asked.clear();
         if (conns.delete(c)) peersChanged();
       };
       channel.onClose(detach);
@@ -269,6 +416,26 @@ export function lanHost(opts: LanHostOptions): LanHost {
       };
     },
     peers: () => [...conns].map((c) => ({ ...c.info })),
+    peerLinks: () =>
+      [...conns]
+        .filter((c) => c.authed && !c.channel.closed)
+        .map((c) => ({
+          info: { ...c.info },
+          call(op, header, payload, o = {}) {
+            if (!op.startsWith(SERVICE_PREFIX)) return Promise.reject(new Error(`a LAN service op starts with "${SERVICE_PREFIX}"`));
+            return new Promise<Message>((resolve, reject) => {
+              if (c.channel.closed || !conns.has(c)) return reject(new ProviderUnavailableError("Not connected to the other device"));
+              const rq = c.nextRq++;
+              const timer = setTimeout(() => {
+                c.asked.delete(rq);
+                reject(new ProviderUnavailableError("The other device did not answer"));
+              }, o.timeoutMs ?? REQUEST_TIMEOUT_MS);
+              c.asked.set(rq, { resolve, reject, timer });
+              // `rq` and `op` last: a header can't pose as another request or a bucket op.
+              c.send({ ...header, id: undefined, rs: undefined, rq, op }, payload);
+            }).then(serviceResult);
+          },
+        })),
     onPeerWrite(fn) {
       writeListeners.add(fn);
       return () => writeListeners.delete(fn);
@@ -286,25 +453,58 @@ export function lanHost(opts: LanHostOptions): LanHost {
 
 /* ─── A peer: the host's bucket as a SyncProvider ───────────────────────── */
 
+/** A host service refused or could not answer ("unsupported": the host has no such service). */
+export class LanServiceError extends ProviderUnavailableError {
+  constructor(readonly code: string) {
+    super(`The hosting device could not answer (${code})`);
+    this.name = "LanServiceError";
+  }
+}
+
 export interface RemoteLanProvider extends SyncProvider {
   /** Prove this device belongs to the vault, and check the host does. Needed before anything but the header. */
   authenticate(keys: VaultKeys): Promise<void>;
+  /** Ask a service on the host ("svc.…"); after `authenticate`. Rejects with LanServiceError (or LanAuthError) on a refusal. */
+  service(op: string, header: Record<string, unknown>, payload?: Uint8Array, opts?: { timeoutMs?: number }): Promise<Message>;
+  /** Answer `op` ("svc.…") for the host, once `authenticate` checked the host's proof (W6.19). Returns the function that stops serving it. */
+  serve(op: string, service: LanService): () => void;
   /** Called when the host says the bucket changed. */
   onChanged(fn: () => void): () => void;
   readonly closed: boolean;
   close(): void;
 }
 
-export function remoteLanProvider(channel: LanChannel, opts: { timeoutMs?: number } = {}): RemoteLanProvider {
+export function remoteLanProvider(channel: LanChannel, opts: { timeoutMs?: number; address?: string | null; fingerprints?: LinkFingerprints | null } = {}): RemoteLanProvider {
+  const binding = channelBinding("peer", opts.fingerprints);
   const m = messenger(channel);
   const timeoutMs = opts.timeoutMs ?? REQUEST_TIMEOUT_MS;
   let nextId = 1;
-  const pending = new Map<number, { resolve: (m: Message) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }>();
+  const pending = new Map<number, Waiting>();
   const changeListeners = new Set<() => void>();
+  const services = new Map<string, LanService>();
+  /** The keys this device proved itself with, once the host's own proof checked out: until then, no service runs. */
+  let provenKeys: VaultKeys | null = null;
+  const hostInfo: LanPeerInfo = { address: opts.address ?? null, authed: false, connectedAt: Date.now() };
+
+  /** A service request from the host (host → peer): proven hosts only, answered by the service registered for it. */
+  async function answer({ header, payload }: Message): Promise<void> {
+    const rq = header.rq;
+    const reply = (h: Record<string, unknown>, p?: Uint8Array) => m.send({ ...h, rs: rq }, p);
+    if (typeof rq !== "number") return;
+    if (!provenKeys) return reply({ error: "auth" });
+    const service = typeof header.op === "string" && header.op.startsWith(SERVICE_PREFIX) ? services.get(header.op) : undefined;
+    if (!service) return reply({ error: "unsupported" });
+    const r = await service({ header, payload, peer: { ...hostInfo }, keys: provenKeys });
+    return reply(r.header, r.payload);
+  }
 
   m.onMessage((msg) => {
     if (msg.header.ev === "changed") {
       for (const l of [...changeListeners]) l();
+      return;
+    }
+    if (msg.header.rq !== undefined) {
+      void answer(msg).catch(() => m.send({ rs: msg.header.rq, error: "unavailable" }));
       return;
     }
     const id = msg.header.id;
@@ -322,14 +522,14 @@ export function remoteLanProvider(channel: LanChannel, opts: { timeoutMs?: numbe
     pending.clear();
   });
 
-  const request = (header: Record<string, unknown>, payload?: Uint8Array): Promise<Message> =>
+  const request = (header: Record<string, unknown>, payload?: Uint8Array, waitMs = timeoutMs): Promise<Message> =>
     new Promise((resolve, reject) => {
       if (channel.closed) return reject(new ProviderUnavailableError("Not connected to the hosting device"));
       const id = nextId++;
       const timer = setTimeout(() => {
         pending.delete(id);
         reject(new ProviderUnavailableError("The hosting device did not answer"));
-      }, timeoutMs);
+      }, waitMs);
       pending.set(id, { resolve, reject, timer });
       m.send({ ...header, id }, payload);
     });
@@ -377,7 +577,7 @@ export function remoteLanProvider(channel: LanChannel, opts: { timeoutMs?: numbe
       const challenge = await call({ op: "challenge" });
       const hostNonce = String(challenge.header.nonce ?? "");
       const nonce = toB64u(randomBytes(16));
-      const tag = await hmac(keys.pairing, proofData("peer", hostNonce, nonce));
+      const tag = await hmac(keys.pairing, proofData("peer", hostNonce, nonce, binding));
       const r = await call({ op: "auth", nonce, tag: toB64u(tag) });
       let hostTag: Uint8Array;
       try {
@@ -385,10 +585,23 @@ export function remoteLanProvider(channel: LanChannel, opts: { timeoutMs?: numbe
       } catch {
         hostTag = new Uint8Array();
       }
-      if (!(await verifyHmac(keys.pairing, hostTag, proofData("host", nonce, hostNonce)))) {
+      if (!(await verifyHmac(keys.pairing, hostTag, proofData("host", nonce, hostNonce, binding)))) {
         channel.close();
         throw new LanAuthError("The hosting device is not part of this vault");
       }
+      provenKeys = keys;
+      hostInfo.authed = true;
+    },
+    async service(op, header, payload, o = {}) {
+      if (!op.startsWith(SERVICE_PREFIX)) throw new Error(`a LAN service op starts with "${SERVICE_PREFIX}"`);
+      return serviceResult(await request({ ...header, op }, payload, o.timeoutMs ?? timeoutMs));
+    },
+    serve(op, service) {
+      if (!op.startsWith(SERVICE_PREFIX)) throw new Error(`a LAN service op starts with "${SERVICE_PREFIX}"`);
+      services.set(op, service);
+      return () => {
+        if (services.get(op) === service) services.delete(op);
+      };
     },
     onChanged(fn) {
       changeListeners.add(fn);

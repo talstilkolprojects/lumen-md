@@ -14,6 +14,20 @@ for (const line of toml.split('\n')) {
   const h = line.match(/^\[(.+)\]\s*$/); if (h) { sect = h[1]; continue; }
   if (/(^|\.)(build-)?dependencies$/.test(sect) && !/dev-dependencies/.test(sect)) { const m = line.match(/^([A-Za-z0-9_-]+)\s*=/); if (m) want.add(m[1]); }
 }
+// cargo's TOML parser refuses a key twice in one table and a [table] header twice
+// ("error: duplicate key") before it resolves anything; rustc against stubs never sees it.
+const dup = [];
+{
+  const headers = new Map(); const keys = new Map(); let table = '';
+  toml.split('\n').forEach((line, i) => {
+    const h = line.match(/^\[([^\[\]]+)\]\s*(#.*)?$/);
+    if (h) { table = h[1].trim(); if (headers.has(table)) dup.push(`Cargo.toml:${i + 1}: table [${table}] again (first at line ${headers.get(table)})`); else headers.set(table, i + 1); return; }
+    if (/^\[\[/.test(line)) { table = ''; return; }
+    const k = line.match(/^([A-Za-z0-9_-]+|"[^"]+")\s*=/);
+    if (k && table) { const id = `${table}\u0000${k[1].replace(/"/g, '')}`; if (keys.has(id)) dup.push(`Cargo.toml:${i + 1}: ${k[1]} again in [${table}] (first at line ${keys.get(id)})`); else keys.set(id, i + 1); }
+  });
+}
+if (dup.length) { console.log('FAIL Cargo.toml: duplicate key (cargo refuses the manifest)'); dup.forEach(e => console.log('     ' + e)); process.exit(1); }
 const lock = parse(path.join(dir, 'Cargo.lock'));
 const pkg = lock.pk.find(p => p.name === root);
 const have = new Set(pkg.deps.map(d => d.split(' ')[0]));

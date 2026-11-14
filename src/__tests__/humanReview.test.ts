@@ -10,7 +10,9 @@ import { join } from "node:path";
 import {
   codeownersMatch,
   HUMAN_REVIEW_LABEL,
+  codeownersSections,
   humanReviewVerdict,
+  independentPatterns,
   parseCodeowners,
   sensitiveChanges,
   // @ts-expect-error -- plain .mjs script, no types
@@ -124,5 +126,49 @@ describe("the verdict", () => {
     const two = humanReviewVerdict(sensitive, pr({ reviews }));
     expect(two.lines.join("\n")).toContain("@maintainer2");
     expect(two.lines.join("\n")).not.toContain("@maintainer3");
+  });
+});
+
+describe("cryptography needs an independent reviewer (W6.13)", () => {
+  const independent = independentPatterns(OWNERS);
+  const crypto = [{ file: "src/sync/e2ee/kdf.ts", pattern: "/src/sync/e2ee/" }];
+  const csp = [{ file: "public/_headers", pattern: "/public/_headers" }];
+  const pr = (actor: string, author = "claude-agent") => ({
+    number: 8,
+    labels: [HUMAN_REVIEW_LABEL],
+    events: [{ event: "labeled", label: HUMAN_REVIEW_LABEL, created_at: "2026-11-12T10:00:00Z", actor }],
+    reviews: [],
+    author,
+    headSha: "abc",
+    headDate: "2026-11-12T09:00:00Z",
+  });
+  const rule = { independent, owner: "talstilkol" };
+
+  it("reads the Cryptography section of the repository's CODEOWNERS, and only it", () => {
+    expect(independent.has("/src/sync/e2ee/")).toBe(true);
+    expect(independent.has("/src/plugins/signing.ts")).toBe(true);
+    expect(independent.has("/public/_headers")).toBe(false);
+    expect(independent.has("/src/storage/vault/")).toBe(false);
+    const sections = codeownersSections(OWNERS) as { pattern: string; section: string }[];
+    expect(sections.find((e) => e.pattern === "/src/sync/e2ee/")?.section).toMatch(/^Cryptography/);
+  });
+
+  it("fails a crypto change labelled by the owner or the author, passes one labelled by someone else", () => {
+    const byOwner = humanReviewVerdict(crypto, pr("talstilkol"), HUMAN_REVIEW_LABEL, rule);
+    expect(byOwner.status).toBe("fail");
+    expect(byOwner.lines[0]).toMatch(/repository owner \(@talstilkol\)/);
+    const byAuthor = humanReviewVerdict(crypto, pr("dev1", "dev1"), HUMAN_REVIEW_LABEL, rule);
+    expect(byAuthor.status).toBe("fail");
+    expect(byAuthor.lines[0]).toMatch(/author \(@dev1\)/);
+    expect(humanReviewVerdict(crypto, pr("maintainer2"), HUMAN_REVIEW_LABEL, rule).status).toBe("ok");
+  });
+
+  it("leaves the other sensitive areas to any person, the owner included", () => {
+    expect(humanReviewVerdict(csp, pr("talstilkol"), HUMAN_REVIEW_LABEL, rule).status).toBe("ok");
+  });
+
+  it("an unknown labelling account does not count for cryptography", () => {
+    const p = { ...pr("x"), events: [{ event: "labeled", label: HUMAN_REVIEW_LABEL, created_at: "2026-11-12T10:00:00Z", actor: "" }] };
+    expect(humanReviewVerdict(crypto, p, HUMAN_REVIEW_LABEL, rule).status).toBe("fail");
   });
 });

@@ -2,6 +2,10 @@
 node_modules
 node_modules_bad/
 dist/
+dist-registry/
+dist-legal-packet/
+# The Cloudflare rebuild's manifest (plan W7.23, scripts/supply-chain/cf-build.sh)
+/.repro-out/
 
 # Build
 tsconfig.tsbuildinfo
@@ -124,3 +128,13 @@ __pycache__/
 sr-results/
 # npm run ci:docker output (plan W4.27)
 ci-docker-out/
+# The Safari run on BrowserStack (scripts/safari/run.mjs, plan W6.6): its build, config copy and SDK file
+.factory/
+/browserstack.yml
+# …and the responsiveness baselines (plan W6.45): one committed run per environment, the gate's reference
+!/reports/perf/
+/reports/perf/*
+!/reports/perf/baselines/
+# Buildkite job output (plan W7.21): shard plans, blob reports, receipts — build artifacts
+/ci-out/
+/.vitest/

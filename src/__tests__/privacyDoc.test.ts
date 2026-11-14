@@ -40,6 +40,13 @@ const RECORDERS: Record<string, (src: string) => string[]> = {
   "src/ai/tts.ts": () => [],
   // Jewish sources (plan W5.1): ledgerFetch with the ledger's own sefaria.org rule.
   "src/sources/sefaria/app.ts": () => [],
+  // Calendar connections (plan W7.20): CalDAV and ICS, each with its own reason.
+  "src/calendar/config.ts": (src) => [...src.matchAll(/\? "([^"]+)" : "([^"]+)"/g)].flatMap((m) => [m[1], m[2]]),
+  // Standard.site publishing (W7.19): its fixed reason (the PDS and plc.directory rules are the ledger's).
+  "src/publish/standardSite.ts": (src) => [/export const ATPROTO_REASON = "([^"]+)"/.exec(src)![1]],
+  // Open sources (W7.24): each host under its source's reason; the gate itself records its callers' reasons.
+  "src/sources/open/app.ts": (src) => [...src.matchAll(/reason: "([^"]+)"/g)].map((m) => m[1]),
+  "src/sources/open/gate.ts": () => [],
 };
 
 function walk(dir: string, out: string[] = []): string[] {

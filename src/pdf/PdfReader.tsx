@@ -9,41 +9,37 @@
  *   page and flashes the highlight.
  * - Search runs over the text of every page (case, spacing and niqqud
  *   insensitive). Scanned pages (no text layer) can be read with the
- *   on-device OCR the importer uses; the recognised text is searchable and
- *   can be highlighted too.
+ *   on-device OCR the importer uses; W6.47: the recognised lines become a
+ *   hidden text layer over the page image (./ocrPages.ts), so a scanned page
+ *   is searched, selected and highlighted where its words are, and what OCR
+ *   found is kept for the next open.
+ * - W6.47: reading mode (the pages alone, fitted to the width), and the
+ *   place you were in each PDF, kept in the vault so it syncs to your other
+ *   devices (./readingPosition.ts).
+ * - W6.47: "Send to Zotero" — highlights back to the PDF's Zotero item, after
+ *   the user confirms (../citations/zoteroAnnotations.ts).
  *
  * Page geometry is physical (left/top of the PDF), so the page boxes are
  * `dir="ltr"`; each text span keeps the direction pdf.js gives it, which is
  * what makes selecting and highlighting Hebrew lines right in RTL.
  */
 
-import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./strings";
 import { t } from "../i18n";
 import { showAiToast } from "../ui/AiToast";
 import { ErrorBoundary } from "../ui/ErrorBoundary";
-import {
-  anchorAnnotation,
-  companionNotePath,
-  createPdfAnnotation,
-  describeAnnotation,
-  findAll,
-  nextMatchIndex,
-  readAnnotationsNote,
-  parsePdfFragment,
-  shortId,
-  unionRect,
-  upsertAnnotationsNote,
-  withNote,
-  type PageRect,
-  type PdfAnnotation,
-} from "./annotations";
+import { companionNotePath, createPdfAnnotation, describeAnnotation, findAll, nextMatchIndex, readAnnotationsNote, parsePdfFragment, shortId, unionRect, upsertAnnotationsNote, withNote, type PdfAnnotation } from "./annotations";
 import { layerText, offsetsToRange, pageTextFromItems, rangePageRects, rangeToOffsets } from "./textMap";
-import { openPdf, loadPdfjs, type PdfDocument, type PdfRenderTask, type PdfTextLayer } from "./pdfjs";
+import { openPdf, type PdfDocument } from "./pdfjs";
 import "./PdfReader.css";
 import { HelpButton } from "../ui/HelpButton";
-import { explainError } from "../lib/userError";
+import { explainError, UserFacingError } from "../lib/userError";
 import { EmptyState, learnHow } from "../ui/EmptyState";
+import { PdfPageView } from "./PdfPageView";
+import type { PageSize } from "./PdfPageView";
+import type { OcrPage } from "./ocrPages";
+import { positionAt, scrollTopFor, type PageBox, type PositionsIO } from "./readingPosition";
 
 /** "Ask this PDF" (plan 6.8): its own chunk, loaded on the first click of Ask. */
 const PdfChatPanel = lazy(() => import("./PdfChatPanel").then((m) => ({ default: m.PdfChatPanel })));
@@ -94,11 +90,6 @@ export function PdfReaderOverlay(props: Omit<Props, "onOpenNotes">) {
   );
 }
 
-interface PageSize {
-  w: number;
-  h: number;
-}
-
 const MIN_SCALE = 0.5;
 const MAX_SCALE = 4;
 /** Pages kept rendered beyond the viewport, in viewport heights. */
@@ -134,7 +125,14 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
   const [annotations, setAnnotations] = useState<PdfAnnotation[]>([]);
   const [flash, setFlash] = useState<{ id: string; seq: number } | null>(null);
   const [hasSelection, setHasSelection] = useState(false);
-  const [ocrTexts, setOcrTexts] = useState<Record<number, string>>({});
+  const [ocrPages, setOcrPages] = useState<Record<number, OcrPage>>({});
+  /** SHA-256 of the PDF: what OCR found is kept under it (./ocrPages.ts). */
+  const fingerprint = useRef<string | null>(null);
+  const [ocrAllBusy, setOcrAllBusy] = useState(false);
+  /** W6.47: the pages alone, fitted to the width. */
+  const [reading, setReading] = useState(false);
+  /** The saved place to return to once the pages are laid out (null: none, or already used). */
+  const restoreAt = useRef<{ page: number; offset: number } | null>(null);
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<{ page: number; occurrence: number }[]>([]);
   const [hitIndex, setHitIndex] = useState(-1);
@@ -187,7 +185,9 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
     setVisible(new Set([1]));
     setAnnotations([]);
     setFlash(null);
-    setOcrTexts({});
+    setOcrPages({});
+    fingerprint.current = null;
+    restoreAt.current = null;
     setQuery("");
     setHits([]);
     setHitIndex(-1);
@@ -197,7 +197,12 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
     (async () => {
       const ws = await import("../storage/workspace");
       const blob = await ws.readWorkspaceBlob(path);
-      const opened = await openPdf(new Uint8Array(await blob.arrayBuffer()));
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      // W6.47: what OCR found in this PDF before, and where the user was in it.
+      const [{ loadOcrPages, pdfFingerprint }, { loadPosition }] = await Promise.all([import("./ocrPages"), import("./readingPosition")]);
+      const fp = await pdfFingerprint(bytes).catch(() => null);
+      const [cachedOcr, savedPos] = await Promise.all([fp ? loadOcrPages(fp) : Promise.resolve({}), loadPosition(positionsIO, path).catch(() => null)]);
+      const opened = await openPdf(bytes);
       closeDoc = opened.close;
       if (cancelled) {
         void opened.close();
@@ -228,8 +233,11 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
       const saved = readAnnotationsNote(note);
       // A highlights block that can't be read whole: open nothing for editing,
       // or the next save would replace it with only the new highlights.
-      if (!saved) throw new Error(t("pdf.notesUnreadable", { name: baseName(notePath) }));
+      if (!saved) throw new UserFacingError(t("pdf.notesUnreadable", { name: baseName(notePath) }));
       setAnnotations(saved.map((a) => (a.target.source === path ? a : { ...a, target: { ...a.target, source: path } })));
+      fingerprint.current = fp;
+      setOcrPages(cachedOcr);
+      restoreAt.current = savedPos && savedPos.page <= all.length ? { page: savedPos.page, offset: savedPos.offset } : null;
       setDoc(pdf);
     })().catch((e: unknown) => {
       if (!cancelled) setError(explainError(e));
@@ -262,9 +270,21 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
       setFlash({ id: f.highlight, seq: openSeq });
     }
     if (page) {
+      restoreAt.current = null;
       const target = Math.min(Math.max(1, page), sizes.length);
       // After the page boxes are laid out at their size.
       requestAnimationFrame(() => goToPage(target));
+    } else if (restoreAt.current) {
+      // W6.47: no page in the link — back to where the user was (on any device).
+      const at = restoreAt.current;
+      restoreAt.current = null;
+      requestAnimationFrame(() => {
+        const box = scrollRef.current;
+        if (!box) return;
+        box.scrollTop = scrollTopFor(pageBoxes(pageEls.current), at);
+        setVisible((v) => (v.has(at.page) ? v : new Set([...v, at.page])));
+        setCurrent(at.page);
+      });
     }
   }, [doc, sizes, fragment, openSeq, goToPage]);
 
@@ -298,7 +318,23 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
     let page = 1;
     for (const [n, el] of pageEls.current) if (el.offsetTop <= mark && n > page) page = n;
     setCurrent(page);
-  }, []);
+    // W6.47: remember the place a moment after scrolling stops.
+    if (savePosTimer.current) clearTimeout(savePosTimer.current);
+    savePosTimer.current = setTimeout(() => {
+      savePosTimer.current = null;
+      const b = scrollRef.current;
+      if (!b) return;
+      const pos = positionAt(pageBoxes(pageEls.current), b.scrollTop);
+      void import("./readingPosition").then(({ savePosition }) => savePosition(positionsIO, path, pos)).catch(() => undefined);
+    }, POSITION_SAVE_MS);
+  }, [path]);
+  const savePosTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (savePosTimer.current) clearTimeout(savePosTimer.current);
+    },
+    [],
+  );
 
   // Selection inside a page's text: enables Highlight.
   useEffect(() => {
@@ -334,7 +370,7 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
         } catch (e) {
           if (!isMissing(e)) throw e;
         }
-        if (existing !== null && !readAnnotationsNote(existing)) throw new Error(t("pdf.notesUnreadable", { name: baseName(notePath) }));
+        if (existing !== null && !readAnnotationsNote(existing)) throw new UserFacingError(t("pdf.notesUnreadable", { name: baseName(notePath) }));
         const labels = {
           title: t("pdf.noteTitle", { name: baseName(path) }),
           page: (n: number) => t("pdf.notePage", { n }),
@@ -386,7 +422,8 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
     const text = layerText(layer);
     if (!text.slice(off.start, off.end).trim()) return;
     const exactRange = offsetsToRange(layer, off.start, off.end);
-    const onPage = layer.dataset.pdfText === "page";
+    // The page's own text, or W6.47's OCR layer laid over the page image: both in page coordinates.
+    const onPage = layer.dataset.pdfText === "page" || layer.dataset.pdfText === "ocr-layer";
     const rect = onPage && exactRange ? unionRect(rangePageRects(exactRange, pageEl.getBoundingClientRect(), scale)) : null;
     const a = createPdfAnnotation({ id: newUuid(), source: path, page, text, start: off.start, end: off.end, rect });
     sel.removeAllRanges();
@@ -408,13 +445,14 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
       if (step === 0 || !list.length) {
         const found: { page: number; occurrence: number }[] = [];
         for (let p = 1; p <= doc.numPages; p++) {
-          let text = ocrTexts[p] ?? pageTexts.current.get(p);
+          let text = ocrPages[p]?.text ?? pageTexts.current.get(p);
           if (text === undefined) {
             text = pageTextFromItems((await (await doc.getPage(p)).getTextContent()).items);
             pageTexts.current.set(p, text);
             if (seq !== searchSeq.current) return;
           }
-          findAll(text, q).forEach((_, occurrence) => found.push({ page: p, occurrence }));
+          // A scanned page's text is what OCR read: matched loosely (W6.47), the same way when the hit is drawn below.
+          findAll(text, q, { loose: !!ocrPages[p] }).forEach((_, occurrence) => found.push({ page: p, occurrence }));
         }
         list = found;
         setHits(found);
@@ -428,7 +466,7 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
       setHitIndex(i);
       goToPage(list[i].page);
     },
-    [doc, hits, hitIndex, current, ocrTexts, goToPage],
+    [doc, hits, hitIndex, current, ocrPages, goToPage],
   );
 
   const zoom = useCallback(
@@ -542,10 +580,54 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
     pageTexts.current.set(page, text);
   }, []);
 
-  const onOcr = useCallback((page: number, text: string) => {
-    setOcrTexts((prev) => ({ ...prev, [page]: text }));
+  const onOcr = useCallback((page: number, value: OcrPage) => {
+    setOcrPages((prev) => ({ ...prev, [page]: value }));
     setHits([]);
+    const fp = fingerprint.current;
+    if (fp) void import("./ocrPages").then(({ saveOcrPage }) => saveOcrPage(fp, page, value));
   }, []);
+
+  /** W6.47: read every scanned page (no text of its own) with the on-device OCR, one after another. */
+  const ocrAll = useCallback(async () => {
+    if (!doc || ocrAllBusy) return;
+    setOcrAllBusy(true);
+    try {
+      const { ocrPdfPage } = await import("./ocrPages");
+      let done = 0;
+      for (let p = 1; p <= doc.numPages; p++) {
+        if (ocrPages[p]) continue;
+        let text = pageTexts.current.get(p);
+        if (text === undefined) {
+          text = pageTextFromItems((await (await doc.getPage(p)).getTextContent()).items);
+          pageTexts.current.set(p, text);
+        }
+        if (text.trim()) continue;
+        showAiToast(t("pdf.ocr.allRunning", { n: p, total: doc.numPages }), "info");
+        onOcr(p, await ocrPdfPage(doc, p));
+        done++;
+      }
+      showAiToast(done ? t("pdf.ocr.allDone", { n: done }) : t("pdf.ocr.none"), "success");
+    } catch (e) {
+      showAiToast(t("pdf.failed", { error: explainError(e) }), "error");
+    } finally {
+      setOcrAllBusy(false);
+    }
+  }, [doc, ocrAllBusy, ocrPages, onOcr]);
+
+  /** W6.47: the highlights not in Zotero yet go to the PDF's Zotero item — after the user confirms. */
+  const sendToZotero = useCallback(() => {
+    whenSaved(() => {
+      void import("./zoteroSend")
+        .then(({ sendHighlightsToZotero }) => sendHighlightsToZotero({ pdfPath: path, notePath, annotations: annotationsRef.current, pageHeights: sizes.map((z) => z.h) }))
+        .catch((e: unknown) => showAiToast(t("pdf.zotero.failed", { error: explainError(e) }), "error"));
+    });
+  }, [whenSaved, path, notePath, sizes]);
+
+  const toggleReading = useCallback(() => {
+    setReading((r) => !r);
+    // The pages fill the width in reading mode; after the side panel is gone.
+    requestAnimationFrame(() => fitWidth());
+  }, [fitWidth]);
 
   const activeHit = hitIndex >= 0 ? hits[hitIndex] : undefined;
   const name = baseName(path);
@@ -554,8 +636,9 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
     <div
       ref={rootRef}
       tabIndex={-1}
-      className="pdf-reader"
+      className={reading ? "pdf-reader pdf-reader--reading" : "pdf-reader"}
       data-testid="pdf-reader"
+      data-reading={reading ? "true" : undefined}
       data-current-page={current}
       data-page-count={sizes.length}
       data-ready={doc ? "true" : undefined}
@@ -636,6 +719,12 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
           </span>
         </form>
         <div className="pdf-group pdf-end">
+          <button type="button" className="icon-btn pdf-text-btn" data-testid="pdf-reading" aria-pressed={reading} onClick={toggleReading}>
+            {t("pdf.reading")}
+          </button>
+          <button type="button" className="icon-btn pdf-text-btn" data-testid="pdf-ocr-all" disabled={!doc || ocrAllBusy} onClick={() => void ocrAll()}>
+            {ocrAllBusy ? t("pdf.ocr.running") : t("pdf.ocr.all")}
+          </button>
           <button
             type="button"
             className="pdf-primary"
@@ -684,7 +773,7 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
                 active={visible.has(i + 1)}
                 annotations={byPage.get(i + 1) ?? EMPTY}
                 flash={flash}
-                ocrText={ocrTexts[i + 1]}
+                ocr={ocrPages[i + 1]}
                 query={activeHit?.page === i + 1 ? query : ""}
                 occurrence={activeHit?.page === i + 1 ? activeHit.occurrence : -1}
                 registerEl={registerEl}
@@ -712,8 +801,13 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
             />
           </Suspense>
         )}
-        <aside className="pdf-side" aria-label={t("pdf.highlights")}>
+        <aside className="pdf-side" aria-label={t("pdf.highlights")} hidden={reading}>
           <h3>{t("pdf.highlights")}</h3>
+          {sorted.length > 0 && (
+            <button type="button" className="icon-btn pdf-text-btn" data-testid="pdf-zotero-send" onClick={sendToZotero}>
+              {t("pdf.zotero.send")}
+            </button>
+          )}
           {!sorted.length && <EmptyState message={t("pdf.highlights.empty")} action={learnHow("workspace/pdf-reader#highlight-text")} />}
           <ol className="pdf-hl-list" data-testid="pdf-highlights">
             {sorted.map((a) => {
@@ -760,241 +854,27 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
 
 const EMPTY: PdfAnnotation[] = [];
 
-interface PageProps {
-  doc: PdfDocument;
-  page: number;
-  size: PageSize;
-  scale: number;
-  /** Near the viewport: render it. */
-  active: boolean;
-  annotations: PdfAnnotation[];
-  flash: { id: string; seq: number } | null;
-  ocrText: string | undefined;
-  /** Search query whose `occurrence`-th match on this page is the current hit ("" for none). */
-  query: string;
-  occurrence: number;
-  registerEl: (page: number, el: HTMLDivElement | null) => void;
-  onText: (page: number, text: string) => void;
-  onOcr: (page: number, text: string) => void;
-  onAnchored: (missing: string[], all: string[]) => void;
-}
+/** W6.47: the place is saved this long after scrolling stops. */
+const POSITION_SAVE_MS = 1_000;
 
-interface DrawnRect {
-  id: string;
-  kind: "highlight" | "search";
-  rects: PageRect[];
-  /** Rects in px of the OCR text block, not points of the page. */
-  ocr?: boolean;
-}
-
-const PdfPageView = memo(function PdfPageView({
-  doc,
-  page,
-  size,
-  scale,
-  active,
-  annotations,
-  flash,
-  ocrText,
-  query,
-  occurrence,
-  registerEl,
-  onText,
-  onOcr,
-  onAnchored,
-}: PageProps) {
-  const boxRef = useRef<HTMLDivElement | null>(null);
-  const canvasHost = useRef<HTMLDivElement>(null);
-  const textRef = useRef<HTMLDivElement>(null);
-  const ocrRef = useRef<HTMLDivElement>(null);
-  const [ready, setReady] = useState(0);
-  const [scanned, setScanned] = useState(false);
-  const [ocrBusy, setOcrBusy] = useState(false);
-  const [drawn, setDrawn] = useState<DrawnRect[]>([]);
-
-  // Render the canvas and the text layer while the page is near the viewport.
-  useEffect(() => {
-    const host = canvasHost.current;
-    const layer = textRef.current;
-    if (!active || !host || !layer) return;
-    let cancelled = false;
-    let task: PdfRenderTask | null = null;
-    let textLayer: PdfTextLayer | null = null;
-    (async () => {
-      const [pdfjs, p] = await Promise.all([loadPdfjs(), doc.getPage(page)]);
-      if (cancelled) return;
-      const viewport = p.getViewport({ scale });
-      const dpr = Math.min(window.devicePixelRatio || 1, 3);
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.floor(viewport.width * dpr);
-      canvas.height = Math.floor(viewport.height * dpr);
-      canvas.style.width = "100%";
-      canvas.style.height = "100%";
-      canvas.setAttribute("aria-hidden", "true");
-      task = p.render({ canvas, viewport, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : undefined });
-      // Cancelled when the page scrolls away: not an error.
-      task.promise.catch(() => undefined);
-      const content = await p.getTextContent();
-      if (cancelled) return;
-      layer.replaceChildren();
-      textLayer = new pdfjs.TextLayer({ textContentSource: content, container: layer, viewport });
-      await Promise.all([task.promise, textLayer.render()]);
-      if (cancelled) return;
-      host.replaceChildren(canvas);
-      const text = layerText(layer);
-      setScanned(!text.trim());
-      onText(page, text);
-      setReady((n) => n + 1);
-    })().catch(() => {
-      /* why: cancelled (scrolled away / zoomed) or a broken page: the box stays empty */
-    });
-    return () => {
-      cancelled = true;
-      task?.cancel();
-      textLayer?.cancel();
-      host.replaceChildren();
-      layer.replaceChildren();
-      setDrawn([]);
-    };
-  }, [active, doc, page, scale, onText]);
-
-  // Where this page's highlights (and the current search hit) are.
-  useEffect(() => {
-    const box = boxRef.current;
-    if (!active || !box || !ready) return;
-    const layers: { el: HTMLElement; ocr: boolean }[] = [];
-    if (textRef.current && layerText(textRef.current).trim()) layers.push({ el: textRef.current, ocr: false });
-    if (ocrRef.current) layers.push({ el: ocrRef.current, ocr: true });
-    const out: DrawnRect[] = [];
-    const missing: string[] = [];
-    for (const a of annotations) {
-      const id = shortId(a.id);
-      let placed = false;
-      for (const { el, ocr } of layers) {
-        const anchor = anchorAnnotation(a, layerText(el));
-        const range = anchor && offsetsToRange(el, anchor.start, anchor.end);
-        if (!range) continue;
-        const origin = (ocr ? el : box).getBoundingClientRect();
-        out.push({ id, kind: "highlight", rects: rangePageRects(range, origin, ocr ? 1 : scale), ocr });
-        placed = true;
-        break;
-      }
-      if (!placed) missing.push(id);
-    }
-    if (query && occurrence >= 0) {
-      for (const { el, ocr } of layers) {
-        const hit = findAll(layerText(el), query)[occurrence];
-        const range = hit && offsetsToRange(el, hit.start, hit.end);
-        if (!range) continue;
-        const origin = (ocr ? el : box).getBoundingClientRect();
-        out.push({ id: "search", kind: "search", rects: rangePageRects(range, origin, ocr ? 1 : scale), ocr });
-        range.startContainer.parentElement?.scrollIntoView({ block: "center" });
-        break;
-      }
-    }
-    setDrawn(out);
-    onAnchored(
-      missing,
-      annotations.map((a) => shortId(a.id)),
-    );
-  }, [active, ready, annotations, scale, query, occurrence, ocrText, onAnchored]);
-
-  // Bring a flashed highlight into view.
-  useEffect(() => {
-    if (!flash) return;
-    const el = boxRef.current?.parentElement?.querySelector(`[data-highlight-id="${flash.id}"]`);
-    el?.scrollIntoView({ block: "nearest" });
-  }, [flash, drawn]);
-
-  const runOcr = useCallback(async () => {
-    setOcrBusy(true);
+/** Reading positions live in the vault (`.lumen/reading-positions.json`), so the vault's sync carries them. */
+const positionsIO: PositionsIO = {
+  read: async (p) => {
+    const ws = await import("../storage/workspace");
     try {
-      const p = await doc.getPage(page);
-      const viewport = p.getViewport({ scale: 2 });
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.ceil(viewport.width);
-      canvas.height = Math.ceil(viewport.height);
-      await p.render({ canvas, viewport }).promise;
-      const { ocrImage } = await import("../ai/ocr");
-      const { text } = await ocrImage(canvas);
-      onOcr(page, text);
-      setReady((n) => n + 1);
-    } catch (e) {
-      showAiToast(t("pdf.failed", { error: explainError(e) }), "error");
-    } finally {
-      setOcrBusy(false);
+      return await ws.readWorkspaceFile(p);
+    } catch {
+      return null;
     }
-  }, [doc, page, onOcr]);
+  },
+  write: async (p, text) => {
+    const ws = await import("../storage/workspace");
+    await ws.createWorkspaceFolder(".lumen").catch(() => undefined);
+    await ws.writeWorkspaceFile(p, text);
+  },
+};
 
-  const style = {
-    width: `${size.w * scale}px`,
-    height: `${size.h * scale}px`,
-    "--total-scale-factor": String(scale),
-    "--scale-round-x": "1px",
-    "--scale-round-y": "1px",
-  } as CSSProperties;
-
-  const pct = (r: PageRect): CSSProperties => ({
-    left: `${(r.left / size.w) * 100}%`,
-    top: `${(r.top / size.h) * 100}%`,
-    width: `${(r.width / size.w) * 100}%`,
-    height: `${(r.height / size.h) * 100}%`,
-  });
-  const px = (r: PageRect): CSSProperties => ({ left: r.left, top: r.top, width: r.width, height: r.height });
-
-  const marks = (ocr: boolean) =>
-    drawn
-      .filter((d) => !!d.ocr === ocr)
-      .map((d) => (
-        <div
-          key={`${d.kind}-${d.id}`}
-          className={`pdf-hl-group pdf-hl--${d.kind}`}
-          data-highlight-id={d.kind === "highlight" ? d.id : undefined}
-          data-search-hit={d.kind === "search" ? "true" : undefined}
-          data-flash={d.kind === "highlight" && flash?.id === d.id ? "true" : undefined}
-        >
-          {d.rects.map((r, i) => (
-            // Re-keyed per flash, so the same highlight flashes again on the next open.
-            <span key={`${i}-${flash?.id === d.id ? flash.seq : 0}`} className="pdf-hl-rect" style={ocr ? px(r) : pct(r)} />
-          ))}
-        </div>
-      ));
-
-  return (
-    <div className="pdf-page-wrap" data-page-wrap={page}>
-      <div
-        ref={(el) => {
-          boxRef.current = el;
-          registerEl(page, el);
-        }}
-        className="pdf-page"
-        data-page-number={page}
-        data-rendered={ready > 0 && active ? "true" : undefined}
-        style={style}
-        dir="ltr"
-        role="region"
-        aria-label={t("pdf.page.label", { n: page })}
-      >
-        <div ref={canvasHost} className="pdf-canvas" />
-        <div className="pdf-hl-layer">{marks(false)}</div>
-        <div ref={textRef} className="textLayer" data-pdf-text="page" />
-        {active && scanned && ocrText === undefined && (
-          <div className="pdf-scanned">
-            <p>{t("pdf.ocr.scanned")}</p>
-            <button type="button" className="pdf-primary" disabled={ocrBusy} onClick={() => void runOcr()}>
-              {ocrBusy ? t("pdf.ocr.running") : t("pdf.ocr.run")}
-            </button>
-          </div>
-        )}
-      </div>
-      {ocrText !== undefined && (
-        <div className="pdf-ocr-wrap" style={{ width: `${size.w * scale}px` }}>
-          <div className="pdf-hl-layer">{marks(true)}</div>
-          <div ref={ocrRef} className="pdf-ocr" data-pdf-text="ocr" dir="auto">
-            {ocrText || t("pdf.ocr.scanned")}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-});
+/** The pages' boxes in the scroll container, page 1 first. */
+function pageBoxes(els: Map<number, HTMLDivElement>): PageBox[] {
+  return [...els.entries()].sort(([a], [b]) => a - b).map(([, el]) => ({ top: el.offsetTop, height: el.offsetHeight }));
+}

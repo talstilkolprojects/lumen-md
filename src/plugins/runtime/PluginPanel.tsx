@@ -19,7 +19,7 @@ function Panel() {
       aria-label={panel.title}
       data-plugin-panel={panel.pluginId}
       dir="auto"
-      style={{ position: "fixed", top: 56, bottom: 16, insetInlineEnd: 16, width: 320, zIndex: 40, overflow: "auto", background: "hsl(var(--bg))", color: "hsl(var(--fg))", border: "1px solid hsl(var(--border-strong))", borderRadius: 10, padding: 12, boxShadow: "0 8px 32px hsl(0 0% 0%/0.2)", fontSize: 13 }}
+      style={{ position: "fixed", top: 56, bottom: 16, insetInlineEnd: 16, width: 320, zIndex: 40, overflow: "auto", background: "hsl(var(--bg))", color: "hsl(var(--fg))", border: "1px solid hsl(var(--border-strong))", borderRadius: 10, padding: 12, boxShadow: "var(--shadow-md)", fontSize: 13 }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
         <strong style={{ flex: 1 }}>{panel.title}</strong>

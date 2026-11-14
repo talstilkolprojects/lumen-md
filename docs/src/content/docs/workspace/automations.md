@@ -21,6 +21,17 @@ trigger, then the action, and answer one question for each (the folder,
 the tag, the property…). The rules are kept in `.lumen/automations.json`
 in the vault, which you can also edit by hand.
 
+### When a row of a base changes
+
+Pick **a row of a base view changes**, then give the base (for example
+`Projects/Tasks.base`), the view (empty: the first) and, if you want, one
+property to watch. The rule runs when a note that is in that view (by the
+view's own filters, after the change) has a property changed, or when a new
+note joins the view. A change to the text only doesn't count. Changes made
+through the table, the property panel or a plugin's `bases.update` all
+count. The filters see the note alone, so a filter that looks at other notes
+(backlinks, a linked note's property) can't match here.
+
 ## Dry run
 
 **Automations: dry run on this note** shows what the rules would do to the

@@ -21,10 +21,15 @@ passphrase when it opens the vault.
 | History snapshots (the backups the Version History panel shows) | AES-256-GCM in IndexedDB |
 | Agent traces (the last 50 runs, which include parts of notes) | AES-256-GCM in IndexedDB; migrated when encryption is turned on, deleted when it is turned off |
 | Semantic search index (embeddings and the text of each chunk) | AES-256-GCM in IndexedDB |
+| The search index's saved copy (the notes' text, so a large vault reopens fast) | AES-256-GCM and an HMAC-SHA256 signature in IndexedDB, written and checked in the index worker with keys of its own; a copy that was changed is refused and the vault is read in full |
 | AI answer cache | Not written while the vault is encrypted; emptied when encryption is turned on or off |
 | The open note and the open tabs, which Lumen normally keeps in `localStorage` to resume a session | Not kept; after a reload you open the notes again from the vault |
 
-The fast search index lives in memory only and is never stored.
+The fast search index lives in memory. Its saved copy is sealed with two
+keys derived from the vault's key for this one job (HKDF-SHA256), bound to
+the vault and the copy's format, and signed; the worker that writes it never
+sees the vault's key. While the vault is locked nothing is written, and
+the copy waits for the next unlock.
 
 **Not encrypted:** file and folder names, file sizes and dates (the vault
 stays a normal folder of files); the list of recent files; API keys and

@@ -524,9 +524,16 @@
         "revision": null,
         "cache": "transformers-cache",
         "dtypes": [
-          "fp32",
+          "fp16",
           "q4",
           "q8"
+        ],
+        "omitted": [
+          {
+            "dtype": "fp32",
+            "reason": "over-2gib",
+            "instead": "fp16"
+          }
         ]
       },
       "catalog": "WHISPER_MODELS (src/ai/transformersEngine.ts)",
@@ -658,8 +665,8 @@
       "kind": "other",
       "source": "https://github.com/hermitdave/FrequencyWords/blob/525f9b560de45753a5ea01069454e72e9aa541c6/content/2018/he/he_50k.txt",
       "license": "CC-BY-SA-4.0",
-      "class": "allowed",
-      "commercial": "yes",
+      "class": "conditional",
+      "commercial": "conditional",
       "attribution": "Hebrew word frequencies: FrequencyWords he_50k by Hermit Dave (github.com/hermitdave/FrequencyWords), built from OpenSubtitles 2018 (opus.nlpl.eu), licensed CC BY-SA 4.0.",
       "size": "0.8 MB (792 853 bytes, sha256 0069e931eb1ca0aaf638ea806b0d9d5810d787c51ada944da564a2fb213af41d)",
       "runs": "browser",
@@ -671,15 +678,17 @@
         "dict/he_50k.txt"
       ],
       "verified": true,
-      "notes": "Plan 9.2. Shipped unmodified next to its licence (public/dict/LICENSE.md), so ShareAlike binds only the list itself, not the app; every spelling hint names the list and its licence (HEBREW_FREQ_CREDIT). Suggestion-only: the list comes from subtitles and has typos of its own. Content licence from the repo README (\"CC-by-sa-4.0 for content\"; code is MIT), checked 2026-10-19 at commit 525f9b5."
+      "notes": "Plan 9.2. Shipped unmodified next to its licence (public/dict/LICENSE.md), so ShareAlike binds only the list itself, not the app; every spelling hint names the list and its licence (HEBREW_FREQ_CREDIT). Suggestion-only: the list comes from subtitles and has typos of its own. Content licence from the repo README (\"CC-by-sa-4.0 for content\"; code is MIT), checked 2026-10-19 at commit 525f9b5.",
+      "unmodified": true,
+      "notice": "public/dict/NOTICE"
     },
     {
       "id": "hewiktionary-lexicon",
       "kind": "other",
       "source": "https://dumps.wikimedia.org/hewiktionary/",
       "license": "CC-BY-SA-4.0",
-      "class": "allowed",
-      "commercial": "yes",
+      "class": "conditional",
+      "commercial": "conditional",
       "attribution": "Hebrew dictionary and synonyms: Hebrew Wiktionary (he.wiktionary.org) contributors, licensed CC BY-SA 4.0. Definitions shortened, examples removed.",
       "size": "not built yet (scripts/build-hebrew-lexicon.mjs writes the size and sha256 to public/lexicon/manifest.json)",
       "runs": "browser",
@@ -690,7 +699,8 @@
         "lexicon/he-wiktionary.json"
       ],
       "verified": true,
-      "notes": "Plan W5.26. Built from the hewiktionary pages-articles dump; the pack is a separate file next to its licence (public/lexicon/LICENSE.md), so ShareAlike binds the pack, not the app (same as frequencywords-he-50k). Chosen over Hspell-derived lists, which are AGPL-3.0 and cannot ship inside the MIT app. Text licence: Wikimedia projects are CC BY-SA 4.0 since 2023 (Terms of Use §7)."
+      "notes": "Plan W5.26. Built from the hewiktionary pages-articles dump; the pack is a separate file next to its licence (public/lexicon/LICENSE.md), so ShareAlike binds the pack, not the app (same as frequencywords-he-50k). Chosen over Hspell-derived lists, which are AGPL-3.0 and cannot ship inside the MIT app. Text licence: Wikimedia projects are CC BY-SA 4.0 since 2023 (Terms of Use §7).",
+      "unmodified": false
     },
     {
       "id": "DictaLM-3.0-1.7B",

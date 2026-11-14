@@ -1,0 +1,105 @@
+filters:
+  or:
+    - type == "meeting"
+formulas:
+  week: date(date_start).format("[W]WW")
+properties:
+  note.date_start:
+    displayName: Start
+  note.summary:
+    displayName: Summary
+  note.details:
+    displayName: Details
+  note.actions:
+    displayName: Actions
+views:
+  - type: table
+    name: Project meetings
+    filters:
+      and:
+        - up.contains(link(this.file))
+    groupBy:
+      property: formula.week
+      direction: DESC
+    order:
+      - type
+      - file.name
+      - summary
+      - up
+      - people
+    sort:
+      - property: date_start
+        direction: DESC
+    columnSize:
+      note.type: 89
+      file.name: 197
+      note.summary: 622
+      note.up: 209
+    rowHeight: medium
+  - type: table
+    name: Project meetings detailed
+    filters:
+      and:
+        - up.contains(link(this.file))
+    groupBy:
+      property: formula.week
+      direction: DESC
+    order:
+      - file.name
+      - summary
+      - details
+      - actions
+      - people
+    sort:
+      - property: date_start
+        direction: DESC
+    columnSize:
+      file.name: 153
+      note.summary: 260
+      note.details: 360
+      note.actions: 260
+    rowHeight: extra
+  - type: table
+    name: People meetings
+    filters:
+      and:
+        - people.contains(link(this.file))
+    groupBy:
+      property: formula.week
+      direction: DESC
+    order:
+      - file.name
+      - summary
+      - up
+      - people
+    sort:
+      - property: date_start
+        direction: DESC
+    columnSize:
+      file.name: 173
+      note.summary: 458
+      note.up: 250
+    rowHeight: medium
+  - type: table
+    name: People meetings detailed
+    filters:
+      and:
+        - people.contains(link(this.file))
+    groupBy:
+      property: formula.week
+      direction: DESC
+    order:
+      - file.name
+      - summary
+      - details
+      - actions
+      - up
+    sort:
+      - property: date_start
+        direction: DESC
+    columnSize:
+      file.name: 173
+      note.summary: 260
+      note.details: 360
+      note.actions: 260
+    rowHeight: extra

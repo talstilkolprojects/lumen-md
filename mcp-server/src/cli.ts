@@ -7,11 +7,14 @@
  *   lumen append <path> <text…>        add text to the end of a note
  *   lumen daily [text…] [--folder d]   today's note (journal/YYYY-MM-DD.md);
  *                                      with text, adds "- HH:MM text"
+ *   lumen bases query <f.base> [--view v] [--json]   a view's rows (W8.1)
+ *   lumen bases update --edits e.json [--dry-run] [--approve]
+ *                                      property edits into the approval queue
  *   lumen mcp status                   which MCP clients may do what
  *   lumen mcp enable <client> [--scopes search,read,propose]
  *   lumen mcp disable <client>
  *   lumen mcp review                   proposals from MCP clients, as diffs
- *   lumen mcp approve <id>|--all       write them
+ *   lumen mcp approve <id>|--client c  show each diff, ask, write (TTY only)
  *   lumen mcp reject <id>|--all        drop them
  *   lumen mcp log [--limit n]          the ledger
  *   lumen mcp serve [--client id]      the MCP server on stdio
@@ -24,11 +27,12 @@
 import { promises as fs } from "node:fs";
 import * as path from "node:path";
 import { spawn } from "node:child_process";
-import { ALL_SCOPES, DEFAULT_SCOPES, disableClient, enableClient, parseScopes, readConfig, writeFileAtomic } from "./vault/config.js";
+import { ALL_SCOPES, DEFAULT_SCOPES, disableClient, enableClient, normalizeClientId, parseScopes, readConfig, writeFileAtomic } from "./vault/config.js";
 import { appendLedger, readLedger } from "./vault/ledger.js";
 import { approvePending, lineDiff, listPending, readNote, rejectPending } from "./vault/pending.js";
 import { absPath, notePath } from "./vault/paths.js";
 import { VaultIndex } from "./vault/search.js";
+import { planBasesUpdate, proposeBatch, queryVaultBase, relForCli } from "./vault/bases.js";
 
 export interface CliIO {
   out: (line: string) => void;
@@ -38,9 +42,31 @@ export interface CliIO {
   now?: () => Date;
   /** Opens a file in the system's default app (tests pass a fake). */
   openFile?: (abs: string) => void;
+  /**
+   * A terminal (stdin and stdout are a TTY) and a way to ask. Approving
+   * needs both, shows each diff and waits for a typed "yes" (review 21, B1).
+   * What this enforces: no approval from a pipe or a plain subprocess, no
+   * approval without the diff on screen, and one client's or one change at
+   * a time. What it does not: an agent with a shell can give itself a
+   * terminal (`script`, `expect`) and type "yes" (review 24). Tool output
+   * never names an approval command, so a well-behaved agent is not told
+   * to; the review screen in Lumen remains the approval to rely on.
+   */
+  tty?: boolean;
+  ask?: (question: string) => Promise<string>;
 }
 
-export const VAULT_COMMANDS = ["search", "open", "new", "append", "daily", "mcp"] as const;
+/** Ask the person to type "yes" for one change, after its diff. False without a TTY. */
+async function confirmChange(io: CliIO, header: string, before: string | null, after: string): Promise<boolean> {
+  io.out(header);
+  for (const l of lineDiff(before, after)) io.out(l);
+  if (!io.tty || !io.ask) return false;
+  return (await io.ask('Type "yes" to write this change: ')).trim().toLowerCase() === "yes";
+}
+
+const NO_TTY = "Approving needs a terminal (a TTY): each diff is shown and you type yes. Nothing was written. You can also approve in Lumen's review screen.";
+
+export const VAULT_COMMANDS = ["search", "open", "new", "append", "daily", "bases", "mcp"] as const;
 
 export const USAGE = [
   "usage: lumen search <words…> [--limit n] [--json]",
@@ -48,12 +74,14 @@ export const USAGE = [
   "       lumen new <path> [text…]",
   "       lumen append <path> <text…>",
   "       lumen daily [text…] [--folder journal]",
+  "       lumen bases query <file.base> [--view name] [--offset n] [--limit n] [--json]",
+  "       lumen bases update --edits <edits.json> [--dry-run] [--approve]   (--approve asks for each note)",
   "       lumen mcp status | enable <client> [--scopes search,read,propose] | disable <client>",
-  "       lumen mcp review | approve <id>|--all | reject <id>|--all | log [--limit n] | serve [--client id]",
+  "       lumen mcp review [--client id] | approve <id>|--client <id> | reject <id>|--all | log [--limit n] | serve [--client id]",
   "       (vault: --vault <dir>, $LUMEN_VAULT, or the current folder)",
 ].join("\n");
 
-const BOOLEAN_FLAGS = new Set(["json", "print", "all"]);
+const BOOLEAN_FLAGS = new Set(["json", "print", "all", "dry-run", "approve"]);
 
 export function parseArgs(args: string[]): { flags: Record<string, string>; positional: string[] } {
   const flags: Record<string, string> = {};
@@ -188,11 +216,100 @@ async function runCommand(argv: string[], io: CliIO): Promise<number> {
       io.out(rel);
       return 0;
     }
+    case "bases":
+      return runBases(vault, rest, flags, io);
     case "mcp":
       return runMcp(vault, rest, flags, io);
   }
   io.err(USAGE);
   return 1;
+}
+
+/**
+ * `lumen bases` (plan W8.1): the app's Bases engine from a terminal.
+ * `query` prints a view's rows (tab-separated, or JSON). `update` takes the
+ * same edits as `lumen.bases.update` / the `bases_update` MCP tool and
+ * queues them in the approval queue — `--dry-run` only shows what would
+ * change, `--approve` shows each note's diff and writes the ones you
+ * confirm (a TTY only: an agent's shell cannot approve).
+ */
+async function runBases(vault: string, rest: string[], flags: Record<string, string>, io: CliIO): Promise<number> {
+  const [sub, arg] = rest;
+  if (sub === "query" && arg) {
+    const r = await queryVaultBase(vault, relForCli(vault, arg), flags.view, { offset: flags.offset, limit: flags.limit });
+    if (flags.json) io.out(JSON.stringify(r));
+    else {
+      io.out(["path", ...r.columns.map((c) => c.label)].join("\t"));
+      for (const row of r.rows) io.out([row.path, ...r.columns.map((c) => cellText(row.cells[c.id]))].join("\t"));
+    }
+    for (const e of r.errors) io.err(`warning: ${e}`);
+    io.err(`${r.rows.length} of ${r.total} row(s), view "${r.view}"`);
+    return 0;
+  }
+  if (sub === "update" && flags.edits) {
+    const raw = flags.edits === "-" ? await readStdin() : await fs.readFile(path.resolve(io.cwd, flags.edits), "utf8");
+    let edits: unknown;
+    try {
+      edits = JSON.parse(raw);
+    } catch {
+      io.err("error: --edits must be a JSON list of { path, set }");
+      return 1;
+    }
+    const plan = await planBasesUpdate(vault, edits);
+    const s = plan.summary;
+    io.out(`${plan.changes.length} note(s) would change (${s.properties.join(", ") || "no properties"}); ${s.unchanged} row(s) already have these values.`);
+    for (const c of plan.changes.slice(0, 20)) {
+      io.out(`── ${c.path}`);
+      for (const l of lineDiff(c.before, c.after, 12)) io.out(l);
+    }
+    if (plan.changes.length > 20) io.out(`… and ${plan.changes.length - 20} more`);
+    if (flags["dry-run"] || !plan.changes.length) {
+      if (flags["dry-run"]) io.out("Dry run: nothing written, nothing queued.");
+      return 0;
+    }
+    const batch = await proposeBatch(vault, "cli", "bases_update", plan.changes);
+    if (!flags.approve) {
+      io.out(`Queued as batch ${batch.id}: review it in Lumen's review screen or at a terminal.`);
+      return 0;
+    }
+    if (!io.tty || !io.ask) {
+      io.err(NO_TTY);
+      return 1;
+    }
+    let failed = 0;
+    let written = 0;
+    for (const id of batch.ids) {
+      const p = (await listPending(vault)).find((x) => x.id === id);
+      if (!p) continue;
+      if (!(await confirmChange(io, `── ${p.path}`, p.before, p.after))) {
+        io.out(`left in the queue: ${p.path}`);
+        continue;
+      }
+      const r = await approvePending(vault, id, "cli");
+      if (r.status === "applied") written++;
+      else {
+        failed++;
+        io.err(r.status === "missing" ? `no proposal ${id}` : `not written: ${r.reason} (${r.pending.path})`);
+      }
+    }
+    io.out(`wrote ${written} note(s)`);
+    return failed ? 1 : 0;
+  }
+  io.err(USAGE);
+  return 1;
+}
+
+function cellText(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  if (Array.isArray(v)) return v.map(cellText).join(", ");
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v).replace(/[\t\n]+/g, " ");
+}
+
+async function readStdin(): Promise<string> {
+  const chunks: Buffer[] = [];
+  for await (const c of process.stdin) chunks.push(c as Buffer);
+  return Buffer.concat(chunks).toString("utf8");
 }
 
 async function runMcp(vault: string, rest: string[], flags: Record<string, string>, io: CliIO): Promise<number> {
@@ -222,7 +339,7 @@ async function runMcp(vault: string, rest: string[], flags: Record<string, strin
       return 0;
     }
     case "review": {
-      const list = await listPending(vault);
+      const list = (await listPending(vault)).filter((p) => !flags.client || p.client === normalizeClientId(flags.client));
       if (!list.length) io.out("No proposals waiting.");
       for (const p of list) {
         io.out(`── ${p.id}  ${p.client} · ${p.tool} · ${p.path}${p.before === null ? " (new)" : ""} · ${p.createdAt}`);
@@ -230,8 +347,41 @@ async function runMcp(vault: string, rest: string[], flags: Record<string, strin
       }
       return 0;
     }
-    case "approve":
+    case "approve": {
+      // No --all (review 21, B1): one client's agent must not be able to approve another client's changes,
+      // and every change is approved by a person who saw its diff.
+      if (flags.all) {
+        io.err("`lumen mcp approve --all` was removed: approve one proposal (<id>) or one client's (--client <id>), each after its diff.");
+        return 1;
+      }
+      const all = await listPending(vault);
+      const list = arg ? all.filter((p) => p.id === arg) : flags.client ? all.filter((p) => p.client === normalizeClientId(flags.client)) : [];
+      if (!arg && !flags.client) break;
+      if (!list.length) {
+        io.err(arg ? `no proposal ${arg}` : `No proposals waiting from ${flags.client}.`);
+        return arg ? 1 : 0;
+      }
+      if (!io.tty || !io.ask) {
+        io.err(NO_TTY);
+        return 1;
+      }
+      let failed = 0;
+      for (const p of list) {
+        if (!(await confirmChange(io, `── ${p.id}  ${p.client} · ${p.tool} · ${p.path}${p.before === null ? " (new)" : ""}`, p.before, p.after))) {
+          io.out(`left in the queue: ${p.id} (${p.path})`);
+          continue;
+        }
+        const r = await approvePending(vault, p.id);
+        if (r.status === "applied") io.out(`wrote ${r.pending.path} (${p.id})`);
+        else {
+          failed++;
+          io.err(r.status === "missing" ? `no proposal ${p.id}` : `not written: ${r.reason} (${p.id}, ${r.pending.path})`);
+        }
+      }
+      return failed ? 1 : 0;
+    }
     case "reject": {
+      // Rejecting writes nothing, so it may be done in bulk.
       const ids = flags.all ? (await listPending(vault)).map((p) => p.id) : arg ? [arg] : [];
       if (!ids.length) {
         if (flags.all) {
@@ -242,20 +392,11 @@ async function runMcp(vault: string, rest: string[], flags: Record<string, strin
       }
       let failed = 0;
       for (const id of ids) {
-        if (sub === "reject") {
-          const p = await rejectPending(vault, id);
-          if (p) io.out(`rejected ${id} (${p.path})`);
-          else {
-            failed++;
-            io.err(`no proposal ${id}`);
-          }
-          continue;
-        }
-        const r = await approvePending(vault, id);
-        if (r.status === "applied") io.out(`wrote ${r.pending.path} (${id})`);
+        const p = await rejectPending(vault, id);
+        if (p) io.out(`rejected ${id} (${p.path})`);
         else {
           failed++;
-          io.err(r.status === "missing" ? `no proposal ${id}` : `not written: ${r.reason} (${id}, ${r.pending.path})`);
+          io.err(`no proposal ${id}`);
         }
       }
       return failed ? 1 : 0;
@@ -267,13 +408,13 @@ async function runMcp(vault: string, rest: string[], flags: Record<string, strin
       return 0;
     }
     case "serve": {
-      // Not a static import: the SDK is only a dependency of this package.
+      // Not a static import: the stdio loop is only needed by `serve`.
       const spec = "./server.js";
       const mod = (await import(spec)) as { serveStdio: (vault: string, client?: string) => Promise<void> };
       await mod.serveStdio(vault, flags.client || io.env.LUMEN_MCP_CLIENT);
       return -1;
     }
   }
-  io.err(`usage: lumen mcp status | enable <client> [--scopes ${ALL_SCOPES.join(",")}] | disable <client> | review | approve <id>|--all | reject <id>|--all | log | serve`);
+  io.err(`usage: lumen mcp status | enable <client> [--scopes ${ALL_SCOPES.join(",")}] | disable <client> | review [--client id] | approve <id>|--client <id> | reject <id>|--all | log | serve`);
   return 1;
 }

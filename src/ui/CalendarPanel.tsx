@@ -138,7 +138,8 @@ export function CalendarPanel() {
       return { y: Math.floor(k / 12), m: (k % 12) + 1 };
     });
 
-  const btn: React.CSSProperties = { border: "none", background: "transparent", color: "hsl(var(--fg-muted))", cursor: "pointer", padding: 3, borderRadius: 5, display: "inline-flex" };
+  // 24 px targets at least (WCAG 2.2 2.5.8; axe target-size).
+  const btn: React.CSSProperties = { border: "none", background: "transparent", color: "hsl(var(--fg-muted))", cursor: "pointer", padding: 3, borderRadius: 5, display: "inline-flex", alignItems: "center", justifyContent: "center", minInlineSize: 24, minBlockSize: 24 };
   const input: React.CSSProperties = { inlineSize: "100%", fontSize: 11, paddingBlock: 2, paddingInline: 5, borderRadius: 4, border: "1px solid hsl(var(--border))", background: "hsl(var(--bg))", color: "hsl(var(--fg))" };
 
   return (
@@ -163,13 +164,20 @@ export function CalendarPanel() {
         {heMonths}
       </div>
       <div role="grid" aria-label={title} style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1, textAlign: "center" }}>
-        {weekdays.map((w) => (
-          <div key={w.long} role="columnheader" aria-label={w.long} style={{ fontSize: 10, color: "hsl(var(--fg-muted))", paddingBlock: 2 }}>
-            {w.short}
-          </div>
-        ))}
-        {rows.flat().map((day, i) => {
-          if (!day) return <div key={`e${i}`} role="gridcell" aria-hidden />;
+        {/* Rows are display: contents, so the cells stay items of the 7-column grid
+            while a screen reader gets grid > row > cell (axe aria-required-children/parent). */}
+        <div role="row" style={{ display: "contents" }}>
+          {weekdays.map((w) => (
+            <div key={w.long} role="columnheader" aria-label={w.long} style={{ fontSize: 10, color: "hsl(var(--fg-muted))", paddingBlock: 2 }}>
+              {w.short}
+            </div>
+          ))}
+        </div>
+        {rows.map((week, r) => (
+        <div key={`w${r}`} role="row" style={{ display: "contents" }}>
+        {week.map((day, c) => {
+          const i = r * 7 + c;
+          if (!day) return <div key={`e${i}`} role="gridcell" />;
           const iso = isoOf(day);
           const has = withNotes.has(iso);
           const isToday = iso === isoOf(today);
@@ -181,10 +189,9 @@ export function CalendarPanel() {
           // Days off in the work week (plan W5.15): the weekend and the rest days, drawn muted.
           const dayOff = !dayStatus(day, { israel, workWeek }).working;
           return (
+            <div key={iso} role="gridcell" style={{ display: "grid" }}>
             <button
-              key={iso}
               type="button"
-              role="gridcell"
               data-date={iso}
               data-has-note={has || undefined}
               data-holiday={holidays.length ? holidays.map((h) => h.id).join(" ") : undefined}
@@ -213,8 +220,11 @@ export function CalendarPanel() {
               {dayNumber.format(utcNoon(day))}
               {has && <span aria-hidden style={{ position: "absolute", insetBlockEnd: 1, insetInlineStart: "50%", inlineSize: 3, blockSize: 3, marginInlineStart: -1.5, borderRadius: 2, background: "hsl(var(--accent))" }} />}
             </button>
+            </div>
           );
         })}
+        </div>
+        ))}
       </div>
       {monthHolidays.length > 0 && (
         <ul aria-label={t("calendar.holidays")} data-testid="calendar-holidays" style={{ listStyle: "none", margin: 0, marginBlockStart: 6, padding: 0, display: "grid", gap: 1, fontSize: 10, color: "hsl(var(--fg-muted))" }}>

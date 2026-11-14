@@ -28,6 +28,7 @@ interface Listed {
 }
 
 async function getJson<T>(url: string, signal: AbortSignal): Promise<T> {
+  // privacy-ledger: not tracked — the app's own files: every caller passes a path under BASE (/plugins/examples, this origin).
   const res = await fetchWithRetry(url, { signal }, { label: "plugins.sandboxed", maxRetries: 1, baseDelayMs: 300, maxDelayMs: 1000 });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return (await res.json()) as T;
@@ -84,6 +85,7 @@ export function SandboxedPlugins() {
   async function install(item: Listed): Promise<void> {
     setBusy(true);
     try {
+      // privacy-ledger: not tracked — the app's own files (/plugins/examples, this origin).
       const code = await (await fetch(`${BASE}/${item.path}/${item.manifest.main}`)).text();
       const [{ scanPluginVersion }, { startPlugin }] = await Promise.all([import("./scan"), import("./manager")]);
       // The bytes about to run are scanned again: the card is about the registry copy.

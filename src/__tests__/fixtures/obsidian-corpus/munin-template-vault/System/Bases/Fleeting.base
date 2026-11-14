@@ -1,0 +1,41 @@
+filters:
+  and:
+    - file.path.startsWith("Fleeting/")
+    - 'file.ext == "md"'
+    - '!file.name.contains("README")'
+formulas:
+  age: 'if(note.date_created, (now() - note.date_created).days.round(0), "")'
+  captured: 'if(note.date_created, note.date_created.format("YYYY-MM-DD"), "")'
+properties:
+  formula.age:
+    displayName: Days alive
+  formula.captured:
+    displayName: Captured
+  note.date_created:
+    displayName: Created
+views:
+  - type: table
+    name: Fleeting
+    order:
+      - file.name
+      - formula.age
+      - formula.captured
+    sort:
+      - property: date_created
+        direction: ASC
+    columnSize:
+      file.name: 420
+  - type: table
+    name: Stale (7+ days)
+    filters:
+      and:
+        - 'note.date_created < now() - "7d"'
+    order:
+      - file.name
+      - formula.age
+      - formula.captured
+    sort:
+      - property: date_created
+        direction: ASC
+    columnSize:
+      file.name: 420

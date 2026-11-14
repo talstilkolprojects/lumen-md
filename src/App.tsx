@@ -831,6 +831,12 @@ export default function App() {
         setCaptureOpen(true);
         return;
       }
+      // ⌥⌘S → the open-sources dialog (plan W7.24). Not AltGr: AltGr+S types a letter (ś).
+      if (e.altKey && e.code === "KeyS" && !e.getModifierState("AltGraph")) {
+        e.preventDefault();
+        void import("./sources/open/OpenSourcesDialog").then((m) => m.openSourcesDialog());
+        return;
+      }
       // ⌥⌘C → the cite dialog (plan W2.16).
       if (e.altKey && e.code === "KeyC") {
         e.preventDefault();
@@ -1029,8 +1035,8 @@ export default function App() {
         void cmd.action();
       }
     };
-    // The usage dialog (plan W4.26) needs every command id to name the unused ones.
-    const onUsage = () => {
+    // The usage dialog (plan W4.26) needs every command id to name the unused ones; the beta panel's report (W6.31) names only these.
+    const commandIds = () => {
       const ids: string[] = [];
       const walk = (list: typeof commands) => {
         for (const c of list) {
@@ -1039,13 +1045,17 @@ export default function App() {
         }
       };
       walk(commandsRef.current);
-      void import("./ui/UsageDialog").then((m) => m.openUsage({ commandIds: ids }));
+      return ids;
     };
+    const onUsage = () => void import("./ui/UsageDialog").then((m) => m.openUsage({ commandIds: commandIds() }));
+    const onBeta = () => void import("./ui/BetaPanel").then((m) => m.openBeta({ commandIds: commandIds() }));
     window.addEventListener("lumen-run-command", onRun);
     window.addEventListener("lumen-open-usage", onUsage);
+    window.addEventListener("lumen-open-beta", onBeta);
     return () => {
       window.removeEventListener("lumen-run-command", onRun);
       window.removeEventListener("lumen-open-usage", onUsage);
+      window.removeEventListener("lumen-open-beta", onBeta);
     };
   }, []);
   useEffect(() => {
@@ -1496,7 +1506,7 @@ export default function App() {
           <div style={{ height: "calc(100vh - 42px)" }}>
             <Suspense fallback={<div style={{padding:'2rem',color:'hsl(var(--fg-muted))'}}>{t("loading.generic")}</div>}>
               <ErrorBoundary fallback={
-                <div style={{ padding: "3rem", textAlign: "center", color: "hsl(0 80% 60%)" }}>
+                <div style={{ padding: "3rem", textAlign: "center", color: "hsl(var(--danger))" }}>
                   <strong>{t("graphView.renderFailed")}</strong>
                   <p>{t("graphView.renderFailedDetail")}</p>
                 </div>
@@ -1513,8 +1523,8 @@ export default function App() {
 
       {/* Canvas Whiteboard overlay */}
       <Suspense fallback={null}>
-        <ErrorBoundary fallback={<div style={{ padding: '2rem', color: 'hsl(0 80% 60%)' }}>{t("errorBoundary.heading")}</div>}>
-          {canvasOpen && <CanvasWhiteboard open={canvasOpen} onClose={() => setCanvasOpen(false)} />}
+        <ErrorBoundary fallback={<div style={{ padding: '2rem', color: 'hsl(var(--danger))' }}>{t("errorBoundary.heading")}</div>}>
+          {canvasOpen && <CanvasWhiteboard open={canvasOpen} onClose={() => setCanvasOpen(false)} collab={collab} />}
           {galleryOpen && <PluginGallery open={galleryOpen} onClose={() => setGalleryOpen(false)} />}
           {templateGalleryOpen && <TemplateGallery open={templateGalleryOpen} onClose={() => setTemplateGalleryOpen(false)} />}
           {auditLogOpen && <AuditLog
@@ -1540,7 +1550,7 @@ export default function App() {
       {/* Version History overlay */}
       {historyOpen && (
         <Suspense fallback={<div style={{padding:'2rem',color:'hsl(var(--fg-muted))'}}>{t("loading.generic")}</div>}>
-          <ErrorBoundary fallback={<div style={{ padding: '2rem', color: 'hsl(0 80% 60%)' }}>{t("errorBoundary.heading")}</div>}>
+          <ErrorBoundary fallback={<div style={{ padding: '2rem', color: 'hsl(var(--danger))' }}>{t("errorBoundary.heading")}</div>}>
             <VersionHistory
               fileName={historyKey(doc)}
               currentContent={doc.content}
@@ -1554,7 +1564,7 @@ export default function App() {
       {/* Table Editor overlay */}
       {tableEditorOpen && (
         <Suspense fallback={null}>
-          <ErrorBoundary fallback={<div style={{ padding: '2rem', color: 'hsl(0 80% 60%)' }}>{t("errorBoundary.heading")}</div>}>
+          <ErrorBoundary fallback={<div style={{ padding: '2rem', color: 'hsl(var(--danger))' }}>{t("errorBoundary.heading")}</div>}>
             <MarkdownTableEditor
               onUpdate={(md) => {
                 const current = doc.content;

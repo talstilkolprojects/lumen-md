@@ -110,7 +110,7 @@ export function AuthDialog({ open, onClose }: Props) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "hsl(0 0% 0% / 0.5)",
+        background: "var(--overlay)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -130,7 +130,7 @@ export function AuthDialog({ open, onClose }: Props) {
           borderRadius: 14,
           padding: 24,
           width: "min(420px, 100%)",
-          boxShadow: "0 20px 60px -10px hsl(0 0% 0% / 0.5)",
+          boxShadow: "var(--shadow-xl)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -295,9 +295,9 @@ export function AuthDialog({ open, onClose }: Props) {
                   marginTop: 12,
                   padding: "8px 12px",
                   borderRadius: 8,
-                  background: "hsl(0 80% 50% / 0.1)",
-                  color: "hsl(0 80% 65%)",
-                  border: "1px solid hsl(0 80% 50% / 0.4)",
+                  background: "hsl(var(--danger) / 0.1)",
+                  color: "hsl(var(--danger))",
+                  border: "1px solid hsl(var(--danger) / 0.4)",
                   fontSize: 12,
                 }}
               >
@@ -364,7 +364,7 @@ const inputStyle: React.CSSProperties = {
 const btnPrimary: React.CSSProperties = {
   marginTop: 4,
   padding: "10px 14px",
-  background: "linear-gradient(135deg,#7c5cff,#22d3ee)",
+  background: "var(--gradient-brand)",
   color: "white",
   border: "none",
   borderRadius: 8,

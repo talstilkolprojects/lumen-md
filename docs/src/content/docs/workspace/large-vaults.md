@@ -89,6 +89,35 @@ The run writes `reports/perf/inp-latest.json`. The gate compares it with
 10 % or more slower; the first run becomes the baseline
 (`npm run perf:inp:gate -- --update` replaces it on purpose).
 
+## Responsiveness on real devices
+
+`npm run perf:responsiveness` measures both editors (source and WYSIWYG) on
+a 10,000-note vault, against the production build (plan W6.45):
+
+| Environment | Where | INP p75 budget |
+|---|---|---|
+| `desktop-chromium` | Desktop Chrome, CPU as is | < 100 ms |
+| `mid-phone-emulated` | Pixel 7 emulation, CPU 4× slower | < 200 ms |
+| `real-device-*` | real Pixel and iPhone on BrowserStack (`perf:responsiveness -- browserstack`) | < 200 ms |
+
+Keypress → paint p95 must stay under 16 ms in a 50 KB note and under 33 ms
+in a 2 MB note, everywhere. Safari has no Event Timing API, so on an iPhone
+only keypress → paint is measured; INP shows as "not measured" there,
+never as 0.
+
+The related-notes panel is open during the whole measurement, because it
+re-ranks after every pause in typing. A build without the panel still runs,
+but its run says `relatedPanel: false`, it scores no board number, and it is
+never compared with a baseline taken with the panel. To make a new baseline,
+run `node scripts/perf/responsiveness.mjs gate --update`.
+
+Each environment has its own baseline in `reports/perf/baselines/<env>.json`.
+The first run writes it; commit it. A later run fails when any number is
+10 % or more slower than that baseline. The run also writes a signed
+`lumen-metric` receipt to `reports/metrics/`, which the area board scores
+(`perf.inp-p75-ms`, `perf.inp-p75-mid-phone-ms`, `perf.key2paint-p95-*`).
+The nightly perf run and the verification factory run it every night.
+
 ## For developers
 
 - `src/storage/vaultIndexCore.ts` — the index (pure, runs in the worker or in

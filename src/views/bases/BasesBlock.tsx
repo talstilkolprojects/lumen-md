@@ -36,7 +36,7 @@ import { EmptyState, learnHow } from "../../ui/EmptyState";
 const DatabaseMapView = lazy(() => import("../DatabaseMapView"));
 
 const muted = "hsl(var(--fg-muted))";
-const danger = "hsl(0 80% 60%)";
+const danger = "hsl(var(--danger))";
 
 /** Every file of the workspace, as Bases sees it (notes with their text, attachments without). */
 async function loadVault(): Promise<BasesFile[]> {

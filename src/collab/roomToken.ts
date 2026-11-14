@@ -77,6 +77,7 @@ function askOnce(
 ): Promise<{ token: string; expiresAt: number }> {
   return new Promise((resolve, reject) => {
     let settled = false;
+    // privacy-ledger: not tracked — the live-share server the user set up (collaboration, not AI traffic: docs/ai/privacy lists what the ledger covers). Airplane mode blocks and lists it.
     const ws = new WebSocket(roomTokenUrl(serverUrl));
     const finish = (fn: () => void) => {
       if (settled) return;

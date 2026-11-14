@@ -50,6 +50,7 @@ const enabled = process.env.LUMEN_EVAL_CANVAS === "1";
 
 (enabled ? describe : describe.skip)(`canvas "draw me" eval — ${model} @ ${url}`, () => {
   it("≥ 80% of 20 requests give a valid editable diagram", async () => {
+    // privacy-ledger: local-ai — the eval's own Ollama on this machine (LUMEN_EVAL_OLLAMA_URL), not app code; eval-only, never built into the app.
     const tags = await fetch(`${url}/api/tags`, { signal: AbortSignal.timeout(3000) }).catch((e: Error) => e);
     expect(tags instanceof Error ? `Ollama unreachable at ${url}: ${tags.message}` : "ok").toBe("ok");
     localStorage.setItem("lumen.ollama.baseUrl", url);

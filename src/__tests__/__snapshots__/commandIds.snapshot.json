@@ -968,6 +968,13 @@
       "icon": "Link"
     },
     {
+      "id": "help.beta",
+      "label": "Help: Beta programme",
+      "group": "Tools",
+      "hint": "Join the beta on this device, send feedback, and a weekly report only if you ask for it",
+      "icon": "Sparkles"
+    },
+    {
       "id": "ai.policy",
       "label": "AI: Local or Cloud Policy",
       "group": "Tools",
@@ -1910,6 +1917,91 @@
       "group": "Tools",
       "hint": "Puts back every file the last automation run changed, byte for byte",
       "icon": "Workflow"
+    },
+    {
+      "id": "sources.knessetLaw",
+      "label": "Cite a law (Knesset)…",
+      "group": "Insert",
+      "hint": "חוק הגנת הפרטיות, [[חוק:חופש המידע]] or a Basic Law becomes a cited source; a saved law opens offline",
+      "icon": "Quote"
+    },
+    {
+      "id": "sources.knessetBill",
+      "label": "Cite a bill (Knesset)…",
+      "group": "Insert",
+      "hint": "Find a bill by a word of its name and cite its Knesset record",
+      "icon": "FileText"
+    },
+    {
+      "id": "sources.knessetProtocol",
+      "label": "Quote from this committee protocol",
+      "group": "Insert",
+      "hint": "The selected words with the speaker, the session date and the page, read from the open protocol",
+      "icon": "Quote"
+    },
+    {
+      "id": "sources.askLaw",
+      "label": "Ask the law…",
+      "group": "Insert",
+      "hint": "Search the laws you saved, on this device; every answer is an exact, verified section",
+      "icon": "FileText"
+    },
+    {
+      "id": "sources.datagovInsert",
+      "label": "Insert government data (data.gov.il)…",
+      "group": "Insert",
+      "hint": "Search datasets; the rows are saved as a CSV in your vault, shown as a table or chart, with the attribution",
+      "icon": "Table"
+    },
+    {
+      "id": "sources.cbsSeries",
+      "label": "Insert a CBS series…",
+      "group": "Insert",
+      "hint": "A Central Bureau of Statistics time series by its id (120010 is the CPI), with the attribution its licence asks for",
+      "icon": "BarChart3"
+    },
+    {
+      "id": "sources.datasetRefresh",
+      "label": "Refresh this dataset",
+      "group": "Insert",
+      "hint": "Fetch the dataset under the cursor again and see what changed before switching to the new snapshot",
+      "icon": "Download"
+    },
+    {
+      "id": "sources.benyehudaDownload",
+      "label": "Download the Ben-Yehuda library…",
+      "group": "Insert",
+      "hint": "Hebrew literature in the public domain, once, from the project's dump: then search and read with no network",
+      "icon": "Download"
+    },
+    {
+      "id": "sources.benyehudaSearch",
+      "label": "Search the Ben-Yehuda library…",
+      "group": "Insert",
+      "hint": "Author, work or words of the text (ביאליק בריכה), on this device",
+      "icon": "FileText"
+    },
+    {
+      "id": "sources.benyehudaQuote",
+      "label": "Copy as a quote (Ben-Yehuda)",
+      "group": "Insert",
+      "hint": "The selected passage with author, work, a link to it and the public-domain mark, ready to paste",
+      "icon": "Quote"
+    },
+    {
+      "id": "sources.benyehudaHighlight",
+      "label": "Highlight this passage (Ben-Yehuda)",
+      "group": "Insert",
+      "hint": "Keep the selected passage of a work in the highlights hub",
+      "icon": "Pencil"
+    },
+    {
+      "id": "sources.open",
+      "label": "Open sources…",
+      "group": "Insert",
+      "hint": "One search over Sefaria, the Knesset, data.gov.il and the Ben-Yehuda library, with each result's rights",
+      "shortcut": "⌥⌘S",
+      "icon": "Quote"
     }
   ],
   "full": [
@@ -2912,6 +3004,13 @@
       "group": "Tools",
       "hint": "Counts on this device and a weekly report you can send — nothing leaves without your click",
       "icon": "Link"
+    },
+    {
+      "id": "help.beta",
+      "label": "Help: Beta programme",
+      "group": "Tools",
+      "hint": "Join the beta on this device, send feedback, and a weekly report only if you ask for it",
+      "icon": "Sparkles"
     },
     {
       "id": "ai.policy",
@@ -3972,6 +4071,91 @@
       "group": "Tools",
       "hint": "Puts back every file the last automation run changed, byte for byte",
       "icon": "Workflow"
+    },
+    {
+      "id": "sources.knessetLaw",
+      "label": "Cite a law (Knesset)…",
+      "group": "Insert",
+      "hint": "חוק הגנת הפרטיות, [[חוק:חופש המידע]] or a Basic Law becomes a cited source; a saved law opens offline",
+      "icon": "Quote"
+    },
+    {
+      "id": "sources.knessetBill",
+      "label": "Cite a bill (Knesset)…",
+      "group": "Insert",
+      "hint": "Find a bill by a word of its name and cite its Knesset record",
+      "icon": "FileText"
+    },
+    {
+      "id": "sources.knessetProtocol",
+      "label": "Quote from this committee protocol",
+      "group": "Insert",
+      "hint": "The selected words with the speaker, the session date and the page, read from the open protocol",
+      "icon": "Quote"
+    },
+    {
+      "id": "sources.askLaw",
+      "label": "Ask the law…",
+      "group": "Insert",
+      "hint": "Search the laws you saved, on this device; every answer is an exact, verified section",
+      "icon": "FileText"
+    },
+    {
+      "id": "sources.datagovInsert",
+      "label": "Insert government data (data.gov.il)…",
+      "group": "Insert",
+      "hint": "Search datasets; the rows are saved as a CSV in your vault, shown as a table or chart, with the attribution",
+      "icon": "Table"
+    },
+    {
+      "id": "sources.cbsSeries",
+      "label": "Insert a CBS series…",
+      "group": "Insert",
+      "hint": "A Central Bureau of Statistics time series by its id (120010 is the CPI), with the attribution its licence asks for",
+      "icon": "BarChart3"
+    },
+    {
+      "id": "sources.datasetRefresh",
+      "label": "Refresh this dataset",
+      "group": "Insert",
+      "hint": "Fetch the dataset under the cursor again and see what changed before switching to the new snapshot",
+      "icon": "Download"
+    },
+    {
+      "id": "sources.benyehudaDownload",
+      "label": "Download the Ben-Yehuda library…",
+      "group": "Insert",
+      "hint": "Hebrew literature in the public domain, once, from the project's dump: then search and read with no network",
+      "icon": "Download"
+    },
+    {
+      "id": "sources.benyehudaSearch",
+      "label": "Search the Ben-Yehuda library…",
+      "group": "Insert",
+      "hint": "Author, work or words of the text (ביאליק בריכה), on this device",
+      "icon": "FileText"
+    },
+    {
+      "id": "sources.benyehudaQuote",
+      "label": "Copy as a quote (Ben-Yehuda)",
+      "group": "Insert",
+      "hint": "The selected passage with author, work, a link to it and the public-domain mark, ready to paste",
+      "icon": "Quote"
+    },
+    {
+      "id": "sources.benyehudaHighlight",
+      "label": "Highlight this passage (Ben-Yehuda)",
+      "group": "Insert",
+      "hint": "Keep the selected passage of a work in the highlights hub",
+      "icon": "Pencil"
+    },
+    {
+      "id": "sources.open",
+      "label": "Open sources…",
+      "group": "Insert",
+      "hint": "One search over Sefaria, the Knesset, data.gov.il and the Ben-Yehuda library, with each result's rights",
+      "shortcut": "⌥⌘S",
+      "icon": "Quote"
     }
   ],
   "autoSaveOn": [
@@ -4124,6 +4308,7 @@
     "help.open",
     "help.diagnostics",
     "help.usage",
+    "help.beta",
     "ai.policy",
     "ai.trace",
     "ai.cache",

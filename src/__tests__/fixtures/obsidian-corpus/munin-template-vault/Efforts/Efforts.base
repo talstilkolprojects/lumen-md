@@ -1,0 +1,30 @@
+filters:
+  and:
+    - type == "project" || type == "area"
+properties:
+  note.date_created:
+    displayName: Created
+views:
+  - type: table
+    name: Active
+    filters:
+      and:
+        - status == "active" || status == "waiting" || status == "simmering"
+    groupBy:
+      property: status
+      direction: ASC
+    order:
+      - file.name
+      - type
+      - status
+      - date_created
+  - type: table
+    name: All efforts
+    groupBy:
+      property: status
+      direction: ASC
+    order:
+      - file.name
+      - type
+      - status
+      - date_created

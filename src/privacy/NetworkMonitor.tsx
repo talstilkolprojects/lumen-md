@@ -12,9 +12,16 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 import { createRoot } from "react-dom/client";
 import { Plane, X } from "lucide-react";
 import { t, getLocale } from "../i18n";
-import { airplaneModeOn, airplaneSince, disableAirplaneMode, egressAttempts, enableAirplaneMode, subscribeEgress, type EgressAttempt } from "./airplane";
+import { airplaneModeOn, airplaneSince, disableAirplaneMode, egressAttempts, egressTally, enableAirplaneMode, subscribeEgress, type EgressAttempt } from "./airplane";
 import { buildCertificate, reachedNetwork, sealCertificate } from "./airplaneCertificate";
 import { HelpButton } from "../ui/HelpButton";
+
+/**
+ * The "Test" button's target: one GET with no data, made only when the user clicks.
+ * privacy-ledger: network — airplane mode's monitor lists the attempt (allowed or blocked,
+ * src/privacy/airplane.ts), and the ledger lists it as "network" in audit mode.
+ */
+const AIRPLANE_TEST_URL = "https://example.com/";
 
 const muted: React.CSSProperties = { fontSize: 12, color: "hsl(var(--fg-muted))" };
 const ghost: React.CSSProperties = { padding: "5px 12px", fontSize: 12, borderRadius: 6, border: "1px solid hsl(var(--border))", background: "transparent", color: "inherit", cursor: "pointer" };
@@ -22,11 +29,11 @@ const primary: React.CSSProperties = { ...ghost, background: "hsl(var(--accent))
 const cell: React.CSSProperties = { padding: "3px 6px", borderBottom: "1px solid hsl(var(--border))", verticalAlign: "top" };
 
 const DECISION_COLOR: Record<EgressAttempt["decision"], string> = {
-  allowed: "hsl(35 90% 50%)",
-  blocked: "hsl(0 70% 55%)",
+  allowed: "hsl(var(--warning))",
+  blocked: "hsl(var(--danger))",
   "cache-only": "hsl(var(--fg-muted))",
-  local: "hsl(140 50% 45%)",
-  "in-flight": "hsl(35 90% 50%)",
+  local: "hsl(var(--success))",
+  "in-flight": "hsl(var(--warning))",
 };
 
 const decisionLabel = (d: EgressAttempt["decision"]) =>
@@ -74,7 +81,7 @@ export function NetworkMonitor({ onClose }: { onClose: () => void }) {
   const certificate = async () => {
     if (since === null) return;
     const to = Date.now();
-    const sealed = await sealCertificate(buildCertificate(list, since, to));
+    const sealed = await sealCertificate(buildCertificate(list, since, to, undefined, egressTally()));
     download(JSON.stringify({ certificate: sealed.text, sha256: sealed.sha256 }, null, 2) + "\n", `lumen-airplane-${new Date(since).toISOString().replace(/[:.]/g, "-")}.json`);
   };
 
@@ -109,7 +116,8 @@ export function NetworkMonitor({ onClose }: { onClose: () => void }) {
               title={t("airplane.test.hint")}
               data-testid="airplane-test"
               onClick={() => {
-                fetch("https://example.com/", { mode: "no-cors", cache: "no-store" }).catch(() => {
+                // privacy-ledger: network — the airplane test (AIRPLANE_TEST_URL above): listed by airplane mode's monitor.
+                fetch(AIRPLANE_TEST_URL, { mode: "no-cors", cache: "no-store" }).catch(() => {
                   /* why: blocked or offline — the attempt is listed either way */
                 });
               }}

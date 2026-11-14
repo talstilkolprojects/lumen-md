@@ -46,10 +46,46 @@ with 1 when a check fails. Warnings do not fail it.
   and its time are read from GitHub (`gh api`) and the check fails without
   them; without `--pr` it only warns. Tal runs it with `--pr` before every
   merge. See [Second maintainer](/contributing/second-maintainer/).
+- **Sensitive files have an owner (plan W8.6).** Which files are sensitive
+  is worked out from the code, not kept by hand
+  (`scripts/lib/sensitivePaths.mjs`): shipped code whose path or text shows
+  cryptography, an export or publish door, a sanitizer, a frame sandbox,
+  CSP or security headers, a network call, redaction, criticMarkup, agent tools and MCP, or the
+  Markdown-to-HTML pipeline and its raw-HTML sinks. Each changed file of
+  that kind needs a line in `.github/CODEOWNERS`, or an entry in
+  `security/codeowners-exceptions.json` with a reason and an expiry date
+  (at most 90 days ahead). An expired or undated exception fails. When the
+  PR changes CODEOWNERS or the exceptions, the whole tree is checked. The
+  report prints the CODEOWNERS lines to add.
+
+The same sensitive paths also need an independent review receipt for the
+head commit, from a reviewer that did not write the change, with attack tests
+and no critical or high finding open (plan W6.11). See
+[Independent review](/contributing/independent-review/).
+- **Budgets only go down** (plan W6.26). A diff that raises a bundle
+  budget, the startup budget, an exception's expiry date, the ratchet
+  margin, a performance-gate FCP/LCP limit or a Lighthouse assertion
+  fails. So does a budget number written into `scripts/bundle-budget.mjs`
+  itself. See [Budgets that only go down](/contributing/budgets/).
 
 It also warns:
 - when source changed and no test did;
 - when an AI agent wrote the PR (add the `ai-written` label).
+
+## The branch's base (plan W6.22)
+
+Every PR is based on the current train (the highest-numbered
+`verify/train-N` on the remote) or on `main`, not on another PR's branch.
+The check:
+- warns when the base is something else, and names the
+  `scripts/restack.mjs` command that prints how to move it;
+- warns when the branch is behind its base (the train head, for a
+  stacked PR) and says by how many commits;
+- fails when the merge base is more than 7 days old
+  (`--max-age-days`), or when there is more than one merge base
+  (a criss-cross).
+
+See [Every PR on the train head](/contributing/train-base/).
 
 ## Options
 
@@ -60,6 +96,22 @@ It also warns:
 | `--base-sizes <file>`, `--head-sizes <file>` | Sizes already measured |
 | `--build-base` | Build the base to measure it |
 | `--no-size` | Skip the size check |
-| `--pr <n>` | The pull request number: read its labels, label events and reviews (human-review rule) |
+| `--pr <n>` | The pull request number: read its labels, label events, reviews and comments (human-review and independent-review rules) |
+| `--review <file>` | A review receipt file to check against this checkout's HEAD, offline; repeatable ([Independent review](/contributing/independent-review/)) |
 | `--repo <owner/name>` | The repository, when the `origin` remote does not name it |
+| `--train <branch>` | The current train, when it isn't the highest `verify/train-N` on the remote |
+| `--max-age-days <n>` | The age limit of the merge base (default 7) |
 | `--out <file>` | Write the report |
+
+## The whole tree
+
+`npm run codeowners:check` runs the owner check on every file in the
+repository and exits with 1 on a gap. `-- --list` also prints every
+sensitive file, the rules it matched and the CODEOWNERS line that covers
+it. An exception looks like this:
+
+```json
+[
+  { "path": "src/storage/exportOdt.ts", "reason": "The second maintainer takes it over in W9.1.", "expires": "2027-01-31" }
+]
+```

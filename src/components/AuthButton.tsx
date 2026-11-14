@@ -62,7 +62,7 @@ export function AuthButton() {
                 width: 20,
                 height: 20,
                 borderRadius: 999,
-                background: "linear-gradient(135deg,#7c5cff,#22d3ee)",
+                background: "var(--gradient-brand)",
                 color: "white",
                 display: "flex",
                 alignItems: "center",
@@ -96,7 +96,7 @@ export function AuthButton() {
               background: "hsl(var(--bg))",
               border: "1px solid hsl(var(--border-strong))",
               borderRadius: 10,
-              boxShadow: "0 12px 40px -8px hsl(0 0% 0% / 0.35)",
+              boxShadow: "var(--shadow-lg)",
               zIndex: 100,
               padding: "6px 0",
             }}
@@ -149,7 +149,7 @@ export function AuthButton() {
           alignItems: "center",
           gap: 6,
           padding: "4px 10px",
-          border: isError ? "1px solid hsl(0 70% 60% / 0.6)" : "1px solid hsl(var(--border))",
+          border: isError ? "1px solid hsl(var(--danger) / 0.6)" : "1px solid hsl(var(--border))",
           borderRadius: 999,
           background: "transparent",
           color: "hsl(var(--fg))",
@@ -160,7 +160,7 @@ export function AuthButton() {
         }}
       >
         {isError ? (
-          <AlertTriangle size={13} aria-hidden style={{ color: "hsl(0 70% 60%)" }} />
+          <AlertTriangle size={13} aria-hidden style={{ color: "hsl(var(--danger))" }} />
         ) : (
           <LogIn size={13} aria-hidden />
         )}{" "}

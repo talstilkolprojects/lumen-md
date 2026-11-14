@@ -14,7 +14,7 @@ const ask = async (key: string, defaultValue = "") => (await uiPrompt({ message:
 const fail = (e: unknown) => useToastStore.getState().push({ kind: "error", title: t("automations.failed", { error: explainError(e) }) });
 
 async function buildRule(): Promise<Rule | null> {
-  const w = await uiSelect({ message: t("automations.pick.trigger"), choices: ["created", "tagAdded", "propertyChanged", "daily"].map((v) => ({ value: v, label: t(`automations.trigger.${v}`) })) });
+  const w = await uiSelect({ message: t("automations.pick.trigger"), choices: ["created", "tagAdded", "propertyChanged", "rowChanged", "daily"].map((v) => ({ value: v, label: t(`automations.trigger.${v}`) })) });
   if (!w) return null;
   let when: Trigger;
   if (w === "created") when = { kind: "created", folder: (await ask("automations.ask.folder")) || undefined };
@@ -26,6 +26,11 @@ async function buildRule(): Promise<Rule | null> {
     const key = await ask("automations.ask.key");
     if (!key) return null;
     when = { kind: "propertyChanged", key, value: (await ask("automations.ask.value")) || undefined };
+  } else if (w === "rowChanged") {
+    // W6.46: when a row of a base view changes.
+    const base = await ask("automations.ask.base");
+    if (!base) return null;
+    when = { kind: "rowChanged", base: /\.base$/i.test(base) ? base : `${base}.base`, view: (await ask("automations.ask.view")) || undefined, property: (await ask("automations.ask.rowProperty")) || undefined };
   } else when = { kind: "daily" };
   const a = await uiSelect({ message: t("automations.pick.action"), choices: ["move", "tag", "template", "appendDaily"].map((v) => ({ value: v, label: t(`automations.action.${v}`) })) });
   if (!a) return null;

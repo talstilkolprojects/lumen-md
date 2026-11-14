@@ -491,6 +491,16 @@
       "vars": []
     },
     {
+      "key": "cmd.beta",
+      "en": "Help: Beta programme",
+      "vars": []
+    },
+    {
+      "key": "cmd.beta.hint",
+      "en": "Join the beta on this device, send feedback, and a weekly report only if you ask for it",
+      "vars": []
+    },
+    {
       "key": "cmd.billing.manage",
       "en": "Billing: Manage subscription",
       "vars": []
@@ -1008,6 +1018,16 @@
       "vars": []
     },
     {
+      "key": "cmd.file.publishAtproto",
+      "en": "Publish to Bluesky (Standard.site)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.publishAtproto.hint",
+      "en": "This note as a public record in your AT Protocol account",
+      "vars": []
+    },
+    {
       "key": "cmd.file.publishSite",
       "en": "Publish site…",
       "vars": []
@@ -1082,6 +1102,16 @@
     {
       "key": "cmd.file.trash.hint",
       "en": "Restore deleted notes (kept 30 days)",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.unpublishAtproto",
+      "en": "Remove from Bluesky (Standard.site)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.unpublishAtproto.hint",
+      "en": "Delete this note's public record from your account",
       "vars": []
     },
     {
@@ -1840,6 +1870,86 @@
       "vars": []
     },
     {
+      "key": "cmd.sources.askLaw",
+      "en": "Ask the law…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.askLaw.hint",
+      "en": "Search the laws you saved, on this device; every answer is an exact, verified section",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.benyehudaDownload",
+      "en": "Download the Ben-Yehuda library…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.benyehudaDownload.hint",
+      "en": "Hebrew literature in the public domain, once, from the project's dump: then search and read with no network",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.benyehudaHighlight",
+      "en": "Highlight this passage (Ben-Yehuda)",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.benyehudaHighlight.hint",
+      "en": "Keep the selected passage of a work in the highlights hub",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.benyehudaQuote",
+      "en": "Copy as a quote (Ben-Yehuda)",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.benyehudaQuote.hint",
+      "en": "The selected passage with author, work, a link to it and the public-domain mark, ready to paste",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.benyehudaSearch",
+      "en": "Search the Ben-Yehuda library…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.benyehudaSearch.hint",
+      "en": "Author, work or words of the text (ביאליק בריכה), on this device",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.cbsSeries",
+      "en": "Insert a CBS series…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.cbsSeries.hint",
+      "en": "A Central Bureau of Statistics time series by its id (120010 is the CPI), with the attribution its licence asks for",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.datagovInsert",
+      "en": "Insert government data (data.gov.il)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.datagovInsert.hint",
+      "en": "Search datasets; the rows are saved as a CSV in your vault, shown as a table or chart, with the attribution",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.datasetRefresh",
+      "en": "Refresh this dataset",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.datasetRefresh.hint",
+      "en": "Fetch the dataset under the cursor again and see what changed before switching to the new snapshot",
+      "vars": []
+    },
+    {
       "key": "cmd.sources.insert",
       "en": "Insert a source from Sefaria…",
       "vars": []
@@ -1850,6 +1960,36 @@
       "vars": []
     },
     {
+      "key": "cmd.sources.knessetBill",
+      "en": "Cite a bill (Knesset)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.knessetBill.hint",
+      "en": "Find a bill by a word of its name and cite its Knesset record",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.knessetLaw",
+      "en": "Cite a law (Knesset)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.knessetLaw.hint",
+      "en": "חוק הגנת הפרטיות, [[חוק:חופש המידע]] or a Basic Law becomes a cited source; a saved law opens offline",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.knessetProtocol",
+      "en": "Quote from this committee protocol",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.knessetProtocol.hint",
+      "en": "The selected words with the speaker, the session date and the page, read from the open protocol",
+      "vars": []
+    },
+    {
       "key": "cmd.sources.notesOnVerse",
       "en": "My notes on this verse",
       "vars": []
@@ -1857,6 +1997,16 @@
     {
       "key": "cmd.sources.notesOnVerse.hint",
       "en": "Every note that cites the verse under the cursor",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.open",
+      "en": "Open sources…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.open.hint",
+      "en": "One search over Sefaria, the Knesset, data.gov.il and the Ben-Yehuda library, with each result's rights",
       "vars": []
     },
     {

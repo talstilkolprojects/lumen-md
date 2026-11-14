@@ -75,15 +75,15 @@ export const StatusBar = React.memo(function StatusBar({
   const healthIssues = configHealth
     ? [
         ...configHealth.blocked.map((item) => ({ ...item, emoji: "⚠", color: "hsl(var(--danger))" })),
-        ...configHealth.partial.map((item) => ({ ...item, emoji: "◌", color: "hsl(var(--warning))" })),
+        ...configHealth.partial.map((item) => ({ ...item, emoji: "◌", color: "hsl(var(--warn))" })),
       ].slice(0, 2)
     : [];
   const healthColor = !configHealth
     ? "hsl(var(--fg-muted))"
     : configHealth.score >= 85
-      ? "hsl(var(--success))"
+      ? "hsl(var(--ok))"
       : configHealth.score >= 65
-        ? "hsl(var(--warning))"
+        ? "hsl(var(--warn))"
         : "hsl(var(--danger))";
   return (
     <footer className="status-bar">
@@ -306,11 +306,12 @@ export const StatusBar = React.memo(function StatusBar({
           style={{ gap: 4 }}
           data-testid="status-privacy-mode"
         >
+          {/* --ok is the status green made for text (>= 4.5:1); --success is not. */}
           <ShieldCheck
             size={10}
-            style={{ color: "hsl(var(--success))" }}
+            style={{ color: "hsl(var(--ok))" }}
           />
-          <span style={{ color: "hsl(var(--success))", fontSize: 10, fontWeight: 600 }}>
+          <span style={{ color: "hsl(var(--ok))", fontSize: 10, fontWeight: 600 }}>
             {t("status.privacyMode")}
           </span>
         </span>

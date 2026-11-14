@@ -14,10 +14,10 @@
         "type": "Crash Data",
         "linkedToUser": false,
         "usedForTracking": false,
-        "condition": "Only in a build made with a crash-reporting key (VITE_SENTRY_DSN), and only until the user opts out (Settings). Personal data is scrubbed before sending (src/lib/telemetry.ts)."
+        "condition": "Only in a build made with a crash-reporting key (VITE_SENTRY_DSN), and only after the user turns error reports on (Settings; off by default, refused under the local-only policy). A report holds the error's class name and where in the code, never its message, note text, titles, paths or the page address (src/lib/telemetry.ts)."
       }
     ],
-    "note": "Everything under optionalFeatures is sent by the user's own choice to the service the user set up (their own key or account); the developer receives none of it."
+    "note": "Everything under optionalFeatures is sent by the user's own choice to the service the user set up (their own key or account); the developer receives none of it, except error reports, which go to whoever runs the error tracker the build names (VITE_SENTRY_DSN)."
   },
   "google": {
     "dataCollected": false,
@@ -28,7 +28,7 @@
       {
         "type": "App info and performance: Crash logs",
         "optional": true,
-        "condition": "Only in a build made with a crash-reporting key (VITE_SENTRY_DSN), and only until the user opts out."
+        "condition": "Only in a build made with a crash-reporting key (VITE_SENTRY_DSN), and only after the user turns error reports on (off by default, refused under the local-only policy)."
       }
     ]
   },
@@ -39,6 +39,8 @@
     { "feature": "Canvas (tldraw) licence check", "ledgerCategory": "third-party", "sends": "The page address", "turnedOnBy": "Opening a canvas in a production build; refused under local-only" },
     { "feature": "Model and dictionary downloads (Hugging Face, GitHub)", "ledgerCategory": "model-download", "sends": "Nothing of yours (a download)", "turnedOnBy": "Choosing a local model or a dictionary" },
     { "feature": "Canvas fonts, icons and translations", "ledgerCategory": "static-asset", "sends": "Nothing of yours (static files)", "turnedOnBy": "Opening a canvas" },
+    { "feature": "Error reports (Sentry / GlitchTip)", "ledgerCategory": "monitoring", "sends": "The error's class name and where in the code it happened; no error message, note text, titles, paths or page address", "turnedOnBy": "Turning error reports on in Settings (off by default), in a build made with VITE_SENTRY_DSN; refused under local-only" },
+    { "feature": "Plugins' network requests", "ledgerCategory": "plugin", "sends": "Whatever the plugin's request carries, to the destination the plugin names", "turnedOnBy": "Installing a plugin and granting it network access; refused under local-only" },
     { "feature": "Other requests in audit mode", "ledgerCategory": "network", "sends": "Whatever that request carries; listed so an audit can compare", "turnedOnBy": "Audit mode only (lumen.privacy.audit)" },
     { "feature": "Encrypted sync (WebDAV, S3, Dropbox, Google Drive)", "ledgerCategory": null, "sends": "Ciphertext only, to the storage you chose", "turnedOnBy": "Connecting a sync provider" },
     { "feature": "Live collaboration", "ledgerCategory": null, "sends": "End-to-end encrypted edits, to your collaborators (and a collab server, if configured)", "turnedOnBy": "Starting or joining a session" }

@@ -20,9 +20,9 @@ const ATTR = "lumenSync";
 const GLYPH: Record<FileSyncState, string> = { synced: "✓", pending: "↻", conflict: "!", error: "×", excluded: "–" };
 const COLOR: Record<FileSyncState, string> = {
   synced: "hsl(var(--fg-muted) / 0.7)",
-  pending: "hsl(210 80% 55%)",
-  conflict: "hsl(35 90% 50%)",
-  error: "hsl(0 70% 55%)",
+  pending: "hsl(var(--info))",
+  conflict: "hsl(var(--warning))",
+  error: "hsl(var(--danger))",
   excluded: "hsl(var(--fg-muted) / 0.6)",
 };
 

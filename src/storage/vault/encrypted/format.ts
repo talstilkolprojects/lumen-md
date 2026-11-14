@@ -19,9 +19,11 @@
  *
  * From the data key, HKDF-SHA256 (salt = vault id) makes one key per job:
  * "files" (AES-GCM, file contents), "store" (AES-GCM, what Lumen keeps in
- * IndexedDB: agent traces, the semantic index, history) and "header" (HMAC
+ * IndexedDB: agent traces, the semantic index, history), "header" (HMAC
  * over the header, so nobody can lower the KDF cost or flip the conversion
- * direction unnoticed).
+ * direction unnoticed), and since W6.36 "snapshot-enc" (AES-GCM) and
+ * "snapshot-mac" (HMAC), which seal and sign the vault index snapshot in
+ * the index worker (../../snapshotSeal.ts).
  *
  * Header. `.lumen-encryption.json` at the vault root, plain JSON (a device
  * needs it before it has a key), written twice (the second copy is
@@ -38,6 +40,7 @@
 
 import { bs, concat, fromB64u, fromUtf8, randomBytes, toB64u, utf8 } from "../../../sync/e2ee/bytes";
 import { ENCRYPTED_PREFIX } from "./paths";
+import type { SnapshotKeys } from "../../snapshotSeal";
 import { deriveMasterKey, newKdfParams, validateKdfParams, type Argon2idParams, type KdfParams, type KdfPolicy } from "../../../sync/e2ee/kdf";
 
 /** The shortest passphrase the vault accepts (characters), for the setup and unlock dialogs. */
@@ -70,6 +73,8 @@ export interface RestKeys {
   files: CryptoKey;
   store: CryptoKey;
   header: CryptoKey;
+  /** W6.36: the index snapshot's own subkeys, handed to the index worker (../../snapshotSeal.ts). */
+  snapshot: SnapshotKeys;
 }
 
 export class WrongPassphraseError extends Error {
@@ -161,12 +166,16 @@ export async function deriveRestKeys(dataKey: Uint8Array, vaultId: string): Prom
   const sub = (purpose: string, alg: HmacKeyGenParams | AesKeyGenParams, usages: KeyUsage[]) =>
     crypto.subtle.deriveKey({ name: "HKDF", hash: "SHA-256", salt: bs(utf8(vaultId)), info: bs(utf8(`${FORMAT}/${VERSION}/${purpose}`)) }, base, alg, false, usages);
   const aes: AesKeyGenParams = { name: "AES-GCM", length: 256 };
-  const [files, store, header] = await Promise.all([
+  const hmac: HmacKeyGenParams = { name: "HMAC", hash: "SHA-256", length: 256 };
+  const [files, store, header, snapEnc, snapMac] = await Promise.all([
     sub("files", aes, ["encrypt", "decrypt"]),
     sub("store", aes, ["encrypt", "decrypt"]),
-    sub("header", { name: "HMAC", hash: "SHA-256", length: 256 }, ["sign", "verify"]),
+    sub("header", hmac, ["sign", "verify"]),
+    // W6.36: the index snapshot, sealed in the worker. Not extractable, like the others.
+    sub("snapshot-enc", aes, ["encrypt", "decrypt"]),
+    sub("snapshot-mac", hmac, ["sign", "verify"]),
   ]);
-  return { vaultId, files, store, header };
+  return { vaultId, files, store, header, snapshot: { vaultId, enc: snapEnc, mac: snapMac } };
 }
 
 // ── Header ───────────────────────────────────────────────────────────────

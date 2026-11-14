@@ -51,6 +51,17 @@ We do not pursue legal action against good-faith research that follows this poli
 
 מדווחים על חולשת אבטחה **רק בערוץ פרטי**: [Report a vulnerability](https://github.com/talstilkol/lumen-md/security/advisories/new) ב-GitHub (Security → Advisories). לא פותחים issue ציבורי. נאשר קבלה תוך 48 שעות, ניתן חומרה ותאריך תיקון תוך 5 ימי עבודה, נתקן ב-fork פרטי זמני ונפרסם את הגרסה ואז את ה-advisory (עם CVE מחומרה בינונית ומעלה, ועם קרדיט למדווח). המועד האחרון לפרסום הוא 90 יום מהדיווח. אם המתחזק הראשון לא עונה תוך 48 שעות, המתחזק השני מטפל.
 
+## Maintainers and keys
+
+Every key that can sign a Lumen release, plugin or reviewed commit is listed here with its fingerprint. A key that is not in this table is not ours. Changing this table is a sensitive change, so the other maintainer reviews it (`.github/CODEOWNERS`).
+
+| Maintainer | GitHub | Commit signing key (SSH, SHA256 fingerprint) | Plugin signing key (Ed25519, SHA-256 of the SPKI) | Since |
+|---|---|---|---|---|
+| Tal (owner) | @talstilkol | *to add* | *to add* | — |
+| Second maintainer | *open: see docs, contributing/second-maintainer* | — | — | — |
+
+The desktop updater trusts one minisign public key (`src-tauri/tauri.conf.json`). It is held by the owner and kept in the maintainers' emergency vault (docs: *contributing/second-maintainer*, sections 6 and 7).
+
 ## Security architecture
 
 Lumen is a **local-first** application. By default, no data leaves the browser.

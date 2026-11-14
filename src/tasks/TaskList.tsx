@@ -28,7 +28,7 @@ export function TaskList({ tasks, hide = new Set(), onToggle, today }: TaskListP
               {task.description}
               {!hide.has("priority") && PRIORITY_MARK[task.priority] ? <span style={{ marginInlineStart: 6 }}>{PRIORITY_MARK[task.priority]}</span> : null}
               {!hide.has("due date") && task.due ? (
-                <span style={{ marginInlineStart: 6, color: overdue ? "hsl(0 70% 55%)" : "hsl(var(--fg-muted))", fontSize: "0.9em" }}>
+                <span style={{ marginInlineStart: 6, color: overdue ? "hsl(var(--danger))" : "hsl(var(--fg-muted))", fontSize: "0.9em" }}>
                   📅 <bdi>{task.due}</bdi>
                 </span>
               ) : null}

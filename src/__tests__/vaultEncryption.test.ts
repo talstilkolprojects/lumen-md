@@ -198,6 +198,58 @@ describe("turning it on, locking, recovering, turning it off", () => {
     expect(read).toBe(NOTES["Projects/Home.md"]);
   });
 
+  it("lock forgets every encrypted vault's keys, not only the open one's (#529 re-review 14.11, T5)", async () => {
+    await enable();
+    const second = createMemoryBackend({ id: "second-vault" });
+    await second.write("Other.md", "second secret");
+    setVaultBackend(second);
+    await session.enableEncryption(PASS, { pbkdf2Iterations: ITER, confirmRecoveryKey: async () => true });
+    expect(await readWorkspaceFile("Other.md")).toBe("second secret");
+    session.lock(); // while the second vault is open
+    setVaultBackend(inner); // back to the first one
+    expect(await vaultEncryptionReady()).toBe("locked");
+    let read: string | null = null;
+    const pending = readWorkspaceFile("Projects/Home.md").then((t) => (read = t));
+    await new Promise((r) => setTimeout(r, 10));
+    expect(read).toBeNull(); // waits for the passphrase
+    await session.unlock(PASS);
+    await pending;
+    expect(read).toBe(NOTES["Projects/Home.md"]);
+  });
+
+  it("turning encryption off on one vault keeps auto-lock running for another that is unlocked (review 16, T5-1)", async () => {
+    const minutesBefore = session.autoLockMinutes();
+    const live = new Set<unknown>();
+    const realSet = globalThis.setInterval;
+    const realClear = globalThis.clearInterval;
+    globalThis.setInterval = ((fn: () => void, ms?: number) => {
+      const id = realSet(fn, ms);
+      if (ms === 30_000) live.add(id);
+      return id;
+    }) as typeof setInterval;
+    globalThis.clearInterval = ((id?: ReturnType<typeof setInterval>) => {
+      live.delete(id);
+      realClear(id);
+    }) as typeof clearInterval;
+    try {
+      await enable(); // the first vault: unlocked
+      const second = createMemoryBackend({ id: "second-vault" });
+      await second.write("Other.md", "second secret");
+      setVaultBackend(second);
+      await session.enableEncryption(PASS, { pbkdf2Iterations: ITER, confirmRecoveryKey: async () => true });
+      session.setAutoLockMinutes(1);
+      expect((await session.disableEncryption(PASS)).done).toBe(true);
+      expect(live.size).toBeGreaterThan(0); // the first vault's keys are still under auto-lock
+      expect(session.checkAutoLock(Date.now() + 3_600_000)).toBe(true);
+      setVaultBackend(inner);
+      expect(await vaultEncryptionReady()).toBe("locked");
+    } finally {
+      globalThis.setInterval = realSet;
+      globalThis.clearInterval = realClear;
+      session.setAutoLockMinutes(minutesBefore);
+    }
+  });
+
   it("a vault made with PBKDF2 stays on it at unlock and at a passphrase change; it moves to Argon2id only when asked (review 12.11)", async () => {
     await enable();
     const alg = async () => (await readHeader(inner, { minPbkdf2Iterations: ITER, minArgon2CostKiB: 8 }))?.passphrase.kdf.alg;

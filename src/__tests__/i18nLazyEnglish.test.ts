@@ -33,11 +33,13 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   // imported from outside, and must not reach the strings.
   "e2ee.json": {
     module: "sync/e2ee/strings.ts",
-    users: ["sync/e2ee/classroom/ClassroomPanel.tsx", "sync/e2ee/conflict.ts", "sync/e2ee/ui/FreshnessBanner.tsx", "sync/e2ee/ui/LanPairing.tsx", "sync/e2ee/ui/PassphraseForm.tsx", "sync/e2ee/ui/SetupWizard.tsx", "sync/e2ee/ui/SyncActivity.tsx", "sync/e2ee/ui/SyncPanel.tsx", "sync/e2ee/ui/SyncRulesForm.tsx", "sync/e2ee/ui/errorText.ts", "sync/e2ee/ui/treeBadges.ts"],
+    users: ["sync/e2ee/classroom/ClassroomPanel.tsx", "sync/e2ee/conflict.ts", "sync/e2ee/ui/FreshnessBanner.tsx", "sync/e2ee/ui/LanPairing.tsx", "sync/e2ee/ui/PairingCompare.tsx", "sync/e2ee/ui/PassphraseForm.tsx", "sync/e2ee/ui/SetupWizard.tsx", "sync/e2ee/ui/SyncActivity.tsx", "sync/e2ee/ui/SyncPanel.tsx", "sync/e2ee/ui/SyncRulesForm.tsx", "sync/e2ee/ui/errorText.ts", "sync/e2ee/ui/treeBadges.ts"],
     prefixes: ["e2ee."],
     within: "sync/e2ee/",
-    shared: ["sync/e2ee/age.ts", "sync/e2ee/bytes.ts", "sync/e2ee/kdf.ts", "sync/e2ee/kdfCalibrate.ts", "sync/e2ee/primitives/argon2.ts", "sync/e2ee/primitives/blake2b.ts", "sync/e2ee/primitives/chacha20poly1305.ts", "sync/e2ee/primitives/scrypt.ts"],
+    shared: ["sync/e2ee/age.ts", "sync/e2ee/bytes.ts", "sync/e2ee/keys.ts", "sync/e2ee/lan/address.ts", "sync/e2ee/kdf.ts", "sync/e2ee/kdfCalibrate.ts", "sync/e2ee/primitives/argon2.ts", "sync/e2ee/primitives/blake2b.ts", "sync/e2ee/primitives/chacha20poly1305.ts", "sync/e2ee/primitives/scrypt.ts"],
   },
+  // Agent skills (plan W7.1): "/" in the AI prompt and the palette loads src/agents/skills/ with a dynamic import.
+  "skills.json": { module: "agents/skills/strings.ts", users: ["agents/skills/ui.ts"], prefixes: ["skills."], within: "agents/skills/" },
   "feedback.json": { module: "feedback/strings.ts", users: ["ui/FeedbackDialog.tsx"], prefixes: ["feedback."] },
   // The encrypted vault's dialogs (plan 11.4), opened with a dynamic import.
   "vaultEncryption.json": { module: "storage/vault/encrypted/strings.ts", users: ["ui/VaultEncryptionDialog.tsx", "ui/VaultUnlock.tsx"], prefixes: ["vaultEnc."] },
@@ -61,7 +63,7 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "canvasCards.json": { module: "canvas/strings.ts", users: ["ui/CanvasExcalidraw.tsx"], prefixes: ["canvas."] },
   "canvasDiagram.json": { module: "canvas/diagramStrings.ts", users: ["canvas/DiagramDialog.tsx"], prefixes: ["canvas."] },
   "capture.json": { module: "capture/strings.ts", users: ["capture/quickCapture.ts", "ui/QuickCapture.tsx"], prefixes: ["capture."] },
-  "citations.json": { module: "citations/strings.ts", users: ["citations/CiteDialog.tsx", "citations/LegalCiteDialog.tsx", "citations/run.ts"], prefixes: ["cite.", "legalCite."] },
+  "citations.json": { module: "citations/strings.ts", users: ["citations/CiteDialog.tsx", "citations/LegalCiteDialog.tsx", "citations/run.ts", "pdf/zoteroSend.ts"], prefixes: ["cite.", "legalCite."] },
   "epub.json": { module: "epub/strings.ts", users: ["epub/EpubReader.tsx", "epub/ReadingMode.tsx", "epub/openEpub.ts", "highlights/HighlightsPanel.tsx"], prefixes: ["epub.", "reading."] },
   "fineTune.json": { module: "ui/fineTuneStrings.ts", users: ["ui/FineTuneSettings.tsx"], prefixes: ["fineTune."] },
   "highlightImport.json": { module: "highlights/import/strings.ts", users: ["highlights/import/runImport.ts"], prefixes: ["hlimport."] },
@@ -69,7 +71,7 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "importWizard.json": { module: "storage/import/strings.ts", users: ["storage/import/ImportWizard.tsx", "storage/import/report.ts"], prefixes: ["importWizard."], within: "storage/import/" },
   "meetingSpeakers.json": { module: "meetings/speakerStrings.ts", users: ["meetings/meetingTranscribe.ts"], prefixes: ["speakers."] },
   "morning.json": { module: "daily/morningStrings.ts", users: ["daily/morning.ts"], prefixes: ["morning."] },
-  "pdf.json": { module: "pdf/strings.ts", users: ["highlights/HighlightsPanel.tsx", "pdf/PdfReader.tsx", "pdf/openPdf.ts"], prefixes: ["pdf."] },
+  "pdf.json": { module: "pdf/strings.ts", users: ["highlights/HighlightsPanel.tsx", "pdf/PdfReader.tsx", "pdf/openPdf.ts", "pdf/zoteroSend.ts"], prefixes: ["pdf."] },
   "pluginDev.json": { module: "plugins/runtime/devStrings.ts", users: ["plugins/runtime/DevPanel.tsx", "plugins/runtime/SandboxedPlugins.tsx"], prefixes: ["pluginDev."], within: "plugins/runtime/", shared: ["plugins/runtime/rendererRegistry.ts"] },
   "pluginTrust.json": { module: "plugins/runtime/trustStrings.ts", users: ["plugins/runtime/permissions.ts"], prefixes: ["pluginTrust."], within: "plugins/runtime/", shared: ["plugins/runtime/rendererRegistry.ts"] },
   "privacy.json": { module: "privacy/strings.ts", users: ["ui/PrivacyLedgerPanel.tsx"], prefixes: ["privacy."] },
@@ -81,6 +83,8 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "templates.json": { module: "storage/templateStrings.ts", users: ["ui/TemplateGallery.tsx"], prefixes: ["templates."] },
   "transcribeFile.json": { module: "ai/dictation/strings.ts", users: ["ui/TranscribeFile.ts"], prefixes: ["transcribeFile."] },
   "usage.json": { module: "metrics/strings.ts", users: ["metrics/reminder.ts", "ui/UsageDialog.tsx"], prefixes: ["usage."] },
+  // The beta programme (plan W6.31): its panel and its weekly reminder, both loaded with a dynamic import.
+  "betaProgramme.json": { module: "beta/strings.ts", users: ["beta/reminder.ts", "ui/BetaPanel.tsx"], prefixes: ["beta."] },
   "vaultCheck.json": { module: "storage/vault/integrityStrings.ts", users: ["storage/vault/integrityReport.ts"], prefixes: ["vaultCheck."] },
   "versions.json": { module: "collab/versionStrings.ts", users: ["ui/NamedVersionsDialog.tsx"], prefixes: ["versions."] },
   "voiceCommands.json": { module: "ai/voice/strings.ts", users: ["ai/voice/run.ts"], prefixes: ["voiceCmd."] },
@@ -120,7 +124,7 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "liveRubyBlock.json": { module: "plugins/liveRubyBlockStrings.ts", users: ["plugins/LiveRubyBlock.tsx"], prefixes: ["block.liveRuby.clear", "block.liveRuby.loadFailed", "block.liveRuby.loadTimeout", "block.liveRuby.loading", "block.liveRuby.prompt", "block.liveRuby.run", "block.liveRuby.state.error", "block.liveRuby.state.idle", "block.liveRuby.state.loading", "block.liveRuby.state.running", "block.liveRuby.state.success", "block.liveRuby.state.timeout", "block.liveRuby.stop", "block.liveRuby.stopped", "block.liveRuby.timedOut", "block.liveRuby.title"] },
   "localModelsCommand.json": { module: "ai/localModelsCommandStrings.ts", users: ["ai/localModelsCommand.ts"], prefixes: ["ai.localModels.auto", "ai.localModels.autoSet", "ai.localModels.cached", "ai.localModels.downloadNow", "ai.localModels.failed", "ai.localModels.message", "ai.localModels.noWebgpu", "ai.localModels.ready", "ai.localModels.recommended", "ai.localModels.selected", "ai.localModels.set", "ai.localModels.title", "ai.localModels.tooBig"] },
   "insertTextDialog.json": { module: "ui/insertTextDialogStrings.ts", users: ["ui/InsertTextDialog.tsx"], prefixes: ["insertText.auto", "insertText.codeLang", "insertText.confirm", "insertText.detect", "insertText.detectedAs", "insertText.hintCancel", "insertText.hintInsert", "insertText.mode", "insertText.mode.append", "insertText.mode.atCursor", "insertText.mode.replace", "insertText.preview", "insertText.smartHelp", "insertText.smartPlaceholder", "insertText.title"] },
-  "liveDictation.json": { module: "ui/liveDictationStrings.ts", users: ["ui/LiveDictation.tsx"], prefixes: ["dictation.download.body", "dictation.download.browser", "dictation.download.cancel", "dictation.download.credits", "dictation.download.start", "dictation.download.title", "dictation.downloading", "dictation.listening", "dictation.loading", "dictation.speaking", "dictation.stop"] },
+  "liveDictation.json": { module: "ui/liveDictationStrings.ts", users: ["ui/LiveDictation.tsx"], prefixes: ["dictation.download.body", "dictation.download.browser", "dictation.download.cancel", "dictation.download.credits", "dictation.download.start", "dictation.download.title", "dictation.downloading", "dictation.listening", "dictation.loading", "dictation.speaking", "dictation.stop", "dictation.desktop."] },
   "playgroundBlock.json": { module: "plugins/playgroundBlockStrings.ts", users: ["plugins/PlaygroundBlock.tsx"], prefixes: ["block.playground.console", "block.playground.errors", "block.playground.frameTitle", "block.playground.preview", "block.playground.prompt", "block.playground.reset", "block.playground.run", "block.playground.runnerBlocked", "block.playground.state.error", "block.playground.state.idle", "block.playground.state.running", "block.playground.state.success", "block.playground.title"] },
   "liveRBlock.json": { module: "plugins/liveRBlockStrings.ts", users: ["plugins/LiveRBlock.tsx"], prefixes: ["block.liveR.clear", "block.liveR.loadFailed", "block.liveR.loadTimeout", "block.liveR.loading", "block.liveR.plot", "block.liveR.prompt", "block.liveR.run", "block.liveR.state.error", "block.liveR.state.idle", "block.liveR.state.loading", "block.liveR.state.running", "block.liveR.state.success", "block.liveR.state.timeout", "block.liveR.stop", "block.liveR.stopped", "block.liveR.timedOut", "block.liveR.title"] },
   "vaultActions.json": { module: "commands/domains/vaultActionsStrings.ts", users: ["commands/domains/vaultActions.ts"], prefixes: ["vault.export.done", "vault.export.doneFolder", "vault.export.failed", "vault.export.folder", "vault.export.where", "vault.export.zip", "vault.prompt.decryptPassword", "vault.prompt.encryptPassword", "toast.digest.readFailed", "toast.documentDecrypted", "toast.documentEncrypted", "toast.documentIsNotEncrypted", "toast.wrongPassword"] },
@@ -160,6 +164,7 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "relatedPanel.json": { module: "ui/relatedPanelStrings.ts", users: ["ui/RelatedPanel.tsx"], prefixes: ["related."] },
   "tasksBlock.json": { module: "plugins/tasksBlockStrings.ts", users: ["plugins/TasksBlock.tsx"], prefixes: ["tasks.count", "tasks.error.date", "tasks.error.query", "tasks.error.regex", "tasks.group.done", "tasks.group.none", "tasks.group.todo"] },
   "tts.json": { module: "ai/ttsStrings.ts", users: ["ai/tts.ts"], prefixes: ["tts.", "toast.tts."] },
+  "commandBodies.json": { module: "commands/domains/commandBodiesStrings.ts", users: ["commands/domains/agentsActions.ts","commands/domains/aiActions.ts","commands/domains/batchActions.ts","commands/domains/citeActions.ts","commands/domains/gitActions.ts","commands/domains/researchActions.ts","commands/domains/viewActions.ts","commands/domains/voiceActions.ts"], prefixes: ["agent.links.needWorkspace","agent.links.no","agent.links.prompt","agent.links.yes","agent.product.prompt","agent.tags.prompt","agent.translate.prompt","ai.cache.clear","ai.cache.cleared","ai.cache.off","ai.cache.on","ai.cache.title","ai.provider.choose","ai.provider.enterKey","ai.provider.invalid","ai.trace.title","ai.usage.title","autofill.folder","autofill.noFields","autofill.progress","autofill.proposed","batch.applied","batch.apply","batch.confirm","batch.confirmLocal","batch.folder","batch.lang","batch.noNotes","batch.op","batch.processing","batch.provider","batch.quota","batch.saveFailed","batch.submitted","batch.terminal","clip.localOnly","clip.needsService","clip.source.prompt","clip.source.unknown","clip.url.prompt","fim.off","fim.on","fim.onNoModel","git.alert.cloned","git.alert.commitFailed","git.alert.identitySaved","git.alert.pushed","git.clone.kept","git.commit.lfsKept","git.commit.skipped","git.commit.unresolved","git.commit.unsaved","git.prompt.commitMessageAi","git.prompt.identityEmail","git.prompt.identityName","git.prompt.url","git.status.clean","git.status.summary","git.watch.conflicts","litReview.done","litReview.failed","litReview.progress","litReview.started","meeting.empty","rerank.consent","research.checking","research.endpoint","research.key","research.noCitations","research.noService","research.provider.brave","research.provider.claude","research.provider.searxng","research.provider.tavily","summary.empty","toast.actionItemsAdded","toast.actionItemsFailed","toast.addedTag","toast.agentError","toast.aiProviderSetTo","toast.appliedLink","toast.autoTagFailed","toast.cite.noCaseNumber","toast.diagramFailed","toast.diagramInserted","toast.extractingActionItems","toast.generatingDiagram","toast.gitWatchOnPullingEvery","toast.gitWatchPaused","toast.linkSuggestFailed","toast.noLinkSuggestions","toast.noTagSuggestionsReturned","toast.productAgentStarting","toast.productCreatedFilesGenerated","toast.productCreationFailed","toast.pulledFile","toast.related.folderOff","toast.related.folderOn","toast.rerankModelOff","toast.rerankModelOn","toast.rerankUnsupported","toast.scanningWorkspaceForLinkSuggestions","toast.suggestingTags","toast.translatingTo","toast.translationFailed","tts.networkVoice.body","tts.networkVoice.ok","tts.networkVoice.title","voice.languagePrompt"] },
   // Journalist mode (plan W5.11): the note-password flow, the redact command, the settings switch,
   // and the photo-metadata refusals of the editor and Publish site, all behind a dynamic import.
   "journalist.json": {
@@ -187,6 +192,16 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "latex.json": { module: "latex/latexStrings.ts", users: ["latex/app.ts"], prefixes: ["latex."] },
   // The self-guided usability session (plan W4.25), opened from the palette.
   "usabilitySelf.json": { module: "research/usability/selfStrings.ts", users: ["ui/UsabilitySelfPanel.tsx"], prefixes: ["usabilitySelf."] },
+  // Train 4's lazy domains (V4 sweep): each loaded with a dynamic import, like the ones above.
+  // Open sources (W7.24): the dialog, and the Ben-Yehuda, Knesset and government-data sources' app layers and the dataset block.
+  "openSources.json": { module: "sources/open/strings.ts", users: ["sources/open/OpenSourcesDialog.tsx"], prefixes: ["openSources."] },
+  "benyehuda.json": { module: "sources/benyehuda/strings.ts", users: ["sources/benyehuda/app.ts"], prefixes: ["benyehuda."] },
+  "knesset.json": { module: "sources/knesset/strings.ts", users: ["sources/knesset/app.ts"], prefixes: ["knesset."] },
+  "datagov.json": { module: "sources/datagov/strings.ts", users: ["plugins/DatasetBlock.tsx", "sources/datagov/app.ts"], prefixes: ["datagov."] },
+  // Standard.site publishing (W7.19): the palette's publish and unpublish actions.
+  "standardSite.json": { module: "publish/standardSiteStrings.ts", users: ["publish/standardSiteActions.ts"], prefixes: ["atproto."] },
+  // The host-move banner: pwa/hostMoveBoot.ts loads pwa/hostMove.ts with a dynamic import, and it holds its own strings.
+  "hostmove.json": { module: "pwa/hostMove.ts", users: [], prefixes: ["pwa.move."] },
 };
 
 function sources(dir: string): string[] {

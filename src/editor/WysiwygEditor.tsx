@@ -32,7 +32,7 @@ import { showAiToast } from "../ui/AiToast";
 import { openAiPrompt } from "../ui/AiInlinePrompt";
 import { log } from "../lib/logger";
 import { getMarkdown, insert as insertMarkdown, $prose } from "@milkdown/utils";
-import { cleanPastedHtml, shouldConvertPaste } from "../paste/htmlPaste";
+import { cleanPastedHtml, cleanPastedText, shouldConvertPaste } from "../paste/htmlPaste";
 import { setWysiwygPasteTarget, type PasteDetail } from "../paste/pasteCommands";
 import { wysiwygPdfPastePlugin } from "../paste/wysiwygPdfPaste";
 import { wysiwygSourcePreserver } from "./wysiwygSource";
@@ -632,6 +632,7 @@ const pasteCleanPlugin = $prose(
     new Plugin({
       props: {
         transformPastedHTML: (html: string) => (shouldConvertPaste(html, "") ? cleanPastedHtml(html) : html),
+        transformPastedText: (text: string) => cleanPastedText(text),
       },
     }),
 );

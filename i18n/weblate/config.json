@@ -1,0 +1,28 @@
+{
+  "about": "Hosted Weblate setup for Lumen's UI strings (plan W6.32). One Weblate component per i18n domain. scripts/weblate.mjs checks this file against the locale layout (npm run i18n:weblate) and prints the settings to enter in Weblate (--print). See docs/src/content/docs/contributing/weblate.md.",
+  "instance": "https://hosted.weblate.org",
+  "project": { "name": "Lumen", "slug": "lumen-md", "web": "https://lumen-md.vercel.app", "instructions": "i18n/weblate/arabic-reviewer-brief.md" },
+  "repository": {
+    "url": "https://github.com/talstilkol/lumen-md.git",
+    "branch": "main",
+    "vcs": "github",
+    "access": "Hosted Weblate GitHub App, installed on talstilkol/lumen-md only",
+    "pull_requests": true
+  },
+  "component": {
+    "filemask": "src/i18n/locales/*/{domain}.json",
+    "template": "i18n/weblate/en/{domain}.json",
+    "file_format": "json",
+    "file_format_params": { "json_indent": 2, "json_indent_style": "spaces", "json_sort_keys": "case_sensitive", "json_use_compact_separators": false },
+    "language_regex": "^(?!en$)[a-z]{2}(-[A-Z]{2})?$",
+    "source_language": "en",
+    "edit_template": false,
+    "new_lang": "none",
+    "license": "MIT",
+    "check_flags": "placeholders:r\"\\{\\{?\\w+\\}?\\}\"",
+    "enable_review": true,
+    "addons": ["weblate.cleanup.generic", "weblate.cleanup.blank"]
+  },
+  "languages": ["ar", "ru", "fr", "de", "ja", "zh-CN"],
+  "first": "ar"
+}

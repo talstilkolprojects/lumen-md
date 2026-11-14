@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
- * Design audit (plan W3.1): the checklist, run on each of the 40 surfaces
- * in scripts/design-surfaces.json (src/ui/<Surface>.tsx and its .css):
+ * Design audit (plan W3.1, W6.41): the checklist, run on each of the 43
+ * surfaces in scripts/design-surfaces.json — src/ui/<Surface>.tsx and its
+ * .css, or, for a name with a folder, src/<folder>/<Surface>.tsx (the
+ * surfaces that live outside src/ui):
  *
  *   1. colour     — no hard-coded colour; tokens only        (check-design.mjs)
  *   2. motion     — only transform / opacity, the duration scale, nothing on layout
@@ -62,9 +64,10 @@ export function auditSource(fileName, text) {
 export function audit() {
   const { surfaces } = JSON.parse(readFileSync(join(ROOT, "scripts/design-surfaces.json"), "utf8"));
   return surfaces.map((name) => {
-    const tsx = join(ROOT, "src/ui", `${name}.tsx`);
-    const css = join(ROOT, "src/ui", `${name}.css`);
-    if (!existsSync(tsx)) return { name, missing: true, pass: false, problems: { missing: [{ line: 0, text: `src/ui/${name}.tsx` }] } };
+    const base = name.includes("/") ? join(ROOT, "src", name) : join(ROOT, "src/ui", name);
+    const tsx = `${base}.tsx`;
+    const css = `${base}.css`;
+    if (!existsSync(tsx)) return { name, missing: true, pass: false, problems: { missing: [{ line: 0, text: `${name.includes("/") ? "src" : "src/ui"}/${name}.tsx` }] } };
     const text = readFileSync(tsx, "utf8");
     const design = [...scan(tsx, text, { strict: true, colors: true }), ...(existsSync(css) ? scan(css, readFileSync(css, "utf8"), { strict: true, colors: true }) : [])];
     const rest = auditSource(tsx, text);

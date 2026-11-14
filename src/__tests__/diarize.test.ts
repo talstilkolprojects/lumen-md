@@ -9,6 +9,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { t } from "../i18n";
+import { readLocale } from "../../scripts/lib/i18n-files.mjs";
 import { assignSpeakers, clusterEmbeddings, cosineDistance, framesToTurns, powersetToSpeakers, renameSpeaker, speakersIn, windowStarts, type Turn } from "../meetings/diarize";
 import { DIARIZATION_MODELS, diarizationAvailable, diarize, type DiarizationModels, type OrtLike } from "../meetings/diarizeModels";
 import { plainTranscript, readTurns, sampleSentences, speakerTranscript, turnsBlock, withLinkedTranscript, type SpokenSentence } from "../meetings/meetingTranscribe";
@@ -293,12 +294,13 @@ describe("meeting speaker strings ship with their chunk (W2.7)", () => {
   };
   walk(SRC);
   const lazy = JSON.parse(readFileSync(join(SRC, "i18n", "lazy", "meetingSpeakers.json"), "utf8")) as Record<string, string>;
-  const index = readFileSync(join(SRC, "i18n", "index.ts"), "utf8");
+  // The startup English: every domain file of locales/en/ (plan 0.3 moved it out of i18n/index.ts).
+  const startup = readLocale("en") as Record<string, string>;
 
   it("no lazy key is in the startup bundle; the palette labels are", () => {
-    for (const k of Object.keys(lazy)) expect(index.includes(`"${k}"`), k).toBe(false);
-    expect(index).toContain('"cmd.voice.meetingFile"');
-    expect(index).toContain('"cmd.speakers.rename"');
+    for (const k of Object.keys(lazy)) expect(k in startup, k).toBe(false);
+    expect("cmd.voice.meetingFile" in startup).toBe(true);
+    expect("cmd.speakers.rename" in startup).toBe(true);
   });
 
   it("only speakerStrings imports the JSON, only meetingTranscribe imports that, and the commands load it lazily", () => {

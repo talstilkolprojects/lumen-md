@@ -1,0 +1,11 @@
+/* The open-sources dialog (W7.24): the cite dialog's frame, plus badges and switches. */
+.os-dialog { max-width: 44rem; }
+.os-title { font-size: 1rem; margin: 0 0 0.5rem; }
+.os-kinds { display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; margin: 0.5rem 0; font-size: 0.85rem; }
+.os-kind { display: inline-flex; align-items: center; gap: 0.25rem; }
+.os-badge { margin-inline-start: auto; font-size: 0.75rem; padding: 0.05rem 0.4rem; border-radius: 0.6rem; border: 1px solid currentColor; white-space: nowrap; }
+.os-badge-link-only { opacity: 0.85; border-style: dashed; }
+.os-status { min-height: 1.2em; font-size: 0.8rem; margin: 0.25rem 0; }
+.os-switches { border: 1px solid var(--border, #8884); border-radius: 0.4rem; padding: 0.4rem 0.6rem; font-size: 0.85rem; }
+.os-switch { display: grid; grid-template-columns: auto auto 1fr; gap: 0.5rem; align-items: baseline; padding: 0.15rem 0; }
+.os-sends { opacity: 0.75; font-size: 0.8rem; }

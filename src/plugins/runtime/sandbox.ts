@@ -197,11 +197,15 @@ export async function createSandbox(opts: SandboxOptions): Promise<Sandbox> {
       pendingCalls.delete(id);
       if (disposed) return;
       arm();
+      // resolve()/reject() do not take the handle: it is ours to free. Kept, every host call leaked
+      // a string or an Error into the plugin's heap, and freeing the runtime failed its leak check (W6.35).
+      const valueH = ok ? context.newString(text) : context.newError({ name: text.startsWith("PluginDenied:") ? "PluginDenied" : "Error", message: text.replace(/^PluginDenied:\s*/, "") });
       try {
-        if (ok) deferred.resolve(context.newString(text));
-        else deferred.reject(context.newError({ name: text.startsWith("PluginDenied:") ? "PluginDenied" : "Error", message: text.replace(/^PluginDenied:\s*/, "") }));
+        if (ok) deferred.resolve(valueH);
+        else deferred.reject(valueH);
         drain();
       } finally {
+        if (valueH.alive) valueH.dispose();
         deferred.dispose();
         disarm();
       }

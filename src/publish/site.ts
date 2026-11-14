@@ -27,6 +27,7 @@ import { escapeHtml } from "../lib/escapeHtml";
 import { MD_RE, PUBLISH_CSS, encodePath, pageTitle, rewriteMarkdownLinks, rewriteWikiLinks } from "./siteLinks";
 import { prepareForExport } from "../lib/redaction";
 import { cleanPublishedFile, keepImageMetadata } from "../lib/imageMetadata";
+import { linkTags, wellKnownFile } from "./standardSite";
 
 export interface SiteNote {
   /** Vault-relative path, POSIX separators (`Projects/Plan.md`). */
@@ -58,6 +59,12 @@ export interface SiteOptions {
   words?: Partial<SiteWords>;
   /** Keep photos' metadata (Settings). Defaults to the user's choice. */
   keepImageMetadata?: boolean;
+  /**
+   * Standard.site verification (plan W7.19): the publication's at:// URI is
+   * served at /.well-known/site.standard.publication, and each page links its
+   * publication and, when published, its document record (by note path).
+   */
+  standardSite?: { publication: string; documents?: Readonly<Record<string, string>> };
 }
 
 export interface SiteWords {
@@ -298,11 +305,12 @@ export async function buildSite(notes: readonly SiteNote[], opts: SiteOptions): 
   const withheld = new Set<string>();
   const keepMeta = opts.keepImageMetadata ?? keepImageMetadata();
 
-  const pageShell = async (md: string, output: string, title: string, extra = ""): Promise<string> => {
+  const pageShell = async (md: string, output: string, title: string, extra = "", source?: string): Promise<string> => {
     const prefix = up(output);
+    const std = opts.standardSite ? linkTags(opts.standardSite.publication, source ? opts.standardSite.documents?.[source] : undefined) : "";
     let html = await opts.render(md, {
       title,
-      head: `\n<link rel="stylesheet" href="${prefix}style.css" />\n<meta name="lumen-site-root" content="${prefix}" />\n<script src="${prefix}search.js" defer></script>`,
+      head: `\n<link rel="stylesheet" href="${prefix}style.css" />\n<meta name="lumen-site-root" content="${prefix}" />\n<script src="${prefix}search.js" defer></script>${std}`,
       before: `${siteBar(opts.title, output, words, chromeDir, opts.lang)}\n<div class="lumen-site-layout" dir="${chromeDir}">${navTree(navPages, output, words)}`,
     });
     // The layout takes the site's direction (sidebar side); the page keeps its own, as the renderer set it on <html>.
@@ -315,7 +323,7 @@ export async function buildSite(notes: readonly SiteNote[], opts: SiteOptions): 
   };
 
   for (const p of pages) {
-    let html = await pageShell(p.md, p.output, p.output === "index.html" ? opts.title : `${p.title} — ${opts.title}`);
+    let html = await pageShell(p.md, p.output, p.output === "index.html" ? opts.title : `${p.title} — ${opts.title}`, "", p.source);
     html = rewriteMarkdownLinks(html, p.output);
     html = rewriteWikiLinks(html, p.output, pages);
     html = unlinkMissingPages(html, p.output, outputs);
@@ -358,6 +366,10 @@ export async function buildSite(notes: readonly SiteNote[], opts: SiteOptions): 
   files.push({ path: "search-index.json", data: JSON.stringify(index) });
   // GitHub Pages: serve files as they are (no Jekyll, which hides _folders).
   files.push({ path: ".nojekyll", data: "" });
+  if (opts.standardSite) {
+    const w = wellKnownFile(opts.standardSite.publication);
+    files.push({ path: w.path, data: w.data });
+  }
   for (const [path, data] of assets) if (!files.some((f) => f.path === path)) files.push({ path, data });
 
   return { files, pages: navPages, missing: [...missing].sort(), withheld: [...withheld].sort() };

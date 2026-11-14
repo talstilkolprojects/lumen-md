@@ -267,7 +267,7 @@ export function CollabSettings({ onClose, embedded = false }: Props) {
               border: "none",
               borderRadius: 8,
               background: "hsl(var(--accent))",
-              color: "white",
+              color: "hsl(var(--accent-fg))",
               cursor: "pointer",
               fontWeight: 600,
             }}

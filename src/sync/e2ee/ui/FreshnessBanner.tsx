@@ -7,6 +7,8 @@
  * changes wait on it (third review 12.11, N6). Pairing is two-way by
  * default (N3): this device shows a request, an existing device checks it
  * against the vault as it is now and answers; a one-way code still works.
+ * Either way the device is paired only after the user compared the five
+ * symbols on both devices (plan W8.5, `PairingCompare`).
  */
 
 import { useEffect, useState } from "react";
@@ -14,20 +16,25 @@ import { t } from "../../../i18n";
 import { PairingEpochError, PairingError } from "../pairing";
 import type { E2eeSync } from "../engine";
 import { e2eeErrorText } from "./errorText";
+import { PairingCompare } from "./PairingCompare";
 import "../strings";
 import { explainError } from "../../../lib/userError";
 
 type Freshness = Awaited<ReturnType<E2eeSync["freshness"]>>;
 
 interface Props {
-  sync: Pick<E2eeSync, "freshness" | "pair" | "confirmFreshness" | "pairingRequest">;
+  sync: Pick<E2eeSync, "freshness" | "pair" | "confirmFreshness" | "pairingRequest" | "pairingSas" | "confirmPairing" | "rejectPairing">;
+  /** How often the comparison asks for the other device's key or confirmation (ms; tests). */
+  pollMs?: number;
 }
 
-export function FreshnessBanner({ sync }: Props) {
+export function FreshnessBanner({ sync, pollMs }: Props) {
   const [state, setState] = useState<Freshness | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [request, setRequest] = useState<string | null>(null);
+  /** The comparison under way (W8.5): a new key for each code or answer entered. */
+  const [comparing, setComparing] = useState(0);
 
   useEffect(() => {
     let live = true;
@@ -63,8 +70,8 @@ export function FreshnessBanner({ sync }: Props) {
         display: "grid",
         gap: 8,
         padding: "10px 12px",
-        border: "1px solid hsl(40 90% 45%)",
-        background: "hsl(40 90% 50% / 0.1)",
+        border: "1px solid hsl(var(--warning))",
+        background: "hsl(var(--warning) / 0.1)",
         borderRadius: 8,
         fontSize: 13,
       }}
@@ -94,12 +101,31 @@ export function FreshnessBanner({ sync }: Props) {
           style={{ padding: "4px 6px", border: "1px solid hsl(var(--border))", borderRadius: 6, background: "transparent", color: "inherit", fontFamily: "JetBrains Mono, ui-monospace, monospace" }}
         />
       </label>
-      {error && <div style={{ color: "hsl(0 70% 50%)", fontSize: 12 }}>{error}</div>}
+      {error && <div style={{ color: "hsl(var(--danger))", fontSize: 12 }}>{error}</div>}
+      {comparing > 0 && <PairingCompare key={comparing} sync={sync} pollMs={pollMs} onEnd={() => void sync.freshness().then(setState)} />}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button type="button" onClick={() => act(async () => setRequest(await sync.pairingRequest()))}>
+        <button
+          type="button"
+          onClick={() =>
+            act(async () => {
+              setComparing(0);
+              setRequest(await sync.pairingRequest());
+            })
+          }
+        >
           {t("e2ee.fresh.request")}
         </button>
-        <button type="button" disabled={!code.trim()} onClick={() => act(() => sync.pair(code))}>
+        <button
+          type="button"
+          disabled={!code.trim()}
+          onClick={() =>
+            act(async () => {
+              setComparing(0);
+              await sync.pair(code);
+              setComparing((n) => n + 1);
+            })
+          }
+        >
           {t("e2ee.fresh.pair")}
         </button>
         <button type="button" disabled={state.counter === null} onClick={() => act(() => sync.confirmFreshness())}>

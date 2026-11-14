@@ -4,3 +4,8 @@
 public/dict/he_50k.txt linguist-generated=true -diff
 # Real-vault corpus (plan W4.30): byte-for-byte copies, never converted.
 src/__tests__/fixtures/obsidian-corpus/** -text
+# Plan W8.11: the in-app help bundle is built from docs/ (scripts/help-bundle.mjs).
+# Its shards never get conflict markers: the lumen-help driver keeps our side and the
+# bundle is rebuilt after the merge (scripts/lane-merge.sh does both; by hand:
+# node scripts/help-merge-driver.mjs --install once, then node scripts/help-bundle.mjs).
+src/help/generated/*.json merge=lumen-help linguist-generated=true

@@ -37,6 +37,7 @@ const fontUrl = (bold: boolean) => `${import.meta.env.BASE_URL.replace(/\/$/, ""
 
 async function dataUrlOf(url: string): Promise<string | null> {
   try {
+    // privacy-ledger: not tracked — the app's own font file (fontUrl: BASE_URL/excalidraw/fonts, this origin); the only caller.
     const res = await fetch(url);
     if (!res.ok) return null;
     const blob = await res.blob();

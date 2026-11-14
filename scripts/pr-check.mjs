@@ -20,10 +20,25 @@
  *     adds the `human-reviewed` label (plan W4.28). With `--pr <n>` the
  *     label is read from GitHub and must be newer than the last commit;
  *     without it the rule only warns.
+ *   - The same paths need an independent review receipt for the head
+ *     commit (plan W6.11): a `lumen-review` block in a PR comment (read with
+ *     `--pr`) or a JSON file (`--review <file>`, repeatable), by a reviewer
+ *     that is not the author, with attack tests and no critical or high
+ *     finding open. A new push makes older receipts stale.
+ *   - Budgets only go down (plan W6.26): no bundle budget, startup budget,
+ *     exception date, perf-gate FCP/LCP limit or Lighthouse assertion loosened.
+ *   - No stacks (plan W6.22): the base is the current train (the highest
+ *     verify/train-N) or main, else a warning; commits behind the base warn;
+ *     a merge base older than 7 days, or a criss-cross, fails.
+ *   - Every sensitive file the PR adds or changes has an owner in
+ *     CODEOWNERS or a dated exception (plan W8.6; sensitive is worked out
+ *     from the code: scripts/lib/sensitivePaths.mjs). When the PR changes
+ *     CODEOWNERS or the exceptions, the whole tree is checked.
  *
  *   npm run pr:check -- --base origin/main --body pr-body.md
  *   npm run build && npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-check.md
  *   npm run pr:check -- --base origin/main --pr 123 --no-size     # before merging
+ *   npm run pr:check -- --base origin/verify/train-2 --review review.json --no-size   # offline
  *
  * Exit 1 when a check fails; warnings do not fail.
  */
@@ -34,7 +49,12 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { addedLinesFromDiff, AI_LABEL, bodyProblems, domainMentions, licenceChanges, skipCiViolations, unregisteredNetworkCalls, untestedChanges, writtenByAi } from "./lib/prGate.mjs";
 import { bundleDiffMarkdown } from "./bundle-diff.mjs";
-import { HUMAN_REVIEW_LABEL, humanReviewVerdict, parseCodeowners, sensitiveChanges } from "./lib/humanReview.mjs";
+import { HUMAN_REVIEW_LABEL, humanReviewVerdict, independentPatterns, parseCodeowners, sensitiveChanges } from "./lib/humanReview.mjs";
+import { extractReceipts, independentReviewVerdict } from "./lib/independentReview.mjs";
+import { RATCHET_FILES, raiseLine, raisesFor } from "./lib/budgetRatchet.mjs";
+import { MAX_AGE_DAYS, baseVerdict, branchName, currentTrain, driftVerdicts, worst } from "./lib/trainBase.mjs";
+import { EXCEPTIONS_FILE } from "./lib/sensitivePaths.mjs";
+import { coverageLines, treeCoverage } from "./codeowners-coverage.mjs";
 
 export function parseArgs(argv) {
   const opt = (n) => (argv.includes(n) ? argv[argv.indexOf(n) + 1] : undefined);
@@ -45,8 +65,12 @@ export function parseArgs(argv) {
     baseSizes: opt("--base-sizes"),
     headSizes: opt("--head-sizes"),
     buildBase: argv.includes("--build-base"),
+    train: opt("--train"),
+    maxAgeDays: opt("--max-age-days") != null ? Number(opt("--max-age-days")) : MAX_AGE_DAYS,
+    now: opt("--now") != null ? Date.parse(opt("--now")) : Date.now(),
     noSize: argv.includes("--no-size"),
     pr: opt("--pr"),
+    review: argv.flatMap((a, i) => (a === "--review" && argv[i + 1] ? [argv[i + 1]] : [])),
     repo: opt("--repo"),
     cwd: resolve(opt("--cwd") ?? process.cwd()),
   };
@@ -100,8 +124,9 @@ export function loadPr(repo, n) {
   const pull = ghJson([`repos/${repo}/pulls/${n}`]);
   const events = ghJson(["--paginate", `repos/${repo}/issues/${n}/events?per_page=100`]).map((e) => ({ event: e.event, label: e.label?.name, created_at: e.created_at, actor: e.actor?.login }));
   const reviews = ghJson(["--paginate", `repos/${repo}/pulls/${n}/reviews?per_page=100`]).map((r) => ({ user: r.user?.login, state: r.state, submitted_at: r.submitted_at, commit_id: r.commit_id }));
+  const comments = ghJson(["--paginate", `repos/${repo}/issues/${n}/comments?per_page=100`]).map((c) => ({ id: c.id, user: c.user?.login, created_at: c.created_at, body: c.body ?? "" }));
   const head = ghJson([`repos/${repo}/commits/${pull.head.sha}`]);
-  return { number: Number(n), labels: pull.labels.map((l) => l.name), events, reviews, author: pull.user?.login, headSha: pull.head.sha, headDate: head.commit?.committer?.date ?? null };
+  return { number: Number(n), labels: pull.labels.map((l) => l.name), events, reviews, comments, author: pull.user?.login, headSha: pull.head.sha, headDate: head.commit?.committer?.date ?? null };
 }
 
 /** Every check → { sections: [{ title, status: "ok" | "warn" | "fail" | "skipped", lines }], failed }. */
@@ -116,6 +141,23 @@ export function runChecks(opts) {
   const subjects = git(cwd, "log", "--format=%s", range).split("\n").filter(Boolean);
   const noSkip = skipCiViolations(subjects);
   add("Commits carry [skip ci]", noSkip.length ? "fail" : "ok", noSkip.length ? noSkip.map((s) => `- \`${s}\``) : [`${subjects.length} commit${subjects.length === 1 ? "" : "s"}, all with [skip ci].`]);
+
+  // No stacks (W6.22): the base, the drift behind it and the age of the merge base.
+  {
+    const remotes = git(cwd, "remote").split("\n").filter(Boolean);
+    const base = branchName(opts.base, remotes);
+    const remoteOf = remotes.find((r) => opts.base.startsWith(`${r}/`)) ?? remotes[0];
+    const trainBranches = remoteOf ? git(cwd, "for-each-ref", "--format=%(refname:short)", `refs/remotes/${remoteOf}/verify/`).split("\n").filter(Boolean).map((r) => r.slice(remoteOf.length + 1)) : [];
+    const train = opts.train ?? currentTrain(trainBranches);
+    const v = baseVerdict(base, train);
+    // Drift against the base when it is allowed; against the train head when the PR is stacked.
+    const driftRef = v.status === "ok" || !train || !remoteOf ? opts.base : `${remoteOf}/${train}`;
+    const behind = Number(git(cwd, "rev-list", "--count", `HEAD..${driftRef}`).trim());
+    const ageDays = (opts.now / 1000 - Number(git(cwd, "show", "-s", "--format=%ct", mergeBase).trim())) / 86400;
+    const mergeBases = git(cwd, "merge-base", "--all", opts.base, "HEAD").split("\n").filter(Boolean).length;
+    const rows = [v, ...driftVerdicts({ base: branchName(driftRef, remotes), behind, ageDays, mergeBases, maxAgeDays: opts.maxAgeDays, ageOf: base })];
+    add("Based on the train head", worst(rows), rows.map((r) => `- ${r.line}`));
+  }
 
   // Body
   let body = null;
@@ -141,7 +183,8 @@ export function runChecks(opts) {
   // Human review of sensitive paths (plan W4.28)
   const ownersFile = join(cwd, ".github", "CODEOWNERS");
   if (existsSync(ownersFile)) {
-    const sensitive = sensitiveChanges(changed, parseCodeowners(readFileSync(ownersFile, "utf8")));
+    const ownersText = readFileSync(ownersFile, "utf8");
+    const sensitive = sensitiveChanges(changed, parseCodeowners(ownersText));
     let pr = null;
     let mismatch = null;
     if (opts.pr && sensitive.length) {
@@ -149,9 +192,47 @@ export function runChecks(opts) {
       const local = git(cwd, "rev-parse", "HEAD").trim();
       if (pr.headSha && pr.headSha !== local) mismatch = `This checkout's HEAD (\`${local.slice(0, 9)}\`) is not PR #${pr.number}'s head (\`${pr.headSha.slice(0, 9)}\`): fetch the PR branch and run again.`;
     }
-    const v = humanReviewVerdict(sensitive, pr, HUMAN_REVIEW_LABEL);
+    // Plan W6.13: cryptography needs a label from someone other than the owner and the author.
+    let owner = opts.owner ?? null;
+    if (pr && !owner) {
+      try {
+        owner = repoOf(cwd, opts.repo).split("/")[0];
+      } catch {
+        /* why: no GitHub remote — the author rule still applies */
+      }
+    }
+    const v = humanReviewVerdict(sensitive, pr, HUMAN_REVIEW_LABEL, { independent: independentPatterns(ownersText), owner });
     add("Human review of sensitive paths", mismatch ? "fail" : v.status, mismatch ? [mismatch, "", ...v.lines] : v.lines);
-  } else add("Human review of sensitive paths", "skipped", [".github/CODEOWNERS is not on this branch."]);
+
+    // Independent review receipt for the head (plan W6.11)
+    const receipts = [];
+    for (const c of pr?.comments ?? []) for (const receipt of extractReceipts(c.body)) receipts.push({ source: `comment${c.id ? ` ${c.id}` : ""} by @${c.user ?? "?"}`, receipt });
+    for (const f of opts.review ?? []) {
+      let receipt;
+      try {
+        receipt = JSON.parse(readFileSync(resolve(cwd, f), "utf8"));
+      } catch (e) {
+        receipt = { error: `cannot read ${f} as JSON (${e.message})` };
+      }
+      receipts.push({ source: `\`${f}\``, receipt });
+    }
+    const head = pr?.headSha ?? git(cwd, "rev-parse", "HEAD").trim();
+    const iv = independentReviewVerdict(sensitive, receipts, { head, strict: !!opts.pr || (opts.review ?? []).length > 0 });
+    add("Independent review of sensitive paths", mismatch ? "fail" : iv.status, mismatch ? [mismatch, "", ...iv.lines] : iv.lines);
+  } else {
+    add("Human review of sensitive paths", "skipped", [".github/CODEOWNERS is not on this branch."]);
+    add("Independent review of sensitive paths", "skipped", [".github/CODEOWNERS is not on this branch."]);
+  }
+
+  // Every sensitive file has an owner (plan W8.6)
+  {
+    const whole = changed.includes(".github/CODEOWNERS") || changed.includes(EXCEPTIONS_FILE);
+    const paths = whole ? git(cwd, "ls-files", "-z").split("\0").filter(Boolean) : changed;
+    const c = treeCoverage(cwd, paths, opts.today ?? new Date());
+    const title = "Sensitive files have an owner";
+    if (!c) add(title, "skipped", [".github/CODEOWNERS is not on this branch."]);
+    else add(title, c.uncovered.length || c.problems.length ? "fail" : "ok", [whole ? "CODEOWNERS or its exceptions changed: the whole tree is checked." : `The ${changed.length} changed file${changed.length === 1 ? "" : "s"} are checked (\`npm run codeowners:check\` checks the whole tree).`, "", ...coverageLines(c)]);
+  }
 
   const untested = untestedChanges(changed);
   add("Tests", untested.length ? "warn" : "ok", untested.length ? [`Source changed and no test changed: ${untested.slice(0, 10).map((f) => `\`${f}\``).join(", ")}${untested.length > 10 ? ` and ${untested.length - 10} more` : ""}.`] : ["Source changes come with test changes (or there are none)."]);
@@ -164,6 +245,28 @@ export function runChecks(opts) {
     const bad = rows.filter((r) => r.level === "fail");
     add("Licences of production packages", bad.length ? "fail" : rows.some((r) => r.level === "warn") ? "warn" : "ok", rows.length ? ["| Package | Version | Licence | Before | |", "|---|---|---|---|---|", ...rows.map((r) => `| ${r.name} | ${r.version} | ${r.license} | ${r.previous ?? "new"} | ${r.level} |`)] : ["The lockfile changed, no production package did."]);
   } else add("Licences of production packages", "ok", ["package-lock.json is unchanged."]);
+
+  // Budgets only go down (W6.26): every ratchet file the diff changes, against the merge base.
+  {
+    const raised = [];
+    const touched = RATCHET_FILES.filter((f) => changed.includes(f));
+    for (const f of touched) {
+      let before = null;
+      try {
+        before = git(cwd, "show", `${mergeBase}:${f}`);
+      } catch {
+        // why: the base has no such file yet — this diff introduces it, so there is nothing to raise.
+      }
+      const after = existsSync(join(cwd, f)) ? readFileSync(join(cwd, f), "utf8") : null;
+      if (before != null && after == null) raised.push(`- \`${f}\` was deleted.`);
+      else if (before != null) raised.push(...raisesFor(f, before, after).map((x) => raiseLine(f, x)));
+    }
+    // The numbers live in the JSON: a number written into the enforcer itself would bypass the check.
+    for (const a of added["scripts/bundle-budget.mjs"] ?? []) {
+      if (/\bbudgetKb\s*:\s*\d|STARTUP_BUDGET_KB\s*=\s*\d/.test(a.text)) raised.push(`- \`scripts/bundle-budget.mjs:${a.line}\` sets a budget in code; budgets live in \`scripts/bundle-budgets.json\`.`);
+    }
+    add("Budgets only go down", raised.length ? "fail" : "ok", raised.length ? [...raised, "", "A budget is never raised: split the chunk, load it lazily, or make the page faster."] : [touched.length ? `${touched.map((f) => `\`${f}\``).join(", ")}: nothing raised.` : "No budget file changed."]);
+  }
 
   // AI label
   const messages = git(cwd, "log", "--format=%B%x1e", range).split("\x1e");

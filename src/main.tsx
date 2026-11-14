@@ -2,6 +2,8 @@
 import "./lib/trustedTypesInit";
 // Airplane mode (plan W5.9): when it is on, the browser refuses other sites from here on.
 import "./privacy/airplaneBoot";
+// After a host move, before anything writes localStorage (plan W6.9; inert without VITE_MOVED_TO).
+import "./pwa/hostMoveBoot";
 import "./fonts";
 import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";

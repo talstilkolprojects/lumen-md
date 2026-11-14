@@ -72,6 +72,8 @@ const SPECIAL_LANGS = new Set([
   "tasks",
   "database",
   "base",
+  // Government data with a local snapshot (plan W7.6).
+  "dataset",
   // Embedded queries and Dataview blocks (plan W2.12).
   "query",
   "dataview",

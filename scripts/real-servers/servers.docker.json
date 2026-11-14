@@ -1,0 +1,7 @@
+{
+  "servers": [
+    { "name": "Nextcloud 31", "kind": "webdav", "url": "http://127.0.0.1:8080/remote.php/dav/files/lumen/", "username": "lumen", "password": "lumen-real-test" },
+    { "name": "Apache httpd 2.4 mod_dav", "kind": "webdav", "url": "http://127.0.0.1:18086/dav/", "username": "tal", "password": "pw" },
+    { "name": "MinIO", "kind": "s3", "endpoint": "http://127.0.0.1:9000", "region": "us-east-1", "bucket": "lumen", "accessKeyId": "lumenadmin", "secretAccessKey": "lumenadmin-secret", "pathStyle": true }
+  ]
+}

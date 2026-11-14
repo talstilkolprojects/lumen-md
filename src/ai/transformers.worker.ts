@@ -163,12 +163,18 @@ async function verifiedPrefill(id: number, model: string, dtype: string | Record
 /**
  * Whisper on WebGPU: fp32 encoder + q4 decoder is the library's recommended
  * split; ivrit.ai's Hebrew turbo ships q4f16 for both (≈ 563 MB); wasm: q8.
+ * large-v3-turbo's fp32 encoder (≈ 2.5 GB) is over GitHub's 2 GiB per file,
+ * so the mirror can't hold it (plan W6.33): its fp16 encoder (1.27 GB,
+ * Whisper's own precision on GPUs) instead. whisperModelFor picks turbo only
+ * on an adapter with shader-f16.
  */
+const TURBO = "onnx-community/whisper-large-v3-turbo";
 export function asrOptions(device: Device, model = "") {
   if (device !== "webgpu" && model !== "itayinbar/Ozen-v1") return { device, dtype: "q8" };
   if (model === "ivrit-ai/whisper-large-v3-turbo-onnx") return { device, dtype: { encoder_model: "q4f16", decoder_model_merged: "q4f16" } };
   // Ozen v1 ships an fp16 encoder and an fp32 decoder only (its card: an fp16 decoder does not load, int8 changes transcripts).
   if (model === "itayinbar/Ozen-v1") return { device, dtype: { encoder_model: "fp16", decoder_model_merged: "fp32" } };
+  if (model === TURBO) return { device, dtype: { encoder_model: "fp16", decoder_model_merged: "q4" } };
   return { device, dtype: { encoder_model: "fp32", decoder_model_merged: "q4" } };
 }
 

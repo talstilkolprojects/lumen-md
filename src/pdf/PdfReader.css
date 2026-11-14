@@ -390,3 +390,40 @@
 .pdf-page .textLayer br::selection {
   background: transparent;
 }
+
+/* W6.47: the OCR text of a scanned page, laid over its image (./ocrPages.ts):
+   transparent, selectable, one span per recognised line, stretched over the
+   line's box so a selection covers the words it names. */
+.pdf-page .pdf-ocr-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: clip;
+  line-height: 1;
+}
+
+.pdf-page .pdf-ocr-layer > span {
+  position: absolute;
+  color: transparent;
+  white-space: pre;
+  overflow: hidden;
+  cursor: text;
+  text-align: justify;
+  text-align-last: justify;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.pdf-page .pdf-ocr-layer ::selection {
+  background: rgb(0 90 255 / 0.25);
+  color: transparent;
+}
+
+/* W6.47: reading mode — the pages alone, the highlights panel out of the way. */
+.pdf-reader--reading .pdf-side {
+  display: none;
+}
+
+.pdf-reader--reading .pdf-scroll {
+  scroll-behavior: auto;
+}

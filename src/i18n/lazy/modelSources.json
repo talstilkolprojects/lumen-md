@@ -9,5 +9,11 @@
   "modelSources.saved": "Saved.",
   "modelSources.invalid": "Enter an http(s) address, or leave it empty.",
   "modelSources.importFiles": "Add model files from this device…",
-  "modelSources.imported": "{stored} files added, {unknown} not recognised."
+  "modelSources.imported": "{stored} files added, {unknown} not recognised.",
+  "modelSources.hfOnlyTitle": "Only on Hugging Face for now",
+  "modelSources.gap.noHosting": "{model}: downloads only from Hugging Face; Lumen's mirror has no entry for it.",
+  "modelSources.gap.notPinned": "{model}: not on Lumen's mirror yet, so it downloads only from Hugging Face. If Hugging Face is blocked on your network, add your own copy above or pick its files from this device.",
+  "modelSources.gap.unhashed": "{model}: some of its files have no checksum yet, so they come only from Hugging Face, at a fixed version.",
+  "modelSources.gap.over2gib": "{model}: one of its files is over 2 GiB, more than the mirror holds per file, so it downloads only from Hugging Face.",
+  "modelSources.omitted.over2gib": "{model}: the {dtype} version has a file over 2 GiB, more than the mirror holds per file, so Lumen loads the {instead} version instead."
 }

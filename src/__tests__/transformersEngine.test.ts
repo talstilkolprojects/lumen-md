@@ -65,17 +65,20 @@ describe("transformersEngine (worker client)", () => {
     expect(whisperModelFor({ ...hardware, deviceMemoryGB: 4 })).toBe(WHISPER_MODELS.small);
     expect(whisperModelFor({ ...hardware, mobile: true })).toBe(WHISPER_MODELS.small);
     expect(whisperModelFor({ ...hardware, webgpu: false })).toBe(WHISPER_MODELS.tiny);
+    // Turbo loads its fp16 encoder (the fp32 one is over the mirror's 2 GiB, W6.33): no f16, no turbo.
+    expect(whisperModelFor({ ...hardware, f16: false })).toBe(WHISPER_MODELS.small);
     expect(await transformersDevice()).toBe("webgpu");
     hardware = { ...hardware, webgpu: false };
     expect(await transformersDevice()).toBe("wasm");
   });
 
-  it("picks ivrit.ai's turbo for Hebrew on a GPU with f16 and the VRAM, else Ozen v1 (plans 6.1, W4.13)", () => {
+  it("picks ivrit.ai's turbo for Hebrew on a GPU with f16 and the VRAM; Ozen v1 stays off until its licence is approved (plans 6.1, W4.13, W6.19)", () => {
     expect(whisperModelForLanguage(hardware, "webgpu", "he")).toBe(WHISPER_MODELS.turboHe);
-    // Without the turbo's GPU budget, Hebrew gets Ozen v1 (plan W4.13), on WebGPU or wasm.
-    expect(whisperModelForLanguage({ ...hardware, f16: false }, "webgpu", "he")).toBe(WHISPER_MODELS.ozenHe);
-    expect(whisperModelForLanguage({ ...hardware, mobile: true }, "webgpu", "he")).toBe(WHISPER_MODELS.ozenHe);
-    expect(whisperModelForLanguage({ ...hardware, webgpu: false }, "wasm", "he")).toBe(WHISPER_MODELS.ozenHe);
+    // Without the turbo's GPU budget, Hebrew gets what other languages get (W6.19: Ozen is not offered yet).
+    expect(whisperModelForLanguage({ ...hardware, f16: false }, "webgpu", "he")).toBe(whisperModelFor({ ...hardware, f16: false }, "webgpu"));
+    expect(whisperModelForLanguage({ ...hardware, mobile: true }, "webgpu", "he")).toBe(whisperModelFor({ ...hardware, mobile: true }, "webgpu"));
+    expect(whisperModelForLanguage({ ...hardware, webgpu: false }, "wasm", "he")).toBe(WHISPER_MODELS.tiny);
+    expect(whisperModelForLanguage({ ...hardware, f16: false }, "webgpu", "he")).not.toBe(WHISPER_MODELS.ozenHe);
     expect(whisperModelForLanguage(hardware, "webgpu", "en")).toBe(WHISPER_MODELS.turbo);
     expect(whisperModelForLanguage({ ...hardware, webgpu: false }, "wasm", undefined)).toBe(WHISPER_MODELS.tiny);
   });

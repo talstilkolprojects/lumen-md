@@ -7,11 +7,13 @@
  * result to GitHub as the "Vercel" commit status. A preview build therefore
  * runs the checks CI used to run, and any failing gate fails the build, so
  * a train with a failing test gets a red status. Production (main) builds as before:
- * the app and its bundle budget, nothing else.
+ * the app, its bundle budget and its build manifest (W7.23), nothing else.
  *
- *   VERCEL_ENV=preview      build, budget, vitest, e2e, i18n:check,
- *                           hygiene, docs:sync, the licence gate
- *   VERCEL_ENV=production   build, budget
+ *   VERCEL_ENV=preview      build, budget, secrets, manifest, vitest, e2e, i18n:check,
+ *                           hygiene, docs:sync, docs:complete (with the
+ *                           strict Hebrew parity), the licence gate, the mutation floor
+ *   VERCEL_ENV=production   build, budget, manifest (after the scans: its
+ *                           hashes are not secrets, but they look like them)
  *   (not on Vercel)         the preview set, so `node scripts/vercel-build.mjs`
  *                           reproduces a preview build locally
  *
@@ -32,12 +34,16 @@ import { resolve } from "node:path";
 /** Every gate: its name and the npm script that runs it. */
 export const GATES = {
   build: ["run", "build"],
+  // W7.23: the manifest of this dist, which the second infrastructure's build is compared with.
+  manifest: ["run", "-s", "build:manifest"],
   budget: ["run", "budget"],
   vitest: ["run", "test"],
   e2e: ["run", "-s", "e2e:gate"],
   "i18n:check": ["run", "-s", "i18n:check"],
   hygiene: ["run", "-s", "hygiene"],
   "docs:sync": ["run", "-s", "docs:sync"],
+  // W6.28: every page in English and Hebrew, and each Hebrew page with its English page's sections (docs-parity --strict).
+  "docs:complete": ["run", "-s", "docs:complete"],
   licenses: ["run", "-s", "licenses"],
   // W4.4: token shapes and VITE_* values not on the allowlist in dist/.
   secrets: ["run", "-s", "secrets:dist"],
@@ -46,14 +52,18 @@ export const GATES = {
 };
 
 /**
- * Arguments a gate's npm script gets on top. Vitest also writes its JSON
+ * Arguments a gate's npm script gets on top. The budget gate writes its
+ * sizes (and prints them as one `bundle-sizes:` line in the log). Vitest also writes its JSON
  * report, so a failed run ends with one short block naming every failing
  * file: the build log shows only its tail, and the failure dump of a big run
  * is thousands of lines (W1.1).
  */
 export const VITEST_REPORT = "reports/vitest.json";
+/** The budget gate's receipt (plan W6.26): what `npm run budget:ratchet -- --sizes` lowers the budgets to after a train. */
+export const SIZES_REPORT = "reports/bundle-sizes.json";
 export const GATE_EXTRA = {
   vitest: ["--", "--reporter=default", "--reporter=json", `--outputFile.json=${VITEST_REPORT}`],
+  budget: ["--", "--json", SIZES_REPORT],
 };
 
 /**
@@ -81,8 +91,8 @@ export function vitestSummary(report, { maxFiles = 80 } = {}) {
   return out;
 }
 
-export const PRODUCTION_GATES = ["build", "budget"];
-export const PREVIEW_GATES = ["build", "budget", "secrets", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "licenses", "mutation"];
+export const PRODUCTION_GATES = ["build", "budget", "manifest"];
+export const PREVIEW_GATES = ["build", "budget", "secrets", "manifest", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "docs:complete", "licenses", "mutation"];
 /**
  * `--e2e-only`: build and the e2e gate, nothing else. For a probe branch
  * that runs Playwright specs (LUMEN_E2E_SPECS, a longer LUMEN_E2E_MINUTES)
@@ -104,6 +114,12 @@ function main() {
   const where = process.env.VERCEL_ENV ? `VERCEL_ENV=${process.env.VERCEL_ENV}` : "local";
   console.log(`vercel-build (${where}): ${gates.join(" → ")}`);
   if (argv.includes("--dry-run")) return;
+  // Plan W6.9: no build that takes payments on a plan without commercial use (deploy/hosting.json).
+  const hosting = spawnSync(process.execPath, ["scripts/hosting-gate.mjs"], { stdio: "inherit", env: process.env });
+  if (hosting.status !== 0) {
+    console.error("\n✗ vercel-build: the hosting gate failed (docs self-hosting/cut-over).");
+    process.exit(1);
+  }
   const npm = process.platform === "win32" ? "npm.cmd" : "npm";
   const done = [];
   // After build, every gate runs even if an earlier one failed, so one

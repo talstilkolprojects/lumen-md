@@ -21,6 +21,12 @@ export const isAppCode = (f) => /^(src|e2e|scripts|public)\/|^[^/]+\.html$|^(vit
 
 const isCodeFile = (f) => /\.(m?[jt]sx?)$/.test(f);
 
+/**
+ * OCR inputs (plan 7.5): the OCR code, its traineddata, the golden OCR set
+ * and the measuring script. A diff that touches one gets the CER step.
+ */
+export const isOcrInput = (f) => /^(src\/ai\/ocr[^/]*\.ts|public\/tesseract\/|eval\/golden\/ocr-he\/|scripts\/ocr\/)/.test(f);
+
 /** A module path without its extension or a trailing /index: how imports name it. */
 export const moduleStem = (p) => p.replace(/\.(m?[jt]sx?)$/, "").replace(/\/index$/, "");
 
@@ -95,6 +101,9 @@ export function planSteps({ pkg, exists, changed, flags, dynamicTargets }) {
     { id: "build", title: "Build", cmd: ["npm", "run", "-s", "build"], slow: true },
     // Measures this run's build (see buildState), never a dist/ left from earlier.
     has(pkg, "budget") ? { id: "budget", title: "Bundle budget", cmd: ["npm", "run", "-s", "budget"] } : { id: "budget", title: "Bundle budget", cmd: [], skipReason: "not here" },
+    // Plan 7.5 "runs on every PR": the CER gates (clean ≤ 5 %, degraded ≤ 12 %) on the ocr-he dev split,
+    // with the app's own tesseract.js models and post-processing; it was CI's `ocr-cer` job.
+    { id: "ocr", title: "OCR CER (Hebrew, English; dev split)", cmd: ["node", "scripts/ocr/cer-node.mjs"], needs: ["scripts/ocr/cer-node.mjs"], slow: true },
     { id: "e2e", title: "e2e (Chromium, production build)", cmd: ["e2e"], slow: true },
   ];
   for (const s of steps) {
@@ -104,6 +113,7 @@ export function planSteps({ pkg, exists, changed, flags, dynamicTargets }) {
     else if (s.needs?.some((p) => !exists(p))) s.skipReason = "not here";
     else if (changed !== null && s.id === "test" && s.empty) s.skipReason = "no unit-test inputs in the diff";
     else if (changed !== null && (s.id === "build" || s.id === "budget" || s.id === "e2e") && !codeChanged) s.skipReason = "diff touches no app code";
+    else if (changed !== null && s.id === "ocr" && !changed.some(isOcrInput)) s.skipReason = "diff touches no OCR input";
   }
   return steps;
 }
@@ -148,7 +158,7 @@ export function buildState(results) {
 }
 
 /** Step ids, for --only / --skip. */
-export const STEP_IDS = ["typecheck", "hygiene", "lint", "i18n", "licenses", "headers", "test", "build", "budget", "e2e"];
+export const STEP_IDS = ["typecheck", "hygiene", "lint", "i18n", "licenses", "headers", "test", "build", "budget", "ocr", "e2e"];
 const BOOL_FLAGS = ["--help", "--h", "-h", "--changed", "--coverage", "--bail", "--install-hook", "--force"];
 const VALUE_FLAGS = ["--base", "--skip", "--only"];
 

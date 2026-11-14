@@ -44,6 +44,8 @@ export const METHODS = {
   "clipboard.writeText": "clipboard:write",
   "notifications.show": "notifications",
   "network.fetch": "network",
+  "bases.query": "bases:read",
+  "bases.update": "bases:write",
 };
 
 export class PluginDenied extends Error {
@@ -68,6 +70,11 @@ const granted = (grants, cap, args) => {
  * `grants`: "all" (default: every capability the manifest asks for) or a list.
  * Mock state: `document` { text, fileName, selection: [from, to] }, `vault` { "folder/note.md": text },
  * `settings`, `storage`, `fetch(url, init)` for granted network calls.
+ * `engine` (optional): what runs the code. The default is a fresh Node `vm` context. An engine is
+ * `async ({ manifest, code, grants, call, log }) => ({ dispatch(name, payload), denied?, dispose() })`:
+ * it runs `code` with a `lumen` object whose calls go to `call(method, args)` and returns how to
+ * deliver events. Lumen's own tests pass the app's QuickJS sandbox here, so the same cases run in
+ * the real engine (src/__tests__/helpers/quickjsEngine.ts).
  */
 export async function loadPlugin(opts = {}) {
   const manifest = opts.manifest ?? JSON.parse(readFileSync(join(opts.dir, "lumen-plugin.json"), "utf8"));
@@ -79,7 +86,7 @@ export async function loadPlugin(opts = {}) {
   const vault = new Map(Object.entries(opts.vault ?? {}));
   let settings = structuredClone(opts.settings ?? {});
   const storage = new Map(Object.entries(opts.storage ?? {}));
-  const state = { commands: new Map(), renderers: new Set(), panel: { open: false, title: null, tree: null }, rendered: [], notifications: [], clipboard: null, logs: [], calls: [], denied: new Map() };
+  const state = { commands: new Map(), renderers: new Set(), panel: { open: false, title: null, tree: null }, rendered: [], notifications: [], clipboard: null, logs: [], calls: [], denied: new Map(), basesUpdates: [] };
   const handlers = new Map();
   const renders = new Map();
   let renderSeq = 0;
@@ -148,6 +155,18 @@ export async function loadPlugin(opts = {}) {
       if (!opts.fetch) throw new Error("no fetch mock: pass opts.fetch");
       return opts.fetch(url, init);
     },
+    // The Bases API (W6.46): pass opts.bases(path, view) for query; update records the edits and answers
+    // the approval with opts.approve (default yes), as the app's one approval screen per call does.
+    "bases.query": (path, view, page) => {
+      if (!opts.bases) throw new Error("no bases mock: pass opts.bases");
+      return opts.bases(path, view, page);
+    },
+    "bases.update": (edits) => {
+      if (!Array.isArray(edits)) throw new TypeError("edits: a list of { path, set }");
+      state.basesUpdates.push(edits);
+      if (opts.approve === false) return { written: 0, unchanged: 0, declined: true };
+      return { written: edits.length, unchanged: 0, declined: false };
+    },
   };
 
   const call = async (method, args) => {
@@ -191,12 +210,19 @@ export async function loadPlugin(opts = {}) {
   const fmt = (args) => args.map((a) => (typeof a === "string" ? a : JSON.stringify(a))).join(" ");
   const consoleMock = Object.freeze(Object.fromEntries(["log", "info", "debug", "warn", "error"].map((k) => [k, (...a) => state.logs.push({ level: k === "warn" || k === "error" ? k : "log", text: fmt(a) })])));
 
-  // A fresh context: the plugin sees only lumen and console (and the language's own built-ins).
-  const context = vm.createContext({ lumen, console: consoleMock });
-  const fn = vm.runInContext(`(async function () { "use strict";\n${code}\n})`, context, { filename: manifest.main ?? "main.js" });
-  await fn();
+  let engine = null;
+  if (opts.engine) {
+    const log = (level, text) => void state.logs.push({ level: level === "warn" || level === "error" ? level : "log", text: String(text) });
+    engine = await opts.engine({ manifest, code, grants: [...grants], call, log });
+  } else {
+    // A fresh context: the plugin sees only lumen and console (and the language's own built-ins).
+    const context = vm.createContext({ lumen, console: consoleMock });
+    const fn = vm.runInContext(`(async function () { "use strict";\n${code}\n})`, context, { filename: manifest.main ?? "main.js" });
+    await fn();
+  }
 
   const emit = async (name, payload) => {
+    if (engine) return engine.dispatch(name, json(payload));
     const list = handlers.get(name) ?? [];
     await Promise.all(list.map((h) => Promise.resolve().then(() => h(json(payload)))));
   };
@@ -220,7 +246,12 @@ export async function loadPlugin(opts = {}) {
     },
     logs: state.logs,
     calls: state.calls,
-    denied: state.denied,
+    /** Refused calls by capability (an engine that checks grants itself reports its own count). */
+    denied: engine?.denied ?? state.denied,
+    /** Stop the plugin (an engine frees what it holds). */
+    dispose() {
+      engine?.dispose();
+    },
     /** Run a command the plugin registered (its handler gets `payload`). */
     async run(id, payload = {}) {
       if (!state.commands.has(id)) throw new Error(`the plugin registered no command "${id}" (it has: ${[...state.commands.keys()].join(", ") || "none"})`);

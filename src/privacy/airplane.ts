@@ -66,8 +66,13 @@
  * from Resource Timing, so a non-zero transfer shows up.
  */
 
+import { isPopup, reachedNetwork, type EgressTally } from "./airplaneCertificate";
 import { __setAirplaneFlag, addAirplaneCsp, AIRPLANE_KEY, AIRPLANE_TAB, airplaneSinceStored, blankFrames, onSwitchedElsewhere, rootsOf, shadowRoots } from "./airplaneBoot";
 import { AIRPLANE_CHANNEL, type AirplaneMessage } from "../ai/workerLedger";
+import { wrapLedgerTransport } from "../ai/privacyLedger";
+import { EMBED_ORIGINS, egressTarget, guardedSandbox as sandboxFor } from "./airplaneEmbeds";
+
+export { EMBED_ORIGINS, egressTarget };
 
 export type EgressKind = "fetch" | "xhr" | "websocket" | "eventsource" | "beacon" | "webrtc" | "worker" | "resource" | "csp" | "frame";
 /** "in-flight": a request still waiting for its answer when the switch went on (counted, then aborted). */
@@ -100,8 +105,14 @@ export class AirplaneBlockedError extends Error {
   }
 }
 
+/** The list keeps every attempt that reached the network, and this many others (the newest). */
 const MAX = 500;
 let attempts: EgressAttempt[] = [];
+/** Listed attempts that did not reach the network (the ones the list may drop). */
+let unpinned = 0;
+const freshTally = (from: number): EgressTally => ({ from, attempts: 0, blocked: 0, local: 0, cacheOnly: 0, inFlight: 0, left: 0, popups: 0 });
+/** Every attempt counted, by decision, since the switch (or the page's start): kept apart from the bounded list (review 14). */
+let tally: EgressTally = freshTally(Date.now());
 let nextId = 1;
 const listeners = new Set<() => void>();
 let on = false;
@@ -119,6 +130,11 @@ export function airplaneSince(): number | null {
 
 export function egressAttempts(): readonly EgressAttempt[] {
   return attempts;
+}
+
+/** The running count behind the certificate's summary (`buildCertificate(…, egressTally())`). */
+export function egressTally(): Readonly<EgressTally> {
+  return { ...tally };
 }
 
 export function subscribeEgress(fn: () => void): () => void {
@@ -144,20 +160,25 @@ export function codeOrigin(stack: string | undefined, skip = 0): string {
   return `${fn ? `${fn} ` : ""}${file}`.slice(0, 160);
 }
 
-/** Origin + path only. */
-export function egressTarget(url: string, base: string = typeof location !== "undefined" ? location.href : "http://localhost/"): string {
-  try {
-    const u = new URL(url, base);
-    if (u.protocol === "blob:" || u.protocol === "data:") return `${u.protocol}…`;
-    return `${u.origin}${u.pathname}`;
-  } catch {
-    return String(url).split(/[?#]/)[0].slice(0, 200);
-  }
-}
-
 export function record(a: Omit<EgressAttempt, "id" | "ts"> & { ts?: number }): EgressAttempt {
   const entry: EgressAttempt = { ...a, id: nextId++, ts: a.ts ?? Date.now() };
-  attempts = [...attempts, entry].slice(-MAX);
+  tally.attempts++;
+  if (entry.decision === "blocked") tally.blocked++;
+  else if (entry.decision === "local") tally.local++;
+  else if (entry.decision === "cache-only") tally.cacheOnly++;
+  else if (entry.decision === "in-flight") tally.inFlight++;
+  const leak = reachedNetwork(entry);
+  if (leak) tally.left++;
+  if (leak && isPopup(entry)) tally.popups++;
+  // A real leak is never dropped from the list (review 14): only the oldest of the others go, past MAX.
+  const next = [...attempts, entry];
+  if (!leak) unpinned++;
+  if (unpinned > MAX) {
+    const i = next.findIndex((a) => !reachedNetwork(a));
+    if (i >= 0) next.splice(i, 1);
+    unpinned--;
+  }
+  attempts = next;
   for (const fn of [...listeners]) fn();
   return entry;
 }
@@ -230,6 +251,7 @@ export function enableAirplaneMode(): void {
   on = true;
   const at = Date.now();
   since = at;
+  tally = freshTally(at);
   try {
     localStorage.setItem(AIRPLANE_KEY, JSON.stringify({ since }));
   } catch {
@@ -278,9 +300,21 @@ export function enableAirplaneMode(): void {
  * after the switch inherits the <meta>.
  */
 export function stopFrames(doc: Pick<Document, "querySelectorAll">, at: number = Date.now()): number {
-  // Before they are emptied: frames that could have opened a window out of this page's reach (RR8-451-1, -2).
-  for (const src of popupFrames(doc)) {
+  // Before they are emptied: frames that could have opened a window out of this page's reach (RR8-451-1, -2),
+  // and those seen able to since they were made, gone or changed since (RR11-451-1).
+  const seen = new Set<HTMLIFrameElement>();
+  const counted = popupFrames(doc, 0, seen);
+  for (const l of latched.splice(0)) {
+    const f = l.frame?.deref();
+    if (!f || !seen.has(f)) counted.push(l.target);
+  }
+  for (const src of counted) {
     record({ kind: "frame", target: src.startsWith("about:") ? src : egressTarget(src), method: "POPUP", decision: "in-flight", origin: "frame (allow-popups)", ts: at });
+  }
+  // More frames than the list keeps: those dropped from it may have opened windows too (review 14, RR14-451-1).
+  if (droppedLatches > 0) {
+    record({ kind: "frame", target: "about:frames", method: "POPUP", decision: "in-flight", origin: `${droppedLatches} earlier frames (allow-popups)`, ts: at });
+    droppedLatches = 0;
   }
   const stopped = blankFrames(doc);
   for (const f of stopped) {
@@ -304,12 +338,50 @@ export function stopFrames(doc: Pick<Document, "querySelectorAll">, at: number =
 const popups = new Map<Window, string>();
 
 /**
+ * Every frame seen able to open windows while the switch was off (review 11,
+ * RR11-451-1), from when the guard first decided it: a window it opened stays
+ * open after the frame is gone or loses allow-popups, so the switch counts it
+ * even then. Its target, and the frame while it is alive (to not count it twice).
+ */
+const latched: Array<{ target: string; frame: WeakRef<HTMLIFrameElement> | null }> = [];
+const latchedFrames = new WeakSet<HTMLIFrameElement>();
+const MAX_LATCHED = 500;
+/** Latches dropped to keep the list at MAX_LATCHED: recorded at the switch as one POPUP (review 14, RR14-451-1). */
+let droppedLatches = 0;
+
+/** Remember a frame that can open windows now (its sandbox allows popups, or it has none and holds another site's page). */
+function latchPopups(f: HTMLIFrameElement, base: string): void {
+  if (on || latchedFrames.has(f)) return;
+  const sb = f.getAttribute("sandbox");
+  const srcdoc = f.getAttribute("srcdoc");
+  const src = f.getAttribute("src") ?? "";
+  if (srcdoc === null && (!src || src === "about:blank")) return; // why: nothing loaded in it yet
+  let may = false;
+  if (sb !== null) may = sb.split(/[\t\n\f\r ]+/).some((t) => t.toLowerCase() === "allow-popups");
+  else {
+    try {
+      const u = new URL(src, base);
+      may = /^https?:$/.test(u.protocol) && u.origin !== new URL(base).origin;
+    } catch {
+      may = true; // why: a URL that doesn't parse: count it
+    }
+  }
+  if (!may) return;
+  latchedFrames.add(f);
+  latched.push({ target: srcdoc !== null ? "about:srcdoc" : src, frame: typeof WeakRef === "undefined" ? null : new WeakRef(f) });
+  if (latched.length > MAX_LATCHED) {
+    latched.shift();
+    droppedLatches++;
+  }
+}
+
+/**
  * Frames that may have opened a window this page can't close (review 8,
  * RR8-451-1, -2): a frame whose sandbox allows popups, or that has none,
  * unless its window is one whose window.open is tracked (`trackOpen`); and
  * the same in same-origin frames' documents.
  */
-function popupFrames(doc: Pick<Document, "querySelectorAll">, depth = 0): string[] {
+function popupFrames(doc: Pick<Document, "querySelectorAll">, depth = 0, seen?: Set<HTMLIFrameElement>): string[] {
   const out: string[] = [];
   for (const root of rootsOf(doc)) {
     let frames: HTMLIFrameElement[] = [];
@@ -329,8 +401,11 @@ function popupFrames(doc: Pick<Document, "querySelectorAll">, depth = 0): string
       }
       const sb = f.getAttribute("sandbox");
       const may = sb === null || sb.split(/[\t\n\f\r ]+/).some((t) => t.toLowerCase() === "allow-popups");
-      if (may && !tracked) out.push(f.getAttribute("srcdoc") !== null ? "about:srcdoc" : f.getAttribute("src") || "about:blank");
-      if (inner && depth < 8) out.push(...popupFrames(inner, depth + 1));
+      if (may && !tracked) {
+        out.push(f.getAttribute("srcdoc") !== null ? "about:srcdoc" : f.getAttribute("src") || "about:blank");
+        seen?.add(f);
+      }
+      if (inner && depth < 8) out.push(...popupFrames(inner, depth + 1, seen));
     }
   }
   return out;
@@ -353,58 +428,9 @@ export function trackOpen(w: Window | null | undefined): void {
   }
 }
 
-/**
- * The sites whose embeds keep `allow-same-origin`: the https origins of
- * public/_headers' frame-src, which are the providers of
- * src/plugins/EmbedBlock.tsx and the embed codes they hand out (review 8,
- * RR8-451-2: one list; a test keeps them equal). A frame from any other site
- * loses it, so it has no storage and no service worker of its own (review 6,
- * RR6-451-2).
- */
-export const EMBED_ORIGINS: ReadonlySet<string> = new Set([
-  "https://codepen.io",
-  "https://codesandbox.io",
-  "https://gist.github.com",
-  "https://maps.google.com",
-  "https://open.spotify.com",
-  "https://platform.twitter.com",
-  "https://player.vimeo.com",
-  "https://w.soundcloud.com",
-  "https://www.facebook.com",
-  "https://www.figma.com",
-  "https://www.google.com",
-  "https://www.instagram.com",
-  "https://www.linkedin.com",
-  "https://www.loom.com",
-  "https://www.openstreetmap.org",
-  "https://www.reddit.com",
-  "https://www.redditmedia.com",
-  "https://www.tiktok.com",
-  "https://www.youtube.com",
-  "https://www.youtube-nocookie.com",
-]);
-
-const NO_POPUPS = new Set(["allow-popups", "allow-popups-to-escape-sandbox"]);
-
-/**
- * A frame's sandbox as `guardFrames` leaves it: no popups while the switch is
- * on (`stripPopups`, review 8, RR8-451-2: before it, an embed's links still
- * open their page); same-origin powers only for the app and the known embeds.
- */
+/** guardedSandbox (airplaneEmbeds.ts), stripping popups while the switch is on unless told otherwise. */
 export function guardedSandbox(sandbox: string, src: string | null, base: string, stripPopups: boolean = on): string {
-  let foreign = false;
-  if (src) {
-    try {
-      const u = new URL(src, base);
-      foreign = /^https?:$/.test(u.protocol) && u.origin !== new URL(base).origin && !EMBED_ORIGINS.has(u.origin);
-    } catch {
-      foreign = true; // why: a URL that doesn't parse gets no powers
-    }
-  }
-  return sandbox
-    .split(/[\t\n\f\r ]+/)
-    .filter((t) => t && !(stripPopups && NO_POPUPS.has(t.toLowerCase())) && !(foreign && t.toLowerCase() === "allow-same-origin"))
-    .join(" ");
+  return sandboxFor(sandbox, src, base, stripPopups);
 }
 
 /**
@@ -512,6 +538,7 @@ function observeFrames(win: W, root: Node | null | undefined, native: (this: Ele
   observed.add(root);
   const base = () => win.location?.href ?? "http://localhost/";
   const decide = (f: HTMLIFrameElement) => {
+    latchPopups(f, base());
     const sb = f.getAttribute("sandbox");
     if (sb !== null) {
       const next = guardedSandbox(sb, f.getAttribute("src"), base());
@@ -620,6 +647,8 @@ export function installAirplaneMode(win: W = window as W): void {
   installed = true;
   since = airplaneSinceStored();
   on = since !== null;
+  // Woken with the switch on: everything this page counts is since the switch (nothing earlier is in memory).
+  if (since !== null) tally = freshTally(since);
   if (on && win.document) addAirplaneCsp(win.document);
 
   // What a frame could start outside itself, and frames in shadow roots (review 6).
@@ -648,37 +677,41 @@ export function installAirplaneMode(win: W = window as W): void {
     /* why: no document here */
   }
 
-  const innerFetch = win.fetch.bind(win);
-  win.fetch = function airplaneFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-    const method = (init?.method ?? (typeof Request !== "undefined" && input instanceof Request ? input.method : "GET")).toUpperCase();
-    const v = verdict(url, win.location?.href);
-    if (v === "blocked" || (v === "self" && method !== "GET")) return Promise.reject(blockedAttempt("fetch", url, method));
-    const origin = note("fetch", url, method, v);
-    // The app's own files, from a cache only: the service worker passes the mode on.
-    if (v === "self") return innerFetch(input, { ...init, cache: "only-if-cached", mode: "same-origin" });
-    if (v !== "network" || typeof AbortController === "undefined") return innerFetch(input, init);
-    // On the network: kept in reach, so turning the switch on counts it and aborts it.
-    const ctrl = new AbortController();
-    const outer = init?.signal ?? (typeof Request !== "undefined" && input instanceof Request ? input.signal : undefined);
-    if (outer) {
-      if (outer.aborted) ctrl.abort(outer.reason);
-      else outer.addEventListener("abort", () => ctrl.abort(outer.reason), { once: true });
-    }
-    const flight: Flight = { kind: "fetch", url, method, origin, abort: () => ctrl.abort(new AirplaneBlockedError(egressTarget(url))) };
-    inFlight.add(flight);
-    return innerFetch(input, { ...init, signal: ctrl.signal }).then(
-      (res) => {
-        inFlight.delete(flight);
-        bodies = [...bodies, ctrl].slice(-MAX_BODIES);
-        return res;
-      },
-      (err: unknown) => {
-        inFlight.delete(flight);
-        throw err;
-      },
-    );
-  } as typeof fetch;
+  const guard = (innerFetch: typeof fetch): typeof fetch =>
+  function airplaneFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      const method = (init?.method ?? (typeof Request !== "undefined" && input instanceof Request ? input.method : "GET")).toUpperCase();
+      const v = verdict(url, win.location?.href);
+      if (v === "blocked" || (v === "self" && method !== "GET")) return Promise.reject(blockedAttempt("fetch", url, method));
+      const origin = note("fetch", url, method, v);
+      // The app's own files, from a cache only: the service worker passes the mode on.
+      if (v === "self") return innerFetch(input, { ...init, cache: "only-if-cached", mode: "same-origin" });
+      if (v !== "network" || typeof AbortController === "undefined") return innerFetch(input, init);
+      // On the network: kept in reach, so turning the switch on counts it and aborts it.
+      const ctrl = new AbortController();
+      const outer = init?.signal ?? (typeof Request !== "undefined" && input instanceof Request ? input.signal : undefined);
+      if (outer) {
+        if (outer.aborted) ctrl.abort(outer.reason);
+        else outer.addEventListener("abort", () => ctrl.abort(outer.reason), { once: true });
+      }
+      const flight: Flight = { kind: "fetch", url, method, origin, abort: () => ctrl.abort(new AirplaneBlockedError(egressTarget(url))) };
+      inFlight.add(flight);
+      return innerFetch(input, { ...init, signal: ctrl.signal }).then(
+        (res) => {
+          inFlight.delete(flight);
+          bodies = [...bodies, ctrl].slice(-MAX_BODIES);
+          return res;
+        },
+        (err: unknown) => {
+          inFlight.delete(flight);
+          throw err;
+        },
+      );
+    } as typeof fetch;
+  win.fetch = guard(win.fetch.bind(win));
+  // The ledger's own transport too (RR20-1): consented requests (open sources, Sefaria, the clipper) go
+  // through the captured fetch, which would otherwise bypass this guard. Only for the real window.
+  if (typeof window !== "undefined" && (win as unknown) === window) wrapLedgerTransport(guard);
 
   const XHR = win.XMLHttpRequest;
   if (XHR) {
@@ -792,6 +825,8 @@ export function installAirplaneMode(win: W = window as W): void {
 export function __resetAirplane(): void {
   __setAirplaneFlag(false);
   attempts = [];
+  unpinned = 0;
+  tally = freshTally(Date.now());
   nextId = 1;
   listeners.clear();
   on = false;

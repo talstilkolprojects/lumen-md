@@ -10,6 +10,7 @@
 import { noteMeta } from "../graph/graphModel";
 import { wikiTargetsOf } from "./wikiTargets";
 import { noteTags } from "../search/queryOps";
+import { frontmatterAliases } from "../editor/frontmatterAliases";
 
 export interface NoteSummary {
   /** Raw `[[target]]` texts. */
@@ -22,6 +23,8 @@ export interface NoteSummary {
   noteTags: string[];
   /** Length of the note, in characters. */
   chars: number;
+  /** Front-matter aliases (W6.36): `[[` completion lists notes from summaries, without their text. */
+  aliases: string[];
 }
 
 /** The same block `extractFrontmatter` (renderer/pipeline) reads. */
@@ -37,6 +40,7 @@ export function summarize(content: string): NoteSummary {
     frontmatter: fm && fm.length <= MAX_FRONTMATTER ? fm : null,
     noteTags: noteTags(content),
     chars: content.length,
+    aliases: frontmatterAliases(content),
   };
   // The strings above are slices of `content`: V8 would keep the whole text
   // alive through them. A copy owns its own small strings.

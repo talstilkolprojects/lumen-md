@@ -670,6 +670,101 @@
       "vars": []
     },
     {
+      "key": "atproto.confirm.ok",
+      "en": "Publish publicly",
+      "vars": []
+    },
+    {
+      "key": "atproto.confirm.publish",
+      "en": "“{title}” will be written to {handle}'s AT Protocol account as a public record. Anyone can read it, and relays and apps keep their own copies: removing it later can't take those back. Marked passages (<redact>) and hidden comments are removed first.",
+      "vars": [
+        "title",
+        "handle"
+      ]
+    },
+    {
+      "key": "atproto.confirm.title",
+      "en": "Publish publicly?",
+      "vars": []
+    },
+    {
+      "key": "atproto.confirm.update",
+      "en": "The public record of “{title}” in {handle}'s account will be replaced with this version. Copies relays already made of the old version stay.",
+      "vars": [
+        "title",
+        "handle"
+      ]
+    },
+    {
+      "key": "atproto.done",
+      "en": "Published: {url}",
+      "vars": [
+        "url"
+      ]
+    },
+    {
+      "key": "atproto.failed",
+      "en": "Publishing failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "atproto.handle",
+      "en": "Your Bluesky handle (or another AT Protocol account)",
+      "vars": []
+    },
+    {
+      "key": "atproto.notPublished",
+      "en": "This note isn't published.",
+      "vars": []
+    },
+    {
+      "key": "atproto.password",
+      "en": "An App Password for this account (Bluesky → Settings → Privacy and security → App passwords). It is used for this sign-in only and is not stored.",
+      "vars": []
+    },
+    {
+      "key": "atproto.removed",
+      "en": "The record was removed from your account.",
+      "vars": []
+    },
+    {
+      "key": "atproto.siteName",
+      "en": "Your site's name",
+      "vars": []
+    },
+    {
+      "key": "atproto.siteUrl",
+      "en": "Your site's address (https), where the note is published",
+      "vars": []
+    },
+    {
+      "key": "atproto.unpublish.confirm",
+      "en": "The record of “{title}” will be deleted from {handle}'s account. Copies relays and apps already made stay.",
+      "vars": [
+        "title",
+        "handle"
+      ]
+    },
+    {
+      "key": "atproto.unpublish.ok",
+      "en": "Remove",
+      "vars": []
+    },
+    {
+      "key": "atproto.unpublish.title",
+      "en": "Remove the public record?",
+      "vars": []
+    },
+    {
+      "key": "atproto.updated",
+      "en": "Updated: {url}",
+      "vars": [
+        "url"
+      ]
+    },
+    {
       "key": "autofill.approve",
       "en": "Approve",
       "vars": []
@@ -761,6 +856,11 @@
       "vars": []
     },
     {
+      "key": "automations.ask.base",
+      "en": "Base file (for example Projects/Tasks.base)",
+      "vars": []
+    },
+    {
       "key": "automations.ask.folder",
       "en": "Folder (empty: anywhere)",
       "vars": []
@@ -773,6 +873,11 @@
     {
       "key": "automations.ask.name",
       "en": "Rule name",
+      "vars": []
+    },
+    {
+      "key": "automations.ask.rowProperty",
+      "en": "Property to watch (empty: any property)",
       "vars": []
     },
     {
@@ -797,6 +902,11 @@
     {
       "key": "automations.ask.value",
       "en": "Value (empty: any change)",
+      "vars": []
+    },
+    {
+      "key": "automations.ask.view",
+      "en": "View name (empty: the first view)",
       "vars": []
     },
     {
@@ -860,6 +970,11 @@
     {
       "key": "automations.trigger.propertyChanged",
       "en": "a property changes",
+      "vars": []
+    },
+    {
+      "key": "automations.trigger.rowChanged",
+      "en": "a row of a base view changes",
       "vars": []
     },
     {
@@ -1159,6 +1274,307 @@
       "vars": [
         "property"
       ]
+    },
+    {
+      "key": "benyehuda.cancel",
+      "en": "Cancel",
+      "vars": []
+    },
+    {
+      "key": "benyehuda.confirm",
+      "en": "Download from the project's public-domain dump on GitHub? Nothing from your notes is sent.",
+      "vars": []
+    },
+    {
+      "key": "benyehuda.copied",
+      "en": "Quote copied: paste it into any note",
+      "vars": []
+    },
+    {
+      "key": "benyehuda.downloadFirst",
+      "en": "This work's text is not on this device. Download the works of {author} first.",
+      "vars": [
+        "author"
+      ]
+    },
+    {
+      "key": "benyehuda.downloaded",
+      "en": "{count} works of {author} are on this device",
+      "vars": [
+        "count",
+        "author"
+      ]
+    },
+    {
+      "key": "benyehuda.empty",
+      "en": "The library is not on this device yet. Download it first.",
+      "vars": []
+    },
+    {
+      "key": "benyehuda.enable",
+      "en": "Turn on the Ben-Yehuda library? Lumen downloads it from GitHub only when you ask; after that, search and reading are local.",
+      "vars": []
+    },
+    {
+      "key": "benyehuda.failed",
+      "en": "The Ben-Yehuda library failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "benyehuda.highlighted",
+      "en": "Highlighted in {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "benyehuda.none",
+      "en": "Nothing in the library matches “{query}”.",
+      "vars": [
+        "query"
+      ]
+    },
+    {
+      "key": "benyehuda.notDownloaded",
+      "en": "not downloaded",
+      "vars": []
+    },
+    {
+      "key": "benyehuda.pickAuthor",
+      "en": "Whose works? ({count} authors in the public domain)",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "benyehuda.progress",
+      "en": "Downloaded {done} of {total} works",
+      "vars": [
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "benyehuda.prompt",
+      "en": "Author, work or words (for example ביאליק בריכה)",
+      "vars": []
+    },
+    {
+      "key": "benyehuda.results",
+      "en": "{count} works",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "benyehuda.selectInWork",
+      "en": "Open a work from the library and select a passage first.",
+      "vars": []
+    },
+    {
+      "key": "beta.area.ai",
+      "en": "AI",
+      "vars": []
+    },
+    {
+      "key": "beta.area.editor",
+      "en": "Editor",
+      "vars": []
+    },
+    {
+      "key": "beta.area.files",
+      "en": "Files and import",
+      "vars": []
+    },
+    {
+      "key": "beta.area.hebrew",
+      "en": "Hebrew and RTL",
+      "vars": []
+    },
+    {
+      "key": "beta.area.mobile",
+      "en": "Phone and tablet",
+      "vars": []
+    },
+    {
+      "key": "beta.area.other",
+      "en": "Something else",
+      "vars": []
+    },
+    {
+      "key": "beta.area.search",
+      "en": "Search",
+      "vars": []
+    },
+    {
+      "key": "beta.area.sync",
+      "en": "Sync and sharing",
+      "vars": []
+    },
+    {
+      "key": "beta.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "beta.copied",
+      "en": "Copied.",
+      "vars": []
+    },
+    {
+      "key": "beta.copy",
+      "en": "Copy report",
+      "vars": []
+    },
+    {
+      "key": "beta.copyFailed",
+      "en": "Couldn't copy. Select the text and copy it.",
+      "vars": []
+    },
+    {
+      "key": "beta.feedback",
+      "en": "Feedback",
+      "vars": []
+    },
+    {
+      "key": "beta.feedback.area",
+      "en": "Part of the app",
+      "vars": []
+    },
+    {
+      "key": "beta.feedback.env",
+      "en": "Include the app version, platform and language",
+      "vars": []
+    },
+    {
+      "key": "beta.feedback.kind",
+      "en": "Kind",
+      "vars": []
+    },
+    {
+      "key": "beta.feedback.send",
+      "en": "Open feedback on GitHub",
+      "vars": []
+    },
+    {
+      "key": "beta.feedback.text",
+      "en": "What happened, or what you would like",
+      "vars": []
+    },
+    {
+      "key": "beta.feedback.title",
+      "en": "Short title",
+      "vars": []
+    },
+    {
+      "key": "beta.feedback.tooLong",
+      "en": "The text is too long for a link. It was copied: paste it into the issue.",
+      "vars": []
+    },
+    {
+      "key": "beta.intro",
+      "en": "Get new features first and help shape them. Everything here stays on this device until you click a button that opens GitHub.",
+      "vars": []
+    },
+    {
+      "key": "beta.join",
+      "en": "Join the beta on this device",
+      "vars": []
+    },
+    {
+      "key": "beta.joined.toast",
+      "en": "You joined the beta. Thank you!",
+      "vars": []
+    },
+    {
+      "key": "beta.joinedOn",
+      "en": "In the beta since {date} (week {week})",
+      "vars": [
+        "date",
+        "week"
+      ]
+    },
+    {
+      "key": "beta.kind.bug",
+      "en": "Something is broken",
+      "vars": []
+    },
+    {
+      "key": "beta.kind.idea",
+      "en": "An idea",
+      "vars": []
+    },
+    {
+      "key": "beta.kind.question",
+      "en": "A question",
+      "vars": []
+    },
+    {
+      "key": "beta.leave",
+      "en": "Leave the beta",
+      "vars": []
+    },
+    {
+      "key": "beta.left.toast",
+      "en": "You left the beta. Updates follow stable releases again.",
+      "vars": []
+    },
+    {
+      "key": "beta.notJoined",
+      "en": "You are not in the beta on this device.",
+      "vars": []
+    },
+    {
+      "key": "beta.opened",
+      "en": "The issue form is open in a new tab. Nothing is sent until you submit it there.",
+      "vars": []
+    },
+    {
+      "key": "beta.preview",
+      "en": "This week's report, exactly as it would be sent:",
+      "vars": []
+    },
+    {
+      "key": "beta.reminder",
+      "en": "Your weekly beta report is ready",
+      "vars": []
+    },
+    {
+      "key": "beta.reminder.body",
+      "en": "Counts only. You review it before anything is sent.",
+      "vars": []
+    },
+    {
+      "key": "beta.reminder.open",
+      "en": "Review",
+      "vars": []
+    },
+    {
+      "key": "beta.send",
+      "en": "Open report on GitHub",
+      "vars": []
+    },
+    {
+      "key": "beta.title",
+      "en": "Beta programme",
+      "vars": []
+    },
+    {
+      "key": "beta.weekly",
+      "en": "Once a week, prepare a usage report I can send",
+      "vars": []
+    },
+    {
+      "key": "beta.weekly.hint",
+      "en": "Counts only: days used, starts, errors and the app's command names. No notes, names or ids. You see all of it before anything leaves.",
+      "vars": []
+    },
+    {
+      "key": "beta.what",
+      "en": "Joining turns on the features in beta here and, in the desktop app, switches updates to the beta channel. Leaving undoes both.",
+      "vars": []
     },
     {
       "key": "bidi.control.ALM",
@@ -1927,7 +2343,7 @@
     },
     {
       "key": "cite.web.keyBody",
-      "en": "Lumen reads your Zotero library from api.zotero.org with a key you create at zotero.org → Settings → Security → Applications (read-only library access is enough). The key stays in this device's secret store and is sent only to api.zotero.org; every request shows in the privacy ledger. Nothing is written to Zotero.",
+      "en": "Lumen reads your Zotero library from api.zotero.org with a key you create at zotero.org → Settings → Security → Applications (read-only library access is enough). The key stays in this device's secret store and is sent only to api.zotero.org; every request shows in the privacy ledger. Lumen writes to Zotero only when you send PDF highlights and confirm (that needs a key with write access).",
       "vars": []
     },
     {
@@ -2025,6 +2441,11 @@
       "vars": []
     },
     {
+      "key": "credits.req.ccBySa",
+      "en": "CC BY-SA 4.0: the creator is credited and the licence is linked; modified versions (changed weights or data) are shared under the same licence and are downloaded only when you ask. An unmodified file may ship with the app, with this credit.",
+      "vars": []
+    },
+    {
       "key": "credits.req.gemma",
       "en": "Gemma Terms of Use: the terms come with the model; Google's Prohibited Use Policy applies.",
       "vars": []
@@ -2064,6 +2485,116 @@
     {
       "key": "daily.noWorkspace",
       "en": "Daily notes need the workspace, which this browser can't provide.",
+      "vars": []
+    },
+    {
+      "key": "datagov.badBlock",
+      "en": "This dataset block is missing its source, id or snapshot.",
+      "vars": []
+    },
+    {
+      "key": "datagov.changes",
+      "en": "Changes since the last snapshot. Switch the note to the new one?",
+      "vars": []
+    },
+    {
+      "key": "datagov.confirm",
+      "en": "Search data.gov.il for “{query}”? Only these words are sent, nothing from your notes.",
+      "vars": [
+        "query"
+      ]
+    },
+    {
+      "key": "datagov.confirmRefresh",
+      "en": "Fetch this dataset again? Only its id is sent.",
+      "vars": []
+    },
+    {
+      "key": "datagov.confirmSeries",
+      "en": "Fetch CBS series {id}? Only its id is sent to apis.cbs.gov.il.",
+      "vars": [
+        "id"
+      ]
+    },
+    {
+      "key": "datagov.enable",
+      "en": "Turn on government data? Lumen then sends search words and dataset ids to data.gov.il and the CBS when you ask, and never on its own.",
+      "vars": []
+    },
+    {
+      "key": "datagov.failed",
+      "en": "Fetching the data failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "datagov.inserted",
+      "en": "Inserted {title} ({rows} rows, saved locally)",
+      "vars": [
+        "title",
+        "rows"
+      ]
+    },
+    {
+      "key": "datagov.loading",
+      "en": "Reading the local snapshot…",
+      "vars": []
+    },
+    {
+      "key": "datagov.missing",
+      "en": "The snapshot {path} is not in this vault.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "datagov.noBlock",
+      "en": "Put the cursor in a ```dataset block first.",
+      "vars": []
+    },
+    {
+      "key": "datagov.noTable",
+      "en": "This dataset has no table Lumen can read (only files without a data API).",
+      "vars": []
+    },
+    {
+      "key": "datagov.none",
+      "en": "No dataset matches “{query}”.",
+      "vars": [
+        "query"
+      ]
+    },
+    {
+      "key": "datagov.personal",
+      "en": "Some columns look like personal data ({columns}). The CBS licence forbids cross-matching data to identify people. Insert anyway?",
+      "vars": [
+        "columns"
+      ]
+    },
+    {
+      "key": "datagov.pickDataset",
+      "en": "Which dataset?",
+      "vars": []
+    },
+    {
+      "key": "datagov.pickResource",
+      "en": "Which table of this dataset?",
+      "vars": []
+    },
+    {
+      "key": "datagov.prompt",
+      "en": "Search data.gov.il (for example תאונות דרכים, אוכלוסייה ביישובים)",
+      "vars": []
+    },
+    {
+      "key": "datagov.seriesPrompt",
+      "en": "CBS series id (for example 120010, the Consumer Price Index)",
+      "vars": []
+    },
+    {
+      "key": "datagov.unchanged",
+      "en": "Nothing changed since the last snapshot. Switch to the new date anyway?",
       "vars": []
     },
     {
@@ -2485,6 +3016,28 @@
       "vars": []
     },
     {
+      "key": "dictation.desktop.missed",
+      "en": "Your desktop didn't answer in time, so this device's text was kept.",
+      "vars": []
+    },
+    {
+      "key": "dictation.desktop.send",
+      "en": "Send to my desktop",
+      "vars": []
+    },
+    {
+      "key": "dictation.desktop.sending",
+      "en": "Each sentence goes to your desktop and back over your local network.",
+      "vars": []
+    },
+    {
+      "key": "dictation.desktop.why",
+      "en": "Dictation on this device makes about {wer}% word errors. Your desktop can transcribe each sentence with a bigger model, over your local network, end-to-end encrypted.",
+      "vars": [
+        "wer"
+      ]
+    },
+    {
       "key": "dictation.download.body",
       "en": "Hebrew dictation runs entirely on this device — no audio leaves it. It needs a one-time download of {size}, kept for offline use.",
       "vars": [
@@ -2700,6 +3253,11 @@
       "vars": [
         "minutes"
       ]
+    },
+    {
+      "key": "e2ee.busy",
+      "en": "This device is syncing in another tab right now, so nothing was changed. Try again in a moment; if it keeps happening, reload or close the other tabs of Lumen.",
+      "vars": []
     },
     {
       "key": "e2ee.class.assignmentTitle",
@@ -2946,7 +3504,7 @@
     },
     {
       "key": "e2ee.dropped",
-      "en": "A device that couldn't verify the vault's device list changed the keys, and this device wasn't carried over. It wasn't removed, and nothing on it was changed: pair it again from a device you trust, or unlock it with the passphrase.",
+      "en": "This device wasn't carried over to the vault's new keys: either a device that couldn't verify the vault's device list changed them, or this device was removed. Nothing on it was changed. To use it with the vault again, unlock it with the passphrase, or pair it from a device you trust (as a new device, if it was removed).",
       "vars": []
     },
     {
@@ -3249,6 +3807,31 @@
       "vars": []
     },
     {
+      "key": "e2ee.lan.compare.ask",
+      "en": "Check that the other device shows this same code next to this device before you continue:",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.compare.differ",
+      "en": "Different — cancel",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.compare.mismatch",
+      "en": "The codes differed, so the link was closed. Pair again; if it happens again, another device on this network may be in between.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.compare.same",
+      "en": "Same code — continue",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.compare.title",
+      "en": "Comparison code",
+      "vars": []
+    },
+    {
       "key": "e2ee.lan.copied",
       "en": "Copied",
       "vars": []
@@ -3256,6 +3839,16 @@
     {
       "key": "e2ee.lan.copy",
       "en": "Copy",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.discovery.failed",
+      "en": "Couldn't reach that device. Use the code below instead.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.discovery.used",
+      "en": "That device already paired with another one. Start a new pairing there.",
       "vars": []
     },
     {
@@ -3292,6 +3885,35 @@
       "key": "e2ee.lan.error.wrong-code",
       "en": "That code is from the wrong step: the host shows the first code, the joining device the answer.",
       "vars": []
+    },
+    {
+      "key": "e2ee.lan.find",
+      "en": "Find devices on this network",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.finding",
+      "en": "Looking on this network…",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.found.duplicate",
+      "en": "Two devices announce {name}. Pick one only if, after pairing, both screens show the same code.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.lan.found.none",
+      "en": "No device found. On the hosting device, start Pair a device and keep the dialog open, or use the code below.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.found.pick",
+      "en": "Pair with {name}",
+      "vars": [
+        "name"
+      ]
     },
     {
       "key": "e2ee.lan.hostNote",
@@ -3364,6 +3986,11 @@
       "vars": []
     },
     {
+      "key": "e2ee.lan.peer.code",
+      "en": "code",
+      "vars": []
+    },
+    {
       "key": "e2ee.lan.peer.pending",
       "en": "not verified yet",
       "vars": []
@@ -3394,6 +4021,13 @@
       "key": "e2ee.lan.role.peer",
       "en": "Joins a device that keeps the vault",
       "vars": []
+    },
+    {
+      "key": "e2ee.lan.visibleAs",
+      "en": "Also visible on this network as {name}: on the other device, choose Find devices on this network and pick it.",
+      "vars": [
+        "name"
+      ]
     },
     {
       "key": "e2ee.lan.waiting",
@@ -3464,6 +4098,13 @@
       "key": "e2ee.rekey.busy",
       "en": "Another device is changing the vault's keys right now. Sync, and try again once it has finished (10 minutes at most).",
       "vars": []
+    },
+    {
+      "key": "e2ee.rekey.contested",
+      "en": "Removing {devices} didn't go through, again: each time, the vault's device list was rewritten at the same moment by something that still has the vault's keys and the storage login, most likely the device you're removing. Change the storage password or token first, so that device can't write any more, then remove it again.",
+      "vars": [
+        "devices"
+      ]
     },
     {
       "key": "e2ee.rekey.dropConfirm",
@@ -3546,6 +4187,366 @@
     {
       "key": "e2ee.rules.title",
       "en": "What syncs on this device",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.aborted",
+      "en": "Pairing stopped, and nothing was paired. Start again, and pair only with the device in front of you.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.done",
+      "en": "Paired: the symbols were confirmed on both devices.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.match",
+      "en": "They match",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.mismatch",
+      "en": "They don't match",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.prompt",
+      "en": "Do these five symbols, in this order, match the ones on the other device?",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.title",
+      "en": "Compare the symbols",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w0",
+      "en": "Dog",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w1",
+      "en": "Cat",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w10",
+      "en": "Penguin",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w11",
+      "en": "Turtle",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w12",
+      "en": "Fish",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w13",
+      "en": "Octopus",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w14",
+      "en": "Butterfly",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w15",
+      "en": "Sunflower",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w16",
+      "en": "Tree",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w17",
+      "en": "Cactus",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w18",
+      "en": "Cheese",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w19",
+      "en": "Globe",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w2",
+      "en": "Lion",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w20",
+      "en": "Moon",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w21",
+      "en": "Cloud",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w22",
+      "en": "Flame",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w23",
+      "en": "Crab",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w24",
+      "en": "Avocado",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w25",
+      "en": "Strawberry",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w26",
+      "en": "Pineapple",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w27",
+      "en": "Pizza",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w28",
+      "en": "Cake",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w29",
+      "en": "Bee",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w3",
+      "en": "Horse",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w30",
+      "en": "Frog",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w31",
+      "en": "Robot",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w32",
+      "en": "Crown",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w33",
+      "en": "Glasses",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w34",
+      "en": "Compass",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w35",
+      "en": "Balloon",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w36",
+      "en": "Thumbs up",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w37",
+      "en": "Umbrella",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w38",
+      "en": "Watermelon",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w39",
+      "en": "Hedgehog",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w4",
+      "en": "Unicorn",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w40",
+      "en": "Gift",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w41",
+      "en": "Flashlight",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w42",
+      "en": "Book",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w43",
+      "en": "Chair",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w44",
+      "en": "Paperclip",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w45",
+      "en": "Envelope",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w46",
+      "en": "Shield",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w47",
+      "en": "Key",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w48",
+      "en": "Hammer",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w49",
+      "en": "Telescope",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w5",
+      "en": "Pig",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w50",
+      "en": "Carrot",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w51",
+      "en": "Train",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w52",
+      "en": "Bicycle",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w53",
+      "en": "Sailboat",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w54",
+      "en": "Rocket",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w55",
+      "en": "Medal",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w56",
+      "en": "Puzzle",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w57",
+      "en": "Guitar",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w58",
+      "en": "Trumpet",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w59",
+      "en": "Bell",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w6",
+      "en": "Elephant",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w60",
+      "en": "Truck",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w61",
+      "en": "Headphones",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w62",
+      "en": "Kite",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w63",
+      "en": "Rainbow",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w7",
+      "en": "Owl",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w8",
+      "en": "Whale",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w9",
+      "en": "Rooster",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.waitingConfirm",
+      "en": "Confirmed on this device. Now choose “They match” on the other one.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.waitingKey",
+      "en": "Waiting for the other device… Keep both devices open.",
       "vars": []
     },
     {
@@ -5727,6 +6728,110 @@
       ]
     },
     {
+      "key": "knesset.askNone",
+      "en": "No saved law answers that. The search reads only laws saved for offline, with their text.",
+      "vars": []
+    },
+    {
+      "key": "knesset.askPick",
+      "en": "Sections that answer it",
+      "vars": []
+    },
+    {
+      "key": "knesset.askPrompt",
+      "en": "Ask the laws you saved (searched on this device)",
+      "vars": []
+    },
+    {
+      "key": "knesset.billPick",
+      "en": "{count} bill(s) found",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "knesset.billPrompt",
+      "en": "Which bill? A word from its name",
+      "vars": []
+    },
+    {
+      "key": "knesset.confirm",
+      "en": "Look up “{name}” in the Knesset's records? Only the name is sent to knesset.gov.il, nothing from your notes. Saved laws open without asking.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "knesset.enable",
+      "en": "Turn on Knesset sources? Lumen then sends law and bill names to knesset.gov.il when you ask, and never on its own.",
+      "vars": []
+    },
+    {
+      "key": "knesset.failed",
+      "en": "Knesset lookup failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "knesset.inserted",
+      "en": "Cited {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "knesset.noBills",
+      "en": "No bill matches “{name}”.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "knesset.noMatch",
+      "en": "No law named “{name}” was found.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "knesset.pick",
+      "en": "Which of these laws?",
+      "vars": []
+    },
+    {
+      "key": "knesset.prompt",
+      "en": "Which law? For example חוק הגנת הפרטיות or [[חוק:חופש המידע]]",
+      "vars": []
+    },
+    {
+      "key": "knesset.protocolNotFound",
+      "en": "These words are not in a speaker's turn in this protocol.",
+      "vars": []
+    },
+    {
+      "key": "knesset.protocolSelect",
+      "en": "Open a committee protocol and select the words to quote first.",
+      "vars": []
+    },
+    {
+      "key": "knesset.saveOffline",
+      "en": "Save for offline",
+      "vars": []
+    },
+    {
+      "key": "knesset.saved",
+      "en": "Saved to {path}. Paste the law's text under “## נוסח” to ask it questions.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "knesset.unverified",
+      "en": "not verified",
+      "vars": []
+    },
+    {
       "key": "latex.exported",
       "en": "{file}: main.tex, the references and the images. Compile with latexmk -lualatex (or -xelatex).",
       "vars": [
@@ -6508,6 +7613,39 @@
       "vars": []
     },
     {
+      "key": "modelSources.gap.noHosting",
+      "en": "{model}: downloads only from Hugging Face; Lumen's mirror has no entry for it.",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "modelSources.gap.notPinned",
+      "en": "{model}: not on Lumen's mirror yet, so it downloads only from Hugging Face. If Hugging Face is blocked on your network, add your own copy above or pick its files from this device.",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "modelSources.gap.over2gib",
+      "en": "{model}: one of its files is over 2 GiB, more than the mirror holds per file, so it downloads only from Hugging Face.",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "modelSources.gap.unhashed",
+      "en": "{model}: some of its files have no checksum yet, so they come only from Hugging Face, at a fixed version.",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "modelSources.hfOnlyTitle",
+      "en": "Only on Hugging Face for now",
+      "vars": []
+    },
+    {
       "key": "modelSources.importFiles",
       "en": "Add model files from this device…",
       "vars": []
@@ -6535,6 +7673,15 @@
       "en": "Lumen's mirror: on ({host})",
       "vars": [
         "host"
+      ]
+    },
+    {
+      "key": "modelSources.omitted.over2gib",
+      "en": "{model}: the {dtype} version has a file over 2 GiB, more than the mirror holds per file, so Lumen loads the {instead} version instead.",
+      "vars": [
+        "model",
+        "dtype",
+        "instead"
       ]
     },
     {
@@ -7104,6 +8251,204 @@
       "vars": []
     },
     {
+      "key": "openSources.confirm",
+      "en": "Search online for “{query}”? Only these words go to the sources you turned on (the Knesset, data.gov.il), nothing from your notes.",
+      "vars": [
+        "query"
+      ]
+    },
+    {
+      "key": "openSources.confirmFetch",
+      "en": "Fetch “{what}” from its source? Only its reference or id is sent.",
+      "vars": [
+        "what"
+      ]
+    },
+    {
+      "key": "openSources.declined",
+      "en": "Nothing was sent.",
+      "vars": []
+    },
+    {
+      "key": "openSources.failed",
+      "en": "The search failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "openSources.found",
+      "en": "{count} result(s) online",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "openSources.hint",
+      "en": "Type to search the sources on this device; “Search online” asks before it sends anything.",
+      "vars": []
+    },
+    {
+      "key": "openSources.keys",
+      "en": "↑↓ choose · Enter insert · Alt+O search online · Esc close",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind",
+      "en": "Kind",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.all",
+      "en": "All",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.dataset",
+      "en": "Datasets",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.law",
+      "en": "Laws",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.series",
+      "en": "Statistics",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.verse",
+      "en": "Jewish sources",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.work",
+      "en": "Literature",
+      "vars": []
+    },
+    {
+      "key": "openSources.noLocal",
+      "en": "Nothing on this device. Try “Search online”.",
+      "vars": []
+    },
+    {
+      "key": "openSources.onDevice",
+      "en": "on this device",
+      "vars": []
+    },
+    {
+      "key": "openSources.online",
+      "en": "Search online",
+      "vars": []
+    },
+    {
+      "key": "openSources.placeholder",
+      "en": "A verse, a law, a poem or a statistic",
+      "vars": []
+    },
+    {
+      "key": "openSources.results",
+      "en": "Results",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.cbs-licence",
+      "en": "CBS licence",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.cc-by",
+      "en": "CC BY",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.cc-by-sa",
+      "en": "CC BY-SA",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.cc0",
+      "en": "CC0",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.gov-open",
+      "en": "Government open data",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.link-only",
+      "en": "Link only",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.public-domain",
+      "en": "Public domain",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.section-6",
+      "en": "§6: laws and Knesset records",
+      "vars": []
+    },
+    {
+      "key": "openSources.searching",
+      "en": "Searching…",
+      "vars": []
+    },
+    {
+      "key": "openSources.sends.benyehuda",
+      "en": "downloads once; search is local",
+      "vars": []
+    },
+    {
+      "key": "openSources.sends.datagov",
+      "en": "sends search words and dataset ids",
+      "vars": []
+    },
+    {
+      "key": "openSources.sends.knesset",
+      "en": "sends law and bill names",
+      "vars": []
+    },
+    {
+      "key": "openSources.sends.sefaria",
+      "en": "sends the reference you choose",
+      "vars": []
+    },
+    {
+      "key": "openSources.source.benyehuda",
+      "en": "Ben-Yehuda library",
+      "vars": []
+    },
+    {
+      "key": "openSources.source.datagov",
+      "en": "data.gov.il and CBS",
+      "vars": []
+    },
+    {
+      "key": "openSources.source.knesset",
+      "en": "Knesset",
+      "vars": []
+    },
+    {
+      "key": "openSources.source.sefaria",
+      "en": "Sefaria",
+      "vars": []
+    },
+    {
+      "key": "openSources.switches",
+      "en": "Sources (off: nothing is sent to it)",
+      "vars": []
+    },
+    {
+      "key": "openSources.title",
+      "en": "Open sources",
+      "vars": []
+    },
+    {
       "key": "organizer.analysing",
       "en": "Looking for links, tags, duplicates and maps of content…",
       "vars": []
@@ -7426,6 +8771,31 @@
       ]
     },
     {
+      "key": "pdf.ocr.all",
+      "en": "Recognise scanned pages",
+      "vars": []
+    },
+    {
+      "key": "pdf.ocr.allDone",
+      "en": "Text recognised on {n} scanned pages.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "pdf.ocr.allRunning",
+      "en": "Recognising page {n} of {total}…",
+      "vars": [
+        "n",
+        "total"
+      ]
+    },
+    {
+      "key": "pdf.ocr.none",
+      "en": "This PDF has no scanned pages left to recognise.",
+      "vars": []
+    },
+    {
       "key": "pdf.ocr.run",
       "en": "Recognise text (OCR)",
       "vars": []
@@ -7459,6 +8829,11 @@
         "n",
         "total"
       ]
+    },
+    {
+      "key": "pdf.reading",
+      "en": "Reading mode",
+      "vars": []
     },
     {
       "key": "pdf.saveFailed",
@@ -7519,6 +8894,68 @@
       "key": "pdf.zoomOut",
       "en": "Zoom out",
       "vars": []
+    },
+    {
+      "key": "pdf.zotero.confirm",
+      "en": "Send {n} highlights to Zotero? They are saved on zotero.org as annotations on “{title}”, with the key kept in this device's secret store. This is the only thing Lumen writes to Zotero.",
+      "vars": [
+        "n",
+        "title"
+      ]
+    },
+    {
+      "key": "pdf.zotero.failed",
+      "en": "Couldn't send to Zotero: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "pdf.zotero.noAttachment",
+      "en": "This PDF isn't a PDF attachment in your synced Zotero library. Add “zotero-attachment: KEY” to the front matter of {note}.",
+      "vars": [
+        "note"
+      ]
+    },
+    {
+      "key": "pdf.zotero.noLibrary",
+      "en": "Sync your Zotero library from zotero.org first (Citations: sync the Zotero library from zotero.org).",
+      "vars": []
+    },
+    {
+      "key": "pdf.zotero.noWrite",
+      "en": "Your Zotero key can't write. On zotero.org → Settings → Security → Applications, edit the key and allow write access.",
+      "vars": []
+    },
+    {
+      "key": "pdf.zotero.nothing",
+      "en": "Every highlight is already in Zotero.",
+      "vars": []
+    },
+    {
+      "key": "pdf.zotero.ok",
+      "en": "Send",
+      "vars": []
+    },
+    {
+      "key": "pdf.zotero.partial",
+      "en": "{n} highlights sent to Zotero; it refused {failed}.",
+      "vars": [
+        "n",
+        "failed"
+      ]
+    },
+    {
+      "key": "pdf.zotero.send",
+      "en": "Send to Zotero",
+      "vars": []
+    },
+    {
+      "key": "pdf.zotero.sent",
+      "en": "{n} highlights sent to Zotero.",
+      "vars": [
+        "n"
+      ]
     },
     {
       "key": "pdfPaste.changed",
@@ -7816,6 +9253,45 @@
     {
       "key": "pluginDev.used",
       "en": "Calls",
+      "vars": []
+    },
+    {
+      "key": "pluginTrust.bases.body",
+      "en": "Properties: {properties}. Nothing is written unless you allow it.",
+      "vars": [
+        "properties"
+      ]
+    },
+    {
+      "key": "pluginTrust.bases.more",
+      "en": "…and {n} more",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "pluginTrust.bases.ok",
+      "en": "Change {n} notes",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "pluginTrust.bases.title",
+      "en": "“{name}” wants to change {n} notes",
+      "vars": [
+        "name",
+        "n"
+      ]
+    },
+    {
+      "key": "pluginTrust.cap.bases-read",
+      "en": "Read the rows of your bases (.base views) and the notes in them",
+      "vars": []
+    },
+    {
+      "key": "pluginTrust.cap.bases-write",
+      "en": "Change note properties through a base — each change asks you first",
       "vars": []
     },
     {
@@ -8438,6 +9914,49 @@
       "key": "pwa.dismiss",
       "en": "Dismiss",
       "vars": []
+    },
+    {
+      "key": "pwa.move.body",
+      "en": "Your notes are kept in this browser, for this address only. Download them here, then open the new address and import the file there.",
+      "vars": []
+    },
+    {
+      "key": "pwa.move.download",
+      "en": "Download my notes (.zip)",
+      "vars": []
+    },
+    {
+      "key": "pwa.move.downloaded",
+      "en": "Downloaded {count} files.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "pwa.move.failed",
+      "en": "The download failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "pwa.move.later",
+      "en": "Later",
+      "vars": []
+    },
+    {
+      "key": "pwa.move.open",
+      "en": "Open {host}",
+      "vars": [
+        "host"
+      ]
+    },
+    {
+      "key": "pwa.move.title",
+      "en": "Lumen has moved to {host}.",
+      "vars": [
+        "host"
+      ]
     },
     {
       "key": "pwa.offlineReady",
@@ -9339,6 +10858,71 @@
     {
       "key": "shareLink.view.openApp",
       "en": "Open Lumen",
+      "vars": []
+    },
+    {
+      "key": "skills.answerSummary",
+      "en": "The answer of the skill “{name}”",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "skills.done",
+      "en": "“{name}” finished: {n} change(s) wait for your review.",
+      "vars": [
+        "name",
+        "n"
+      ]
+    },
+    {
+      "key": "skills.empty",
+      "en": "No skill matches.",
+      "vars": []
+    },
+    {
+      "key": "skills.failed",
+      "en": "“{name}” did not finish: {error}",
+      "vars": [
+        "name",
+        "error"
+      ]
+    },
+    {
+      "key": "skills.heading",
+      "en": "Skills",
+      "vars": []
+    },
+    {
+      "key": "skills.running",
+      "en": "Running “{name}”…",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "skills.untrusted.message",
+      "en": "This skill comes from {source}, not from your own vault. It may ask to use: {tools}. Every change it proposes still waits for your approval, and outside content in it is checked for injected instructions. Allow this version to run?",
+      "vars": [
+        "source",
+        "tools"
+      ]
+    },
+    {
+      "key": "skills.untrusted.ok",
+      "en": "Allow and run",
+      "vars": []
+    },
+    {
+      "key": "skills.untrusted.title",
+      "en": "Run the untrusted skill “{name}”?",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "skills.untrustedBadge",
+      "en": "Untrusted",
       "vars": []
     },
     {

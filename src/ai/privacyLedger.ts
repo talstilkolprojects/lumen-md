@@ -86,12 +86,20 @@ const RULES: Rule[] = [
   { test: (h) => h === "generativelanguage.googleapis.com", category: "cloud-ai", reason: "Google Gemini" },
   { test: (h) => h === "api.mistral.ai", category: "cloud-ai", reason: "Mistral" },
   { test: (h) => h === "api.languagetool.org", category: "cloud-text", reason: "LanguageTool grammar check" },
+  // W7.19: publishing a note to the user's own AT Protocol PDS (Standard.site), only when they press Publish.
+  { test: (h) => h === "bsky.social" || h.endsWith(".host.bsky.network"), category: "third-party", reason: "Publish to the AT Protocol (Standard.site), your PDS" },
+  { test: (h) => h === "plc.directory", category: "third-party", reason: "AT Protocol identity lookup (plc.directory)" },
   { test: (h) => h === "kroki.io", category: "cloud-text", reason: "PlantUML rendering (kroki.io)" },
   // Jewish sources (plan W5.1): the reference the user asked for, nothing else.
   { test: (h) => h === "www.sefaria.org" || h === "sefaria.org", category: "cloud-text", reason: "Jewish sources (Sefaria): the reference only" },
-  // Plan W5.23: the Zotero Web API, read-only, with the user's own key. A
-  // cloud route: a local-only policy blocks it like the research service.
-  { test: (h) => h === "api.zotero.org", category: "research", reason: "Zotero Web API (your library, read-only)" },
+  // Plan W5.23: the Zotero Web API, with the user's own key. A cloud route:
+  // a local-only policy blocks it like the research service. W6.47: it also
+  // writes — only the PDF highlights the user sends and confirms.
+  { test: (h) => h === "api.zotero.org", category: "research", reason: "Zotero Web API (your library; writes only the PDF highlights you send)" },
+  // Knesset records (plan W7.5): the law or bill name the user asked for.
+  { test: (h) => h === "knesset.gov.il" || h === "main.knesset.gov.il", category: "cloud-text", reason: "Knesset records (OData): the law or bill name only" },
+  // Government data (plan W7.6): search words, a dataset id or a series id.
+  { test: (h) => h === "data.gov.il" || h === "apis.cbs.gov.il", category: "cloud-text", reason: "Government data (data.gov.il, CBS): the search words or dataset id only" },
   {
     test: (h) => h === "huggingface.co" || h.endsWith(".huggingface.co") || h.endsWith(".hf.co") || h === "hf.co",
     category: "model-download",
@@ -424,6 +432,22 @@ export function recordUserShare(url: string, bytes: number, reason: string = USA
  * Record a request that was refused before it was made (an agent network
  * tool under `local-only` without consent) and return the error to throw.
  */
+/**
+ * A call to a local program that may reach the network (an MCP server on
+ * stdio, plan W7.18): it makes no fetch the ledger could see, so it is
+ * recorded here, under its `stdio://<server>` destination (review 24, C3r).
+ */
+export function recordProcessCall(url: string, reason: string, bytesOut: number, consent: boolean): LedgerEntry | null {
+  let host = url;
+  try {
+    host = `${new URL(url).protocol}//${new URL(url).hostname}`;
+  } catch {
+    /* keep the text */
+  }
+  const id = record({ host, method: "STDIO", bytesOut, bytesIn: null, category: "network", reason, policy: getAiPolicy(), decision: "allowed", ...(consent ? { consent: true } : {}) });
+  return entries.find((x) => x.id === id) ?? null;
+}
+
 export function recordBlockedRequest(url: string, category: LedgerCategory, reason: string, method = "GET"): PrivacyBlockedError {
   const host = hostOf(url);
   const id = record({ host, category, reason, method, bytesOut: 0, bytesIn: null, policy: getAiPolicy(), decision: "blocked" });
@@ -447,6 +471,21 @@ export function ledgerFetch(opts: LedgerOptions): typeof fetch {
 }
 
 let rawFetch: typeof fetch | null = null;
+
+/**
+ * Airplane mode (W5.9) wraps the window's fetch after the ledger is
+ * installed (main.tsx), so the ledger's own transport — the fetch it
+ * captured, used by ledgerFetch and guardedFetch — would go around it, and a
+ * request still in flight when the switch goes on would be neither counted
+ * nor aborted (review 20, RR20-1). Airplane mode hands its guard here, and
+ * the ledger then sends through it. No request is recorded twice: the
+ * window's fetch is the ledger wrapping the guard, and this path is the
+ * guard alone.
+ */
+export function wrapLedgerTransport(wrap: (inner: typeof fetch) => typeof fetch): void {
+  if (unwrappedFetch) unwrappedFetch = wrap(unwrappedFetch);
+  if (rawFetch) rawFetch = wrap(rawFetch);
+}
 
 /**
  * Requests that workers report (workerLedger.ts): recorded with the same

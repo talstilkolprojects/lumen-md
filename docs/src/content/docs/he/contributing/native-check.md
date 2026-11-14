@@ -26,6 +26,24 @@ bash tools/native-check/run.sh
 | 3. ‏Android | `javac -Xlint:all -Werror` על `android/app/src/main/java` ו-`mobile/android` מול `java-stubs/`, עם מחלקת `R` שנוצרת מ-`res/` | ה-Java מתקמפל בלי אזהרות; כל הפניה ל-`@string`,‏ `@xml`,‏ `@layout`,‏ `@drawable`,‏ `@mipmap` ו-`@style` קיימת. |
 | 4. ‏Swift | רק רשימה | כלום: Swift צריך Xcode. |
 
+## ‏cargo אמיתי, בלי הורדת crates
+
+‏`Cargo.toml` נבדק גם למפתח או ל-`[table]` שנכתבו פעמיים: ‏cargo מסרב לקובץ כזה
+("duplicate key") עוד לפני שהוא פותר תלויות, ו-rustc מול stubs לא רואה את זה.
+
+כשאפשר להגיע לאינדקס של crates.io דרך git אבל לא להוריד crates, ה-cargo האמיתי
+עדיין מריץ את מפענח ה-manifest, את פותר התלויות, את בדיקת ה-features ואת כלל
+`--locked`:
+
+```bash
+git clone --depth 1 https://github.com/rust-lang/crates.io-index ~/crates.io-index   # כ-8 GB אחרי checkout
+NATIVE_CHECK_INDEX=~/crates.io-index bash tools/native-check/run.sh
+```
+
+‏`real-cargo.sh` מכוון `CARGO_HOME` זמני אל השיבוט כ-local registry, על עותק של
+`src-tauri/`. ‏`cargo check --locked` צריך לעצור רק בהורדה הראשונה של crate, וכל
+crate מקומי בלי תלויות (`desktop/`) מקומפל ונבדק על ידי cargo.
+
 ## מה הבדיקה לא יכולה להוכיח
 
 ה-stubs מכילים חתימות, לא התנהגות. הם הועתקו מ-tauri 2 ומקוד המקור של

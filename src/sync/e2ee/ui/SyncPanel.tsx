@@ -13,6 +13,7 @@ import { PassphraseForm } from "./PassphraseForm";
 import { FreshnessBanner } from "./FreshnessBanner";
 import { SyncActivity } from "./SyncActivity";
 import { SyncRulesForm } from "./SyncRulesForm";
+import { PairingCompare } from "./PairingCompare";
 import { e2eeErrorText, e2eeResultNotices } from "./errorText";
 import { syncSession, type SyncSession } from "./session";
 import { ProviderAuthError, ProviderUnreachableError, ProviderUnsupportedError } from "../providers/http";
@@ -38,8 +39,8 @@ const field: React.CSSProperties = {
   font: "inherit",
 };
 const muted: React.CSSProperties = { fontSize: 12, color: "hsl(var(--fg-muted))" };
-const errorStyle: React.CSSProperties = { fontSize: 12, color: "hsl(0 70% 50%)" };
-const primary: React.CSSProperties = { padding: "6px 14px", border: "none", borderRadius: 6, background: "hsl(var(--accent))", color: "white", cursor: "pointer", justifySelf: "start" };
+const errorStyle: React.CSSProperties = { fontSize: 12, color: "hsl(var(--danger))" };
+const primary: React.CSSProperties = { padding: "6px 14px", border: "none", borderRadius: 6, background: "hsl(var(--accent))", color: "hsl(var(--accent-fg))", cursor: "pointer", justifySelf: "start" };
 
 /** A human message for a failed connection (never the error's own text: explainError). */
 export function describeConnectError(e: unknown, settings: ProviderSettings): string {
@@ -300,6 +301,8 @@ function Unlocked({ session }: { session: SyncSession }) {
   const [answer, setAnswer] = useState<string | null>(null);
   const [pairError, setPairError] = useState<string | null>(null);
   const [cancelled, setCancelled] = useState(false);
+  /** The comparison for the code or answer this device gave out (W8.5): a new key for each. */
+  const [comparing, setComparing] = useState(0);
   const last = s.last;
   // I3: an answer or a code holds this device's key changes back for minutes; the user can call it off.
   const cancelPairing = () => {
@@ -307,6 +310,7 @@ function Unlocked({ session }: { session: SyncSession }) {
     void engine.cancelPairing().then(() => {
       setAnswer(null);
       setCode(null);
+      setComparing(0);
       setCancelled(true);
     });
   };
@@ -315,7 +319,13 @@ function Unlocked({ session }: { session: SyncSession }) {
     setPairError(null);
     setAnswer(null);
     setCancelled(false);
-    void engine.answerPairing(request).then(setAnswer, (e) => setPairError(e2eeErrorText(e, "answer", explainError)));
+    void engine.answerPairing(request).then(
+      (a) => {
+        setAnswer(a);
+        setComparing((n) => n + 1);
+      },
+      (e) => setPairError(e2eeErrorText(e, "answer", explainError)),
+    );
   };
   return (
     <div style={{ display: "grid", gap: 10 }}>
@@ -392,6 +402,7 @@ function Unlocked({ session }: { session: SyncSession }) {
                 (c) => {
                   setCode(c);
                   setCancelled(false);
+                  setComparing((n) => n + 1);
                 },
                 (e) => setCode(e2eeErrorText(e, "other", explainError)),
               )
@@ -407,6 +418,7 @@ function Unlocked({ session }: { session: SyncSession }) {
               <div style={muted}>{t("e2ee.sync.pairCodeNote")}</div>
             </>
           )}
+          {comparing > 0 && <PairingCompare key={comparing} sync={engine} />}
           {(answer || code) && (
             <button type="button" style={{ justifySelf: "start" }} onClick={cancelPairing}>
               {t("e2ee.pair.cancel")}
@@ -442,7 +454,7 @@ export function SyncPanel({ onClose, session = syncSession() }: { onClose: () =>
   const where = !s.settings ? "" : s.settings.kind === "lan" ? t(`e2ee.lan.where.${s.settings.role}`) : s.settings.kind === "folder" ? `${NAMES.folder} ${s.settings.name}` : `${NAMES[s.settings.kind]} — ${providerHosts(s.settings)[0] ?? ""}`;
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "hsl(0 0% 0% / 0.4)", display: "grid", placeItems: "center", zIndex: 1000 }} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div style={{ position: "fixed", inset: 0, background: "var(--overlay)", display: "grid", placeItems: "center", zIndex: 1000 }} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div
         role="dialog"
         aria-modal="true"

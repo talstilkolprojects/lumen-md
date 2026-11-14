@@ -42,11 +42,16 @@ must not drop.
 
 ## Smart (semantic)
 
-Hybrid retrieval that fuses BM25 with cosine similarity over OpenAI
-`text-embedding-3-small` vectors via Reciprocal Rank Fusion (RRF, k = 60).
-Finds notes that are semantically related even when the surface words
-don't match — a query for *"deep learning"* surfaces a note titled
-*"Neural networks"*.
+Hybrid retrieval that fuses BM25 with cosine similarity over embedding
+vectors via Reciprocal Rank Fusion (RRF, k = 60). The vectors come from the
+first model available, local first: an Ollama embedding model
+(`nomic-embed-text` or another one you installed), then the built-in
+`multilingual-e5-small` in the browser (384 dimensions, about 100 languages,
+Hebrew included), and OpenAI `text-embedding-3-small` only under the
+*cloud* AI policy. Vectors from different models don't mix, so a change of
+model rebuilds the index. Smart search finds notes that are semantically
+related even when the surface words don't match — a query for
+*"deep learning"* surfaces a note titled *"Neural networks"*.
 
 To enable:
 
@@ -54,10 +59,10 @@ To enable:
 2. Click **Build index** (one-time, then incremental on subsequent runs).
 3. Type your query — results re-rank in real time.
 
-**Cost**: each chunk is embedded once and cached in IndexedDB. A 100-note
-workspace embeds in ≈ 8s and ≈ 200 K tokens (≈ $0.004 with
-`text-embedding-3-small`). Re-indexing only re-embeds chunks whose hash
-changed.
+**Cost**: each chunk is embedded once and cached in IndexedDB, and
+re-indexing only re-embeds chunks whose hash changed. A local model costs
+nothing. With OpenAI, a 100-note workspace embeds in ≈ 8s and ≈ 200 K
+tokens (≈ $0.004 with `text-embedding-3-small`).
 
 ## Cross-language: ask in Hebrew, find English sources
 

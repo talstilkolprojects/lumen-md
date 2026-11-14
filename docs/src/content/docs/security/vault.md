@@ -44,4 +44,5 @@ note cannot be recovered.
 
 Your notes themselves are plain Markdown files (in the browser's private
 file system, or a folder on desktop). Encrypting the whole vault at rest is
-planned as an option (plan task 11.4).
+an option, with **🔐 Vault encryption…**: see
+[Vault encryption at rest](/security/vault-encryption/).

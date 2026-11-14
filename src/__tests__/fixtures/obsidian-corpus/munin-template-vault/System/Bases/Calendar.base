@@ -1,0 +1,139 @@
+filters:
+  and:
+    - file.path.startsWith("Calendar/")
+formulas:
+  anchor: date(if(type == "meeting" || type == "work-session", date_start, date))
+  week: formula.anchor.format("[W]WW")
+  day: formula.anchor.format("dddd")
+properties:
+  note.date_start:
+    displayName: Start
+views:
+  - type: table
+    name: Daily rollup
+    filters:
+      and:
+        - or:
+            - type == "meeting"
+            - type == "work-session"
+        - formula.anchor >= this.date
+        - formula.anchor < this.date + "1d"
+    order:
+      - type
+      - file.name
+      - up
+      - summary
+      - people
+    sort:
+      - property: formula.anchor
+        direction: ASC
+    columnSize:
+      note.type: 110
+      file.name: 220
+      note.up: 155
+      note.summary: 460
+    rowHeight: tall
+  - type: table
+    name: Weekly rollup
+    filters:
+      and:
+        - or:
+            - type == "meeting"
+            - type == "work-session"
+        - formula.anchor >= this.date
+        - formula.anchor < this.date + "7d"
+    groupBy:
+      property: formula.day
+      direction: ASC
+    order:
+      - type
+      - file.name
+      - up
+      - summary
+    sort:
+      - property: formula.anchor
+        direction: ASC
+    columnSize:
+      note.type: 110
+      file.name: 220
+      note.up: 155
+      note.summary: 560
+    rowHeight: medium
+  - type: table
+    name: Monthly rollup
+    filters:
+      and:
+        - or:
+            - type == "meeting"
+            - type == "work-session"
+        - formula.anchor >= this.date
+        - formula.anchor < this.date + "1 month"
+    groupBy:
+      property: formula.week
+      direction: ASC
+    order:
+      - type
+      - file.name
+      - up
+      - summary
+    sort:
+      - property: formula.anchor
+        direction: ASC
+    columnSize:
+      note.type: 110
+      file.name: 220
+      note.up: 155
+      note.summary: 560
+    rowHeight: medium
+  - type: table
+    name: Quarterly rollup
+    filters:
+      and:
+        - or:
+            - type == "meeting"
+            - type == "work-session"
+        - formula.anchor >= this.date
+        - formula.anchor < this.date + "3 months"
+    groupBy:
+      property: formula.week
+      direction: ASC
+    order:
+      - type
+      - file.name
+      - up
+      - summary
+    sort:
+      - property: formula.anchor
+        direction: ASC
+    columnSize:
+      note.type: 110
+      file.name: 220
+      note.up: 155
+      note.summary: 560
+    rowHeight: medium
+  - type: table
+    name: Yearly rollup
+    filters:
+      and:
+        - or:
+            - type == "meeting"
+            - type == "work-session"
+        - formula.anchor >= this.date
+        - formula.anchor < this.date + "1 year"
+    groupBy:
+      property: formula.week
+      direction: ASC
+    order:
+      - type
+      - file.name
+      - up
+      - summary
+    sort:
+      - property: formula.anchor
+        direction: ASC
+    columnSize:
+      note.type: 110
+      file.name: 220
+      note.up: 155
+      note.summary: 560
+    rowHeight: medium

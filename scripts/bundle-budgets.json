@@ -1,0 +1,48 @@
+{
+  "about": "Bundle budgets in KB gzipped, read by scripts/bundle-budget.mjs (npm run budget). Plan W6.26: they only go down. After each train `npm run budget:ratchet` lowers every budget to the measured size plus the margin when that is lower, never higher; `npm run pr:check` fails a diff that raises one, and `npm run budget:history` checks every commit of this file. A rule with `expires` is an exception: it names its task, and the budget fails once the date has passed. The first matching rule wins, so narrower patterns come first.",
+  "margin": { "pct": 2, "minKb": 1 },
+  "startup": {
+    "budgetKb": 460,
+    "targetKb": 250,
+    "note": "C2: the SUM of what index.html loads before the app can run (its entry script + every modulepreload), not each file alone. Measured 448 KB (18.10); goal 250 KB (W4.9: 460 → 380 → 300 → 250)."
+  },
+  "rules": [
+    { "name": "main bundle", "pattern": "^app-", "budgetKb": 195, "note": "The eager Lumen runtime (App + side panels + i18n table). With Vite 8 the startup code shared by the HTML entries lives in app-*. History: 222 → 225 (round 16), 225 → 230 (round 25), 230 → 195 (audit M12-followup-2, rehype-raw lazy)." },
+    { "name": "entry stub", "pattern": "^main-", "budgetKb": 5, "note": "The entry main-* is a stub with a tight budget of its own, so code moving back into it can't double the startup allowance." },
+    { "name": "entry index", "pattern": "^index-", "budgetKb": 220 },
+    { "name": "vendor: mermaid", "pattern": "^vendor-mermaid-", "budgetKb": 860, "note": "800 → 860 (2026-10 dependency audit): mermaid 11.17.2 fixes five advisories; measured 833.3 KB on Linux. Lazy: only a doc with a mermaid block fetches it." },
+    { "name": "vendor: shiki", "pattern": "^vendor-shiki-", "budgetKb": 320, "note": "~263 KB today; per-language grammars live in assets/shiki-langs/* and are fetched on demand." },
+    { "name": "vendor: codemirror", "pattern": "^vendor-codemirror-", "budgetKb": 600 },
+    { "name": "vendor: echarts", "pattern": "^vendor-echarts-", "budgetKb": 400 },
+    { "name": "vendor: graphviz", "pattern": "^vendor-graphviz-", "budgetKb": 700 },
+    { "name": "vendor: yjs", "pattern": "^vendor-yjs-", "budgetKb": 180 },
+    { "name": "vendor: milkdown", "pattern": "^vendor-milkdown-", "budgetKb": 200 },
+    { "name": "vendor: react", "pattern": "^vendor-react-", "budgetKb": 160, "note": "Bundles react and react-dom (round 16); splitting them caused a circular-import init crash." },
+    { "name": "vendor: katex", "pattern": "^vendor-katex-", "budgetKb": 110 },
+    { "name": "vendor: leaflet", "pattern": "^vendor-leaflet-", "budgetKb": 60 },
+    { "name": "vendor: git", "pattern": "^vendor-git-", "budgetKb": 110 },
+    { "name": "vendor: excalidraw-mermaid", "pattern": "^vendor-excalidraw-mermaid-", "budgetKb": 120, "note": "Excalidraw's Mermaid → diagram dialog (plan 4.19), loaded on demand." },
+    {
+      "name": "vendor: excalidraw core",
+      "pattern": "^vendor-excalidraw-chunk-EIO257PC-",
+      "budgetKb": 740,
+      "expires": "2027-01-15",
+      "task": "W1.36",
+      "note": "Exception. Excalidraw's own core module (dist/prod/chunk-EIO257PC, 0.18.1) is one file no chunk grouping can split: 718.6 KB on verify/train (11.11.2026). Decision 11.11: a rule of its own at measured + 3%, never a blanket raise. Lazy (canvas only), not precached. A new Excalidraw build renames the stem, falls to the 700 rule and fails: decided again, not inherited. W1.36 looks for a smaller build and removes this rule; when it expires the budget fails until it is lowered or decided again."
+    },
+    { "name": "vendor: excalidraw", "pattern": "^vendor-excalidraw-", "budgetKb": 700, "note": "Every other Excalidraw shared chunk (review 13.5)." },
+    { "name": "vendor: modelviewer", "pattern": "^vendor-modelviewer-", "budgetKb": 320, "note": "@google/model-viewer + three.js, self-hosted (CSP bans the CDN); only a ```model3d block loads it." },
+    { "name": "vendor: other", "pattern": "^vendor-", "budgetKb": 200 },
+    { "name": "lazy: pdfjs", "pattern": "^pdf-", "budgetKb": 165, "note": "The pdfjs-dist text extractor, only on PDF import; its worker ships as a separate .mjs." },
+    { "name": "lazy: prettier", "pattern": "^prettier-", "budgetKb": 215, "note": "Standalone core + one chunk per language plugin; the TypeScript parser is 204 KB with Vite 8." },
+    { "name": "lazy: abcjs", "pattern": "^abcjs-", "budgetKb": 160 },
+    { "name": "lazy: canvas", "pattern": "^CanvasExcalidraw-", "budgetKb": 40, "note": "The canvas dialog around Excalidraw." },
+    { "name": "lazy: cytoscape", "pattern": "^cytoscape", "budgetKb": 150, "note": "mermaid's graph layouts, split out of vendor-mermaid." },
+    { "name": "lazy: ts checker", "pattern": "^tsCheck\\.worker-", "budgetKb": 1450, "note": "TypeScript compiler + lib .d.ts for the opt-in code-block checks (src/lsp); one worker, not precached. Measured 1325 KB (TypeScript 5.9)." },
+    { "name": "lazy: web-llm worker", "pattern": "^webllm\\.worker-", "budgetKb": 2200, "note": "web-llm with its inlined tokenizer wasm and TVM runtime: 2082 KB (0.2.82). Only on the first in-browser AI prompt, never precached." },
+    { "name": "lazy: transformers worker", "pattern": "^transformers\\.worker-", "budgetKb": 700, "note": "transformers.js (local Whisper + embeddings); the ONNX Runtime wasm is served from public/ort/." },
+    { "name": "lazy: graphviz worker", "pattern": "^graphviz\\.worker-", "budgetKb": 700, "note": "viz.js wasm in its own worker so the page CSP needs no unsafe-eval (~608 KB)." },
+    { "name": "lazy plugin chunk", "pattern": "\\.js$", "budgetKb": 100 }
+  ],
+  "history": []
+}

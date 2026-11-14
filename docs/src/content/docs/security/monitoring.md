@@ -93,13 +93,3 @@ time**, through the same mechanism as the other deployment endpoints
 same origin to the header it serves, from the project's `VITE_SENTRY_DSN`
 environment variable. No error-tracker host or wildcard is in the
 checked-in policies.
-
-## בעברית
-
-- **מדדי ביצועים (Web Vitals)** נמדדים במכשיר שלך ולא נשלחים לשום מקום.
-  אפשר לראות אותם בחלון "מדדי ריצה" בשורת המצב.
-- **דוחות שגיאה כבויים כברירת מחדל.** הם נשלחים רק אם הפעלת אותם בכפתור
-  "טלמטריה" בשורת המצב, **וגם** הבנייה כוללת כתובת DSN של שירות מעקב.
-- הדוח כולל רק את סוג השגיאה ואת מיקומה בקוד. הודעת השגיאה, תוכן הפתקים,
-  הכותרות והנתיבים לא נשלחים. אין הקלטת סשן ואין מידע מזהה.
-- כל דוח מופיע ביומן הפרטיות. במדיניות "מקומי בלבד" הדוחות נחסמים.

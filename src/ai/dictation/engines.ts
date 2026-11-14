@@ -73,6 +73,15 @@ export interface EngineChoice {
 
 export const baseLanguage = (tag: string): string => tag.split(/[-_]/)[0].toLowerCase();
 
+/**
+ * Plan W6.19: Ozen v1 stays off until the owner approves the licence of its
+ * training data (its card lists imvladikon/hebrew_speech_kan, which declares
+ * none; models/registry.json has it verified: false). While false it is never
+ * chosen, for files or for the re-read of live sentences, and is not measured
+ * by the cloud run. A speech model reaches users only with a verified licence.
+ */
+export const OZEN_LICENSE_APPROVED = false;
+
 /** The turbo model's floor: 563 MB of q4f16 weights plus activations. */
 export const TURBO_VRAM_MB = 1200;
 
@@ -85,7 +94,7 @@ export function chooseEngine(ctx: EngineContext): EngineChoice {
   } else {
     if (he && ctx.desktopWhisper) out.push("whisper-cpp-he");
     if (he && ctx.webgpu && ctx.f16 && ctx.vramMB >= TURBO_VRAM_MB) out.push("whisper-turbo-he");
-    if (he) out.push("ozen-he");
+    if (he && OZEN_LICENSE_APPROVED) out.push("ozen-he");
     out.push("whisper-base");
   }
   let webSpeechBlocked: EngineChoice["webSpeechBlocked"];
@@ -109,11 +118,12 @@ export function chooseEngine(ctx: EngineContext): EngineChoice {
  * sentence's audio goes through a stronger model. Only a model already on
  * the device is used — live dictation never starts a download: ivrit.ai's
  * turbo where the GPU can hold it, else Ozen v1 (WebGPU or wasm — the
- * fallback without WebGPU), else none (the streaming text stays).
+ * fallback without WebGPU) once its licence is approved, else none (the
+ * streaming text stays; plan W6.19 then offers the desktop).
  */
 export function chooseCorrection(ctx: Pick<EngineContext, "language" | "webgpu" | "f16" | "vramMB" | "downloaded">): "whisper-turbo-he" | "ozen-he" | null {
   if (baseLanguage(ctx.language) !== "he") return null;
   if (ctx.webgpu && ctx.f16 && ctx.vramMB >= TURBO_VRAM_MB && ctx.downloaded.has("whisper-turbo-he")) return "whisper-turbo-he";
-  if (ctx.downloaded.has("ozen-he")) return "ozen-he";
+  if (OZEN_LICENSE_APPROVED && ctx.downloaded.has("ozen-he")) return "ozen-he";
   return null;
 }

@@ -1,0 +1,18 @@
+{
+  "benyehuda.enable": "Turn on the Ben-Yehuda library? Lumen downloads it from GitHub only when you ask; after that, search and reading are local.",
+  "benyehuda.confirm": "Download from the project's public-domain dump on GitHub? Nothing from your notes is sent.",
+  "benyehuda.pickAuthor": "Whose works? ({count} authors in the public domain)",
+  "benyehuda.progress": "Downloaded {done} of {total} works",
+  "benyehuda.downloaded": "{count} works of {author} are on this device",
+  "benyehuda.failed": "The Ben-Yehuda library failed: {error}",
+  "benyehuda.empty": "The library is not on this device yet. Download it first.",
+  "benyehuda.prompt": "Author, work or words (for example ביאליק בריכה)",
+  "benyehuda.none": "Nothing in the library matches “{query}”.",
+  "benyehuda.results": "{count} works",
+  "benyehuda.notDownloaded": "not downloaded",
+  "benyehuda.downloadFirst": "This work's text is not on this device. Download the works of {author} first.",
+  "benyehuda.selectInWork": "Open a work from the library and select a passage first.",
+  "benyehuda.copied": "Quote copied: paste it into any note",
+  "benyehuda.highlighted": "Highlighted in {path}",
+  "benyehuda.cancel": "Cancel"
+}

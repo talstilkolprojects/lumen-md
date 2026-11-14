@@ -2,9 +2,10 @@
 /**
  * Design-system gate (plan W3.1).
  *
- *   color    src/ui: no hard-coded colour — a hex, rgb()/rgba(), or hsl()/hsla()
- *            whose first argument is not var(…). Colours come from the tokens
- *            (src/ui/tokens.ts, src/index.css).
+ *   color    src/ui and the other interface folders (COLOR_SCOPE below: dialogs,
+ *            panels and blocks outside src/ui): no hard-coded colour — a hex,
+ *            rgb()/rgba(), or hsl()/hsla() whose first argument is not var(…).
+ *            Colours come from the tokens (src/ui/tokens.ts, src/index.css).
  *   layout   all of src/: nothing animates or transitions width, height,
  *            top / left / right / bottom, inset, margin, padding, font-size,
  *            line-height or border-width (they move layout every frame).
@@ -32,6 +33,12 @@ const ALLOW = /design-allow:\s*\S+/;
 const COLOR = /#[0-9a-fA-F]{3,8}\b(?![-\w])|\brgba?\(|\bhsla?\(\s*(?!var\()/;
 const LAYOUT = /^(width|height|top|left|right|bottom|inset|inset-[\w-]+|margin(-[\w-]+)?|padding(-[\w-]+)?|font-size|line-height|border(-[\w-]+)?-width|min-width|max-width|min-height|max-height)$/;
 const MOVES = new Set(["transform", "opacity"]);
+/** Where the colour rule applies (plan W6.41): src/ui and every folder that draws interface chrome. */
+export const COLOR_SCOPE = [
+  "src/ui/", "src/App.tsx", "src/layouts/", "src/components/", "src/backup/", "src/citations/", "src/highlights/",
+  "src/lexicon/", "src/onboarding/", "src/plugins/runtime/", "src/privacy/", "src/share/", "src/student/", "src/sync/",
+  "src/tasks/", "src/views/", "src/whatsNew/",
+];
 const SCALE = new Set(["0", "0s", "0ms", "100ms", "250ms", "350ms", ".1s", "0.1s", ".25s", "0.25s", ".35s", "0.35s"]);
 
 function walk(dir, out = []) {
@@ -96,7 +103,7 @@ export function keyframesOf(css) {
 
 const stripCssComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, " "));
 
-/** Findings for one file. `strict`: the motion rules apply (src/ui, src/index.css). `colors`: the colour rule applies (src/ui). */
+/** Findings for one file. `strict`: the motion rules apply (src/ui, src/index.css). `colors`: the colour rule applies (COLOR_SCOPE). */
 export function scan(fileName, text, { strict, colors }) {
   const out = [];
   const lines = text.split(/\r?\n/);
@@ -168,7 +175,8 @@ export function scanAll() {
     const rel = relative(ROOT, f).split("\\").join("/");
     const inUi = rel.startsWith("src/ui/");
     const strict = inUi || rel === "src/index.css";
-    for (const v of scan(f, readFileSync(f, "utf8"), { strict, colors: inUi })) findings.push({ file: rel, ...v });
+    const colors = COLOR_SCOPE.some((p) => (p.endsWith("/") ? rel.startsWith(p) : rel === p));
+    for (const v of scan(f, readFileSync(f, "utf8"), { strict, colors })) findings.push({ file: rel, ...v });
   }
   return findings;
 }
@@ -182,7 +190,7 @@ function main() {
     console.error(`\n✖ design: ${by("color")} hard-coded colour(s), ${by("layout")} layout animation(s), ${by("motion")} motion rule break(s). Use src/ui/tokens.ts, or mark a real exception with \`design-allow: <reason>\`.`);
     process.exit(1);
   }
-  console.error("✓ design: no hard-coded colours in src/ui, nothing animates layout, motion uses transform / opacity and the duration scale.");
+  console.error("✓ design: no hard-coded colours in the interface folders, nothing animates layout, motion uses transform / opacity and the duration scale.");
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

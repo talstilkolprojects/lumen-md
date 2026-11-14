@@ -58,7 +58,7 @@ export function isPendingWrite(v: unknown): v is PendingWrite {
 
 let seq = 0;
 /** Time, then a per-process counter, then randomness: sorts in the order proposed. */
-function newId(now: Date): string {
+export function newProposalId(now: Date): string {
   seq = (seq + 1) % 36 ** 4;
   return now.getTime().toString(36).padStart(9, "0") + seq.toString(36).padStart(4, "0") + randomBytes(4).toString("hex");
 }
@@ -80,7 +80,7 @@ export async function readNote(vault: string, rel: string): Promise<string | nul
 
 /** Queue a change. Writes nothing to the note itself. */
 export async function proposeWrite(vault: string, p: Omit<PendingWrite, "id" | "createdAt">, now = new Date()): Promise<PendingWrite> {
-  const full: PendingWrite = { ...p, path: safeRel(p.path), id: newId(now), createdAt: now.toISOString() };
+  const full: PendingWrite = { ...p, path: safeRel(p.path), id: newProposalId(now), createdAt: now.toISOString() };
   await writeFileAtomic(fileOf(vault, full.id), JSON.stringify(full, null, 2) + "\n");
   await appendLedger(vault, { client: full.client, tool: full.tool, scope: "propose", path: full.path, decision: "proposed", bytesOut: 0, id: full.id });
   return full;

@@ -52,7 +52,9 @@ Desktop doesn't need to be open.
 The next sync asks only for what changed since the last one. If nothing
 changed, Zotero answers with one empty response (`304`). Otherwise Lumen
 fetches the changed items, up to 50 per request, and drops the deleted ones.
-Lumen never writes to Zotero. If Zotero asks the app to slow down
+The sync itself never writes to Zotero; the one write is
+[sending PDF highlights](/workspace/pdf-reader/#send-highlights-to-zotero),
+after you confirm it, with a key that has write access. If Zotero asks the app to slow down
 (`Backoff`, `429`), Lumen waits.
 
 ## Pandoc syntax

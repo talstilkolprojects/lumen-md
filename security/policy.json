@@ -60,9 +60,15 @@
           "http://localhost:5199",
           "http://127.0.0.1:5199",
           "https://api.languagetool.org",
+          "https://bsky.social",
+          "https://*.host.bsky.network",
+          "https://plc.directory",
           "https://kroki.io",
           "https://www.sefaria.org",
           "https://api.zotero.org",
+          "https://knesset.gov.il",
+          "https://data.gov.il",
+          "https://apis.cbs.gov.il",
           "https://oauth2.googleapis.com",
           "https://www.googleapis.com",
           "https://api.dropboxapi.com",
@@ -411,7 +417,22 @@
   },
   "hosts": {
     "cloudflare": {
-      "why": "public/_headers: Cloudflare Pages (and Netlify, which applies dist/_headers but cannot detach headers). The build copies it to dist/_headers and adds the deployment's endpoint origins to every connect-src (src/build/cspEndpoints.ts)."
+      "why": "public/_headers: Cloudflare Pages (and Netlify, which applies dist/_headers but cannot detach headers). The build copies it to dist/_headers and adds the deployment's endpoint origins to every connect-src (src/build/cspEndpoints.ts).",
+      "lineLimit": 2000,
+      "lineLimitWhy": "Cloudflare's _headers parser skips, without failing the deploy, any line longer than 2,000 characters (workers-sdk parseHeaders.ts, MAX_LINE_LENGTH). The app policy was 1,994 characters on one line, so the first endpoint origin the build adds would have dropped the whole header CSP on that host (plan W6.9).",
+      "split": [
+        {
+          "routes": ["app"],
+          "directive": "connect-src",
+          "superset": ["'self'", "blob:", "data:", "https:", "http:", "wss:", "ws:"],
+          "why": "The app policy is sent as two policies on two lines of the same rule, which Cloudflare (and Netlify) join with a comma. The first carries every directive, with connect-src widened to the schemes of the second; the second carries the real connect-src. A browser enforces both, so the result is exactly the policy's connect-src, and the long, build-extended list sits on a line of its own."
+        }
+      ],
+      "samples": {
+        "playground-runner": ["/playground-runner"],
+        "livejs-runner": ["/livejs-runner"]
+      },
+      "samplesWhy": "Cloudflare Pages answers /x.html with a 308 to /x and serves the page there, so the runner pages are framed at their extension-less paths: those need the runner policy too."
     },
     "vercel": {
       "why": "deploy/vercel.base.json headers. Vercel reads vercel.ts, which runs at build time with the project's environment: it loads this file and fills the placeholder below with the deployment's endpoint origins (vercel.ts, src/build/cspEndpoints.ts).",

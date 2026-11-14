@@ -1,0 +1,47 @@
+# Firebase Test Lab robo runs of the debug APK (plan W6.24): no phone, no test code.
+# A gcloud argument file (`gcloud topic arg-files`): each top-level key is a group of
+# `gcloud firebase test android run` flags. Run through scripts/mobile-device-smoke.sh,
+# which passes --app (the command line wins over this file) and checks the result:
+#
+#   bash scripts/mobile-device-smoke.sh testlab release/mobile/lumen-<v>-debug.apk
+#   gcloud firebase test android run mobile/testlab/robo.yaml:robo --app <apk>   # by hand
+#
+# Quota (firebase.google.com/docs/test-lab/usage-quotas-pricing, updated 12.11.2026):
+# the no-cost Spark plan allows 10 runs a day on virtual devices and 5 on physical
+# ones; every device below is one run. Test Lab shuts down on 30.9.2027 — the
+# fallback is BrowserStack App Automate (`mobile-device-smoke.sh browserstack`).
+#
+# Robo fails the run (gcloud exit 10) when the app crashes or does not start; the
+# acceptance "robo run: 0 crashes" is exit 0 for every device.
+
+robo:
+  type: robo
+  # Two Arm virtual devices: the Hebrew (RTL) UI and the English one. Android's
+  # locale id for Hebrew is `iw`. gcloud refuses an unknown model, version or
+  # locale before anything runs; the catalogue:
+  #   gcloud firebase test android models list --filter=form=VIRTUAL
+  #   gcloud firebase test android locales list
+  device:
+    - model: MediumPhone.arm
+      version: 34
+      locale: iw
+      orientation: portrait
+    - model: MediumPhone.arm
+      version: 34
+      locale: en
+      orientation: portrait
+  # The robo crawl: long enough to open the welcome screen, a vault and the editor.
+  timeout: 5m
+  # A crash on start is never flaky: no reruns.
+  num-flaky-test-attempts: 0
+  record-video: true
+  performance-metrics: true
+
+# One physical device (counts against the 5 a day), for the release candidate only.
+robo-physical:
+  include: [ robo ]
+  device:
+    - model: oriole
+      version: 33
+      locale: iw
+      orientation: portrait

@@ -48,7 +48,7 @@ export async function buildTagsIndex(): Promise<TagsIndex> {
   }
   // The shared workspace index re-reads only changed files (C3).
   const { ensureIndex, indexedFiles } = await import("../storage/workspaceIndex");
-  await ensureIndex();
+  await ensureIndex(false, { checked: true });
   const buckets = new Map<string, string[]>();
   const untagged: string[] = [];
   let totalNotes = 0;

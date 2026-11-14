@@ -22,7 +22,7 @@ import { deriveMasterKey, type KdfParams } from "../sync/e2ee/kdf";
 import { DecryptError, hmac, passphraseKeys } from "../sync/e2ee/keys";
 import { fromUtf8, randomBytes, toB64u, utf8 } from "../sync/e2ee/bytes";
 import { memoryChannelPair, messenger, type LanChannel, type Message } from "../sync/e2ee/lan/channel";
-import { lanHost, LanAuthError, remoteLanProvider } from "../sync/e2ee/lan/rpc";
+import { lanHost, LanAuthError, proofData, remoteLanProvider } from "../sync/e2ee/lan/rpc";
 import { newVault, PASSPHRASE, TEST_POLICY } from "./helpers/e2ee";
 
 /** A vault at epoch 1 with two enrolled devices, served by a LAN host. */
@@ -57,7 +57,8 @@ function raw(channel: LanChannel) {
     });
 }
 
-const proof = (role: "host" | "peer", theirs: string, mine: string) => utf8(`lumen-lan:1|${role}|${theirs}|${mine}`);
+// The proof as rpc.ts builds it (W2.19 / review 28 L1: it names the channel; these links have no DTLS fingerprints, so "-").
+const proof = (role: "host" | "peer", theirs: string, mine: string) => proofData(role, theirs, mine, "-");
 
 async function opensWrap(bucketKeyring: Uint8Array, passphrase: string, kdf: KdfParams): Promise<boolean> {
   const file = decodeKeyring(bucketKeyring);

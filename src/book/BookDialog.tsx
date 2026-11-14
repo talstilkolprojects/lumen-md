@@ -10,6 +10,7 @@ import { t } from "../i18n";
 import { useToastStore } from "../store/useToastStore";
 import type { BookState } from "./app";
 import { explainError } from "../lib/userError";
+import { HelpButton } from "../ui/HelpButton";
 
 type App = typeof import("./app");
 
@@ -70,7 +71,7 @@ function BookPanel({ app, indexPath, close }: { app: App; indexPath: string; clo
   return (
     <div dir="auto">
       <h2 style={{ marginTop: 0 }}>
-        {t("book.title")}: {book.title}
+        {t("book.title")}: {book.title} <HelpButton topic="workspace/book" />
       </h2>
       <p style={{ margin: "4px 0" }}>{progress.goal ? t("book.total.ofGoal", { words: progress.words, goal: progress.goal, percent: pct(progress.share ?? 0) }) : t("book.total", { words: progress.words })}</p>
       {progress.share !== null && <Bar value={progress.share} label={t("book.total", { words: progress.words })} />}
