@@ -48,6 +48,8 @@ interface Env {
 }
 const results: Partial<Record<EditorName, EditorResult>> = {};
 let eventTiming = false;
+/** Whether the related-notes panel (W2.2) was open: the plan measures with it. */
+let relatedPanel = false;
 let envOf: Env | null = null;
 
 function environment(info: TestInfo): Env {
@@ -119,8 +121,29 @@ async function open(page: Page, editor: EditorName, path: string, text: string):
   await expect(surface(page, editor)).toContainText(text, { timeout: 120_000 });
 }
 
+/**
+ * Open the related-notes panel (W2.2) through its palette command, before
+ * the observers start, so its own opening is not an interaction measured.
+ * It stays open while the steps type, switch notes and search: it re-ranks
+ * after every typing pause. A build without the command (before W2.2) runs
+ * without it, and the run says so: its numbers then score no board metric.
+ */
+async function openRelated(page: Page): Promise<boolean> {
+  const panel = page.getByTestId("related-panel");
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent("lumen-run-command", { detail: { id: "related.toggle" } })));
+  try {
+    await expect(panel).toBeVisible({ timeout: 15_000 });
+    return true;
+  } catch {
+    // why: no related.toggle command in this build; the run records relatedPanel: false instead of failing
+    return false;
+  }
+}
+
 async function measureEditor(page: Page, editor: EditorName, env: Env): Promise<EditorResult> {
   await open(page, editor, "inp-a.md", "Note A");
+  relatedPanel = await openRelated(page);
+  test.info().annotations.push({ type: "perf", description: `${editor}: related-notes panel ${relatedPanel ? "open" : "not in this build"}` });
   eventTiming = await page.evaluate(installInpObserver);
   await throttle(page, env.cpuSlowdown);
   const tree = page.locator("aside.file-tree");
@@ -227,6 +250,7 @@ test.afterAll(() => {
     version: 1,
     ...envOf,
     eventTiming,
+    relatedPanel,
     vaultNotes: NOTES,
     at: new Date().toISOString(),
     editors: results,

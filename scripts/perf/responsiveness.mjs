@@ -53,7 +53,15 @@ export function gate({ runs = readRuns(), baselines = BASELINES, update = false 
       lines.push(`${run.env}: ${update ? "baseline updated" : "no baseline yet: this run is now the baseline"} (${file.slice(ROOT.length + 1)}; commit it)`);
       continue;
     }
-    const c = compareRuns(JSON.parse(readFileSync(file, "utf8")), run);
+    let c;
+    try {
+      c = compareRuns(JSON.parse(readFileSync(file, "utf8")), run);
+    } catch (e) {
+      // why: a run that cannot be compared (another setup than its baseline) fails, and the other environments are still gated
+      lines.push(`✗ ${run.env}: ${e instanceof Error ? e.message : e}`);
+      ok = false;
+      continue;
+    }
     for (const r of c.rows) {
       const pct = `${r.change >= 0 ? "+" : ""}${(r.change * 100).toFixed(1)} %`;
       lines.push(`${r.regressed ? "✗" : "✓"} ${run.env} ${r.metric.padEnd(22)} ${r.baseline.toFixed(1).padStart(7)} → ${r.latest.toFixed(1).padStart(7)} ms  ${pct}`);

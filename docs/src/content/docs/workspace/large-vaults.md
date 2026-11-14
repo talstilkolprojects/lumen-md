@@ -105,6 +105,12 @@ in a 2 MB note, everywhere. Safari has no Event Timing API, so on an iPhone
 only keypress → paint is measured; INP shows as "not measured" there,
 never as 0.
 
+The related-notes panel is open during the whole measurement, because it
+re-ranks after every pause in typing. A build without the panel still runs,
+but its run says `relatedPanel: false`, it scores no board number, and it is
+never compared with a baseline taken with the panel. To make a new baseline,
+run `node scripts/perf/responsiveness.mjs gate --update`.
+
 Each environment has its own baseline in `reports/perf/baselines/<env>.json`.
 The first run writes it; commit it. A later run fails when any number is
 10 % or more slower than that baseline. The run also writes a signed

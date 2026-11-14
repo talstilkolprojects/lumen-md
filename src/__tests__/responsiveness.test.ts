@@ -30,6 +30,7 @@ type Run = {
   device: string;
   cpuSlowdown: number;
   scored: boolean;
+  relatedPanel?: boolean;
   inpBudget?: number;
   editors: Record<string, { inpP75: number | null; k2pP95: Record<string, number> }>;
 };
@@ -40,6 +41,7 @@ const run = (over: Partial<Run> = {}, scale = 1): Run => ({
   device: "Desktop Chrome",
   cpuSlowdown: 1,
   scored: true,
+  relatedPanel: true,
   inpBudget: 100,
   editors: {
     source: { inpP75: 40 * scale, k2pP95: { "50KB": 8 * scale, "2MB": 20 * scale } },
@@ -77,6 +79,17 @@ describe("the +10 % gate", () => {
     next.editors.source.inpP75 = null;
     expect(compareRuns(run(), next)).toMatchObject({ ok: false, missing: ["source.inpP75"] });
     expect(() => compareRuns(run(), run({ env: "mid-phone-emulated" }))).toThrow(/baseline is for/);
+  });
+
+  it("a run with the related-notes panel is never compared with a baseline without it (W2.2)", () => {
+    expect(() => compareRuns(run({ relatedPanel: false }), run())).toThrow(/related-notes panel/);
+    expect(() => compareRuns(run(), run({ relatedPanel: false }))).toThrow(/re-baseline/);
+    const dir = mkdtempSync(join(tmpdir(), "lumen-resp-"));
+    gate({ runs: [run({ relatedPanel: false })], baselines: dir });
+    const g = gate({ runs: [run(), run({ env: "mid-phone-emulated" })], baselines: dir });
+    expect(g.ok).toBe(false);
+    expect(g.lines.join("\n")).toMatch(/✗ desktop-chromium: baseline did not have the related-notes panel open/);
+    expect(g.lines.join("\n")).toMatch(/mid-phone-emulated: no baseline yet/);
   });
 
   it("gate(): the first run becomes the baseline, the next one is compared with it", () => {
@@ -120,6 +133,10 @@ describe("the lumen-metric receipt", () => {
     expect(m["perf.key2paint-p95-2mb-ms"]).toBe(50);
     expect(m["perf.unscored.offline-harness-desktop.inp-p75-ms"]).toBe(5.6);
     expect(boardMetrics([harness])["perf.inp-p75-ms"]).toBeUndefined();
+    // Without the related-notes panel (a build before W2.2) a run proves no board number.
+    const bare = boardMetrics([run({ relatedPanel: false })]);
+    expect(bare["perf.inp-p75-ms"]).toBeUndefined();
+    expect(bare["perf.unscored.desktop-chromium.inp-p75-ms"]).toBe(56);
   });
 
   it("is the board's format, and seals and verifies with the nightly receipt code", () => {

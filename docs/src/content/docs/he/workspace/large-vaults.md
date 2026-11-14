@@ -77,6 +77,11 @@ PLAYWRIGHT_BASE_URL=http://localhost:5180 npx playwright test --project=perf
 בפתק של 2 MB, בכל הסביבות. ב-Safari אין Event Timing API, ולכן ב-iPhone נמדד
 רק הזמן מהקשה עד ציור. ה-INP מופיע שם כ"לא נמדד", אף פעם לא כ-0.
 
+לוח הפתקים הקשורים פתוח לאורך כל המדידה, כי הוא מדרג מחדש אחרי כל הפסקה
+בהקלדה. בנייה בלי הלוח עדיין רצה, אבל הריצה שלה מסומנת `relatedPanel: false`,
+היא לא נותנת ציון ללוח התחומים, ולעולם לא משווים אותה ל-baseline שנמדד עם
+הלוח. כדי ליצור baseline חדש מריצים `node scripts/perf/responsiveness.mjs gate --update`.
+
 לכל סביבה יש baseline משלה ב-`reports/perf/baselines/<env>.json`. הריצה
 הראשונה כותבת אותו, ואותו מוסיפים לקומיט. ריצה מאוחרת יותר נכשלת כשמספר
 כלשהו איטי ב-10% או יותר מה-baseline. הריצה כותבת גם קבלה חתומה מסוג

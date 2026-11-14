@@ -5,6 +5,8 @@
  * A run (reports/perf/responsiveness/<env>.json) holds, per editor (source,
  * wysiwyg), INP p75 (null where the browser has no Event Timing) and
  * keypress → paint p95 in a 50 KB and a 2 MB note. Lower is better for all.
+ * `relatedPanel` says whether the related-notes panel (W2.2) was open, as
+ * the plan measures it: it re-ranks after every typing pause.
  */
 
 export const REGRESSION = 0.1;
@@ -31,6 +33,9 @@ export function flatten(run) {
  */
 export function compareRuns(baseline, latest, threshold = REGRESSION) {
   if (baseline?.env !== latest?.env) throw new Error(`baseline is for "${baseline?.env}", the run for "${latest?.env}"`);
+  // A run with the related-notes panel does more work per keystroke than one without: a new baseline, not a regression.
+  if (!!baseline?.relatedPanel !== !!latest?.relatedPanel)
+    throw new Error(`baseline ${baseline?.relatedPanel ? "had" : "did not have"} the related-notes panel open, the run ${latest?.relatedPanel ? "had" : "did not"}: re-baseline it (node scripts/perf/responsiveness.mjs gate --update)`);
   const b = flatten(baseline);
   const l = flatten(latest);
   const rows = Object.keys(b)
@@ -61,7 +66,7 @@ const worst = (xs) => (xs.length ? Math.max(...xs) : undefined);
 /**
  * The area-board metrics (scripts/plan/area-bars.mjs, #513) a set of runs
  * proves. The worse of the two editors counts. Only `scored` runs give the
- * board's ids: "perf.inp-p75-ms" from a desktop run (CPU as is),
+ * board's ids, and only with the related-notes panel open: "perf.inp-p75-ms" from a desktop run (CPU as is),
  * "perf.inp-p75-mid-phone-ms" from a phone (real or CPU-slowed), and the
  * keypress → paint ids from either, the worst environment winning. A run
  * that is not scored (the offline harness) gives its numbers under
@@ -78,7 +83,8 @@ export function boardMetrics(runs) {
     const inp = worst(eds.map((e) => e.inpP75).filter((v) => typeof v === "number"));
     const k50 = worst(eds.map((e) => e.k2pP95?.["50KB"]).filter((v) => typeof v === "number"));
     const k2m = worst(eds.map((e) => e.k2pP95?.["2MB"]).filter((v) => typeof v === "number"));
-    if (!run.scored) {
+    // The plan measures with the related-notes panel open (W2.2); a run without it proves no board number.
+    if (!run.scored || !run.relatedPanel) {
       const p = `perf.unscored.${run.env}`;
       put(`${p}.inp-p75-ms`, inp);
       put(`${p}.key2paint-p95-50kb-ms`, k50);
@@ -108,7 +114,7 @@ export function metricReceipt(runs, { sha, command, measuredAt = new Date().toIS
     measuredAt,
     metrics: boardMetrics(runs),
     command,
-    environments: runs.map((r) => ({ env: r.env, device: r.device, cpuSlowdown: r.cpuSlowdown, scored: !!r.scored, eventTiming: !!r.eventTiming, vaultNotes: r.vaultNotes, at: r.at })),
+    environments: runs.map((r) => ({ env: r.env, device: r.device, cpuSlowdown: r.cpuSlowdown, scored: !!r.scored, relatedPanel: !!r.relatedPanel, eventTiming: !!r.eventTiming, vaultNotes: r.vaultNotes, at: r.at })),
   };
 }
 
