@@ -100,10 +100,15 @@ describe("local translation next to the original", () => {
   });
 });
 
-describe("dev probe: 50 Hebrew questions over English abstracts", () => {
-  it("is well-formed: 50 questions, one relevant abstract each, all in the corpus", () => {
-    expect(probe.items).toHaveLength(50);
-    expect(probe.corpus).toHaveLength(50);
+describe("dev probe: 100 Hebrew questions over English abstracts (W5.28 + 2.78)", () => {
+  it("is well-formed: 100 questions, one relevant abstract each, all in the corpus, no repeats", () => {
+    expect(probe.items).toHaveLength(100);
+    expect(probe.corpus).toHaveLength(100);
+    expect(new Set(probe.items.map((it) => it.id)).size).toBe(100);
+    expect(new Set(probe.items.map((it) => it.query)).size).toBe(100);
+    expect(new Set(probe.corpus.map((d) => d.id)).size).toBe(100);
+    // Each abstract is the answer to exactly one question.
+    expect(new Set(probe.items.flatMap((it) => it.relevant)).size).toBe(100);
     const ids = new Set(probe.corpus.map((d) => d.id));
     for (const it of probe.items) {
       expect(scriptOf(it.query), it.id).toBe("he");
@@ -117,9 +122,18 @@ describe("dev probe: 50 Hebrew questions over English abstracts", () => {
     for (const d of probe.corpus) index.set(d.id, d.text, "");
     const r = await scoreCrossLingual((q: string) => index.search(q, { limit: 10 }).map((h) => h.id), probe);
     // A lexicon of common words reaches only a few research questions: this is why W5.28 needs embeddings.
-    expect(r.items).toBe(50);
+    expect(r.items).toBe(100);
     expect(r.ndcg10).toBeLessThan(0.8);
     // Recorded for the PR: the number this run measured.
     expect(typeof r.ndcg10).toBe("number");
+  });
+});
+
+describe("the retrieval-hard copy of the probe (W7.13)", () => {
+  it("eval/golden/retrieval-hard/crosslingual.json holds the same 100 questions and abstracts", () => {
+    const hard = JSON.parse(readFileSync(join(__dirname, "../../eval/golden/retrieval-hard/crosslingual.json"), "utf8")) as typeof probe & { note: string };
+    expect(hard.items).toEqual(probe.items);
+    expect(hard.corpus).toEqual(probe.corpus);
+    expect(hard.note).toMatch(/^100 cross-lingual questions/);
   });
 });

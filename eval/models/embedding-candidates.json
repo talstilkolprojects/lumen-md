@@ -1,0 +1,10 @@
+{
+  "about": "Plan W7.13: the embedding and reranker candidates for Hebrew search. A model is downloaded only after gate 0.10 confirms its licence and files; sha256 is filled in from the download (W4.14 mirror), never by hand.",
+  "current": "multilingual-e5-small",
+  "candidates": [
+    { "id": "multilingual-e5-small", "kind": "embedding", "hf": "Xenova/multilingual-e5-small", "license": "MIT", "licenseVerified": true, "dims": 384, "prefix": { "query": "query: ", "document": "passage: " }, "dtype": "q8", "sha256": null },
+    { "id": "embeddinggemma-2", "kind": "embedding", "hf": "onnx-community/embeddinggemma-2-ONNX", "license": "Apache-2.0 (plan, 10.2026)", "licenseVerified": false, "dims": 768, "matryoshka": [768, 512, 256, 128], "prefix": { "query": "task: search result | query: ", "document": "title: none | text: " }, "dtype": "q4", "sha256": null },
+    { "id": "qwen3-embedding-0.6b", "kind": "embedding", "hf": "onnx-community/Qwen3-Embedding-0.6B-ONNX", "license": "Apache-2.0", "licenseVerified": false, "dims": 1024, "matryoshka": [1024, 512, 256], "prefix": { "query": "Instruct: Given a question, retrieve passages that answer it\nQuery: ", "document": "" }, "dtype": "q4", "sha256": null, "note": "the ONNX page was blocked in the planning session: verify the files and licence at gate 0.10" },
+    { "id": "qwen3-reranker-0.6b", "kind": "reranker", "hf": "onnx-community/Qwen3-Reranker-0.6B-ONNX", "license": "Apache-2.0", "licenseVerified": false, "dtype": "q4", "sha256": null }
+  ]
+}
