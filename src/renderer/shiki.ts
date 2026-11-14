@@ -1,5 +1,25 @@
 import type { Root, Element, Text } from "hast";
 import { visit } from "unist-util-visit";
+import { BlockCache } from "./blockCache";
+import { DARK_DATA_KEY } from "./renderProtocol";
+
+/**
+ * Highlighted blocks, keyed by a hash of (theme, language, source) (plan 8.1
+ * step 2): after an edit only the code blocks that changed go through Shiki
+ * again. The pipeline runs in the render worker (./render.worker.ts) when
+ * there is one, so this cache lives there.
+ */
+const highlighted = new BlockCache<{ lang: string; pre: Element }>(500);
+
+/** Blocks highlighted by Shiki since load, and blocks taken from the cache (a test counter). */
+export const shikiStats = { highlighted: 0, cached: 0 };
+
+/** Forget the kept highlights (tests). */
+export function clearShikiCache(): void {
+  highlighted.clear();
+  shikiStats.highlighted = 0;
+  shikiStats.cached = 0;
+}
 
 let highlighterPromise: Promise<unknown> | null = null;
 const loadedLangs = new Set<string>();
@@ -78,7 +98,9 @@ interface ShikiOpts {
  * Skips elements that already have a `data-lumen-block` attribute.
  */
 export function rehypeShiki(opts: ShikiOpts) {
-  return async function transformer(tree: Root) {
+  return async function transformer(tree: Root, file?: { data?: Record<string, unknown> }) {
+    const fileDark = file?.data?.[DARK_DATA_KEY];
+    const isDark = typeof fileDark === "boolean" ? () => fileDark : opts.isDark;
     const tasks: Array<() => Promise<void>> = [];
     visit(tree, "element", (node: Element, index, parent) => {
       if (node.tagName !== "pre") return;
@@ -102,23 +124,21 @@ export function rehypeShiki(opts: ShikiOpts) {
 
       tasks.push(async () => {
         try {
-          const hl = await getHighlighter();
-          // Lazy-load the language the first time it's encountered.
-          // Falls back to "text" when the language isn't bundled.
-          const safeLang = await ensureLang(lang);
-          const themed = hl.codeToHast(source, {
-            lang: safeLang,
-            themes: {
-              dark: "github-dark-default",
-              light: "github-light-default",
-            },
-            defaultColor: opts.isDark() ? "dark" : "light",
-            cssVariablePrefix: "--shiki-",
-          });
-          // Shiki's codeToHast returns a Root with a single <pre><code> element.
-          const newPre = (themed as Root).children.find(
-            (c) => c.type === "element" && (c as Element).tagName === "pre",
-          ) as Element | undefined;
+          const dark = isDark();
+          const key = `${dark ? 1 : 0}\u0000${lang}\u0000${source}`;
+          const kept = highlighted.get(key);
+          let safeLang: string;
+          let newPre: Element | undefined;
+          if (kept) {
+            shikiStats.cached++;
+            safeLang = kept.lang;
+            newPre = structuredClone(kept.pre);
+          } else {
+            ({ safeLang, newPre } = await highlight(source, lang, dark));
+            if (!newPre) return;
+            shikiStats.highlighted++;
+            highlighted.set(key, { lang: safeLang, pre: structuredClone(newPre) });
+          }
           if (!newPre) return;
 
           // Wrap with our header (filename + lang chip + copy button).
@@ -167,10 +187,31 @@ export function rehypeShiki(opts: ShikiOpts) {
     // document with dozens of code blocks used to highlight in one long
     // main-thread task — the biggest share of the startup blocking time.
     for (const fn of tasks) {
+      const before = shikiStats.highlighted;
       await fn();
-      await new Promise<void>((r) => setTimeout(r, 0));
+      if (shikiStats.highlighted !== before) await new Promise<void>((r) => setTimeout(r, 0));
     }
   };
+}
+
+/** One block through Shiki: the language it was highlighted as (`text` when not bundled) and its `<pre>`. */
+async function highlight(source: string, lang: string, dark: boolean): Promise<{ safeLang: string; newPre: Element | undefined }> {
+  const hl = await getHighlighter();
+  // Lazy-load the language the first time it's encountered.
+  // Falls back to "text" when the language isn't bundled.
+  const safeLang = await ensureLang(lang);
+  const themed = hl.codeToHast(source, {
+    lang: safeLang,
+    themes: {
+      dark: "github-dark-default",
+      light: "github-light-default",
+    },
+    defaultColor: dark ? "dark" : "light",
+    cssVariablePrefix: "--shiki-",
+  });
+  // Shiki's codeToHast returns a Root with a single <pre><code> element.
+  const newPre = (themed as Root).children.find((c) => c.type === "element" && (c as Element).tagName === "pre") as Element | undefined;
+  return { safeLang, newPre };
 }
 
 function parseFilenameMeta(codeNode: Element): string | null {

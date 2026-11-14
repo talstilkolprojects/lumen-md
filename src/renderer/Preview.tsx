@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { renderMarkdown, renderMarkdownFast, extractFrontmatter } from "./pipeline";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { renderMarkdown, renderMarkdownFast, extractFrontmatter, RenderSuperseded } from "./pipeline";
+import { nextVersion, renderWorkerWarm } from "./renderClient";
 import { subscribePluginLangs } from "../plugins/runtime/rendererRegistry";
 import { LARGE_DOC_CHARS, PreviewDocKeyContext } from "./previewDoc";
 import type { IncrementalPreview } from "./incrementalPreview";
@@ -28,7 +29,15 @@ interface Props {
    * its width). Without it, images are not resizable.
    */
   onSourceEdit?: (next: string) => void;
+  /**
+   * The character the reader is looking at (the editor's view in split
+   * mode): a long note renders the blocks from there first (plan 8.1 step
+   * 3). Default: the top.
+   */
+  focusOffset?: number;
 }
+
+let previewChannels = 0;
 
 /**
  * Set once the full (Shiki/KaTeX) pipeline has completed a render in this
@@ -46,7 +55,7 @@ function safeFastRender(markdownText: string): React.ReactElement | null {
   }
 }
 
-export function Preview({ markdownText, docKey = null, onSourceEdit }: Props) {
+export function Preview({ markdownText, docKey = null, onSourceEdit, focusOffset = 0 }: Props) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const textRef = useRef(markdownText);
   textRef.current = markdownText;
@@ -76,9 +85,20 @@ export function Preview({ markdownText, docKey = null, onSourceEdit }: Props) {
   // browser is idle and swaps in highlighted code + math.
   // A long document skips the synchronous pass: it renders in blocks,
   // yielding to the browser (plan 8.4).
+  // Once the render worker has answered, the first paint waits for it too:
+  // the main thread renders nothing (plan 8.1).
   const [tree, setTree] = useState<React.ReactElement | null>(() =>
-    fullPipelineWarm || markdownText.length >= LARGE_DOC_CHARS ? null : safeFastRender(markdownText),
+    fullPipelineWarm || renderWorkerWarm() || markdownText.length >= LARGE_DOC_CHARS ? null : safeFastRender(markdownText),
   );
+  /** This preview's channel in the render worker: a newer render makes the older one stale. */
+  const channelRef = useRef<string | null>(null);
+  channelRef.current ??= `preview${++previewChannels}`;
+  const focusRef = useRef(focusOffset);
+  focusRef.current = focusOffset;
+  /** Blocks of a long note still rendering: the root says so, so links to their headings wait. */
+  const [pending, setPending] = useState(false);
+  /** The element at the top of the view before a commit, to keep it in place after (plan 8.1 step 3). */
+  const anchorRef = useRef<{ el: Element; top: number } | null>(null);
   // The document the *displayed* tree was rendered from — it lags `docKey`
   // until the async render for the new document lands.
   const [treeDocKey, setTreeDocKey] = useState<string | null>(docKey);
@@ -93,17 +113,69 @@ export function Preview({ markdownText, docKey = null, onSourceEdit }: Props) {
   /** Block-by-block renderer for long documents, loaded on first need. */
   const incrementalRef = useRef<IncrementalPreview | null>(null);
 
+  /** Remember the first element in view, so the commit that follows does not move it (scroll anchoring for every engine). */
+  const keepAnchor = () => {
+    const root = rootRef.current;
+    if (!root || root.scrollTop === 0) {
+      anchorRef.current = null;
+      return;
+    }
+    const top = root.getBoundingClientRect().top;
+    const prose = root.querySelector(".prose-lumen");
+    const first = prose ? Array.from(prose.querySelectorAll(":scope > *, :scope > * > *")).find((el) => el.getBoundingClientRect().bottom > top) : null;
+    anchorRef.current = first ? { el: first, top: first.getBoundingClientRect().top } : null;
+  };
+  useLayoutEffect(() => {
+    const a = anchorRef.current;
+    anchorRef.current = null;
+    const root = rootRef.current;
+    if (!a || !root || !a.el.isConnected) return;
+    const moved = a.el.getBoundingClientRect().top - a.top;
+    if (moved) root.scrollTop += moved;
+  }, [tree]);
+  // A pending block the reader scrolls to renders next (plan 8.1 step 3).
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || !pending) return;
+    const onScroll = () => {
+      const inc = incrementalRef.current;
+      if (!inc) return;
+      const view = root.getBoundingClientRect();
+      const seen: number[] = [];
+      for (const el of root.querySelectorAll<HTMLElement>("[data-lumen-pending]")) {
+        const r = el.getBoundingClientRect();
+        if (r.bottom >= view.top && r.top <= view.bottom) seen.push(Number(el.dataset.lumenPending));
+      }
+      if (seen.length) inc.prioritize(seen);
+    };
+    root.addEventListener("scroll", onScroll, { passive: true });
+    return () => root.removeEventListener("scroll", onScroll);
+  }, [pending]);
+
   useEffect(() => {
     const seq = ++seqRef.current;
     const isDark = () => document.documentElement.classList.contains("dark");
     const renderedFor = docKey;
     const stale = () => seq !== seqRef.current;
+    const channel = () => ({ id: channelRef.current!, version: nextVersion(channelRef.current!) });
     const render = async (): Promise<React.ReactElement | null> => {
-      if (markdownText.length < LARGE_DOC_CHARS) return renderMarkdown(markdownText, isDark);
+      if (markdownText.length < LARGE_DOC_CHARS) return renderMarkdown(markdownText, isDark, { channel: channel() });
       const m = await import("./incrementalPreview");
-      if (!m.canRenderInBlocks(markdownText)) return renderMarkdown(markdownText, isDark);
+      if (!m.canRenderInBlocks(markdownText)) return renderMarkdown(markdownText, isDark, { channel: channel() });
       const inc = (incrementalRef.current ??= new m.IncrementalPreview());
-      return inc.render(markdownText, isDark, stale);
+      // Viewport first (plan 8.1 step 3): the blocks in view, then the rest while idle.
+      const el = await inc.render(markdownText, isDark, stale, {
+        focusOffset: focusRef.current,
+        viewportPx: Math.max(600, (rootRef.current?.clientHeight ?? 800) * 1.5),
+        onPartial: (partial) => {
+          if (stale()) return;
+          keepAnchor();
+          setPending(true);
+          setTree(partial);
+          setTreeDocKey(renderedFor);
+        },
+      });
+      return el;
     };
     const run = () => {
       // Only a note with `![[embeds]]` loads the embed code and waits for
@@ -113,19 +185,22 @@ export function Preview({ markdownText, docKey = null, onSourceEdit }: Props) {
         ? import("./embedContext")
             .then((m) => m.loadEmbedContext(markdownText, renderedFor))
             .catch(() => undefined)
-            .then(async (embeds) => ({ el: await renderMarkdown(markdownText, isDark, { embeds }), embeds }))
+            .then(async (embeds) => ({ el: await renderMarkdown(markdownText, isDark, { embeds, channel: channel() }), embeds }))
         : render().then((el) => ({ el, embeds: undefined }));
       rendered
         .then(({ el, embeds }) => {
           if (!el || stale()) return;
           fullPipelineWarm = true;
           embedWatchRef.current = { active: !!embeds, paths: embeds?.used ?? new Set() };
+          keepAnchor();
+          setPending(false);
           setTree(el);
           setTreeDocKey(renderedFor);
           setError(null);
         })
         .catch((e: Error) => {
-          if (stale()) return;
+          // A newer render on this preview's channel replaced this one.
+          if (stale() || e instanceof RenderSuperseded) return;
           setError(explainError(e, "preview"));
         });
     };
@@ -190,6 +265,8 @@ export function Preview({ markdownText, docKey = null, onSourceEdit }: Props) {
       // The document the displayed tree belongs to (it lags behind while a
       // newly opened note renders) — lets callers wait for the right one.
       data-preview-doc={treeDocKey ?? ""}
+      // Blocks of a long note still rendering (plan 8.1 step 3): links to their headings wait for them.
+      data-preview-pending={pending ? "" : undefined}
       style={{ contain: "layout" }}
       // Hover / focus on a [[link]] previews the note (4.6; loaded on first use).
       {...wikiHoverHandlers}

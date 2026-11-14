@@ -5,6 +5,7 @@
  * never goes blank).
  */
 
+import { fillTemplate } from "./fill";
 import { platformKeys } from "../lib/platformKeys";
 import { detectLocale, systemLanguages } from "./detect";
 
@@ -175,19 +176,7 @@ export function t(id: string, vars?: Record<string, string | number>): string {
   // Mac-style shortcuts (⌘K) read as Ctrl+K on Windows / Linux (T45).
   const template = platformKeys(bundle[id] ?? en[id] ?? id);
   if (!vars) return template;
-  // Support both `{key}` (canonical) and `{{key}}` (some early templates
-  // accidentally used double-brace syntax). The double-brace form was
-  // a real production bug — users saw literal "{5} / {100}" because the
-  // outer braces were never stripped. Order matters: substitute the
-  // double-brace form FIRST so the regex doesn't leave inner braces
-  // behind for the single-brace pass to keep.
-  return template
-    .replace(/\{\{(\w+)\}\}/g, (_, k) =>
-      vars[k] !== undefined ? String(vars[k]) : `{{${k}}}`,
-    )
-    .replace(/\{(\w+)\}/g, (_, k) =>
-      vars[k] !== undefined ? String(vars[k]) : `{${k}}`,
-    );
+  return fillTemplate(template, vars);
 }
 
 /**

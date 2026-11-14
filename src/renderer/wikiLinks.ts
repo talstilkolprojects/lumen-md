@@ -85,7 +85,13 @@ export function handleWikiLinkClick(
   // carried through so the opened note can scroll to it. `[[#Heading]]`
   // is same-note only — nothing to open.
   const { note, heading } = splitWikiTarget(el.getAttribute("data-wiki-target") ?? "");
-  if (!note) return false;
+  if (!note) {
+    // A long note still rendering its blocks (plan 8.1 step 3): the heading may be in one of them.
+    if (!root.hasAttribute("data-preview-pending") || !targetId) return false;
+    e.preventDefault();
+    scrollToHeadingWhenRendered(targetId, { doc: root.ownerDocument, docKey: root.getAttribute("data-preview-doc") ?? undefined });
+    return true;
+  }
   e.preventDefault();
   void listPaths()
     .then((paths) => {
@@ -126,7 +132,9 @@ export function scrollToHeadingWhenRendered(
       el.scrollIntoView({ block: "start" });
       return;
     }
-    if (Date.now() - started < timeoutMs) setTimeout(tick, intervalMs);
+    // A preview still rendering the blocks of a long note keeps the wait going (plan 8.1 step 3).
+    const rendering = roots.some((r) => r.hasAttribute("data-preview-pending"));
+    if (Date.now() - started < (rendering ? Math.max(timeoutMs, 60_000) : timeoutMs)) setTimeout(tick, intervalMs);
   };
   // First look after a beat, so the previous note's DOM is gone.
   setTimeout(tick, intervalMs);

@@ -35,8 +35,21 @@ same:
   definition (`[label]: url`), re-parses what it affects.
 - **The preview** is rendered block by block. After an edit only the changed
   blocks are rendered again, and rendering pauses every few milliseconds so
-  the editor stays fluid. A note with footnotes, reference definitions or
-  suggestions (CriticMarkup) is rendered in one pass, as before.
+  the editor stays fluid. The blocks you can see come first; the rest of the
+  note fills in while the browser is idle, and a part you scroll to jumps the
+  queue. Until a block is ready it holds its place with a blank of about its
+  height, so the page does not jump, and a link to a heading in it waits for
+  it. A note with footnotes, reference definitions or suggestions
+  (CriticMarkup) is rendered in one pass, as before.
+
+## Rendering off the main thread
+
+The preview of every note — Markdown parsing, code highlighting (Shiki) and
+math (KaTeX) — is worked out in a background worker, so typing is never
+held up by it. Link hover cards are made there too. Code blocks and formulas
+that did not change are not highlighted or typeset again. Without a worker
+(an old browser, or one that blocks it) the same work runs in the page, and
+the result is the same.
 - **The word count** in the status bar, and keeping a copy of the open note
   in the browser's storage for the next session, happen when you pause
   typing rather than on every keystroke.
@@ -128,5 +141,15 @@ The nightly perf run and the verification factory run it every night.
 - `src/renderer/blocks.ts` — top-level blocks of a document, re-scanned only
   around an edit; `src/renderer/incrementalToc.ts` and
   `src/renderer/incrementalPreview.ts` build on it.
+- `src/renderer/renderCore.ts` — the pipeline up to HAST (no React, no DOM);
+  `src/renderer/render.worker.ts` and `src/renderer/renderWorkerCore.ts` — the
+  render worker; `src/renderer/renderProtocol.ts` — its messages (a version
+  per preview, so a newer render makes an older one stale);
+  `src/renderer/renderClient.ts` — the page's side, with the fallback;
+  `src/renderer/hastToReact.ts` — the one step that stays in the page.
+  `src/renderer/viewport.ts` orders the blocks of a long note. Shiki and KaTeX
+  keep their output per block (`src/renderer/blockCache.ts`,
+  `src/renderer/math.ts`). Tests: `src/__tests__/renderWorker.test.ts` and
+  `src/__tests__/viewportPreview.test.ts`.
 - Semantic-search vectors are kept as one `Float32Array` per note, with the
   norms precomputed (`packVectors` in `src/ai/semanticSearch.ts`).
