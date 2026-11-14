@@ -58,9 +58,98 @@ and an answer works only for the request it answers.
 **Cancelling a pairing.** The device that answered a request (or made a code)
 doesn't change keys for the next 5 minutes (2 for a code). If you must remove a
 lost device right away, cancel the pairing on it first (`cancelPairing()`;
-in the app, *Cancel pairing*). Then don't use that answer or code on the new
-device: pair it again after the key change. Cancelling on the new device
+in the app, *Cancel pairing*). An answer or code used after that can't be
+confirmed any more (see *Compare the symbols* below), so it pairs nothing; pair
+the new device again after the key change. Once you have chosen **They match**
+on both devices, though, the new device may still finish pairing for the rest
+of the code's or answer's life, so the device you already use keeps waiting
+until then (at most 6 minutes), even if you cancel. If the two devices' clocks
+differ by more than a minute, the new device refuses the code or answer: set
+both clocks right, then pair again. Cancelling on the new device
 forgets its request, so no answer to it is accepted any more.
+
+**Compare the symbols.** Since plan W8.5, an answer or a code alone pairs
+nothing. Once the new device has read it, both devices show the same five
+symbols (an emoji and its name) and ask *Do these symbols match on both
+devices?* Look at both screens and choose **They match** on each. The new
+device is paired only when you have confirmed on both. If anything differs,
+or the other device shows no symbols (because its pairing was cancelled,
+expired, or its keys changed), choose **They don't match** and start again:
+nothing is recorded on either device. The symbols are derived from a fresh
+key on each device and everything both devices act on, so a leaked or reused
+code, or a storage that replays one, can't produce matching symbols. The
+emoji are the same in every language, so devices set to different languages
+can be compared too.
+
+The 64 symbols, with their English and Hebrew names (chosen so that no two
+names look alike):
+
+| # | Symbol | English | Hebrew |
+|---|---|---|---|
+| 0 | 🐶 | Dog | כלב |
+| 1 | 🐱 | Cat | חתול |
+| 2 | 🦁 | Lion | אריה |
+| 3 | 🐎 | Horse | סוס |
+| 4 | 🦄 | Unicorn | חד־קרן |
+| 5 | 🐷 | Pig | חזיר |
+| 6 | 🐘 | Elephant | פיל |
+| 7 | 🦉 | Owl | ינשוף |
+| 8 | 🐳 | Whale | לווייתן |
+| 9 | 🐓 | Rooster | תרנגול |
+| 10 | 🐧 | Penguin | פינגווין |
+| 11 | 🐢 | Turtle | צב |
+| 12 | 🐟 | Fish | דג |
+| 13 | 🐙 | Octopus | תמנון |
+| 14 | 🦋 | Butterfly | פרפר |
+| 15 | 🌻 | Sunflower | חמנייה |
+| 16 | 🌳 | Tree | עץ |
+| 17 | 🌵 | Cactus | קקטוס |
+| 18 | 🧀 | Cheese | גבינה |
+| 19 | 🌏 | Globe | גלובוס |
+| 20 | 🌙 | Moon | ירח |
+| 21 | ☁️ | Cloud | ענן |
+| 22 | 🔥 | Flame | להבה |
+| 23 | 🦀 | Crab | סרטן |
+| 24 | 🥑 | Avocado | אבוקדו |
+| 25 | 🍓 | Strawberry | תות |
+| 26 | 🍍 | Pineapple | אננס |
+| 27 | 🍕 | Pizza | פיצה |
+| 28 | 🎂 | Cake | עוגה |
+| 29 | 🐝 | Bee | דבורה |
+| 30 | 🐸 | Frog | צפרדע |
+| 31 | 🤖 | Robot | רובוט |
+| 32 | 👑 | Crown | כתר |
+| 33 | 👓 | Glasses | משקפיים |
+| 34 | 🧭 | Compass | מצפן |
+| 35 | 🎈 | Balloon | בלון |
+| 36 | 👍 | Thumbs up | אגודל |
+| 37 | ☂️ | Umbrella | מטרייה |
+| 38 | 🍉 | Watermelon | אבטיח |
+| 39 | 🦔 | Hedgehog | קיפוד |
+| 40 | 🎁 | Gift | מתנה |
+| 41 | 🔦 | Flashlight | פנס |
+| 42 | 📕 | Book | ספר |
+| 43 | 🪑 | Chair | כיסא |
+| 44 | 📎 | Paperclip | אטב |
+| 45 | ✉️ | Envelope | מעטפה |
+| 46 | 🛡️ | Shield | מגן |
+| 47 | 🔑 | Key | מפתח |
+| 48 | 🔨 | Hammer | פטיש |
+| 49 | 🔭 | Telescope | טלסקופ |
+| 50 | 🥕 | Carrot | גזר |
+| 51 | 🚂 | Train | רכבת |
+| 52 | 🚲 | Bicycle | אופניים |
+| 53 | ⛵ | Sailboat | מפרשית |
+| 54 | 🚀 | Rocket | רקטה |
+| 55 | 🏅 | Medal | מדליה |
+| 56 | 🧩 | Puzzle | פאזל |
+| 57 | 🎸 | Guitar | גיטרה |
+| 58 | 🎺 | Trumpet | חצוצרה |
+| 59 | 🔔 | Bell | פעמון |
+| 60 | 🚚 | Truck | משאית |
+| 61 | 🎧 | Headphones | אוזניות |
+| 62 | 🪁 | Kite | עפיפון |
+| 63 | 🌈 | Rainbow | קשת |
 
 Until a new device is paired (or you confirm it by hand), it downloads
 changes but **keeps its own changes on the device**: it can't tell yet

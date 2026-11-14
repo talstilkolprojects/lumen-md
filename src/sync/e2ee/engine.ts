@@ -64,21 +64,23 @@ import { FREEZE_TTL_MS, sealManifest, type Manifest, type ManifestEntry } from "
 import { PreconditionFailedError } from "./provider";
 import { computeFileStates, liveHash, sameEntry, type FileStatus } from "./status";
 import { BASE_BYTES_LIMIT, BlobMissingError, successor, type SyncResult } from "./engineTypes";
-import { E2eeSyncKeys } from "./engineKeys";
+import { E2eeSyncPairing } from "./enginePairing";
 
 // W4.11: the engine is split into engineTypes.ts, vaultOpen.ts,
-// engineCore.ts and engineKeys.ts; everything is still imported from here.
+// engineCore.ts, engineKeys.ts and enginePairing.ts (W8.5); everything is still imported from here.
 export {
   BASE_BYTES_LIMIT,
   DropDevicesRequiredError,
   KeyChangeInProgressError,
   NoVaultError,
+  PairingAbortedError,
   PairingDuringKeyChangeError,
   PairingPendingError,
   RevocationContestedError,
   UnverifiedDeviceError,
   VaultExistsError,
   type E2eeSyncOptions,
+  type PairingComparison,
   type RekeyRequest,
   type RekeyResult,
   type SyncResult,
@@ -86,7 +88,7 @@ export {
 export { createVault, unlockVault, unlockWithDevice } from "./vaultOpen";
 
 
-export class E2eeSync extends E2eeSyncKeys {
+export class E2eeSync extends E2eeSyncPairing {
   /**
    * The sync state of every file and folder as of the last round (plan
    * W1.8). `rescan` lists the local files again first, so edits made since
