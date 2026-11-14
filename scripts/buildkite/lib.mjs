@@ -121,6 +121,68 @@ export const JOBS = [
 ];
 
 /**
+ * Buildkite-only jobs (W10.D4, W10.D14): gates that have no ci.yml step, so
+ * their scripts live here. Each step is `{ name, run }`; the job runs on every
+ * build (no `if`), and posts its own commit status like every other gate.
+ *   pr-check   `npm run pr:check` on the PR itself (W10.D4): every PR gets it
+ *              without anyone running it. A build that isn't for a PR passes.
+ *   security   the scanners that replace GitHub's (W10.D14, plan 2.8):
+ *              gitleaks, npm audit, cargo audit (with audit-lock) and semgrep
+ *              with OSS rules in place of CodeQL. A missing binary fails here.
+ *   security-nightly  the scheduled build only (research R3.7): OSV,
+ *              cargo deny, OpenSSF Scorecard and a CycloneDX SBOM.
+ */
+export const NATIVE_JOBS = [
+  {
+    key: "pr-check",
+    label: ":mag: pr:check",
+    timeout: 20,
+    keepGoing: false,
+    steps: [
+      {
+        name: "pr:check on the pull request",
+        run: [
+          'if [ "${BUILDKITE_PULL_REQUEST:-false}" = "false" ]; then echo "pr:check: not a pull-request build; it runs on every PR build"; exit 0; fi',
+          'base="${BUILDKITE_PULL_REQUEST_BASE_BRANCH:-main}"',
+          'git fetch --no-tags origin "+refs/heads/$base:refs/remotes/origin/$base"',
+          "mkdir -p ci-out",
+          `gh api "repos/${REPO}/pulls/$BUILDKITE_PULL_REQUEST" --jq .body > ci-out/pr-body.md`,
+          'npm run -s pr:check -- --base "origin/$base" --pr "$BUILDKITE_PULL_REQUEST" --body ci-out/pr-body.md --no-size --out ci-out/pr-check.md',
+        ].join("\n"),
+      },
+    ],
+    artifacts: ["ci-out/pr-check.md"],
+  },
+  {
+    key: "security",
+    label: ":shield: security scanners",
+    timeout: 25,
+    keepGoing: true,
+    steps: [
+      { name: "gitleaks (secrets in the history)", run: "node scripts/security-scan.mjs gitleaks" },
+      { name: "npm audit (high and critical)", run: "node scripts/security-scan.mjs npm-audit" },
+      { name: "cargo audit (with audit-lock)", run: "node scripts/security-scan.mjs cargo-audit" },
+      { name: "semgrep (OSS rules, in place of CodeQL)", run: "node scripts/security-scan.mjs semgrep" },
+    ],
+    artifacts: ["reports/security/*.json"],
+  },
+  {
+    key: "security-nightly",
+    label: ":crescent_moon: supply chain (nightly)",
+    timeout: 40,
+    keepGoing: true,
+    if: 'build.source == "schedule"',
+    steps: [
+      { name: "osv-scanner (every lockfile)", run: "node scripts/security-scan.mjs osv" },
+      { name: "cargo deny (advisories, bans)", run: "node scripts/security-scan.mjs cargo-deny" },
+      { name: "OpenSSF Scorecard", run: "node scripts/security-scan.mjs scorecard" },
+      { name: "CycloneDX SBOM", run: "node scripts/security-scan.mjs sbom" },
+    ],
+    artifacts: ["reports/security/*.json"],
+  },
+];
+
+/**
  * ci.yml steps that the pipeline does not run as a gate, each with the reason.
  * Keys are `<job> › <step>`; a whole job is `<job> › *`.
  */
@@ -227,6 +289,12 @@ export function jobScript(job, ci) {
   const steps = ciSteps(ci);
   const parts = [];
   for (const name of job.steps) {
+    if (typeof name === "object") {
+      // A Buildkite-only step (NATIVE_JOBS): its script is here, not in ci.yml.
+      const d = delimiter(name.run, "LUMEN_STEP");
+      parts.push(`gate ${shq(name.name)} <<'${d}'\n${name.run.replace(/\s+$/, "")}\n${d}`);
+      continue;
+    }
     const s = steps.find((x) => x.job === job.job && x.name === name);
     if (!s) throw new Error(`${job.key}: ci.yml's ${job.job} job has no step "${name}"`);
     const env = { ...s.env };
@@ -262,7 +330,7 @@ const RETRY = { automatic: [{ exit_status: -1, limit: 2 }, { exit_status: 255, l
  * merges them, checks that every planned file ran, and applies ci.yml's
  * coverage gate. `receipt` seals what every gate did (W4.36 format).
  */
-export function buildPipeline(ci, { jobs = JOBS, shards = VITEST_SHARDS } = {}) {
+export function buildPipeline(ci, { jobs = JOBS, shards = VITEST_SHARDS, native = NATIVE_JOBS } = {}) {
   const cov = ciSteps(ci).find((s) => s.id === "check › Coverage gate (lines >= 65%)");
   if (!cov) throw new Error('ci.yml has no step "check › Coverage gate (lines >= 65%)"');
   const covLines = cov.run.split("\n");
@@ -323,7 +391,7 @@ export function buildPipeline(ci, { jobs = JOBS, shards = VITEST_SHARDS } = {}) 
     retry: RETRY,
   };
   steps.push(vitestPlan, vitest, merge);
-  for (const j of jobs) {
+  for (const j of [...jobs, ...native]) {
     const s = {
       label: j.label,
       key: j.key,
@@ -434,6 +502,12 @@ export function pipelineRules(p) {
   else {
     if (webkit.agents?.queue !== "mac") problems.push("e2e-webkit must run on the Mac's queue (real WebKit on macOS)");
     if (webkit.if || webkit.skip) problems.push("e2e-webkit must run on every build (no if/skip)");
+  }
+  // W10.D4 / W10.D14: pr:check and the scanners run on every build, PRs included.
+  for (const key of ["pr-check", "security"]) {
+    const s = (p.steps ?? []).find((x) => x.key === key);
+    if (!s) problems.push(`no ${key} job`);
+    else if (s.if || s.skip || s.branches) problems.push(`${key} must run on every build (no if/skip/branches)`);
   }
   const receipt = (p.steps ?? []).find((s) => s.key === "receipt");
   const deps = new Set((receipt?.depends_on ?? []).map((d) => d.step));

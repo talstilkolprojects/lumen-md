@@ -51,6 +51,7 @@ import { addedLinesFromDiff, AI_LABEL, bodyProblems, domainMentions, licenceChan
 import { bundleDiffMarkdown } from "./bundle-diff.mjs";
 import { HUMAN_REVIEW_LABEL, humanReviewVerdict, independentPatterns, parseCodeowners, sensitiveChanges } from "./lib/humanReview.mjs";
 import { extractReceipts, independentReviewVerdict } from "./lib/independentReview.mjs";
+import { check as auditLockCheck, readVersions } from "./audit-lock.mjs";
 import { RATCHET_FILES, raiseLine, raisesFor } from "./lib/budgetRatchet.mjs";
 import { MAX_AGE_DAYS, baseVerdict, branchName, currentTrain, driftVerdicts, worst } from "./lib/trainBase.mjs";
 import { EXCEPTIONS_FILE } from "./lib/sensitivePaths.mjs";
@@ -245,6 +246,25 @@ export function runChecks(opts) {
     const bad = rows.filter((r) => r.level === "fail");
     add("Licences of production packages", bad.length ? "fail" : rows.some((r) => r.level === "warn") ? "warn" : "ok", rows.length ? ["| Package | Version | Licence | Before | |", "|---|---|---|---|---|", ...rows.map((r) => `| ${r.name} | ${r.version} | ${r.license} | ${r.previous ?? "new"} | ${r.level} |`)] : ["The lockfile changed, no production package did."]);
   } else add("Licences of production packages", "ok", ["package-lock.json is unchanged."]);
+
+  // Dependency review (W10.D14, in place of GitHub's dependency-review action): a
+  // changed lockfile or manifest is checked against the known-bad list offline
+  // (scripts/audit-lock.mjs); npm audit and cargo audit run in Buildkite's security job.
+  {
+    const deps = changed.filter((f) => /(^|\/)(package-lock\.json|package\.json|Cargo\.lock|Cargo\.toml)$/.test(f) || f === "security/known-bad.json");
+    if (!deps.length) add("Dependency review", "ok", ["No lockfile, manifest or known-bad entry changed."]);
+    else if (!existsSync(join(cwd, "security/known-bad.json"))) add("Dependency review", "skipped", ["security/known-bad.json is not on this branch."]);
+    else {
+      const { entries } = JSON.parse(readFileSync(join(cwd, "security/known-bad.json"), "utf8"));
+      const r = auditLockCheck(entries, (f) => (existsSync(join(cwd, f)) ? readVersions(cwd, f) : null), opts.today ?? new Date().toISOString().slice(0, 10));
+      add("Dependency review", r.errors.length ? "fail" : r.open.length ? "warn" : "ok", [
+        `Changed: ${deps.map((f) => `\`${f}\``).join(", ")}.`,
+        ...(r.errors.length ? ["", ...r.errors.map((e) => `- ${e}`)] : []),
+        ...(r.open.length ? ["", "Open (waiting for an owner step):", ...r.open.map((o) => `- ${o}`)] : []),
+        ...(!r.errors.length && !r.open.length ? ["", "No known-bad version in any checked file."] : []),
+      ]);
+    }
+  }
 
   // Budgets only go down (W6.26): every ratchet file the diff changes, against the merge base.
   {

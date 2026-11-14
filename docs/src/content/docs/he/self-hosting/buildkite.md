@@ -32,6 +32,18 @@ Lumen לא משתמש ב-GitHub Actions. מפעל האימות
 | `lighthouse` | רק ב-main וב-PR-ים עם התווית `lighthouse`, כמו ב-ci.yml | linux |
 | `receipt` | הקבלה החתומה, אחרי כל השערים (עברו או נכשלו) | linux |
 
+שלוש משימות נוספות שייכות ל-Buildkite בלבד ואין להן צעד ב-ci.yml (`NATIVE_JOBS` ב-`scripts/buildkite/lib.mjs`). הן רצות בכל בנייה, בלי תנאי:
+
+| משימה | מה היא מריצה | תור |
+|---|---|---|
+| `pr-check` | ‏`npm run pr:check` על ה-PR עצמו (הבסיס, הגוף והתגובות שלו); בנייה שאינה של PR עוברת | linux |
+| `security` | ‏`scripts/security-scan.mjs`: ‏gitleaks, ‏npm audit (גבוה וקריטי), ‏cargo audit עם audit-lock, ‏semgrep עם חוקי קוד פתוח (במקום CodeQL). סורק שחסר בסוכן מכשיל את המשימה | linux |
+| `security-nightly` | רק בבנייה המתוזמנת: ‏osv-scanner על כל קובצי הנעילה, ‏cargo deny, ‏OpenSSF Scorecard (צריך `GITHUB_AUTH_TOKEN` לקריאה בלבד) ו-SBOM בפורמט CycloneDX ‏(syft) | linux |
+
+הסוכן צריך `gh` עם טוקן קריאה בשביל `pr-check`, ואת `gitleaks`, ‏`semgrep` ו-`cargo-audit` בשביל `security` (ואת `osv-scanner`, ‏`cargo-deny`, ‏`scorecard` ו-`syft` להרצה הלילית). גם `npm run ci:local` מריץ את gitleaks, ‏semgrep ו-cargo audit כשהם מותקנים.
+
+ה-PR מקבל את `pr:check` דרך `pr-check` ודרך `npm run ci:local`: ‏`ci:local` מריץ אותו בכל הרצה, מול הרכבת הנוכחית (או `--base`), ועם `--body <file>` בשביל הסעיפים של גוף ה-PR. ‏Vercel בונה רק את `main` ואת `verify/*` (`scripts/vercel-ignore.sh`): בתוכנית החינמית יש 100 בניות ביום, והאפליקציה של PR נבדקת דרך הרכבת.
+
 ב-ci.yml יש צעדים שאינם שערים: התקנות, תגובות ל-PR, מטמון הגדלים של main
 ואבחון. כל אחד מהם מופיע עם הסיבה ב-`NOT_GATES` שב-`scripts/buildkite/lib.mjs`.
 

@@ -150,6 +150,29 @@ describe("pr:check", () => {
     }
   });
 
+  it("W10.D14: dependency review — a changed lockfile at a known-bad version fails", () => {
+    const r0 = repo();
+    try {
+      mkdirSync(join(r0.dir, "security"));
+      writeFileSync(join(r0.dir, "security/known-bad.json"), JSON.stringify({ entries: [{ file: "package-lock.json", name: "nanoid", range: "<3.3.16", severity: "high", advisories: ["GHSA-28wg-ghj8-5hjv"], status: "fixed" }] }));
+      r0.git("add", "-A");
+      r0.git("commit", "-q", "-m", "chore: known-bad [skip ci]");
+      const section = () => runChecks({ ...parseArgs(["--cwd", r0.dir, "--base", "main~1", "--no-size"]) }).sections.find((x: { title: string }) => x.title === "Dependency review");
+      expect(section().status).toBe("ok"); // only known-bad.json changed, nothing is at a bad version
+      const lock = (v: string) => JSON.stringify({ packages: { "node_modules/ok": { version: "1.0.0", license: "MIT" }, "node_modules/nanoid": { version: v, license: "MIT" } } });
+      writeFileSync(join(r0.dir, "package-lock.json"), lock("3.3.3"));
+      r0.git("commit", "-qam", "deps: nanoid [skip ci]");
+      const bad = section();
+      expect(bad.status).toBe("fail");
+      expect(bad.lines.join("\n")).toMatch(/nanoid is back at a known-bad version: 3\.3\.3/);
+      writeFileSync(join(r0.dir, "package-lock.json"), lock("3.3.20"));
+      r0.git("commit", "-qam", "deps: nanoid fixed [skip ci]");
+      expect(section().status).toBe("ok");
+    } finally {
+      r0.done();
+    }
+  });
+
   it("plan W6.11: a sensitive path fails with --pr or --review until an independent receipt for the head is there", () => {
     const r0 = repo();
     try {

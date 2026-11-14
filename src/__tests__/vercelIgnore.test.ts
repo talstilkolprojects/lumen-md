@@ -35,6 +35,7 @@ function cleanEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
   delete env.VERCEL_GIT_COMMIT_REF;
   delete env.VERCEL_GIT_COMMIT_SHA;
   delete env.LUMEN_BUILD_ALL;
+  delete env.VERCEL_GIT_PULL_REQUEST_ID;
   return { ...env, ...extra };
 }
 
@@ -169,6 +170,40 @@ describe("scripts/vercel-ignore.sh", () => {
     expect(run("verify/train")).toBe(BUILD);
     expect(run("verify/e2e-probe-1")).toBe(BUILD);
     expect(run("feat/something", { LUMEN_BUILD_ALL: "1" })).toBe(BUILD);
+  });
+
+  it("W10.D4: only main and verify/* build — a branch with an open pull request is skipped too (100 builds a day; pr:check runs in Buildkite and ci:local)", () => {
+    decide(["src/lib/branch.ts"]);
+    const run = (ref: string, extra: Record<string, string> = {}) => {
+      try {
+        execFileSync("bash", ["scripts/vercel-ignore.sh"], {
+          cwd: repo,
+          stdio: "ignore",
+          env: cleanEnv({ VERCEL_GIT_COMMIT_REF: ref, VERCEL_GIT_COMMIT_SHA: "0".repeat(40), LUMEN_IGNORE_REMOTE: join(repo, "no-remote"), ...extra }),
+        });
+        return 0;
+      } catch (e) {
+        return (e as { status?: number }).status ?? -1;
+      }
+    };
+    // An app change on a PR branch: skipped whether Vercel says it has a PR or not.
+    expect(run("w10/d4-ci", { VERCEL_GIT_PULL_REQUEST_ID: "642" })).toBe(SKIP);
+    expect(run("w10/d4-ci", { VERCEL_GIT_PULL_REQUEST_ID: "" })).toBe(SKIP);
+    expect(run("w10/d4-ci")).toBe(SKIP);
+    // The same change on main or a train builds, a PR id or not.
+    expect(run("main")).toBe(BUILD);
+    expect(run("verify/train-5")).toBe(BUILD);
+    expect(run("verify/train-5", { VERCEL_GIT_PULL_REQUEST_ID: "616" })).toBe(BUILD);
+    // The owner's switch still builds everything.
+    expect(run("w10/d4-ci", { VERCEL_GIT_PULL_REQUEST_ID: "642", LUMEN_BUILD_ALL: "1" })).toBe(BUILD);
+  });
+
+  it("W10.D4: the PR gate moved to Buildkite and ci:local, both of which run it on every PR", () => {
+    const lib = readFileSync(join(__dirname, "..", "..", "scripts/buildkite/lib.mjs"), "utf8");
+    expect(lib).toMatch(/key: "pr-check"[\s\S]*?npm run -s pr:check/);
+    const ci = readFileSync(join(__dirname, "..", "..", "scripts/lib/ciLocal.mjs"), "utf8");
+    expect(ci).toMatch(/id: "pr-check"[^\n]*scripts\/pr-check\.mjs/);
+    expect(readFileSync(join(__dirname, "..", "..", "scripts/vercel-ignore.sh"), "utf8")).not.toContain("VERCEL_GIT_PULL_REQUEST_ID");
   });
 
   it("builds when there is no parent commit to diff against", () => {

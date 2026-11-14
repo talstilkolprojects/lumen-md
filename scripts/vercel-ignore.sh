@@ -21,8 +21,11 @@
 #     vercel.json, scripts/, …) triggers a build.
 #   • When history is unavailable (shallow clone, first commit), build.
 #   • Before anything else: only main (production) and the integration
-#     trains (verify/*) build. A PR branch is verified through the train
-#     (verify/train-2) and skipped here. LUMEN_BUILD_ALL=1 (a Vercel project
+#     trains (verify/*) build. A PR branch is skipped, open pull request or
+#     not: the free plan allows 100 builds a day and builds run on the Mac
+#     now, so a PR gets pr:check from Buildkite's pr-check job and from
+#     `npm run ci:local` (W10.D4), not from a preview, and its app is
+#     verified through the train. LUMEN_BUILD_ALL=1 (a Vercel project
 #     variable) builds every branch again.
 #   • Then: a commit that is no longer its branch's head when its
 #     build starts is skipped. A newer push is queued behind it, and Vercel
@@ -37,7 +40,7 @@ if [ -n "$REF" ] && [ "${LUMEN_BUILD_ALL:-}" != "1" ] && [ "$REF" != "main" ]; t
   case "$REF" in
     verify/*) ;;
     *)
-      echo "vercel-ignore: $REF is a PR branch: verified through the train (verify/train-2)"
+      echo "vercel-ignore: $REF is a PR branch: skipped; pr:check runs in Buildkite and ci:local, the app is verified through the train"
       exit 0
       ;;
   esac

@@ -505,6 +505,99 @@ steps:
         - exit_status: 255
           limit: 1
     if: "build.branch == \"main\" || build.pull_request.labels includes \"lighthouse\""
+  - label: ":mag: pr:check"
+    key: "pr-check"
+    command: |-
+      LUMEN_CI_JOB=pr-check bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate 'pr:check on the pull request' <<'LUMEN_STEP'
+      if [ "$${BUILDKITE_PULL_REQUEST:-false}" = "false" ]; then echo "pr:check: not a pull-request build; it runs on every PR build"; exit 0; fi
+      base="$${BUILDKITE_PULL_REQUEST_BASE_BRANCH:-main}"
+      git fetch --no-tags origin "+refs/heads/$$base:refs/remotes/origin/$$base"
+      mkdir -p ci-out
+      gh api "repos/talstilkol/lumen-md/pulls/$$BUILDKITE_PULL_REQUEST" --jq .body > ci-out/pr-body.md
+      npm run -s pr:check -- --base "origin/$$base" --pr "$$BUILDKITE_PULL_REQUEST" --body ci-out/pr-body.md --no-size --out ci-out/pr-check.md
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+    agents:
+      queue: "linux"
+    timeout_in_minutes: 20
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: pr-check"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+    artifact_paths:
+      - "ci-out/pr-check.md"
+  - label: ":shield: security scanners"
+    key: "security"
+    command: |-
+      LUMEN_CI_JOB=security LUMEN_CI_KEEP_GOING=1 bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate 'gitleaks (secrets in the history)' <<'LUMEN_STEP'
+      node scripts/security-scan.mjs gitleaks
+      LUMEN_STEP
+      gate 'npm audit (high and critical)' <<'LUMEN_STEP'
+      node scripts/security-scan.mjs npm-audit
+      LUMEN_STEP
+      gate 'cargo audit (with audit-lock)' <<'LUMEN_STEP'
+      node scripts/security-scan.mjs cargo-audit
+      LUMEN_STEP
+      gate 'semgrep (OSS rules, in place of CodeQL)' <<'LUMEN_STEP'
+      node scripts/security-scan.mjs semgrep
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+    agents:
+      queue: "linux"
+    timeout_in_minutes: 25
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: security"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+    artifact_paths:
+      - "reports/security/*.json"
+  - label: ":crescent_moon: supply chain (nightly)"
+    key: "security-nightly"
+    command: |-
+      LUMEN_CI_JOB=security-nightly LUMEN_CI_KEEP_GOING=1 bash scripts/buildkite/run.sh <<'LUMEN_JOB'
+      gate 'osv-scanner (every lockfile)' <<'LUMEN_STEP'
+      node scripts/security-scan.mjs osv
+      LUMEN_STEP
+      gate 'cargo deny (advisories, bans)' <<'LUMEN_STEP'
+      node scripts/security-scan.mjs cargo-deny
+      LUMEN_STEP
+      gate 'OpenSSF Scorecard' <<'LUMEN_STEP'
+      node scripts/security-scan.mjs scorecard
+      LUMEN_STEP
+      gate 'CycloneDX SBOM' <<'LUMEN_STEP'
+      node scripts/security-scan.mjs sbom
+      LUMEN_STEP
+      gates_done
+      LUMEN_JOB
+    agents:
+      queue: "linux"
+    timeout_in_minutes: 40
+    notify:
+      - github_commit_status:
+          context: "lumen/buildkite: security-nightly"
+    retry:
+      automatic:
+        - exit_status: -1
+          limit: 2
+        - exit_status: 255
+          limit: 1
+    artifact_paths:
+      - "reports/security/*.json"
+    if: "build.source == \"schedule\""
   - label: ":lock_with_ink_pen: signed receipt"
     key: "receipt"
     depends_on:
@@ -536,9 +629,15 @@ steps:
         allow_failure: true
       - step: "lighthouse"
         allow_failure: true
+      - step: "pr-check"
+        allow_failure: true
+      - step: "security"
+        allow_failure: true
+      - step: "security-nightly"
+        allow_failure: true
     command: |-
       buildkite-agent artifact download 'ci-out/vitest-summary.json' . || true
-      node scripts/buildkite/receipt.mjs --gates vitest,vitest-merge,static,lint,licenses,build,e2e-chromium,e2e-firefox,e2e-webkit,e2e-prod,e2e-headers,local-ai,ocr-cer,lighthouse
+      node scripts/buildkite/receipt.mjs --gates vitest,vitest-merge,static,lint,licenses,build,e2e-chromium,e2e-firefox,e2e-webkit,e2e-prod,e2e-headers,local-ai,ocr-cer,lighthouse,pr-check,security,security-nightly
     agents:
       queue: "linux"
     artifact_paths:
