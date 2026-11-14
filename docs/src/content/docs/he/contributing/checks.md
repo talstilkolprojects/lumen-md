@@ -12,8 +12,8 @@ description: השערים של Lumen רצים בבניית Vercel של כל ענ
 
 | בנייה | מה רץ, לפי הסדר |
 |---|---|
-| ‏Preview (רכבות `verify/…`) | build, תקציב החבילה, סריקת הסודות של `dist/`, vitest, ‏e2e (smoke ב-chromium וב-firefox), ‏`i18n:check`, ‏hygiene, ‏`docs:sync`, ‏`docs:complete` (כל עמוד בשתי השפות, ולכל עמוד עברי הסעיפים של העמוד האנגלי, עוגני העזרה ולפחות 60% מהמילים שלו), שער הרישיונות, רצפת ה-mutation (‏`mutation:check`) |
-| ‏Production (`main`) | build, תקציב החבילה — כמו קודם |
+| ‏Preview (רכבות `verify/…`) | build, ‏`live:meta` על `dist/` (המטא-דאטה שנפרס מפנה רק ל-lumen-md.vercel.app), תקציב החבילה, סריקת הסודות של `dist/`, vitest, ‏e2e (smoke ב-chromium וב-firefox), ‏`i18n:check`, ‏hygiene, ‏`docs:sync`, ‏`docs:complete` (כל עמוד בשתי השפות, ולכל עמוד עברי הסעיפים של העמוד האנגלי, עוגני העזרה ולפחות 60% מהמילים שלו), שער הרישיונות, רצפת ה-mutation (‏`mutation:check`) |
+| ‏Production (`main`) | build, ‏`live:meta` על `dist/`, תקציב החבילה, מניפסט הבנייה |
 
 השערים נעצרים בכישלון הראשון. יומן הבנייה מסתיים בשער שנכשל ובאלה שעברו
 לפניו, עם הזמנים שלהם:
@@ -43,7 +43,7 @@ Vercel בונה פריסה אחת בכל פעם, כך שכל בנייה בתור
 
 ```bash
 node scripts/vercel-build.mjs              # the preview set
-node scripts/vercel-build.mjs --production # build and budget only
+node scripts/vercel-build.mjs --production # build, live:meta, budget and manifest only
 node scripts/vercel-build.mjs --dry-run    # print the gates, run nothing
 ```
 

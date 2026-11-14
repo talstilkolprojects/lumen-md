@@ -28,6 +28,7 @@
  *                                                  its latest.json — and a stable one's, when newer — also goes
  *                                                  to the rolling "beta-channel" release the beta updater reads.
  *   node scripts/release.mjs deploy-beta           the beta web app: a Vercel preview deployment of dist/,
+ *                                                  checked with live:meta on its URL (W10.C29) before any alias,
  *                                                  aliased to $LUMEN_BETA_HOST when set (stable stays on --prod)
  *   node scripts/release.mjs verify [dir]          check SHA256SUMS (and its signature) in release/ or dir
  *   node scripts/release.mjs rollback <bad> [--to <good>]
@@ -53,6 +54,8 @@ import { latestJson } from "./lib/tauriSigning.mjs";
 import { allPackages, flatpakManifest, packagingMeta, parseSums, wingetObjects } from "./lib/packaging.mjs";
 import { checkAur, checkCask, checkFlatpak, checkWinget } from "./lib/packagingCheck.mjs";
 import { createHash } from "node:crypto";
+import { deploymentUrlFrom } from "./lib/liveMeta.mjs";
+import { liveMetaAlert, liveMetaReport } from "./live-meta.mjs";
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, "release");
@@ -252,16 +255,30 @@ const commands = {
     if (!flag("--draft") && existsSync(path.join(OUT, "latest.json"))) updateBetaChannel(version);
   },
 
-  "deploy-beta"() {
+  async "deploy-beta"() {
     // The beta web app (plan 14.4): a separate deployment from the same build pipeline, never production.
     if (!isBeta(current())) throw new Error(`${current()} is not a beta: run \`release.mjs prepare --beta\` first`);
     if (!existsSync(path.join(ROOT, "dist", "index.html"))) throw new Error("no dist/: run `node scripts/release.mjs build` first");
     const out = execFileSync("npx", ["vercel", "deploy", "dist", "--yes"], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] }).trim();
-    const url = out.split("\n").pop();
+    const url = deploymentUrlFrom(out) ?? out.split("\n").pop();
     console.log(`beta deployed: ${url}`);
+    // Audit W10.C29: every deploy checks the deployed metadata (live:meta) before it gets an alias.
+    const meta = await liveMetaReport({ url, selfTest: false });
+    console.log(meta.lines.join("\n"));
+    if (!meta.ok) {
+      console.error(liveMetaAlert(url, meta.problems));
+      throw new Error(`live:meta failed on ${url}: the beta keeps no alias`);
+    }
     const host = (process.env.LUMEN_BETA_HOST ?? "").trim();
-    if (host) run("npx", ["vercel", "alias", "set", url, host]);
-    else warn("LUMEN_BETA_HOST not set — the beta is only at its deployment URL");
+    if (host) {
+      run("npx", ["vercel", "alias", "set", url, host]);
+      const aliased = await liveMetaReport({ url: `https://${host.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`, selfTest: false });
+      console.log(aliased.lines.join("\n"));
+      if (!aliased.ok) {
+        console.error(liveMetaAlert(host, aliased.problems));
+        throw new Error(`live:meta failed on ${host}`);
+      }
+    } else warn("LUMEN_BETA_HOST not set — the beta is only at its deployment URL");
   },
 
   verify() {
@@ -347,7 +364,7 @@ if (!commands[cmd]) {
   process.exit(2);
 }
 try {
-  commands[cmd]();
+  await commands[cmd]();
 } catch (e) {
   console.error(`release: ${e.message}`);
   process.exit(1);
