@@ -7,6 +7,7 @@
  * the commit messages, two package-lock.json objects — so the rules run the
  * same from the command line and in a test.
  */
+import { TAKEN_DOMAIN } from "./takenDomain.mjs";
 
 // ── Network calls must be registered in the privacy ledger ────────────────
 
@@ -170,8 +171,11 @@ export function bodyProblems(body, required = REQUIRED_SECTIONS) {
 
 // ── The project's domain ──────────────────────────────────────────────────
 
-/** Added lines that name the domain the project never writes (the owner's rule): lumen + .md as a host. */
-const DOMAIN = new RegExp(`${["lumen", "md"].join("\\.")}\\b`, "i");
+/**
+ * Added lines that name the domain the project never writes (the owner's rule): lumen + .md as a host.
+ * The whole tree is checked too, by `npm run hygiene` (./takenDomain.mjs).
+ */
+const DOMAIN = TAKEN_DOMAIN;
 export function domainMentions(added) {
   const out = [];
   for (const [file, lines] of Object.entries(added)) for (const { line, text } of lines) if (DOMAIN.test(text)) out.push({ file, line, text: text.trim().slice(0, 160) });
