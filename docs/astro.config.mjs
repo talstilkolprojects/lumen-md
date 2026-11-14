@@ -175,6 +175,7 @@ export default defineConfig({
           translations: { he: "הפרויקט" },
           items: [
             { label: "Public roadmap", slug: "project/roadmap", translations: { he: "מפת דרכים ציבורית" } },
+            { label: "Sustainability", slug: "project/sustainability", translations: { he: "קיימות" } },
           ],
         },
       ],
