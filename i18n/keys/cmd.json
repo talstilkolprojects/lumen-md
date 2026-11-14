@@ -1018,6 +1018,16 @@
       "vars": []
     },
     {
+      "key": "cmd.file.publishAtproto",
+      "en": "Publish to Bluesky (Standard.site)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.publishAtproto.hint",
+      "en": "This note as a public record in your AT Protocol account",
+      "vars": []
+    },
+    {
       "key": "cmd.file.publishSite",
       "en": "Publish site…",
       "vars": []
@@ -1092,6 +1102,16 @@
     {
       "key": "cmd.file.trash.hint",
       "en": "Restore deleted notes (kept 30 days)",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.unpublishAtproto",
+      "en": "Remove from Bluesky (Standard.site)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.unpublishAtproto.hint",
+      "en": "Delete this note's public record from your account",
       "vars": []
     },
     {

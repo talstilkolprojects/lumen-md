@@ -670,6 +670,101 @@
       "vars": []
     },
     {
+      "key": "atproto.confirm.ok",
+      "en": "Publish publicly",
+      "vars": []
+    },
+    {
+      "key": "atproto.confirm.publish",
+      "en": "“{title}” will be written to {handle}'s AT Protocol account as a public record. Anyone can read it, and relays and apps keep their own copies: removing it later can't take those back. Marked passages (<redact>) and hidden comments are removed first.",
+      "vars": [
+        "title",
+        "handle"
+      ]
+    },
+    {
+      "key": "atproto.confirm.title",
+      "en": "Publish publicly?",
+      "vars": []
+    },
+    {
+      "key": "atproto.confirm.update",
+      "en": "The public record of “{title}” in {handle}'s account will be replaced with this version. Copies relays already made of the old version stay.",
+      "vars": [
+        "title",
+        "handle"
+      ]
+    },
+    {
+      "key": "atproto.done",
+      "en": "Published: {url}",
+      "vars": [
+        "url"
+      ]
+    },
+    {
+      "key": "atproto.failed",
+      "en": "Publishing failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "atproto.handle",
+      "en": "Your Bluesky handle (or another AT Protocol account)",
+      "vars": []
+    },
+    {
+      "key": "atproto.notPublished",
+      "en": "This note isn't published.",
+      "vars": []
+    },
+    {
+      "key": "atproto.password",
+      "en": "An App Password for this account (Bluesky → Settings → Privacy and security → App passwords). It is used for this sign-in only and is not stored.",
+      "vars": []
+    },
+    {
+      "key": "atproto.removed",
+      "en": "The record was removed from your account.",
+      "vars": []
+    },
+    {
+      "key": "atproto.siteName",
+      "en": "Your site's name",
+      "vars": []
+    },
+    {
+      "key": "atproto.siteUrl",
+      "en": "Your site's address (https), where the note is published",
+      "vars": []
+    },
+    {
+      "key": "atproto.unpublish.confirm",
+      "en": "The record of “{title}” will be deleted from {handle}'s account. Copies relays and apps already made stay.",
+      "vars": [
+        "title",
+        "handle"
+      ]
+    },
+    {
+      "key": "atproto.unpublish.ok",
+      "en": "Remove",
+      "vars": []
+    },
+    {
+      "key": "atproto.unpublish.title",
+      "en": "Remove the public record?",
+      "vars": []
+    },
+    {
+      "key": "atproto.updated",
+      "en": "Updated: {url}",
+      "vars": [
+        "url"
+      ]
+    },
+    {
       "key": "autofill.approve",
       "en": "Approve",
       "vars": []
