@@ -2,6 +2,7 @@
  * W6.36 — regressions for the round-3 crypto review of #529 (14.11, rr12).
  * Each case asserts the secure (or live) outcome:
  *  (j)/(j2) U1: a vault switch during the first build: no other vault's notes saved in the clear;
+ *  (j3) the same between two vaults of the same kind (review 19 R1: the kind is not the vault);
  *  (l) U2: a build waiting for an unlock gives way to a vault switch; queries on the new vault answer;
  *  (m)/(n) U3: a lock during the build's clear or applyChanges' remove leaves no text in the engine;
  *  (p) T3 raced with T6; (q) a query issued just before a lock returns no text.
@@ -91,6 +92,34 @@ describe("W6.36 review 14.11 round 3", () => {
     setVaultBackend(E);
     await session.enableEncryption(PASS, { pbkdf2Iterations: 1000, confirmRecoveryKey: async () => true });
     const P = createMemoryBackend({ id: "vault-P", now: () => 1_000_000 });
+    await notes("s", "plainword")(P);
+    setVaultBackend(P);
+    const { eng } = hooked({
+      clear: (n) => {
+        if (n === 2) {
+          // the build has listed P and is about to read the notes: the user opens E (location.ts activate)
+          setVaultBackend(E);
+          notifyWorkspaceChanged({ kind: "structure" });
+        }
+      },
+    });
+    __resetWorkspaceIndex(() => eng);
+    await ensureIndex();
+    const inIndex = indexedFiles().length;
+    setVaultBackend(P); // ... and back to P before anything else used the index
+    notifyWorkspaceChanged({ kind: "structure" });
+    await __saveSnapshotNow(); // the idle save the build scheduled
+    const t = await recText();
+    console.log("  summaries after build:", inIndex, "| record sealed:", isSealedSnapshot(await __snapshotRecord()), "| ESECRET in clear:", /ESECRET/.test(t), "|", t.slice(0, 120));
+    expect(/ESECRET/.test(t)).toBe(false);
+  });
+
+  it("(j3) review 19 R1: as (j2), with two vaults of the same kind (both \"desktop\"): a switch mid-build is still caught", async () => {
+    const E = createMemoryBackend({ id: "desktop", now: () => 1_000_000 });
+    await notes("s", "ESECRET")(E);
+    setVaultBackend(E);
+    await session.enableEncryption(PASS, { pbkdf2Iterations: 1000, confirmRecoveryKey: async () => true });
+    const P = createMemoryBackend({ id: "desktop", now: () => 1_000_000 });
     await notes("s", "plainword")(P);
     setVaultBackend(P);
     const { eng } = hooked({
