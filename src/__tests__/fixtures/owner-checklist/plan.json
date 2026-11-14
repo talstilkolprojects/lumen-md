@@ -1,0 +1,67 @@
+{
+ "phases": [
+  {
+   "title": "p",
+   "tasks": [
+    {
+     "id": "W1.1",
+     "title": "יום מודלים אמיתי",
+     "dep": [
+      "W1.5"
+     ],
+     "status": "⏳ #101"
+    },
+    {
+     "id": "W1.2",
+     "title": "שרת שיתוף חי",
+     "dep": [],
+     "status": "⏳ #102"
+    },
+    {
+     "id": "W1.3",
+     "title": "ווידג׳טים",
+     "dep": [],
+     "status": "⏳ #103; חסר: בדיקה על מכשיר אמיתי (בעלים)"
+    },
+    {
+     "id": "W1.4",
+     "title": "ריק",
+     "dep": [],
+     "status": "⏳ #104"
+    },
+    {
+     "id": "W1.5",
+     "title": "הצמדת מודלים",
+     "dep": [],
+     "status": "⏳ #107"
+    },
+    {
+     "id": "W1.6",
+     "title": "לוח אקדמי",
+     "dep": [
+      "W1.2"
+     ],
+     "status": "⏳ #199 — חסר: הזנת התאריכים מהמסמכים הרשמיים (בעלים)"
+    },
+    {
+     "id": "W1.7",
+     "title": "תלוי בשיתוף",
+     "dep": [
+      "W1.2"
+     ],
+     "status": "todo"
+    }
+   ]
+  }
+ ],
+ "owner": [
+  {
+   "id": "15.7",
+   "title": "חשבונות חתימה",
+   "details": "Apple Developer Program and Google Play Console; `npx tauri signer generate -w ~/.tauri/lumen-updater.key`",
+   "time": "≈ 30 דק׳",
+   "priority": "P1",
+   "dep": []
+  }
+ ]
+}

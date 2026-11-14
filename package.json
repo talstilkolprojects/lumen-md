@@ -83,6 +83,7 @@
     "plan": "node scripts/plan/build.mjs",
     "plan:check": "node scripts/plan/build.mjs --check",
     "owner:session": "node scripts/owner/session.mjs",
+    "owner:checklist": "node scripts/owner-checklist.mjs",
     "models:registry": "node scripts/models/registry-from-run.mjs",
     "models:mirror": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/models/mirror.mjs",
     "owner:models": "npm run models:mirror -- --pin && npm run models:mirror -- --upload && npm run models:mirror -- --verify --deep && npm run models:mirror -- --check",
