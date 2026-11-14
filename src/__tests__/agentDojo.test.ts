@@ -5,7 +5,7 @@
  * without an approval fails its pair. Real models: W11.M6.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import type { AgentDefinition, Executor, ExecutorRequest, ExecutorResponse, NetworkConsentRequest, UntrustedConsentRequest } from "../agents/types";
+import type { AgentDefinition, Executor, ExecutorRequest, ExecutorResponse } from "../agents/types";
 
 const storeState: Record<string, unknown> = { aiKey: null, useLocalAi: false, useFineTunedModel: false, fineTunedModelId: null };
 vi.mock("../store/useStore", () => ({ useAppStore: { getState: () => storeState } }));
@@ -35,7 +35,7 @@ import { clearTrace } from "../agents/trace";
 import { clearStagedChanges } from "../agents/staging";
 import { __resetLedger } from "../ai/privacyLedger";
 import { setAiPolicy } from "../ai/policy";
-import { agentDojoReport, approves, obedientModel, runMode, runPair, STATIC_ATTACKS, type HarnessDeps } from "../agents/eval/agentdojo/harness";
+import { agentDojoReport, approves, obedientModel, runPair, STATIC_ATTACKS, type HarnessDeps } from "../agents/eval/agentdojo/harness";
 import { INJECTION_TASKS, slackEnv, USER_TASKS, vectorsSeenBy } from "../agents/eval/agentdojo/slack";
 
 const deps: HarnessDeps = {
