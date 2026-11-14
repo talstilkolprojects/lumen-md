@@ -31,15 +31,28 @@ export interface SnapEntry {
 }
 export type Snapshot = Map<string, SnapEntry>;
 
-/** Every file of `backend` with size and mtime (by listing; dot folders included). */
+/** A folder that is not there (any more), or is a file now: what "vanished while walking" looks like. */
+function isNotFound(e: unknown): boolean {
+  const err = e as { name?: unknown; code?: unknown } | null;
+  return err?.name === "NotFoundError" || err?.name === "TypeMismatchError" || err?.code === "ENOENT";
+}
+
+/**
+ * Every file of `backend` with size and mtime (by listing; dot folders
+ * included). A sub-folder that vanished while walking is skipped; any other
+ * listing failure — a revoked permission, an I/O error, or the vault root
+ * itself not listing — rejects, so the watcher keeps its previous baseline
+ * instead of reporting the whole vault as deleted (2.83, Codex P2 on #258).
+ */
 export async function listSnapshot(backend: VaultBackend): Promise<Snapshot> {
   const out: Snapshot = new Map();
   const walk = async (dir: string): Promise<void> => {
     let entries;
     try {
       entries = await backend.list(dir);
-    } catch {
-      return; // vanished while walking
+    } catch (err) {
+      if (dir !== "" && isNotFound(err)) return; // vanished while walking
+      throw err;
     }
     for (const e of entries) {
       if (e.kind === "directory") await walk(e.path);
@@ -172,6 +185,8 @@ export function watchExternalChanges(backend: VaultBackend, opts: WatchOptions =
       }
       baseline = next;
     } catch (err) {
+      // No events, and the baseline stays what it was: the next comparison
+      // that can list the vault reports what really changed.
       log.warn("vault change check failed", err);
     } finally {
       running = false;

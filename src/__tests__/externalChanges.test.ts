@@ -184,11 +184,49 @@ describe("review round 2", () => {
     useAppStore.getState().setContent("mine, and more typed behind the dialog");
     answer({ kind: "merged", content: "merge of the older text" });
     await settle();
-    expect(doc()).toMatchObject({ content: "mine, and more typed behind the dialog", dirty: true });
-    expect(await readWorkspaceFile("note.md")).toBe("theirs"); // untouched until the next save
     expect(toasts.some((m) => /kept typing|latest text/i.test(m))).toBe(true);
-    // The next save goes through: the disk still holds what Lumen now knows.
-    expect(await saveOpenNote("note.md", "mine, and more typed behind the dialog")).toBe(true);
+    // The kept text is saved once the dialog is answered (2.84), not left
+    // unsaved until another edit; "theirs" stays in the copy.
+    await vi.waitFor(async () => expect(await readWorkspaceFile("note.md")).toBe("mine, and more typed behind the dialog"));
+    expect(doc()).toMatchObject({ content: "mine, and more typed behind the dialog", dirty: false });
+    const copy = (await listWorkspace()).map((f) => f.path).find((p) => p.startsWith("note ("))!;
+    expect(await readWorkspaceFile(copy)).toBe("theirs");
+    // Later saves go through: the disk holds what Lumen now knows.
+    expect(await saveOpenNote("note.md", "mine, typed on")).toBe(true);
+  });
+
+  it("an autosave refused while the dialog is open is retried after the answer, with no further edit (2.84, Codex P2 4311564696)", async () => {
+    let answer!: (v: { kind: "local" }) => void;
+    resolver.mockImplementationOnce(() => new Promise((r) => (answer = r)));
+    useAppStore.getState().setContent("mine");
+    await outside("note.md", "theirs");
+    await vi.waitFor(() => expect(resolver).toHaveBeenCalled());
+    useAppStore.getState().setContent("mine, typed behind the dialog");
+    // The 600 ms autosave fires during the dialog: refused (the note is a conflict).
+    expect(await saveOpenNote("note.md", "mine, typed behind the dialog")).toBe(false);
+    answer({ kind: "local" });
+    await vi.waitFor(async () => expect(await readWorkspaceFile("note.md")).toBe("mine, typed behind the dialog"));
+    expect(doc().dirty).toBe(false);
+  });
+
+  it("text typed again while the kept text is being saved stays unsaved (the autosave takes it)", async () => {
+    let answer!: (v: { kind: "local" }) => void;
+    resolver.mockImplementationOnce(() => new Promise((r) => (answer = r)));
+    useAppStore.getState().setContent("mine");
+    await outside("note.md", "theirs");
+    await vi.waitFor(() => expect(resolver).toHaveBeenCalled());
+    useAppStore.getState().setContent("mine, 2");
+    const plain = vault.write.bind(vault);
+    vault.write = (async (p: string, d: never) => {
+      // While the kept text is written, the user types once more.
+      if (p === "note.md") useAppStore.getState().setContent("mine, 3");
+      return plain(p, d);
+    }) as typeof vault.write;
+    answer({ kind: "local" });
+    await vi.waitFor(async () => expect(await readWorkspaceFile("note.md")).toBe("mine, 2"));
+    await settle();
+    expect(doc()).toMatchObject({ content: "mine, 3", dirty: true });
+    vault.write = plain;
   });
 
   it("trash / move / export (flushActiveWorkspaceDoc) wait for the conflict's answer and then save, or stop", async () => {
