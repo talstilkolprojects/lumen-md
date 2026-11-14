@@ -9,7 +9,8 @@
  *    (a call to one of the agent's tools, or the final answer) (5.3.5).
  *  - A streaming agent's tools are context only; its answer still streams.
  *  - callTool runs one tool under the same rules, for commands.
- *  - The builder proposes all files at once, or none (5.3.2).
+ *  - The builder proposes all files at once, or none (5.3.2), through the
+ *    staged write_file: nothing is written before the user approves (W10.C12).
  */
 import { installEvalWeb } from "./helpers/evalWeb";
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -31,7 +32,10 @@ import { registerExecutor, resetExecutors } from "../agents/executors";
 import { EVAL_CASES, type EvalCase } from "../agents/eval/fixtures";
 import { scoreCases } from "../agents/eval/score";
 import { toolCheck } from "../agents/eval/run";
-import { clearStagedChanges, listStagedChanges } from "../agents/staging";
+import { clearStagedChanges, listStagedChanges, stageChange } from "../agents/staging";
+import { approveAll, lineDiffRows, rejectAll } from "../agents/review";
+import { readdirSync, readFileSync } from "node:fs";
+import { join, relative, sep } from "node:path";
 import { writeWorkspaceFile } from "../storage/workspace";
 import type { AgentDefinition, AgentTool, ExecutorRequest, ExecutorResponse } from "../agents/types";
 import { fakeExecutor, reply } from "./helpers/fakeExecutor";
@@ -182,16 +186,64 @@ describe("builder: all files or none (5.3.2)", () => {
     });
   const projectFiles = () => [...vault.keys()].filter((p) => p.startsWith("pomodoro/")).sort();
 
-  it("a finished product is written to the workspace at once", async () => {
+  /** The builder's proposals, oldest first (plan 5.11: every agent change waits for review). */
+  const proposals = () => listStagedChanges({ all: true }).filter((c) => c.agentId === "builder");
+
+  it("a finished product is proposed, every file in the review screen with its diff, and nothing is written (W10.C12)", async () => {
     registerExecutor(builder());
     const { createProduct } = await import("../ai/productAgent");
     const res = await createProduct("a pomodoro timer");
     expect(res.success).toBe(true);
+    expect(projectFiles()).toEqual([]);
+    expect(writeWorkspaceFile).not.toHaveBeenCalled();
+    const staged = listStagedChanges();
+    expect(staged.map((c) => c.path).sort()).toEqual([...res.files.keys()].sort());
+    expect(res.staged).toEqual(staged.map((c) => c.id));
+    for (const c of staged) {
+      expect(c).toMatchObject({ kind: "file", tool: "write_file", agentId: "builder", status: "pending", before: null });
+      expect(c.kind === "file" && c.after).toBe(res.files.get(c.path!));
+      // The review screen's diff of a new file: every line added.
+      const rows = lineDiffRows(c.kind === "file" ? c.before : null, c.kind === "file" ? c.after : "");
+      expect(rows, c.path).not.toBeNull();
+      expect(rows!.some((r) => r.op === "add")).toBe(true);
+    }
+    expect(staged.find((c) => c.path === "pomodoro/app.js")).toMatchObject({ after: files["app.js"] });
+  });
+
+  it("rejecting the proposals writes 0 files (W10.C12)", async () => {
+    registerExecutor(builder());
+    const { createProduct } = await import("../ai/productAgent");
+    const res = await createProduct("a pomodoro timer");
+    expect(res.staged.length).toBeGreaterThan(0);
+    expect(rejectAll(listStagedChanges())).toBe(res.staged.length);
+    expect(projectFiles()).toEqual([]);
+    expect(writeWorkspaceFile).not.toHaveBeenCalled();
+    expect(proposals().every((c) => c.status === "rejected")).toBe(true);
+  });
+
+  it("only the user's approval writes the files", async () => {
+    registerExecutor(builder());
+    const { createProduct } = await import("../ai/productAgent");
+    const res = await createProduct("a pomodoro timer");
+    expect(projectFiles()).toEqual([]);
+    const done = await approveAll(listStagedChanges());
+    expect(done.map((c) => c.status)).toEqual(res.staged.map(() => "applied"));
     expect(projectFiles()).toEqual([...res.files.keys()].sort());
     expect(vault.get("pomodoro/app.js")).toBe(files["app.js"]);
   });
 
-  it("a builder that fails midway leaves 0 files (review: #241 — written, not staged without a review screen)", async () => {
+  it("a file the user already has is proposed as an overwrite with its diff, and stays as it is", async () => {
+    registerExecutor(builder());
+    vault.set("pomodoro/index.html", "the user's own page");
+    const { createProduct } = await import("../ai/productAgent");
+    await createProduct("a pomodoro timer");
+    expect(vault.get("pomodoro/index.html")).toBe("the user's own page");
+    const page = listStagedChanges().find((c) => c.path === "pomodoro/index.html");
+    expect(page).toMatchObject({ kind: "file", before: "the user's own page", summary: expect.stringMatching(/^Overwrite/) });
+    expect(lineDiffRows("the user's own page", page!.kind === "file" ? page!.after : "")!.some((r) => r.op === "del")).toBe(true);
+  });
+
+  it("a builder that fails midway proposes 0 files and writes 0 files", async () => {
     registerExecutor(builder("app.js"));
     const { createProduct } = await import("../ai/productAgent");
     const res = await createProduct("a pomodoro timer");
@@ -201,20 +253,34 @@ describe("builder: all files or none (5.3.2)", () => {
     expect(listStagedChanges({ all: true })).toEqual([]);
   });
 
-  it("if a write fails partway, the files already written are put back", async () => {
+  it("if proposing a file fails partway, the files already proposed are withdrawn", async () => {
     registerExecutor(builder());
-    vault.set("pomodoro/index.html", "the user's own page");
-    let n = 0;
-    vi.mocked(writeWorkspaceFile).mockImplementation(async (p: string, c: string) => {
-      if (p.startsWith("pomodoro/") && c !== "the user's own page" && ++n === 3) throw new Error("disk full");
-      vault.set(p, c);
-    });
+    // The review queue holds 200 pending proposals at most: leave room for 3 of the product's files.
+    for (let i = 0; i < 197; i++) stageChange({ kind: "file", path: `other/n${i}.md`, before: null, after: "x", summary: "s" }, { tool: "write_file", agentId: "other" });
     const { createProduct } = await import("../ai/productAgent");
     const res = await createProduct("a pomodoro timer");
-    vi.mocked(writeWorkspaceFile).mockReset();
     expect(res.success).toBe(false);
-    expect(projectFiles()).toEqual(["pomodoro/index.html"]);
-    expect(vault.get("pomodoro/index.html")).toBe("the user's own page");
+    expect(proposals()).toHaveLength(3);
+    expect(proposals().every((c) => c.status === "rejected" && c.withdrawn)).toBe(true);
+    expect(listStagedChanges().filter((c) => c.agentId === "builder")).toEqual([]);
+    expect(projectFiles()).toEqual([]);
+    expect(writeWorkspaceFile).not.toHaveBeenCalled();
+  });
+
+  it("no agent or AI module writes workspace files itself: only an approved proposal does (W10.C12)", () => {
+    const root = join(process.cwd(), "src");
+    const writers: string[] = [];
+    const walk = (dir: string) => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const p = join(dir, e.name);
+        if (e.isDirectory()) walk(p);
+        else if (/\.tsx?$/.test(e.name) && !/\.(test|eval)\.tsx?$/.test(e.name) && /\bwriteWorkspaceFile\s*\(/.test(readFileSync(p, "utf8"))) writers.push(relative(root, p).split(sep).join("/"));
+      }
+    };
+    walk(join(root, "agents"));
+    walk(join(root, "ai"));
+    // staging.ts: the approval path itself. mcpInbox.ts: the inbox's own ledger of what MCP clients sent, not an agent's change.
+    expect(writers.sort()).toEqual(["agents/mcpInbox.ts", "agents/staging.ts"]);
   });
 });
 

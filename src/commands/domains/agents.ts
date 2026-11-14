@@ -33,7 +33,7 @@ export function buildDocumentAgentCommands({ setContent, liveDoc }: CommandConte
       hint: t("cmd.ai.productAgent.hint", { defaultValue: "Generate a complete project from a description" }),
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
-      action: () => void import("./agentsActions").then((m) => m.productAgentFlow({ setContent })),
+      action: () => void import("./agentsActions").then((m) => m.productAgentFlow()),
     },
     {
       id: "ai.diagram",

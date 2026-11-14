@@ -12,6 +12,9 @@
 import type { ChatMessage } from "./llm";
 import { isOPFSAvailable } from "../storage/workspace";
 import { log } from "../lib/logger";
+import type { StagedReceipt } from "../agents/types";
+
+let builderRuns = 0;
 
 /* ─── Types ───────────────────────────────────────────────────────── */
 
@@ -50,6 +53,18 @@ export interface AgentProgress {
   totalSteps: number;
   message: string;
   files: string[];
+}
+
+/**
+ * A run's result: `files` is what was generated; `staged` the ids of the
+ * proposals waiting in the review screen (nothing is written before the
+ * user approves them).
+ */
+export interface ProductResult {
+  success: boolean;
+  files: Map<string, string>;
+  staged: string[];
+  error?: string;
 }
 
 export type AgentProgressCallback = (progress: AgentProgress) => void;
@@ -113,11 +128,18 @@ export class ProductAgent {
   private generatedFiles: Map<string, string> = new Map();
   private abortController: AbortController | null = null;
   private onProgress: AgentProgressCallback | null = null;
+  /** The staged change ids of the last finished run (each waits in the review screen). */
+  private staged: string[] = [];
 
   constructor(private projectDir = "") {}
 
   setProgressCallback(cb: AgentProgressCallback): void {
     this.onProgress = cb;
+  }
+
+  /** The proposals of the last finished run, waiting in the review screen. */
+  getStaged(): string[] {
+    return [...this.staged];
   }
 
   getSteps(): AgentStep[] {
@@ -141,7 +163,7 @@ export class ProductAgent {
   /**
    * Main entry point — takes an idea and produces a full product.
    */
-  async run(idea: string, outer?: AbortSignal): Promise<{ success: boolean; files: Map<string, string>; error?: string }> {
+  async run(idea: string, outer?: AbortSignal): Promise<ProductResult> {
     const ctrl = (this.abortController = new AbortController());
     const signal = ctrl.signal;
     // The caller's cancellation (Esc / "AI: Cancel", T55) stops the run too.
@@ -190,17 +212,18 @@ export class ProductAgent {
       this.emit("deploying", "Creating deployment configuration...");
       await this.generateDeployConfig(signal);
 
-      // All or nothing (plan 5.3.2): only a finished product reaches the workspace.
-      await this.writeAll(signal);
-      this.emit("complete", `Product "${this.spec.name}" created with ${this.generatedFiles.size} files!`);
-      return { success: true, files: this.generatedFiles };
+      // All or nothing (plan 5.3.2): only a finished product is proposed, and
+      // nothing reaches the workspace before the user approves it (5.11).
+      const staged = await this.stageAll(signal);
+      this.emit("complete", `Product "${this.spec.name}": ${staged.length} files waiting for your approval`);
+      return { success: true, files: this.generatedFiles, staged };
 
     } catch (e) {
       // Cancelled by the caller: an AbortError, not a failed product.
       if (outer?.aborted) throw new DOMException("Cancelled by the user", "AbortError");
       const msg = e instanceof Error ? e.message : "Unknown error";
       this.emit("error", msg);
-      return { success: false, files: this.generatedFiles, error: msg };
+      return { success: false, files: this.generatedFiles, staged: [], error: msg };
     }
   }
 
@@ -344,41 +367,51 @@ export class ProductAgent {
     return related.join("\n");
   }
 
-  /** Keep a generated file; nothing reaches the workspace before the whole product is done (`writeAll`). */
+  /** Keep a generated file; nothing is proposed before the whole product is done (`stageAll`). */
   private async saveFile(path: string, content: string): Promise<void> {
     this.generatedFiles.set(path, content);
   }
 
   /**
-   * Write every generated file at once, after the whole product is done:
-   * a builder that fails midway leaves 0 files (5.3.2). If a write fails,
-   * the files already written are put back as they were (removed, or their
-   * earlier text restored), so a product is in the workspace whole or not at
-   * all.
+   * Propose every generated file at once, after the whole product is done:
+   * a builder that fails midway proposes 0 files (5.3.2).
    *
-   * Written, not staged: proposals need the review screen to be approved
-   * (plan 5.11, #223), which this branch does not have yet. Once both are
-   * on the same branch, this becomes write_file through the runtime.
+   * Proposed, never written (plan 5.3, 5.11; audit W10.C12): each file goes
+   * through the staged `write_file` tool under the runtime's rules, so it
+   * waits in the review screen with its diff, and only the user's approval
+   * writes it. If proposing one file fails, or the run is cancelled, the
+   * files already proposed in this run are withdrawn, so the review screen
+   * holds the whole product or none of it.
    */
-  private async writeAll(signal: AbortSignal): Promise<void> {
-    if (!isOPFSAvailable()) return;
-    const ws = await import("../storage/workspace");
-    const done: Array<{ path: string; before: string | null }> = [];
+  private async stageAll(signal: AbortSignal): Promise<string[]> {
+    this.staged = [];
+    if (!isOPFSAvailable()) return [];
+    const [{ callTool }, { discardRunChanges }, { ToolError }] = await Promise.all([
+      import("../agents/runtime"),
+      import("../agents/staging"),
+      import("../agents/tools/define"),
+    ]);
+    const runId = `builder_${Date.now().toString(36)}_${(++builderRuns).toString(36)}`;
+    const ids: string[] = [];
     try {
       for (const [path, content] of this.generatedFiles) {
         if (signal.aborted) throw new DOMException("Cancelled by the user", "AbortError");
-        const full = this.projectDir + path;
-        const before = (await ws.workspaceHasFile(full)) ? await ws.readWorkspaceFile(full) : null;
-        await ws.writeWorkspaceFile(full, content);
-        done.push({ path: full, before });
+        try {
+          const receipt = await callTool<StagedReceipt>("write_file", { path: this.projectDir + path, content }, { grants: ["write"], signal, runId, agentId: "builder" });
+          ids.push(receipt.changeId);
+        } catch (e) {
+          // A file that already has exactly this text needs no proposal.
+          if (e instanceof ToolError && e.code === "bad-args" && /already has exactly this content/.test(e.message)) continue;
+          throw e;
+        }
       }
     } catch (e) {
-      for (const w of done.reverse()) {
-        await (w.before === null ? ws.deleteWorkspaceFile(w.path) : ws.writeWorkspaceFile(w.path, w.before)).catch((err) => log.warn("productAgent", `Could not undo ${w.path}`, err));
-      }
-      log.warn("productAgent", "Could not write the product's files; none were kept", e);
+      discardRunChanges(runId);
+      log.warn("productAgent", "Could not propose the product's files; none are waiting for review", e);
       throw e;
     }
+    this.staged = ids;
+    return ids;
   }
 
 }
@@ -392,7 +425,7 @@ export async function createProduct(
   idea: string,
   onProgress?: AgentProgressCallback,
   signal?: AbortSignal,
-): Promise<{ success: boolean; files: Map<string, string>; error?: string }> {
+): Promise<ProductResult> {
   const agent = new ProductAgent();
   if (onProgress) agent.setProgressCallback(onProgress);
   return agent.run(idea, signal);

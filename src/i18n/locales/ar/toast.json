@@ -89,7 +89,7 @@
   "toast.privacyModeUnavailableFallsBack": "وضع الخصوصية غير متاح: {reason}. سيتم الرجوع إلى الذكاء الاصطناعي السحابي.",
   "toast.processing": "🤖 جارٍ تنفيذ {name}...",
   "toast.productAgentStarting": "🚀 بدء Product Agent...",
-  "toast.productCreatedFilesGenerated": "✅ تم إنشاء المنتج! الملفات المُنشأة: {count}",
+  "toast.productCreatedFilesGenerated": "✅ المنتج جاهز: {count} ملفات بانتظار موافقتك في شاشة المراجعة",
   "toast.productCreationFailed": "فشل إنشاء المنتج: {error}",
   "toast.pulledChangedFiles": "✅ الملفات المتغيرة التي تم سحبها: {count}",
   "toast.pulledFile": "⬇️ الملفات المسحوبة: {count}",

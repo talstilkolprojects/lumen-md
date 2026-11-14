@@ -81,8 +81,12 @@ export async function suggestLinksFlow({ setContent, liveDoc }: Ctx): Promise<vo
   }
 }
 
-/** Make a whole project from a description (the product agent). */
-export async function productAgentFlow({ setContent }: Pick<Ctx, "setContent">): Promise<void> {
+/**
+ * Make a whole project from a description (the product agent). The files
+ * are proposed, not written: they wait in the review screen with their
+ * diffs, and the open note is left as it is (audit W10.C12).
+ */
+export async function productAgentFlow(): Promise<void> {
   const idea = await uiPrompt({
     message: t("agent.product.prompt"),
   });
@@ -100,9 +104,7 @@ export async function productAgentFlow({ setContent }: Pick<Ctx, "setContent">):
       ),
     );
     if (result.success) {
-      showAiToast(t("toast.productCreatedFilesGenerated", { count: result.files.size }), "success");
-      const summary = `# Product Created\n\n${result.files.size} files generated:\n\n${[...result.files.keys()].map((f) => `- \`${f}\``).join("\n")}`;
-      setContent(summary);
+      showAiToast(t("toast.productCreatedFilesGenerated", { count: result.staged.length }), "success");
     } else {
       showAiToast(t("toast.productCreationFailed", { error: result.error ?? "" }), "error");
     }
