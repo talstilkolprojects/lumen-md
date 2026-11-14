@@ -19,7 +19,7 @@
  */
 
 import { bs, randomBytes, toB64u, fromB64u, utf8 } from "./bytes";
-import { argon2id, type Argon2Input } from "./primitives/argon2";
+import { argon2id, type Argon2Input } from "./primitives";
 
 /** OWASP 2023 minimum for PBKDF2-HMAC-SHA256. */
 export const PBKDF2_MIN_ITERATIONS = 600_000;

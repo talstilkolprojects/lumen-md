@@ -12,7 +12,7 @@ import { createVault, E2eeSync, unlockVault } from "../../src/sync/e2ee/engine";
 import { memoryFiles } from "../../src/sync/e2ee/localFiles";
 import { memoryStateStore } from "../../src/sync/e2ee/state";
 import { generateIdentity, ageEncrypt } from "../../src/sync/e2ee/age";
-import { argon2id } from "../../src/sync/e2ee/primitives/argon2";
+import { argon2id } from "../../src/sync/e2ee/primitives";
 import { createPairingAnswer, createPairingCode, createPairingRequest, pairingRequestHash, readPairingCode } from "../../src/sync/e2ee/pairing";
 import { confirmTag, deriveSas, sasCommit, sasKeyPair, transcriptBytes, type SasTranscript } from "../../src/sync/e2ee/sas";
 import type { VaultKeys } from "../../src/sync/e2ee/keys";
@@ -105,7 +105,7 @@ if (OLD) {
   for (const [m, t, pl] of [[64, 2, 1], [256, 3, 2], [47104, 1, 1]] as const) {
     const password = new TextEncoder().encode(`pw-${m}-שלום`);
     const salt = crypto.getRandomValues(new Uint8Array(16));
-    argon.push({ password: b64(password), salt: b64(salt), memoryKiB: m, iterations: t, parallelism: pl, tag: b64(argon2id({ password, salt, memoryKiB: m, iterations: t, parallelism: pl, tagLength: 32 })) });
+    argon.push({ password: b64(password), salt: b64(salt), memoryKiB: m, iterations: t, parallelism: pl, tag: b64(await argon2id({ password, salt, memoryKiB: m, iterations: t, parallelism: pl, tagLength: 32 })) });
   }
   ageVectors = [];
   const id = await generateIdentity();

@@ -13,7 +13,7 @@ import { E2eeSync, unlockVault, unlockWithDevice } from "../sync/e2ee/engine";
 import { memoryFiles } from "../sync/e2ee/localFiles";
 import { memoryStateStore } from "../sync/e2ee/state";
 import { ageDecrypt } from "../sync/e2ee/age";
-import { argon2id } from "../sync/e2ee/primitives/argon2";
+import { argon2id } from "../sync/e2ee/primitives";
 import { readPairingAnswer, readPairingCode, readPairingRequest } from "../sync/e2ee/pairing";
 import { manifestName, openManifest } from "../sync/e2ee/manifest";
 import { confirmTag, deriveSas, sasCommit, sasKeyPair, type SasTranscript } from "../sync/e2ee/sas";
@@ -87,7 +87,7 @@ describe("the sync protocol's test vectors", () => {
 
   it("Argon2id, age (X25519 and scrypt), the one-way pairing code and the two-way request and answer", async () => {
     for (const a of V.argon2id) {
-      expect(Buffer.from(argon2id({ password: bytes(a.password), salt: bytes(a.salt), memoryKiB: a.memoryKiB, iterations: a.iterations, parallelism: a.parallelism, tagLength: 32 })).toString("base64")).toBe(a.tag);
+      expect(Buffer.from(await argon2id({ password: bytes(a.password), salt: bytes(a.salt), memoryKiB: a.memoryKiB, iterations: a.iterations, parallelism: a.parallelism, tagLength: 32 })).toString("base64")).toBe(a.tag);
     }
     for (const a of V.age) {
       const pt = await ageDecrypt(bytes(a.file), [a.identity ? { identity: a.identity } : { passphrase: a.passphrase! }]);

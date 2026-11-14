@@ -17,8 +17,7 @@
  * (scripts/sync-protocol/check_vectors.py).
  */
 
-import { chachaOpen, chachaSeal } from "./primitives/chacha20poly1305";
-import { scrypt } from "./primitives/scrypt";
+import { chachaOpen, chachaSeal, scrypt } from "./primitives";
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();

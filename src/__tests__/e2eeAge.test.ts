@@ -8,9 +8,9 @@
 import { describe, expect, it } from "vitest";
 import { createCipheriv, createHash, randomBytes, scryptSync } from "node:crypto";
 import { AgeError, ageDecrypt, ageEncrypt, bech32Decode, bech32Encode, generateIdentity } from "../sync/e2ee/age";
-import { chachaOpen, chachaSeal, poly1305 } from "../sync/e2ee/primitives/chacha20poly1305";
-import { scrypt } from "../sync/e2ee/primitives/scrypt";
-import { blake2b } from "../sync/e2ee/primitives/blake2b";
+// poly1305 alone is tested inside the in-house file (it is no primitive of the interface).
+import { poly1305 } from "../sync/e2ee/primitives/chacha20poly1305";
+import { chachaOpen, chachaSeal, scrypt, blake2b } from "../sync/e2ee/primitives";
 
 describe("primitives", () => {
   it("ChaCha20-Poly1305 matches Node's, and refuses a changed byte (RFC 8439 Poly1305 vector too)", () => {
