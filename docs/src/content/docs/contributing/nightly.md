@@ -17,7 +17,7 @@ npm run nightly -- --dry-run     # print the plan, run nothing
 |---|---|---|
 | `flake` | every night | `npm run e2e:flake -- --all --times 5` (chromium, firefox, webkit, 5 runs each, no retries) |
 | `perf` | every night | build, bundle budget, the `@nightly` perf project, Lighthouse when it is installed |
-| `triage` | every night | review triage of the open PRs, the 0.14 count over the first 20 PRs since 12.11.2026, and `live:meta --self-test` (below) |
+| `triage` | every night | review triage of the open PRs, the 0.14 count over the first 20 PRs since 12.11.2026, `live:meta --self-test` and the ruleset drift check (both below) |
 | `weekly` | Sundays (UTC) | dependency health (audit, outdated, licences), and mutation scores when `test:mutation` is there |
 | `sr` | every night, on a Mac with `@guidepup/*` installed | `npx @guidepup/setup --ci`, then the Hebrew journey under VoiceOver ([screen readers, automated](/editor/screen-reader-automation/)). Not counted by 0.11. |
 
@@ -140,3 +140,29 @@ Run it **after every production deploy**: the owner's merge session runs it
 right after promoting. Every night the `triage` kind runs it too, so drift
 shows up within a day. The command exits 1 on any problem. It fetches with
 Node and falls back to `curl`, which follows `HTTPS_PROXY`.
+
+## The GitHub rulesets (W11.S4)
+
+No GitHub Actions run here, so only GitHub itself can stop a push to `main`
+or a merge without review. The rules for `main` and `verify/*` are code, in
+`security/github-ruleset.json`:
+
+- a pull request with one approval, including approval of the most recent push;
+- stale approvals are dismissed, and code owners must review;
+- no force push and no deletion;
+- signed commits;
+- the `Vercel` and `lumen/buildkite` statuses.
+
+The admin role may bypass only through a pull request, so every bypass is
+recorded.
+
+```bash
+npm run security:ruleset-drift                         # compare with gh api repos/talstilkol/lumen-md/rulesets
+node scripts/security/ruleset-drift.mjs --print-apply  # the owner's gh commands that create them (W10.O1)
+```
+
+The script checks the file against `security/github-ruleset.schema.json`
+(GitHub's REST body for a ruleset) and the policy above, then reports every
+difference from what GitHub has. It exits 1 on drift, and 2 when the API
+can't be read, which never counts as a match. The `triage` kind runs it every
+night.

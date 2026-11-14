@@ -21,7 +21,7 @@ npm run nightly -- --dry-run     # print the plan, run nothing
 |---|---|---|
 | `flake` | כל לילה | `npm run e2e:flake -- --all --times 5` (chromium, firefox, webkit, חמש ריצות לכל אחד, בלי retries) |
 | `perf` | כל לילה | build, תקציב החבילה, פרויקט הביצועים `@nightly`, ו-Lighthouse כשהוא מותקן |
-| `triage` | כל לילה | מיון הביקורות של ה-PR-ים הפתוחים, הספירה של 0.14 על 20 ה-PR-ים הראשונים מאז 12.11.2026, ו-`live:meta --self-test` (למטה) |
+| `triage` | כל לילה | מיון הביקורות של ה-PR-ים הפתוחים, הספירה של 0.14 על 20 ה-PR-ים הראשונים מאז 12.11.2026, ‏`live:meta --self-test` ובדיקת הסחיפה של ה-rulesets (שניהם למטה) |
 | `weekly` | בימי ראשון (UTC) | בריאות התלויות (audit, outdated, רישיונות), וציוני mutation כש-`test:mutation` קיים |
 | `sr` | כל לילה, ב-Mac שבו `@guidepup/*` מותקנים | ‏`npx @guidepup/setup --ci`, ואז המסע העברי עם VoiceOver ([קוראי מסך, אוטומטית](/he/editor/screen-reader-automation/)). לא נספר ב-0.11. |
 
@@ -139,3 +139,27 @@ npm run live:meta -- --self-test --json live-meta.json
 אחרי הקידום. בכל לילה הסוג `triage` מריץ אותה גם כן, כך שסטייה מתגלה תוך
 יום. הפקודה יוצאת עם 1 על כל בעיה. היא מורידה עם Node, ואם זה לא עובד עוברת
 ל-`curl`, שמכבד את `HTTPS_PROXY`.
+
+## ה-rulesets של GitHub‏ (W11.S4)
+
+אין כאן GitHub Actions, ולכן רק GitHub עצמו יכול לעצור דחיפה ל-`main` או מיזוג
+בלי ביקורת. הכללים ל-`main` ול-`verify/*` הם קוד, בקובץ
+`security/github-ruleset.json`:
+
+- PR עם אישור אחד, כולל אישור של הדחיפה האחרונה;
+- אישורים ישנים מבוטלים, ובעלי הקוד חייבים לבדוק;
+- אין force push ואין מחיקה;
+- קומיטים חתומים;
+- הסטטוסים `Vercel` ו-`lumen/buildkite`.
+
+תפקיד ה-admin יכול לעקוף רק דרך PR, כך שכל עקיפה נרשמת.
+
+```bash
+npm run security:ruleset-drift                         # השוואה ל-gh api repos/talstilkol/lumen-md/rulesets
+node scripts/security/ruleset-drift.mjs --print-apply  # פקודות ה-gh של הבעלים שיוצרות אותם (W10.O1)
+```
+
+הסקריפט בודק את הקובץ מול `security/github-ruleset.schema.json` (גוף ה-REST של
+GitHub ל-ruleset) ומול המדיניות שלמעלה, ואז מדווח על כל הבדל ממה שיש ב-GitHub.
+הוא יוצא עם 1 כשיש סחיפה, ועם 2 כשאי אפשר לקרוא את ה-API, וזה אף פעם לא נחשב
+התאמה. הסוג `triage` מריץ אותו בכל לילה.
