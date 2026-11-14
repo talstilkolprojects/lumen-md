@@ -553,6 +553,21 @@ export function sourcesTable(md) {
   return null;
 }
 
+/**
+ * The app code the model check reads: src/ minus tests, fixtures, eval
+ * harnesses and src/help/generated/ (the docs site packed for the in-app
+ * help, plan 13.1: prose such as "jina-reranker-v2 is not used" is not a
+ * reference, and docs/ itself is not scanned either).
+ */
+export function isModelScanSource(rel) {
+  const p = rel.split("\\").join("/");
+  if (!p.startsWith("src/")) return false;
+  if (/(^|\/)(__tests__|node_modules|fixtures)\//.test(p)) return false;
+  if (p.startsWith("src/help/generated/")) return false;
+  if (/\.(test|spec|eval)\.[cm]?[jt]sx?$/.test(p)) return false;
+  return /\.([cm]?[jt]sx?|json)$/.test(p);
+}
+
 export function checkDatasets(dirs) {
   return dirs.map(({ name, files, sources, license }) => {
     const base = { area: "dataset", name: `eval/golden/${name}`, license: "" };
@@ -560,6 +575,8 @@ export function checkDatasets(dirs) {
     if (!files.includes("SOURCES.md")) missing.push("SOURCES.md");
     if (!files.some((f) => /^LICEN[CS]E(\.md|\.txt)?$/.test(f))) missing.push("LICENSE");
     if (missing.length) return { ...base, level: "fail", reason: `missing ${missing.join(" and ")}` };
+    // An empty placeholder LICENSE states no terms at all (Codex on #199).
+    if (!(license ?? "").trim()) return { ...base, level: "fail", reason: "LICENSE is empty: it must state the licence of the data" };
     const rows = sourcesTable(sources ?? "");
     if (!rows?.length) return { ...base, level: "fail", reason: "SOURCES.md has no parts table with a Licence column" };
     const shareAlikeFolder = /share-?alike|\bBY-SA\b/i.test(license ?? "");
