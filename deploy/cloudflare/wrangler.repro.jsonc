@@ -1,0 +1,21 @@
+// The second infrastructure of plan W7.23: Cloudflare Workers Builds builds
+// main from the same lockfile, and serves the result only so that
+// scripts/supply-chain/two-hosts.mjs can compare it with Vercel's. It is not
+// a place users go (the app is https://lumen-md.vercel.app).
+//
+// Workers Builds settings (dashboard → Workers → lumen-md-repro → Settings → Builds):
+//   Build command:   npm ci && npm run build:repro
+//   Deploy command:  npx wrangler deploy --config deploy/cloudflare/wrangler.repro.jsonc
+//   Branch:          main          Root directory: /
+//   Build variables: NODE_VERSION=22.13.0 (the Node Vercel uses: see `node` in the manifest), TZ=UTC
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "lumen-md-repro",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "../../dist",
+    "not_found_handling": "single-page-application"
+  },
+  "workers_dev": true,
+  "preview_urls": false
+}
