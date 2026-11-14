@@ -206,6 +206,54 @@ describe("pr:check", () => {
     }
   });
 
+  it("no stacks (W6.22): a feature-branch base warns, an old merge base and a criss-cross fail", () => {
+    const r0 = repo();
+    try {
+      const env = (date: string) => ({ ...process.env, GIT_COMMITTER_DATE: date, GIT_AUTHOR_DATE: date });
+      const at = (date: string, ...a: string[]) => execFileSync("git", a, { cwd: r0.dir, encoding: "utf8", env: env(date) });
+      // A base 30 days old, and a feature branch that stacks on it.
+      at("2026-10-01T12:00:00Z", "commit", "-q", "--amend", "--no-edit", "--date", "2026-10-01T12:00:00Z");
+      r0.git("switch", "-q", "-c", "feat/base");
+      writeFileSync(join(r0.dir, "src/b.ts"), "export const b = 1;\n");
+      r0.git("add", "-A");
+      at("2026-10-01T12:00:00Z", "commit", "-q", "-m", "feat: b [skip ci]");
+      r0.git("switch", "-q", "-c", "feat/top");
+      writeFileSync(join(r0.dir, "src/c.ts"), "export const c = 1;\n");
+      r0.git("add", "-A");
+      r0.git("commit", "-q", "-m", "feat: c [skip ci]");
+      const now = ["--now", "2026-11-12T12:00:00Z", "--no-size"];
+      const stacked = runChecks(parseArgs(["--cwd", r0.dir, "--base", "feat/base", "--train", "verify/train-2", ...now]));
+      const gate = stacked.sections.find((s: { title: string }) => s.title === "Based on the train head");
+      expect(gate.status).toBe("fail");
+      expect(gate.lines[0]).toContain("- The base `feat/base` is not `verify/train-2` or `main`: a stacked PR.");
+      expect(gate.lines[1]).toBe("- The merge base with `feat/base` is 42 days old (limit 7). Merge or restack onto the head of `feat/base`.");
+      // The same branch against main, with a 60-day limit: only the base warning is gone… and main has moved on.
+      r0.git("switch", "-q", "main");
+      writeFileSync(join(r0.dir, "src/m.ts"), "export const m = 1;\n");
+      r0.git("add", "-A");
+      r0.git("commit", "-q", "-m", "chore: m [skip ci]");
+      r0.git("switch", "-q", "feat/top");
+      const onMain = runChecks(parseArgs(["--cwd", r0.dir, "--base", "main", "--max-age-days", "60", ...now]));
+      expect(onMain.sections.find((s: { title: string }) => s.title === "Based on the train head")).toMatchObject({
+        status: "warn",
+        lines: ["- The base `main` is the trunk.", "- 1 commit behind `main`. Merge or restack onto its head before the train."],
+      });
+      // Criss-cross: feat/top merges main's commit while main merges feat/top's earlier one.
+      r0.git("merge", "-q", "--no-ff", "-m", "Merge main [skip ci]", "main");
+      r0.git("switch", "-q", "main");
+      r0.git("merge", "-q", "--no-ff", "-m", "Merge feat/top~1 [skip ci]", "feat/top~1");
+      r0.git("switch", "-q", "feat/top");
+      expect(r0.git("merge-base", "--all", "main", "HEAD").trim().split("\n")).toHaveLength(2);
+      const cc = runChecks(parseArgs(["--cwd", r0.dir, "--base", "main", "--max-age-days", "60", ...now]));
+      const ccGate = cc.sections.find((s: { title: string }) => s.title === "Based on the train head");
+      expect(ccGate.status).toBe("fail");
+      expect(ccGate.lines[1]).toBe("- Criss-cross: 2 merge bases with `main`. Merge `main` into the branch once more, or restack it.");
+      expect(cc.failed).toBe(true);
+    } finally {
+      r0.done();
+    }
+  });
+
   it("no dist/: the size check is skipped with what to do", () => {
     const r0 = repo();
     try {

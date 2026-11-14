@@ -27,6 +27,9 @@
  *     finding open. A new push makes older receipts stale.
  *   - Budgets only go down (plan W6.26): no bundle budget, startup budget,
  *     exception date, perf-gate FCP/LCP limit or Lighthouse assertion loosened.
+ *   - No stacks (plan W6.22): the base is the current train (the highest
+ *     verify/train-N) or main, else a warning; commits behind the base warn;
+ *     a merge base older than 7 days, or a criss-cross, fails.
  *
  *   npm run pr:check -- --base origin/main --body pr-body.md
  *   npm run build && npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-check.md
@@ -45,6 +48,7 @@ import { bundleDiffMarkdown } from "./bundle-diff.mjs";
 import { HUMAN_REVIEW_LABEL, humanReviewVerdict, parseCodeowners, sensitiveChanges } from "./lib/humanReview.mjs";
 import { extractReceipts, independentReviewVerdict } from "./lib/independentReview.mjs";
 import { RATCHET_FILES, raiseLine, raisesFor } from "./lib/budgetRatchet.mjs";
+import { MAX_AGE_DAYS, baseVerdict, branchName, currentTrain, driftVerdicts, worst } from "./lib/trainBase.mjs";
 
 export function parseArgs(argv) {
   const opt = (n) => (argv.includes(n) ? argv[argv.indexOf(n) + 1] : undefined);
@@ -55,6 +59,9 @@ export function parseArgs(argv) {
     baseSizes: opt("--base-sizes"),
     headSizes: opt("--head-sizes"),
     buildBase: argv.includes("--build-base"),
+    train: opt("--train"),
+    maxAgeDays: opt("--max-age-days") != null ? Number(opt("--max-age-days")) : MAX_AGE_DAYS,
+    now: opt("--now") != null ? Date.parse(opt("--now")) : Date.now(),
     noSize: argv.includes("--no-size"),
     pr: opt("--pr"),
     review: argv.flatMap((a, i) => (a === "--review" && argv[i + 1] ? [argv[i + 1]] : [])),
@@ -128,6 +135,23 @@ export function runChecks(opts) {
   const subjects = git(cwd, "log", "--format=%s", range).split("\n").filter(Boolean);
   const noSkip = skipCiViolations(subjects);
   add("Commits carry [skip ci]", noSkip.length ? "fail" : "ok", noSkip.length ? noSkip.map((s) => `- \`${s}\``) : [`${subjects.length} commit${subjects.length === 1 ? "" : "s"}, all with [skip ci].`]);
+
+  // No stacks (W6.22): the base, the drift behind it and the age of the merge base.
+  {
+    const remotes = git(cwd, "remote").split("\n").filter(Boolean);
+    const base = branchName(opts.base, remotes);
+    const remoteOf = remotes.find((r) => opts.base.startsWith(`${r}/`)) ?? remotes[0];
+    const trainBranches = remoteOf ? git(cwd, "for-each-ref", "--format=%(refname:short)", `refs/remotes/${remoteOf}/verify/`).split("\n").filter(Boolean).map((r) => r.slice(remoteOf.length + 1)) : [];
+    const train = opts.train ?? currentTrain(trainBranches);
+    const v = baseVerdict(base, train);
+    // Drift against the base when it is allowed; against the train head when the PR is stacked.
+    const driftRef = v.status === "ok" || !train || !remoteOf ? opts.base : `${remoteOf}/${train}`;
+    const behind = Number(git(cwd, "rev-list", "--count", `HEAD..${driftRef}`).trim());
+    const ageDays = (opts.now / 1000 - Number(git(cwd, "show", "-s", "--format=%ct", mergeBase).trim())) / 86400;
+    const mergeBases = git(cwd, "merge-base", "--all", opts.base, "HEAD").split("\n").filter(Boolean).length;
+    const rows = [v, ...driftVerdicts({ base: branchName(driftRef, remotes), behind, ageDays, mergeBases, maxAgeDays: opts.maxAgeDays, ageOf: base })];
+    add("Based on the train head", worst(rows), rows.map((r) => `- ${r.line}`));
+  }
 
   // Body
   let body = null;

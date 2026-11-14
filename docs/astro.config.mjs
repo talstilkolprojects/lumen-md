@@ -267,6 +267,7 @@ export default defineConfig({
             { label: "Visual regression", translations: { he: "רגרסיה חזותית" }, slug: "contributing/visual-regression" },
             { label: "Skipped tests", translations: { he: "בדיקות מדולגות" }, slug: "contributing/skipped-tests" },
             { label: "Checks on every branch (Vercel)", translations: { he: "בדיקות בכל ענף (Vercel)" }, slug: "contributing/checks" },
+            { label: "Every PR on the train head", translations: { he: "כל PR על ראש הרכבת" }, slug: "contributing/train-base" },
             { label: "Threat model", slug: "security/threat-model" },
             { label: "Supply chain", slug: "security/supply-chain" },
             { label: "The e2e test surface", translations: { he: "ממשק הבדיקות של e2e" }, slug: "security/test-surface" },

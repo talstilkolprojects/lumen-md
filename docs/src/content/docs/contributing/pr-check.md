@@ -61,6 +61,21 @@ It also warns:
 - when source changed and no test did;
 - when an AI agent wrote the PR (add the `ai-written` label).
 
+## The branch's base (plan W6.22)
+
+Every PR is based on the current train (the highest-numbered
+`verify/train-N` on the remote) or on `main`, not on another PR's branch.
+The check:
+- warns when the base is something else, and names the
+  `scripts/restack.mjs` command that prints how to move it;
+- warns when the branch is behind its base (the train head, for a
+  stacked PR) and says by how many commits;
+- fails when the merge base is more than 7 days old
+  (`--max-age-days`), or when there is more than one merge base
+  (a criss-cross).
+
+See [Every PR on the train head](/contributing/train-base/).
+
 ## Options
 
 | Option | Meaning |
@@ -73,4 +88,6 @@ It also warns:
 | `--pr <n>` | The pull request number: read its labels, label events, reviews and comments (human-review and independent-review rules) |
 | `--review <file>` | A review receipt file to check against this checkout's HEAD, offline; repeatable ([Independent review](/contributing/independent-review/)) |
 | `--repo <owner/name>` | The repository, when the `origin` remote does not name it |
+| `--train <branch>` | The current train, when it isn't the highest `verify/train-N` on the remote |
+| `--max-age-days <n>` | The age limit of the merge base (default 7) |
 | `--out <file>` | Write the report |
