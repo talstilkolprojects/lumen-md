@@ -4,7 +4,16 @@
     {
       "id": "update.checkOnLaunch",
       "stage": "beta",
-      "since": { "beta": "0.2.0-beta.1" }
+      "since": {
+        "beta": "0.2.0-beta.1"
+      }
+    },
+    {
+      "id": "sync.e2ee",
+      "stage": "experimental",
+      "since": {
+        "beta": "0.2.0-beta.1"
+      }
     }
   ]
 }

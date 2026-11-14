@@ -72,6 +72,8 @@ function hasNote(page: Page, path: string) {
 async function open(context: BrowserContext): Promise<Page> {
   const page = await context.newPage();
   await page.addInitScript(() => localStorage.setItem("lumen-tour-done", "1"));
+  // Encrypted sync is experimental in 0.2.0-beta.1 (W6.43): the user turns it on in Settings → Feature flags.
+  await page.addInitScript(() => localStorage.setItem("lumen-flags", JSON.stringify({ "sync.e2ee": true })));
   await page.goto("/");
   await expect(page.locator(".cm-content").first()).toContainText("Welcome to", { timeout: 15_000 });
   return page;

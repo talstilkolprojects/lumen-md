@@ -1,4 +1,6 @@
 {
+  "flag.sync.e2ee.desc": "Sync your notes between devices through a storage service that sees only encrypted data. Experimental and off by default until an open item of its security review is fixed. Back up your notes folder before you try it.",
+  "flag.sync.e2ee.name": "Encrypted sync (experimental)",
   "flag.update.checkOnLaunch.desc": "Desktop app: look for a new version once a day when Lumen starts, so beta fixes arrive quickly. Never in local-only mode; every check is in the privacy log.",
   "flag.update.checkOnLaunch.name": "Check for updates at launch",
   "flags.close": "Close",
@@ -10,6 +12,7 @@
   "flags.source.channel": "Default for this build",
   "flags.source.override": "Your choice (default here: {default})",
   "flags.stage.beta": "Beta",
+  "flags.stage.experimental": "Experimental",
   "flags.stage.stable": "Stable",
   "flags.title": "Feature flags",
   "flags.useDefault": "Use the default"
