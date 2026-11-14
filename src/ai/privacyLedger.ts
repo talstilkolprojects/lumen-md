@@ -76,6 +76,9 @@ const RULES: Rule[] = [
   { test: (h) => h === "generativelanguage.googleapis.com", category: "cloud-ai", reason: "Google Gemini" },
   { test: (h) => h === "api.mistral.ai", category: "cloud-ai", reason: "Mistral" },
   { test: (h) => h === "api.languagetool.org", category: "cloud-text", reason: "LanguageTool grammar check" },
+  // W7.19: publishing a note to the user's own AT Protocol PDS (Standard.site), only when they press Publish.
+  { test: (h) => h === "bsky.social" || h.endsWith(".host.bsky.network"), category: "third-party", reason: "Publish to the AT Protocol (Standard.site), your PDS" },
+  { test: (h) => h === "plc.directory", category: "third-party", reason: "AT Protocol identity lookup (plc.directory)" },
   { test: (h) => h === "kroki.io", category: "cloud-text", reason: "PlantUML rendering (kroki.io)" },
   // Jewish sources (plan W5.1): the reference the user asked for, nothing else.
   { test: (h) => h === "www.sefaria.org" || h === "sefaria.org", category: "cloud-text", reason: "Jewish sources (Sefaria): the reference only" },

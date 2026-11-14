@@ -1,0 +1,7 @@
+# Sensitive paths (plan W4.28; the full list arrives with #481 and these lines merge into its
+# "Relays, sharing, privacy and redaction" section). Every path here needs a human review.
+
+# ── W7.19 (review 20): a public, permanent export door. It must build every record from the
+#    redacted text (privateRemoved / publishReadyText) and send nothing before the user confirms.
+/src/publish/standardSite.ts             @talstilkol
+/src/publish/standardSiteActions.ts      @talstilkol

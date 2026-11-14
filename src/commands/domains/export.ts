@@ -43,6 +43,33 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       },
     },
     {
+      // W7.19: the open note as a public Standard.site record in the user's own AT Protocol account,
+      // after a confirmation that says it is public and permanent (review 20). One note, never in bulk.
+      id: "file.publishAtproto",
+      label: t("cmd.file.publishAtproto"),
+      hint: t("cmd.file.publishAtproto.hint"),
+      icon: cmdIcons.Link,
+      group: t("group.file"),
+      action: async () => {
+        // Snapshot before any await: a tab switch while the chunk loads must not publish another note.
+        const doc = liveDoc();
+        const { publishOpenNote } = await import("../../publish/standardSiteActions");
+        await publishOpenNote({ path: doc.workspaceName ?? doc.name, markdown: doc.content });
+      },
+    },
+    {
+      id: "file.unpublishAtproto",
+      label: t("cmd.file.unpublishAtproto"),
+      hint: t("cmd.file.unpublishAtproto.hint"),
+      icon: cmdIcons.Link,
+      group: t("group.file"),
+      action: async () => {
+        const doc = liveDoc();
+        const { unpublishOpenNote } = await import("../../publish/standardSiteActions");
+        await unpublishOpenNote({ path: doc.workspaceName ?? doc.name, markdown: doc.content });
+      },
+    },
+    {
       id: "file.exportDocx",
       label: t("cmd.file.exportDocx"),
       hint: t("cmd.file.exportDocx.hint"),

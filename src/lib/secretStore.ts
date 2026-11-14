@@ -55,6 +55,8 @@ const EXACT_SECRETS = new Set([
   "lumen.research.searchKey",
   "lumen.research.serviceToken",
   "lumen.git.token.v1",
+  // The AT Protocol refresh token for publishing (plan W7.19); the App Password itself is never stored.
+  "lumen.atproto.refreshJwt",
 ]);
 /** The git token used to live in idb-keyval's default store. */
 const LEGACY_IDB_SECRETS = ["lumen.git.token.v1"];
