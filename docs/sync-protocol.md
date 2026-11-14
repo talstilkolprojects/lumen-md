@@ -212,7 +212,10 @@ check) a fork. This holds for passphrase and device-key devices alike.
    refusal (kept in its state, and from the first of an unbroken run of
    foreign freezes its rounds saw), whatever freezes come after, and after
    it the re-keyer freezes over whatever freeze is there. A refusal older
-   than 24 hours starts the wait again. Nothing in a freeze (digest, `at`,
+   than 24 hours, or from an earlier epoch, starts the wait again (ninth
+   review 12.11, H1: the key change that held it back has committed, so
+   the freeze now in the way is another one); so does a round's run of
+   freezes once one of them is called off. Nothing in a freeze (digest, `at`,
    `by`) moves this clock, so the device being revoked, which still holds
    `S_N` and the storage login, can't hold its revocation back by writing a
    fresh freeze every few minutes. Against a provider that keeps the
@@ -225,7 +228,16 @@ check) a fork. This holds for passphrase and device-key devices alike.
    the device verified (create-only at epoch 0). The new `S` is random; it is
    wrapped for the passphrase (the same one, or a new one) and for each
    device on the sealed list, except those revoked. If the commit loses, the
-   re-keyer deletes the manifest of step 2.
+   re-keyer deletes the manifest of step 2. A revocation whose commit loses
+   twice in a row to a rewrite of the keyring at the same epoch says so
+   (`RevocationContestedError`, ninth review 12.11, H2): anyone who still
+   holds `S_N` and the storage login, most likely the device being revoked,
+   can do that every time, so no retry wins; the user takes the storage
+   login away first. Inherent while that writer keeps it. A device's key
+   changes and its pairing codes and answers exclude each other across
+   its tabs too (the Web Locks API, one lock per device and vault; H3);
+   the device state is read again under that lock, and the pairing lock
+   is read from the stored state before the commit.
    **Read-back** (third review 12.11, N2): the re-keyer then reads the
    keyring again. It must be the bytes it wrote, or a keyring that already
    descends from them. Otherwise the provider let another write replace it
@@ -511,3 +523,8 @@ Changes:
   (G4): a code or answer already given out, entered after `cancelPairing` on
   a device the provider keeps on the old view, still pairs it; only telling
   that device not to use it helps.
+- Ninth review 12.11: a refusal from an earlier epoch, and a run of freezes
+  that was called off, no longer shorten the wait on a new key change (H1);
+  a revocation that keeps losing to same-epoch keyring rewrites says to
+  change the storage login first (H2, inherent); a device's tabs share one
+  lock for key changes and pairing (H3).
