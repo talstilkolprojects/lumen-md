@@ -292,6 +292,7 @@ export default defineConfig({
           items: [
             { label: "Issue triage", slug: "project/issue-triage", translations: { he: "מיון issues" } },
             { label: "Releasing a version", slug: "project/releasing", translations: { he: "שחרור גרסה" } },
+            { label: "Open PR triage", slug: "project/pr-triage", translations: { he: "מיון ה-PR-ים הפתוחים" } },
           ],
         },
         {

@@ -114,6 +114,7 @@
     "flags:check": "node scripts/check-flags.mjs",
     "bench:models": "node scripts/bench-models.mjs",
     "pr:check": "node scripts/pr-check.mjs",
+    "pr:triage": "node scripts/pr-triage.mjs",
     "launch:check": "node scripts/launch-check.mjs",
     "store:check": "node scripts/store.mjs check",
     "eval:crosslingual": "LUMEN_EVAL_XL=1 vitest run --config vitest.eval.config.ts src/agents/eval/crosslingual.eval.ts",
