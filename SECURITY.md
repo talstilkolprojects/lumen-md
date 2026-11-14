@@ -8,28 +8,28 @@
 
 ## Reporting a vulnerability
 
-**Do not open a public GitHub issue, discussion or pull request for a vulnerability.**
+**Do not put the details of a vulnerability in a public GitHub issue, discussion or pull request.**
 
-Report it privately through GitHub: **[Report a vulnerability](https://github.com/talstilkol/lumen-md/security/advisories/new)** (Security → Advisories → Report a vulnerability). Only the maintainers see it. Include:
+**Today:** open a public issue titled **["Security contact request"](https://github.com/talstilkol/lumen-md/issues/new?title=Security%20contact%20request)** with no details at all, only a way to reach you if you want one. A maintainer answers within 48 hours with a private channel, and you send the report there. Include:
 
 1. What is affected (file, feature, version or commit)
 2. Steps to reproduce, or a proof of concept
 3. The impact: what an attacker gets (notes read, notes changed, keys, code run, data sent off the device)
 4. A suggested fix, if you have one
 
-If you cannot use GitHub, open a public issue titled **"Security contact request"** with no details; a maintainer replies with a private channel.
+GitHub's private vulnerability reporting is **not turned on yet** for this repository, so the "Report a vulnerability" button does not work. Once the owner turns it on, it becomes the first channel here. A dedicated security mailbox with a published key will follow. The state of every channel is in `security/channels.json`.
 
 ### What happens next
 
 | When | What the maintainers do |
 |---|---|
-| ≤ 48 hours | Acknowledge the report in the advisory. |
+| ≤ 48 hours | Answer the contact request with a private channel, then acknowledge the report there. |
 | ≤ 5 business days | Confirm or reject it, give it a severity (CVSS 3.1: critical, high, medium, low) and a fix date. |
-| Critical / high: ≤ 14 days · medium: ≤ 30 days · low: next release | Fix it in the advisory's **temporary private fork**, so the fix is not public before the release. The fix touches a sensitive path, so it gets a human review (`human-reviewed` label, see `.github/CODEOWNERS`) like any other change there. |
-| Release day | Publish the release, then the advisory; request a CVE through the advisory when the severity is medium or higher. The reporter is credited unless they ask not to be. |
+| Critical / high: ≤ 14 days · medium: ≤ 30 days · low: next release | Fix it in a **temporary private fork** (a GitHub security advisory's, once private reporting is on), so the fix is not public before the release. The fix touches a sensitive path, so it gets a human review (`human-reviewed` label, see `.github/CODEOWNERS`) like any other change there. |
+| Release day | Publish the release, then a GitHub security advisory; request a CVE through it when the severity is medium or higher. The reporter is credited unless they ask not to be. |
 | 90 days after the report | The latest date for disclosure, fixed or not, unless the reporter and the maintainers agree on another date. If a vulnerability is exploited in the wild, it is disclosed as soon as users can protect themselves. |
 
-If the first maintainer does not answer within 48 hours, the second maintainer (docs: *contributing/second-maintainer*) takes the report. Both receive every advisory.
+If the first maintainer does not answer within 48 hours, the second maintainer (docs: *contributing/second-maintainer*) takes the report. Both receive every report.
 
 ### In scope
 
@@ -49,7 +49,7 @@ We do not pursue legal action against good-faith research that follows this poli
 
 ### בעברית
 
-מדווחים על חולשת אבטחה **רק בערוץ פרטי**: [Report a vulnerability](https://github.com/talstilkol/lumen-md/security/advisories/new) ב-GitHub (Security → Advisories). לא פותחים issue ציבורי. נאשר קבלה תוך 48 שעות, ניתן חומרה ותאריך תיקון תוך 5 ימי עבודה, נתקן ב-fork פרטי זמני ונפרסם את הגרסה ואז את ה-advisory (עם CVE מחומרה בינונית ומעלה, ועם קרדיט למדווח). המועד האחרון לפרסום הוא 90 יום מהדיווח. אם המתחזק הראשון לא עונה תוך 48 שעות, המתחזק השני מטפל.
+לא מפרסמים פרטים של חולשת אבטחה ב-issue, בדיון או ב-PR ציבוריים. **היום** פותחים issue ציבורי בכותרת **["Security contact request"](https://github.com/talstilkol/lumen-md/issues/new?title=Security%20contact%20request)** בלי שום פרט, ומתחזק עונה תוך 48 שעות עם ערוץ פרטי שאליו שולחים את הדיווח. הדיווח הפרטי של GitHub ‏(Report a vulnerability) **עוד לא מופעל** במאגר הזה, ולכן הכפתור לא עובד; כשהבעלים יפעיל אותו הוא יהיה הערוץ הראשון, ואחריו תיבת דואר ייעודית עם מפתח מפורסם. מצב כל ערוץ נמצא ב-`security/channels.json`. ניתן חומרה ותאריך תיקון תוך 5 ימי עבודה, נתקן ב-fork פרטי זמני ונפרסם את הגרסה ואז את ה-advisory (עם CVE מחומרה בינונית ומעלה, ועם קרדיט למדווח). המועד האחרון לפרסום הוא 90 יום מהדיווח. אם המתחזק הראשון לא עונה תוך 48 שעות, המתחזק השני מטפל.
 
 ## Maintainers and keys
 

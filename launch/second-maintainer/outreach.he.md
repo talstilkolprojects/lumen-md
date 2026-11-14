@@ -53,7 +53,7 @@ https://github.com/talstilkol/lumen-md
 - מקרי התקיפה מוכנים: בית מוצפן הפוך, ‏nonce שחוזר, מפתח שגוי, עלות KDF.
 - מה שמצאת יקבל תיקון עם בדיקה, והקרדיט יהיה שלך, אם תרצה/י.
 
-אם מצאת חולשה, בבקשה דווח/י בערוץ הפרטי: https://github.com/talstilkol/lumen-md/security/advisories/new
+אם מצאת חולשה, בבקשה פתח/י issue בכותרת "Security contact request" בלי פרטים, ונחזור אלייך עם ערוץ פרטי (ראו SECURITY.md): https://github.com/talstilkol/lumen-md/issues/new?title=Security%20contact%20request
 
 תודה רבה,
 טל
