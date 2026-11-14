@@ -56,8 +56,14 @@ before and after it) and a `TextPositionSelector`. Other annotation tools
 can read them.
 
 Lumen only rewrites the part of the note between the
-`lumen:pdf-annotations` markers. Anything you write above or below them is
-kept.
+`lumen:pdf-annotations` markers that enclose that block. Anything you write
+above or below them is kept, even text that quotes one of the markers. If
+the block can't be read (for example after a hand edit broke its JSON), the
+reader says so and saves nothing over it.
+
+The highlights note belongs to its PDF: renaming or moving the PDF takes the
+note along, and a PDF can't be renamed to its own note's name (or the note
+to the PDF's).
 
 ### When the PDF's text changes
 
@@ -74,6 +80,9 @@ next match, Shift+Enter to the previous one. Search ignores case, extra
 spaces and Hebrew vowel marks (niqqud). ⌘F / Ctrl+F jumps to the search box
 while the reader is open, and Esc closes the reader.
 
+Vault search and the AI's workspace search read notes and plain-text files
+only: the text of a PDF isn't in them, but its highlights note is.
+
 ## Scanned pages
 
 A page that is only an image has no text to select. The reader says so and
@@ -82,6 +91,11 @@ device (Hebrew and English, the same OCR as image import) and shown under
 the page, where you can search it and highlight it. The recognised text is
 not saved with the PDF, so run OCR again to see those highlights after
 reopening.
+
+## On a phone
+
+On a narrow screen the highlights list sits under the pages instead of
+beside them, so you can still read, annotate and delete highlights there.
 
 ## Limits
 

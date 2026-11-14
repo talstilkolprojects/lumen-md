@@ -2,7 +2,10 @@
  * PDF reader with highlights (plan 4.14), on the pdf.js already in the app.
  *
  * - Pages are virtualised: only those near the viewport get a canvas and a
- *   text layer; the rest are empty boxes of the right size.
+ *   text layer; the rest are empty boxes. The reader opens with page 1's
+ *   size for every box, and each page takes its real size once it is loaded.
+ * - The reader is modal: the rest of the app is inert while it is open, and
+ *   focus goes back where it was when it closes.
  * - Select text on a page and press Highlight (or H): the highlight is stored
  *   as a W3C Web Annotation in the companion note `<file>.pdf.md`, with a
  *   `[[file.pdf#page=N&highlight=ID]]` link that opens the reader at that
@@ -21,6 +24,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProper
 import { t } from "../i18n";
 import { showAiToast } from "../ui/AiToast";
 import { ErrorBoundary } from "../ui/ErrorBoundary";
+import { inertOutside } from "../ui/inertOutside";
 import {
   anchorAnnotation,
   companionNotePath,
@@ -116,6 +120,20 @@ function baseName(p: string): string {
   return p.split("/").pop() ?? p;
 }
 
+/**
+ * Wait until the write queue is empty: a write queued while an earlier one
+ * was awaited is awaited too, until the queue is the same promise after the
+ * await (review #272, step 2.25). A snapshot of the queue would let a
+ * highlight edit made meanwhile be dropped on close.
+ */
+export async function drainQueue(queue: { readonly current: Promise<unknown> }): Promise<void> {
+  for (;;) {
+    const seen = queue.current;
+    await seen;
+    if (queue.current === seen) return;
+  }
+}
+
 export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenNotes, registerSaveGate }: Props) {
   const notePath = companionNotePath(path);
   const [doc, setDoc] = useState<PdfDocument | null>(null);
@@ -145,6 +163,7 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
 
   // Leaving the page (closing the tab or window) with highlights not saved
   // yet — queued, or after a failed write — asks first, like unsaved notes do.
+  // The guard outlives the reader until its queued writes are done (step 2.25).
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       if (pendingWrites.current === 0 && !writeFailed.current) return;
@@ -152,7 +171,11 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
       e.returnValue = "";
     };
     window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      const remove = () => window.removeEventListener("beforeunload", onBeforeUnload);
+      if (pendingWrites.current > 0) void drainQueue(writeQueue).then(remove);
+      else remove();
+    };
   }, []);
   const annotationsRef = useRef<PdfAnnotation[]>([]);
   annotationsRef.current = annotations;
@@ -161,9 +184,25 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
   const searchSeq = useRef(0);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // Take focus from the editor underneath, so keys go to the reader.
+  // The reader is modal (step 2.21): take focus from the editor underneath,
+  // make everything outside the reader inert so Tab can't reach the hidden
+  // editor, and give focus back to where it was on close.
   useEffect(() => {
-    rootRef.current?.focus({ preventScroll: true });
+    const root = rootRef.current;
+    if (!root) return;
+    const before = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
+    const inert = inertOutside(root);
+    root.focus({ preventScroll: true });
+    // Where `inert` isn't supported: focus that lands underneath comes back.
+    const onFocusIn = (e: FocusEvent) => {
+      if (e.target instanceof Node && inert.isInsideInerted(e.target)) root.focus({ preventScroll: true });
+    };
+    document.addEventListener("focusin", onFocusIn);
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      inert.release();
+      if (before?.isConnected) before.focus({ preventScroll: true });
+    };
   }, []);
 
   // Open the PDF and read its highlights.
@@ -195,11 +234,11 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
         return;
       }
       const pdf = opened.doc;
-      const all: PageSize[] = [];
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const vp = (await pdf.getPage(i)).getViewport({ scale: 1 });
-        all.push({ w: vp.width, h: vp.height });
-      }
+      // Page 1's size stands in for every page, so a long PDF opens at once
+      // (step 2.18); each page reports its real size when it comes near the
+      // viewport and is rendered (onPageSize).
+      const first = pdf.numPages > 0 ? (await pdf.getPage(1)).getViewport({ scale: 1 }) : null;
+      const all: PageSize[] = first ? Array.from({ length: pdf.numPages }, () => ({ w: first.width, h: first.height })) : [];
       // No note yet means no highlights. Any other read failure stops here:
       // opening with an empty list would let the next save drop the saved ones.
       let note: string | null = null;
@@ -257,7 +296,9 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
       // After the page boxes are laid out at their size.
       requestAnimationFrame(() => goToPage(target));
     }
-  }, [doc, sizes, fragment, openSeq, goToPage]);
+    // On the page count, not the sizes: a page reporting its real size must
+    // not scroll back to the link's page or flash again.
+  }, [doc, sizes.length, fragment, openSeq, goToPage]);
 
   // Which pages are near the viewport.
   useEffect(() => {
@@ -279,7 +320,7 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
     );
     for (const el of pageEls.current.values()) io.observe(el);
     return () => io.disconnect();
-  }, [doc, sizes, scale]);
+  }, [doc, sizes.length, scale]);
 
   // The current page: the last one whose top is above the middle of the view.
   const onScroll = useCallback(() => {
@@ -445,13 +486,14 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
    */
   const whenSaved = useCallback(
     (then: () => void) => {
-      void writeQueue.current.then(() => {
+      void (async () => {
+        // Every write, including those queued while waiting (step 2.25).
+        await drainQueue(writeQueue);
         if (!writeFailed.current) return then();
         persist(annotationsRef.current);
-        void writeQueue.current.then(() => {
-          if (!writeFailed.current) then();
-        });
-      });
+        await drainQueue(writeQueue);
+        if (!writeFailed.current) then();
+      })();
     },
     [persist],
   );
@@ -531,6 +573,17 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
 
   const onPageText = useCallback((page: number, text: string) => {
     pageTexts.current.set(page, text);
+  }, []);
+
+  /** A rendered page's real size (in points), replacing the page-1 placeholder. */
+  const onPageSize = useCallback((page: number, size: PageSize) => {
+    setSizes((prev: PageSize[]) => {
+      const cur = prev[page - 1];
+      if (!cur || (cur.w === size.w && cur.h === size.h)) return prev;
+      const next = prev.slice();
+      next[page - 1] = size;
+      return next;
+    });
   }, []);
 
   const onOcr = useCallback((page: number, text: string) => {
@@ -674,6 +727,7 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
                 query={activeHit?.page === i + 1 ? query : ""}
                 occurrence={activeHit?.page === i + 1 ? activeHit.occurrence : -1}
                 registerEl={registerEl}
+                onSize={onPageSize}
                 onText={onPageText}
                 onOcr={onOcr}
                 onAnchored={onAnchored}
@@ -743,6 +797,8 @@ interface PageProps {
   query: string;
   occurrence: number;
   registerEl: (page: number, el: HTMLDivElement | null) => void;
+  /** The page's real size at scale 1, once it is loaded. */
+  onSize: (page: number, size: PageSize) => void;
   onText: (page: number, text: string) => void;
   onOcr: (page: number, text: string) => void;
   onAnchored: (missing: string[], all: string[]) => void;
@@ -768,6 +824,7 @@ const PdfPageView = memo(function PdfPageView({
   query,
   occurrence,
   registerEl,
+  onSize,
   onText,
   onOcr,
   onAnchored,
@@ -792,6 +849,8 @@ const PdfPageView = memo(function PdfPageView({
     (async () => {
       const [pdfjs, p] = await Promise.all([loadPdfjs(), doc.getPage(page)]);
       if (cancelled) return;
+      const base = p.getViewport({ scale: 1 });
+      onSize(page, { w: base.width, h: base.height });
       const viewport = p.getViewport({ scale });
       const dpr = Math.min(window.devicePixelRatio || 1, 3);
       const canvas = document.createElement("canvas");
@@ -825,7 +884,7 @@ const PdfPageView = memo(function PdfPageView({
       layer.replaceChildren();
       setDrawn([]);
     };
-  }, [active, doc, page, scale, onText]);
+  }, [active, doc, page, scale, onSize, onText]);
 
   // Where this page's highlights (and the current search hit) are.
   useEffect(() => {
