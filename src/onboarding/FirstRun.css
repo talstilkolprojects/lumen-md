@@ -115,6 +115,13 @@
   opacity: 0.65;
 }
 
+/* "Opening the vault…" while a slow start-up is still restoring it. */
+.lumen-firstrun-note {
+  margin: 4px 0 0;
+  color: hsl(var(--fg-muted));
+  font-size: 12.5px;
+}
+
 .lumen-firstrun-choice input {
   margin: 0;
   margin-block-start: 2px;

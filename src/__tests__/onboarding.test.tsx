@@ -11,18 +11,22 @@ import { sampleWorkspaceFilesHe, SAMPLE_ROOT_HE, SAMPLE_ENTRY_HE } from "../stor
 import { resolveWikiTarget } from "../renderer/wikiLinks";
 import { extractFrontmatter } from "../renderer/pipeline";
 import { parseDatabaseSpec } from "../views/database";
-import { createFirstNote, DONE_KEY, markSetupDone, setupDue } from "../onboarding/setup";
+import { createFirstNote, currentVault, DONE_KEY, markSetupDone, openBrowserVault, setupDue } from "../onboarding/setup";
 import FirstRun from "../onboarding/FirstRun";
 import { useAppStore } from "../store/useStore";
 
 vi.mock("../ui/AiToast", () => ({ showAiToast: vi.fn() }));
 // The vault's place, settable per test (reopening setup with a folder vault).
-const vaultState = vi.hoisted(() => ({ status: null as null | { location: string; name?: string }, toBrowser: 0, reconnects: 0, allowReconnect: false }));
+const vaultState = vi.hoisted(() => ({ status: null as null | { location: string; name?: string }, toBrowser: 0, reconnects: 0, allowReconnect: false, listeners: new Set<() => void>() }));
 vi.mock("../storage/vault/location", async (orig) => {
   const real = await orig<typeof import("../storage/vault/location")>();
   return {
     ...real,
     getVaultStatus: () => (vaultState.status ?? real.getVaultStatus()) as ReturnType<typeof real.getVaultStatus>,
+    onVaultStatusChange: (fn: () => void) => {
+      vaultState.listeners.add(fn);
+      return () => void vaultState.listeners.delete(fn);
+    },
     reconnectVaultFolder: async () => {
       vaultState.reconnects++;
       if (vaultState.allowReconnect) vaultState.status = { location: "folder", name: vaultState.status?.name };
@@ -208,6 +212,60 @@ describe("FirstRun", () => {
     } finally {
       vaultState.status = null;
       delete (window as { showDirectoryPicker?: unknown }).showDirectoryPicker;
+    }
+  });
+
+  it("a slow start-up still restoring the vault: no choice is preselected or possible until it is known (2.85, Codex P2 4311616383)", async () => {
+    vaultState.status = { location: "restoring" };
+    vaultState.toBrowser = 0;
+    Object.assign(window, { showDirectoryPicker: async () => ({}) });
+    try {
+      render(<FirstRun onDone={() => {}} />);
+      fireEvent.click(screen.getByRole("button", { name: "Next" }));
+      const browser = () => screen.getByRole("radio", { name: /In this browser/ });
+      const inFolder = () => screen.getByRole("radio", { name: /A folder on this computer/ });
+      await waitFor(() => expect(browser()).toHaveProperty("disabled", true));
+      expect(browser()).toHaveProperty("checked", false);
+      expect(inFolder()).toHaveProperty("checked", false);
+      expect(inFolder()).toHaveProperty("disabled", true);
+      expect(screen.getByText("Opening the vault…")).toBeTruthy();
+      fireEvent.click(browser());
+      expect(vaultState.toBrowser).toBe(0);
+      // Start writing waits too.
+      fireEvent.click(screen.getByRole("button", { name: "Next" }));
+      fireEvent.click(screen.getByRole("button", { name: "Next" }));
+      expect(screen.getByRole("button", { name: "Start writing" })).toHaveProperty("disabled", true);
+      fireEvent.click(screen.getByRole("button", { name: "Back" }));
+      fireEvent.click(screen.getByRole("button", { name: "Back" }));
+      // The restore finishes: the saved place was a folder, and setup shows it.
+      await waitFor(() => expect(vaultState.listeners.size).toBeGreaterThan(0));
+      await act(async () => {
+        vaultState.status = { location: "folder", name: "Notes" };
+        for (const fn of vaultState.listeners) fn();
+      });
+      await waitFor(() => expect(inFolder()).toHaveProperty("checked", true));
+      expect(inFolder()).toHaveProperty("disabled", false);
+      expect(browser()).toHaveProperty("disabled", false);
+      expect(screen.queryByText("Opening the vault…")).toBeNull();
+      expect(vaultState.toBrowser).toBe(0);
+    } finally {
+      vaultState.status = null;
+      delete (window as { showDirectoryPicker?: unknown }).showDirectoryPicker;
+    }
+  });
+
+  it("openBrowserVault never switches away while the vault is still restoring", async () => {
+    vaultState.status = { location: "restoring" };
+    vaultState.toBrowser = 0;
+    try {
+      expect(await currentVault()).toEqual({ folder: null, disconnected: false, restoring: true });
+      expect(await openBrowserVault()).toBe(false);
+      expect(vaultState.toBrowser).toBe(0);
+      vaultState.status = { location: "folder", name: "Notes" };
+      expect(await openBrowserVault()).toBe(true);
+      expect(vaultState.toBrowser).toBe(1);
+    } finally {
+      vaultState.status = null;
     }
   });
 

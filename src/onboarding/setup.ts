@@ -42,13 +42,24 @@ export async function openFolderVault(handle: FileSystemDirectoryHandle): Promis
   return openFolderAsVault(handle);
 }
 
-/** Where the vault is now (reopening setup from ⌘K): its folder, if any, and whether that folder needs permission again. */
-export async function currentVault(): Promise<{ folder: string | null; disconnected: boolean }> {
+/**
+ * Where the vault is now (reopening setup from ⌘K): its folder, if any, and
+ * whether that folder needs permission again. `restoring`: start-up has not
+ * found out yet (a slow restore) — neither browser storage nor a folder, so
+ * the setup waits instead of guessing (2.85, Codex P2 on #261).
+ */
+export async function currentVault(): Promise<{ folder: string | null; disconnected: boolean; restoring: boolean }> {
   const { getVaultStatus } = await import("../storage/vault/location");
   const status = getVaultStatus();
-  if (status.location === "folder") return { folder: status.name, disconnected: false };
-  if (status.location === "folder-disconnected") return { folder: status.name, disconnected: true };
-  return { folder: null, disconnected: false };
+  if (status.location === "folder") return { folder: status.name, disconnected: false, restoring: false };
+  if (status.location === "folder-disconnected") return { folder: status.name, disconnected: true, restoring: false };
+  return { folder: null, disconnected: false, restoring: status.location === "restoring" };
+}
+
+/** Call `fn` whenever the vault's place changes (a slow restore finishing, a switch). Returns the stop function. */
+export async function onVaultChange(fn: () => void): Promise<() => void> {
+  const { onVaultStatusChange } = await import("../storage/vault/location");
+  return onVaultStatusChange(fn);
 }
 
 /** Ask again for the folder vault the browser closed (after a restart); false when refused. */
@@ -57,10 +68,18 @@ export async function reconnectFolderVault(): Promise<boolean> {
   return reconnectVaultFolder();
 }
 
-/** The vault in browser storage (the default; a no-op unless a folder was chosen earlier in this setup). */
-export async function openBrowserVault(): Promise<void> {
+/**
+ * The vault in browser storage (the default; a no-op unless a folder was
+ * chosen earlier in this setup). False, and nothing switched, while start-up
+ * is still restoring: the saved place may be a folder, and it is never
+ * replaced before it is known (2.85).
+ */
+export async function openBrowserVault(): Promise<boolean> {
   const { getVaultStatus, switchToBrowserStorage } = await import("../storage/vault/location");
-  if (getVaultStatus().location !== "opfs") await switchToBrowserStorage();
+  const location = getVaultStatus().location;
+  if (location === "restoring") return false;
+  if (location !== "opfs") await switchToBrowserStorage();
+  return true;
 }
 
 /**

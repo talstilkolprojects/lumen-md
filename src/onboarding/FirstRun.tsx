@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { SUPPORTED_LOCALES, getLocale, isLocaleLoaded, loadLocale, t, type Locale } from "../i18n";
 import { useAppStore, type Theme } from "../store/useStore";
 import { PRESET_IDS, type PresetId } from "../lib/themeSettings";
-import { createFirstNote, currentVault, importInto, markSetupDone, openBrowserVault, openFolderVault, reconnectFolderVault, type StartChoice } from "./setup";
+import { createFirstNote, currentVault, importInto, markSetupDone, onVaultChange, openBrowserVault, openFolderVault, reconnectFolderVault, type StartChoice } from "./setup";
 import "./FirstRun.css";
 
 const STEPS = ["lang", "vault", "look", "start"] as const;
@@ -40,6 +40,8 @@ export default function FirstRun({ onDone }: Props) {
   const [folder, setFolder] = useState<string | null>(null);
   /** The folder vault needs permission again (browser restart): it can't be written until reconnected. */
   const [disconnected, setDisconnected] = useState(false);
+  /** Start-up is still finding the vault (a slow restore): no choice can be made, nothing is written. */
+  const [restoring, setRestoring] = useState(false);
   const [start, setStart] = useState<StartChoice>("sample");
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
@@ -47,16 +49,27 @@ export default function FirstRun({ onDone }: Props) {
   const importKind = useRef<"obsidian" | "notion">("obsidian");
   const fileInput = useRef<HTMLInputElement>(null);
 
-  // Reopened from ⌘K: the vault may already be in a folder.
+  // Reopened from ⌘K: the vault may already be in a folder. A slow start-up
+  // may still be restoring it: read again whenever the vault's place changes.
   useEffect(() => {
     let live = true;
-    void currentVault().then((v) => {
-      if (!live || v.folder === null) return;
-      setFolder(v.folder);
-      setDisconnected(v.disconnected);
+    let stop: (() => void) | null = null;
+    const read = () =>
+      void currentVault().then((v) => {
+        if (!live) return;
+        setRestoring(v.restoring);
+        if (v.restoring) return;
+        setFolder(v.folder);
+        setDisconnected(v.disconnected);
+      });
+    read();
+    void onVaultChange(read).then((off) => {
+      if (live) stop = off;
+      else off();
     });
     return () => {
       live = false;
+      stop?.();
     };
   }, []);
 
@@ -95,8 +108,8 @@ export default function FirstRun({ onDone }: Props) {
   };
 
   const chooseBrowser = async () => {
-    if (folder === null) return;
-    await openBrowserVault();
+    if (folder === null || restoring) return;
+    if (!(await openBrowserVault())) return; // still restoring: nothing switched
     setFolder(null);
     setDisconnected(false);
     setStatus("");
@@ -139,6 +152,7 @@ export default function FirstRun({ onDone }: Props) {
   };
 
   const finish = async () => {
+    if (restoring) return; // where to write is not known yet
     // A folder vault the browser closed: ask first (this click is the user gesture it needs).
     if (folder !== null && disconnected && !(await reconnect())) return;
     setBusy(true);
@@ -207,15 +221,15 @@ export default function FirstRun({ onDone }: Props) {
           {current === "vault" && (
             <fieldset>
               <legend>{t("onboard.vault.title")}</legend>
-              <label className="lumen-firstrun-choice wide" data-checked={folder === null}>
-                <input type="radio" name="fr-vault" checked={folder === null} onChange={() => void chooseBrowser()} />
+              <label className="lumen-firstrun-choice wide" data-checked={!restoring && folder === null} data-disabled={restoring}>
+                <input type="radio" name="fr-vault" checked={!restoring && folder === null} disabled={restoring} onChange={() => void chooseBrowser()} />
                 <span>
                   <strong>{t("onboard.vault.opfs")}</strong>
                   <small>{t("onboard.vault.opfs.desc")}</small>
                 </span>
               </label>
-              <label className="lumen-firstrun-choice wide" data-checked={folder !== null} data-disabled={!folderSupported()}>
-                <input type="radio" name="fr-vault" checked={folder !== null} disabled={!folderSupported()} onChange={() => void chooseFolder()} />
+              <label className="lumen-firstrun-choice wide" data-checked={!restoring && folder !== null} data-disabled={restoring || !folderSupported()}>
+                <input type="radio" name="fr-vault" checked={!restoring && folder !== null} disabled={restoring || !folderSupported()} onChange={() => void chooseFolder()} />
                 <span>
                   <strong>{t("onboard.vault.folder")}</strong>
                   <small>
@@ -227,6 +241,7 @@ export default function FirstRun({ onDone }: Props) {
                   </small>
                 </span>
               </label>
+              {restoring && <p className="lumen-firstrun-note">{t("vault.folder.restoring")}</p>}
               {folder !== null && disconnected && (
                 <button type="button" className="lumen-firstrun-btn" onClick={() => void reconnect()}>
                   {t("vault.folder.reconnect")}
@@ -311,7 +326,7 @@ export default function FirstRun({ onDone }: Props) {
               {t("onboard.back")}
             </button>
           )}
-          <button type="button" className="lumen-firstrun-btn primary" disabled={busy} onClick={() => (last ? void finish() : setStep(step + 1))}>
+          <button type="button" className="lumen-firstrun-btn primary" disabled={busy || (last && restoring)} onClick={() => (last ? void finish() : setStep(step + 1))}>
             {last ? t("onboard.finish") : t("onboard.next")}
           </button>
         </footer>
