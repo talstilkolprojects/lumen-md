@@ -40,12 +40,14 @@ export interface GateOptions {
 
 /** A fetch that asks once, then sends through the ledger. */
 export function gatedFetch(opts: GateOptions & { source: string }): typeof fetch {
-  let asked: boolean | null = null;
+  // The pending answer, not the answer: requests started together (the dialog's search runs its
+  // sources in parallel) share one question (review 20, RR20-2).
+  let asked: Promise<boolean> | null = null;
   const base = opts.base ?? ledgerFetch({ force: { category: "cloud-text", reason: opts.reason }, consent: true });
   return async (input, init) => {
     if (opts.enabled && !opts.enabled()) throw new SourceOffError(opts.source);
-    asked ??= await opts.confirm();
-    if (!asked) throw new DeclinedError();
+    asked ??= opts.confirm();
+    if (!(await asked)) throw new DeclinedError();
     return base(input, init);
   };
 }

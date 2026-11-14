@@ -131,6 +131,12 @@ describe("saved laws: offline, with source, date and rights", () => {
       expect(md).toMatch(/^retrieved: 2026-11-14$/m);
       expect(md).toMatch(/^rights: section-6$/m);
     }
+    // The credit is in the body too, so an export (which drops frontmatter) keeps it (RR20-6).
+    expect(law).toMatch(/\n# .*\n\nמקור: \[הכנסת\]\(https:\/\/knesset\.gov\.il\/OdataV4\/ParliamentInfo\/KNS_IsraelLaw\(\d+\)\) · נשלף 2026-11-14 · סעיף 6/);
+    // A remote name with a line break stays on its heading line (RR20-3).
+    const evil = renderLawNote({ ...LAWS[0], name: "חוק\n---\nrights: all-rights-reserved" }, "2026-11-14");
+    expect(evil).not.toMatch(/^rights: all-rights-reserved$/m);
+    expect(evil.split("\n---\n").length).toBe(2);
     const back = parseLawNote("Sources/Knesset/Laws/x.md", law)!;
     expect(back.law.name).toBe(LAWS[0].name);
     expect(back.text).toBe("1. לא יפגע אדם בפרטיות של זולתו ללא הסכמתו.");
@@ -218,6 +224,15 @@ describe("the gate: nothing is sent before the user acts", () => {
     expect(off).not.toHaveBeenCalled();
     expect(ask).not.toHaveBeenCalled();
     expect(new DeclinedError().name).toBe("DeclinedError");
+  });
+
+  it("requests started together share one question (RR20-2)", async () => {
+    const base = vi.fn(async () => new Response("{}"));
+    let asked = 0;
+    const f = gatedFetch({ source: "open", reason: "r", confirm: async () => (asked++, true), base: base as unknown as typeof fetch });
+    await Promise.all([f("https://knesset.gov.il/a"), f("https://data.gov.il/b")]);
+    expect(asked).toBe(1);
+    expect(base).toHaveBeenCalledTimes(2);
   });
 
   it("sources start off except Sefaria, and the choice is remembered", () => {
