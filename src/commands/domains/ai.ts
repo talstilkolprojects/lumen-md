@@ -243,6 +243,18 @@ export function buildAiControlCommands({ getEditorView }: CommandContext): Comma
       action: () => void import("../../ui/diagnosticsActions").then((m) => m.saveDiagnostics()),
     },
     {
+      // Plan 1.7 / W10.B20: the model credits and licences sit with the other
+      // help commands, not inside the voice section.
+      id: "help.credits",
+      label: t("cmd.help.credits"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: async () => {
+        const { openCredits } = await import("../../ui/CreditsDialog");
+        openCredits();
+      },
+    },
+    {
       // W4.26: local usage counters and the weekly report the user sends by hand.
       id: "help.usage",
       label: t("cmd.usage"),

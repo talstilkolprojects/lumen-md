@@ -1333,17 +1333,17 @@
     {
       "id": "DictaLM-3.0-24B",
       "kind": "llm",
-      "source": "https://huggingface.co/dicta-il",
-      "license": "not verified",
-      "class": "unknown",
-      "commercial": "unknown",
-      "attribution": "",
+      "source": "https://huggingface.co/dicta-il/DictaLM-3.0-24B-Thinking",
+      "license": "Apache-2.0",
+      "class": "allowed",
+      "commercial": "yes",
+      "attribution": "DictaLM 3.0 © Dicta, licensed under the Apache License 2.0.",
       "size": "~14 GB (q4), approximate",
       "runs": "ollama",
       "delivery": "none",
       "catalog": "not in a catalog: owner checks open in models/dictalm3.json (plan W2.4)",
-      "verified": false,
-      "notes": "DictaLM 3.0 24B, adapted from Mistral-Small-3.1 (arXiv 2602.02104). The weights' licence and the exact repository were not verified (Hugging Face unreachable from the build environment; the paper states no licence). Until the owner check in models/dictalm3.json is done it stays unknown and out of every catalog; `npm run dictalm3 -- eval` refuses it."
+      "verified": true,
+      "notes": "DictaLM 3.0 24B, adapted from Mistral-Small-3.1 (arXiv 2602.02104). Licence verified on the model card of dicta-il/DictaLM-3.0-24B-Thinking (\"License: apache-2.0\", tool calling stated), read 14.11.2026 (plan W10.B20). The repository Lumen evaluates and its revision are still owner checks in models/dictalm3.json, so it stays out of every catalog and `npm run dictalm3 -- eval` refuses it."
     },
     {
       "id": "ivrit-ai/whisper-large-v3-turbo",

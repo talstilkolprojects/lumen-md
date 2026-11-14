@@ -961,6 +961,12 @@
       "icon": "FileText"
     },
     {
+      "id": "help.credits",
+      "label": "Credits & model licences",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
       "id": "help.usage",
       "label": "Help: Usage on this device",
       "group": "Tools",
@@ -1266,12 +1272,6 @@
     {
       "id": "voice.transcribeFile",
       "label": "🎙 Transcribe an audio file (with timestamps)",
-      "group": "Tools",
-      "icon": "Sparkles"
-    },
-    {
-      "id": "help.credits",
-      "label": "Credits & model licences",
       "group": "Tools",
       "icon": "Sparkles"
     },
@@ -2999,6 +2999,12 @@
       "icon": "FileText"
     },
     {
+      "id": "help.credits",
+      "label": "Credits & model licences",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
       "id": "help.usage",
       "label": "Help: Usage on this device",
       "group": "Tools",
@@ -3374,12 +3380,6 @@
     {
       "id": "voice.transcribeFile",
       "label": "🎙 Transcribe an audio file (with timestamps)",
-      "group": "Tools",
-      "icon": "Sparkles"
-    },
-    {
-      "id": "help.credits",
-      "label": "Credits & model licences",
       "group": "Tools",
       "icon": "Sparkles"
     },
@@ -4307,6 +4307,7 @@
     "help.feedback",
     "help.open",
     "help.diagnostics",
+    "help.credits",
     "help.usage",
     "help.beta",
     "ai.policy",
@@ -4351,7 +4352,6 @@
     "voice.command",
     "voice.memo",
     "voice.transcribeFile",
-    "help.credits",
     "voice.meeting",
     "voice.meetingFile",
     "speakers.rename",
