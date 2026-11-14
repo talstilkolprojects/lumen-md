@@ -2441,6 +2441,11 @@
       "vars": []
     },
     {
+      "key": "credits.req.ccBySa",
+      "en": "CC BY-SA 4.0: the creator is credited and the licence is linked; modified versions (changed weights or data) are shared under the same licence and are downloaded only when you ask. An unmodified file may ship with the app, with this credit.",
+      "vars": []
+    },
+    {
       "key": "credits.req.gemma",
       "en": "Gemma Terms of Use: the terms come with the model; Google's Prohibited Use Policy applies.",
       "vars": []
