@@ -210,7 +210,8 @@ function exec({ cmd, args, env: extra = {} }, log) {
   return new Promise((done) => {
     log.write(`\n$ ${cmd} ${args.join(" ")}\n`);
     console.log(`  $ ${cmd} ${args.join(" ")}`);
-    child = spawn(cmd, args, { cwd: root, env: { ...process.env, ...extra }, stdio: ["ignore", "pipe", "pipe"], shell: platform() === "win32" });
+    // W7.15: every step pins speculative decoding off (draft_num_predict 0), so scores are reproducible.
+    child = spawn(cmd, args, { cwd: root, env: { ...process.env, LUMEN_OLLAMA_REPRODUCIBLE: "1", ...extra }, stdio: ["ignore", "pipe", "pipe"], shell: platform() === "win32" });
     const tee = (chunk) => {
       process.stdout.write(chunk);
       log.write(chunk);
@@ -310,7 +311,7 @@ const report = seal(
     writtenAt: new Date().toISOString(),
     git: { commit: git(["rev-parse", "HEAD"]).stdout?.trim() || null, branch: git(["rev-parse", "--abbrev-ref", "HEAD"]).stdout?.trim() || null, dirty: !!git(["status", "--porcelain", "--untracked-files=no"]).stdout?.trim() },
     host: { platform: platform(), arch: arch(), cpus: cpus().length, ramGB: Math.round(totalmem() / 1e9), gpu: env.gpu, node: process.versions.node },
-    ollama: { url, version: ollama.version, fake: ollama.fake },
+    ollama: { url, version: ollama.version, fake: ollama.fake, draft_num_predict: 0 },
     models: modelDigests,
     declaredMinutes: declaredMinutes(selected),
     actualMinutes: Math.round(selected.reduce((n, s) => n + (state.steps[s.id]?.ms ?? 0), 0) / 6000) / 10,

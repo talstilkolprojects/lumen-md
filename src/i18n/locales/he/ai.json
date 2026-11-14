@@ -69,6 +69,7 @@
   "ai.doctor.check.ollamaVersion": "גרסת Ollama (0.5 ומעלה לפלט מובנה)",
   "ai.doctor.check.policy": "מדיניות AI ומנוע מועדף",
   "ai.doctor.check.research": "שירות מחקר (חיפוש ברשת וחילוץ דפים)",
+  "ai.doctor.check.speculative": "פענוח ספקולטיבי (Ollama 0.34 ומעלה)",
   "ai.doctor.check.spellEn": "איות אנגלית במכשיר",
   "ai.doctor.check.spellHe": "מילון איות עברי",
   "ai.doctor.check.storage": "אחסון הכספת: מכסה ועמידות",
