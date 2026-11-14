@@ -439,6 +439,27 @@
       "icon": "Save"
     },
     {
+      "id": "vault.toFolder",
+      "label": "Move the vault to a folder…",
+      "group": "File",
+      "hint": "Copies every note to a folder on this computer, checks each file byte for byte, then works there. Nothing is deleted.",
+      "icon": "FolderOpen"
+    },
+    {
+      "id": "vault.openFolder",
+      "label": "Open a folder as the vault…",
+      "group": "File",
+      "hint": "Work in an existing folder (for example an Obsidian vault) without copying. Notes in browser storage stay where they are.",
+      "icon": "FolderOpen"
+    },
+    {
+      "id": "vault.toBrowser",
+      "label": "Move the vault back to browser storage",
+      "group": "File",
+      "hint": "Copies every note from the folder into the browser's private storage, checks it, then works there. The folder is not changed.",
+      "icon": "Save"
+    },
+    {
       "id": "file.trash",
       "label": "Trash…",
       "group": "Tools",
@@ -1493,6 +1514,27 @@
       "icon": "Save"
     },
     {
+      "id": "vault.toFolder",
+      "label": "Move the vault to a folder…",
+      "group": "File",
+      "hint": "Copies every note to a folder on this computer, checks each file byte for byte, then works there. Nothing is deleted.",
+      "icon": "FolderOpen"
+    },
+    {
+      "id": "vault.openFolder",
+      "label": "Open a folder as the vault…",
+      "group": "File",
+      "hint": "Work in an existing folder (for example an Obsidian vault) without copying. Notes in browser storage stay where they are.",
+      "icon": "FolderOpen"
+    },
+    {
+      "id": "vault.toBrowser",
+      "label": "Move the vault back to browser storage",
+      "group": "File",
+      "hint": "Copies every note from the folder into the browser's private storage, checks it, then works there. The folder is not changed.",
+      "icon": "Save"
+    },
+    {
       "id": "file.trash",
       "label": "Trash…",
       "group": "Tools",
@@ -2248,6 +2290,9 @@
     "spell.hebrewDictionary",
     "vault.export",
     "vault.import",
+    "vault.toFolder",
+    "vault.openFolder",
+    "vault.toBrowser",
     "file.trash",
     "ai.cancel",
     "note.read",

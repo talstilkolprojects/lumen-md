@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-10-18T04:31:22.318Z",
+  "generated_at": "2026-11-14T19:39:45.773Z",
   "source": "src/i18n/index.ts (en bundle)",
-  "count": 1426,
+  "count": 1452,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -1549,6 +1549,162 @@
       "vars": [
         "error"
       ]
+    },
+    {
+      "key": "cmd.vault.toFolder",
+      "en": "Move the vault to a folder…",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.toFolder.hint",
+      "en": "Copies every note to a folder on this computer, checks each file byte for byte, then works there. Nothing is deleted.",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.openFolder",
+      "en": "Open a folder as the vault…",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.openFolder.hint",
+      "en": "Work in an existing folder (for example an Obsidian vault) without copying. Notes in browser storage stay where they are.",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.toBrowser",
+      "en": "Move the vault back to browser storage",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.toBrowser.hint",
+      "en": "Copies every note from the folder into the browser's private storage, checks it, then works there. The folder is not changed.",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.unsupported",
+      "en": "This browser can't open a folder on your computer, so your notes stay in the browser's private storage (OPFS). To keep the vault in a folder, use Chrome or Edge, or the desktop app.",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.permissionDenied",
+      "en": "Lumen didn't get permission to edit the folder “{folder}”.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.folder.moving",
+      "en": "Moving the vault… {done} of {total} files",
+      "vars": [
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "vault.folder.moved",
+      "en": "The vault is now in the folder “{folder}”: {n} files copied and checked. Your notes in browser storage were not deleted.",
+      "vars": [
+        "folder",
+        "n"
+      ]
+    },
+    {
+      "key": "vault.folder.movedBack",
+      "en": "The vault is back in browser storage: {n} files copied and checked. The folder “{folder}” was not changed.",
+      "vars": [
+        "n",
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.folder.lateCopies",
+      "en": "{n} note(s) were saved in the previous location while the move was finishing. Their newer text is in the vault now, as a conflict copy next to the note where needed (first: “{path}”).",
+      "vars": [
+        "n",
+        "path"
+      ]
+    },
+    {
+      "key": "vault.folder.opened",
+      "en": "Lumen now works in the folder “{folder}”. Notes in browser storage stay where they are.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.folder.conflict",
+      "en": "Not moved: {n} files in “{folder}” already exist with different content (for example {path}). Nothing was changed.",
+      "vars": [
+        "n",
+        "folder",
+        "path"
+      ]
+    },
+    {
+      "key": "vault.folder.failed",
+      "en": "Moving the vault stopped: {error}. Nothing was deleted, and you can resume.",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "vault.folder.alreadyBrowser",
+      "en": "The vault is already in browser storage.",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.reconnectBody",
+      "en": "Your vault is the folder “{folder}”. Lumen needs your permission to open it again.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.folder.reconnect",
+      "en": "Reconnect folder",
+      "vars": []
+    },
+    {
+      "key": "vault.boot.failed",
+      "en": "Your notes can't be opened yet: part of Lumen didn't load (are you offline?).",
+      "vars": []
+    },
+    {
+      "key": "vault.boot.retry",
+      "en": "Try again",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.useBrowser",
+      "en": "Use browser storage",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.interrupted",
+      "en": "Moving the vault to “{folder}” was interrupted. Nothing was deleted.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.folder.resume",
+      "en": "Resume move",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.cancelMove",
+      "en": "Cancel move",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.browserStorage",
+      "en": "browser storage",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.restoring",
+      "en": "Opening the vault…",
+      "vars": []
     },
     {
       "key": "vault.import.what",

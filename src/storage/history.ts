@@ -15,6 +15,15 @@
  * stored twice in a row; each document keeps its newest 100 snapshots; when
  * the browser's quota runs out the oldest snapshots of all documents go
  * first and the write is retried once.
+ *
+ * History belongs to a vault (2.80, Codex P2 on #235): two vaults can both
+ * have `notes/a.md`, and one must never see or restore the other's versions.
+ * Every row is filed under the active vault's identity (`setHistoryVault`,
+ * set by ./vault/location.ts on each switch). The first vault this code ever
+ * saw keeps the empty identity, so the rows written before vaults had one
+ * stay with it, unchanged; every other vault's rows are prefixed with
+ * `lumen-vault:<id>|`. While no vault is open (start-up still restoring)
+ * nothing is recorded and nothing is listed.
  */
 
 import { log } from "../lib/logger";
@@ -28,6 +37,8 @@ export interface Snapshot {
   content: string;
   timestamp: number;
   reason?: SnapshotReason;
+  /** The vault identity it was listed from (set by `listSnapshots`, not stored). */
+  vault?: string;
 }
 
 const DB_NAME = "lumen-history";
@@ -35,6 +46,29 @@ const STORE = "snapshots";
 export const MAX_PER_DOC = 100;
 export const AUTOSAVE_EVERY_MS = 2 * 60_000;
 const lastAutosave = new Map<string, number>();
+
+/** The active vault's identity: "" for the first (legacy) vault, null while none is open. */
+let vault: string | null = "";
+const VAULT_PREFIX = "lumen-vault:";
+
+/** Which vault's history is read and written from now on (null: none is open). */
+export function setHistoryVault(id: string | null): void {
+  vault = id;
+}
+export function getHistoryVault(): string | null {
+  return vault;
+}
+
+/** The stored row name of `name` in vault `v`. */
+function scoped(name: string, v: string): string {
+  return v ? `${VAULT_PREFIX}${v}|${name}` : name;
+}
+
+/** `name` back out of a stored row name, when it belongs to vault `v`. */
+function unscoped(stored: string, v: string): string | null {
+  if (v) return stored.startsWith(`${VAULT_PREFIX}${v}|`) ? stored.slice(VAULT_PREFIX.length + v.length + 1) : null;
+  return stored.startsWith(VAULT_PREFIX) ? null : stored;
+}
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -91,25 +125,31 @@ export function isQuotaError(e: unknown): boolean {
   return name === "QuotaExceededError" || name === "NS_ERROR_DOM_QUOTA_REACHED";
 }
 
-/** Snapshots of one document, newest first. */
+/** Snapshots of one document of the active vault, newest first. */
 export async function listSnapshots(name: string): Promise<Snapshot[]> {
+  const v = vault;
+  if (v === null) return [];
   const db = await openDB();
   const tx = db.transaction(STORE, "readonly");
-  const rows = (await promisify(tx.objectStore(STORE).index("name").getAll(name))) as Snapshot[];
-  return rows.sort((a, b) => b.timestamp - a.timestamp || b.id - a.id);
+  const rows = (await promisify(tx.objectStore(STORE).index("name").getAll(scoped(name, v)))) as Snapshot[];
+  return rows.map((r) => ({ ...r, name, vault: v })).sort((a, b) => b.timestamp - a.timestamp || b.id - a.id);
 }
 
-/** Every document that has history, with its newest snapshot time. */
+/** Every document of the active vault that has history, with its newest snapshot time. */
 export async function listDocuments(): Promise<Array<{ name: string; latest: number; count: number }>> {
+  const v = vault;
+  if (v === null) return [];
   const db = await openDB();
   const tx = db.transaction(STORE, "readonly");
   const rows = (await promisify(tx.objectStore(STORE).getAll())) as Snapshot[];
   const by = new Map<string, { name: string; latest: number; count: number }>();
   for (const r of rows) {
-    const e = by.get(r.name) ?? { name: r.name, latest: 0, count: 0 };
+    const name = unscoped(r.name, v);
+    if (name === null) continue;
+    const e = by.get(name) ?? { name, latest: 0, count: 0 };
     e.latest = Math.max(e.latest, r.timestamp);
     e.count++;
-    by.set(r.name, e);
+    by.set(name, e);
   }
   return [...by.values()].sort((a, b) => b.latest - a.latest);
 }
@@ -156,10 +196,19 @@ export function onHistoryQuota(fn: QuotaListener): () => void {
  * Record a snapshot. Skips content identical to the document's newest
  * snapshot. On a quota error, prunes the oldest quarter and retries once;
  * if that fails too, listeners are told and the error is rethrown.
- * Returns whether a snapshot was written.
+ * Returns whether a snapshot was written. `inVault` is the vault the text
+ * came from (default: the active one), for a caller that captured it before
+ * a switch could happen.
  */
-export async function recordSnapshot(name: string, content: string, reason: SnapshotReason = "autosave", now = Date.now()): Promise<boolean> {
-  if (!name || typeof indexedDB === "undefined") return false;
+export async function recordSnapshot(
+  name: string,
+  content: string,
+  reason: SnapshotReason = "autosave",
+  now = Date.now(),
+  inVault: string | null = vault,
+): Promise<boolean> {
+  if (!name || inVault === null || typeof indexedDB === "undefined") return false;
+  name = scoped(name, inVault);
   // Typing autosaves every pause; keep one autosave snapshot per document
   // per AUTOSAVE_EVERY_MS so a document's 100 slots cover hours, not
   // minutes. Explicit saves, closes, restores and backups always record.
@@ -183,12 +232,14 @@ export async function recordSnapshot(name: string, content: string, reason: Snap
   }
 }
 
-/** Remove one document's history (used when the note is deleted for good). */
+/** Remove one document's history in the active vault (used when the note is deleted for good). */
 export async function clearHistory(name: string): Promise<void> {
+  const v = vault;
+  if (v === null) return;
   const db = await openDB();
   const tx = db.transaction(STORE, "readwrite");
   const store = tx.objectStore(STORE);
-  const keys = (await promisify(store.index("name").getAllKeys(name))) as IDBValidKey[];
+  const keys = (await promisify(store.index("name").getAllKeys(scoped(name, v)))) as IDBValidKey[];
   for (const k of keys) store.delete(k);
   await done(tx);
 }
@@ -197,4 +248,5 @@ export async function clearHistory(name: string): Promise<void> {
 export function __resetHistoryDb(): void {
   dbPromise = null;
   lastAutosave.clear();
+  vault = "";
 }

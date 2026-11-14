@@ -14,6 +14,7 @@ import { buildAltTextCommands, buildDocumentAgentCommands, buildGrammarCommands,
 import { buildBatchCommands } from "./batch";
 import { buildResearchCommands } from "./research";
 import { buildDigestCommands, buildEncryptionCommands, buildVaultDoctorCommands, buildVaultTransferCommands } from "./vault";
+import { buildVaultLocationCommands } from "./vaultLocation";
 import { buildReadAloudCommands, buildVoiceCommands } from "./voice";
 import { buildGitCommands } from "./git";
 import { buildCollabCommands, buildCommentCommands } from "./collab";
@@ -34,6 +35,7 @@ export const COMMAND_SECTIONS: ReadonlyArray<(ctx: CommandContext) => Command[]>
   buildAiModelCommands,
   buildHebrewDictionaryCommands,
   buildVaultTransferCommands,
+  buildVaultLocationCommands,
   buildTrashCommands,
   buildAiCancelCommands,
   buildReadAloudCommands,

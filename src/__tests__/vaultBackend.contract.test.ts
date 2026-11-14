@@ -17,6 +17,7 @@ import {
   type VaultBackend,
   type VaultEvent,
 } from "../storage/vault";
+import { createFolderBackend } from "../storage/vault/location";
 
 const backends: [string, () => VaultBackend][] = [
   [
@@ -32,6 +33,10 @@ const backends: [string, () => VaultBackend][] = [
       const dir = new FakeDir("picked");
       return createDirectoryHandleBackend({ id: "folder", root: async () => dir as unknown as FileSystemDirectoryHandle });
     },
+  ],
+  [
+    "folder vault (plan 4.2, fake picked folder)",
+    () => createFolderBackend(new FakeDir("My Vault") as unknown as FileSystemDirectoryHandle),
   ],
   ["memory", () => createMemoryBackend()],
 ];
