@@ -10,7 +10,9 @@
  *   flake    e2e ×5 on chromium, firefox and webkit (npm run e2e:flake -- --all --times 5)
  *   perf     build + bundle budget, the @nightly perf project, Lighthouse (when installed)
  *   triage   review triage over the open PRs, and the 0.14 count over the first 20 PRs
- *   weekly   dependency health (audit, outdated, licences) and mutation scores — Sundays
+ *   weekly   dependency health (audit, outdated, licences) and mutation scores — Sundays:
+ *            the critical modules under real vitest with a receipt (W6.16) where the
+ *            branch has scripts/mutation/check.mjs, else npm run test:mutation
  *
  *   npm run nightly                          # what is due today: flake, perf, triage (+ weekly on Sunday)
  *   npm run nightly -- --only triage,weekly  # these kinds only
@@ -53,8 +55,15 @@ export function reportName(dir, date, kind, exists = existsSync) {
   }
 }
 
-/** The steps of one kind, as { id, cmd, timeoutMin, optional? }. `has` says whether an npm script exists. */
-export function stepsFor(kind, has) {
+/** W6.16: the floor every critical module must reach in the weekly real run (targets.json critical.min). */
+export const MUTATION_MIN = 80;
+export const MUTATION_RECEIPT = "scripts/mutation/receipt.json";
+
+/**
+ * The steps of one kind, as { id, cmd, timeoutMin, optional? }. `has` says
+ * whether an npm script exists, `exists` whether a file of the checkout does.
+ */
+export function stepsFor(kind, has, exists = (f) => existsSync(join(root, f))) {
   switch (kind) {
     case "flake":
       return [{ id: "e2e-flake", cmd: ["npm", "run", "e2e:flake", "--", "--all", "--times", String(FLAKE_TIMES)], timeoutMin: 300 }];
@@ -70,11 +79,33 @@ export function stepsFor(kind, has) {
     case "weekly":
       return [
         { id: "weekly-health", cmd: ["node", "scripts/nightly/weekly-health.mjs"], timeoutMin: 30 },
-        ...(has("test:mutation") ? [{ id: "mutation", cmd: ["npm", "run", "test:mutation"], timeoutMin: 240 }] : []),
+        // W6.16: the critical set under real vitest (the default runner), its receipt
+        // rewritten, then the preview build's own check of that receipt.
+        ...(exists("scripts/mutation/check.mjs")
+          ? [
+              { id: "mutation-critical", cmd: ["node", "scripts/mutation/run.mjs", "--critical", "--receipt", "--min", String(MUTATION_MIN)], timeoutMin: 240 },
+              { id: "mutation-check", cmd: ["node", "scripts/mutation/check.mjs"], timeoutMin: 5 },
+            ]
+          : has("test:mutation")
+            ? [{ id: "mutation", cmd: ["npm", "run", "test:mutation"], timeoutMin: 240 }]
+            : []),
       ];
     default:
       throw new Error(`unknown kind ${kind}`);
   }
+}
+
+/**
+ * The mutation receipt as a weekly report carries it (W6.16): per critical
+ * module its score, the runner, and the sha256 of the source and the tests it
+ * was measured on. The sealed report is the signed copy.
+ */
+export function receiptForReport(receipt, min = MUTATION_MIN) {
+  if (!receipt?.modules) return null;
+  return {
+    min,
+    modules: Object.entries(receipt.modules).map(([module, m]) => ({ module, score: m.score ?? null, runner: m.runner ?? null, sha256: m.sha256 ?? null, tests: m.tests ?? null })),
+  };
 }
 
 /** flake-results/<browser>/summary.json → the shape status.mjs reads. */
@@ -159,7 +190,7 @@ function writeStatus(privateKeyPem) {
   const status = seal({ kind: "status", writtenAt: new Date().toISOString(), commit: git(["rev-parse", "HEAD"]), plan: planStatus(reports, triage?.metric ?? null) }, privateKeyPem);
   writeFileSync(join(NIGHTLY_DIR, "status.json"), JSON.stringify(status, null, 2) + "\n");
   const p = status.plan;
-  console.log(`status: 0.5 ${p["0.5"].nights}/${p["0.5"].needed} clean nights · 0.11 ${p["0.11"].ran}/${p["0.11"].needed} scheduled kinds · 0.14 ${p["0.14"] ? `${p["0.14"].remoteFailures} preview failures in ${p["0.14"].prs}/${p["0.14"].of} PRs` : "not counted yet"}`);
+  console.log(`status: 0.5 ${p["0.5"].nights}/${p["0.5"].needed} clean nights · 0.11 ${p["0.11"].ran}/${p["0.11"].needed} scheduled kinds · 0.14 ${p["0.14"] ? `${p["0.14"].remoteFailures} preview failures in ${p["0.14"].prs}/${p["0.14"].of} PRs` : "not counted yet"} · W6.16 ${p["W6.16"].weeks}/${p["W6.16"].needed} clean mutation weeks`);
 }
 
 function main() {
@@ -241,6 +272,12 @@ function main() {
       }
       const m = join(root, "reports", "mutation", "report.json");
       if (existsSync(m)) report.mutation = JSON.parse(readFileSync(m, "utf8")).map((r) => ({ module: r.module, score: r.score ?? null, error: r.error }));
+      if (steps.some((s) => s.id === "mutation-critical")) {
+        const rf = join(root, MUTATION_RECEIPT);
+        report.mutationReceipt = existsSync(rf) ? receiptForReport(JSON.parse(readFileSync(rf, "utf8"))) : null;
+        // The signed report keeps the receipt; the clone goes back to the committed one so the next pull applies.
+        if (git(["status", "--porcelain", "--", MUTATION_RECEIPT])) git(["checkout", "--", MUTATION_RECEIPT]);
+      }
     }
     const name = reportName(NIGHTLY_DIR, new Date(startedAt), kind);
     writeFileSync(join(NIGHTLY_DIR, name), JSON.stringify(seal(report, privateKeyPem), null, 2) + "\n");

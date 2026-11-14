@@ -18,7 +18,7 @@ npm run nightly -- --dry-run     # print the plan, run nothing
 | `flake` | every night | `npm run e2e:flake -- --all --times 5` (chromium, firefox, webkit, 5 runs each, no retries) |
 | `perf` | every night | build, bundle budget, the `@nightly` perf project, Lighthouse when it is installed |
 | `triage` | every night | review triage of the open PRs, and the 0.14 count over the first 20 PRs since 12.11.2026 |
-| `weekly` | Sundays (UTC) | dependency health (audit, outdated, licences), and mutation scores when `test:mutation` is there |
+| `weekly` | Sundays (UTC) | dependency health (audit, outdated, licences), and mutation scores: on a branch with `scripts/mutation/check.mjs`, the critical modules under real vitest (`run.mjs --critical --receipt --min 80`, then `mutation:check`), otherwise `test:mutation` |
 
 `--only flake,perf` picks kinds. The scheduler passes `--scheduled`, which
 marks the reports as scheduled. Plan 0.11 counts only those.
@@ -59,6 +59,13 @@ signature fail.
   `ci:local`, so each such failure is one `ci:local` would have caught,
   except `docs:sync`, which `ci:local` doesn't run. `verify/*` integration
   branches aren't counted.
+- **W6.16**: how many consecutive weeks had a scheduled weekly run in which
+  every critical module scored at least 80 under real vitest (not the
+  offline shim), and the receipt check passed (4 are needed). The weekly
+  report carries each module's score with the sha256 of its source and
+  tests, so the signed report is the receipt. The run then puts
+  `scripts/mutation/receipt.json` back to the committed version, so the
+  clone still pulls cleanly.
 
 `--commit` commits `reports/nightly/` with a `[skip ci]` message. It never
 pushes. A commit that changes only `reports/` doesn't start a Vercel build

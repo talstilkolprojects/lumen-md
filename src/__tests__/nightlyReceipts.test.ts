@@ -7,9 +7,9 @@ import { join } from "node:path";
 // @ts-expect-error — plain .mjs module without type declarations
 import { canonical, check, loadOrCreateKey, seal } from "../../scripts/nightly/receipt.mjs";
 // @ts-expect-error — plain .mjs module without type declarations
-import { ciLocalMetric, cleanNight, flakeStreak, planStatus, scheduledKinds } from "../../scripts/nightly/status.mjs";
+import { ciLocalMetric, cleanMutationWeek, cleanNight, flakeStreak, mutationStreak, planStatus, scheduledKinds, weekOf } from "../../scripts/nightly/status.mjs";
 // @ts-expect-error — plain .mjs script without type declarations
-import { collectFlake, fetchMetricInputs, kindsDue, perfAnnotations, reportName, stepsFor } from "../../scripts/nightly/run.mjs";
+import { collectFlake, fetchMetricInputs, kindsDue, perfAnnotations, receiptForReport, reportName, stepsFor } from "../../scripts/nightly/run.mjs";
 
 type Report = Record<string, unknown> & { receipt?: Record<string, string> };
 const keys = () => {
@@ -141,7 +141,14 @@ describe("the nightly runner", () => {
     expect(stepsFor("flake", none).map((s: { cmd: string[] }) => s.cmd.join(" "))).toEqual(["npm run e2e:flake -- --all --times 5"]);
     expect(stepsFor("perf", none).map((s: { id: string }) => s.id)).toEqual(["build", "budget", "perf-e2e"]);
     expect(stepsFor("perf", (s: string) => s === "lighthouse").map((s: { id: string }) => s.id)).toContain("lighthouse");
-    expect(stepsFor("weekly", (s: string) => s === "test:mutation").map((s: { id: string }) => s.id)).toEqual(["weekly-health", "mutation"]);
+    expect(stepsFor("weekly", (s: string) => s === "test:mutation", () => false).map((s: { id: string }) => s.id)).toEqual(["weekly-health", "mutation"]);
+    // W6.16: where the branch has the receipt check, the critical set runs under real vitest at the floor, then the check.
+    const weekly = stepsFor("weekly", (s: string) => s === "test:mutation", (f: string) => f === "scripts/mutation/check.mjs");
+    expect(weekly.map((s: { cmd: string[] }) => s.cmd.join(" "))).toEqual([
+      "node scripts/nightly/weekly-health.mjs",
+      "node scripts/mutation/run.mjs --critical --receipt --min 80",
+      "node scripts/mutation/check.mjs",
+    ]);
     expect(() => stepsFor("nope", none)).toThrow(/unknown kind/);
   });
 
@@ -160,5 +167,45 @@ describe("the nightly runner", () => {
     }
     const pw = { suites: [{ specs: [{ tests: [{ annotations: [], results: [{ annotations: [{ type: "perf", description: "open: 640 ms" }, { type: "other", description: "x" }] }] }] }], suites: [{ specs: [{ tests: [{ annotations: [{ type: "perf", description: "search: 40 ms" }], results: [] }] }] }] }] };
     expect(perfAnnotations(pw)).toEqual(["open: 640 ms", "search: 40 ms"]);
+  });
+});
+
+describe("W6.16: four weeks of real mutation receipts", () => {
+  const receipt = (score: number, runner = "vitest") => ({ modules: { "src/sync/e2ee/age.ts": { score: 94, runner, sha256: "a", tests: "b" }, "src/sync/e2ee/keyring.ts": { score, runner, sha256: "c", tests: "d" } } });
+  const weekly = (startedAt: string, score = 92.5, runner = "vitest", status = 0) => ({
+    kind: "weekly",
+    trigger: "schedule",
+    startedAt,
+    steps: [{ id: "weekly-health", status: 0 }, { id: "mutation-critical", status }, { id: "mutation-check", status: 0 }],
+    mutationReceipt: receiptForReport(receipt(score, runner)),
+  });
+
+  it("the report carries each module's score, runner and hashes", () => {
+    expect(receiptForReport(receipt(92.5))).toEqual({
+      min: 80,
+      modules: [
+        { module: "src/sync/e2ee/age.ts", score: 94, runner: "vitest", sha256: "a", tests: "b" },
+        { module: "src/sync/e2ee/keyring.ts", score: 92.5, runner: "vitest", sha256: "c", tests: "d" },
+      ],
+    });
+    expect(receiptForReport(null)).toBe(null);
+  });
+
+  it("a week counts only when every critical module is at 80 or more under real vitest, the run and the check passed, and it was scheduled", () => {
+    expect(cleanMutationWeek(weekly("2026-11-15T03:00:00Z"))).toBe(true);
+    expect(cleanMutationWeek(weekly("2026-11-15T03:00:00Z", 79.9))).toBe(false);
+    expect(cleanMutationWeek(weekly("2026-11-15T03:00:00Z", 92.5, "shim"))).toBe(false);
+    expect(cleanMutationWeek(weekly("2026-11-15T03:00:00Z", 92.5, "vitest", 1))).toBe(false);
+    expect(cleanMutationWeek({ ...weekly("2026-11-15T03:00:00Z"), trigger: "manual" })).toBe(false);
+  });
+
+  it("counts consecutive ISO weeks; a gap or a bad week breaks the streak", () => {
+    expect(weekOf("2026-11-15T03:00:00Z")).toBe("2026-11-09"); // a Sunday belongs to the week of Monday 9.11
+    const four = ["2026-11-15", "2026-11-22", "2026-11-29", "2026-12-06"].map((d) => weekly(`${d}T03:00:00Z`));
+    expect(mutationStreak(four)).toMatchObject({ weeks: 4 });
+    expect(planStatus(four)["W6.16"]).toMatchObject({ weeks: 4, needed: 4, met: true });
+    expect(mutationStreak([four[0], four[1], four[3]]).weeks).toBe(1);
+    expect(mutationStreak([...four.slice(0, 3), weekly("2026-12-06T03:00:00Z", 70)]).weeks).toBe(0);
+    expect(planStatus([])["W6.16"]).toMatchObject({ weeks: 0, met: false });
   });
 });
