@@ -35,6 +35,10 @@ COLLAB_MAX_ROOMS = "20000"
 COLLAB_MAX_STORED_BYTES = "4000000000"
 COLLAB_STORED_ROOMS_PER_ADDRESS = "50"
 COLLAB_STORED_ROOMS_PER_48 = "50"
+# Review 11 (RR11-469-1): bytes per address and per /48, 1/200 of the store, so 20
+# addresses can't hold it; and only a return by someone other than the creator
+# protects a room. Several small rooms may free one room's share together.
+COLLAB_STORED_BYTES_PER_ADDRESS = "20000000"
 COLLAB_PROTECT_DAYS = "14"
 
 [[durable_objects.bindings]]

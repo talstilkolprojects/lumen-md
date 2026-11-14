@@ -12,14 +12,18 @@
  *                                      Workers Free plan's 5 GB of Durable Object storage)
  *   - rooms per address                COLLAB_STORED_ROOMS_PER_ADDRESS (default 50)
  *   - rooms per IPv6 /48               COLLAB_STORED_ROOMS_PER_48    (default: the same; review 8)
- * When the rooms or the bytes are full, a new room may take the place of one
- * stored room that nobody came back to: the smallest that frees one room's
- * share of the bytes, then the least recently written (review 8: only for an
- * attempt every other limit lets in, and one room for one new room; when no
- * room is enough alone, none is evicted and the attempt is refused, and it
- * still counts for the client). A room someone joined again (a second person,
- * or the same one later) within COLLAB_PROTECT_DAYS (default 14) is never
- * evicted, and neither is a room someone who sent its token is connected to.
+ *   - bytes per address and per /48    COLLAB_STORED_BYTES_PER_ADDRESS (default 1/200 of the store; review 11)
+ * Review 11 (RR11-469-1): a return protects a room only when it comes from
+ * someone other than its creator (another owner value), and several small
+ * rooms may free one room's share together.
+ * When the rooms or the bytes are full, a new room may take the place of
+ * stored rooms that nobody came back to: the smallest that frees one room's
+ * share of the bytes, else a few smaller ones that free it together (review
+ * 8 and 11: only for an attempt every other limit lets in; when they can't,
+ * none is evicted and the attempt is refused, and it still counts for the
+ * client). A room someone other than its creator joined again within
+ * COLLAB_PROTECT_DAYS (default 14) is never evicted, and neither is a room
+ * someone who sent its token is connected to.
  *
  * The day is the Quota's own (review 6, RR6-469-1): a room passes ids that do
  * not depend on the day, and the Quota turns them into the day's bucket
@@ -156,6 +160,8 @@ export function quotaLimits(env = {}) {
     storedPerAddress: Math.max(1, Math.floor(num(env.COLLAB_STORED_ROOMS_PER_ADDRESS, 50))),
     // A /48 is one site as a rule (RFC 6177): the same cap as one address (review 8, RR8-469-4).
     storedPer48: Math.max(1, Math.floor(num(env.COLLAB_STORED_ROOMS_PER_48, num(env.COLLAB_STORED_ROOMS_PER_ADDRESS, 50)))),
+    // Bytes per address and per /48 (review 11, RR11-469-1): 1/200 of the store, so it takes 200 owners to fill it.
+    storedBytesPerAddress: Math.max(1, Math.floor(num(env.COLLAB_STORED_BYTES_PER_ADDRESS, num(env.COLLAB_MAX_STORED_BYTES, 4_000_000_000) / 200))),
     protectMs: Math.max(0, num(env.COLLAB_PROTECT_DAYS, 14)) * 86_400_000,
   };
 }
@@ -168,7 +174,7 @@ export const storeFull = (counts, limits) => counts.stored >= limits.maxRooms ||
  * {day, rooms, stored, bytes, buckets: Map, owners: Map}. `day` is the
  * Quota's own; the counts never go back to an earlier day. Returns null to
  * admit (and counts it), or the reason: "rooms-full" | "address-stored" |
- * "prefix-stored" | "day" | "address" | "prefix".
+ * "prefix-stored" | "address-bytes" | "prefix-bytes" | "day" | "address" | "prefix".
  */
 export function admit(counts, keys, day, limits, owner = null, owner48 = null) {
   if (day > counts.day) {
@@ -179,6 +185,9 @@ export function admit(counts, keys, day, limits, owner = null, owner48 = null) {
   if (storeFull(counts, limits)) return "rooms-full";
   if (owner !== null && (counts.owners?.get(owner) ?? 0) >= limits.storedPerAddress) return "address-stored";
   if (owner48 !== null && (counts.owners48?.get(owner48) ?? 0) >= (limits.storedPer48 ?? limits.storedPerAddress)) return "prefix-stored";
+  const byteCap = limits.storedBytesPerAddress ?? Infinity;
+  if (owner !== null && (counts.ownerBytes?.get(owner) ?? 0) >= byteCap) return "address-bytes";
+  if (owner48 !== null && (counts.owner48Bytes?.get(owner48) ?? 0) >= byteCap) return "prefix-bytes";
   if (counts.rooms >= limits.perDay) return "day";
   for (const k of keys) {
     const cap = k.startsWith("p:") ? limits.per48 : limits.perAddress;
@@ -230,13 +239,27 @@ export function needed(counts, limits) {
   return { rooms: counts.stored >= limits.maxRooms ? 1 : 0, bytes: over > 0 ? Math.min(over, share) : 0 };
 }
 
+/** At most this many rooms make way for one new room. */
+export const MAX_PLAN_ROOMS = 32;
+
 /**
- * The one stored room, of `order` (eviction order), that frees `need`: the
- * first that is big enough, so the smallest that is (review 8, RR8-469-1).
- * At most one room makes way for one new room; null when none is enough
- * alone, and then nothing is evicted.
+ * The rooms, of `order` (eviction order), that free `need` for one new room
+ * (review 8, RR8-469-1; review 11, RR11-469-1): the smallest one that is
+ * enough alone; else the smallest ones, each smaller than that, until they
+ * are enough (at most MAX_PLAN_ROOMS, and under two shares in all); null
+ * when neither works, and then nothing is evicted.
  */
 export function evictionPlan(rooms, order, need) {
-  const one = order.find((id) => (rooms.get(id)?.b ?? 0) >= need.bytes);
-  return one === undefined ? null : [one];
+  const size = (id) => rooms.get(id)?.b ?? 0;
+  const one = order.find((id) => size(id) >= need.bytes);
+  if (one !== undefined) return [one];
+  const plan = [];
+  let freed = 0;
+  for (const id of [...order].sort((x, y) => size(x) - size(y))) {
+    if (plan.length >= MAX_PLAN_ROOMS) break;
+    plan.push(id);
+    freed += size(id);
+    if (freed >= need.bytes && plan.length >= need.rooms) return plan;
+  }
+  return null;
 }
