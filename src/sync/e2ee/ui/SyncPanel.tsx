@@ -13,6 +13,7 @@ import { PassphraseForm } from "./PassphraseForm";
 import { FreshnessBanner } from "./FreshnessBanner";
 import { SyncActivity } from "./SyncActivity";
 import { SyncRulesForm } from "./SyncRulesForm";
+import { PairingCompare } from "./PairingCompare";
 import { e2eeErrorText, e2eeResultNotices } from "./errorText";
 import { syncSession, type SyncSession } from "./session";
 import { ProviderAuthError, ProviderUnreachableError, ProviderUnsupportedError } from "../providers/http";
@@ -300,6 +301,8 @@ function Unlocked({ session }: { session: SyncSession }) {
   const [answer, setAnswer] = useState<string | null>(null);
   const [pairError, setPairError] = useState<string | null>(null);
   const [cancelled, setCancelled] = useState(false);
+  /** The comparison for the code or answer this device gave out (W8.5): a new key for each. */
+  const [comparing, setComparing] = useState(0);
   const last = s.last;
   // I3: an answer or a code holds this device's key changes back for minutes; the user can call it off.
   const cancelPairing = () => {
@@ -307,6 +310,7 @@ function Unlocked({ session }: { session: SyncSession }) {
     void engine.cancelPairing().then(() => {
       setAnswer(null);
       setCode(null);
+      setComparing(0);
       setCancelled(true);
     });
   };
@@ -315,7 +319,13 @@ function Unlocked({ session }: { session: SyncSession }) {
     setPairError(null);
     setAnswer(null);
     setCancelled(false);
-    void engine.answerPairing(request).then(setAnswer, (e) => setPairError(e2eeErrorText(e, "answer", explainError)));
+    void engine.answerPairing(request).then(
+      (a) => {
+        setAnswer(a);
+        setComparing((n) => n + 1);
+      },
+      (e) => setPairError(e2eeErrorText(e, "answer", explainError)),
+    );
   };
   return (
     <div style={{ display: "grid", gap: 10 }}>
@@ -392,6 +402,7 @@ function Unlocked({ session }: { session: SyncSession }) {
                 (c) => {
                   setCode(c);
                   setCancelled(false);
+                  setComparing((n) => n + 1);
                 },
                 (e) => setCode(e2eeErrorText(e, "other", explainError)),
               )
@@ -407,6 +418,7 @@ function Unlocked({ session }: { session: SyncSession }) {
               <div style={muted}>{t("e2ee.sync.pairCodeNote")}</div>
             </>
           )}
+          {comparing > 0 && <PairingCompare key={comparing} sync={engine} />}
           {(answer || code) && (
             <button type="button" style={{ justifySelf: "start" }} onClick={cancelPairing}>
               {t("e2ee.pair.cancel")}
