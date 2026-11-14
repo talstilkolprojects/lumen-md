@@ -119,16 +119,16 @@
       "date": "2026-11-14"
     },
     "src/sync/e2ee/keyring.ts": {
-      "score": 81.3,
-      "caught": 65,
-      "survived": 15,
+      "score": 83.8,
+      "caught": 67,
+      "survived": 13,
       "invalid": 0,
       "sampled": 80,
-      "mutants": 441,
+      "mutants": 440,
       "max": 80,
       "runner": "shim",
-      "sha256": "964fd218fb5b54b9d3e54568bedd2c9be073c990aba877cf88d5ccb98c2e3ed8",
-      "tests": "e060760eec0bc971b9215e34c4b0433c61234ef9c7c008ac019ac9b05788e541",
+      "sha256": "ba92c8bd3c7fb8d75ad8bedbafa9d659722729cc6f0a6adbc5d028810014ef6a",
+      "tests": "c1d8a19114eaf357ee82affdbe30eed3a2e56f24357948badf0e0e063fcdd998",
       "date": "2026-11-14"
     },
     "src/sync/e2ee/manifest.ts": {
