@@ -10,14 +10,15 @@
  * declarations) that no other production line names. A re-export
  * (`export { x } from`) and a comment are not callers.
  *
- * `checkSeams(srcDir, exceptions)` applies LIVE_SEAM_EXCEPTIONS: a dead seam
+ * `checkSeams(srcDir, exceptions)` applies the allow list (scripts/seams.allow.json): a dead seam
  * not listed fails; a listed seam that is live now fails too (stale entry:
  * remove it), so the list only shrinks. Each entry says why: `test-only`
  * (a knob for tests, never an app seam) or `pending` with the plan task
  * that wires it.
  */
 import { readdirSync, readFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const isProduction = (p) => /\.(ts|tsx)$/.test(p) && !/\.d\.ts$/.test(p) && !/\.(test|spec|stories)\.tsx?$/.test(p) && !p.split(/[\\/]/).includes("__tests__");
 
@@ -70,42 +71,52 @@ export function deadSeams(srcDir) {
 }
 
 /**
- * The seams that may stay without a production caller, each with its reason.
- * `pending`: the plan task that wires it (the entry goes when it does).
- * `test-only`: a knob for tests, not an engine the app plugs in.
- * `dead`: an API nothing uses and no task wires yet — named so the
- * coordinator decides (wire or delete); it is never silently fine.
+ * The seams that may stay without a production caller, each with its reason,
+ * from scripts/seams.allow.json (W11.I1). Every entry has:
+ * `kind` — `pending` (the plan task wires it), `test-only` (a knob for tests,
+ * not an engine the app plugs in) or `dead` (an API nothing uses: the task
+ * wires or deletes it; it is never silently fine);
+ * `task` — the plan id that closes it; `reason`; and `expires` (YYYY-MM-DD,
+ * at most MAX_ALLOW_DAYS ahead). On its expiry day the entry fails the gate,
+ * so an exception is reviewed instead of living forever.
  */
-export const LIVE_SEAM_EXCEPTIONS = {
-  setVoiceTranscriber: { kind: "pending", task: "W10.C8", reason: "the live dictation engine in capture" },
-  setLectureSummarizer: { kind: "pending", task: "W10.C9", reason: "the verified lecture summary" },
-  setOrganizerModel: { kind: "pending", task: "W10.C16", reason: "the organizer's local model" },
-  setToolPermission: { kind: "pending", task: "W10.C2", reason: "per-tool MCP permissions from the servers screen" },
-  registerGrammarRanker: { kind: "pending", task: "W10.B9", reason: "the model ranking of grammar findings" },
-  setArgon2idImplementation: { kind: "pending", task: "W10.D5", reason: "hash-wasm's Argon2id once it is in the lockfile" },
-  setKdfPolicyForTests: { kind: "test-only", reason: "cheap KDF costs for tests" },
-  setGrammarDebounce: { kind: "test-only", reason: "a zero debounce for tests" },
-  setPythonWorkerFactory: { kind: "test-only", reason: "a fake Pyodide worker for tests" },
-  registerLocalTranslator: { kind: "dead", reason: "a local translator for cross-lingual passages: no engine registers one" },
-  registerPluginSkill: { kind: "dead", reason: "skills from plugins: the plugin host does not call it" },
-  setPublishedSlug: { kind: "dead", reason: "the publish dialog does not set a slug through it" },
-  setSyncStatus: { kind: "dead", reason: "the sync engines do not report through it" },
-  setEncryptionPassword: { kind: "dead", reason: "changing the at-rest password: no UI calls it" },
-};
+export const ALLOW_FILE = join(dirname(fileURLToPath(import.meta.url)), "..", "seams.allow.json");
+export const MAX_ALLOW_DAYS = 183;
+export function loadAllowList(file = ALLOW_FILE) {
+  return JSON.parse(readFileSync(file, "utf8")).seams;
+}
+export const LIVE_SEAM_EXCEPTIONS = loadAllowList();
 
-export function checkSeams(srcDir, exceptions = LIVE_SEAM_EXCEPTIONS) {
+const DAY = 86_400_000;
+/** Problems with one entry's own fields, judged on `today` (YYYY-MM-DD, UTC). */
+export function entryProblems(name, e, today) {
+  const out = [];
+  if (!["pending", "test-only", "dead"].includes(e?.kind)) out.push(`${name}: kind must be pending, test-only or dead`);
+  if (!/^W\d+\.\w+$/.test(e?.task ?? "")) out.push(`${name}: an allow-list entry needs the plan task that closes it`);
+  if (typeof e?.reason !== "string" || e.reason.trim().length < 6) out.push(`${name}: an allow-list entry needs its reason`);
+  const exp = /^\d{4}-\d{2}-\d{2}$/.test(e?.expires ?? "") ? Date.parse(`${e.expires}T00:00:00Z`) : NaN;
+  const now = Date.parse(`${today}T00:00:00Z`);
+  if (Number.isNaN(exp)) out.push(`${name}: an allow-list entry needs an expiry date (YYYY-MM-DD)`);
+  else if (exp <= now) out.push(`${name}: the allow-list entry expired on ${e.expires}: wire the seam, delete it, or review the entry`);
+  else if (exp - now > MAX_ALLOW_DAYS * DAY) out.push(`${name}: expires ${e.expires}, more than ${MAX_ALLOW_DAYS} days ahead`);
+  return out;
+}
+
+const isoDay = (d) => new Date(d).toISOString().slice(0, 10);
+
+export function checkSeams(srcDir, exceptions = LIVE_SEAM_EXCEPTIONS, { today = isoDay(Date.now()) } = {}) {
   const { seams, dead } = deadSeams(srcDir);
   const problems = [];
   const deadNames = new Set(dead.map((d) => d.name));
   for (const d of dead) {
     const e = exceptions[d.name];
     if (!e) problems.push({ ...d, rule: "dead-seam", text: `${d.name} has no caller outside tests: wire it in the app, or delete it` });
-    else if (e.kind === "pending" && !/^W\d+\.\w+$/.test(e.task ?? "")) problems.push({ ...d, rule: "dead-seam", text: `${d.name}: a pending seam needs the plan task that wires it` });
+    else for (const text of entryProblems(d.name, e, today)) problems.push({ ...d, rule: "live-seam-allow", text });
   }
   const known = new Set(seams.map((s) => s.name));
   for (const name of Object.keys(exceptions)) {
-    if (!known.has(name)) problems.push({ name, file: "scripts/lib/liveSeams.mjs", line: 0, rule: "live-seam-stale", text: `${name} is listed in LIVE_SEAM_EXCEPTIONS but no longer exists: remove the entry` });
-    else if (!deadNames.has(name)) problems.push({ name, file: "scripts/lib/liveSeams.mjs", line: 0, rule: "live-seam-stale", text: `${name} has a production caller now: remove it from LIVE_SEAM_EXCEPTIONS` });
+    if (!known.has(name)) problems.push({ name, file: "scripts/seams.allow.json", line: 0, rule: "live-seam-stale", text: `${name} is listed in seams.allow.json but no longer exists: remove the entry` });
+    else if (!deadNames.has(name)) problems.push({ name, file: "scripts/seams.allow.json", line: 0, rule: "live-seam-stale", text: `${name} has a production caller now: remove it from seams.allow.json` });
   }
   return { seams, dead, problems };
 }

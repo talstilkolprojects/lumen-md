@@ -1,0 +1,89 @@
+{
+  "$comment": "Live-seam allow list (W11.I1, R4.1). Every register*/set* hook in src/ with no production caller must be listed here with its kind (pending | test-only | dead), the plan task that closes it, the reason, and an expiry date (YYYY-MM-DD, at most 183 days ahead). An expired entry fails `npm run hygiene`, as does a stale one (the seam is live now, or gone). Read by scripts/lib/liveSeams.mjs.",
+  "seams": {
+    "setVoiceTranscriber": {
+      "kind": "pending",
+      "task": "W10.C8",
+      "reason": "the live dictation engine in capture",
+      "expires": "2026-12-31"
+    },
+    "setLectureSummarizer": {
+      "kind": "pending",
+      "task": "W10.C9",
+      "reason": "the verified lecture summary",
+      "expires": "2026-12-31"
+    },
+    "setOrganizerModel": {
+      "kind": "pending",
+      "task": "W10.C16",
+      "reason": "the organizer's local model",
+      "expires": "2026-12-31"
+    },
+    "setToolPermission": {
+      "kind": "pending",
+      "task": "W10.C2",
+      "reason": "per-tool MCP permissions from the servers screen",
+      "expires": "2026-12-31"
+    },
+    "registerGrammarRanker": {
+      "kind": "pending",
+      "task": "W10.B9",
+      "reason": "the model ranking of grammar findings",
+      "expires": "2026-12-31"
+    },
+    "setArgon2idImplementation": {
+      "kind": "pending",
+      "task": "W10.D5",
+      "reason": "hash-wasm's Argon2id once it is in the lockfile",
+      "expires": "2026-12-31"
+    },
+    "setKdfPolicyForTests": {
+      "kind": "test-only",
+      "task": "W11.I1",
+      "reason": "cheap KDF costs for tests",
+      "expires": "2027-05-14"
+    },
+    "setGrammarDebounce": {
+      "kind": "test-only",
+      "task": "W11.I1",
+      "reason": "a zero debounce for tests",
+      "expires": "2027-05-14"
+    },
+    "setPythonWorkerFactory": {
+      "kind": "test-only",
+      "task": "W11.I1",
+      "reason": "a fake Pyodide worker for tests",
+      "expires": "2027-05-14"
+    },
+    "registerLocalTranslator": {
+      "kind": "dead",
+      "task": "W11.I1",
+      "reason": "a local translator for cross-lingual passages: no engine registers one",
+      "expires": "2026-12-15"
+    },
+    "registerPluginSkill": {
+      "kind": "dead",
+      "task": "W11.I1",
+      "reason": "skills from plugins: the plugin host does not call it",
+      "expires": "2026-12-15"
+    },
+    "setPublishedSlug": {
+      "kind": "dead",
+      "task": "W11.I1",
+      "reason": "the publish dialog does not set a slug through it",
+      "expires": "2026-12-15"
+    },
+    "setSyncStatus": {
+      "kind": "dead",
+      "task": "W11.I1",
+      "reason": "the sync engines do not report through it",
+      "expires": "2026-12-15"
+    },
+    "setEncryptionPassword": {
+      "kind": "dead",
+      "task": "W11.I1",
+      "reason": "changing the at-rest password: no UI calls it",
+      "expires": "2026-12-15"
+    }
+  }
+}

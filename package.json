@@ -15,6 +15,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "hygiene": "node scripts/check-code-hygiene.mjs && node scripts/audit-lock.mjs && node scripts/check-live-seams.mjs",
+    "check": "npm run -s hygiene",
+    "check:seams": "node scripts/check-live-seams.mjs",
     "audit:lock": "node scripts/audit-lock.mjs",
     "secrets:scan-live": "node scripts/secrets-scan-live.mjs",
     "secrets:dist": "node scripts/secrets-scan-live.mjs --dir dist",
