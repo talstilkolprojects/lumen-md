@@ -10,7 +10,7 @@ export default defineConfig({
       formats: ["es"],
       fileName: () => "__PLUGIN_NAME__.js",
     },
-    rollupOptions: {
+    rolldownOptions: {
       external: ["react", "react/jsx-runtime"],
     },
     sourcemap: true,
