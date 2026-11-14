@@ -105,6 +105,7 @@ export function safeFileStem(name: string): string {
 export async function installTemplate(
   template: MarketplaceTemplate,
 ): Promise<{ path: string; bytes: number; basePath?: string }> {
+  // privacy-ledger: not tracked — the app's own files: every entry of public/templates/registry.json is a path on this origin (106 of 106); a remote one would be listed in audit mode.
   const res = await fetchWithRetry(absoluteUrl(template.url), { cache: "no-cache" }, { label: "templates.install", maxRetries: 2, baseDelayMs: 700, maxDelayMs: 2500 });
   if (!res.ok) throw new Error(`Template ${res.status}`);
   const body = await res.text();
@@ -129,6 +130,7 @@ async function installCompanionBase(template: MarketplaceTemplate): Promise<stri
   const path = `${INSTALLED_BASES_DIR}/${stem}.base`;
   try {
     if (await workspaceHasFile(path)) return path;
+    // privacy-ledger: not tracked — the app's own files, as for the template body above.
     const res = await fetchWithRetry(absoluteUrl(template.base), { cache: "no-cache" }, { label: "templates.base", maxRetries: 1, baseDelayMs: 500 });
     if (!res.ok) throw new Error(`Base ${res.status}`);
     await writeWorkspaceFile(path, await res.text());

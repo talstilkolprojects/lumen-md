@@ -100,6 +100,7 @@ async function loadModel(m: ModelFile, signal?: AbortSignal): Promise<Uint8Array
     cache = null;
   }
   const hit = await cache?.match(url);
+  // privacy-ledger: model-download — a pinned huggingface.co file (modelUrl): the window's fetch wrapper lists it under the Hugging Face rule.
   const bytes = new Uint8Array(await (hit ?? (await fetch(url, { signal }))).arrayBuffer());
   if (bytes.length !== m.bytes) throw new Error(`size mismatch for ${m.file}: ${bytes.length} bytes, expected ${m.bytes}`);
   if ((await sha256Hex(bytes)) !== m.sha256) throw new Error(`checksum mismatch for ${m.file}`);

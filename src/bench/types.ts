@@ -59,5 +59,7 @@ export interface BenchEnv {
 
 /** A data: URL → Blob (images, audio). */
 export async function dataUrlBlob(url: string): Promise<Blob> {
+  if (!url.startsWith("data:")) throw new Error("dataUrlBlob: not a data: URL");
+  // privacy-ledger: not tracked — a data: URL (checked above), decoded in memory: no request leaves.
   return (await fetch(url)).blob();
 }

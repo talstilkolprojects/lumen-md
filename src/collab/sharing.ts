@@ -47,6 +47,7 @@ export interface ShareInfo {
 export function tokenRequest<T>(serverUrl: string, payload: Record<string, unknown>, timeoutMs = ROOM_TOKEN_TIMEOUT_MS): Promise<T> {
   return new Promise((resolve, reject) => {
     let settled = false;
+    // privacy-ledger: not tracked — the live-share server the user set up (collaboration, not AI traffic: docs/ai/privacy lists what the ledger covers); the same socket as roomToken.ts. Airplane mode blocks and lists it.
     const ws = new WebSocket(roomTokenUrl(serverUrl));
     const finish = (fn: () => void) => {
       if (settled) return;

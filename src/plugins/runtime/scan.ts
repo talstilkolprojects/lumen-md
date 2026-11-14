@@ -250,6 +250,7 @@ export async function scanPluginVersion(input: ScanInput): Promise<ScanResult> {
       if (!netDeclared.length) {
         findings.push({ rule: "undeclared-network", severity: "error", detail: u.origin ?? "network.fetch", line: u.line });
       } else if (u.origin === null) {
+        // privacy-ledger: not a call — the text of a scan finding that names network.fetch(…).
         findings.push({ rule: "dynamic-network", severity: "warning", detail: `network.fetch(…) — allowed only to ${netDeclared.map((c) => c.slice(8)).join(", ")}`, line: u.line });
       } else if (!declared.has(`network:${u.origin}`) || networkOrigin(`network:${u.origin}`) === null) {
         findings.push({ rule: "undeclared-network", severity: "error", detail: u.origin, line: u.line });

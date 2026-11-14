@@ -16,6 +16,13 @@ import { airplaneModeOn, airplaneSince, disableAirplaneMode, egressAttempts, ena
 import { buildCertificate, reachedNetwork, sealCertificate } from "./airplaneCertificate";
 import { HelpButton } from "../ui/HelpButton";
 
+/**
+ * The "Test" button's target: one GET with no data, made only when the user clicks.
+ * privacy-ledger: network — airplane mode's monitor lists the attempt (allowed or blocked,
+ * src/privacy/airplane.ts), and the ledger lists it as "network" in audit mode.
+ */
+const AIRPLANE_TEST_URL = "https://example.com/";
+
 const muted: React.CSSProperties = { fontSize: 12, color: "hsl(var(--fg-muted))" };
 const ghost: React.CSSProperties = { padding: "5px 12px", fontSize: 12, borderRadius: 6, border: "1px solid hsl(var(--border))", background: "transparent", color: "inherit", cursor: "pointer" };
 const primary: React.CSSProperties = { ...ghost, background: "hsl(var(--accent))", borderColor: "hsl(var(--accent))", color: "hsl(var(--accent-fg, 0 0% 100%))" };
@@ -109,7 +116,8 @@ export function NetworkMonitor({ onClose }: { onClose: () => void }) {
               title={t("airplane.test.hint")}
               data-testid="airplane-test"
               onClick={() => {
-                fetch("https://example.com/", { mode: "no-cors", cache: "no-store" }).catch(() => {
+                // privacy-ledger: network — the airplane test (AIRPLANE_TEST_URL above): listed by airplane mode's monitor.
+                fetch(AIRPLANE_TEST_URL, { mode: "no-cors", cache: "no-store" }).catch(() => {
                   /* why: blocked or offline — the attempt is listed either way */
                 });
               }}
