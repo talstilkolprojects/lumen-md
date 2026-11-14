@@ -128,6 +128,12 @@ updates:
     schedule:
       interval: "weekly"
     labels: ["dependencies", "mcp"]
+    # The MCP server runs on Node 22 (package.json "engines"), so its
+    # Node types must stay on the 22 line: no @types/node majors
+    # (decision 2.73, #153). Patches and minors of 22.x still come.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   # ── Sync server ─────────────────────────────────────────────────────
   - package-ecosystem: "npm"
