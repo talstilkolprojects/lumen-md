@@ -9,7 +9,7 @@
  * @vitest-environment node
  */
 import { describe, expect, it } from "vitest";
-import { announcePairing, DiscoveryError, findDevices, joinFound, NAME_RE, type Invoke } from "../sync/e2ee/lan/discovery";
+import { announcePairing, DiscoveryError, findDevices, joinFound, NAME_RE, pairingCode, type Invoke } from "../sync/e2ee/lan/discovery";
 
 const OFFER = "lumen-lan:1:zHostOffer_-1";
 const ANSWER = "lumen-lan:1:zJoinAnswer_-2";
@@ -154,3 +154,21 @@ describe("W2.19 discovery: the joining device", () => {
     await expect(findDevices()).rejects.toMatchObject({ reason: "unavailable" });
   });
 });
+
+describe("W2.19 review 31 L1b: a pairing found over the network is compared, or refused", () => {
+  const fp = { local: "sha-256 aa:bb", remote: "sha-256 cc:dd" };
+  it("refuses a network pairing whose fingerprints can't be read, on either side", async () => {
+    for (const role of ["host", "peer"] as const) {
+      await expect(pairingCode(role, null, { viaNetwork: true })).rejects.toMatchObject({ reason: "unverifiable" });
+      await expect(pairingCode(role, undefined, { viaNetwork: true })).rejects.toBeInstanceOf(DiscoveryError);
+    }
+  });
+
+  it("gives both sides the same code when they can, and lets a carried code (QR, text) go on without one", async () => {
+    const host = await pairingCode("host", fp, { viaNetwork: true });
+    expect(host).toMatch(/^\d{4} \d{4}$/);
+    expect(await pairingCode("peer", { local: fp.remote, remote: fp.local }, { viaNetwork: true })).toBe(host);
+    expect(await pairingCode("peer", null, { viaNetwork: false })).toBeNull();
+  });
+});
+

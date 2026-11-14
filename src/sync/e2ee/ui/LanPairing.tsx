@@ -11,9 +11,9 @@ import "../strings";
 import { encodeQr, qrPath } from "../../../lib/qr";
 import { recordLanSync, setLanSyncBytes } from "../../../ai/privacyLedger";
 import { hostOffer, joinOffer, LanLinkError, type LanLink } from "../lan/link";
-import { channelBinding, comparisonCode, LanAuthError } from "../lan/rpc";
+import { LanAuthError } from "../lan/rpc";
 import { adoptPeerLink, LanNoVaultError, LanNotConnectedError, thisHost } from "../lan";
-import { announcePairing, discoveryAvailable, DiscoveryError, findDevices, joinFound, type FoundDevice } from "../lan/discovery";
+import { announcePairing, discoveryAvailable, DiscoveryError, findDevices, joinFound, pairingCode, type FoundDevice } from "../lan/discovery";
 import type { LanPeerInfo } from "../lan/rpc";
 
 const field: React.CSSProperties = { width: "100%", padding: "6px 8px", border: "1px solid hsl(var(--border))", borderRadius: 6, background: "transparent", color: "inherit", font: "inherit", fontSize: 12 };
@@ -26,6 +26,7 @@ export function lanError(e: unknown): string {
   if (e instanceof LanNoVaultError) return t("e2ee.lan.noVault");
   if (e instanceof LanNotConnectedError) return t("e2ee.lan.notConnected");
   if (e instanceof LanAuthError) return t("e2ee.lan.authFailed");
+  // "unverifiable" (no fingerprints on a network pairing) also reads "use the code instead".
   if (e instanceof DiscoveryError) return t(e.reason === "used" || e.reason === "token" ? "e2ee.lan.discovery.used" : e.reason === "not-lan" ? "e2ee.lan.error.not-lan" : "e2ee.lan.discovery.failed");
   return String((e as Error)?.message ?? e);
 }
@@ -119,6 +120,7 @@ export function LanJoin({ onLinked }: { onLinked: () => Promise<void> }) {
         if (e instanceof DiscoveryError && (e.reason === "used" || e.reason === "token")) void find();
         throw e;
       }),
+      true,
     );
   }
 
@@ -134,7 +136,7 @@ export function LanJoin({ onLinked }: { onLinked: () => Promise<void> }) {
     }
   }
 
-  async function join(start: () => Promise<{ link: Promise<LanLink> }>) {
+  async function join(start: () => Promise<{ link: Promise<LanLink> }>, viaNetwork = false) {
     setError(null);
     setBusy(true);
     try {
@@ -143,7 +145,13 @@ export function LanJoin({ onLinked }: { onLinked: () => Promise<void> }) {
       pending.current = null;
       // Review 28, L1: before anything syncs, both screens show the channel's code; the user checks they match.
       pending.current = () => link.close();
-      const code = await comparisonCode(channelBinding("peer", link.fingerprints));
+      let code: string | null;
+      try {
+        code = await pairingCode("peer", link.fingerprints, { viaNetwork });
+      } catch (e) {
+        link.close();
+        throw e;
+      }
       if (code && !(await new Promise<boolean>((resolve) => setCompare({ code, resolve })))) {
         link.close();
         setCompare(null);
@@ -281,7 +289,7 @@ export function LanHostPairing() {
         setVisibleAs(name);
         void came.then(async (a) => {
           if (!a || ctl.signal.aborted) return;
-          await accept(offer, a);
+          await accept(offer, a, true);
           // Review 28, L2: an answer from the network uses the pairing up, whoever sent it. Make a fresh
           // offer under a new name, so the user's own device can still pair if another one got there first.
           if (!ctl.signal.aborted) void start();
@@ -301,11 +309,18 @@ export function LanHostPairing() {
     await accept(offer, answer);
   }
 
-  async function accept(o: NonNullable<typeof offer>, code: string) {
+  async function accept(o: NonNullable<typeof offer>, code: string, viaNetwork = false) {
     setError(null);
     setBusy(true);
     try {
       const link = await o.accept(code);
+      // Review 31, L1b: an answer from the network with no fingerprints can't be compared: refuse it.
+      try {
+        await pairingCode("host", link.fingerprints, { viaNetwork });
+      } catch (e) {
+        link.close();
+        throw e;
+      }
       pending.current = null;
       trackInLedger(link);
       thisHost().attach(link.channel, { address: link.remoteAddress, fingerprints: link.fingerprints });

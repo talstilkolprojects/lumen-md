@@ -19,6 +19,7 @@
  */
 
 import { isLanHost } from "./address";
+import { channelBinding, comparisonCode, type LinkFingerprints } from "./rpc";
 import { CODE_PREFIX } from "./link";
 
 export type Invoke = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
@@ -42,7 +43,7 @@ export const NAME_RE = /^Lumen-[A-Z0-9]{4}$/;
 export const BROWSE_MS = 2500;
 
 export class DiscoveryError extends Error {
-  constructor(public readonly reason: "unavailable" | "not-lan" | "used" | "token" | "failed") {
+  constructor(public readonly reason: "unavailable" | "not-lan" | "used" | "token" | "failed" | "unverifiable") {
     super(`LAN discovery: ${reason}`);
     this.name = "DiscoveryError";
   }
@@ -160,3 +161,18 @@ export async function joinFound<J extends { code: string; cancel?(): void }>(dev
   }
   return joined;
 }
+
+/**
+ * The comparison code for a link (review 28 L1, review 31 L1b). A pairing
+ * whose codes came over the network has no out-of-band check but this code
+ * and the fingerprint-bound proof, so without fingerprints it is refused
+ * ("unverifiable": pair with the codes instead), never continued unchecked.
+ * Only a pairing whose codes the user carried (QR or text) may go on
+ * without one.
+ */
+export async function pairingCode(role: "host" | "peer", fingerprints: LinkFingerprints | null | undefined, opts: { viaNetwork: boolean }): Promise<string | null> {
+  const code = await comparisonCode(channelBinding(role, fingerprints));
+  if (!code && opts.viaNetwork) throw new DiscoveryError("unverifiable");
+  return code;
+}
+
