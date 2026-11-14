@@ -22,8 +22,10 @@ async function openProperties(page: import("@playwright/test").Page) {
   await page.keyboard.press("ControlOrMeta+k");
   const palette = page.locator('[role="dialog"]').filter({ has: page.locator("input") });
   await expect(palette).toBeVisible();
-  await palette.locator("input").first().fill("properties");
-  await expect(palette.locator('[role="option"][aria-selected="true"]')).toContainText(/Properties/i);
+  // "properties" alone also matches "AI: Fill Properties for Notes…", which the
+  // palette (substring match, registry order) lists first: name this command.
+  await palette.locator("input").first().fill("Properties: edit");
+  await expect(palette.locator('[role="option"][aria-selected="true"]')).toContainText(/frontmatter/i);
   await page.keyboard.press("Enter");
   const panel = page.getByTestId("properties-panel");
   await expect(panel).toBeVisible();

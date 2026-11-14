@@ -3,6 +3,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { E2E_COLLAB_PORT } from "../scripts/test-tiers.mjs";
 
 /**
  * Plan 3.6.4: two browsers edit one room through the persistent collab
@@ -32,7 +33,9 @@ function startServer(dataDir: string): Promise<Running> {
   const proc = spawn(process.execPath, ["--disable-warning=ExperimentalWarning", "sync-server/collab-server.mjs"], {
     env: {
       ...process.env,
-      PORT: "0",
+      // The one port the e2e page's CSP names (scripts/test-tiers.mjs): a random
+      // port is refused by connect-src, and the room never syncs.
+      PORT: String(E2E_COLLAB_PORT),
       HOST: "127.0.0.1",
       COLLAB_DATA_DIR: dataDir,
       COLLAB_ACCESS_KEY: ACCESS_KEY,

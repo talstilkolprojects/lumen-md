@@ -27,6 +27,20 @@ describe("the Vercel config's ignoreCommand", () => {
     expect(cfg.ignoreCommand).toBe("bash scripts/vercel-ignore.sh");
     expect(existsSync(SCRIPT)).toBe(true);
   });
+
+  // vercel.ts compiles the config only after Vercel's Ignored Build Step has
+  // run, so the config's ignoreCommand is never read: the rule takes effect
+  // through the project setting (Settings → Git → Ignored Build Step), which
+  // must be this same command. The checks page says so in both languages.
+  it("the project's Ignored Build Step is the same command, and the docs say it must be set", () => {
+    const PROJECT_IGNORE_COMMAND = "bash scripts/vercel-ignore.sh";
+    expect(cfg.ignoreCommand).toBe(PROJECT_IGNORE_COMMAND);
+    for (const doc of ["docs/src/content/docs/contributing/checks.md", "docs/src/content/docs/he/contributing/checks.md"]) {
+      const text = readFileSync(join(ROOT, doc), "utf8");
+      expect(text, doc).toContain(`\`${PROJECT_IGNORE_COMMAND}\``);
+      expect(text, doc).toContain("Ignored Build Step");
+    }
+  });
 });
 
 /** The environment without Vercel's git variables (a Vercel build sets them for vitest too). */
