@@ -20,6 +20,13 @@
  * Pure; no data files.
  */
 
+/**
+ * Every phoneme the G2P can write (stress included), for checking a voice
+ * covers them before it is listed (scripts/tts-voice.mjs, voices.ts
+ * voiceCoverage). Punctuation and spaces pass through as they are.
+ */
+export const G2P_PHONEMES: readonly string[] = ["a", "b", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "s", "t", "u", "v", "z", "ʁ", "ʃ", "ʒ", "ʔ", "χ", "ˈ"];
+
 const SHVA = "\u05B0";
 const HATAF_SEGOL = "\u05B1";
 const HATAF_PATAH = "\u05B2";

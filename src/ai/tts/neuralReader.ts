@@ -14,7 +14,8 @@
  *   < 400 ms on the desktop, plan W2.6).
  */
 import { HEBREW_VOICES, parsePiperConfig, phonemeIds, scales, usableVoices, wordTimes, type PiperConfig, type VoiceFile, type VoicePack } from "./voices";
-import { isVocalized, sentenceToIpa, wordToIpa } from "./hebrewG2P";
+import { isVocalized, sentenceToIpa } from "./hebrewG2P";
+import { expandNumbers } from "./hebrewNumbers";
 import type { Sentence, WordRange } from "../tts";
 
 /** The voice to read Hebrew with, or null (today: always null — no licensed voice). */
@@ -79,8 +80,9 @@ async function loadSynth(voice: VoicePack): Promise<Synth> {
 
 /** One sentence → what to synthesize, and each spoken word's IPA (for the word timings). */
 export function prepareSentence(vocalized: string): { ipa: string; words: string[] } {
+  // Numbers are read out (./hebrewNumbers.ts); each source word keeps one entry, so the highlight stays on it.
   const words = vocalized.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w));
-  return { ipa: sentenceToIpa(vocalized), words: words.map((w) => wordToIpa(w)) };
+  return { ipa: sentenceToIpa(expandNumbers(vocalized)), words: words.map((w) => sentenceToIpa(expandNumbers(w))) };
 }
 
 export interface NeuralOptions {
