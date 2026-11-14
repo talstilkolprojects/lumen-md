@@ -12,7 +12,8 @@
  *                   step (`fix`). It is reported, not failed, until `expires`
  *                   (at most 90 days from today). It fails once expired, and
  *                   it fails as stale once the bad version is gone, so the
- *                   list stays exact.
+ *                   list stays exact. A critical or high entry can't be open:
+ *                   it fails at once (W10.D9).
  *
  * Unlike scripts/audit-gate.mjs (npm audit / cargo audit, which need the
  * network), this needs nothing but the repo, so it runs in `npm run hygiene`.
@@ -25,6 +26,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const MAX_OPEN_DAYS = 90;
+/** Severities that never wait behind an "open" exception (W10.D9): such an entry fails at once. */
+export const BLOCKING_SEVERITIES = ["critical", "high"];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** [major, minor, patch, prerelease] of "1.2.3" / "1.2.3-beta.1", or null. */
@@ -138,6 +141,11 @@ export function check(entries, versionsOf, today) {
     const hasList = Array.isArray(e.versions) && e.versions.length > 0;
     if (!e.file || !e.name || hasRange === hasList || !Array.isArray(e.advisories) || e.advisories.length === 0 || !["fixed", "open"].includes(e.status)) {
       errors.push(`known-bad.json: entry ${JSON.stringify(e)} needs file, name, exactly one of range / versions, advisories and status "fixed" or "open"`);
+      continue;
+    }
+    if (e.status === "open" && BLOCKING_SEVERITIES.includes(String(e.severity ?? "").toLowerCase())) {
+      const hits = (versionsOf(e.file) ?? []).filter((p) => p.name === e.name && parseVersion(p.version) && (typeof e.range === "string" && e.range.trim() ? inRange(p.version, e.range) : (e.versions ?? []).includes(p.version)));
+      errors.push(`${label}: ${e.severity} ${e.advisories.join(", ")} can't stay open${hits.length ? ` (still at ${hits.map((h) => h.version).join(", ")})` : ""}; run: ${e.fix ?? "the fix"}, then set it to "fixed"`);
       continue;
     }
     if (e.status === "open") {

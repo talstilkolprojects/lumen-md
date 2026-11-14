@@ -1,12 +1,17 @@
 {
-  "$comment": "Known-bad dependency versions (scripts/audit-lock.mjs, `npm run audit:lock`, also run by `npm run hygiene`). Built from the GitHub advisory matches in PR #491. It works offline: it reads the lockfiles and manifests, not the registry. Each entry names a file (an npm package-lock.json, a Cargo.lock, or a package.json for a dependency range that is not locked), a package, the versions that count as bad (`range`, e.g. \"<3.3.16 || >=4.0.0 <5.1.16\", or an exact `versions` list) and the advisories. status \"fixed\": the bad versions are gone; one coming back fails the check. status \"open\": the bad version is still there and needs an owner step (`fix`, a command that needs the registry or crates.io). It needs an `expires` date (YYYY-MM-DD) at most 90 days from today, after which it fails, and it fails as stale once the bad version is gone (then set it to \"fixed\"). For a package.json entry, the lowest version the declared range allows is checked.",
+  "$comment": "Known-bad dependency versions (scripts/audit-lock.mjs, `npm run audit:lock`, also run by `npm run hygiene`). Built from the GitHub advisory matches in PR #491. It works offline: it reads the lockfiles and manifests, not the registry. Each entry names a file (an npm package-lock.json, a Cargo.lock, or a package.json for a dependency range that is not locked), a package, the versions that count as bad (`range`, e.g. \"<3.3.16 || >=4.0.0 <5.1.16\", or an exact `versions` list) and the advisories. status \"fixed\": the bad versions are gone; one coming back fails the check. status \"open\": the bad version is still there and needs an owner step (`fix`, a command that needs the registry or crates.io). It needs an `expires` date (YYYY-MM-DD) at most 90 days from today, after which it fails, and it fails as stale once the bad version is gone (then set it to \"fixed\"). For a package.json entry, the lowest version the declared range allows is checked. A critical or high entry can't be \"open\": it fails at once (W10.D9), so a critical advisory never waits behind an exception.",
   "entries": [
     {
       "file": "package-lock.json",
       "name": "nanoid",
       "range": "<3.3.16 || >=4.0.0 <5.1.16",
       "severity": "high",
-      "advisories": ["GHSA-28wg-ghj8-5hjv", "GHSA-2v37-7h3g-55p8", "GHSA-xwg4-73v4-xw9w", "GHSA-mwcw-c2x4-8c55"],
+      "advisories": [
+        "GHSA-28wg-ghj8-5hjv",
+        "GHSA-2v37-7h3g-55p8",
+        "GHSA-xwg4-73v4-xw9w",
+        "GHSA-mwcw-c2x4-8c55"
+      ],
       "status": "fixed",
       "note": "Exact pins of @excalidraw/excalidraw (3.3.3) and @excalidraw/mermaid-to-excalidraw (4.0.2), forced to ^3.3.20 and ^5.1.16 by package.json overrides. The 4.x line has no patched release."
     },
@@ -15,7 +20,10 @@
       "name": "lodash-es",
       "range": "<4.18.0",
       "severity": "high",
-      "advisories": ["GHSA-r5fr-rjxr-66jc", "GHSA-xxjr-mmjv-4gpg"],
+      "advisories": [
+        "GHSA-r5fr-rjxr-66jc",
+        "GHSA-xxjr-mmjv-4gpg"
+      ],
       "status": "fixed",
       "note": "Exact pin of chevrotain 11.0.3 (via langium, @mermaid-js/parser), forced to ^4.18.1 by package.json overrides."
     },
@@ -24,7 +32,9 @@
       "name": "zod",
       "range": "<4.6.7",
       "severity": "high",
-      "advisories": ["GHSA-mrhx-c7xc-m3w5"],
+      "advisories": [
+        "GHSA-mrhx-c7xc-m3w5"
+      ],
       "status": "fixed",
       "note": "4.3.6 was flagged; 4.6.7 (the root's copy) is not. The range is everything below the copy known to be clean."
     },
@@ -33,7 +43,16 @@
       "name": "vite",
       "range": "<8.3.4",
       "severity": "high",
-      "advisories": ["GHSA-587h-7wmj-h5pm", "GHSA-4w7w", "GHSA-fx2h", "GHSA-v6wh", "GHSA-698v", "GHSA-r825", "GHSA-rq7h", "GHSA-9jrq"],
+      "advisories": [
+        "GHSA-587h-7wmj-h5pm",
+        "GHSA-4w7w",
+        "GHSA-fx2h",
+        "GHSA-v6wh",
+        "GHSA-698v",
+        "GHSA-r825",
+        "GHSA-rq7h",
+        "GHSA-9jrq"
+      ],
       "status": "fixed",
       "note": "The template declared ^5.0.0. It now declares the root's vite (^8.3.4), which has no advisory match. The short ids are as PR #491 lists them."
     },
@@ -42,27 +61,48 @@
       "name": "body-parser",
       "range": ">=2.0.0 <2.4.0",
       "severity": "high",
-      "advisories": ["GHSA-27r3-jxmh-p828"],
+      "advisories": [
+        "GHSA-27r3-jxmh-p828"
+      ],
       "status": "fixed",
       "note": "2.3.0 was flagged: a crafted compressed body crashes the process (OSV: fixed in 1.20.9 and 2.4.0). 2.4.0 and iconv-lite 0.7.3 were folded in from dependabot #323's npm-generated lock entries; the other edges 2.4.0 needs (nested content-type 2.1.0, qs 6.16.1) were already there."
     },
     {
       "file": "src-tauri/Cargo.lock",
       "name": "zip",
-      "range": "<9.0.5",
+      "range": "<9.1.0",
       "severity": "critical",
-      "advisories": ["GHSA-m665-v7pm-7grj", "GHSA-q7v9-x93c-xqv3", "GHSA-8hxf-qr8p-62x4"],
-      "status": "open",
-      "fix": "cd src-tauri && cargo update -p tauri-plugin-updater --precise 2.14.1 && cargo tree -i zip && cargo build",
-      "expires": "2026-12-27",
-      "note": "tauri-plugin-updater 2.14.0 requires zip 4; 2.14.1 moved to zip 9. `cargo update -p zip --precise 9.x` alone fails because 4.6.1 to 9 is a semver-major jump. Cargo.lock needs crates.io checksums, so it cannot be edited offline."
+      "advisories": [
+        "GHSA-m665-v7pm-7grj",
+        "GHSA-q7v9-x93c-xqv3",
+        "GHSA-8hxf-qr8p-62x4"
+      ],
+      "status": "fixed",
+      "note": "W10.D9: Cargo.lock resolved with cargo 'update -p tauri-plugin-updater --precise 2.14.1' against the crates.io index (zip 4.6.1 -> 9.5.1, checksums from the index). zip is pulled in only by tauri-plugin-updater. The range is below 9.1.0, not 9.0.5: 9.0.5's header checks are off by default, and 9.1.0 stages and validates files before moving them (research R3, CVE-2026-115905)."
+    },
+    {
+      "file": "src-tauri/Cargo.lock",
+      "name": "tauri-plugin-updater",
+      "range": "<2.14.1",
+      "severity": "high",
+      "advisories": [
+        "GHSA-rjc6-5hfg-grp9",
+        "GHSA-m665-v7pm-7grj"
+      ],
+      "status": "fixed",
+      "note": "W10.D9: below 2.12.0 the webview could ask check() for a downgrade (CVE-2026-95624, GHSA-rjc6-5hfg-grp9); 2.13.3 moved to minisign-verify 0.3 (canonical-S Ed25519); below 2.14.1 the plugin requires zip 4 (the critical zip advisory). src-tauri/Cargo.toml requires 2.14.1."
     },
     {
       "file": "package-lock.json",
       "name": "fast-uri",
       "range": ">=3.0.0 <3.1.9",
       "severity": "moderate",
-      "advisories": ["GHSA-wjr9", "GHSA-w74x", "GHSA-333x", "GHSA-xhq7"],
+      "advisories": [
+        "GHSA-wjr9",
+        "GHSA-w74x",
+        "GHSA-333x",
+        "GHSA-xhq7"
+      ],
       "status": "fixed",
       "note": "The 3.x fix is 3.1.9 (OSV GHSA-wjr9-j795-jxcr, GHSA-xhq7-xmqj-769h). Folded in from dependabot #317 (the same tarball in both locks; fast-uri has no dependencies)."
     },
@@ -71,16 +111,25 @@
       "name": "fast-uri",
       "range": ">=3.0.0 <3.1.9",
       "severity": "moderate",
-      "advisories": ["GHSA-wjr9", "GHSA-w74x", "GHSA-333x", "GHSA-xhq7"],
+      "advisories": [
+        "GHSA-wjr9",
+        "GHSA-w74x",
+        "GHSA-333x",
+        "GHSA-xhq7"
+      ],
       "status": "fixed",
       "note": "The 3.x fix is 3.1.9 (OSV GHSA-wjr9-j795-jxcr, GHSA-xhq7-xmqj-769h). Folded in from dependabot #317 (the same tarball in both locks; fast-uri has no dependencies)."
     },
     {
       "file": "package-lock.json",
       "name": "minimatch",
-      "versions": ["10.2.5"],
+      "versions": [
+        "10.2.5"
+      ],
       "severity": "moderate",
-      "advisories": ["GHSA-g3hv-75wg-m249"],
+      "advisories": [
+        "GHSA-g3hv-75wg-m249"
+      ],
       "status": "open",
       "fix": "npm update minimatch",
       "expires": "2026-12-27"
@@ -88,9 +137,13 @@
     {
       "file": "package-lock.json",
       "name": "glob",
-      "versions": ["13.0.6"],
+      "versions": [
+        "13.0.6"
+      ],
       "severity": "moderate",
-      "advisories": ["GHSA-3g3m-2fjr-6pw4"],
+      "advisories": [
+        "GHSA-3g3m-2fjr-6pw4"
+      ],
       "status": "open",
       "fix": "npm update glob rimraf",
       "expires": "2026-12-27"
@@ -98,9 +151,13 @@
     {
       "file": "package-lock.json",
       "name": "serialize-javascript",
-      "versions": ["7.1.2"],
+      "versions": [
+        "7.1.2"
+      ],
       "severity": "low",
-      "advisories": ["GHSA-m5mm-p8h7-m29v"],
+      "advisories": [
+        "GHSA-m5mm-p8h7-m29v"
+      ],
       "status": "open",
       "fix": "raise overrides.serialize-javascript in package.json to the patched release, then npm install --package-lock-only",
       "expires": "2026-12-27"
@@ -108,9 +165,13 @@
     {
       "file": "docs/package-lock.json",
       "name": "postcss-selector-parser",
-      "versions": ["6.1.4"],
+      "versions": [
+        "6.1.4"
+      ],
       "severity": "moderate",
-      "advisories": ["GHSA-rj75-hqrm-r3gf"],
+      "advisories": [
+        "GHSA-rj75-hqrm-r3gf"
+      ],
       "status": "open",
       "fix": "npm --prefix docs update postcss-selector-parser",
       "expires": "2026-12-27"
@@ -118,9 +179,13 @@
     {
       "file": "docs/package-lock.json",
       "name": "esbuild",
-      "versions": ["0.27.7"],
+      "versions": [
+        "0.27.7"
+      ],
       "severity": "low",
-      "advisories": ["GHSA-g7r4-m6w7-qqqr"],
+      "advisories": [
+        "GHSA-g7r4-m6w7-qqqr"
+      ],
       "status": "open",
       "fix": "npm --prefix docs update esbuild",
       "expires": "2026-12-27"
@@ -128,9 +193,13 @@
     {
       "file": "src-tauri/Cargo.lock",
       "name": "glib",
-      "versions": ["0.18.5"],
+      "versions": [
+        "0.18.5"
+      ],
       "severity": "moderate",
-      "advisories": ["GHSA-wrw7-89jp-8q8g"],
+      "advisories": [
+        "GHSA-wrw7-89jp-8q8g"
+      ],
       "status": "open",
       "fix": "none upstream yet: Tauri 2 is on gtk-rs 0.18 (Linux only); renew with a new reason when it expires",
       "expires": "2027-02-09"

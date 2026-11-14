@@ -5,6 +5,7 @@ use tauri::{Emitter, Manager};
 
 mod shell;
 mod updates;
+mod update_guard;
 
 mod whisper_core;
 
