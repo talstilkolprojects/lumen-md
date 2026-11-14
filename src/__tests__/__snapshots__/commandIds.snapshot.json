@@ -46,6 +46,13 @@
       "icon": "Link"
     },
     {
+      "id": "file.shareLink",
+      "label": "Share as encrypted link",
+      "group": "File",
+      "hint": "A read-only copy inside the link, no server",
+      "icon": "Link"
+    },
+    {
       "id": "file.exportDocx",
       "label": "Export to Word (.doc)",
       "group": "File",
@@ -1312,6 +1319,13 @@
       "label": "Publish site…",
       "group": "File",
       "hint": "Your notes as a website: GitHub Pages or a .zip",
+      "icon": "Link"
+    },
+    {
+      "id": "file.shareLink",
+      "label": "Share as encrypted link",
+      "group": "File",
+      "hint": "A read-only copy inside the link, no server",
       "icon": "Link"
     },
     {
@@ -2637,6 +2651,7 @@
     "file.saveAs",
     "file.exportHtml",
     "file.publishSite",
+    "file.shareLink",
     "file.exportDocx",
     "file.exportRtf",
     "file.exportMarkdownAiMarks",

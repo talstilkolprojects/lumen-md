@@ -143,6 +143,8 @@
   "cmd.file.saveAs": "שמירה בשם…",
   "cmd.file.saveToWorkspace": "שמירה במרחב העבודה",
   "cmd.file.saveToWorkspace.hint": "שמור מסמך זה ב-OPFS",
+  "cmd.file.shareLink": "שיתוף כקישור מוצפן",
+  "cmd.file.shareLink.hint": "עותק לקריאה בלבד בתוך הקישור, בלי שרת",
   "cmd.file.trash": "סל המחזור…",
   "cmd.file.trash.hint": "שחזור פתקים שנמחקו (נשמרים 30 יום)",
   "cmd.fineTune.open": "הגדרות אימון AI…",

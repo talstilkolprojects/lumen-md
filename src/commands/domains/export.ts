@@ -27,6 +27,31 @@ export function buildExportCommands({ handleExportHtml, liveDoc, getEditorView }
       },
     },
     {
+      // W5.10: a read-only copy of the open note inside an encrypted link (no server); the dialog loads on use.
+      id: "file.shareLink",
+      label: t("cmd.file.shareLink"),
+      hint: t("cmd.file.shareLink.hint"),
+      icon: cmdIcons.Link,
+      group: t("group.file"),
+      action: async () => {
+        // Snapshot before any await: a tab switch while the chunk loads must not share another note.
+        const doc = liveDoc();
+        // Review 12.11: the link carries the export text (through #473's door once it is in the build).
+        const [{ openShareLink }, { shareReadyText, ExportDoorMissingError }] = await Promise.all([import("../../share/ShareLinkDialog"), import("../../share/shareReady")]);
+        let markdown: string;
+        try {
+          markdown = await shareReadyText(doc.content);
+        } catch (e) {
+          if (!(e instanceof ExportDoorMissingError)) throw e;
+          // Review 4 (RR4-448-2): the refusal (fail closed) says why, instead of nothing happening.
+          const { uiAlert } = await import("../../ui/PromptDialog");
+          await uiAlert({ message: t("shareLink.noExportDoor") });
+          return;
+        }
+        openShareLink({ title: doc.name, markdown });
+      },
+    },
+    {
       id: "file.exportDocx",
       label: t("cmd.file.exportDocx"),
       hint: t("cmd.file.exportDocx.hint"),

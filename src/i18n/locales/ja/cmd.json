@@ -143,6 +143,8 @@
   "cmd.file.saveAs": "保存 as…",
   "cmd.file.saveToWorkspace": "保存 to workspace",
   "cmd.file.saveToWorkspace.hint": "このドキュメントを OPFS に保存",
+  "cmd.file.shareLink": "暗号化リンクで共有",
+  "cmd.file.shareLink.hint": "リンクの中に読み取り専用のコピー。サーバー不要",
   "cmd.file.trash": "ごみ箱…",
   "cmd.file.trash.hint": "削除したノートを復元（30日間保持）",
   "cmd.fineTune.open": "AI ファインチューニング設定…",

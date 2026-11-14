@@ -142,6 +142,8 @@
   "cmd.file.saveAs": "Save as…",
   "cmd.file.saveToWorkspace": "Save to workspace",
   "cmd.file.saveToWorkspace.hint": "store this doc in OPFS",
+  "cmd.file.shareLink": "Share as encrypted link",
+  "cmd.file.shareLink.hint": "A read-only copy inside the link, no server",
   "cmd.file.trash": "Trash…",
   "cmd.file.trash.hint": "Restore deleted notes (kept 30 days)",
   "cmd.fineTune.open": "AI fine-tune settings…",

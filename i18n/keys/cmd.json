@@ -728,6 +728,16 @@
       "vars": []
     },
     {
+      "key": "cmd.file.shareLink",
+      "en": "Share as encrypted link",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.shareLink.hint",
+      "en": "A read-only copy inside the link, no server",
+      "vars": []
+    },
+    {
       "key": "cmd.file.trash",
       "en": "Trash…",
       "vars": []

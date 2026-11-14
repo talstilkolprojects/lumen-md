@@ -43,6 +43,8 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "vaultEncryption.json": { module: "storage/vault/encrypted/strings.ts", users: ["ui/VaultEncryptionDialog.tsx", "ui/VaultUnlock.tsx"], prefixes: ["vaultEnc."] },
   // The webR download offer (plan W1.34), in the lazily rendered live-R block.
   "webr.json": { module: "plugins/r/webrStrings.ts", users: ["plugins/LiveRBlock.tsx"], prefixes: ["block.liveR.install."] },
+  // The encrypted share link (plan W5.10): the dialog and the read-only viewer, both loaded with a dynamic import.
+  "shareLink.json": { module: "share/shareStrings.ts", users: ["share/ShareLinkDialog.tsx", "share/SharedNoteView.tsx"], prefixes: ["shareLink."] },
 };
 
 function sources(dir: string): string[] {

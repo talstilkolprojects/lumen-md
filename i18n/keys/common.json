@@ -3065,6 +3065,190 @@
       "vars": []
     },
     {
+      "key": "shareLink.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "shareLink.copied",
+      "en": "Copied",
+      "vars": []
+    },
+    {
+      "key": "shareLink.copy",
+      "en": "Copy link",
+      "vars": []
+    },
+    {
+      "key": "shareLink.copyKey",
+      "en": "Copy key",
+      "vars": []
+    },
+    {
+      "key": "shareLink.create",
+      "en": "Create link",
+      "vars": []
+    },
+    {
+      "key": "shareLink.downloadFile",
+      "en": "Download encrypted file",
+      "vars": []
+    },
+    {
+      "key": "shareLink.expiry",
+      "en": "Expires",
+      "vars": []
+    },
+    {
+      "key": "shareLink.expiry.day",
+      "en": "After 1 day",
+      "vars": []
+    },
+    {
+      "key": "shareLink.expiry.days",
+      "en": "After {n} days",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "shareLink.expiry.never",
+      "en": "Never",
+      "vars": []
+    },
+    {
+      "key": "shareLink.expiryNote",
+      "en": "The viewer refuses the note after this date. The link itself still holds the note, so someone who kept it could decode it by hand.",
+      "vars": []
+    },
+    {
+      "key": "shareLink.failed",
+      "en": "Couldn't create the link: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "shareLink.intro",
+      "en": "The note is encrypted on this device and travels inside the link. No server stores it or sees it: the part of the link after # is never sent anywhere. Whoever has the whole link can read the note; nobody else can.",
+      "vars": []
+    },
+    {
+      "key": "shareLink.keyHint",
+      "en": "Send the key another way (another app, in person). The link alone can't open the note.",
+      "vars": []
+    },
+    {
+      "key": "shareLink.noExportDoor",
+      "en": "This build can't make share links: the part that removes redacted text and hidden comments from what leaves the device is missing, so nothing is shared.",
+      "vars": []
+    },
+    {
+      "key": "shareLink.separateKey",
+      "en": "Send the key separately",
+      "vars": []
+    },
+    {
+      "key": "shareLink.size",
+      "en": "{chars} of {max} characters in the link.",
+      "vars": [
+        "chars",
+        "max"
+      ]
+    },
+    {
+      "key": "shareLink.title",
+      "en": "Share as an encrypted link",
+      "vars": []
+    },
+    {
+      "key": "shareLink.tooBig",
+      "en": "This note is too large for a link ({chars} of {max} characters). Download it as an encrypted file and send the file together with this link, which holds only the key:",
+      "vars": [
+        "chars",
+        "max"
+      ]
+    },
+    {
+      "key": "shareLink.unsupported",
+      "en": "This browser can't encrypt or open share links (no WebCrypto or CompressionStream).",
+      "vars": []
+    },
+    {
+      "key": "shareLink.view.badge",
+      "en": "Shared note · read-only · decrypted on this device",
+      "vars": []
+    },
+    {
+      "key": "shareLink.view.copy",
+      "en": "Copy Markdown",
+      "vars": []
+    },
+    {
+      "key": "shareLink.view.created",
+      "en": "Shared {date}",
+      "vars": [
+        "date"
+      ]
+    },
+    {
+      "key": "shareLink.view.decrypting",
+      "en": "Decrypting…",
+      "vars": []
+    },
+    {
+      "key": "shareLink.view.download",
+      "en": "Download .md",
+      "vars": []
+    },
+    {
+      "key": "shareLink.view.error.expired",
+      "en": "This shared note has expired.",
+      "vars": []
+    },
+    {
+      "key": "shareLink.view.error.key",
+      "en": "This key doesn't open the note: the key is wrong, or the link was changed.",
+      "vars": []
+    },
+    {
+      "key": "shareLink.view.error.malformed",
+      "en": "This link is damaged or incomplete. Ask for it again.",
+      "vars": []
+    },
+    {
+      "key": "shareLink.view.expires",
+      "en": "expires {date}",
+      "vars": [
+        "date"
+      ]
+    },
+    {
+      "key": "shareLink.view.keyLabel",
+      "en": "Key",
+      "vars": []
+    },
+    {
+      "key": "shareLink.view.needFile",
+      "en": "Choose the encrypted file (.lumenshare) you received with this link:",
+      "vars": []
+    },
+    {
+      "key": "shareLink.view.needKey",
+      "en": "This link came without its key. Paste the key you received:",
+      "vars": []
+    },
+    {
+      "key": "shareLink.view.open",
+      "en": "Open",
+      "vars": []
+    },
+    {
+      "key": "shareLink.view.openApp",
+      "en": "Open Lumen",
+      "vars": []
+    },
+    {
       "key": "status.aiActive",
       "en": "AI Copilot Active",
       "vars": []

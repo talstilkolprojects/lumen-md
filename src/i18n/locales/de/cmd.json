@@ -143,6 +143,8 @@
   "cmd.file.saveAs": "Speichern as…",
   "cmd.file.saveToWorkspace": "Speichern to workspace",
   "cmd.file.saveToWorkspace.hint": "dieses Dokument in OPFS speichern",
+  "cmd.file.shareLink": "Als verschlüsselten Link teilen",
+  "cmd.file.shareLink.hint": "Eine schreibgeschützte Kopie im Link, ohne Server",
   "cmd.file.trash": "Papierkorb…",
   "cmd.file.trash.hint": "Gelöschte Notizen wiederherstellen (30 Tage)",
   "cmd.fineTune.open": "KI-Fine-Tuning-Einstellungen…",

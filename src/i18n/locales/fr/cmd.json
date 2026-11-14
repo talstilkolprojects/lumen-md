@@ -143,6 +143,8 @@
   "cmd.file.saveAs": "Enregistrer as…",
   "cmd.file.saveToWorkspace": "Enregistrer to workspace",
   "cmd.file.saveToWorkspace.hint": "stocker ce document dans OPFS",
+  "cmd.file.shareLink": "Partager en lien chiffré",
+  "cmd.file.shareLink.hint": "Une copie en lecture seule dans le lien, sans serveur",
   "cmd.file.trash": "Corbeille…",
   "cmd.file.trash.hint": "Restaurer les notes supprimées (30 jours)",
   "cmd.fineTune.open": "Paramètres de fine-tuning IA…",

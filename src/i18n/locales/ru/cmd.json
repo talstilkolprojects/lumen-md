@@ -143,6 +143,8 @@
   "cmd.file.saveAs": "Сохранить as…",
   "cmd.file.saveToWorkspace": "Сохранить to workspace",
   "cmd.file.saveToWorkspace.hint": "сохранить документ в OPFS",
+  "cmd.file.shareLink": "Поделиться зашифрованной ссылкой",
+  "cmd.file.shareLink.hint": "Копия только для чтения внутри ссылки, без сервера",
   "cmd.file.trash": "Корзина…",
   "cmd.file.trash.hint": "Восстановить удалённые заметки (30 дней)",
   "cmd.fineTune.open": "Настройки дообучения ИИ…",

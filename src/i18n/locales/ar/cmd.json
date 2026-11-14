@@ -143,6 +143,8 @@
   "cmd.file.saveAs": "حفظ as…",
   "cmd.file.saveToWorkspace": "حفظ to workspace",
   "cmd.file.saveToWorkspace.hint": "احفظ هذا المستند في OPFS",
+  "cmd.file.shareLink": "مشاركة كرابط مشفّر",
+  "cmd.file.shareLink.hint": "نسخة للقراءة فقط داخل الرابط، بلا خادم",
   "cmd.file.trash": "سلة المهملات…",
   "cmd.file.trash.hint": "استعادة الملاحظات المحذوفة (تُحفظ 30 يومًا)",
   "cmd.fineTune.open": "إعدادات الضبط الدقيق للذكاء الاصطناعي…",

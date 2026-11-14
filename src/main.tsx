@@ -149,6 +149,17 @@ void Promise.all([initLocale(), secretsReady, vaultReady])
   })
   .finally(renderApp);
 
+// An encrypted share link (plan W5.10, `#view=…`): the read-only viewer
+// instead of the editor. The note and its key are in the #fragment, which
+// never leaves the browser; the viewer decrypts it here and saves nothing.
+const SharedNoteView = React.lazy(() => import("./share/SharedNoteView"));
+const SHARE_HASH = /^#view(?:-file)?(?:[=&]|$)/;
+const showShare = SHARE_HASH.test(location.hash);
+// A share link pasted into an open tab only changes the fragment: switch views.
+window.addEventListener("hashchange", () => {
+  if (showShare || SHARE_HASH.test(location.hash)) location.reload();
+});
+
 function renderApp() {
 ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
@@ -181,7 +192,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           {t("boot.loading")}
         </div>
       }>
-        <App />
+        {showShare ? <SharedNoteView /> : <App />}
       </Suspense>
     </ErrorBoundary>
     <UpdateBanner />

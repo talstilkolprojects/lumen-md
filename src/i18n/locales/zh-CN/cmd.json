@@ -143,6 +143,8 @@
   "cmd.file.saveAs": "保存 as…",
   "cmd.file.saveToWorkspace": "保存 to workspace",
   "cmd.file.saveToWorkspace.hint": "将此文档存储到 OPFS",
+  "cmd.file.shareLink": "以加密链接分享",
+  "cmd.file.shareLink.hint": "链接内的只读副本，无需服务器",
   "cmd.file.trash": "回收站…",
   "cmd.file.trash.hint": "恢复已删除的笔记（保留 30 天）",
   "cmd.fineTune.open": "AI 微调设置…",
