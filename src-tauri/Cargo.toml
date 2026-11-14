@@ -35,7 +35,6 @@ tauri-plugin-deep-link = "2"
 # Plan W3.9: windows, tray, file associations and `lumen://` links. The
 # decisions are in this std-only crate (tested offline); src/shell.rs is the glue.
 lumen-desktop = { path = "desktop" }
-tauri-plugin-deep-link = "2"
 
 [target.'cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))'.dependencies]
 # One instance: a second launch forwards its files and links (Windows, Linux).
@@ -45,9 +44,6 @@ tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 # Manager on Windows, in its own crate (keychain/) so CI tests it on both
 # without building Tauri (plan 2.5).
 lumen-keychain = { path = "keychain" }
-
-[target.'cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))'.dependencies]
-tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
