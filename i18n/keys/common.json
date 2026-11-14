@@ -3905,6 +3905,196 @@
       ]
     },
     {
+      "key": "usability.assisted",
+      "en": "The moderator helped",
+      "vars": []
+    },
+    {
+      "key": "usability.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "usability.collapse",
+      "en": "Hide the study panel",
+      "vars": []
+    },
+    {
+      "key": "usability.consent",
+      "en": "The participant signed the consent form and agrees to this session being recorded on this device.",
+      "vars": []
+    },
+    {
+      "key": "usability.delete",
+      "en": "Delete session data",
+      "vars": []
+    },
+    {
+      "key": "usability.delete.confirm",
+      "en": "Delete this session from this device? Save the file first if you still need it.",
+      "vars": []
+    },
+    {
+      "key": "usability.done",
+      "en": "Session ended. Save the file, then delete the data from this device.",
+      "vars": []
+    },
+    {
+      "key": "usability.expand",
+      "en": "Show the study panel",
+      "vars": []
+    },
+    {
+      "key": "usability.export",
+      "en": "Save the session file",
+      "vars": []
+    },
+    {
+      "key": "usability.limit",
+      "en": "limit {min} min",
+      "vars": [
+        "min"
+      ]
+    },
+    {
+      "key": "usability.note.asked-help",
+      "en": "Asked for help",
+      "vars": []
+    },
+    {
+      "key": "usability.note.bug",
+      "en": "Bug",
+      "vars": []
+    },
+    {
+      "key": "usability.note.hesitated",
+      "en": "Hesitated",
+      "vars": []
+    },
+    {
+      "key": "usability.note.rtl-issue",
+      "en": "Direction (RTL) problem",
+      "vars": []
+    },
+    {
+      "key": "usability.note.said-confused",
+      "en": "Said it's confusing",
+      "vars": []
+    },
+    {
+      "key": "usability.note.said-liked",
+      "en": "Said they liked it",
+      "vars": []
+    },
+    {
+      "key": "usability.note.wrong-path",
+      "en": "Wrong path",
+      "vars": []
+    },
+    {
+      "key": "usability.notes",
+      "en": "Observations",
+      "vars": []
+    },
+    {
+      "key": "usability.outcome.fail",
+      "en": "Failed",
+      "vars": []
+    },
+    {
+      "key": "usability.outcome.gave-up",
+      "en": "Gave up / out of time",
+      "vars": []
+    },
+    {
+      "key": "usability.outcome.partial",
+      "en": "Partial",
+      "vars": []
+    },
+    {
+      "key": "usability.outcome.success",
+      "en": "Success",
+      "vars": []
+    },
+    {
+      "key": "usability.participant",
+      "en": "Participant code",
+      "vars": []
+    },
+    {
+      "key": "usability.recording",
+      "en": "Recording on this device only · {n} events · no note text",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "usability.retention",
+      "en": "Delete the file too once the round's analysis is written (consent form, section 5). Data left on this device is deleted after 30 days.",
+      "vars": []
+    },
+    {
+      "key": "usability.round",
+      "en": "round {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "usability.roundLabel",
+      "en": "Round",
+      "vars": []
+    },
+    {
+      "key": "usability.setup.intro",
+      "en": "For the moderator. Enter the participant's code (P1…P8, never a name). Recording starts only after the participant has signed the consent form and you tick the box.",
+      "vars": []
+    },
+    {
+      "key": "usability.start",
+      "en": "Start the session",
+      "vars": []
+    },
+    {
+      "key": "usability.sus.intro",
+      "en": "Ask the participant to rate each statement about the whole session.",
+      "vars": []
+    },
+    {
+      "key": "usability.sus.save",
+      "en": "Save the answers and end the session",
+      "vars": []
+    },
+    {
+      "key": "usability.task",
+      "en": "Task",
+      "vars": []
+    },
+    {
+      "key": "usability.task.start",
+      "en": "Start task {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "usability.taskRunning",
+      "en": "Task {n} running",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "usability.title",
+      "en": "Usability study",
+      "vars": []
+    },
+    {
+      "key": "usability.toSus",
+      "en": "Tasks done: SUS questionnaire",
+      "vars": []
+    },
+    {
       "key": "vaultEnc.autoLock",
       "en": "Lock after inactivity",
       "vars": []

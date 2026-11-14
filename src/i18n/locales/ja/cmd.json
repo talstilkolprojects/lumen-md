@@ -211,6 +211,8 @@
   "cmd.research.ask.hint": "ウェブを検索し、出典を読み、各主張に引用付き脚注を付けたノートを作成",
   "cmd.research.settings": "🔎 リサーチ：設定…",
   "cmd.research.settings.hint": "Claude のウェブ検索、または自分のキーで Brave / Tavily",
+  "cmd.research.usability": "ユーザビリティ調査（司会者）…",
+  "cmd.research.usability.hint": "参加者の同意のもと、このデバイスでユーザビリティセッションを記録",
   "cmd.research.verify": "🔎 リサーチ：このノートの引用を検証",
   "cmd.research.verify.hint": "脚注のリンクが生きていて、引用が実際にページにあるかを確認",
   "cmd.save": "保存",

@@ -211,6 +211,8 @@
   "cmd.research.ask.hint": "Cherche sur le web, lit les sources et rédige une note avec une note de bas de page citée pour chaque affirmation",
   "cmd.research.settings": "🔎 Recherche : réglages…",
   "cmd.research.settings.hint": "Recherche web de Claude, ou Brave / Tavily avec votre clé",
+  "cmd.research.usability": "Étude d'utilisabilité (animateur)…",
+  "cmd.research.usability.hint": "Enregistrer une séance d'utilisabilité sur cet appareil, avec le consentement du participant",
   "cmd.research.verify": "🔎 Recherche : vérifier les citations de cette note",
   "cmd.research.verify.hint": "Vérifie que chaque lien de note fonctionne et que la citation figure vraiment sur la page",
   "cmd.save": "Enregistrer",

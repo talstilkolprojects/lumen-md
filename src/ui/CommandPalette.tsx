@@ -29,6 +29,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { t } from "../i18n";
 import "./CommandPalette.css";
+import { announceCommand } from "../research/usability/commandEvents";
 
 export interface Command {
   id: string;
@@ -276,7 +277,10 @@ export function CommandPalette({ open, onClose, commands }: Props) {
         }
         onClose();
         // Defer slightly so the palette unmounts before the action (e.g. file dialog) runs.
-        setTimeout(() => cmd.action(), 0);
+        setTimeout(() => {
+          announceCommand(cmd.id);
+          void cmd.action();
+        }, 0);
       }
     } else if (e.key === "Backspace" && !query) {
       // When query is empty, Backspace collapses the last expanded sub-menu
@@ -414,7 +418,10 @@ export function CommandPalette({ open, onClose, commands }: Props) {
                         return;
                       }
                       onClose();
-                      setTimeout(() => cmd.action(), 0);
+                      setTimeout(() => {
+          announceCommand(cmd.id);
+          void cmd.action();
+        }, 0);
                     }}
                   >
                     <Icon size={15} style={{ opacity: 0.75, flexShrink: 0 }} />

@@ -58,6 +58,20 @@ export function buildHebrewDictionaryCommands(): Command[] {
   ];
 }
 
+/** Plan W1.29: the moderator's usability-session recorder (local only, consent first). */
+export function buildUsabilityStudyCommands(): Command[] {
+  return [
+    {
+      id: "research.usability",
+      label: t("cmd.research.usability"),
+      hint: t("cmd.research.usability.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: () => window.dispatchEvent(new CustomEvent("lumen-open-usability")),
+    },
+  ];
+}
+
 /** Commands registered by plugins. */
 export function buildPluginCommands(): Command[] {
   return [

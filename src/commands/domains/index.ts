@@ -8,7 +8,7 @@ import { buildFileCommands, buildRecentCommands, buildSyncCommands, buildTemplat
 import { buildExportCommands } from "./export";
 import { buildLanguageCommands, buildPanelCommands, buildThemeToggleCommands, buildViewCommands } from "./view";
 import { buildEditCommands, buildInsertCommands } from "./edit";
-import { buildHebrewDictionaryCommands, buildPluginCommands, buildWritingGoalCommands } from "./tools";
+import { buildHebrewDictionaryCommands, buildPluginCommands, buildUsabilityStudyCommands, buildWritingGoalCommands } from "./tools";
 import { buildAiCancelCommands, buildAiCapabilityCommands, buildAiControlCommands, buildAiModelCommands, buildAiProviderCommands, buildPrivacyModeCommands } from "./ai";
 import { buildAltTextCommands, buildDocumentAgentCommands, buildGrammarCommands, buildNikudCommands, buildPromptTemplateCommands } from "./agents";
 import { buildBatchCommands } from "./batch";
@@ -34,6 +34,7 @@ export const COMMAND_SECTIONS: ReadonlyArray<(ctx: CommandContext) => Command[]>
   buildBatchCommands,
   buildAiModelCommands,
   buildHebrewDictionaryCommands,
+  buildUsabilityStudyCommands,
   buildVaultTransferCommands,
   buildVaultLocationCommands,
   buildDesktopUpdateCommands,

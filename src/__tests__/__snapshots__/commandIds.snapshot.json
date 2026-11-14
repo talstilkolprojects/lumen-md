@@ -516,6 +516,13 @@
       "icon": "Sparkles"
     },
     {
+      "id": "research.usability",
+      "label": "Usability study (moderator)…",
+      "group": "Tools",
+      "hint": "Record a usability session on this device, with the participant's consent",
+      "icon": "Sparkles"
+    },
+    {
       "id": "vault.export",
       "label": "Export the whole vault…",
       "group": "File",
@@ -1792,6 +1799,13 @@
       "icon": "Sparkles"
     },
     {
+      "id": "research.usability",
+      "label": "Usability study (moderator)…",
+      "group": "Tools",
+      "hint": "Record a usability session on this device, with the participant's consent",
+      "icon": "Sparkles"
+    },
+    {
       "id": "vault.export",
       "label": "Export the whole vault…",
       "group": "File",
@@ -2703,6 +2717,7 @@
     "ai.marks.toggle",
     "ai.agentSettings",
     "spell.hebrewDictionary",
+    "research.usability",
     "vault.export",
     "vault.import",
     "vault.toFolder",

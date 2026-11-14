@@ -210,6 +210,8 @@
   "cmd.research.ask.hint": "Searches the web, reads sources and writes a note with a quoted footnote for every claim",
   "cmd.research.settings": "🔎 Research: Settings…",
   "cmd.research.settings.hint": "Claude web search, or Brave / Tavily with your own key",
+  "cmd.research.usability": "Usability study (moderator)…",
+  "cmd.research.usability.hint": "Record a usability session on this device, with the participant's consent",
   "cmd.research.verify": "🔎 Research: Verify Citations in This Note",
   "cmd.research.verify.hint": "Checks every footnote link is alive and its quote really appears on the page",
   "cmd.save": "Save",

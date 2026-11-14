@@ -174,6 +174,7 @@ export default defineConfig({
           translations: { he: "הפרויקט" },
           items: [
             { label: "Public roadmap", slug: "project/roadmap", translations: { he: "מפת דרכים ציבורית" } },
+            { label: "Usability tests with Hebrew speakers", slug: "project/usability", translations: { he: "בדיקות שימושיות עם דוברי עברית" } },
           ],
         },
       ],

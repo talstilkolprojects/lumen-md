@@ -211,6 +211,8 @@
   "cmd.research.ask.hint": "מחפש ברשת, קורא מקורות וכותב פתק עם הערת שוליים מצוטטת לכל טענה",
   "cmd.research.settings": "🔎 מחקר: הגדרות…",
   "cmd.research.settings.hint": "חיפוש הרשת של Claude, או Brave / Tavily עם מפתח משלך",
+  "cmd.research.usability": "בדיקת שימושיות (למנחה)…",
+  "cmd.research.usability.hint": "הקלטת מפגש בדיקת שימושיות במכשיר הזה, בהסכמת המשתתף/ת",
   "cmd.research.verify": "🔎 מחקר: בדיקת הציטוטים בפתק",
   "cmd.research.verify.hint": "בודק שכל קישור בהערות השוליים חי ושהציטוט באמת מופיע בעמוד",
   "cmd.save": "שמירה",

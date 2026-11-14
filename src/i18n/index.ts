@@ -150,6 +150,24 @@ export function registerEnglish(strings: Strings): void {
   for (const [k, v] of Object.entries(strings)) if (!(k in en)) en[k] = v;
 }
 
+/**
+ * Every UI string of the active language and of English, as shown (with
+ * platform shortcuts). The usability recorder (plan W1.29) keeps a
+ * control's label only when it is one of these, so a label that carries
+ * someone's text (a note name on a tab) is never recorded.
+ */
+export function uiStringValues(): Set<string> {
+  const out = new Set<string>();
+  for (const bundle of [en, BUNDLES[activeLocale] ?? {}]) {
+    for (const v of Object.values(bundle)) {
+      if (typeof v !== "string" || /\{\w+\}/.test(v)) continue;
+      out.add(v);
+      out.add(platformKeys(v));
+    }
+  }
+  return out;
+}
+
 /** Translate `id` using the active locale, with optional `{name}` substitutions. */
 export function t(id: string, vars?: Record<string, string | number>): string {
   const bundle = BUNDLES[activeLocale] ?? en;
