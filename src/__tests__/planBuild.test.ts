@@ -18,6 +18,11 @@ import {
   spliceBoard,
   BOARD_START,
   BOARD_END,
+  wipWarnings,
+  formatWip,
+  waveNumber,
+  belowFloor,
+  WIP_LIMIT,
   // @ts-expect-error — plain .mjs script without type declarations
 } from "../../scripts/plan/build.mjs";
 
@@ -163,5 +168,55 @@ describe("plan build", () => {
     const audit = M.agent.find((t: { depRule?: string }) => t.depRule === "all");
     for (const o of M.owner) expect(audit.dep).toContain(o.id);
     expect(audit.start).toBeGreaterThanOrEqual(Math.max(...M.owner.map((o: { end: number }) => o.end)));
+  });
+});
+
+describe("work-in-progress limit (plan W6.39)", () => {
+  type T = { id: string; status?: string; verified?: string };
+  const wave = (n: number, ts: T[]) => ({ title: `גל ${n} — x`, tasks: ts });
+  const mini = (w1: T[], w2: T[], schedule: Record<string, unknown> = {}) => ({ schedule, phases: [{ title: "יסודות", tasks: [{ id: "0.1", status: "⏳" }] }, wave(1, w1), wave(2, w2)] });
+  const w1: T[] = [
+    { id: "W1.1", status: "⏳ #1" },
+    { id: "W1.2", status: "⏳ #2", verified: "node" },
+    { id: "W1.3", status: "⏳ #3", verified: "browser" },
+    { id: "W1.4", status: "✅ #4" },
+    { id: "W1.5" },
+  ];
+
+  it("reads waves from phase titles and counts ⏳ below browser (no level = below)", () => {
+    expect([waveNumber("גל 6 — תיקונים"), waveNumber("יסודות ואוטומציה"), waveNumber(" גל 12 — x")]).toEqual([6, null, 12]);
+    expect(w1.map((t) => belowFloor(t))).toEqual([true, true, false, false, false]);
+    expect(belowFloor({ status: "⏳", verified: "real" })).toBe(false);
+    expect(belowFloor({ status: "⏳", verified: "owner" })).toBe(false);
+    expect(WIP_LIMIT).toBe(5);
+  });
+
+  it("a new task of the next wave is flagged while the wave before is over the limit", () => {
+    const quiet = mini(w1, [{ id: "W2.1" }, { id: "W2.2" }]);
+    expect(wipWarnings(quiet, { limit: 1 })).toEqual([]);
+    // W2.1 starts: now it is a warning (and --wip-strict fails the check).
+    const started = mini(w1, [{ id: "W2.1", status: "⏳ #9" }, { id: "W2.2" }]);
+    const [w] = wipWarnings(started, { limit: 1 });
+    expect(w).toEqual({ wave: 1, next: 2, limit: 1, open: ["W1.1", "W1.2"], unlabelled: 1, started: ["W2.1"] });
+    expect(formatWip(w)).toBe("plan: WIP — wave 1 has 2 ⏳ tasks verified below browser (limit 1; 1 with no verified level) while wave 2 has 1 started (W2.1). Verify wave 1 first: W1.1, W1.2.");
+    // At the limit is fine; plan.schedule.wipLimit sets it when no limit is passed.
+    expect(wipWarnings(started, { limit: 2 })).toEqual([]);
+    expect(wipWarnings(mini(w1, [{ id: "W2.1", status: "⏳" }], { wipLimit: 2 }))).toEqual([]);
+    expect(wipWarnings(mini(w1, [{ id: "W2.1", status: "⏳" }], { wipLimit: 1 }))).toHaveLength(1);
+    // Verifying the wave lifts it.
+    const verified = mini(w1.map((t) => (t.status?.startsWith("⏳") ? { ...t, verified: "browser" } : t)), [{ id: "W2.1", status: "⏳" }]);
+    expect(wipWarnings(verified, { limit: 0 })).toEqual([]);
+  });
+
+  it("run() reports the warnings; the CLI only warns unless --wip-strict", () => {
+    const p = plan();
+    expect(run({ root: ROOT, check: true, wipLimit: 3 }).wip).toEqual(wipWarnings(p, { limit: 3 }));
+    const cli = (...args: string[]) => spawnSync(process.execPath, [join(ROOT, "scripts/plan/build.mjs"), "--check", ...args], { cwd: ROOT, encoding: "utf8" });
+    const loose = cli("--wip-limit", "0");
+    expect(loose.status).toBe(0);
+    expect(loose.stderr.split("\n").filter((l) => l.startsWith("plan: WIP")).length).toBe(wipWarnings(p, { limit: 0 }).length);
+    expect(cli("--wip-limit", "0", "--wip-strict").status).toBe(wipWarnings(p, { limit: 0 }).length ? 1 : 0);
+    expect(cli("--wip-limit", "100000", "--wip-strict").status).toBe(0);
+    expect(cli("--wip-limit", "x").status).toBe(1);
   });
 });
