@@ -80,7 +80,7 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
    * first, and keys another tab moved on to are taken up.
    */
   protected async pairingUnderLock<T>(fn: (s: DeviceState) => Promise<T>): Promise<T> {
-    const out = await tryDeviceLock(this.lockName(await this.loadState()), async () => {
+    const out = await tryDeviceLock(this.lockScope(), async () => {
       this.lockHeld = true;
       try {
         const s = await this.reloadState();
@@ -128,7 +128,8 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
    * still holds the epoch's secret and the storage login, so the user is
    * told to take the storage login away first.
    */
-  protected async countContestedRevocation(s: DeviceState, epoch: number, revoke: string[]): Promise<void> {
+  protected async countContestedRevocation(s: DeviceState, previous: VaultKeys, revoke: string[]): Promise<void> {
+    const epoch = previous.epoch;
     const live = await readKeyring(this.o.provider).catch(() => null);
     if (!live || live.file.epoch !== epoch) {
       if (s.revokeContested) {
@@ -137,6 +138,14 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
       }
       return;
     }
+    // K6-2 (review 16): a loss counts only when the keyring really was
+    // rewritten by a holder of this epoch's secret: another keyring than
+    // the one this device re-keyed from, that opens under the epoch's keys,
+    // at a later revision. A refusal the storage made up, or an older
+    // revision it serves, is a plain storage error, not "contested".
+    const rev = previous.ring?.rev ?? -1;
+    const rewritten = live.digest !== previous.ring?.digest && (await keyringContents(live.file, previous).then((c) => c.rev > rev, () => false));
+    if (!rewritten) return;
     const was = s.revokeContested;
     const same = !!was && was.epoch === epoch && was.devices.some((d) => revoke.includes(d));
     const losses = (same ? was.losses : 0) + 1;
@@ -203,7 +212,7 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
     if (current ? current.file.epoch !== previous.epoch || current.digest !== previous.ring?.digest : previous.epoch !== 0) {
       // H2: rewritten between this device's refresh and here (the probe's
       // writes are enough of a cue for a writer that polls) counts as a loss too.
-      if (opts.revoke?.length) await this.countContestedRevocation(s, previous.epoch, opts.revoke);
+      if (opts.revoke?.length) await this.countContestedRevocation(s, previous, opts.revoke);
       throw new PreconditionFailedError(KEYRING_NAME);
     }
     // F2: the devices this device revoked stay out of every re-key it makes,
@@ -292,7 +301,7 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
     } catch (e) {
       if (e instanceof PreconditionFailedError) {
         await this.o.provider.delete(name).catch(() => undefined);
-        if (revoke.length) await this.countContestedRevocation(s, previous.epoch, revoke);
+        if (revoke.length) await this.countContestedRevocation(s, previous, revoke);
       }
       throw e; // anything else: the outcome is unknown, and the manifest stays for the keyring that may have landed
     }
@@ -396,7 +405,7 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
    * writes, like `rekey`.
    */
   enroll(device: string, recipient: string): Promise<void> {
-    return this.exclusive(async () => {
+    return this.exclusive(() => this.underDeviceLock(true, async () => {
       const s = await this.loadState();
       await this.refresh();
       if (this.o.keys.ring?.preRelease) throw new PreReleaseKeyringError();
@@ -406,7 +415,7 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
       await this.checkNoPairingPending();
       await proveCas(this.o.provider);
       await this.adopt(await enrollDevice(this.o.provider, this.o.keys, device, recipient, this.o.access));
-    });
+    }));
   }
 
   /** How this device knows its view of the vault is current. */
@@ -417,12 +426,12 @@ export abstract class E2eeSyncKeys extends E2eeSyncCore {
 
   /** The creator of the vault anchors on the manifest it just wrote. */
   markCreated(anchor: FreshnessAnchor): Promise<void> {
-    return this.exclusive(async () => {
+    return this.exclusive(() => this.underDeviceLock(true, async () => {
       const s = await this.loadState();
       s.anchor = anchor;
       s.freshness = "created";
       await this.save();
-    });
+    }));
   }
 
   /**
