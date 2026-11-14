@@ -174,12 +174,40 @@ export function parseJsonCanvas(input: string | unknown): { canvas: JsonCanvas; 
     edges.push(e as unknown as JcEdge);
   }
   const { nodes: _n, edges: _e, ...rest } = data;
-  return { canvas: { ...rest, nodes, edges }, warnings };
+  // Obsidian's order: nodes, edges, then anything else (a plugin's `metadata`).
+  return { canvas: { nodes, edges, ...rest }, warnings };
 }
 
-/** Write a `.canvas` file the way Obsidian does (tab-indented JSON). */
+/**
+ * Write a `.canvas` file byte for byte the way Obsidian does (plan W4.30,
+ * checked on real files): tab indents, no space after a colon, one node or
+ * edge per line, no newline at the end.
+ *
+ *   {
+ *   \t"nodes":[
+ *   \t\t{"id":"a1","type":"text","text":"Hi","x":0,"y":0,"width":250,"height":60}
+ *   \t],
+ *   \t"edges":[]
+ *   }
+ */
 export function serializeJsonCanvas(canvas: JsonCanvas): string {
-  return JSON.stringify(canvas, null, "\t");
+  const pretty = (v: unknown, depth: number): string => {
+    const pad = "\t".repeat(depth + 1);
+    const end = "\t".repeat(depth);
+    if (Array.isArray(v)) return v.length ? `[\n${v.map((x) => pad + pretty(x, depth + 1)).join(",\n")}\n${end}]` : "[]";
+    if (isObj(v)) {
+      const keys = Object.keys(v).filter((k) => v[k] !== undefined);
+      return keys.length ? `{\n${keys.map((k) => `${pad}${JSON.stringify(k)}:${pretty(v[k], depth + 1)}`).join(",\n")}\n${end}}` : "{}";
+    }
+    return JSON.stringify(v) ?? "null";
+  };
+  const records = (list: readonly unknown[]) => (list.length ? `[\n${list.map((x) => `\t\t${JSON.stringify(x)}`).join(",\n")}\n\t]` : "[]");
+  const top = Object.keys(canvas).filter((k) => (canvas as unknown as Obj)[k] !== undefined);
+  const body = top.map((k) => {
+    const v = (canvas as unknown as Obj)[k];
+    return `\t${JSON.stringify(k)}:${(k === "nodes" || k === "edges") && Array.isArray(v) ? records(v) : pretty(v, 1)}`;
+  });
+  return `{\n${body.join(",\n")}\n}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -485,5 +513,5 @@ export function excalidrawToJsonCanvas(file: Pick<ExcalidrawFile, "elements" | "
   }
 
   const extra = isObj(file.appState.jsonCanvas) ? (file.appState.jsonCanvas as Obj) : {};
-  return { canvas: { ...extra, nodes, edges }, warnings };
+  return { canvas: { nodes, edges, ...extra }, warnings };
 }
