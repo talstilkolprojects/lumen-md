@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { createRequire } from "node:module";
+import { readFileSync } from "node:fs";
 import { RTL_NOTE } from "./rtl-note";
 
 /**
@@ -14,7 +15,7 @@ import { RTL_NOTE } from "./rtl-note";
 
 type Locale = "he" | "en";
 
-async function open(page: Page, locale: Locale, opts: { tour?: boolean; tabs?: number } = {}) {
+async function open(page: Page, locale: Locale, opts: { tour?: boolean; tabs?: number; content?: string } = {}) {
   const tabs = Array.from({ length: opts.tabs ?? 0 }, (_, i) => ({ id: `t${i}`, name: `${locale === "he" ? "פתק" : "Note"} ${i + 1}.md`, content: `# ${i + 1}\n`, workspaceName: null, dirty: false }));
   await page.addInitScript(
     ({ locale, content, tour, tabs }) => {
@@ -28,7 +29,7 @@ async function open(page: Page, locale: Locale, opts: { tour?: boolean; tabs?: n
         }),
       );
     },
-    { locale, content: RTL_NOTE, tour: !!opts.tour, tabs },
+    { locale, content: opts.content ?? RTL_NOTE, tour: !!opts.tour, tabs },
   );
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
@@ -92,15 +93,18 @@ for (const locale of ["he", "en"] as const) {
     });
 
     test("7. the outline's border faces the editor and its levels indent from the start", async ({ page }) => {
-      await open(page, locale);
+      // RTL_NOTE has one heading (an h1, which has no indent of its own): add an
+      // h2 in the interface's language, since the outline link is dir="auto".
+      const h2 = locale === "he" ? "## פרק שני\n\nטקסט.\n" : "## Second part\n\nText.\n";
+      await open(page, locale, { content: `${RTL_NOTE}\n${h2}` });
       const s = await page.locator(".outline-aside").first().evaluate((el) => {
         const c = getComputedStyle(el);
         return { left: parseFloat(c.borderLeftWidth), right: parseFloat(c.borderRightWidth) };
       });
       expect(locale === "he" ? s.right : s.left).toBeGreaterThan(0);
-      const h2 = page.locator(".outline-link.h2").first();
-      await expect(h2).toBeVisible();
-      const pad = await h2.evaluate((el) => {
+      const link = page.locator(".outline-link.h2").first();
+      await expect(link).toBeVisible();
+      const pad = await link.evaluate((el) => {
         const c = getComputedStyle(el);
         return { left: parseFloat(c.paddingLeft), right: parseFloat(c.paddingRight) };
       });
@@ -182,7 +186,11 @@ for (const locale of ["he", "en"] as const) {
     });
 
     test("16. the tour's next arrow points the way the interface reads", async ({ page }) => {
-      await open(page, locale, { tour: true });
+      // A first visit opens the setup dialog, not the tour (plan 14.1): the
+      // tour is replayed from Help → Guided tour, as a user would.
+      await open(page, locale);
+      await page.locator("header button", { hasText: locale === "he" ? "עזרה" : "Help" }).first().click();
+      await page.getByRole("menuitem", { name: locale === "he" ? /סיור מודרך/ : /Guided tour/ }).click();
       const counter = page.getByText(/^1 \/ \d+$/);
       await expect(counter).toBeVisible({ timeout: 10_000 });
       await page.keyboard.press(locale === "he" ? "ArrowLeft" : "ArrowRight");
@@ -226,11 +234,13 @@ for (const locale of ["he", "en"] as const) {
 
 // ── axe in RTL ──────────────────────────────────────────────────────────
 const require = createRequire(import.meta.url);
-const AXE = require.resolve("axe-core/axe.min.js");
+const AXE = readFileSync(require.resolve("axe-core/axe.min.js"), "utf8");
 
 type Violation = { id: string; impact: string | null; nodes: unknown[] };
 async function axe(page: Page): Promise<Violation[]> {
-  await page.addScriptTag({ path: AXE });
+  // Evaluated over the DevTools protocol, as in a11y.spec.ts: the page's CSP
+  // (script-src 'self') refuses the inline <script> addScriptTag would add.
+  await page.evaluate(AXE);
   return page.evaluate(async () => {
     const w = window as unknown as { axe: { run: (ctx: Document, opts: object) => Promise<{ violations: Violation[] }> } };
     const r = await w.axe.run(document, { resultTypes: ["violations"] });
