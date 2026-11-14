@@ -298,6 +298,9 @@ function getEngine(): Promise<IndexEngine> {
  */
 async function withEngine<T>(fn: (e: IndexEngine) => Promise<T>): Promise<T> {
   const current = getEngine();
+  // Review 29 Z5: the vault and the epoch this request belongs to, for the refill below.
+  const at = epoch;
+  const vault = snapshotVault();
   const e = await current;
   try {
     return await fn(e);
@@ -311,7 +314,14 @@ async function withEngine<T>(fn: (e: IndexEngine) => Promise<T>): Promise<T> {
     engine = Promise.resolve(local);
     // The text died with the worker (W2.22: this thread keeps summaries only):
     // fill the new index from the snapshot, reading only what it lacks.
-    const filled = await fillEngine(local, [...cache.byPath.values()]);
+    // Z5: the refill reads from the vault active now; once the vault or the epoch moved (a switch, a lock, a drop),
+    // what it read is another index's: it stops posting, what it posted goes, and the request is not retried.
+    const stale = () => moved(at, vault);
+    const filled = await fillEngine(local, [...cache.byPath.values()], stale);
+    if (stale()) {
+      discard();
+      throw err;
+    }
     for (const [path, f] of filled) cache.byPath.set(path, f);
     return fn(local);
   }
@@ -526,10 +536,18 @@ async function fillingEncrypted(): Promise<boolean> {
  */
 async function saveSnapshotNow(): Promise<void> {
   const gen = snapshotGen;
+  const at = epoch;
+  const vault = snapshotVault();
+  const current = () => gen === snapshotGen && !moved(at, vault);
   const mode = await snapshotMode();
   // Z1: a switch, a drop or a new build since this save was asked for: what the engine holds is not what was meant.
-  if (!mode || gen !== snapshotGen) return;
-  await withEngine((eng) => eng.saveSnapshot(cache.recordVault, mode.keys));
+  if (!mode || !current()) return;
+  // Z5: checked again right before the write, inside the request: a worker death refills the engine first, and a
+  // switch during that refill must not reach the record.
+  const key = cache.recordVault;
+  await withEngine(async (eng) => {
+    if (current()) await eng.saveSnapshot(key, mode.keys);
+  });
   if (!mode.keys) {
     const now = await snapshotMode();
     if (!now || now.keys) await dropSnapshot();
@@ -759,6 +777,8 @@ function diffListing(list: WorkspaceEntry[], indexOps: IndexOp[], toRead: Map<st
 async function refresh(): Promise<void> {
   // After the snapshot's check (W6.36): changes apply in the order they happened.
   await verified();
+  // Review 29 Z6: the epoch this refresh belongs to, taken before its listing: a drop during it stops it.
+  const at = epoch;
   // Z1: an index that isn't built (dropped, or a build that gave way) is never filled by a refresh: it would hold
   // notes no build labelled. The next ensureIndex builds it.
   if (!cache.builtAt) return;
@@ -803,7 +823,8 @@ async function refresh(): Promise<void> {
     if (!indexable(path) || toRead.has(path)) continue;
     toRead.set(path, { path, name: cache.byPath.get(path)?.name ?? nameOf(path), modified: null });
   }
-  await applyChanges(indexOps, toRead, epoch);
+  if (at !== epoch) return;
+  await applyChanges(indexOps, toRead, at);
 }
 
 /** Read `toRead`, then send the removes, moves and new texts to the index, in order. Nothing when the index was reset meanwhile. */
