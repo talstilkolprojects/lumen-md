@@ -229,15 +229,18 @@ check) a fork. This holds for passphrase and device-key devices alike.
    wrapped for the passphrase (the same one, or a new one) and for each
    device on the sealed list, except those revoked. If the commit loses, the
    re-keyer deletes the manifest of step 2. A revocation whose commit loses
-   twice in a row to a rewrite of the keyring at the same epoch says so
+   twice in a row to a rewrite of the keyring at the same epoch (another
+   keyring that opens under the epoch's keys, at a later revision; a
+   refusal or an older revision the storage serves doesn't count) says so
    (`RevocationContestedError`, ninth review 12.11, H2): anyone who still
    holds `S_N` and the storage login, most likely the device being revoked,
    can do that every time, so no retry wins; the user takes the storage
    login away first. Inherent while that writer keeps it. A device's key
    changes and its pairing codes and answers exclude each other across
-   its tabs too (the Web Locks API, one lock per device and vault; H3);
-   the device state is read again under that lock, and the pairing lock
-   is read from the stored state before the commit.
+   its tabs too (the Web Locks API, one lock per vault in an origin; H3,
+   review 16 K6-3); rounds and every call that writes the device state
+   take that lock and read the state again under it (K6-1), and the
+   pairing lock is read from the stored state before the commit.
    **Read-back** (third review 12.11, N2): the re-keyer then reads the
    keyring again. It must be the bytes it wrote, or a keyring that already
    descends from them. Otherwise the provider let another write replace it
