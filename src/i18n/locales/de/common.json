@@ -1873,6 +1873,7 @@
   "scroll.page": "Seite {current}/{total}",
   "settings.empty": "Keine passende Einstellung",
   "settings.general": "Allgemein",
+  "settings.privacy": "Datenschutz",
   "settings.importFailed": "Diese Datei ist keine Lumen-Einstellungsdatei.",
   "settings.importRefused": "Nicht importiert, damit dieses Gerät seine Datenschutzeinstellungen behält: {keys}",
   "settings.imported": "{n} Einstellungen importiert, {skipped} übersprungen",

@@ -235,6 +235,7 @@
   "remoteMedia.label": "Video or audio from {host}",
   "scroll.page": "page {current}/{total}",
   "settings.general": "General",
+  "settings.privacy": "Privacy",
   "settings.language": "Language",
   "settings.search": "Search settings",
   "settings.telemetryOptOut": "Send no error reports",

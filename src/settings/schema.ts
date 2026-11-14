@@ -23,12 +23,14 @@
  * Pure data: no imports, so the test and the export code load it alone.
  */
 
-export type SettingsTab = "general" | "appearance" | "ai" | "sync" | "fineTune" | "security" | "org";
+export type SettingsTab = "general" | "appearance" | "ai" | "privacy" | "sync" | "fineTune" | "security" | "org";
 
 export const SETTINGS_TABS: ReadonlyArray<{ id: SettingsTab; label: string }> = [
   { id: "general", label: "settings.general" },
   { id: "appearance", label: "themeSettings.title" },
   { id: "ai", label: "ai.settings.title" },
+  // Plan W1.30 (W10.C18): the image hosts the user chose "Always allow" for, each revocable.
+  { id: "privacy", label: "settings.privacy" },
   { id: "sync", label: "collab.settings.title" },
   { id: "fineTune", label: "fineTune.title" },
   { id: "security", label: "trustedKeys.title" },

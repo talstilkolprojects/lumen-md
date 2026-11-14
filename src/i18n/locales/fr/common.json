@@ -1873,6 +1873,7 @@
   "scroll.page": "page {current}/{total}",
   "settings.empty": "Aucun paramètre ne correspond",
   "settings.general": "Général",
+  "settings.privacy": "Confidentialité",
   "settings.importFailed": "Ce fichier n’est pas un fichier de paramètres Lumen.",
   "settings.importRefused": "Non importés, pour que cet appareil garde ses réglages de confidentialité : {keys}",
   "settings.imported": "{n} paramètres importés, {skipped} ignorés",
