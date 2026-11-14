@@ -19,7 +19,7 @@
 
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import "./strings";
-import { t } from "../i18n";
+import { getLocale, t } from "../i18n";
 import { showAiToast } from "../ui/AiToast";
 import { ErrorBoundary } from "../ui/ErrorBoundary";
 import {
@@ -143,6 +143,8 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
   /** The "Ask this PDF" panel is open (plan 6.8). */
   const [askOpen, setAskOpen] = useState(false);
   const [unanchored, setUnanchored] = useState<Set<string>>(() => new Set());
+  /** Read-aloud of this PDF (plan W2.6): the page being read, while it reads. */
+  const [listening, setListening] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pageEls = useRef(new Map<number, HTMLDivElement>());
   const pageTexts = useRef(new Map<number, string>());
@@ -431,6 +433,70 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
     [doc, hits, hitIndex, current, ocrTexts, goToPage],
   );
 
+  /**
+   * Listen to the PDF (plan W2.6, step 3): every page's text (or its OCR
+   * text), read aloud with the note reader's voice, speed and saved
+   * position, the view following the page being read. Press again to stop.
+   */
+  const listen = useCallback(async () => {
+    if (!doc) return;
+    const [tts, { listeningText, pageAt }, { loadAids }, { getAiPolicy }, { uiConfirm }] = await Promise.all([import("../ai/tts"), import("./pdfListen"), import("../reading/readingAids"), import("../ai/policy"), import("../ui/PromptDialog")]);
+    if (tts.isSpeaking()) {
+      tts.stopSpeaking();
+      setListening(null);
+      return;
+    }
+    const pages: { page: number; text: string }[] = [];
+    for (let p = 1; p <= doc.numPages; p++) {
+      let text = ocrTexts[p] ?? pageTexts.current.get(p);
+      if (text === undefined) {
+        text = pageTextFromItems((await (await doc.getPage(p)).getTextContent()).items);
+        pageTexts.current.set(p, text);
+      }
+      pages.push({ page: p, text });
+    }
+    const lt = listeningText(pages);
+    if (!lt.text) {
+      showAiToast(t("pdf.listen.empty"), "info");
+      return;
+    }
+    setListening(lt.pages[0].page);
+    let shown = -1;
+    try {
+      await tts.readAloudCommand({
+        content: lt.text,
+        // Its own saved position: the PDF, not a note.
+        doc: { workspaceName: `pdf:${path}` },
+        uiLang: getLocale(),
+        t,
+        toast: showAiToast,
+        rate: loadAids().rate,
+        confirmNetworkVoice: () => (getAiPolicy() === "local-only" ? Promise.resolve(false) : uiConfirm({ title: t("tts.networkVoice.title"), message: t("tts.networkVoice.body"), okLabel: t("tts.networkVoice.ok") })),
+        onRange: (r) => {
+          if (!r) return;
+          const page = pageAt(lt, r.from);
+          if (page === null || page === shown) return;
+          shown = page;
+          setListening(page);
+          goToPage(page);
+        },
+        onWord: () => undefined,
+      });
+    } finally {
+      setListening(null);
+    }
+  }, [doc, ocrTexts, path, goToPage]);
+
+  // Closing the reader stops its reading.
+  useEffect(
+    () => () => {
+      void import("../ai/tts").then((tts) => {
+        if (tts.isSpeaking()) tts.stopSpeaking();
+      });
+    },
+    [],
+  );
+
   const zoom = useCallback(
     (next: number) => {
       const page = current;
@@ -648,6 +714,14 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
           >
             {t("pdf.highlight")}
           </button>
+          <button type="button" className="icon-btn pdf-text-btn" data-testid="pdf-listen" aria-pressed={listening !== null} disabled={!doc} onClick={() => void listen()}>
+            {listening !== null ? t("pdf.listen.stop") : t("pdf.listen")}
+          </button>
+          {listening !== null && (
+            <span role="status" className="pdf-muted" data-testid="pdf-listen-page">
+              {t("pdf.listen.page", { n: listening })}
+            </span>
+          )}
           <button type="button" className="icon-btn pdf-text-btn" data-testid="pdf-ask" aria-pressed={askOpen} onClick={() => setAskOpen((v) => !v)}>
             {t("pdf.ask")}
           </button>

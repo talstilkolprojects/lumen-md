@@ -109,3 +109,10 @@ export function wordTimes(wordsIpa: readonly string[], durationSec: number): num
   }
   return out;
 }
+
+/** The G2P's phonemes, and the pause marks it keeps, that `config` has no id for: a voice must cover all of them. */
+export function voiceCoverage(config: PiperConfig, phonemes: readonly string[], pauses: readonly string[] = [" ", ",", ".", "?", "!"]): { missing: string[]; missingPauses: string[] } {
+  const map = config.phoneme_id_map;
+  return { missing: phonemes.filter((p) => !Array.isArray(map[p])), missingPauses: pauses.filter((p) => !Array.isArray(map[p])) };
+}
+
