@@ -249,6 +249,7 @@ export default defineConfig({
             { label: "Sync on the local network", slug: "sync/lan", translations: { he: "סנכרון ברשת המקומית" } },
             { label: "Real servers and conditional writes", slug: "sync/real-servers", translations: { he: "שרתים אמיתיים וכתיבות מותנות" } },
             { label: "Read-mode publishing", slug: "sync/publish" },
+            { label: "The share servers on Cloudflare", slug: "sync/relay-server", translations: { he: "שרתי השיתוף ב-Cloudflare" } },
           ],
         },
         {

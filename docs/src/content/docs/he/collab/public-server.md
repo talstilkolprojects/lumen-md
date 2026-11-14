@@ -51,7 +51,8 @@ npm run collab:deploy
 
 הפקודה פורסת את ה-Worker, קובעת את סוד האסימונים, בודקת את `/healthz` ומדפיסה את שני
 משתני הבנייה של האפליקציה: `VITE_YJS_WEBSOCKET_URL` ו-`VITE_WEBRTC_SIGNALING_URL`.
-מודדים את ההשהיה מהמקום שלכם עם `node scripts/collab-latency.mjs wss://<server>/`.
+איך פורסים אותו יחד עם ממסר הסנכרון המוצפן ומודדים את ההשהיה מהמקום שלכם: ב[שרתי השיתוף
+ב-Cloudflare](/he/sync/relay-server/) ‏(`npm run owner:share`).
 
 כדי להריץ שרת Node משלכם עם אותם כללים, מפעילים את `sync-server/collab-server.mjs`
 עם `COLLAB_E2EE_ONLY=1`. חדרים שלא השתנו `COLLAB_RETENTION_DAYS` ימים (90 כברירת

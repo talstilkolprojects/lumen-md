@@ -61,8 +61,22 @@ function isEnvelope(x) {
   );
 }
 
-/** Does a top-level type hold anything at all? */
-const hasContent = (type) => type._start !== null || type._map.size > 0;
+/** The struct of `structs` (sorted by clock, one client) that holds `clock`, or null. */
+function structAt(structs, clock) {
+  if (!structs || structs.length === 0) return null;
+  const last = structs[structs.length - 1];
+  if (clock < structs[0].id.clock || clock >= last.id.clock + last.length) return null;
+  let lo = 0;
+  let hi = structs.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >>> 1;
+    const s = structs[mid];
+    if (clock < s.id.clock) hi = mid - 1;
+    else if (clock >= s.id.clock + s.length) lo = mid + 1;
+    else return s;
+  }
+  return null;
+}
 
 /**
  * Null when `doc` with `update` applied holds only encrypted envelopes in
@@ -70,31 +84,149 @@ const hasContent = (type) => type._start !== null || type._map.size > 0;
  * "not-envelope", "incomplete" (the update needs structs the room does not
  * have, so it can't be checked), or "malformed".
  * `doc` itself is not changed.
+ *
+ * Plan W6.23 (review 12.11 #15): only the update's own structs are read.
+ * The room is never encoded again; each struct whose parent the update does
+ * not name (an insert next to an existing item) finds its neighbour with a
+ * binary search in the room's struct store, as Yjs itself does when it
+ * integrates the update. So the cost follows the update's size, not the
+ * room's (src/__tests__/collabE2eeCheckCost.test.ts: a 4 MB room).
+ * The room already passed this check for everything it holds, so what it
+ * has stays valid; only what the update adds is new.
  */
 export function checkE2eeUpdate(doc, update) {
-  const probe = new Y.Doc({ gc: false });
+  let decoded;
   try {
-    Y.applyUpdate(probe, Y.encodeStateAsUpdate(doc));
-    Y.applyUpdate(probe, update);
+    decoded = Y.decodeUpdate(update);
   } catch {
-    probe.destroy();
     return "malformed";
   }
-  try {
-    if (probe.store.pendingStructs !== null || probe.store.pendingDs !== null) return "incomplete";
-    for (const [name, type] of probe.share) {
-      if (name === E2E_ARRAY) continue;
-      if (hasContent(type)) return "plaintext";
-    }
-    const raw = probe.share.get(E2E_ARRAY);
-    if (!raw) return null;
-    if (raw._map.size > 0) return "plaintext";
-    const items = probe.getArray(E2E_ARRAY).toArray();
-    for (const item of items) if (!isEnvelope(item)) return "not-envelope";
-    return null;
-  } finally {
-    probe.destroy();
+  const store = doc.store;
+  /** The update's structs per client, in clock order (as Yjs writes them). */
+  const own = new Map();
+  for (const s of decoded.structs) {
+    const list = own.get(s.id.client);
+    if (list) list.push(s);
+    else own.set(s.id.client, [s]);
   }
+  // Completeness, as Y.applyUpdate decides it: each client's structs must
+  // start at or before what the room has of that client, without gaps.
+  const reach = new Map();
+  for (const [client, list] of own) {
+    let next = Y.getState(store, client);
+    let open = true;
+    for (const s of list) {
+      if (s instanceof Y.Skip) {
+        open = false;
+        continue;
+      }
+      if (!open || s.id.clock > next) return "incomplete";
+      next = Math.max(next, s.id.clock + s.length);
+    }
+    reach.set(client, next);
+  }
+  const known = (client) => reach.get(client) ?? Y.getState(store, client);
+  // Deletes of structs neither the room nor the update has wait in Yjs (pendingDs).
+  for (const [client, ranges] of decoded.ds.clients) {
+    for (const r of ranges) if (r.clock + r.len > known(client)) return "incomplete";
+  }
+
+  /**
+   * Where an item of the update lands: "e2e" (the envelopes' array, as a list
+   * entry), "nested" (inside a Y type in that array), "gc" (Yjs drops it: a
+   * neighbour is garbage collected), "other", or "missing". Resolved through its origins, as Item.getMissing does.
+   */
+  const memo = new Map();
+  const roomPlace = (struct) => {
+    if (struct instanceof Y.GC) return "gc";
+    if (!(struct instanceof Y.Item)) return "missing";
+    const parent = struct.parent;
+    if (!parent || parent._item !== null) return "other";
+    if (doc.share.get(E2E_ARRAY) !== parent) return "other";
+    return struct.parentSub === null ? "e2e" : "other";
+  };
+  const find = (id) => {
+    if (!id) return null;
+    const mine = structAt(own.get(id.client), id.clock);
+    if (mine && !(mine instanceof Y.Skip)) return { mine };
+    if (id.clock >= Y.getState(store, id.client)) return { missing: true };
+    const theirs = structAt(store.clients.get(id.client), id.clock);
+    return theirs ? { theirs } : { missing: true };
+  };
+  const placeOf = (start) => {
+    // Iterative: an update of many inserts is a chain of origins.
+    const chain = [];
+    let item = start;
+    let place;
+    for (;;) {
+      if (memo.has(item)) {
+        place = memo.get(item);
+        break;
+      }
+      if (item instanceof Y.GC) {
+        place = "gc";
+        break;
+      }
+      if (typeof item.parent === "string") {
+        place = item.parent === E2E_ARRAY && item.parentSub === null ? "e2e" : "other";
+        break;
+      }
+      if (item.parent !== null) {
+        // A child of a nested type (there is none among envelopes): where is that type?
+        const up = find(item.parent);
+        if (!up || up.missing) place = "missing";
+        else if (up.theirs) place = roomPlace(up.theirs) === "e2e" ? "nested" : up.theirs instanceof Y.GC ? "gc" : "other";
+        else {
+          const at = placeOf(up.mine);
+          place = at === "e2e" || at === "nested" ? "nested" : at;
+        }
+        break;
+      }
+      const left = find(item.origin);
+      const right = find(item.rightOrigin);
+      if (left?.missing || right?.missing) {
+        place = "missing";
+        break;
+      }
+      const l = left?.theirs ? roomPlace(left.theirs) : null;
+      const r = right?.theirs ? roomPlace(right.theirs) : null;
+      if (l === "gc" || r === "gc" || left?.mine instanceof Y.GC || right?.mine instanceof Y.GC) {
+        place = "gc";
+        break;
+      }
+      if (l !== null) {
+        place = l;
+        break;
+      }
+      const next = left?.mine ?? (r !== null ? null : right?.mine);
+      if (!next) {
+        place = r ?? "missing";
+        break;
+      }
+      chain.push(item);
+      item = next;
+    }
+    memo.set(item, place);
+    for (const c of chain) memo.set(c, place);
+    return place;
+  };
+
+  let notEnvelope = false;
+  for (const s of decoded.structs) {
+    if (!(s instanceof Y.Item)) continue; // GC and Skip carry no content
+    const place = placeOf(s);
+    if (place === "missing") return "incomplete";
+    if (place === "gc") continue; // Yjs keeps none of it
+    if (place === "other") return "plaintext";
+    if (place === "nested") {
+      notEnvelope = true; // inside a Y type that sits in the array instead of an envelope
+      continue;
+    }
+    const c = s.content;
+    if (c instanceof Y.ContentDeleted) continue;
+    if (!(c instanceof Y.ContentAny) || !c.arr.every(isEnvelope)) notEnvelope = true;
+  }
+  return notEnvelope ? "not-envelope" : null;
 }
 
 /**
@@ -174,7 +306,12 @@ export function createRelayRoom({ name, state = null, authorize, onChange = () =
       peer.socket.close(Close.TooLarge.code, Close.TooLarge.reason);
       return false;
     }
-    Y.applyUpdate(doc, update, peer);
+    try {
+      Y.applyUpdate(doc, update, peer);
+    } catch {
+      peer.socket.close(Close.Forbidden.code, "e2ee-only: malformed");
+      return false;
+    }
     peer.socket.send(frame(peer.address, MessageType.SyncStatus, (e) => encoding.writeVarUint(e, 1)));
     return true;
   }
