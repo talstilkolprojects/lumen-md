@@ -91,6 +91,24 @@
 /src/plugins/liveJsSandbox.ts            @talstilkol
 /src/main.tsx                            @talstilkol
 
+# ── Review 11 (RR11-481-1): what redaction, the preview and the frames also depend on ──
+#   An input of every redaction pass (prepareCriticMarkupMapped)
+/src/editor/suggesting.ts                @talstilkol
+#   What a long or embedding note's preview parses
+/src/renderer/blocks.ts                  @talstilkol
+/src/renderer/incrementalPreview.ts      @talstilkol
+/src/renderer/Preview.tsx                @talstilkol
+/src/renderer/embeds.ts                  @talstilkol
+#   Frame sandboxes and sinks
+/src/plugins/sandbox.ts                  @talstilkol
+/src/lib/trustedTypes.ts                 @talstilkol
+/src/playground/runner.ts                @talstilkol
+/src/plugins/liveJsRunner.ts             @talstilkol
+#   CSPs outside /deploy/ and public/_headers (index.html's frame-src must equal EMBED_ORIGINS)
+/index.html                              @talstilkol
+/playground-runner.html                  @talstilkol
+/livejs-runner.html                      @talstilkol
+
 # ── Native permissions and updates ──
 /src-tauri/capabilities/                 @talstilkol
 /src-tauri/tauri.conf.json               @talstilkol
@@ -100,3 +118,5 @@
 /.github/CODEOWNERS                      @talstilkol
 /scripts/lib/humanReview.mjs             @talstilkol
 /scripts/lib/independentReview.mjs       @talstilkol
+/scripts/lib/prGate.mjs                  @talstilkol
+/scripts/pr-check.mjs                    @talstilkol
