@@ -10,7 +10,8 @@
  * the app and its bundle budget, nothing else.
  *
  *   VERCEL_ENV=preview      build, budget, vitest, e2e, i18n:check,
- *                           hygiene, docs:sync, the licence gate
+ *                           hygiene, docs:sync, docs:complete (with the
+ *                           strict Hebrew parity), the licence gate
  *   VERCEL_ENV=production   build, budget
  *   (not on Vercel)         the preview set, so `node scripts/vercel-build.mjs`
  *                           reproduces a preview build locally
@@ -38,6 +39,8 @@ export const GATES = {
   "i18n:check": ["run", "-s", "i18n:check"],
   hygiene: ["run", "-s", "hygiene"],
   "docs:sync": ["run", "-s", "docs:sync"],
+  // W6.28: every page in English and Hebrew, and each Hebrew page with its English page's sections (docs-parity --strict).
+  "docs:complete": ["run", "-s", "docs:complete"],
   licenses: ["run", "-s", "licenses"],
   // W4.4: token shapes and VITE_* values not on the allowlist in dist/.
   secrets: ["run", "-s", "secrets:dist"],
@@ -86,7 +89,7 @@ export function vitestSummary(report, { maxFiles = 80 } = {}) {
 }
 
 export const PRODUCTION_GATES = ["build", "budget"];
-export const PREVIEW_GATES = ["build", "budget", "secrets", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "licenses", "mutation"];
+export const PREVIEW_GATES = ["build", "budget", "secrets", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "docs:complete", "licenses", "mutation"];
 /**
  * `--e2e-only`: build and the e2e gate, nothing else. For a probe branch
  * that runs Playwright specs (LUMEN_E2E_SPECS, a longer LUMEN_E2E_MINUTES)

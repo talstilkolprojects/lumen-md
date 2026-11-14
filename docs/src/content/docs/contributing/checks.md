@@ -14,7 +14,7 @@ No GitHub Actions minutes are used.
 
 | Build | What runs, in order |
 |---|---|
-| Preview (the `verify/…` trains) | build, bundle budget, the secret scan of `dist/`, vitest, e2e (smoke on chromium and firefox), `i18n:check`, hygiene, `docs:sync`, the licence gate, the mutation floor (`mutation:check`) |
+| Preview (the `verify/…` trains) | build, bundle budget, the secret scan of `dist/`, vitest, e2e (smoke on chromium and firefox), `i18n:check`, hygiene, `docs:sync`, `docs:complete` (every page in both languages, and each Hebrew page with its English page's sections, help anchors and at least 60% of its words), the licence gate, the mutation floor (`mutation:check`) |
 | Production (`main`) | build, bundle budget — as before |
 
 The gates stop at the first failure. The build log ends with the gate that
@@ -54,7 +54,7 @@ node scripts/vercel-build.mjs --dry-run    # print the gates, run nothing
 Outside Vercel (no `VERCEL_ENV`) the script runs the preview set, so a
 local run is what the branch's build will do. Each gate is also an npm
 script of its own: `npm run build`, `npm run budget`, `npm test`,
-`npm run e2e:gate` (after `VITE_E2E=1 npm run build`: specs reach the app's modules through `window.__lumenTest`, which only such a build has), `npm run i18n:check`, `npm run hygiene`, `npm run docs:sync`,
+`npm run e2e:gate` (after `VITE_E2E=1 npm run build`: specs reach the app's modules through `window.__lumenTest`, which only such a build has), `npm run i18n:check`, `npm run hygiene`, `npm run docs:sync`, `npm run docs:complete`,
 `npm run licenses`, `npm run secrets:dist` (see
 [Secret scan of the build](/security/secret-scan/)).
 

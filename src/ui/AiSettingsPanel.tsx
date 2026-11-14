@@ -418,7 +418,7 @@ export function AiSettingsPanel({ open, onClose, embedded = false }: Props) {
               <X size={16} />
             </button>
           )}
-          <HelpButton topic="ai/local-agents" />
+          <HelpButton topic="ai/local-agents#ai-settings" />
         </header>
 
         <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 14, fontSize: 13, lineHeight: 1.5, overflowY: "auto" }}>

@@ -128,7 +128,7 @@ export function AiSuggestionsPanel() {
         <Lightbulb size={16} style={{ color: "hsl(var(--accent))" }} />
         <strong style={{ flex: 1 }}>{t("agent.panel.title")}</strong>
         <button type="button" aria-label={t("agent.panel.close")} onClick={close} style={{ background: "none", border: "none", color: "inherit", cursor: "pointer" }}>
-        <HelpButton topic="ai/local-agents" />
+        <HelpButton topic="ai/local-agents#what-a-run-does" />
           <X size={14} />
         </button>
       </div>

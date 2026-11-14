@@ -62,6 +62,27 @@ PLAYWRIGHT_BASE_URL=http://localhost:5180 npx playwright test --project=perf
 
 כל הרצה מצרפת את המספרים שנמדדו לדוח של Playwright כהערות `perf`.
 
+## תקציב תגובתיות
+
+את זמן הטעינה מודד Lighthouse; את מהירות התגובה לכל פעולה מודדים בנפרד
+(תוכנית W1.22), ב-Chromium עם מעבד מואט פי 4, כמו בטלפון מהביניים:
+
+| מה | תקציב |
+| --- | --- |
+| INP על 20 אינטראקציות קבועות (לוח הפקודות, מצבי תצוגה, פתיחת פתקים ומעבר ביניהם, הקלדה, תיבת סימון של משימה, חיפוש, ביטול) | p75 < 100 ms |
+| הקשה ← הפריים הבא, בסוף פתק של 50 KB | p95 < 16 ms |
+| הקשה ← הפריים הבא, בסוף פתק של 2 MB | p95 < 33 ms |
+
+```sh
+npm run perf:inp          # measures (e2e/inp-budget.spec.ts), then gates
+npm run perf:inp:gate -- --record   # also appends the run to reports/perf/inp-trend.jsonl
+```
+
+ההרצה כותבת את `reports/perf/inp-latest.json`. השער משווה אותו
+ל-`reports/perf/inp-baseline.json` ונכשל כשאחד משלושת המספרים איטי ב-10% או
+יותר; ההרצה הראשונה הופכת לבסיס (`npm run perf:inp:gate -- --update` מחליף
+אותו בכוונה).
+
 ## למפתחים
 
 - `src/storage/vaultIndexCore.ts` — האינדקס (טהור, רץ ב-worker או בדף);
