@@ -27,6 +27,7 @@ import { checkPosition, newRecoveryWords, normalizeWord, parseRecoveryWords, rel
 import type { FileSyncState } from "../status";
 import { WrongPassphraseError } from "../header";
 import { explainError } from "../../../lib/userError";
+import { HelpButton } from "../../../ui/HelpButton";
 
 const muted: React.CSSProperties = { fontSize: 13, color: "hsl(var(--fg-muted))" };
 const errorStyle: React.CSSProperties = { fontSize: 13, color: "hsl(var(--danger))" };
@@ -152,6 +153,8 @@ export function SetupWizard({
           <h2 id="sync-setup-title" style={{ margin: 0, fontSize: 18 }}>
             {t("e2ee.guide.title")}
           </h2>
+          <span style={{ flex: 1 }} />
+          <HelpButton topic="sync/two-clicks" />
           <button type="button" aria-label={t("e2ee.sync.close")} onClick={onClose} style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", fontSize: 20 }}>
             ×
           </button>

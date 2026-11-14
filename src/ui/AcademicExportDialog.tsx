@@ -16,6 +16,7 @@ import { GraduationCap, X } from "lucide-react";
 import { t, getLocale } from "../i18n";
 import { ACADEMIC_TEMPLATES, COVER_KEYS, academicTemplate, splitCover, type AcademicTemplateId, type CoverFields, type PageNumberFormat } from "../storage/academicTemplates";
 import { explainError } from "../lib/userError";
+import { HelpButton } from "./HelpButton";
 
 const SETTINGS_KEY = "lumen.academicExport.v1";
 
@@ -120,6 +121,7 @@ export function AcademicExportDialog({ content, name, onClose }: AcademicExportP
         <header style={{ padding: "14px 18px", borderBottom: "1px solid hsl(var(--border))", display: "flex", gap: 10, alignItems: "center" }}>
           <GraduationCap size={18} style={{ color: "hsl(var(--accent))" }} aria-hidden="true" />
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, flex: 1 }}>{t("academic.title")}</h2>
+          <HelpButton topic="workspace/academic-docx" />
           <button ref={closeRef} type="button" style={ghost} onClick={onClose} aria-label={t("academic.close")}>
             <X size={16} />
           </button>

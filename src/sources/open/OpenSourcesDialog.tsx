@@ -17,6 +17,7 @@ import "./OpenSourcesDialog.css";
 import { enabledSources, setSourceEnabled, type OpenSourceId } from "./gate";
 import { KINDS, merge, type Kind, type LocalSources, type OpenResult } from "./search";
 import { explainError } from "../../lib/userError";
+import { HelpButton } from "../../ui/HelpButton";
 
 export interface DialogDeps {
   /** Saved laws and the downloaded library (read from the vault once). */
@@ -120,7 +121,7 @@ export function OpenSourcesDialog(d: DialogDeps) {
     <div className="cite-backdrop" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && d.onClose()}>
       <div className="cite-dialog os-dialog" role="dialog" aria-modal="true" aria-labelledby="os-title" data-testid="open-sources" onKeyDown={onKey}>
         <h2 id="os-title" className="os-title">
-          {t("openSources.title")}
+          {t("openSources.title")} <HelpButton topic="workspace/open-sources" />
         </h2>
         <div className="cite-fields">
           <input

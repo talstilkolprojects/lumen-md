@@ -35,6 +35,7 @@ import {
 } from "./classroom";
 import { classLinkHash, ClassLinkError, type ClassLink } from "./link";
 import { listAssignments, removeAssignment, saveAssignment } from "./store";
+import { HelpButton } from "../../../ui/HelpButton";
 
 const muted: React.CSSProperties = { fontSize: 13, color: "hsl(var(--fg-muted))" };
 const errorStyle: React.CSSProperties = { fontSize: 13, color: "hsl(var(--danger))" };
@@ -281,6 +282,8 @@ export function ClassroomPanel({ onClose, joining = null, deps = {}, relay = bui
           <h2 id="classroom-title" style={{ margin: 0, fontSize: 18 }}>
             {t("e2ee.class.title")}
           </h2>
+          <span style={{ flex: 1 }} />
+          <HelpButton topic="sync/classroom" />
           <button type="button" aria-label={t("e2ee.sync.close")} onClick={onClose} style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", fontSize: 20 }}>
             ×
           </button>

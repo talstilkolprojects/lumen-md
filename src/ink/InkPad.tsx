@@ -18,6 +18,7 @@ import { cropInk, newInkId, roundPoint, type Ink, type InkDir, type InkPlacement
 import { strokeOutline } from "./inkPath";
 import { PalmGate, isEraser } from "./palmGate";
 import { strokesHit } from "./eraser";
+import { HelpButton } from "../ui/HelpButton";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const COLORS = [
@@ -272,8 +273,11 @@ export function InkPad({ initial, dir, onDone }: InkPadProps) {
           gap: 10,
         }}
       >
-        <div id="ink-pad-title" style={{ fontSize: 15, fontWeight: 600 }}>
-          {t("ink.title")}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div id="ink-pad-title" style={{ fontSize: 15, fontWeight: 600, flex: 1 }}>
+            {t("ink.title")}
+          </div>
+          <HelpButton topic="editor/handwriting" />
         </div>
         <div style={{ fontSize: 12, color: "hsl(var(--fg-muted))" }}>{t("ink.hint")}</div>
         <div role="toolbar" aria-label={t("ink.title")} style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
