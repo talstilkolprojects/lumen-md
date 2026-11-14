@@ -70,6 +70,7 @@ import { E2eeSyncKeys } from "./engineKeys";
 // engineCore.ts and engineKeys.ts; everything is still imported from here.
 export {
   BASE_BYTES_LIMIT,
+  DeviceBusyError,
   DropDevicesRequiredError,
   KeyChangeInProgressError,
   NoVaultError,
@@ -78,6 +79,7 @@ export {
   RevocationContestedError,
   UnverifiedDeviceError,
   VaultExistsError,
+  KEY_CHANGE_LOCK_WAIT_MS,
   type E2eeSyncOptions,
   type RekeyRequest,
   type RekeyResult,

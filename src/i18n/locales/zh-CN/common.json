@@ -558,6 +558,7 @@
   "e2ee.bg.didNotRunNative": "iOS 和 Android 会在后台暂停 Lumen，因此 {minutes} 分钟内未同步。正在同步。",
   "e2ee.bg.dismiss": "知道了",
   "e2ee.bg.locked": "保险库锁定期间同步已暂停（{minutes} 分钟）。解锁后即可同步。",
+  "e2ee.busy": "此设备正在另一个标签页中同步，因此没有做任何更改。请稍后再试；如果反复出现，请重新加载或关闭 Lumen 的其他标签页。",
   "e2ee.class.assignmentTitle": "作业标题",
   "e2ee.class.check": "查看提交",
   "e2ee.class.close": "从中继删除",

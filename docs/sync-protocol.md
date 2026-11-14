@@ -240,7 +240,11 @@ check) a fork. This holds for passphrase and device-key devices alike.
    its tabs too (the Web Locks API, one lock per vault in an origin; H3,
    review 16 K6-3); rounds and every call that writes the device state
    take that lock and read the state again under it (K6-1), and the
-   pairing lock is read from the stored state before the commit.
+   pairing lock is read from the stored state before the commit. A key
+   change waits at most 8 seconds for another tab's round to let go of the
+   lock, then fails with "busy" and writes nothing (review 34, K34-1); a
+   pairing code refused because another tab only syncs says "busy", not
+   "changing keys" (K34-2).
    **Read-back** (third review 12.11, N2): the re-keyer then reads the
    keyring again. It must be the bytes it wrote, or a keyring that already
    descends from them. Otherwise the provider let another write replace it

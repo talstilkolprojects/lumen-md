@@ -558,6 +558,7 @@
   "e2ee.bg.didNotRunNative": "iOS et Android mettent Lumen en pause en arrière-plan : la synchro ne s’est pas exécutée pendant {minutes} min. Synchronisation en cours.",
   "e2ee.bg.dismiss": "OK",
   "e2ee.bg.locked": "La synchro est en pause tant que le coffre est verrouillé ({minutes} min). Déverrouillez-le pour synchroniser.",
+  "e2ee.busy": "Cet appareil se synchronise en ce moment dans un autre onglet, donc rien n'a été modifié. Réessayez dans un instant ; si cela se répète, rechargez ou fermez les autres onglets de Lumen.",
   "e2ee.class.assignmentTitle": "Titre du devoir",
   "e2ee.class.check": "Voir les rendus",
   "e2ee.class.close": "Supprimer du relais",

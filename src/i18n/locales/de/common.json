@@ -558,6 +558,7 @@
   "e2ee.bg.didNotRunNative": "iOS und Android pausieren Lumen im Hintergrund, daher lief {minutes} min keine Synchronisierung. Jetzt wird synchronisiert.",
   "e2ee.bg.dismiss": "OK",
   "e2ee.bg.locked": "Die Synchronisierung pausiert, solange der Tresor gesperrt ist ({minutes} min). Entsperre ihn zum Synchronisieren.",
+  "e2ee.busy": "Dieses Gerät synchronisiert gerade in einem anderen Tab, daher wurde nichts geändert. Versuchen Sie es gleich noch einmal; wenn das wiederholt passiert, laden Sie die anderen Lumen-Tabs neu oder schließen Sie sie.",
   "e2ee.class.assignmentTitle": "Titel der Aufgabe",
   "e2ee.class.check": "Abgaben prüfen",
   "e2ee.class.close": "Vom Relay löschen",

@@ -558,6 +558,7 @@
   "e2ee.bg.didNotRunNative": "iOS と Android はバックグラウンドの Lumen を一時停止するため、{minutes} 分間同期されませんでした。今すぐ同期します。",
   "e2ee.bg.dismiss": "OK",
   "e2ee.bg.locked": "保管庫がロックされている間は同期を停止しています（{minutes} 分）。同期するにはロックを解除してください。",
+  "e2ee.busy": "この端末は現在別のタブで同期中のため、何も変更されていません。少し待ってからもう一度お試しください。繰り返し起きる場合は、Lumen の他のタブを再読み込みするか閉じてください。",
   "e2ee.class.assignmentTitle": "課題名",
   "e2ee.class.check": "提出を確認",
   "e2ee.class.close": "リレーから削除",
