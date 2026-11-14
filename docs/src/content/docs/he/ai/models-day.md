@@ -54,6 +54,7 @@ npm run models:day
 | `bench-models` | כל מנוע בדפדפן ב-Chromium על WebGPU |
 | `meetings`, `canvas-draw`, `crosslingual`, `lit-review` | ההערכה של כל פיצ׳ר |
 | `dictalm3` (רשות: `--with dictalm3`) | DictaLM 3.0 מול `qwen3:4b` |
+| `heldout` (כשמפתח המעריך קיים: `LUMEN_HELDOUT_KEY` או `--heldout-key-file`) | ששת [הסטים המוחזקים](/he/ai/heldout/), אחרי סריקת הזיהום |
 
 ## עצירה והמשך
 
