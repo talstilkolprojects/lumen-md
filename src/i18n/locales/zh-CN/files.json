@@ -286,6 +286,7 @@
   "vault.folder.conflict": "未移动：“{folder}”中有 {n} 个文件已存在且内容不同（例如 {path}）。没有做任何更改。",
   "vault.folder.failed": "库的移动已停止：{error}。没有删除任何内容，可以继续。",
   "vault.folder.interrupted": "将库移动到“{folder}”的过程被中断。没有删除任何内容。",
+  "vault.folder.lateCopies": "移动即将完成时，有 {n} 条笔记保存到了原来的位置。它们较新的内容现在已在库中，必要时作为冲突副本放在笔记旁边（第一条：“{path}”）。",
   "vault.folder.moved": "库现在位于文件夹“{folder}”：已复制并检查 {n} 个文件。浏览器存储中的笔记没有被删除。",
   "vault.folder.movedBack": "库已回到浏览器存储：已复制并检查 {n} 个文件。文件夹“{folder}”没有改变。",
   "vault.folder.moving": "正在移动库… {done}/{total} 个文件",

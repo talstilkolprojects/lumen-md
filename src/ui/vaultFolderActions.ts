@@ -11,6 +11,12 @@ export async function flushOpenNote(): Promise<void> {
   await flushActiveWorkspaceDoc();
 }
 
+/** Say so when notes saved during the switch went to the new vault as conflict copies (2.9). */
+export function reportLateCopies(r: { conflictCopies?: string[] }): void {
+  const copies = r.conflictCopies ?? [];
+  if (copies.length) showAiToast(t("vault.folder.lateCopies", { n: String(copies.length), path: copies[0] }), "info");
+}
+
 /** Toast for a failed move: conflicts, permission, or anything else. */
 export async function reportMoveError(e: unknown, folder: string): Promise<void> {
   const { VaultMoveConflictError, VaultPermissionError } = await import("../storage/vault/location");
@@ -79,6 +85,7 @@ export async function moveVaultToFolder(): Promise<void> {
     await (await actions()).flushOpenNote();
     const r = await loc.moveVault({ kind: "folder", handle, name: handle.name });
     showAiToast(t("vault.folder.moved", { folder: handle.name, n: String(r.files) }), "info");
+    reportLateCopies(r);
   } catch (e) {
     await (await actions()).reportMoveError(e, handle.name);
   }
@@ -123,6 +130,7 @@ export async function moveVaultToBrowser(): Promise<void> {
     await (await actions()).flushOpenNote();
     const r = await loc.moveVault({ kind: "opfs" });
     showAiToast(t("vault.folder.movedBack", { folder: status.name, n: String(r.files) }), "info");
+    reportLateCopies(r);
   } catch (e) {
     await (await actions()).reportMoveError(e, status.name);
   }

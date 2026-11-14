@@ -26,6 +26,7 @@ import {
   type StoredLocation,
 } from "../storage/vault/location";
 import { readWorkspaceFile, writeWorkspaceBlob, writeWorkspaceFile, isOPFSAvailable } from "../storage/workspace";
+import { getHistoryVault } from "../storage/history";
 
 const store = new Map<string, unknown>();
 const kv = { get: async <T,>(k: string) => store.get(k) as T | undefined, set: async (k: string, v: unknown) => void store.set(k, v), del: async (k: string) => void store.delete(k) };
@@ -71,7 +72,7 @@ describe("moving the vault into a folder", () => {
     const f = folder();
     const seen: number[] = [];
     const r = await moveVault(loc(f), { onProgress: (p) => seen.push(p.done) });
-    expect(r).toEqual({ files: 4, bytes: 4 + 3 + new TextEncoder().encode("שלום עולם").byteLength + 2, unchanged: 0, trashed: 0 });
+    expect(r).toEqual({ files: 4, bytes: 4 + 3 + new TextEncoder().encode("שלום עולם").byteLength + 2, unchanged: 0, trashed: 0, conflictCopies: [] });
     expect(seen.at(-1)).toBe(4);
     expect(getVaultStatus()).toEqual({ location: "folder", name: "My Vault" });
     expect(await bytesAt(f.dir, "img/lumen-asset-1.png")).toEqual([0, 255, 7]);
@@ -404,5 +405,149 @@ describe("start-up and permission", () => {
     w.showDirectoryPicker = async () => null;
     expect(isFolderVaultSupported()).toBe(true);
     delete w.showDirectoryPicker;
+  });
+});
+
+describe("folders in a move (2.79, Codex P2 4311163141)", () => {
+  it("creates the source's empty folders at the target, nested ones too", async () => {
+    await seed();
+    const opfs = createOpfsBackend();
+    await opfs.mkdir("ארכיון");
+    await opfs.mkdir("projects/empty/inner");
+    const f = folder();
+    await moveVault(loc(f));
+    const target = getVaultBackend();
+    expect(await target.stat("ארכיון")).toMatchObject({ kind: "directory" });
+    expect(await target.stat("projects/empty/inner")).toMatchObject({ kind: "directory" });
+    expect(f.dir.dirs.get("ארכיון")?.files.size).toBe(0);
+    expect(await target.list("ארכיון")).toEqual([]);
+  });
+
+  it("a file at the target where the source has a parent folder is a conflict before anything is written", async () => {
+    await seed();
+    const f = folder();
+    // A regular file named like the source's folder "פרויקטים".
+    await (await f.dir.getFileHandle("פרויקטים", { create: true })).createWritable().then(async (w) => {
+      await w.write("a file, not a folder");
+      await w.close();
+    });
+    const err = await moveVault(loc(f)).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(VaultMoveConflictError);
+    expect((err as VaultMoveConflictError).paths).toEqual(["פרויקטים"]);
+    // Nothing was written: no a.md, no img/, no .trash/, and no move record.
+    expect([...f.dir.files.keys()]).toEqual(["פרויקטים"]);
+    expect([...f.dir.dirs.keys()]).toEqual([]);
+    expect(getPendingMove()).toBeNull();
+    expect(getVaultStatus()).toEqual({ location: "opfs" });
+  });
+
+  it("a file at the target where the source has an empty folder is a conflict too", async () => {
+    await writeWorkspaceFile("a.md", "A");
+    await createOpfsBackend().mkdir("Inbox");
+    const f = folder();
+    await (await f.dir.getFileHandle("Inbox", { create: true })).createWritable().then(async (w) => {
+      await w.write("x");
+      await w.close();
+    });
+    const err = await moveVault(loc(f)).catch((e: unknown) => e);
+    expect((err as VaultMoveConflictError).paths).toEqual(["Inbox"]);
+    expect(f.dir.files.has("a.md")).toBe(false);
+  });
+});
+
+describe("a save between the final check and the switch (2.9, Codex P2 4306783259)", () => {
+  /** Runs `fn` when the move stores its new location: after the final check, before the switch. */
+  function atSwitch(fn: () => Promise<void>) {
+    __setLocationStore({
+      ...kv,
+      set: async (k: string, v: unknown) => {
+        if (k === "lumen-vault-location") await fn();
+        store.set(k, v);
+      },
+    });
+  }
+
+  it("the newer text of an edited note goes to the new vault as a conflict copy, and the report says so", async () => {
+    await seed();
+    const f = folder();
+    atSwitch(() => createOpfsBackend().write("a.md", "# A, saved in the window\n"));
+    const r = await moveVault(loc(f));
+    expect(r.conflictCopies).toEqual(["a (conflict copy).md"]);
+    expect(getVaultStatus()).toEqual({ location: "folder", name: "My Vault" });
+    // The checked copy stays the note; the newer text sits next to it.
+    expect(await readWorkspaceFile("a.md")).toBe("# A\n");
+    expect(await readWorkspaceFile("a (conflict copy).md")).toBe("# A, saved in the window\n");
+  });
+
+  it("a note created in the window is copied at its own path; a taken conflict-copy name gets a number", async () => {
+    await seed();
+    await writeWorkspaceFile("פרויקטים/סיכום (conflict copy).md", "older copy");
+    const f = folder();
+    atSwitch(async () => {
+      const opfs = createOpfsBackend();
+      await opfs.write("new in the window.md", "N");
+      await opfs.write("פרויקטים/סיכום.md", "שלום, שוב");
+    });
+    const r = await moveVault(loc(f));
+    expect(r.conflictCopies.sort()).toEqual(["new in the window.md", "פרויקטים/סיכום (conflict copy 2).md"].sort());
+    expect(await readWorkspaceFile("new in the window.md")).toBe("N");
+    expect(await readWorkspaceFile("פרויקטים/סיכום (conflict copy 2).md")).toBe("שלום, שוב");
+    expect(await readWorkspaceFile("פרויקטים/סיכום (conflict copy).md")).toBe("older copy");
+  });
+
+  it("no save in the window: no conflict copies", async () => {
+    await seed();
+    const r = await moveVault(loc(folder()));
+    expect(r.conflictCopies).toEqual([]);
+  });
+});
+
+describe("vault identity for history (2.80, Codex P2 4311163146)", () => {
+  it("the first vault keeps the legacy identity; an unrelated folder gets its own; each keeps it", async () => {
+    await restoreVaultLocation();
+    expect(getHistoryVault()).toBe("");
+    const a = folder("A");
+    await openFolderAsVault(a.handle);
+    const idA = getHistoryVault();
+    expect(idA).toMatch(/.{8,}/);
+    const b = folder("B");
+    await openFolderAsVault(b.handle);
+    const idB = getHistoryVault();
+    expect(idB).toMatch(/.{8,}/);
+    expect(idB).not.toBe(idA);
+    await switchToBrowserStorage();
+    expect(getHistoryVault()).toBe("");
+    await openFolderAsVault(a.handle);
+    expect(getHistoryVault()).toBe(idA);
+    // After a reload the stored folder is the same vault again.
+    __resetVaultLocation();
+    __setLocationStore(kv);
+    await restoreVaultLocation();
+    expect(getHistoryVault()).toBe(idA);
+  });
+
+  it("a move hands the vault's identity to the target: its history follows the notes", async () => {
+    await restoreVaultLocation();
+    const other = folder("Other");
+    await openFolderAsVault(other.handle);
+    const otherId = getHistoryVault();
+    await switchToBrowserStorage();
+    await writeWorkspaceFile("a.md", "A");
+    // Moving the browser vault into the folder makes the folder this vault.
+    await moveVault(loc(other));
+    expect(getHistoryVault()).toBe("");
+    expect(getHistoryVault()).not.toBe(otherId);
+  });
+
+  it("while start-up is still restoring there is no vault, so no history", async () => {
+    store.set("lumen-vault-location", loc(folder()));
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    __setLocationStore({ ...kv, get: async <T,>(k: string) => (await gate, store.get(k) as T | undefined) });
+    expect(await restoreVaultLocationWithin(20)).toEqual({ location: "restoring" });
+    expect(getHistoryVault()).toBeNull();
+    release();
+    await vi.waitFor(() => expect(getVaultStatus().location).toBe("folder"));
+    expect(getHistoryVault()).not.toBeNull();
   });
 });
