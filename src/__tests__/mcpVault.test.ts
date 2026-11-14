@@ -179,7 +179,7 @@ describe("writes from a client wait for approval", () => {
     await expect(proposeWrite(vault, { client: "noisy", tool: "create_note", path: "q/3.md", before: null, after: "x" }, new Date(), 3)).rejects.toBeInstanceOf(QueueFullError);
     // Another client is not affected.
     await proposeWrite(vault, { client: "quiet", tool: "create_note", path: "q/q.md", before: null, after: "x" }, new Date(), 3);
-    await expect(proposeBatch(vault, "quiet", "bases_update", [0, 1, 2].map((i) => ({ path: `b/${i}.md`, before: null, after: "y" })), new Date(), 3)).rejects.toBeInstanceOf(QueueFullError);
+    await expect(proposeBatch(vault, "quiet", "bases_update", [0, 1, 2].map((i) => ({ path: `b/${i}.md`, before: "", after: "y" })), new Date(), 3)).rejects.toBeInstanceOf(QueueFullError);
     const queued = await listPending(vault);
     expect(queued.filter((q) => q.client === "noisy")).toHaveLength(3);
     expect(queued.filter((q) => q.client === "quiet").map((q) => q.path)).toEqual(["q/q.md"]);
