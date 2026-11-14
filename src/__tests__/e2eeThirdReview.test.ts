@@ -8,7 +8,7 @@
  * @vitest-environment node
  */
 import { describe, expect, it } from "vitest";
-import { CasUnsupportedError, memoryProvider, PreconditionFailedError, proveCas, type SyncProvider } from "../sync/e2ee/provider";
+import { CasUnsupportedError, memoryProvider, PreconditionFailedError, PROBE_RACE_ROUNDS, proveCas, type SyncProvider } from "../sync/e2ee/provider";
 import { E2eeSync, PairingPendingError, unlockVault, unlockWithDevice, UnverifiedDeviceError } from "../sync/e2ee/engine";
 import { ageDecrypt, ageEncrypt, generateIdentity } from "../sync/e2ee/age";
 import { bs, fromB64u, fromUtf8, randomBytes, sha256Hex, toB64u, utf8 } from "../sync/e2ee/bytes";
@@ -185,7 +185,7 @@ describe("N2: every keyring write is read back", () => {
     const p: SyncProvider = { ...base, id: "watched", put: (n, d, c) => (seen.push({ name: n, size: d.length }), base.put(n, d, c)) };
     await proveCas(p);
     const names = new Set(seen.map((s) => s.name));
-    expect(names.size).toBe(2);
+    expect(names.size).toBe(1 + PROBE_RACE_ROUNDS); // the probe object and one per race round (W6.27)
     for (const s of seen) {
       expect(s.name).toMatch(/^[A-Za-z0-9_-]{43}$/);
       expect(s.size).toBeGreaterThanOrEqual(285);

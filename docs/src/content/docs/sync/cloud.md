@@ -61,6 +61,10 @@ accept every write; Lumen refuses to sync with them. The test catches a
 misconfigured server, not a dishonest one: Lumen also reads every key change
 back right after writing it ([keys](/sync/e2ee-keys/)).
 
+Which servers pass, measured against the real ones (WsgiDAV, sabre/dav,
+golang.org/x/net/webdav and nginx are refused; an S3 API passes), and how to
+run the same check against yours: [real servers](/sync/real-servers/).
+
 ### S3-compatible
 
 - **Endpoint:** for example `https://s3.eu-central-1.amazonaws.com`,

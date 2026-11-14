@@ -238,6 +238,8 @@ export default defineConfig({
             { label: "Private classroom", slug: "sync/classroom", translations: { he: "כיתה פרטית" } },
             { label: "Sync status, selective sync, time left", slug: "sync/status", translations: { he: "מצב הסנכרון וסנכרון סלקטיבי" } },
             { label: "Sync on the local network", slug: "sync/lan", translations: { he: "סנכרון ברשת המקומית" } },
+            { label: "Real servers and conditional writes", slug: "sync/real-servers", translations: { he: "שרתים אמיתיים וכתיבות מותנות" } },
+            { label: "Read-mode publishing", slug: "sync/publish" },
           ],
         },
         {

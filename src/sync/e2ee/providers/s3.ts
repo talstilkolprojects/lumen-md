@@ -59,7 +59,7 @@ export function s3Provider(cfg: S3Config, deps: { fetch?: FetchLike } = {}): S3P
 
     async probe() {
       const probe = probeObject(); // a random, blob-like name and size (third review N2)
-      const a = await signed(keyUrl(probe.name), { method: "PUT", body: probe.data() as BodyInit, headers: { "Content-Type": "application/octet-stream" } });
+      const a = await signed(keyUrl(probe.name), { method: "PUT", body: probe.data(), headers: { "Content-Type": "application/octet-stream" } });
       if (!a.ok) throw await failed(a, "s3", probe.name);
       const etag = a.headers.get("ETag");
       await signed(keyUrl(probe.name), { method: "DELETE" }).catch(() => undefined);

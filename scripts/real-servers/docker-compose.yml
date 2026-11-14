@@ -1,0 +1,38 @@
+# Real servers for src/__tests__/providersRealServers.test.ts (plan W6.27)
+# that need Docker: Nextcloud, Apache httpd mod_dav and MinIO.
+#   docker compose -f scripts/real-servers/docker-compose.yml up -d
+#   node scripts/real-servers/wait.mjs          # until Nextcloud has installed itself
+#   LUMEN_REAL_SERVERS=scripts/real-servers/servers.docker.json LUMEN_REAL_SERVERS_OUT=/tmp/lumen-real.json \
+#     npx vitest run src/__tests__/providersRealServers.test.ts
+#   node scripts/real-servers/table.mjs /tmp/lumen-real.json
+#   docker compose -f scripts/real-servers/docker-compose.yml down -v
+services:
+  nextcloud:
+    image: nextcloud:31-apache
+    ports: ["127.0.0.1:8080:80"]
+    environment:
+      SQLITE_DATABASE: nextcloud
+      NEXTCLOUD_ADMIN_USER: lumen
+      NEXTCLOUD_ADMIN_PASSWORD: lumen-real-test
+      NEXTCLOUD_TRUSTED_DOMAINS: "127.0.0.1 localhost"
+  apache-dav:
+    image: httpd:2.4
+    ports: ["127.0.0.1:18086:80"]
+    volumes: ["./apache-dav.conf:/usr/local/apache2/conf/extra/lumen-dav.conf:ro"]
+    command: >
+      sh -c "mkdir -p /dav /var/lib/dav && chown daemon:daemon /dav /var/lib/dav &&
+             htpasswd -bc /usr/local/apache2/conf/dav.htpasswd tal pw &&
+             echo 'Include conf/extra/lumen-dav.conf' >> /usr/local/apache2/conf/httpd.conf &&
+             httpd-foreground"
+  minio:
+    image: minio/minio:latest
+    ports: ["127.0.0.1:9000:9000"]
+    environment:
+      MINIO_ROOT_USER: lumenadmin
+      MINIO_ROOT_PASSWORD: lumenadmin-secret
+    command: server /data
+  minio-bucket:
+    image: minio/mc:latest
+    depends_on: [minio]
+    entrypoint: >
+      sh -c "until mc alias set local http://minio:9000 lumenadmin lumenadmin-secret; do sleep 1; done && mc mb -p local/lumen"
