@@ -58,6 +58,35 @@ for a local investigation only (`LUMEN_SOURCEMAP=1`):
 `node scripts/supply-chain/repro-check.mjs --sourcemap` builds with them and
 says which fields of each differing map differ.
 
+### On two machines and two infrastructures (plan W7.23)
+
+A build that only reproduces on the machine that made it proves little. Two
+more checks:
+
+```bash
+npm run repro:two-paths      # two clean checkouts of one commit, different everything
+npm run repro:compare -- <A> <B>
+```
+
+- **`repro:two-paths`** builds the commit twice. The two builds differ in the
+  checkout's absolute path (a long nested one with a space), every source
+  file's modification time, `TZ`, `LANG`, `umask`, and the clock (under
+  `faketime +400d` when it is installed). It then compares every file's SHA-256.
+- **Cloudflare Workers Builds rebuilds every commit of `main`**
+  (`scripts/supply-chain/cf-build.sh`, the Worker `cloudflare/repro/wrangler.jsonc`).
+  It runs `npm ci` and `npm run build` from the same `package-lock.json`, and
+  serves only the build's manifest at `<worker>/lumen-build.json`. The app
+  stays on Vercel, whose `manifest` build gate writes the same manifest to
+  `/.well-known/lumen-build.json`. The free plan gives 3,000 build minutes a month, one build at
+  a time and 20 minutes per build (developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing).
+- **The second host compares** (`scripts/supply-chain/repro-second-host.sh`). It
+  hashes every file in the manifest as Vercel serves it for the same commit,
+  appends the verdict to `reports/repro/ledger.jsonl`, and runs diffoscope on any
+  file that differs. When the build is identical, it writes an in-toto statement
+  ("built identically on two infrastructures") for the release attestation to sign.
+- The target is 0 differing files, `.map` files included, on 10 commits in a row,
+  with the Cloudflare build under 15 minutes.
+
 ## 3. Every release has an SBOM
 
 ```bash
