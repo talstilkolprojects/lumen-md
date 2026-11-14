@@ -8,8 +8,10 @@
  *             user makes in AI settings; local-only never reaches here.
  *   preview   `lumen.ai.redact.preview` = "1": before each cloud request the
  *             user sees the redacted text and may cancel (2.6.4).
- *   names     with the DictaBERT-NER model downloaded (consent, plan 6.0)
- *             Hebrew names are found too; without it, patterns only.
+ *   names     a name finder this device has (piiNer.namesEngine): a cached
+ *             DictaBERT-NER / bert-base-NER model (consent, plan 6.0), else
+ *             Ollama on this machine; without one, patterns only, and the
+ *             preview says names are not hidden (audit W10.C23).
  *   ledger    each request's counts per type go to `piiLog` (no values).
  *
  * Loaded on demand from llm.ts: nothing here is on the startup path.
@@ -92,8 +94,8 @@ export function __setNer(fn: NerFn | null | undefined): void {
 async function namesFinder(): Promise<NerFn | null> {
   if (nerOverride !== undefined) return nerOverride;
   try {
-    const { nerIfCached } = await import("./piiNer");
-    return await nerIfCached();
+    const { namesEngine } = await import("./piiNer");
+    return (await namesEngine()).ner;
   } catch {
     return null;
   }
@@ -114,15 +116,16 @@ export class RedactionCancelledError extends Error {
   }
 }
 
-export type PreviewFn = (redacted: Message[], counts: Partial<Record<PiiType, number>>) => Promise<boolean>;
+/** `names`: whether a name finder ran (false: the preview says names are not hidden). */
+export type PreviewFn = (redacted: Message[], counts: Partial<Record<PiiType, number>>, names: boolean) => Promise<boolean>;
 
 let previewOverride: PreviewFn | null = null;
 export function __setPreview(fn: PreviewFn | null): void {
   previewOverride = fn;
 }
 
-async function showPreview(redacted: Message[], counts: Partial<Record<PiiType, number>>): Promise<boolean> {
-  if (previewOverride) return previewOverride(redacted, counts);
+async function showPreview(redacted: Message[], counts: Partial<Record<PiiType, number>>, names: boolean): Promise<boolean> {
+  if (previewOverride) return previewOverride(redacted, counts, names);
   const { uiConfirm } = await import("../ui/PromptDialog");
   const { t } = await import("../i18n");
   const summary = Object.entries(counts)
@@ -135,7 +138,7 @@ async function showPreview(redacted: Message[], counts: Partial<Record<PiiType, 
     .slice(0, 4000);
   return uiConfirm({
     title: t("pii.preview.title"),
-    message: `${summary ? `${t("pii.preview.hidden", { list: summary })}\n\n` : `${t("pii.preview.none")}\n\n`}${body}`,
+    message: `${summary ? `${t("pii.preview.hidden", { list: summary })}\n\n` : `${t("pii.preview.none")}\n\n`}${names ? "" : `${t("pii.preview.noNames")}\n\n`}${body}`,
     okLabel: t("pii.preview.send"),
   });
 }
@@ -157,6 +160,6 @@ export async function redactForCloud<M extends Message>(messages: M[], provider:
   const out: M[] = [];
   for (const m of messages) out.push({ ...m, content: typeof m.content === "string" ? await redactText(m.content, vault, { ner }) : m.content });
   if (vault.size) record({ ts: Date.now(), provider, counts: { ...vault.counts }, names: !!ner });
-  if (previewEnabled() && !(await showPreview(out, vault.counts))) throw new RedactionCancelledError();
+  if (previewEnabled() && !(await showPreview(out, vault.counts, !!ner))) throw new RedactionCancelledError();
   return { messages: out, vault };
 }

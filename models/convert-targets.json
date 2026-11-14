@@ -37,6 +37,17 @@
       "smoke": { "text": "דוד בן גוריון נולד בפולין ועלה לארץ ישראל.", "expect": "entities" }
     },
     {
+      "id": "bert-base-ner",
+      "hf": "dslim/bert-base-NER",
+      "task": "token-classification",
+      "pipeline": "token-classification",
+      "kind": "other",
+      "license": "MIT",
+      "cardLicense": "mit",
+      "attribution": "bert-base-NER by David S. Lim (dslim), fine-tuned BERT on CoNLL-2003, MIT licence. Converted to ONNX and quantised by Lumen.",
+      "smoke": { "text": "Ada Lovelace met Charles Babbage in London.", "expect": "entities" }
+    },
+    {
       "id": "siglip-base-patch16-256-multilingual",
       "hf": "google/siglip-base-patch16-256-multilingual",
       "task": "zero-shot-image-classification",

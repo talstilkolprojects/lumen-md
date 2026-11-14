@@ -36,7 +36,7 @@
   "ai.settings.unavailable": "Not available ({reason})",
   "ai.trace.clearConfirm": "Delete the record of {n} agent runs? This cannot be undone.",
   "ai.trace.testSetup": "Test the AI setup",
-  "pii.settings.hint": "E-mails, phone numbers, ID numbers, cards, IBANs, plates and birth dates are replaced with tokens such as ⟨EMAIL_1⟩ on this device, and put back in the answer. Names too when the Hebrew name model is downloaded.",
+  "pii.settings.hint": "E-mails, phone numbers, ID numbers, cards, IBANs, plates and birth dates are replaced with tokens such as ⟨EMAIL_1⟩ on this device, and put back in the answer. Names too, but only when a name finder is on this device (a downloaded name model, or Ollama running here); otherwise the preview says that names are not hidden.",
   "pii.settings.preview": "Show what will be sent before each cloud request",
   "pii.settings.redact": "Hide personal data before a request leaves this device",
   "pii.settings.title": "Personal data before the cloud"
