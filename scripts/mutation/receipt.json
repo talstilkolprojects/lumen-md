@@ -1,6 +1,19 @@
 {
   "$comment": "Plan W4.17: mutation scores of the critical modules, written by `node scripts/mutation/run.mjs --critical --receipt`. sha256 is the module source each score was measured on; scripts/mutation/check.mjs (npm run mutation:check, a preview-build gate) fails when a critical module scores under the minimum or has changed since its run.",
   "modules": {
+    "src/agents/runtime.ts": {
+      "score": 83.8,
+      "caught": 67,
+      "survived": 13,
+      "invalid": 0,
+      "sampled": 80,
+      "mutants": 487,
+      "max": 80,
+      "runner": "shim",
+      "sha256": "21dae64081d46ef29604909c85ea8723af88aa9af75f9ae820d834035d215f69",
+      "tests": "a7838b9d46dfa644e9c797ba1aff7b262e9c7984a3656982861de1bbd4ca8f9f",
+      "date": "2026-11-15"
+    },
     "src/ai/privacyLedger.ts": {
       "score": 82.5,
       "caught": 66,
