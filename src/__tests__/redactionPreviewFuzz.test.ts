@@ -383,4 +383,20 @@ describe("review 8: the text the preview parses, and where it puts footnotes", (
     expect(shadedTotal).toBeGreaterThan(1500);
     expect(kept.slice(0, 10)).toEqual([]);
   }, 120_000);
+
+  (haveDom ? it : it.skip)("an opening tag the preview reads inside another mark's tag opens there too (W8.8-F1, -F2)", async () => {
+    // F1: micromark doesn't read the first tag (a CR, then an attribute that runs over two more tags), so the
+    // preview opens at each inner <redact>; the export saw one open, and the one close ended it.
+    const f1 = "<REDACT\r a='>TK1Q<redact\t id=1>TK2Q<redact\n title='a>b'>TK3Q</REDACT>  TK12Q";
+    // F2: `</redact <redact data-x="</redact>">` is text then an opening tag to the preview, a close to the
+    // export; and `</redact/>` is text to the preview, a close to the export.
+    const f2 = '<Redact > --->TK2Q</redact <redact   data-x="</redact>">TK4Q<!--</redact-->TK5Q<b></redact></b>TK6Q</redact/> TK7Q';
+    for (const [md, secret] of [[f1, "TK12Q"], [f2, "TK7Q"]] as const) {
+      const shaded = shaded8(md.replace(/TK(\d+)Q/g, "Z$1Z")).map((t) => t.replace(/Z(\d+)Z/, "TK$1Q"));
+      expect(shaded, JSON.stringify(md)).toContain(secret);
+      const out = await exportReadyText(md);
+      expect(shaded.filter((t) => new RegExp(`${t}(?!\\d)`).test(out)), JSON.stringify(md)).toEqual([]);
+    }
+  });
 });
+
