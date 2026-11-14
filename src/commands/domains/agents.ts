@@ -1,8 +1,7 @@
 /** AI actions on the open note: tags, links, diagrams, translation, grammar, alt text, prompt templates. */
 import { cmdIcons, type Command } from "../../ui/CommandPalette";
-import { useAppStore } from "../../store/useStore";
-import { t, getLocale, tPlural } from "../../i18n";
-import { uiAlert, uiConfirm, uiPrompt } from "../../ui/PromptDialog";
+import { t, tPlural } from "../../i18n";
+import { uiAlert, uiPrompt } from "../../ui/PromptDialog";
 import { AI_PROMPT_INDEX } from "../../ai/multiLangPromptIndex";
 import { showAiToast } from "../../ui/AiToast";
 import { isAbort } from "../../ai/aiAbort";
@@ -116,34 +115,7 @@ export function buildAltTextCommands(): Command[] {
       hint: t("cmd.image.altText.hint"),
       icon: cmdIcons.Sparkles,
       group: t("group.ai", { defaultValue: "AI Copilot" }),
-      action: async () => {
-        const { imageText, withImageText, imagesNeedingAlt, documentLanguage } = await import("../../ai/vision");
-        const { readWorkspaceBlob } = await import("../../storage/workspace");
-        const doc = useAppStore.getState().doc.content;
-        // Images with no alt, or still named after their file — a real
-        // one-word description ("logo") is kept.
-        const targets = imagesNeedingAlt(doc);
-        if (!targets.length) {
-          showAiToast(t("toast.imageAlt.none"), "info");
-          return;
-        }
-        showAiToast(t("toast.imageAlt.working", { count: targets.length }), "info");
-        let next = doc;
-        let done = 0;
-        // The user asked: the browser captioner may offer its download (plan 6.6).
-        const lang = await documentLanguage(doc, getLocale());
-        const consent = { confirm: uiConfirm, t, locale: getLocale() };
-        for (const m of targets) {
-          const blob = await readWorkspaceBlob(m.url).catch(() => null);
-          if (!blob) continue;
-          const res = await imageText(blob, lang, { name: m.url, consent }).catch(() => null);
-          if (!res || res.source === "none") continue;
-          next = withImageText(next, m.url, m.alt, res);
-          done++;
-        }
-        if (next !== useAppStore.getState().doc.content && useAppStore.getState().doc.content === doc) useAppStore.getState().setContent(next);
-        showAiToast(t("toast.imageAlt.done", { done, count: targets.length }), done ? "success" : "info");
-      },
+      action: () => import("./agentsActions").then((m) => m.imageAltText()),
     },
   ];
 }

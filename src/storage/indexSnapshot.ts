@@ -19,8 +19,12 @@
  * and index the texts right after.
  */
 import { createStore, get, set, del } from "idb-keyval";
-import { isSealedSnapshot, openSnapshot, sealSnapshot, type SnapshotKeys } from "./snapshotSeal";
+import type { SnapshotKeys } from "./snapshotSeal";
 import { summarize, type NoteSummary } from "./noteSummary";
+
+// The seal (./snapshotSeal.ts) loads with the first snapshot read or write, not with the
+// file tree at start-up (W4.9 startup budget); every use below is already async.
+const seal = () => import("./snapshotSeal");
 
 export const SNAPSHOT_VERSION = 1;
 
@@ -199,7 +203,7 @@ function decodeBody(raw: unknown, vault: string, n: number): string[] | null {
 export async function readSnapshotManifest(raw: unknown, vault: string, keys: SnapshotKeys): Promise<{ entries: SnapshotEntry[] | null; refused: boolean }> {
   if (raw === undefined) return { entries: null, refused: false };
   try {
-    const entries = decodeManifest(parseUtf8(await openSnapshot(keys, vault, raw, "manifest")), vault);
+    const entries = decodeManifest(parseUtf8(await (await seal()).openSnapshot(keys, vault, raw, "manifest")), vault);
     return { entries, refused: !entries };
   } catch {
     return { entries: null, refused: true };
@@ -209,7 +213,7 @@ export async function readSnapshotManifest(raw: unknown, vault: string, keys: Sn
 /** The texts of a sealed record, in its manifest's order; null when the body is refused. */
 export async function readSnapshotBody(raw: unknown, vault: string, keys: SnapshotKeys, n: number): Promise<string[] | null> {
   try {
-    return decodeBody(parseUtf8(await openSnapshot(keys, vault, raw, "body")), vault, n);
+    return decodeBody(parseUtf8(await (await seal()).openSnapshot(keys, vault, raw, "body")), vault, n);
   } catch {
     return null;
   }
@@ -223,6 +227,7 @@ export async function readSnapshotBody(raw: unknown, vault: string, keys: Snapsh
 export async function readSnapshotRecord(raw: unknown, vault: string, keys?: SnapshotKeys): Promise<{ snap: Map<string, SnapshotFile> | null; refused: boolean }> {
   if (raw === undefined) return { snap: null, refused: false };
   if (!keys) {
+    const { isSealedSnapshot } = await seal();
     const snap = isSealedSnapshot(raw) ? null : decodeSnapshot(raw, vault);
     return { snap, refused: !snap };
   }
@@ -262,7 +267,7 @@ export async function loadSnapshot(vault: string, keys?: SnapshotKeys): Promise<
 export async function snapshotRecord(vault: string, files: Iterable<SnapshotFile>, keys?: SnapshotKeys): Promise<unknown> {
   if (!keys) return encodeSnapshot(vault, files);
   const parts = encodeSnapshotParts(vault, files);
-  return sealSnapshot(keys, vault, parts.manifest, parts.body);
+  return (await seal()).sealSnapshot(keys, vault, parts.manifest, parts.body);
 }
 
 export async function saveSnapshot(vault: string, files: Iterable<SnapshotFile>, keys?: SnapshotKeys): Promise<void> {
