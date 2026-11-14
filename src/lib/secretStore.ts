@@ -24,7 +24,13 @@
  *
  * Where IndexedDB or WebCrypto is missing (old engines, some tests), the
  * store falls back to the old localStorage behaviour and says so via
- * `secretStoreMode()`.
+ * `secretStoreMode()`; the status bar shows that state (plan 2.5: no silent
+ * plain mode), via `subscribeSecretStoreMode()`.
+ *
+ * The Supabase session (access + refresh token) is a secret too: the auth
+ * client stores it through `secretAuthStorage` (src/auth/supabaseProvider.ts),
+ * and a copy Supabase left in localStorage (`sb-<project>-auth-token`) is
+ * migrated like any other plaintext secret.
  */
 import { createStore, get, set, del, keys, type UseStore } from "idb-keyval";
 
@@ -44,8 +50,11 @@ const EXACT_SECRETS = new Set([
 /** The git token used to live in idb-keyval's default store. */
 const LEGACY_IDB_SECRETS = ["lumen.git.token.v1"];
 
+/** supabase-js session keys: `sb-<project ref>-auth-token`, its PKCE `-code-verifier` and `-user`. */
+const SUPABASE_SESSION = /^sb-[A-Za-z0-9_-]+-auth-token(-code-verifier|-user)?$/;
+
 export function isSecretName(name: string): boolean {
-  return EXACT_SECRETS.has(name) || PREFIX_SECRETS.some((p) => name.startsWith(p));
+  return EXACT_SECRETS.has(name) || PREFIX_SECRETS.some((p) => name.startsWith(p)) || SUPABASE_SESSION.test(name);
 }
 
 interface Sealed {
@@ -66,6 +75,18 @@ let pending: Promise<unknown> = Promise.resolve();
 
 export function secretStoreMode(): Mode {
   return mode;
+}
+
+const modeListeners = new Set<() => void>();
+/** Subscribe to mode changes (for useSyncExternalStore). Returns the unsubscribe. */
+export function subscribeSecretStoreMode(cb: () => void): () => void {
+  modeListeners.add(cb);
+  return () => modeListeners.delete(cb);
+}
+function setMode(m: Mode): void {
+  if (mode === m) return;
+  mode = m;
+  for (const cb of modeListeners) cb();
 }
 
 function lsGet(name: string): string | null {
@@ -122,7 +143,7 @@ async function initKeychain(): Promise<boolean> {
   // access denied) must not switch this session to IndexedDB: the next launch
   // would pick the keychain again and never see what was saved meanwhile.
   invoke = inv;
-  mode = "keychain";
+  setMode("keychain");
   for (const name of readIndex()) {
     let v: string | null = null;
     try {
@@ -147,7 +168,7 @@ async function initKeychain(): Promise<boolean> {
 async function doInit(): Promise<void> {
   if (await initKeychain()) return;
   if (typeof indexedDB === "undefined" || typeof crypto === "undefined" || !crypto.subtle) {
-    mode = "plain";
+    setMode("plain");
     await migrateLegacyToPlain();
     return;
   }
@@ -170,12 +191,12 @@ async function doInit(): Promise<void> {
         await del(name, db);
       }
     }
-    mode = "encrypted";
+    setMode("encrypted");
     await migratePlaintext();
   } catch {
     db = null;
     cryptoKey = null;
-    mode = "plain";
+    setMode("plain");
     await migrateLegacyToPlain();
   }
 }
@@ -294,6 +315,25 @@ export function removeSecret(name: string): Promise<void> {
   return setSecret(name, null);
 }
 
+/**
+ * A Web Storage–shaped adapter (async) over this store, for libraries that
+ * persist their own session, e.g. supabase-js's `auth.storage`.
+ */
+export const secretAuthStorage = {
+  async getItem(key: string): Promise<string | null> {
+    await initSecretStore();
+    return getSecret(key);
+  },
+  async setItem(key: string, value: string): Promise<void> {
+    await initSecretStore();
+    await setSecret(key, value);
+  },
+  async removeItem(key: string): Promise<void> {
+    await initSecretStore();
+    await removeSecret(key);
+  },
+};
+
 const failures: unknown[] = [];
 
 /**
@@ -314,7 +354,7 @@ export function __resetSecretStore(): void {
   cache.clear();
   db = null;
   cryptoKey = null;
-  mode = "uninitialized";
+  setMode("uninitialized");
   initPromise = null;
   invoke = null;
   pending = Promise.resolve();

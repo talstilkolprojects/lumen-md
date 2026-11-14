@@ -553,6 +553,8 @@
   "status.live": "● 在线",
   "status.privacyMode": "私密",
   "status.privacyMode.tooltip": "隐私模式 — AI 通过 WebGPU 完全在此设备上运行,提示词不会离开您的浏览器。",
+  "status.secretsPlain": "密钥未加密",
+  "status.secretsPlain.tooltip": "此浏览器在这里没有 IndexedDB 或 WebCrypto,因此 API 密钥和登录令牌以未加密形式保存在 localStorage 中。请通过 HTTPS 使用新版浏览器(或桌面应用)来加密它们。",
   "status.reading": "约{n}分钟阅读",
   "status.roadmap": "路线图",
   "status.roadmap.tooltip": "视图 Lumen's public roadmap",

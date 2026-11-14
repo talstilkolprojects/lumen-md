@@ -7,6 +7,7 @@ import { useAppStore } from "../store/useStore";
 import { getTelemetryOptOut, setTelemetryOptOut } from "../lib/telemetry";
 import type { ConfigHealthReport } from "../lib/configHealth";
 import { subscribeSyncStatus } from "../sync/syncStatus";
+import { secretStoreMode, subscribeSecretStoreMode } from "../lib/secretStore";
 import { parseSuggestions, mayContainCriticMarkup } from "../editor/suggesting";
 
 /** Number of CriticMarkup suggestions (cheap no-op for plain docs). */
@@ -46,6 +47,8 @@ export const StatusBar = React.memo(function StatusBar({
     () => "idle" as const,
     () => "idle" as const,
   );
+  // No silent plain mode (plan 2.5): unencrypted secrets are always visible here.
+  const secretsMode = useSyncExternalStore(subscribeSecretStoreMode, secretStoreMode, secretStoreMode);
   const aiKey = useAppStore((s) => s.aiKey);
   const useLocalAi = useAppStore((s) => s.useLocalAi);
   const grammarCheck = useAppStore((s) => s.grammarCheck);
@@ -265,6 +268,19 @@ export const StatusBar = React.memo(function StatusBar({
           <BarChart3 size={10} />
           <span style={{ fontSize: 10, fontWeight: 600 }}>{t("status.runtimeMetrics")}</span>
         </button>
+      )}
+      {secretsMode === "plain" && (
+        <span
+          className="sb-item"
+          role="status"
+          title={t("status.secretsPlain.tooltip")}
+          aria-label={t("status.secretsPlain.tooltip")}
+          style={{ gap: 4, paddingInline: 4 }}
+          data-testid="status-secrets-plain"
+        >
+          <AlertCircle size={10} style={{ color: "hsl(12 90% 58%)" }} aria-hidden="true" />
+          <span style={{ color: "hsl(12 90% 58%)", fontSize: 10, fontWeight: 600 }}>{t("status.secretsPlain")}</span>
+        </span>
       )}
       {useLocalAi && (
         <span

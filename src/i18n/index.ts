@@ -788,6 +788,8 @@ const en: Strings = {
   "tree.tagFilter.empty": "No notes match this tag.",
   "status.privacyMode": "PRIVATE",
   "status.privacyMode.tooltip": "Privacy Mode — AI runs entirely on this device via WebGPU. No prompts leave your browser.",
+  "status.secretsPlain": "KEYS UNENCRYPTED",
+  "status.secretsPlain.tooltip": "This browser has no IndexedDB or WebCrypto here, so API keys and sign-in tokens are stored unencrypted in localStorage. Use a current browser over HTTPS (or the desktop app) to encrypt them.",
   "status.roadmap": "Roadmap",
   "status.roadmap.tooltip": "View Lumen's public roadmap",
   "status.grammar.on": "Grammar",

@@ -52,6 +52,18 @@ describe("secretStore", () => {
     expect(isSecretName("lumen.ai.key.anthropic")).toBe(true);
     expect(isSecretName("lumen.cloud.dropbox.refresh")).toBe(true);
     expect(isSecretName("lumen.ai.policy")).toBe(false);
+    // The Supabase session (plan 2.5).
+    expect(isSecretName("sb-abcdefgh-auth-token")).toBe(true);
+    expect(isSecretName("sb-abcdefgh-auth-token-code-verifier")).toBe(true);
+    expect(isSecretName("sb-abcdefgh-other")).toBe(false);
+  });
+
+  it("migrates a Supabase session left in localStorage into the encrypted store", async () => {
+    const session = JSON.stringify({ access_token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1In0.c2ln", refresh_token: "r-123" });
+    localStorage.setItem("sb-proj-auth-token", session);
+    await initSecretStore();
+    expect(localStorage.getItem("sb-proj-auth-token")).toBeNull();
+    expect(getSecret("sb-proj-auth-token")).toBe(session);
   });
 
   it("moves plaintext keys out of localStorage and the legacy git token out of IndexedDB", async () => {

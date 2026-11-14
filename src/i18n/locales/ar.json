@@ -553,6 +553,8 @@
   "status.live": "● متصل",
   "status.privacyMode": "خاص",
   "status.privacyMode.tooltip": "وضع الخصوصية — يعمل الذكاء الاصطناعي بالكامل على هذا الجهاز عبر WebGPU. لا تغادر أي أوامر متصفحك.",
+  "status.secretsPlain": "المفاتيح غير مشفّرة",
+  "status.secretsPlain.tooltip": "لا يتوفر في هذا المتصفح هنا IndexedDB أو WebCrypto، لذا تُحفظ مفاتيح API ورموز تسجيل الدخول في localStorage دون تشفير. استخدم متصفحًا حديثًا عبر HTTPS (أو تطبيق سطح المكتب) لتشفيرها.",
   "status.reading": "~{n} دقيقة قراءة",
   "status.roadmap": "خارطة الطريق",
   "status.roadmap.tooltip": "عرض Lumen's public roadmap",

@@ -553,6 +553,8 @@
   "status.live": "● ライブ",
   "status.privacyMode": "プライベート",
   "status.privacyMode.tooltip": "プライバシーモード — AI は WebGPU によりこのデバイス上だけで動作します。プロンプトがブラウザの外に送信されることはありません。",
+  "status.secretsPlain": "キーは未暗号化",
+  "status.secretsPlain.tooltip": "このブラウザーではここで IndexedDB も WebCrypto も使えないため、API キーとサインイン用トークンは暗号化されずに localStorage に保存されます。暗号化するには、HTTPS で最新のブラウザー(またはデスクトップアプリ)を使ってください。",
   "status.reading": "約{n}分で読了",
   "status.roadmap": "ロードマップ",
   "status.roadmap.tooltip": "表示 Lumen's public roadmap",

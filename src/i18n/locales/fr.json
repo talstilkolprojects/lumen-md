@@ -553,6 +553,8 @@
   "status.live": "● en direct",
   "status.privacyMode": "PRIVÉ",
   "status.privacyMode.tooltip": "Mode confidentialité — l'IA s'exécute entièrement sur cet appareil via WebGPU. Aucune requête ne quitte votre navigateur.",
+  "status.secretsPlain": "CLÉS NON CHIFFRÉES",
+  "status.secretsPlain.tooltip": "Ce navigateur n’a ici ni IndexedDB ni WebCrypto : les clés d’API et les jetons de connexion sont donc stockés sans chiffrement dans localStorage. Utilisez un navigateur récent en HTTPS (ou l’application de bureau) pour les chiffrer.",
   "status.reading": "~{n} min de lecture",
   "status.roadmap": "Feuille de route",
   "status.roadmap.tooltip": "Affichage Lumen's public roadmap",

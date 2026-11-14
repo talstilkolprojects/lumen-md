@@ -553,6 +553,8 @@
   "status.live": "● в сети",
   "status.privacyMode": "ПРИВАТНО",
   "status.privacyMode.tooltip": "Режим приватности — ИИ работает полностью на этом устройстве через WebGPU. Ни один запрос не покидает ваш браузер.",
+  "status.secretsPlain": "КЛЮЧИ НЕ ЗАШИФРОВАНЫ",
+  "status.secretsPlain.tooltip": "В этом браузере здесь нет IndexedDB или WebCrypto, поэтому API-ключи и токены входа хранятся в localStorage без шифрования. Чтобы зашифровать их, используйте современный браузер по HTTPS (или настольное приложение).",
   "status.reading": "~{n} мин. чтения",
   "status.roadmap": "Дорожная карта",
   "status.roadmap.tooltip": "Вид Lumen's public roadmap",

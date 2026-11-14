@@ -553,6 +553,8 @@
   "status.live": "● live",
   "status.privacyMode": "PRIVAT",
   "status.privacyMode.tooltip": "Datenschutzmodus — die KI läuft komplett auf diesem Gerät über WebGPU. Keine Prompts verlassen deinen Browser.",
+  "status.secretsPlain": "SCHLÜSSEL UNVERSCHLÜSSELT",
+  "status.secretsPlain.tooltip": "Dieser Browser hat hier weder IndexedDB noch WebCrypto, daher werden API-Schlüssel und Anmelde-Tokens unverschlüsselt in localStorage gespeichert. Nutze einen aktuellen Browser über HTTPS (oder die Desktop-App), um sie zu verschlüsseln.",
   "status.reading": "~{n} Min. Lesezeit",
   "status.roadmap": "Roadmap",
   "status.roadmap.tooltip": "Ansicht Lumen's public roadmap",

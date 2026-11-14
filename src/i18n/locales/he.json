@@ -377,6 +377,8 @@
   "tree.tagFilter.empty": "אין פתקים מתאימים לתגית.",
   "status.privacyMode": "פרטי",
   "status.privacyMode.tooltip": "מצב פרטי — ה-AI רץ במלואו במכשיר הזה דרך WebGPU. שום הודעה לא יוצאת מהדפדפן.",
+  "status.secretsPlain": "מפתחות לא מוצפנים",
+  "status.secretsPlain.tooltip": "בדפדפן הזה אין כאן IndexedDB או WebCrypto, ולכן מפתחות API ואסימוני התחברות נשמרים ב-localStorage בלי הצפנה. השתמשו בדפדפן עדכני דרך HTTPS (או באפליקציית שולחן העבודה) כדי להצפין אותם.",
   "status.roadmap": "מפת דרכים",
   "status.roadmap.tooltip": "צפה במפת הדרכים הציבורית של Lumen",
   "status.grammar.on": "דקדוק",

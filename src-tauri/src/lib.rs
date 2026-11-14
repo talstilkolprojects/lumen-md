@@ -93,56 +93,22 @@ fn build_menu(app: &tauri::AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::
     Ok(menu)
 }
 
-const KEYCHAIN_SERVICE: &str = "app.lumen.secrets";
-
 /// Is the OS keychain available to `secret_get` / `secret_set` (T36)?
 #[tauri::command]
 fn secret_available() -> bool {
-    cfg!(any(target_os = "macos", target_os = "windows"))
-}
-
-#[cfg(any(target_os = "macos", target_os = "windows"))]
-fn entry(name: &str) -> Result<keyring::Entry, String> {
-    keyring::Entry::new(KEYCHAIN_SERVICE, name).map_err(|e| e.to_string())
+    lumen_keychain::available()
 }
 
 /// Read one secret from the OS keychain; `None` when it isn't there.
 #[tauri::command]
 fn secret_get(name: String) -> Result<Option<String>, String> {
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
-    {
-        match entry(&name)?.get_password() {
-            Ok(v) => Ok(Some(v)),
-            Err(keyring::Error::NoEntry) => Ok(None),
-            Err(e) => Err(e.to_string()),
-        }
-    }
-    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-    {
-        let _ = (name, KEYCHAIN_SERVICE);
-        Err("keychain unavailable on this platform".into())
-    }
+    lumen_keychain::get(lumen_keychain::SERVICE, &name)
 }
 
 /// Store (or with `None`, delete) one secret in the OS keychain.
 #[tauri::command]
 fn secret_set(name: String, value: Option<String>) -> Result<(), String> {
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
-    {
-        let e = entry(&name)?;
-        match value {
-            Some(v) => e.set_password(&v).map_err(|e| e.to_string()),
-            None => match e.delete_credential() {
-                Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
-                Err(err) => Err(err.to_string()),
-            },
-        }
-    }
-    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-    {
-        let _ = (name, value);
-        Err("keychain unavailable on this platform".into())
-    }
+    lumen_keychain::set(lumen_keychain::SERVICE, &name, value.as_deref())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

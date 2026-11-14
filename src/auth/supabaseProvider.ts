@@ -1,4 +1,5 @@
 import type { AuthProvider, User } from "./types";
+import { secretAuthStorage } from "../lib/secretStore";
 
 /**
  * Supabase adapter — only initialized when both `VITE_SUPABASE_URL` and
@@ -7,8 +8,11 @@ import type { AuthProvider, User } from "./types";
  *
  * To enable, install `@supabase/supabase-js` and set the env vars. The
  * provider then handles email/password and OAuth redirect flows for Google
- * and GitHub. Sessions are kept in localStorage by Supabase itself, so
- * `loadSession` reads them on subsequent loads without a network round-trip.
+ * and GitHub. The session (access and refresh tokens) is persisted through
+ * the encrypted secret store (`secretAuthStorage`, OS keychain on desktop)
+ * instead of Supabase's default plaintext localStorage; an old localStorage
+ * copy is migrated when the store starts (plan 2.5). `loadSession` still
+ * reads it on later loads without a network round-trip.
  */
 
 interface SupabaseEnv {
@@ -48,8 +52,9 @@ function shape(u: SupabaseSessionUser | null | undefined): User | null {
 }
 
 /** Returns a Supabase-backed AuthProvider, or null when env vars are missing. */
-export async function createSupabaseProvider(): Promise<AuthProvider | null> {
-  const env = readEnv();
+export async function createSupabaseProvider(opts: { loadSdk?: () => Promise<unknown>; env?: SupabaseEnv } = {}): Promise<AuthProvider | null> {
+  // loadSdk / env: test seams (the SDK is optional, and build-time env is not stubbable in vitest).
+  const env = opts.env ?? readEnv();
   if (!env) return null;
   // The dynamic import is wrapped with `@vite-ignore` so the bundler does not
   // try to resolve the package at build time when it isn't installed. The
@@ -58,7 +63,14 @@ export async function createSupabaseProvider(): Promise<AuthProvider | null> {
     createClient: (
       url: string,
       key: string,
-      opts?: { auth?: { persistSession?: boolean; autoRefreshToken?: boolean; detectSessionInUrl?: boolean } },
+      opts?: {
+        auth?: {
+          persistSession?: boolean;
+          autoRefreshToken?: boolean;
+          detectSessionInUrl?: boolean;
+          storage?: { getItem(k: string): Promise<string | null>; setItem(k: string, v: string): Promise<void>; removeItem(k: string): Promise<void> };
+        };
+      },
     ) => {
       auth: {
         getSession: () => Promise<{
@@ -85,13 +97,14 @@ export async function createSupabaseProvider(): Promise<AuthProvider | null> {
   const pkg = "@supabase/supabase-js";
   let mod: SupabaseModule;
   try {
-    mod = (await import(/* @vite-ignore */ pkg)) as unknown as SupabaseModule;
+    mod = (await (opts.loadSdk ? opts.loadSdk() : import(/* @vite-ignore */ pkg))) as unknown as SupabaseModule;
   } catch {
     // Package not installed — the local provider will be used instead.
     return null;
   }
   const client = mod.createClient(env.url, env.anonKey, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    // The session never goes to localStorage in plain text (plan 2.5).
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: secretAuthStorage },
   });
 
   return {

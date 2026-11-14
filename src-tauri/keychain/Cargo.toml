@@ -1,0 +1,16 @@
+[package]
+name = "lumen-keychain"
+version = "0.1.0"
+edition = "2021"
+description = "Lumen's OS keychain access (T36): Keychain on macOS, Credential Manager on Windows"
+publish = false
+
+# A crate of its own so CI can build and test it on macOS and Windows in a
+# minute, without compiling Tauri (plan 2.5).
+[lib]
+path = "src/lib.rs"
+
+# Linux keeps the WebCrypto store in the app (keyutils is per-session and
+# Secret Service needs D-Bus at build time).
+[target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
+keyring = { version = "3", features = ["apple-native", "windows-native"] }
