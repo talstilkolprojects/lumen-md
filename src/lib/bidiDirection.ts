@@ -54,11 +54,28 @@ export function strongDirection(codePoint: number): LineDirection | null {
   return c === 1 ? "ltr" : c === 2 ? "rtl" : null;
 }
 
-/** First strong direction in `text`, or null when it has none. */
-export function firstStrong(text: string): LineDirection | null {
+const LRI = 0x2066;
+const RLI = 0x2067;
+const FSI = 0x2068;
+const PDI = 0x2069;
+
+/**
+ * First strong direction in `text`, or null when it has none — UAX #9 P2:
+ * characters between an isolate initiator (LRI, RLI, FSI) and its matching
+ * PDI are skipped (an initiator with no PDI isolates the rest), so
+ * "⁧abc⁩ שלום" is a Hebrew line (W11.H1, BidiCharacterTest).
+ */
+export function firstStrong(text: string, strong: (cp: number) => LineDirection | null = strongDirection): LineDirection | null {
+  let depth = 0;
   for (const ch of text) {
-    const d = strongDirection(ch.codePointAt(0)!);
-    if (d) return d;
+    const cp = ch.codePointAt(0)!;
+    if (cp === LRI || cp === RLI || cp === FSI) depth++;
+    else if (cp === PDI) {
+      if (depth > 0) depth--;
+    } else if (depth === 0) {
+      const d = strong(cp);
+      if (d) return d;
+    }
   }
   return null;
 }

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-19",
+  "updated": "2026-11-14",
   "about": "Every model or data file Lumen can download or ships, with its licence. Checked by `npm run licenses` (scripts/licenses.mjs). class: allowed = may be a default; conditional = may be offered with a licence notice in the UI, never as a default; forbidden = must not be referenced by app code; unknown = licence not established yet (warns). `verified: false` marks a classification read from the model card by us, not from the verified licence research. Deny-list entries (delivery: none) exist so the gate catches the model if someone adds it. Runtime code (webR, ruby.wasm, ONNX Runtime, tesseract core) comes from npm and is checked by the npm part of the gate; Pyodide is listed here as well because it is shipped as a data bundle.",
   "hosting": {
     "about": "Where downloadable models come from (plan W4.14), tried in this order and every file checked against its sha256 and size below: 1. Hugging Face at hosting.revision; 2. Lumen's mirror: one GitHub release per model on talstilkol/lumen-md (tag hosting.tag or models-<slug of id>, assets flattened: a/b.onnx → a__b.onnx, ≤ 2 GiB each), read in the browser through the CORS proxy edge-workers/model-mirror (VITE_MODEL_MIRROR_URL), because GitHub's release downloads send no Access-Control-Allow-Origin; 3. the user's own URL (same layout as the release) or files picked on the device. A file with no sha256 is taken only from Hugging Face at a pinned commit. `npm run models:mirror -- --check` lists what is not pinned yet; `--pin` fills revision and files from Hugging Face, `--upload` publishes the release (owner).",
@@ -991,6 +991,11 @@
           "license": "CC-BY-4.0",
           "attribution": "Hebrew speech recognition: ivrit.ai Zipformer2 streaming model © ivrit.ai, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Based on k2-fsa/icefall (Apache-2.0)."
         }
+      ],
+      "benchmarks": [
+        "asr-ivrit-eval-d1",
+        "asr-ivrit-eval-whatsapp",
+        "asr-fleurs-he"
       ]
     },
     {
@@ -1055,7 +1060,12 @@
       },
       "catalog": "WHISPER_MODELS.turboHe (src/ai/transformersEngine.ts)",
       "verified": false,
-      "notes": "Hebrew files on WebGPU with f16 and >= 1.2 GB VRAM budget (plan 6.1). The ONNX repo's card declares no licence; the source model ivrit-ai/whisper-large-v3-turbo is apache-2.0 (HF API, 2026-10-19). Load/latency measured by the owner (15.3)."
+      "notes": "Hebrew files on WebGPU with f16 and >= 1.2 GB VRAM budget (plan 6.1). The ONNX repo's card declares no licence; the source model ivrit-ai/whisper-large-v3-turbo is apache-2.0 (HF API, 2026-10-19). Load/latency measured by the owner (15.3).",
+      "benchmarks": [
+        "asr-ivrit-eval-d1",
+        "asr-ivrit-eval-whatsapp",
+        "asr-fleurs-he"
+      ]
     },
     {
       "id": "itayinbar/Ozen-v1",
@@ -1294,6 +1304,9 @@
           "license": "MIT",
           "attribution": "Nakdimon © 2022 Elazar Gershuni (Gershuni & Pinter, “Restoring Hebrew Diacritics Without a Dictionary”, NAACL Findings 2022), licensed under the MIT License; mirrored unchanged by Lumen."
         }
+      ],
+      "benchmarks": [
+        "nikud-nakdimon-test"
       ]
     },
     {
@@ -1313,7 +1326,10 @@
       },
       "catalog": "CONVERTED_MODELS (src/ai/convertedModels.ts), MENAKED_ID (src/ai/nikudService.ts)",
       "verified": false,
-      "notes": "Plan W2.5: the high-quality niqqud layer above Nakdimon. Custom architecture (trust_remote_code), so it is not an optimum export: scripts/models/export-menaked.py exports it to ONNX, quantises it to int8 and writes menaked.json (vocabulary, class lists, tensor names) at a pinned revision; then scripts/models/registry-edit.mjs records the files here. Until then (no files) the app uses Nakdimon. CC BY 4.0: the attribution is shown in the consent dialog."
+      "notes": "Plan W2.5: the high-quality niqqud layer above Nakdimon. Custom architecture (trust_remote_code), so it is not an optimum export: scripts/models/export-menaked.py exports it to ONNX, quantises it to int8 and writes menaked.json (vocabulary, class lists, tensor names) at a pinned revision; then scripts/models/registry-edit.mjs records the files here. Until then (no files) the app uses Nakdimon. CC BY 4.0: the attribution is shown in the consent dialog.",
+      "benchmarks": [
+        "nikud-nakdimon-test"
+      ]
     },
     {
       "id": "DictaLM-3.0-12B",
@@ -1358,7 +1374,12 @@
       "delivery": "user-install",
       "catalog": "WHISPER_GGML (src/ai/dictation/whisperDesktop.ts)",
       "verified": true,
-      "notes": "Desktop file transcription through whisper.cpp (plan W1.17). The source model is apache-2.0 (HF API, 2026-10-19, see the -onnx entry). The ggml file's repository, revision, size and sha256 are owner checks (Hugging Face unreachable where this was written): until WHISPER_GGML is pinned the engine is never offered, and the app checks size + sha256 before every use."
+      "notes": "Desktop file transcription through whisper.cpp (plan W1.17). The source model is apache-2.0 (HF API, 2026-10-19, see the -onnx entry). The ggml file's repository, revision, size and sha256 are owner checks (Hugging Face unreachable where this was written): until WHISPER_GGML is pinned the engine is never offered, and the app checks size + sha256 before every use.",
+      "benchmarks": [
+        "asr-ivrit-eval-d1",
+        "asr-ivrit-eval-whatsapp",
+        "asr-fleurs-he"
+      ]
     },
     {
       "id": "whisper.cpp",
@@ -1374,6 +1395,81 @@
       "catalog": "whisper_cli (src-tauri/src/lib.rs), found via LUMEN_WHISPER_CLI, <app data>/whisper/ or PATH",
       "verified": false,
       "notes": "Runtime for desktop Whisper (plan W1.17). Lumen does not bundle the binary: the user installs it (e.g. Homebrew `whisper-cpp`, which provides `whisper-cli`) and Lumen runs it as a separate process. Licence read from the project's LICENSE file, not re-checked here."
+    },
+    {
+      "id": "chatterbox-multilingual",
+      "kind": "tts",
+      "source": "https://huggingface.co/ResembleAI/chatterbox",
+      "license": "MIT",
+      "class": "unknown",
+      "commercial": "unknown",
+      "attribution": "Chatterbox Multilingual © Resemble AI, licensed under the MIT License. Audio it makes carries Resemble's PerTh watermark.",
+      "size": "set from the pinned ONNX export (BricksDisplay/chatterbox-multilingual-ONNX); ~0.5B parameters (Llama backbone)",
+      "runs": "desktop",
+      "delivery": "none",
+      "catalog": "NEURAL_VOICE_CANDIDATES (src/ai/publicGates.ts)",
+      "verified": false,
+      "decision": "W11.H8 (14.11): the weights are MIT, but a voice is licensed by its weights AND its training data (decision 15.10), and Resemble has not published the training data's terms. Class stays unknown, delivery none, until (1) Resemble answers in writing (W11.O2) and (2) the ASR round trip on the 200 frozen FLEURS-he prompts passes (W11.H9: CER ≤ 6 %, or within 2 points of natural speech). Only then: class allowed, verified true, files pinned. Desktop first; the browser only if the q4 export fits. Watermark (PerTh) disclosed to the user in the voice picker.",
+      "benchmarks": [
+        "tts-insva-fleurs-he"
+      ],
+      "notes": "Candidate only: hidden in the UI by exposedNeuralVoices() until the decision's two conditions hold. Pipeline: niqqud (W2.5) → Chatterbox ONNX (src/ai/tts/chatterbox.ts)."
+    },
+    {
+      "id": "phonikud-onnx",
+      "kind": "nikud",
+      "source": "https://huggingface.co/Phonikud/phonikud-onnx",
+      "license": "MIT",
+      "class": "allowed",
+      "commercial": "yes",
+      "attribution": "phonikud-onnx © the Phonikud authors, licensed under the MIT License (model card). Built on DictaBERT-char-menaked © DICTA, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).",
+      "size": "set when pinned (int8 ONNX)",
+      "runs": "browser",
+      "delivery": "none",
+      "verified": false,
+      "decision": "W11.H10 (14.11): the model card says MIT (research R2 §1.3), which settles the plan's MIT-vs-CC-BY question for the weights; the Dicta CC BY credit stays because the model is built on DictaBERT-char-menaked. verified: false until the card is re-read at a pinned revision (W11.M3). Not the SASPEECH-trained phonikud TTS voices, which stay forbidden (entry phonikud-tts).",
+      "benchmarks": [
+        "nikud-nakdimon-test",
+        "g2p-milim"
+      ],
+      "notes": "Niqqud + stress + vocal shva (G2P front end). Not referenced by app code yet; measured on the Nakdimon test set and MILIM first."
+    },
+    {
+      "id": "renikud",
+      "kind": "nikud",
+      "source": "https://arxiv.org/abs/2606.20179",
+      "license": "not published",
+      "class": "unknown",
+      "commercial": "unknown",
+      "attribution": "",
+      "size": "n/a",
+      "runs": "browser",
+      "delivery": "none",
+      "verified": false,
+      "decision": "W11.H10 (14.11): weights released without a licence (arXiv 2606.20179, June 2026). Blocked until a licence is published; even then it voices read-aloud only if MILIM WER ≤ 0.8 × Phonikud's (renikudAllowed in src/eval/public/adapters/g2p.ts).",
+      "benchmarks": [
+        "g2p-milim",
+        "nikud-nakdimon-test"
+      ],
+      "notes": "G2P trained with ASR weak supervision on ~1.7k h of Knesset audio. MILIM WER/CER 24.3 / 6.6 vs Phonikud 35.6 / 10.6 per the paper."
+    },
+    {
+      "id": "ivrit-ai/yi-whisper-large-v3-turbo",
+      "kind": "asr",
+      "source": "https://huggingface.co/ivrit-ai/yi-whisper-large-v3-turbo",
+      "license": "Apache-2.0",
+      "class": "allowed",
+      "commercial": "yes",
+      "attribution": "ivrit.ai Yiddish Whisper large-v3-turbo © ivrit.ai, Apache License 2.0; Whisper © OpenAI.",
+      "size": "ggml / ct2 file: pinned by the owner (W11.M13); large-v3-turbo ggml is ~1.6 GB in f16, approximate",
+      "runs": "desktop",
+      "delivery": "user-install",
+      "catalog": "WHISPER_GGML_YI (src/ai/dictation/whisperDesktop.ts)",
+      "verified": false,
+      "benchmarks": [
+        "asr-fleurs-yi"
+      ],
+      "notes": "Yiddish file transcription on the desktop (plan W11.H18, W7.9) through the whisper.cpp track of W1.17. Licence from the ivrit.ai organisation card (research R2 §1.2), not re-read at a pinned revision: verified false until W11.M13 pins the ggml file (repository, revision, size, sha256). Until then the engine is never offered."
     }
   ]
 }

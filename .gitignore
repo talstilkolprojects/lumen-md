@@ -75,8 +75,12 @@ bundle-sizes.json
 bundle-diff.md
 .bundle-base/
 
-# Live agent eval reports (npm run eval:agents)
-eval/results/
+# Live agent eval reports (npm run eval:agents). Public-benchmark results
+# (eval/results/<task>/<model>@<rev>.json, plan W11.H5) are committed.
+eval/results/*.json
+eval/results/*/report.json
+# Downloaded public benchmark data (npm run eval:public -- fetch): never committed.
+eval/public/.data/
 flake-results/
 visual-results/
 # Review triage / reply state (scripts/review-triage.mjs, review-reply.mjs)

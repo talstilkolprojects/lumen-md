@@ -1,0 +1,42 @@
+{
+  "id": "asr-fleurs-he",
+  "task": "asr",
+  "title": "FLEURS he_il test (2.05 h), under the ivrit.ai leaderboard normaliser",
+  "dataset": {
+    "hub": "huggingface",
+    "id": "google/fleurs",
+    "config": "he_il",
+    "url": "https://huggingface.co/datasets/google/fleurs",
+    "revision": null,
+    "files": [
+      {
+        "path": "data/he_il/test.tsv",
+        "sha256": null
+      },
+      {
+        "path": "data/he_il/audio/test.tar.gz",
+        "sha256": null
+      }
+    ]
+  },
+  "license": {
+    "id": "CC-BY-4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "redistribute": true,
+    "note": "google/fleurs dataset card. Not copied here anyway: the gate refuses dataset files in the repo."
+  },
+  "split": "test",
+  "format": "fleurs-tsv",
+  "normalizer": "ivrit-leaderboard",
+  "metrics": [
+    "wer",
+    "cer"
+  ],
+  "owed": [
+    "pin: npm run eval:public -- fetch asr-fleurs-he --pin (writes the revision's sha256s; set dataset.revision to the Hub commit first)",
+    "report next to eval-d1/eval-whatsapp: FLEURS alone moves ±12 points with the normaliser"
+  ],
+  "plan": [
+    "W11.H6"
+  ]
+}

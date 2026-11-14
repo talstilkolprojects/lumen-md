@@ -1,0 +1,22 @@
+{
+  "about": "Self-built golden sets that stay because no public set exists for them (plan W11.H5). Everything else is measured on a public set in eval/public/*.json.",
+  "sets": [
+    {
+      "path": "eval/golden/typos-he",
+      "why": "no public Hebrew spelling benchmark found (R2 §1.8)"
+    },
+    {
+      "path": "eval/probes/hebrew-grammar.json",
+      "why": "no public Hebrew grammar-error benchmark found (R2 §1.8)"
+    },
+    {
+      "path": "eval/golden/bidi",
+      "why": "Markdown-line direction (markers, code spans, links) is not what the Unicode tests cover; unicode-bidi.json covers the algorithm"
+    },
+    {
+      "path": "eval/golden/asr-he",
+      "why": "the owner's own voice part: dictation by the person who uses the app; FLEURS and ivrit.ai sets cover the rest"
+    }
+  ],
+  "builtByUs": true
+}

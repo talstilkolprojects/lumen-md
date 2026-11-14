@@ -7,7 +7,7 @@
  * licence gate, say) is reported as "not here" instead of failing.
  */
 
-/** @typedef {{ id: string, title: string, cmd: string[], needs?: string[], slow?: boolean, skipReason?: string, coverageMin?: number }} Step */
+/** @typedef {{ id: string, title: string, cmd: string[], needs?: string[], data?: string[], slow?: boolean, skipReason?: string, coverageMin?: number }} Step */
 
 /** CI's coverage gate (.github/workflows/ci.yml "Coverage gate (lines >= 65%)"). */
 export const COVERAGE_MIN = 65;
@@ -26,6 +26,19 @@ const isCodeFile = (f) => /\.(m?[jt]sx?)$/.test(f);
  * and the measuring script. A diff that touches one gets the CER step.
  */
 export const isOcrInput = (f) => /^(src\/ai\/ocr[^/]*\.ts|public\/tesseract\/|eval\/golden\/ocr-he\/|scripts\/ocr\/)/.test(f);
+
+/**
+ * Public-benchmark inputs (plan W11.H5): manifests, committed results, the
+ * registry the staleness rule reads, and the harness. A diff that touches
+ * one gets the public-eval gate.
+ */
+export const isPublicEvalInput = (f) => /^(eval\/public\/|eval\/results\/|models\/registry\.json$|src\/eval\/public\/|scripts\/eval-public)/.test(f);
+
+/** Bidi conformance inputs (plan W11.H1): the direction rule, its strong table, the runner and its manifest. */
+export const isBidiConformanceInput = (f) => /^(src\/lib\/bidi(Direction|Strong\.generated)\.ts$|src\/eval\/public\/adapters\/bidi\.ts$|eval\/public\/unicode-bidi\.json$|scripts\/eval-public\.mjs$)/.test(f);
+
+/** Where `npm run eval:public -- fetch unicode-bidi` puts the UCD test file (git-ignored). */
+export const BIDI_TEST_DATA = "eval/public/.data/unicode-bidi/BidiCharacterTest.txt";
 
 /** A module path without its extension or a trailing /index: how imports name it. */
 export const moduleStem = (p) => p.replace(/\.(m?[jt]sx?)$/, "").replace(/\/index$/, "");
@@ -104,6 +117,14 @@ export function planSteps({ pkg, exists, changed, flags, dynamicTargets }) {
     // Plan 7.5 "runs on every PR": the CER gates (clean ≤ 5 %, degraded ≤ 12 %) on the ocr-he dev split,
     // with the app's own tesseract.js models and post-processing; it was CI's `ocr-cer` job.
     { id: "ocr", title: "OCR CER (Hebrew, English; dev split)", cmd: ["node", "scripts/ocr/cer-node.mjs"], needs: ["scripts/ocr/cer-node.mjs"], slow: true },
+    // W11.H5: manifests valid, no stale result, no dataset file in the repo or dist (never GitHub Actions).
+    has(pkg, "eval:public")
+      ? { id: "public-eval", title: "Public benchmarks gate (manifests, stale results, no dataset files)", cmd: ["npm", "run", "-s", "eval:public", "--", "check"] }
+      : { id: "public-eval", title: "Public benchmarks gate", cmd: [], skipReason: "not here (plan W11.H5)" },
+    // W11.H1: Unicode's BidiCharacterTest against Lumen's direction rule, when the data is downloaded.
+    has(pkg, "eval:public")
+      ? { id: "bidi-conformance", title: "Unicode bidi conformance (BidiCharacterTest ≥ 99.9 %)", cmd: ["npm", "run", "-s", "eval:public", "--", "run", "unicode-bidi"], data: [BIDI_TEST_DATA], slow: true }
+      : { id: "bidi-conformance", title: "Unicode bidi conformance", cmd: [], skipReason: "not here (plan W11.H1)" },
     { id: "e2e", title: "e2e (Chromium, production build)", cmd: ["e2e"], slow: true },
   ];
   for (const s of steps) {
@@ -111,9 +132,12 @@ export function planSteps({ pkg, exists, changed, flags, dynamicTargets }) {
     if (only && !only.has(s.id)) s.skipReason = "not selected";
     else if (skip.has(s.id)) s.skipReason = "skipped (--skip)";
     else if (s.needs?.some((p) => !exists(p))) s.skipReason = "not here";
+    else if (s.data?.some((p) => !exists(p))) s.skipReason = `data not downloaded (${s.data.find((p) => !exists(p))}): npm run eval:public -- fetch unicode-bidi`;
     else if (changed !== null && s.id === "test" && s.empty) s.skipReason = "no unit-test inputs in the diff";
     else if (changed !== null && (s.id === "build" || s.id === "budget" || s.id === "e2e") && !codeChanged) s.skipReason = "diff touches no app code";
     else if (changed !== null && s.id === "ocr" && !changed.some(isOcrInput)) s.skipReason = "diff touches no OCR input";
+    else if (changed !== null && s.id === "public-eval" && !changed.some(isPublicEvalInput)) s.skipReason = "diff touches no public-benchmark input";
+    else if (changed !== null && s.id === "bidi-conformance" && !changed.some(isBidiConformanceInput)) s.skipReason = "diff touches no bidi-conformance input";
   }
   return steps;
 }
@@ -158,7 +182,7 @@ export function buildState(results) {
 }
 
 /** Step ids, for --only / --skip. */
-export const STEP_IDS = ["typecheck", "hygiene", "lint", "i18n", "licenses", "headers", "test", "build", "budget", "ocr", "e2e"];
+export const STEP_IDS = ["typecheck", "hygiene", "lint", "i18n", "licenses", "headers", "test", "build", "budget", "ocr", "public-eval", "bidi-conformance", "e2e"];
 const BOOL_FLAGS = ["--help", "--h", "-h", "--changed", "--coverage", "--bail", "--install-hook", "--force"];
 const VALUE_FLAGS = ["--base", "--skip", "--only"];
 

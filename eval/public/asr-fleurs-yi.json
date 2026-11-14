@@ -1,0 +1,42 @@
+{
+  "id": "asr-fleurs-yi",
+  "task": "asr",
+  "title": "Yiddish speech recognition (ivrit-ai/yi-whisper-large-v3-turbo, desktop)",
+  "dataset": {
+    "hub": "huggingface",
+    "id": "google/fleurs",
+    "config": "yi (to confirm)",
+    "url": "https://huggingface.co/datasets/google/fleurs",
+    "revision": null,
+    "files": [
+      {
+        "path": "data/yi/test.tsv",
+        "sha256": null
+      },
+      {
+        "path": "data/yi/audio/test.tar.gz",
+        "sha256": null
+      }
+    ]
+  },
+  "license": {
+    "id": "CC-BY-4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "redistribute": true,
+    "note": "google/fleurs dataset card. Not copied here anyway: the gate refuses dataset files in the repo."
+  },
+  "split": "test",
+  "format": "fleurs-tsv",
+  "normalizer": "whisper-basic",
+  "metrics": [
+    "wer",
+    "cer"
+  ],
+  "owed": [
+    "pin: confirm FLEURS has a Yiddish config (the plan says 'FLEURS yi'; the config name could not be checked offline) — if it has none, use the evaluation set ivrit.ai reports yi-whisper on, and rename this manifest",
+    "run (W11.M13): npm run eval:public -- run asr-fleurs-yi --engine <whisper.cpp engine> --model ivrit-ai/yi-whisper-large-v3-turbo --rev <pinned>"
+  ],
+  "plan": [
+    "W11.H18"
+  ]
+}

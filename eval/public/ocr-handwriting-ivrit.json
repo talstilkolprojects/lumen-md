@@ -1,0 +1,43 @@
+{
+  "id": "ocr-handwriting-ivrit",
+  "task": "ocr-handwriting",
+  "title": "ivrit.ai Hebrew handwriting OCR benchmark — 225 held-out lines, 10 writers",
+  "dataset": {
+    "hub": "huggingface",
+    "id": "ivrit-ai/hebrew-handwriting-ocr-benchmark",
+    "url": "https://huggingface.co/datasets/ivrit-ai/hebrew-handwriting-ocr-benchmark",
+    "revision": null,
+    "files": [
+      {
+        "path": "data/test-00000-of-00001.parquet",
+        "sha256": null
+      }
+    ]
+  },
+  "license": {
+    "id": "ivrit.ai license",
+    "url": "https://huggingface.co/ivrit-ai",
+    "redistribute": false,
+    "note": "ivrit.ai's own data licence (permissive for training and evaluation, conditions on redistribution); read the dataset card at pin time."
+  },
+  "split": "test",
+  "format": "image-jsonl",
+  "export": {
+    "script": "scripts/eval-public/export_hf_images.py",
+    "output": "export/items.jsonl"
+  },
+  "normalizer": "nfc",
+  "metrics": [
+    "wordCoverage",
+    "medianCer",
+    "microCer"
+  ],
+  "owed": [
+    "pin: npm run eval:public -- fetch ocr-handwriting-ivrit --pin (writes the revision's sha256s; set dataset.revision to the Hub commit first)",
+    "run W7.11's engine; submit to the benchmark's leaderboard Space; handwriting is offered only at median CER ≤ 20 %",
+    "HebVL (Qwen3-VL-8B Hebrew) as a desktop candidate after its licence is known"
+  ],
+  "plan": [
+    "W11.H14"
+  ]
+}
