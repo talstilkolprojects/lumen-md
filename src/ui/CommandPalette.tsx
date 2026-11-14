@@ -215,8 +215,25 @@ export function CommandPalette({ open, onClose, commands }: Props) {
   }, [commands]);
 
   const search = useMemo(() => rankCommands(flatAll, query), [flatAll, query]);
+  // "/" lists the agent skills (plan W7.1), loaded only when typed.
+  const [skillItems, setSkillItems] = useState<Command[]>([]);
+  const slash = query.trimStart().startsWith("/");
+  useEffect(() => {
+    if (!slash) return;
+    let live = true;
+    void import("../agents/skills/ui")
+      .then((m) => m.skillPaletteItems(query.trimStart()))
+      .then((items) => {
+        if (live) setSkillItems(items.map((it) => ({ ...it, group: t("skills.heading"), action: () => { onClose(); it.action(); } })));
+      })
+      .catch(() => live && setSkillItems([]));
+    return () => {
+      live = false;
+    };
+  }, [slash, query, onClose]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+    if (q.startsWith("/")) return skillItems;
 
     // If searching, search across ALL commands (including children), ranked —
     // and in the other keyboard layout too (plan W2.8).
@@ -246,7 +263,7 @@ export function CommandPalette({ open, onClose, commands }: Props) {
       }
     }
     return out;
-  }, [query, commands, search, tab, expanded]);
+  }, [query, commands, search, tab, expanded, skillItems]);
 
   useEffect(() => {
     if (active >= filtered.length) setActive(0);
