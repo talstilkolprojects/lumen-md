@@ -1,0 +1,159 @@
+# Codemagic: the mobile builds without a Mac or an Android SDK (plan W4.22).
+#
+# The same one-command scripts as on the owner's machine (scripts/mobile-build.mjs),
+# run on Codemagic's macOS M2 machines. A personal Codemagic account gets 500 free
+# macOS M2 minutes a month (docs.codemagic.io/billing/pricing, checked 12.11.2026);
+# Linux and Windows have no free minutes, so both workflows use the Mac.
+#
+# There is no `triggering:` section, so nothing builds on a push: every build is
+# started by hand in the Codemagic UI (Start new build → pick the workflow).
+# This is not GitHub Actions.
+#
+# Environment groups (Codemagic UI → the app → Environment variables), all secure:
+#   lumen_ios:     APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY (the .p8 file's text)
+#   lumen_android: ANDROID_KEYSTORE_BASE64 (base64 -i upload.jks), ANDROID_KEYSTORE_PASSWORD,
+#                  ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+#   lumen_play:    GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS (the service account's JSON, Play
+#                  Console → Users and permissions → invite it with "Release to testing tracks")
+#   lumen_testlab: GCLOUD_KEY_FILE (service account JSON, role Firebase Test Lab Admin),
+#                  FIREBASE_PROJECT
+#   lumen_browserstack: BROWSERSTACK_USERNAME, BROWSERSTACK_ACCESS_KEY (the Test Lab fallback)
+# All of them are the owner's keys of plan 15.7, referenced here by name only.
+#
+# Plan W6.24 adds (free-tier terms checked 14.11.2026, codemagic.io/pricing: 500 macOS M2
+# minutes a month, 1 parallel build, 120 min per build, single user):
+#   mobile-release   the signed AAB and the signed IPA from ONE commit, AAB → Play internal,
+#                    IPA → TestFlight internal; BUILD-INFO.txt + SHA256SUMS name the commit
+#   android-robo     debug APK + its Espresso test APK → Firebase Test Lab robo (0 crashes),
+#                    LUMEN_SMOKE=browserstack runs BrowserStack App Automate instead
+#   desktop-macos    cargo check --locked and tauri build for macOS (.app, unsigned)
+# Rough minutes per run: mobile-release ≈ 40, android-robo ≈ 20 (Codemagic bills while Test Lab
+# runs, so `bash scripts/mobile-device-smoke.sh testlab` from any machine is cheaper),
+# desktop-macos ≈ 25. A month of one of each a week stays under 500.
+workflows:
+  ios-testflight:
+    name: iOS → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      groups:
+        - lumen_ios
+      node: 22
+      xcode: latest
+    scripts:
+      - name: Install
+        script: npm ci
+      - name: Build, archive and upload (npm run mobile:ios)
+        script: npm run mobile:ios
+    artifacts:
+      - release/mobile/*
+
+  android-aab:
+    name: Android AAB + APK
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    environment:
+      groups:
+        - lumen_android
+      node: 22
+      java: 21
+    scripts:
+      - name: Install
+        script: npm ci
+      - name: Upload keystore from the group
+        script: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$CM_BUILD_DIR/upload.jks"
+          echo "ANDROID_KEYSTORE_PATH=$CM_BUILD_DIR/upload.jks" >> "$CM_ENV"
+      - name: Build and sign (npm run mobile:android)
+        script: npm run mobile:android
+    artifacts:
+      - release/mobile/*
+
+  # Plan W6.24: both stores from the same commit, in one build (free tier: 1 parallel build).
+  mobile-release:
+    name: Release AAB → Play internal + IPA → TestFlight (one commit)
+    instance_type: mac_mini_m2
+    max_build_duration: 90
+    environment:
+      groups:
+        - lumen_ios
+        - lumen_android
+        - lumen_play
+      node: 22
+      java: 21
+      xcode: latest
+    scripts:
+      - name: Install
+        script: npm ci
+      - name: Android SDK platform of android/variables.gradle
+        script: |
+          SDK=$(sed -n 's/^ *compileSdkVersion *= *\([0-9]*\).*/\1/p' android/variables.gradle)
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platforms;android-$SDK" "build-tools;$SDK.0.0"
+      - name: Upload keystore from the group
+        script: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$CM_BUILD_DIR/upload.jks"
+          echo "ANDROID_KEYSTORE_PATH=$CM_BUILD_DIR/upload.jks" >> "$CM_ENV"
+      - name: Signed AAB + APK (npm run mobile:android)
+        script: npm run mobile:android -- ${LUMEN_VERSION:+--version "$LUMEN_VERSION"}
+      - name: Signed IPA, uploaded to TestFlight (npm run mobile:ios -- --altool)
+        # --altool exports the .ipa (kept as an artifact) and uploads it with the same API key.
+        script: npm run mobile:ios -- --altool --skip-web ${LUMEN_VERSION:+--version "$LUMEN_VERSION"}
+      - name: One commit for both
+        script: |
+          { echo "commit $(git rev-parse HEAD)"; echo "codemagic build $CM_BUILD_ID"; ls release/mobile; } > release/mobile/BUILD-INFO.txt
+          cat release/mobile/BUILD-INFO.txt release/mobile/SHA256SUMS
+          test -n "$(ls release/mobile/*.aab)" && test -n "$(ls release/mobile/*.ipa)"
+    artifacts:
+      - release/mobile/*
+    publishing:
+      google_play:
+        credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+        # Play needs the very first upload by hand in the console; while the app is still a
+        # draft app there, set this to true.
+        submit_as_draft: false
+
+  # Plan W6.24: the phone-free smoke run, robo on Firebase Test Lab (BrowserStack as fallback).
+  android-robo:
+    name: Android robo (Test Lab) / Espresso (BrowserStack)
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    environment:
+      groups:
+        - lumen_testlab
+        - lumen_browserstack
+      node: 22
+      java: 21
+    scripts:
+      - name: Install
+        script: npm ci
+      - name: Debug APK (npm run mobile:android -- --unsigned) + the Espresso test APK
+        script: |
+          npm run mobile:android -- --unsigned
+          (cd android && ./gradlew --no-daemon assembleDebugAndroidTest)
+      - name: Smoke run (0 crashes)
+        script: bash scripts/mobile-device-smoke.sh "${LUMEN_SMOKE:-testlab}"
+    artifacts:
+      - release/mobile/*
+
+  # Plan W6.24: the desktop app compiles for macOS (acceptance "tauri build on Linux and macOS").
+  desktop-macos:
+    name: Desktop macOS (cargo check --locked + tauri build)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      node: 22
+    scripts:
+      - name: Rust (not on the image)
+        script: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          echo "PATH=$HOME/.cargo/bin:$PATH" >> "$CM_ENV"
+      - name: Install + web build
+        script: npm ci && npm run build
+      - name: cargo check --locked
+        script: cargo check --locked --all-targets --manifest-path src-tauri/Cargo.toml
+      - name: tauri build (.app, unsigned)
+        script: npx tauri build --ci --bundles app
+    artifacts:
+      - src-tauri/target/release/bundle/macos/*.app
