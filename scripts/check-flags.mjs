@@ -7,10 +7,12 @@
 import { readFileSync } from "node:fs";
 import { checkFlags } from "./lib/flags.mjs";
 import { readLocale } from "./lib/i18n-files.mjs";
+import { lazyEnglishEntries } from "./lib/i18n-lazy.mjs";
 
 const registry = JSON.parse(readFileSync("src/flags/flags.json", "utf8"));
 // Plan 0.3 split the strings into src/i18n/locales/<lang>/<domain>.json (W4.5 found this script still read he.json).
-const keys = new Set(Object.keys(readLocale("en")));
+// English also lives in the lazy domains (src/i18n/lazy/*.json, e.g. featureFlagsPanel.json): read both.
+const keys = new Set([...Object.keys(readLocale("en")), ...lazyEnglishEntries().map(([k]) => k)]);
 const he = readLocale("he");
 const problems = checkFlags(registry, { keys, he });
 if (problems.length) {
