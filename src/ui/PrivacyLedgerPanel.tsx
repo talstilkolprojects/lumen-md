@@ -10,6 +10,7 @@ import { auditMode, clearLedger, leftDevice, ledgerEntries, ledgerSummary, subsc
 import "../privacy/strings";
 import { getAiPolicy } from "../ai/policy";
 import { redactionLog, redactionTotals, subscribeRedactionLog } from "../ai/piiRedactor";
+import { guardLog, guardTotals, subscribeGuardLog } from "../agents/guardLog";
 import { EmptyState } from "./EmptyState";
 import { HelpButton } from "./HelpButton";
 import "./privacyLedgerPanelStrings";
@@ -32,6 +33,8 @@ export function PrivacyLedgerPanel({ open, onClose }: Props) {
   const list = useSyncExternalStore(subscribeLedger, ledgerEntries, ledgerEntries);
   const [onlyCloud, setOnlyCloud] = useState(false);
   const redactions = useSyncExternalStore(subscribeRedactionLog, redactionLog, redactionLog);
+  // W11.I2: the Rule of Two — runs that read outside content, and the approvals they asked for.
+  const guard = useSyncExternalStore(subscribeGuardLog, guardLog, guardLog);
   const [exported, setExported] = useState<string | null>(null);
 
   // Plan W2.24: the session's ledger as a signed report (lazy: the signing code loads on use).
@@ -77,7 +80,17 @@ export function PrivacyLedgerPanel({ open, onClose }: Props) {
           <span style={{ color: sum.blocked ? "hsl(var(--danger))" : undefined }}>{t("privacy.blocked", { n: sum.blocked })}</span>
           {sum.staticAssets > 0 && <span>{t("privacy.staticAssets", { n: sum.staticAssets })}</span>}
           <span data-testid="privacy-redacted">{t("pii.ledger.redacted", { n: redactionTotals(redactions).items, requests: redactionTotals(redactions).requests })}</span>
+          {guard.length > 0 && <span data-testid="privacy-guard">{t("privacy.guard.summary", { ...guardTotals(guard) })}</span>}
         </div>
+        {guard.some((g) => g.event !== "tainted") && (
+          <ul style={{ margin: 0, padding: "6px 16px 8px 32px", fontSize: 12, borderBottom: "1px solid hsl(var(--border))" }} data-testid="privacy-guard-list" aria-label={t("privacy.guard.title")}>
+            {[...guard].reverse().filter((g) => g.event !== "tainted").slice(0, 20).map((g) => (
+              <li key={g.id} data-decision={g.event}>
+                {t(`privacy.guard.${g.event}`, { tool: g.tool ?? "", what: t(`privacy.guard.scope.${g.scope ?? "write"}`), sources: g.sources, time: new Date(g.ts).toLocaleTimeString(getLocale()) })}
+              </li>
+            ))}
+          </ul>
+        )}
         <div style={{ padding: "8px 16px", display: "flex", gap: 8, alignItems: "center", fontSize: 12 }}>
           <label style={{ display: "flex", gap: 6, alignItems: "center", flex: 1 }}>
             <input type="checkbox" checked={onlyCloud} onChange={(e) => setOnlyCloud(e.target.checked)} />

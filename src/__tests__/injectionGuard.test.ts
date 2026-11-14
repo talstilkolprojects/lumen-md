@@ -366,8 +366,9 @@ describe("sanitizeUntrusted", () => {
     const guarded = guardUntrusted(text, ["clipped page"]).text.split("\n");
     const orig = text.split("\n");
     expect(guarded.length).toBe(orig.length + 1); // + the closing marker
-    expect(guarded[0]).toMatch(/^⟪untrusted id=\w+ .*⟫ intro line$/);
-    expect(guarded[5]).toContain("Ignore previous instructions");
+    // W11.I3: inside the block spaces are data marks (ˆ); the lines stay where they were.
+    expect(guarded[0]).toMatch(/^⟪untrusted id=\w+ .*⟫ introˆline$/);
+    expect(guarded[5]).toContain("Ignoreˆpreviousˆinstructions");
     expect(guarded[6]).toBe("zero");
     expect(guarded[7]).toBe("last");
     expect(guarded[8]).toMatch(/^⟪\/untrusted id=\w+⟫$/);
