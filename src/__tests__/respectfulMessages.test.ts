@@ -82,11 +82,26 @@ describe("destructive actions (scripts/check-destructive)", () => {
   it("each destructive command, one by one: declared, and doing what it declares", () => {
     const { actions } = scanAll() as { actions: { command?: string; declared?: string; how: string; api: string }[] };
     const commands = Object.fromEntries(actions.filter((a) => a.command).map((a) => [a.command, `${a.declared}/${a.how}`]));
+    // ai.styleProfile (aiActions.ts, train 4) and spell.hebrewDictionary (toolsActions.ts, train 5) load
+    // their bodies on use, like tools.vaultDoctorFix: checked declaration and body together below.
     expect(commands).toEqual({
-      "ai.styleProfile": "confirm/confirm",
       "git.pull": "confirm/confirm",
-      "spell.hebrewDictionary": "confirm/confirm",
     });
+  });
+
+  it.each([
+    ["ai.styleProfile", "ai.ts", "aiActions", "aiStyleProfile", "export const aiStyleProfile", "sp.clearStyleProfile("],
+    ["spell.hebrewDictionary", "tools.ts", "toolsActions", "toggleHebrewDictionary", "export const toggleHebrewDictionary", "svc.removeHebrewDictionary("],
+  ])("%s: its body is loaded on use, the command declares it, and the loaded body asks before it deletes", (id, domain, module, fn, start, destroy) => {
+    const commands = readFileSync(resolve(ROOT, `src/commands/domains/${domain}`), "utf8");
+    expect(commands).toMatch(new RegExp(`id: "${id.replace(".", "\\.")}",\\s*destructive: "confirm",[\\s\\S]*?${module}"\\)\\.then\\(\\(m\\) => m\\.${fn}\\(\\)\\)`));
+    const body = readFileSync(resolve(ROOT, `src/commands/domains/${module}.ts`), "utf8");
+    const own = body.slice(body.indexOf(start));
+    const del = own.indexOf(destroy);
+    const ask = own.lastIndexOf("uiConfirm(", del);
+    expect(del).toBeGreaterThan(0);
+    expect(ask).toBeGreaterThan(0);
+    expect(ask).toBeLessThan(del);
   });
 
   it("a command whose body is loaded on use declares it, and the loaded body asks (tools.vaultDoctorFix)", () => {
