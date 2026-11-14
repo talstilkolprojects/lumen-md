@@ -106,11 +106,14 @@ exits 1 when a check fails:
 | PR body | `--body <file>` lacks a section, or one is empty: What and why, Definition of done (plan 0.7), Local verification, Not verified here, Owner commands |
 | Network | a new `fetch` / `WebSocket` / `EventSource` / `sendBeacon` goes to a host that is not in `src/ai/privacyLedger.ts`, or has a computed URL without `// privacy-ledger: <rule>` |
 | Licences | a production package added or changed has a copyleft, non-commercial, or no licence |
+| Human review | a path in `.github/CODEOWNERS` (crypto, vault writes, privacy ledger, CSP/policy, native permissions) changed and, with `--pr <n>`, the PR has no `human-reviewed` label added after its last commit (without `--pr`: a warning) |
 | Domain | an added line names the project's domain |
 
 It also warns (without failing):
 - when source changed but no test did;
 - when the PR was written by an AI agent: add the `ai-written` label.
+
+**The `human-reviewed` label is a person's word that they read the diff.** An AI agent never adds it, never asks for it to be added without a review, and never removes and re-adds it. Before merging, Tal runs `npm run pr:check -- --base origin/<base> --pr <n> --no-size`; on a sensitive path it fails until the label is newer than the last commit. Reviewer checklist: docs page *Second maintainer* (`docs/src/content/docs/contributing/second-maintainer.md`).
 
 ## Testing
 
