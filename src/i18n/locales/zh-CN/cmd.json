@@ -359,6 +359,8 @@
   "cmd.sources.knessetProtocol.hint": "所选文字，附发言人、会议日期和页码",
   "cmd.sources.notesOnVerse": "我对这节经文的笔记",
   "cmd.sources.notesOnVerse.hint": "引用光标所在经文的所有笔记",
+  "cmd.sources.open": "开放来源…",
+  "cmd.sources.open.hint": "一次搜索 Sefaria、议会、data.gov.il 和本-耶胡达，并显示每个结果的权利",
   "cmd.sources.saveOffline": "离线保存此出处",
   "cmd.sources.saveOffline.hint": "在 Sources/Sefaria 中保留副本（仅限自由许可的文本），无需网络请求即可打开",
   "cmd.speakers.rename": "重命名此笔记中的发言人…",

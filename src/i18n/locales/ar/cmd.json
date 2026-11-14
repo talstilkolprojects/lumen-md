@@ -359,6 +359,8 @@
   "cmd.sources.knessetProtocol.hint": "الكلمات المحددة مع المتحدث وتاريخ الجلسة ورقم الصفحة",
   "cmd.sources.notesOnVerse": "ملاحظاتي على هذه الآية",
   "cmd.sources.notesOnVerse.hint": "كل الملاحظات التي تقتبس الآية تحت المؤشر",
+  "cmd.sources.open": "المصادر المفتوحة…",
+  "cmd.sources.open.hint": "بحث واحد في سفاريا والكنيست وdata.gov.il ومكتبة بن يهودا، مع حقوق كل نتيجة",
   "cmd.sources.saveOffline": "حفظ هذا المصدر للاستخدام دون اتصال",
   "cmd.sources.saveOffline.hint": "الاحتفاظ بنسخة في Sources/Sefaria (النصوص ذات الترخيص الحر فقط) لتُفتح دون طلب شبكة",
   "cmd.speakers.rename": "إعادة تسمية متحدث في هذه الملاحظة…",

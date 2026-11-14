@@ -359,6 +359,8 @@
   "cmd.sources.knessetProtocol.hint": "Die markierten Worte mit Sprecher, Sitzungsdatum und Seite",
   "cmd.sources.notesOnVerse": "Meine Notizen zu diesem Vers",
   "cmd.sources.notesOnVerse.hint": "Alle Notizen, die den Vers unter dem Cursor zitieren",
+  "cmd.sources.open": "Offene Quellen…",
+  "cmd.sources.open.hint": "Eine Suche über Sefaria, Knesset, data.gov.il und die Ben-Jehuda-Bibliothek, mit den Rechten jedes Treffers",
   "cmd.sources.saveOffline": "Diese Quelle offline speichern",
   "cmd.sources.saveOffline.hint": "Eine Kopie in Sources/Sefaria behalten (nur frei lizenzierte Texte), damit sie ohne Netzwerkanfrage öffnet",
   "cmd.speakers.rename": "Sprecher in dieser Notiz umbenennen…",

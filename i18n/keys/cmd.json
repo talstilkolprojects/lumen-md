@@ -1810,6 +1810,16 @@
       "vars": []
     },
     {
+      "key": "cmd.sources.open",
+      "en": "Open sources…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.open.hint",
+      "en": "One search over Sefaria, the Knesset, data.gov.il and the Ben-Yehuda library, with each result's rights",
+      "vars": []
+    },
+    {
       "key": "cmd.sources.saveOffline",
       "en": "Save this source for offline",
       "vars": []

@@ -359,6 +359,8 @@
   "cmd.sources.knessetProtocol.hint": "המילים המסומנות עם שם הדובר, תאריך הישיבה ומספר העמוד, מתוך הפרוטוקול הפתוח",
   "cmd.sources.notesOnVerse": "הפתקים שלי על הפסוק הזה",
   "cmd.sources.notesOnVerse.hint": "כל הפתקים שמצטטים את הפסוק שבו נמצא הסמן",
+  "cmd.sources.open": "מקורות פתוחים…",
+  "cmd.sources.open.hint": "חיפוש אחד בספריא, בכנסת, ב-data.gov.il ובספריית בן־יהודה, עם הזכויות של כל תוצאה",
   "cmd.sources.saveOffline": "שמירת המקור לשימוש לא מקוון",
   "cmd.sources.saveOffline.hint": "שמירת עותק ב-Sources/Sefaria (רק טקסטים ברישיון חופשי), כך שייפתח בלי בקשת רשת",
   "cmd.speakers.rename": "שינוי שם של דובר בפתק הזה…",

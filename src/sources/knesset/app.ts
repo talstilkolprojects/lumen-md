@@ -58,6 +58,9 @@ export async function keepBill(bill: Bill): Promise<string | null> {
   return path;
 }
 
+/** The laws saved in the vault (no request). */
+export const savedLawsInVault = () => savedLaws(vault);
+
 /** "Ask the law": the saved laws only, searched here; nothing is sent. */
 export async function ask(question: string): Promise<LawAnswer[]> {
   return askTheLaw(question, await savedLaws(vault));

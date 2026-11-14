@@ -359,6 +359,8 @@
   "cmd.sources.knessetProtocol.hint": "Les mots sélectionnés avec l’orateur, la date de séance et la page",
   "cmd.sources.notesOnVerse": "Mes notes sur ce verset",
   "cmd.sources.notesOnVerse.hint": "Toutes les notes qui citent le verset sous le curseur",
+  "cmd.sources.open": "Sources ouvertes…",
+  "cmd.sources.open.hint": "Une recherche dans Sefaria, la Knesset, data.gov.il et Ben-Yehuda, avec les droits de chaque résultat",
   "cmd.sources.saveOffline": "Enregistrer cette source hors ligne",
   "cmd.sources.saveOffline.hint": "Garder une copie dans Sources/Sefaria (textes sous licence libre uniquement), pour l’ouvrir sans requête réseau",
   "cmd.speakers.rename": "Renommer un intervenant dans cette note…",
