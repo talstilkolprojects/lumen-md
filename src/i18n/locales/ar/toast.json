@@ -58,7 +58,6 @@
   "toast.issues": "⚠️ المشكلات: {count} — {list}",
   "toast.learnMore": "اعرف المزيد",
   "toast.linkSuggestFailed": "فشل اقتراح الروابط: {error}",
-  "toast.loadedFromRemoteModule": "✅ تم تحميل {name} من وحدة بعيدة",
   "toast.localMtUnavailable": "لم تتوفر الترجمة المحلية ({why})؛ ترجم نموذج الذكاء الاصطناعي بدلاً منها.",
   "toast.loremIpsumInserted": "📄 تم إدراج Lorem ipsum",
   "toast.mediarecorderNotSupportedInThis": "MediaRecorder غير مدعوم في هذا المتصفح",

@@ -58,7 +58,6 @@
   "toast.issues": "⚠️ Problèmes : {count} — {list}",
   "toast.learnMore": "En savoir plus",
   "toast.linkSuggestFailed": "Échec des suggestions de liens : {error}",
-  "toast.loadedFromRemoteModule": "✅ {name} chargé depuis un module distant",
   "toast.localMtUnavailable": "La traduction locale n’était pas disponible ({why}) ; le modèle d’IA a traduit à sa place.",
   "toast.loremIpsumInserted": "📄 Lorem ipsum inséré",
   "toast.mediarecorderNotSupportedInThis": "MediaRecorder n'est pas pris en charge dans ce navigateur",

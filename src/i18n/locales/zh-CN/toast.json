@@ -58,7 +58,6 @@
   "toast.issues": "⚠️ 问题：{count} — {list}",
   "toast.learnMore": "了解更多",
   "toast.linkSuggestFailed": "链接建议失败：{error}",
-  "toast.loadedFromRemoteModule": "✅ 已从远程模块加载 {name}",
   "toast.localMtUnavailable": "本地翻译不可用（{why}）；已改由 AI 模型翻译。",
   "toast.loremIpsumInserted": "📄 已插入 Lorem ipsum",
   "toast.mediarecorderNotSupportedInThis": "此浏览器不支持 MediaRecorder",

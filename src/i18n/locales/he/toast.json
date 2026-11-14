@@ -58,7 +58,6 @@
   "toast.issues": "⚠️ בעיות: {count} — {list}",
   "toast.learnMore": "מידע נוסף",
   "toast.linkSuggestFailed": "הצעת הקישורים נכשלה: {error}",
-  "toast.loadedFromRemoteModule": "✅ {name} נטען ממודול מרוחק",
   "toast.localMtUnavailable": "תרגום מקומי לא היה זמין ({why}); מודל ה-AI תרגם במקומו.",
   "toast.loremIpsumInserted": "📄 Lorem ipsum נוסף",
   "toast.mediarecorderNotSupportedInThis": "MediaRecorder לא נתמך בדפדפן זה",
