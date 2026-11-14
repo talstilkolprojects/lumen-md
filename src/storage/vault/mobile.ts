@@ -8,8 +8,9 @@
  *     and edit the notes in place.
  *   • Android — a folder the user picks with the Storage Access Framework
  *     (`ACTION_OPEN_DOCUMENT_TREE`, permission kept across restarts), through
- *     Lumen's small native plugin `LumenVaultFolder` (mobile/android/, see
- *     its README). Without the plugin (or if the user picks nothing), the
+ *     Lumen's small native plugin `LumenVaultFolder`
+ *     (android/app/src/main/java/com/lumen/editor/, registered in
+ *     MainActivity; see mobile/README.md). Without the plugin (or if the user picks nothing), the
  *     app's own folder on the device (Capacitor `Directory.External`).
  *
  * Both are a `MobileFs`: a handful of calls over paths relative to the
@@ -261,7 +262,7 @@ export interface CapacitorFilesystemPlugin {
   rmdir(o: { path: string; directory: string; recursive: boolean }): Promise<void>;
 }
 
-/** Lumen's Android plugin over a Storage Access Framework tree (mobile/android/LumenVaultFolderPlugin.java). */
+/** Lumen's Android plugin over a Storage Access Framework tree (android/app/src/main/java/com/lumen/editor/LumenVaultFolderPlugin.java). */
 export interface LumenVaultFolderPlugin {
   /** The folder picker; null `uri` when the user cancelled. Keeps the read/write permission. */
   pickFolder(): Promise<{ uri: string | null; name: string }>;

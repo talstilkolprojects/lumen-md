@@ -1,7 +1,7 @@
 /**
  * Stand-ins for the phone's native file APIs (plan 4.20): the Capacitor
  * Filesystem plugin (iOS Documents / Android app folder) and Lumen's Android
- * Storage Access Framework plugin (mobile/android/LumenVaultFolderPlugin.java).
+ * Storage Access Framework plugin (android/app/src/main/java/com/lumen/editor/LumenVaultFolderPlugin.java).
  * Same method names, arguments and shapes (base64 data, `{ files }`
  * listings, "does not exist" rejections), over an in-memory tree that keeps
  * no vault rules of its own — those are the backend's job.
