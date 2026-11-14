@@ -9,7 +9,7 @@ import { hasEmbeds } from "./remarkEmbeds";
 import { onWorkspaceChanged } from "../storage/workspaceEvents";
 import { wikiFragmentId } from "../lib/slug";
 import { attachFootnoteHover } from "./footnoteHover";
-import { attachImageResize, setImageWidth } from "./imageSize";
+import { attachImageResize, clearImageWidth, setImageWidth } from "./imageSize";
 import { scheduleIdle } from "../lib/idle";
 import { CopyButtonHandler } from "./components";
 import { Frontmatter } from "../ui/Frontmatter";
@@ -65,6 +65,11 @@ export function Preview({ markdownText, docKey = null, onSourceEdit }: Props) {
     return attachImageResize(root, (offset, target, width) => {
       const md = textRef.current;
       const next = setImageWidth(md, offset, width, target);
+      if (next !== md) editRef.current?.(next);
+    }, (offset, target) => {
+      // Double-click on the edge: back to the image's own size (W7.3).
+      const md = textRef.current;
+      const next = clearImageWidth(md, offset, target);
       if (next !== md) editRef.current?.(next);
     });
   }, [canEdit]);

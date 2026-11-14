@@ -17,6 +17,7 @@ import { Compartment, EditorState } from "@codemirror/state";
 import { lineSeparatorFor } from "./lineEndings";
 import { obsidianSourceExtension } from "./obsidianSource";
 import { pastedHtmlToMarkdown, shouldConvertPaste } from "../paste/htmlPaste";
+import { copySelectionWithHtml, imageEmbedAt } from "./copyEvents";
 import { wysiwygTakesPaste, type PasteDetail } from "../paste/pasteCommands";
 import { FIX_PDF_HEBREW_EVENT, fixSourceSelection, offerInSourceEditor } from "../paste/pdfPaste";
 import { EditorView, keymap, highlightActiveLine, Decoration, WidgetType } from "@codemirror/view";
@@ -380,10 +381,28 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
         void handleAssetFiles(view, files);
         return true;
       },
+      // W7.3 — a copy carries the Markdown and an HTML rendering, so Word and Google Docs keep the formatting and direction.
+      copy(event, view) {
+        return copySelectionWithHtml(event, view, false);
+      },
+      cut(event, view) {
+        return copySelectionWithHtml(event, view, true);
+      },
       // Right-click on a Hebrew word (plan W5.26): synonyms, definition and niqqud from the offline
       // lexicon — only once its pack is installed; Shift+right-click keeps the browser's menu.
       contextmenu(event, view) {
-        if (event.shiftKey || !lexiconInstalled()) return false;
+        if (event.shiftKey) return false;
+        // W7.3 — right-click on an image embed: "Copy image".
+        const imgPos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+        const embed = imgPos === null ? null : imageEmbedAt(view.state.doc.lineAt(imgPos).text, imgPos - view.state.doc.lineAt(imgPos).from);
+        if (embed) {
+          event.preventDefault();
+          const at = { x: event.clientX, y: event.clientY };
+          const notePath = useAppStore.getState().doc.workspaceName ?? "";
+          void import("./imageCopy").then(({ openImageMenu }) => openImageMenu(embed, notePath, at));
+          return true;
+        }
+        if (!lexiconInstalled()) return false;
         const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
         if (pos === null || !wordAt(view, pos)) return false;
         event.preventDefault();

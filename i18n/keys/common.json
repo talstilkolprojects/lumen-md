@@ -536,6 +536,59 @@
       "vars": []
     },
     {
+      "key": "attachCleanup.ask.always",
+      "en": "Yes, and don't ask again",
+      "vars": []
+    },
+    {
+      "key": "attachCleanup.ask.keep",
+      "en": "No, keep them",
+      "vars": []
+    },
+    {
+      "key": "attachCleanup.ask.message",
+      "en": "{n} attachments are linked only from what you are deleting:\n{list}\nMove them to the trash too? Ctrl+Z brings everything back.",
+      "vars": [
+        "n",
+        "list"
+      ]
+    },
+    {
+      "key": "attachCleanup.ask.never",
+      "en": "No, and don't ask again",
+      "vars": []
+    },
+    {
+      "key": "attachCleanup.ask.title",
+      "en": "Delete the attachments too?",
+      "vars": []
+    },
+    {
+      "key": "attachCleanup.ask.trash",
+      "en": "Yes, move them to the trash too",
+      "vars": []
+    },
+    {
+      "key": "attachCleanup.setting",
+      "en": "When a deleted note leaves attachments no other note links to",
+      "vars": []
+    },
+    {
+      "key": "attachCleanup.setting.always",
+      "en": "Move them to the trash too",
+      "vars": []
+    },
+    {
+      "key": "attachCleanup.setting.ask",
+      "en": "Ask each time",
+      "vars": []
+    },
+    {
+      "key": "attachCleanup.setting.never",
+      "en": "Keep them",
+      "vars": []
+    },
+    {
       "key": "autofill.approve",
       "en": "Approve",
       "vars": []
@@ -605,6 +658,50 @@
       "vars": [
         "n"
       ]
+    },
+    {
+      "key": "backlinksList.collapseAll",
+      "en": "Collapse all",
+      "vars": []
+    },
+    {
+      "key": "backlinksList.count",
+      "en": "{n} links",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "backlinksList.expandAll",
+      "en": "Expand all",
+      "vars": []
+    },
+    {
+      "key": "backlinksList.noMatch",
+      "en": "No backlink matches “{q}”.",
+      "vars": [
+        "q"
+      ]
+    },
+    {
+      "key": "backlinksList.search",
+      "en": "Search backlinks",
+      "vars": []
+    },
+    {
+      "key": "backlinksList.sort",
+      "en": "Sort",
+      "vars": []
+    },
+    {
+      "key": "backlinksList.sort.modified",
+      "en": "Modified (newest first)",
+      "vars": []
+    },
+    {
+      "key": "backlinksList.sort.name",
+      "en": "Name",
+      "vars": []
     },
     {
       "key": "backup.choose.age",
@@ -4041,6 +4138,35 @@
       ]
     },
     {
+      "key": "imageCopy.copied",
+      "en": "Image copied",
+      "vars": []
+    },
+    {
+      "key": "imageCopy.copy",
+      "en": "Copy image",
+      "vars": []
+    },
+    {
+      "key": "imageCopy.failed",
+      "en": "Could not copy the image: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "imageCopy.menu",
+      "en": "Image",
+      "vars": []
+    },
+    {
+      "key": "imageCopy.notFound",
+      "en": "“{name}” is not in this vault",
+      "vars": [
+        "name"
+      ]
+    },
+    {
       "key": "imageHosts.close",
       "en": "Close",
       "vars": []
@@ -6630,7 +6756,7 @@
     },
     {
       "key": "preview.imageResize.hint",
-      "en": "Drag the edge to resize. The width is saved in the note.",
+      "en": "Drag the edge to resize; double-click it to reset. The width is saved in the note.",
       "vars": []
     },
     {
