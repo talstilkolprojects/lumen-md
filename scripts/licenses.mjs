@@ -22,7 +22,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { applyAllowlist, checkDatasets, checkModels, checkNpm, formatTable, summarize } from "./lib/licenses.mjs";
+import { applyAllowlist, checkDatasets, checkModels, checkNpm, formatTable, isModelScanSource, summarize } from "./lib/licenses.mjs";
 
 const args = process.argv.slice(2);
 const flag = (name) => {
@@ -57,16 +57,15 @@ const readLicenseFile = (path) => {
 };
 const npmFindings = checkNpm(lock, { readPackage, readLicenseFile });
 
-// ── models ── app code = src/, minus tests and eval harnesses.
+// ── models ── app code = src/, minus tests, eval harnesses and the packed docs (isModelScanSource).
 const SKIP_DIR = new Set(["__tests__", "node_modules", "fixtures"]);
-const TEST_FILE = /\.(test|spec|eval)\.[cm]?[jt]sx?$/;
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {
     const p = join(dir, name);
     const st = statSync(p);
     if (st.isDirectory()) {
       if (!SKIP_DIR.has(name)) walk(p, out);
-    } else if (/\.([cm]?[jt]sx?|json)$/.test(name) && !TEST_FILE.test(name)) out.push(p);
+    } else if (isModelScanSource(posix(relative(root, p)))) out.push(p);
   }
   return out;
 }
