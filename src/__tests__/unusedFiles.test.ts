@@ -153,8 +153,37 @@ describe("the gate", () => {
     expect(compare([], ["src/old.ts"])).toEqual({ added: [], stale: ["src/old.ts"] });
   });
 
+  it("a file only a baseline orphan imports is held by it; a file nothing imports still fails", () => {
+    const dir = repo("held", {
+      "index.html": '<script type="module" src="/src/main.ts"></script>',
+      "src/main.ts": "export {};\n",
+      "src/dead.ts": 'import "./deadStrings";\n',
+      "src/deadStrings.ts": 'import "./deadDeeper";\n',
+      "src/deadDeeper.ts": "export {};\n",
+      "src/newOrphan.ts": "export {};\n",
+    });
+    const { orphans, held } = findOrphans({ root: dir, baseline: ["src/dead.ts"] });
+    expect(orphans).toEqual(["src/dead.ts", "src/deadDeeper.ts", "src/deadStrings.ts", "src/newOrphan.ts"]);
+    expect(held).toEqual({ "src/deadStrings.ts": "src/dead.ts", "src/deadDeeper.ts": "src/dead.ts" });
+    expect(compare(orphans, ["src/dead.ts"], held)).toEqual({ added: ["src/newOrphan.ts"], stale: [] });
+    // Without the baseline entry nothing is held: all three are new orphans.
+    expect(compare(orphans, [], findOrphans({ root: dir }).held).added).toEqual(["src/dead.ts", "src/deadDeeper.ts", "src/deadStrings.ts", "src/newOrphan.ts"]);
+  });
+
+  it("an HTML page in a folder of its own is an entry (bench/models.html)", () => {
+    const dir = repo("subpage", {
+      "index.html": '<script type="module" src="/src/main.ts"></script>',
+      "bench/models.html": '<script type="module" src="/src/bench/page.ts"></script>',
+      "src/main.ts": "export {};\n",
+      "src/bench/page.ts": 'import "./engine";\n',
+      "src/bench/engine.ts": "export {};\n",
+    });
+    expect(findOrphans({ root: dir }).orphans).toEqual([]);
+  });
+
   it("the checked-in tree matches the baseline exactly", () => {
     const baseline: string[] = JSON.parse(readFileSync(join(ROOT, BASELINE), "utf8")).files;
-    expect(compare(findOrphans({ root: ROOT }).orphans, baseline)).toEqual({ added: [], stale: [] });
+    const { orphans, held } = findOrphans({ root: ROOT, baseline });
+    expect(compare(orphans, baseline, held)).toEqual({ added: [], stale: [] });
   });
 });
