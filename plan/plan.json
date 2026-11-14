@@ -639,7 +639,7 @@
       "0.4"
      ],
      "priority": "P1",
-     "status": "⏳ #266 (שער קבצים יתומים בלי תלות: 376 קובצי ייצור, 11 ב-baseline, קובץ חדש שאיש לא מייבא נכשל; CI ירוק על ae930f52; חסר: חבילת knip ל-exports ותלויות — דורש lockfile על ה-Mac)",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: unusedFiles 14/14 עם #578; חסר: knip (Mac)",
      "new": true,
      "was": "0.15",
      "source": "O2",
@@ -731,7 +731,7 @@
      "groups": [
       "ci"
      ],
-     "status": "⏳ #426 (על #266; npm run pr:check במקום Danger ו-size-limit: הפרש גודל חבילה, [skip ci], חלקי גוף ה-PR, קריאות רשת מול יומן הפרטיות, רישיונות, הדומיין; prGate 11/11, prCheck 3/3; מצא פער ב-#418; לא נבדק ב-Sandbox (חסום עד 1.12))"
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: prCheck 3/3 עם #580 (לוותר אם #505 נכנס קודם)"
     },
     {
      "id": "0.20",
@@ -800,7 +800,7 @@
      "minutes": 120,
      "dep": [],
      "priority": "P0",
-     "status": "⏳ #194 + #206 (Lighthouse CI אדום על 9e13289c ב-#194; 23 שרשורי P2 פתוחים ב-#199–#251, אחד מהם ב-#206 (CanvasTldraw.tsx:486)) · ביקורת 1.8",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: licenses 90/91 עם #579; כל שרשורי Codex טופלו בקוד",
      "was": "1.1",
      "source": "נספח 16.1 (1)",
      "steps": [
@@ -1189,7 +1189,7 @@
       "6.0"
      ],
      "priority": "P1",
-     "status": "⏳ #307 feat/pii-redactor (נפתח 24.10 / 20.10; CI אדום על בדיקות (צעד Test); ✅ רק אחרי בדיקה מקומית ב-Vercel Sandbox — לא ב-GitHub Actions, לפי החלטת טל 9.11)",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: piiRedactor 12/12, piiGolden 4/4; חסר: מודל NER אמיתי",
      "new": true,
      "was": "2.6",
      "source": "פרטיות, נספח 19",
@@ -1470,7 +1470,7 @@
       "4.4"
      ],
      "priority": "P0",
-     "status": "⏳ #297 test/data-safety-matrix (נפתח 24.10 / 20.10; CI אדום על תקציב החבילה (צעד Bundle-size budget); ✅ רק אחרי בדיקה מקומית ב-Vercel Sandbox — לא ב-GitHub Actions, לפי החלטת טל 9.11)",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: dataSafetyMatrix 11/11; חסר: e2e G1–G11",
      "was": "3.6",
      "source": "G1–G11",
      "steps": [
@@ -1880,7 +1880,7 @@
       "7.10"
      ],
      "priority": "P1",
-     "status": "⏳ #308 feat/clipper-v2 (נפתח 24.10 / 20.10; CI אדום על תקציב החבילה (צעד Bundle-size budget); ✅ רק אחרי בדיקה מקומית ב-Vercel Sandbox — לא ב-GitHub Actions, לפי החלטת טל 9.11)",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: clipperV2 9/13 (חבילות חסרות לא מקוון); חסר: vitest אמיתי ו-15 דפי בדיקה",
      "was": "5.11",
      "source": "T34, מחקר פערים #9",
      "steps": [
@@ -2656,7 +2656,7 @@
       "7.10"
      ],
      "priority": "P0",
-     "status": "⏳ #284 feat/local-spell-en (נפתח 24.10 / 20.10; CI אדום על תקציב החבילה (צעד Bundle-size budget); ✅ רק אחרי בדיקה מקומית ב-Vercel Sandbox — לא ב-GitHub Actions, לפי החלטת טל 9.11)",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: englishSpell 8/11 (חבילות חסרות); חסר: vitest אמיתי",
      "new": true,
      "was": "5.10",
      "source": "מחליף LanguageTool ציבורי",
@@ -3226,7 +3226,7 @@
      "groups": [
       "ci"
      ],
-     "status": "⏳ #424 (על #386; Lighthouse לא בלוקפייל — npm run perf:gate עם Playwright ומדדי הדפדפן: FCP, LCP, CLS, TBT, TTI; desktop נכשל ב-FCP 1200/LCP 3500 (החלטה 15.16(20–21)), mobile רק מזהיר עד מדידה; 5 טעינות, חציון; perfGate 9/9; אין עדיין מספר מ-Lumen עצמו; לא נבדק ב-Sandbox (חסום עד 1.12))"
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: perfGate 9/9; חסר: מספר perf:gate אמיתי ו-3 ריצות לילה"
     },
     {
      "id": "8.4",
@@ -3505,7 +3505,7 @@
       "10.3"
      ],
      "priority": "P1",
-     "status": "⏳ #350 feat/rtl-parity (כל left/right ב-CSS הפך ללוגי, חיצים שומרים משמעות חזותית, שער שנכשל על מאפיין פיזי חדש; 4.10 ו-10.2 יחוברו אחרי 15.1) — Playwright/typecheck/build ממתינים ל-Vercel Sandbox",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: rtlLogical 7/7; חסר: e2e rtl-parity",
      "new": true,
      "source": "Obsidian 1.14 (המחקר המורחב, 18.10)",
      "steps": [
@@ -3543,7 +3543,7 @@
       "4.10"
      ],
      "priority": "P0",
-     "status": "⏳ #290 feat/a11y (נפתח 24.10 / 20.10; CI אדום על e2e — התקנת Playwright נשברת על Ubuntu 26 (#330); ✅ רק אחרי בדיקה מקומית ב-Vercel Sandbox — לא ב-GitHub Actions, לפי החלטת טל 9.11)",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: useFocusTrap 10/10, AiDoctorPanelRender 6/6; חסר: e2e נגישות",
      "was": "9.1",
      "source": "H1–H3",
      "steps": [
@@ -3570,7 +3570,7 @@
       "4.4"
      ],
      "priority": "P0",
-     "status": "⏳ #300 feat/touch (נפתח 24.10 / 20.10; CI אדום על e2e — התקנת Playwright נשברת על Ubuntu 26 (#330); ✅ רק אחרי בדיקה מקומית ב-Vercel Sandbox — לא ב-GitHub Actions, לפי החלטת טל 9.11)",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: touchLayout 4/4, sidebarResizer 6/6; חסר: e2e מגע",
      "was": "9.2",
      "source": "I1–I3",
      "steps": [
@@ -3597,7 +3597,7 @@
       "0.5"
      ],
      "priority": "P1",
-     "status": "⏳ #343 test/visual-local (רגרסיה חזותית מקומית — לא ב-Actions: 40 צילומים, 10 משטחים × עברית/אנגלית × בהיר/כהה; בדיקה עצמית שהזזה של 3px נכשלת; baselines נוצרים בהרצה ראשונה) — Playwright/typecheck/build ממתינים ל-Vercel Sandbox",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: חסר: test:visual עם baselines ראשונים",
      "was": "9.3",
      "source": "T24",
      "steps": [
@@ -3626,7 +3626,7 @@
       "0.5"
      ],
      "priority": "P1",
-     "status": "⏳ #281 test/coverage-all (נפתח 24.10 / 20.10; CI אדום על e2e — התקנת Playwright נשברת על Ubuntu 26 (#330); ✅ רק אחרי בדיקה מקומית ב-Vercel Sandbox — לא ב-GitHub Actions, לפי החלטת טל 9.11)",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: EditorLayout 11/11, EmbedBlock 29/29; חסר: ריצת כיסוי ≥60%",
      "was": "9.4",
      "source": "E4",
      "steps": [
@@ -3692,7 +3692,7 @@
       "2.3"
      ],
      "priority": "P1",
-     "status": "⏳ #287 feat/plugins-runtime + #289 feat/plugins-api (נפתח 24.10 / 20.10; CI אדום על e2e — התקנת Playwright נשברת על Ubuntu 26 (#330); ✅ רק אחרי בדיקה מקומית ב-Vercel Sandbox — לא ב-GitHub Actions, לפי החלטת טל 9.11)",
+     "status": "⏳ ממוזג ב-train-2 וברכבת 3; plugins-manifest 41/41, plugins-sandbox 36/36, + #588: בדיקות הדלפה לכל ערוץ 7/7. לא גמור: e2e/plugins.spec (״3 תוספים רצים״) לא קיים",
      "was": "10.2",
      "source": "J2, M1",
      "steps": [
@@ -3723,7 +3723,7 @@
       "8.4"
      ],
      "priority": "P1",
-     "status": "⏳ #306 feat/search-ops (נפתח 24.10 / 20.10; CI אדום על תקציב החבילה (צעד Bundle-size budget); ✅ רק אחרי בדיקה מקומית ב-Vercel Sandbox — לא ב-GitHub Actions, לפי החלטת טל 9.11)",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: searchOps 39/40 (30 שאילתות הקבלה עוברות), bm25 12/12",
      "was": "10.3",
      "source": "J5",
      "steps": [
@@ -3782,7 +3782,7 @@
       "4.3"
      ],
      "priority": "P1",
-     "status": "⏳ #314 feat/desktop-release (נפתח 24.10 / 20.10; CI אדום על תקציב החבילה (צעד Bundle-size budget); ✅ רק אחרי בדיקה מקומית ב-Vercel Sandbox — לא ב-GitHub Actions, לפי החלטת טל 9.11)",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: desktopRelease 9/9; חסר: updater על מכשיר אמיתי",
      "was": "10.4",
      "source": "N3, F7",
      "steps": [
@@ -3848,7 +3848,7 @@
       "0 קבצים בלי מייבאים",
       "0 גרסאות ראשיות מאחור"
      ],
-     "status": "⏳ #491 (על verify/train; הוסרו 4 חבילות שאיש לא מייבא ו-7 תלויות שרק הן משכו, בלי הורדות; npm ls: אותן 3 בעיות קיימות כמו בבסיס; licenses 0 כשלים; אבטחה: main — 24 התאמות לייעוצים (3 high), verify/train מוסיף 13: critical ‏zip 4.6.1 (Cargo, דרך tauri-plugin-updater), high ‏nanoid ו-lodash-es (נעיצות של excalidraw ו-chevrotain); חסר: overrides, npm update/dedupe ו-cargo update -p zip — דורשים התקנה אמיתית) · #494 fix/vuln-deps (על #491): nanoid 3.3.3→3.3.20 ו-4.0.2→5.1.16, lodash-es 4.17.21→4.18.1, zod ב-mcp-server, vite בתבנית התוסף ל-^8 — הכול offline מעותקים שכבר בנעילה; שער חדש audit-lock (רשימת גרסאות פגיעות, נכשל אם חוזרות) ב-hygiene; auditLock 15/15; חסר: cargo update של tauri-plugin-updater ל-2.14.1 (zip 9) ו-body-parser (טל)"
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: auditLock 15/15; חסר: overrides ו-cargo update (בעלים)"
     },
     {
      "id": "12.3",
@@ -3886,7 +3886,7 @@
       "2.4"
      ],
      "priority": "P1",
-     "status": "⏳ #280 feat/monitoring (נפתח 24.10 / 20.10; CI אדום על e2e — התקנת Playwright נשברת על Ubuntu 26 (#330); ✅ רק אחרי בדיקה מקומית ב-Vercel Sandbox — לא ב-GitHub Actions, לפי החלטת טל 9.11)",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: telemetry 5/5, webVitals 7/7; חסר: e2e monitoring",
      "was": "11.4",
      "source": "A10, P7",
      "steps": [
@@ -3919,7 +3919,7 @@
       "3.6"
      ],
      "priority": "P0",
-     "status": "⏳ #316 docs/complete (נפתח 24.10 / 20.10; CI אדום על e2e — התקנת Playwright נשברת על Ubuntu 26 (#330); ✅ רק אחרי בדיקה מקומית ב-Vercel Sandbox — לא ב-GitHub Actions, לפי החלטת טל 9.11)",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: docsComplete 9/9; כשל docs-complete ב-train-2 תוקן ברכבת 3",
      "was": "12.1",
      "source": "N1",
      "steps": [
@@ -3940,7 +3940,7 @@
       "0.17"
      ],
      "priority": "P1",
-     "status": "⏳ #301 chore/hosting (נפתח 24.10 / 20.10; CI אדום על e2e — התקנת Playwright נשברת על Ubuntu 26 (#330); ✅ רק אחרי בדיקה מקומית ב-Vercel Sandbox — לא ב-GitHub Actions, לפי החלטת טל 9.11)",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: hosting 5/5, headersPolicy 28/28; חסר: e2e playground",
      "was": "12.2",
      "source": "N2",
      "steps": [
@@ -3962,7 +3962,7 @@
       "1.1"
      ],
      "priority": "P2",
-     "status": "⏳ #302 feat/mobile-builds (נפתח 24.10 / 20.10; CI אדום על תקציב החבילה (צעד Bundle-size budget); ✅ רק אחרי בדיקה מקומית ב-Vercel Sandbox — לא ב-GitHub Actions, לפי החלטת טל 9.11)",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: mobileBuilds 10/10; חסר: בניות APK/IPA וחתימה",
      "was": "12.3",
      "source": "I4",
      "steps": [
@@ -4136,7 +4136,7 @@
       "0.6"
      ],
      "priority": "P1",
-     "status": "⏳ #303 chore/issue-triage (נפתח 24.10 / 20.10; CI אדום על e2e — התקנת Playwright נשברת על Ubuntu 26 (#330); ✅ רק אחרי בדיקה מקומית ב-Vercel Sandbox — לא ב-GitHub Actions, לפי החלטת טל 9.11)",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: issueTriage 10/10, ריצה יבשה מול הריפו עובדת; חסר: הרצה יומית (בלי Actions — משימה מתוזמנת אצל הבעלים)",
      "new": true,
      "source": "חיסכון בזמן",
      "steps": [
@@ -4179,7 +4179,7 @@
       "0.6"
      ],
      "priority": "P2",
-     "status": "⏳ #304 feat/public-roadmap (נפתח 24.10 / 20.10; CI אדום על e2e — התקנת Playwright נשברת על Ubuntu 26 (#330); ✅ רק אחרי בדיקה מקומית ב-Vercel Sandbox — לא ב-GitHub Actions, לפי החלטת טל 9.11)",
+     "status": "⏳ קוד גמור — ממוזג ב-train-2 וברכבת 3; בדיקות יחידה לא מקוון: publicRoadmap 6/6, planBuild 12/12",
      "new": true,
      "source": "השקה",
      "steps": [
