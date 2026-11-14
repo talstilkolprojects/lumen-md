@@ -1825,6 +1825,34 @@
       "group": "Insert",
       "hint": "Fetch the dataset under the cursor again and see what changed before switching to the new snapshot",
       "icon": "Download"
+    },
+    {
+      "id": "sources.benyehudaDownload",
+      "label": "Download the Ben-Yehuda library…",
+      "group": "Insert",
+      "hint": "Hebrew literature in the public domain, once, from the project's dump: then search and read with no network",
+      "icon": "Download"
+    },
+    {
+      "id": "sources.benyehudaSearch",
+      "label": "Search the Ben-Yehuda library…",
+      "group": "Insert",
+      "hint": "Author, work or words of the text (ביאליק בריכה), on this device",
+      "icon": "FileText"
+    },
+    {
+      "id": "sources.benyehudaQuote",
+      "label": "Copy as a quote (Ben-Yehuda)",
+      "group": "Insert",
+      "hint": "The selected passage with author, work, a link to it and the public-domain mark, ready to paste",
+      "icon": "Quote"
+    },
+    {
+      "id": "sources.benyehudaHighlight",
+      "label": "Highlight this passage (Ben-Yehuda)",
+      "group": "Insert",
+      "hint": "Keep the selected passage of a work in the highlights hub",
+      "icon": "Pencil"
     }
   ],
   "full": [
@@ -3802,6 +3830,34 @@
       "group": "Insert",
       "hint": "Fetch the dataset under the cursor again and see what changed before switching to the new snapshot",
       "icon": "Download"
+    },
+    {
+      "id": "sources.benyehudaDownload",
+      "label": "Download the Ben-Yehuda library…",
+      "group": "Insert",
+      "hint": "Hebrew literature in the public domain, once, from the project's dump: then search and read with no network",
+      "icon": "Download"
+    },
+    {
+      "id": "sources.benyehudaSearch",
+      "label": "Search the Ben-Yehuda library…",
+      "group": "Insert",
+      "hint": "Author, work or words of the text (ביאליק בריכה), on this device",
+      "icon": "FileText"
+    },
+    {
+      "id": "sources.benyehudaQuote",
+      "label": "Copy as a quote (Ben-Yehuda)",
+      "group": "Insert",
+      "hint": "The selected passage with author, work, a link to it and the public-domain mark, ready to paste",
+      "icon": "Quote"
+    },
+    {
+      "id": "sources.benyehudaHighlight",
+      "label": "Highlight this passage (Ben-Yehuda)",
+      "group": "Insert",
+      "hint": "Keep the selected passage of a work in the highlights hub",
+      "icon": "Pencil"
     }
   ],
   "autoSaveOn": [
@@ -4076,6 +4132,10 @@
     "sources.askLaw",
     "sources.datagovInsert",
     "sources.cbsSeries",
-    "sources.datasetRefresh"
+    "sources.datasetRefresh",
+    "sources.benyehudaDownload",
+    "sources.benyehudaSearch",
+    "sources.benyehudaQuote",
+    "sources.benyehudaHighlight"
   ]
 }

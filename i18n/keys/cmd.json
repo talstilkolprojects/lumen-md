@@ -1690,6 +1690,46 @@
       "vars": []
     },
     {
+      "key": "cmd.sources.benyehudaDownload",
+      "en": "Download the Ben-Yehuda library…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.benyehudaDownload.hint",
+      "en": "Hebrew literature in the public domain, once, from the project's dump: then search and read with no network",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.benyehudaHighlight",
+      "en": "Highlight this passage (Ben-Yehuda)",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.benyehudaHighlight.hint",
+      "en": "Keep the selected passage of a work in the highlights hub",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.benyehudaQuote",
+      "en": "Copy as a quote (Ben-Yehuda)",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.benyehudaQuote.hint",
+      "en": "The selected passage with author, work, a link to it and the public-domain mark, ready to paste",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.benyehudaSearch",
+      "en": "Search the Ben-Yehuda library…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.benyehudaSearch.hint",
+      "en": "Author, work or words of the text (ביאליק בריכה), on this device",
+      "vars": []
+    },
+    {
       "key": "cmd.sources.cbsSeries",
       "en": "Insert a CBS series…",
       "vars": []
