@@ -119,10 +119,20 @@ export async function askLaw(ctx: CommandContext): Promise<void> {
     await uiAlert({ message: t("knesset.askNone") });
     return;
   }
+  // Plan W10.B10: these are quotes from the law, not verified answers.
   const pick = await uiSelect({
-    message: t("knesset.askPick"),
-    choices: answers.map((a, i) => ({ value: String(i), label: `${a.law.law.name} §${a.section.number}${a.verified ? "" : ` (${t("knesset.unverified")})`}: ${a.section.text.slice(0, 90)}` })),
+    message: t("knesset.askPickQuote"),
+    choices: answers.map((a, i) => ({ value: String(i), label: `${a.law.law.name} §${a.section.number}${a.quoteInLaw ? "" : ` (${t("knesset.quoteNotInCopy")})`}: ${a.section.text.slice(0, 90)}` })),
   });
   const a = pick === null || pick === undefined ? null : answers[Number(pick)];
-  if (a) ctx.insertSnippet(`\n\n${a.markdown}\n`);
+  if (!a) return;
+  // With a model on this device: a short answer from the section, checked by the critic.
+  const answer = await k.answerLawQuestion(q, a, await k.localLawChat());
+  const lines = [a.markdown];
+  if (answer) {
+    lines.push("", `**${t("knesset.answerLabel")}:** ${answer.claim}`, "", `_${answer.verified ? t("knesset.answerVerified", { section: a.section.number }) : t("knesset.answerNotVerified", { section: a.section.number })}_`);
+  } else {
+    lines.push("", `_${t("knesset.quoteNotAnswer")}_`);
+  }
+  ctx.insertSnippet(`\n\n${lines.join("\n")}\n`);
 }

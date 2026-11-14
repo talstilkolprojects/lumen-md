@@ -15,6 +15,10 @@
   "knesset.protocolNotFound": "These words are not in a speaker's turn in this protocol.",
   "knesset.askPrompt": "Ask the laws you saved (searched on this device)",
   "knesset.askNone": "No saved law answers that. The search reads only laws saved for offline, with their text.",
-  "knesset.askPick": "Sections that answer it",
-  "knesset.unverified": "not verified"
+  "knesset.askPickQuote": "Sections to quote — quotes from the law, not verified answers",
+  "knesset.quoteNotInCopy": "quote not found in the saved copy",
+  "knesset.quoteNotAnswer": "Quote from the law, not a verified answer.",
+  "knesset.answerLabel": "Answer (local model)",
+  "knesset.answerVerified": "Checked by the critic: section {section} supports this answer.",
+  "knesset.answerNotVerified": "Not verified: the critic could not confirm this answer from section {section}. Rely on the quote."
 }

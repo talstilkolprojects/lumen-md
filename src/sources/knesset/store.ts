@@ -222,17 +222,29 @@ export function lawSections(text: string): Section[] {
   return out;
 }
 
+/**
+ * A section quoted from a saved law (plan W10.B10, audit W7.5). It is a
+ * QUOTE, not an answer: nothing here checks that the section answers the
+ * question. `verified` is always false on this path; only the claim critic
+ * (./answer.ts) can mark an answer verified.
+ */
 export interface LawAnswer {
+  kind: "quote";
   law: SavedLaw;
   section: Section;
   score: number;
-  /** The answer as written into a note: the section, quoted, with its citation. */
+  /** The quote as written into a note: the section, quoted, with its citation. */
   markdown: string;
-  /** The quote was found word for word in the saved law (the citation check). */
-  verified: boolean;
+  /**
+   * The quote was found word for word in the saved law. An integrity check
+   * of the quote (it is the section's own text), not a check of any answer.
+   */
+  quoteInLaw: boolean;
+  /** A quote is never a verified answer. */
+  verified: false;
 }
 
-/** Search the saved laws' sections for a question; the best sections, each verified against its note. */
+/** Search the saved laws' sections for a question: the best sections, quoted. Not answers, and not verified. */
 export function askTheLaw(question: string, laws: readonly SavedLaw[], limit = 3): LawAnswer[] {
   const index = new Bm25Index();
   const where = new Map<string, { law: SavedLaw; section: Section }>();
@@ -249,8 +261,8 @@ export function askTheLaw(question: string, laws: readonly SavedLaw[], limit = 3
     const plain = section.text.split(/["“”«»]/)[0];
     const quote = plain.length > 280 ? plain.slice(0, 280).replace(/\s+\S*$/, "") : plain;
     const answer = `[1] "${quote}"`;
-    const verified = verifyVaultCitations(answer, [{ path: law.path, content: law.content }]).verifiedCount === 1;
+    const quoteInLaw = verifyVaultCitations(answer, [{ path: law.path, content: law.content }]).verifiedCount === 1;
     const markdown = [`> ${section.number}. ${quote}`, ">", `> — ${lawCitation(law.law, section.number)}`].join("\n");
-    return { law, section, score: hit.score, markdown, verified };
+    return { kind: "quote" as const, law, section, score: hit.score, markdown, quoteInLaw, verified: false as const };
   });
 }
