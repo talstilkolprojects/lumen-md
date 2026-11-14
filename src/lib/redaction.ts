@@ -108,6 +108,8 @@ export function redactMarks(text: string): RedactMark[] {
   for (const m of marks) {
     m.index = at[m.index];
     m.end = seen[m.end - 1] === ">" ? at[m.end - 1] + 1 : text.length;
+    // The opening tag a mark stands for is a `<` of the note too (review 26, RR26-473-1).
+    if (m.at !== undefined) m.at = at[m.at];
   }
   return marks;
 }
