@@ -129,9 +129,9 @@ live next to the spec in <code>e2e/visual-smoke.spec.ts-snapshots/</code> and ar
 per-platform (<code>…-chromium-linux.png</code>).</p>
 <ul dir="ltr">
 <li dir="ltr">
-<p dir="auto"><strong>First run without a baseline</strong> writes one and passes with a<br/>
-<code>baseline-created</code> annotation (so CI can produce it). Download it from<br/>
-the CI artifacts or regenerate locally, review it, and commit it.</p>
+<p dir="auto"><strong>A missing baseline fails</strong>, locally and on the gate: no run writes one<br/>
+on its own (plan W10.B16). <code>npm run visual:approve -- smoke</code> writes it<br/>
+after you type <code>approve</code>; review it and commit it.</p>
 </li>
 <li dir="ltr">
 <p dir="auto"><strong>Intentional visual change</strong> (Mermaid theme, block CSS): regenerate with</p>

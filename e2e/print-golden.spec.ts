@@ -13,8 +13,9 @@ import { contentDirection } from "../src/print/printLayout";
  * are then:
  *
  * - compared visually, in print media, with an approved baseline (under 1%
- *   of pixels may differ). The first run writes the baselines
- *   (`--update-snapshots`); a person looks at them once and commits them;
+ *   of pixels may differ). A missing baseline fails (plan W10.B16); a
+ *   person writes them with `npm run visual:approve -- print`, looks at
+ *   them and commits them;
  * - printed to PDF (Chromium, the engine behind "Save as PDF"), and the PDF's
  *   text layer is read back with pdftotext: the Hebrew must come out in
  *   reading order, the page numbers must be there (Hebrew numerals where the

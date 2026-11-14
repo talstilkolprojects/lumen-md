@@ -148,9 +148,9 @@ after it; `--threshold` (default 0.5 %) sets how much may differ.
 live next to the spec in `e2e/visual-smoke.spec.ts-snapshots/` and are
 per-platform (`…-chromium-linux.png`).
 
-- **First run without a baseline** writes one and passes with a
-  `baseline-created` annotation (so CI can produce it). Download it from
-  the CI artifacts or regenerate locally, review it, and commit it.
+- **A missing baseline fails**, locally and on the gate: no run writes one
+  on its own (plan W10.B16). `npm run visual:approve -- smoke` writes it
+  after you type `approve`; review it and commit it.
 - **Intentional visual change** (Mermaid theme, block CSS): regenerate with
 
   ```bash
