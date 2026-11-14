@@ -128,7 +128,7 @@ export async function toggleRelatedPanel(getView: () => EditorView | null): Prom
     return;
   }
   // W2.22: related notes are ranked by the index's own BM25, in the index worker.
-  await ensureIndex();
+  await ensureIndex(false, { checked: true });
   if (!semantic) setRelatedSemantic(await onDeviceSemantic().catch(() => null));
   let titles: TitleEntry[] = titleEntries(indexedFiles().map((f) => f.path));
   const listeners = new Set<(s: Snapshot) => void>();
@@ -183,7 +183,7 @@ export async function toggleRelatedPanel(getView: () => EditorView | null): Prom
     attach();
   }, 1000);
   const refresh = setInterval(() => {
-    void ensureIndex().then(() => {
+    void ensureIndex(false, { checked: true }).then(() => {
       titles = titleEntries(indexedFiles().map((f) => f.path));
     });
   }, 15_000);

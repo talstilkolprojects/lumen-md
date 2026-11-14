@@ -356,7 +356,7 @@ export function PropertiesPanel({ open, onClose, text, applyEdit }: Props) {
     const refresh = async () => {
       try {
         const { ensureIndex, indexedFiles } = await import("../storage/workspaceIndex");
-        await ensureIndex();
+        await ensureIndex(false, { checked: true });
         const files = indexedFiles();
         if (cancelled) return;
         setVault({

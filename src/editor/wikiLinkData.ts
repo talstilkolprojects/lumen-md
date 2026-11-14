@@ -26,7 +26,7 @@ import { explainError } from "../lib/userError";
  */
 export async function linkCatalog(query?: WikiQuery | null, current?: CurrentNote): Promise<NoteCatalog> {
   if (!isOPFSAvailable()) return noteCatalog([]);
-  const refresh = ensureIndex().catch(() => undefined);
+  const refresh = ensureIndex(false, { checked: true }).catch(() => undefined);
   if (!indexedFiles().length) await refresh;
   // Rebuilt only when the index changed — not on every keystroke.
   const version = indexVersion();

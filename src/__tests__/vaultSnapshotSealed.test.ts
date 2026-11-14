@@ -219,7 +219,8 @@ describe("an encrypted vault opens from its sealed snapshot (workspace index)", 
       await ensureIndex();
       // Open, from the snapshot alone.
       expect(snapshotCounters).toEqual({ fromSnapshot: N, read: 0 });
-      expect(indexedFiles()).toHaveLength(N);
+      // T7: no summaries are shown before the check (n4 was deleted while closed).
+      expect(indexedFiles()).toHaveLength(0);
       let answered = false;
       const first = searchWorkspace("closed", { limit: 100 }).then((hits) => ((answered = true), hits));
       const back = findBacklinks("notes/n9.md");

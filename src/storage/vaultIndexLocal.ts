@@ -6,7 +6,7 @@
 
 import { VaultIndex, type IndexInput } from "./vaultIndexCore";
 import { engineOver, type IndexEngine, type IndexRequest, type IndexRequestBody, type IndexResponse, type RestoredNote } from "./vaultIndexProtocol";
-import { dropSnapshot, loadSnapshot, readSnapshotBody, readSnapshotManifest, saveSnapshot, snapshotRaw } from "./indexSnapshot";
+import { dropSnapshot, loadSnapshot, readSnapshotBody, readSnapshotManifest, sameNote, saveSnapshot, snapshotRaw } from "./indexSnapshot";
 import { summarize } from "./noteSummary";
 import type { SnapshotKeys } from "./snapshotSeal";
 
@@ -22,7 +22,7 @@ import type { SnapshotKeys } from "./snapshotSeal";
 async function restoreInto(
   index: VaultIndex,
   vault: string,
-  listing: { path: string; name: string; modified: number }[] | null,
+  listing: { path: string; name: string; modified: number; size?: number }[] | null,
   keys?: SnapshotKeys,
   defer?: (work: () => Promise<void>) => void,
 ): Promise<RestoredNote[]> {
@@ -55,12 +55,15 @@ async function restoreInto(
   const out: RestoredNote[] = [];
   const take: IndexInput[] = [];
   // W6.36: no listing — every note of the snapshot, as it recorded it.
-  const entries = listing ?? [...snap.values()].map((s) => ({ path: s.path, name: s.name, modified: s.modified }));
+  const entries = listing ?? [...snap.values()].map((s) => ({ path: s.path, name: s.name, modified: s.modified, size: s.size }));
   for (const e of entries) {
     const s = snap.get(e.path);
-    if (!s || !e.modified || s.modified !== e.modified) continue;
+    // S3: the same mtime and, when both are known, the same size.
+    if (!s || !sameNote(s, e)) continue;
     take.push({ path: e.path, name: e.name, content: s.content, modified: s.modified });
-    out.push({ path: e.path, name: e.name, modified: s.modified, ...summarize(s.content) });
+    const r: RestoredNote = { path: e.path, name: e.name, modified: s.modified, ...summarize(s.content) };
+    if (s.size !== undefined) r.size = s.size;
+    out.push(r);
   }
   const work = async () => {
     for (const f of take) index.upsert(f);

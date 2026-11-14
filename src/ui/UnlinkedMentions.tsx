@@ -62,7 +62,7 @@ function linkTargetFor(path: string): string {
 export default function UnlinkedMentions({ filePath, onOpen }: { filePath: string; onOpen: (path: string) => void }) {
   const [hits, setHits] = useState<UnlinkedHit[] | null>(null);
   const scan = useCallback(async () => {
-    await ensureIndex();
+    await ensureIndex(false, { checked: true });
     // The open note's latest text, not the index's copy.
     const doc = useAppStore.getState().doc;
     const files = (await indexedNotes()).map((f) => (f.path === doc.workspaceName ? { path: f.path, content: doc.content } : f));
