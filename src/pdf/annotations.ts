@@ -13,7 +13,8 @@
  * The annotations live in a companion note `<file>.pdf.md`: a readable list
  * (one `[[file.pdf#page=N&highlight=ID]]` wiki link per highlight) and a
  * fenced JSON block that carries the annotations themselves. Only the region
- * between the two markers is ours; the rest of the note is the user's.
+ * between the two markers that enclose that block is ours; the rest of the
+ * note is the user's.
  *
  * Everything here is pure (no DOM, no pdf.js) so it is unit-tested directly.
  */
@@ -543,12 +544,34 @@ function inlineText(s: string): string {
     .replace(/([\\`*_[\]<>|#~])/g, "\\$1");
 }
 
+const FENCE_RE = /(`{3,}|~{3,})[ \t]*json[ \t]+lumen-pdf-annotations[^\n]*\n([\s\S]*?)\n\1/;
+const FENCE_INFO_RE = /^[ \t]*(`{3,}|~{3,})[ \t]*json[ \t]+lumen-pdf-annotations/m;
+
+/**
+ * Where the managed region is: the start / end marker pair that encloses the
+ * annotations fence (`start` at the start marker, `end` at the end marker).
+ * The markers alone are not enough — the user's own text may quote one (a
+ * note about the format, a pasted snippet), and that text must never be
+ * taken for the region and replaced (review #272, step 2.22). So the search
+ * runs from the last start marker back, and takes the first pair whose
+ * region holds the fence. Null: no such pair.
+ */
+export function findManagedRegion(md: string): { start: number; end: number } | null {
+  for (let start = md.lastIndexOf(NOTE_START); start !== -1; start = start === 0 ? -1 : md.lastIndexOf(NOTE_START, start - 1)) {
+    const end = md.indexOf(NOTE_END, start + NOTE_START.length);
+    if (end === -1) continue;
+    if (FENCE_RE.test(md.slice(start, end))) return { start, end };
+  }
+  return null;
+}
+
 /** The annotations stored in a companion note (empty when there are none or the block is unreadable). */
 export function parseAnnotationsNote(md: string | null | undefined): PdfAnnotation[] {
   if (!md) return [];
-  const start = md.indexOf(NOTE_START);
-  const region = start === -1 ? md : md.slice(start, md.indexOf(NOTE_END, start) === -1 ? undefined : md.indexOf(NOTE_END, start));
-  const fence = /(`{3,}|~{3,})[ \t]*json[ \t]+lumen-pdf-annotations[^\n]*\n([\s\S]*?)\n\1/.exec(region);
+  const pair = findManagedRegion(md);
+  // No marker pair around a fence: a fence on its own (an older or hand-made note) still counts.
+  const region = pair ? md.slice(pair.start, pair.end) : md;
+  const fence = FENCE_RE.exec(region);
   if (!fence) return [];
   try {
     const data = JSON.parse(fence[2]) as unknown;
@@ -561,20 +584,21 @@ export function parseAnnotationsNote(md: string | null | undefined): PdfAnnotati
 
 /**
  * The annotations of a companion note, strictly: null when the note has a
- * highlights block that can't be read whole (a marker without its pair, a
- * fence cut short, JSON that doesn't parse, an entry that isn't an
- * annotation). Saving over such a block would erase what it held, so a
- * caller must not write then. No note, or a note without a block: [].
+ * highlights block that can't be read whole (a fence cut short or outside
+ * its markers, JSON that doesn't parse, an entry that isn't an annotation
+ * the reader can show). Saving over such a block would erase what it held,
+ * so a caller must not write then. No note, or a note without a block — even
+ * one whose text merely quotes a marker — : [].
  */
 export function readAnnotationsNote(md: string | null | undefined): PdfAnnotation[] | null {
   if (!md) return [];
-  const start = md.indexOf(NOTE_START);
-  const end = start === -1 ? -1 : md.indexOf(NOTE_END, start);
-  const hasInfo = /^[ \t]*(`{3,}|~{3,})[ \t]*json[ \t]+lumen-pdf-annotations/m.test(md);
-  if (start === -1 && !hasInfo) return [];
-  if (start !== -1 && end === -1) return null;
-  const region = start === -1 ? md : md.slice(start, end);
-  const fence = /(`{3,}|~{3,})[ \t]*json[ \t]+lumen-pdf-annotations[^\n]*\n([\s\S]*?)\n\1/.exec(region);
+  const pair = findManagedRegion(md);
+  const hasInfo = FENCE_INFO_RE.test(md);
+  if (!pair && !hasInfo) return [];
+  // A fence with markers around it but not enclosed by a pair: a damaged block.
+  if (!pair && md.includes(NOTE_START)) return null;
+  const region = pair ? md.slice(pair.start, pair.end) : md;
+  const fence = FENCE_RE.exec(region);
   if (!fence) return null;
   try {
     const data = JSON.parse(fence[2]) as unknown;
@@ -585,16 +609,43 @@ export function readAnnotationsNote(md: string | null | undefined): PdfAnnotatio
   }
 }
 
+const isString = (x: unknown): x is string => typeof x === "string";
+const isNumber = (x: unknown): x is number => typeof x === "number" && Number.isFinite(x);
+const isObject = (x: unknown): x is Record<string, unknown> => !!x && typeof x === "object" && !Array.isArray(x);
+
+/** A selector refinement the reader can use: a quote of strings, or a position of numbers. */
+function isRefinement(x: unknown): boolean {
+  if (!isObject(x)) return false;
+  if (x.type === "TextQuoteSelector") {
+    return isString(x.exact) && (x.prefix === undefined || isString(x.prefix)) && (x.suffix === undefined || isString(x.suffix));
+  }
+  if (x.type === "TextPositionSelector") return isNumber(x.start) && isNumber(x.end);
+  return false;
+}
+
+/**
+ * Every field the reader and the note renderer dereference has the type
+ * they expect (review #272, step 2.26): `created` (sorted with
+ * localeCompare), `modified`, `motivation`, `body` (an array of
+ * TextualBody with a string value) and each selector's refinement. An
+ * entry that fails is not an annotation, which makes a strict read of the
+ * block fail: the block is shown as unreadable, never saved over.
+ */
 function isPdfAnnotation(x: unknown): x is PdfAnnotation {
-  if (!x || typeof x !== "object") return false;
-  const a = x as Partial<PdfAnnotation>;
+  if (!isObject(x)) return false;
+  const target = x.target;
   return (
-    a.type === "Annotation" &&
-    typeof a.id === "string" &&
-    !!a.target &&
-    typeof a.target.source === "string" &&
-    Array.isArray(a.target.selector) &&
-    a.target.selector.every((s) => !!s && s.type === "FragmentSelector" && typeof s.value === "string")
+    x.type === "Annotation" &&
+    isString(x.id) &&
+    isString(x.created) &&
+    (x.modified === undefined || isString(x.modified)) &&
+    (x.motivation === undefined || x.motivation === "highlighting" || x.motivation === "commenting") &&
+    (x.body === undefined ||
+      (Array.isArray(x.body) && x.body.every((b) => isObject(b) && b.type === "TextualBody" && isString(b.value)))) &&
+    isObject(target) &&
+    isString(target.source) &&
+    Array.isArray(target.selector) &&
+    target.selector.every((s) => isObject(s) && s.type === "FragmentSelector" && isString(s.value) && (s.refinedBy === undefined || isRefinement(s.refinedBy)))
   );
 }
 
@@ -637,8 +688,10 @@ export function renderAnnotationsBlock(pdfPath: string, annotations: readonly Pd
 export function upsertAnnotationsNote(existing: string | null | undefined, pdfPath: string, annotations: readonly PdfAnnotation[], labels: NoteLabels): string {
   const block = renderAnnotationsBlock(pdfPath, annotations, labels);
   if (!existing || !existing.trim()) return `# ${labels.title}\n\n${block}\n`;
-  const start = existing.indexOf(NOTE_START);
-  const end = start === -1 ? -1 : existing.indexOf(NOTE_END, start);
-  if (start !== -1 && end !== -1) return existing.slice(0, start) + block + existing.slice(end + NOTE_END.length);
+  // Only the pair that encloses the annotations fence is ours (step 2.22):
+  // a marker quoted in the user's text is left as it is, and without a pair
+  // the block is appended after everything the user wrote.
+  const pair = findManagedRegion(existing);
+  if (pair) return existing.slice(0, pair.start) + block + existing.slice(pair.end + NOTE_END.length);
   return `${existing.replace(/\s*$/, "")}\n\n${block}\n`;
 }

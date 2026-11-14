@@ -2,7 +2,10 @@
  * PDF reader with highlights (plan 4.14), on the pdf.js already in the app.
  *
  * - Pages are virtualised: only those near the viewport get a canvas and a
- *   text layer; the rest are empty boxes of the right size.
+ *   text layer; the rest are empty boxes. The reader opens with page 1's
+ *   size for every box, and each page takes its real size once it is loaded.
+ * - The reader is modal: the rest of the app is inert while it is open, and
+ *   focus goes back where it was when it closes.
  * - Select text on a page and press Highlight (or H): the highlight is stored
  *   as a W3C Web Annotation in the companion note `<file>.pdf.md`, with a
  *   `[[file.pdf#page=N&highlight=ID]]` link that opens the reader at that
@@ -29,6 +32,8 @@ import "./strings";
 import { t } from "../i18n";
 import { showAiToast } from "../ui/AiToast";
 import { ErrorBoundary } from "../ui/ErrorBoundary";
+import { modalFocus } from "../ui/inertOutside";
+import { drainQueue } from "./drainQueue";
 import { companionNotePath, createPdfAnnotation, describeAnnotation, findAll, nextMatchIndex, readAnnotationsNote, parsePdfFragment, shortId, unionRect, upsertAnnotationsNote, withNote, type PdfAnnotation } from "./annotations";
 import { layerText, offsetsToRange, pageTextFromItems, rangePageRects, rangeToOffsets } from "./textMap";
 import { openPdf, type PdfDocument } from "./pdfjs";
@@ -36,10 +41,11 @@ import "./PdfReader.css";
 import { HelpButton } from "../ui/HelpButton";
 import { explainError, UserFacingError } from "../lib/userError";
 import { EmptyState, learnHow } from "../ui/EmptyState";
-import { PdfPageView } from "./PdfPageView";
+import { PdfPageView, withPageSize } from "./PdfPageView";
 import type { PageSize } from "./PdfPageView";
 import type { OcrPage } from "./ocrPages";
-import { positionAt, scrollTopFor, type PageBox, type PositionsIO } from "./readingPosition";
+import { positionAt, scrollTopFor } from "./readingPosition";
+import { POSITION_SAVE_MS, pageBoxes, positionsIO } from "./readingPositionVault";
 
 /** "Ask this PDF" (plan 6.8): its own chunk, loaded on the first click of Ask. */
 const PdfChatPanel = lazy(() => import("./PdfChatPanel").then((m) => ({ default: m.PdfChatPanel })));
@@ -110,6 +116,8 @@ function isMissing(e: unknown): boolean {
   return !!e && typeof e === "object" && (e as { name?: unknown }).name === "NotFoundError";
 }
 
+export { drainQueue };
+
 function baseName(p: string): string {
   return p.split("/").pop() ?? p;
 }
@@ -152,6 +160,7 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
 
   // Leaving the page (closing the tab or window) with highlights not saved
   // yet — queued, or after a failed write — asks first, like unsaved notes do.
+  // The guard outlives the reader until its queued writes are done (step 2.25).
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       if (pendingWrites.current === 0 && !writeFailed.current) return;
@@ -159,7 +168,11 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
       e.returnValue = "";
     };
     window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      const remove = () => window.removeEventListener("beforeunload", onBeforeUnload);
+      if (pendingWrites.current > 0) void drainQueue(writeQueue).then(remove);
+      else remove();
+    };
   }, []);
   const annotationsRef = useRef<PdfAnnotation[]>([]);
   annotationsRef.current = annotations;
@@ -168,10 +181,10 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
   const searchSeq = useRef(0);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // Take focus from the editor underneath, so keys go to the reader.
-  useEffect(() => {
-    rootRef.current?.focus({ preventScroll: true });
-  }, []);
+  // The reader is modal (step 2.21): focus moves in from the editor
+  // underneath, everything outside is inert so Tab can't reach the hidden
+  // editor, and focus goes back to where it was on close.
+  useEffect(() => (rootRef.current ? modalFocus(rootRef.current) : undefined), []);
 
   // Open the PDF and read its highlights.
   useEffect(() => {
@@ -209,11 +222,11 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
         return;
       }
       const pdf = opened.doc;
-      const all: PageSize[] = [];
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const vp = (await pdf.getPage(i)).getViewport({ scale: 1 });
-        all.push({ w: vp.width, h: vp.height });
-      }
+      // Page 1's size stands in for every page, so a long PDF opens at once
+      // (step 2.18); each page reports its real size when it comes near the
+      // viewport and is rendered (onPageSize).
+      const first = pdf.numPages > 0 ? (await pdf.getPage(1)).getViewport({ scale: 1 }) : null;
+      const all: PageSize[] = first ? Array.from({ length: pdf.numPages }, () => ({ w: first.width, h: first.height })) : [];
       // No note yet means no highlights. Any other read failure stops here:
       // opening with an empty list would let the next save drop the saved ones.
       let note: string | null = null;
@@ -286,7 +299,9 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
         setCurrent(at.page);
       });
     }
-  }, [doc, sizes, fragment, openSeq, goToPage]);
+    // On the page count, not the sizes: a page reporting its real size must
+    // not scroll back to the link's page or flash again.
+  }, [doc, sizes.length, fragment, openSeq, goToPage]);
 
   // Which pages are near the viewport.
   useEffect(() => {
@@ -308,7 +323,7 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
     );
     for (const el of pageEls.current.values()) io.observe(el);
     return () => io.disconnect();
-  }, [doc, sizes, scale]);
+  }, [doc, sizes.length, scale]);
 
   // The current page: the last one whose top is above the middle of the view.
   const onScroll = useCallback(() => {
@@ -492,13 +507,14 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
    */
   const whenSaved = useCallback(
     (then: () => void) => {
-      void writeQueue.current.then(() => {
+      void (async () => {
+        // Every write, including those queued while waiting (step 2.25).
+        await drainQueue(writeQueue);
         if (!writeFailed.current) return then();
         persist(annotationsRef.current);
-        void writeQueue.current.then(() => {
-          if (!writeFailed.current) then();
-        });
-      });
+        await drainQueue(writeQueue);
+        if (!writeFailed.current) then();
+      })();
     },
     [persist],
   );
@@ -579,6 +595,9 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
   const onPageText = useCallback((page: number, text: string) => {
     pageTexts.current.set(page, text);
   }, []);
+
+  /** A rendered page's real size (in points), replacing the page-1 placeholder. */
+  const onPageSize = useCallback((page: number, size: PageSize) => setSizes((prev: PageSize[]) => withPageSize(prev, page, size)), []);
 
   const onOcr = useCallback((page: number, value: OcrPage) => {
     setOcrPages((prev) => ({ ...prev, [page]: value }));
@@ -777,6 +796,7 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
                 query={activeHit?.page === i + 1 ? query : ""}
                 occurrence={activeHit?.page === i + 1 ? activeHit.occurrence : -1}
                 registerEl={registerEl}
+                onSize={onPageSize}
                 onText={onPageText}
                 onOcr={onOcr}
                 onAnchored={onAnchored}
@@ -853,28 +873,3 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
 }
 
 const EMPTY: PdfAnnotation[] = [];
-
-/** W6.47: the place is saved this long after scrolling stops. */
-const POSITION_SAVE_MS = 1_000;
-
-/** Reading positions live in the vault (`.lumen/reading-positions.json`), so the vault's sync carries them. */
-const positionsIO: PositionsIO = {
-  read: async (p) => {
-    const ws = await import("../storage/workspace");
-    try {
-      return await ws.readWorkspaceFile(p);
-    } catch {
-      return null;
-    }
-  },
-  write: async (p, text) => {
-    const ws = await import("../storage/workspace");
-    await ws.createWorkspaceFolder(".lumen").catch(() => undefined);
-    await ws.writeWorkspaceFile(p, text);
-  },
-};
-
-/** The pages' boxes in the scroll container, page 1 first. */
-function pageBoxes(els: Map<number, HTMLDivElement>): PageBox[] {
-  return [...els.entries()].sort(([a], [b]) => a - b).map(([, el]) => ({ top: el.offsetTop, height: el.offsetHeight }));
-}

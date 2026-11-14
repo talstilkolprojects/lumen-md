@@ -318,9 +318,20 @@
   line-height: 1.5;
 }
 
+/*
+ * Narrow screens: the highlights list (the only place to read, annotate or
+ * delete a highlight) stacks under the pages instead of being hidden
+ * (review #272, step 2.23). It keeps at most 40% of the height and scrolls.
+ */
 @media (max-width: 720px) {
+  .pdf-body {
+    flex-direction: column;
+  }
   .pdf-side {
-    display: none;
+    width: auto;
+    max-height: 40vh;
+    border-inline-start: none;
+    border-top: 1px solid hsl(var(--border));
   }
   /* The Ask panel stays: over the pages, on the reading side's end. */
   .pdf-side.pdf-ask {
@@ -333,6 +344,7 @@
     z-index: 3;
   }
   .pdf-scroll {
+    min-height: 0;
     padding: 8px;
   }
 }
