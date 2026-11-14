@@ -117,6 +117,39 @@ async function checkedIndex(force = false): Promise<void> {
 }
 
 /**
+ * Review 15 V3: how long a view that lists notes (`ensureIndex(false, {
+ * checked: true })`) waits for the check before it goes on with what
+ * `indexedFiles()` gives while unchecked: nothing. It re-derives when the
+ * check ends (`indexVersion()`). Text queries keep waiting for the check.
+ */
+export const VIEW_CHECK_WAIT_MS = 1_000;
+/**
+ * V3: a check whose listing has not settled after this long counts as
+ * failed: the trusted notes go and the next use reads the vault (T2). A
+ * 10,000-note OPFS listing takes 2–10 s on a slow machine.
+ */
+export const CHECK_TIMEOUT_MS = 60_000;
+
+/** `p`, or a rejection after `ms`. */
+function withDeadline<T>(p: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`the vault listing did not settle in ${ms} ms`)), ms);
+  });
+  return Promise.race([p, late]).finally(() => clearTimeout(timer));
+}
+
+/** For a view that lists notes (V3): the index open and checked, or, after VIEW_CHECK_WAIT_MS, open and still unchecked (it then lists none). */
+async function checkedView(force: boolean): Promise<void> {
+  await ensureIndex(force);
+  if (!cache.verify) return checkedIndex();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const waited = await Promise.race([verified().then(() => true), new Promise<false>((r) => (timer = setTimeout(() => r(false), VIEW_CHECK_WAIT_MS)))]);
+  clearTimeout(timer);
+  if (waited && !cache.builtAt) await ensureIndex();
+}
+
+/**
  * Forget everything the index holds, on this thread and in the worker:
  * on lock (T4), on a vault switch (T1) and after a failed check (T2). The
  * next use builds again, from the sealed snapshot when there is one.
@@ -533,7 +566,8 @@ function discard(): void {
  */
 async function verifySnapshot(listing: Promise<WorkspaceEntry[]>, body: Promise<{ refused: boolean }>, at: number): Promise<void> {
   try {
-    const [list, texts] = await Promise.all([listing, body]);
+    // V3: a listing that never settles fails the check (closed) instead of holding every query.
+    const [list, texts] = await withDeadline(Promise.all([listing, body]), CHECK_TIMEOUT_MS);
     if (at !== epoch) return;
     const indexOps: IndexOp[] = [];
     const toRead = new Map<string, ToRead>();
@@ -682,7 +716,7 @@ function pendingChanges(): boolean {
  * it lists none).
  */
 export async function ensureIndex(force = false, opts: { checked?: boolean } = {}): Promise<void> {
-  if (opts.checked) return checkedIndex(force);
+  if (opts.checked) return checkedView(force);
   if (!isOPFSAvailable()) return;
   // T1/U1: another vault is active now (even mid-build); this index is not its index.
   if (cache.filledVault !== null && cache.filledVault !== snapshotVault()) dropIndex();
