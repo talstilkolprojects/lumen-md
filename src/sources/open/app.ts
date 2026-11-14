@@ -63,7 +63,8 @@ export async function insertion(r: OpenResult): Promise<string | null> {
   if (r.kind === "work" && r.payload.work) {
     const b = await import("../benyehuda/app");
     const note = await b.workNote(r.payload.work);
-    const text = note ? note.content.replace(/^---\n[\s\S]*?\n---\n\s*# .*\n/, "").trim() : null;
+    const { parseWorkNote } = await import("../benyehuda/library");
+    const text = note ? (parseWorkNote(note.content)?.text ?? null) : null;
     const cut = text && text.length > MAX_COPY ? text.slice(0, text.lastIndexOf("\n\n", MAX_COPY) > 0 ? text.lastIndexOf("\n\n", MAX_COPY) : MAX_COPY) : text;
     return insertionFor(r, cut);
   }
