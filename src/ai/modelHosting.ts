@@ -430,7 +430,7 @@ export function hostingGaps(models: HostedModel[], only: (m: HostedModel) => boo
 /**
  * Why a model cannot come from the mirror (yet), so it downloads only from
  * Hugging Face (plan W6.33). Each has a message the app shows the user
- * (MIRROR_MESSAGES, English in src/i18n/lazy/modelSources.json); a model
+ * (MIRROR_MESSAGES, English in the lazy modelSources domain); a model
  * that is only on Hugging Face is never silent about it.
  */
 export type MirrorGap = "no-hosting" | "not-pinned" | "unhashed" | "over-2gib";

@@ -3,11 +3,13 @@
  * snapshot in the vault. It reads the file and never fetches: refreshing
  * is a palette command the user runs.
  */
-import { useEffect, useState } from "react";
-import CsvBlock from "./CsvBlock";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { parseBlock } from "../sources/datagov/snapshot";
 import { t } from "../i18n";
 import "../sources/datagov/strings";
+
+// The CSV block's own chunk (and its lazy strings), loaded when a snapshot is shown.
+const CsvBlock = lazy(() => import("./CsvBlock"));
 
 export default function DatasetBlock({ source }: { source: string }) {
   const block = parseBlock(source);
@@ -29,7 +31,9 @@ export default function DatasetBlock({ source }: { source: string }) {
   return (
     <figure className="dataset-block" aria-label={block.title}>
       <figcaption>{block.title}</figcaption>
-      <CsvBlock source={csv} lang="csv" meta={block.view === "chart" ? "view=chart" : ""} />
+      <Suspense fallback={<div className="dataset-block-loading">{t("datagov.loading")}</div>}>
+        <CsvBlock source={csv} lang="csv" meta={block.view === "chart" ? "view=chart" : ""} />
+      </Suspense>
     </figure>
   );
 }
