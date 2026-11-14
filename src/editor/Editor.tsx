@@ -10,7 +10,6 @@
  *   `update(u: ViewUpdate)` that wants to dispatch synchronously.
  */
 import { screenReaderAnnouncements } from "./srAnnouncements";
-import { announce } from "../a11y/announce";
 import { readyToReveal } from "./revealLine";
 import { useEffect, useImperativeHandle, useRef, useState, forwardRef } from "react";
 import { Compartment, EditorState } from "@codemirror/state";
@@ -19,8 +18,7 @@ import { obsidianSourceExtension } from "./obsidianSource";
 import { cleanPastedText, pastedHtmlToMarkdown, shouldConvertPaste } from "../paste/htmlPaste";
 import { wysiwygTakesPaste, type PasteDetail } from "../paste/pasteCommands";
 import { FIX_PDF_HEBREW_EVENT, fixSourceSelection, offerInSourceEditor } from "../paste/pdfPaste";
-import { EditorView, keymap, highlightActiveLine, Decoration, WidgetType } from "@codemirror/view";
-import type { DecorationSet } from "@codemirror/view";
+import { EditorView, keymap, highlightActiveLine } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, indentWithTab, redo, undo } from "@codemirror/commands";
 import { actionById, applyTextAction, type ToolbarActionId } from "../mobile/toolbarActions";
 import { wikiLinkCompletion } from "./wikiLinkComplete";
@@ -42,9 +40,7 @@ import { bidiMarksExtension } from "./bidiMarks";
 import { mathBidiExtension } from "./mathBidi";
 import { languages } from "@codemirror/language-data";
 import { tags as t } from "@lezer/highlight";
-import { StateField, StateEffect } from "@codemirror/state";
 import type { Extension } from "@codemirror/state";
-import { aiOperation } from "../ai/aiAbort";
 import { embedHintExtension } from "./embedHintExtension";
 import { insertSlashMenuExtension } from "./insertMenu";
 import { wikiLinkAutocomplete } from "./wikiLinkAutocomplete";
@@ -55,6 +51,7 @@ import { t as i18nT, getLocale } from "../i18n";
 // the collab effect below — a static import dragged ~60KB gz of yjs into the
 // eager boot path for a feature that's off until a session starts.
 import { typewriterModeExtension } from "./typewriterMode";
+import { ghostTextExtension } from "./ghostText";
 import { useAppStore } from "../store/useStore";
 import { markdownLintExtension } from "./lintExtension";
 // commentDecorations imports yjs (comment anchors are Y.Map relative
@@ -64,7 +61,7 @@ import { showSpokenRange, showSpokenWord, speechHighlightExtension } from "./spe
 import { lexiconInstalled } from "../lexicon/installed";
 import { wordAt } from "../lexicon/wordAt";
 import { inlineSuggestion } from "./inlineSuggestion";
-import { aiAuthored, aiAuthorshipExtension } from "./aiAuthorship";
+import { aiAuthorshipExtension } from "./aiAuthorship";
 import { formatKeymap } from "./formatKeymap";
 import { setSuggesting, suggestingAuthor, suggestingExtension, suggestingSkip } from "./suggestingExtension";
 import { useAuth } from "../auth/useAuth";
@@ -156,127 +153,6 @@ async function loadGrammarExtension() {
   }
   const m = await grammarExtensionPromise;
   return m.grammarExtension;
-}
-
-/* ─── Ghost Text (Copilot-style inline completion) ─────────────── */
-
-class GhostWidget extends WidgetType {
-  constructor(readonly text: string) { super(); }
-  toDOM() {
-    const span = document.createElement("span");
-    span.textContent = this.text;
-    span.style.opacity = "0.4";
-    span.style.fontStyle = "italic";
-    span.style.pointerEvents = "none";
-    span.className = "cm-ghost-text";
-    return span;
-  }
-  eq(other: GhostWidget) { return this.text === other.text; }
-}
-
-const setGhostText = StateEffect.define<{ pos: number; text: string } | null>();
-
-interface GhostState {
-  pos: number;
-  text: string;
-  decorations: DecorationSet;
-}
-
-const ghostField = StateField.define<GhostState | null>({
-  create() { return null; },
-  update(value, tr) {
-    for (const e of tr.effects) {
-      if (e.is(setGhostText)) {
-        if (!e.value) return null;
-        const deco = Decoration.set([
-          Decoration.widget({
-            widget: new GhostWidget(e.value.text),
-            side: 1,
-          }).range(e.value.pos),
-        ]);
-        return { pos: e.value.pos, text: e.value.text, decorations: deco };
-      }
-    }
-    // Clear ghost on any doc change or selection move
-    if (value && (tr.docChanged || tr.selection)) return null;
-    return value;
-  },
-  provide(f) {
-    return EditorView.decorations.from(f, (v) => v?.decorations ?? Decoration.none);
-  },
-});
-
-function ghostTextExtension(): Extension {
-  let controller: AbortController | null = null;
-  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-  return [
-    ghostField,
-    keymap.of([
-      {
-        // Ctrl+Space → fetch AI ghost text
-        key: "Ctrl-Space",
-        run(view) {
-          controller?.abort();
-          if (debounceTimer) clearTimeout(debounceTimer);
-
-          const pos = view.state.selection.main.head;
-          const textBefore = view.state.doc.sliceString(
-            Math.max(0, pos - 500), pos,
-          );
-          if (!textBefore.trim()) return false;
-
-          debounceTimer = setTimeout(async () => {
-            // Explicit Ctrl-Space request: counts against the AI quota when
-            // it is actually sent (ownPrompt), not before chat()'s checks.
-            // T55: registered, so Esc / "AI: Cancel" stop it too.
-            const op = aiOperation();
-            try {
-              const c = (controller = new AbortController());
-              op.signal.addEventListener("abort", () => c.abort(op.signal.reason), { once: true });
-              // Plan 5.5: the `completer` agent, through the runtime (local first, traced).
-              const [{ runAgentOrThrow }, { completerAgent }] = await Promise.all([import("../agents/runtime"), import("../agents/defs")]);
-              const text = await runAgentOrThrow(completerAgent, { text: textBefore, extra: { mode: "ghost" } }, { signal: controller.signal, ownPrompt: true });
-              if (text && view.state.selection.main.head === pos) {
-                view.dispatch({ effects: setGhostText.of({ pos, text }) });
-                announce(i18nT("sr.suggestion", { text: text.trim() }));
-              }
-            } catch {
-              // why: Silently ignore abort / API errors for completions
-            } finally {
-              op.end();
-            }
-          }, 150);
-          return true;
-        },
-      },
-      {
-        // Tab → accept ghost text
-        key: "Tab",
-        run(view) {
-          const ghost = view.state.field(ghostField);
-          if (!ghost) return false;
-          view.dispatch({
-            changes: { from: ghost.pos, insert: ghost.text },
-            selection: { anchor: ghost.pos + ghost.text.length },
-            effects: setGhostText.of(null),
-            annotations: aiAuthored.of(true),
-          });
-          return true;
-        },
-      },
-      {
-        // Escape → dismiss ghost text
-        key: "Escape",
-        run(view) {
-          const ghost = view.state.field(ghostField);
-          if (!ghost) return false;
-          view.dispatch({ effects: setGhostText.of(null) });
-          return true;
-        },
-      },
-    ]),
-  ];
 }
 
 export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
