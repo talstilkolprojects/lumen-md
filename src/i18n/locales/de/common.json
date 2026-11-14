@@ -2094,6 +2094,8 @@
   "student.start": "Aufnahme starten",
   "student.stop": "Stoppen und verarbeiten",
   "student.summary": "Zusammenfassung",
+  "student.summary.checked": "Geprüfte Zusammenfassung: Jeder Satz stammt wörtlich aus der Vorlesung (ein lokales Modell hat sie ausgewählt).",
+  "student.summary.extractive": "Extraktive Zusammenfassung: die markierten und zentralsten Sätze (kein lokales Modell, oder seine Zusammenfassung hat die Prüfung nicht bestanden).",
   "student.title": "Vorlesung aufnehmen",
   "student.transcript": "Transkript",
   "student.untitled": "Vorlesung",

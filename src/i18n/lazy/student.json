@@ -14,6 +14,8 @@
   "student.micFailed": "The microphone could not start: {error}",
   "student.recording": "Recording",
   "student.summary": "Summary",
+  "student.summary.checked": "Checked summary: every sentence is copied from the lecture (a local model picked them).",
+  "student.summary.extractive": "Extractive summary: the marked and most central sentences (no local model, or its summary did not pass the check).",
   "student.cards": "Review cards",
   "student.noCards": "No moment was marked important, so there are no cards.",
   "student.transcript": "Transcript",

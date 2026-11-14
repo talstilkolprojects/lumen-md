@@ -121,6 +121,8 @@ export function cardsFrom(sentences: readonly TimedText[], important: ReadonlySe
 export interface LectureWords {
   recording: string;
   summary: string;
+  /** Which summary it is (W10.C9): written under the heading when given. */
+  summaryKind?: string;
   cards: string;
   noCards: string;
   transcript: string;
@@ -157,6 +159,7 @@ export function lectureNote(l: Lecture, w: LectureWords): string {
     "",
     `## ${w.summary}`,
     "",
+    ...(w.summaryKind ? [`_${w.summaryKind}_`, ""] : []),
     ...l.summary.map((i) => `- ${plain(l.sentences[i].text)} ${playLink(l.audioPath, l.sentences[i])}`),
     "",
     `## ${w.cards}`,

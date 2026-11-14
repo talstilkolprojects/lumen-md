@@ -2,10 +2,11 @@
  * Student mode (plan W5.13), the app side: save the recording, transcribe
  * it on this device with local Whisper (never a cloud service, under every
  * AI policy), and write the lecture note: summary, cards, timed transcript.
- * The summary goes through a seam (`setLectureSummarizer`) so plan 6.11's
- * checked local summarizer can replace the extractive one; whatever it
- * returns must be sentences of the transcript, or the extractive summary
- * is kept.
+ * The summary goes through a seam (`setLectureSummarizer`): plan 6.11's
+ * checked local summarizer (./lectureSummarizer.ts, registered by the
+ * recorder) picks it; whatever it returns must be sentences of the
+ * transcript, or the extractive summary is kept. The note and the result
+ * say which one it is (`summary: "checked" | "extractive"`).
  */
 import "./strings";
 import { t } from "../i18n";
@@ -19,6 +20,9 @@ let summarizer: LectureSummarizer | null = null;
 export function setLectureSummarizer(fn: LectureSummarizer | null): void {
   summarizer = fn;
 }
+
+/** Which summary the lecture got: the checked model summary, or the extractive one. */
+export type SummaryKind = "checked" | "extractive";
 
 export interface LectureProgress {
   step: "saving" | "transcribing" | "writing";
@@ -36,7 +40,7 @@ export function lecturePaths(when: Date, title: string, mime: string): { note: s
 }
 
 /** From the stopped recording to the lecture note; resolves to the note's path and what it holds. */
-export async function processLecture(audio: Blob, opts: { durationMs: number; markers: number[]; title: string; language?: string; when?: Date; signal?: AbortSignal; onProgress?: (p: LectureProgress) => void }): Promise<{ path: string; sentences: number; important: number; cards: number; ms: number }> {
+export async function processLecture(audio: Blob, opts: { durationMs: number; markers: number[]; title: string; language?: string; when?: Date; signal?: AbortSignal; onProgress?: (p: LectureProgress) => void }): Promise<{ path: string; sentences: number; important: number; cards: number; ms: number; summary: SummaryKind }> {
   const t0 = performance.now();
   const when = opts.when ?? new Date();
   const [{ writeWorkspaceBlob, writeWorkspaceFile }, { notifyWorkspaceChanged }, engine] = await Promise.all([import("../storage/workspace"), import("../storage/workspaceEvents"), import("../ai/transformersEngine")]);
@@ -52,13 +56,17 @@ export async function processLecture(audio: Blob, opts: { durationMs: number; ma
   const sentences = sentencesOf(segments);
   const important = importantOf(sentences, opts.markers);
   let summary = extractiveSummary(sentences, important);
+  let summaryKind: SummaryKind = "extractive";
   if (summarizer) {
     const picked = await summarizer(sentences, important, opts.signal).catch(() => null);
-    if (picked?.length && picked.every((i) => sentences[i]) && verifySummary(picked.map((i) => sentences[i].text), sentences.map((s) => s.text).join(" "))) summary = picked;
+    if (picked?.length && picked.every((i) => sentences[i]) && verifySummary(picked.map((i) => sentences[i].text), sentences.map((s) => s.text).join(" "))) {
+      summary = picked;
+      summaryKind = "checked";
+    }
   }
   const lecture: Lecture = { title: opts.title, date: when.toISOString().slice(0, 10), audioPath: paths.audioLink, durationSec, sentences, important, summary, cards: cardsFrom(sentences, important, paths.audioLink) };
   opts.onProgress?.({ step: "writing" });
-  await writeWorkspaceFile(paths.note, lectureNote(lecture, { recording: t("student.recording"), summary: t("student.summary"), cards: t("student.cards"), noCards: t("student.noCards"), transcript: t("student.transcript"), important: t("student.important") }));
+  await writeWorkspaceFile(paths.note, lectureNote(lecture, { recording: t("student.recording"), summary: t("student.summary"), summaryKind: t(summaryKind === "checked" ? "student.summary.checked" : "student.summary.extractive"), cards: t("student.cards"), noCards: t("student.noCards"), transcript: t("student.transcript"), important: t("student.important") }));
   notifyWorkspaceChanged({ kind: "structure", paths: [paths.audio, paths.note] });
-  return { path: paths.note, sentences: sentences.length, important: important.size, cards: lecture.cards.length, ms: Math.round(performance.now() - t0) };
+  return { path: paths.note, sentences: sentences.length, important: important.size, cards: lecture.cards.length, ms: Math.round(performance.now() - t0), summary: summaryKind };
 }

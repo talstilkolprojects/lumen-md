@@ -15,13 +15,15 @@ type Phase = "idle" | "recording" | "processing" | "done" | "error";
 
 export interface RecorderDeps {
   start: () => Promise<{ stop(): Promise<{ audio: Blob; durationMs: number }>; cancel(): void }>;
-  process: (audio: Blob, o: { durationMs: number; markers: number[]; title: string }) => Promise<{ path: string; cards: number; important: number }>;
+  process: (audio: Blob, o: { durationMs: number; markers: number[]; title: string }) => Promise<{ path: string; cards: number; important: number; summary?: "checked" | "extractive" }>;
   open: (path: string) => void;
   now: () => number;
 }
 
 async function defaultDeps(): Promise<RecorderDeps> {
-  const [{ startRecording }, { processLecture }] = await Promise.all([import("../capture/voiceCapture"), import("./lecture")]);
+  const [{ startRecording }, { processLecture }, { registerLectureSummarizer }] = await Promise.all([import("../capture/voiceCapture"), import("./lecture"), import("./lectureSummarizer")]);
+  // Plan 6.11 (W10.C9): the checked local summary; without a local model the extractive one, and the note says which.
+  registerLectureSummarizer(undefined, document.documentElement.lang || undefined);
   return {
     start: () => startRecording(),
     process: (audio, o) => processLecture(audio, o),
@@ -85,7 +87,8 @@ export function LectureRecorder({ onClose, deps }: { onClose: () => void; deps?:
       const { audio, durationMs } = await r.stop();
       const res = await d.current!.process(audio, { durationMs, markers, title: title.trim() || t("student.untitled") });
       setPhase("done");
-      setMessage(t("student.done", { cards: res.cards, important: res.important }));
+      const kind = res.summary === "checked" ? t("student.summary.checked") : res.summary === "extractive" ? t("student.summary.extractive") : "";
+      setMessage([t("student.done", { cards: res.cards, important: res.important }), kind].filter(Boolean).join(" "));
       d.current!.open(res.path);
     } catch (e) {
       setPhase("error");

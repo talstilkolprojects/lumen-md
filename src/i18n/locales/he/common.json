@@ -2094,6 +2094,8 @@
   "student.start": "התחלת הקלטה",
   "student.stop": "עצירה ועיבוד",
   "student.summary": "סיכום",
+  "student.summary.checked": "סיכום מאומת: כל משפט מועתק מההרצאה (מודל מקומי בחר אותם).",
+  "student.summary.extractive": "סיכום חילוצי: המשפטים המסומנים והמרכזיים ביותר (אין מודל מקומי, או שהסיכום שלו לא עבר את הבדיקה).",
   "student.title": "הקלטת הרצאה",
   "student.transcript": "תמליל",
   "student.untitled": "הרצאה",

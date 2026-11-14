@@ -2094,6 +2094,8 @@
   "student.start": "بدء التسجيل",
   "student.stop": "إيقاف ومعالجة",
   "student.summary": "الملخص",
+  "student.summary.checked": "ملخص مُتحقَّق منه: كل جملة منسوخة من المحاضرة (اختارها نموذج محلي).",
+  "student.summary.extractive": "ملخص استخلاصي: الجمل المعلَّمة والأكثر مركزية (لا يوجد نموذج محلي، أو لم يجتز ملخصه الفحص).",
   "student.title": "تسجيل محاضرة",
   "student.transcript": "النص",
   "student.untitled": "محاضرة",
