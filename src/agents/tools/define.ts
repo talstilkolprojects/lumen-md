@@ -108,8 +108,8 @@ export function canonicalSegment(seg: string): string {
 
 /**
  * A path an agent may WRITE (reviews 21 D3, 24): `safeWorkspacePath`, and not
- * an absolute or UNC path, no `:` (Windows streams, drives) or `~` (8.3 short
- * names), nothing under a dot folder (`.lumen/` holds skills and MCP grants,
+ * an absolute or UNC path, no Windows stream syntax (`:$`, `::`, a trailing
+ * `:`), drive prefix (`C:`) or 8.3 short name (`~1`), nothing under a dot folder (`.lumen/` holds skills and MCP grants,
  * `.claude/` and `.git/` steer other tools), no agent control file — each
  * segment compared in its canonical form (NFKC, invisible characters
  * dropped, look-alike letters folded, trailing dots and spaces removed).
@@ -120,7 +120,9 @@ export function safeWriteTarget(path: string): string {
   const p = safeWorkspacePath(path);
   const parts = p.split("/");
   for (const raw of parts) {
-    if (/[:~\\]/.test(raw)) throw new ToolError("denied", `Agents do not write paths with ":", "~" or "\\" (${p})`);
+    // Windows streams (`:$`, `::`, a trailing `:`), drive prefixes (`C:`), 8.3 short names (`~1`), backslashes.
+    // An ordinary ":" or "~" in a note name ("Meeting: plan.md", "~draft.md") is fine.
+    if (/\\/.test(raw) || /:\$|::|:$|^[a-zA-Z]:|~\d/.test(raw)) throw new ToolError("denied", `Agents do not write stream, drive or short names (${p})`);
     const seg = canonicalSegment(raw);
     if (!seg || seg.startsWith(".")) throw new ToolError("denied", `Agents do not write under dot folders (${p}): they hold Lumen's skills and permissions and other tools' settings`);
   }

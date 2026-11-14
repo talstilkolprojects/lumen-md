@@ -252,7 +252,12 @@ describe("running a skill through the runtime (5.3)", () => {
       "CLAUDE.local.md", "AGENTS.override.md", "CLAUDE.md.", "CLAUDE.md ", "CLAUDE.md::$DATA", "CLAUDE~1.MD", "\uFF0Elumen/x.md", "\u2024lumen/x.md", "\u0421LAUDE.md", "CLAUDE\u200B.md", "\\\\server\\x"]) {
       expect(() => safeWriteTarget(p), p).toThrow();
     }
+    for (const p of ["CLAUDE.md:$DATA", "notes/x.md:", "a::b.md", "C:x.md", "notes/C:evil.md", "LONGNA~1.MD"]) expect(() => safeWriteTarget(p), p).toThrow();
     expect(safeWriteTarget("notes/plan.md")).toBe("notes/plan.md");
+    // Ordinary ":" and "~" in note names are allowed (coordinator, review 24).
+    expect(safeWriteTarget("notes/Meeting: plan.md")).toBe("notes/Meeting: plan.md");
+    expect(safeWriteTarget("~draft.md")).toBe("~draft.md");
+    expect(safeWriteTarget("notes/a~b.md")).toBe("notes/a~b.md");
     expect(safeWriteTarget("skills/x/2026.md")).toBe("skills/x/2026.md");
   });
 
