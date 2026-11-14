@@ -175,6 +175,18 @@ export function buildVaultTransferCommands(): Command[] {
         await (await import("../../capture/chats/runImport")).runChatImport();
       },
     },
+    {
+      // Plan W5.18: .eml / .mbox and a Google Takeout zip → notes, from files only.
+      id: "vault.importMail",
+      label: t("cmd.mail.import"),
+      hint: t("cmd.mail.import.hint"),
+      icon: cmdIcons.Save,
+      group: t("group.file"),
+      action: async () => {
+        if (!isOPFSAvailable()) return;
+        await (await import("../../capture/mail/runImport")).runMailImport();
+      },
+    },
   ];
 }
 

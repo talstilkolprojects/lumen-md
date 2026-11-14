@@ -194,6 +194,8 @@
   "cmd.insert.table": "Insertion Table (Editor)",
   "cmd.insert.table.hint": "constructeur de tableau visuel",
   "cmd.insert.wikilink": "Insertion wiki-lien",
+  "cmd.mail.import": "Importer des e-mails (.eml, .mbox) ou Google Takeout…",
+  "cmd.mail.import.hint": "Une note par fil avec ses pièces jointes, les notes Keep et les Docs ; fichiers uniquement, sur cet appareil",
   "cmd.new": "Nouveau document",
   "cmd.nikud.add": "Hébreu : ajouter le niqqud",
   "cmd.nikud.add.hint": "Vocaliser la sélection (ou toute la note) sur cet appareil",

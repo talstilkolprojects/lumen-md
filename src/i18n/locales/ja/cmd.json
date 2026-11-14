@@ -194,6 +194,8 @@
   "cmd.insert.table": "挿入 Table (Editor)",
   "cmd.insert.table.hint": "ビジュアルなテーブルビルダー",
   "cmd.insert.wikilink": "挿入 wiki-リンク",
+  "cmd.mail.import": "メール (.eml, .mbox) または Google Takeout をインポート…",
+  "cmd.mail.import.hint": "スレッドごとに 1 ノート（添付付き）、Keep のメモと Docs。ファイルのみ、この端末内で処理",
   "cmd.new": "新規 document",
   "cmd.nikud.add": "ヘブライ語：ニクードを付ける",
   "cmd.nikud.add.hint": "選択範囲（またはノート全体）にこのデバイスで付ける",

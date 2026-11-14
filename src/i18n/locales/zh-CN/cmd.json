@@ -194,6 +194,8 @@
   "cmd.insert.table": "插入 Table (Editor)",
   "cmd.insert.table.hint": "可视化表格构建器",
   "cmd.insert.wikilink": "插入 wiki-链接",
+  "cmd.mail.import": "导入邮件（.eml、.mbox）或 Google Takeout…",
+  "cmd.mail.import.hint": "每个会话一篇笔记（含附件）、Keep 笔记和 Docs 文档；仅文件，在此设备上处理",
   "cmd.new": "新建 document",
   "cmd.nikud.add": "希伯来语：添加元音符号",
   "cmd.nikud.add.hint": "在本设备上为所选内容（或整篇笔记）加元音符号",

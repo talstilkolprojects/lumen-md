@@ -194,6 +194,8 @@
   "cmd.insert.table": "הוספת טבלה (עורך)",
   "cmd.insert.table.hint": "בונה טבלאות חזותי",
   "cmd.insert.wikilink": "הוספת קישור wiki",
+  "cmd.mail.import": "ייבוא דואר (.eml, .mbox) או Google Takeout…",
+  "cmd.mail.import.hint": "פתק לכל שרשור עם הקבצים המצורפים, פתקי Keep ומסמכי Docs; רק קבצים, במכשיר הזה",
   "cmd.new": "מסמך חדש",
   "cmd.nikud.add": "עברית: הוספת ניקוד",
   "cmd.nikud.add.hint": "ניקוד הבחירה (או הפתק כולו) במכשיר",

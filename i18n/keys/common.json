@@ -1941,6 +1941,59 @@
       ]
     },
     {
+      "key": "mailImport.allLabels",
+      "en": "All mail ({n})",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "mailImport.done",
+      "en": "Imported {messages} messages in {threads} threads, {keep} Keep notes, {docs} documents and {files} files → {folders}",
+      "vars": [
+        "messages",
+        "threads",
+        "keep",
+        "docs",
+        "files",
+        "folders"
+      ]
+    },
+    {
+      "key": "mailImport.failed",
+      "en": "Mail import failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "mailImport.label",
+      "en": "Which Gmail label should be imported?",
+      "vars": []
+    },
+    {
+      "key": "mailImport.missing",
+      "en": "(not in the export)",
+      "vars": []
+    },
+    {
+      "key": "mailImport.noSubject",
+      "en": "(no subject)",
+      "vars": []
+    },
+    {
+      "key": "mailImport.none",
+      "en": "No mail (.eml, .mbox) or Google Takeout data in these files.",
+      "vars": []
+    },
+    {
+      "key": "mailImport.trashSkipped",
+      "en": "{n} Keep notes in Keep's trash were left out.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
       "key": "meeting.decisions",
       "en": "Decisions",
       "vars": []

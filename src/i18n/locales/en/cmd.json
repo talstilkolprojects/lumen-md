@@ -193,6 +193,8 @@
   "cmd.insert.table": "Insert Table (Editor)",
   "cmd.insert.table.hint": "visual table builder",
   "cmd.insert.wikilink": "Insert wiki-link",
+  "cmd.mail.import": "Import mail (.eml, .mbox) or Google Takeout…",
+  "cmd.mail.import.hint": "A note per thread with attachments, Keep notes and Docs; files only, on this device",
   "cmd.new": "New document",
   "cmd.nikud.add": "Hebrew: add niqqud",
   "cmd.nikud.add.hint": "Point the selection (or the whole note) on this device",

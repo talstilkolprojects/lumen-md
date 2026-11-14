@@ -45,6 +45,8 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "webr.json": { module: "plugins/r/webrStrings.ts", users: ["plugins/LiveRBlock.tsx"], prefixes: ["block.liveR.install."] },
   // Chat import (plan W5.7): the command loads its module with a dynamic import.
   "chatImport.json": { module: "capture/chats/strings.ts", users: ["capture/chats/runImport.ts"], prefixes: ["chatImport."] },
+  // Mail and Takeout import (plan W5.18), loaded the same way.
+  "mailImport.json": { module: "capture/mail/strings.ts", users: ["capture/mail/runImport.ts"], prefixes: ["mailImport."] },
 };
 
 function sources(dir: string): string[] {

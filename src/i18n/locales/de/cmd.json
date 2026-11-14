@@ -194,6 +194,8 @@
   "cmd.insert.table": "Einfügen Table (Editor)",
   "cmd.insert.table.hint": "visueller Tabellen-Builder",
   "cmd.insert.wikilink": "Einfügen wiki-Link",
+  "cmd.mail.import": "E-Mails (.eml, .mbox) oder Google Takeout importieren…",
+  "cmd.mail.import.hint": "Eine Notiz pro Unterhaltung mit Anhängen, Keep-Notizen und Docs; nur Dateien, auf diesem Gerät",
   "cmd.new": "Neu document",
   "cmd.nikud.add": "Hebräisch: Niqqud hinzufügen",
   "cmd.nikud.add.hint": "Auswahl (oder ganze Notiz) auf diesem Gerät punktieren",

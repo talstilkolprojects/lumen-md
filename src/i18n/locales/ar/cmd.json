@@ -194,6 +194,8 @@
   "cmd.insert.table": "إدراج Table (Editor)",
   "cmd.insert.table.hint": "منشئ جداول مرئي",
   "cmd.insert.wikilink": "إدراج wiki-رابط",
+  "cmd.mail.import": "استيراد البريد (.eml، .mbox) أو Google Takeout…",
+  "cmd.mail.import.hint": "ملاحظة لكل سلسلة مع مرفقاتها، وملاحظات Keep ومستندات Docs؛ ملفات فقط، على هذا الجهاز",
   "cmd.new": "جديد document",
   "cmd.nikud.add": "العبرية: إضافة التنقيط",
   "cmd.nikud.add.hint": "تنقيط التحديد (أو الملاحظة كلها) على هذا الجهاز",

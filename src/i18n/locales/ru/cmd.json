@@ -194,6 +194,8 @@
   "cmd.insert.table": "Вставка Table (Editor)",
   "cmd.insert.table.hint": "визуальный конструктор таблиц",
   "cmd.insert.wikilink": "Вставка wiki-ссылка",
+  "cmd.mail.import": "Импортировать почту (.eml, .mbox) или Google Takeout…",
+  "cmd.mail.import.hint": "Заметка на каждую переписку с вложениями, заметки Keep и документы Docs; только файлы, на этом устройстве",
   "cmd.new": "Новый document",
   "cmd.nikud.add": "Иврит: расставить огласовки",
   "cmd.nikud.add.hint": "Огласовки для выделения (или всей заметки) на этом устройстве",
