@@ -384,6 +384,7 @@
   "capture.saved": "أُضيف إلى {path}",
   "capture.title": "التقاط سريع",
   "capture.voice.keepAudio": "الاحتفاظ بالتسجيل",
+  "capture.globalShortcut.taken": "⌥⌘N محجوز لتطبيق آخر، لذلك لا يفتح Lumen من التطبيقات الأخرى. داخل Lumen، لا يزال ⌥⌘N وملف ▸ التقاط سريع يعملان.",
   "capture.voice.noMic": "لا ميكروفون، أو رُفض الإذن.",
   "capture.voice.noTranscript": "تعذّر التفريغ على هذا الجهاز؛ يُحفظ التسجيل مع الملاحظة.",
   "capture.voice.placeholderNote": "ملاحظة صوتية (غير مفرّغة)",

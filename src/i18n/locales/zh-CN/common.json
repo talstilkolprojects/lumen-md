@@ -384,6 +384,7 @@
   "capture.saved": "已添加到 {path}",
   "capture.title": "快速记录",
   "capture.voice.keepAudio": "保留录音",
+  "capture.globalShortcut.taken": "⌥⌘N 已被其他应用占用，因此无法从其他应用打开 Lumen。在 Lumen 内，⌥⌘N 和“文件 ▸ 快速记录”仍可使用。",
   "capture.voice.noMic": "没有麦克风，或权限被拒绝。",
   "capture.voice.noTranscript": "无法在本机转写；录音已随笔记保存。",
   "capture.voice.placeholderNote": "语音笔记（未转写）",

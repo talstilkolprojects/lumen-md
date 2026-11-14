@@ -384,6 +384,7 @@
   "capture.saved": "{path} に追加しました",
   "capture.title": "クイックキャプチャ",
   "capture.voice.keepAudio": "録音を保存",
+  "capture.globalShortcut.taken": "⌥⌘N は別のアプリが使用中のため、他のアプリから Lumen を開けません。Lumen の中では ⌥⌘N と「ファイル ▸ クイックキャプチャ」が引き続き使えます。",
   "capture.voice.noMic": "マイクがないか、許可されませんでした。",
   "capture.voice.noTranscript": "この端末で文字起こしできませんでした。録音はノートと一緒に保存されます。",
   "capture.voice.placeholderNote": "音声メモ（未文字起こし）",

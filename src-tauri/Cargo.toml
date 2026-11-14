@@ -43,6 +43,9 @@ lumen-lan-mdns = { path = "lan-mdns" }
 [target.'cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))'.dependencies]
 # One instance: a second launch forwards its files and links (Windows, Linux).
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
+# The system-wide capture shortcut, ⌥⌘N on macOS (plan 4.16, audit W10.C13):
+# src/capture/desktopShortcut.ts registers it through the plugin's IPC.
+tauri-plugin-global-shortcut = "2"
 
 # OS keychain for API keys and tokens (T36): Keychain on macOS, Credential
 # Manager on Windows, in its own crate (keychain/) so CI tests it on both

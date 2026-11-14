@@ -384,6 +384,7 @@
   "capture.saved": "נוסף ל־{path}",
   "capture.title": "לכידה מהירה",
   "capture.voice.keepAudio": "לשמור את ההקלטה",
+  "capture.globalShortcut.taken": "⌥⌘N תפוס על ידי אפליקציה אחרת, ולכן הוא לא פותח את Lumen מאפליקציות אחרות. בתוך Lumen, ‏⌥⌘N וקובץ ▸ לכידה מהירה עדיין עובדים.",
   "capture.voice.noMic": "אין מיקרופון, או שההרשאה נדחתה.",
   "capture.voice.noTranscript": "לא הצלחתי לתמלל במכשיר; ההקלטה נשמרת עם הפתק.",
   "capture.voice.placeholderNote": "פתק קולי (לא תומלל)",

@@ -7,6 +7,8 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QuickCapture } from "../ui/QuickCapture";
 import { installFakeOpfs } from "./helpers/fakeOpfs";
@@ -265,6 +267,46 @@ describe("desktop global shortcut (feature check)", () => {
       vi.doUnmock("@tauri-apps/api/core");
       vi.doUnmock("@tauri-apps/api/window");
     }
+  });
+
+  it("a shortcut another app holds is reported to the user, not swallowed (W10.C13)", async () => {
+    vi.doMock("@tauri-apps/api/core", () => ({
+      Channel: class {},
+      invoke: async (cmd: string) => {
+        if (cmd === "plugin:global-shortcut|register") throw new Error("HotKey already registered: HotKey { mods: Modifiers(ALT | SUPER), key: KeyN }");
+        return null;
+      },
+    }));
+    (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
+    try {
+      vi.resetModules();
+      vi.spyOn(navigator, "platform", "get").mockReturnValue("MacIntel");
+      const m = await import("../capture/desktopShortcut");
+      const why: string[] = [];
+      expect(await m.registerGlobalCapture(() => {}, (w) => void why.push(w))).toBe(false);
+      expect(why).toEqual(["taken"]);
+      const { toast } = await import("../store/useToastStore");
+      const warn = vi.spyOn(toast, "warn");
+      await m.reportGlobalCaptureFailure("taken");
+      expect(warn).toHaveBeenCalledWith(expect.stringMatching(/⌥⌘N is taken by another app/));
+      expect(m.failureOf(new Error("plugin global-shortcut not found"))).toBe("no-plugin");
+      expect(m.failureOf(new Error("global-shortcut.register not allowed. Permissions associated with this command: global-shortcut:allow-register"))).toBe("no-plugin");
+      expect(m.failureOf(new Error("Failed to register hotkey"))).toBe("taken");
+    } finally {
+      delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
+      vi.restoreAllMocks();
+      vi.doUnmock("@tauri-apps/api/core");
+    }
+  });
+
+  it("the desktop shell declares and registers the plugin, and grants exactly register/unregister (W10.C13)", () => {
+    const cargo = readFileSync(resolve(process.cwd(), "src-tauri/Cargo.toml"), "utf8");
+    const desktopDeps = cargo.slice(cargo.indexOf("[target.'cfg(any(target_os = \"macos\""));
+    expect(desktopDeps.split(/\n\[/)[0]).toMatch(/^tauri-plugin-global-shortcut = "2"$/m);
+    const lib = readFileSync(resolve(process.cwd(), "src-tauri/src/lib.rs"), "utf8");
+    expect(lib).toMatch(/#\[cfg\(desktop\)\]\s*let builder = builder\.plugin\(tauri_plugin_global_shortcut::Builder::new\(\)\.build\(\)\);/);
+    const caps = JSON.parse(readFileSync(resolve(process.cwd(), "src-tauri/capabilities/default.json"), "utf8")) as { permissions: string[] };
+    expect(caps.permissions.filter((p) => p.startsWith("global-shortcut:")).sort()).toEqual(["global-shortcut:allow-register", "global-shortcut:allow-unregister"]);
   });
 
   it("registers nothing on Windows / Linux, where Ctrl+Alt+N is also AltGr+N (review #268)", async () => {
