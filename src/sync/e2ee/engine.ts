@@ -54,7 +54,7 @@ import { equalBytes, fromB64u, randomBytes, sha256Hex, toB64u, utf8 } from "./by
 import { conflictCopyPath, keepBothResolver, type ConflictResolver } from "./conflict";
 import { createHeader, decodeHeader, encodeHeader, HEADER_NAME, headerMacValid, PROTOCOL_VERSION, rekeyHeader, unlockHeader, WrongPassphraseError, type VaultHeader } from "./header";
 import { PBKDF2_DEFAULT_ITERATIONS, PBKDF2_MIN_ITERATIONS, WeakKdfError, type KdfPolicy } from "./kdf";
-import { blobKey, DecryptError, epochKeys, hmac, revokedHereKey, seal, unseal, verifyHmac, type VaultKeys } from "./keys";
+import { blobKey, DecryptError, epochKeys, hmac, opaqueName, revokedHereKey, seal, unseal, verifyHmac, type VaultKeys } from "./keys";
 import {
   ABORTED_LENGTH,
   anchorOf,
@@ -106,17 +106,23 @@ import {
 import {
   createPairingAnswer,
   createPairingCode,
+  createPairingConfirm,
   createPairingRequest,
+  createPairingReveal,
   isPairingAnswer,
   PAIRING_REQUEST_TTL_MS,
   PAIRING_TTL_MS,
   PairingEpochError,
   PairingError,
+  pairingRequestHash,
   readPairingAnswer,
   readPairingCode,
+  readPairingConfirm,
   readPairingRequest,
-  type PairingAnchor,
+  readPairingReveal,
+  type PairingOffer,
 } from "./pairing";
+import { confirmTag, confirmValid, deriveSas, SAS_EMOJI, sasCommit, sasKeyPair, type PairingFlow, type PairingRole, type Sas, type SasTranscript } from "./sas";
 import { PreconditionFailedError, proveCas, type StoredObject, type SyncProvider } from "./provider";
 import type { DeviceState, FreshnessSource, RevokedHere, SyncStateStore } from "./state";
 
@@ -171,6 +177,59 @@ export class PairingDuringKeyChangeError extends Error {
     super("This device is changing the vault's keys right now: make the pairing code once the change has finished.");
     this.name = "PairingDuringKeyChangeError";
   }
+}
+
+/**
+ * The comparison failed or can't go on (plan W8.5): the user said the
+ * symbols differ, the other device's confirmation doesn't verify, or this
+ * side's pairing ended (cancelled, expired, keys changed, app restarted).
+ * Nothing was committed on this device; start pairing again.
+ */
+export class PairingAbortedError extends PairingError {
+  constructor(message: string) {
+    super(message);
+    this.name = "PairingAbortedError";
+  }
+}
+
+/** What a device shows while two devices pair (plan W8.5): the symbols to compare. */
+export interface PairingComparison {
+  role: PairingRole;
+  /** SAS_LENGTH indices into SAS_EMOJI; the UI shows each emoji with its name (`e2ee.sas.w<index>`). */
+  symbols: number[];
+  emoji: string[];
+}
+
+/** An issuing device's side of a pairing (memory only: a restart ends it, and the code or answer it gave can't complete). */
+interface IssuerSession {
+  flow: PairingFlow;
+  session: string;
+  answer: string;
+  nonce: string;
+  priv: CryptoKey;
+  pub: Uint8Array;
+  /** The keyring and manifest the code or answer vouches for. */
+  ring: RingAnchor;
+  anchor: FreshnessAnchor;
+  /** Two-way: the new device's commitment, from the request. */
+  commitJ?: string;
+  sas?: Sas;
+  until: number;
+  /** `pairingUntil` before this session: restored when it ends without the new device having been confirmed. */
+  prevUntil: number | undefined;
+  confirmed?: boolean;
+}
+
+/** The new device's side: the offer read, not committed until both users confirmed. */
+interface JoinerSession {
+  flow: PairingFlow;
+  offer: PairingOffer;
+  priv: CryptoKey;
+  pub: Uint8Array;
+  pubI?: Uint8Array;
+  sas?: Sas;
+  until: number;
+  confirmed?: boolean;
 }
 
 /**
@@ -516,6 +575,11 @@ export class E2eeSync {
   private running: Promise<unknown> = Promise.resolve();
   /** Key changes (`rekeyNow`) running now: no pairing code meanwhile (G3). */
   private keyChanges = 0;
+  /** This device's pairing in progress (W8.5), as the existing device or as the new one. */
+  private issuing: IssuerSession | null = null;
+  private joining: JoinerSession | null = null;
+  /** The comparison key made with this device's two-way request (W8.5). */
+  private requestKey: { hash: string; priv: CryptoKey; pub: Uint8Array } | null = null;
   private state: DeviceState | null = null;
   /** Digest of the manifest `readManifest` returned last (the parent of the next commit). */
   private remoteDigest = "";
@@ -1108,7 +1172,12 @@ export class E2eeSync {
         throw new PairingError("This device's freshness is not verified: pair it or confirm it before pairing others");
       }
       const now = this.o.now();
-      const code = await createPairingCode(this.o.keys, s.anchor, now, anchorOf(this.o.keys));
+      const ring = anchorOf(this.o.keys);
+      const { priv, pub } = await sasKeyPair();
+      const code = await createPairingCode(this.o.keys, s.anchor, now, ring, await sasCommit(pub));
+      const read = await readPairingCode(this.o.keys, code, now);
+      await this.endIssuing();
+      this.issuing = { flow: "one-way", session: read.sas.session, answer: "", nonce: read.sas.nonce, priv, pub, ring, anchor: { ...s.anchor }, until: now + PAIRING_TTL_MS, prevUntil: s.pairingUntil };
       s.pairingUntil = Math.max(s.pairingUntil ?? 0, now + PAIRING_TTL_MS); // N3: no key change while it is valid
       await this.save();
       return code;
@@ -1125,7 +1194,10 @@ export class E2eeSync {
     return this.exclusive(async () => {
       await this.refresh();
       const s = await this.loadState();
-      const { code, request } = await createPairingRequest(this.o.keys, s.anchor, this.o.now(), anchorOf(this.o.keys));
+      const { priv, pub } = await sasKeyPair();
+      const { code, request } = await createPairingRequest(this.o.keys, s.anchor, this.o.now(), anchorOf(this.o.keys), await sasCommit(pub));
+      await this.endJoining();
+      this.requestKey = { hash: request.hash!, priv, pub };
       s.pairRequest = request;
       await this.save();
       return code;
@@ -1157,7 +1229,10 @@ export class E2eeSync {
       }
       if (req.manifest && req.manifest.counter > s.anchor.counter) throw new PairingEpochError("newer", "The new device sees newer notes than this one: sync this device, then enter the request again");
       const now = this.o.now();
-      const answer = await createPairingAnswer(this.o.keys, req, s.anchor, now, mine);
+      const { priv, pub } = await sasKeyPair();
+      const answer = await createPairingAnswer(this.o.keys, req, s.anchor, now, mine, pub);
+      await this.endIssuing();
+      this.issuing = { flow: "two-way", session: req.hash!, answer: await pairingRequestHash(answer), nonce: req.nonce, priv, pub, ring: mine, anchor: { ...s.anchor }, commitJ: req.commit!, until: now + PAIRING_REQUEST_TTL_MS, prevUntil: s.pairingUntil };
       s.pairingUntil = Math.max(s.pairingUntil ?? 0, now + PAIRING_REQUEST_TTL_MS);
       await this.save();
       return answer;
@@ -1175,13 +1250,24 @@ export class E2eeSync {
   cancelPairing(): Promise<void> {
     return this.exclusive(async () => {
       const s = await this.loadState();
+      await this.endIssuing();
+      await this.endJoining();
       delete s.pairingUntil;
       delete s.pairRequest;
       await this.save();
     });
   }
 
-  /** Accept a pairing code from an existing device: anchors the rollback guards (manifest and keyring). */
+  /**
+   * Read a pairing code, or the answer to this device's request, from an
+   * existing device, and start the comparison (plan W8.5). Nothing is
+   * committed here: every check runs now (and again at the commit), this
+   * device's comparison key goes to the storage, and the anchors are taken
+   * only by `confirmPairing`, once the user has confirmed that the symbols
+   * (`pairingSas`) match on both devices and the other device's confirmation
+   * verifies. Resolves without a comparison when this device is verified and
+   * already holds a newer state than the code (it needs nothing from it).
+   */
   pair(code: string): Promise<void> {
     return this.exclusive(async () => {
       const s = await this.loadState();
@@ -1191,28 +1277,232 @@ export class E2eeSync {
       if (s.ring && !(await verifyAnchor(this.o.keys, s.ring))) await this.refresh();
       const answer = isPairingAnswer(code);
       // A one-way code, or the answer to this device's own request (N3).
-      const got: PairingAnchor = answer ? await readPairingAnswer(this.o.keys, code, s.pairRequest ?? null, this.o.now()) : await readPairingCode(this.o.keys, code, this.o.now());
-      // The keyring: same epoch (readPairingCode checks it); the same revision must be the same keyring.
-      const mine = s.ring ?? anchorOf(this.o.keys);
-      if (got.ring.epoch === mine.epoch && got.ring.rev === mine.rev && mine.digest && got.ring.digest !== mine.digest) {
-        throw new KeyringForkError(`the pairing code names another keyring at ${mine.epoch}.${mine.rev}`);
+      const now = this.o.now();
+      const got = answer ? await readPairingAnswer(this.o.keys, code, s.pairRequest ?? null, now) : await readPairingCode(this.o.keys, code, now);
+      if (this.checkOffer(s, got) === "nothing") return;
+      await this.endJoining();
+      if (answer) {
+        const k = this.requestKey;
+        if (!k || k.hash !== s.pairRequest?.hash) throw new PairingAbortedError("This device was restarted after it made its pairing request: make a new request and answer it again");
+        const session: JoinerSession = { flow: "two-way", offer: got, priv: k.priv, pub: k.pub, pubI: fromB64u(got.sas.pub!), until: s.pairRequest!.issuedAt + PAIRING_REQUEST_TTL_MS };
+        session.sas = await deriveSas(k.priv, session.pubI!, this.transcript(session.flow, got, session.pubI!, k.pub));
+        this.joining = session;
+      } else {
+        const { priv, pub } = await sasKeyPair();
+        this.joining = { flow: "one-way", offer: got, priv, pub, until: now + PAIRING_TTL_MS };
       }
-      const ringNewer = got.ring.epoch > mine.epoch || (got.ring.epoch === mine.epoch && got.ring.rev > mine.rev);
-      // Never move the anchor backwards; equal counters must be the same manifest.
-      if (s.anchor && got.counter === s.anchor.counter && got.digest !== s.anchor.digest) {
-        throw new RollbackError(s.anchor.counter, got.counter, "fork");
+      await this.o.provider.put(await this.pairName(got.sas.session, "reveal-joiner"), utf8(await createPairingReveal(this.o.keys, got.sas.session, "joiner", this.joining.pub)));
+    });
+  }
+
+  /**
+   * The checks a code or answer must pass against this device's state, at
+   * `pair` and again at the commit. "nothing": a verified device that already
+   * holds a newer state needs nothing from it.
+   */
+  private checkOffer(s: DeviceState, got: PairingOffer): "ok" | "nothing" {
+    // The keyring: same epoch (readPairingCode checks it); the same revision must be the same keyring.
+    const mine = s.ring ?? anchorOf(this.o.keys);
+    if (got.ring.epoch === mine.epoch && got.ring.rev === mine.rev && mine.digest && got.ring.digest !== mine.digest) {
+      throw new KeyringForkError(`the pairing code names another keyring at ${mine.epoch}.${mine.rev}`);
+    }
+    // Never move the anchor backwards; equal counters must be the same manifest.
+    if (s.anchor && got.counter === s.anchor.counter && got.digest !== s.anchor.digest) {
+      throw new RollbackError(s.anchor.counter, got.counter, "fork");
+    }
+    if (s.anchor && got.counter < s.anchor.counter) {
+      // An older code cannot vouch for the newer state this device already
+      // holds (it may come from another fork). A verified device needs
+      // nothing from it; an unverified one needs a current code.
+      if (s.freshness !== "unverified") return "nothing";
+      throw new PairingError("The pairing code is older than this device's state; create a new code on the other device");
+    }
+    return "ok";
+  }
+
+  /** The transcript both devices derive the symbols from (sas.ts). */
+  private transcript(flow: PairingFlow, got: PairingOffer, pubI: Uint8Array, pubJ: Uint8Array): SasTranscript {
+    return { flow, vaultId: this.o.keys.vaultId, epoch: got.ring.epoch, ringRev: got.ring.rev, ringDigest: got.ring.digest, counter: got.counter, digest: got.digest, session: got.sas.session, answer: got.sas.answer, nonce: got.sas.nonce, pubI, pubJ };
+  }
+
+  private pairName(session: string, what: "reveal-issuer" | "reveal-joiner" | "confirm-issuer" | "confirm-joiner"): Promise<string> {
+    return opaqueName(this.o.keys, `pairing/${session}/${what}`);
+  }
+
+  private async readPairObject(session: string, what: "reveal-issuer" | "reveal-joiner" | "confirm-issuer" | "confirm-joiner"): Promise<string | null> {
+    const obj = await this.o.provider.get(await this.pairName(session, what));
+    return obj ? new TextDecoder().decode(obj.data) : null;
+  }
+
+  /** Remove the comparison's objects this device may have written (best effort: they hold public keys and MACs only). */
+  private async dropPairObjects(session: string, role: PairingRole): Promise<void> {
+    for (const what of [`reveal-${role}`, `confirm-${role}`] as const) await this.o.provider.delete(await this.pairName(session, what)).catch(() => undefined);
+  }
+
+  /** End this device's issuing session; unless `kept`, its hold on key changes goes back to what it was before it. */
+  private async endIssuing(kept = false): Promise<void> {
+    const i = this.issuing;
+    if (!i) return;
+    this.issuing = null;
+    if (!kept) {
+      const s = await this.loadState();
+      if (i.prevUntil === undefined) delete s.pairingUntil;
+      else s.pairingUntil = i.prevUntil;
+      await this.dropPairObjects(i.session, "issuer");
+    }
+  }
+
+  private async endJoining(): Promise<void> {
+    const j = this.joining;
+    if (!j) return;
+    this.joining = null;
+    await this.dropPairObjects(j.offer.sas.session, "joiner");
+  }
+
+  /** The issuing session, if it may still go on: not expired, and this device's keys are those it vouched for. */
+  private async liveIssuing(): Promise<IssuerSession | null> {
+    const i = this.issuing;
+    if (!i) return null;
+    const now = this.o.now();
+    const ring = anchorOf(this.o.keys);
+    if (now > i.until || ring.epoch !== i.ring.epoch || ring.rev !== i.ring.rev || ring.digest !== i.ring.digest) {
+      await this.endIssuing();
+      await this.save();
+      return null;
+    }
+    return i;
+  }
+
+  /**
+   * The symbols to compare (plan W8.5), on either device: null until the
+   * other device's key has arrived through the storage (poll), or when this
+   * device has no pairing in progress. Show them with the question "Do the
+   * symbols match on both devices?" and call `confirmPairing` or
+   * `rejectPairing`.
+   */
+  pairingSas(): Promise<PairingComparison | null> {
+    return this.exclusive(async () => {
+      const j = this.joining;
+      if (j) {
+        if (!j.sas) {
+          const text = await this.readPairObject(j.offer.sas.session, "reveal-issuer");
+          if (!text) return null;
+          const pubI = await readPairingReveal(this.o.keys, text, j.offer.sas.session, "issuer");
+          if ((await sasCommit(pubI)) !== j.offer.sas.commit) return null; // not the key the code committed to: the storage's, not the issuer's
+          j.pubI = pubI;
+          j.sas = await deriveSas(j.priv, pubI, this.transcript(j.flow, j.offer, pubI, j.pub));
+        }
+        return { role: "joiner", symbols: j.sas.symbols, emoji: j.sas.symbols.map((n) => SAS_EMOJI[n]!) };
       }
-      if (s.anchor && got.counter < s.anchor.counter) {
-        // An older code cannot vouch for the newer state this device already
-        // holds (it may come from another fork). A verified device needs
-        // nothing from it; an unverified one needs a current code.
-        if (s.freshness !== "unverified") return;
-        throw new PairingError("The pairing code is older than this device's state; create a new code on the other device");
+      const i = await this.liveIssuing();
+      if (!i) return null;
+      if (!i.sas) {
+        const text = await this.readPairObject(i.session, "reveal-joiner");
+        if (!text) return null;
+        const pubJ = await readPairingReveal(this.o.keys, text, i.session, "joiner");
+        if (i.flow === "two-way" && (await sasCommit(pubJ)) !== i.commitJ) return null; // not the key the request committed to
+        const offer: PairingOffer = { counter: i.anchor.counter, digest: i.anchor.digest, ring: i.ring, sas: { session: i.session, answer: i.answer, nonce: i.nonce } };
+        i.sas = await deriveSas(i.priv, pubJ, this.transcript(i.flow, offer, i.pub, pubJ));
+        // One-way: the key the code committed to, now that the new device's key is fixed.
+        if (i.flow === "one-way") await this.o.provider.put(await this.pairName(i.session, "reveal-issuer"), utf8(await createPairingReveal(this.o.keys, i.session, "issuer", i.pub)));
       }
-      s.anchor = { counter: got.counter, digest: got.digest };
-      if (got.ring.epoch > 0 && (ringNewer || !s.ring)) s.ring = await sealAnchor(got.ring, this.o.keys.secret, this.o.keys.vaultId);
-      s.freshness = "paired";
-      if (answer) delete s.pairRequest;
+      return { role: "issuer", symbols: i.sas.symbols, emoji: i.sas.symbols.map((n) => SAS_EMOJI[n]!) };
+    });
+  }
+
+  /**
+   * The user says the symbols match on both devices (plan W8.5). This device
+   * posts its confirmation; it commits once the other device's confirmation
+   * verifies too: "done". "waiting": the other device's user hasn't
+   * confirmed yet; call again (poll). The new device takes the anchors only
+   * here, after the same checks as `pair`; the existing device commits
+   * nothing but keeps holding back key changes until its code or answer
+   * expires.
+   */
+  confirmPairing(): Promise<"done" | "waiting"> {
+    return this.exclusive(async () => {
+      const s = await this.loadState();
+      const j = this.joining;
+      if (j) {
+        if (!j.sas) throw new PairingError("Compare the symbols on both devices first");
+        const now = this.o.now();
+        if (now > j.until) {
+          await this.endJoining();
+          throw new PairingAbortedError("The pairing has expired; start again");
+        }
+        const session = j.offer.sas.session;
+        if (!j.confirmed) {
+          await this.o.provider.put(await this.pairName(session, "confirm-joiner"), utf8(await createPairingConfirm(this.o.keys, session, "joiner", await confirmTag(j.sas, "joiner"))));
+          j.confirmed = true;
+        }
+        const text = await this.readPairObject(session, "confirm-issuer");
+        if (!text) return "waiting";
+        const tag = await readPairingConfirm(this.o.keys, text, session, "issuer").catch(() => null);
+        if (!tag || !(await confirmValid(j.sas, "issuer", tag))) {
+          await this.endJoining();
+          throw new PairingAbortedError("The other device's confirmation doesn't match this pairing, so nothing was paired. Start again, and pair only with the device in front of you.");
+        }
+        // Both users confirmed: commit, after the same checks as `pair`.
+        const got = j.offer;
+        this.joining = null;
+        if (j.flow === "two-way") {
+          if (!s.pairRequest || s.pairRequest.hash !== session) throw new PairingAbortedError("This device's pairing request was replaced; start again");
+          delete s.pairRequest;
+          this.requestKey = null;
+        }
+        // Clean up what both sides have read; the issuer removes this device's confirmation once it has read it.
+        for (const what of ["reveal-joiner", "reveal-issuer", "confirm-issuer"] as const) await this.o.provider.delete(await this.pairName(session, what)).catch(() => undefined);
+        if (this.checkOffer(s, got) === "nothing") {
+          await this.save();
+          return "done";
+        }
+        const mine = s.ring ?? anchorOf(this.o.keys);
+        const ringNewer = got.ring.epoch > mine.epoch || (got.ring.epoch === mine.epoch && got.ring.rev > mine.rev);
+        s.anchor = { counter: got.counter, digest: got.digest };
+        if (got.ring.epoch > 0 && (ringNewer || !s.ring)) s.ring = await sealAnchor(got.ring, this.o.keys.secret, this.o.keys.vaultId);
+        s.freshness = "paired";
+        await this.save();
+        return "done";
+      }
+      const i = await this.liveIssuing();
+      if (!i) throw new PairingAbortedError("This device has no pairing in progress (it was cancelled, it expired, or this device's keys changed): start again");
+      if (!i.sas) throw new PairingError("Compare the symbols on both devices first");
+      if (!i.confirmed) {
+        await this.o.provider.put(await this.pairName(i.session, "confirm-issuer"), utf8(await createPairingConfirm(this.o.keys, i.session, "issuer", await confirmTag(i.sas, "issuer"))));
+        i.confirmed = true;
+      }
+      const text = await this.readPairObject(i.session, "confirm-joiner");
+      if (!text) return "waiting";
+      const tag = await readPairingConfirm(this.o.keys, text, i.session, "joiner").catch(() => null);
+      if (!tag || !(await confirmValid(i.sas, "joiner", tag))) {
+        await this.endIssuing();
+        await this.save();
+        throw new PairingAbortedError("The other device's confirmation doesn't match this pairing, so nothing was paired. Start again, and pair only with the device in front of you.");
+      }
+      // Both confirmed. The new device may commit until the code or answer expires: keep holding key changes until then.
+      await this.endIssuing(true);
+      await this.o.provider.delete(await this.pairName(i.session, "confirm-joiner")).catch(() => undefined);
+      return "done";
+    });
+  }
+
+  /**
+   * The user says the symbols differ, or stops the comparison (plan W8.5):
+   * this device's side ends and records nothing. On the new device the
+   * request is forgotten; on the existing one the code or answer can no
+   * longer be confirmed, so it stops holding back key changes.
+   */
+  rejectPairing(): Promise<void> {
+    return this.exclusive(async () => {
+      const s = await this.loadState();
+      if (this.joining) {
+        if (this.joining.flow === "two-way") {
+          delete s.pairRequest;
+          this.requestKey = null;
+        }
+        await this.endJoining();
+      }
+      await this.endIssuing();
       await this.save();
     });
   }
