@@ -38,6 +38,8 @@ export const GATES = {
   manifest: ["run", "-s", "build:manifest"],
   budget: ["run", "budget"],
   vitest: ["run", "test"],
+  // W10.D6: the crypto attack tests on their own, so a red one names itself in the log.
+  attacks: ["run", "-s", "test:attacks"],
   e2e: ["run", "-s", "e2e:gate"],
   "i18n:check": ["run", "-s", "i18n:check"],
   hygiene: ["run", "-s", "hygiene"],
@@ -91,8 +93,8 @@ export function vitestSummary(report, { maxFiles = 80 } = {}) {
   return out;
 }
 
-export const PRODUCTION_GATES = ["build", "budget", "manifest"];
-export const PREVIEW_GATES = ["build", "budget", "secrets", "manifest", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "docs:complete", "licenses", "mutation"];
+export const PRODUCTION_GATES = ["build", "budget", "manifest", "attacks"];
+export const PREVIEW_GATES = ["build", "budget", "secrets", "manifest", "attacks", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "docs:complete", "licenses", "mutation"];
 /**
  * `--e2e-only`: build and the e2e gate, nothing else. For a probe branch
  * that runs Playwright specs (LUMEN_E2E_SPECS, a longer LUMEN_E2E_MINUTES)

@@ -40,6 +40,8 @@
     "test:coverage": "vitest run --coverage",
     "test:mutation": "node scripts/mutation/run.mjs --min 70",
     "test:watch": "vitest",
+    "test:attacks": "vitest run security/attacks",
+    "train:offline": "node scripts/train-offline.mjs",
     "test:crash": "node scripts/vault-crash-test.mjs --kills 1000",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
