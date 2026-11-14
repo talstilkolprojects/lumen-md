@@ -37,7 +37,7 @@ describe("secure rooms", () => {
     localStorage.setItem(PUBLIC_SIGNALING_KEY, "1");
     try {
       expect(signalingUrls().length).toBeGreaterThan(0);
-      expect(signalingUrls().every((u) => /yjs\.dev|herokuapp/.test(u))).toBe(true);
+      expect(signalingUrls().every((u) => /yjs\.dev|fly\.dev/.test(u))).toBe(true);
     } finally {
       localStorage.removeItem(PUBLIC_SIGNALING_KEY);
     }

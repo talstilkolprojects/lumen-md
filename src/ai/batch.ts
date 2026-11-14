@@ -574,13 +574,14 @@ async function loadLocal(id: string): Promise<LocalState> {
 
 async function saveLocal(id: string, state: LocalState): Promise<void> {
   memory.set(id, state);
+  // Listeners hear the change as soon as it is visible (progress reads this memory), not after the disk write.
+  emitBatch();
   try {
     await idbSet(LOCAL_KEY(id), state);
     unsaved.delete(id);
   } catch {
     unsaved.add(id);
   }
-  emitBatch();
 }
 
 /** Thrown when neither Ollama nor the in-browser model can run the job. */

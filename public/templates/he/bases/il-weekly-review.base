@@ -1,0 +1,18 @@
+# סיכומים שבועיים — נוצר מהתבנית סיכום שבועי (ראשון–חמישי)
+filters:
+  and:
+    - 'type == "weekly-review"'
+properties:
+  file.name:
+    displayName: "שבוע"
+  note.week:
+    displayName: "מתחיל"
+  note.energy:
+    displayName: "אנרגיה"
+views:
+  - type: table
+    name: "סיכומים שבועיים"
+    order:
+      - file.name
+      - note.week
+      - note.energy

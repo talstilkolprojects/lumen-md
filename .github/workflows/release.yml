@@ -6,6 +6,10 @@ name: Release
 #
 # iOS + Android builds are NOT included here — signing keys live on
 # developer machines. See RELEASE.md sections 3 + 4 for those flows.
+#
+# Plan 13.4: every step here is also `node scripts/release.mjs …` on a
+# developer machine (plan → prepare → build → publish, and rollback), so a
+# release never depends on Actions running. Kept for when they are on.
 
 on:
   push:
@@ -28,16 +32,23 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22, cache: npm }
       - run: npm ci || npm install
-      - run: npm run typecheck && npm run test
-      - run: npm run build
-      - run: npm run budget
-      - name: Tar the dist folder
-        run: tar -czf lumen-web-${{ github.ref_name }}.tgz -C dist .
+      # The accessibility conformance report is reviewed for every release (plan W3.8).
+      - name: ACR is complete and for this version
+        run: node scripts/acr.mjs --check
+      # typecheck, tests, build, budget, no source maps, web .tgz, SHA256SUMS — the local script's own steps
+      - run: node scripts/release.mjs build
+      - name: Release notes from CHANGELOG.md
+        run: node scripts/release.mjs notes "${{ github.ref_name }}" > release-notes.md || echo "Lumen ${{ github.ref_name }}" > release-notes.md
+      - name: Attach the ACR
+        run: cp docs/acr/wcag22.json release/lumen-acr-wcag22-${{ github.ref_name }}.json
       - uses: softprops/action-gh-release@v3
         with:
-          files: lumen-web-${{ github.ref_name }}.tgz
+          files: |
+            release/lumen-web-${{ github.ref_name }}.tgz
+            release/SHA256SUMS
+            release/lumen-acr-wcag22-${{ github.ref_name }}.json
           fail_on_unmatched_files: true
-          generate_release_notes: true
+          body_path: release-notes.md
 
   tauri:
     name: Tauri ${{ matrix.os }}

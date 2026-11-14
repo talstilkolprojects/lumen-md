@@ -1,0 +1,13 @@
+{
+  "litReview.field.findings": "Findings",
+  "litReview.field.limitations": "Limitations",
+  "litReview.field.method": "Method",
+  "litReview.field.question": "Question",
+  "litReview.field.sample": "Sample",
+  "litReview.noValue": "No value with a verified quote.",
+  "litReview.pageLine": "p. {page}, line {line}",
+  "litReview.source": "Source",
+  "litReview.verifiedFields": "Verified fields",
+  "litReview.view.all": "All papers",
+  "litReview.view.verifiedOnly": "Verified only"
+}

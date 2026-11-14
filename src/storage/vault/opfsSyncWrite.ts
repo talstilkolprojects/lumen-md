@@ -8,20 +8,38 @@
  */
 
 const WORKER_SOURCE = `
+async function put(dir, name, bytes) {
+  var file = await dir.getFileHandle(name, { create: true });
+  var handle = await file.createSyncAccessHandle();
+  try {
+    handle.truncate(0);
+    handle.write(bytes, { at: 0 });
+    handle.flush();
+    if (handle.getSize() !== bytes.byteLength) throw new Error("the write was cut short");
+  } finally {
+    handle.close();
+  }
+  return file;
+}
 self.onmessage = async function (e) {
   var msg = e.data || {};
   try {
     var dir = await navigator.storage.getDirectory();
     var parts = msg.parts || [];
     for (var i = 0; i < parts.length - 1; i++) dir = await dir.getDirectoryHandle(parts[i], { create: true });
-    var file = await dir.getFileHandle(parts[parts.length - 1], { create: true });
-    var handle = await file.createSyncAccessHandle();
-    try {
-      handle.truncate(0);
-      handle.write(new Uint8Array(msg.bytes), { at: 0 });
-      handle.flush();
-    } finally {
-      handle.close();
+    var name = parts[parts.length - 1];
+    var bytes = new Uint8Array(msg.bytes);
+    var probe = await dir.getFileHandle(name, { create: true });
+    if (typeof probe.move !== "function") {
+      await put(dir, name, bytes);
+    } else {
+      // Atomic save (src/storage/vault/atomic.ts): new version complete in a
+      // temporary file first, then it takes the name.
+      var id = msg.sid, tmp = ".lumen-tmp~" + name + "~" + id, old = ".lumen-old~" + name + "~" + id;
+      var file = await put(dir, tmp, bytes);
+      await probe.move(old);
+      await file.move(name);
+      await dir.removeEntry(old);
     }
     self.postMessage({ id: msg.id, ok: true });
   } catch (err) {
@@ -65,6 +83,6 @@ export async function syncWriteOpfs(parts: string[], data: string | Blob | Array
   else bytes = data.slice(0);
   const id = ++nextId;
   const done = new Promise<void>((resolve, reject) => pending.set(id, { resolve, reject }));
-  getWorker().postMessage({ id, parts, bytes }, [bytes]);
+  getWorker().postMessage({ id, sid: `${id.toString(36)}${Date.now().toString(36)}`, parts, bytes }, [bytes]);
   return done;
 }

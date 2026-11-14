@@ -1,0 +1,38 @@
+name: Accessibility problem / בעיית נגישות
+description: Something in Lumen you can't use with a keyboard, a screen reader, zoom, contrast or other assistive settings. / משהו ב-Lumen שאי אפשר להשתמש בו עם מקלדת, קורא מסך, זום, ניגודיות או הגדרות מסייעות אחרות.
+title: "[a11y] "
+labels: ["accessibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Accessibility reports are triaged before other bugs. You can write in Hebrew or English.
+        תודה. דיווחי נגישות מטופלים לפני באגים אחרים. אפשר לכתוב בעברית או באנגלית.
+  - type: textarea
+    id: what
+    attributes:
+      label: What were you trying to do? / מה ניסיתם לעשות?
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened? / מה קרה?
+      description: What you expected, and what you got instead. / מה ציפיתם שיקרה, ומה קרה במקום.
+    validations:
+      required: true
+  - type: input
+    id: tools
+    attributes:
+      label: Assistive technology and browser / טכנולוגיה מסייעת ודפדפן
+      placeholder: "NVDA 2025.3 + Firefox, VoiceOver + Safari, 400 % zoom, Windows high contrast…"
+  - type: input
+    id: criterion
+    attributes:
+      label: WCAG criterion, if you know it / קריטריון WCAG, אם ידוע
+      placeholder: "2.1.1 Keyboard"
+  - type: input
+    id: version
+    attributes:
+      label: Lumen version / גרסת Lumen
+      placeholder: "0.1.0"

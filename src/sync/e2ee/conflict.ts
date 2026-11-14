@@ -10,6 +10,8 @@
  */
 
 import { fromUtf8, utf8 } from "./bytes";
+import { mergeText } from "../merge/textMerge";
+import { keepBothVersions } from "../merge/keepVersions";
 import "./strings";
 
 export interface ConflictInput {
@@ -50,11 +52,32 @@ export function asText(b: Uint8Array): string | null {
 export const keepBothResolver: ConflictResolver = async () => ({ kind: "keepBoth" });
 
 /**
- * The app's resolver: the three-way ConflictDialog (loaded on demand) for
- * text, "keep both" for binary files. Cancelling the dialog holds the file
- * until the next round.
+ * Merge first (plan W1.9): a text file both devices changed goes through the
+ * app's merge engine (../merge/textMerge.ts — front matter by key, lines,
+ * then words). A clean merge is the answer, and both versions are kept in
+ * the note's history; only what overlaps reaches `next`.
  */
-export const dialogResolver: ConflictResolver = async (c) => {
+export function mergeFirst(next: ConflictResolver, keep: (path: string, ours: string, theirs: string) => Promise<void> = keepBothVersions): ConflictResolver {
+  return async (c) => {
+    const local = asText(c.local);
+    const remote = asText(c.remote);
+    const base = c.base ? asText(c.base) : null;
+    if (local !== null && remote !== null && base !== null) {
+      const r = mergeText(base, local, remote);
+      if (r.clean) {
+        await keep(c.path, local, remote);
+        return { kind: "content", data: utf8(r.text) };
+      }
+    }
+    return next(c);
+  };
+}
+
+/**
+ * The three-way ConflictDialog (loaded on demand) for text, "keep both" for
+ * binary files. Cancelling the dialog holds the file until the next round.
+ */
+const askResolver: ConflictResolver = async (c) => {
   const local = asText(c.local);
   const remote = asText(c.remote);
   if (local === null || remote === null) return { kind: "keepBoth" };
@@ -80,6 +103,9 @@ export const dialogResolver: ConflictResolver = async (c) => {
   if (choice.kind === "merged") return { kind: "content", data: utf8(choice.content) };
   return { kind: choice.kind };
 };
+
+/** The app's resolver: merge automatically, and ask only about what overlaps. */
+export const dialogResolver: ConflictResolver = mergeFirst(askResolver);
 
 /**
  * `dir/name (conflict <tag>).ext`, or with " 2", " 3"… until `taken` says

@@ -14,8 +14,8 @@
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://avatars.githubusercontent.com https://*.googleusercontent.com https:; media-src 'self' blob: https:; connect-src 'self' blob: data: https: http: wss: ws:; worker-src 'self' blob:; frame-src 'self' data: https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.loom.com https://codepen.io https://codesandbox.io https://www.figma.com https://open.spotify.com https://www.google.com https://maps.google.com https://www.openstreetmap.org https://platform.twitter.com https://www.facebook.com https://www.instagram.com https://www.tiktok.com https://www.redditmedia.com https://www.reddit.com https://www.linkedin.com https://gist.github.com https://w.soundcloud.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; require-trusted-types-for 'script'; trusted-types lumen default dompurify lit-html iconify ProseMirrorClipboard 'allow-duplicates'
-  Content-Security-Policy: connect-src 'self' blob: data: wss://signaling.yjs.dev wss://y-webrtc-signaling-eu.herokuapp.com https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://api.mistral.ai http://localhost:11434 http://127.0.0.1:11434 http://localhost:8787 http://127.0.0.1:8787 http://localhost:8010 http://127.0.0.1:8010 http://localhost:9999 http://127.0.0.1:9999 https://api.languagetool.org https://kroki.io https://oauth2.googleapis.com https://www.googleapis.com https://api.dropboxapi.com https://content.dropboxapi.com https://github.com https://api.github.com https://huggingface.co https://*.huggingface.co https://cdn-lfs.huggingface.co https://*.hf.co https://raw.githubusercontent.com https://webr.r-wasm.org https://cdn.jsdelivr.net https://www.gstatic.com https://fonts.googleapis.com https://fonts.gstatic.com https://*.supabase.co
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://avatars.githubusercontent.com https://*.googleusercontent.com; media-src 'self' blob:; connect-src 'self' blob: data: https: http: wss: ws:; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; require-trusted-types-for 'script'; trusted-types lumen default dompurify lit-html iconify ProseMirrorClipboard 'allow-duplicates'
+  Content-Security-Policy: connect-src 'self' blob: data: wss://signaling.yjs.dev wss://y-webrtc-eu.fly.dev https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://api.mistral.ai http://localhost:11434 http://127.0.0.1:11434 http://localhost:8787 http://127.0.0.1:8787 http://localhost:8010 http://127.0.0.1:8010 http://localhost:9999 http://127.0.0.1:9999 http://localhost:5199 http://127.0.0.1:5199 https://api.languagetool.org https://kroki.io https://www.sefaria.org https://oauth2.googleapis.com https://www.googleapis.com https://api.dropboxapi.com https://content.dropboxapi.com https://github.com https://api.github.com https://huggingface.co https://*.huggingface.co https://*.hf.co https://raw.githubusercontent.com https://webr.r-wasm.org https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: interest-cohort=(), geolocation=(), microphone=(self), camera=()
 
@@ -48,6 +48,21 @@
   ! Content-Security-Policy
   ! X-Frame-Options
   Content-Security-Policy: default-src 'none'; script-src 'self' 'nonce-lumen-livejs-runner' blob: 'unsafe-eval'; worker-src blob:; connect-src 'none'; img-src 'none'; style-src 'none'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'
+
+# Content frame (plan W4.15): the same-origin page that shows, after the
+# user allowed it, an image / video / audio from another site, a provider
+# embed or a Gist (src/lib/contentFrame.ts). It carries https: in img-src and
+# media-src and the embed providers in frame-src, so the app's policy does
+# not. Framed by the app only.
+/content-frame.html
+  ! Content-Security-Policy
+  ! X-Frame-Options
+  Content-Security-Policy: default-src 'none'; script-src 'self' 'nonce-lumen-livejs-runner' https://gist.github.com; style-src 'self' 'unsafe-inline' https://github.githubassets.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.loom.com https://codepen.io https://codesandbox.io https://www.figma.com https://open.spotify.com https://www.google.com https://maps.google.com https://www.openstreetmap.org https://platform.twitter.com https://www.facebook.com https://www.instagram.com https://www.tiktok.com https://www.redditmedia.com https://www.reddit.com https://www.linkedin.com https://w.soundcloud.com; connect-src 'none'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'
+# The same at the extension-less path Cloudflare Pages serves it from.
+/content-frame
+  ! Content-Security-Policy
+  ! X-Frame-Options
+  Content-Security-Policy: default-src 'none'; script-src 'self' 'nonce-lumen-livejs-runner' https://gist.github.com; style-src 'self' 'unsafe-inline' https://github.githubassets.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.loom.com https://codepen.io https://codesandbox.io https://www.figma.com https://open.spotify.com https://www.google.com https://maps.google.com https://www.openstreetmap.org https://platform.twitter.com https://www.facebook.com https://www.instagram.com https://www.tiktok.com https://www.redditmedia.com https://www.reddit.com https://www.linkedin.com https://w.soundcloud.com; connect-src 'none'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'
 
 # On-device OCR (T31): the tesseract.js worker, its wasm cores and the language
 # models (tesseract/lang/, same origin since plan 7.5). Dedicated workers get

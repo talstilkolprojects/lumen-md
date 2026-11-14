@@ -1,0 +1,10 @@
+{
+  "transcribeFile.working": "Transcribing “{name}” ({duration}) on this device with {engine}…",
+  "transcribeFile.done": "Transcribed {n} sentences in {seconds} s.",
+  "transcribeFile.failed": "Couldn't transcribe the file: {error}",
+  "transcribeFile.empty": "No speech found in the file.",
+  "transcribeFile.audioSaved": "The audio is saved as {path}; each time links to it.",
+  "transcribeFile.desktop.missing": "Desktop Whisper: the model file is not in the app's whisper folder yet — using the in-browser model. See the docs: AI → Hebrew Whisper on the desktop.",
+  "transcribeFile.desktop.checksum": "Desktop Whisper: the model file does not match its pinned checksum, so it is not used — using the in-browser model.",
+  "transcribeFile.desktop.noCli": "Desktop Whisper: whisper-cli is not installed — using the in-browser model. See the docs: AI → Hebrew Whisper on the desktop."
+}

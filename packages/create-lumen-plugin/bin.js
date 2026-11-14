@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 /**
- * create-lumen-plugin — scaffold a new Lumen plugin.
+ * create-lumen-plugin — scaffold a sandboxed Lumen plugin (plans 11.2, W3.10).
  *
  * Usage:
  *   npx create-lumen-plugin my-cool-plugin
  *
- * Creates a directory `my-cool-plugin/` with:
- *   • package.json          — npm package metadata
- *   • src/index.ts          — plugin entry, registered via the Lumen plugin API
- *   • src/block.tsx         — example custom code-fence renderer
- *   • lumen-plugin.json     — plugin manifest (id / name / icon / commands)
- *   • README.md             — install/dev/publish instructions
- *   • tsconfig.json + vite config for build → ESM bundle for the registry
+ * Creates `my-cool-plugin/` with:
+ *   • lumen-plugin.json     — the manifest: id, version, the capabilities it asks for and why
+ *   • main.js               — the plugin; runs in Lumen's QuickJS sandbox
+ *   • test/main.test.mjs    — tests with the plugin test kit (`npm test`, Node's own runner)
+ *   • tools/dev-server.mjs  — `npm run dev`: serves the folder to Lumen and hot-reloads on save
+ *   • tools/testkit.mjs     — a mock of the `lumen` API with the sandbox's capability rules
+ *   • README.md             — the five-minute walk-through
+ * No dependencies: nothing to install.
  */
 
 import { promises as fs } from "node:fs";
@@ -34,18 +35,20 @@ if (!/^[a-z][a-z0-9-]+$/.test(name)) {
 const dest = path.join(process.cwd(), name);
 
 async function main() {
+  if (await fs.stat(dest).then(() => true, () => false)) {
+    console.error(`./${name} already exists.`);
+    process.exit(1);
+  }
   await fs.mkdir(dest, { recursive: true });
   const tplDir = path.join(__dirname, "template");
   await copyDir(tplDir, dest, name);
   console.log(`\n✨  Created Lumen plugin at ./${name}\n`);
-  console.log(`Next steps:`);
+  console.log(`Next steps (nothing to install):`);
   console.log(`  cd ${name}`);
-  console.log(`  npm install`);
-  console.log(`  npm run dev          # rebuild on save`);
-  console.log(`  npm run build        # produce dist/${name}.js for the registry`);
+  console.log(`  npm run dev          # serves the plugin at http://127.0.0.1:5199, reloads on save`);
+  console.log(`  npm test             # the plugin test kit`);
   console.log(``);
-  console.log(`To install in your local Lumen instance:`);
-  console.log(`  Open Lumen → ⌘K → "Plugin gallery" → "Load unpacked" → pick dist/${name}.js`);
+  console.log(`In Lumen: Plugin gallery → Developer mode → Connect.`);
   console.log(``);
 }
 

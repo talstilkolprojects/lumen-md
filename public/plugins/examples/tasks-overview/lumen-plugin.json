@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "lumen.example.tasks-overview",
+  "name": "Tasks overview",
+  "version": "1.0.0",
+  "description": "Collects the open “- [ ]” tasks from every note in the vault into one side panel, with a link to each note.",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    { "id": "commands", "reason": "Adds the “Tasks overview” command" },
+    { "id": "vault:read", "reason": "Reads your notes to find their tasks (nothing is changed or sent)" },
+    { "id": "panel", "reason": "Shows the tasks in a side panel" }
+  ]
+}

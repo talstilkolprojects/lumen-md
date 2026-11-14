@@ -8,6 +8,7 @@ import { toast } from "../store/useToastStore";
 import { t } from "../i18n";
 import { isBillingConfigured, useEntitlement } from "./useEntitlement";
 import type { PlanTier } from "./types";
+import { explainError } from "../lib/userError";
 
 async function accessToken(): Promise<string | null> {
   try {
@@ -39,7 +40,7 @@ export async function upgradeTo(tier: Exclude<PlanTier, "free">): Promise<void> 
     const { startCheckout } = await import("./checkout");
     await startCheckout(tier, jwt);
   } catch (err) {
-    toast.error(t("billing.action.failed"), (err as Error).message);
+    toast.error(t("billing.action.failed"), explainError(err));
   }
 }
 
@@ -57,6 +58,6 @@ export async function manageBilling(scope?: "personal"): Promise<void> {
     const { openBillingPortal } = await import("./checkout");
     await openBillingPortal(jwt, scope ? { scope } : {});
   } catch (err) {
-    toast.error(t("billing.action.failed"), (err as Error).message);
+    toast.error(t("billing.action.failed"), explainError(err));
   }
 }

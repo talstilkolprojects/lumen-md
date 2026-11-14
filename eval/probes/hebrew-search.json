@@ -1,0 +1,575 @@
+{
+ "about": "Hebrew search probe set for plan W2.11, written for this repository (not a held-out golden set: the same author wrote the queries and the search rules, so treat its numbers as development numbers). Three parts over the public HeQ dev corpus (eval/golden/retrieval/dev/heq.json): `morph` — 30 queries whose words appear in their relevant paragraph only in another inflection, spelling or a synonym; `ktiv` — 30 full/defective spelling pairs, each a one-sentence note in one spelling found by a query in the other; `crosslingual` — 5 Hebrew queries for English notes. Licence: CC0-1.0 for the queries and sentences written here.",
+ "license": "CC0-1.0",
+ "morph": [
+  {
+   "id": "heb-m01",
+   "query": "אנזימים שמזרחנים גלוקוז",
+   "relevant": [
+    "heq-d004"
+   ],
+   "kind": "inflection, ktiv"
+  },
+  {
+   "id": "heb-m02",
+   "query": "המונחים לבנטינים ושליטה עותמאנית",
+   "relevant": [
+    "heq-d012"
+   ],
+   "kind": "plural, construct, geresh"
+  },
+  {
+   "id": "heb-m03",
+   "query": "אלבום שלישי של צנעני אהבות אבודות",
+   "relevant": [
+    "heq-d020"
+   ],
+   "kind": "possessive, plural"
+  },
+  {
+   "id": "heb-m04",
+   "query": "עיר שאירחה אולימפיאדות קיץ וחורף",
+   "relevant": [
+    "heq-d028"
+   ],
+   "kind": "plural, verb"
+  },
+  {
+   "id": "heb-m05",
+   "query": "אוהד של מנצ'סטר סיטי וצופה באצטדיון",
+   "relevant": [
+    "heq-d036"
+   ],
+   "kind": "singular for plural"
+  },
+  {
+   "id": "heb-m06",
+   "query": "רופא שיניים ערבי סירב לשיר המנון",
+   "relevant": [
+    "heq-d044"
+   ],
+   "kind": "singular for plural, verb"
+  },
+  {
+   "id": "heb-m07",
+   "query": "מבחן בד לתכנית טלויזיה",
+   "relevant": [
+    "heq-d052"
+   ],
+   "kind": "ktiv haser"
+  },
+  {
+   "id": "heb-m08",
+   "query": "המתקפה היפנית על פרל הרבור",
+   "relevant": [
+    "heq-d060"
+   ],
+   "kind": "spelling variant"
+  },
+  {
+   "id": "heb-m09",
+   "query": "מנוי לאמזון פריים במשק בית אמריקאי",
+   "relevant": [
+    "heq-d068"
+   ],
+   "kind": "singular for plural"
+  },
+  {
+   "id": "heb-m10",
+   "query": "ביקורת על משחק רופאלו בתפקיד הענק",
+   "relevant": [
+    "heq-d076"
+   ],
+   "kind": "singular for plural"
+  },
+  {
+   "id": "heb-m11",
+   "query": "מרים ואהרון ריכלו על משה",
+   "relevant": [
+    "heq-d084"
+   ],
+   "kind": "ktiv male name"
+  },
+  {
+   "id": "heb-m12",
+   "query": "שופטת אורחת באקס פקטור",
+   "relevant": [
+    "heq-d092"
+   ],
+   "kind": "prefix"
+  },
+  {
+   "id": "heb-m13",
+   "query": "יחס בין ארץ ישראל לענינים חברתיים",
+   "relevant": [
+    "heq-d100"
+   ],
+   "kind": "ktiv haser, plural"
+  },
+  {
+   "id": "heb-m14",
+   "query": "הקלטה בטלפון סלולרי של ארי הרו",
+   "relevant": [
+    "heq-d108"
+   ],
+   "kind": "singular for plural"
+  },
+  {
+   "id": "heb-m15",
+   "query": "רכישת מניה מעובד",
+   "relevant": [
+    "heq-d116"
+   ],
+   "kind": "singular for plural"
+  },
+  {
+   "id": "heb-m16",
+   "query": "יזם שעבד בתחום ה-IT במשרד ראש הממשלה",
+   "relevant": [
+    "heq-d124"
+   ],
+   "kind": "singular for plural"
+  },
+  {
+   "id": "heb-m17",
+   "query": "קספרסקי פיתחה מערכת הפעלה מאובטחת",
+   "relevant": [
+    "heq-d132"
+   ],
+   "kind": "derivation"
+  },
+  {
+   "id": "heb-m18",
+   "query": "בוט שהופך עיצוב לאתר",
+   "relevant": [
+    "heq-d140"
+   ],
+   "kind": "singular for plural"
+  },
+  {
+   "id": "heb-m19",
+   "query": "סוללת השעון של אפל",
+   "relevant": [
+    "heq-d148"
+   ],
+   "kind": "construct"
+  },
+  {
+   "id": "heb-m20",
+   "query": "טעויות קלאסיות של יזמים בגיוס",
+   "relevant": [
+    "heq-d156"
+   ],
+   "kind": "plural for singular"
+  },
+  {
+   "id": "heb-m21",
+   "query": "מצלמה בעלת עדשה טלפוטו",
+   "relevant": [
+    "heq-d164"
+   ],
+   "kind": "singular for plural"
+  },
+  {
+   "id": "heb-m22",
+   "query": "חברות רכב שהשקיעו ב-Upstream",
+   "relevant": [
+    "heq-d172"
+   ],
+   "kind": "verb tense"
+  },
+  {
+   "id": "heb-m23",
+   "query": "סירי לומדת עברית",
+   "relevant": [
+    "heq-d180"
+   ],
+   "kind": "verb tense"
+  },
+  {
+   "id": "heb-m24",
+   "query": "סנכרון המזגן החכם",
+   "relevant": [
+    "heq-d188"
+   ],
+   "kind": "ktiv haser"
+  },
+  {
+   "id": "heb-m25",
+   "query": "פרצת אבטחה שתוקנה ב-iOS",
+   "relevant": [
+    "heq-d196"
+   ],
+   "kind": "binyan"
+  },
+  {
+   "id": "heb-m26",
+   "query": "האקר דרש כופר מאנבידיה",
+   "relevant": [
+    "heq-d204"
+   ],
+   "kind": "singular for plural, verb"
+  },
+  {
+   "id": "heb-m27",
+   "query": "איתור גז ונפט בים",
+   "relevant": [
+    "heq-d212"
+   ],
+   "kind": "prefix"
+  },
+  {
+   "id": "heb-m28",
+   "query": "מקלדת של איימק",
+   "relevant": [
+    "heq-d220"
+   ],
+   "kind": "prefix"
+  },
+  {
+   "id": "heb-m29",
+   "query": "טלפון חכם של מיקרוסופט",
+   "relevant": [
+    "heq-d228"
+   ],
+   "kind": "synonym"
+  },
+  {
+   "id": "heb-m30",
+   "query": "צ'ק פוינט רכשה חברה ישראלית",
+   "relevant": [
+    "heq-d236"
+   ],
+   "kind": "verb for noun"
+  }
+ ],
+ "ktiv": [
+  {
+   "id": "heb-k01",
+   "doc": {
+    "id": "ktiv-01",
+    "text": "קבענו פגישה על התוכנית החדשה לבית הספר."
+   },
+   "query": "תכנית",
+   "docForm": "תוכנית"
+  },
+  {
+   "id": "heb-k02",
+   "doc": {
+    "id": "ktiv-02",
+    "text": "בערב ראינו סרט ישן בטלויזיה עם הסבתא."
+   },
+   "query": "טלוויזיה",
+   "docForm": "טלויזיה"
+  },
+  {
+   "id": "heb-k03",
+   "doc": {
+    "id": "ktiv-03",
+    "text": "הנחנו את הספרים על השולחן במטבח."
+   },
+   "query": "שלחן",
+   "docForm": "שולחן"
+  },
+  {
+   "id": "heb-k04",
+   "doc": {
+    "id": "ktiv-04",
+    "text": "הוא סיפר משל על חכמה ועל ענווה."
+   },
+   "query": "חוכמה",
+   "docForm": "חכמה"
+  },
+  {
+   "id": "heb-k05",
+   "doc": {
+    "id": "ktiv-05",
+    "text": "המורה קראה סיפור קצר לתלמידים."
+   },
+   "query": "ספור",
+   "docForm": "סיפור"
+  },
+  {
+   "id": "heb-k06",
+   "doc": {
+    "id": "ktiv-06",
+    "text": "הרצאה על דבור בציבור ועל ביטחון עצמי."
+   },
+   "query": "דיבור",
+   "docForm": "דבור"
+  },
+  {
+   "id": "heb-k07",
+   "doc": {
+    "id": "ktiv-07",
+    "text": "נפגשנו לארוחת צהריים בפארק."
+   },
+   "query": "צהרים",
+   "docForm": "צהריים"
+  },
+  {
+   "id": "heb-k08",
+   "doc": {
+    "id": "ktiv-08",
+    "text": "יש לי ענין מיוחד בהיסטוריה של העיר."
+   },
+   "query": "עניין",
+   "docForm": "ענין"
+  },
+  {
+   "id": "heb-k09",
+   "doc": {
+    "id": "ktiv-09",
+    "text": "חיפשנו כל מילה במילון."
+   },
+   "query": "מלה",
+   "docForm": "מילה"
+  },
+  {
+   "id": "heb-k10",
+   "doc": {
+    "id": "ktiv-10",
+    "text": "הוא ישב על כסא עץ ליד החלון."
+   },
+   "query": "כיסא",
+   "docForm": "כסא"
+  },
+  {
+   "id": "heb-k11",
+   "doc": {
+    "id": "ktiv-11",
+    "text": "הסרט מספר על גיבור צעיר מהכפר."
+   },
+   "query": "גבור",
+   "docForm": "גיבור"
+  },
+  {
+   "id": "heb-k12",
+   "doc": {
+    "id": "ktiv-12",
+    "text": "אחרי השעור יצאנו להפסקה."
+   },
+   "query": "שיעור",
+   "docForm": "שעור"
+  },
+  {
+   "id": "heb-k13",
+   "doc": {
+    "id": "ktiv-13",
+    "text": "קיבלנו שירות מצוין בחנות."
+   },
+   "query": "שרות",
+   "docForm": "שירות"
+  },
+  {
+   "id": "heb-k14",
+   "doc": {
+    "id": "ktiv-14",
+    "text": "הרכב נכנס למוסך לתקון הבלמים."
+   },
+   "query": "תיקון",
+   "docForm": "תקון"
+  },
+  {
+   "id": "heb-k15",
+   "doc": {
+    "id": "ktiv-15",
+    "text": "גדלתי בקיבוץ בעמק יזרעאל."
+   },
+   "query": "קבוץ",
+   "docForm": "קיבוץ"
+  },
+  {
+   "id": "heb-k16",
+   "doc": {
+    "id": "ktiv-16",
+    "text": "השיר הודפס עם נקוד מלא."
+   },
+   "query": "ניקוד",
+   "docForm": "נקוד"
+  },
+  {
+   "id": "heb-k17",
+   "doc": {
+    "id": "ktiv-17",
+    "text": "הגשתי חיבור על המהפכה התעשייתית."
+   },
+   "query": "חבור",
+   "docForm": "חיבור"
+  },
+  {
+   "id": "heb-k18",
+   "doc": {
+    "id": "ktiv-18",
+    "text": "כלם הגיעו לחגיגה בזמן."
+   },
+   "query": "כולם",
+   "docForm": "כלם"
+  },
+  {
+   "id": "heb-k19",
+   "doc": {
+    "id": "ktiv-19",
+    "text": "הרופא בדק את האוזן של הילד."
+   },
+   "query": "אזן",
+   "docForm": "אוזן"
+  },
+  {
+   "id": "heb-k20",
+   "doc": {
+    "id": "ktiv-20",
+    "text": "אין צרך להביא אוכל לטיול."
+   },
+   "query": "צורך",
+   "docForm": "צרך"
+  },
+  {
+   "id": "heb-k21",
+   "doc": {
+    "id": "ktiv-21",
+    "text": "כתבנו את תוכן המצגת יחד."
+   },
+   "query": "תכן",
+   "docForm": "תוכן"
+  },
+  {
+   "id": "heb-k22",
+   "doc": {
+    "id": "ktiv-22",
+    "text": "התלמידים חזרו לכתה אחרי ההפסקה."
+   },
+   "query": "כיתה",
+   "docForm": "כתה"
+  },
+  {
+   "id": "heb-k23",
+   "doc": {
+    "id": "ktiv-23",
+    "text": "הזמנו ריהוט חדש למשרד."
+   },
+   "query": "רהוט",
+   "docForm": "ריהוט"
+  },
+  {
+   "id": "heb-k24",
+   "doc": {
+    "id": "ktiv-24",
+    "text": "קיבלנו חסון נגד שפעת בחורף."
+   },
+   "query": "חיסון",
+   "docForm": "חסון"
+  },
+  {
+   "id": "heb-k25",
+   "doc": {
+    "id": "ktiv-25",
+    "text": "הייתה אווירה טובה במסיבה."
+   },
+   "query": "אוירה",
+   "docForm": "אווירה"
+  },
+  {
+   "id": "heb-k26",
+   "doc": {
+    "id": "ktiv-26",
+    "text": "השיר מדבר על תקוה ועל געגועים."
+   },
+   "query": "תקווה",
+   "docForm": "תקוה"
+  },
+  {
+   "id": "heb-k27",
+   "doc": {
+    "id": "ktiv-27",
+    "text": "חגגנו בר מצווה לאח הקטן."
+   },
+   "query": "מצוה",
+   "docForm": "מצווה"
+  },
+  {
+   "id": "heb-k28",
+   "doc": {
+    "id": "ktiv-28",
+    "text": "קראתי ראיון עם הסופרת בעיתון."
+   },
+   "query": "ריאיון",
+   "docForm": "ראיון"
+  },
+  {
+   "id": "heb-k29",
+   "doc": {
+    "id": "ktiv-29",
+    "text": "שיגרו לוויין תקשורת חדש לחלל."
+   },
+   "query": "לויין",
+   "docForm": "לוויין"
+  },
+  {
+   "id": "heb-k30",
+   "doc": {
+    "id": "ktiv-30",
+    "text": "המפעל עבר לקו יצור אוטומטי."
+   },
+   "query": "ייצור",
+   "docForm": "יצור"
+  }
+ ],
+ "crosslingual": [
+  {
+   "id": "heb-x01",
+   "query": "מתכון לעוגת שוקולד",
+   "relevant": [
+    "en-01"
+   ],
+   "doc": {
+    "id": "en-01",
+    "text": "Chocolate cake recipe: melt the chocolate with butter, add eggs and sugar, bake for forty minutes."
+   }
+  },
+  {
+   "id": "heb-x02",
+   "query": "תיקון אופניים",
+   "relevant": [
+    "en-02"
+   ],
+   "doc": {
+    "id": "en-02",
+    "text": "How I fixed the bicycle: a new chain, a patched tube and the brakes adjusted."
+   }
+  },
+  {
+   "id": "heb-x03",
+   "query": "רשימת קניות לסופר",
+   "relevant": [
+    "en-03"
+   ],
+   "doc": {
+    "id": "en-03",
+    "text": "Shopping list for the supermarket: milk, bread, apples, coffee and rice."
+   }
+  },
+  {
+   "id": "heb-x04",
+   "query": "פגישה עם רופא שיניים",
+   "relevant": [
+    "en-04"
+   ],
+   "doc": {
+    "id": "en-04",
+    "text": "Dentist appointment on Tuesday at 10; bring the X-ray and the insurance card."
+   }
+  },
+  {
+   "id": "heb-x05",
+   "query": "טיסה לאילת",
+   "relevant": [
+    "en-05"
+   ],
+   "doc": {
+    "id": "en-05",
+    "text": "Flight to Eilat booked for Friday morning, return on Sunday evening."
+   }
+  }
+ ]
+}

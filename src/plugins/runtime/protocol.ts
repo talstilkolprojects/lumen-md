@@ -35,7 +35,15 @@ export type WorkerToHost =
   | { type: "log"; level: "log" | "warn" | "error"; text: string }
   /** The plugin's code failed: at load, in an event handler, or hit a limit. The worker is dead afterwards. */
   | { type: "fatal"; error: string }
-  | { type: "unloaded" };
+  | { type: "unloaded" }
+  /** CPU and memory of the sandbox after it loaded and after each event (the developer panel, W3.10). */
+  | { type: "stats"; cpuMs: number; entries: number; maxEntryMs: number; memoryBytes: number | null; denied: Record<string, number> };
 
 /** The host-side API names a plugin can call: `<namespace>.<method>`. */
 export const METHOD_RE = /^[a-z]+\.[a-zA-Z]+$/;
+
+/** "memory used   947   48798  (…)" → 48798. */
+export function memoryUsed(dump: string): number | null {
+  const m = /memory used\s+\d+\s+(\d+)/.exec(dump);
+  return m ? Number(m[1]) : null;
+}

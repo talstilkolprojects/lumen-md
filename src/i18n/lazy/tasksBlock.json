@@ -1,0 +1,9 @@
+{
+  "tasks.count": "{n} tasks",
+  "tasks.error.date": "Not a date: {text}",
+  "tasks.error.query": "Not understood: {text}",
+  "tasks.error.regex": "Not a regular expression: {text}",
+  "tasks.group.done": "Done",
+  "tasks.group.none": "(none)",
+  "tasks.group.todo": "To do"
+}

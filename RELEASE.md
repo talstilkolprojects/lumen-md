@@ -17,20 +17,140 @@ This document covers building and shipping Lumen across all targets:
 
 ---
 
-## Versioning
+## Versioning and the release pipeline (plan 13.4)
 
-Bump the version in three places, in lock-step:
+One script runs the whole release on your machine — GitHub Actions are not
+needed (`.github/workflows/release.yml` runs the same steps on a tag push when
+Actions are on):
 
-1. `package.json` → `"version"`
-2. `src-tauri/tauri.conf.json` → `"version"` and `src-tauri/Cargo.toml`
-3. iOS Xcode project (`MARKETING_VERSION` in `ios/App/App.xcodeproj/project.pbxproj`)
-4. Android Gradle (`android/app/build.gradle` → `versionName` / `versionCode`)
+```bash
+node scripts/release.mjs plan                    # next version from Conventional Commits + changelog preview
+node scripts/release.mjs prepare --commit --tag  # bump every manifest, write CHANGELOG.md, commit, tag vX.Y.Z
+git push origin HEAD vX.Y.Z
+node scripts/release.mjs build [--desktop]       # typecheck, tests, build, budget, no source maps → release/
+node scripts/release.mjs publish                 # GitHub release (gh CLI), notes from CHANGELOG.md, every file in release/
+node scripts/release.mjs verify release/         # anyone: check SHA256SUMS (and SHA256SUMS.asc)
+node scripts/release.mjs rollback 0.3.0 --to 0.2.1
+```
 
-Use [semver](https://semver.org/): `MAJOR.MINOR.PATCH` for the marketing
-string, monotonically increasing integer for App Store / Play Store
-internal codes.
+**Version.** `feat` → minor, `fix` / `perf` → patch, a breaking change
+(`feat!:` or `BREAKING CHANGE:`) → major (minor while the version is 0.x).
+`--version X.Y.Z` overrides. `prepare` bumps, in lock-step:
+
+1. `package.json` and `package-lock.json` (root entry only)
+2. `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml` (`[package]`)
+3. the iOS project: `MARKETING_VERSION`, and `CURRENT_PROJECT_VERSION` + 1
+4. Android (`android/app/build.gradle` → `versionName` / `versionCode`) once
+   the Android project exists (plan 13.3)
+
+and adds the version's section to `CHANGELOG.md` under `[Unreleased]`
+(Added / Fixed / Performance / Breaking, with commit links). `[skip ci]` is
+dropped from commit subjects.
+
+**Artifacts and signatures** (`build`, all into `release/`):
+
+| Artifact | Signed by | Key (owner, plan 15.7) |
+|---|---|---|
+| `lumen-web-vX.tgz` | `SHA256SUMS` + `SHA256SUMS.asc` | `LUMEN_RELEASE_GPG_KEY` (a GPG key id) |
+| desktop bundles (`--desktop`) | Apple / Authenticode + the updater's minisign `.sig` | see "Signing" below, `TAURI_SIGNING_PRIVATE_KEY` |
+| `latest.json` (Tauri updater) | built from the `.sig` files | — |
+| iOS `.ipa`, Android `.aab` (plan 13.3) | Xcode / Gradle, store signing | put them in `release/` before `build`'s checksum step |
+
+Every key is optional: without one, that signature is skipped with a warning
+and the release still builds.
+
+**Rollback.** `rollback <bad> --to <good>` makes the bad release a
+pre-release, so it is no longer "latest": download links and the desktop
+updater's `releases/latest/download/latest.json` fall back to the good release
+at once. Apps already on the bad version stay on it (the updater never
+downgrades), so ship the fix as the next patch (`prepare --version …`). The
+command prints how to redeploy the web app from the good tag (or
+`npx vercel rollback`).
 
 ---
+
+## Beta channel and feature flags (plan 14.4)
+
+New features reach a **beta** before they reach everyone:
+
+```bash
+node scripts/release.mjs plan --beta                    # e.g. 0.2.0-beta.1 (or -beta.N+1 on a beta train)
+node scripts/release.mjs prepare --beta --commit --tag
+git push origin HEAD v0.2.0-beta.1
+node scripts/release.mjs build [--desktop]              # a beta builds with VITE_LUMEN_CHANNEL=beta
+node scripts/release.mjs publish                        # a GitHub pre-release: never "latest"
+node scripts/release.mjs deploy-beta                    # the beta web app (Vercel preview + $LUMEN_BETA_HOST)
+# …when the beta is good:
+node scripts/release.mjs prepare --commit --tag         # 0.2.0, changelog since the last *stable* tag
+```
+
+- **Web.** The beta is its own deployment: `deploy-beta` makes a Vercel
+  *preview* deployment of `dist/` and, when `LUMEN_BETA_HOST` is set, points
+  that host at it. Stable stays the production deployment. For self-hosting,
+  build once with `VITE_LUMEN_CHANNEL=beta` into a second site. The beta build
+  shows a **Beta** badge in the status bar.
+- **Desktop.** Stable apps read `releases/latest/download/latest.json`.
+  GitHub's "latest" never points at a pre-release, so stable users never get
+  a beta. Beta apps read the rolling **`beta-channel`** pre-release's
+  `latest.json`, which `publish` updates for every beta and for every stable
+  release newer than the last beta. Build settings:
+  `LUMEN_UPDATER_ENDPOINT` (stable) and `LUMEN_UPDATER_ENDPOINT_BETA`
+  (`https://github.com/<owner>/<repo>/releases/download/beta-channel/latest.json`).
+  The user switches with *Update channel* in the palette. On Windows a beta
+  ships the NSIS installer only, because MSI takes only numeric pre-release
+  versions.
+- **Feature flags** (`src/flags/flags.json`): a feature ships as stage
+  `beta` with `since.beta`, the first beta that has it. It is on in beta
+  builds and off in stable. Promote it in a later release with
+  `stage: "stable"` and `since.stable`. `npm run flags:check` (also run by
+  `build`) refuses a flag that reached stable without an earlier beta, and
+  one without its strings in English and Hebrew. Flags are local only: no
+  remote config. A user can override any flag under *Feature flags…*.
+  `plan` lists the flags still in beta, for the release notes.
+
+## Stores and package managers (plan W1.24)
+
+`build --desktop` leaves the bundles and `SHA256SUMS` in `release/`. Then:
+
+```bash
+node scripts/release.mjs packages        # → release/packages/, checked offline
+```
+
+It writes, with every hash taken from `SHA256SUMS`:
+
+| Channel | Files | Submit |
+|---|---|---|
+| Homebrew | `homebrew/lumen-md.rb` (cask, arm + intel) | a tap (`brew tap talstilkol/lumen-md`), or a PR to `Homebrew/homebrew-cask` |
+| winget | `winget/manifests/t/Talstilkol/Lumen/<v>/` (version, installer, en-US locale; schema 1.6.0) | `wingetcreate submit <dir>` or a PR to `microsoft/winget-pkgs` |
+| Flathub | `flatpak/io.github.talstilkol.Lumen.json` + `.metainfo.xml` (the `.deb`, unpacked) | a new-app PR to `flathub/flathub` |
+| AUR | `aur/lumen-md-bin/PKGBUILD` + `.SRCINFO` | `git push` to `ssh://aur@aur.archlinux.org/lumen-md-bin.git` |
+
+A channel whose bundle is not in `SHA256SUMS` is skipped and reported; it is
+never written with a placeholder hash. The checks run without the network:
+
+- **winget:** the official JSON schemas, vendored in `scripts/vendor/winget-schemas` (MIT).
+- **Homebrew:** the cask's stanzas, their order and brew's `desc` rules, plus `ruby -c` when Ruby is installed.
+- **Flathub:** the keys flatpak-builder needs, permissions Flathub rejects, and the metainfo's required elements.
+- **AUR:** `bash -n`, and `.SRCINFO` agreeing with the `PKGBUILD`.
+
+The stores' own tools are the final check, run by the owner before
+submitting:
+- `brew audit --new --cask`
+- `winget validate`
+- `flatpak-builder` + `flatpak run --command=flathub-build org.flatpak.Builder`
+- `makepkg` + `namcap`
+
+Nothing here submits anything: the submissions, and the store accounts,
+are the owner's.
+
+Notes for the owner:
+- **Flathub id:** Flathub needs an id under a domain or code host you
+  control, so the manifest uses `io.github.talstilkol.Lumen`, not the
+  bundle id `app.lumen.editor`.
+- **Flathub file access:** the sandbox gets the network and `Documents`.
+  Other vault folders open through the file-chooser portal.
+- **Pre-releases:** for a version like `0.2.0-beta.1`, the PKGBUILD's
+  `pkgver` is `0.2.0_beta.1`, because pacman versions cannot contain `-`.
 
 ## 1. Web build (PWA)
 
@@ -219,6 +339,13 @@ git push --tags
 
 ---
 
+## Store submission (plan 13.7)
+
+Listings (English and Hebrew), privacy-label answers, the screenshot script
+and the desktop manifests are prepared in `store/` and `fastlane/metadata/`.
+The step-by-step for each store is in [store/SUBMISSION.md](store/SUBMISSION.md).
+`npm run store:check` keeps the listings within each store's limits.
+
 ## Smoke-test checklist
 
 After every build, before publishing:
@@ -238,3 +365,36 @@ After every build, before publishing:
 
 Add an entry to `CHANGELOG.md` for every version. Keep entries terse,
 group under `Added` / `Changed` / `Fixed` headings, and link to PRs.
+
+## Signatures, SBOM and reproducible builds (plan W1.27)
+
+Every release carries `SHA256SUMS` (each file of `dist/` and each desktop /
+mobile artifact), a CycloneDX SBOM `sbom.cdx.json`, and minisign signatures
+of both, made **on the release owner's machine** — no CI system holds the
+key. Full steps: docs → Security → Supply chain.
+
+```bash
+# once: make the key, commit only the public half
+LUMEN_RELEASE_PASSPHRASE=… node scripts/supply-chain/keys.mjs --out ~/.lumen-release
+cp ~/.lumen-release/lumen-release.pub security/release-key.pub
+
+# each release
+npm run repro                     # two clean builds, same SHA-256 per file
+npm run build
+LUMEN_RELEASE_PASSPHRASE=… npm run release:sign -- --key ~/.lumen-release/lumen-release.key \
+  --artifact src-tauri/target/release/bundle/dmg/Lumen_<version>_aarch64.dmg
+npm run release:verify            # what anyone can run with the public key
+```
+
+Upload `release/SHA256SUMS`, `release/sbom.cdx.json` and their `.minisig`
+files with the release.
+
+### "What's new" in the app (plan 14.6)
+
+The app shows each version's `CHANGELOG.md` section once after an update, in
+the interface language. Translations live in `changelog/<locale>.md`
+(`changelog/he.md` to start): `release.mjs prepare` copies the new section
+into each of them marked `<!-- untranslated -->` — translate it and delete
+that line before tagging, or the app shows the English notes (under
+translated headings) with a note that they aren't translated yet. The notes
+are built into the app (`virtual:lumen-whats-new` in `vite.config.ts`).

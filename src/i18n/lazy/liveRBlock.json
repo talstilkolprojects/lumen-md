@@ -1,0 +1,19 @@
+{
+  "block.liveR.clear": "Clear output",
+  "block.liveR.loadFailed": "Failed to load the R runtime.",
+  "block.liveR.loadTimeout": "R took too long to load.",
+  "block.liveR.loading": "Loading R…",
+  "block.liveR.plot": "R plot",
+  "block.liveR.prompt": "Click Run to execute this R block. The first run downloads R (~45 MB, cached afterwards).",
+  "block.liveR.run": "Run",
+  "block.liveR.state.error": "Error",
+  "block.liveR.state.idle": "Not run",
+  "block.liveR.state.loading": "Loading…",
+  "block.liveR.state.running": "Running…",
+  "block.liveR.state.success": "Completed",
+  "block.liveR.state.timeout": "Timed out",
+  "block.liveR.stop": "Stop",
+  "block.liveR.stopped": "Stopped.",
+  "block.liveR.timedOut": "Execution timed out after {ms} ms.",
+  "block.liveR.title": "Live R"
+}

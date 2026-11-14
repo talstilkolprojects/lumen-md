@@ -1,0 +1,205 @@
+{
+ "about": "50 ways people write a Jewish-source reference (plan W5.1), each with Sefaria's reference. Written for this test (CC0 1.0).",
+ "items": [
+  {
+   "input": "בראשית א:א",
+   "tref": "Genesis 1:1"
+  },
+  {
+   "input": "בראשית א, א",
+   "tref": "Genesis 1:1"
+  },
+  {
+   "input": "בראשית פרק א פסוק א",
+   "tref": "Genesis 1:1"
+  },
+  {
+   "input": "בראשית א׳ א׳",
+   "tref": "Genesis 1:1"
+  },
+  {
+   "input": "בראשית א' א'",
+   "tref": "Genesis 1:1"
+  },
+  {
+   "input": "שמות כ׳ ג׳",
+   "tref": "Exodus 20:3"
+  },
+  {
+   "input": "שמות כ:ג",
+   "tref": "Exodus 20:3"
+  },
+  {
+   "input": "ב״ר א, א",
+   "tref": "Bereshit Rabbah 1:1"
+  },
+  {
+   "input": "בראשית רבה א:א",
+   "tref": "Bereshit Rabbah 1:1"
+  },
+  {
+   "input": "בר׳ א:א",
+   "tref": "Genesis 1:1"
+  },
+  {
+   "input": "[[בראשית:א:א]]",
+   "tref": "Genesis 1:1"
+  },
+  {
+   "input": "[[שמות:כ:ג]]",
+   "tref": "Exodus 20:3"
+  },
+  {
+   "input": "[[Genesis 1:1]]",
+   "tref": "Genesis 1:1"
+  },
+  {
+   "input": "[[בראשית א:א|הפסוק הראשון]]",
+   "tref": "Genesis 1:1"
+  },
+  {
+   "input": "Genesis 1:1",
+   "tref": "Genesis 1:1"
+  },
+  {
+   "input": "Gen. 1:1",
+   "tref": "Genesis 1:1"
+  },
+  {
+   "input": "Gen 1:1-3",
+   "tref": "Genesis 1:1-3"
+  },
+  {
+   "input": "Exodus 20:3",
+   "tref": "Exodus 20:3"
+  },
+  {
+   "input": "Ex. 20:2-3",
+   "tref": "Exodus 20:2-3"
+  },
+  {
+   "input": "I Samuel 3:4",
+   "tref": "I Samuel 3:4"
+  },
+  {
+   "input": "1 Sam 3:4",
+   "tref": "I Samuel 3:4"
+  },
+  {
+   "input": "שמואל א ג:ד",
+   "tref": "I Samuel 3:4"
+  },
+  {
+   "input": "ש״א ג, ד",
+   "tref": "I Samuel 3:4"
+  },
+  {
+   "input": "מלכים ב׳ ה:א",
+   "tref": "II Kings 5:1"
+  },
+  {
+   "input": "Ps. 23:1",
+   "tref": "Psalms 23:1"
+  },
+  {
+   "input": "Psalm 23",
+   "tref": "Psalms 23"
+  },
+  {
+   "input": "תהלים כג",
+   "tref": "Psalms 23"
+  },
+  {
+   "input": "תהילים קיט:א",
+   "tref": "Psalms 119:1"
+  },
+  {
+   "input": "תהלים קי״ט, קה",
+   "tref": "Psalms 119:105"
+  },
+  {
+   "input": "ישעיהו מ:א",
+   "tref": "Isaiah 40:1"
+  },
+  {
+   "input": "ישעיה מ, א-ב",
+   "tref": "Isaiah 40:1-2"
+  },
+  {
+   "input": "דברים ו:ד",
+   "tref": "Deuteronomy 6:4"
+  },
+  {
+   "input": "Deut. 6:4",
+   "tref": "Deuteronomy 6:4"
+  },
+  {
+   "input": "ויקרא י״ט:י״ח",
+   "tref": "Leviticus 19:18"
+  },
+  {
+   "input": "ויקרא יט, יח",
+   "tref": "Leviticus 19:18"
+  },
+  {
+   "input": "קהלת ג:א",
+   "tref": "Ecclesiastes 3:1"
+  },
+  {
+   "input": "שיר השירים ב:א",
+   "tref": "Song of Songs 2:1"
+  },
+  {
+   "input": "דה״א א:א",
+   "tref": "I Chronicles 1:1"
+  },
+  {
+   "input": "רות א, טז",
+   "tref": "Ruth 1:16"
+  },
+  {
+   "input": "איכה א:א",
+   "tref": "Lamentations 1:1"
+  },
+  {
+   "input": "ברכות ב.",
+   "tref": "Berakhot 2a"
+  },
+  {
+   "input": "ברכות ב:",
+   "tref": "Berakhot 2b"
+  },
+  {
+   "input": "ברכות ב ע״א",
+   "tref": "Berakhot 2a"
+  },
+  {
+   "input": "ברכות דף ב עמוד ב",
+   "tref": "Berakhot 2b"
+  },
+  {
+   "input": "Berakhot 2a",
+   "tref": "Berakhot 2a"
+  },
+  {
+   "input": "שבת ל״א.",
+   "tref": "Shabbat 31a"
+  },
+  {
+   "input": "ב״מ נט:",
+   "tref": "Bava Metzia 59b"
+  },
+  {
+   "input": "משנה ברכות א:א",
+   "tref": "Mishnah Berakhot 1:1"
+  },
+  {
+   "input": "אבות א:א",
+   "tref": "Pirkei Avot 1:1"
+  },
+  {
+   "input": "Pirkei Avot 1:14",
+   "tref": "Pirkei Avot 1:14"
+  }
+ ]
+}

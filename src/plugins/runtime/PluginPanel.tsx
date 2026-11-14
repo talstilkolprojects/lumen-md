@@ -8,6 +8,7 @@ import { t } from "../../i18n";
 import { getPanel, sendUiEvent, subscribePanel } from "./manager";
 import { UiTreeView } from "./UiTreeView";
 import { openPluginNoteLink } from "./openNote";
+import { HelpButton } from "../../ui/HelpButton";
 
 function Panel() {
   const panel = useSyncExternalStore(subscribePanel, getPanel);
@@ -22,6 +23,7 @@ function Panel() {
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
         <strong style={{ flex: 1 }}>{panel.title}</strong>
+        <HelpButton topic="plugins/sandbox" />
         <button
           type="button"
           aria-label={t("plugins.panel.close")}

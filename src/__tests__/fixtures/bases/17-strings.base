@@ -1,0 +1,11 @@
+filters: file.name.startsWith("2026") && file.inFolder("Daily")
+formulas:
+  weekday: date(file.basename).format("dddd")
+  label: file.basename.split("-").reverse().join("/")
+views:
+  - type: table
+    name: Days
+    order: [file.name, formula.weekday, formula.label]
+    sort:
+      - property: file.name
+        direction: DESC

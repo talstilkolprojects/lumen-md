@@ -4,6 +4,9 @@
  * @vitest-environment node
  */
 import { describe, it, expect } from "vitest";
+import { createHash } from "crypto";
+import { readFileSync } from "fs";
+import { join } from "path";
 import {
   JsonCanvasFormatError,
   excalidrawToJsonCanvas,
@@ -188,7 +191,19 @@ describe("JSON Canvas ↔ Excalidraw (4.17)", () => {
     expect(parseJsonCanvas("").canvas).toEqual({ nodes: [], edges: [] });
   });
 
-  it("writes tab-indented JSON like Obsidian", () => {
-    expect(serializeJsonCanvas(CANVASES["one text node"])).toBe('{\n\t"nodes": [\n\t\t{\n\t\t\t"id": "a1",\n\t\t\t"type": "text",\n\t\t\t"x": 0,\n\t\t\t"y": 0,\n\t\t\t"width": 250,\n\t\t\t"height": 60,\n\t\t\t"text": "Hello"\n\t\t}\n\t],\n\t"edges": []\n}');
+  it("writes JSON byte for byte like Obsidian: tabs, no space after a colon, one record per line (W4.30)", () => {
+    expect(serializeJsonCanvas(CANVASES["one text node"])).toBe('{\n\t"nodes":[\n\t\t{"id":"a1","type":"text","x":0,"y":0,"width":250,"height":60,"text":"Hello"}\n\t],\n\t"edges":[]\n}');
+    const withMeta = '{\n\t"nodes":[],\n\t"edges":[],\n\t"metadata":{\n\t\t"version":"1.0-1.0",\n\t\t"frontmatter":{}\n\t}\n}';
+    expect(serializeJsonCanvas(parseJsonCanvas(withMeta).canvas)).toBe(withMeta);
+  });
+
+  it("a real Obsidian canvas comes back byte-identical through Excalidraw and back (W4.30)", () => {
+    // obsidianmd/jsoncanvas@456f843cb293df4f4ab1763e22ccb46a80b307c8 sample.canvas (MIT, fixtures/json-canvas/LICENSE.upstream).
+    const real = readFileSync(join(__dirname, "fixtures", "json-canvas", "sample.canvas"), "utf8");
+    expect(createHash("sha256").update(real).digest("hex")).toBe("ad089f3cbf255924d912a1e6fdc29d3414d9c7264b2c6c878e38680c3f33a7ce");
+    expect(serializeJsonCanvas(parseJsonCanvas(real).canvas)).toBe(real);
+    const scene = jsonCanvasToExcalidraw(real);
+    expect(scene.warnings).toEqual([]);
+    expect(serializeJsonCanvas(excalidrawToJsonCanvas(scene.file).canvas)).toBe(real);
   });
 });

@@ -19,10 +19,12 @@
  * the canvas closes or another one is opened.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Excalidraw } from "@excalidraw/excalidraw";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Excalidraw, convertToExcalidrawElements } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
 import "./CanvasExcalidraw.css";
+import "../canvas/NoteCard.css";
+import "../canvas/strings";
 import { uiPrompt } from "./PromptDialog";
 import { showAiToast } from "./AiToast";
 import { useAppStore } from "../store/useStore";
@@ -44,6 +46,15 @@ import {
 import { emptyScene, excalidrawLangOf, fileToInitialData, legacyCanvasToExcalidraw, sceneStamp, sceneToFile, tldrCanvasToExcalidraw, type SceneAppState, type SceneElement } from "../canvas/excalidrawScene";
 import type { ExBinaryFile, ExcalidrawFile } from "../canvas/tldrawToExcalidraw";
 import { JSON_CANVAS_EXT, excalidrawToJsonCanvas, jsonCanvasToExcalidraw, serializeJsonCanvas } from "../canvas/jsonCanvas";
+import { CARD_HEIGHT, CARD_WIDTH, NOTE_LINK, cardPositions, noteLink, notePathOf, pastedNoteRefs, resolveNoteRef } from "../canvas/noteCards";
+import { NoteCard, readNote } from "../canvas/NoteCard";
+import { listWorkspace } from "../storage/workspace";
+import type { ExportKind } from "./canvasExport";
+// The Mermaid → diagram dialog loads when it opens (its own strings and the converter come with it).
+const DiagramDialog = lazy(() => import("../canvas/DiagramDialog").then((m) => ({ default: m.DiagramDialog })));
+import "./canvasExcalidrawStrings";
+import { HelpButton } from "./HelpButton";
+import { explainError } from "../lib/userError";
 
 // Fonts (and anything else Excalidraw fetches by relative path) come from
 // this origin. Without it Excalidraw falls back to esm.sh.
@@ -58,6 +69,15 @@ interface Props {
   open: boolean;
   onClose: () => void;
 }
+
+/** What the canvas uses of Excalidraw's imperative API. */
+interface CanvasApi {
+  getSceneElements(): readonly SceneElement[];
+  getAppState(): { scrollX: number; scrollY: number; width: number; height: number; zoom: { value: number } };
+  updateScene(scene: { elements: readonly SceneElement[] }): void;
+  addFiles(files: unknown[]): void;
+}
+
 
 const DEFAULT_CANVAS_NAME = "untitled";
 const LEGACY_EXT = ".canvas.json";
@@ -120,6 +140,9 @@ export function CanvasExcalidraw({ open, onClose }: Props) {
   const latest = useRef<{ elements: readonly SceneElement[]; appState: SceneAppState; files: Record<string, ExBinaryFile> } | null>(null);
   const savedStamp = useRef<string>("");
   const saverRef = useRef<{ schedule(): void; flush(): void } | null>(null);
+  const apiRef = useRef<CanvasApi | null>(null);
+  const [exporting, setExporting] = useState<ExportKind | null>(null);
+  const [diagramOpen, setDiagramOpen] = useState(false);
 
   const refreshLists = useCallback(async () => {
     if (!store) return;
@@ -142,7 +165,7 @@ export function CanvasExcalidraw({ open, onClose }: Props) {
     const load = async () => {
       const file = store ? await readExcalidrawCanvas(store, canvasName).catch((err) => {
         log.warn("excalidraw read failed", err);
-        showAiToast(t("canvas.openFailed", { name: canvasName, error: (err as Error).message }), "error");
+        showAiToast(t("canvas.openFailed", { name: canvasName, error: explainError(err) }), "error");
         return null;
       }) : null;
       if (cancelled) return;
@@ -168,7 +191,7 @@ export function CanvasExcalidraw({ open, onClose }: Props) {
       savedStamp.current = stamp;
       void writeExcalidrawCanvas(store, name, sceneToFile(cur.elements, cur.appState, cur.files)).catch((err) => {
         log.warn("excalidraw save failed", err);
-        showAiToast(t("canvas.saveFailed", { name, error: (err as Error).message }), "error");
+        showAiToast(t("canvas.saveFailed", { name, error: explainError(err) }), "error");
       });
     }, 500);
     saverRef.current = saver;
@@ -194,7 +217,7 @@ export function CanvasExcalidraw({ open, onClose }: Props) {
       } catch (err) {
         // Already there: open it rather than replace it.
         if (!(err instanceof CanvasFileExistsError)) {
-          showAiToast(t("canvas.saveFailed", { name: trimmed, error: (err as Error).message }), "error");
+          showAiToast(t("canvas.saveFailed", { name: trimmed, error: explainError(err) }), "error");
           return;
         }
       }
@@ -211,7 +234,7 @@ export function CanvasExcalidraw({ open, onClose }: Props) {
       try {
         const text = await store.read(`${name}${kind === "tldr" ? TLDRAW_EXT : kind === "json" ? JSON_CANVAS_EXT : LEGACY_EXT}`);
         if (text === null) throw new Error("file not found");
-        const result = kind === "tldr" ? tldrCanvasToExcalidraw(text) : kind === "json" ? jsonCanvasToExcalidraw(text) : legacyCanvasToExcalidraw(text);
+        const result = kind === "tldr" ? tldrCanvasToExcalidraw(text) : kind === "json" ? jsonCanvasToExcalidraw(text, { noteCards: true }) : legacyCanvasToExcalidraw(text);
         await createExcalidrawCanvas(store, name, result.file);
         await refreshLists();
         setCanvasName(name);
@@ -224,7 +247,7 @@ export function CanvasExcalidraw({ open, onClose }: Props) {
           return;
         }
         log.error("canvas convert failed", err);
-        showAiToast(t("canvas.legacy.convertFailed", { error: (err as Error).message }), "error");
+        showAiToast(t("canvas.legacy.convertFailed", { error: explainError(err) }), "error");
       } finally {
         setConverting(null);
       }
@@ -237,7 +260,7 @@ export function CanvasExcalidraw({ open, onClose }: Props) {
     async (file: File) => {
       if (!store) return;
       try {
-        const result = jsonCanvasToExcalidraw(await file.text());
+        const result = jsonCanvasToExcalidraw(await file.text(), { noteCards: true });
         const base = nameFromFile(file.name);
         let name = base;
         for (let n = 2; ; n++) {
@@ -255,7 +278,7 @@ export function CanvasExcalidraw({ open, onClose }: Props) {
         showAiToast(t("canvas.jsonCanvas.imported", { name, count: String(nodes) }), "success");
         if (result.warnings.length) log.warn("JSON Canvas import warnings", result.warnings);
       } catch (err) {
-        showAiToast(t("canvas.jsonCanvas.failed", { error: (err as Error).message }), "error");
+        showAiToast(t("canvas.jsonCanvas.failed", { error: explainError(err) }), "error");
       }
     },
     [store, refreshLists],
@@ -272,9 +295,110 @@ export function CanvasExcalidraw({ open, onClose }: Props) {
       showAiToast(t("canvas.jsonCanvas.exported", { name: scene.name, nodes: String(canvas.nodes.length), edges: String(canvas.edges.length) }), "success");
       if (warnings.length) showAiToast(t("canvas.jsonCanvas.skipped", { count: String(warnings.length) }), "info");
     } catch (err) {
-      showAiToast(t("canvas.saveFailed", { name: `${scene.name}${JSON_CANVAS_EXT}`, error: (err as Error).message }), "error");
+      showAiToast(t("canvas.saveFailed", { name: `${scene.name}${JSON_CANVAS_EXT}`, error: explainError(err) }), "error");
     }
   }, [store, scene]);
+
+  /** Place cards for vault notes at the middle of the view (in a row when several). */
+  const placeCards = useCallback((paths: string[]) => {
+    const api = apiRef.current;
+    if (!api || !paths.length) return;
+    const st = api.getAppState();
+    const z = st.zoom.value || 1;
+    const centre = { x: -st.scrollX + st.width / 2 / z - CARD_WIDTH / 2, y: -st.scrollY + st.height / 2 / z - CARD_HEIGHT / 2 };
+    const skeletons = cardPositions(paths.length, centre).map((at, i) => ({ type: "embeddable", ...at, width: CARD_WIDTH, height: CARD_HEIGHT, link: noteLink(paths[i]), roughness: 0, strokeWidth: 1, roundness: { type: 3 } }));
+    const cards = convertToExcalidrawElements(skeletons as unknown as Parameters<typeof convertToExcalidrawElements>[0]) as unknown as SceneElement[];
+    api.updateScene({ elements: [...api.getSceneElements(), ...cards] });
+  }, []);
+
+  /** `![[note]]` / a note name → the vault note, or a toast when there's none. */
+  const resolveRefs = useCallback(async (refs: string[]): Promise<string[]> => {
+    const notes = (await listWorkspace().catch(() => [])).map((e) => e.path).filter((p) => /\.(md|markdown)$/i.test(p));
+    const found: string[] = [];
+    for (const ref of refs) {
+      const p = resolveNoteRef(ref, notes);
+      if (p) found.push(p);
+      else showAiToast(t("canvas.card.notFound", { ref }), "error");
+    }
+    return found;
+  }, []);
+
+  const handleAddCard = useCallback(async () => {
+    const ref = await uiPrompt({ message: t("canvas.card.prompt"), placeholder: "![[…]]" });
+    if (!ref?.trim()) return;
+    placeCards(await resolveRefs([ref]));
+  }, [placeCards, resolveRefs]);
+
+  const openNote = useCallback(
+    async (path: string) => {
+      const content = await readNote(path);
+      if (content === null) {
+        showAiToast(t("canvas.card.missing", { path }), "error");
+        return;
+      }
+      saverRef.current?.flush();
+      onClose();
+      useAppStore.getState().openTab({ name: path.split("/").pop() ?? path, content, workspaceName: path });
+    },
+    [onClose],
+  );
+
+  /** Mermaid → editable elements in the middle of the view (plan W2.18). */
+  const insertDiagram = useCallback(async (code: string): Promise<{ missing: string[]; editable: boolean } | { error: string }> => {
+    const api = apiRef.current;
+    if (!api) return { error: "the canvas isn't ready" };
+    try {
+      const { mermaidToElements, centredOn } = await import("./mermaidToCanvas");
+      const res = await mermaidToElements(code);
+      const st = api.getAppState();
+      const z = st.zoom.value || 1;
+      const placed = centredOn(res.elements as unknown as Array<SceneElement & { x: number; y: number; width: number; height: number }>, { x: -st.scrollX + st.width / 2 / z, y: -st.scrollY + st.height / 2 / z });
+      const files = Object.values(res.files);
+      if (files.length) api.addFiles(files);
+      api.updateScene({ elements: [...api.getSceneElements(), ...placed] });
+      if (!res.editable) showAiToast(t("canvas.diagram.insertedAsImage"), "info");
+      return { missing: res.missing, editable: res.editable };
+    } catch (err) {
+      return { error: (err as Error).message };
+    }
+  }, []);
+
+  /** The canvas's frames as slides, in arrow order (plan W2.17). */
+  const handlePresent = useCallback(async () => {
+    if (!scene) return;
+    const cur = latest.current;
+    const sceneNow = cur ?? { elements: (scene.file?.elements ?? []) as unknown as SceneElement[], appState: (scene.file?.appState ?? {}) as SceneAppState, files: scene.file?.files ?? {} };
+    try {
+      const { presentCanvas } = await import("../slides/present");
+      const n = await presentCanvas(sceneNow as never, scene.name, readNote);
+      if (n === 0) showAiToast(t("canvas.present.noFrames"), "info");
+    } catch (err) {
+      log.warn("canvas presentation failed", err);
+      showAiToast(t("canvas.present.failed", { error: explainError(err) }), "error");
+    }
+  }, [scene]);
+
+  /** PNG / SVG / PDF with note cards drawn and Hebrew kept (src/canvas/canvasExport.ts). */
+  const handleImageExport = useCallback(
+    async (kind: ExportKind) => {
+      if (!scene) return;
+      const cur = latest.current;
+      const sceneNow = cur ?? { elements: (scene.file?.elements ?? []) as unknown as SceneElement[], appState: (scene.file?.appState ?? {}) as SceneAppState, files: scene.file?.files ?? {} };
+      setExporting(kind);
+      try {
+        const { exportCanvas, download, printSvgAsPdf } = await import("./canvasExport");
+        const res = await exportCanvas(kind === "pdf" ? "svg" : kind, sceneNow, scene.name, readNote);
+        if (kind === "pdf" && res.svg) await printSvgAsPdf(res.svg, scene.name);
+        else download(res);
+      } catch (err) {
+        log.warn("canvas export failed", err);
+        showAiToast(t("canvas.export.failed", { error: explainError(err) }), "error");
+      } finally {
+        setExporting(null);
+      }
+    },
+    [scene],
+  );
 
   if (!open) return null;
   const pending = [
@@ -287,6 +411,7 @@ export function CanvasExcalidraw({ open, onClose }: Props) {
     <div role="dialog" aria-modal="true" aria-label={t("canvas.dialogLabel")} className="lumen-canvas" data-testid="canvas">
       <div className="lumen-canvas-head">
         <strong style={{ fontSize: 13 }}>{t("canvas.title")}</strong>
+        <HelpButton topic="workspace/canvas" />
         <select value={canvasName} onChange={(e) => setCanvasName(e.target.value)} aria-label={t("canvas.picker")} className="lumen-canvas-pick">
           {!lists.saved.includes(canvasName) && <option value={canvasName}>{canvasName}</option>}
           {lists.saved.map((n) => (
@@ -332,6 +457,24 @@ export function CanvasExcalidraw({ open, onClose }: Props) {
             </button>
           </>
         )}
+        {store && (
+          <button type="button" onClick={() => void handleAddCard()} disabled={!scene} className="lumen-canvas-btn" data-testid="canvas-add-card">
+            + {t("canvas.card.add")}
+          </button>
+        )}
+        <button type="button" onClick={() => setDiagramOpen(true)} disabled={!scene} className="lumen-canvas-btn" data-testid="canvas-diagram">
+          {t("canvas.diagram.open")}
+        </button>
+        <button type="button" onClick={() => void handlePresent()} disabled={!scene} className="lumen-canvas-btn" data-testid="canvas-present">
+          ▶ {t("canvas.present")}
+        </button>
+        <span className="lumen-canvas-export" role="group" aria-label={t("canvas.export.label")}>
+          {(["png", "svg", "pdf"] as const).map((k) => (
+            <button key={k} type="button" onClick={() => void handleImageExport(k)} disabled={!scene || exporting !== null} className="lumen-canvas-btn" data-testid={`canvas-export-${k}`}>
+              {exporting === k ? t("canvas.export.working") : k.toUpperCase()}
+            </button>
+          ))}
+        </span>
         <span style={{ flex: 1 }} />
         <span className="lumen-canvas-note">{store ? t("canvas.autoSaved") : t("doc.alert.workspaceUnavailable")}</span>
         <button type="button" onClick={onClose} aria-label={t("canvas.close")} className="lumen-canvas-btn">
@@ -348,8 +491,31 @@ export function CanvasExcalidraw({ open, onClose }: Props) {
             theme={isDark(theme) ? "dark" : "light"}
             langCode={excalidrawLangOf(locale)}
             aiEnabled={false}
-            UIOptions={{ canvasActions: { loadScene: false, saveToActiveFile: false, toggleTheme: false, export: { saveFileToDisk: true } } }}
+            excalidrawAPI={(api: unknown) => {
+              apiRef.current = api as CanvasApi;
+            }}
+            // Note cards (plan W1.16): lumen-note: embeds are ours, drawn by NoteCard; other embeds keep Excalidraw's rules.
+            validateEmbeddable={(link: string) => (link.startsWith(NOTE_LINK) ? true : undefined)}
+            renderEmbeddable={(el: { id: string; type: string; link: string | null }, appState: { activeEmbeddable: { element: { id: string }; state: string } | null }) => {
+              const path = notePathOf(el);
+              if (!path) return null;
+              const active = appState.activeEmbeddable?.element.id === el.id && appState.activeEmbeddable.state === "active";
+              return <NoteCard path={path} active={active} onOpen={(p) => void openNote(p)} />;
+            }}
+            onPaste={(data: { text?: string }) => {
+              const refs = data.text ? pastedNoteRefs(data.text) : null;
+              if (!refs) return true;
+              void resolveRefs(refs).then(placeCards);
+              return false;
+            }}
+            // Image export goes through the bar's PNG / SVG / PDF (Hebrew fixed, note cards drawn).
+            UIOptions={{ canvasActions: { loadScene: false, saveToActiveFile: false, toggleTheme: false, saveAsImage: false, export: { saveFileToDisk: true } } }}
           />
+        )}
+        {diagramOpen && (
+          <Suspense fallback={null}>
+            <DiagramDialog onInsert={insertDiagram} onClose={() => setDiagramOpen(false)} />
+          </Suspense>
         )}
       </div>
     </div>

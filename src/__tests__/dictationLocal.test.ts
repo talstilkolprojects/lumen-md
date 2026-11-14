@@ -1,6 +1,7 @@
 /** 1.3 — dictation runs on this device; the browser speech service never runs under local-only. */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { chooseDictationEngine, downsampleTo16k, Segmenter, SerialQueue, WEB_SPEECH_KEY } from "../ai/dictation";
+import { t } from "../i18n";
 
 vi.mock("../ui/AiToast", () => ({ showAiToast: vi.fn() }));
 vi.mock("../ui/PromptDialog", () => ({ uiConfirm: vi.fn(async () => true) }));
@@ -440,7 +441,9 @@ describe("dictation setup and failures (review: #197)", () => {
     expect(confirms.mock.calls.length).toBe(confirmsBefore + 1);
     const errors = toasts.mock.calls.slice(toastsBefore).filter((c) => c[1] === "error");
     expect(errors).toHaveLength(1);
-    expect(String(errors[0][0])).toContain("model download failed");
+    // One toast, in words (explainError), not the engine's own text.
+    expect(String(errors[0][0])).toContain(t("error.unknown"));
+    expect(String(errors[0][0])).not.toContain("model download failed");
     expect(stopTrack).toHaveBeenCalled();
     vi.doUnmock("../ai/transformersEngine");
     delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;

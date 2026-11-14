@@ -71,6 +71,11 @@
       "vars": []
     },
     {
+      "key": "agent.panel.retry",
+      "en": "Run it again",
+      "vars": []
+    },
+    {
       "key": "agent.panel.summary",
       "en": "{agent} · {attempts} attempt(s) · {executor} / {model}",
       "vars": [
@@ -104,6 +109,14 @@
       "key": "agent.suggest.allowCloud.detail",
       "en": "Switches the AI policy to \"local first\": your cloud key is used only when no local model can answer.",
       "vars": []
+    },
+    {
+      "key": "agent.suggest.clarifyTool",
+      "en": "Say what {tool} needs, then run it again ({problem})",
+      "vars": [
+        "tool",
+        "problem"
+      ]
     },
     {
       "key": "agent.suggest.configureKey",
@@ -920,6 +933,11 @@
       "vars": []
     },
     {
+      "key": "ai.settings.ollama.copyPull",
+      "en": "Copy the install command",
+      "vars": []
+    },
+    {
       "key": "ai.settings.ollama.installed",
       "en": "Installed: {models}",
       "vars": [
@@ -1204,8 +1222,20 @@
       "vars": []
     },
     {
+      "key": "ai.trace.clearConfirm",
+      "en": "Delete the record of {n} agent runs? This cannot be undone.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
       "key": "ai.trace.empty",
       "en": "No agent runs yet.",
+      "vars": []
+    },
+    {
+      "key": "ai.trace.testSetup",
+      "en": "Test the AI setup",
       "vars": []
     },
     {
@@ -1767,6 +1797,16 @@
       "vars": []
     },
     {
+      "key": "suggest.author.ai",
+      "en": "AI",
+      "vars": []
+    },
+    {
+      "key": "suggest.author.unknown",
+      "en": "no author",
+      "vars": []
+    },
+    {
       "key": "suggest.needsSource",
       "en": "Switch to Source or Split view to work with suggestions at the cursor",
       "vars": []
@@ -1795,6 +1835,43 @@
       "key": "tts.networkVoice.title",
       "en": "Use a network voice?",
       "vars": []
+    },
+    {
+      "key": "tts.neural.none",
+      "en": "Hebrew is read with your system's Hebrew voice: no on-device neural Hebrew voice with a licence that allows it exists yet.",
+      "vars": []
+    },
+    {
+      "key": "tts.resumed",
+      "en": "Resuming at sentence {n} of {total} — where you stopped. It starts over after the end.",
+      "vars": [
+        "n",
+        "total"
+      ]
+    },
+    {
+      "key": "tts.settings.rate",
+      "en": "Speed",
+      "vars": []
+    },
+    {
+      "key": "tts.settings.saved",
+      "en": "Read-aloud settings saved ({rate}).",
+      "vars": [
+        "rate"
+      ]
+    },
+    {
+      "key": "tts.settings.title",
+      "en": "Read aloud",
+      "vars": []
+    },
+    {
+      "key": "tts.settings.voice",
+      "en": "Voice for {lang}",
+      "vars": [
+        "lang"
+      ]
     },
     {
       "key": "voice.languagePrompt",

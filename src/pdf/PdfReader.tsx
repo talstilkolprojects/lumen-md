@@ -18,6 +18,7 @@
  */
 
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import "./strings";
 import { t } from "../i18n";
 import { showAiToast } from "../ui/AiToast";
 import { ErrorBoundary } from "../ui/ErrorBoundary";
@@ -40,6 +41,9 @@ import {
 import { layerText, offsetsToRange, pageTextFromItems, rangePageRects, rangeToOffsets } from "./textMap";
 import { openPdf, loadPdfjs, type PdfDocument, type PdfRenderTask, type PdfTextLayer } from "./pdfjs";
 import "./PdfReader.css";
+import { HelpButton } from "../ui/HelpButton";
+import { explainError } from "../lib/userError";
+import { EmptyState, learnHow } from "../ui/EmptyState";
 
 /** "Ask this PDF" (plan 6.8): its own chunk, loaded on the first click of Ask. */
 const PdfChatPanel = lazy(() => import("./PdfChatPanel").then((m) => ({ default: m.PdfChatPanel })));
@@ -228,7 +232,7 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
       setAnnotations(saved.map((a) => (a.target.source === path ? a : { ...a, target: { ...a.target, source: path } })));
       setDoc(pdf);
     })().catch((e: unknown) => {
-      if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      if (!cancelled) setError(explainError(e));
     });
     return () => {
       cancelled = true;
@@ -360,7 +364,7 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
         })
         .catch((e: unknown) => {
           writeFailed.current = true;
-          showAiToast(t("pdf.saveFailed", { error: e instanceof Error ? e.message : String(e) }), "error");
+          showAiToast(t("pdf.saveFailed", { error: explainError(e) }), "error");
         });
     },
     [path, notePath],
@@ -563,6 +567,7 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
         <strong className="pdf-title" title={path} dir="auto">
           {name}
         </strong>
+        <HelpButton topic="workspace/pdf-reader" />
         <label className="pdf-pageinfo">
           <input
             type="number"
@@ -626,6 +631,7 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
             ↓
           </button>
           <span className="pdf-count" aria-live="polite" data-testid="pdf-search-count">
+            {/* empty-action: the search field and arrows just before it */}
             {hitIndex >= 0 ? t("pdf.search.count", { i: hitIndex + 1, n: hits.length }) : searched ? t("search.noMatches") : ""}
           </span>
         </form>
@@ -708,7 +714,7 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
         )}
         <aside className="pdf-side" aria-label={t("pdf.highlights")}>
           <h3>{t("pdf.highlights")}</h3>
-          {!sorted.length && <p className="pdf-muted">{t("pdf.highlights.empty")}</p>}
+          {!sorted.length && <EmptyState message={t("pdf.highlights.empty")} action={learnHow("workspace/pdf-reader#highlight-text")} />}
           <ol className="pdf-hl-list" data-testid="pdf-highlights">
             {sorted.map((a) => {
               const d = describeAnnotation(a);
@@ -914,7 +920,7 @@ const PdfPageView = memo(function PdfPageView({
       onOcr(page, text);
       setReady((n) => n + 1);
     } catch (e) {
-      showAiToast(t("pdf.failed", { error: e instanceof Error ? e.message : String(e) }), "error");
+      showAiToast(t("pdf.failed", { error: explainError(e) }), "error");
     } finally {
       setOcrBusy(false);
     }

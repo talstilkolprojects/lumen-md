@@ -49,6 +49,7 @@ export default function LiveSvgBlock({ source, meta }: Props) {
           <span>{status}</span>
         </div>
         <div style={{ padding: "1rem", color: "hsl(var(--fg-muted))" }}>
+          {/* empty-allow: inside a code block the fix is the block's own source, right above */}
           {t("block.liveSvg.empty")}
         </div>
       </div>

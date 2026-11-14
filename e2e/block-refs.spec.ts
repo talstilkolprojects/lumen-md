@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * Block references (MASTER_PLAN 4.8), acceptance: a `[[Note#^id]]` link and
@@ -51,9 +52,9 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(".cm-content").first()).toContainText("Welcome to", { timeout: 15_000 });
 });
 
-test("a block reference survives a rename and a move, and still scrolls to the block", async ({ page }) => {
+test("a block reference survives a rename and a move, and still scrolls to the block", async ({ page, browserName }) => {
   test.setTimeout(90_000);
-  test.skip(!(await seed(page, { "Plans.md": PLANS, "Hub.md": HUB })), "this engine cannot write OPFS files here");
+  vaultOrSkip(await seed(page, { "Plans.md": PLANS, "Hub.md": HUB }), browserName);
   const tree = page.locator("aside.file-tree");
   if (!(await tree.isVisible())) await page.evaluate(() => window.dispatchEvent(new CustomEvent("lumen-run-command", { detail: { id: "view.workspace" } })));
   const name = (n: string) => tree.locator(".file-tree-name", { hasText: n });

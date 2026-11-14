@@ -1,39 +1,7 @@
 /** Vault commands: Vault Doctor, export / import, digest and encryption. */
 import { cmdIcons, type Command } from "../../ui/CommandPalette";
-import { useAppStore } from "../../store/useStore";
-import { t, getLocale } from "../../i18n";
-import { uiConfirm, uiPrompt, uiSelect } from "../../ui/PromptDialog";
-import { showAiToast } from "../../ui/AiToast";
-import { encryptDocument, decryptDocument, isEncrypted } from "../../storage/encryption";
-import { isOPFSAvailable, readWorkspaceFile } from "../../storage/workspace";
-import { openTemplateDoc } from "../openDoc";
+import { t } from "../../i18n";
 import type { CommandContext } from "./context";
-
-/** Every Markdown note in the workspace, for Vault Doctor (null when there is none). */
-async function loadDoctorNotes(): Promise<Array<{ path: string; text: string }> | null> {
-  if (!isOPFSAvailable()) {
-    showAiToast(t("doctor.noWorkspace"), "error");
-    return null;
-  }
-  const { listWorkspace } = await import("../../storage/workspace");
-  const notes: Array<{ path: string; text: string }> = [];
-  for (const f of await listWorkspace({ includeAssets: false })) {
-    if (!/\.(md|markdown)$/i.test(f.path)) continue;
-    try {
-      notes.push({ path: f.path, text: await readWorkspaceFile(f.path) });
-    } catch {
-      // A missing note would look like a broken link target (and "fix"
-      // links to it): stop rather than scan an incomplete workspace.
-      showAiToast(t("doctor.readFailed", { path: f.path }), "error");
-      return null;
-    }
-  }
-  if (!notes.length) {
-    showAiToast(t("doctor.noWorkspace"), "error");
-    return null;
-  }
-  return notes;
-}
 
 /** Vault Doctor: a report on the workspace, and fixing its broken wiki links. */
 export function buildVaultDoctorCommands(): Command[] {
@@ -44,96 +12,47 @@ export function buildVaultDoctorCommands(): Command[] {
       hint: t("cmd.tools.vaultDoctor.hint"),
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
-      action: async () => {
-        const notes = await loadDoctorNotes();
-        if (!notes) return;
-        showAiToast(t("doctor.checking", { count: notes.length }), "info");
-        const { runVaultDoctor, formatDoctorReport } = await import("../../lint/vaultDoctor");
-        const findings = runVaultDoctor(notes);
-        openTemplateDoc("Vault Doctor report", formatDoctorReport(findings, notes.length));
-        showAiToast(t("doctor.done", { count: findings.length }), findings.length ? "info" : "success");
-      },
+      action: async () => (await import("./vaultDoctorActions")).runDoctor(),
     },
     {
       id: "tools.vaultDoctorFix",
+      destructive: "confirm",
       label: t("cmd.tools.vaultDoctorFix"),
       hint: t("cmd.tools.vaultDoctorFix.hint"),
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
-      action: async () => {
-        const notes = await loadDoctorNotes();
-        if (!notes) return;
-        const { runVaultDoctor, applyLinkFixes } = await import("../../lint/vaultDoctor");
-        // Notes open in a tab may hold unsaved edits: never rewrite them.
-        const open = new Set(useAppStore.getState().openTabs.map((tab) => tab.workspaceName).filter(Boolean));
-        const current = useAppStore.getState().doc.workspaceName;
-        if (current) open.add(current);
-        const byFile = new Map<string, Array<{ from: string; to: string }>>();
-        for (const f of runVaultDoctor(notes)) {
-          if (f.kind !== "broken-wiki-link" || !f.suggestion || !f.detail || open.has(f.path)) continue;
-          byFile.set(f.path, [...(byFile.get(f.path) ?? []), { from: f.detail, to: f.suggestion }]);
-        }
-        const links = [...byFile.values()].reduce((n, l) => n + l.length, 0);
-        if (!links) {
-          showAiToast(t("doctor.noFixes"), "info");
-          return;
-        }
-        const list = [...byFile]
-          .flatMap(([path, fixes]) => fixes.map((x) => `${path}: [[${x.from}]] → [[${x.to}]]`))
-          .slice(0, 15)
-          .join("\n");
-        const ok = await uiConfirm({ message: t("doctor.confirmFix", { links, files: byFile.size, list }) });
-        if (!ok) return;
-        const { writeWorkspaceFile } = await import("../../storage/workspace");
-        for (const [path, fixes] of byFile) {
-          const note = notes.find((n) => n.path === path)!;
-          await writeWorkspaceFile(path, applyLinkFixes(note.text, fixes));
-        }
-        // Backlinks, tags, file tree and database views refresh on this.
-        window.dispatchEvent(new CustomEvent("lumen-workspace-changed"));
-        showAiToast(t("doctor.fixed", { links, files: byFile.size }), "success");
-      },
+      action: async () => (await import("./vaultDoctorActions")).fixDoctorLinks(),
+    },
+    {
+      id: "vault.check",
+      label: t("cmd.vault.check"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: async () => (await import("../../storage/vault/integrityCommand")).runVaultCheck(),
     },
   ];
 }
 
+
 /** Export the whole vault (zip or folder) and import one. */
 export function buildVaultTransferCommands(): Command[] {
   return [
+    {
+      id: "vault.backups",
+      label: t("cmd.vault.backups"),
+      hint: t("cmd.vault.backups.hint"),
+      icon: cmdIcons.Save,
+      group: t("group.file"),
+      // Plan W1.6: lazy, with its own root.
+      action: () => void import("../../backup/BackupPanel").then((m) => m.openBackupPanel()),
+    },
     {
       id: "vault.export",
       label: t("cmd.vault.export"),
       hint: t("cmd.vault.export.hint"),
       icon: cmdIcons.Save,
       group: t("group.file"),
-      action: async () => {
-        const { exportVaultZip, exportVaultToFolder } = await import("../../storage/exportAll");
-        const { flushActiveWorkspaceDoc } = await import("../../store/openDocs");
-        try {
-          const picker = (window as unknown as { showDirectoryPicker?: (o?: object) => Promise<unknown> }).showDirectoryPicker;
-          const choice = picker
-            ? await uiSelect({ message: t("vault.export.where"), choices: [{ value: "zip", label: t("vault.export.zip") }, { value: "folder", label: t("vault.export.folder") }] })
-            : "zip";
-          if (!choice) return;
-          // The export reads the vault from disk: include edits the
-          // debounced autosave has not written yet.
-          await flushActiveWorkspaceDoc();
-          if (choice === "folder" && picker) {
-            // A WebIDL method: it must be called on `window` (Illegal invocation otherwise).
-            const dir = await picker.call(window, { mode: "readwrite" });
-            const r = await exportVaultToFolder(dir as Parameters<typeof exportVaultToFolder>[0]);
-            showAiToast(t("vault.export.doneFolder", { n: String(r.files), folder: r.folder }), "info");
-            return;
-          }
-          const { bytes, files } = await exportVaultZip();
-          const { downloadBytes } = await import("../../storage/exportFormats");
-          downloadBytes(`lumen-vault-${new Date().toISOString().slice(0, 10)}.zip`, bytes, "application/zip");
-          showAiToast(t("vault.export.done", { n: String(files) }), "info");
-        } catch (e) {
-          if ((e as DOMException)?.name === "AbortError") return;
-          showAiToast(t("vault.export.failed", { error: (e as Error).message }), "error");
-        }
-      },
+      action: async () => (await import("./vaultActions")).exportVault(),
     },
     {
       id: "vault.import",
@@ -141,27 +60,17 @@ export function buildVaultTransferCommands(): Command[] {
       hint: t("cmd.vault.import.hint"),
       icon: cmdIcons.Save,
       group: t("group.file"),
-      action: async () => {
-        const choice = await uiSelect({ message: t("vault.import.what"), choices: [{ value: "zip", label: t("vault.import.zip") }, { value: "folder", label: t("vault.import.folder") }] });
-        if (!choice) return;
-        const input = document.createElement("input");
-        input.type = "file";
-        if (choice === "zip") input.accept = ".zip,application/zip";
-        else (input as HTMLInputElement & { webkitdirectory: boolean }).webkitdirectory = true;
-        input.onchange = async () => {
-          const files = input.files;
-          if (!files?.length) return;
-          const { importZip, importFileList } = await import("../../storage/exportAll");
-          try {
-            const r = choice === "zip" ? await importZip(await files[0].arrayBuffer(), files[0].name) : await importFileList(files);
-            window.dispatchEvent(new Event("lumen-workspace-changed"));
-            showAiToast(t("vault.import.done", { notes: String(r.notes), files: String(r.attachments), folder: r.folder, source: r.source }), "info");
-          } catch (e) {
-            showAiToast(t("vault.import.failed", { error: (e as Error).message }), "error");
-          }
-        };
-        input.click();
+      action: () => {
+        window.dispatchEvent(new Event("lumen-open-import"));
       },
+    },
+    {
+      id: "vault.importUndo",
+      label: t("cmd.vault.importUndo"),
+      hint: t("cmd.vault.importUndo.hint"),
+      icon: cmdIcons.Save,
+      group: t("group.file"),
+      action: async () => (await import("./vaultActions")).undoLastImport(),
     },
   ];
 }
@@ -175,51 +84,7 @@ export function buildDigestCommands(): Command[] {
       hint: t("cmd.vault.digest.hint"),
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
-      action: async () => {
-        const { readWorkspaceFile, writeWorkspaceFile, isOPFSAvailable } = await import("../../storage/workspace");
-        if (!isOPFSAvailable()) return;
-        // The digest reads the vault through the agent runtime's tools
-        // (list_files + read_file, plan 5.3.3); it writes its own note.
-        const { callTool } = await import("../../agents/runtime");
-        const { digestFolder, writeDigest, toolDigestIO } = await import("../../agents/defs/digester");
-        const KEY = "lumen.digest.last";
-        const now = Date.now();
-        let since = now - 24 * 3600_000;
-        try {
-          since = Number(localStorage.getItem(KEY)) || since;
-        } catch {
-          /* why: storage denied: the digest covers the last 24 h */
-        }
-        const lang = getLocale();
-        const FOLDER_KEY = "lumen.digest.folder";
-        let storedFolder: string | null = null;
-        try {
-          storedFolder = localStorage.getItem(FOLDER_KEY);
-        } catch {
-          /* why: the UI language's default */
-        }
-        // Fixed once chosen: a language switch keeps writing to the same folder (and the same day's note).
-        const folder = digestFolder(storedFolder, lang);
-        const fmtDate = (ms: number) => new Date(ms).toLocaleString(getLocale(), { dateStyle: "medium", timeStyle: "short" });
-        const res = await writeDigest(
-          toolDigestIO({ callTool, readOwn: readWorkspaceFile, write: writeWorkspaceFile, since, now, folder }),
-          { since, now, lang, folder, formatDate: fmtDate },
-        );
-        if (!res.ok) {
-          // The checkpoint stays, so these notes are in the next digest.
-          showAiToast(t("toast.digest.readFailed", { count: res.failed.length }), "error");
-          return;
-        }
-        const { path, body } = res;
-        try {
-          localStorage.setItem(KEY, String(now));
-          localStorage.setItem(FOLDER_KEY, folder);
-        } catch {
-          /* why: next digest covers 24 h again */
-        }
-        window.dispatchEvent(new Event("lumen-workspace-changed"));
-        useAppStore.getState().openTab({ name: path.split("/").pop()!, content: body, workspaceName: path });
-      },
+      action: async () => (await import("./vaultActions")).writeDigest(),
     },
   ];
 }
@@ -233,13 +98,7 @@ export function buildEncryptionCommands({ setContent, liveDoc }: CommandContext)
       hint: t("cmd.security.encrypt.hint"),
       icon: cmdIcons.Save,
       group: t("group.security"),
-      action: async () => {
-        const password = await uiPrompt({ message: t("vault.prompt.encryptPassword") });
-        if (!password) return;
-        const encrypted = await encryptDocument(liveDoc().content, password);
-        setContent(encrypted);
-        showAiToast(t("toast.documentEncrypted"), "info");
-      },
+      action: async () => (await import("./vaultActions")).encryptOpenNote({ setContent, liveDoc }),
     },
     {
       id: "vault.decrypt",
@@ -247,21 +106,7 @@ export function buildEncryptionCommands({ setContent, liveDoc }: CommandContext)
       hint: t("cmd.security.decrypt.hint"),
       icon: cmdIcons.Save,
       group: t("group.security"),
-      action: async () => {
-        if (!isEncrypted(liveDoc().content)) {
-          showAiToast(t("toast.documentIsNotEncrypted"), "error");
-          return;
-        }
-        const password = await uiPrompt({ message: t("vault.prompt.decryptPassword") });
-        if (!password) return;
-        try {
-          const decrypted = await decryptDocument(liveDoc().content, password);
-          setContent(decrypted);
-          showAiToast(t("toast.documentDecrypted"), "info");
-        } catch {
-          showAiToast(t("toast.wrongPassword"), "error");
-        }
-      },
+      action: async () => (await import("./vaultActions")).decryptOpenNote({ setContent, liveDoc }),
     },
     {
       // The whole vault, encrypted where it is stored (plan 11.4).

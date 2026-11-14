@@ -1,0 +1,9 @@
+{
+  "block.csv.refetch": "Refetch CSV data",
+  "block.data.aiChart": "AI Chart",
+  "block.data.aiGenerating": "🤖 Generating AI visualization...",
+  "block.data.aiNone": "No AI visualization available.",
+  "block.data.fetchFailed": "⚠︎ {lang} fetch failed: {error}",
+  "block.data.parseFailed": "⚠︎ Could not parse {lang} data.",
+  "toast.aiChartGenerationFailed": "AI chart generation failed"
+}

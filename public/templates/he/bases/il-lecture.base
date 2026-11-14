@@ -1,0 +1,24 @@
+# הרצאות — נוצר מהתבנית סיכום הרצאה
+filters:
+  and:
+    - 'type == "lecture"'
+properties:
+  file.name:
+    displayName: "הרצאה"
+  note.course:
+    displayName: "קורס"
+  note.lecture:
+    displayName: "מס׳"
+  note.date:
+    displayName: "תאריך"
+views:
+  - type: table
+    name: "הרצאות"
+    order:
+      - file.name
+      - note.course
+      - note.lecture
+      - note.date
+    sort:
+      - property: note.date
+        direction: DESC

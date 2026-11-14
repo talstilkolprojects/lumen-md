@@ -6,6 +6,24 @@
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<!-- Plan W3.4: English and Hebrew (widget, Siri and Shortcuts strings). -->
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>he</string>
+	</array>
+	<!-- Plan W3.4: lumen:// action links from the widget, App Shortcuts and other apps. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.lumen.editor.actions</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>lumen</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleDisplayName</key>
 	<string>Lumen</string>
 	<key>CFBundleExecutable</key>

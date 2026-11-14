@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * `[[` link completion (MASTER_PLAN 4.5), in English and Hebrew, in the
@@ -57,14 +58,14 @@ async function vaultHas(page: Page, name: string): Promise<boolean> {
   }, name);
 }
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, browserName }) => {
   await page.addInitScript(() => {
     localStorage.setItem("lumen-tour-done", "1");
     localStorage.removeItem("lumen-md");
   });
   await page.goto("/");
   await expect(page.locator(".cm-content").first()).toContainText("Welcome to", { timeout: 15_000 });
-  test.skip(!(await seedVault(page)), "OPFS writes are unavailable in this engine's test context");
+  vaultOrSkip(await seedVault(page), browserName);
 });
 
 test("source editor: [[ completes notes, Hebrew and headings, and creates a note", async ({ page }) => {

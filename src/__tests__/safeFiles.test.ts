@@ -107,9 +107,9 @@ describe("link rewriting", () => {
     );
   });
 
-  it("rewrites extension-qualified wiki links", () => {
+  it("rewrites extension-qualified wiki links, keeping the extension as written (W4.30)", () => {
     expect(rewriteLinks("[[Old.md]] [[folder/Old.markdown#h|l]]", "x.md", "folder/Old.md", "folder/New.md")).toBe(
-      "[[New]] [[folder/New#h|l]]",
+      "[[New.md]] [[folder/New.markdown#h|l]]",
     );
   });
 

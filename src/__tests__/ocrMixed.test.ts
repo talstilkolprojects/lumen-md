@@ -6,7 +6,7 @@
  * right, a right-to-left line starts at the largest x.
  */
 import { describe, it, expect, vi } from "vitest";
-import { fixMixedLine, fixMixedText, isLtrWord, needsFix, type Box, type OcrLine, type OcrWord } from "../ai/ocrMixed";
+import { fixMixedLine, fixMixedText, implausibleHebrew, isLtrWord, needsFix, type Box, type OcrLine, type OcrWord } from "../ai/ocrMixed";
 
 const box = (x0: number, x1: number): Box => ({ x0, x1, y0: 10, y1: 30 });
 
@@ -112,6 +112,60 @@ describe("fixMixedLine", () => {
   it("without a Latin reader, an unsure prefixed word stays as read", async () => {
     const l = line([word("ה-זסץ", 100, 160, 27, ["ז", "ס", "ץ", "-", "ה"]), word("קובץ", 170, 220)], "קובץ ה-זסץ");
     expect(await fixMixedLine(l, noRead)).toBe("קובץ ה-זסץ");
+  });
+});
+
+describe("plan W1.18: Latin read as Hebrew shapes, and unsure Latin parts", () => {
+  it("implausibleHebrew: digits among Hebrew letters or a final letter inside the word", () => {
+    expect(implausibleHebrew("ח01סז6טו8.")).toBe(true);
+    expect(implausibleHebrew("זםסץ")).toBe(true);
+    expect(implausibleHebrew("זסץ")).toBe(false);
+    expect(implausibleHebrew("שלום")).toBe(false);
+    expect(implausibleHebrew("2022")).toBe(false);
+  });
+
+  it("takes even an unsure all-letters Latin reading when the Hebrew one cannot be a word, and keeps the sentence mark", async () => {
+    // "ו-Bluetooth." read as "ו-ח01סז6טו8.": the Latin pass reads the crop as ".Bluetooth" (the period sits at the visual left).
+    const syms = ["ו", "-", "ח", "0", "1", "ס", "ז", "6", "ט", "ו", "8", "."].reverse();
+    const w = word("ו-ח01סז6טו8.", 27, 176, 64, syms);
+    const l = line([w, word("Wi-Fi", 187, 250), word("בדיקת", 260, 337)], "בדיקת Wi-Fi ו-ח01סז6טו8.");
+    expect(await fixMixedLine(l, { heb: noRead, latin: async () => ({ text: ".Bluetooth", confidence: 5 }) })).toBe("בדיקת Wi-Fi ו-Bluetooth.");
+    // A Latin reading far from the tail's length is not taken.
+    expect(await fixMixedLine(l, { heb: noRead, latin: async () => ({ text: "Bt", confidence: 5 }) })).toBe("בדיקת Wi-Fi ו-ח01סז6טו8.");
+  });
+
+  it("re-reads the Latin part of an unsure '<Latin>-<prefix>' word, kept only when sure", async () => {
+    const mk = () => line([word("PDE-7", 679, 762, 50, [..."PDE", "-", "7"]), word("קובץ", 770, 823)], "קובץ PDE-7");
+    const heb = async () => ({ text: "ה", confidence: 93 });
+    expect(await fixMixedLine(mk(), { heb, latin: async () => ({ text: "PDF", confidence: 91 }) })).toBe("קובץ ה-PDF");
+    expect(await fixMixedLine(mk(), { heb, latin: async () => ({ text: "PDF", confidence: 48 }) })).toBe("קובץ ה-PDE");
+    // A sure word is not re-read.
+    const latin = vi.fn(async () => ({ text: "PDF", confidence: 99 }));
+    const sure = line([word("PDE-7", 679, 762, 90, [..."PDE", "-", "7"]), word("קובץ", 770, 823)], "קובץ PDE-7");
+    expect(await fixMixedLine(sure, { heb, latin })).toBe("קובץ ה-PDE");
+    expect(latin).not.toHaveBeenCalled();
+  });
+});
+
+describe("plan W1.18: whole runs and Latin-only lines on a Hebrew page", () => {
+  it("puts a prefix before the whole left-to-right run: 'ב-Drive' with 'Google' at its left is 'ב-Google Drive'", async () => {
+    const l = line([word("Google", 10, 80), word("ב-Drive", 90, 160, 90, [..."Drive", "-", "ב"]), word("שמרנו", 180, 240)], "שמרנו ב-Drive Google");
+    expect(await fixMixedLine(l, noRead)).toBe("שמרנו ב-Google Drive");
+  });
+
+  it("on a Hebrew page, a glued prefix is fixed on a line with no Hebrew letter left; not on an English page", async () => {
+    const mk = () => line([word(".WhatsApp-2", 10, 140, 60, [".", ..."WhatsApp", "-", "2"])], ".WhatsApp-2");
+    const heb = async () => ({ text: "ב", confidence: 90 });
+    expect(needsFix(mk(), { hebrewPage: true })).toBe(true);
+    expect(await fixMixedLine(mk(), heb, { hebrewPage: true })).toBe("ב-WhatsApp.");
+    expect(needsFix(mk())).toBe(false);
+    expect(await fixMixedLine(mk(), heb)).toBe(".WhatsApp-2");
+  });
+
+  it("symbols that are not a number after a prefix are not a plausible reading", () => {
+    expect(implausibleHebrew("50[")).toBe(true);
+    expect(implausibleHebrew("04.02.2022")).toBe(false);
+    expect(implausibleHebrew("50%")).toBe(false);
   });
 });
 

@@ -1,0 +1,21 @@
+# כתב היד — נוצר מהתבנית פרק בספר
+filters:
+  and:
+    - 'type == "chapter"'
+properties:
+  file.name:
+    displayName: "פרק"
+  note.chapter:
+    displayName: "מס׳"
+  note.pov:
+    displayName: "נקודת מבט"
+  note.status:
+    displayName: "סטטוס"
+views:
+  - type: table
+    name: "כתב היד"
+    order:
+      - file.name
+      - note.chapter
+      - note.pov
+      - note.status

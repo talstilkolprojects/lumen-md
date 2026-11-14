@@ -1,0 +1,16 @@
+{
+  "trustedRepos.close": "Close",
+  "trustedRepos.confirm.body": "Agents that read notes from {repo} will propose changes without asking first. Anyone who can push to it can put text in front of your agents. Trust it only if you control who writes to it.",
+  "trustedRepos.confirm.title": "Trust this repository?",
+  "trustedRepos.empty": "No cloned repositories yet.",
+  "trustedRepos.intro": "Notes from a cloned repo may be other people's, so an agent that reads them asks before it proposes a change. Trust a repo you own to skip that question. Changes still wait for your review, and web requests still ask. Saved on this device only.",
+  "trustedRepos.loadFailed": "Couldn't list the cloned repositories.",
+  "trustedRepos.loading": "Loading…",
+  "trustedRepos.off": "{repo}: agents ask first again",
+  "trustedRepos.on": "{repo} is trusted",
+  "trustedRepos.saveFailed": "Couldn't save the setting: {error}",
+  "trustedRepos.state.off": "Asks first",
+  "trustedRepos.state.on": "Trusted",
+  "trustedRepos.title": "Trusted repositories",
+  "trustedRepos.toggle.aria": "Trust {repo}"
+}

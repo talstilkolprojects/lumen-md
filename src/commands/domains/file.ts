@@ -1,7 +1,7 @@
 /** File commands: new / open / save, recent files, trash, templates and the sample workspace. */
 import { cmdIcons, type Command } from "../../ui/CommandPalette";
 import { useAppStore } from "../../store/useStore";
-import { t } from "../../i18n";
+import { t, getLocale } from "../../i18n";
 import { getRecents, removeRecent } from "../../storage/recent";
 import { uiAlert } from "../../ui/PromptDialog";
 import { TEMPLATES } from "../../editor/templates";
@@ -11,6 +11,7 @@ import { isOPFSAvailable, readWorkspaceFile } from "../../storage/workspace";
 import { relativeTime } from "../../lib/relativeTime";
 import { openTemplateDoc } from "../openDoc";
 import type { CommandContext } from "./context";
+import { explainError } from "../../lib/userError";
 
 /** Recently opened files (the last 8): reopen one, or drop it from the list. */
 export function buildRecentCommands({ recents, setRecents, handleReopenRecent }: CommandContext): Command[] {
@@ -102,6 +103,15 @@ export function buildTrashCommands(): Command[] {
       },
     },
     {
+      // Plan W1.30: the hosts allowed with "Always allow", and revoking them.
+      id: "privacy.imageHosts",
+      label: t("cmd.privacy.imageHosts"),
+      hint: t("cmd.privacy.imageHosts.hint"),
+      icon: cmdIcons.Eye,
+      group: t("group.tools"),
+      action: () => window.dispatchEvent(new CustomEvent("lumen-open-image-hosts")),
+    },
+    {
       id: "file.trash",
       label: t("cmd.file.trash"),
       hint: t("cmd.file.trash.hint"),
@@ -142,9 +152,44 @@ export function buildTemplateCommands({ installedTemplates }: CommandContext): C
     ...buildInstalledTemplateCommands(installedTemplates, {
       groupLabel: t("group.templates"),
       hint: t("templates.installed.button"),
-      apply: (name, content) => openTemplateDoc(name, content),
+      apply: (name, content) => {
+        // {{title}}, {{date}}, {{time}}, {{hebrewDate}}: as Obsidian's Templates plugin fills them.
+        void import("../../editor/templateVars").then(({ expandTemplate }) =>
+          openTemplateDoc(name, expandTemplate(content, { title: name, locale: getLocale() })),
+        );
+      },
       onError: (e) => showAiToast(t("templates.loadFailed", { error: e.message }), "error"),
     }),
+    {
+      id: "template.importFromFile",
+      label: t("cmd.template.importFromFile"),
+      hint: t("cmd.template.importFromFile.hint"),
+      icon: cmdIcons.FileText,
+      group: t("group.templates"),
+      action: async () => {
+        if (!isOPFSAvailable()) {
+          await uiAlert({ message: t("doc.alert.workspaceUnavailable") });
+          return;
+        }
+        const [{ pickMarkdownFile }, { importTemplateFile }] = await Promise.all([
+          import("../installedTemplates"),
+          import("../../storage/templateMarketplace"),
+          import("../../storage/templateStrings"),
+        ]);
+        const file = await pickMarkdownFile();
+        if (!file) return;
+        if (!/\.(md|markdown)$/i.test(file.name)) {
+          showAiToast(t("templates.importNotMarkdown"), "error");
+          return;
+        }
+        try {
+          const tpl = await importTemplateFile(file.name, await file.text());
+          showAiToast(t("templates.imported", { name: tpl.name }), "success");
+        } catch (e) {
+          showAiToast(t("templates.importFailed", { error: explainError(e) }), "error");
+        }
+      },
+    },
   ];
 }
 
@@ -181,7 +226,7 @@ export function buildWorkspaceFileCommands({ handleSaveToWorkspace, toggleWorksp
           );
         } catch (e) {
           await uiAlert({
-            message: t("sample.alert.failed", { error: (e as Error).message }),
+            message: t("sample.alert.failed", { error: explainError(e) }),
           });
         }
       },
@@ -194,6 +239,36 @@ export function buildWorkspaceFileCommands({ handleSaveToWorkspace, toggleWorksp
       group: t("group.file"),
       action: () => window.dispatchEvent(new CustomEvent("lumen-open-setup")),
     },
+    // Sample vaults for Israeli use cases (W3.6), in the UI's language.
+    ...(["student", "researcher", "writer"] as const).map((vault) => ({
+      id: `file.sampleVault.${vault}`,
+      label: t(`cmd.file.sampleVault.${vault}`),
+      hint: t("cmd.file.sampleVault.hint"),
+      icon: cmdIcons.FolderOpen,
+      group: t("group.file"),
+      action: async () => {
+        if (!isOPFSAvailable()) {
+          await uiAlert({ message: t("doc.alert.workspaceUnavailable") });
+          return;
+        }
+        try {
+          const { createSampleVault } = await import("../../storage/sampleVaults");
+          const result = await createSampleVault(vault, getLocale());
+          window.dispatchEvent(new Event("lumen-workspace-changed"));
+          if (!useAppStore.getState().showWorkspace) toggleWorkspace();
+          const content = await readWorkspaceFile(result.entry);
+          useAppStore.getState().openTab({ name: result.entry, content, workspaceName: result.entry });
+          showAiToast(
+            result.created.length > 0
+              ? t("sample.toast.created", { count: result.created.length, folder: result.root })
+              : t("sample.toast.exists", { folder: result.root }),
+            "info",
+          );
+        } catch (e) {
+          await uiAlert({ message: t("sample.alert.failed", { error: explainError(e) }) });
+        }
+      },
+    })),
     {
       id: "file.saveToWorkspace",
       label: t("cmd.file.saveToWorkspace"),

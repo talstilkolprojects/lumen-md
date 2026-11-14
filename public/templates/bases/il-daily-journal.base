@@ -1,0 +1,21 @@
+# Journal — from the template Daily journal (Hebrew date)
+filters:
+  and:
+    - 'type == "journal"'
+properties:
+  file.name:
+    displayName: "Note"
+  note.date:
+    displayName: "Date"
+  note.mood:
+    displayName: "Mood"
+views:
+  - type: table
+    name: "Journal"
+    order:
+      - file.name
+      - note.date
+      - note.mood
+    sort:
+      - property: note.date
+        direction: DESC

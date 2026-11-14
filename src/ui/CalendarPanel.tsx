@@ -3,7 +3,9 @@
  * note are marked; a click opens (or creates) that day's note. Month and
  * weekday names, the first day of the week and the Hebrew months all come
  * from Intl for the UI locale; the grid follows the document direction, so
- * it reads right-to-left in Hebrew and Arabic. Loaded lazily.
+ * it reads right-to-left in Hebrew and Arabic. Holidays, fasts and the
+ * Shabbat Torah portion come from our own Hebrew calendar (plan W2.10), for
+ * Israel or the diaspora. Loaded lazily.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -11,7 +13,16 @@ import { CalendarDays, ChevronLeft, ChevronRight, Settings2 } from "lucide-react
 import { t } from "../i18n";
 import { useAppStore } from "../store/useStore";
 import { onWorkspaceChanged } from "../storage/workspaceEvents";
-import { dayOf, dayOfPath, isoOf, isolatedHebrewDate, isValidDailyPattern, openDailyNote, type Day } from "../daily/dailyNote";
+import { dayOf, dayOfPath, isIsrael, isoOf, isolatedHebrewDate, isValidDailyPattern, openDailyNote, type Day } from "../daily/dailyNote";
+import { calendarOfRange, gregorianOf, type Holiday } from "../daily/hebrewCalendar";
+import { holidayLabel, nameLang, readingName } from "../daily/hebrewCalendarNames";
+import "./calendarPanelStrings";
+import { dayStatus, defaultWorkWeek, type WorkWeek } from "../daily/israeliTime";
+import { showHebrewDates } from "../daily/defaults";
+import { explainError } from "../lib/userError";
+
+/** Holidays that get a mark on their day (the rest are in the day's label only). */
+const MARKED = new Set<Holiday["kind"]>(["major", "modern", "fast", "minor"]);
 
 /** Monday = 1 … Sunday = 7, as Intl.Locale weekInfo has it. */
 const FIRST_DAY_FALLBACK: Record<string, number> = { he: 7, ar: 6, en: 7, ja: 7, ru: 1, fr: 1, de: 1, "zh-CN": 1, zh: 1 };
@@ -101,6 +112,21 @@ export function CalendarPanel() {
   }, [locale, firstDay]);
   const title = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric", timeZone: "UTC" }).format(utcNoon({ ...month, d: 1 }));
   const heMonths = useMemo(() => hebrewMonthsOf(month.y, month.m).join(" – "), [month]);
+  const israel = isIsrael(settings, locale);
+  const workWeek: WorkWeek = settings.workWeek ?? defaultWorkWeek(israel);
+  const lang = nameLang(locale);
+  // The month's holidays and Shabbat readings, by ISO day.
+  const { holidaysByDay, readingByDay, monthHolidays } = useMemo(() => {
+    const last = new Date(Date.UTC(month.y, month.m, 0)).getUTCDate();
+    const cal = calendarOfRange({ ...month, d: 1 }, { ...month, d: last }, { israel });
+    const holidaysByDay = new Map<string, Holiday[]>();
+    for (const h of cal.holidays) {
+      const iso = isoOf(gregorianOf(h.fixed));
+      holidaysByDay.set(iso, [...(holidaysByDay.get(iso) ?? []), h]);
+    }
+    const readingByDay = new Map(cal.readings.map((r) => [isoOf(gregorianOf(r.fixed)), readingName(r, lang)]));
+    return { holidaysByDay, readingByDay, monthHolidays: cal.holidays.filter((h) => h.kind !== "erev") };
+  }, [month, israel, lang]);
   const dayLabel = new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" });
   const dayNumber = new Intl.DateTimeFormat(locale, { day: "numeric", timeZone: "UTC" });
   const rtl = typeof document !== "undefined" && document.documentElement.dir === "rtl";
@@ -147,7 +173,13 @@ export function CalendarPanel() {
           const iso = isoOf(day);
           const has = withNotes.has(iso);
           const isToday = iso === isoOf(today);
-          const label = `${dayLabel.format(utcNoon(day))} · ${isolatedHebrewDate(day)}${has ? ` — ${t("calendar.hasNote")}` : ""}`;
+          const holidays = holidaysByDay.get(iso) ?? [];
+          const reading = readingByDay.get(iso);
+          const extra = [...holidays.map((h) => holidayLabel(h, lang)), ...(reading && !holidays.some((h) => h.yomTov || h.cholHamoed) ? [t("calendar.parasha", { name: reading })] : [])];
+          const label = `${dayLabel.format(utcNoon(day))} · ${isolatedHebrewDate(day)}${extra.length ? ` · ${extra.join(" · ")}` : ""}${has ? ` — ${t("calendar.hasNote")}` : ""}`;
+          const mark = holidays.find((h) => MARKED.has(h.kind));
+          // Days off in the work week (plan W5.15): the weekend and the rest days, drawn muted.
+          const dayOff = !dayStatus(day, { israel, workWeek }).working;
           return (
             <button
               key={iso}
@@ -155,12 +187,14 @@ export function CalendarPanel() {
               role="gridcell"
               data-date={iso}
               data-has-note={has || undefined}
+              data-holiday={holidays.length ? holidays.map((h) => h.id).join(" ") : undefined}
+              data-day-off={dayOff || undefined}
               aria-label={label}
               title={label}
               aria-current={isToday ? "date" : undefined}
               onClick={() =>
                 openDailyNote(day, settings, locale).catch((e: unknown) =>
-                  void import("../store/useToastStore").then(({ toast }) => toast.error(t("daily.failed", { error: e instanceof Error ? e.message : String(e) }))),
+                  void import("../store/useToastStore").then(({ toast }) => toast.error(t("daily.failed", { error: explainError(e) }))),
                 )
               }
               style={{
@@ -169,18 +203,29 @@ export function CalendarPanel() {
                 border: isToday ? "1px solid hsl(var(--accent))" : "1px solid transparent",
                 borderRadius: 5,
                 background: has ? "hsl(var(--accent) / 0.12)" : "transparent",
-                color: "hsl(var(--fg))",
+                color: dayOff ? "hsl(var(--fg-muted))" : "hsl(var(--fg))",
                 fontWeight: has ? 600 : 400,
                 cursor: "pointer",
                 fontSize: 11,
               }}
             >
+              {mark && <span aria-hidden data-testid="holiday-mark" style={{ position: "absolute", insetBlockStart: 1, insetInlineStart: "25%", inlineSize: "50%", blockSize: 2, borderRadius: 1, background: mark.kind === "major" || mark.kind === "modern" ? "hsl(var(--accent))" : "hsl(var(--fg-muted))" }} />}
               {dayNumber.format(utcNoon(day))}
               {has && <span aria-hidden style={{ position: "absolute", insetBlockEnd: 1, insetInlineStart: "50%", inlineSize: 3, blockSize: 3, marginInlineStart: -1.5, borderRadius: 2, background: "hsl(var(--accent))" }} />}
             </button>
           );
         })}
       </div>
+      {monthHolidays.length > 0 && (
+        <ul aria-label={t("calendar.holidays")} data-testid="calendar-holidays" style={{ listStyle: "none", margin: 0, marginBlockStart: 6, padding: 0, display: "grid", gap: 1, fontSize: 10, color: "hsl(var(--fg-muted))" }}>
+          {monthHolidays.map((h) => (
+            <li key={`${h.id}-${h.fixed}`} style={{ display: "flex", gap: 6 }}>
+              <span style={{ minInlineSize: 18, textAlign: "end", fontVariantNumeric: "tabular-nums" }}>{dayNumber.format(utcNoon(gregorianOf(h.fixed)))}</span>
+              <span dir="auto" style={{ color: h.kind === "major" || h.kind === "modern" ? "hsl(var(--fg))" : undefined }}>{holidayLabel(h, lang)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       {editing && (
         <form
           onSubmit={(e) => {
@@ -192,7 +237,17 @@ export function CalendarPanel() {
               return;
             }
             setPatternError(false);
-            setDailyNotes({ folder: String(f.get("folder") ?? ""), pattern, template: String(f.get("template") ?? "") });
+            const week = f.get("workWeek");
+            const move = f.get("deadlineMove");
+            setDailyNotes({
+              folder: String(f.get("folder") ?? ""),
+              pattern,
+              template: String(f.get("template") ?? ""),
+              israel: f.get("israel") === "on",
+              workWeek: week === "mon-fri" ? "mon-fri" : "sun-thu",
+              hebrewDates: f.get("hebrewDates") === "on",
+              deadlineMove: move === "previous" || move === "off" ? move : "next",
+            });
             setEditing(false);
           }}
           style={{ display: "grid", gap: 4, marginBlockStart: 8 }}
@@ -215,6 +270,29 @@ export function CalendarPanel() {
             <textarea name="template" dir="auto" rows={4} defaultValue={settings.template} style={{ ...input, fontFamily: "var(--font-mono, monospace)" }} />
           </label>
           <span style={{ fontSize: 10, color: "hsl(var(--fg-muted))" }}>{t("calendar.templateHint")}</span>
+          <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <input type="checkbox" name="israel" defaultChecked={israel} />
+            <span>{t("calendar.israel")}</span>
+          </label>
+          <label style={{ display: "grid", gap: 2 }}>
+            <span>{t("calendar.workWeek")}</span>
+            <select name="workWeek" defaultValue={workWeek} style={input}>
+              <option value="sun-thu">{t("calendar.workWeek.sunThu")}</option>
+              <option value="mon-fri">{t("calendar.workWeek.monFri")}</option>
+            </select>
+          </label>
+          <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <input type="checkbox" name="hebrewDates" defaultChecked={showHebrewDates(settings, locale)} />
+            <span>{t("calendar.hebrewDates")}</span>
+          </label>
+          <label style={{ display: "grid", gap: 2 }}>
+            <span>{t("calendar.deadlineMove")}</span>
+            <select name="deadlineMove" defaultValue={settings.deadlineMove ?? "next"} style={input}>
+              <option value="next">{t("calendar.deadlineMove.next")}</option>
+              <option value="previous">{t("calendar.deadlineMove.previous")}</option>
+              <option value="off">{t("calendar.deadlineMove.off")}</option>
+            </select>
+          </label>
           <button type="submit" style={{ ...btn, justifySelf: "end", color: "hsl(var(--accent))", fontWeight: 600 }}>
             {t("calendar.save")}
           </button>

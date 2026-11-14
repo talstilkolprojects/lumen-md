@@ -1,0 +1,11 @@
+{
+  "sync.conflict.apply": "Apply merge",
+  "sync.conflict.body": "Both sides changed since the last sync. Pick what to keep, or take one side wholesale.",
+  "sync.conflict.both": "both",
+  "sync.conflict.empty": "(empty)",
+  "sync.conflict.local": "local",
+  "sync.conflict.remote": "remote",
+  "sync.conflict.takeLocal": "Take local",
+  "sync.conflict.takeRemote": "Take remote",
+  "sync.conflict.title": "Sync conflict — {path}"
+}

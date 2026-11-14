@@ -1,0 +1,23 @@
+{
+  "runtimeMetrics.clear": "Clear",
+  "runtimeMetrics.cleared": "Runtime metrics cleared",
+  "runtimeMetrics.close": "Close",
+  "runtimeMetrics.column.avgMs": "Avg (ms)",
+  "runtimeMetrics.column.label": "Label",
+  "runtimeMetrics.column.p95Ms": "p95 (ms)",
+  "runtimeMetrics.column.rateLimits": "Rate limit",
+  "runtimeMetrics.column.retries": "Retry %",
+  "runtimeMetrics.column.success": "Success",
+  "runtimeMetrics.column.timeouts": "Timeouts",
+  "runtimeMetrics.column.total": "Total",
+  "runtimeMetrics.column.totalRetries": "Retries",
+  "runtimeMetrics.lastUpdated": "Last updated",
+  "runtimeMetrics.noData": "No runtime data yet. Use the app and retry operations to populate metrics.",
+  "runtimeMetrics.refresh": "Refresh",
+  "runtimeMetrics.section.categories": "Categories",
+  "runtimeMetrics.section.operations": "Operations",
+  "runtimeMetrics.subtitle": "Session runtime telemetry for network + AI operations.",
+  "runtimeMetrics.title": "Runtime metrics",
+  "runtimeMetrics.totalRequests": "Total requests",
+  "runtimeMetrics.vitals": "Web vitals — measured on this device, never sent"
+}

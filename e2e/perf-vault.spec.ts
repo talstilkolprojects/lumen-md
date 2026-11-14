@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * Plan 8.4 — a large vault and a long document, in a real browser.
@@ -85,9 +86,9 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(".cm-content").first()).toBeVisible({ timeout: 30_000 });
 });
 
-test("a 10,000-note vault: open < 1 s, save → index < 50 ms, search < 100 ms", async ({ page }) => {
+test("a 10,000-note vault: open < 1 s, save → index < 50 ms, search < 100 ms", async ({ page, browserName }) => {
   test.setTimeout(300_000);
-  test.skip(!(await canSeed(page)), "OPFS createWritable is unavailable in this engine's test context");
+  vaultOrSkip(await canSeed(page), browserName);
   report("seed 10,000 notes (test setup)", await seedVault(page, NOTES));
 
   // Reopen with the workspace panel showing, as a user with a big vault would.
@@ -163,9 +164,9 @@ test("a 10,000-note vault: open < 1 s, save → index < 50 ms, search < 100 ms",
   expect(search.back.ms).toBeLessThan(100);
 });
 
-test("typing in a 2 MB note keeps each keystroke under a frame", { tag: "@nightly" }, async ({ page }) => {
+test("typing in a 2 MB note keeps each keystroke under a frame", { tag: "@nightly" }, async ({ page, browserName }) => {
   test.setTimeout(300_000);
-  test.skip(!(await canSeed(page)), "OPFS createWritable is unavailable in this engine's test context");
+  vaultOrSkip(await canSeed(page), browserName);
   const last = await page.evaluate(async () => {
     let s = "";
     let i = 0;
@@ -222,4 +223,65 @@ test("typing in a 2 MB note keeps each keystroke under a frame", { tag: "@nightl
   report("longest task while typing", Math.max(0, ...perf.longTasks));
   // ≤ 5% of the key events may take a frame or more (p95 < 16 ms).
   expect(overFrame).toBeLessThanOrEqual(Math.floor(typed.length * 0.05));
+});
+
+/**
+ * Plan W1.10 — the graph of a 10,000-note vault with 50,000 links: first
+ * layout < 3 s (the stats stop saying "laying out"), and ≥ 30 fps while
+ * zooming. The frame rate is asserted only on a GPU: under SwiftShader
+ * (software WebGL, as in headless CI) it is reported, not asserted.
+ */
+test("graph: 10,000 notes and 50,000 links lay out < 3 s and zoom at ≥ 30 fps", { tag: "@nightly" }, async ({ page }) => {
+  test.setTimeout(300_000);
+  test.skip(!(await canSeed(page)), "OPFS createWritable is unavailable in this engine's test context");
+  const seeded = await page.evaluate(async (n) => {
+    const root = await navigator.storage.getDirectory();
+    const dir = await root.getDirectoryHandle("graph", { create: true });
+    const write = async (i: number) => {
+      const fh = await dir.getFileHandle(`g${i}.md`, { create: true });
+      const w = await (fh as unknown as { createWritable(): Promise<FileSystemWritableFileStream> }).createWritable();
+      // Five links each, mostly within a cluster of 40.
+      const links = [1, 2, 3, 5, 7].map((k) => `[[g${(i + k * 40 + (k === 7 ? 13 : 0)) % n}]]`).join(" ");
+      await w.write(`# ${i % 4 ? "Note" : "פתק"} ${i}\n\n${links}\n`);
+      await w.close();
+    };
+    for (let i = 0; i < n; i += 250) await Promise.all(Array.from({ length: Math.min(250, n - i) }, (_, k) => write(i + k)));
+    return n;
+  }, NOTES);
+  expect(seeded).toBe(NOTES);
+  await page.reload();
+  await expect(page.locator(".cm-content").first()).toBeVisible({ timeout: 30_000 });
+  await page.evaluate(async () => (await (window as unknown as { __lumen: { vaultIndex(): Promise<Probe> } }).__lumen.vaultIndex()).ensureIndex());
+
+  await page.keyboard.press(process.platform === "darwin" ? "Meta+k" : "Control+k");
+  await page.keyboard.type("Knowledge Graph");
+  const t0 = await page.evaluate(() => performance.now());
+  await page.keyboard.press("Enter");
+  const stats = page.locator('[data-testid="graph-stats"]');
+  await expect(stats).toContainText("10000", { timeout: 60_000 });
+  await expect(stats).not.toContainText("…", { timeout: 60_000 });
+  const layoutMs = (await page.evaluate(() => performance.now())) - t0;
+  report("graph: open → layout settled (10,000 notes)", layoutMs);
+  expect(layoutMs).toBeLessThan(3000);
+
+  const surface = page.locator(".lumen-graph-surface");
+  const box = (await surface.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  const result = await page.evaluate(async () => {
+    const el = document.querySelector(".lumen-graph-surface")!;
+    const canvas = el.querySelector("canvas")!;
+    const gl = (canvas.getContext("webgl2") ?? canvas.getContext("webgl")) as WebGLRenderingContext | null;
+    const info = gl?.getExtension("WEBGL_debug_renderer_info");
+    const renderer = gl && info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "unknown";
+    let frames = 0;
+    const start = performance.now();
+    while (performance.now() - start < 3000) {
+      el.dispatchEvent(new WheelEvent("wheel", { deltaY: frames % 40 < 20 ? -30 : 30, clientX: 400, clientY: 300, bubbles: true, cancelable: true }));
+      await new Promise((r) => requestAnimationFrame(r));
+      frames++;
+    }
+    return { fps: frames / 3, renderer };
+  });
+  report(`graph: zoom fps (${result.renderer})`, result.fps, "fps");
+  if (!/swiftshader|llvmpipe|software/i.test(result.renderer)) expect(result.fps).toBeGreaterThanOrEqual(30);
 });

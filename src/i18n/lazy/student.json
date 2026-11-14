@@ -1,0 +1,21 @@
+{
+  "student.title": "Record a lecture",
+  "student.about": "Everything stays on this device: the recording, the transcript (local Whisper), the summary and the cards. Tap “Important!” or press the space bar when something matters.",
+  "student.name": "Lecture name",
+  "student.untitled": "Lecture",
+  "student.start": "Start recording",
+  "student.stop": "Stop and process",
+  "student.close": "Close",
+  "student.mark": "Important!",
+  "student.marks": "Marked moments: {n}",
+  "student.processing": "Transcribing and writing the lecture note…",
+  "student.done": "Done: {important} important sentences, {cards} cards.",
+  "student.failed": "The lecture could not be processed: {error}",
+  "student.micFailed": "The microphone could not start: {error}",
+  "student.recording": "Recording",
+  "student.summary": "Summary",
+  "student.cards": "Review cards",
+  "student.noCards": "No moment was marked important, so there are no cards.",
+  "student.transcript": "Transcript",
+  "student.important": "Important"
+}

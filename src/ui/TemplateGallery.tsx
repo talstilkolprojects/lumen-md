@@ -12,15 +12,22 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useFocusTrap } from "./useFocusTrap";
-import { Download, Search, Star, Tag, X, Loader2, Check } from "lucide-react";
+import { Download, Search, Star, Tag, X, Loader2, Check, Upload } from "lucide-react";
 import {
   fetchMarketplaceItems,
+  importTemplateFile,
   installTemplate,
   type MarketplaceTemplate,
 } from "../storage/templateMarketplace";
+import "../storage/templateStrings";
+import { pickMarkdownFile } from "../commands/installedTemplates";
 import { showAiToast } from "./AiToast";
 import { log } from "../lib/logger";
 import { t } from "../i18n";
+import { explainError } from "../lib/userError";
+import { EmptyState } from "./EmptyState";
+import { HelpButton } from "./HelpButton";
+import "./templateGalleryStrings";
 
 interface Props {
   open: boolean;
@@ -28,6 +35,29 @@ interface Props {
 }
 
 type SortKey = "rating" | "downloads" | "alphabetical";
+
+/** A registry category in the UI's language (the registry keeps English ids). */
+function categoryLabel(category: string): string {
+  const key = `templates.category.${category}`;
+  const label = t(key);
+  return label === key ? category : label;
+}
+
+async function importFromFile(): Promise<void> {
+  const file = await pickMarkdownFile();
+  if (!file) return;
+  if (!/\.(md|markdown)$/i.test(file.name)) {
+    showAiToast(t("templates.importNotMarkdown"), "error");
+    return;
+  }
+  try {
+    const tpl = await importTemplateFile(file.name, await file.text());
+    showAiToast(t("templates.imported", { name: tpl.name }), "success");
+  } catch (e) {
+    log.error("template import failed", e);
+    showAiToast(t("templates.importFailed", { error: explainError(e) }), "error");
+  }
+}
 
 export function TemplateGallery({ open, onClose }: Props) {
   const [templates, setTemplates] = useState<MarketplaceTemplate[]>([]);
@@ -50,7 +80,7 @@ export function TemplateGallery({ open, onClose }: Props) {
       .then(setTemplates)
       .catch((e) => {
         log.error("template registry fetch failed", e);
-        setError((e as Error).message);
+        setError(explainError(e, "templates"));
       })
       .finally(() => setLoading(false));
   }, [open]);
@@ -84,16 +114,18 @@ export function TemplateGallery({ open, onClose }: Props) {
   async function handleInstall(template: MarketplaceTemplate): Promise<void> {
     setInstalling((s) => new Set(s).add(template.id));
     try {
-      const { path } = await installTemplate(template);
+      const { path, basePath } = await installTemplate(template);
       setInstalled((s) => new Set(s).add(template.id));
       showAiToast(
-        t("templates.installed", { name: template.name, path }),
+        basePath
+          ? t("templates.installedWithBase", { name: template.name, path, base: basePath })
+          : t("templates.installed", { name: template.name, path }),
         "success",
       );
     } catch (e) {
       log.error("template install failed", e);
       showAiToast(
-        t("templates.installFailed", { error: (e as Error).message }),
+        t("templates.installFailed", { error: explainError(e) }),
         "error",
       );
     } finally {
@@ -154,6 +186,27 @@ export function TemplateGallery({ open, onClose }: Props) {
           >
             {filtered.length} / {templates.length}
           </span>
+          <HelpButton topic="plugins/templates" />
+          <button
+            type="button"
+            onClick={() => void importFromFile()}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "3px 10px",
+              borderRadius: 6,
+              border: "1px solid hsl(var(--border))",
+              background: "transparent",
+              color: "hsl(var(--fg))",
+              fontSize: 11,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            <Upload size={14} aria-hidden="true" />
+            {t("templates.importFromFile")}
+          </button>
           <button
             type="button"
             onClick={onClose}
@@ -238,7 +291,7 @@ export function TemplateGallery({ open, onClose }: Props) {
             {categories.map((c) => (
               <CategoryChip
                 key={c}
-                label={c}
+                label={categoryLabel(c)}
                 active={activeCategory === c}
                 onClick={() =>
                   setActiveCategory(activeCategory === c ? null : c)
@@ -275,7 +328,7 @@ export function TemplateGallery({ open, onClose }: Props) {
             <div
               style={{
                 padding: 16,
-                color: "hsl(0 80% 65%)",
+                color: "hsl(var(--danger))",
                 fontSize: 12,
               }}
             >
@@ -283,16 +336,17 @@ export function TemplateGallery({ open, onClose }: Props) {
             </div>
           )}
           {!loading && !error && filtered.length === 0 && (
-            <div
-              style={{
-                padding: 32,
-                textAlign: "center",
-                color: "hsl(var(--fg-muted))",
-                fontSize: 13,
+            <EmptyState
+              style={{ padding: 32, alignItems: "center", fontSize: 13 }}
+              message={t("templates.empty")}
+              action={{
+                label: t("templates.clearFilter"),
+                onClick: () => {
+                  setQuery("");
+                  setActiveCategory(null);
+                },
               }}
-            >
-              {t("templates.empty")}
-            </div>
+            />
           )}
           {!loading && !error && filtered.length > 0 && (
             <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
@@ -424,7 +478,7 @@ function TemplateRow({
             }}
             title={t("templates.rating", { rating: String(template.rating) })}
           >
-            <Star size={11} style={{ color: "hsl(40 90% 60%)" }} />
+            <Star size={11} style={{ color: "hsl(var(--warning))" }} />
             {template.rating.toFixed(1)}
           </span>
           <span

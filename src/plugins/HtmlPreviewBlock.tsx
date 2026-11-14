@@ -3,6 +3,7 @@ import { Maximize2, Code2 } from "lucide-react";
 import { t } from "../i18n";
 import { sanitizeHtmlMarkup } from "../lib/markupSanitizer";
 import { setSandboxedSrcdoc } from "../lib/trustedTypes";
+import "./htmlPreviewBlockStrings";
 
 interface Props {
   source: string;

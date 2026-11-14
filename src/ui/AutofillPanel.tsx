@@ -10,6 +10,10 @@ import { Check, X } from "lucide-react";
 import { t } from "../i18n";
 import { AutofillQueue, type Proposal } from "../properties/autofill";
 import { showAiToast } from "./AiToast";
+import "./autofillPanelStrings";
+import { HelpButton } from "./HelpButton";
+import { explainError } from "../lib/userError";
+import { EmptyState, runCommand } from "./EmptyState";
 
 const btn: React.CSSProperties = { padding: "4px 10px", fontSize: 12, borderRadius: 6, border: "1px solid hsl(var(--border))", background: "transparent", color: "inherit", cursor: "pointer" };
 
@@ -93,7 +97,7 @@ export function AutofillPanel({ onClose }: { onClose: () => void }) {
         else if (r === "stale") stale++;
       }
     } catch (e) {
-      showAiToast((e as Error).message, "error");
+      showAiToast(explainError(e), "error");
     } finally {
       setBusy(false);
     }
@@ -106,6 +110,7 @@ export function AutofillPanel({ onClose }: { onClose: () => void }) {
       <div className="cmd-palette" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 680, padding: 0, display: "flex", flexDirection: "column", maxHeight: "82vh" }}>
         <header style={{ padding: "12px 16px", borderBottom: "1px solid hsl(var(--border))", display: "flex", gap: 10, alignItems: "center" }}>
           <strong style={{ flex: 1 }}>{t("autofill.title")}</strong>
+          <HelpButton topic="workspace/ai-autofill" />
           <button type="button" style={btn} disabled={busy || !items.length} onClick={() => void approve(items.map((p) => p.id))} data-testid="autofill-approve-all">
             {t("autofill.approveAll", { n: items.length })}
           </button>
@@ -116,7 +121,7 @@ export function AutofillPanel({ onClose }: { onClose: () => void }) {
         <p style={{ margin: 0, padding: "8px 16px", fontSize: 12, color: "hsl(var(--fg-muted))" }}>{t("autofill.hint")}</p>
         <div style={{ overflow: "auto", flex: 1 }}>
           {items.length === 0 ? (
-            <p style={{ padding: 16, margin: 0, fontSize: 13, color: "hsl(var(--fg-muted))" }}>{t("autofill.empty")}</p>
+            <EmptyState message={t("autofill.empty")} action={{ label: t("cmd.ai.autofill"), onClick: () => (onClose(), runCommand("ai.autofill")) }} />
           ) : (
             <ul style={{ margin: 0, padding: 0 }}>
               {items.map((p) => (

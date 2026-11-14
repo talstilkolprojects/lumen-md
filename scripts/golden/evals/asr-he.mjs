@@ -41,6 +41,109 @@ export function normalizeAsr(text) {
     .toLowerCase();
 }
 
+/*
+ * Normal form v2 (plan W4.13), on top of v1: what a reader counts as the same
+ * words is the same words. Each rule applies to the reference and the
+ * hypothesis alike, and v1 is still reported next to it:
+ *   - a number is a number: Hebrew number words (0–999,999, masculine,
+ *     feminine and construct forms, "ו" joining) become digits, as Whisper's
+ *     English normaliser does for English; "1,000" → "1000", "3.5" stays;
+ *   - "%" is the word "אחוז" (FLEURS writes it either way);
+ *   - a one-letter prefix glued to a number ("ב2020", "ב-2020", "בשלושה")
+ *     is its own word, as v1 already makes of "ב-2020".
+ * Latin words are not transliterated (ambiguous: "Google" ↔ "גוגל" is not
+ * a rule a normaliser can know); that error stays in the score.
+ */
+const UNITS = new Map(
+  Object.entries({
+    אפס: 0, אחד: 1, אחת: 1, שניים: 2, שתיים: 2, שני: 2, שתי: 2, שתים: 2, שלושה: 3, שלוש: 3, שלושת: 3, ארבעה: 4, ארבע: 4, ארבעת: 4,
+    חמישה: 5, חמש: 5, חמשת: 5, שישה: 6, שש: 6, ששת: 6, שבעה: 7, שבע: 7, שבעת: 7, שמונה: 8, שמונת: 8, תשעה: 9, תשע: 9, תשעת: 9,
+  }),
+);
+const TENS = new Map(Object.entries({ עשר: 10, עשרה: 10, עשרת: 10, עשרים: 20, שלושים: 30, ארבעים: 40, חמישים: 50, שישים: 60, שבעים: 70, שמונים: 80, תשעים: 90 }));
+const HUNDREDS = new Map(Object.entries({ מאה: 100, מאת: 100, מאתיים: 200 }));
+const PREFIXES = ["וב", "וה", "ול", "ומ", "וש", "שב", "שה", "של", "מה", "ב", "ה", "ו", "ל", "מ", "ש", "כ"];
+const isNumberWord = (w) => UNITS.has(w) || TENS.has(w) || HUNDREDS.has(w) || w === "מאות" || w === "אלף" || w === "אלפים" || w === "אלפיים";
+
+/** "שלושת אלפים ומאתיים וחמישה" → 3205; null when `words` is not a number. */
+export function hebrewNumberValue(words) {
+  let total = 0;
+  let current = 0;
+  let lastUnit = false;
+  for (const w of words) {
+    if (UNITS.has(w)) {
+      if (lastUnit) return null; // "שלוש שתיים" is two numbers, not five
+      current += UNITS.get(w);
+      lastUnit = true;
+      continue;
+    }
+    if ((w === "עשר" || w === "עשרה") && lastUnit && current % 10 > 0 && current % 100 < 10) current += 10; // "שלושה עשר" = 13
+    else if (TENS.has(w)) current += TENS.get(w);
+    else if (HUNDREDS.has(w)) current += HUNDREDS.get(w);
+    else if (w === "מאות") current = (current % 100 || 1) * 100 + Math.floor(current / 100) * 100;
+    else if (w === "אלפיים") total += 2000;
+    else if (w === "אלף" || w === "אלפים") {
+      total += (current || 1) * 1000;
+      current = 0;
+    } else return null;
+    lastUnit = false;
+  }
+  return total + current;
+}
+
+/** Hebrew number words → digits, a prefix glued to a number → its own word (normal form v2). */
+export function hebrewNumbersToDigits(text) {
+  const words = text.split(" ").filter(Boolean);
+  const out = [];
+  for (let i = 0; i < words.length; ) {
+    // A prefix glued to digits: "ב2020" → "ב 2020".
+    const glued = words[i].match(/^([א-ת]{1,2})(\d[\d.]*)$/);
+    if (glued && PREFIXES.includes(glued[1])) {
+      out.push(glued[1], glued[2]);
+      i++;
+      continue;
+    }
+    let prefix = "";
+    let first = words[i];
+    if (!isNumberWord(first)) {
+      const p = PREFIXES.find((x) => first.startsWith(x) && isNumberWord(first.slice(x.length)));
+      if (!p) {
+        out.push(words[i++]);
+        continue;
+      }
+      prefix = p;
+      first = first.slice(p.length);
+    }
+    const run = [first];
+    let j = i + 1;
+    for (; j < words.length; j++) {
+      const w = words[j].startsWith("ו") && isNumberWord(words[j].slice(1)) ? words[j].slice(1) : words[j];
+      if (!isNumberWord(w)) break;
+      run.push(w);
+    }
+    let value = hebrewNumberValue(run);
+    // A run that does not parse whole: keep its longest parsable start.
+    while (value === null && run.length > 1) {
+      run.pop();
+      j--;
+      value = hebrewNumberValue(run);
+    }
+    if (prefix) out.push(prefix);
+    out.push(value === null ? words[i].slice(prefix.length) : String(value));
+    i = j;
+  }
+  return out.join(" ");
+}
+
+/** Normal form v2: v1, numbers as digits, "%" as a word (see above). */
+export function normalizeAsrV2(text) {
+  const t = String(text ?? "")
+    .replace(/(\d),(?=\d{3}\b)/g, "$1") // 1,000 → 1000
+    .replace(/(\d)\.(\d)/g, "$1\uE000$2") // keep a decimal point through v1's punctuation strip (a private-use mark, restored below)
+    .replace(/%/g, " אחוז ");
+  return hebrewNumbersToDigits(normalizeAsr(t).replace(/\uE000/g, "."));
+}
+
 /** Edit distance between two sequences. */
 export function editDistance(a, b) {
   const n = a.length;
@@ -55,9 +158,9 @@ export function editDistance(a, b) {
 }
 
 /** Errors and reference length, words and characters, of one hypothesis (both normalised here). */
-export function errors(reference, hypothesis) {
-  const r = normalizeAsr(reference);
-  const h = normalizeAsr(hypothesis);
+export function errors(reference, hypothesis, normalize = normalizeAsr) {
+  const r = normalize(reference);
+  const h = normalize(hypothesis);
   const rw = r ? r.split(" ") : [];
   const hw = h ? h.split(" ") : [];
   const rc = [...r.replace(/ /g, "")];
@@ -261,6 +364,7 @@ export async function transcribeLive(recognizer, samples, now = () => performanc
 /** Scores of every part, with `transcribe(item) → { text, latencies, compute, duration }`. */
 export async function scoreWith(transcribe, items) {
   const parts = new Map();
+  const v2 = []; // the same hypotheses under normal form v2 (plan W4.13)
   const latencies = [];
   const shown = [];
   let compute = 0;
@@ -269,6 +373,7 @@ export async function scoreWith(transcribe, items) {
     const out = await transcribe(it);
     if (!parts.has(it.part)) parts.set(it.part, []);
     parts.get(it.part).push(errors(it.text, out.text));
+    v2.push(errors(it.text, out.text, normalizeAsrV2));
     latencies.push(...(out.latencies ?? []));
     shown.push(...(out.shownLatencies ?? []));
     compute += out.compute ?? 0;
@@ -286,6 +391,9 @@ export async function scoreWith(transcribe, items) {
   const r = rates(all);
   scores.wer = round(r.wer);
   scores.cer = round(r.cer);
+  const r2 = rates(v2);
+  scores["wer.v2"] = round(r2.wer);
+  scores["cer.v2"] = round(r2.cer);
   if (latencies.length) {
     scores["latency.p50Ms"] = Math.round(percentile(latencies, 50) * 1000);
     scores["latency.p95Ms"] = Math.round(percentile(latencies, 95) * 1000);

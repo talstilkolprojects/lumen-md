@@ -12,6 +12,7 @@ import type { QueryResult } from "./taskQuery";
 import type { Task } from "./taskParser";
 import { todayIso, toggleTaskInVault } from "./toggle";
 import { remindersEnabled, setRemindersEnabled, startReminders } from "./reminders";
+import { HelpButton } from "../ui/HelpButton";
 
 export const TODAY_QUERY = "not done\n(due on or before today) OR (scheduled on or before today)\nsort by due";
 export const UPCOMING_QUERY = "not done\n(due after today) OR (scheduled after today)\n(due on or before in 7 days) OR (scheduled on or before in 7 days)\nsort by due";
@@ -64,6 +65,7 @@ function Panel({ onClose }: { onClose: () => void }) {
     <div role="dialog" aria-label={t("tasks.panel.title")} className="lumen-tasks-panel" style={{ position: "fixed", insetBlockStart: 56, insetInlineEnd: 16, width: "min(420px, calc(100vw - 32px))", maxHeight: "70vh", overflow: "auto", background: "hsl(var(--bg-elevated, var(--bg)))", color: "hsl(var(--fg))", border: "1px solid hsl(var(--border))", borderRadius: 10, boxShadow: "0 12px 32px -8px rgb(0 0 0 / .35)", zIndex: 60, padding: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
         <strong style={{ flex: 1 }}>{t("tasks.panel.title")}</strong>
+        <HelpButton topic="workspace/tasks" />
         <label style={{ fontSize: 12, display: "inline-flex", gap: 4, alignItems: "center" }}>
           <input type="checkbox" checked={reminders} onChange={() => void toggleReminders()} data-testid="tasks-reminders" />
           {t("tasks.reminders")}

@@ -39,5 +39,8 @@
   "vaultEnc.recoveryKey": "Recovery key",
   "vaultEnc.recover": "Open and set the new passphrase",
   "vaultEnc.headerBroken": "The vault's encryption header can't be read ({reason}). The recovery key opens the vault and writes a new one.",
-  "vaultEnc.close": "Close"
+  "vaultEnc.close": "Close",
+  "vaultEnc.kdfUpgradeNote": "This vault's passphrase is protected with PBKDF2. Argon2id makes guessing it much slower. Update Lumen first on every device that opens this vault: an older Lumen can't open it after the switch. Only the header changes; no note is rewritten.",
+  "vaultEnc.kdfUpgrade": "Switch to Argon2id",
+  "vaultEnc.kdfUpgraded": "The passphrase is now protected with Argon2id."
 }

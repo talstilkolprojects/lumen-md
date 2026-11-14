@@ -67,6 +67,28 @@ PLAYWRIGHT_BASE_URL=http://localhost:5180 npx playwright test --project=perf
 Each run attaches the measured numbers to the Playwright report as `perf`
 annotations.
 
+## Responsiveness budget
+
+Load time is measured by Lighthouse; how fast each action answers is
+measured separately (plan W1.22), in Chromium with the CPU slowed 4×, like a
+mid-range phone:
+
+| What | Budget |
+| --- | --- |
+| INP over 20 fixed interactions (palette, view modes, opening and switching notes, typing, a task checkbox, search, undo) | p75 < 100 ms |
+| Key press → next frame, end of a 50 KB note | p95 < 16 ms |
+| Key press → next frame, end of a 2 MB note | p95 < 33 ms |
+
+```sh
+npm run perf:inp          # measures (e2e/inp-budget.spec.ts), then gates
+npm run perf:inp:gate -- --record   # also appends the run to reports/perf/inp-trend.jsonl
+```
+
+The run writes `reports/perf/inp-latest.json`. The gate compares it with
+`reports/perf/inp-baseline.json` and fails when any of the three numbers is
+10 % or more slower; the first run becomes the baseline
+(`npm run perf:inp:gate -- --update` replaces it on purpose).
+
 ## For developers
 
 - `src/storage/vaultIndexCore.ts` — the index (pure, runs in the worker or in

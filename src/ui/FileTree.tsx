@@ -28,6 +28,8 @@ import { FileContextMenu, buildFileActions } from "./FileContextMenu";
 import { useAppStore } from "../store/useStore";
 import { duplicateFile, movedPath, renamedFileName, safeMoveWithCompanion, undoTrash, withoutCompanions, type MoveResult } from "../storage/fileOps";
 import { flushActiveWorkspaceDoc, syncOpenDocsAfterMove, trashWithOpenEdits } from "../store/openDocs";
+// Saved searches (plan W2.12): a small chunk of its own, off the startup path.
+const SavedSearches = lazy(() => import("./SavedSearches"));
 import type { TrashItem } from "../storage/trash";
 import { toast, useToastStore } from "../store/useToastStore";
 import { onWorkspaceChanged } from "../storage/workspaceEvents";
@@ -81,6 +83,9 @@ function folderStats(nodes: WorkspaceNode[], dirs: string[] = []): { dirs: strin
   }
   return { dirs, files };
 }
+import { explainError } from "../lib/userError";
+import { EmptyState } from "./EmptyState";
+import { HelpButton } from "./HelpButton";
 
 interface Props {
   /** Currently active workspace path (if any). */
@@ -190,7 +195,7 @@ export function FileTree({
       if (settled && activePath && paths.some((p) => activePath === p || activePath.startsWith(p + "/"))) onActiveDeleted();
       announceTrash(items);
     } catch (e) {
-      await uiAlert({ message: t("tree.alert.deleteFailed", { error: (e as Error).message }) });
+      await uiAlert({ message: t("tree.alert.deleteFailed", { error: explainError(e) }) });
     }
     clearSelection();
     await refresh();
@@ -221,7 +226,7 @@ export function FileTree({
           afterMove(from, r);
         }
       } catch (e) {
-        await uiAlert({ message: t("tree.alert.renameFailed", { error: (e as Error).message }) });
+        await uiAlert({ message: t("tree.alert.renameFailed", { error: explainError(e) }) });
       }
     }
     announceMove([...updated]);
@@ -350,7 +355,7 @@ export function FileTree({
       await createWorkspaceFolder(joinPath(parentPath, name));
     } catch (e) {
       await uiAlert({
-        message: t("tree.alert.folderFailed", { error: (e as Error).message }),
+        message: t("tree.alert.folderFailed", { error: explainError(e) }),
       });
       return;
     }
@@ -359,8 +364,8 @@ export function FileTree({
 
   async function open(node: WorkspaceNode) {
     if (node.kind !== "file") return;
-    // A PDF opens in the reader (plan 4.14), not as text.
-    if (/\.pdf$/i.test(node.path)) {
+    // A PDF or an EPUB opens in its reader (plans 4.14, W1.14), not as text.
+    if (/\.(pdf|epub)$/i.test(node.path)) {
       window.dispatchEvent(new CustomEvent("lumen-open-file", { detail: { path: node.path } }));
       return;
     }
@@ -368,7 +373,7 @@ export function FileTree({
       const text = await readWorkspaceFile(node.path);
       onOpenFile(node.path, text);
     } catch (e) {
-      await uiAlert({ message: t("tree.alert.openFailed", { error: (e as Error).message }) });
+      await uiAlert({ message: t("tree.alert.openFailed", { error: explainError(e) }) });
     }
   }
 
@@ -392,7 +397,7 @@ export function FileTree({
       await refresh();
     } catch (e) {
       await uiAlert({
-        message: t("tree.alert.renameFailed", { error: (e as Error).message }),
+        message: t("tree.alert.renameFailed", { error: explainError(e) }),
       });
     }
   }
@@ -404,7 +409,7 @@ export function FileTree({
       await duplicateFile(node.path);
       await refresh();
     } catch (e) {
-      await uiAlert({ message: (e as Error).message });
+      await uiAlert({ message: explainError(e) });
     }
   }
 
@@ -435,7 +440,7 @@ export function FileTree({
       await refresh();
     } catch (e) {
       await uiAlert({
-        message: t("tree.alert.deleteFailed", { error: (e as Error).message }),
+        message: t("tree.alert.deleteFailed", { error: explainError(e) }),
       });
     }
   }
@@ -443,7 +448,10 @@ export function FileTree({
   if (!available) {
     return (
       <aside className="file-tree" aria-label={t("tree.title")}>
-        <div className="file-tree-header">{t("tree.title")}</div>
+        <div className="file-tree-header">
+          {t("tree.title")}
+          <HelpButton topic="workspace/panels#file-tree" />
+        </div>
         <div
           style={{
             padding: "1rem",
@@ -462,6 +470,7 @@ export function FileTree({
       <div className="file-tree-header">
         <span style={{ fontWeight: 600 }}>{t("tree.title")}</span>
         <div style={{ display: "flex", gap: 6 }}>
+          <HelpButton topic="workspace/panels#file-tree" />
           <button
             className="icon-btn"
             title={t("tree.newFileRoot")}
@@ -518,6 +527,9 @@ export function FileTree({
           </button>
         </div>
       </div>
+      <Suspense fallback={null}>
+        <SavedSearches />
+      </Suspense>
       {tagFilter && (
         <div
           role="status"
@@ -563,17 +575,11 @@ export function FileTree({
         </div>
       )}
       {displayedTree.length === 0 ? (
-        <div
-          style={{
-            padding: "1rem 0.85rem",
-            color: "hsl(var(--fg-muted))",
-            fontSize: 12,
-          }}
-        >
-          {tagFilter
-            ? (t("tree.tagFilter.empty"))
-            : t("tree.emptyHint")}
-        </div>
+        tagFilter ? (
+          <EmptyState message={t("tree.tagFilter.empty")} action={{ label: t("tree.tagFilter.clear"), onClick: () => setTagFilter(null) }} />
+        ) : (
+          <EmptyState message={t("tree.emptyHint")} action={{ label: t("tree.newNote"), onClick: () => void newFile("") }} />
+        )
       ) : (
         <>
           {selectedPaths.size > 0 && (
@@ -615,10 +621,10 @@ export function FileTree({
                 style={{
                   padding: "3px 9px",
                   fontSize: 11,
-                  border: "1px solid hsl(0 80% 60% / 0.5)",
+                  border: "1px solid hsl(var(--danger) / 0.5)",
                   borderRadius: 6,
-                  background: "hsl(0 80% 60% / 0.10)",
-                  color: "hsl(0 80% 70%)",
+                  background: "hsl(var(--danger) / 0.10)",
+                  color: "hsl(var(--danger))",
                   cursor: "pointer",
                 }}
               >
@@ -762,6 +768,7 @@ function renderNode(
     >
       <div
         className={`file-tree-item ${isActive ? "active" : ""}${isSelected ? " selected" : ""}`}
+        data-path={node.path}
         onContextMenu={(e) => {
           e.preventDefault();
           ctx.openContextMenu(e.clientX, e.clientY, node);

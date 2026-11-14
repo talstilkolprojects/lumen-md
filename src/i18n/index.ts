@@ -6,6 +6,7 @@
  */
 
 import { platformKeys } from "../lib/platformKeys";
+import { detectLocale, systemLanguages } from "./detect";
 
 // β.4 — `Locale` includes the 6 deferred locales so the type is stable
 // across the rest of the codebase. Bundles for ar / ru / fr / de / ja /
@@ -150,6 +151,24 @@ export function registerEnglish(strings: Strings): void {
   for (const [k, v] of Object.entries(strings)) if (!(k in en)) en[k] = v;
 }
 
+/**
+ * Every UI string of the active language and of English, as shown (with
+ * platform shortcuts). The usability recorder (plan W1.29) keeps a
+ * control's label only when it is one of these, so a label that carries
+ * someone's text (a note name on a tab) is never recorded.
+ */
+export function uiStringValues(): Set<string> {
+  const out = new Set<string>();
+  for (const bundle of [en, BUNDLES[activeLocale] ?? {}]) {
+    for (const v of Object.values(bundle)) {
+      if (typeof v !== "string" || /\{\w+\}/.test(v)) continue;
+      out.add(v);
+      out.add(platformKeys(v));
+    }
+  }
+  return out;
+}
+
 /** Translate `id` using the active locale, with optional `{name}` substitutions. */
 export function t(id: string, vars?: Record<string, string | number>): string {
   const bundle = BUNDLES[activeLocale] ?? en;
@@ -211,15 +230,17 @@ function isLocale(x: unknown): x is Locale {
  * chunk fetch, unknown code).
  */
 export async function initLocale(storageKey = "lumen-md"): Promise<Locale> {
-  let locale: Locale = "en";
+  let persisted: unknown = null;
   try {
     const raw = globalThis.localStorage?.getItem(storageKey);
     const parsed = raw ? (JSON.parse(raw) as { state?: { locale?: unknown } }) : null;
-    const persisted = parsed?.state?.locale;
-    if (isLocale(persisted)) locale = persisted;
+    persisted = parsed?.state?.locale;
   } catch {
-    /* why: corrupt storage — stay on English */
+    /* why: corrupt storage — go by the system's languages */
   }
+  // Plan W4.10: no saved choice → the system's language (as public/locale-boot.js
+  // already set lang/dir before the first paint), so a Hebrew system starts in Hebrew.
+  let locale: Locale = isLocale(persisted) ? persisted : detectLocale(null, systemLanguages());
   if (locale !== "en") {
     await loadLocale(locale);
     // The chunk couldn't be fetched (offline, missing): don't apply e.g.
@@ -229,6 +250,8 @@ export async function initLocale(storageKey = "lumen-md"): Promise<Locale> {
   applyLocale(locale);
   return locale;
 }
+
+export { detectLocale, systemLanguages };
 
 export function isRTL(): boolean {
   return SUPPORTED_LOCALES.find((l) => l.code === activeLocale)?.dir === "rtl";

@@ -1,0 +1,21 @@
+# שיחות אחד על אחד — נוצר מהתבנית שיחת אחד על אחד
+filters:
+  and:
+    - 'type == "one-on-one"'
+properties:
+  file.name:
+    displayName: "שיחה"
+  note.with:
+    displayName: "עם"
+  note.date:
+    displayName: "תאריך"
+views:
+  - type: table
+    name: "שיחות אחד על אחד"
+    order:
+      - file.name
+      - note.with
+      - note.date
+    sort:
+      - property: note.date
+        direction: DESC

@@ -2,10 +2,11 @@
 /**
  * The Vercel build, and the project's gates without GitHub Actions (W1.35).
  *
- * Vercel builds every branch and reports the result to GitHub as the
- * "Vercel" commit status. A preview build therefore runs the checks CI
- * used to run, and any failing gate fails the build, so a pull request with
- * a failing test gets a red status. Production (main) builds as before:
+ * Vercel builds main and the verify/* integration trains (a PR branch is
+ * verified through the train: scripts/vercel-ignore.sh) and reports the
+ * result to GitHub as the "Vercel" commit status. A preview build therefore
+ * runs the checks CI used to run, and any failing gate fails the build, so
+ * a train with a failing test gets a red status. Production (main) builds as before:
  * the app and its bundle budget, nothing else.
  *
  *   VERCEL_ENV=preview      build, budget, vitest, e2e, i18n:check,
@@ -38,6 +39,8 @@ export const GATES = {
   hygiene: ["run", "-s", "hygiene"],
   "docs:sync": ["run", "-s", "docs:sync"],
   licenses: ["run", "-s", "licenses"],
+  // W4.4: token shapes and VITE_* values not on the allowlist in dist/.
+  secrets: ["run", "-s", "secrets:dist"],
 };
 
 /**
@@ -77,13 +80,13 @@ export function vitestSummary(report, { maxFiles = 80 } = {}) {
 }
 
 export const PRODUCTION_GATES = ["build", "budget"];
+export const PREVIEW_GATES = ["build", "budget", "secrets", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "licenses"];
 /**
  * `--e2e-only`: build and the e2e gate, nothing else. For a probe branch
  * that runs Playwright specs (LUMEN_E2E_SPECS, a longer LUMEN_E2E_MINUTES)
  * without the 13 minutes of vitest; never a branch's real gate.
  */
 export const E2E_ONLY_GATES = ["build", "e2e"];
-export const PREVIEW_GATES = ["build", "budget", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "licenses"];
 
 /** Which gates a build runs: production only for VERCEL_ENV=production (or --production). */
 export function gatesFor(env = process.env, argv = []) {

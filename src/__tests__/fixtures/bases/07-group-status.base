@@ -1,0 +1,11 @@
+filters: file.hasTag("book")
+views:
+  - type: table
+    name: By status
+    order: [file.name, status]
+    groupBy:
+      property: note.status
+      direction: ASC
+    sort:
+      - property: file.name
+        direction: ASC

@@ -1,0 +1,24 @@
+# Reserve duty — from the template Reserve duty (miluim) log
+filters:
+  and:
+    - 'type == "reserve-duty"'
+properties:
+  file.name:
+    displayName: "Period"
+  note.from:
+    displayName: "From"
+  note.to:
+    displayName: "To"
+  note.days:
+    displayName: "Days"
+  note.approval_sent:
+    displayName: "Approval sent"
+views:
+  - type: table
+    name: "Reserve duty"
+    order:
+      - file.name
+      - note.from
+      - note.to
+      - note.days
+      - note.approval_sent

@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * Embeds (plan 4.7) — `![[note]]`, `![[note#heading]]`, `![[image.png|40]]`
@@ -41,7 +42,7 @@ async function seed(page: Page, files: Record<string, string>): Promise<boolean>
 
 const PIXEL = "data:iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 
-test("embeds render notes, sections and images, guard cycles, and update live", async ({ page }) => {
+test("embeds render notes, sections and images, guard cycles, and update live", async ({ page, browserName }) => {
   const ok = await seed(page, {
     "Embedded Source.md": "# Source\n\nfirst version of the source\n\n## Part\n\nonly this part",
     "Loop A.md": "A body\n\n![[Loop B]]",
@@ -51,7 +52,7 @@ test("embeds render notes, sections and images, guard cycles, and update live", 
     "Hebrew note.md": "שלום עולם, זה פתק בעברית.",
     "pixel.png": PIXEL,
   });
-  test.skip(!ok, "this engine cannot write OPFS files here");
+  vaultOrSkip(ok, browserName);
   // The vault changed behind the app's back: let the workspace index know.
   await page.evaluate(() => window.dispatchEvent(new Event("lumen-workspace-changed")));
 

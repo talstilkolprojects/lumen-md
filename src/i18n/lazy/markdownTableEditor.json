@@ -1,0 +1,13 @@
+{
+  "mdTable.addCol": "Add Column",
+  "mdTable.addRow": "Add Row",
+  "mdTable.align.center": "◆ center",
+  "mdTable.align.left": "◀ left",
+  "mdTable.align.right": "▶ right",
+  "mdTable.cell": "Row {row} column {col}",
+  "mdTable.columnHeader": "Column {n} header",
+  "mdTable.cycleAlign": "Cycle alignment for column {n}",
+  "mdTable.removeCol": "Remove Column",
+  "mdTable.removeRow": "Remove Row",
+  "mdTable.title": "Table Editor"
+}

@@ -25,6 +25,11 @@ import type { Hardware } from "../ai/modelManager";
 import type { AiMode } from "../ai/aiMode";
 import type { PullProgress } from "../ai/ollamaPull";
 import type { ModelCacheKind, StorageEstimateResult } from "../ai/modelStorage";
+import { EmptyState } from "./EmptyState";
+import { uiConfirm } from "./PromptDialog";
+import { HelpButton } from "./HelpButton";
+import "./aiSettingsPanelStrings";
+import { explainError } from "../lib/userError";
 
 interface Props {
   open: boolean;
@@ -307,7 +312,7 @@ export function AiSettingsPanel({ open, onClose, embedded = false }: Props) {
       void refreshStatus();
     } catch (e) {
       if (!mounted.current || (e as Error)?.name === "AbortError") return;
-      setPullMsg({ ok: false, text: t("ai.settings.ollama.pullFailed", { error: (e as Error)?.message ?? String(e) }) });
+      setPullMsg({ ok: false, text: t("ai.settings.ollama.pullFailed", { error: explainError(e) }) });
     } finally {
       if (pullAbort.current === ctrl) pullAbort.current = null;
       if (mounted.current) setPull(null);
@@ -373,6 +378,7 @@ export function AiSettingsPanel({ open, onClose, embedded = false }: Props) {
   };
 
   const clearRuns = async () => {
+    if (!(await uiConfirm({ message: t("ai.trace.clearConfirm", { n: runs.length }) }))) return;
     const { clearTrace } = await import("../agents/trace");
     await clearTrace();
     setRuns([]);
@@ -409,6 +415,7 @@ export function AiSettingsPanel({ open, onClose, embedded = false }: Props) {
               <X size={16} />
             </button>
           )}
+          <HelpButton topic="ai/local-agents" />
         </header>
 
         <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 14, fontSize: 13, lineHeight: 1.5, overflowY: "auto" }}>
@@ -482,9 +489,15 @@ export function AiSettingsPanel({ open, onClose, embedded = false }: Props) {
                 })}
               </datalist>
             </label>
-            <div style={muted}>
-              {installed === null ? t("ai.settings.ollama.unreachable") : installed.length ? t("ai.settings.ollama.installed", { models: installed.join(", ") }) : t("ai.settings.ollama.none")}
-            </div>
+            {installed !== null && installed.length === 0 ? (
+              <EmptyState
+                style={{ padding: 0 }}
+                message={t("ai.settings.ollama.none")}
+                action={{ label: t("ai.settings.ollama.copyPull"), onClick: () => void navigator.clipboard?.writeText("ollama pull qwen2.5:7b").catch(() => undefined) }}
+              />
+            ) : (
+              <div style={muted}>{installed === null ? t("ai.settings.ollama.unreachable") : t("ai.settings.ollama.installed", { models: installed.join(", ") })}</div>
+            )}
             <div style={row}>
               <button type="button" style={primary} onClick={() => void saveOllama()}>{t("ai.settings.save")}</button>
             </div>
@@ -540,7 +553,8 @@ export function AiSettingsPanel({ open, onClose, embedded = false }: Props) {
                 ? t("ai.settings.checking")
                 : hw.webgpu
                   ? t("ai.settings.hw.ok", { budget: String(budget), f16: hw.f16 ? "f16" : "f32", cores: String(hw.cores ?? "?"), memory: String(hw.deviceMemoryGB ?? "?") })
-                  : t("ai.settings.hw.none", { reason: gap ? GAP_LABEL[gap] : hw.reason ?? "" })}
+                  : // empty-action: the Ollama section above (the message names it)
+                    t("ai.settings.hw.none", { reason: gap ? GAP_LABEL[gap] : hw.reason ?? "" })}
             </div>
             {gap && <div style={muted} data-testid="hw-gap">{t("ai.settings.hw.wasm")}</div>}
             {hw?.webgpu && (
@@ -614,6 +628,7 @@ export function AiSettingsPanel({ open, onClose, embedded = false }: Props) {
                 <span>{t("ai.settings.style.use")}</span>
               </label>
             ) : (
+              // empty-action: the "Build style profile" button right below (runCommand("ai.styleProfile")).
               <div style={muted}>{t("ai.settings.style.none")}</div>
             )}
             <div style={row}>
@@ -624,7 +639,7 @@ export function AiSettingsPanel({ open, onClose, embedded = false }: Props) {
           <section style={box} aria-labelledby="ai-set-trace">
             <div id="ai-set-trace" style={caption}>{t("ai.settings.trace")}</div>
             {runs.length === 0 ? (
-              <div style={muted}>{t("ai.trace.empty")}</div>
+              <EmptyState style={{ padding: 0 }} message={t("ai.trace.empty")} action={{ label: t("ai.trace.testSetup"), onClick: () => runCommand("ai.doctor") }} />
             ) : (
               <ul style={{ margin: 0, paddingInlineStart: 18, display: "flex", flexDirection: "column", gap: 2 }}>
                 {runs.map((r) => (

@@ -1,0 +1,18 @@
+{
+  "versions.title": "Named versions",
+  "versions.close": "Close",
+  "versions.name": "Version name",
+  "versions.namePlaceholder": "Before submission",
+  "versions.save": "Save this version",
+  "versions.editorsOnly": "Only editors can name versions. You can still compare them.",
+  "versions.empty": "No named versions yet.",
+  "versions.by": "{author}, {date}",
+  "versions.unknownAuthor": "someone",
+  "versions.current": "Current text",
+  "versions.compare": "Compare",
+  "versions.from": "From",
+  "versions.to": "To",
+  "versions.stats": "{added} words added, {removed} removed",
+  "versions.same": "No differences.",
+  "versions.saved": "Saved \"{name}\"."
+}

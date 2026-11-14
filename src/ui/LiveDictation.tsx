@@ -14,12 +14,18 @@ import { showAiToast } from "./AiToast";
 import { useAppStore } from "../store/useStore";
 import { getAiPolicy } from "../ai/policy";
 import { detectHardware, vramBudgetMB } from "../ai/modelManager";
-import { chooseEngine, type EngineId } from "../ai/dictation/engines";
+import { chooseCorrection, chooseEngine, type EngineId } from "../ai/dictation/engines";
+import { downloadedCorrectionModels, makeCorrector } from "../ai/dictation/correction";
+
+type CorrectionEngine = ReturnType<typeof chooseCorrection>;
 import { dictationDownloadBytes, formatMB } from "../ai/dictation/models";
 import { isDictationModelDownloaded, loadDictationFiles } from "../ai/dictation/modelStore";
 import { createDictationAudioContext, startDictationSession, type DictationSession } from "../ai/dictation/session";
 import { appendSegment } from "../ai/dictation/punctuate";
 import { log } from "../lib/logger";
+import "./liveDictationStrings";
+import { HelpButton } from "./HelpButton";
+import { explainError } from "../lib/userError";
 
 type Phase = { kind: "ask"; browserAllowed: boolean } | { kind: "downloading"; percent: number } | { kind: "loading" } | { kind: "listening"; speaking: boolean; interim: string };
 
@@ -41,7 +47,7 @@ function removeText(text: string): void {
   if (store.doc.content.endsWith(text)) store.setContent(store.doc.content.slice(0, -text.length));
 }
 
-function Panel({ initial, onBrowser, onClose }: { initial: Phase; onBrowser: () => void; onClose: () => void }) {
+function Panel({ initial, onBrowser, onClose, correction = null }: { initial: Phase; onBrowser: () => void; onClose: () => void; correction?: CorrectionEngine }) {
   const [phase, setPhase] = useState<Phase>(initial);
   const session = useRef<DictationSession | null>(null);
   const abort = useRef<AbortController | null>(null);
@@ -91,7 +97,12 @@ function Panel({ initial, onBrowser, onClose }: { initial: Phase; onBrowser: () 
           showAiToast(t("dictation.error", { error: message }), "error");
           void stop();
         },
-      }, { signal: ctl.signal, audioContext });
+      }, {
+        signal: ctl.signal,
+        audioContext,
+        // Plan W4.13: each sentence re-read by a Whisper already on this device.
+        correct: correction ? makeCorrector(correction, async (audio, o) => (await import("../ai/transformersEngine")).transcribeAudio(audio, o)) : undefined,
+      });
       // Cancelled or closed while the model loaded: never leave a hidden session holding the microphone.
       if (ctl.signal.aborted) {
         await started.stop();
@@ -102,7 +113,7 @@ function Panel({ initial, onBrowser, onClose }: { initial: Phase; onBrowser: () 
     } catch (e) {
       // A load that failed before the session took the context: close it here.
       void audioContext?.close().catch(() => undefined);
-      if ((e as Error).name !== "AbortError" && !ctl.signal.aborted) showAiToast(t("dictation.error", { error: (e as Error).message }), "error");
+      if ((e as Error).name !== "AbortError" && !ctl.signal.aborted) showAiToast(t("dictation.error", { error: explainError(e) }), "error");
       await stop();
     }
   };
@@ -122,10 +133,11 @@ function Panel({ initial, onBrowser, onClose }: { initial: Phase; onBrowser: () 
   );
 
   return (
-    <div role="dialog" aria-live="polite" aria-label={t("dictation.download.title")} dir="auto" style={{ position: "fixed", bottom: 20, insetInlineEnd: 20, zIndex: 9999, maxWidth: 420, display: "flex", flexDirection: "column", gap: 8, background: "hsl(var(--bg))", border: "1px solid hsl(var(--border-strong))", borderRadius: 12, padding: "12px 16px", boxShadow: "0 8px 32px hsl(0 0% 0%/0.3)", fontSize: 13, color: "hsl(var(--fg))" }}>
+    <div role="dialog" aria-live="polite" aria-label={t("dictation.download.title")} dir="auto" style={{ position: "fixed", bottom: 20, insetInlineEnd: 20, zIndex: 9999, maxWidth: 420, display: "flex", flexDirection: "column", gap: 8, background: "hsl(var(--bg))", border: "1px solid hsl(var(--border-strong))", borderRadius: 12, padding: "12px 16px", boxShadow: "var(--shadow-md)", fontSize: 13, color: "hsl(var(--fg))" }}>
       {phase.kind === "ask" && (
         <>
           <strong>{t("dictation.download.title")}</strong>
+          <HelpButton topic="ai/hebrew-dictation" />
           <span>{t("dictation.download.body", { size })}</span>
           <span style={{ opacity: 0.7, fontSize: 11 }}>{t("dictation.download.credits")}</span>
           {!phase.browserAllowed && <span style={{ opacity: 0.7, fontSize: 11 }}>{t("dictation.localOnlyNoBrowser")}</span>}
@@ -152,7 +164,7 @@ function Panel({ initial, onBrowser, onClose }: { initial: Phase; onBrowser: () 
       {phase.kind === "listening" && (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 10, height: 10, borderRadius: "50%", background: phase.speaking ? "#ef4444" : "#9ca3af", animation: phase.speaking ? "pulse 1s infinite" : undefined }} />
+            <div style={{ width: 10, height: 10, borderRadius: "50%", background: phase.speaking ? "hsl(var(--danger))" : "hsl(var(--fg-muted))", animation: phase.speaking ? "pulse 1s infinite" : undefined }} />
             <span>{phase.speaking ? t("dictation.speaking") : t("dictation.listening")}</span>
             <span style={{ flex: 1 }} />
             {button(t("dictation.stop"), () => void stop(), true)}
@@ -192,6 +204,7 @@ export async function openLiveDictation(lang: string, fallbacks: DictationFallba
   });
   if (choice.candidates[0] === "web-speech") return fallbackToBrowser();
   if (choice.candidates[0] !== "zipformer-he") return fallbacks.record();
+  const correction = chooseCorrection({ language: lang, webgpu: hw.webgpu, f16: hw.f16, vramMB: vramBudgetMB(hw), downloaded: await downloadedCorrectionModels() });
   const host = document.createElement("div");
   document.body.appendChild(host);
   const root = createRoot(host);
@@ -209,6 +222,7 @@ export async function openLiveDictation(lang: string, fallbacks: DictationFallba
   root.render(
     <Panel
       initial={initial}
+      correction={correction}
       onClose={close}
       onBrowser={() => {
         close();

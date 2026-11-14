@@ -5,7 +5,7 @@ import {
   buildFileActions,
 } from "../ui/FileContextMenu";
 
-vi.mock("../i18n", () => ({ t: (k: string) => k }));
+vi.mock("../i18n", () => ({ registerEnglish: () => undefined, t: (k: string) => k }));
 
 describe("FileContextMenu", () => {
   const baseProps = {

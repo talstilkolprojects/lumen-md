@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "lumen.example.text-format",
+  "name": "Text format",
+  "version": "1.0.0",
+  "description": "Lower / upper / title case, capitalize, slug, snake_case, camelCase and spacing cleanup for the selected text. A port of part of the Obsidian plugin “Text Format” by Benature Wong (MIT).",
+  "author": "Benature Wong (original); ported for Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    { "id": "commands", "reason": "Adds the “Text format: …” commands" },
+    { "id": "document:read", "reason": "Reads the selected text" },
+    { "id": "document:write", "reason": "Replaces the selection with the formatted text" }
+  ],
+  "homepage": "https://github.com/Benature/obsidian-text-format"
+}

@@ -166,7 +166,7 @@ describe("nikudService gates", () => {
       onmessage: null as ((e: MessageEvent) => void) | null,
       postMessage(m: Record<string, unknown>) {
         posted.push(m);
-        queueMicrotask(() => this.onmessage?.({ data: { type: "result", id: m.id, value: m.type === "point" ? `${m.text}!` : true } } as MessageEvent));
+        queueMicrotask(() => this.onmessage?.({ data: { type: "result", id: m.id, value: m.type === "point" ? { text: `${m.text}!`, words: [] } : true } } as MessageEvent));
       },
       terminate() {},
     };
@@ -181,5 +181,41 @@ describe("nikudService gates", () => {
     expect(posted.map((m) => m.type)).toEqual(["load", "point", "point"]);
     expect(posted[2]).toMatchObject({ partial: true });
     vi.unstubAllGlobals();
+  });
+});
+
+describe("plan W2.5: other readings in the editor", () => {
+  const PATAH = "ַ";
+  it("the editor action hands the pointed words to onPointed, relative to where the text starts", async () => {
+    const v = new EditorView({ state: EditorState.create({ doc: "x שלום", selection: EditorSelection.single(2, 6) }) });
+    const pointed = `ש${PATAH}לום`;
+    const words = [{ from: 0, to: pointed.length, alternatives: [{ text: pointed, p: 0.6 }, { text: `ש${QAMATS}לום`, p: 0.4 }] }];
+    const onPointed = vi.fn();
+    expect(await runNikudCommand(v, "add", { point: async () => ({ text: pointed, words }), unpoint: removeNikud, onPointed })).toBe(true);
+    expect(v.state.doc.toString()).toBe(`x ${pointed}`);
+    expect(onPointed).toHaveBeenCalledWith(v, 2, words);
+  });
+
+  it("a remembered ambiguous word opens its readings; picking one replaces it and keeps the list", async () => {
+    const { rememberNikudAlternatives, openNikudAlternativesAt } = await import("../editor/nikudAlternatives");
+    const parent = document.createElement("div");
+    document.body.appendChild(parent);
+    const first = `ש${PATAH}לום`;
+    const second = `ש${QAMATS}לום`;
+    const v = new EditorView({ state: EditorState.create({ doc: `x ${first}` }), parent });
+    rememberNikudAlternatives(v, 2, [{ from: 0, to: first.length, alternatives: [{ text: first, p: 0.6 }, { text: second, p: 0.4 }] }], (k, vars) => `${k}${vars ? JSON.stringify(vars) : ""}`);
+    expect(v.dom.querySelector(".cm-nikud-ambiguous")).toBeTruthy();
+    expect(openNikudAlternativesAt(v, 0)).toBe(false);
+    expect(openNikudAlternativesAt(v, 3)).toBe(true);
+    const options = [...v.dom.querySelectorAll<HTMLButtonElement>(".cm-nikud-alt-option")];
+    expect(options.map((b) => b.querySelector("span")?.textContent)).toEqual([first, second]);
+    options[1].click();
+    expect(v.state.doc.toString()).toBe(`x ${second}`);
+    expect(v.dom.querySelector(".cm-nikud-alternatives")).toBeNull();
+    // The word keeps its readings, the chosen one first.
+    expect(openNikudAlternativesAt(v, 3)).toBe(true);
+    expect([...v.dom.querySelectorAll(".cm-nikud-alt-option span")].map((s) => s.textContent)).toEqual([second, first]);
+    v.destroy();
+    parent.remove();
   });
 });

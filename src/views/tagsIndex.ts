@@ -12,7 +12,6 @@ import {
   isAssetName,
 } from "../storage/workspace";
 import { extractFrontmatter } from "../renderer/pipeline";
-import { noteTags } from "../search/queryOps";
 
 export interface TagBucket {
   tag: string;
@@ -58,10 +57,10 @@ export async function buildTagsIndex(): Promise<TagsIndex> {
     if (!/\.(md|markdown)$/i.test(f.path)) continue;
     if (isAssetName(f.name)) continue;
     totalNotes++;
-    const body = f.content;
-    const fm = extractFrontmatter(body) ?? {};
-    // Front matter first (as YAML reads it), then the body's #tags.
-    const tags = [...new Set([...tagsFromFrontmatter(fm), ...noteTags(body)])];
+    // W2.22: the frontmatter block the index kept, not the note's text;
+    // front matter first (as YAML reads it), then the body's #tags (plan 11.3).
+    const fm = (f.frontmatter ? extractFrontmatter(f.frontmatter) : null) ?? {};
+    const tags = [...new Set([...tagsFromFrontmatter(fm), ...f.noteTags])];
     if (tags.length === 0) {
       untagged.push(f.path);
       continue;

@@ -1,0 +1,7 @@
+{
+  "block.liveSql.loadFailed": "The SQL engine could not load. {error}",
+  "block.liveSql.noResult": "Statement executed (no result set).",
+  "block.liveSql.prompt": "Click Run to execute this SQL block.",
+  "block.liveSql.run": "Run SQL",
+  "block.liveSql.title": "Live SQL"
+}

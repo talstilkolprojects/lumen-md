@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 import { readFileSync } from "node:fs";
 
 /**
@@ -78,9 +79,9 @@ async function selectInPage(page: Page, pageNumber: number, text: string) {
   );
 }
 
-test("a highlight becomes a link that opens the PDF at the right page", async ({ page }) => {
+test("a highlight becomes a link that opens the PDF at the right page", async ({ page, browserName }) => {
   test.setTimeout(60_000);
-  test.skip(!(await putInVault(page, "bilingual.pdf", FIXTURE)), "this engine refuses OPFS writes here, so there is no vault to keep the PDF in");
+  vaultOrSkip(await putInVault(page, "bilingual.pdf", FIXTURE), browserName);
 
   // Open it the way the file tree does.
   await page.evaluate(() => window.dispatchEvent(new CustomEvent("lumen-open-file", { detail: { path: "bilingual.pdf" } })));
@@ -147,8 +148,8 @@ test("a highlight becomes a link that opens the PDF at the right page", async ({
   await expect(flashed).toBeInViewport();
 });
 
-test("search finds Hebrew text on another page and goes there", async ({ page }) => {
-  test.skip(!(await putInVault(page, "bilingual.pdf", FIXTURE)), "this engine refuses OPFS writes here, so there is no vault to keep the PDF in");
+test("search finds Hebrew text on another page and goes there", async ({ page, browserName }) => {
+  vaultOrSkip(await putInVault(page, "bilingual.pdf", FIXTURE), browserName);
   await page.evaluate(() => window.dispatchEvent(new CustomEvent("lumen-open-file", { detail: { path: "bilingual.pdf" } })));
   const reader = page.getByTestId("pdf-reader");
   await expect(reader).toHaveAttribute("data-page-count", "3", { timeout: 15_000 });

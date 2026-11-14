@@ -16,6 +16,7 @@ import { getVaultBackend, refreshVaultEncryption, setVaultEncryptionState, unwra
 import type { VaultBackend } from "../types";
 import { log } from "../../../lib/logger";
 import type { KdfPolicy } from "../../../sync/e2ee/kdf";
+import { calibrateArgon2, type Argon2Cost } from "../../../sync/e2ee/kdfCalibrate";
 import { setRestSealer } from "../restStore";
 import { createEncryptedBackend, createLockedBackend } from "./backend";
 import { canRemoveHeader, convertFiles, readHeader, recoverInterrupted, removeHeader, scanVault, writeHeader, type ConvertProgress, type ConvertReport, type ScanReport } from "./convert";
@@ -47,8 +48,19 @@ const sessions = new WeakMap<VaultBackend, Session>();
 let current: Session | null = null;
 /** Tests only: accept cheap KDF parameters (production keeps the 600,000-iteration floor). */
 let policy: KdfPolicy = {};
-export function setKdfPolicyForTests(p: KdfPolicy): void {
-  policy = p;
+/** Tests only: the Argon2id cost new headers get, instead of this device's calibration. */
+let argon2ForTests: Argon2Cost | null = null;
+export function setKdfPolicyForTests(p: KdfPolicy & { argon2?: Argon2Cost }): void {
+  const { argon2, ...rest } = p;
+  policy = rest;
+  argon2ForTests = argon2 ?? null;
+}
+
+/** The Argon2id cost for a header written now (plan W4.20): ≤ 1 s on this device. */
+async function argon2Cost(): Promise<Argon2Cost> {
+  if (argon2ForTests) return argon2ForTests;
+  const { memoryKiB, iterations, parallelism } = await calibrateArgon2();
+  return { memoryKiB, iterations, parallelism };
 }
 
 export const LOCKED_EVENT = "lumen-vault-locked";
@@ -119,11 +131,37 @@ export function encryptionStatus(): { locked: boolean; headerError: string | nul
   return { locked: !s?.keys, headerError: s?.headerError?.message ?? null, target: s?.header?.target ?? null };
 }
 
-/** Unlock with the passphrase. Throws `WrongPassphraseError`; nothing is written either way. */
+/** Unlock with the passphrase. Throws `WrongPassphraseError`. Nothing is written either way. */
 export async function unlock(passphrase: string): Promise<void> {
   const s = await active();
   if (!s.header) throw s.headerError ?? new Error("The encryption header is missing");
   open(s, await unlockRestHeader(s.header, passphrase), s.header);
+}
+
+/**
+ * The unlocked vault's passphrase is derived with PBKDF2 (a vault made
+ * before plan W4.20) and can move to Argon2id: the dialog offers it.
+ */
+export function kdfUpgradeAvailable(): boolean {
+  const s = sessions.get(unwrapVaultBackend(getVaultBackend()));
+  return !!s?.keys && s.header?.passphrase.kdf.alg === "pbkdf2-sha256";
+}
+
+/**
+ * Move a PBKDF2 vault to Argon2id, at the user's request only (review
+ * 12.11). An unlock never does it: a Lumen from before plan W4.20 that opens
+ * the same folder (a desktop app not yet updated, say) can't read an
+ * Argon2id header, and nothing records which builds read a vault folder,
+ * so only the user can tell when every device is ready. The data key is
+ * re-wrapped in a new header (both copies, each checked); no file changes.
+ */
+export async function upgradeKdf(passphrase: string): Promise<void> {
+  const s = await active();
+  if (!s.header) throw new Error("The encryption header is missing");
+  if (s.header.passphrase.kdf.alg !== "pbkdf2-sha256") return;
+  const next = await rewrapPassphrase(s.header, passphrase, { newPassphrase: passphrase, kdf: "argon2id", argon2: await argon2Cost() });
+  await writeHeader(s.inner, next.header, policy);
+  open(s, next.keys, next.header);
 }
 
 /**
@@ -147,9 +185,9 @@ export async function recover(recoveryKey: string, newPassphrase: string, opts: 
   }
   let next: { header: RestHeader; keys: RestKeys };
   if (s.header) {
-    next = await rewrapPassphrase(s.header, recoveryKey, { recovery: true, newPassphrase, ...opts });
+    next = await rewrapPassphrase(s.header, recoveryKey, { recovery: true, newPassphrase, argon2: await argon2Cost(), ...opts });
   } else {
-    next = await headerFromRecoveryKey(recoveryKey, newPassphrase, "encrypted", opts);
+    next = await headerFromRecoveryKey(recoveryKey, newPassphrase, "encrypted", { argon2: await argon2Cost(), ...opts });
     const scan = await scanVault(s.inner, next.keys);
     if (scan.encrypted === 0 && scan.broken.length > 0) throw new WrongPassphraseError();
   }
@@ -162,7 +200,7 @@ export async function recover(recoveryKey: string, newPassphrase: string, opts: 
 export async function changePassphrase(currentPassphrase: string, newPassphrase: string, opts: CreateOptions = {}): Promise<void> {
   const s = await active();
   if (!s.header) throw new Error("The encryption header is missing");
-  const next = await rewrapPassphrase(s.header, currentPassphrase, { newPassphrase, ...opts });
+  const next = await rewrapPassphrase(s.header, currentPassphrase, { newPassphrase, argon2: await argon2Cost(), ...opts });
   await writeHeader(s.inner, next.header, policy);
   open(s, next.keys, next.header);
 }
@@ -269,7 +307,7 @@ export async function enableEncryption(
 ): Promise<(EnableResult & { report: ConvertReport }) | null> {
   const inner = unwrapVaultBackend(getVaultBackend());
   if (await readHeader(inner, policy).catch(() => "broken")) throw new Error("The vault is already encrypted");
-  const { header, keys, recoveryKey } = await createRestHeader(passphrase, opts);
+  const { header, keys, recoveryKey } = await createRestHeader(passphrase, { argon2: await argon2Cost(), ...opts });
   if (opts.confirmRecoveryKey && !(await opts.confirmRecoveryKey(recoveryKey))) return null;
   await writeHeader(inner, header, policy);
   const s = sessionFor(inner);
@@ -351,6 +389,8 @@ async function migrateStores(direction: "seal" | "open"): Promise<void> {
     await step("agent traces", async () => (await import("../../../agents/trace")).resealTrace());
     await step("semantic index", async () => (await import("../../../ai/semanticSearch")).resealSemanticIndex());
     await step("history", async () => (await import("../../history")).resealHistory());
+    // The vault index snapshot (W2.22) holds note text in the clear and cannot be sealed in its worker: drop it.
+    await step("index snapshot", async () => (await import("../../indexSnapshot")).dropSnapshot());
   } else {
     await step("history", async () => (await import("../../history")).unsealHistory());
     await step("agent traces", async () => (await import("../../../agents/trace")).clearTrace());

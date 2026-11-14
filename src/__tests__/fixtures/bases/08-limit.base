@@ -1,0 +1,11 @@
+filters: file.hasTag("book")
+views:
+  - type: table
+    name: Top two
+    limit: 2
+    order: [file.name, rating]
+    sort:
+      - property: rating
+        direction: DESC
+      - property: file.name
+        direction: ASC

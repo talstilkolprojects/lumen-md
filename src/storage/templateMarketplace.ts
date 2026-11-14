@@ -17,7 +17,7 @@
 
 import { log } from "../lib/logger";
 import { connectAllowedByCsp } from "../lib/cspConnect";
-import { isOPFSAvailable, listWorkspace, readWorkspaceFile, writeWorkspaceFile } from "./workspace";
+import { isOPFSAvailable, listWorkspace, readWorkspaceFile, workspaceHasFile, writeWorkspaceFile } from "./workspace";
 import { fetchWithRetry } from "../lib/fetchRetry";
 import { getLocale } from "../i18n";
 
@@ -37,13 +37,31 @@ export interface MarketplaceTemplate {
   name_he?: string;
   description_he?: string;
   url_he?: string;
+  /**
+   * A companion Obsidian Bases view (W3.6): `.base` file URL and the name it
+   * is installed under (`Bases/<base_name>.base`), with Hebrew twins.
+   */
+  base?: string;
+  base_he?: string;
+  base_name?: string;
+  base_name_he?: string;
 }
 
 /** The template as the current UI language should show it. */
 export function localizeTemplate(tpl: MarketplaceTemplate, locale: string = getLocale()): MarketplaceTemplate {
   if (locale !== "he" || !tpl.url_he) return tpl;
-  return { ...tpl, name: tpl.name_he ?? tpl.name, description: tpl.description_he ?? tpl.description, url: tpl.url_he };
+  return {
+    ...tpl,
+    name: tpl.name_he ?? tpl.name,
+    description: tpl.description_he ?? tpl.description,
+    url: tpl.url_he,
+    base: tpl.base_he ?? tpl.base,
+    base_name: tpl.base_name_he ?? tpl.base_name,
+  };
 }
+
+/** Folder in the workspace where a template's companion `.base` goes. */
+export const INSTALLED_BASES_DIR = "Bases";
 
 interface Registry {
   version: number;
@@ -56,34 +74,87 @@ const LOCAL_DOWNLOADS_KEY = "lumen.templates.downloads";
 let cache: Registry | null = null;
 
 export async function fetchTemplateRegistry(force = false): Promise<MarketplaceTemplate[]> {
-  if (cache && !force) return mergeLocalDownloads(cache.templates);
+  if (cache && !force) return mergeLocalDownloads(cache.templates).map((tpl) => localizeTemplate(tpl));
   const res = await fetchWithRetry("/templates/registry.json", { cache: "no-cache" }, { label: "templates.registry", maxRetries: 2, baseDelayMs: 600 });
   if (!res.ok) throw new Error(`Registry ${res.status}`);
   cache = (await res.json()) as Registry;
   return mergeLocalDownloads(cache.templates).map((tpl) => localizeTemplate(tpl));
 }
 
+const absoluteUrl = (url: string) => (url.startsWith("/") || /^https?:\/\//.test(url) ? url : `/${url}`);
+
+/** A name that is safe as one path segment (letters of any script kept). */
+export function safeFileStem(name: string): string {
+  return name
+    .normalize("NFC")
+    .replace(/\.(md|markdown|base)$/i, "")
+    .replace(/[\\/:*?"<>|#^[\]\u0000-\u001f]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^\.+/, "")
+    .slice(0, 80)
+    .trim();
+}
+
 /**
  * Pull the body of `template` from its `url`, save it under
  * `templates/<id>.md` in the workspace, and increment the local download
- * counter so the gallery can re-rank.
+ * counter so the gallery can re-rank. A companion `.base` (W3.6) goes to
+ * `Bases/` beside it.
  */
 export async function installTemplate(
   template: MarketplaceTemplate,
-): Promise<{ path: string; bytes: number }> {
-  const url = template.url.startsWith("/") || /^https?:\/\//.test(template.url)
-    ? template.url
-    : `/${template.url}`;
-  const res = await fetchWithRetry(url, { cache: "no-cache" }, { label: "templates.install", maxRetries: 2, baseDelayMs: 700, maxDelayMs: 2500 });
+): Promise<{ path: string; bytes: number; basePath?: string }> {
+  const res = await fetchWithRetry(absoluteUrl(template.url), { cache: "no-cache" }, { label: "templates.install", maxRetries: 2, baseDelayMs: 700, maxDelayMs: 2500 });
   if (!res.ok) throw new Error(`Template ${res.status}`);
   const body = await res.text();
   const path = `templates/${template.id}.md`;
   await writeWorkspaceFile(path, body);
+  const basePath = await installCompanionBase(template);
   bumpDownloads(template.id);
   rememberInstalledName(template.id, template.name);
   void recordRemoteInstall(template.id);
   notifyInstalledTemplatesChanged();
-  return { path, bytes: body.length };
+  return basePath ? { path, bytes: body.length, basePath } : { path, bytes: body.length };
+}
+
+/**
+ * Write the template's companion `.base` to `Bases/<base_name>.base` — once:
+ * an existing file (the user may have edited its view) is never replaced.
+ * Best-effort: a failed fetch leaves the template installed without it.
+ */
+async function installCompanionBase(template: MarketplaceTemplate): Promise<string | undefined> {
+  if (!template.base) return undefined;
+  const stem = safeFileStem(template.base_name || template.name) || template.id;
+  const path = `${INSTALLED_BASES_DIR}/${stem}.base`;
+  try {
+    if (await workspaceHasFile(path)) return path;
+    const res = await fetchWithRetry(absoluteUrl(template.base), { cache: "no-cache" }, { label: "templates.base", maxRetries: 1, baseDelayMs: 500 });
+    if (!res.ok) throw new Error(`Base ${res.status}`);
+    await writeWorkspaceFile(path, await res.text());
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("lumen-workspace-changed"));
+    return path;
+  } catch (e) {
+    log.warn("templates: companion base not installed", e);
+    return undefined;
+  }
+}
+
+/**
+ * Import a template from a Markdown file the user picked: copy it into
+ * `templates/` under a safe, unused name ("Recipe.md" → `templates/Recipe.md`,
+ * then `Recipe 2.md`…), so it shows in ⌘K next to the gallery's templates.
+ */
+export async function importTemplateFile(fileName: string, text: string): Promise<InstalledTemplate> {
+  if (!/\.(md|markdown)$/i.test(fileName)) throw new Error("not a Markdown file");
+  const stem = safeFileStem(fileName) || "Template";
+  let id = stem;
+  for (let n = 2; await workspaceHasFile(`${INSTALLED_TEMPLATES_DIR}/${id}.md`); n++) id = `${stem} ${n}`;
+  const path = `${INSTALLED_TEMPLATES_DIR}/${id}.md`;
+  await writeWorkspaceFile(path, text);
+  rememberInstalledName(id, id);
+  notifyInstalledTemplatesChanged();
+  return { id, name: id, path };
 }
 
 /* ─── Installed templates (OPFS `templates/<id>.md`) ───────────────── */

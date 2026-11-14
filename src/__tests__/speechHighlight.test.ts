@@ -2,7 +2,7 @@
 import { describe, it, expect } from "vitest";
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import { showSpokenRange, speechHighlightExtension, spokenRangeField } from "../editor/speechHighlight";
+import { showSpokenRange, showSpokenWord, speechHighlightExtension, spokenRangeField, spokenWordField } from "../editor/speechHighlight";
 
 function ranges(view: EditorView): Array<[number, number]> {
   const out: Array<[number, number]> = [];
@@ -30,6 +30,28 @@ describe("speech highlight", () => {
     const view = new EditorView({ state: EditorState.create({ doc: "short", extensions: speechHighlightExtension() }) });
     showSpokenRange(view, { from: 2, to: 99 });
     expect(ranges(view)).toEqual([[2, 5]]);
+    view.destroy();
+  });
+
+  it("marks the spoken word inside the sentence (plan W5.6); a new sentence clears it", () => {
+    const view = new EditorView({ state: EditorState.create({ doc: "שלום עולם. מה שלומך.", extensions: speechHighlightExtension() }) });
+    const words = () => {
+      const out: Array<[number, number]> = [];
+      view.state.field(spokenWordField).between(0, view.state.doc.length, (a, b) => {
+        out.push([a, b]);
+      });
+      return out;
+    };
+    showSpokenRange(view, { from: 0, to: 10 });
+    showSpokenWord(view, { from: 5, to: 9 });
+    expect(words()).toEqual([[5, 9]]);
+    expect(view.state.selection.main.empty).toBe(true);
+    showSpokenRange(view, { from: 11, to: 20 });
+    expect(words()).toEqual([]);
+    showSpokenWord(view, { from: 14, to: 99 });
+    expect(words()).toEqual([[14, 20]]);
+    showSpokenRange(view, null);
+    expect(words()).toEqual([]);
     view.destroy();
   });
 });

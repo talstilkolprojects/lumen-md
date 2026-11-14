@@ -10,6 +10,8 @@ import {
 import { uiPrompt } from "./PromptDialog";
 import { randomId } from "../lib/cryptoRandom";
 import { t } from "../i18n";
+import { resolvedColor } from "./tokens";
+import "./canvasWhiteboardStrings";
 
 /**
  * Canvas / Whiteboard mode — an infinite canvas for visual note-taking.
@@ -31,17 +33,18 @@ interface Props {
   onClose: () => void;
 }
 
+// The notes' own colours (content the person picks, saved with the canvas), not interface colours.
 const COLORS = [
-  "#7c5cfc", "#22c55e", "#f97316", "#ef4444", "#3b82f6",
-  "#eab308", "#ec4899", "#14b8a6", "#8b5cf6",
+  "#7c5cfc", "#22c55e", "#f97316", "#ef4444", "#3b82f6", // design-allow: note colours are content
+  "#eab308", "#ec4899", "#14b8a6", "#8b5cf6", // design-allow: note colours are content
 ];
 
 const DEFAULT_CANVAS_NAME = "untitled";
 
 const SEED_NODES: CanvasNode[] = [
-  { id: "1", x: 200, y: 200, width: 200, height: 120, content: "# Welcome\n\nDrag to move notes.", color: "#7c5cfc" },
-  { id: "2", x: 500, y: 150, width: 200, height: 120, content: "## Ideas\n\n- Note 1\n- Note 2", color: "#22c55e" },
-  { id: "3", x: 350, y: 400, width: 200, height: 120, content: "Click **+ Add** to create more notes", color: "#f97316" },
+  { id: "1", x: 200, y: 200, width: 200, height: 120, content: "# Welcome\n\nDrag to move notes.", color: "#7c5cfc" }, // design-allow: a seed note's own colour (content)
+  { id: "2", x: 500, y: 150, width: 200, height: 120, content: "## Ideas\n\n- Note 1\n- Note 2", color: "#22c55e" }, // design-allow: a seed note's own colour (content)
+  { id: "3", x: 350, y: 400, width: 200, height: 120, content: "Click **+ Add** to create more notes", color: "#f97316" }, // design-allow: a seed note's own colour (content)
 ];
 const SEED_EDGES: CanvasEdge[] = [
   { from: "1", to: "2" },
@@ -145,11 +148,11 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
     ctx.scale(2, 2);
 
     // Clear
-    ctx.fillStyle = "#0d0d18";
+    ctx.fillStyle = resolvedColor("bg");
     ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
 
     // Grid dots
-    ctx.fillStyle = "rgba(255,255,255,0.03)";
+    ctx.fillStyle = resolvedColor("border", 0.3);
     const gridSize = 40 * zoom;
     const offsetX = pan.x % gridSize;
     const offsetY = pan.y % gridSize;
@@ -162,7 +165,7 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
     }
 
     // Draw edges
-    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+    ctx.strokeStyle = resolvedColor("border-strong");
     ctx.lineWidth = 1.5;
     for (const edge of edges) {
       const from = nodes.find((n) => n.id === edge.from);
@@ -201,7 +204,7 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
       ctx.shadowOffsetY = 4;
 
       // Card background
-      ctx.fillStyle = "#1a1a2e";
+      ctx.fillStyle = resolvedColor("bg-subtle");
       ctx.beginPath();
       ctx.roundRect(nx, ny, nw, nh, 8);
       ctx.fill();
@@ -218,7 +221,7 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
       ctx.fill();
 
       // Text
-      ctx.fillStyle = "#e8e8f0";
+      ctx.fillStyle = resolvedColor("fg");
       ctx.font = `${11 * zoom}px Inter, sans-serif`;
       const lines = node.content.split("\n");
       let textY = ny + 20 * zoom;
@@ -263,15 +266,15 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 200,
-      background: "#0d0d18",
+      background: "hsl(var(--bg))",
       display: "flex", flexDirection: "column",
     }}>
       {/* Toolbar */}
       <div style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "8px 16px",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-        background: "#12121e",
+        borderBottom: "1px solid hsl(var(--border))",
+        background: "hsl(var(--bg-subtle))",
       }}>
         <button
           onClick={async () => {
@@ -279,8 +282,8 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
             onClose();
           }}
           style={{
-            background: "none", border: "1px solid rgba(255,255,255,0.1)",
-            color: "#e8e8f0", borderRadius: 6, padding: "4px 12px",
+            background: "none", border: "1px solid hsl(var(--border))",
+            color: "hsl(var(--fg))", borderRadius: 6, padding: "4px 12px",
             cursor: "pointer", fontSize: 12,
           }}
         >
@@ -291,9 +294,9 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
           onChange={(e) => void switchCanvas(e.target.value)}
           aria-label={t("canvas.switch")}
           style={{
-            background: "#12121e",
-            color: "#e8e8f0",
-            border: "1px solid rgba(255,255,255,0.1)",
+            background: "hsl(var(--bg-subtle))",
+            color: "hsl(var(--fg))",
+            border: "1px solid hsl(var(--border))",
             borderRadius: 6,
             padding: "4px 8px",
             fontSize: 12,
@@ -313,8 +316,8 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
           onClick={() => void newCanvas()}
           style={{
             background: "none",
-            border: "1px solid rgba(255,255,255,0.1)",
-            color: "#e8e8f0",
+            border: "1px solid hsl(var(--border))",
+            color: "hsl(var(--fg))",
             borderRadius: 6,
             padding: "4px 10px",
             cursor: "pointer",
@@ -325,7 +328,7 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
           + {t("canvas.new")}
         </button>
         <div style={{ flex: 1 }} />
-        <span style={{ fontSize: 12, color: "#8888a8" }}>{t("canvas.autoSaved")}</span>
+        <span style={{ fontSize: 12, color: "hsl(var(--fg-muted))" }}>{t("canvas.autoSaved")}</span>
         <div style={{ display: "flex", gap: 4 }}>
           {COLORS.map((c) => (
             <button
@@ -342,7 +345,7 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
         <button
           onClick={addNode}
           style={{
-            background: "linear-gradient(135deg, #7c5cfc, #c084fc)",
+            background: "var(--gradient-brand)",
             color: "white", border: "none", borderRadius: 6,
             padding: "6px 16px", cursor: "pointer", fontSize: 12,
             fontWeight: 600,
@@ -350,7 +353,7 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
         >
           {t("canvas.addNote")}
         </button>
-        <span style={{ fontSize: 11, color: "#8888a8" }}>
+        <span style={{ fontSize: 11, color: "hsl(var(--fg-muted))" }}>
           {t("canvas.zoom", { pct: Math.round(zoom * 100) })}
         </span>
       </div>
@@ -428,11 +431,11 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
         return (
           <div style={{
             position: "fixed", inset: 0, zIndex: 300,
-            background: "rgba(0,0,0,0.7)",
+            background: "var(--overlay)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }} onClick={() => setEditingId(null)}>
             <div onClick={(e) => e.stopPropagation()} style={{
-              background: "#1a1a2e",
+              background: "hsl(var(--bg-subtle))",
               border: `2px solid ${node.color}`,
               borderRadius: 12, padding: 20,
               width: 400, maxHeight: "80vh",
@@ -446,7 +449,7 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
                 }}
                 style={{
                   width: "100%", minHeight: 200,
-                  background: "transparent", color: "#e8e8f0",
+                  background: "transparent", color: "hsl(var(--fg))",
                   border: "none", outline: "none", resize: "vertical",
                   fontFamily: "JetBrains Mono, monospace", fontSize: 13,
                   lineHeight: 1.6,
@@ -470,7 +473,7 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
                     setEditingId(null);
                   }}
                   style={{
-                    background: "#ef4444", color: "white", border: "none",
+                    background: "hsl(var(--danger))", color: "white", border: "none",
                     borderRadius: 6, padding: "6px 16px", cursor: "pointer",
                     fontSize: 12,
                   }}

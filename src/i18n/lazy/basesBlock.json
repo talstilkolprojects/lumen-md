@@ -1,0 +1,20 @@
+{
+  "base.calendar.next": "Next month",
+  "base.calendar.prev": "Previous month",
+  "base.calendar.undated": "{count} without a date",
+  "base.csv.export": "Export CSV",
+  "base.csv.failed": "Couldn't import the CSV: {error}",
+  "base.csv.import": "Import CSV…",
+  "base.csv.imported": "Added {count} notes to {folder}",
+  "base.error": "Can't read this base: {error}",
+  "base.limited": "Showing {count} of {total}",
+  "base.move.hint": "Drag to another day, or Alt + arrow keys",
+  "base.move.readOnly": "{property} can't be changed from here: only note properties can",
+  "base.moveFailed": "Couldn't move it: {error}",
+  "base.moved": "Moved {name} to {date}",
+  "base.notFound": "{path} is not in the workspace.",
+  "base.problems": "Some expressions could not run:",
+  "base.saveSort": "Save this sort to {file}",
+  "base.saved": "Saved to {file}",
+  "base.timeline.empty": "No item has a date in {property}"
+}

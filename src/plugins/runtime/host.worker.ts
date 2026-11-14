@@ -41,6 +41,20 @@ async function load(m: Extract<HostToWorker, { type: "load" }>): Promise<void> {
     },
   });
   post({ type: "ready", loadMs: Math.round(performance.now() - t0) });
+  postStats();
+}
+
+/** The sandbox's CPU and memory, for the developer panel (W3.10). */
+function postStats(): void {
+  clearTimeout(statsTimer);
+  if (sandbox) post({ type: "stats", ...sandbox.stats(), denied: Object.fromEntries(sandbox.denied) });
+}
+
+/** After a call's answer the plugin runs on by itself: report once it has settled (at most every 100 ms). */
+let statsTimer: ReturnType<typeof setTimeout> | undefined;
+function statsSoon(): void {
+  clearTimeout(statsTimer);
+  statsTimer = setTimeout(postStats, 100);
 }
 
 self.onmessage = (ev: MessageEvent<HostToWorker>) => {
@@ -55,14 +69,17 @@ self.onmessage = (ev: MessageEvent<HostToWorker>) => {
       if (m.denied) e.name = "PluginDenied";
       p.reject(e);
     }
+    statsSoon();
     return;
   }
   // Load, events and unload run in order; events are delivered one at a time.
   queue = queue
     .then(async () => {
       if (m.type === "load") await load(m);
-      else if (m.type === "event") await sandbox?.dispatch(m.name, m.payload);
-      else if (m.type === "unload") {
+      else if (m.type === "event") {
+        await sandbox?.dispatch(m.name, m.payload);
+        postStats();
+      } else if (m.type === "unload") {
         sandbox?.dispose();
         sandbox = null;
         for (const p of pending.values()) p.reject(new Error("plugin unloaded"));

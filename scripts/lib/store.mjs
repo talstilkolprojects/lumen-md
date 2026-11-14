@@ -1,0 +1,205 @@
+/**
+ * Store submission prep (plan 13.7), the pure parts: listing limits, the
+ * fastlane metadata layout, privacy-label answers, desktop manifests.
+ * scripts/store.mjs does the files; src/__tests__/storeSubmit.test.ts tests.
+ */
+
+/** Each store's limits. `bytes` = counted in UTF-8 bytes (App Store keywords). */
+export const LIMITS = {
+  apple: { name: 30, subtitle: 30, keywords: { max: 100, bytes: true }, promotional: 170, description: 4000, releaseNotes: 4000 },
+  google: { name: 30, short: 80, description: 4000, releaseNotes: 500 },
+  microsoft: { name: 256, short: 1000, description: 10000 },
+};
+
+/** Store locale codes for our locales (Play still uses the old "iw" for Hebrew). */
+export const LOCALE_CODES = {
+  apple: { en: "en-US", he: "he" },
+  google: { en: "en-US", he: "iw-IL" },
+  microsoft: { en: "en-us", he: "he-il" },
+};
+
+const chars = (s) => [...s].length;
+const bytes = (s) => Buffer.byteLength(s, "utf8");
+export const descriptionOf = (loc) => loc.description.join("\n");
+
+/** Problems with listing.json: missing fields, over-limit texts, competitor names in keywords. */
+export function listingProblems(listing) {
+  const out = [];
+  for (const [lang, loc] of Object.entries(listing.locales ?? {})) {
+    const fields = { name: loc.name, subtitle: loc.subtitle, keywords: loc.keywords, promotional: loc.promotional, short: loc.short, description: Array.isArray(loc.description) ? descriptionOf(loc) : "", releaseNotes: loc.releaseNotes };
+    for (const [k, v] of Object.entries(fields)) if (!v || !String(v).trim()) out.push(`${lang}.${k}: missing`);
+    for (const [store, limits] of Object.entries(LIMITS)) {
+      for (const [k, lim] of Object.entries(limits)) {
+        const v = fields[k];
+        if (!v) continue;
+        const max = typeof lim === "number" ? lim : lim.max;
+        const n = typeof lim === "object" && lim.bytes ? bytes(v) : chars(v);
+        if (n > max) out.push(`${store} ${lang}.${k}: ${n} > ${max}${typeof lim === "object" && lim.bytes ? " bytes" : ""}`);
+      }
+    }
+    // App Store keywords: comma-separated, no spaces after commas, no other apps' names (Guideline 2.3.7).
+    const kw = String(loc.keywords ?? "").split(",");
+    if (kw.some((k) => k !== k.trim() || !k)) out.push(`${lang}.keywords: no empty items or spaces around commas`);
+    if (kw.some((k) => /obsidian|notion|google|evernote|bear|word/i.test(k))) out.push(`${lang}.keywords: other apps' names are not allowed`);
+    if (/\b(best|fastest|#1|world's)\b/i.test(fields.description + fields.promotional + fields.subtitle)) out.push(`${lang}: superlatives can't be backed up`);
+    if (!loc.reviewNotes?.trim()) out.push(`${lang}.reviewNotes: missing`);
+  }
+  for (const k of ["support", "privacy", "marketing"]) if (!/^https:\/\//.test(listing.urls?.[k] ?? "")) out.push(`urls.${k}: an https URL is required`);
+  return out;
+}
+
+/**
+ * The fastlane metadata files (deliver for the App Store, supply for Play):
+ * path → text. Upload with `fastlane deliver` / `fastlane supply`, or copy
+ * by hand into App Store Connect / Play Console.
+ */
+export function fastlaneFiles(listing) {
+  const f = {};
+  for (const [lang, loc] of Object.entries(listing.locales)) {
+    const a = `fastlane/metadata/${LOCALE_CODES.apple[lang]}`;
+    f[`${a}/name.txt`] = loc.name;
+    f[`${a}/subtitle.txt`] = loc.subtitle;
+    f[`${a}/keywords.txt`] = loc.keywords;
+    f[`${a}/promotional_text.txt`] = loc.promotional;
+    f[`${a}/description.txt`] = descriptionOf(loc);
+    f[`${a}/release_notes.txt`] = loc.releaseNotes;
+    f[`${a}/support_url.txt`] = listing.urls.support;
+    f[`${a}/privacy_url.txt`] = listing.urls.privacy;
+    f[`${a}/marketing_url.txt`] = listing.urls.marketing;
+    const g = `fastlane/metadata/android/${LOCALE_CODES.google[lang]}`;
+    f[`${g}/title.txt`] = loc.name;
+    f[`${g}/short_description.txt`] = loc.short;
+    f[`${g}/full_description.txt`] = descriptionOf(loc);
+    f[`${g}/changelogs/default.txt`] = loc.releaseNotes;
+  }
+  // App-level review information (deliver: review_information/).
+  f["fastlane/metadata/review_information/notes.txt"] = listing.locales.en.reviewNotes;
+  f["fastlane/metadata/copyright.txt"] = "© 2026 Lumen contributors";
+  f["fastlane/metadata/primary_category.txt"] = listing.category.apple;
+  for (const k of Object.keys(f)) f[k] = `${f[k].trim()}\n`;
+  return f;
+}
+
+/**
+ * Privacy-label answers, question by question, from store/privacy-labels.json
+ * (plan W2.24, #395): App Store Connect → App Privacy, and Play Console →
+ * Data safety. Markdown, English with Hebrew notes for the owner.
+ */
+export function privacyAnswers(labels) {
+  if (labels?.format !== "lumen-store-privacy-labels/1") throw new Error("store/privacy-labels.json: unknown format");
+  const yn = (b) => (b ? "**Yes**" : "**No**");
+  const A = labels.apple;
+  const G = labels.google;
+  const L = [
+    "# Privacy-label answers",
+    "",
+    "> Generated by `node scripts/store.mjs privacy` from `store/privacy-labels.json` (plan W2.24, the privacy report). Don't edit by hand: change the labels file, and its test checks them against the privacy ledger and the published audits.",
+    "> נוצר אוטומטית מ-`store/privacy-labels.json`. התשובות נגזרות מדוח הפרטיות; לא עורכים כאן ידנית.",
+    "",
+    `**Basis:** ${labels.default.summary}`,
+    "",
+    "## App Store Connect → App Privacy",
+    "",
+    `1. *Do you or your third-party partners collect data from this app?* → ${A.dataNotCollected && A.dataTypes.length === 0 ? "**No, we do not collect data from this app.**" : A.dataNotCollected ? "**No, we do not collect data from this app**, for the store build (see the condition below)." : "**Yes**"}`,
+    `2. *Is any data used to track the user?* → ${yn(A.tracking)}`,
+  ];
+  if (A.dataTypes.length) {
+    L.push("3. Data that a **differently configured build** would collect (declare these only if the store build is made with that setting):", "");
+    L.push("   | Category | Type | Linked to the user | Used for tracking | Only when |", "   |---|---|---|---|---|");
+    for (const d of A.dataTypes) L.push(`   | ${d.category} | ${d.type} | ${yn(d.linkedToUser)} | ${yn(d.usedForTracking)} | ${d.condition} |`);
+    L.push("", "   **The store build is made without `VITE_SENTRY_DSN`**, so the answer to question 1 stays *No*. If a build ever ships with it, declare *Crash Data*: not linked, not used for tracking, *App Functionality*.");
+  }
+  L.push("", `*Note:* ${A.note}`, "", "## Google Play Console → Data safety", "");
+  L.push(`1. *Does your app collect or share any of the required user data types?* → ${G.dataCollected || G.dataShared ? "**Yes**" : "**No**"}`);
+  L.push(`2. *Is all of the user data collected by your app encrypted in transit?* → ${yn(G.encryptedInTransit)}`);
+  L.push(`3. *Do you provide a way for users to request that their data is deleted?* → ${G.userCanRequestDeletion}`);
+  if (G.conditionalCollection.length) {
+    L.push("", "   Only in a differently configured build:", "");
+    for (const c of G.conditionalCollection) L.push(`   - **${c.type}**${c.optional ? " (optional for the user)" : ""}: ${c.condition}`);
+  }
+  L.push("", "## Features the user turns on (not collection by the developer)", "", "Both stores ask about data *the developer* collects. These go only where the user sends them, with the user's own key or account, and the developer receives none of it. Mention them in the review notes, not as collected data.", "");
+  L.push("| Feature | Sends | Turned on by |", "|---|---|---|");
+  for (const o of labels.optionalFeatures) L.push(`| ${o.feature} | ${o.sends} | ${o.turnedOnBy} |`);
+  L.push("");
+  return L.join("\n");
+}
+
+/** sha256 of a release file, from SHA256SUMS text (`<hash>  <name>`). */
+export function sumOf(sums, name) {
+  const line = String(sums).split("\n").find((l) => l.endsWith(`  ${name}`));
+  const h = line?.split("  ")[0];
+  if (!h || !/^[0-9a-f]{64}$/.test(h)) throw new Error(`SHA256SUMS has no entry for ${name}`);
+  return h;
+}
+
+/**
+ * The desktop manifests for winget (Windows) and a Homebrew cask (macOS),
+ * filled from a release's version and SHA256SUMS (plan 13.4 writes both).
+ * `files` names the release assets: { windows: "Lumen_1.0.0_x64-setup.exe", mac: "Lumen_1.0.0_universal.dmg" }.
+ */
+export function desktopManifests({ version, sums, files, repo = "talstilkol/lumen-md", listing }) {
+  if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error("a stable version (x.y.z): stores don't take betas");
+  const url = (f) => `https://github.com/${repo}/releases/download/v${version}/${encodeURIComponent(f)}`;
+  const en = listing.locales.en;
+  const winSha = sumOf(sums, files.windows).toUpperCase();
+  const macSha = sumOf(sums, files.mac);
+  const id = "Lumen.Lumen";
+  const winget = {
+    [`manifests/l/Lumen/Lumen/${version}/${id}.yaml`]: [`PackageIdentifier: ${id}`, `PackageVersion: ${version}`, "DefaultLocale: en-US", "ManifestType: version", "ManifestVersion: 1.6.0", ""].join("\n"),
+    [`manifests/l/Lumen/Lumen/${version}/${id}.installer.yaml`]: [
+      `PackageIdentifier: ${id}`,
+      `PackageVersion: ${version}`,
+      "InstallerType: nullsoft",
+      "Scope: user",
+      "Installers:",
+      "  - Architecture: x64",
+      `    InstallerUrl: ${url(files.windows)}`,
+      `    InstallerSha256: ${winSha}`,
+      "ManifestType: installer",
+      "ManifestVersion: 1.6.0",
+      "",
+    ].join("\n"),
+    [`manifests/l/Lumen/Lumen/${version}/${id}.locale.en-US.yaml`]: [
+      `PackageIdentifier: ${id}`,
+      `PackageVersion: ${version}`,
+      "PackageLocale: en-US",
+      "Publisher: Lumen contributors",
+      "PackageName: Lumen",
+      "License: MIT",
+      `LicenseUrl: https://github.com/${repo}/blob/main/LICENSE`,
+      `ShortDescription: ${en.short}`,
+      `PackageUrl: ${listing.urls.marketing}`,
+      `PrivacyUrl: ${listing.urls.privacy}`,
+      "Tags:",
+      ...en.keywords.split(",").slice(0, 10).map((k) => `  - ${k}`),
+      "ManifestType: defaultLocale",
+      "ManifestVersion: 1.6.0",
+      "",
+    ].join("\n"),
+  };
+  const cask = [
+    'cask "lumen" do',
+    `  version "${version}"`,
+    `  sha256 "${macSha}"`,
+    "",
+    `  url "https://github.com/${repo}/releases/download/v#{version}/${files.mac.replace(version, "#{version}")}"`,
+    '  name "Lumen"',
+    `  desc "${en.short.replace(/\.$/, "")}"`,
+    `  homepage "${listing.urls.marketing}"`,
+    "",
+    "  livecheck do",
+    "    url :url",
+    "    strategy :github_latest",
+    "  end",
+    "",
+    '  app "Lumen.app"',
+    "",
+    "  zap trash: [",
+    '    "~/Library/Application Support/app.lumen.editor",',
+    '    "~/Library/Caches/app.lumen.editor",',
+    "  ]",
+    "end",
+    "",
+  ].join("\n");
+  return { ...winget, "Casks/l/lumen.rb": cask };
+}

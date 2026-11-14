@@ -44,18 +44,19 @@ describe("hosting: one policy on every host", () => {
     expect(run({ root: ROOT }).problems).toEqual([]);
   });
 
-  it("Netlify: the edge function gives both runner pages their policy and drops the frame denial", () => {
+  it("Netlify: the edge function gives both runner pages and the content frame their policy and drops the frame denial", () => {
     const fn = read("netlify/edge-functions/runner-headers.ts");
     for (const [path, route] of [
       ["/playground-runner.html", "playground-runner"],
       ["/livejs-runner.html", "livejs-runner"],
+      ["/content-frame.html", "content-frame"],
     ]) {
       expect(fn).toContain(`"${path}": ${JSON.stringify(renderCsp(policy, route, "netlify"))}`);
       expect(read("netlify.toml")).toMatch(new RegExp(`path = "${path}"\\n\\s*function = "runner-headers"`));
     }
     expect(fn).toContain('headers.delete("x-frame-options")');
     expect(fn).toContain('headers.set("content-security-policy", csp)');
-    expect(fn).toMatch(/export const config = \{ path: \["\/playground-runner\.html", "\/livejs-runner\.html"\] \}/);
+    expect(fn).toMatch(/export const config = \{ path: \["\/playground-runner\.html", "\/livejs-runner\.html", "\/content-frame\.html"\] \}/);
     // Netlify's own _headers sets no CSP of its own (dist/_headers does).
     expect(read("netlify.toml")).not.toMatch(/Content-Security-Policy/i);
   });

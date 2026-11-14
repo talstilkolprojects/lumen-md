@@ -145,13 +145,19 @@ export interface ExFrameElement extends ExBase {
   name: string | null;
 }
 
+/** An embed (plan W1.16 uses it for note cards: link `lumen-note:<path>`, see ../canvas/noteCards.ts). */
+export interface ExEmbeddableElement extends ExBase {
+  type: "embeddable";
+}
+
 export type ExcalidrawElement =
   | ExShapeElement
   | ExTextElement
   | ExLinearElement
   | ExFreedrawElement
   | ExImageElement
-  | ExFrameElement;
+  | ExFrameElement
+  | ExEmbeddableElement;
 
 export interface ExBinaryFile {
   id: string;

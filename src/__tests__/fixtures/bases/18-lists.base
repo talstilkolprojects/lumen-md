@@ -1,0 +1,14 @@
+filters:
+  and:
+    - file.hasTag("book")
+    - note.tags.containsAny("classic", "ספר")
+formulas:
+  tagCount: note.tags.length
+  others: note.tags.filter(value != "book").join(", ")
+views:
+  - type: table
+    name: Classics
+    order: [file.name, formula.tagCount, formula.others]
+    sort:
+      - property: file.name
+        direction: ASC

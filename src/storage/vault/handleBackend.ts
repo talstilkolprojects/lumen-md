@@ -39,7 +39,12 @@ export interface DirectoryHandleBackendOptions {
    * path segments relative to `root`.
    */
   writeFallback?: (segments: string[], data: VaultData) => Promise<void>;
+  /** Is a `writeFallback` save still running (its temporary files are not leftovers yet)? */
+  writesPending?: () => boolean;
 }
+
+/** Names an interrupted atomic save leaves (./atomic.ts, written by the OPFS worker). */
+const isSaveLeftover = (name: string) => name.startsWith(".lumen-old~") || name.startsWith(".lumen-tmp~");
 
 type Found =
   | { kind: "file"; handle: FileSystemFileHandle }
@@ -93,6 +98,17 @@ export function createDirectoryHandleBackend(o: DirectoryHandleBackendOptions): 
     } catch (e) {
       if (isMissing(e)) throw new VaultNotFoundError(path);
       throw e;
+    }
+  }
+
+  /** fileAt, finishing an interrupted save of the file first when it is missing. */
+  async function fileRecovered(path: string): Promise<FileSystemFileHandle> {
+    const parts = vaultSegments(path);
+    try {
+      return await fileAt(parts, path);
+    } catch (e) {
+      if (!(e instanceof VaultNotFoundError) || !parts.length || !(await recoverIn(parts.slice(0, -1)))) throw e;
+      return await fileAt(parts, path);
     }
   }
 
@@ -188,6 +204,40 @@ export function createDirectoryHandleBackend(o: DirectoryHandleBackendOptions): 
     await removeAt(src, src.join("/"));
   }
 
+  /**
+   * Finish or undo a save the OPFS worker was stopped in the middle of
+   * (./atomic.ts) in folder `dirParts`. The recovery code loads only when
+   * such leftovers are there. Returns whether anything was done.
+   */
+  // Folders found without leftovers in this session. Leftovers come from a
+  // run that was stopped (a failed save removes its own), so a clean folder
+  // stays clean and a missing file costs one scan of its folder at most.
+  const clean = new Set<string>();
+  async function recoverIn(dirParts: string[]): Promise<boolean> {
+    const key = dirParts.join("/");
+    if (clean.has(key) || o.writesPending?.()) return false;
+    let dir: FileSystemDirectoryHandle;
+    try {
+      dir = await dirAt(dirParts, false);
+    } catch {
+      return false;
+    }
+    const names: string[] = [];
+    for await (const [name] of dir.entries()) names.push(name);
+    if (!names.some(isSaveLeftover)) {
+      clean.add(key);
+      return false;
+    }
+    const { recoverHandleDir } = await import("./atomic");
+    await recoverHandleDir<Found>(
+      { lookup, move, removeAt, writeAt, segments: vaultSegments, fileSize: async (f) => (f.kind === "file" ? (await f.handle.getFile()).size : null) },
+      key,
+      names,
+    );
+    clean.add(key);
+    return true;
+  }
+
   return {
     id: o.id,
 
@@ -203,7 +253,9 @@ export function createDirectoryHandleBackend(o: DirectoryHandleBackendOptions): 
         throw e;
       }
       const out: VaultEntry[] = [];
+      let leftovers = false;
       for await (const [name, child] of handle.entries()) {
+        if (isSaveLeftover(name)) leftovers = true;
         const path = [...parts, name].join("/");
         if (child.kind === "directory") {
           out.push({ name, path, kind: "directory" });
@@ -216,11 +268,16 @@ export function createDirectoryHandleBackend(o: DirectoryHandleBackendOptions): 
           out.push({ name, path, kind: "file" });
         }
       }
+      // An interrupted save: finish or undo it, then list again.
+      if (leftovers && (await recoverIn(parts))) return this.list(dir);
+      if (!leftovers) clean.add(parts.join("/"));
       return out.sort(compareVaultEntries);
     },
 
     async stat(path): Promise<VaultStat | null> {
-      const found = await lookup(vaultSegments(path));
+      const parts = vaultSegments(path);
+      let found = await lookup(parts);
+      if (!found && parts.length && (await recoverIn(parts.slice(0, -1)))) found = await lookup(parts);
       if (!found) return null;
       if (found.kind === "directory") return { kind: "directory", size: 0, mtime: 0 };
       try {
@@ -235,13 +292,11 @@ export function createDirectoryHandleBackend(o: DirectoryHandleBackendOptions): 
     },
 
     async read(path) {
-      const handle = await fileAt(vaultSegments(path), path);
-      return await handle.getFile();
+      return await (await fileRecovered(path)).getFile();
     },
 
     async readText(path) {
-      const handle = await fileAt(vaultSegments(path), path);
-      return await (await handle.getFile()).text();
+      return await (await (await fileRecovered(path)).getFile()).text();
     },
 
     async write(path, data) {

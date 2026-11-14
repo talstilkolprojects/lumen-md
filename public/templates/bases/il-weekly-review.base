@@ -1,0 +1,18 @@
+# Weekly reviews — from the template Weekly review (Sunday–Thursday)
+filters:
+  and:
+    - 'type == "weekly-review"'
+properties:
+  file.name:
+    displayName: "Week"
+  note.week:
+    displayName: "Starts"
+  note.energy:
+    displayName: "Energy"
+views:
+  - type: table
+    name: "Weekly reviews"
+    order:
+      - file.name
+      - note.week
+      - note.energy

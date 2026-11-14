@@ -1,0 +1,27 @@
+# מבחנים — נוצר מהתבנית מבחן (מועד א׳ / ב׳)
+filters:
+  and:
+    - 'type == "exam"'
+properties:
+  file.name:
+    displayName: "מבחן"
+  note.course:
+    displayName: "קורס"
+  note.exam_date:
+    displayName: "תאריך"
+  note.moed:
+    displayName: "מועד"
+  note.grade:
+    displayName: "ציון"
+views:
+  - type: kanban
+    name: "מבחנים"
+    order:
+      - file.name
+      - note.course
+      - note.exam_date
+      - note.moed
+      - note.grade
+    groupBy:
+      property: note.status
+      direction: ASC

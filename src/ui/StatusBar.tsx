@@ -10,6 +10,7 @@ import type { ConfigHealthReport } from "../lib/configHealth";
 import { subscribeSyncStatus } from "../sync/syncStatus";
 import { secretStoreMode, subscribeSecretStoreMode } from "../lib/secretStore";
 import { parseSuggestions, mayContainCriticMarkup } from "../editor/suggesting";
+import { BetaBadge } from "./FeatureFlagsHost";
 
 /** Number of CriticMarkup suggestions (cheap no-op for plain docs). */
 function countCriticMarkup(text: string): number {
@@ -74,19 +75,20 @@ export const StatusBar = React.memo(function StatusBar({
   const healthIssues = configHealth
     ? [
         ...configHealth.blocked.map((item) => ({ ...item, emoji: "⚠", color: "hsl(var(--danger))" })),
-        ...configHealth.partial.map((item) => ({ ...item, emoji: "◌", color: "hsl(var(--warn))" })),
+        ...configHealth.partial.map((item) => ({ ...item, emoji: "◌", color: "hsl(var(--warning))" })),
       ].slice(0, 2)
     : [];
   const healthColor = !configHealth
     ? "hsl(var(--fg-muted))"
     : configHealth.score >= 85
-      ? "hsl(var(--ok))"
+      ? "hsl(var(--success))"
       : configHealth.score >= 65
-        ? "hsl(var(--warn))"
+        ? "hsl(var(--warning))"
         : "hsl(var(--danger))";
   return (
     <footer className="status-bar">
       <span className="sb-item" title={t("status.document")}>
+      <BetaBadge />
         {dirty ? "●" : "○"} {filename}
       </span>
       {syncState !== "idle" && (
@@ -202,7 +204,7 @@ export const StatusBar = React.memo(function StatusBar({
           cursor: "pointer",
           padding: 0,
           font: "inherit",
-          color: suggestingMode ? "hsl(var(--ok))" : "hsl(var(--fg-muted))",
+          color: suggestingMode ? "hsl(var(--success))" : "hsl(var(--fg-muted))",
         }}
       >
         <FileDiff size={10} />
@@ -229,7 +231,7 @@ export const StatusBar = React.memo(function StatusBar({
           cursor: "pointer",
           padding: 0,
           font: "inherit",
-          color: grammarCheck ? "hsl(220 80% 65%)" : "hsl(var(--fg-muted))",
+          color: grammarCheck ? "hsl(var(--info))" : "hsl(var(--fg-muted))",
         }}
       >
         <SpellCheck size={10} />
@@ -255,7 +257,7 @@ export const StatusBar = React.memo(function StatusBar({
           cursor: "pointer",
           padding: 0,
           font: "inherit",
-          color: telemetryOff ? "hsl(var(--fg-muted))" : "hsl(var(--ok))",
+          color: telemetryOff ? "hsl(var(--fg-muted))" : "hsl(var(--success))",
         }}
       >
         <Activity size={10} />
@@ -293,8 +295,8 @@ export const StatusBar = React.memo(function StatusBar({
           style={{ gap: 4, paddingInline: 4 }}
           data-testid="status-secrets-plain"
         >
-          <AlertCircle size={10} style={{ color: "hsl(12 90% 58%)" }} aria-hidden="true" />
-          <span style={{ color: "hsl(12 90% 58%)", fontSize: 10, fontWeight: 600 }}>{t("status.secretsPlain")}</span>
+          <AlertCircle size={10} style={{ color: "hsl(var(--danger))" }} aria-hidden="true" />
+          <span style={{ color: "hsl(var(--danger))", fontSize: 10, fontWeight: 600 }}>{t("status.secretsPlain")}</span>
         </span>
       )}
       {useLocalAi && (
@@ -306,9 +308,9 @@ export const StatusBar = React.memo(function StatusBar({
         >
           <ShieldCheck
             size={10}
-            style={{ color: "hsl(var(--ok))" }}
+            style={{ color: "hsl(var(--success))" }}
           />
-          <span style={{ color: "hsl(var(--ok))", fontSize: 10, fontWeight: 600 }}>
+          <span style={{ color: "hsl(var(--success))", fontSize: 10, fontWeight: 600 }}>
             {t("status.privacyMode")}
           </span>
         </span>

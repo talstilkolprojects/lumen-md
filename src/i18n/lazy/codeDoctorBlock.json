@@ -1,0 +1,21 @@
+{
+  "block.codeDoctor.charRange": "· char {start}–{end}: {message}",
+  "block.codeDoctor.clean": "clean",
+  "block.codeDoctor.col.confidence": "Confidence",
+  "block.codeDoctor.col.count": "Count",
+  "block.codeDoctor.col.example": "Example",
+  "block.codeDoctor.col.issue": "Issue",
+  "block.codeDoctor.copied": "Repaired JSON copied to the clipboard.",
+  "block.codeDoctor.copyFailed": "Could not copy to the clipboard. Select the text and copy it by hand.",
+  "block.codeDoctor.diagnostics": "{n} individual diagnostics",
+  "block.codeDoctor.identical": "Original and repaired outputs are identical — nothing to compare.",
+  "block.codeDoctor.noIssues": "✓ No issues detected. The input parses as valid JSON.",
+  "block.codeDoctor.original": "Original (broken)",
+  "block.codeDoctor.repairedTable": "Repaired output, rendered as a table:",
+  "block.codeDoctor.switchHint": "⚙ Switch to {tab} tab to see the auto-fixed output.",
+  "block.codeDoctor.title": "Code Doctor · {format}",
+  "block.codeDoctor.view.compare": "Compare",
+  "block.codeDoctor.view.diagnose": "Diagnose",
+  "block.codeDoctor.view.repaired": "Repaired",
+  "block.common.copy": "Copy"
+}

@@ -1,5 +1,8 @@
 import { useCommands, openNewDoc } from "./commands/useCommands";
 import type { NoteEditDetail } from "./views/databaseEdit";
+import { baseAsMarkdown } from "./views/bases/embed";
+import { appShortcutFor } from "./lib/shortcuts";
+import { noteTypedKey } from "./lib/keyboardLayout";
 import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { EditorHandle } from "./editor/Editor";
 import type { SettingsTab } from "./settings/schema";
@@ -11,6 +14,7 @@ import { ScrollProgress } from "./ui/ScrollProgress";
 import { SearchReplace } from "./ui/SearchReplace";
 const GraphView = lazy(() => import("./ui/GraphView").then(m => ({ default: m.GraphView })));
 // Canvas on Excalidraw (plan 4.19; γ.2 had it on tldraw). The legacy custom-canvas component
+const LocalGraphPanel = lazy(() => import("./ui/LocalGraphPanel").then(m => ({ default: m.LocalGraphPanel })));
 // `CanvasWhiteboard.tsx` remains in tree as a fallback in case we ever
 // need to surface old `.canvas.json` files; it's intentionally unused.
 const CanvasWhiteboard = lazy(() => import("./ui/CanvasExcalidraw").then(m => ({ default: m.CanvasExcalidraw })));
@@ -20,19 +24,22 @@ const AuditLog = lazy(() => import("./ui/AuditLog").then(m => ({ default: m.Audi
 // One settings screen (plan 11.1); the theme, AI, training, trusted-key and
 // organization dialogs are its tabs.
 const SettingsScreen = lazy(() => import("./ui/SettingsScreen").then(m => ({ default: m.SettingsScreen })));
+const ReadingSettings = lazy(() => import("./ui/ReadingSettings").then(m => ({ default: m.ReadingSettings })));
 const PrivacyLedgerPanel = lazy(() => import("./ui/PrivacyLedgerPanel").then(m => ({ default: m.PrivacyLedgerPanel })));
 const TrashPanel = lazy(() => import("./ui/TrashPanel").then(m => ({ default: m.TrashPanel })));
 // Properties editor (plan 4.9) — lazy: the yaml-editing code is not in the startup bundle.
 const PropertiesPanel = lazy(() => import("./ui/PropertiesPanel").then(m => ({ default: m.PropertiesPanel })));
 // Quick capture to inbox.md (plan 4.16): its own chunk, loaded on first open.
 const QuickCapture = lazy(() => import("./ui/QuickCapture").then(m => ({ default: m.QuickCapture })));
+const ImageHostsPanel = lazy(() => import("./ui/ImageHostsPanel").then(m => ({ default: m.ImageHostsPanel })));
 const AiDoctorPanel = lazy(() => import("./ui/AiDoctorPanel").then(m => ({ default: m.AiDoctorPanel })));
 const AgentReviewPanel = lazy(() => import("./ui/AgentReviewPanel").then(m => ({ default: m.AgentReviewPanel })));
+const ImportWizard = lazy(() => import("./storage/import/ImportWizard").then(m => ({ default: m.ImportWizard })));
 const VersionHistory = lazy(() => import("./ui/VersionHistory").then(m => ({ default: m.VersionHistory })));
 const MarkdownTableEditor = lazy(() => import("./ui/MarkdownTableEditor").then(m => ({ default: m.MarkdownTableEditor })));
 // PDF reader (plan 4.14): pdf.js and the reader load only when a PDF is opened.
 const PdfReader = lazy(() => import("./pdf/PdfReader").then(m => ({ default: m.PdfReaderOverlay })));
-import { htmlToMarkdown } from "./storage/fileFormats";
+const EpubReader = lazy(() => import("./epub/EpubReader").then(m => ({ default: m.EpubReaderOverlay })));
 import { wirePluginAPI, registerPlugin, unregisterPlugin, wordCountPlugin } from "./plugins/pluginSystem";
 import { CommandPalette } from "./ui/CommandPalette";
 import { AiFab } from "./ui/AiFab";
@@ -50,9 +57,10 @@ const SearchDialog = lazy(() =>
 );
 import { AiToastContainer, showAiToast } from "./ui/AiToast";
 import { minimalChange, propertiesTransaction, trackedPropertiesText } from "./editor/propertiesEdit";
+import { HelpHost } from "./ui/HelpHost";
 import { AiSuggestionsPanel } from "./ui/AiSuggestionsPanel";
 import { ledgerEntries } from "./ai/privacyLedger";
-import { MobileKeyboardBar } from "./ui/MobileKeyboardBar";
+import { MobileKeyboardBarHost } from "./ui/MobileKeyboardBarHost";
 import { TagsPanel } from "./ui/TagsPanel";
 // CommentsPanel pulls collab/comments.ts → yjs; comments only exist inside a
 // collab session, so the panel is lazy and addCommentFromSelection is
@@ -90,7 +98,6 @@ import {
   writeWorkspaceBlob,
   writeWorkspaceFile,
 } from "./storage/workspace";
-import { welcomeDoc } from "./welcomeDoc";
 import { ErrorBoundary } from "./ui/ErrorBoundary";
 const KeyboardShortcuts = lazy(() => import("./ui/KeyboardShortcuts").then(m => ({ default: m.KeyboardShortcuts })));
 import { handleTrashUndoKey } from "./ui/trashUndoShortcut";
@@ -98,11 +105,48 @@ import { FocusMode } from "./ui/FocusMode";
 const OnboardingTour = lazy(() => import("./ui/OnboardingTour").then(m => ({ default: m.OnboardingTour })));
 // First-run setup (plan 14.1): its own chunk, loaded only on a first visit or from ⌘K.
 const FirstRun = lazy(() => import("./onboarding/FirstRun"));
+// Plan W1.29: the moderator's usability-session panel, loaded only when a study runs.
+const UsabilitySessionPanel = lazy(() => import("./ui/UsabilitySessionPanel").then((m) => ({ default: m.UsabilitySessionPanel })));
 import { scrollToHeadingWhenRendered } from "./renderer/wikiLinks";
 import { notifyWorkspaceChanged } from "./storage/workspaceEvents";
+import { explainError } from "./lib/userError";
+import { useEdgeSwipes, useLongNotesOpenForReading } from "./mobile/useMobileGestures";
+import { FeatureFlagsHost } from "./ui/FeatureFlagsHost";
+import { announceCommand } from "./research/usability/commandEvents";
+import { useDesktopShell } from "./desktop/useDesktopShell";
+import { countCommand } from "./metrics/count";
 
 export default function App() {
   const doc = useAppStore((s) => s.doc);
+  // Reading options (plan W3.5): the open note's face, size and spacing.
+  // The module (and any face) loads only once the person has set one.
+  const readingPath = doc.workspaceName ?? null;
+  useEffect(() => {
+    let live = true;
+    const apply = () => {
+      let stored = false;
+      try {
+        stored = localStorage.getItem("lumen-reading") !== null;
+      } catch {
+        /* no storage: nothing set */
+      }
+      if (!stored) return;
+      void import("./reading/settings").then((m) => {
+        if (live) void m.applyReading(m.effectiveReading(readingPath));
+      });
+    };
+    apply();
+    window.addEventListener("lumen-reading-changed", apply);
+    return () => {
+      live = false;
+      window.removeEventListener("lumen-reading-changed", apply);
+    };
+  }, [readingPath]);
+  useEffect(() => {
+    const onOpen = () => setReadingOpen(true);
+    window.addEventListener("lumen-open-reading", onOpen);
+    return () => window.removeEventListener("lumen-open-reading", onOpen);
+  }, []);
   const setContent = useAppStore((s) => s.setContent);
   const setDoc = useAppStore((s) => s.setDoc);
   const markSaved = useAppStore((s) => s.markSaved);
@@ -124,10 +168,31 @@ export default function App() {
     mq.addEventListener?.("change", on);
     return () => mq.removeEventListener?.("change", on);
   }, []);
+  // Phones (plan W1.25): edge swipes for the panels; long notes open for reading.
+  useEdgeSwipes();
+  useLongNotesOpenForReading(tabId(doc), doc.content);
   const showWorkspace = useAppStore((s) => s.showWorkspace);
   const locale = useAppStore((s) => s.locale);
   const toggleWorkspace = useAppStore((s) => s.toggleWorkspace);
   const showBacklinks = useAppStore((s) => s.showBacklinks);
+  const showLocalGraph = useAppStore((s) => s.showLocalGraph);
+  const enabledSnippets = useAppStore((s) => s.enabledSnippets);
+  // CSS snippets from the vault (plan W1.21): sanitized, applied, kept in step with the files.
+  useEffect(() => {
+    if (!enabledSnippets.length && !document.querySelector("style[data-lumen-snippet]")) return;
+    let off: (() => void) | undefined;
+    let cancelled = false;
+    void Promise.all([import("./theme/snippets"), import("./storage/workspaceEvents")]).then(([m, ev]) => {
+      if (cancelled) return;
+      const run = () => void m.refreshSnippets(useAppStore.getState().enabledSnippets).catch(() => undefined);
+      run();
+      off = ev.onWorkspaceChanged(run, { debounceMs: 300 });
+    });
+    return () => {
+      cancelled = true;
+      off?.();
+    };
+  }, [enabledSnippets]);
   const vimEnabled = useAppStore((s) => s.vimEnabled);
   const spellCheck = useAppStore((s) => s.spellCheck);
   const grammarCheck = useAppStore((s) => s.grammarCheck);
@@ -148,6 +213,32 @@ export default function App() {
     if (typeof window === "undefined" || typeof navigator === "undefined") return false;
     return localLlmAvailable().available;
   }, []);
+  // Plan 14.4: the beta flag update.checkOnLaunch — once a day, desktop only,
+  // never in local-only; says something only when there is an update.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void import("./desktop/updates")
+        .then((m) => m.launchUpdateCheck())
+        .then((r) => {
+          if (r?.state === "available") showAiToast(t("update.launch.available", { version: r.version }), "info");
+        })
+        .catch(() => undefined);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
+  // A usability session (W1.29) survives a reload: reopen its panel.
+  const [usabilityOpen, setUsabilityOpen] = useState(() => {
+    try {
+      return !!localStorage.getItem("lumen-usability-session");
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    const on = () => setUsabilityOpen(true);
+    window.addEventListener("lumen-open-usability", on);
+    return () => window.removeEventListener("lumen-open-usability", on);
+  }, []);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   useEffect(() => {
@@ -157,6 +248,7 @@ export default function App() {
   const [graphOpen, setGraphOpen] = useState(false);
   /** The PDF open in the reader, with the link fragment that opened it (`page=N&highlight=ID`). */
   const [pdfView, setPdfView] = useState<{ path: string; fragment: string | null; seq: number } | null>(null);
+  const [epubView, setEpubView] = useState<{ path: string; fragment: string | null; seq: number } | null>(null);
   /** The open reader's save gate: replacing the reader waits until its highlights are saved. */
   const pdfSaveGate = useRef<((then: () => void) => void) | null>(null);
   const registerPdfSaveGate = useCallback((gate: ((then: () => void) => void) | null) => {
@@ -174,12 +266,15 @@ export default function App() {
   const setOrgSettingsOpen = useCallback((open: boolean) => setSettingsTab(open ? "org" : null), []);
   const setTrustedKeysOpen = useCallback((open: boolean) => setSettingsTab(open ? "security" : null), []);
   const setThemeSettingsOpen = useCallback((open: boolean) => setSettingsTab(open ? "appearance" : null), []);
+  const [readingOpen, setReadingOpen] = useState(false);
   const [aiDoctorOpen, setAiDoctorOpen] = useState(false);
   const [agentReviewOpen, setAgentReviewOpen] = useState(false);
   const openAgentReview = useCallback(() => setAgentReviewOpen(true), []);
+  const [importOpen, setImportOpen] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
   const [propertiesOpen, setPropertiesOpen] = useState(false);
   const [captureOpen, setCaptureOpen] = useState(false);
+  const [captureVoice, setCaptureVoice] = useState(false);
   // The search dialog loads on first open and then stays mounted, so an
   // Ask Workspace conversation survives closing it (perf: not at startup).
   const [searchMounted, setSearchMounted] = useState(false);
@@ -199,6 +294,14 @@ export default function App() {
   // Load recents on mount.
   useEffect(() => {
     getRecents().then(setRecents).catch(() => setRecents([]));
+  }, []);
+
+  // Plan 14.6: after an update, that version's notes once (when the app is idle; nothing on a fresh install).
+  useEffect(() => {
+    const run = () => void import("./whatsNew/check").then((m) => m.checkWhatsNew()).catch(() => undefined);
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    if (ric) ric(run, { timeout: 4000 });
+    else setTimeout(run, 2000);
   }, []);
 
   useEffect(() => {
@@ -229,8 +332,10 @@ export default function App() {
     // e2e/ocr-cer.spec.ts measures its CER on the production build); the
     // module loads on the first call only.
     (window as unknown as { __lumen?: unknown }).__lumen = {
-      htmlToMarkdown,
-      // `agentReview` (plan 5.11 e2e) is added by agents/reviewBridge once it loads.
+      // Async: the converters load on first use (startup budget); page.evaluate awaits it.
+      htmlToMarkdown: (html: string) => import("./storage/fileFormats").then((m) => m.htmlToMarkdown(html)),
+      // `agentReview` (plan 5.11 e2e) is added by agents/reviewBridge once it
+      // loads, in development and tests only (plan W1.31).
       // The vault index, for e2e/perf-vault.spec.ts (a lazy chunk).
       vaultIndex: () => import("./storage/vaultIndexProbe"),
       ocr: (image: Blob) => import("./ai/ocr").then((m) => m.ocrImage(image)),
@@ -239,6 +344,8 @@ export default function App() {
       runPython: async (args: { code: string; inputs?: Record<string, unknown>; timeoutMs?: number }) =>
         (await import("./agents/tools/python")).runPythonTool.run(args, { grants: new Set(["read" as const]) }),
       ledger: () => ledgerEntries(),
+      // W2.23 — the print document as HTML, for the print golden tests.
+      buildPrintHtml: (md: string, name: string) => import("./ui/PrintExport").then((m) => m.buildPrintHtml(md, name)),
     };
     return () => {
       unregisterPlugin(wordCountPlugin.id);
@@ -267,6 +374,9 @@ export default function App() {
         else asNote();
       } else if (l.kind === "action" && l.action === "capture") {
         setCaptureOpen(true);
+      } else if (l.kind === "action" && l.action === "voice") {
+        setCaptureVoice(true);
+        setCaptureOpen(true);
       } else if (l.kind === "action" && l.action === "new") {
         openNewDoc(t("doc.untitled"), "", false);
       } else if (l.kind === "action" && l.action === "palette") {
@@ -287,7 +397,7 @@ export default function App() {
     let stop: (() => void) | undefined;
     let cancelled = false;
     const save = (p: import("./research/clipV2").ClipPayload) =>
-      void import("./commands/useCommands").then(({ saveClipV2 }) => saveClipV2(p)).catch((e) => showAiToast(t("clip.failed", { message: (e as Error).message }), "error"));
+      void import("./commands/useCommands").then(({ saveClipV2 }) => saveClipV2(p)).catch((e) => showAiToast(t("clip.failed", { message: explainError(e) }), "error"));
     void import("./research/clipBridge").then(({ startClipBridge }) => {
       if (!cancelled) stop = startClipBridge(save);
     });
@@ -295,6 +405,35 @@ export default function App() {
       cancelled = true;
       stop?.();
     };
+  }, []);
+
+  // Plan W3.4: home-screen widgets, App Shortcuts, Siri / Shortcuts and Spotlight
+  // reach the app as lumen:// action links and a queue of captures (iOS / Android only).
+  const [searchQuery, setSearchQuery] = useState("");
+  useEffect(() => {
+    let stop: (() => void) | undefined;
+    void import("./mobile/nativeActions").then(async (m) => {
+      stop = await m.initNativeBridge({
+        capture: (mode, tappedAt) => {
+          m.noteTap(tappedAt);
+          setCaptureVoice(mode === "voice");
+          setCaptureOpen(true);
+        },
+        captureText: async (text, when) => {
+          const { captureToInbox } = await import("./capture/quickCapture");
+          await captureToInbox(text, when);
+          showAiToast(t("widgets.captured"), "success");
+        },
+        newNote: () => openNewDoc(t("doc.untitled"), "", false),
+        search: (query) => {
+          setSearchQuery(query);
+          setSearchOpen(true);
+        },
+        daily: () => window.dispatchEvent(new CustomEvent("lumen-open-today")),
+      });
+    });
+    return () => stop?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Check for a shared note from the iOS Share Extension.
@@ -311,8 +450,13 @@ export default function App() {
   // Seed the Welcome document on first launch
   useEffect(() => {
     if (!doc.content) {
-      // Use openTab so the Welcome doc lands on the tab strip too.
-      openTabAction({ name: "Welcome.md", content: welcomeDoc(), workspaceName: null });
+      // Use openTab so the Welcome doc lands on the tab strip too. Its text
+      // (English and Hebrew) loads on demand, off the startup bundle; a note
+      // opened in the meantime wins.
+      void import("./welcomeDoc").then((m) => {
+        if (useAppStore.getState().doc.content) return;
+        openTabAction({ name: "Welcome.md", content: m.welcomeDoc(), workspaceName: null });
+      });
     } else if (openTabs.length === 0) {
       // Existing session before tabs existed — backfill a tab for the
       // currently active doc so the strip shows up immediately.
@@ -425,7 +569,7 @@ export default function App() {
       } catch (err) {
         // User cancelled Save-As dialog or filesystem error
         if ((err as DOMException)?.name !== "AbortError") {
-          await uiAlert({ message: t("doc.alert.saveFailed", { error: (err as Error).message }) });
+          await uiAlert({ message: t("doc.alert.saveFailed", { error: explainError(err) }) });
         }
       }
     },
@@ -452,7 +596,7 @@ export default function App() {
     try {
       await exportToHtml(doc.content, doc.name);
     } catch (e) {
-      await uiAlert({ message: t("doc.alert.exportFailed", { error: (e as Error).message }) });
+      await uiAlert({ message: t("doc.alert.exportFailed", { error: explainError(e) }) });
     }
   }, [doc.content, doc.name]);
 
@@ -497,6 +641,11 @@ export default function App() {
     async function onOpen(e: Event) {
       const detail = (e as CustomEvent<{ path: string; heading?: string; fragment?: string }>).detail;
       if (!detail?.path) return;
+      // A book opens in the EPUB reader, at the chapter / highlight the link names (W1.14).
+      if (/\.epub$/i.test(detail.path)) {
+        setEpubView((prev) => ({ path: detail.path, fragment: detail.fragment ?? null, seq: (prev?.seq ?? 0) + 1 }));
+        return;
+      }
       // A PDF opens in the reader, at the page / highlight the link names.
       if (/\.pdf$/i.test(detail.path)) {
         const open = () => setPdfView((prev) => ({ path: detail.path, fragment: detail.fragment ?? null, seq: (prev?.seq ?? 0) + 1 }));
@@ -530,7 +679,7 @@ export default function App() {
           const s = useAppStore.getState();
           return m.openDailyNote(m.dayOf(new Date()), s.dailyNotes, s.locale);
         })
-        .catch((e: unknown) => showAiToast(t("daily.failed", { error: e instanceof Error ? e.message : String(e) }), "error"));
+        .catch((e: unknown) => showAiToast(t("daily.failed", { error: explainError(e) }), "error"));
     };
     window.addEventListener("lumen-open-today", onToday);
     return () => window.removeEventListener("lumen-open-today", onToday);
@@ -643,21 +792,17 @@ export default function App() {
   // Keyboard shortcuts
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      const meta = e.metaKey || e.ctrlKey;
-      if (!meta) return;
+      noteTypedKey(e.key);
+      // F1 → in-app help (W3.7), as the palette shows.
+      if (e.key === "F1" && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        e.preventDefault();
+        void import("./ui/HelpButton").then((m) => m.openHelp());
+        return;
+      }
+      if (!(e.metaKey || e.ctrlKey)) return;
       // ⌘Z / Ctrl+Z outside the editor: restore the last delete (plan 3.1).
       // In an editor or a text field it stays their own undo.
       if (handleTrashUndoKey(e)) return;
-      // ⇧⌘F → focus mode toggle (or workspace search if already in focus mode)
-      if (e.shiftKey && (e.key === "f" || e.key === "F")) {
-        e.preventDefault();
-        if (focusMode) {
-          setFocusMode(false);
-        } else {
-          setFocusMode(true);
-        }
-        return;
-      }
       // ⌥⌘D → today's daily note (e.code: Option changes e.key on a Mac).
       if (e.altKey && e.code === "KeyD") {
         e.preventDefault();
@@ -671,52 +816,68 @@ export default function App() {
         setCaptureOpen(true);
         return;
       }
-      if (e.key === "k" || e.key === "K") {
+      // ⌥⌘C → the cite dialog (plan W2.16).
+      if (e.altKey && e.code === "KeyC") {
         e.preventDefault();
-        setPaletteOpen((v) => !v);
-      } else if (e.key === "s" || e.key === "S") {
-        e.preventDefault();
-        handleSave(e.shiftKey);
-      } else if (e.key === "h" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setFindReplaceOpen((v) => !v);
-      } else if (e.key === "o" || e.key === "O") {
-        e.preventDefault();
-        handleOpen();
-      } else if (e.key === "n" || e.key === "N") {
-        e.preventDefault();
-        handleNew();
-      } else if (e.key === "1") {
-        e.preventDefault();
-        useAppStore.getState().setMode("source");
-      } else if (e.key === "2") {
-        e.preventDefault();
-        useAppStore.getState().setMode("split");
-      } else if (e.key === "3") {
-        e.preventDefault();
-        useAppStore.getState().setMode("preview");
-      } else if (e.key === "4") {
-        e.preventDefault();
-        useAppStore.getState().setMode("wysiwyg");
-      } else if (e.key === "/") {
-        e.preventDefault();
-        setShortcutsOpen((v) => !v);
-      } else if (e.shiftKey && (e.key === "v" || e.key === "V")) {
-        // ⌘⇧V — Smart Insert (paste anything → auto-detect → wrap).
-        e.preventDefault();
-        (async () => {
-          const result = await openInsertTextDialog();
-          if (!result) return;
-          const cur = useAppStore.getState().doc.content;
-          const setter = useAppStore.getState().setContent;
-          if (result.mode === "replace") setter(result.markdown);
-          else if (result.mode === "atCursor" && editorRef.current) {
-            editorRef.current.insertText(result.markdown);
-          } else {
-            const trimmed = cur.endsWith("\n") ? cur : cur + "\n";
-            setter(trimmed + (result.mode === "append" ? "\n" : "") + result.markdown);
-          }
-        })();
+        void import("./citations/CiteDialog").then((m) => m.openCiteDialog());
+        return;
+      }
+      // Matched by the physical key, so the Hebrew layout works too (plan W2.8).
+      const id = appShortcutFor(e);
+      if (!id) return;
+      e.preventDefault();
+      switch (id) {
+        case "view.focusMode":
+          // ⇧⌘F → focus mode toggle
+          setFocusMode(!focusMode);
+          return;
+        case "palette.toggle":
+          setPaletteOpen((v) => !v);
+          return;
+        case "file.save":
+        case "file.saveAs":
+          handleSave(id === "file.saveAs");
+          return;
+        case "view.findReplace":
+          setFindReplaceOpen((v) => !v);
+          return;
+        case "file.open":
+          handleOpen();
+          return;
+        case "file.new":
+          handleNew();
+          return;
+        case "view.source":
+          useAppStore.getState().setMode("source");
+          return;
+        case "view.split":
+          useAppStore.getState().setMode("split");
+          return;
+        case "view.preview":
+          useAppStore.getState().setMode("preview");
+          return;
+        case "view.wysiwyg":
+          useAppStore.getState().setMode("wysiwyg");
+          return;
+        case "help.shortcuts":
+          setShortcutsOpen((v) => !v);
+          return;
+        case "insert.smart":
+          // ⌘⇧V — Smart Insert (paste anything → auto-detect → wrap).
+          (async () => {
+            const result = await openInsertTextDialog();
+            if (!result) return;
+            const cur = useAppStore.getState().doc.content;
+            const setter = useAppStore.getState().setContent;
+            if (result.mode === "replace") setter(result.markdown);
+            else if (result.mode === "atCursor" && editorRef.current) {
+              editorRef.current.insertText(result.markdown);
+            } else {
+              const trimmed = cur.endsWith("\n") ? cur : cur + "\n";
+              setter(trimmed + (result.mode === "append" ? "\n" : "") + result.markdown);
+            }
+          })();
+          return;
       }
     }
     window.addEventListener("keydown", onKey);
@@ -789,8 +950,9 @@ export default function App() {
   // never pairs one document's markdown with another's identity.
   const currentDocKey = docIdentity(doc);
   const previewSource = useMemo(
-    () => ({ content: doc.content, docKey: currentDocKey }),
-    [doc.content, currentDocKey],
+    // A `.base` file (Obsidian Bases, plan W1.11) previews as its views.
+    () => ({ content: /\.base$/i.test(doc.name) ? baseAsMarkdown(doc.content) : doc.content, docKey: currentDocKey }),
+    [doc.content, doc.name, currentDocKey],
   );
   const deferredPreview = useDeferredValue(previewSource);
   const deferredContent = deferredPreview.content;
@@ -846,10 +1008,30 @@ export default function App() {
         return undefined;
       };
       const cmd = id ? find(commandsRef.current) : undefined;
-      if (cmd) void cmd.action();
+      if (cmd) {
+        announceCommand(cmd.id);
+        countCommand(cmd.id);
+        void cmd.action();
+      }
+    };
+    // The usage dialog (plan W4.26) needs every command id to name the unused ones.
+    const onUsage = () => {
+      const ids: string[] = [];
+      const walk = (list: typeof commands) => {
+        for (const c of list) {
+          ids.push(c.id);
+          if (c.children) walk(c.children as typeof commands);
+        }
+      };
+      walk(commandsRef.current);
+      void import("./ui/UsageDialog").then((m) => m.openUsage({ commandIds: ids }));
     };
     window.addEventListener("lumen-run-command", onRun);
-    return () => window.removeEventListener("lumen-run-command", onRun);
+    window.addEventListener("lumen-open-usage", onUsage);
+    return () => {
+      window.removeEventListener("lumen-run-command", onRun);
+      window.removeEventListener("lumen-open-usage", onUsage);
+    };
   }, []);
   useEffect(() => {
     const onOpenAi = () => setSettingsTab("ai");
@@ -865,6 +1047,16 @@ export default function App() {
     const onOpen = () => setPrivacyOpen(true);
     window.addEventListener("lumen-open-privacy-ledger", onOpen);
     return () => window.removeEventListener("lumen-open-privacy-ledger", onOpen);
+  }, []);
+  // A saved search in the sidebar (plan W2.12) opens the dialog on its query.
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const query = (e as CustomEvent<{ query?: string }>).detail?.query;
+      (window as unknown as { __lumenSearchQuery?: string }).__lumenSearchQuery = typeof query === "string" ? query : undefined;
+      setSearchOpen(true);
+    };
+    window.addEventListener("lumen-open-search", onOpen);
+    return () => window.removeEventListener("lumen-open-search", onOpen);
   }, []);
   useEffect(() => {
     const onOpen = () => setPropertiesOpen((v) => !v);
@@ -911,6 +1103,13 @@ export default function App() {
     window.addEventListener("lumen-note-edit", onEdit);
     return () => window.removeEventListener("lumen-note-edit", onEdit);
   }, [applyPropertiesEdit]);
+  // Allowed image hosts (plan W1.30), opened from the palette.
+  const [imageHostsOpen, setImageHostsOpen] = useState(false);
+  useEffect(() => {
+    const onOpen = () => setImageHostsOpen(true);
+    window.addEventListener("lumen-open-image-hosts", onOpen);
+    return () => window.removeEventListener("lumen-open-image-hosts", onOpen);
+  }, []);
   useEffect(() => {
     const onOpen = () => setTrashOpen(true);
     window.addEventListener("lumen-open-trash", onOpen);
@@ -935,6 +1134,11 @@ export default function App() {
     window.addEventListener("lumen-open-agent-review", openAgentReview);
     return () => window.removeEventListener("lumen-open-agent-review", openAgentReview);
   }, [openAgentReview]);
+  useEffect(() => {
+    const onOpen = () => setImportOpen(true);
+    window.addEventListener("lumen-open-import", onOpen);
+    return () => window.removeEventListener("lumen-open-import", onOpen);
+  }, []);
   // Stage 2 of the improvement agent (a small local model proposes suggestions).
   useEffect(() => {
     void import("./agents/modelCritic").then((m) => m.installModelCritic());
@@ -951,6 +1155,8 @@ export default function App() {
   }, []);
 
   // Native Tauri menu wiring — no-op when running in a regular browser.
+  // Plan W3.9: files from Finder / Explorer, lumen:// links, the tray, tabs between windows.
+  const desktopShell = useDesktopShell({ editorRef, onNew: () => void handleNew(), showToast: (m) => showAiToast(m, "info") });
   useTauriMenu({
     onNew: handleNew,
     onOpen: handleOpen,
@@ -998,6 +1204,7 @@ export default function App() {
         aria-atomic="true"
         className="aria-live-region"
         id="lumen-sr-announcer"
+        data-testid="sr-announcer-polite"
       />
       <Toolbar
         onOpen={handleOpen}
@@ -1007,9 +1214,10 @@ export default function App() {
         onFocusMode={() => setFocusMode(true)}
         onShortcuts={() => setShortcutsOpen(true)}
         onTour={() => setTourOpen(true)}
-        onShowWelcome={() => {
+        onShowWelcome={async () => {
           // Restore the bundled welcome document — handy when the user wants
           // to revisit the feature tour without scrubbing recents for it.
+          const { welcomeDoc } = await import("./welcomeDoc");
           setDoc({
             name: "Welcome.md",
             content: welcomeDoc(),
@@ -1043,7 +1251,7 @@ export default function App() {
             placeholder: t("toast.pasteText.placeholder"),
           });
           if (!text) return;
-          const md = text.trim().startsWith("<") ? htmlToMarkdown(text) : text;
+          const md = text.trim().startsWith("<") ? (await import("./storage/fileFormats")).htmlToMarkdown(text) : text;
           setContent(doc.content + "\n\n" + md);
           showAiToast(`✅ ${t("toast.pasteText.success")}`, "info");
         }}
@@ -1090,6 +1298,7 @@ export default function App() {
             }}
             onClose={(id) => closeTabAction(id)}
             onReorder={(from, to) => reorderTabs(from, to)}
+            onDragOut={desktopShell.onTabDragOut}
           />
           <EditorLayout
             mode={mode}
@@ -1129,6 +1338,21 @@ export default function App() {
               }
             }}
           />
+        )}
+        {showLocalGraph && (
+          <Suspense fallback={null}>
+            <LocalGraphPanel
+              filePath={doc.workspaceName ?? null}
+              onOpen={async (path) => {
+                try {
+                  const content = await readWorkspaceFile(path);
+                  setDoc({ name: path.split("/").pop() ?? path, content, handle: undefined, workspaceName: path, dirty: false });
+                } catch {
+                  /* missing file */
+                }
+              }}
+            />
+          </Suspense>
         )}
         {dragHover && (
           <div
@@ -1183,7 +1407,11 @@ export default function App() {
       {searchMounted && <Suspense fallback={null}>
       <SearchDialog
         open={searchOpen}
-        onClose={() => setSearchOpen(false)}
+        initialQuery={searchQuery}
+        onClose={() => {
+          setSearchOpen(false);
+          setSearchQuery("");
+        }}
         onOpenFile={(path, content) => {
           setDoc({
             name: path.split("/").pop() ?? path,
@@ -1197,9 +1425,16 @@ export default function App() {
       />
       </Suspense>}
       <AiToastContainer />
+      <HelpHost />
+      <FeatureFlagsHost />
       <AiSuggestionsPanel />
       <AiInlinePromptOverlay />
-      <MobileKeyboardBar />
+      <MobileKeyboardBarHost />
+      {usabilityOpen && (
+        <Suspense fallback={null}>
+          <UsabilitySessionPanel onClose={() => setUsabilityOpen(false)} />
+        </Suspense>
+      )}
       <TagsPanel open={tagsPanelOpen} onClose={() => setTagsPanelOpen(false)} />
       {collab && (
         <Suspense fallback={null}>
@@ -1226,6 +1461,13 @@ export default function App() {
         <Suspense fallback={null}>
           {/* A new PDF gets a fresh reader: no page, search or OCR state carries over. */}
           <PdfReader key={pdfView.path} path={pdfView.path} fragment={pdfView.fragment} openSeq={pdfView.seq} onClose={() => setPdfView(null)} registerSaveGate={registerPdfSaveGate} />
+        </Suspense>
+      )}
+
+      {/* EPUB reader overlay (plan W1.14) */}
+      {epubView && (
+        <Suspense fallback={null}>
+          <EpubReader key={epubView.path} path={epubView.path} fragment={epubView.fragment} openSeq={epubView.seq} onClose={() => setEpubView(null)} />
         </Suspense>
       )}
 
@@ -1272,8 +1514,11 @@ export default function App() {
           {agentReviewOpen && <AgentReviewPanel open={agentReviewOpen} onClose={() => setAgentReviewOpen(false)} />}
           {privacyOpen && <PrivacyLedgerPanel open={privacyOpen} onClose={() => setPrivacyOpen(false)} />}
           {trashOpen && <TrashPanel open={trashOpen} onClose={() => setTrashOpen(false)} />}
+          {importOpen && <ImportWizard open={importOpen} onClose={() => setImportOpen(false)} />}
           {propertiesOpen && <PropertiesPanel open={propertiesOpen} onClose={() => setPropertiesOpen(false)} text={doc.content} applyEdit={applyPropertiesEdit} />}
-          {captureOpen && <QuickCapture open={captureOpen} onClose={() => setCaptureOpen(false)} />}
+          {captureOpen && <QuickCapture open={captureOpen} voice={captureVoice} onClose={() => { setCaptureOpen(false); setCaptureVoice(false); }} />}
+          {imageHostsOpen && <ImageHostsPanel open={imageHostsOpen} onClose={() => setImageHostsOpen(false)} />}
+          {readingOpen && <ReadingSettings open={readingOpen} onClose={() => setReadingOpen(false)} notePath={doc.workspaceName ?? null} />}
         </ErrorBoundary>
       </Suspense>
 

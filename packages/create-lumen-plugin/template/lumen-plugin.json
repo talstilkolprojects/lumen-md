@@ -1,15 +1,15 @@
 {
-  "id": "__PLUGIN_NAME__",
+  "schema": 1,
+  "id": "local.__PLUGIN_NAME__",
   "name": "__PLUGIN_TITLE__",
   "version": "0.1.0",
-  "author": "Your Name <you@example.com>",
-  "description": "A Lumen plugin.",
-  "icon": "✨",
-  "homepage": "https://example.com/",
-  "minLumenVersion": "0.1.0",
-  "main": "dist/__PLUGIN_NAME__.js",
-  "permissions": [
-    "register-block",
-    "register-command"
+  "description": "Counts the words of the open note and shows them in a side panel.",
+  "author": "Your Name",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    { "id": "document:read", "reason": "To count the words of the open note" },
+    { "id": "commands", "reason": "Adds the “__PLUGIN_TITLE__” command" },
+    { "id": "panel", "reason": "Shows the count in a side panel" }
   ]
 }

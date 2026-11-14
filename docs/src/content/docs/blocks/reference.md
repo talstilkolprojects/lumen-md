@@ -19,7 +19,7 @@ Lumen's killer feature is **dynamic blocks**: write a fenced code block in markd
 | ` ```plantuml ` / ` ```puml ` | PlantUML via kroki.io | Network egress; opt out via privacy mode |
 | ` ```abc ` | ABC music notation (renderable score) | Abcjs |
 | ` ```model ` | 3-D model viewer (`<model-viewer>`) | GLB / GLTF |
-| ` ```embed ` | Universal embed (YouTube, Vimeo, Twitter, Loom, CodePen, oembed) | URL on the body line |
+| ` ```embed ` | Universal embed (YouTube, Vimeo, Twitter, Loom, CodePen, Spotify, Gist, …) | URL on the body line. Nothing loads until you click **Load** (or **Always allow** the site): then the player runs inside Lumen's content frame. A link to a site Lumen can't embed stays a link |
 | ` ```html ` / ` ```html-preview ` | Sanitized HTML preview | DOMPurify allowlist; no JS executes in the page |
 | ` ```svg ` / ` ```live-svg ` | Sanitized inline SVG preview | Same hardening as HTML |
 | ` ```live-js ` | JS sandbox (Worker isolate) with console output | Stdout/stderr/error states; timeout-protected; `shared` = one REPL scope per document (see below) |

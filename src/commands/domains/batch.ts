@@ -5,6 +5,7 @@ import { t } from "../../i18n";
 import { uiAlert, uiConfirm, uiPrompt, uiSelect } from "../../ui/PromptDialog";
 import { showAiToast } from "../../ui/AiToast";
 import { aiOperation, isAbort } from "../../ai/aiAbort";
+import { explainError } from "../../lib/userError";
 
 /** Submit a batch job over a folder of notes; check jobs and apply their results. */
 export function buildBatchCommands(): Command[] {
@@ -95,9 +96,9 @@ export function buildBatchCommands(): Command[] {
           // Live progress, with pause / resume / cancel (plan 5.8).
           if (job.provider === "local") void import("../../ui/BatchPanel").then((m) => m.openBatchPanel());
         } catch (e) {
+          showAiToast(explainError(e), "error");
           if (isAbort(e)) return;
           if ((await import("../../agents/suggestions")).reportAgentFailure(e, "ai.batch")) return;
-          showAiToast((e as Error).message, "error");
         }
       },
     },
@@ -123,7 +124,7 @@ export function buildBatchCommands(): Command[] {
           try {
             results = await batch.fetchBatchResults(job);
           } catch (e) {
-            showAiToast((e as Error).message, "error");
+            showAiToast(explainError(e), "error");
             continue;
           }
           if (results.state === "processing") {
@@ -258,7 +259,7 @@ export function buildBatchCommands(): Command[] {
           }
           await uiAlert({ title: t("cmd.ai.summarize"), message: `${res.sentences.map((s) => `• ${s}`).join("\n")}\n\n${t(res.engine === "extractive" ? "pdf.summary.extractive" : "pdf.summary.local")}` });
         } catch (e) {
-          if (!isAbort(e)) showAiToast(t("pdf.ask.failed", { error: (e as Error).message }), "error");
+          if (!isAbort(e)) showAiToast(t("pdf.ask.failed", { error: explainError(e) }), "error");
         } finally {
           op.end();
         }

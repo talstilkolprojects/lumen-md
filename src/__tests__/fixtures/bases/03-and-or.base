@@ -1,0 +1,15 @@
+filters:
+  and:
+    - file.hasTag("book")
+    - or:
+        - "rating >= 5"
+        - 'status == "reading"'
+views:
+  - type: table
+    name: Favourites or current
+    order: [file.name, rating, status]
+    sort:
+      - property: rating
+        direction: DESC
+      - property: file.name
+        direction: ASC

@@ -1,0 +1,18 @@
+# Characters — from the template Character
+filters:
+  and:
+    - 'type == "character"'
+properties:
+  file.name:
+    displayName: "Character"
+  note.role:
+    displayName: "Role"
+  note.age:
+    displayName: "Age"
+views:
+  - type: cards
+    name: "Characters"
+    order:
+      - file.name
+      - note.role
+      - note.age

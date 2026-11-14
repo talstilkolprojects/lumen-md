@@ -1,10 +1,13 @@
 /** View commands: editor modes, panels, editor settings, language and theme. */
+import { isBetaLocale } from "../../i18n/review";
 import { cmdIcons, type Command } from "../../ui/CommandPalette";
 import { useAppStore } from "../../store/useStore";
 import { t, SUPPORTED_LOCALES } from "../../i18n";
+import { showAiToast } from "../../ui/AiToast";
 import type { CommandContext } from "./context";
 import { EXCALIDRAW_CANVAS_ENABLED } from "../../canvas/engine";
 import { log } from "../../lib/logger";
+import { explainError } from "../../lib/userError";
 
 /** Editor modes, side panels and the editor's on/off settings. */
 export function buildViewCommands({ setSearchOpen, setRuntimeMetricsOpen, vimEnabled, spellCheck, typewriterMode, pageView, toggleWorkspace, toggleBacklinks, toggleVim, toggleSpellCheck, toggleTypewriter, tsChecks, toggleTsChecks, grammarCheck, toggleGrammarCheck, setMode, toggleOutline }: CommandContext): Command[] {
@@ -50,6 +53,25 @@ export function buildViewCommands({ setSearchOpen, setRuntimeMetricsOpen, vimEna
       action: toggleOutline,
     },
     {
+      id: "mobile.customizeToolbar",
+      label: t("cmd.mobile.customizeToolbar"),
+      hint: t("cmd.mobile.customizeToolbar.hint"),
+      icon: cmdIcons.Pencil,
+      group: t("group.view"),
+      action: () => window.dispatchEvent(new CustomEvent("lumen-mobile-customize")),
+    },
+    {
+      id: "mobile.readLongNotes",
+      label: t("cmd.mobile.readLongNotes"),
+      hint: useAppStore.getState().readLongNotes ? t("cmd.mobile.readLongNotes.on") : t("cmd.mobile.readLongNotes.off"),
+      icon: cmdIcons.Eye,
+      group: t("group.view"),
+      action: () => {
+        const st = useAppStore.getState();
+        st.setReadLongNotes(!st.readLongNotes);
+      },
+    },
+    {
       id: "view.pageView",
       label: t("cmd.view.pageView"),
       hint: pageView ? t("cmd.view.pageView.on") : t("cmd.view.pageView.off"),
@@ -84,12 +106,116 @@ export function buildViewCommands({ setSearchOpen, setRuntimeMetricsOpen, vimEna
       action: () => void import("../../pdf/openPdf").then((m) => m.pickAndOpenPdf()),
     },
     {
+      id: "student.lecture",
+      label: t("cmd.student.lecture"),
+      hint: t("cmd.student.lecture.hint"),
+      icon: cmdIcons.FileText,
+      group: t("group.file"),
+      // Plan W5.13: record a lecture, mark the important moments, get a transcript, a summary and review cards.
+      action: () => void import("../../student/LectureRecorder").then((m) => m.openLectureRecorder()),
+    },
+    {
       id: "note.capture",
       label: t("capture.title"),
       shortcut: "⌥⌘N",
       icon: cmdIcons.FileText,
       group: t("group.file"),
       action: () => window.dispatchEvent(new CustomEvent("lumen-open-capture")),
+    },
+    {
+      id: "epub.open",
+      label: t("cmd.epub.open"),
+      icon: cmdIcons.FileText,
+      group: t("group.file"),
+      // Plan W1.14: copies the book into the vault and opens it in the reader.
+      action: () => void import("../../epub/openEpub").then((m) => m.pickAndOpenEpub()),
+    },
+    {
+      id: "view.reading",
+      label: t("cmd.reading.mode"),
+      icon: cmdIcons.FileText,
+      group: t("group.file"),
+      // Plan W1.14: the open note (a clip, typically) as a page to read and highlight.
+      action: () => void import("../../epub/ReadingMode").then((m) => m.openReadingMode()),
+    },
+    {
+      id: "view.highlights",
+      label: t("cmd.highlights.all"),
+      icon: cmdIcons.FileText,
+      group: t("group.file"),
+      // Plan W1.15: every PDF, EPUB and clip highlight — search, tags, export.
+      action: () => void import("../../highlights/HighlightsPanel").then((m) => m.openHighlightsPanel()),
+    },
+    {
+      id: "view.review",
+      label: t("cmd.review.daily"),
+      icon: cmdIcons.FileText,
+      group: t("group.file"),
+      // Plan W3.3: today's spaced-repetition cards (highlights and question::answer).
+      action: () => void import("../../srs/ReviewPanel").then((m) => m.openDailyReview()),
+    },
+    {
+      id: "highlights.import",
+      label: t("cmd.highlights.import"),
+      icon: cmdIcons.FileText,
+      group: t("group.file"),
+      // Plan W2.15: Kindle, Kobo, Readwise and Zotero highlights into one note per book.
+      action: () => void import("../../highlights/import/runImport").then((m) => m.importHighlights()),
+    },
+    {
+      id: "research.litReview",
+      label: t("cmd.research.litReview"),
+      hint: t("cmd.research.litReview.hint"),
+      icon: cmdIcons.FileText,
+      group: t("group.file"),
+      // Plan W5.12: a matrix of every PDF in the vault, each value with a quote verified on its page.
+      action: async () => {
+        const { buildLiteratureReview, REVIEW_FOLDER } = await import("../../research/litReview");
+        showAiToast(t("litReview.started"), "info");
+        try {
+          const { papers } = await buildLiteratureReview({ onProgress: (p) => p.current && showAiToast(t("litReview.progress", { done: p.done + 1, total: p.total, title: p.current }), "info") });
+          const values = papers.reduce((n, p) => n + p.fields.filter((f) => f.value).length, 0);
+          showAiToast(t("litReview.done", { papers: papers.length, values, folder: REVIEW_FOLDER }), "success");
+        } catch (e) {
+          showAiToast(t("litReview.failed", { error: explainError(e) }), "error");
+        }
+      },
+    },
+    {
+      id: "note.morning",
+      label: t("cmd.note.morning"),
+      hint: t("cmd.note.morning.hint"),
+      icon: cmdIcons.FileText,
+      group: t("group.file"),
+      // Plan W5.19: turn "Your morning" on (off by default) and write it into today's note now.
+      action: async () => {
+        const store = useAppStore.getState();
+        const settings = { ...store.dailyNotes, morning: true };
+        if (!store.dailyNotes.morning) store.setDailyNotes({ morning: true });
+        const [{ dayOf, dailyPath, ensureDailyNote }, m] = await Promise.all([import("../../daily/dailyNote"), import("../../daily/morning")]);
+        const day = dayOf(new Date());
+        const path = dailyPath(day, settings);
+        try {
+          const t0 = performance.now();
+          if (store.doc.workspaceName === path) store.setContent(await m.applyToText(store.doc.content, day, settings, store.locale));
+          else {
+            await ensureDailyNote(day, settings, store.locale);
+            await m.refreshMorningFile(day, settings, store.locale);
+            window.dispatchEvent(new CustomEvent("lumen-open-today"));
+          }
+          showAiToast(t("morning.done", { ms: Math.round(performance.now() - t0) }), "success");
+        } catch (e) {
+          showAiToast(t("morning.failed", { error: explainError(e) }), "error");
+        }
+      },
+    },
+    {
+      id: "note.morningOff",
+      label: t("cmd.note.morningOff"),
+      hint: t("cmd.note.morningOff.hint"),
+      icon: cmdIcons.FileText,
+      group: t("group.file"),
+      action: () => useAppStore.getState().setDailyNotes({ morning: false }),
     },
     {
       id: "view.calendar",
@@ -108,9 +234,18 @@ export function buildViewCommands({ setSearchOpen, setRuntimeMetricsOpen, vimEna
       action: toggleBacklinks,
     },
     {
+      id: "view.localGraph",
+      label: t("cmd.view.localGraph"),
+      hint: t("cmd.view.localGraph.hint"),
+      icon: cmdIcons.Link,
+      group: t("group.view"),
+      action: () => useAppStore.getState().toggleLocalGraph(),
+    },
+    {
       id: "view.search",
       label: t("cmd.view.search"),
-      shortcut: "⇧⌘F",
+      // No shortcut shown: ⇧⌘F is focus mode (App.tsx) — the palette promised
+      // a key that did something else (W2.8 conflict check).
       icon: cmdIcons.PanelRightOpen,
       group: t("group.view"),
       action: () => setSearchOpen(true),
@@ -200,7 +335,8 @@ export function buildLanguageCommands({ rtl, toggleRtl, setLocale }: CommandCont
     },
     ...SUPPORTED_LOCALES.map((l) => ({
       id: `lang.${l.code}`,
-      label: t("cmd.view.language", { label: l.label }),
+      // Plan W4.18: a language no native speaker has reviewed says so.
+      label: t("cmd.view.language", { label: isBetaLocale(l.code) ? t("locale.betaLabel", { label: l.label }) : l.label }),
       hint:
         l.dir === "rtl"
           ? t("cmd.view.language.rtl")
@@ -209,11 +345,22 @@ export function buildLanguageCommands({ rtl, toggleRtl, setLocale }: CommandCont
       group: t("group.view"),
       action: () => setLocale(l.code),
     })),
+    {
+      id: "i18n.suggest",
+      label: t("cmd.i18n.suggest"),
+      hint: t("cmd.i18n.suggest.hint"),
+      icon: cmdIcons.PanelRightOpen,
+      group: t("group.view"),
+      action: async () => {
+        const { openTranslationSuggest } = await import("../../ui/TranslationSuggest");
+        openTranslationSuggest();
+      },
+    },
   ];
 }
 
 /** Find & replace, graph, history, table editor, autosave, canvas, plugins. */
-export function buildPanelCommands({ setFindReplaceOpen, setGraphOpen, setHistoryOpen, setTableEditorOpen, setCanvasOpen, setGalleryOpen, autoSave, autoSaveInterval, toggleAutoSave }: CommandContext): Command[] {
+export function buildPanelCommands({ setFindReplaceOpen, setGraphOpen, setHistoryOpen, setTableEditorOpen, setCanvasOpen, setGalleryOpen, autoSave, autoSaveInterval, toggleAutoSave, liveDoc }: CommandContext): Command[] {
   return [
     {
       id: "view.findReplace",
@@ -264,6 +411,19 @@ export function buildPanelCommands({ setFindReplaceOpen, setGraphOpen, setHistor
       icon: cmdIcons.Sparkles,
       group: t("group.view"),
       action: () => setCanvasOpen(true),
+    },
+    {
+      id: "view.present",
+      label: t("cmd.view.present"),
+      hint: t("cmd.view.present.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.view"),
+      // Plan W2.17: the note as slides (headings and --- lines), from the slide at the cursor.
+      action: async () => {
+        const doc = liveDoc();
+        const { presentNote, slideAtLine, cursorLine } = await import("../../slides/present");
+        await presentNote(doc.content, doc.name, slideAtLine(doc.content, await cursorLine()));
+      },
     },
     // Plan 4.19: offered once the Excalidraw canvas lands (src/canvas/engine.ts).
     ...(EXCALIDRAW_CANVAS_ENABLED

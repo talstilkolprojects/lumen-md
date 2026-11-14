@@ -30,7 +30,9 @@ export function setRoomInHash(name: string | null, password?: string | null): vo
     return;
   }
   const pw = password ? encodeURIComponent(password) : location.hash.match(/[#&]password=([^&]+)/)?.[1];
-  history.replaceState(null, "", `#room=${name}${pw ? `&password=${pw}` : ""}`);
+  // A share link's id stays too (plan W1.19): without it a reload would ask the server as the owner.
+  const share = location.hash.match(/[#&]share=([\w-]+)/)?.[1];
+  history.replaceState(null, "", `#room=${name}${pw ? `&password=${pw}` : ""}${share ? `&share=${share}` : ""}`);
 }
 
 /**

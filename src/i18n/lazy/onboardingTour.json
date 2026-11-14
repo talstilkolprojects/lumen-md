@@ -1,0 +1,15 @@
+{
+  "onboard.tour.skip": "Skip tour",
+  "tour.done": "✓ Done",
+  "tour.next": "→ Next",
+  "tour.step.editor.body": "Write Markdown with full syntax highlighting, live preview, and AI assistance.",
+  "tour.step.editor.title": "✍️ Editor",
+  "tour.step.menu.body": "Access File, Edit, Insert, View, and Help — each menu has clear sections, hover tooltips, and per-action descriptions.",
+  "tour.step.menu.title": "📋 Menu Bar",
+  "tour.step.statusBar.body": "Word count, character count, reading time — always visible.",
+  "tour.step.statusBar.title": "📊 Status Bar",
+  "tour.step.viewModes.body": "Switch between Source, Split, Preview, and WYSIWYG anytime (⌘1-4).",
+  "tour.step.viewModes.title": "👁️ View Modes",
+  "tour.step.workspace.body": "Manage files in your local workspace. Everything is stored in-browser.",
+  "tour.step.workspace.title": "📁 Workspace"
+}

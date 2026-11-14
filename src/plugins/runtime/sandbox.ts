@@ -14,7 +14,7 @@ import type { QuickJSContext, QuickJSHandle, QuickJSRuntime, QuickJSWASMModule }
 import { newQuickJSWASMModuleFromVariant, newVariant } from "quickjs-emscripten-core";
 import { isGranted, METHOD_CAPABILITY, networkGranted, PluginDenied, type Grants } from "./capabilities";
 import type { PluginManifest } from "./manifest";
-import { DEFAULT_LIMITS, METHOD_RE, type SandboxLimits } from "./protocol";
+import { DEFAULT_LIMITS, memoryUsed, METHOD_RE, type SandboxLimits } from "./protocol";
 
 export interface SandboxHost {
   /** Perform a granted call in the app. Rejections become errors inside the plugin. */
@@ -39,7 +39,18 @@ export interface Sandbox {
   dispatch(name: string, payload: unknown): Promise<void>;
   /** Calls the plugin made that were refused for a missing capability, by capability. */
   readonly denied: ReadonlyMap<string, number>;
+  /** CPU time spent in plugin code and the QuickJS heap in use (the developer panel, W3.10). */
+  stats(): SandboxStats;
   dispose(): void;
+}
+
+export interface SandboxStats {
+  /** Total CPU time in plugin code, ms (every entry: load, events, settled calls). */
+  cpuMs: number;
+  entries: number;
+  maxEntryMs: number;
+  /** Bytes the QuickJS heap uses ("memory used" of JS_DumpMemoryUsage), or null when unknown. */
+  memoryBytes: number | null;
 }
 
 /** The API surface inside the sandbox, from the method table: `lumen.<ns>.<fn>(...args)` → host call. */
@@ -111,6 +122,24 @@ export async function createSandbox(opts: SandboxOptions): Promise<Sandbox> {
   // CPU: every entry into plugin code (eval, event, job drain) gets `cpuMsPerEntry`; the handler is polled by the interpreter.
   let deadline = Infinity;
   runtime.setInterruptHandler(() => Date.now() > deadline);
+  // CPU accounting for the developer panel (W3.10): the time between arming the deadline and disarming it.
+  const cpu = { totalMs: 0, entries: 0, maxMs: 0 };
+  const clock = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
+  let armedAt = 0;
+  const arm = () => {
+    deadline = Date.now() + limits.cpuMsPerEntry;
+    armedAt = clock();
+  };
+  const disarm = () => {
+    if (armedAt) {
+      const d = clock() - armedAt;
+      cpu.totalMs += d;
+      cpu.entries++;
+      cpu.maxMs = Math.max(cpu.maxMs, d);
+      armedAt = 0;
+    }
+    deadline = Infinity;
+  };
   const context: QuickJSContext = runtime.newContext();
   const denied = new Map<string, number>();
   let disposed = false;
@@ -139,13 +168,13 @@ export async function createSandbox(opts: SandboxOptions): Promise<Sandbox> {
 
   /** Run `fn` as one entry into plugin code: CPU deadline on, pending jobs drained after. */
   const enter = <T>(fn: () => T): T => {
-    deadline = Date.now() + limits.cpuMsPerEntry;
+    arm();
     try {
       const out = fn();
       drain();
       return out;
     } finally {
-      deadline = Infinity;
+      disarm();
     }
   };
   const drain = () => {
@@ -167,14 +196,14 @@ export async function createSandbox(opts: SandboxOptions): Promise<Sandbox> {
     const settle = (ok: boolean, text: string) => {
       pendingCalls.delete(id);
       if (disposed) return;
-      deadline = Date.now() + limits.cpuMsPerEntry;
+      arm();
       try {
         if (ok) deferred.resolve(context.newString(text));
         else deferred.reject(context.newError({ name: text.startsWith("PluginDenied:") ? "PluginDenied" : "Error", message: text.replace(/^PluginDenied:\s*/, "") }));
         drain();
       } finally {
         deferred.dispose();
-        deadline = Infinity;
+        disarm();
       }
     };
     void (async () => {
@@ -272,7 +301,7 @@ export async function createSandbox(opts: SandboxOptions): Promise<Sandbox> {
   // A module may return a promise (top-level await): await it so load errors surface here.
   const modH = mainResult.value;
   if (context.typeof(modH) === "object" && isPromise(context, modH)) {
-    const state = await settleModule(context, runtime, modH, limits, () => (deadline = Date.now() + limits.cpuMsPerEntry), () => (deadline = Infinity));
+    const state = await settleModule(context, runtime, modH, limits, arm, disarm);
     if (!disposed) modH.dispose();
     if (state || disposed) {
       dispose();
@@ -283,6 +312,7 @@ export async function createSandbox(opts: SandboxOptions): Promise<Sandbox> {
 
   return {
     denied,
+    stats: () => ({ cpuMs: Math.round(cpu.totalMs * 100) / 100, entries: cpu.entries, maxEntryMs: Math.round(cpu.maxMs * 100) / 100, memoryBytes: disposed ? null : memoryUsed(runtime.dumpMemoryUsage()) }),
     async dispatch(name, payload) {
       if (disposed) return;
       const dispatchH = context.getProp(context.global, "__lumen_dispatch");
@@ -305,7 +335,7 @@ export async function createSandbox(opts: SandboxOptions): Promise<Sandbox> {
       }
       // Handlers are async: wait for their promise, running jobs as host calls settle.
       const h = out.value;
-      const failure = await settleModule(context, runtime, h, limits, () => (deadline = Date.now() + limits.cpuMsPerEntry), () => (deadline = Infinity));
+      const failure = await settleModule(context, runtime, h, limits, arm, disarm);
       if (!disposed) h.dispose();
       if (failure && !disposed) fatal(`plugin ${opts.manifest.id} event "${name}": ${failure}`);
     },

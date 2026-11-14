@@ -1,0 +1,24 @@
+# מועמדויות — נוצר מהתבנית מועמדות לעבודה
+filters:
+  and:
+    - 'type == "application"'
+properties:
+  file.name:
+    displayName: "מועמדות"
+  note.company:
+    displayName: "חברה"
+  note.role:
+    displayName: "תפקיד"
+  note.applied_on:
+    displayName: "הוגש"
+views:
+  - type: kanban
+    name: "מועמדויות"
+    order:
+      - file.name
+      - note.company
+      - note.role
+      - note.applied_on
+    groupBy:
+      property: note.stage
+      direction: ASC

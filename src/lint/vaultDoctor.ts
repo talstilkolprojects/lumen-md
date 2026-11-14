@@ -18,7 +18,7 @@
  */
 import { decodeNamedCharacterReference } from "decode-named-character-reference";
 import GithubSlugger, { slug as headingSlug } from "github-slugger";
-import { resolveWikiTarget, splitWikiTarget } from "../renderer/wikiLinks";
+import { splitWikiTarget } from "../renderer/wikiLinks";
 
 export type DoctorKind =
   | "broken-wiki-link"
@@ -493,6 +493,8 @@ function similarity(a: Uint32Array, b: Uint32Array): number {
 export interface DoctorOptions {
   /** Minimum estimated similarity to report two notes as near-duplicates. */
   duplicateThreshold?: number;
+  /** Skip the near-duplicate pass (the vault integrity check only wants links). */
+  skipDuplicates?: boolean;
 }
 
 export function runVaultDoctor(notes: readonly DoctorNote[], opts: DoctorOptions = {}): DoctorFinding[] {
@@ -510,6 +512,23 @@ export function runVaultDoctor(notes: readonly DoctorNote[], opts: DoctorOptions
     names.set(key, [...(names.get(key) ?? []), p]);
   }
   const headings = new Map(md.map((n) => [n.path, headingsOf(n.text)]));
+  // resolveWikiTarget (../renderer/wikiLinks) with the paths indexed, so a
+  // large vault is not scanned once per link: the first path whose whole
+  // path matches, else the first whose file name matches.
+  const strip = (p: string) => p.toLowerCase().replace(/\.(md|markdown)$/, "");
+  const byPath = new Map<string, string>();
+  const byName = new Map<string, string>();
+  for (const p of paths) {
+    if (!byPath.has(strip(p))) byPath.set(strip(p), p);
+    const name = strip(p.split("/").pop() ?? p);
+    if (!byName.has(name)) byName.set(name, p);
+  }
+  const resolveWiki = (target: string): string | null => {
+    const want = target.trim().toLowerCase().replace(/\.(md|markdown)$/, "");
+    if (!want) return null;
+    return byPath.get(want) ?? byName.get(want) ?? null;
+  };
+  const pathSet = new Set(paths);
   const incoming = new Map<string, number>(paths.map((p) => [p, 0]));
   const findings: DoctorFinding[] = [];
 
@@ -541,7 +560,7 @@ export function runVaultDoctor(notes: readonly DoctorNote[], opts: DoctorOptions
       // `[[Heading]]` to a heading in this same note wins over a note of
       // that name (the preview jumps in-page first).
       if (!heading && hasHeading(headings.get(note.path), target)) continue;
-      const resolved = resolveWikiTarget(target, paths);
+      const resolved = resolveWiki(target);
       if (resolved) {
         if (resolved !== note.path) incoming.set(resolved, (incoming.get(resolved) ?? 0) + 1);
         if (heading && !hasHeading(headings.get(resolved), heading)) {
@@ -583,7 +602,7 @@ export function runVaultDoctor(notes: readonly DoctorNote[], opts: DoctorOptions
       }
       const target = parts.join("/");
       // Relative links are file paths: case matters (OPFS / most servers).
-      if (!escapes && paths.includes(target)) {
+      if (!escapes && pathSet.has(target)) {
         const real = target;
         if (real !== note.path) incoming.set(real, (incoming.get(real) ?? 0) + 1);
       } else {
@@ -616,6 +635,8 @@ export function runVaultDoctor(notes: readonly DoctorNote[], opts: DoctorOptions
       findings.push({ kind: "orphan", path: p });
     }
   }
+
+  if (opts.skipDuplicates) return findings;
 
   // Near-duplicates via LSH: only notes sharing a band are compared.
   const sigs = md.map((n) => {

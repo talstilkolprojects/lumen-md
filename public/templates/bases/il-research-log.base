@@ -1,0 +1,24 @@
+# Research log — from the template Research log / experiment
+filters:
+  and:
+    - 'type == "experiment"'
+properties:
+  file.name:
+    displayName: "Entry"
+  note.date:
+    displayName: "Date"
+  note.project:
+    displayName: "Project"
+  note.outcome:
+    displayName: "Outcome"
+views:
+  - type: table
+    name: "Research log"
+    order:
+      - file.name
+      - note.date
+      - note.project
+      - note.outcome
+    sort:
+      - property: note.date
+        direction: DESC

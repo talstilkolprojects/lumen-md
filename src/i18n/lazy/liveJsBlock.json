@@ -1,0 +1,13 @@
+{
+  "block.liveJs.clear": "Clear console",
+  "block.liveJs.idle": "Not run yet",
+  "block.liveJs.idleHint": "Code in a document runs only when you press Run. It runs in an isolated sandbox with no access to your files, keys or the network.",
+  "block.liveJs.resetScope": "Reset scope",
+  "block.liveJs.resetScope.hint": "Discard every variable defined by this document's shared blocks",
+  "block.liveJs.run": "Run",
+  "block.liveJs.runStatus": "JS run: {state}",
+  "block.liveJs.scopeReset": "Scope reset",
+  "block.liveJs.shared": "shared scope",
+  "block.liveJs.sharedHint": "Runs in this document's shared worker: top-level variables and functions stay available to later runs and other shared blocks.",
+  "block.liveJs.title": "Live JavaScript"
+}

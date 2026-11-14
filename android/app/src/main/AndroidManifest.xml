@@ -22,7 +22,25 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Plan W3.4: lumen:// action links (widget, App Shortcuts, other apps). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="lumen" />
+            </intent-filter>
+
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+
         </activity>
+
+        <!-- Plan W3.4: the home-screen widget. -->
+        <receiver android:name=".LumenWidgetProvider" android:exported="false" android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_lumen_info" />
+        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"

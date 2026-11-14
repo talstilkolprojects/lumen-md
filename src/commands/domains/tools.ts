@@ -5,10 +5,26 @@ import { uiConfirm, uiPrompt } from "../../ui/PromptDialog";
 import { getPluginCommands } from "../../plugins/pluginSystem";
 import { showAiToast } from "../../ui/AiToast";
 import type { CommandContext } from "./context";
+import { explainError } from "../../lib/userError";
 
 /** Daily writing goal. */
 export function buildWritingGoalCommands({ writingGoalWords, setWritingGoal }: CommandContext): Command[] {
   return [
+    {
+      id: "view.hebrewGrammarLevel",
+      label: t("cmd.view.hebrewGrammarLevel"),
+      hint: t("cmd.view.hebrewGrammarLevel.hint"),
+      icon: cmdIcons.Pencil,
+      group: t("group.view"),
+      action: async () => {
+        const { getGrammarLevel, setGrammarLevel } = await import("../../ai/hebrewSpellService");
+        const { GRAMMAR_LEVELS } = await import("../../ai/hebrewGrammar");
+        const next = GRAMMAR_LEVELS[(GRAMMAR_LEVELS.indexOf(getGrammarLevel()) + 1) % GRAMMAR_LEVELS.length];
+        setGrammarLevel(next);
+        const name = { everyday: t("grammar.he.level.everyday"), academic: t("grammar.he.level.academic"), legal: t("grammar.he.level.legal") }[next];
+        showAiToast(t("grammar.he.levelSet", { level: name }), "success");
+      },
+    },
     {
       id: "tools.writingGoal",
       label: writingGoalWords > 0
@@ -29,11 +45,12 @@ export function buildWritingGoalCommands({ writingGoalWords, setWritingGoal }: C
   ];
 }
 
-/** Download or remove the Hebrew spelling dictionary. */
-export function buildHebrewDictionaryCommands(): Command[] {
+/** Download or remove the Hebrew spelling dictionary; the Hebrew lexicon (plan W5.26). */
+export function buildHebrewDictionaryCommands({ getEditorView }: CommandContext): Command[] {
   return [
     {
       id: "spell.hebrewDictionary",
+      destructive: "confirm",
       label: t("cmd.spell.hebrewDictionary"),
       hint: t("cmd.spell.hebrewDictionary.hint"),
       icon: cmdIcons.Sparkles,
@@ -51,9 +68,47 @@ export function buildHebrewDictionaryCommands(): Command[] {
           const n = await svc.downloadHebrewDictionary();
           showAiToast(t("spell.he.installed", { n: n.toLocaleString() }), "info");
         } catch (e) {
-          showAiToast(t("spell.he.failed", { error: (e as Error).message }), "error");
+          showAiToast(t("spell.he.failed", { error: explainError(e) }), "error");
         }
       },
+    },
+    {
+      id: "lexicon.pack",
+      label: t("cmd.lexicon.pack"),
+      hint: t("cmd.lexicon.pack.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: async () => {
+        const { runLexiconPackCommand } = await import("../../lexicon/commands");
+        await runLexiconPackCommand();
+      },
+    },
+    {
+      id: "lexicon.lookup",
+      label: t("cmd.lexicon.lookup"),
+      hint: t("cmd.lexicon.lookup.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: async () => {
+        const view = getEditorView?.();
+        if (!view) return;
+        const { runLexiconLookupCommand } = await import("../../lexicon/commands");
+        await runLexiconLookupCommand(view);
+      },
+    },
+  ];
+}
+
+/** Plan W1.29: the moderator's usability-session recorder (local only, consent first). */
+export function buildUsabilityStudyCommands(): Command[] {
+  return [
+    {
+      id: "research.usability",
+      label: t("cmd.research.usability"),
+      hint: t("cmd.research.usability.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: () => window.dispatchEvent(new CustomEvent("lumen-open-usability")),
     },
   ];
 }

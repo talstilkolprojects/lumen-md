@@ -1,0 +1,15 @@
+{
+  "ai.localModels.auto": "Automatic — pick by hardware and task",
+  "ai.localModels.autoSet": "Automatic model selection. Current pick: {model}",
+  "ai.localModels.cached": "downloaded",
+  "ai.localModels.downloadNow": "Download {model} now? It is cached in the browser for later prompts.",
+  "ai.localModels.failed": "Model download failed: {error}",
+  "ai.localModels.message": "About {budget} GB of GPU memory is usable on this device ({f16} weights).",
+  "ai.localModels.noWebgpu": "WebGPU is not available in this browser.",
+  "ai.localModels.ready": "{model} is ready.",
+  "ai.localModels.recommended": "recommended",
+  "ai.localModels.selected": "selected",
+  "ai.localModels.set": "Local model: {model}",
+  "ai.localModels.title": "Local models (WebGPU)",
+  "ai.localModels.tooBig": "may not fit"
+}

@@ -59,12 +59,13 @@ describe("Vercel security headers", () => {
     }
   });
 
-  it("frames and CSP for the app exclude the two runner pages", () => {
+  it("frames and CSP for the app exclude the two runner pages and the content frame", () => {
     const entry = vercel.headers.find((h) => h.headers.some((x) => x.key === "X-Frame-Options"))!;
     const re = new RegExp(`^${entry.source}$`);
     expect(re.test("/index.html")).toBe(true);
     expect(re.test("/livejs-runner.html")).toBe(false);
     expect(re.test("/playground-runner.html")).toBe(false);
+    expect(re.test("/content-frame.html")).toBe(false);
     const csp = entry.headers.find((x) => x.key === "Content-Security-Policy")!.value;
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).toContain("object-src 'none'");

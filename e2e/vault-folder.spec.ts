@@ -1,16 +1,16 @@
 import { test, expect, type Page } from "@playwright/test";
+import { opfsWritable, vaultOrSkip } from "./_opfs";
 
 /**
  * Plan 4.2 — the vault in a real folder (Chromium's showDirectoryPicker).
  * Playwright cannot click through the native picker, so the picker is
- * mocked with a real directory handle: the app's OPFS is rooted in one OPFS
+ * mocked with a real directory handle on every engine that has OPFS: the app's OPFS is rooted in one OPFS
  * subfolder and the "picked" folder is another — two real
  * FileSystemDirectoryHandles, the same API a folder on disk has.
  */
 const PICKED = "picked-folder";
 
 test.beforeEach(async ({ page, browserName }) => {
-  test.skip(browserName !== "chromium", "showDirectoryPicker is Chromium-only");
   await page.addInitScript((picked) => {
     localStorage.setItem("lumen-tour-done", "1");
     const storage = navigator.storage as StorageManager & { getDirectory: () => Promise<FileSystemDirectoryHandle> };
@@ -21,6 +21,8 @@ test.beforeEach(async ({ page, browserName }) => {
     (window as unknown as { showDirectoryPicker: () => Promise<FileSystemDirectoryHandle> }).showDirectoryPicker = () => sub(picked);
   }, PICKED);
   await page.goto("/");
+  // The picker is mocked with OPFS handles, so every engine with OPFS runs these (W4.12).
+  vaultOrSkip(await opfsWritable(page), browserName);
   await expect(page.locator(".cm-content").first()).toContainText("Welcome to", { timeout: 15_000 });
 });
 

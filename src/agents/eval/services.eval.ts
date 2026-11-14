@@ -13,6 +13,7 @@ import { describe, it, expect } from "vitest";
 const lt = process.env.LUMEN_REAL_LANGUAGETOOL_URL || "";
 const sx = (process.env.LUMEN_REAL_SEARXNG_URL || "").replace(/\/+$/, "");
 
+// skip-reason: needs a running LanguageTool (LUMEN_REAL_LANGUAGETOOL_URL); the unit suite uses its mock | task: 7.2 | until: 2027-05-12
 describe.skipIf(!lt)("LanguageTool (real)", () => {
   it("finds the error in an English sentence through Lumen's grammar client", async () => {
     const { checkGrammar, grammarEndpoint, GRAMMAR_ENDPOINT_KEY } = await import("../../ai/grammar");
@@ -24,6 +25,7 @@ describe.skipIf(!lt)("LanguageTool (real)", () => {
   }, 60_000);
 });
 
+// skip-reason: needs a running SearXNG (LUMEN_REAL_SEARXNG_URL, AGPL, never shipped); the unit suite uses its mock | task: 7.2 | until: 2027-05-12
 describe.skipIf(!sx)("SearXNG (real)", () => {
   it("answers a JSON search (search.formats: json, limiter: false)", async () => {
     const r = await fetch(`${sx}/search?q=lumen+markdown&format=json`, { signal: AbortSignal.timeout(30_000) });

@@ -86,6 +86,32 @@ Scopes are area names: `editor`, `renderer`, `collab`, `storage`, `ui`, `ai`, `i
 4. Link any related issue.
 5. One of the maintainers will review.
 
+### The PR check (replaces Danger)
+
+GitHub Actions do not run on PRs, so Danger.js and size-limit, which need
+them, are replaced by one local command (plan 0.19):
+
+```bash
+npm run build
+npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-check.md
+```
+
+It prints a Markdown report. Paste it into the PR, or use `--out`. It
+exits 1 when a check fails:
+
+| Check | Fails when |
+|---|---|
+| Bundle size | the bundle budget fails. The size table against the base comes from `--base-sizes <bundle-budget --json file>`, or `--build-base`, which builds the merge base in a temporary worktree |
+| Commits | a subject in base..HEAD lacks `[skip ci]` |
+| PR body | `--body <file>` lacks a section, or one is empty: What and why, Definition of done (plan 0.7), Local verification, Not verified here, Owner commands |
+| Network | a new `fetch` / `WebSocket` / `EventSource` / `sendBeacon` goes to a host that is not in `src/ai/privacyLedger.ts`, or has a computed URL without `// privacy-ledger: <rule>` |
+| Licences | a production package added or changed has a copyleft, non-commercial, or no licence |
+| Domain | an added line names the project's domain |
+
+It also warns (without failing):
+- when source changed but no test did;
+- when the PR was written by an AI agent: add the `ai-written` label.
+
 ## Testing
 
 ### Structure

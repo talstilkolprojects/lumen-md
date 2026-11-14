@@ -119,6 +119,11 @@
       "vars": []
     },
     {
+      "key": "toast.cite.noCaseNumber",
+      "en": "No case number at the cursor: fill in the citation by hand.",
+      "vars": []
+    },
+    {
       "key": "toast.clonedFilesIntoWorkspace",
       "en": "✅ Cloned files into the workspace: {count}",
       "vars": [
@@ -389,6 +394,16 @@
       "vars": []
     },
     {
+      "key": "toast.nikud.done",
+      "en": "Niqqud added on this device. Underlined words can be read more than one way: click one for its readings (Alt+click any word).",
+      "vars": []
+    },
+    {
+      "key": "toast.nikud.doneHigh",
+      "en": "Niqqud added on this device with DictaBERT-char-menaked (high quality). Underlined words can be read more than one way: click one for its readings.",
+      "vars": []
+    },
+    {
       "key": "toast.nikud.failed",
       "en": "Niqqud failed: {error}",
       "vars": [
@@ -577,6 +592,20 @@
       "key": "toast.region",
       "en": "Notifications",
       "vars": []
+    },
+    {
+      "key": "toast.related.folderOff",
+      "en": "Related notes are off in {folder}",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "toast.related.folderOn",
+      "en": "Related notes are on in {folder}",
+      "vars": [
+        "folder"
+      ]
     },
     {
       "key": "toast.rerankModelOff",

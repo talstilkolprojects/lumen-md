@@ -50,7 +50,8 @@ export interface TextualBody {
   type: "TextualBody";
   value: string;
   format: "text/plain";
-  purpose: "commenting";
+  /** "commenting": the highlight's note; "tagging": one tag (plan W1.15). */
+  purpose: "commenting" | "tagging";
 }
 
 export interface PdfAnnotation {
@@ -201,7 +202,9 @@ function noteBody(value: string): TextualBody {
 export function withNote(a: PdfAnnotation, note: string, now: Date = new Date()): PdfAnnotation {
   const value = note.trim();
   const next: PdfAnnotation = { ...a, modified: now.toISOString(), motivation: value ? "commenting" : "highlighting" };
-  if (value) next.body = [noteBody(value)];
+  // Tags (W1.15) are kept; only the note changes.
+  const body = [...(value ? [noteBody(value)] : []), ...(a.body ?? []).filter((b) => b.purpose === "tagging")];
+  if (body.length) next.body = body;
   else delete next.body;
   return next;
 }
@@ -225,7 +228,7 @@ export function describeAnnotation(a: PdfAnnotation): {
     if (s.refinedBy?.type === "TextQuoteSelector" && !quote) quote = s.refinedBy;
     if (s.refinedBy?.type === "TextPositionSelector" && !position) position = s.refinedBy;
   }
-  const note = a.body?.find((b) => b.type === "TextualBody")?.value ?? "";
+  const note = a.body?.find((b) => b.type === "TextualBody" && b.purpose !== "tagging")?.value ?? "";
   return { page, quote, position, rect, note };
 }
 

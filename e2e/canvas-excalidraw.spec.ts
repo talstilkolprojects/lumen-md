@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * The canvas on Excalidraw (plan 4.19, part 2). Acceptance:
@@ -53,8 +54,8 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(".cm-content").first()).toBeVisible({ timeout: 15_000 });
 });
 
-test("local-only: opening the canvas, drawing Hebrew text and saving makes no request off this origin", async ({ page, baseURL }) => {
-  test.skip(!(await opfsWritable(page)), "this engine refuses OPFS writes here, so there is nowhere to save a canvas");
+test("local-only: opening the canvas, drawing Hebrew text and saving makes no request off this origin", async ({ page, baseURL, browserName }) => {
+  vaultOrSkip(await opfsWritable(page), browserName);
   const origin = new URL(baseURL ?? page.url()).origin;
   const offOrigin: string[] = [];
   const fontRequests: string[] = [];
@@ -98,8 +99,8 @@ test("local-only: opening the canvas, drawing Hebrew text and saving makes no re
   test.info().annotations.push({ type: "canvas-requests", description: `${fontRequests.length} same-origin font files, 0 off-origin` });
 });
 
-test("a canvas comes back after reopening, and the UI follows the app's language and direction", async ({ page }) => {
-  test.skip(!(await opfsWritable(page)), "this engine refuses OPFS writes here, so there is nowhere to save a canvas");
+test("a canvas comes back after reopening, and the UI follows the app's language and direction", async ({ page, browserName }) => {
+  vaultOrSkip(await opfsWritable(page), browserName);
   await run(page, "view.canvas");
   const canvas = page.getByTestId("canvas");
   const excalidraw = canvas.locator(".excalidraw");
@@ -132,8 +133,8 @@ test("a canvas comes back after reopening, and the UI follows the app's language
   await expect(page.locator("html")).toHaveAttribute("lang", "he");
 });
 
-test("JSON Canvas (plan 4.17): an Obsidian .canvas imports, opens, and exports back unchanged", async ({ page }) => {
-  test.skip(!(await opfsWritable(page)), "this engine refuses OPFS writes here, so there is nowhere to save a canvas");
+test("JSON Canvas (plan 4.17): an Obsidian .canvas imports, opens, and exports back unchanged", async ({ page, browserName }) => {
+  vaultOrSkip(await opfsWritable(page), browserName);
   const canvasJson = {
     nodes: [
       { id: "g1", type: "group", label: "Plan", x: -40, y: -40, width: 760, height: 260, color: "6" },

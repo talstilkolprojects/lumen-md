@@ -155,3 +155,5 @@ newest — the service could show it an old one from the start. So:
   permanent fork) is detected only when they compare notes — by pairing or
   by syncing through the same up-to-date copy.
 - Traffic analysis: sync times, object counts and size buckets are visible.
+
+What the sync is doing for each file, what each device leaves out, and how long a round takes: [Sync status, selective sync and time left](/sync/status/).

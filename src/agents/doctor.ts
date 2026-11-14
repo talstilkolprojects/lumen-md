@@ -12,6 +12,7 @@
  */
 
 import type { ExecutorId } from "./types";
+import "./doctorLazyStrings";
 
 export type DoctorStatus = "ok" | "warn" | "fail" | "skip";
 

@@ -1,0 +1,1 @@
+Write in Hebrew and English in one note, with direction set per line. Your notes stay on your device as plain Markdown files.

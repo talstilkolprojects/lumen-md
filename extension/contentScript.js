@@ -77,12 +77,23 @@
     return div.innerHTML;
   }
 
+  // YouTube (plan W2.14): the transcript, when its panel is open ("…more" → "Show transcript").
+  // The page loads it on demand, so it is not in the HTML; nothing is fetched for it.
+  function transcript() {
+    if (!/(^|\.)youtube\.com$/.test(location.hostname)) return undefined;
+    const lines = [...document.querySelectorAll("ytd-transcript-segment-renderer .segment-text, ytd-transcript-segment-renderer yt-formatted-string")]
+      .map((el) => el.textContent.replace(/\s+/g, " ").trim())
+      .filter(Boolean);
+    return lines.length ? lines.join("\n") : undefined;
+  }
+
   async function clip(opts = {}) {
     const payload = {
       url: location.href,
       html: opts.selectionOnly ? undefined : document.documentElement.outerHTML,
       selectionHtml: selectionHtml(),
       highlights: await storedHighlights(),
+      transcript: opts.selectionOnly ? undefined : transcript(),
     };
     if (!payload.html && !payload.selectionHtml) return flashBadge("Select some text first", true);
     chrome.runtime.sendMessage({ type: "lumen-clip", payload }, (resp) => {

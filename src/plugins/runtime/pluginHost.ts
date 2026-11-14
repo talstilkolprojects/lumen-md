@@ -44,7 +44,28 @@ export interface PluginInstance {
   /** The plugin died (uncaught error, limit). The instance is unusable afterwards. */
   onFatal(fn: (error: string) => void): () => void;
   readonly alive: boolean;
+  /** For the developer panel (W3.10): the last calls the plugin made, how often each capability was used, CPU and memory. */
+  readonly calls: readonly CallRecord[];
+  readonly capabilityUse: ReadonlyMap<string, number>;
+  readonly stats: SandboxStatsMessage | null;
+  /** How long the plugin took to start, ms. */
+  readonly loadMs: number | null;
+  onActivity(fn: () => void): () => void;
 }
+
+/** One call a plugin made to the app, as the host saw it. */
+export interface CallRecord {
+  at: number;
+  method: string;
+  capability: string;
+  ms: number;
+  outcome: "ok" | "denied" | "error";
+}
+
+export type SandboxStatsMessage = Omit<Extract<WorkerToHost, { type: "stats" }>, "type">;
+
+/** Calls kept per plugin for the developer panel. */
+export const CALL_LOG_SIZE = 200;
 
 export interface LoadOptions {
   manifest: PluginManifest;
@@ -112,6 +133,20 @@ export function loadPlugin(opts: LoadOptions): Promise<PluginInstance> {
   const logFns = new Set<(level: "log" | "warn" | "error", text: string) => void>();
   const fatalFns = new Set<(error: string) => void>();
   const denied = new Map<string, number>();
+  const calls: CallRecord[] = [];
+  const capabilityUse = new Map<string, number>();
+  const activityFns = new Set<() => void>();
+  let stats: SandboxStatsMessage | null = null;
+  let loadMs: number | null = null;
+  const activity = () => {
+    for (const f of activityFns) f();
+  };
+  const record = (r: CallRecord) => {
+    calls.push(r);
+    if (calls.length > CALL_LOG_SIZE) calls.splice(0, calls.length - CALL_LOG_SIZE);
+    if (r.outcome === "ok") capabilityUse.set(r.capability, (capabilityUse.get(r.capability) ?? 0) + 1);
+    activity();
+  };
   let alive = true;
   let unloaded: (() => void) | null = null;
   const die = (error: string) => {
@@ -145,6 +180,15 @@ export function loadPlugin(opts: LoadOptions): Promise<PluginInstance> {
     },
     onLog: (fn) => (logFns.add(fn), () => void logFns.delete(fn)),
     onFatal: (fn) => (fatalFns.add(fn), () => void fatalFns.delete(fn)),
+    calls,
+    capabilityUse,
+    get stats() {
+      return stats;
+    },
+    get loadMs() {
+      return loadMs;
+    },
+    onActivity: (fn) => (activityFns.add(fn), () => void activityFns.delete(fn)),
   };
 
   /** The host's own check and dispatch of a call the sandbox let through. */
@@ -176,12 +220,31 @@ export function loadPlugin(opts: LoadOptions): Promise<PluginInstance> {
       const m = ev.data;
       if (m.type === "ready") {
         clearTimeout(timer);
+        loadMs = m.loadMs;
         resolve(instance);
+      } else if (m.type === "stats") {
+        const { type: _t, ...rest } = m;
+        stats = rest;
+        activity();
       } else if (m.type === "call") {
+        const t0 = performance.now();
+        let capability = String(METHOD_CAPABILITY[m.method as keyof typeof METHOD_CAPABILITY] ?? m.method);
+        // A network call counts against the origin it went to, as the manifest names it.
+        if (capability === "network") {
+          try {
+            capability = `network:${new URL(String((m.args as unknown[])[0])).origin}`;
+          } catch {
+            /* not a URL: the host refuses it below */
+          }
+        }
         void handle(m.method, m.args).then(
-          (value) => alive && send({ type: "result", id: m.id, ok: true, value: value === undefined ? null : value }),
+          (value) => {
+            record({ at: Date.now(), method: m.method, capability, ms: Math.round((performance.now() - t0) * 10) / 10, outcome: "ok" });
+            if (alive) send({ type: "result", id: m.id, ok: true, value: value === undefined ? null : value });
+          },
           (e: unknown) => {
             const deniedErr = e instanceof PluginDenied;
+            record({ at: Date.now(), method: m.method, capability: deniedErr ? e.capability : capability, ms: Math.round((performance.now() - t0) * 10) / 10, outcome: deniedErr ? "denied" : "error" });
             if (deniedErr) denied.set(e.capability, (denied.get(e.capability) ?? 0) + 1);
             if (alive) send({ type: "result", id: m.id, ok: false, error: e instanceof Error ? e.message : String(e), denied: deniedErr });
           },

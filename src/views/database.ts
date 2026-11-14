@@ -18,6 +18,8 @@
  *     formulas:              # computed columns (plan 4.11, see ./formula)
  *       total: price * qty
  *     location: place        # coordinates for the map view ("32.08, 34.78", [lat, lng] or {lat, lng})
+ *     deadline: due          # a deadline column: moved off Shabbat / chag, working days left (W5.15)
+ *     hebrewDate: true       # Hebrew dates next to dates (default: the calendar setting)
  *     ```
  *
  * The query runs over OPFS — every .md / .markdown file under `source`
@@ -61,6 +63,10 @@ export interface DatabaseSpec {
   formulas?: Record<string, string>;
   /** Column with a note's coordinates, for the map view. Default: `location`, else `lat` + `lng`. */
   location?: string;
+  /** A deadline column (plan W5.15): a date on Shabbat or a chag gets the suggested working day, and the working days left. */
+  deadline?: string;
+  /** Hebrew dates next to dates; unset: the calendar setting (on for a Hebrew UI). */
+  hebrewDate?: boolean;
 }
 
 export interface DatabaseRow {

@@ -72,7 +72,7 @@
   border: 1px solid hsl(var(--border));
   border-radius: 6px;
   background: hsl(var(--bg));
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.3);
+  box-shadow: var(--shadow-sm);
 }
 
 .lumen-canvas-legacy-menu button {

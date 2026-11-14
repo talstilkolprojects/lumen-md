@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * Editable database (MASTER_PLAN 4.10), acceptance: over 100 notes, moving
@@ -92,10 +93,10 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(".cm-content").first()).toContainText("Welcome to", { timeout: 15_000 });
 });
 
-test("100 notes: kanban moves and a cell edit change only the edited values", async ({ page }) => {
+test("100 notes: kanban moves and a cell edit change only the edited values", async ({ page, browserName }) => {
   test.setTimeout(90_000);
   const original = vault();
-  test.skip(!(await seed(page, original)), "OPFS writes are unavailable in this engine's test context");
+  vaultOrSkip(await seed(page, original), browserName);
   const editor = page.locator(".cm-content").first();
   await editor.click();
   await editor.fill(HUB);

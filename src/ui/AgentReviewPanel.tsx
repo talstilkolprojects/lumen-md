@@ -16,6 +16,9 @@ import { getLocale, t } from "../i18n";
 import { approveStagedChange, listStagedChanges, onStagedChanges, rejectStagedChange } from "../agents/staging";
 import { approveAll, inlineDiff, lineDiffRows, rejectAll, reviewModel, type RunGroup } from "../agents/review";
 import type { StagedChange } from "../agents/types";
+import "./agentReviewPanelStrings";
+import { HelpButton } from "./HelpButton";
+import { EmptyState, learnHow } from "./EmptyState";
 
 interface Props {
   open: boolean;
@@ -29,16 +32,18 @@ const row: React.CSSProperties = { display: "flex", gap: 8, alignItems: "center"
 const card: React.CSSProperties = { padding: "10px 12px", borderRadius: 8, background: "hsl(var(--bg-subtle))", border: "1px solid hsl(var(--border))", display: "flex", flexDirection: "column", gap: 8 };
 const code: React.CSSProperties = { fontFamily: "var(--font-mono, ui-monospace, monospace)", fontSize: 12 };
 // The editor's suggestion marks (editor/suggestingExtension.ts), so a proposal reads like a tracked change.
-const INS: React.CSSProperties = { textDecoration: "underline 2px", textDecorationColor: "hsl(145 60% 40%)", textUnderlineOffset: 3, background: "hsl(145 60% 45% / 0.14)" };
-const DEL: React.CSSProperties = { textDecoration: "line-through 2px", textDecorationColor: "hsl(0 75% 55%)", background: "hsl(0 75% 55% / 0.12)" };
+const INS: React.CSSProperties = { textDecoration: "underline 2px", textDecorationColor: "hsl(var(--success))", textUnderlineOffset: 3, background: "hsl(var(--success) / 0.14)" };
+const DEL: React.CSSProperties = { textDecoration: "line-through 2px", textDecorationColor: "hsl(var(--danger))", background: "hsl(var(--danger) / 0.12)" };
 const STATUS_COLOR: Record<StagedChange["status"], string> = {
   pending: "hsl(var(--fg-muted))",
-  applied: "hsl(142 70% 45%)",
+  applied: "hsl(var(--success))",
   rejected: "hsl(var(--fg-muted))",
-  conflict: "hsl(0 80% 60%)",
+  conflict: "hsl(var(--danger))",
 };
 
 function agentName(agentId: string | undefined): string {
+  // Proposals from an MCP client (plan W2.3, agents/mcpInbox.ts) are staged as `mcp:<client>`.
+  if (agentId?.startsWith("mcp:")) return t("agentReview.mcpClient", { client: agentId.slice(4) });
   return agentId ?? t("agentReview.unknownAgent");
 }
 
@@ -107,13 +112,13 @@ function LineDiff({ before, after }: { before: string | null; after: string }) {
                 display: "flex",
                 gap: 8,
                 padding: "0 8px",
-                background: r.op === "add" ? "hsl(145 60% 45% / 0.14)" : r.op === "del" ? "hsl(0 75% 55% / 0.12)" : undefined,
+                background: r.op === "add" ? "hsl(var(--success) / 0.14)" : r.op === "del" ? "hsl(var(--danger) / 0.12)" : undefined,
               }}
             >
-              <span aria-hidden style={{ width: 12, flexShrink: 0, color: r.op === "add" ? "hsl(145 60% 40%)" : r.op === "del" ? "hsl(0 75% 55%)" : "hsl(var(--fg-muted))" }}>
+              <span aria-hidden style={{ width: 12, flexShrink: 0, color: r.op === "add" ? "hsl(var(--success))" : r.op === "del" ? "hsl(var(--danger))" : "hsl(var(--fg-muted))" }}>
                 {r.op === "add" ? "+" : r.op === "del" ? "−" : " "}
               </span>
-              <span dir="auto" style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", flex: 1, textDecoration: r.op === "del" ? "line-through" : undefined, textDecorationColor: "hsl(0 75% 55% / 0.6)" }}>
+              <span dir="auto" style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", flex: 1, textDecoration: r.op === "del" ? "line-through" : undefined, textDecorationColor: "hsl(var(--danger) / 0.6)" }}>
                 {r.text || " "}
               </span>
             </div>
@@ -213,6 +218,7 @@ export function AgentReviewPanel({ open, onClose }: Props) {
         <header style={{ padding: "14px 18px", borderBottom: "1px solid hsl(var(--border))", display: "flex", gap: 10, alignItems: "center" }}>
           <FileDiff size={18} style={{ color: "hsl(var(--accent))" }} />
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, flex: 1 }}>{t("agentReview.title")}</h2>
+          <HelpButton topic="ai/local-agents" />
           {model.pendingCount > 0 && (
             <>
               <button type="button" style={ghost} disabled={busy} onClick={() => void run(() => rejectAll(pendingChanges))} data-testid="agent-review-reject-all">
@@ -231,9 +237,7 @@ export function AgentReviewPanel({ open, onClose }: Props) {
         <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12, fontSize: 13, lineHeight: 1.5, overflowY: "auto" }}>
           <p style={{ ...muted, margin: 0 }}>{t("agentReview.intro")}</p>
           {model.pendingCount === 0 && (
-            <div style={{ ...muted, padding: "12px 0", textAlign: "center" }} data-testid="agent-review-empty">
-              {t("agentReview.empty")}
-            </div>
+            <EmptyState testId="agent-review-empty" style={{ padding: "12px 0" }} message={t("agentReview.empty")} action={learnHow("ai/local-agents")} />
           )}
           {model.pending.map((g) => (
             <section key={g.key} style={{ display: "flex", flexDirection: "column", gap: 8 }} data-testid="agent-review-group">

@@ -1,0 +1,76 @@
+{
+  "$comment": "Plan 13.7: the store listings, one source for every store. `node scripts/store.mjs metadata` writes the fastlane layout (fastlane/metadata/…) from it; `node scripts/store.mjs check` enforces each store's limits (characters; App Store keywords in UTF-8 bytes, where a Hebrew letter is 2) and that the generated files match. Plain claims only, the same as the launch copy (plan W2.25): nothing the app doesn't do today.",
+  "urls": {
+    "support": "https://github.com/talstilkol/lumen-md/discussions",
+    "privacy": "https://github.com/talstilkol/lumen-md/blob/main/PRIVACY.md",
+    "marketing": "https://github.com/talstilkol/lumen-md"
+  },
+  "category": { "apple": "PRODUCTIVITY", "google": "PRODUCTIVITY", "microsoft": "Productivity" },
+  "price": "free",
+  "locales": {
+    "en": {
+      "name": "Lumen – Markdown Notes",
+      "subtitle": "Local notes, built for Hebrew",
+      "keywords": "markdown,notes,hebrew,rtl,offline,private,editor,writing,journal,research,local",
+      "promotional": "Write in Hebrew and English in one note, with direction set per line. Your notes stay on your device as plain Markdown files.",
+      "short": "Private, offline Markdown notes that get Hebrew and right-to-left right.",
+      "description": [
+        "Lumen is a Markdown editor for notes, research and writing, built for Hebrew and right-to-left from the start, and it works in English just as well.",
+        "",
+        "HEBREW FIRST",
+        "• The interface in Hebrew, mirrored; also Arabic and six more languages.",
+        "• Direction is set per line, so an English term or a number inside a Hebrew sentence stays in place.",
+        "• Search finds words with a prefix and ignores niqqud.",
+        "",
+        "YOUR NOTES, ON YOUR DEVICE",
+        "• No account needed. Notes are stored on the device, and nothing is sent anywhere by default.",
+        "• Works without a network.",
+        "• Every note is a plain Markdown file. Export the whole vault as a .zip or a folder, any time.",
+        "• Import an Obsidian vault or a Notion export.",
+        "",
+        "WRITE THE WAY YOU THINK",
+        "• Source, split, preview and rich-text modes.",
+        "• Links between notes, tags, a graph of your notes, daily notes.",
+        "• Tables, math, diagrams and code blocks.",
+        "• Optional AI that can run on the device; nothing goes to a cloud service unless you set one up with your own key.",
+        "",
+        "OPEN SOURCE",
+        "Lumen is free and open source under the MIT licence. Questions and feedback: GitHub Discussions."
+      ],
+      "releaseNotes": "The first store release of Lumen: Hebrew-first Markdown notes that stay on your device.",
+      "reviewNotes": "No sign-in is needed. Open the app and start writing: the welcome note explains the basics. Notes are stored on the device. Optional features that use the network (cloud AI with the user's own key, sync to the user's own storage) are off by default and need the user's own account or key; none is required to review the app."
+    },
+    "he": {
+      "name": "Lumen – פתקי Markdown",
+      "subtitle": "פתקים מקומיים, בנויים לעברית",
+      "keywords": "פתקים,עברית,כתיבה,סיכומים,מחקר,יומן,פרטי,markdown,rtl",
+      "promotional": "כותבים בעברית ובאנגלית באותו פתק, והכיוון נקבע לכל שורה. הפתקים נשארים במכשיר כקובצי Markdown רגילים.",
+      "short": "פתקי Markdown פרטיים שעובדים בלי אינטרנט, ומבינים עברית ומימין לשמאל.",
+      "description": [
+        "‏Lumen הוא עורך Markdown לפתקים, למחקר ולכתיבה, שנבנה לעברית ולכתיבה מימין לשמאל מההתחלה, ועובד באנגלית באותה מידה.",
+        "",
+        "עברית קודם",
+        "• ממשק בעברית, בפריסה הפוכה; וגם ערבית ועוד שש שפות.",
+        "• הכיוון נקבע לכל שורה, כך שמונח באנגלית או מספר בתוך משפט עברי נשארים במקום.",
+        "• החיפוש מוצא מילים עם תחילית ומתעלם מניקוד.",
+        "",
+        "הפתקים שלכם, במכשיר שלכם",
+        "• לא צריך חשבון. הפתקים נשמרים במכשיר, וכברירת מחדל שום דבר לא נשלח לשום מקום.",
+        "• עובד בלי רשת.",
+        "• כל פתק הוא קובץ Markdown רגיל. אפשר לייצא את כל הכספת כ-zip או כתיקייה, בכל רגע.",
+        "• ייבוא של כספת Obsidian או של ייצוא Notion.",
+        "",
+        "כותבים כמו שחושבים",
+        "• מצבי מקור, מפוצל, תצוגה ועריכה עשירה.",
+        "• קישורים בין פתקים, תגיות, גרף של הפתקים ופתק יומי.",
+        "• טבלאות, נוסחאות, תרשימים ובלוקי קוד.",
+        "• AI אופציונלי שיכול לרוץ על המכשיר; שום דבר לא נשלח לשירות ענן אלא אם הגדרתם אחד עם מפתח משלכם.",
+        "",
+        "קוד פתוח",
+        "‏Lumen חינמי ובקוד פתוח, ברישיון MIT. שאלות ומשוב: GitHub Discussions."
+      ],
+      "releaseNotes": "הגרסה הראשונה של Lumen בחנות: פתקי Markdown בעברית קודם, שנשארים במכשיר שלכם.",
+      "reviewNotes": "No sign-in is needed. Open the app and start writing (the interface follows the device language; Hebrew is fully supported). Notes are stored on the device. Optional network features are off by default and need the user's own key or account."
+    }
+  }
+}

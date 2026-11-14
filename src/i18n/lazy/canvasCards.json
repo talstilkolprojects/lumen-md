@@ -1,0 +1,13 @@
+{
+  "canvas.card.add": "Note card",
+  "canvas.card.prompt": "Note to place on the canvas (a name or ![[note]]):",
+  "canvas.card.notFound": "No note “{ref}” in the vault",
+  "canvas.card.open": "Open",
+  "canvas.card.missing": "The note “{path}” isn't in the vault (moved or deleted?)",
+  "canvas.card.editLabel": "Edit {name}",
+  "canvas.card.editHint": "Double-click to edit · ⌘Enter saves",
+  "canvas.card.empty": "(empty note)",
+  "canvas.export.label": "Export image",
+  "canvas.export.working": "Exporting…",
+  "canvas.export.failed": "Export failed: {error}"
+}

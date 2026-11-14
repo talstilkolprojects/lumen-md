@@ -10,9 +10,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { installFakeOpfs, type FakeDir } from "./helpers/fakeOpfs";
 import * as ws from "../storage/workspace";
 import { notifyWorkspaceChanged } from "../storage/workspaceEvents";
-import { __resetWorkspaceIndex, ensureIndex, indexedFiles, REVALIDATE_MS } from "../storage/workspaceIndex";
+import { __resetWorkspaceIndex, ensureIndex, indexedNoteText, REVALIDATE_MS } from "../storage/workspaceIndex";
 
-const text = (path: string) => indexedFiles().find((f) => f.path === path)?.content;
+// W2.22: the text lives in the index; the main thread reads it from there.
+const text = async (path: string) => (await indexedNoteText(path)) ?? undefined;
 
 let root: FakeDir;
 /** Write a root-level file without going through the vault: no event at all. */
@@ -46,9 +47,9 @@ describe("workspace index freshness", () => {
     // Plan 8.4: the change announced mid-build is in the index before
     // ensureIndex returns (it used to wait for the next call).
     await ensureIndex();
-    expect(text("a.md")).toBe("new");
+    expect(await text("a.md")).toBe("new");
     await ensureIndex();
-    expect(text("a.md")).toBe("new");
+    expect(await text("a.md")).toBe("new");
   });
 
   it("picks up unannounced writes after REVALIDATE_MS, re-reading only changed files", async () => {
@@ -60,12 +61,12 @@ describe("workspace index freshness", () => {
     await writeBehindTheVault("a.md", "A2"); // e.g. another tab: no event
     await writeBehindTheVault("c.md", "C");
     await ensureIndex();
-    expect(text("a.md")).toBe("A1");
+    expect(await text("a.md")).toBe("A1");
     clock.mockReturnValue(t0 + REVALIDATE_MS + 1000);
     const read = vi.spyOn(ws, "readWorkspaceFile");
     await ensureIndex();
-    expect(text("a.md")).toBe("A2");
-    expect(text("c.md")).toBe("C");
+    expect(await text("a.md")).toBe("A2");
+    expect(await text("c.md")).toBe("C");
     expect(read.mock.calls.map((c) => c[0]).sort()).toEqual(["a.md", "c.md"]);
   });
 });

@@ -7,6 +7,8 @@ import { log } from "../lib/logger";
 
 // Unlinked mentions (4.6): its scan and Link action load with the section.
 const UnlinkedMentions = lazy(() => import("./UnlinkedMentions"));
+import { EmptyState } from "./EmptyState";
+import { HelpButton } from "./HelpButton";
 
 interface Props {
   /** Active workspace path. */
@@ -62,6 +64,7 @@ export function BacklinksPanel({ filePath, onOpen }: Props) {
           <Link2 size={12} />
           {t("backlinks.title")}
         </span>
+        <HelpButton topic="workspace/panels#backlinks" />
       </div>
       {!filePath && (
         <div style={{ padding: "1rem", color: "hsl(var(--fg-muted))", fontSize: 12 }}>
@@ -74,9 +77,14 @@ export function BacklinksPanel({ filePath, onOpen }: Props) {
         </div>
       )}
       {filePath && !loading && hits && hits.length === 0 && (
-        <div style={{ padding: "1rem", color: "hsl(var(--fg-muted))", fontSize: 12 }}>
-          {t("backlinks.empty")}
-        </div>
+        <EmptyState
+          message={t("backlinks.empty")}
+          action={{
+            label: t("backlinks.copyLink"),
+            // A [[link]] to this note, ready to paste into another one.
+            onClick: () => void navigator.clipboard?.writeText(`[[${(filePath ?? "").replace(/^.*\//, "").replace(/\.(md|markdown)$/i, "")}]]`).catch(() => undefined),
+          }}
+        />
       )}
       {hits && hits.length > 0 && (
         <ul className="backlinks-list" role="list" aria-label={t("backlinks.title")}>

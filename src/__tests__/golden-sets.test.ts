@@ -451,8 +451,6 @@ describe("samplers are deterministic for a (dummy) seed", () => {
   });
 
   it("Python (scripts/golden/hf_build.py) samples and hashes exactly like Node", () => {
-    const py = spawnSync("python3", ["--version"]);
-    if (py.status !== 0) return; // CI images have python3; skip where it is missing
     const pool = Array.from({ length: 60 }, (_, i) => ({ id: `x-${String(i).padStart(3, "0")}`, text: `t${i}` }));
     const code = [
       "import importlib.util, json, sys",

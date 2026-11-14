@@ -1,0 +1,18 @@
+{
+  "commentsPanel.add": "Add a comment",
+  "commentsPanel.close": "Close comments panel",
+  "commentsPanel.delete": "Delete comment",
+  "commentsPanel.deleteConfirm": "Delete this comment and its replies for everyone in the room?",
+  "commentsPanel.empty": "No comments yet. Select text in the editor and run “Add comment” from the command palette.",
+  "commentsPanel.hideResolved": "Hide resolved comments",
+  "commentsPanel.jump": "Scroll to anchored text",
+  "commentsPanel.reopen": "Re-open",
+  "commentsPanel.reply": "Reply",
+  "commentsPanel.replyPlaceholder": "Write a reply…",
+  "commentsPanel.resolve": "Resolve",
+  "commentsPanel.showResolved": "Show resolved comments",
+  "commentsPanel.summary": "{{unresolved}} open · {{total}} total",
+  "commentsPanel.title": "Comments",
+  "commentsPanel.viewAll": "All",
+  "commentsPanel.viewOpen": "Open only"
+}

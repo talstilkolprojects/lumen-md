@@ -81,6 +81,12 @@ async function relink(from: string, to: string, folder: boolean | undefined, mov
   } catch (e) {
     linksError = e instanceof Error ? e : new Error(String(e));
   }
+  // Per-note reading options follow the note (plan W3.5) — only once someone has set any.
+  try {
+    if (localStorage.getItem("lumen-reading") !== null) (await import("../reading/settings")).moveNoteReading(from, to);
+  } catch {
+    /* no storage: nothing to move */
+  }
   window.dispatchEvent(new Event("lumen-workspace-changed"));
   const vault = moved.vault;
   const rewrite = (content: string, notePrevPath: string) =>

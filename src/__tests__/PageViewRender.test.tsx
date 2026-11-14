@@ -10,7 +10,7 @@ beforeAll(() => {
   };
 });
 
-vi.mock("../i18n", () => ({ t: (k: string) => k }));
+vi.mock("../i18n", () => ({ registerEnglish: () => undefined, t: (k: string) => k }));
 vi.mock("../renderer/Preview", () => ({
   Preview: ({ markdownText }: { markdownText: string }) => (
     <div data-testid="preview">{markdownText}</div>

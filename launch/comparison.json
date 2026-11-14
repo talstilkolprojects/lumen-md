@@ -1,0 +1,243 @@
+{
+  "$comment": "Plan W2.25: the honest comparison. Every claim names its source; `verified` is the date someone read that source and found the claim there, or null while it still has to be checked. `npm run launch:check` refuses a claim without a source, and the docs page (project/compare) is generated from this file, with unverified claims marked. Lumen's own claims cite its docs. Wording is plain and checkable: no 'best', no 'fastest'.",
+  "products": [
+    "lumen",
+    "obsidian",
+    "notion",
+    "gdocs"
+  ],
+  "names": {
+    "lumen": {
+      "en": "Lumen",
+      "he": "Lumen"
+    },
+    "obsidian": {
+      "en": "Obsidian",
+      "he": "Obsidian"
+    },
+    "notion": {
+      "en": "Notion",
+      "he": "Notion"
+    },
+    "gdocs": {
+      "en": "Google Docs",
+      "he": "Google Docs"
+    }
+  },
+  "topics": [
+    {
+      "id": "price",
+      "en": "Price",
+      "he": "מחיר"
+    },
+    {
+      "id": "hebrew",
+      "en": "Hebrew and right-to-left",
+      "he": "עברית ומימין לשמאל"
+    },
+    {
+      "id": "offline",
+      "en": "Working offline",
+      "he": "עבודה בלי אינטרנט"
+    },
+    {
+      "id": "markdown",
+      "en": "Markdown files",
+      "he": "קובצי Markdown"
+    },
+    {
+      "id": "source",
+      "en": "Source code",
+      "he": "קוד המקור"
+    }
+  ],
+  "claims": [
+    {
+      "product": "lumen",
+      "topic": "price",
+      "en": "Free. In the browser there is nothing to install, and notes stay in the browser's private storage.",
+      "he": "חינם. בדפדפן אין מה להתקין, והפתקים נשמרים באחסון הפרטי של הדפדפן.",
+      "source": "/getting-started/install/ · https://github.com/talstilkol/lumen-md/blob/main/LICENSE",
+      "verified": "2026-11-10"
+    },
+    {
+      "product": "obsidian",
+      "topic": "price",
+      "en": "Free, for personal use and, since February 2025, for work too. Sync is a paid add-on ($4 a month, billed yearly).",
+      "he": "חינם, לשימוש אישי ומפברואר 2025 גם לעבודה. הסנכרון בתשלום (4 דולר לחודש, בחיוב שנתי).",
+      "source": "https://obsidian.md/blog/free-for-work/ · https://obsidian.md/pricing.html",
+      "verified": "2026-11-10"
+    },
+    {
+      "product": "notion",
+      "topic": "price",
+      "en": "A free plan and paid plans; see Notion's pricing page.",
+      "he": "תוכנית חינמית ותוכניות בתשלום; ראו את דף המחירים של Notion.",
+      "source": "https://www.notion.com/pricing",
+      "verified": null
+    },
+    {
+      "product": "gdocs",
+      "topic": "price",
+      "en": "Free with a Google account; Google Workspace plans for organisations.",
+      "he": "חינם עם חשבון Google; תוכניות Google Workspace לארגונים.",
+      "source": "https://workspace.google.com/pricing",
+      "verified": null
+    },
+    {
+      "product": "lumen",
+      "topic": "hebrew",
+      "en": "Interface in Hebrew with a mirrored layout; direction per line; search that ignores niqqud and Hebrew prefixes.",
+      "he": "ממשק בעברית עם פריסה הפוכה; כיוון לכל שורה; חיפוש שמתעלם מניקוד ומתחיליות.",
+      "source": "/editor/hebrew/",
+      "verified": "2026-11-10"
+    },
+    {
+      "product": "obsidian",
+      "topic": "hebrew",
+      "en": "Since version 1.6: a mirrored interface for right-to-left languages, Hebrew among them, and notes in RTL, LTR or both.",
+      "he": "מגרסה 1.6: ממשק הפוך לשפות מימין לשמאל, ובהן עברית, ופתקים מימין לשמאל, משמאל לימין או בשילוב.",
+      "source": "https://docs.obsidian.md/Plugins/User+interface/Right-to-left",
+      "verified": "2026-11-10"
+    },
+    {
+      "product": "notion",
+      "topic": "hebrew",
+      "en": "Interface in Hebrew, mirrored in the desktop and mobile apps; text direction detected in most blocks, but not in simple tables.",
+      "he": "ממשק בעברית, הפוך באפליקציות למחשב ולנייד; כיוון הטקסט מזוהה ברוב הבלוקים, אבל לא בטבלאות פשוטות.",
+      "source": "https://www.notion.com/help/change-your-language",
+      "verified": "2026-11-10"
+    },
+    {
+      "product": "gdocs",
+      "topic": "hebrew",
+      "en": "Right-to-left controls turn on for documents with RTL text; paragraph direction and table column order can be set.",
+      "he": "פקדי ימין-לשמאל נדלקים במסמך עם טקסט מימין לשמאל; אפשר לקבוע כיוון פסקה וסדר עמודות בטבלה.",
+      "source": "https://support.google.com/docs/answer/65166",
+      "verified": "2026-11-10"
+    },
+    {
+      "product": "lumen",
+      "topic": "offline",
+      "en": "The installed web app opens and works without a network; notes are stored on the device.",
+      "he": "אפליקציית הרשת המותקנת נפתחת ועובדת בלי רשת; הפתקים נשמרים במכשיר.",
+      "source": "/getting-started/install/",
+      "verified": "2026-11-10"
+    },
+    {
+      "product": "obsidian",
+      "topic": "offline",
+      "en": "Notes are files in a folder on the device, so they open without a network.",
+      "he": "הפתקים הם קבצים בתיקייה במכשיר, כך שהם נפתחים בלי רשת.",
+      "source": "https://help.obsidian.md/data-storage",
+      "verified": null
+    },
+    {
+      "product": "notion",
+      "topic": "offline",
+      "en": "Since August 2025, offline in the desktop and mobile apps (not the browser): downloaded pages, plus Recents and Favorites on Plus, Business and Enterprise.",
+      "he": "מאוגוסט 2025, בלי רשת באפליקציות למחשב ולנייד (לא בדפדפן): דפים שהורדו, וגם אחרונים ומועדפים בתוכניות Plus, ‏Business ו-Enterprise.",
+      "source": "https://www.notion.com/releases/2025-08-19",
+      "verified": "2026-11-10"
+    },
+    {
+      "product": "gdocs",
+      "topic": "offline",
+      "en": "Offline editing in Chrome or Edge with the Google Docs Offline extension, turned on per account.",
+      "he": "עריכה בלי רשת ב-Chrome או ב-Edge עם התוסף Google Docs Offline, כשהאפשרות מופעלת בחשבון.",
+      "source": "https://support.google.com/docs/answer/6388102",
+      "verified": null
+    },
+    {
+      "product": "lumen",
+      "topic": "markdown",
+      "en": "Every note is a plain Markdown file; the whole vault exports as a .zip or a folder.",
+      "he": "כל פתק הוא קובץ Markdown רגיל; כל הכספת מיוצאת כ-‎.zip או כתיקייה.",
+      "source": "/workspace/export-import/",
+      "verified": "2026-11-10"
+    },
+    {
+      "product": "obsidian",
+      "topic": "markdown",
+      "en": "Notes are Markdown files.",
+      "he": "הפתקים הם קובצי Markdown.",
+      "source": "https://help.obsidian.md/data-storage",
+      "verified": null
+    },
+    {
+      "product": "notion",
+      "topic": "markdown",
+      "en": "Pages live in Notion's database; they can be exported as Markdown.",
+      "he": "הדפים נשמרים במסד הנתונים של Notion; אפשר לייצא אותם כ-Markdown.",
+      "source": "https://www.notion.com/help/export-your-content",
+      "verified": null
+    },
+    {
+      "product": "gdocs",
+      "topic": "markdown",
+      "en": "Since July 2024, import Markdown as a Doc and export a Doc as Markdown.",
+      "he": "מיולי 2024, ייבוא Markdown כמסמך וייצוא מסמך כ-Markdown.",
+      "source": "https://workspaceupdates.googleblog.com/2024/07/import-and-export-markdown-in-google-docs.html",
+      "verified": "2026-11-10"
+    },
+    {
+      "product": "lumen",
+      "topic": "source",
+      "en": "Open source under the MIT licence.",
+      "he": "קוד פתוח ברישיון MIT.",
+      "source": "https://github.com/talstilkol/lumen-md/blob/main/LICENSE",
+      "verified": "2026-11-10"
+    },
+    {
+      "product": "obsidian",
+      "topic": "source",
+      "en": "The app's source code is not published.",
+      "he": "קוד המקור של האפליקציה לא מפורסם.",
+      "source": "https://obsidian.md/license",
+      "verified": null
+    },
+    {
+      "product": "notion",
+      "topic": "source",
+      "en": "Proprietary.",
+      "he": "קנייני.",
+      "source": "https://www.notion.com/terms",
+      "verified": null
+    },
+    {
+      "product": "gdocs",
+      "topic": "source",
+      "en": "Proprietary.",
+      "he": "קנייני.",
+      "source": "https://policies.google.com/terms",
+      "verified": null
+    }
+  ],
+  "lumenGaps": [
+    {
+      "en": "No sync service of its own yet: between devices, keep the vault in a folder you already sync, or export and import.",
+      "he": "עדיין אין שירות סנכרון משלו: בין מכשירים, שומרים את הכספת בתיקייה שכבר מסונכרנת אצלכם, או מייצאים ומייבאים.",
+      "source": "/workspace/export-import/"
+    },
+    {
+      "en": "Real-time co-editing is peer to peer and young; Google Docs and Notion are far ahead for teams.",
+      "he": "עריכה משותפת בזמן אמת עובדת מעמית לעמית ועדיין צעירה; ‏Google Docs ו-Notion הרבה לפני לעבודה בצוות.",
+      "source": "/collab/webrtc/"
+    },
+    {
+      "en": "Far fewer plugins and templates than Obsidian's community.",
+      "he": "הרבה פחות תוספים ותבניות מהקהילה של Obsidian.",
+      "source": "/plugins/sdk/"
+    },
+    {
+      "en": "The phone apps are not in the App Store or Google Play yet; on a phone Lumen runs in the browser or as an installed web app.",
+      "he": "אפליקציות הטלפון עוד לא בחנויות; בטלפון Lumen רץ בדפדפן או כאפליקציית רשת מותקנת.",
+      "source": "/getting-started/install/"
+    },
+    {
+      "en": "It is a beta: expect rough edges, and keep a backup (Export the whole vault).",
+      "he": "זו גרסת בטא: צפו לפינות לא מלוטשות, ושמרו גיבוי (ייצוא כל הכספת).",
+      "source": "/workspace/export-import/"
+    }
+  ]
+}

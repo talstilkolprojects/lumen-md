@@ -1,0 +1,9 @@
+filters: file.hasTag("place")
+views:
+  - type: map
+    name: Places
+    coordinates: note.location
+    order: [file.name, note.location]
+    sort:
+      - property: file.name
+        direction: ASC

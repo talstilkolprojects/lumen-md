@@ -115,8 +115,9 @@ describe("a fake-model run of each eval case makes its tool call through the run
       // Context only: the model is offered no tools and may stream.
       expect(ex.calls.every((r) => !r.tools && !r.schema)).toBe(true);
       expect(run.steps.find((s) => s.kind === "tool")?.detail).toMatch(/^context/);
-    } else if ((def.tier ?? "small") === "small" || def.tier === "tiny") {
-      // Every turn held to the protocol's schema; no native tools.
+    } else if (ex.id !== "chat" || (def.tier ?? "small") === "small" || def.tier === "tiny") {
+      // Every turn held to the protocol's schema; no native tools: a local
+      // executor constrains at every tier (plan W4.31), a cloud one up to "small".
       for (const r of ex.calls) {
         expect(r.tools).toBeUndefined();
         const names = ((r.schema as { anyOf: Array<{ properties: { tool?: { enum: string[] } } }> }).anyOf ?? []).flatMap((b) => b.properties.tool?.enum ?? []);

@@ -16,6 +16,7 @@ import { useCapability, useEntitlementResolved } from "../billing/gates";
 import { UpgradeNotice } from "./UpgradeNotice";
 import { getSecret, setSecret } from "../lib/secretStore";
 import { connectAllowedByCsp } from "../lib/cspConnect";
+import "./collabSettingsStrings";
 
 interface Props {
   onClose: () => void;
@@ -102,7 +103,7 @@ export function CollabSettings({ onClose, embedded = false }: Props) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "hsl(0 0% 0% / 0.5)",
+        background: "var(--overlay)",
         backdropFilter: "blur(4px)",
       }}
       onClick={(e) => {

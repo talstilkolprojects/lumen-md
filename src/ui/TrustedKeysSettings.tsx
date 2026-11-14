@@ -21,6 +21,9 @@ import { uiConfirm } from "./PromptDialog";
 import { showAiToast } from "./AiToast";
 import { docsUrl } from "../lib/docsLinks";
 import { t } from "../i18n";
+import { explainError } from "../lib/userError";
+import { HelpButton } from "./HelpButton";
+import "./trustedKeysSettingsStrings";
 
 interface Props {
   open: boolean;
@@ -75,7 +78,7 @@ export function TrustedKeysSettings({ open, onClose, embedded = false }: Props) 
           res.alreadyTrusted ? "info" : "success",
         );
       } catch (err) {
-        showAiToast(t("trustedKeys.saveFailed", { error: (err as Error).message }), "error", {
+        showAiToast(t("trustedKeys.saveFailed", { error: explainError(err) }), "error", {
           learnMoreUrl: docsUrl("pluginSigning"),
         });
       } finally {
@@ -95,7 +98,7 @@ export function TrustedKeysSettings({ open, onClose, embedded = false }: Props) 
       try {
         await untrustKey(fingerprint);
       } catch (err) {
-        showAiToast(t("trustedKeys.saveFailed", { error: (err as Error).message }), "error", {
+        showAiToast(t("trustedKeys.saveFailed", { error: explainError(err) }), "error", {
           learnMoreUrl: docsUrl("pluginSigning"),
         });
         return;
@@ -136,6 +139,7 @@ export function TrustedKeysSettings({ open, onClose, embedded = false }: Props) 
               <X size={14} />
             </button>
           )}
+          <HelpButton topic="plugins/signing#manage-trusted-keys" />
         </div>
 
         <div style={{ overflow: "auto", padding: "12px 16px", display: "flex", flexDirection: "column", gap: 16 }}>
@@ -153,6 +157,7 @@ export function TrustedKeysSettings({ open, onClose, embedded = false }: Props) 
             {keys === null ? (
               <p style={muted}>{t("trustedKeys.loading")}</p>
             ) : user.length === 0 ? (
+              // empty-action: the "Add a key" form right below this list.
               <p style={muted} data-testid="trusted-keys-empty">
                 {t("trustedKeys.empty")}
               </p>
@@ -221,7 +226,7 @@ export function TrustedKeysSettings({ open, onClose, embedded = false }: Props) 
               style={textarea}
             />
             {error ? (
-              <p id="trusted-keys-error" role="alert" style={{ ...muted, color: "hsl(0 70% 60%)" }}>
+              <p id="trusted-keys-error" role="alert" style={{ ...muted, color: "hsl(var(--danger))" }}>
                 {error}
               </p>
             ) : (

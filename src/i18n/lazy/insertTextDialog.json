@@ -1,0 +1,17 @@
+{
+  "insertText.auto": "Auto",
+  "insertText.codeLang": "Language",
+  "insertText.confirm": "Insert",
+  "insertText.detect": "Detect as",
+  "insertText.detectedAs": "Detected as",
+  "insertText.hintCancel": "to cancel",
+  "insertText.hintInsert": "to insert",
+  "insertText.mode": "Insert as",
+  "insertText.mode.append": "Append to document",
+  "insertText.mode.atCursor": "At cursor position",
+  "insertText.mode.replace": "Replace document",
+  "insertText.preview": "Markdown preview",
+  "insertText.smartHelp": "Paste a URL, CSV, JSON, SQL, Mermaid, GeoJSON, math, code — anything. Lumen detects the type and wraps it in the right block.",
+  "insertText.smartPlaceholder": "Paste anything: a YouTube link, CSV rows, SQL query, Mermaid diagram, GeoJSON, code, math…",
+  "insertText.title": "Insert anything"
+}

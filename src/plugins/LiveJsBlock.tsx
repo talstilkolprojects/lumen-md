@@ -11,6 +11,9 @@ import { useAppStore } from "../store/useStore";
 import { hoistTopLevelBindings } from "./liveJsScope";
 import { SharedScopeRegistry, sharedScopeName } from "./liveJsShared";
 import { makeSandboxedWorker, type SandboxedWorker } from "./liveJsSandbox";
+import "./liveJsBlockStrings";
+import { airplaneFlagOn } from "../privacy/airplaneBoot";
+import "../privacy/airplaneStrings";
 
 type LogLevel = "log" | "info" | "warn" | "error";
 
@@ -102,6 +105,12 @@ export default function LiveJsBlock({ source, meta }: Props) {
     }
     setLogs([]);
     setWorkerErr(null);
+    // Airplane mode: the runner page is a URL-loaded frame the airplane CSP can't govern (review 12.11).
+    if (airplaneFlagOn()) {
+      setWorkerErr(t("airplane.runner.paused"));
+      setRunState("error");
+      return;
+    }
     setRunState("running");
     let hadError = false;
 

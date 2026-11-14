@@ -1,0 +1,70 @@
+#!/usr/bin/env node
+/**
+ * Builds eval/probes/hebrew-grammar.json (plan W5.3): 200 Hebrew sentences
+ * with one marked error each, from templates and word lists written here,
+ * with the corrected sentence beside each one (the false-positive check).
+ * Deterministic (fixed seed), so the file is reproducible:
+ *   node scripts/grammar/make-probe.mjs > eval/probes/hebrew-grammar.json
+ * Development numbers: the same author wrote these and the rules. CC0-1.0.
+ */
+let seed = 20261112;
+const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
+const pick = (a) => a[Math.floor(rnd() * a.length)];
+
+const MASC = ["ילדים", "ספרים", "תלמידים", "ימים", "חודשים", "שבועות", "מקומות", "חלונות", "שולחנות", "אנשים", "רופאים", "סטודנטים", "מחשבים", "כלבים", "חדרים", "שירים", "סרטים", "פרקים", "מאמרים", "עמודים", "רעיונות", "שמות", "כיסאות", "לילות"];
+const FEM = ["בנות", "שנים", "ערים", "מילים", "נשים", "שאלות", "תמונות", "מכוניות", "דקות", "שעות", "מנות", "עבודות", "הרצאות", "משימות", "חנויות", "ארוחות", "פגישות", "אחיות", "מורות", "פעמים"];
+const NUMS = [["שלוש", "שלושה"], ["ארבע", "ארבעה"], ["חמש", "חמישה"], ["שש", "שישה"], ["שבע", "שבעה"], ["תשע", "תשעה"], ["עשר", "עשרה"]];
+const NUM_T = ["אתמול ראיתי {n} {x} חדשים בתערוכה.", "יש לנו {n} {x} ברשימה.", "חיכינו כמעט {n} {x} לתשובה.", "בסוף נשארו רק {n} {x} על השולחן.", "הוא סיפר על {n} {x} שהכיר בדרך.", "במחקר השתתפו {n} {x} מכל הארץ."];
+const items = [];
+const add = (rule, wrong, right) => items.push({ id: `g-${String(items.length + 1).padStart(3, "0")}`, rule, text: wrong, corrected: right });
+
+for (let i = 0; i < 80; i++) {
+  const [f, m] = pick(NUMS);
+  const masc = rnd() < 0.5;
+  const x = masc ? pick(MASC) : pick(FEM);
+  const t = pick(NUM_T).replace(" חדשים", masc ? " חדשים" : " חדשות");
+  add("NUM_GENDER", t.replace("{n}", masc ? f : m).replace("{x}", x), t.replace("{n}", masc ? m : f).replace("{x}", x));
+}
+const TWO_T = ["קנינו {n} {x} בשוק.", "נשארו {n} {x} עד הסוף.", "היא הביאה {n} {x} לפגישה."];
+for (let i = 0; i < 20; i++) {
+  const masc = rnd() < 0.5;
+  const x = masc ? pick(MASC) : pick(FEM);
+  const t = pick(TWO_T);
+  const wrong = masc ? pick(["שתי", "שניים"]) : pick(["שני", "שתיים"]);
+  add("TWO_GENDER", t.replace("{n}", wrong).replace("{x}", x), t.replace("{n}", masc ? "שני" : "שתי").replace("{x}", x));
+}
+const ADJ = ["טוב", "חשוב", "יפה", "מעניין", "קשה", "מהיר", "גדול", "זול"];
+const HACHI_T = ["זה הפתרון הכי {a} ביותר שמצאנו.", "היא הייתה הכי {a} ביותר בכיתה.", "בחרנו בדרך הכי {a} ביותר."];
+for (let i = 0; i < 20; i++) {
+  const a = pick(ADJ);
+  const t = pick(HACHI_T);
+  add("HACHI_BEYOTER", t.replace("{a}", a), t.replace("{a}", a).replace(" ביותר", ""));
+}
+const VERBS = ["נפגשתי", "דיברתי", "שוחחתי", "התייעצתי", "התווכחתי", "נפגשנו", "דיברנו", "התכתבתי"];
+const PEOPLE = ["דני", "המנהלת", "הרופא", "השכנים", "המרצה", "אמא שלי", "החברים מהעבודה", "נועה"];
+const OBJ = [["אותו", "איתו"], ["אותה", "איתה"], ["אותם", "איתם"]];
+for (let i = 0; i < 30; i++) {
+  const v = pick(VERBS);
+  if (rnd() < 0.6) {
+    const p = pick(PEOPLE);
+    add("ET_IM", `אתמול ${v} את ${p} על התוכנית.`, `אתמול ${v} עם ${p} על התוכנית.`);
+  } else {
+    const [o, w] = pick(OBJ);
+    add("ET_IM", `${v} ${o} רק אחרי הצהריים.`, `${v} ${w} רק אחרי הצהריים.`);
+  }
+}
+const COMP = [["בית", "ספר"], ["בית", "חולים"], ["בית", "משפט"], ["כדור", "רגל"], ["יום", "הולדת"], ["ראש", "ממשלה"], ["עורך", "דין"], ["תפוח", "אדמה"], ["חדר", "אוכל"], ["שם", "משפחה"], ["ארוחת", "בוקר"], ["תעודת", "זהות"], ["תחנת", "רכבת"], ["שדה", "תעופה"]];
+const COMP_T = ["{c} היה מלא אנשים.", "שמעתי ש{c} נסגר מוקדם היום.", "כולם דיברו על {c} החדש."];
+for (let i = 0; i < 30; i++) {
+  const [a, b] = pick(COMP);
+  const t = pick(COMP_T);
+  add("SMICHUT_DEF", t.replace("{c}", `ה${a} ${b}`), t.replace("{c}", `${a} ה${b}`));
+}
+const FUT = [["ילך", "אלך"], ["יבוא", "אבוא"], ["יגיד", "אגיד"], ["יעשה", "אעשה"], ["יכתוב", "אכתוב"], ["ישלח", "אשלח"], ["יקנה", "אקנה"], ["יתקשר", "אתקשר"], ["יבדוק", "אבדוק"], ["ישאל", "אשאל"]];
+const FUT_T = ["מחר אני {v} לבד.", "אם צריך, אני {v} אחרי הישיבה.", "אני {v} את זה בערב."];
+for (let i = 0; i < 20; i++) {
+  const [w, r] = pick(FUT);
+  const t = pick(FUT_T);
+  add("ANI_FUTURE", t.replace("{v}", w), t.replace("{v}", r));
+}
+process.stdout.write(JSON.stringify({ about: "Hebrew grammar probe for plan W5.3: 200 sentences with one marked error each (rule = the error class), built from templates and word lists by scripts/grammar/make-probe.mjs, with the corrected sentence beside each one for the false-positive check. Development numbers, not a held-out result: the same author wrote the sentences and the rules. Real-text false positives are measured on the HeQ dev paragraphs (eval/golden/retrieval/dev/heq.json).", license: "CC0-1.0", items }, null, 1) + "\n");

@@ -164,6 +164,7 @@ for (const name of ["iPhone 14", "Pixel 7"] as const) {
     // engine itself is covered by the desktop webkit project above.
     const { defaultBrowserType: _engine, ...device } = devices[name];
     test.use(device);
+    // skip-reason: Firefox has no mobile emulation (isMobile) in Playwright; WebKit's layout is covered by the desktop webkit project | task: 9.2 | until: 2027-05-12
     test.skip(({ browserName }) => browserName !== "chromium", "phones are emulated on Chromium");
 
     for (const locale of ["he", "en"] as const) {

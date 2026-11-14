@@ -1,0 +1,32 @@
+{
+  "$comment": "Plan W4.4 / 15.18. Every VITE_* variable a build may set. Vite inlines VITE_* values into the public bundle, so each name here must be public by design: a URL, a client id, a price id, a public key. A build that sets any other VITE_* name fails (src/build/viteEnvGate.ts), and npm run secrets:scan-live checks the names set in Vercel against this list. Secrets go in the secret store (src/lib/secretStore.ts) or server-side, never here. A value starting with ci-canary- is a CI canary and is allowed under any name.",
+  "names": {
+    "VITE_AUDIT_ENDPOINT": "audit-log worker URL",
+    "VITE_BILLING_ENDPOINT": "billing worker URL",
+    "VITE_CSP_CONNECT_EXTRA": "extra connect-src origins",
+    "VITE_DOCS_URL": "documentation site URL",
+    "VITE_DROPBOX_APP_KEY": "Dropbox OAuth app key (PKCE, no secret)",
+    "VITE_DROPBOX_REDIRECT": "Dropbox OAuth redirect URL",
+    "VITE_ENTITLEMENT_ENDPOINT": "entitlement worker URL",
+    "VITE_GDRIVE_CLIENT_ID": "Google OAuth client id (public)",
+    "VITE_GDRIVE_REDIRECT": "Google OAuth redirect URL",
+    "VITE_GIT_CORS_PROXY": "git CORS proxy URL",
+    "VITE_LANGUAGETOOL_URL": "self-hosted LanguageTool URL",
+    "VITE_MARKETPLACE_URL": "plugin marketplace URL",
+    "VITE_PLUGIN_TRUSTED_KEYS": "public plugin-signing keys",
+    "VITE_PRICE_ID_PRO": "Stripe price id (public)",
+    "VITE_PRICE_ID_TEAM": "Stripe price id (public)",
+    "VITE_PUBLISH_ENDPOINT": "publish worker URL",
+    "VITE_PUBLISH_MOCK_ENABLED": "publish mock switch",
+    "VITE_RESEARCH_ENDPOINT": "research worker URL",
+    "VITE_SENTRY_DSN": "error-tracker DSN (public ingest key)",
+    "VITE_SUPABASE_ANON_KEY": "Supabase anon key (public; row-level security gates access)",
+    "VITE_SUPABASE_URL": "Supabase project URL",
+    "VITE_WEBRTC_SIGNALING_URL": "collaboration signaling WebSocket URL",
+    "VITE_WORKOS_ENDPOINT": "SSO worker URL",
+    "VITE_YJS_WEBSOCKET_URL": "collaboration server WebSocket URL"
+  },
+  "prefixes": {
+    "VITE_VERCEL_": "Vercel system variables (deployment id, git ref and commit). Vercel sets them on every build when 'Automatically expose System Environment Variables' is on; none is a secret, and since #243 the app reads none of them, so they stay out of the bundle."
+  }
+}

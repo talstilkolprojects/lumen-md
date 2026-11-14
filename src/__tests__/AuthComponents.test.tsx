@@ -234,14 +234,15 @@ describe("AuthButton", () => {
     expect(container.innerHTML).toBe("");
   });
 
-  it("opens the sign-in dialog and says why the user is signed out", () => {
+  it("opens the sign-in dialog and says why the user is signed out", async () => {
     render(<AuthButton />);
     const pill = screen.getByRole("button", { name: new RegExp(t("auth.signIn")) });
     expect(pill.getAttribute("data-auth-status")).toBe("notConfigured");
     expect(pill.getAttribute("aria-label")).toContain(t("auth.status.notConfigured"));
     expect(screen.queryByRole("dialog")).toBeNull();
     fireEvent.click(pill);
-    expect(screen.getByRole("dialog")).toBeTruthy();
+    // The dialog is a lazy chunk.
+    expect(await screen.findByRole("dialog")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: t("auth.dialog.close") }));
     expect(screen.queryByRole("dialog")).toBeNull();
   });

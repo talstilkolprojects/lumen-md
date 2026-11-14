@@ -1,0 +1,14 @@
+{
+  "speakers.diarizing": "Finding who spoke when… {done}/{total}",
+  "speakers.unavailable": "Speaker identification isn't set up on this device yet, so the transcript has no speakers.",
+  "speakers.failed": "Couldn't tell the speakers apart: {error}. The transcript is inserted without speakers.",
+  "speakers.namePrompt": "Who is {speaker}? They said: “{sample}”",
+  "speakers.namePlaceholder": "Name (leave empty to keep {speaker})",
+  "speakers.done": "Meeting transcribed: {n} sentences, {speakers} speakers, in {seconds} s.",
+  "speakers.notesFailed": "The transcript is in the note; the meeting summary failed: {error}",
+  "speakers.none": "This note has no speaker labels to rename.",
+  "speakers.pick": "Which speaker do you want to rename?",
+  "speakers.renamePrompt": "New name for {speaker}",
+  "speakers.renamed": "Renamed {from} to {to} everywhere in this note.",
+  "speakers.download": "Speaker identification needs {mb} MB of models from Hugging Face, downloaded once and kept on this device. Download them now?"
+}

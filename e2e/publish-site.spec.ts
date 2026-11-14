@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 import { inflateRawSync } from "node:zlib";
 import { readFileSync } from "node:fs";
 
@@ -67,8 +68,8 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(".cm-content").first()).toBeVisible({ timeout: 15_000 });
 });
 
-test("a 50-note site: published as a .zip, served, and checked in the browser", async ({ page, context }) => {
-  test.skip(!(await seedVault(page)), "this engine refuses OPFS writes here, so there is no vault to publish");
+test("a 50-note site: published as a .zip, served, and checked in the browser", async ({ page, context, browserName }) => {
+  vaultOrSkip(await seedVault(page), browserName);
   const outside: string[] = [];
   page.on("request", (r) => {
     const u = new URL(r.url());

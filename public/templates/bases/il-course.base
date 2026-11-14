@@ -1,0 +1,24 @@
+# Courses — from the template University course
+filters:
+  and:
+    - 'type == "course"'
+properties:
+  file.name:
+    displayName: "Course"
+  note.course_code:
+    displayName: "Code"
+  note.lecturer:
+    displayName: "Lecturer"
+  note.semester:
+    displayName: "Semester"
+  note.credits:
+    displayName: "Credits"
+views:
+  - type: table
+    name: "Courses"
+    order:
+      - file.name
+      - note.course_code
+      - note.lecturer
+      - note.semester
+      - note.credits

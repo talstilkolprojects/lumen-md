@@ -5,6 +5,7 @@ import { describeAuthError, describeAuthStatus, type AuthStatusDescription } fro
 import { isWorkosEnabled, signInWithSso } from "../auth/workosProvider";
 import { loadOrgSettings } from "../lib/orgSettings";
 import { t } from "../i18n";
+import { HelpButton } from "../ui/HelpButton";
 
 /**
  * Email/password + OAuth sign-in dialog.
@@ -132,8 +133,11 @@ export function AuthDialog({ open, onClose }: Props) {
           boxShadow: "0 20px 60px -10px hsl(0 0% 0% / 0.5)",
         }}
       >
-        <div id="auth-dialog-title" style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>
-          {mode === "signin" ? t("auth.dialog.signInTitle") : t("auth.dialog.signUpTitle")}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          <div id="auth-dialog-title" style={{ fontSize: 18, fontWeight: 700, flex: 1 }}>
+            {mode === "signin" ? t("auth.dialog.signInTitle") : t("auth.dialog.signUpTitle")}
+          </div>
+          <HelpButton topic="account/sign-in" />
         </div>
         <div style={{ fontSize: 12, color: "hsl(var(--fg-muted))", marginBottom: 16 }}>
           {t("auth.dialog.intro")}

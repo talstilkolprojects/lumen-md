@@ -1,0 +1,24 @@
+# דירות — נוצר מהתבנית חיפוש דירה
+filters:
+  and:
+    - 'type == "apartment"'
+properties:
+  file.name:
+    displayName: "דירה"
+  note.neighborhood:
+    displayName: "שכונה"
+  note.rent:
+    displayName: "שכירות ₪"
+  note.rooms:
+    displayName: "חדרים"
+  note.status:
+    displayName: "סטטוס"
+views:
+  - type: table
+    name: "דירות"
+    order:
+      - file.name
+      - note.neighborhood
+      - note.rent
+      - note.rooms
+      - note.status

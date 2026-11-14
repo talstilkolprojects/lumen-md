@@ -49,3 +49,26 @@ that bundles eSpeak NG (`phonemizer`, `kokoro-js`, `piper-tts-web`,
 them, and read-aloud must use `speechSynthesis` only and make no request. When
 the owner decides, 6.2.2 is implemented on that branch: option 2 as a
 consent-gated worker download, or option 3 as a lazy chunk.
+
+## Update (10.11.2026): decision 15.10 and plan W2.6
+
+Decision 15.10 was taken on 10.11 by Claude, on Tal's authorisation. (1) A
+GPL eSpeak NG worker is allowed only as a separate, user-initiated download,
+never in the build. (4) BlueTTS is not a default until its data licence is
+clear. Plan W2.6 adds, without any GPL component:
+
+- `src/ai/tts/hebrewG2P.ts`: Lumen's own rules from pointed Hebrew to IPA
+  with stress, in the spirit of Phonikud. No eSpeak is needed for Hebrew.
+- `src/ai/tts/voices.ts`: the voice-pack seam (Piper format, MIT runtime
+  through onnxruntime-web in `piper.worker.ts`). `HEBREW_VOICES` is
+  **empty**: no Hebrew voice has a licence that allows shipping it. A voice
+  is used only with an allowed and verified registry entry and pinned files
+  (URL, size, sha256).
+- `src/ai/tts/neuralReader.ts`: niqqud (6.3 / W2.5) → IPA → voice. It
+  prefetches the next sentence, highlights the word being read and reports
+  the first-audio latency. It stays dormant while there is no voice.
+- Read-aloud on system voices gains the word highlight (boundary events), a
+  saved position per note, and a speed and voice per language.
+
+Hebrew therefore still reads with the system's voice. Training a voice of our
+own from licensed data stays outside the plan (13.6).

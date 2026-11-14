@@ -1,0 +1,8 @@
+{
+  "voiceCmd.listening": "Listening… say a command",
+  "voiceCmd.unknown": "Not a command I know: “{text}”",
+  "voiceCmd.needsModel": "Voice commands use the dictation model. Start dictation once to download it (74 MB).",
+  "voiceCmd.confirmDelete": "Move this note to the trash?",
+  "voiceCmd.confirmOk": "Move to trash",
+  "voiceCmd.heard": "Voice command: {command}"
+}

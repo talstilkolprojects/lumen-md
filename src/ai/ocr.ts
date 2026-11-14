@@ -11,6 +11,7 @@
  * use. No image ever leaves the device, and OCR makes no outside request.
  */
 
+import type { PlacedLine } from "./ocrLayout";
 import type { Box, OcrLine } from "./ocrMixed";
 
 export interface OcrResult {
@@ -19,6 +20,12 @@ export interface OcrResult {
   confidence: number;
   /** The text's language, identified on this device (plan 6.5): BCP-47 primary tag, "und" when unclear. */
   lang?: string;
+  /**
+   * The lines in reading order with their logical text and box, in the
+   * image's pixels (plan W1.18): the text layer of a scanned page
+   * (./ocrLayout textLayerSpans). Absent when tesseract returned no lines.
+   */
+  lines?: PlacedLine[];
 }
 
 /** The language of recognised text; "und" when there is too little to tell. */
@@ -41,7 +48,7 @@ type TesseractWorker = {
     image: Image,
     options?: { rectangle?: { left: number; top: number; width: number; height: number } },
     output?: { text?: boolean; blocks?: boolean },
-  ): Promise<{ data: { text: string; confidence: number; blocks?: Array<{ paragraphs: Array<{ lines: OcrLine[] }> }> | null } }>;
+  ): Promise<{ data: { text: string; confidence: number; blocks?: Array<{ paragraphs: Array<{ lines: Array<OcrLine & { bbox?: Box }> }> }> | null } }>;
   setParameters?(p: Record<string, unknown>): Promise<unknown>;
   terminate(): Promise<unknown>;
 };
@@ -140,19 +147,34 @@ type WorkerRef = TesseractWorker | (() => Promise<TesseractWorker>) | null;
  */
 export async function recognizeWithMixedFix(main: TesseractWorker, heb: WorkerRef, image: Image, latin: WorkerRef = null): Promise<OcrResult> {
   const { data } = await main.recognize(image, {}, { text: true, blocks: true });
-  const lines = (data.blocks ?? []).flatMap((b) => b.paragraphs.flatMap((p) => p.lines));
-  if (!heb || !lines.length) return { text: data.text, confidence: data.confidence };
-  const { fixMixedText, needsFix } = await import("./ocrMixed");
-  if (!lines.some(needsFix)) return { text: data.text, confidence: data.confidence };
-  const reader = (w: Exclude<WorkerRef, null>) => {
-    const get = typeof w === "function" ? w : async () => w;
-    return async (box: Box) => {
-      const r = await (await get()).recognize(image, { rectangle: rect(box) });
-      return { text: r.data.text, confidence: r.data.confidence };
+  type Line = OcrLine & { bbox?: Box };
+  const linesOf = (blocks: typeof data.blocks): Line[] => (blocks ?? []).flatMap((b) => b.paragraphs.flatMap((p) => p.lines));
+  const found = linesOf(data.blocks);
+  if (!found.length) return { text: data.text, confidence: data.confidence };
+  const [{ fixMixedLine, needsFix }, L] = await Promise.all([import("./ocrMixed"), import("./ocrLayout")]);
+  const hebrewPage = L.isRtlPage(found.map((l) => l.text));
+  // Lines tesseract ran across a column gutter are cut there (./ocrLayout).
+  const minGutter = L.defaultGutter(found);
+  const lines: Line[] = L.splitAtGutters(found, minGutter, hebrewPage).filter((l) => L.lineBox(l));
+  const fix = !!heb && lines.some((l) => needsFix(l, { hebrewPage }));
+  let texts = lines.map((l) => l.text.replace(/\n$/, ""));
+  if (heb && fix) {
+    const reader = (w: Exclude<WorkerRef, null>) => {
+      const get = typeof w === "function" ? w : async () => w;
+      return async (box: Box) => {
+        const r = await (await get()).recognize(image, { rectangle: rect(box) });
+        return { text: r.data.text, confidence: r.data.confidence };
+      };
     };
-  };
-  const text = await fixMixedText(lines, { heb: reader(heb), latin: latin ? reader(latin) : undefined });
-  return { text, confidence: data.confidence };
+    const readers = { heb: reader(heb), latin: latin ? reader(latin) : undefined };
+    texts = [];
+    for (const l of lines) texts.push(needsFix(l, { hebrewPage }) ? await fixMixedLine(l, readers, { hebrewPage }) : l.text.replace(/\n$/, ""));
+  }
+  // Reading order from the boxes (./ocrLayout): columns right to left on a Hebrew page.
+  const opts = { rtl: hebrewPage, minGutter };
+  const placed = L.layoutLines(lines, texts, opts);
+  if (lines.length !== found.length || L.columnCount(placed) > 1) return { text: L.layoutText(placed), confidence: data.confidence, lines: placed };
+  return { text: fix ? texts.join("\n") : data.text, confidence: data.confidence, lines: placed };
 }
 
 /** Recognise text. Jobs run one at a time; the worker shuts down when idle. */
@@ -162,7 +184,7 @@ export function ocrImage(image: Blob | HTMLCanvasElement | OffscreenCanvas): Pro
     try {
       const r = await recognizeWithMixedFix(w, getHebWorker, image as Blob, getLatinWorker);
       const text = cleanOcrText(r.text);
-      return { text, confidence: r.confidence, lang: await ocrLanguage(text) };
+      return { ...r, text, lang: await ocrLanguage(text) };
     } finally {
       scheduleIdle();
     }

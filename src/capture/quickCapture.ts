@@ -18,6 +18,7 @@
  * shortcut import it), so none of this is in the startup bundle.
  */
 
+import "./strings";
 import { t } from "../i18n";
 import { flushPendingEdits, useAppStore } from "../store/useStore";
 import { toast } from "../store/useToastStore";

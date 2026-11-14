@@ -26,6 +26,8 @@ export const CONVERTED_MODELS: ConvertedModel[] = [
   { id: "dictabert-ner", task: "token-classification", purposeKey: "models.purpose.nerHe" },
   { id: "siglip-base-patch16-256-multilingual", task: "zero-shot-image-classification", purposeKey: "models.purpose.imageSearch" },
   { id: "nakdimon", task: "nikud", purposeKey: "models.purpose.nikud" },
+  // Plan W2.5: the "high quality" niqqud layer above Nakdimon (CC BY 4.0, attribution in the registry).
+  { id: "dictabert-char-menaked", task: "nikud", purposeKey: "models.purpose.nikudHigh" },
 ];
 
 /**

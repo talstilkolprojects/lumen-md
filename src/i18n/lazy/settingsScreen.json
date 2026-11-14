@@ -1,0 +1,7 @@
+{
+  "locale.betaNote": "This translation was made by machine and is waiting for a native speaker's review.",
+  "settings.empty": "No setting matches",
+  "settings.importFailed": "That file isn't a Lumen settings file.",
+  "settings.importRefused": "Not imported, so this device keeps its privacy settings: {keys}",
+  "settings.imported": "{n} settings imported, {skipped} skipped"
+}

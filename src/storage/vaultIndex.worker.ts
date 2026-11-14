@@ -11,6 +11,11 @@ import type { IndexRequest } from "./vaultIndexProtocol";
 
 const index = new VaultIndex();
 
+// Requests run one after another: a snapshot restore finishes before the
+// upserts sent after it (W2.22: some requests are asynchronous now).
+let queue: Promise<void> = Promise.resolve();
+
 self.onmessage = (e: MessageEvent<IndexRequest>) => {
-  (self as unknown as Worker).postMessage(handleIndexRequest(index, e.data));
+  const req = e.data;
+  queue = queue.then(async () => (self as unknown as Worker).postMessage(await handleIndexRequest(index, req))).catch(() => {});
 };

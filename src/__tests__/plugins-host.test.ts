@@ -110,6 +110,28 @@ describe("plugin host", () => {
     await vi.waitFor(() => expect(logs).toEqual(["ran PluginDenied"]));
   });
 
+  it("keeps what the developer panel shows: calls, capability use, sandbox stats (W3.10)", async () => {
+    const activity = vi.fn();
+    const p = await load(
+      `lumen.on("go", async () => { await lumen.document.getText(); await lumen.document.getText(); await lumen.panel.open({ title: "x" }).catch(() => {}); });`,
+      ["document:read"],
+      { "document.getText": async () => "t" },
+    );
+    p.onActivity(activity);
+    expect(p.loadMs).not.toBeNull();
+    p.emit("go");
+    await vi.waitFor(() => expect(p.stats?.denied.panel).toBe(1));
+    expect(p.calls.map((c) => [c.method, c.capability, c.outcome])).toEqual([
+      ["document.getText", "document:read", "ok"],
+      ["document.getText", "document:read", "ok"],
+    ]);
+    expect(p.capabilityUse.get("document:read")).toBe(2);
+    expect(p.stats!.entries).toBeGreaterThanOrEqual(2);
+    expect(p.stats!.cpuMs).toBeGreaterThanOrEqual(0);
+    expect(p.stats!.memoryBytes).toBeGreaterThan(0);
+    expect(activity).toHaveBeenCalled();
+  });
+
   it("a plugin that dies reports fatal and is terminated", async () => {
     const p = await load(`lumen.on("tick", () => { throw new Error("dead"); });`, []);
     const fatal = vi.fn();

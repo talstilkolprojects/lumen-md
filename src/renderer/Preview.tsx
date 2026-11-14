@@ -8,11 +8,14 @@ import { wikiHoverHandlers } from "./hoverTrigger";
 import { hasEmbeds } from "./remarkEmbeds";
 import { onWorkspaceChanged } from "../storage/workspaceEvents";
 import { wikiFragmentId } from "../lib/slug";
+import { attachFootnoteHover } from "./footnoteHover";
+import { attachImageResize, setImageWidth } from "./imageSize";
 import { scheduleIdle } from "../lib/idle";
 import { CopyButtonHandler } from "./components";
 import { Frontmatter } from "../ui/Frontmatter";
 import { ErrorBoundary } from "../ui/ErrorBoundary";
 import { t } from "../i18n";
+import { explainError } from "../lib/userError";
 
 interface Props {
   markdownText: string;
@@ -20,6 +23,11 @@ interface Props {
   docKey?: string | null;
   /** Re-render is debounced by this many ms */
   debounceMs?: number;
+  /**
+   * W1.3 — the preview can edit the note (dragging an image's edge writes
+   * its width). Without it, images are not resizable.
+   */
+  onSourceEdit?: (next: string) => void;
 }
 
 /**
@@ -38,7 +46,28 @@ function safeFastRender(markdownText: string): React.ReactElement | null {
   }
 }
 
-export function Preview({ markdownText, docKey = null }: Props) {
+export function Preview({ markdownText, docKey = null, onSourceEdit }: Props) {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const textRef = useRef(markdownText);
+  textRef.current = markdownText;
+  const editRef = useRef(onSourceEdit);
+  editRef.current = onSourceEdit;
+  const canEdit = !!onSourceEdit;
+  // Footnote previews on hover / focus.
+  useEffect(() => {
+    const root = rootRef.current;
+    return root ? attachFootnoteHover(root) : undefined;
+  }, []);
+  // Drag an image's edge to resize it; the width is written to the note.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || !canEdit) return;
+    return attachImageResize(root, (offset, target, width) => {
+      const md = textRef.current;
+      const next = setImageWidth(md, offset, width, target);
+      if (next !== md) editRef.current?.(next);
+    });
+  }, [canEdit]);
   // First paint (A7 levers 1 + 3): render the text synchronously on the
   // very first commit with the chunk-free pipeline, so the LCP element
   // (the welcome doc's headings / paragraphs) never waits on Shiki, KaTeX
@@ -97,7 +126,7 @@ export function Preview({ markdownText, docKey = null }: Props) {
         })
         .catch((e: Error) => {
           if (stale()) return;
-          setError(e.message);
+          setError(explainError(e, "preview"));
         });
     };
     if (fullPipelineWarm || markdownText.length >= LARGE_DOC_CHARS) {
@@ -157,6 +186,7 @@ export function Preview({ markdownText, docKey = null }: Props) {
     <div
       className="flex-1 min-h-0 overflow-y-auto"
       data-preview-root
+      ref={rootRef}
       // The document the displayed tree belongs to (it lags behind while a
       // newly opened note renders) — lets callers wait for the right one.
       data-preview-doc={treeDocKey ?? ""}
@@ -175,12 +205,12 @@ export function Preview({ markdownText, docKey = null }: Props) {
           (path, heading) =>
             window.dispatchEvent(
               new CustomEvent("lumen-open-file", {
-                // A PDF takes the fragment as written (`page=3&highlight=…`,
+                // A PDF or a book takes the fragment as written (`page=3&highlight=…`, `chapter=2&…`,
                 // plan 4.14). A note: the same slugger rehype-slug gives the
                 // rendered headings (Unicode-aware: Hebrew / CJK keep their
                 // text); a block reference (`#^id`) is the block's own id
                 // (remarkBlockIds).
-                detail: /\.pdf$/i.test(path)
+                detail: /\.(pdf|epub)$/i.test(path)
                   ? { path, fragment: heading ?? null }
                   : heading
                     ? { path, heading: wikiFragmentId(heading) }

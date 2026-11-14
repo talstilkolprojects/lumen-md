@@ -19,7 +19,9 @@ canvases (`.canvas` files, spec 1.0, MIT licensed). Lumen's
 ## Export
 
 **Export .canvas** writes the open canvas to `canvases/<name>.canvas`, next to
-its `.excalidraw` file, as tab-indented JSON like Obsidian writes it.
+its `.excalidraw` file, byte for byte in Obsidian's own layout (tabs, one
+node or edge per line, no space after a colon). A canvas from Obsidian that
+you import and export without edits comes back byte-identical.
 Exporting again replaces that `.canvas` file. The `.excalidraw` file is not
 touched.
 

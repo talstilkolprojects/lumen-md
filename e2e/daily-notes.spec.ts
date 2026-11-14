@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * Plan 4.12 — daily notes: ⌥⌘D (Ctrl+Alt+D) creates and opens
@@ -75,8 +76,8 @@ const journalFiles = (page: Page) =>
     }
   });
 
-test("today's note is created, opened, and not duplicated when opened again", async ({ page }) => {
-  test.skip(!(await opfsWritable(page)), "this engine refuses OPFS writes here, so there is no vault to keep daily notes in");
+test("today's note is created, opened, and not duplicated when opened again", async ({ page, browserName }) => {
+  vaultOrSkip(await opfsWritable(page), browserName);
   const today = await todayIso(page);
   expect(await journalFiles(page)).toEqual([]);
 
@@ -96,6 +97,7 @@ test("today's note is created, opened, and not duplicated when opened again", as
   await page.keyboard.press("ControlOrMeta+End");
   await page.keyboard.type("first entry");
   await page.keyboard.press("ControlOrMeta+Alt+KeyD");
+  // hygiene-allow: proves a negative (no second note, no second tab appears), so there is no condition to wait for
   await expect(editor).toContainText("first entry");
   await expect.poll(() => journalFiles(page), { timeout: 5_000 }).toEqual([`${today}.md`]);
   await expect(tabs).toHaveCount(1);
@@ -111,6 +113,7 @@ test("today's note is created, opened, and not duplicated when opened again", as
   await expect(cal.locator(`[data-date="${today}"]`)).toHaveAttribute("data-has-note", "true", { timeout: 5000 });
   await expect(cal.locator(`[data-date="${today}"]`)).toHaveAttribute("aria-current", "date");
   await cal.locator(`[data-date="${today}"]`).click();
+  // hygiene-allow: proves a negative (the click creates no duplicate note), so there is no condition to wait for
   await expect(editor).toContainText("first entry");
   await expect(tabs).toHaveCount(1);
   await expect.poll(() => journalFiles(page), { timeout: 5_000 }).toEqual([`${today}.md`]);

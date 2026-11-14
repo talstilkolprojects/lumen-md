@@ -7,7 +7,7 @@
  * (e2e/remote-images.spec.ts) counts the network requests.
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 import { unified } from "unified";
@@ -21,6 +21,7 @@ import { renderMarkdown } from "../renderer/pipeline";
 import { StaticRenderContext } from "../renderer/components";
 import { rehypeSanitizeRaw } from "../renderer/rehypeSanitizeRaw";
 import { RemoteImageView } from "../editor/remoteImageView";
+import { contentFrameRequest } from "../lib/contentFrame";
 import {
   ALLOWED_HOSTS_KEY,
   __resetRemoteImagesForTests,
@@ -111,6 +112,13 @@ describe("the allowlist", () => {
   });
 });
 
+/** What the content frames in `root` show (plan W4.15): [kind, src]. */
+const framed = (root: ParentNode) =>
+  [...root.querySelectorAll("iframe[data-content-frame]")].map((f) => {
+    const req = contentFrameRequest(f.getAttribute("src") ?? "");
+    return [req?.kind, req && "src" in req ? req.src : null];
+  });
+
 describe("in the preview", () => {
   const remoteImgs = (root: ParentNode) =>
     [...root.querySelectorAll("img")].filter((i) => remoteImageHost(i.getAttribute("src")) || /https?:/.test(i.getAttribute("srcset") ?? ""));
@@ -135,13 +143,16 @@ describe("in the preview", () => {
     act(() => {
       fireEvent.click(screen.getAllByRole("button", { name: "Load" })[0]);
     });
-    expect([...container.querySelectorAll("img")].map((i) => i.getAttribute("src"))).toEqual([PIXEL]);
+    // Allowed: inside the content frame (plan W4.15), never an <img> in the app.
+    await waitFor(() => expect(framed(container)).toEqual([["img", PIXEL]]));
+    expect(remoteImgs(container)).toEqual([]);
     expect(container.querySelectorAll(".lumen-remote-image")).toHaveLength(1);
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: "Always allow tracker.example.net" }));
     });
     expect(container.querySelectorAll(".lumen-remote-image")).toHaveLength(0);
-    expect(container.querySelectorAll("img")).toHaveLength(2);
+    await waitFor(() => expect(framed(container)).toEqual([["img", PIXEL], ["img", "https://tracker.example.net/b.gif"]]));
+    expect(remoteImgs(container)).toEqual([]);
     expect(JSON.parse(localStorage.getItem(ALLOWED_HOSTS_KEY)!)).toEqual(["tracker.example.net"]);
   });
 
@@ -165,11 +176,14 @@ describe("in the preview", () => {
     act(() => {
       fireEvent.click(screen.getAllByRole("button", { name: "Always allow media.example.org" })[0]);
     });
-    expect([...container.querySelectorAll("video, audio")].map((m) => m.getAttribute("src"))).toEqual([
-      "https://media.example.org/v.mp4",
-      "https://media.example.org/a.mp3",
-      "./lumen-asset-clip.mp4",
-    ]);
+    // Allowed: they play inside the content frame (plan W4.15); the local clip in the app.
+    await waitFor(() =>
+      expect(framed(container)).toEqual([
+        ["video", "https://media.example.org/v.mp4"],
+        ["audio", "https://media.example.org/a.mp3"],
+      ]),
+    );
+    expect([...container.querySelectorAll("video, audio")].map((m) => m.getAttribute("src"))).toEqual(["./lumen-asset-clip.mp4"]);
   });
 
   it("on desktop the placeholder offers no Load (nothing could load)", async () => {
@@ -250,14 +264,15 @@ describe("WYSIWYG image node view", () => {
   });
   const node = (src: string, alt = "pic") => schema.nodes.image.create({ src, alt });
 
-  it("renders the placeholder for another site and the <img> once allowed", () => {
+  it("renders the placeholder for another site and the content frame once allowed", () => {
     const view = new RemoteImageView(node(PIXEL));
     expect(view.dom.querySelector("img")).toBeNull();
     expect(view.dom.querySelector(".lumen-remote-image")!.textContent).toContain("tracker.example.net");
     const load = [...view.dom.querySelectorAll("button")].find((b) => b.textContent === "Load")!;
     expect(view.stopEvent({ target: load } as unknown as Event)).toBe(true);
     load.click();
-    expect(view.dom.querySelector("img")!.getAttribute("src")).toBe(PIXEL);
+    expect(view.dom.querySelector("img")).toBeNull();
+    expect(framed(view.dom)).toEqual([["img", PIXEL]]);
     view.destroy();
   });
 
@@ -267,7 +282,8 @@ describe("WYSIWYG image node view", () => {
     expect(view.update(node(PIXEL))).toBe(true);
     expect(view.dom.querySelector("img")).toBeNull();
     allowRemoteImageHosts(["tracker.example.net"]);
-    expect(view.dom.querySelector("img")!.getAttribute("src")).toBe(PIXEL);
+    expect(view.dom.querySelector("img")).toBeNull();
+    expect(framed(view.dom)).toEqual([["img", PIXEL]]);
     view.destroy();
   });
 });

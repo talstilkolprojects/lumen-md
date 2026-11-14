@@ -1,0 +1,21 @@
+# Manuscript — from the template Book chapter
+filters:
+  and:
+    - 'type == "chapter"'
+properties:
+  file.name:
+    displayName: "Chapter"
+  note.chapter:
+    displayName: "No."
+  note.pov:
+    displayName: "POV"
+  note.status:
+    displayName: "Status"
+views:
+  - type: table
+    name: "Manuscript"
+    order:
+      - file.name
+      - note.chapter
+      - note.pov
+      - note.status

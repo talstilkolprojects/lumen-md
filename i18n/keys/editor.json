@@ -93,6 +93,16 @@
       "vars": []
     },
     {
+      "key": "block.codeDoctor.copied",
+      "en": "Repaired JSON copied to the clipboard.",
+      "vars": []
+    },
+    {
+      "key": "block.codeDoctor.copyFailed",
+      "en": "Could not copy to the clipboard. Select the text and copy it by hand.",
+      "vars": []
+    },
+    {
       "key": "block.codeDoctor.diagnostics",
       "en": "{n} individual diagnostics",
       "vars": [
@@ -435,6 +445,18 @@
       "vars": []
     },
     {
+      "key": "block.embed.gistDesktop",
+      "en": "The desktop app shows a Gist as a link.",
+      "vars": []
+    },
+    {
+      "key": "block.embed.notEmbeddable",
+      "en": "{host} is not one of the sites Lumen can embed. Open the link instead.",
+      "vars": [
+        "host"
+      ]
+    },
+    {
       "key": "block.embed.open",
       "en": "Open ↗",
       "vars": []
@@ -540,6 +562,25 @@
       "vars": []
     },
     {
+      "key": "block.insights.createdMany",
+      "en": "Created {n} files",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "block.insights.createdOne",
+      "en": "Created {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "block.insights.createdWhere",
+      "en": "All under insights/ in your workspace.",
+      "vars": []
+    },
+    {
       "key": "block.insights.empty",
       "en": "Insights block is empty — paste JSONL (one object per line) or a JSON array.",
       "vars": []
@@ -573,6 +614,11 @@
       ]
     },
     {
+      "key": "block.insights.generateFailed",
+      "en": "Could not build the insights",
+      "vars": []
+    },
+    {
       "key": "block.insights.groupBy",
       "en": "Group by:",
       "vars": []
@@ -594,6 +640,23 @@
       "key": "block.insights.noWorkspace",
       "en": "Workspace storage is unavailable in this browser — running a suggestion will open the first generated document in a new tab instead of writing files.",
       "vars": []
+    },
+    {
+      "key": "block.insights.nothing",
+      "en": "Nothing to generate for that suggestion.",
+      "vars": []
+    },
+    {
+      "key": "block.insights.openedOne",
+      "en": "Opened the generated note in a new tab",
+      "vars": []
+    },
+    {
+      "key": "block.insights.openedSome",
+      "en": "Opened 1 of {n} generated notes",
+      "vars": [
+        "n"
+      ]
     },
     {
       "key": "block.insights.parseError",
@@ -653,6 +716,11 @@
     {
       "key": "block.insights.tab.suggestions",
       "en": "Suggestions",
+      "vars": []
+    },
+    {
+      "key": "block.insights.writeFailed",
+      "en": "Could not save the insights",
       "vars": []
     },
     {
@@ -1071,6 +1139,13 @@
       "vars": []
     },
     {
+      "key": "block.liveSql.loadFailed",
+      "en": "The SQL engine could not load. {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
       "key": "block.liveSql.noResult",
       "en": "Statement executed (no result set).",
       "vars": []
@@ -1455,6 +1530,11 @@
       "vars": []
     },
     {
+      "key": "commentsPanel.add",
+      "en": "Add a comment",
+      "vars": []
+    },
+    {
       "key": "commentsPanel.close",
       "en": "Close comments panel",
       "vars": []
@@ -1462,6 +1542,11 @@
     {
       "key": "commentsPanel.delete",
       "en": "Delete comment",
+      "vars": []
+    },
+    {
+      "key": "commentsPanel.deleteConfirm",
+      "en": "Delete this comment and its replies for everyone in the room?",
       "vars": []
     },
     {
@@ -1861,6 +1946,11 @@
       "vars": []
     },
     {
+      "key": "outline.addHeading",
+      "en": "Add a heading",
+      "vars": []
+    },
+    {
       "key": "outline.close",
       "en": "Close the outline",
       "vars": []
@@ -1871,8 +1961,23 @@
       "vars": []
     },
     {
+      "key": "outline.fold",
+      "en": "Fold",
+      "vars": []
+    },
+    {
       "key": "outline.title",
       "en": "Outline",
+      "vars": []
+    },
+    {
+      "key": "outline.unfold",
+      "en": "Unfold",
+      "vars": []
+    },
+    {
+      "key": "outline.zoomOut",
+      "en": "← Back to the whole note",
       "vars": []
     },
     {

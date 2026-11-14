@@ -1,8 +1,11 @@
 import { DEFAULT_DAILY, isValidDailyPattern, type DailySettings } from "../daily/defaults";
+import { DEFAULT_TOOLBAR, sanitizeToolbar, type ToolbarActionId } from "../mobile/toolbarRow";
+import { DEFAULT_READING_WORDS } from "../mobile/gestures";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { vaultEncryptionState } from "../storage/vault";
 import { deferredJSONStorage, persistedTextLength } from "./deferredStorage";
+import { windowLabel, windowStorage } from "../desktop/window";
 import type { Locale } from "../i18n";
 import { applyLocale, isLocaleLoaded, loadLocale } from "../i18n";
 import {
@@ -89,12 +92,17 @@ export interface AppState {
   theme: Theme;
   /** Theme customisation (preset, accent, typography, measure). */
   themeSettings: ThemeSettings;
+  /** CSS snippets switched on (names of `.lumen/snippets/*.css`, plan W1.21). */
+  enabledSnippets: string[];
+  setSnippetEnabled: (name: string, on: boolean) => void;
   locale: Locale;
   showOutline: boolean;
   /** Phones (plan 10.2.4): the outline as a bottom sheet — this session only, closed at start. */
   outlineSheet: boolean;
   showWorkspace: boolean;
   showBacklinks: boolean;
+  /** The local graph panel (plan W1.10). */
+  showLocalGraph: boolean;
   vimEnabled: boolean;
   rtl: boolean;
   autoSave: boolean;
@@ -115,6 +123,11 @@ export interface AppState {
   dailyNotes: DailySettings;
   /** The month calendar under the file tree. */
   showCalendar: boolean;
+  /** Phones (plan W1.25): the actions above the keyboard, in order. */
+  mobileToolbar: ToolbarActionId[];
+  /** Phones: a note of `readingWords` words or more opens in reading view; a tap on the text edits there. */
+  readLongNotes: boolean;
+  readingWords: number;
   /** Daily writing goal (words). 0 disables the banner. */
   writingGoalWords: number;
   /** Toggle LanguageTool-powered grammar/style checking in the editor. */
@@ -153,6 +166,7 @@ export interface AppState {
   toggleOutline: () => void;
   toggleWorkspace: () => void;
   toggleBacklinks: () => void;
+  toggleLocalGraph: () => void;
   toggleVim: () => void;
   toggleRtl: () => void;
   toggleAutoSave: () => void;
@@ -169,6 +183,8 @@ export interface AppState {
   setWritingGoal: (words: number) => void;
   setDailyNotes: (patch: Partial<DailySettings>) => void;
   toggleCalendar: () => void;
+  setMobileToolbar: (ids: ToolbarActionId[]) => void;
+  setReadLongNotes: (on: boolean) => void;
   /** Toggle the LanguageTool grammar checker. */
   toggleGrammarCheck: () => void;
   /** Toggle suggesting mode (track changes). */
@@ -278,6 +294,7 @@ const partializeAppState = (s: AppState) =>
     showOutline: s.showOutline,
     showWorkspace: s.showWorkspace,
     showBacklinks: s.showBacklinks,
+    showLocalGraph: s.showLocalGraph,
     vimEnabled: s.vimEnabled,
     rtl: s.rtl,
     autoSave: s.autoSave,
@@ -296,6 +313,10 @@ const partializeAppState = (s: AppState) =>
     suggestingMode: s.suggestingMode,
     useFineTunedModel: s.useFineTunedModel,
     fineTunedModelId: s.fineTunedModelId,
+    enabledSnippets: s.enabledSnippets,
+    mobileToolbar: s.mobileToolbar,
+    readLongNotes: s.readLongNotes,
+    readingWords: s.readingWords,
     // aiKey intentionally excluded — session-only for security
     // An encrypted vault (plan 11.4): the open note and the tabs hold
     // note text, and localStorage is plain — they are not kept; after a
@@ -331,11 +352,15 @@ export const useAppStore = create<AppState>()(
       mode: defaultMode(),
       theme: "dark",
       themeSettings: { ...DEFAULT_THEME_SETTINGS },
+      enabledSnippets: [],
+      setSnippetEnabled: (name, on) =>
+        set((s) => ({ enabledSnippets: on ? [...new Set([...s.enabledSnippets, name])] : s.enabledSnippets.filter((x) => x !== name) })),
       locale: "en",
       showOutline: true,
       outlineSheet: false,
       showWorkspace: false,
       showBacklinks: false,
+      showLocalGraph: false,
       vimEnabled: false,
       rtl: false,
       autoSave: true,
@@ -351,6 +376,9 @@ export const useAppStore = create<AppState>()(
       writingGoalWords: 0,
       dailyNotes: { ...DEFAULT_DAILY },
       showCalendar: false,
+      mobileToolbar: [...DEFAULT_TOOLBAR],
+      readLongNotes: true,
+      readingWords: DEFAULT_READING_WORDS,
       grammarCheck: false,
       suggestingMode: false,
       useFineTunedModel: false,
@@ -441,6 +469,7 @@ export const useAppStore = create<AppState>()(
         set((s) => (isNarrowScreen() ? { outlineSheet: !s.outlineSheet } : { showOutline: !s.showOutline })),
       toggleWorkspace: () => set((s) => ({ showWorkspace: !s.showWorkspace })),
       toggleBacklinks: () => set((s) => ({ showBacklinks: !s.showBacklinks })),
+      toggleLocalGraph: () => set((s) => ({ showLocalGraph: !s.showLocalGraph })),
       toggleVim: () => set((s) => ({ vimEnabled: !s.vimEnabled })),
       toggleRtl: () => set((s) => {
         const next = !s.rtl;
@@ -468,6 +497,8 @@ export const useAppStore = create<AppState>()(
           return { dailyNotes: next };
         }),
       // The calendar lives in the file sidebar: showing it shows the sidebar too.
+      setMobileToolbar: (ids) => set({ mobileToolbar: sanitizeToolbar(ids) }),
+      setReadLongNotes: (on) => set({ readLongNotes: on }),
       toggleCalendar: () => set((s) => (s.showCalendar && s.showWorkspace ? { showCalendar: false } : { showCalendar: true, showWorkspace: true })),
       toggleGrammarCheck: () => set((s) => ({ grammarCheck: !s.grammarCheck })),
       toggleSuggestingMode: () =>
@@ -614,7 +645,12 @@ export const useAppStore = create<AppState>()(
       name: "lumen-md",
       // A long open document is saved to localStorage once typing pauses,
       // not on every keystroke (plan 8.4).
-      storage: deferredJSONStorage<PersistedAppState>((v) => persistedTextLength(v.state) >= LARGE_PERSIST_CHARS),
+      // Desktop (plan W3.9): every window keeps its own tabs; a new window
+      // starts with the main window's settings and none of its notes. The
+      // deferred writes (plan 8.4) go to that window's storage.
+      storage: deferredJSONStorage<PersistedAppState>((v) => persistedTextLength(v.state) >= LARGE_PERSIST_CHARS, {
+        storage: () => windowStorage(windowLabel(), localStorage),
+      }),
       partialize: partializeAppState,
       // Persisted theme settings may be stale or hand-edited — sanitise
       // field-by-field on rehydrate instead of trusting localStorage.
@@ -624,13 +660,22 @@ export const useAppStore = create<AppState>()(
           ...current,
           ...p,
           themeSettings: sanitizeThemeSettings(p.themeSettings),
-          // A hand-edited or older store: keep only string fields, fall back per field.
+          // A hand-edited or older store: keep only fields of the right type, fall back per field.
+          enabledSnippets: Array.isArray(p.enabledSnippets) ? p.enabledSnippets.filter((x): x is string => typeof x === "string").slice(0, 200) : [],
           dailyNotes: {
             folder: typeof p.dailyNotes?.folder === "string" ? p.dailyNotes.folder : DEFAULT_DAILY.folder,
             pattern: typeof p.dailyNotes?.pattern === "string" && isValidDailyPattern(p.dailyNotes.pattern) ? p.dailyNotes.pattern : DEFAULT_DAILY.pattern,
             template: typeof p.dailyNotes?.template === "string" ? p.dailyNotes.template : DEFAULT_DAILY.template,
+            ...(typeof p.dailyNotes?.israel === "boolean" ? { israel: p.dailyNotes.israel } : {}),
+            ...(typeof p.dailyNotes?.morning === "boolean" ? { morning: p.dailyNotes.morning } : {}),
+            ...(p.dailyNotes?.workWeek === "sun-thu" || p.dailyNotes?.workWeek === "mon-fri" ? { workWeek: p.dailyNotes.workWeek } : {}),
+            ...(typeof p.dailyNotes?.hebrewDates === "boolean" ? { hebrewDates: p.dailyNotes.hebrewDates } : {}),
+            ...(p.dailyNotes?.deadlineMove === "next" || p.dailyNotes?.deadlineMove === "previous" || p.dailyNotes?.deadlineMove === "off" ? { deadlineMove: p.dailyNotes.deadlineMove } : {}),
           },
           showCalendar: p.showCalendar === true,
+          mobileToolbar: sanitizeToolbar(p.mobileToolbar),
+          readLongNotes: p.readLongNotes !== false,
+          readingWords: typeof p.readingWords === "number" && p.readingWords >= 50 && p.readingWords <= 100000 ? Math.round(p.readingWords) : DEFAULT_READING_WORDS,
         };
         // WYSIWYG and suggesting work together now: restore both as saved.
         return merged;

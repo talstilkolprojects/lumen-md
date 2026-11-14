@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { ensureIndex, indexedFiles } from "../storage/workspaceIndex";
+import { ensureIndex, indexedFiles, indexedNotes } from "../storage/workspaceIndex";
 import { basename, readWorkspaceFile, writeWorkspaceFile } from "../storage/workspace";
 import { notifyWorkspaceChanged, onWorkspaceChanged } from "../storage/workspaceEvents";
 import { findUnlinkedMentions, linkMention, type Mention } from "../lib/unlinkedMentions";
@@ -14,6 +14,8 @@ import { noteKey } from "../lib/slug";
 import { useAppStore } from "../store/useStore";
 import { showAiToast } from "./AiToast";
 import { t } from "../i18n";
+import "./unlinkedMentionsStrings";
+import { explainError } from "../lib/userError";
 
 const MD = /\.(md|markdown)$/i;
 const stem = (p: string) => basename(p).replace(MD, "");
@@ -63,7 +65,7 @@ export default function UnlinkedMentions({ filePath, onOpen }: { filePath: strin
     await ensureIndex();
     // The open note's latest text, not the index's copy.
     const doc = useAppStore.getState().doc;
-    const files = indexedFiles().map((f) => (f.path === doc.workspaceName ? { path: f.path, content: doc.content } : f));
+    const files = (await indexedNotes()).map((f) => (f.path === doc.workspaceName ? { path: f.path, content: doc.content } : f));
     return unlinkedMentionsOf(filePath, files);
   }, [filePath]);
 
@@ -107,7 +109,7 @@ export default function UnlinkedMentions({ filePath, onOpen }: { filePath: strin
       setHits((hs) => hs?.filter((h) => h !== hit) ?? hs);
       showAiToast(t("backlinks.linked", { note: name }), "success");
     } catch (e) {
-      showAiToast(t("backlinks.linkFailed", { note: name, error: (e as Error)?.message ?? String(e) }), "error");
+      showAiToast(t("backlinks.linkFailed", { note: name, error: explainError(e) }), "error");
     }
   };
 
