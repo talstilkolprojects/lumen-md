@@ -49,7 +49,7 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { addedLinesFromDiff, AI_LABEL, bodyProblems, domainMentions, licenceChanges, skipCiViolations, unregisteredNetworkCalls, untestedChanges, writtenByAi } from "./lib/prGate.mjs";
 import { bundleDiffMarkdown } from "./bundle-diff.mjs";
-import { HUMAN_REVIEW_LABEL, humanReviewVerdict, parseCodeowners, sensitiveChanges } from "./lib/humanReview.mjs";
+import { HUMAN_REVIEW_LABEL, humanReviewVerdict, independentPatterns, parseCodeowners, sensitiveChanges } from "./lib/humanReview.mjs";
 import { extractReceipts, independentReviewVerdict } from "./lib/independentReview.mjs";
 import { RATCHET_FILES, raiseLine, raisesFor } from "./lib/budgetRatchet.mjs";
 import { MAX_AGE_DAYS, baseVerdict, branchName, currentTrain, driftVerdicts, worst } from "./lib/trainBase.mjs";
@@ -183,7 +183,8 @@ export function runChecks(opts) {
   // Human review of sensitive paths (plan W4.28)
   const ownersFile = join(cwd, ".github", "CODEOWNERS");
   if (existsSync(ownersFile)) {
-    const sensitive = sensitiveChanges(changed, parseCodeowners(readFileSync(ownersFile, "utf8")));
+    const ownersText = readFileSync(ownersFile, "utf8");
+    const sensitive = sensitiveChanges(changed, parseCodeowners(ownersText));
     let pr = null;
     let mismatch = null;
     if (opts.pr && sensitive.length) {
@@ -191,7 +192,16 @@ export function runChecks(opts) {
       const local = git(cwd, "rev-parse", "HEAD").trim();
       if (pr.headSha && pr.headSha !== local) mismatch = `This checkout's HEAD (\`${local.slice(0, 9)}\`) is not PR #${pr.number}'s head (\`${pr.headSha.slice(0, 9)}\`): fetch the PR branch and run again.`;
     }
-    const v = humanReviewVerdict(sensitive, pr, HUMAN_REVIEW_LABEL);
+    // Plan W6.13: cryptography needs a label from someone other than the owner and the author.
+    let owner = opts.owner ?? null;
+    if (pr && !owner) {
+      try {
+        owner = repoOf(cwd, opts.repo).split("/")[0];
+      } catch {
+        /* why: no GitHub remote — the author rule still applies */
+      }
+    }
+    const v = humanReviewVerdict(sensitive, pr, HUMAN_REVIEW_LABEL, { independent: independentPatterns(ownersText), owner });
     add("Human review of sensitive paths", mismatch ? "fail" : v.status, mismatch ? [mismatch, "", ...v.lines] : v.lines);
 
     // Independent review receipt for the head (plan W6.11)

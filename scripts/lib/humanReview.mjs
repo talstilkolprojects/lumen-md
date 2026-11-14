@@ -28,6 +28,36 @@ export function parseCodeowners(text) {
   return out;
 }
 
+/**
+ * CODEOWNERS sections whose label must come from an independent person (plan W6.13): not the
+ * repository owner and not the PR's author. Cryptography is code that the owner and agents
+ * alone have written and checked so far; a second pair of eyes is the point.
+ */
+export const INDEPENDENT_SECTIONS = ["Cryptography"];
+
+/** CODEOWNERS text → [{ pattern, owners, section }]: each entry with the `# ── Title …` heading above it. */
+export function codeownersSections(text) {
+  const out = [];
+  let section = "";
+  for (const raw of String(text ?? "").split(/\r?\n/)) {
+    const head = /^#\s*──\s*(.+?)\s*(?:──\s*)?$/.exec(raw.trim());
+    if (head) {
+      section = head[1].replace(/[:\s─]+$/, "");
+      continue;
+    }
+    const line = raw.replace(/(^|\s)#.*$/, "").trim();
+    if (!line) continue;
+    const [pattern, ...owners] = line.split(/\s+/);
+    out.push({ pattern, owners, section });
+  }
+  return out;
+}
+
+/** The patterns of the sections that need an independent reviewer. */
+export function independentPatterns(text, sections = INDEPENDENT_SECTIONS) {
+  return new Set(codeownersSections(text).filter((e) => sections.some((s) => e.section.startsWith(s))).map((e) => e.pattern));
+}
+
 function escape(s) {
   return s.replace(/[.+^${}()|[\]\\]/g, "\\$&");
 }
@@ -78,9 +108,12 @@ export function sensitiveChanges(changed, entries) {
  * The verdict for one PR.
  *   sensitive: sensitiveChanges(...)
  *   pr: null (no --pr given) or { number, labels: string[], events: [{ event, label, created_at, actor }], headDate, reviews: [{ user, state, submitted_at, commit_id }], author, headSha }
+ * rule (plan W6.13): { independent: Set of CODEOWNERS patterns, owner: the repository owner's login }.
+ *   When a changed file falls under one of those patterns, the label must have been added by
+ *   someone who is neither `owner` nor the PR's author.
  * → { status: "ok" | "warn" | "fail", lines: string[] }
  */
-export function humanReviewVerdict(sensitive, pr, label = HUMAN_REVIEW_LABEL) {
+export function humanReviewVerdict(sensitive, pr, label = HUMAN_REVIEW_LABEL, rule = {}) {
   if (!sensitive.length) return { status: "ok", lines: ["No sensitive path (`.github/CODEOWNERS`) changed."] };
   const list = sensitive.slice(0, 15).map((s) => `- \`${s.file}\` (\`${s.pattern}\`)`);
   if (sensitive.length > 15) list.push(`- and ${sensitive.length - 15} more`);
@@ -101,6 +134,20 @@ export function humanReviewVerdict(sensitive, pr, label = HUMAN_REVIEW_LABEL) {
     return { status: "fail", lines: [`\`${label}\` was added ${last}, before the last commit (${pr.headDate}): the new commits were not reviewed. Review them, then remove and re-add the label.`, "", ...list] };
   }
   const who = pr.events.filter((e) => e.event === "labeled" && e.label === label && e.created_at === last).map((e) => e.actor).filter(Boolean);
+  const strict = rule.independent ? sensitive.filter((s) => rule.independent.has(s.pattern)) : [];
+  if (strict.length) {
+    const actor = who[0] ?? null;
+    const same = !actor ? "an unknown account" : actor === rule.owner ? `the repository owner (@${actor})` : actor === pr.author ? `the PR's author (@${actor})` : null;
+    if (same)
+      return {
+        status: "fail",
+        lines: [
+          `PR #${pr.number} changes cryptography (${strict.length} file${strict.length === 1 ? "" : "s"}): \`${label}\` must come from a person who is neither the repository owner nor the author, and it was added by ${same}. The second maintainer or a human reviewer reads the diff and adds it (docs: contributing/second-maintainer).`,
+          "",
+          ...list,
+        ],
+      };
+  }
   lines.push(`\`${label}\` added ${last}${who.length ? ` by @${who[0]}` : ""}, after the last commit (${pr.headDate ?? "unknown"}).`);
   const approvals = (pr.reviews ?? []).filter((r) => r.state === "APPROVED" && r.user && r.user !== pr.author && (!pr.headSha || r.commit_id === pr.headSha));
   lines.push(approvals.length ? `Approved on the head commit by a second account: ${[...new Set(approvals.map((r) => `@${r.user}`))].join(", ")}.` : "No approval from a second account yet (the second maintainer's review: CONTRIBUTING.md).", "", ...list);

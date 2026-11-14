@@ -152,7 +152,8 @@
     "hosting:gate": "node scripts/hosting-gate.mjs",
     "perf:responsiveness": "node scripts/perf/responsiveness.mjs",
     "obsidian:compare": "node --experimental-transform-types --import ./scripts/lib/ts-register.mjs scripts/obsidian-compare.mjs",
-    "codeowners:check": "node scripts/codeowners-coverage.mjs"
+    "codeowners:check": "node scripts/codeowners-coverage.mjs",
+    "review:queue": "node scripts/review-queue.mjs"
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "0.4.2",
