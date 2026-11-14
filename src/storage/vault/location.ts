@@ -25,6 +25,7 @@ import { createDirectoryHandleBackend } from "./handleBackend";
 import { createOpfsBackend } from "./opfs";
 import type { VaultBackend } from "./types";
 import { createTauriBackend, isDesktopApp, loadTauriInvoke, type TauriInvoke } from "./tauri";
+import { createMobileBackend, isMobileApp, loadMobileBridge, mobileFsFor, type MobileBridge, type MobileStore } from "./mobile";
 import { observeDirectoryHandle, watchExternalChanges } from "./watcher";
 
 // ── Persistence ──────────────────────────────────────────────────────────
@@ -34,7 +35,9 @@ export type StoredLocation =
   | { kind: "opfs" }
   | { kind: "folder"; handle: FileSystemDirectoryHandle; name: string }
   /** Desktop app (plan 4.3): the folder the Rust side holds; `root` is its absolute path. */
-  | { kind: "desktop"; root: string; name: string };
+  | { kind: "desktop"; root: string; name: string }
+  /** Phone app (plan 4.20): iOS Documents (Files app), an Android folder picked with SAF, or the Android app folder. */
+  | ({ kind: "mobile"; name: string } & MobileStore);
 
 /** An unfinished move, as stored. */
 export interface MoveRecord {
@@ -106,6 +109,27 @@ export function __setDesktopInvoke(inv: TauriInvoke | null): void {
 async function desktop(): Promise<TauriInvoke> {
   desktopInvoke ??= await loadTauriInvoke();
   return desktopInvoke;
+}
+
+let mobileBridge: MobileBridge | null = null;
+
+/** @internal tests: the stand-in for the phone's native plugins. */
+export function __setMobileBridge(bridge: MobileBridge | null): void {
+  mobileBridge = bridge;
+}
+
+async function mobile(): Promise<MobileBridge> {
+  mobileBridge ??= await loadMobileBridge();
+  return mobileBridge;
+}
+
+function mobileStoreOf(loc: Extract<StoredLocation, { kind: "mobile" }>): MobileStore {
+  return loc.store === "saf" ? { store: "saf", uri: loc.uri } : { store: loc.store };
+}
+
+function mobileBackend(loc: Extract<StoredLocation, { kind: "mobile" }>, opts: { available?: () => boolean } = {}): VaultBackend {
+  if (!mobileBridge) throw new Error("The phone vault is not ready.");
+  return createMobileBackend(mobileFsFor(mobileBridge, mobileStoreOf(loc)), { id: "mobile", ...opts });
 }
 
 /** On first launch of the desktop app, the user is asked for the vault folder. */
@@ -203,6 +227,7 @@ function backendFor(loc: StoredLocation): VaultBackend {
     if (!desktopInvoke) throw new Error("The desktop vault is not ready.");
     return createTauriBackend(desktopInvoke, loc.root);
   }
+  if (loc.kind === "mobile") return mobileBackend(loc);
   return createFolderBackend(loc.handle);
 }
 
@@ -236,6 +261,21 @@ function watch(loc: StoredLocation, backend: VaultBackend): void {
       observe: (poke) => observeDirectoryHandle(handle, poke),
       // The observer reports changes at once; polling is the backstop.
       intervalMs: hasObserver ? 5000 : 1000,
+    });
+  } else if (loc.kind === "mobile") {
+    // Phones have no folder watcher Lumen can use: compare sizes and times
+    // every few seconds, and at once when the app comes back to the front
+    // (the usual moment: back from the Files app or another editor).
+    stopWatching = watchExternalChanges(backend, {
+      intervalMs: 3000,
+      observe: (poke) => {
+        if (typeof document === "undefined") return null;
+        const onShow = () => {
+          if (document.visibilityState === "visible") poke();
+        };
+        document.addEventListener("visibilitychange", onShow);
+        return () => document.removeEventListener("visibilitychange", onShow);
+      },
     });
   } else if (loc.kind === "desktop" && desktopInvoke) {
     const inv = desktopInvoke;
@@ -277,6 +317,31 @@ export async function restoreVaultLocation(): Promise<VaultStatus> {
       if (getVaultBackend().id !== "opfs") activate({ kind: "opfs" }, createOpfsBackend());
       // First launch of the desktop app: ask where the vault lives.
       desktopFirstRun = !loc && isDesktopApp();
+      return status;
+    }
+    if (loc.kind === "mobile") {
+      const bridge = await mobile();
+      if (loc.store !== "saf" || !bridge.folder || (await bridge.folder.hasAccess({ uri: loc.uri })).granted) {
+        activate(loc, mobileBackend(loc));
+        return status;
+      }
+      // The folder's permission was revoked (system settings) or it is gone:
+      // closed until the user picks it again.
+      let open = false;
+      setVaultBackend(mobileBackend(loc, { available: () => open }));
+      disconnected = {
+        name: loc.name,
+        connect: async () => {
+          const next = await pickMobileLocation();
+          if (!next) return false;
+          await kv.set(LOCATION_KEY, next);
+          open = true;
+          activate(next, mobileBackend(next));
+          return true;
+        },
+      };
+      status = { location: "folder-disconnected", name: loc.name };
+      changed();
       return status;
     }
     if (loc.kind === "desktop") {
@@ -410,6 +475,53 @@ async function backupCurrentVault(inv: TauriInvoke): Promise<string> {
   return inv<string>("vault_backup", bytes, { headers: { "x-backup-name": encodeURIComponent(name) } });
 }
 
+/**
+ * Phone (plan 4.20): where the vault goes. iOS: the app's Documents folder
+ * (in the Files app). Android: a folder the user picks (Storage Access
+ * Framework); without Lumen's folder plugin, the app's own folder. Null
+ * when the user cancelled the picker.
+ */
+async function pickMobileLocation(): Promise<Extract<StoredLocation, { kind: "mobile" }> | null> {
+  const bridge = await mobile();
+  if (bridge.platform === "ios") return { kind: "mobile", store: "documents", name: "Lumen" };
+  if (bridge.folder) {
+    const picked = await bridge.folder.pickFolder();
+    return picked.uri ? { kind: "mobile", store: "saf", uri: picked.uri, name: picked.name || "Lumen" } : null;
+  }
+  return { kind: "mobile", store: "app", name: "Lumen" };
+}
+
+/**
+ * Phone: move the vault into a folder on the device — notes in the app
+ * storage are copied with the same copy → byte check → switch as every
+ * move (the app storage is never deleted). Null when the user cancelled.
+ */
+export async function chooseMobileVaultFolder(): Promise<MoveReport | null> {
+  const to = await pickMobileLocation();
+  if (!to) return null;
+  const source = getVaultBackend();
+  if (!source.available()) throw new Error("The current vault is not available.");
+  if ((await source.list("")).length === 0) {
+    await kv.set(LOCATION_KEY, to);
+    activate(to, mobileBackend(to));
+    return { files: 0, bytes: 0, unchanged: 0, trashed: 0 };
+  }
+  return moveVault(to);
+}
+
+/** Phone: work in a folder on the device from now on, without copying (e.g. notes already there). Its name, or null. */
+export async function openMobileFolderAsVault(): Promise<string | null> {
+  const loc = await pickMobileLocation();
+  if (!loc) return null;
+  await kv.set(LOCATION_KEY, loc);
+  await cancelPendingMove(); // its source is no longer the vault
+  onVaultReplaced();
+  activate(loc, mobileBackend(loc));
+  return loc.name;
+}
+
+export { isMobileApp };
+
 /** Desktop: work in a folder the user picks, without copying (e.g. an existing Obsidian vault). */
 export async function openDesktopFolderAsVault(): Promise<string | null> {
   const inv = await desktop();
@@ -533,6 +645,7 @@ export async function moveVault(
     throw new VaultPermissionError(to.name);
   }
   if (to.kind === "desktop") await desktop();
+  if (to.kind === "mobile") await mobile();
   const fromLoc: StoredLocation = opts.from ?? ((await kv.get<StoredLocation>(LOCATION_KEY)) || { kind: "opfs" });
   const source = getVaultBackend();
   if (!source.available()) throw new Error("The current vault is not available.");
@@ -654,6 +767,10 @@ export async function cancelPendingMove(): Promise<void> {
 async function sameLocation(a: StoredLocation, b: StoredLocation): Promise<boolean> {
   if (a.kind === "opfs" || b.kind === "opfs") return a.kind === b.kind;
   if (a.kind === "desktop" || b.kind === "desktop") return a.kind === "desktop" && b.kind === "desktop" && a.root === b.root;
+  if (a.kind === "mobile" || b.kind === "mobile") {
+    if (a.kind !== "mobile" || b.kind !== "mobile" || a.store !== b.store) return false;
+    return a.store !== "saf" || (b.store === "saf" && a.uri === b.uri);
+  }
   if (a.handle === b.handle) return true;
   const f = (a.handle as { isSameEntry?: (o: FileSystemHandle) => Promise<boolean> }).isSameEntry;
   return typeof f === "function" ? await f.call(a.handle, b.handle).catch(() => false) : false;

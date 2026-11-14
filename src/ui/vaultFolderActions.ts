@@ -42,3 +42,23 @@ export async function chooseDesktopFolder(): Promise<void> {
   }
 }
 
+
+/**
+ * Phone (plan 4.20): move the vault into a folder on the device — iOS: the
+ * app's folder in the Files app; Android: a folder the user picks (or the
+ * app's folder). Notes in the app storage are copied (copy → byte check →
+ * switch); the app storage is kept.
+ */
+export async function chooseMobileFolder(): Promise<void> {
+  const loc = await import("../storage/vault/location");
+  try {
+    await flushOpenNote();
+    const r = await loc.chooseMobileVaultFolder();
+    if (!r) return;
+    const status = loc.getVaultStatus();
+    const name = status.location === "folder" ? status.name : "";
+    showAiToast(r.files ? t("vault.folder.moved", { folder: name, n: String(r.files) }) : t("vault.folder.opened", { folder: name }), "info");
+  } catch (e) {
+    await reportMoveError(e, "");
+  }
+}
