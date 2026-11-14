@@ -26,6 +26,8 @@ export interface ToolDef {
 export interface ToolResult {
   content: { type: "text"; text: string }[];
   isError?: boolean;
+  /** Set when the call queued a proposal: its id in the approval queue (not sent to the client as such). */
+  proposalId?: string;
 }
 
 export interface ToolContext {
@@ -142,7 +144,7 @@ export async function callTool(ctx: ToolContext, name: string, rawArgs: unknown)
 async function propose(ctx: ToolContext, client: string, tool: string, rel: string, before: string | null, after: string): Promise<ToolResult> {
   if (before === after) return text(`No change to ${rel}.`);
   const p = await proposeWrite(ctx.vault, { client, tool, path: rel, before, after });
-  return text(`Proposed ${before === null ? "a new note" : "a change to"} ${rel} (id ${p.id}). Nothing is written until the user approves it in Lumen (review screen) or with \`lumen mcp approve ${p.id}\`.`);
+  return { ...text(`Proposed ${before === null ? "a new note" : "a change to"} ${rel} (id ${p.id}). Nothing is written until the user approves it in Lumen (review screen) or with \`lumen mcp approve ${p.id}\`.`), proposalId: p.id };
 }
 
 async function run(ctx: ToolContext, client: string, def: ToolDef, args: Record<string, unknown>, onPath: (p: string) => void): Promise<ToolResult> {

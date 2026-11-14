@@ -1,6 +1,6 @@
 {
   "name": "@lumen-md/mcp-server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "The Lumen vault for MCP clients (Claude Desktop, Claude Code, Cursor, VS Code) and a `lumen` CLI — off by default, scopes per client, writes only after your approval.",
   "license": "MIT",
   "type": "module",
@@ -16,7 +16,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "dev": "tsc -p tsconfig.json --watch",
-    "test:stdio": "npm run build && node test/stdio-smoke.mjs"
+    "test:stdio": "npm run build && node test/stdio-smoke.mjs && node test/stdio-2026.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2"

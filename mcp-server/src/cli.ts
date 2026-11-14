@@ -267,7 +267,7 @@ async function runMcp(vault: string, rest: string[], flags: Record<string, strin
       return 0;
     }
     case "serve": {
-      // Not a static import: the SDK is only a dependency of this package.
+      // Not a static import: the stdio loop is only needed by `serve`.
       const spec = "./server.js";
       const mod = (await import(spec)) as { serveStdio: (vault: string, client?: string) => Promise<void> };
       await mod.serveStdio(vault, flags.client || io.env.LUMEN_MCP_CLIENT);
