@@ -12,7 +12,51 @@ import { createPairingConfirm, createPairingReveal, pairingRequestHash, PairingE
 import { opaqueName } from "../sync/e2ee/keys";
 import { utf8 } from "../sync/e2ee/bytes";
 import { SAS_EMOJI, SAS_LENGTH, sasKeyPair } from "../sync/e2ee/sas";
-import { joinVault, newVault, pairConfirmed } from "./helpers/e2ee";
+import { createVault, unlockVault } from "../sync/e2ee/engine";
+import { generateIdentity } from "../sync/e2ee/age";
+import { unlockWithDevice } from "../sync/e2ee/engine";
+import { memoryFiles } from "../sync/e2ee/localFiles";
+import { memoryStateStore } from "../sync/e2ee/state";
+import { E2eeSync } from "../sync/e2ee/engine";
+import { device, joinVault, newVault, pairConfirmed, PASSPHRASE, TEST_ITERATIONS, TEST_POLICY } from "./helpers/e2ee";
+
+type Objects = Map<string, { data: Uint8Array; etag: string }>;
+const copy = (m: Objects): Objects => new Map([...m].map(([k, v]) => [k, { data: v.data.slice(), etag: v.etag }]));
+const isPairing = (d: Uint8Array) => new TextDecoder().decode(d.subarray(0, 11)) === "lumen-pair-";
+
+/**
+ * Review 13, S13-1: a vault with a phone enrolled; later the storage keeps
+ * the laptop on the epoch-1 view and relays every comparison object it ever
+ * saw. `outcome` says whether the stale laptop became verified and what the
+ * revoked phone can then read.
+ */
+async function g4World(now?: () => number) {
+  const p = memoryProvider();
+  const { keys, anchor } = await createVault(p, PASSPHRASE, { pbkdf2Iterations: TEST_ITERATIONS });
+  const a = device("A", p, keys, undefined, now);
+  await a.sync.markCreated(anchor);
+  a.files.set("a.md", "hello");
+  await a.sync.sync();
+  const phone = await generateIdentity();
+  await a.sync.rekey({ enroll: { phone: phone.recipient } });
+  await a.sync.sync();
+  return { p, a, phone };
+}
+async function g4Outcome(laptop: { sync: E2eeSync; files: ReturnType<typeof memoryFiles> }, stale: ReturnType<typeof memoryProvider>, phone: { identity: string }) {
+  const verified = (await laptop.sync.freshness()).verified;
+  laptop.files.set("new.md", "written on the laptop after the revocation");
+  await laptop.sync.sync();
+  const { keys } = await unlockWithDevice(stale, "phone", phone.identity);
+  const files = memoryFiles();
+  await new E2eeSync({ provider: stale, keys, local: files, store: memoryStateStore(), access: { device: "phone", identity: phone.identity } }).sync();
+  return { verified, phoneReads: [...files.files.keys()].sort() };
+}
+function staleView(epoch1: Objects, kept: Objects) {
+  const stale = memoryProvider();
+  for (const [k, v] of epoch1) stale.objects.set(k, v);
+  for (const [k, v] of kept) if (isPairing(v.data)) stale.objects.set(k, v);
+  return stale;
+}
 
 async function world() {
   const p = memoryProvider();
@@ -52,9 +96,11 @@ describe("W8.5: the pairing comparison", () => {
     const i = await a.sync.pairingSas();
     const j = await laptop.sync.pairingSas();
     expect(i?.symbols).toEqual(j?.symbols);
-    expect(await a.sync.confirmPairing()).toBe("waiting");
-    expect(await laptop.sync.confirmPairing()).toBe("done");
+    expect(await a.sync.confirmPairing()).toBe("waiting"); // the issuer confirms last (S13-1)
+    expect(await laptop.sync.confirmPairing()).toBe("waiting");
+    expect((await laptop.sync.freshness()).verified).toBe(false);
     expect(await a.sync.confirmPairing()).toBe("done");
+    expect(await laptop.sync.confirmPairing()).toBe("done");
     expect((await laptop.sync.freshness()).source).toBe("paired");
   });
 
@@ -141,6 +187,76 @@ describe("W8.5: the pairing comparison", () => {
   it("messages from builds before the comparison are refused as older", async () => {
     const { laptop } = await world();
     for (const old of ["lumen-pair:3:1:AAAA", "lumen-pair-answer:2:1:AAAA"]) await expect(laptop.sync.pair(old)).rejects.toThrow(/older build/);
+  });
+
+  it("S13-1 (a): two-way, A confirms first, then cancels and revokes; the stored objects are put back: the stale laptop isn't paired", async () => {
+    const { p, a, phone } = await g4World();
+    const laptop = await joinVault("laptop", p);
+    await laptop.sync.sync();
+    const answer = await a.sync.answerPairing(await laptop.sync.pairingRequest());
+    const epoch1 = copy(p.objects);
+    await laptop.sync.pair(answer);
+    await a.sync.pairingSas();
+    await laptop.sync.pairingSas();
+    expect(await a.sync.confirmPairing()).toBe("waiting"); // nothing posted yet: the issuer confirms last
+    const kept = copy(p.objects);
+    await a.sync.cancelPairing();
+    expect((await a.sync.rekey({ revoke: ["phone"] })).epoch).toBe(2);
+    const stale = staleView(epoch1, kept);
+    (laptop.sync as unknown as { o: { provider: unknown } }).o.provider = stale;
+    expect(await laptop.sync.confirmPairing()).toBe("waiting");
+    expect(await g4Outcome(laptop, stale, phone)).toEqual({ verified: false, phoneReads: ["a.md"] });
+  });
+
+  for (const order of ["issuer-first", "joiner-first"] as const) {
+    it(`S13-1 (${order === "issuer-first" ? "b" : "c"}): one-way, ${order}, code entered at 1:50: the laptop's window ends with the code, inside A's hold`, async () => {
+      let clock = 1_800_000_000_000;
+      const now = () => clock;
+      const { p, a, phone } = await g4World(now);
+      const { keys } = await unlockVault(p, PASSPHRASE, TEST_POLICY);
+      const laptop = device("laptop", p, keys, undefined, now);
+      await laptop.sync.sync();
+      const code = await a.sync.pairingCode();
+      clock += 110_000;
+      const epoch1 = copy(p.objects);
+      await laptop.sync.pair(code);
+      await a.sync.pairingSas();
+      await laptop.sync.pairingSas();
+      if (order === "issuer-first") expect(await a.sync.confirmPairing()).toBe("waiting");
+      else {
+        expect(await laptop.sync.confirmPairing()).toBe("waiting");
+        expect(await a.sync.confirmPairing()).toBe("done");
+      }
+      const kept = copy(p.objects);
+      clock += 15_000; // 2:05: the code has expired
+      const revoke = await a.sync.rekey({ revoke: ["phone"] }).then(
+        (r) => `epoch ${r.epoch}`,
+        (e: Error) => e.name,
+      );
+      // Issuer-first: A never confirmed, so its hold ended with the code. Joiner-first: A's confirmation is out, so it holds (S13-1).
+      expect(revoke).toBe(order === "issuer-first" ? "epoch 2" : "PairingPendingError");
+      clock += 30_000; // 2:35
+      const stale = staleView(epoch1, kept);
+      (laptop.sync as unknown as { o: { provider: unknown } }).o.provider = stale;
+      await expect(laptop.sync.confirmPairing()).rejects.toBeInstanceOf(PairingAbortedError);
+      expect(await g4Outcome(laptop, stale, phone)).toEqual({ verified: false, phoneReads: ["a.md"] });
+    });
+  }
+
+  it("S13-1: once A has confirmed, cancelling doesn't release its hold until the new device's window has ended", async () => {
+    let clock = Date.now(); // the laptop runs on the real clock
+    const { a, laptop } = await world();
+    const a2 = device("A", (a.sync as unknown as { o: { provider: ReturnType<typeof memoryProvider> } }).o.provider, a.sync.keys(), undefined, () => clock);
+    a2.store.state = JSON.parse(JSON.stringify(a.store.state));
+    await laptop.sync.pair(await a2.sync.pairingCode());
+    await a2.sync.pairingSas();
+    await laptop.sync.pairingSas();
+    expect(await laptop.sync.confirmPairing()).toBe("waiting");
+    expect(await a2.sync.confirmPairing()).toBe("done");
+    await a2.sync.cancelPairing();
+    await expect(a2.sync.rekey()).rejects.toBeInstanceOf(PairingPendingError);
+    clock += 2 * 60_000 + 60_000 + 1; // the code's life plus the clock allowance
+    expect((await a2.sync.rekey()).epoch).toBe(2);
   });
 
   it("the helper the other suites use pairs through the full comparison, and leaves no pairing objects in the storage", async () => {

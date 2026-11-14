@@ -138,13 +138,13 @@ async function pairingVectors(vs: Array<{ objects: Record<string, string>; passp
     const commitI = await sasCommit(issuer.pub);
     const code = await createPairingCode(k1, { counter: 2, digest: "d".repeat(64) }, now, ring, commitI);
     const codeNonce = (await readPairingCode(k1, code, now)).sas.nonce;
-    pairing.push({ vault: i, code, body: { counter: 2, digest: "d".repeat(64), ring, sas: { session: await pairingRequestHash(code), answer: "", nonce: codeNonce, commit: commitI } } });
+    pairing.push({ vault: i, code, body: { counter: 2, digest: "d".repeat(64), ring, sas: { session: await pairingRequestHash(code), answer: "", nonce: codeNonce, expires: now + 2 * 60 * 1000, commit: commitI } } });
     const manifest = { counter: 2, digest: "e".repeat(64) };
     const commitJ = await sasCommit(joiner.pub);
     const { code: request, request: req } = await createPairingRequest(k1, manifest, now, ring, commitJ);
     const answer = await createPairingAnswer(k1, req, { counter: 3, digest: "f".repeat(64) }, now + 1000, ring, issuer.pub);
     const answerHash = await pairingRequestHash(answer);
-    pairingTwoWay.push({ vault: i, now, request, requestBody: { nonce: req.nonce, ring, manifest, issuedAt: now, hash: req.hash, commit: commitJ }, answer, answerBody: { counter: 3, digest: "f".repeat(64), ring, sas: { session: req.hash, answer: answerHash, nonce: req.nonce, pub: Buffer.from(issuer.pub).toString("base64url") } } });
+    pairingTwoWay.push({ vault: i, now, request, requestBody: { nonce: req.nonce, ring, manifest, issuedAt: now, hash: req.hash, commit: commitJ }, answer, answerBody: { counter: 3, digest: "f".repeat(64), ring, sas: { session: req.hash, answer: answerHash, nonce: req.nonce, expires: now + 1000 + 5 * 60 * 1000, pub: Buffer.from(issuer.pub).toString("base64url") } } });
     // The symbols and both confirmations, from each side (they must agree).
     for (const [flow, t] of [
       ["one-way", { flow: "one-way", vaultId: k1.vaultId, epoch: ring.epoch, ringRev: ring.rev, ringDigest: ring.digest, counter: 2, digest: "d".repeat(64), session: await pairingRequestHash(code), answer: "", nonce: codeNonce, pubI: issuer.pub, pubJ: joiner.pub }],

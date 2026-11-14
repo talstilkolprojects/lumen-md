@@ -120,9 +120,11 @@ describe("e2ee freshness banner", () => {
     expect([...shown.querySelectorAll("li")].map((li) => li.children[1]!.textContent)).toEqual((await c.sync.pairingSas())!.emoji);
     fireEvent.click(screen.getByText("They match"));
     await screen.findByText("Confirmed on this device. Now choose “They match” on the other one.");
-    expect(await c.sync.confirmPairing()).toBe("done");
+    // The existing device confirms last (review 13, S13-1): it waits for the new device's confirmation.
+    expect(await c.sync.confirmPairing()).toBe("waiting");
     expect(await screen.findByText("Paired: the symbols were confirmed on both devices.")).toBeTruthy();
     expect(ends).toEqual(["done"]);
+    expect(await c.sync.confirmPairing()).toBe("done");
     expect((await c.sync.freshness()).source).toBe("paired");
   });
 

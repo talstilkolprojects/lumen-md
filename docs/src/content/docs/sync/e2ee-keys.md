@@ -60,7 +60,10 @@ doesn't change keys for the next 5 minutes (2 for a code). If you must remove a
 lost device right away, cancel the pairing on it first (`cancelPairing()`;
 in the app, *Cancel pairing*). An answer or code used after that can't be
 confirmed any more (see *Compare the symbols* below), so it pairs nothing; pair
-the new device again after the key change. Cancelling on the new device
+the new device again after the key change. Once you have chosen **They match**
+on both devices, though, the new device may still finish pairing for the rest
+of the code's or answer's life, so the device you already use keeps waiting
+until then (at most 6 minutes), even if you cancel. Cancelling on the new device
 forgets its request, so no answer to it is accepted any more.
 
 **Compare the symbols.** Since plan W8.5, an answer or a code alone pairs

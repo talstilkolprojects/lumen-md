@@ -113,6 +113,13 @@ export const PAIRING_TTL_MS = 2 * 60 * 1000;
  * answering device makes no key change for this long after answering.
  */
 export const PAIRING_REQUEST_TTL_MS = 5 * 60 * 1000;
+/**
+ * How far ahead of this device's clock a code's issuedAt may be (another
+ * device's clock). The issuer keeps its hold this much longer once it has
+ * confirmed a comparison (plan W8.5), so the new device's window, measured
+ * against issuedAt on its own clock, always ends inside the hold.
+ */
+export const PAIRING_CLOCK_SKEW_MS = 60_000;
 
 /** The fields of each kind's body, exactly: a body with any other field is refused. */
 const FIELDS: Record<Kind, string[]> = {
@@ -201,6 +208,12 @@ export interface PairingSasInput {
   answer: string;
   /** The first message's nonce. */
   nonce: string;
+  /**
+   * When the offer stops holding (the issuer's clock): the code's issuedAt +
+   * PAIRING_TTL_MS, the answer's answeredAt + PAIRING_REQUEST_TTL_MS. The new
+   * device's comparison ends then at the latest (review 13, S13-1).
+   */
+  expires: number;
   /** One-way: the issuer's commitment. Two-way: the issuer's key (b64u). */
   commit?: string;
   pub?: string;
@@ -319,10 +332,10 @@ export async function readPairingCode(keys: VaultKeys, code: string, now = Date.
   if (body.vaultId !== keys.vaultId) throw new PairingError("The pairing code is for another vault");
   if (!Number.isSafeInteger(body.counter) || body.counter < 1 || typeof body.digest !== "string") throw new PairingError("The pairing code is damaged");
   if (body.epoch !== epoch || !ringOk(body) || !Number.isSafeInteger(body.issuedAt) || typeof body.nonce !== "string" || !isHex64(body.commit)) throw new PairingError("The pairing code is damaged");
-  if (!(now - body.issuedAt <= PAIRING_TTL_MS && body.issuedAt - now <= 60_000)) {
+  if (!(now - body.issuedAt <= PAIRING_TTL_MS && body.issuedAt - now <= PAIRING_CLOCK_SKEW_MS)) {
     throw new PairingError("The pairing code has expired; create a new one");
   }
-  return { counter: body.counter, digest: body.digest, ring: { epoch: body.epoch, rev: body.ringRev, digest: body.ringDigest }, sas: { session: await pairingRequestHash(code), answer: "", nonce: body.nonce, commit: body.commit } };
+  return { counter: body.counter, digest: body.digest, ring: { epoch: body.epoch, rev: body.ringRev, digest: body.ringDigest }, sas: { session: await pairingRequestHash(code), answer: "", nonce: body.nonce, expires: body.issuedAt + PAIRING_TTL_MS, commit: body.commit } };
 }
 
 /* ─── Two-way pairing (third review 12.11, N3; fifth review F1) ────────── */
@@ -389,7 +402,7 @@ export async function readPairingAnswer(keys: VaultKeys, code: string, request: 
   if (!Number.isSafeInteger(body.counter) || body.counter < 1 || typeof body.digest !== "string" || !ringOk(body) || !Number.isSafeInteger(body.answeredAt) || !isKey(body.pub)) {
     throw new PairingError("The pairing answer is damaged");
   }
-  return { counter: body.counter, digest: body.digest, ring: { epoch, rev: body.ringRev, digest: body.ringDigest }, sas: { session: request.hash, answer: await pairingRequestHash(code), nonce: request.nonce, pub: body.pub } };
+  return { counter: body.counter, digest: body.digest, ring: { epoch, rev: body.ringRev, digest: body.ringDigest }, sas: { session: request.hash, answer: await pairingRequestHash(code), nonce: request.nonce, expires: body.answeredAt + PAIRING_REQUEST_TTL_MS, pub: body.pub } };
 }
 
 /* ─── The comparison's messages through the storage (plan W8.5) ───────── */

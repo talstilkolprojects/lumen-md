@@ -434,17 +434,26 @@ the code), trimmed.
     confirm_R  = HMAC-SHA256(HKDF-SHA256(shared, salt, "lumen-pair-sas/1/confirm/" + R, 32),
                              "lumen-pair-sas/1/confirm\0" ‖ salt),  R ∈ {issuer, joiner}
 
-When its user presses "They match", a device posts its `confirm` once. The
-joiner commits (the checks of `pair` run again) when the issuer's
-confirmation verifies under its own `shared`; the issuer finishes when the
-joiner's does, and keeps holding back key changes until its code or answer
-expires. A confirmation that doesn't verify aborts that side. "They don't
-match" (or a stop) aborts and records nothing: the joiner forgets its
-request; the issuer's hold on key changes goes back to what it was, since its
-code or answer can no longer be confirmed. The issuer confirms only while its
-keyring is the one its message vouched for, and within the code's or
-answer's life. The provider can withhold any of these objects: then nothing
-is paired.
+When its user presses "They match", the joiner posts its `confirm` once and
+commits (the checks of `pair` run again) when the issuer's confirmation
+verifies under its own `shared`. **The issuer confirms last** (review 13,
+S13-1): after its user's "They match" it posts nothing until the joiner's
+confirmation is there and verifies. Before it posts its own, it sets
+`pairingKept = until + 60 s` (`until`: when its code or answer stops
+holding; 60 s: the clock difference a code's `issuedAt` may have), and no
+key change happens before then, **cancel included**. The joiner's window
+ends when the offer does: the code's `issuedAt + 2 min` or the request's
+life (5 min on its own clock; the answer came after the request), never
+later than that, so every commit falls inside the issuer's hold.
+
+A confirmation that doesn't verify aborts that side. "They don't match" (or
+a stop, or a cancel before the issuer confirmed) aborts and records nothing:
+the joiner forgets its request; the issuer's hold on key changes goes back to
+what it was, since its code or answer can no longer be confirmed. The issuer
+confirms only while its keyring is the one its message vouched for, and
+within the code's or answer's life. Confirm, reject and cancel run under the
+device lock on the state as stored (ninth review H3). The provider can
+withhold any of these objects: then nothing is paired.
 
 The 64 symbols are an emoji each, with a name in every language
 (`e2ee.sas.w0` … `e2ee.sas.w63`), so two devices set to different languages

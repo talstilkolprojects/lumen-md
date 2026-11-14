@@ -42,6 +42,11 @@ phone (*Cancel pairing*), and ask the participant to finish on the laptop.
 Correct: they don't press *They match* on the laptop, or, if they do, they
 read that it is waiting and stop. Record what they did and said.
 
+Note for the facilitator: on the phone (the device already in use), choosing
+*They match* without looking at the laptop can still end in "Paired" there
+even under an attack, but nothing is committed on the phone, and the real
+laptop then stops. What protects the user is looking at both screens.
+
 ## After the trials (one question each, 1–5)
 
 1. "How sure were you that the symbols matched?"
@@ -103,6 +108,10 @@ record indices).
 **ד. אין כלום במכשיר השני.** התחילו צימוד, בטלו אותו בטלפון (*ביטול צימוד*),
 ובקשו מהמשתתף לסיים במחשב הנייד. נכון: לא לוחץ *זהים* במחשב, או, אם לחץ,
 קורא שהוא ממתין ועוצר. רשמו מה עשה ואמר.
+
+הערה למנחה: בטלפון (המכשיר שכבר בשימוש), בחירה ב*זהים* בלי להסתכל במחשב יכולה
+להסתיים ב"מצומד" שם גם תחת התקפה, אבל שום דבר לא נרשם בטלפון, והמחשב האמיתי
+עוצר. מה שמגן על המשתמש הוא להסתכל בשני המסכים.
 
 ## אחרי הניסויים (שאלה אחת כל אחת, 1–5)
 
