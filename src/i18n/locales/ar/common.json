@@ -384,6 +384,7 @@
   "capture.saved": "أُضيف إلى {path}",
   "capture.title": "التقاط سريع",
   "capture.voice.keepAudio": "الاحتفاظ بالتسجيل",
+  "capture.voice.afterStop": "لا يوجد نسخ مباشر (نموذج الإملاء غير مثبّت، أو اللغة ليست العبرية): يُنسخ التسجيل على هذا الجهاز عند الإيقاف.",
   "capture.voice.noMic": "لا ميكروفون، أو رُفض الإذن.",
   "capture.voice.noTranscript": "تعذّر التفريغ على هذا الجهاز؛ يُحفظ التسجيل مع الملاحظة.",
   "capture.voice.placeholderNote": "ملاحظة صوتية (غير مفرّغة)",

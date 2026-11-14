@@ -11,7 +11,7 @@ vi.mock("../storage/workspace", () => ({ writeWorkspaceBlob: vi.fn(async (p: str
 vi.mock("../storage/workspaceEvents", () => ({ notifyWorkspaceChanged: vi.fn() }));
 vi.mock("../capture/quickCapture", () => ({ captureToInbox: vi.fn(async (text: string) => (captured.push(text), "inbox.md")) }));
 
-import { attachmentPath, captureVoice, clock, setVoiceTranscriber, titleFromTranscript, transcribeVoice, voiceEntryText } from "../capture/voiceCapture";
+import { attachmentPath, captureVoice, clock, hasLiveTranscriber, setVoiceTranscriber, startLiveTranscript, titleFromTranscript, voiceEntryText } from "../capture/voiceCapture";
 import { parseLaunch } from "../pwa/launch";
 
 afterEach(() => {
@@ -46,12 +46,23 @@ describe("voice capture (W1.13)", () => {
     expect(clock(125_000)).toBe("2:05");
   });
 
-  it("the transcriber seam is used when set (plan 6.1's live dictation registers there)", async () => {
-    const fn = vi.fn(async () => "שלום עולם");
-    setVoiceTranscriber(fn);
-    const blob = new Blob(["x"], { type: "audio/webm" });
-    expect(await transcribeVoice(blob, { language: "he" })).toBe("שלום עולם");
-    expect(fn).toHaveBeenCalledWith(blob, { language: "he" });
+  it("a registered live engine streams partial text; without one the recording is transcribed after it (W10.C8)", async () => {
+    expect(hasLiveTranscriber()).toBe(false);
+    expect(await startLiveTranscript({ language: "he", onPartial: () => {} })).toBeNull();
+    const parts: string[] = [];
+    setVoiceTranscriber(async ({ onPartial }) => {
+      onPartial("שלום");
+      return { stop: async () => "שלום עולם", cancel: () => {} };
+    });
+    expect(hasLiveTranscriber()).toBe(true);
+    const live = await startLiveTranscript({ language: "he", onPartial: (t) => parts.push(t) });
+    expect(parts).toEqual(["שלום"]);
+    expect(await live!.stop()).toBe("שלום עולם");
+    // An engine that cannot start: null, and the capture falls back to Whisper after the recording.
+    setVoiceTranscriber(async () => {
+      throw new Error("no model");
+    });
+    expect(await startLiveTranscript({ language: "he", onPartial: () => {} })).toBeNull();
   });
 
   it("captureVoice saves the audio first, then adds the entry to the inbox", async () => {

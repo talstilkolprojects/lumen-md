@@ -37,6 +37,7 @@ interface Props {
 type VoiceState = { kind: "idle" } | { kind: "starting" } | { kind: "recording"; since: number } | { kind: "transcribing" };
 type VoiceModule = typeof import("../capture/voiceCapture");
 type Recording = import("../capture/voiceCapture").Recording;
+type LiveTranscript = import("../capture/voiceCapture").LiveTranscript;
 
 export function QuickCapture({ open, onClose, voice: voiceOnOpen }: Props) {
   const [text, setText] = useState("");
@@ -45,7 +46,11 @@ export function QuickCapture({ open, onClose, voice: voiceOnOpen }: Props) {
   const [voice, setVoice] = useState<VoiceState>({ kind: "idle" });
   const [keepAudio, setKeepAudio] = useState(false);
   const [now, setNow] = useState(0);
+  /** The live engine's text while recording (W10.C8), and whether there is none (then: after the recording). */
+  const [partial, setPartial] = useState("");
+  const [afterStop, setAfterStop] = useState(false);
   const rec = useRef<Recording | null>(null);
+  const live = useRef<Promise<LiveTranscript | null> | null>(null);
   /** The last recording (kept until the capture is added), and whether its transcript failed. */
   const take = useRef<{ audio: Blob; durationMs: number; untranscribed: boolean } | null>(null);
   const mod = useRef<Promise<VoiceModule> | null>(null);
@@ -58,6 +63,14 @@ export function QuickCapture({ open, onClose, voice: voiceOnOpen }: Props) {
       const m = await voiceMod();
       rec.current = await m.startRecording(pressed);
       setVoice({ kind: "recording", since: Date.now() });
+      // The live engine listens alongside the recording; without one, Whisper transcribes after it (and the box says so).
+      setPartial("");
+      setAfterStop(!m.hasLiveTranscriber());
+      const started = m.startLiveTranscript({ language: document.documentElement.lang || undefined, onPartial: setPartial });
+      live.current = started;
+      void started.then((l: LiveTranscript | null) => {
+        if (!l && live.current === started) setAfterStop(true);
+      });
     } catch {
       setVoice({ kind: "idle" });
       toast.error(t("capture.voice.noMic"));
@@ -68,15 +81,26 @@ export function QuickCapture({ open, onClose, voice: voiceOnOpen }: Props) {
     const r = rec.current;
     if (!r) return;
     rec.current = null;
+    const pendingLive = live.current;
+    live.current = null;
     setVoice({ kind: "transcribing" });
     const { audio, durationMs } = await r.stop();
     let transcript: string | null = null;
     try {
-      const m = await voiceMod();
-      transcript = await m.transcribeVoice(audio, { language: document.documentElement.lang || undefined });
+      transcript = (await (await pendingLive)?.stop()) ?? null;
     } catch {
       transcript = null;
     }
+    if (!transcript) {
+      try {
+        const m = await voiceMod();
+        transcript = await m.transcribeVoice(audio, { language: document.documentElement.lang || undefined });
+      } catch {
+        transcript = null;
+      }
+    }
+    setPartial("");
+    setAfterStop(false);
     take.current = { audio, durationMs, untranscribed: !transcript };
     if (!transcript) {
       // Nothing to read back: keep the audio, or the note would be lost.
@@ -96,7 +120,11 @@ export function QuickCapture({ open, onClose, voice: voiceOnOpen }: Props) {
 
   useEffect(() => {
     if (open && voiceOnOpen) void startVoice();
-    return () => rec.current?.cancel();
+    return () => {
+      rec.current?.cancel();
+      void live.current?.then((l: LiveTranscript | null) => l?.cancel());
+      live.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per opening
   }, [open, voiceOnOpen]);
 
@@ -212,6 +240,16 @@ export function QuickCapture({ open, onClose, voice: voiceOnOpen }: Props) {
           </label>
           <span style={{ flex: 1 }}>{t("capture.hint")}</span>
         </div>
+        {voice.kind === "recording" && partial ? (
+          <p className="prompt-message" dir="auto" aria-live="polite" data-testid="capture-voice-partial" style={{ margin: 0, opacity: 0.8 }}>
+            {partial}
+          </p>
+        ) : null}
+        {voice.kind === "recording" && afterStop ? (
+          <p className="prompt-message" data-testid="capture-voice-after-stop" style={{ margin: 0, fontSize: 12 }}>
+            {t("capture.voice.afterStop")}
+          </p>
+        ) : null}
         <div className="prompt-actions">
           <button
             type="button"

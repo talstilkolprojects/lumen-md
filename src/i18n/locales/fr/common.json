@@ -384,6 +384,7 @@
   "capture.saved": "Ajouté à {path}",
   "capture.title": "Capture rapide",
   "capture.voice.keepAudio": "Garder l’enregistrement",
+  "capture.voice.afterStop": "Pas de transcription en direct (le modèle de dictée n’est pas installé, ou la langue n’est pas l’hébreu) : l’enregistrement est transcrit sur cet appareil à l’arrêt.",
   "capture.voice.noMic": "Pas de micro, ou autorisation refusée.",
   "capture.voice.noTranscript": "Transcription impossible sur cet appareil ; l’enregistrement est gardé avec la note.",
   "capture.voice.placeholderNote": "Note vocale (non transcrite)",
