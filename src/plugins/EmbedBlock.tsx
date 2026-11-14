@@ -286,7 +286,7 @@ export default function EmbedBlock({ source }: Props) {
           allow={embed.allow}
           allowFullScreen
           referrerPolicy="strict-origin-when-cross-origin"
-          sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
+          sandbox="allow-scripts allow-same-origin allow-popups allow-presentation allow-forms"
           style={{
             position: "absolute",
             top: 0,

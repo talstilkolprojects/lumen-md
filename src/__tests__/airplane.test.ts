@@ -447,7 +447,17 @@ describe("review 2 fixes", () => {
     expect(inert.attr("srcdoc")).toBeNull();
     // An empty frame has nothing to stop.
     expect(empty.attr("src")).toBeNull();
-    const frames = egressAttempts().filter((a) => a.kind === "frame");
+    const frames = egressAttempts().filter((a) => a.kind === "frame" && a.method === "FRAME");
+    // Frames that could have opened a window this page can't reach (allow-popups, or no sandbox) are counted
+    // as possible windows too (review 8, RR8-451-1, -2): the embed, and the frames with no sandbox.
+    const windows = egressAttempts().filter((a) => a.kind === "frame" && a.method === "POPUP");
+    expect(windows.map((a) => a.target)).toEqual([
+      "https://lumen-md.vercel.app/livejs-runner.html",
+      "blob:…",
+      "https://example.com/embed",
+      "about:blank",
+    ]);
+    expect(windows.every((a) => reachedNetwork(a))).toBe(true);
     expect(frames.map((a) => a.target)).toEqual([
       "https://lumen-md.vercel.app/playground-runner.html",
       "https://lumen-md.vercel.app/livejs-runner.html",
@@ -460,18 +470,24 @@ describe("review 2 fixes", () => {
     expect(frames.every((a) => a.decision === "in-flight" && reachedNetwork(a))).toBe(true);
   });
 
-  it("no frame gets allow-popups; a frame from another site keeps same-origin powers only as a known embed (review 6, RR6-451-2)", () => {
+  it("no frame gets allow-popups while the switch is on; a frame from another site keeps same-origin powers only as a known embed (review 6, RR6-451-2; review 8, RR8-451-2)", () => {
     const base = "https://lumen-md.vercel.app/note";
-    expect(guardedSandbox("allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox", "https://www.youtube-nocookie.com/embed/x", base)).toBe("allow-scripts allow-same-origin");
-    expect(guardedSandbox("allow-scripts allow-same-origin", "https://example.com/widget", base)).toBe("allow-scripts");
-    expect(guardedSandbox("allow-scripts allow-same-origin", "/livejs-runner.html", base)).toBe("allow-scripts allow-same-origin");
-    expect(guardedSandbox("allow-forms ALLOW-POPUPS", null, base)).toBe("allow-forms");
+    expect(guardedSandbox("allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox", "https://www.youtube-nocookie.com/embed/x", base, true)).toBe("allow-scripts allow-same-origin");
+    expect(guardedSandbox("allow-scripts allow-same-origin", "https://example.com/widget", base, true)).toBe("allow-scripts");
+    expect(guardedSandbox("allow-scripts allow-same-origin", "/livejs-runner.html", base, true)).toBe("allow-scripts allow-same-origin");
+    expect(guardedSandbox("allow-forms ALLOW-POPUPS", null, base, true)).toBe("allow-forms");
+    // Off: an embed's links still open their page; another site still loses same-origin powers.
+    expect(guardedSandbox("allow-scripts allow-same-origin allow-popups", "https://www.youtube.com/embed/x", base, false)).toBe("allow-scripts allow-same-origin allow-popups");
+    expect(guardedSandbox("allow-scripts allow-same-origin allow-popups", "https://example.com/widget", base, false)).toBe("allow-scripts allow-popups");
     // The embed block's providers are the known ones.
     const src = readFileSync(resolve(process.cwd(), "src/plugins/EmbedBlock.tsx"), "utf8");
     const origins = new Set([...src.matchAll(/src: `(https:\/\/[^/`$]+)/g)].map((m) => m[1]));
     expect(origins.size).toBeGreaterThan(10);
     for (const o of origins) expect(EMBED_ORIGINS.has(o), o).toBe(true);
-    expect(src).not.toMatch(/allow-popups/);
+    // One list (RR8-451-2): the known embeds are exactly the https origins public/_headers lets frames load from.
+    const headers = readFileSync(resolve(process.cwd(), "public/_headers"), "utf8");
+    const frameSrc = /frame-src ([^;]+);/.exec(headers)?.[1] ?? "";
+    expect([...EMBED_ORIGINS].sort()).toEqual(frameSrc.split(" ").filter((t) => t.startsWith("https://")).sort());
   });
 
   it("windows opened through window.open are closed and counted when the switch goes on (RR6-451-2)", () => {

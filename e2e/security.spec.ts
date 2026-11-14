@@ -197,9 +197,9 @@ test("an iframe without a scheme is removed; an https embed is sandboxed", async
   const frames = preview(page).locator("iframe");
   await expect(frames).toHaveCount(1);
   await expect(frames.first()).toHaveAttribute("src", "https://frames.lumen-e2e.test/embed");
-  // No popups for any frame, and no same-origin powers for a site that is not a known embed provider
-  // (airplane mode's frame guard, review 6 RR6-451-2).
-  await expect(frames.first()).toHaveAttribute("sandbox", "allow-scripts allow-presentation");
+  // No same-origin powers for a site that is not a known embed provider (airplane mode's frame guard, review 6
+  // RR6-451-2). Popups stay while airplane mode is off (review 8, RR8-451-2): the guard takes them only while it is on.
+  await expect(frames.first()).toHaveAttribute("sandbox", "allow-scripts allow-popups allow-presentation");
   await expect(frames.first()).toHaveAttribute("referrerpolicy", "no-referrer");
   // No frame shows the app (or anything on its origin).
   const origins = await page.evaluate(() => [...document.querySelectorAll(".prose-lumen iframe")].map((f) => new URL((f as HTMLIFrameElement).src).origin));
