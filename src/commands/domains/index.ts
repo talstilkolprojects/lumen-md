@@ -25,6 +25,9 @@ import { buildBookCommands } from "./book";
 import { buildLatexCommands } from "./latex";
 import { buildAutomationCommands } from "./automations";
 import { buildKnessetCommands } from "./knesset";
+import { buildDataGovCommands } from "./datagov";
+import { buildBenYehudaCommands } from "./benyehuda";
+import { buildOpenSourceCommands } from "./openSources";
 
 export const COMMAND_SECTIONS: ReadonlyArray<(ctx: CommandContext) => Command[]> = [
   buildRecentCommands,
@@ -82,4 +85,7 @@ export const COMMAND_SECTIONS: ReadonlyArray<(ctx: CommandContext) => Command[]>
   buildLatexCommands,
   buildAutomationCommands,
   buildKnessetCommands,
+  buildDataGovCommands,
+  buildBenYehudaCommands,
+  buildOpenSourceCommands,
 ];

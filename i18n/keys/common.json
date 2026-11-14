@@ -1276,6 +1276,104 @@
       ]
     },
     {
+      "key": "benyehuda.cancel",
+      "en": "Cancel",
+      "vars": []
+    },
+    {
+      "key": "benyehuda.confirm",
+      "en": "Download from the project's public-domain dump on GitHub? Nothing from your notes is sent.",
+      "vars": []
+    },
+    {
+      "key": "benyehuda.copied",
+      "en": "Quote copied: paste it into any note",
+      "vars": []
+    },
+    {
+      "key": "benyehuda.downloadFirst",
+      "en": "This work's text is not on this device. Download the works of {author} first.",
+      "vars": [
+        "author"
+      ]
+    },
+    {
+      "key": "benyehuda.downloaded",
+      "en": "{count} works of {author} are on this device",
+      "vars": [
+        "count",
+        "author"
+      ]
+    },
+    {
+      "key": "benyehuda.empty",
+      "en": "The library is not on this device yet. Download it first.",
+      "vars": []
+    },
+    {
+      "key": "benyehuda.enable",
+      "en": "Turn on the Ben-Yehuda library? Lumen downloads it from GitHub only when you ask; after that, search and reading are local.",
+      "vars": []
+    },
+    {
+      "key": "benyehuda.failed",
+      "en": "The Ben-Yehuda library failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "benyehuda.highlighted",
+      "en": "Highlighted in {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "benyehuda.none",
+      "en": "Nothing in the library matches “{query}”.",
+      "vars": [
+        "query"
+      ]
+    },
+    {
+      "key": "benyehuda.notDownloaded",
+      "en": "not downloaded",
+      "vars": []
+    },
+    {
+      "key": "benyehuda.pickAuthor",
+      "en": "Whose works? ({count} authors in the public domain)",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "benyehuda.progress",
+      "en": "Downloaded {done} of {total} works",
+      "vars": [
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "benyehuda.prompt",
+      "en": "Author, work or words (for example ביאליק בריכה)",
+      "vars": []
+    },
+    {
+      "key": "benyehuda.results",
+      "en": "{count} works",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "benyehuda.selectInWork",
+      "en": "Open a work from the library and select a passage first.",
+      "vars": []
+    },
+    {
       "key": "beta.area.ai",
       "en": "AI",
       "vars": []
@@ -2382,6 +2480,116 @@
     {
       "key": "daily.noWorkspace",
       "en": "Daily notes need the workspace, which this browser can't provide.",
+      "vars": []
+    },
+    {
+      "key": "datagov.badBlock",
+      "en": "This dataset block is missing its source, id or snapshot.",
+      "vars": []
+    },
+    {
+      "key": "datagov.changes",
+      "en": "Changes since the last snapshot. Switch the note to the new one?",
+      "vars": []
+    },
+    {
+      "key": "datagov.confirm",
+      "en": "Search data.gov.il for “{query}”? Only these words are sent, nothing from your notes.",
+      "vars": [
+        "query"
+      ]
+    },
+    {
+      "key": "datagov.confirmRefresh",
+      "en": "Fetch this dataset again? Only its id is sent.",
+      "vars": []
+    },
+    {
+      "key": "datagov.confirmSeries",
+      "en": "Fetch CBS series {id}? Only its id is sent to apis.cbs.gov.il.",
+      "vars": [
+        "id"
+      ]
+    },
+    {
+      "key": "datagov.enable",
+      "en": "Turn on government data? Lumen then sends search words and dataset ids to data.gov.il and the CBS when you ask, and never on its own.",
+      "vars": []
+    },
+    {
+      "key": "datagov.failed",
+      "en": "Fetching the data failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "datagov.inserted",
+      "en": "Inserted {title} ({rows} rows, saved locally)",
+      "vars": [
+        "title",
+        "rows"
+      ]
+    },
+    {
+      "key": "datagov.loading",
+      "en": "Reading the local snapshot…",
+      "vars": []
+    },
+    {
+      "key": "datagov.missing",
+      "en": "The snapshot {path} is not in this vault.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "datagov.noBlock",
+      "en": "Put the cursor in a ```dataset block first.",
+      "vars": []
+    },
+    {
+      "key": "datagov.noTable",
+      "en": "This dataset has no table Lumen can read (only files without a data API).",
+      "vars": []
+    },
+    {
+      "key": "datagov.none",
+      "en": "No dataset matches “{query}”.",
+      "vars": [
+        "query"
+      ]
+    },
+    {
+      "key": "datagov.personal",
+      "en": "Some columns look like personal data ({columns}). The CBS licence forbids cross-matching data to identify people. Insert anyway?",
+      "vars": [
+        "columns"
+      ]
+    },
+    {
+      "key": "datagov.pickDataset",
+      "en": "Which dataset?",
+      "vars": []
+    },
+    {
+      "key": "datagov.pickResource",
+      "en": "Which table of this dataset?",
+      "vars": []
+    },
+    {
+      "key": "datagov.prompt",
+      "en": "Search data.gov.il (for example תאונות דרכים, אוכלוסייה ביישובים)",
+      "vars": []
+    },
+    {
+      "key": "datagov.seriesPrompt",
+      "en": "CBS series id (for example 120010, the Consumer Price Index)",
+      "vars": []
+    },
+    {
+      "key": "datagov.unchanged",
+      "en": "Nothing changed since the last snapshot. Switch to the new date anyway?",
       "vars": []
     },
     {
@@ -7594,6 +7802,204 @@
     {
       "key": "onboard.working",
       "en": "Setting up…",
+      "vars": []
+    },
+    {
+      "key": "openSources.confirm",
+      "en": "Search online for “{query}”? Only these words go to the sources you turned on (the Knesset, data.gov.il), nothing from your notes.",
+      "vars": [
+        "query"
+      ]
+    },
+    {
+      "key": "openSources.confirmFetch",
+      "en": "Fetch “{what}” from its source? Only its reference or id is sent.",
+      "vars": [
+        "what"
+      ]
+    },
+    {
+      "key": "openSources.declined",
+      "en": "Nothing was sent.",
+      "vars": []
+    },
+    {
+      "key": "openSources.failed",
+      "en": "The search failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "openSources.found",
+      "en": "{count} result(s) online",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "openSources.hint",
+      "en": "Type to search the sources on this device; “Search online” asks before it sends anything.",
+      "vars": []
+    },
+    {
+      "key": "openSources.keys",
+      "en": "↑↓ choose · Enter insert · Alt+O search online · Esc close",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind",
+      "en": "Kind",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.all",
+      "en": "All",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.dataset",
+      "en": "Datasets",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.law",
+      "en": "Laws",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.series",
+      "en": "Statistics",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.verse",
+      "en": "Jewish sources",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.work",
+      "en": "Literature",
+      "vars": []
+    },
+    {
+      "key": "openSources.noLocal",
+      "en": "Nothing on this device. Try “Search online”.",
+      "vars": []
+    },
+    {
+      "key": "openSources.onDevice",
+      "en": "on this device",
+      "vars": []
+    },
+    {
+      "key": "openSources.online",
+      "en": "Search online",
+      "vars": []
+    },
+    {
+      "key": "openSources.placeholder",
+      "en": "A verse, a law, a poem or a statistic",
+      "vars": []
+    },
+    {
+      "key": "openSources.results",
+      "en": "Results",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.cbs-licence",
+      "en": "CBS licence",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.cc-by",
+      "en": "CC BY",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.cc-by-sa",
+      "en": "CC BY-SA",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.cc0",
+      "en": "CC0",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.gov-open",
+      "en": "Government open data",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.link-only",
+      "en": "Link only",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.public-domain",
+      "en": "Public domain",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.section-6",
+      "en": "§6: laws and Knesset records",
+      "vars": []
+    },
+    {
+      "key": "openSources.searching",
+      "en": "Searching…",
+      "vars": []
+    },
+    {
+      "key": "openSources.sends.benyehuda",
+      "en": "downloads once; search is local",
+      "vars": []
+    },
+    {
+      "key": "openSources.sends.datagov",
+      "en": "sends search words and dataset ids",
+      "vars": []
+    },
+    {
+      "key": "openSources.sends.knesset",
+      "en": "sends law and bill names",
+      "vars": []
+    },
+    {
+      "key": "openSources.sends.sefaria",
+      "en": "sends the reference you choose",
+      "vars": []
+    },
+    {
+      "key": "openSources.source.benyehuda",
+      "en": "Ben-Yehuda library",
+      "vars": []
+    },
+    {
+      "key": "openSources.source.datagov",
+      "en": "data.gov.il and CBS",
+      "vars": []
+    },
+    {
+      "key": "openSources.source.knesset",
+      "en": "Knesset",
+      "vars": []
+    },
+    {
+      "key": "openSources.source.sefaria",
+      "en": "Sefaria",
+      "vars": []
+    },
+    {
+      "key": "openSources.switches",
+      "en": "Sources (off: nothing is sent to it)",
+      "vars": []
+    },
+    {
+      "key": "openSources.title",
+      "en": "Open sources",
       "vars": []
     },
     {

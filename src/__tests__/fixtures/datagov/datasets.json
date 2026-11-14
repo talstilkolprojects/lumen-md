@@ -1,0 +1,616 @@
+{
+ "note": "Recorded fixtures written from CKAN's documented answers (package_show, datastore_search). Titles and publishers are typical data.gov.il datasets; resource ids and values are placeholders.",
+ "datasets": [
+  {
+   "source": "datagov",
+   "slug": "population-in-settlements",
+   "resource": "00000000-0000-4000-8000-000000000001",
+   "package_show": {
+    "success": true,
+    "result": {
+     "name": "population-in-settlements",
+     "title": "אוכלוסייה ביישובים",
+     "organization": {
+      "title": "הלשכה המרכזית לסטטיסטיקה"
+     },
+     "metadata_modified": "2026-09-01T08:00:00.000000",
+     "resources": [
+      {
+       "id": "00000000-0000-4000-8000-000000000001",
+       "name": "אוכלוסייה ביישובים",
+       "format": "CSV",
+       "datastore_active": true
+      }
+     ]
+    }
+   },
+   "datastore_search": {
+    "success": true,
+    "result": {
+     "resource_id": "00000000-0000-4000-8000-000000000001",
+     "fields": [
+      {
+       "id": "_id",
+       "type": "int"
+      },
+      {
+       "id": "סמל_ישוב",
+       "type": "int"
+      },
+      {
+       "id": "שם_ישוב",
+       "type": "text"
+      },
+      {
+       "id": "סך_הכל_אוכלוסייה",
+       "type": "int"
+      }
+     ],
+     "records": [
+      {
+       "_id": 1,
+       "סמל_ישוב": 3000,
+       "שם_ישוב": "ירושלים",
+       "סך_הכל_אוכלוסייה": 1000000
+      },
+      {
+       "_id": 2,
+       "סמל_ישוב": 5000,
+       "שם_ישוב": "תל אביב - יפו",
+       "סך_הכל_אוכלוסייה": 470000
+      },
+      {
+       "_id": 3,
+       "סמל_ישוב": 4000,
+       "שם_ישוב": "חיפה",
+       "סך_הכל_אוכלוסייה": 290000
+      }
+     ],
+     "total": 3,
+     "_links": {
+      "start": "/api/3/action/datastore_search?resource_id=00000000-0000-4000-8000-000000000001"
+     }
+    }
+   }
+  },
+  {
+   "source": "datagov",
+   "slug": "road-accidents",
+   "resource": "00000000-0000-4000-8000-000000000002",
+   "package_show": {
+    "success": true,
+    "result": {
+     "name": "road-accidents",
+     "title": "תאונות דרכים עם נפגעים",
+     "organization": {
+      "title": "הרשות הלאומית לבטיחות בדרכים"
+     },
+     "metadata_modified": "2026-09-01T08:00:00.000000",
+     "resources": [
+      {
+       "id": "00000000-0000-4000-8000-000000000002",
+       "name": "תאונות דרכים עם נפגעים",
+       "format": "CSV",
+       "datastore_active": true
+      }
+     ]
+    }
+   },
+   "datastore_search": {
+    "success": true,
+    "result": {
+     "resource_id": "00000000-0000-4000-8000-000000000002",
+     "fields": [
+      {
+       "id": "_id",
+       "type": "int"
+      },
+      {
+       "id": "שנה",
+       "type": "int"
+      },
+      {
+       "id": "חומרה",
+       "type": "text"
+      },
+      {
+       "id": "מספר_תאונות",
+       "type": "int"
+      }
+     ],
+     "records": [
+      {
+       "_id": 1,
+       "שנה": 2024,
+       "חומרה": "קטלנית",
+       "מספר_תאונות": 400
+      },
+      {
+       "_id": 2,
+       "שנה": 2024,
+       "חומרה": "קשה",
+       "מספר_תאונות": 2000
+      }
+     ],
+     "total": 2,
+     "_links": {
+      "start": "/api/3/action/datastore_search?resource_id=00000000-0000-4000-8000-000000000002"
+     }
+    }
+   }
+  },
+  {
+   "source": "datagov",
+   "slug": "private-and-commercial-vehicles",
+   "resource": "00000000-0000-4000-8000-000000000003",
+   "package_show": {
+    "success": true,
+    "result": {
+     "name": "private-and-commercial-vehicles",
+     "title": "כלי רכב פרטיים ומסחריים",
+     "organization": {
+      "title": "משרד התחבורה"
+     },
+     "metadata_modified": "2026-09-01T08:00:00.000000",
+     "resources": [
+      {
+       "id": "00000000-0000-4000-8000-000000000003",
+       "name": "כלי רכב פרטיים ומסחריים",
+       "format": "CSV",
+       "datastore_active": true
+      }
+     ]
+    }
+   },
+   "datastore_search": {
+    "success": true,
+    "result": {
+     "resource_id": "00000000-0000-4000-8000-000000000003",
+     "fields": [
+      {
+       "id": "_id",
+       "type": "int"
+      },
+      {
+       "id": "mispar_rechev",
+       "type": "int"
+      },
+      {
+       "id": "tozeret_nm",
+       "type": "text"
+      },
+      {
+       "id": "degem_nm",
+       "type": "text"
+      },
+      {
+       "id": "shnat_yitzur",
+       "type": "int"
+      }
+     ],
+     "records": [
+      {
+       "_id": 1,
+       "mispar_rechev": 1234567,
+       "tozeret_nm": "טויוטה",
+       "degem_nm": "COROLLA",
+       "shnat_yitzur": 2019
+      }
+     ],
+     "total": 1,
+     "_links": {
+      "start": "/api/3/action/datastore_search?resource_id=00000000-0000-4000-8000-000000000003"
+     }
+    }
+   }
+  },
+  {
+   "source": "datagov",
+   "slug": "streets",
+   "resource": "00000000-0000-4000-8000-000000000004",
+   "package_show": {
+    "success": true,
+    "result": {
+     "name": "streets",
+     "title": "רשימת רחובות בישראל",
+     "organization": {
+      "title": "משרד הפנים"
+     },
+     "metadata_modified": "2026-09-01T08:00:00.000000",
+     "resources": [
+      {
+       "id": "00000000-0000-4000-8000-000000000004",
+       "name": "רשימת רחובות בישראל",
+       "format": "CSV",
+       "datastore_active": true
+      }
+     ]
+    }
+   },
+   "datastore_search": {
+    "success": true,
+    "result": {
+     "resource_id": "00000000-0000-4000-8000-000000000004",
+     "fields": [
+      {
+       "id": "_id",
+       "type": "int"
+      },
+      {
+       "id": "סמל_ישוב",
+       "type": "int"
+      },
+      {
+       "id": "שם_ישוב",
+       "type": "text"
+      },
+      {
+       "id": "שם_רחוב",
+       "type": "text"
+      }
+     ],
+     "records": [
+      {
+       "_id": 1,
+       "סמל_ישוב": 3000,
+       "שם_ישוב": "ירושלים",
+       "שם_רחוב": "יפו"
+      },
+      {
+       "_id": 2,
+       "סמל_ישוב": 3000,
+       "שם_ישוב": "ירושלים",
+       "שם_רחוב": "קינג ג'ורג'"
+      }
+     ],
+     "total": 2,
+     "_links": {
+      "start": "/api/3/action/datastore_search?resource_id=00000000-0000-4000-8000-000000000004"
+     }
+    }
+   }
+  },
+  {
+   "source": "datagov",
+   "slug": "fuel-prices",
+   "resource": "00000000-0000-4000-8000-000000000005",
+   "package_show": {
+    "success": true,
+    "result": {
+     "name": "fuel-prices",
+     "title": "מחירי דלק לצרכן",
+     "organization": {
+      "title": "משרד האנרגיה"
+     },
+     "metadata_modified": "2026-09-01T08:00:00.000000",
+     "resources": [
+      {
+       "id": "00000000-0000-4000-8000-000000000005",
+       "name": "מחירי דלק לצרכן",
+       "format": "CSV",
+       "datastore_active": true
+      }
+     ]
+    }
+   },
+   "datastore_search": {
+    "success": true,
+    "result": {
+     "resource_id": "00000000-0000-4000-8000-000000000005",
+     "fields": [
+      {
+       "id": "_id",
+       "type": "int"
+      },
+      {
+       "id": "חודש",
+       "type": "text"
+      },
+      {
+       "id": "בנזין_95",
+       "type": "numeric"
+      }
+     ],
+     "records": [
+      {
+       "_id": 1,
+       "חודש": "2026-10",
+       "בנזין_95": 7.1
+      },
+      {
+       "_id": 2,
+       "חודש": "2026-11",
+       "בנזין_95": 7.0
+      }
+     ],
+     "total": 2,
+     "_links": {
+      "start": "/api/3/action/datastore_search?resource_id=00000000-0000-4000-8000-000000000005"
+     }
+    }
+   }
+  },
+  {
+   "source": "datagov",
+   "slug": "schools",
+   "resource": "00000000-0000-4000-8000-000000000006",
+   "package_show": {
+    "success": true,
+    "result": {
+     "name": "schools",
+     "title": "מוסדות חינוך",
+     "organization": {
+      "title": "משרד החינוך"
+     },
+     "metadata_modified": "2026-09-01T08:00:00.000000",
+     "resources": [
+      {
+       "id": "00000000-0000-4000-8000-000000000006",
+       "name": "מוסדות חינוך",
+       "format": "CSV",
+       "datastore_active": true
+      }
+     ]
+    }
+   },
+   "datastore_search": {
+    "success": true,
+    "result": {
+     "resource_id": "00000000-0000-4000-8000-000000000006",
+     "fields": [
+      {
+       "id": "_id",
+       "type": "int"
+      },
+      {
+       "id": "סמל_מוסד",
+       "type": "int"
+      },
+      {
+       "id": "שם_מוסד",
+       "type": "text"
+      },
+      {
+       "id": "עיר",
+       "type": "text"
+      }
+     ],
+     "records": [
+      {
+       "_id": 1,
+       "סמל_מוסד": 110001,
+       "שם_מוסד": "בית ספר א",
+       "עיר": "חיפה"
+      }
+     ],
+     "total": 1,
+     "_links": {
+      "start": "/api/3/action/datastore_search?resource_id=00000000-0000-4000-8000-000000000006"
+     }
+    }
+   }
+  },
+  {
+   "source": "datagov",
+   "slug": "bus-stops",
+   "resource": "00000000-0000-4000-8000-000000000007",
+   "package_show": {
+    "success": true,
+    "result": {
+     "name": "bus-stops",
+     "title": "תחנות אוטובוס",
+     "organization": {
+      "title": "משרד התחבורה"
+     },
+     "metadata_modified": "2026-09-01T08:00:00.000000",
+     "resources": [
+      {
+       "id": "00000000-0000-4000-8000-000000000007",
+       "name": "תחנות אוטובוס",
+       "format": "CSV",
+       "datastore_active": true
+      }
+     ]
+    }
+   },
+   "datastore_search": {
+    "success": true,
+    "result": {
+     "resource_id": "00000000-0000-4000-8000-000000000007",
+     "fields": [
+      {
+       "id": "_id",
+       "type": "int"
+      },
+      {
+       "id": "קוד_תחנה",
+       "type": "int"
+      },
+      {
+       "id": "שם_תחנה",
+       "type": "text"
+      },
+      {
+       "id": "עיר",
+       "type": "text"
+      }
+     ],
+     "records": [
+      {
+       "_id": 1,
+       "קוד_תחנה": 1,
+       "שם_תחנה": "מרכזית",
+       "עיר": "באר שבע"
+      }
+     ],
+     "total": 1,
+     "_links": {
+      "start": "/api/3/action/datastore_search?resource_id=00000000-0000-4000-8000-000000000007"
+     }
+    }
+   }
+  },
+  {
+   "source": "datagov",
+   "slug": "bank-branches",
+   "resource": "00000000-0000-4000-8000-000000000008",
+   "package_show": {
+    "success": true,
+    "result": {
+     "name": "bank-branches",
+     "title": "סניפי בנקים",
+     "organization": {
+      "title": "בנק ישראל"
+     },
+     "metadata_modified": "2026-09-01T08:00:00.000000",
+     "resources": [
+      {
+       "id": "00000000-0000-4000-8000-000000000008",
+       "name": "סניפי בנקים",
+       "format": "CSV",
+       "datastore_active": true
+      }
+     ]
+    }
+   },
+   "datastore_search": {
+    "success": true,
+    "result": {
+     "resource_id": "00000000-0000-4000-8000-000000000008",
+     "fields": [
+      {
+       "id": "_id",
+       "type": "int"
+      },
+      {
+       "id": "קוד_בנק",
+       "type": "int"
+      },
+      {
+       "id": "קוד_סניף",
+       "type": "int"
+      },
+      {
+       "id": "שם_סניף",
+       "type": "text"
+      }
+     ],
+     "records": [
+      {
+       "_id": 1,
+       "קוד_בנק": 12,
+       "קוד_סניף": 600,
+       "שם_סניף": "ראשי"
+      }
+     ],
+     "total": 1,
+     "_links": {
+      "start": "/api/3/action/datastore_search?resource_id=00000000-0000-4000-8000-000000000008"
+     }
+    }
+   }
+  },
+  {
+   "source": "cbs",
+   "series": "120010",
+   "series_data": {
+    "DataSet": {
+     "Series": [
+      {
+       "id": 120010,
+       "path": {
+        "name_1": {
+         "name": "מדד המחירים לצרכן — מדד כללי"
+        }
+       },
+       "unit": {
+        "name": "נקודות מדד"
+       },
+       "obs": [
+        {
+         "TimePeriod": "2026-09",
+         "Value": 105.1
+        },
+        {
+         "TimePeriod": "2026-10",
+         "Value": 105.4
+        }
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "source": "cbs",
+   "series": "120460",
+   "series_data": {
+    "DataSet": {
+     "Series": [
+      {
+       "id": 120460,
+       "path": {
+        "name_1": {
+         "name": "מדד מחירי דירות"
+        }
+       },
+       "unit": {
+        "name": "נקודות מדד"
+       },
+       "obs": [
+        {
+         "TimePeriod": "2026-07",
+         "Value": 142.0
+        },
+        {
+         "TimePeriod": "2026-08",
+         "Value": 142.6
+        }
+       ]
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "package_search": {
+  "success": true,
+  "result": {
+   "count": 2,
+   "results": [
+    {
+     "name": "population-in-settlements",
+     "title": "אוכלוסייה ביישובים",
+     "organization": {
+      "title": "הלשכה המרכזית לסטטיסטיקה"
+     },
+     "metadata_modified": "2026-09-01T08:00:00.000000",
+     "resources": [
+      {
+       "id": "00000000-0000-4000-8000-000000000001",
+       "name": "אוכלוסייה ביישובים",
+       "format": "CSV",
+       "datastore_active": true
+      }
+     ]
+    },
+    {
+     "name": "streets",
+     "title": "רשימת רחובות בישראל",
+     "organization": {
+      "title": "משרד הפנים"
+     },
+     "metadata_modified": "2026-09-01T08:00:00.000000",
+     "resources": [
+      {
+       "id": "00000000-0000-4000-8000-000000000004",
+       "name": "רשימת רחובות בישראל",
+       "format": "CSV",
+       "datastore_active": true
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

@@ -42,6 +42,8 @@ export const SHORTCUTS: readonly Shortcut[] = [
   { id: "note.today", combo: "Mod+Alt+D", scope: "global" },
   { id: "note.capture", combo: "Mod+Alt+N", scope: "global" },
   { id: "cite.insert", combo: "Mod+Alt+C", scope: "global" },
+  // The open-sources dialog (plan W7.24). Not Mod+Shift+S: that is Save as.
+  { id: "sources.open", combo: "Mod+Alt+S", scope: "global" },
   { id: "help.open", combo: "F1", scope: "global" },
   // The outline mode's keys (plan W2.x), bound by the editor's outline keymap (editor/outlineExtension.ts).
   { id: "outline.moveUp", combo: "Alt+Shift+↑", scope: "editor" },

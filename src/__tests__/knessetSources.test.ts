@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { lawKey, lawMentionsIn, matchLaw, searchTermOf } from "../sources/knesset/lawNames";
 import { odataDate, odataString, queryUrl, rowsOf, searchLaws, toDocument, toLaw, type Law } from "../sources/knesset/odata";
 import { citeProtocol, findTurn, knessetNumber, parseProtocol, parseProtocolHeader, protocolQuote } from "../sources/knesset/protocol";
-import { askTheLaw, lawSections, lookupLaw, parseLawNote, renderBillNote, renderLawNote, saveLaw, type NoteStorage, type SavedLaw } from "../sources/knesset/store";
+import { askTheLaw, lawSections, lookupLaw, parseLawNote, renderBillNote, renderLawNote, saveLaw, savedLaws, type NoteStorage, type SavedLaw } from "../sources/knesset/store";
 import { DeclinedError, enabledSources, gatedFetch, setSourceEnabled, SourceOffError, withGate } from "../sources/open/gate";
 import { mayCopy, rightsOfSefariaLicense } from "../sources/open/rights";
 
@@ -122,6 +122,14 @@ describe("saved laws: offline, with source, date and rights", () => {
     expect(second!.saved!.law.name).toBe('חוק הגנת הפרטיות, התשמ"א-1981');
   });
 
+  it("one unreadable saved law doesn't break the others (RR25-2)", async () => {
+    const storage = memory();
+    await saveLaw(LAWS[0], storage, "", "2026-11-14");
+    storage.files.set("Sources/Knesset/Laws/bad.md", '---\nsource: knesset\nkind: law\nid: 2\nname: "cut\u2028\n---\n');
+    const all = await savedLaws(storage);
+    expect(all.map((s) => s.law.id)).toEqual([LAWS[0].id]);
+  });
+
   it("every saved document has source, retrieval date and rights in its frontmatter", () => {
     const law = renderLawNote(LAWS[0], "2026-11-14", "1. לא יפגע אדם בפרטיות של זולתו ללא הסכמתו.");
     const bill = renderBillNote({ id: 5, name: "הצעת חוק לדוגמה", knessetNum: 25, subType: "פרטית", privateNumber: 1, publicationDate: null, summary: null }, "2026-11-14");
@@ -137,6 +145,12 @@ describe("saved laws: offline, with source, date and rights", () => {
     const evil = renderLawNote({ ...LAWS[0], name: "חוק\n---\nrights: all-rights-reserved" }, "2026-11-14");
     expect(evil).not.toMatch(/^rights: all-rights-reserved$/m);
     expect(evil.split("\n---\n").length).toBe(2);
+    // U+2028/U+2029 in a remote name round-trip, and a broken note is skipped, not fatal (RR25-2).
+    for (const sep of ["\u2028", "\u2029"]) {
+      const odd = parseLawNote("x.md", renderLawNote({ ...LAWS[0], name: `חוק${sep}משונה` }, "2026-11-14"));
+      expect(odd?.law.name).toBe(`חוק${sep}משונה`);
+    }
+    expect(parseLawNote("x.md", '---\nsource: knesset\nkind: law\nid: 1\nname: "broken\n---\n')).toBe(null);
     const back = parseLawNote("Sources/Knesset/Laws/x.md", law)!;
     expect(back.law.name).toBe(LAWS[0].name);
     expect(back.text).toBe("1. לא יפגע אדם בפרטיות של זולתו ללא הסכמתו.");

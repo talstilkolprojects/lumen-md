@@ -42,6 +42,9 @@ route loses its gate.
 | Jewish sources | `sefaria-texts` | the copy you saved for offline (Sources/Sefaria) | Sefaria's texts API: the reference only, such as "Genesis 1:1" | under any policy, each time you confirm a lookup; a saved source needs no request |
 | Publishing to Bluesky (Standard.site) | `atproto-publish` | nothing is published (Export Markdown and the static site stay local) | your own AT Protocol account (PDS): the open note as a public record, redacted first; plc.directory to find your PDS | under any policy, only when you run Publish, Update or Unpublish on one note and confirm that the record is public and permanent |
 | Laws and Knesset records | `knesset-odata` | laws you saved for offline (Sources/Knesset/Laws); "Ask the law" searches only them | the Knesset's OData service: the law or bill name only, such as "הגנת הפרטיות" | only after you turn Knesset sources on, each time you confirm a lookup |
+| Government data | `datagov-ckan` | the CSV snapshot saved in your vault (Data/datagov, Data/cbs) | data.gov.il's CKAN API and the CBS series API: the search words, a dataset id or a series id | only after you turn government data on, each time you confirm a fetch; a note with a snapshot needs no request |
+| Ben-Yehuda library | `benyehuda-dump` | the works you downloaded (Sources/BenYehuda): search and reading are local | GitHub (raw.githubusercontent.com): the project's public-domain catalogue and the chosen authors' texts; nothing of yours is sent | once, when you turn the library on and confirm a download |
+| Open sources dialog | `open-sources-search` | results from this device: references, saved laws, the downloaded library | the search words, to the Knesset and data.gov.il only when they are on | each time you press "Search online" and confirm |
 
 Model downloads (Hugging Face, the OCR and dictionary files) carry no
 content of yours; they are listed in the privacy ledger and happen only
