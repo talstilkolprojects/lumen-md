@@ -1,0 +1,13 @@
+{
+  "$comment": "Plan W6.25: production files over 800 lines when the max-lines gate came in, with their line count (as ESLint max-lines counts). Counts may only go down: node scripts/check-max-lines.mjs checks, --shrink lowers them after a split, and npm run pr:check fails a diff that raises or adds an entry. Never edit a count upwards.",
+  "max": 800,
+  "files": {
+    "src/agents/runtime.ts": 922,
+    "src/canvas/tldrawToExcalidraw.ts": 1462,
+    "src/editor/Editor.tsx": 1004,
+    "src/editor/WysiwygEditor.tsx": 1053,
+    "src/search/dataview.ts": 833,
+    "src/sync/e2ee/engine.ts": 1064,
+    "src/ui/SearchDialog.tsx": 853
+  }
+}

@@ -13,7 +13,7 @@
     "webr:local": "node scripts/copy-webr.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "hygiene": "node scripts/check-code-hygiene.mjs && node scripts/audit-lock.mjs",
+    "hygiene": "node scripts/check-code-hygiene.mjs && node scripts/check-max-lines.mjs && node scripts/audit-lock.mjs",
     "audit:lock": "node scripts/audit-lock.mjs",
     "secrets:scan-live": "node scripts/secrets-scan-live.mjs",
     "secrets:dist": "node scripts/secrets-scan-live.mjs --dir dist",
