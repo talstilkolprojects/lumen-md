@@ -15,6 +15,11 @@
  * Rules: every A / AA criterion has a status; none at level A is "does not
  * support"; every partial or unsupported one has a plan; every evidence
  * path exists; the report's version is the app's version.
+ *
+ * The automated part comes from axe (docs/acr/axe.json, written by
+ * scripts/acr-axe.mjs from an axe-core run): each criterion shows the axe
+ * rules that test it and how they came out, and a criterion axe finds a
+ * violation of can't be "supports" (or "not applicable").
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -22,6 +27,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const SOURCE = "docs/acr/wcag22.json";
+export const AXE = "docs/acr/axe.json";
 export const PAGES = { en: "docs/src/content/docs/editor/acr.md", he: "docs/src/content/docs/he/editor/acr.md" };
 
 /** WCAG 2.2 level A and AA success criteria (4.1.1 Parsing was removed in 2.2). */
@@ -39,9 +45,30 @@ export function loadReport(root = ROOT) {
   return JSON.parse(readFileSync(join(root, SOURCE), "utf8"));
 }
 
+/** The axe run (scripts/acr-axe.mjs), or null when there is none. */
+export function loadAxe(root = ROOT) {
+  const f = join(root, AXE);
+  return existsSync(f) ? JSON.parse(readFileSync(f, "utf8")) : null;
+}
+
+/** What axe checked for criterion `id`: its rules, their passes, violations and results to review by hand. */
+export function automatedFor(id, axe) {
+  const out = { rules: [], pass: 0, fail: 0, incomplete: 0, failures: [] };
+  for (const [rule, r] of Object.entries(axe?.rules ?? {})) {
+    if (!r.criteria.includes(id)) continue;
+    out.rules.push(rule);
+    out.pass += r.pass;
+    out.fail += r.fail;
+    out.incomplete += r.incomplete;
+    out.failures.push(...r.failures.map((f) => ({ rule, ...f })));
+  }
+  return out;
+}
+
 /** Problems with the report (empty = good). */
-export function checkReport(report, root = ROOT) {
+export function checkReport(report, root = ROOT, axe = loadAxe(root)) {
   const problems = [];
+  if (!axe) problems.push(`${AXE} is missing: run axe and node scripts/acr-axe.mjs (plan W3.8)`);
   const byId = new Map(report.criteria.map((c) => [c.id, c]));
   if (byId.size !== report.criteria.length) problems.push("a criterion is listed twice");
   for (const [level, ids] of Object.entries(WCAG22)) {
@@ -58,6 +85,8 @@ export function checkReport(report, root = ROOT) {
       else if (!/[֐-׿]/.test(c.remarks.he)) problems.push(`${id}: the Hebrew remarks are not in Hebrew`);
       if ((c.status === "partially-supports" || c.status === "does-not-support") && !(c.plan?.en && c.plan?.he && c.plan?.target)) problems.push(`${id}: ${c.status} needs a plan (en, he, target)`);
       for (const e of c.evidence ?? []) if (!existsSync(join(root, e))) problems.push(`${id}: evidence ${e} does not exist`);
+      const auto = automatedFor(id, axe);
+      if (auto.fail && (c.status === "supports" || c.status === "not-applicable")) problems.push(`${id}: axe finds ${auto.fail} violation(s) (${[...new Set(auto.failures.map((f) => f.rule))].join(", ")}), so it can't be "${c.status}"`);
     }
   }
   for (const c of report.criteria) if (!WCAG22.A.includes(c.id) && !WCAG22.AA.includes(c.id)) problems.push(`${c.id} is not a WCAG 2.2 A / AA criterion`);
@@ -77,7 +106,39 @@ export function summary(report) {
 const esc = (s) => s.replace(/\|/g, "\\|").replace(/\n/g, " ");
 
 /** The docs page in one language. */
-export function renderPage(report, lang) {
+const n = (x, lang) => x.toLocaleString(lang === "he" ? "he-IL" : "en-US");
+
+/** The automated column for one criterion. */
+export function automatedCell(id, axe, lang) {
+  const he = lang === "he";
+  const a = automatedFor(id, axe);
+  if (!a.rules.length) return he ? "— (axe לא בודק את זה)" : "— (not testable by axe)";
+  if (a.fail) {
+    const by = [...new Set(a.failures.map((f) => `${f.rule} (${f.surface}, ${f.setup})`))].slice(0, 4).join("; ");
+    return he ? `✗ ${n(a.fail, lang)} הפרות: ${by}` : `✗ ${n(a.fail, lang)} violation${a.fail === 1 ? "" : "s"}: ${by}`;
+  }
+  const review = a.incomplete ? (he ? `, ${n(a.incomplete, lang)} לבדיקה ידנית` : `, ${n(a.incomplete, lang)} to review by hand`) : "";
+  return he ? `✓ ${a.rules.length} כללים, ${n(a.pass, lang)} בדיקות עברו${review}` : `✓ ${a.rules.length} rule${a.rules.length === 1 ? "" : "s"}, ${n(a.pass, lang)} checks passed${review}`;
+}
+
+/** The "Automated testing" section: which axe run, on what, and what it can't tell. */
+function axeSection(axe, lang) {
+  const he = lang === "he";
+  if (!axe) return [];
+  const rules = Object.keys(axe.rules).length;
+  const failing = Object.values(axe.rules).filter((r) => r.fail).length;
+  return [
+    he ? "## בדיקה אוטומטית" : "## Automated testing",
+    "",
+    he
+      ? `**${axe.tool} ${axe.version}**, ${axe.source}, ב-${axe.date} (commit \`${axe.commit}\`): ${n(axe.runs, lang)} הרצות על ${axe.surfaces.length} משטחים × ${axe.setups.length} הגדרות (${axe.setups.join(", ")}), ${rules} כללים של WCAG 2.0/2.1/2.2 ברמות A ו-AA, ${failing ? `**${failing} כללים עם הפרות**` : "**אפס הפרות**"}. העמודה ״axe״ בטבלאות למטה מראה, לכל קריטריון, את הכללים שבודקים אותו ואת התוצאה. axe בודק רק חלק מ-WCAG; כל השאר נבדק ידנית, כמתואר למעלה.`
+      : `**${axe.tool} ${axe.version}**, ${axe.source}, on ${axe.date} (commit \`${axe.commit}\`): ${n(axe.runs, lang)} runs on ${axe.surfaces.length} surfaces × ${axe.setups.length} setups (${axe.setups.join(", ")}), ${rules} WCAG 2.0/2.1/2.2 A and AA rules, ${failing ? `**${failing} rules with violations**` : "**zero violations**"}. The "axe" column below shows, for each criterion, the rules that test it and how they came out. axe tests only part of WCAG; the rest is checked by hand, as described above.`,
+    ...(axe.notRun?.length ? ["", (he ? "לא נבדקו באופן הזה (נבדקים ב-e2e): " : "Not tested this way (covered by the e2e suite): ") + axe.notRun.map((x) => x.split(":")[0]).join(", ") + "."] : []),
+    "",
+  ];
+}
+
+export function renderPage(report, lang, axe = loadAxe()) {
   const L = LABEL[lang];
   const he = lang === "he";
   const s = summary(report);
@@ -105,13 +166,14 @@ export function renderPage(report, lang) {
     "",
     report.method[lang],
     "",
+    ...axeSection(axe, lang),
   ];
   for (const level of ["A", "AA"]) {
-    lines.push(he ? `## רמה ${level}` : `## Level ${level}`, "", he ? "| קריטריון | סטטוס | הערות |" : "| Criterion | Status | Remarks |", "|---|---|---|");
+    lines.push(he ? `## רמה ${level}` : `## Level ${level}`, "", he ? "| קריטריון | סטטוס | הערות | axe |" : "| Criterion | Status | Remarks | axe |", "|---|---|---|---|");
     for (const c of rows.filter((x) => x.level === level)) {
       const link = `[${c.id} ${c.name}](https://www.w3.org/WAI/WCAG22/Understanding/${slug(c.name)})`;
       const plan = c.plan ? ` ${he ? "**תוכנית:**" : "**Plan:**"} ${c.plan[lang]} (${c.plan.target})` : "";
-      lines.push(`| ${link} | ${L[c.status]} | ${esc(c.remarks[lang])}${esc(plan)} |`);
+      lines.push(`| ${link} | ${L[c.status]} | ${esc(c.remarks[lang])}${esc(plan)} | ${esc(automatedCell(c.id, axe, lang))} |`);
     }
     lines.push("");
   }
@@ -142,13 +204,14 @@ const slug = (name) =>
 
 function main() {
   const report = loadReport();
-  const problems = checkReport(report);
+  const axe = loadAxe();
+  const problems = checkReport(report, ROOT, axe);
   for (const p of problems) console.error(`✖ ${p}`);
   if (problems.length) process.exit(1);
   const check = process.argv.includes("--check");
   let stale = 0;
   for (const [lang, rel] of Object.entries(PAGES)) {
-    const want = renderPage(report, lang);
+    const want = renderPage(report, lang, axe);
     const path = join(ROOT, rel);
     const have = existsSync(path) ? readFileSync(path, "utf8") : null;
     if (have === want) continue;
