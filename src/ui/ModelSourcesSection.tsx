@@ -19,6 +19,8 @@ export function ModelSourcesSection({ captionStyle }: { captionStyle?: React.CSS
   const [user, setUser] = useState("");
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  /** Models that are (partly) only on Hugging Face, each with its message (plan W6.33). */
+  const [hfOnly, setHfOnly] = useState<Array<{ key: string; params: Record<string, string> }>>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -26,9 +28,11 @@ export function ModelSourcesSection({ captionStyle }: { captionStyle?: React.CSS
     void import("../ai/modelHosting").then(async (h) => {
       const base = h.builtMirrorBase();
       const saved = await h.readUserSource();
+      const messages = h.mirrorMessages(await h.loadHostedModels());
       if (!alive) return;
       setMirror(base);
       setUser(saved ?? "");
+      setHfOnly(messages);
     });
     return () => {
       alive = false;
@@ -95,6 +99,18 @@ export function ModelSourcesSection({ captionStyle }: { captionStyle?: React.CSS
         </button>
         <input ref={fileRef} type="file" multiple hidden onChange={(e) => void pick(e.target.files)} data-testid="model-files-input" />
       </div>
+      {hfOnly.length > 0 && (
+        <details style={muted} data-testid="model-hf-only">
+          <summary>
+            {t("modelSources.hfOnlyTitle")} ({hfOnly.length})
+          </summary>
+          <ul style={{ margin: "4px 0", paddingInlineStart: 18 }}>
+            {hfOnly.map((m, i) => (
+              <li key={i}>{t(m.key, m.params)}</li>
+            ))}
+          </ul>
+        </details>
+      )}
       {note && (
         <div style={muted} role="status">
           {note}

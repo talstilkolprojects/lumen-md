@@ -66,6 +66,12 @@ export interface Hosting {
   via?: "converted";
   /** Files the library needs that have no published sha256 yet (fetched only from the pinned revision). */
   unpinned?: string[];
+  /**
+   * Variants not offered at all, and what is loaded instead (plan W6.33):
+   * e.g. a dtype whose file is over GitHub's 2 GiB per file, so the mirror
+   * cannot hold it. The app says so (MIRROR_MESSAGES.omitted).
+   */
+  omitted?: Array<{ dtype: string; reason: "over-2gib"; bytes?: number; instead: string }>;
 }
 
 export interface HostedModel {
@@ -419,6 +425,64 @@ export function hostingGaps(models: HostedModel[], only: (m: HostedModel) => boo
     }
   }
   return out;
+}
+
+/**
+ * Why a model cannot come from the mirror (yet), so it downloads only from
+ * Hugging Face (plan W6.33). Each has a message the app shows the user
+ * (MIRROR_MESSAGES, English in src/i18n/lazy/modelSources.json); a model
+ * that is only on Hugging Face is never silent about it.
+ */
+export type MirrorGap = "no-hosting" | "not-pinned" | "unhashed" | "over-2gib";
+
+/** The i18n key of each gap's message ({model} is the model's name), and of an omitted variant's ({model}, {dtype}, {instead}). */
+export const MIRROR_MESSAGES = {
+  "no-hosting": "modelSources.gap.noHosting",
+  "not-pinned": "modelSources.gap.notPinned",
+  unhashed: "modelSources.gap.unhashed",
+  "over-2gib": "modelSources.gap.over2gib",
+  omitted: "modelSources.omitted.over2gib",
+} as const satisfies Record<MirrorGap | "omitted", string>;
+
+/** The first reason `m` cannot download from the mirror, or null when every file it loads can. */
+export function mirrorGap(m: HostedModel): MirrorGap | null {
+  const h = m.hosting;
+  if (!h) return "no-hosting";
+  if (!m.files?.length) return "not-pinned";
+  if (h.hf && !(h.revision && HEX40.test(h.revision))) return "not-pinned";
+  if ((h.unpinned?.length ?? 0) > 0 || m.files.some((f) => !hasSha(f))) return "unhashed";
+  if (m.files.some((f) => f.bytes > GITHUB_RELEASE_MAX_BYTES)) return "over-2gib";
+  return null;
+}
+
+/** A message the app shows for a model that is (partly) only on Hugging Face. */
+export interface MirrorMessage {
+  id: string;
+  gap: MirrorGap | "omitted";
+  /** The i18n key, and its parameters. */
+  key: string;
+  params: Record<string, string>;
+}
+
+/** Every message the models need: one per default candidate with a gap, and one per omitted variant. */
+export function mirrorMessages(models: HostedModel[], only: (m: HostedModel) => boolean = isDefaultCandidate): MirrorMessage[] {
+  const out: MirrorMessage[] = [];
+  for (const m of models.filter(only)) {
+    const gap = mirrorGap(m);
+    if (gap) out.push({ id: m.id, gap, key: MIRROR_MESSAGES[gap], params: { model: m.id } });
+    (m.hosting?.omitted ?? []).forEach((o) => out.push({ id: m.id, gap: "omitted", key: MIRROR_MESSAGES.omitted, params: { model: m.id, dtype: o.dtype, instead: o.instead } }));
+  }
+  return out;
+}
+
+/**
+ * The W6.33 check: models that are only on Hugging Face (or leave a variant
+ * out) and have no message in `strings` (a locale's key → text). Must be [].
+ */
+export function silentHfOnly(models: HostedModel[], strings: Record<string, string>, only?: (m: HostedModel) => boolean): string[] {
+  return mirrorMessages(models, only)
+    .filter((x) => typeof strings[x.key] !== "string" || !strings[x.key].trim())
+    .map((x) => `${x.id}: ${x.gap} (${x.key})`);
 }
 
 /** The mirror's base URL from the build (VITE_MODEL_MIRROR_URL), or null. */
