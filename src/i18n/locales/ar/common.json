@@ -1551,6 +1551,8 @@
   "organizer.resume": "استئناف",
   "organizer.sent": "أُرسل {staged} من {count} إلى شاشة المراجعة",
   "organizer.title": "تنظيم الخزنة",
+  "organizer.model": "إعادة التقييم بالنموذج المحلي",
+  "organizer.model.about": "يقيّم Ollama أو النموذج داخل المتصفح كل اقتراح على هذا الجهاز، بدءًا من التشغيل التالي. لا يُرسَل شيء، ويبقى كل تغيير بانتظار موافقتك.",
   "pageView.jump": "الانتقال إلى صفحة",
   "pageView.next": "الصفحة التالية",
   "pageView.of": "من {total}",

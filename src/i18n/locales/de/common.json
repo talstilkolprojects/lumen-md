@@ -1551,6 +1551,8 @@
   "organizer.resume": "Fortsetzen",
   "organizer.sent": "{staged} von {count} an die Prüfansicht gesendet",
   "organizer.title": "Tresor ordnen",
+  "organizer.model": "Mit dem lokalen Modell neu bewerten",
+  "organizer.model.about": "Ollama oder das Modell im Browser bewertet jeden Vorschlag auf diesem Gerät, ab dem nächsten Lauf. Nichts wird gesendet, und jede Änderung wartet weiter auf deine Freigabe.",
   "pageView.jump": "Zu Seite springen",
   "pageView.next": "Nächste Seite",
   "pageView.of": "von {total}",

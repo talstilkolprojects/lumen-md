@@ -72,6 +72,7 @@ export function OrganizerPanel({ job, onClose }: { job: OrganizerJob; onClose: (
         <header style={{ padding: "12px 16px", borderBottom: "1px solid hsl(var(--border))", display: "flex", gap: 10, alignItems: "center" }}>
           <Network size={16} />
           <strong style={{ flex: 1 }}>{t("organizer.title")}</strong>
+          <ModelSwitch />
           <HelpButton topic="ai/organizer" />
           <button type="button" style={btn} onClick={onClose} aria-label={t("agentReview.close")}>
             <X size={14} />
@@ -161,6 +162,8 @@ export async function openOrganizerPanel(): Promise<void> {
   const reuse = job && (job.state.phase === "reading" || job.state.phase === "analysing" || (job.state.phase === "ready" && job.state.staged < job.state.suggestions.length));
   if (!reuse) {
     lastJob?.dispose();
+    // W10.C16: the local model re-scores the suggestions when the user turned it on (the panel's switch).
+    (await import("../agents/organizer/model")).registerOrganizerModel();
     job = lastJob = startOrganizer(await workspaceSource());
   }
   const close = () => {
@@ -175,3 +178,27 @@ export async function openOrganizerPanel(): Promise<void> {
 }
 
 let lastJob: OrganizerJob | null = null;
+
+/** "Re-score with the local model" (W10.C16): consent for the next run; on this device only. */
+function ModelSwitch() {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    void import("../agents/organizer/model").then((m) => setOn(m.organizerModelConsent()));
+  }, []);
+  return (
+    <label style={{ display: "inline-flex", gap: 4, alignItems: "center", fontSize: 12 }} title={t("organizer.model.about")}>
+      <input
+        type="checkbox"
+        checked={on}
+        data-testid="organizer-model"
+        onChange={(e) => {
+          const next = e.target.checked;
+          setOn(next);
+          void import("../agents/organizer/model").then((m) => m.setOrganizerModelConsent(next));
+        }}
+      />
+      {t("organizer.model")}
+    </label>
+  );
+}
+

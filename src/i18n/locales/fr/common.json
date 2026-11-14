@@ -1551,6 +1551,8 @@
   "organizer.resume": "Reprendre",
   "organizer.sent": "{staged} sur {count} envoyées à l’écran de revue",
   "organizer.title": "Organiser le coffre",
+  "organizer.model": "Réévaluer avec le modèle local",
+  "organizer.model.about": "Ollama ou le modèle du navigateur note chaque suggestion sur cet appareil, dès la prochaine analyse. Rien n’est envoyé, et chaque modification attend toujours votre accord.",
   "pageView.jump": "Aller à la page",
   "pageView.next": "Page suivante",
   "pageView.of": "sur {total}",

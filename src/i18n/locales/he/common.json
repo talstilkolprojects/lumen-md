@@ -1551,6 +1551,8 @@
   "organizer.resume": "המשך",
   "organizer.sent": "{staged} מתוך {count} נשלחו למסך האישור",
   "organizer.title": "סידור הכספת",
+  "organizer.model": "ניקוד מחדש במודל המקומי",
+  "organizer.model.about": "‏Ollama או המודל שבדפדפן מדרגים כל הצעה במכשיר הזה, מהריצה הבאה. שום דבר לא נשלח, וכל שינוי עדיין מחכה לאישור שלכם.",
   "pageView.jump": "מעבר לעמוד",
   "pageView.next": "העמוד הבא",
   "pageView.of": "מתוך {total}",
