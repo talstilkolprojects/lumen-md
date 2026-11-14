@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { datastoreUrl, parseSearch, searchUrl, seriesUrl } from "../sources/datagov/api";
 import { importResource, importSeries, refreshBlock, type FileStore } from "../sources/datagov/core";
-import { attribution, CBS_TERMS, diffSnapshots, parseBlock, parseCsv, personalColumns, toCsv } from "../sources/datagov/snapshot";
+import { attribution, CBS_TERMS, diffSnapshots, insertion, parseBlock, parseCsv, personalColumns, toCsv, verifiedSnapshot } from "../sources/datagov/snapshot";
 
 interface Fixture {
   source: "datagov" | "cbs";
@@ -126,6 +126,27 @@ describe("offline, refresh and the personal-data warning", () => {
   it("warns on personal-looking columns, not on place names", () => {
     expect(personalColumns(["שם_ישוב", "סמל_ישוב", "שם_רחוב", "עיר"])).toEqual([]);
     expect(personalColumns(["שם_פרטי", "ת.ז", "טלפון", "email", "mispar_rechev", "תאריך_לידה", "count"])).toEqual(["שם_פרטי", "ת.ז", "טלפון", "email", "mispar_rechev", "תאריך_לידה"]);
+  });
+
+  it("remote fields can't leave the block (RR20-3)", () => {
+    const md = insertion({ source: "datagov", id: "r1", title: "T", snapshot: "Data/datagov/r1/2026-11-14.csv", retrieved: "2026-11-14", view: "table", organization: "a\n---", updated: null, dataset: "slug\n```\n<b>Z1Z</b>" });
+    expect(md).not.toMatch(/^```\n<b>/m);
+    expect(md.split("\n").filter((l) => l.startsWith("```")).length).toBe(2);
+    expect(parseBlock(md.split("```dataset\n")[1].split("\n```")[0])!.dataset).toBe("slug\n```\n<b>Z1Z</b>");
+  });
+
+  it("a block reads only the file it wrote: its own folder, and its hash (RR20-4)", async () => {
+    expect(parseBlock("source: datagov\nid: r1\nsnapshot: Private/diary.md\n")).toBe(null);
+    expect(parseBlock("source: datagov\nid: r1\nsnapshot: Data/datagov/other/2026-11-14.csv\n")).toBe(null);
+    expect(parseBlock("source: cbs\nid: r1\nsnapshot: Data/datagov/r1/2026-11-14.csv\n")).toBe(null);
+    const store = memory();
+    const r = await importSeries("120010", { fetch: services() as unknown as typeof fetch, store, retrieved: "2026-11-14" });
+    expect(r.block.sha256).toMatch(/^[0-9a-f]{64}$/);
+    const back = parseBlock(r.markdown.split("```dataset\n")[1].split("\n```")[0])!;
+    expect(await verifiedSnapshot(back, store.read)).toBe(store.files.get(r.block.snapshot));
+    store.files.set(r.block.snapshot, "edited,elsewhere\n");
+    expect(await verifiedSnapshot(back, store.read)).toBe(null);
+    expect(await verifiedSnapshot({ ...back, sha256: null }, store.read)).toBe(null);
   });
 
   it("CSV round-trips quotes, commas and new lines", () => {
