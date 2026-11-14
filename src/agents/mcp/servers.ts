@@ -32,21 +32,29 @@ export interface McpServerConfig {
   tools: Record<string, ToolPermission>;
   /** OAuth issuer the credentials were issued by (oauth.ts keys them by it). */
   issuer?: string;
+  /** stdio only: the user says this program makes no network requests. Otherwise it counts as remote (airplane mode, local-only). */
+  offline?: boolean;
+  /** stdio only: the folder the command runs in (never the app's). */
+  cwd?: string;
+  /** Give the model the server's own tool descriptions (cleaned, capped). Off: names and parameters only. */
+  trustDescriptions?: boolean;
 }
 
 /** Suggested servers: off by default; the user adds one, then enables it. */
 export const SUGGESTED_SERVERS: readonly Omit<McpServerConfig, "enabled" | "tools">[] = [
   {
+    // It calls the Knesset's API: remote (blocked in airplane mode). Set `cwd` to your Knessy checkout.
     id: "knesset",
     label: "Knesset (Knessy — bills, votes, committee protocols; MIT)",
     transport: "stdio",
     command: "python3",
-    args: ["-m", "mcp_server.server"],
+    args: ["-I", "-m", "mcp_server.server"],
     defaultPermission: "ask",
   },
   { id: "data-gov-il", label: "data.gov.il (Israeli government open data)", transport: "http", url: "", defaultPermission: "ask" },
   { id: "zotero", label: "Zotero (your library, on this computer)", transport: "http", url: "http://127.0.0.1:23119/mcp", defaultPermission: "ask" },
-  { id: "files", label: "Your files (the reference filesystem server)", transport: "stdio", command: "npx", args: ["-y", "@modelcontextprotocol/server-filesystem"], defaultPermission: "ask" },
+  // Installed by the user (`npm i -g @modelcontextprotocol/server-filesystem@<version>`): Lumen never downloads and runs a package.
+  { id: "files", label: "Your files (the reference filesystem server)", transport: "stdio", command: "mcp-server-filesystem", args: [], defaultPermission: "ask" },
 ];
 
 export const STORE_KEY = "lumen.mcp.servers";
@@ -110,6 +118,8 @@ export interface ReachContext {
 export function blockedReason(server: McpServerConfig, reach: "local" | "remote", ctx: ReachContext): string | null {
   if (!server.enabled) return "off";
   if (server.transport === "stdio" && !ctx.desktop) return "stdio servers run only in the desktop app";
+  // A local program may itself reach the network: it is remote unless the user marked it offline (review 21, C3).
+  if (server.transport === "stdio" && !server.offline) reach = "remote";
   if (reach === "remote" && ctx.airplane) return "airplane mode: remote servers are blocked";
   if (reach === "remote" && ctx.localOnly) return "the AI policy is local-only: remote servers are blocked";
   return null;

@@ -8,8 +8,13 @@
  *   • RFC 9207: a present `iss` in the authorization response MUST equal
  *     the issuer we recorded before the code is redeemed; when the server's
  *     metadata says it sends `iss`, a response without it is refused.
- *   • Credentials are keyed by the issuer and never reused with another
- *     authorization server.
+ *   • RFC 8707: every request names the MCP server it is for (`resource`),
+ *     so a token is bound to that server; credentials are keyed by
+ *     (issuer, resource) and never handed to another server, even one that
+ *     uses the same authorization server (review 21, C4).
+ *   • The authorization server's metadata must advertise PKCE S256 (the MCP
+ *     authorization spec), and its issuer must be the origin it was fetched
+ *     from (RFC 8414 §3.3).
  */
 export const CLIENT_ID = "https://lumen-md.vercel.app/oauth/client-metadata.json";
 
@@ -27,6 +32,8 @@ export interface PendingAuthorization {
   state: string;
   verifier: string;
   redirectUri: string;
+  /** The MCP server the token is for (sent again as `resource` with the code). */
+  resource: string;
 }
 
 const b64url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -41,9 +48,24 @@ export async function pkceChallenge(verifier: string): Promise<string> {
   return b64url(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))));
 }
 
-/** The authorization URL, and what to keep until the redirect comes back. */
-export async function authorizationRequest(meta: AuthServerMetadata, redirectUri: string, scope?: string): Promise<{ url: string; pending: PendingAuthorization }> {
-  if (meta.code_challenge_methods_supported && !meta.code_challenge_methods_supported.includes("S256")) throw new Error("the authorization server does not support PKCE S256");
+/** Refuse metadata that does not advertise S256 or whose issuer is not where it was fetched (RFC 8414 §3.3). */
+export function checkAuthServerMetadata(meta: AuthServerMetadata, expectedIssuer: string): void {
+  if (!meta.code_challenge_methods_supported?.includes("S256")) throw new Error("the authorization server does not advertise PKCE S256: refused");
+  if (meta.issuer !== expectedIssuer) throw new Error(`the authorization server's metadata names ${meta.issuer}, not ${expectedIssuer}: refused`);
+}
+
+/** The canonical URI of an MCP server, for `resource` (RFC 8707): scheme and host lower-case, no fragment. */
+export function canonicalResource(serverUrl: string): string {
+  const u = new URL(serverUrl);
+  u.hash = "";
+  return u.toString().replace(/\/$/, "");
+}
+
+/** The authorization URL, and what to keep until the redirect comes back. `resource`: the MCP server's URL. */
+export async function authorizationRequest(meta: AuthServerMetadata, redirectUri: string, opts: { resource: string; scope?: string }): Promise<{ url: string; pending: PendingAuthorization }> {
+  if (!meta.code_challenge_methods_supported?.includes("S256")) throw new Error("the authorization server does not advertise PKCE S256: refused");
+  if (!opts?.resource) throw new Error("an authorization request must name the MCP server it is for (resource, RFC 8707)");
+  const resource = canonicalResource(opts.resource);
   const verifier = randomToken(48);
   const state = randomToken(16);
   const u = new URL(meta.authorization_endpoint);
@@ -53,8 +75,9 @@ export async function authorizationRequest(meta: AuthServerMetadata, redirectUri
   u.searchParams.set("state", state);
   u.searchParams.set("code_challenge", await pkceChallenge(verifier));
   u.searchParams.set("code_challenge_method", "S256");
-  if (scope) u.searchParams.set("scope", scope);
-  return { url: u.toString(), pending: { issuer: meta.issuer, state, verifier, redirectUri } };
+  u.searchParams.set("resource", resource);
+  if (opts.scope) u.searchParams.set("scope", opts.scope);
+  return { url: u.toString(), pending: { issuer: meta.issuer, state, verifier, redirectUri, resource } };
 }
 
 /** Check the redirect's parameters before redeeming the code (state, RFC 9207 `iss`). Returns the code. */
@@ -71,23 +94,32 @@ export function checkAuthorizationResponse(params: URLSearchParams, pending: Pen
 
 export interface StoredCredential {
   issuer: string;
+  /** The MCP server the token was issued for (RFC 8707). */
+  resource: string;
   accessToken: string;
   refreshToken?: string;
   expiresAt?: number;
 }
 
-/** Credentials keyed by issuer: a server that moves to another authorization server needs a new sign-in. */
+/** Credentials keyed by (issuer, resource): a token for one server never goes to another. */
 export class CredentialStore {
-  private readonly byIssuer = new Map<string, StoredCredential>();
+  private readonly byKey = new Map<string, StoredCredential>();
+  private key(issuer: string, resource: string): string {
+    return JSON.stringify([issuer, canonicalResource(resource)]);
+  }
   set(c: StoredCredential): void {
-    this.byIssuer.set(c.issuer, c);
+    if (!c.resource) throw new Error("a credential must name its resource");
+    this.byKey.set(this.key(c.issuer, c.resource), c);
   }
-  get(issuer: string): StoredCredential | null {
-    return this.byIssuer.get(issuer) ?? null;
+  get(issuer: string, resource: string): StoredCredential | null {
+    try {
+      return this.byKey.get(this.key(issuer, resource)) ?? null;
+    } catch {
+      return null;
+    }
   }
-  /** The token for a server, only when the server still names the issuer it was issued by. */
-  tokenFor(serverIssuer: string | undefined, currentIssuer: string): string | null {
-    if (!serverIssuer || serverIssuer !== currentIssuer) return null;
-    return this.byIssuer.get(currentIssuer)?.accessToken ?? null;
+  /** The token for this server from this issuer, or null (another server, another issuer, or none). */
+  tokenFor(issuer: string, resource: string): string | null {
+    return this.get(issuer, resource)?.accessToken ?? null;
   }
 }

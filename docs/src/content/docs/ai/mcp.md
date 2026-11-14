@@ -156,7 +156,8 @@ your files. Nothing is connected until you add a server and turn it on.
   for tools the server marks read-only), *ask* (you approve each call, the
   default) or *block* (never offered to the model).
 - **Airplane mode and local-only AI:** every remote server is blocked, and no
-  connection is made. Each remote call is in the privacy ledger.
+  connection is made. A program on this computer counts as remote too, since it
+  may reach the network itself, unless you mark it *offline*. Each remote call is in the privacy ledger.
 - **Injection guard:** what a server returns is outside content. It is cleaned
   and marked before the model sees it, and any change or network call the
   agent then tries needs your approval.

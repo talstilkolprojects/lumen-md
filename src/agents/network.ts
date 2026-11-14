@@ -38,6 +38,16 @@ export interface NetworkBinding {
  */
 export async function describeNetworkCall(tool: AgentTool, call: ToolCall): Promise<NetworkConsentRequest & { url: string; bound: NetworkBinding }> {
   const { researchEndpoint, getResearchSettings } = await import("../research/client");
+  // A tool with its own server (an MCP server): the prompt, the ledger and the bound fetch name that server (review 21, C2).
+  if (tool.networkTarget) {
+    let host = "";
+    try {
+      host = new URL(tool.networkTarget).hostname;
+    } catch {
+      throw new ToolError("failed", `"${tool.name}" has no valid server address`);
+    }
+    return { tool: tool.name, host, sends: "the tool's arguments", what: "tool-args", args: call.args, url: tool.networkTarget, bound: { endpoint: tool.networkTarget, settings: getResearchSettings() } };
+  }
   const endpoint = researchEndpoint();
   if (!endpoint) throw new ToolError("failed", "The research service isn't configured (VITE_RESEARCH_ENDPOINT or a local SearXNG in AI settings), so there is no way to reach the web");
   const hostOf = (u: string) => {

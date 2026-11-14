@@ -180,6 +180,8 @@ export function httpTransport(url: string, fetchImpl: () => typeof fetch, header
           ...headers(),
         },
         body: JSON.stringify(msg),
+        // Never follow a redirect: it would carry the tool's arguments to another address (review 21, C3).
+        redirect: "error",
       });
       const sessionId = res.headers.get("Mcp-Session-Id") ?? undefined;
       if (msg.id === undefined) return { message: null, sessionId };
