@@ -129,6 +129,7 @@ export function openTypographyDialog(target: TypographyTarget): void {
     try {
       root.unmount();
     } catch {
+      // why: the dialog root is already unmounted
       // double unmount is harmless
     }
     host.remove();

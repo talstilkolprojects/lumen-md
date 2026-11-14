@@ -234,6 +234,7 @@ export function loadPlugin(opts: LoadOptions): Promise<PluginInstance> {
           try {
             capability = `network:${new URL(String((m.args as unknown[])[0])).origin}`;
           } catch {
+            // why: not a URL: the capability stays "network", which asks for every origin
             /* not a URL: the host refuses it below */
           }
         }

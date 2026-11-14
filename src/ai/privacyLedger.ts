@@ -442,6 +442,7 @@ export function recordProcessCall(url: string, reason: string, bytesOut: number,
   try {
     host = `${new URL(url).protocol}//${new URL(url).hostname}`;
   } catch {
+    // why: not a URL: the entry keeps the raw text as its host
     /* keep the text */
   }
   const id = record({ host, method: "STDIO", bytesOut, bytesIn: null, category: "network", reason, policy: getAiPolicy(), decision: "allowed", ...(consent ? { consent: true } : {}) });
@@ -639,6 +640,7 @@ export function recordStyleRequest(url: string): LedgerEntry {
   try {
     host = new URL(url).hostname.toLowerCase();
   } catch {
+    // why: not a URL: the host stays "?" and the rule falls through to the unknown case
     /* keep "?" */
   }
   const id = record({ host, method: "GET", bytesOut: 0, bytesIn: null, category: "third-party", reason: "A stylesheet (theme or CSS snippet) loaded it", policy: getAiPolicy(), decision: "allowed" });

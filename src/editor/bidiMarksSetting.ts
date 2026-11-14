@@ -27,6 +27,7 @@ export function setBidiMarksShown(next: boolean): void {
     if (next) localStorage.setItem(KEY, "1");
     else localStorage.removeItem(KEY);
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* private mode: on for this session only */
   }
   for (const l of listeners) l(next);

@@ -32,6 +32,7 @@ function remember(key: string): void {
   try {
     localStorage.setItem(RECENT, JSON.stringify([key, ...recentKeys().filter((k) => k !== key)].slice(0, 20)));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* private mode: no recent list */
   }
 }

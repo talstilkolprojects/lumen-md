@@ -94,6 +94,7 @@ export function setFlag(id: string, value: boolean | null, storage: Pick<Storage
     if (Object.keys(next).length) storage?.setItem(STORAGE_KEY, JSON.stringify(next));
     else storage?.removeItem(STORAGE_KEY);
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* storage blocked: the choice lasts for this page only */
   }
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(FLAGS_CHANGED, { detail: { id } }));
@@ -103,6 +104,7 @@ export function resetFlags(storage: Pick<Storage, "removeItem"> | null = safeSto
   try {
     storage?.removeItem(STORAGE_KEY);
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* nothing to reset */
   }
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(FLAGS_CHANGED, { detail: { id: null } }));

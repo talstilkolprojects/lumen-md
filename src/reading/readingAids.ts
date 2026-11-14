@@ -95,6 +95,7 @@ export function saveAids(a: ReadingAids): void {
   try {
     localStorage.setItem(AIDS_KEY, JSON.stringify(normalizeAids(a)));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* private mode: the aids last for this visit */
   }
 }

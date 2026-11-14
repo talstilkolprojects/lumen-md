@@ -16,6 +16,7 @@ afterEach(() => {
   try {
     localStorage.removeItem(PERSIST_KEY);
   } catch {
+    // why: no localStorage in this environment: nothing to clear
     /* no storage */
   }
 });

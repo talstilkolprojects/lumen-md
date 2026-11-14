@@ -58,6 +58,7 @@ export function linkStats(vault: Pick<ConvertedVault, "notes" | "attachments">):
         try {
           d = decodeURIComponent(d);
         } catch {
+          // why: not percent-encoded: the link target is used as written
           /* as written */
         }
         ok = !d || exact.has(key(resolveRel(dirOf(path), d)));

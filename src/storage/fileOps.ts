@@ -85,6 +85,7 @@ async function relink(from: string, to: string, folder: boolean | undefined, mov
   try {
     if (localStorage.getItem("lumen-reading") !== null) (await import("../reading/settings")).moveNoteReading(from, to);
   } catch {
+    // why: storage is blocked: there are no per-note reading options to move
     /* no storage: nothing to move */
   }
   window.dispatchEvent(new Event("lumen-workspace-changed"));

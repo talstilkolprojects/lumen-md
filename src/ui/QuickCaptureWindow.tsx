@@ -38,6 +38,7 @@ export function QuickCaptureWindow() {
       try {
         existing = await ws.readWorkspaceFile(INBOX_PATH);
       } catch {
+        // why: no inbox note yet: the capture starts a new one
         /* a new inbox */
       }
       const next = await formatCapture(text, existing);

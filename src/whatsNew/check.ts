@@ -33,6 +33,7 @@ export function decide(version: string, s: Storage, hasNotes: boolean): "show" |
   try {
     s.setItem(SEEN_KEY, version);
   } catch {
+    // why: storage is blocked or full (private mode, quota): the notes show again next launch
     /* private mode: shown again next time is better than never */
   }
   return !fresh && hasNotes ? "show" : "skip";

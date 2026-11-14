@@ -208,6 +208,7 @@ function frontmatter(md: string): Record<string, string> {
     try {
       v = v.startsWith('"') ? (JSON.parse(v) as string) : v;
     } catch {
+      // why: not a JSON string literal: the raw value is the expected one
       /* raw */
     }
     out[m[1]] = v;

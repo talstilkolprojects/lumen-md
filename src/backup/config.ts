@@ -32,6 +32,7 @@ export async function saveBackupConfig(c: BackupConfig | null): Promise<void> {
     if (c) localStorage.setItem(ENABLED_KEY, "1");
     else localStorage.removeItem(ENABLED_KEY);
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* the scheduler then starts when the panel is opened */
   }
 }

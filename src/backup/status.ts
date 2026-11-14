@@ -37,6 +37,7 @@ export function setBackupStatus(patch: Partial<BackupStatus>): BackupStatus {
   try {
     localStorage.setItem(STATUS_KEY, JSON.stringify({ ...status, running: false }));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* private mode: the state lives for this tab */
   }
   for (const l of [...listeners]) l(status);

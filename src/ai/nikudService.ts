@@ -104,6 +104,7 @@ function setQualityPref(v: string): void {
   try {
     localStorage.setItem(NIKUD_QUALITY_KEY, v);
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* storage blocked: asked again next time */
   }
 }

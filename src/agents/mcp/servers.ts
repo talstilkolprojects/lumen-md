@@ -81,6 +81,7 @@ export function saveServers(list: McpServerConfig[], store: Store | null = ls())
   try {
     store?.setItem(STORE_KEY, JSON.stringify(list));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* storage blocked: the change lasts for this session only */
   }
 }

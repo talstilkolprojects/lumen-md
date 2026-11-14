@@ -105,6 +105,7 @@ export abstract class E2eeSyncCore {
     try {
       this.o.onEvent(e);
     } catch {
+      // why: a listener that throws must not break the sync round that reports to it
       /* the activity panel must never break a round */
     }
   }

@@ -138,6 +138,7 @@ export function saveUndo(u: UndoRecord): void {
   try {
     localStorage.setItem(UNDO_KEY, JSON.stringify(u));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* private mode: undo still works while the wizard is open */
   }
 }
@@ -200,6 +201,7 @@ function clearUndo(u: UndoRecord): void {
     const cur = lastImport();
     if (cur && cur.folder === u.folder && cur.at === u.at) localStorage.removeItem(UNDO_KEY);
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* nothing stored */
   }
 }

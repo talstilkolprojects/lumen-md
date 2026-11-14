@@ -254,6 +254,7 @@ export function saveTypographySettings(s: TypographySettings): void {
   try {
     localStorage.setItem(KEY, JSON.stringify(s));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     // Private mode: the settings last for this session only.
   }
   listeners.forEach((fn) => fn(s));

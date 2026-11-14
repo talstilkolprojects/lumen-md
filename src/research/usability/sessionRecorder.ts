@@ -144,6 +144,7 @@ function save(s: Session, storage: Store | null): void {
   try {
     storage?.setItem(STORE_KEY, JSON.stringify(s));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* storage full or blocked: the session continues in memory */
   }
 }
@@ -152,6 +153,7 @@ export function deleteSession(storage: Store | null = safeStorage()): void {
   try {
     storage?.removeItem(STORE_KEY);
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* nothing stored */
   }
 }

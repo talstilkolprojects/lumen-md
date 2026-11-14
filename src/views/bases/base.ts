@@ -284,6 +284,7 @@ export function basesFileFromText(path: string, text: string | null, meta: { siz
         const parsed: unknown = YAML.parse(m[1]);
         if (isRecord(parsed)) fm = parsed;
       } catch {
+        // why: unreadable frontmatter: the note has no properties, as Obsidian shows it
         // A broken frontmatter is a note without properties, as in Obsidian.
       }
       body = text.slice(m[0].length);

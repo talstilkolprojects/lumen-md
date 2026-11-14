@@ -56,6 +56,7 @@ export function tokenRequest<T>(serverUrl: string, payload: Record<string, unkno
       try {
         ws.close();
       } catch {
+        // why: the probe socket is already closed
         /* already closed */
       }
       fn();
@@ -161,6 +162,7 @@ export function markServerOnly(room: string): void {
     list.add(room);
     localStorage.setItem(SERVER_ONLY_KEY, JSON.stringify([...list]));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* the share link itself also makes its sessions server-only */
   }
 }
@@ -217,6 +219,7 @@ function saveShared(list: SharedWithMe[]): void {
   try {
     localStorage.setItem(SHARED_KEY, JSON.stringify(list.slice(0, 200)));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* a convenience list */
   }
 }
@@ -254,6 +257,7 @@ export function collabServerUrl(): string | null {
     const stored = localStorage.getItem("lumen.collab.ws");
     if (stored) return stored;
   } catch {
+    // why: storage is blocked: the default server is used
     /* no storage */
   }
   const env = (import.meta as ImportMeta & { env?: { VITE_YJS_WEBSOCKET_URL?: string } }).env?.VITE_YJS_WEBSOCKET_URL;

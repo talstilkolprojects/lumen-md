@@ -74,6 +74,7 @@ export function convertBear(files: Map<string, Uint8Array>): ConvertedVault {
         const j = JSON.parse(dec.decode(infoBytes)) as Record<string, unknown>;
         info = (j["net.shinyfrog.bear"] as BearInfo | undefined) ?? {};
       } catch {
+        // why: no readable info.json: the note is imported without Bear's metadata
         /* dates only — the note still imports */
       }
     }
@@ -100,6 +101,7 @@ export function convertBear(files: Map<string, Uint8Array>): ConvertedVault {
       try {
         raw = decodeURIComponent(raw);
       } catch {
+        // why: not percent-encoded: the link target is used as written
         /* keep as written */
       }
       const target = moved.get(raw);

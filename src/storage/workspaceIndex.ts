@@ -339,7 +339,9 @@ function scheduleSnapshot(): void {
     snapshotTimer = null;
     scheduleIdle(() => {
       if (gen !== snapshotGen) return;
-      void saveSnapshotNow().catch(() => {});
+      void saveSnapshotNow().catch(() => {
+        // why: a snapshot save is best effort; the next idle save or the next open tries again
+      });
     });
   }, SNAPSHOT_DELAY_MS);
 }

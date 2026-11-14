@@ -122,6 +122,7 @@ export async function initDesktopShell(h: ShellHooks): Promise<() => void> {
         try {
           localStorage.removeItem(storeKeyFor(label));
         } catch {
+          // why: storage is blocked or full (private mode, quota): the setting holds for this session only
           /* storage blocked */
         }
       }),

@@ -58,6 +58,7 @@ export function resolveHref(base: string, href: string): { path: string; fragmen
   try {
     decoded = decodeURIComponent(raw);
   } catch {
+    // why: not percent-encoded: the path is used as written
     /* keep as written */
   }
   return { path: raw ? normalizeZipPath(dirOf(base) + decoded) : normalizeZipPath(base), fragment };

@@ -195,6 +195,7 @@ export function httpTransport(url: string, fetchImpl: () => typeof fetch, header
             const m = JSON.parse(line.slice(5).trim()) as JsonRpcMessage;
             if (m.id === msg.id) message = m;
           } catch {
+            // why: a server-sent event line that is not JSON-RPC is ignored; the next line may hold the answer
             /* a keep-alive or a partial line */
           }
         }

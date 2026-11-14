@@ -108,6 +108,7 @@ async function writeReport() {
     }
     fs.writeFileSync(`${dir}/report.md`, lines.join("\n"));
   } catch {
+    // why: the report file is an optional extra; the assertions above decide the test
     // No file system (browser runner): the console summary is enough.
   }
 }

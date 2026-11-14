@@ -122,6 +122,7 @@ function dataChannel(pc: RTCPeerConnection, dc: RTCDataChannel, counters: { out:
       dc.close();
       pc.close();
     } catch {
+      // why: the channel or the connection is already closed
       /* already closed */
     }
   };

@@ -126,6 +126,7 @@ export async function collectDiagnostics(): Promise<Diagnostics> {
     }
     persisted = (await navigator.storage?.persisted?.()) ?? null;
   } catch {
+    // why: the storage estimate is not available here: the report says unknown
     /* unknown */
   }
   const desktop = "__TAURI_INTERNALS__" in window;

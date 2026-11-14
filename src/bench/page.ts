@@ -76,7 +76,9 @@ async function run(id: string, payload: { shared?: Record<string, unknown>; item
   } finally {
     clearInterval(timer);
     sample();
-    await engine?.dispose?.().catch(() => {});
+    await engine?.dispose?.().catch(() => {
+      // why: the engine may already be disposed; the benchmark's numbers are taken
+    });
   }
   return out;
 }

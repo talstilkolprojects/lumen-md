@@ -132,6 +132,7 @@ function makeHandle(view: EditorView, blockPos: number): HTMLElement {
     try {
       el.setPointerCapture(e.pointerId);
     } catch {
+      // why: pointer capture is not available for this pointer; the drag still works without it
       /* no capture (an unknown pointer): the window listeners below still see it */
     }
     view.dispatch(view.state.tr.setMeta(HANDLE_KEY, { fromPos: blockPos, hoverPos: null }));

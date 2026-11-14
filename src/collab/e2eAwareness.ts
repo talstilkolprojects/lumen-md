@@ -126,6 +126,7 @@ export function wireE2EAwareness(plain: AwarenessLike, transport: AwarenessLike,
   let chain: Promise<void> = Promise.resolve();
   const enqueue = (job: () => Promise<void>) => {
     chain = chain.then(job, job).catch(() => {
+      // why: one failed awareness job must not block the queue; the next update carries the state again
       /* each job handles its own failure */
     });
   };

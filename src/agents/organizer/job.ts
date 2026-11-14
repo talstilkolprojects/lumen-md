@@ -124,6 +124,7 @@ export function startOrganizer(source: OrganizerSource, opts: AnalyzeOptions & {
           try {
             notes.push({ path: p, text: await source.read(p) });
           } catch {
+            // why: a note that cannot be read is left out of this run; the others are organised
             /* unreadable: skipped */
           }
         }

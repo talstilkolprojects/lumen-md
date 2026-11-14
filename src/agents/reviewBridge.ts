@@ -130,7 +130,9 @@ export function startAgentReview(opts: { editorRef: RefObject<EditorHandle | nul
   void import("./mcpInbox")
     .then((m) => m.startMcpInbox())
     .then((i) => (stopped ? i.stop() : (inbox = i)))
-    .catch(() => {});
+    .catch(() => {
+      // why: the MCP inbox is optional: without it the review panel works as before
+    });
   return () => {
     stopped = true;
     inbox?.stop();

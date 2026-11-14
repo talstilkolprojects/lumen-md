@@ -139,6 +139,7 @@ afterAll(async () => {
     ];
     fs.writeFileSync(`${dir}/report.md`, md.join("\n"));
   } catch {
+    // why: the report file is an optional extra; the assertions above decide the test
     // No file system: the assertions carry the result.
   }
 });
@@ -250,7 +251,9 @@ describe("WYSIWYG (Milkdown) round trip", () => {
           row.detail = `threw: ${e instanceof Error ? e.message : String(e)}`;
         } finally {
           if (opened) {
-            await opened.ed.destroy(true).catch(() => {});
+            await opened.ed.destroy(true).catch(() => {
+              // why: teardown of an editor that may already be gone; its failure is recorded in the row
+            });
             opened.host.remove();
           }
         }

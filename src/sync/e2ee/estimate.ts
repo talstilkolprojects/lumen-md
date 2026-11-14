@@ -41,6 +41,7 @@ function saveSpeed(s: Speed): void {
   try {
     localStorage.setItem(SPEED_KEY, JSON.stringify(s));
   } catch {
+    // why: storage is blocked or full (private mode, quota): the setting holds for this session only
     /* only a convenience */
   }
 }
