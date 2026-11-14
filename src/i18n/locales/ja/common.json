@@ -2094,6 +2094,8 @@
   "student.start": "録音を開始",
   "student.stop": "停止して処理",
   "student.summary": "要約",
+  "student.summary.checked": "検証済みの要約：各文は講義からそのまま引用されています（ローカルモデルが選びました）。",
+  "student.summary.extractive": "抽出型の要約：マークした文と中心的な文です（ローカルモデルがないか、その要約が検証を通りませんでした）。",
   "student.title": "講義を録音",
   "student.transcript": "文字起こし",
   "student.untitled": "講義",

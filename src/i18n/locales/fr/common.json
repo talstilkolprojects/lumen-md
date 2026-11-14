@@ -2094,6 +2094,8 @@
   "student.start": "Démarrer l’enregistrement",
   "student.stop": "Arrêter et traiter",
   "student.summary": "Résumé",
+  "student.summary.checked": "Résumé vérifié : chaque phrase est copiée du cours (un modèle local les a choisies).",
+  "student.summary.extractive": "Résumé extractif : les phrases marquées et les plus centrales (pas de modèle local, ou son résumé n’a pas passé la vérification).",
   "student.title": "Enregistrer un cours",
   "student.transcript": "Transcription",
   "student.untitled": "Cours",

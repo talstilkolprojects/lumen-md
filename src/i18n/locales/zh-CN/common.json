@@ -2094,6 +2094,8 @@
   "student.start": "开始录音",
   "student.stop": "停止并处理",
   "student.summary": "摘要",
+  "student.summary.checked": "已核对的摘要：每句话都逐字取自讲座（由本地模型挑选）。",
+  "student.summary.extractive": "抽取式摘要：标记的和最核心的句子（没有本地模型，或其摘要未通过核对）。",
   "student.title": "录制讲座",
   "student.transcript": "转写",
   "student.untitled": "讲座",
