@@ -51,6 +51,12 @@
  * fails unless a `/* hygiene-allow: <justification> *\/` comment sits on its
  * line or the line above.
  *
+ * The taken domain (plan W4.3, audit W10.C30): the domain the project never
+ * names must appear nowhere in the tree — index.html, public/, docs/,
+ * README and every other text file (scripts/lib/takenDomain.mjs), so an
+ * old mention on a branch fails as well as a new one. The PR gate checks
+ * only the lines a PR adds.
+ *
  * Usage: node scripts/check-code-hygiene.mjs   (or `npm run hygiene`)
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -59,6 +65,7 @@ import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import postcss from "postcss";
 import { auditSkips, MAX_E2E_SKIPS } from "./lib/skipAudit.mjs";
+import { domainInTree } from "./lib/takenDomain.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const srcDir = join(root, "src");
@@ -362,6 +369,11 @@ export function checkFiles(files, { onlyDirectFs = false } = {}) {
   return { violations, stale };
 }
 
+/** Every mention of the taken domain in the tree under `dir` (default: this checkout) → violations. */
+export function takenDomainViolations(dir = root) {
+  return domainInTree(dir).map((h) => ({ file: h.file, line: h.line, rule: "taken-domain", text: "names the domain the project never writes: use lumen-md.vercel.app" }));
+}
+
 /** Production files under src/ (so a test can run the check on the real tree). */
 export function productionFiles() {
   return walk(srcDir);
@@ -376,6 +388,7 @@ function main() {
   }
   const skips = auditSkips(root);
   violations.push(...skips.violations);
+  violations.push(...takenDomainViolations());
   for (const v of violations) console.error(`${v.file}:${v.line}  [${v.rule}]  ${v.text}`);
   for (const k of stale) {
     console.error(`${k}  [direct-fs-allowlist]  listed in DIRECT_FS_ALLOWLIST but makes no direct file-system call: remove the entry`);
@@ -398,7 +411,8 @@ function main() {
           "read import.meta.env one name at a time (src/lib/publicEnv.ts) [env-whole]; " +
           "or add `// hygiene-allow: <reason>`. " +
           "Give a skipped test `// skip-reason: <why> | task: <id> | until: YYYY-MM-DD` [skip-reason], or fix it. " +
-          "Read and write vault files through src/storage/workspace.ts / src/storage/vault, not file-system handles.",
+          "Read and write vault files through src/storage/workspace.ts / src/storage/vault, not file-system handles. " +
+          "Never name the taken domain anywhere in the tree [taken-domain].",
       );
     if (cssTotal > 0)
       console.error(
@@ -412,7 +426,8 @@ function main() {
       `no direct file-system calls outside the vault layer and ${Object.keys(DIRECT_FS_ALLOWLIST).length} allowlisted files); ` +
       `${sheets.length} stylesheets use logical properties in .prose-lumen / .cm-* rules; ` +
       `${e2eFiles.length} e2e files without waitForTimeout; ` +
-      `${skips.sites.length} skipped tests each with a reason, task and date (${skips.e2eCount} of at most ${MAX_E2E_SKIPS} in e2e).`,
+      `${skips.sites.length} skipped tests each with a reason, task and date (${skips.e2eCount} of at most ${MAX_E2E_SKIPS} in e2e); ` +
+      "the taken domain appears nowhere in the tree.",
   );
 }
 
