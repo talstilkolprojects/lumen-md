@@ -81,6 +81,7 @@ export function AiSettingsPanel({ open, onClose }: Props) {
   const [ollamaUrl, setOllamaUrl] = useState("");
   // The address the runtime uses; a download waits until an edit is saved.
   const [savedOllamaUrl, setSavedOllamaUrl] = useState("");
+  const [ollamaUrlError, setOllamaUrlError] = useState("");
   const [ollamaModel, setOllamaModel] = useState("");
   const [installed, setInstalled] = useState<string[] | null>(null);
   const [hw, setHw] = useState<Hardware | null>(null);
@@ -218,6 +219,16 @@ export function AiSettingsPanel({ open, onClose }: Props) {
   };
 
   const saveOllama = async () => {
+    // An address the CSP blocks (or not http(s)) is refused, as saveEndpoints
+    // does for research: stored, it would make getBaseUrl() fall back to
+    // localhost while this field still showed the saved host (2.38).
+    const { usableOllamaUrl, getBaseUrl } = await import("../ai/ollamaProvider");
+    const usable = usableOllamaUrl(ollamaUrl);
+    if (usable === null) {
+      setOllamaUrlError(t("research.endpointInvalid", { url: ollamaUrl.trim() }));
+      return;
+    }
+    setOllamaUrlError("");
     const lic = ollamaModel.trim() && ollamaModel.trim() !== ls("lumen.ollama.model") ? ollamaLicenceNotice(ollamaModel.trim()) : null;
     if (lic) {
       const { uiConfirm } = await import("./PromptDialog");
@@ -228,9 +239,10 @@ export function AiSettingsPanel({ open, onClose }: Props) {
       });
       if (!ok) return;
     }
-    setLs("lumen.ollama.baseUrl", ollamaUrl);
-    const { getBaseUrl } = await import("../ai/ollamaProvider");
-    setSavedOllamaUrl(ollamaUrl.trim() || getBaseUrl());
+    setLs("lumen.ollama.baseUrl", usable);
+    // The panel shows the address requests will actually use.
+    setOllamaUrl(getBaseUrl());
+    setSavedOllamaUrl(getBaseUrl());
     setLs("lumen.ollama.model", ollamaModel);
     flash();
     void refreshStatus();
@@ -421,6 +433,11 @@ export function AiSettingsPanel({ open, onClose }: Props) {
             <div style={muted}>
               {installed === null ? t("ai.settings.ollama.unreachable") : installed.length ? t("ai.settings.ollama.installed", { models: installed.join(", ") }) : t("ai.settings.ollama.none")}
             </div>
+            {ollamaUrlError && (
+              <div role="alert" data-testid="ollama-url-error" style={{ fontSize: 12, color: "hsl(var(--danger, 0 72% 51%))" }}>
+                {ollamaUrlError}
+              </div>
+            )}
             <div style={row}>
               <button type="button" style={primary} onClick={() => void saveOllama()}>{t("ai.settings.save")}</button>
             </div>
