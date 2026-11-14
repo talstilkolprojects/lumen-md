@@ -1,0 +1,123 @@
+# Sensitive paths (plan W4.28). Every path listed here is "sensitive":
+#   - GitHub requests a review from its owners on every pull request that touches it;
+#   - `npm run pr:check -- --pr <n>` fails until a person has reviewed the diff and
+#     added the `human-reviewed` label after the last commit (scripts/lib/humanReview.mjs).
+# Only sensitive paths go in this file: anything listed here needs a human review.
+# When a second maintainer joins, add them next to @talstilkol on each line
+# (docs: contributing/second-maintainer).
+
+# ── Cryptography: end-to-end sync, collaboration, the encrypted vault, secrets ──
+/src/sync/e2ee/                          @talstilkol
+/src/collab/encryption.ts                @talstilkol
+/src/storage/encryption.ts               @talstilkol
+/src/storage/vault/encrypted/            @talstilkol
+/src/lib/cryptoRandom.ts                 @talstilkol
+/src/lib/cryptoStorage.ts                @talstilkol
+/src/lib/secretStore.ts                  @talstilkol
+/src/plugins/signing.ts                  @talstilkol
+/src-tauri/keychain/                     @talstilkol
+/scripts/tauri-signing.mjs               @talstilkol
+/scripts/lib/tauriSigning.mjs            @talstilkol
+
+# ── Vault writes: every path that writes the user's notes to disk ──
+/src/storage/vault/                      @talstilkol
+/src-tauri/vault/                        @talstilkol
+/src-tauri/src/lib.rs                    @talstilkol
+/src-tauri/src/shell.rs                  @talstilkol
+/mobile/android/LumenVaultFolderPlugin.java @talstilkol
+
+# ── Privacy: what may leave the device ──
+/src/ai/privacyLedger.ts                 @talstilkol
+/src/sources/open/gate.ts                @talstilkol
+/src/ai/workerLedger.ts                  @talstilkol
+/src/ai/workerLedgerInstall.ts           @talstilkol
+/src/ai/policy.ts                        @talstilkol
+/src/lib/telemetry.ts                    @talstilkol
+
+# ── CSP, headers and security policy ──
+/src/build/cspEndpoints.ts               @talstilkol
+/src/lib/cspConnect.ts                   @talstilkol
+/scripts/headers.mjs                     @talstilkol
+/public/_headers                         @talstilkol
+/vercel.json                             @talstilkol
+/deploy/                                 @talstilkol
+/netlify.toml                            @talstilkol
+/netlify/                                @talstilkol
+/security/                               @talstilkol
+/SECURITY.md                             @talstilkol
+
+# ── Sanitising untrusted content ──
+/src/lib/markupSanitizer.ts              @talstilkol
+/src/lib/urlSanitizer.ts                 @talstilkol
+/src/renderer/rehypeSanitizeRaw.ts       @talstilkol
+/src/plugins/runtime/capabilities.ts     @talstilkol
+/src/plugins/plantumlPolicy.ts           @talstilkol
+
+# ── Relays, sharing, privacy and redaction (reviews 4 and 6: the receipt gate's sensitive list) ──
+/sync-server/                            @talstilkol
+/edge-workers/                           @talstilkol
+/src/collab/roomProof.ts                 @talstilkol
+/src/collab/roomToken.ts                 @talstilkol
+/src/collab/persistentProvider.ts        @talstilkol
+/src/collab/yjs.ts                       @talstilkol
+/src/privacy/                            @talstilkol
+/src/share/                              @talstilkol
+/src/storage/lockedNote.ts               @talstilkol
+/src/storage/lockedNotesRegistry.ts      @talstilkol
+/src/lib/imageMetadata.ts                @talstilkol
+/src/lib/redaction.ts                    @talstilkol
+/src/lib/redactionTree.ts                @talstilkol
+/src/storage/exportReady.ts              @talstilkol
+/src/sync/publish.ts                     @talstilkol
+/src/ai/dictation/desktopOffload.ts      @talstilkol
+
+# ── Every other door an export leaves by: each must call prepareForExport (review 8, RR8-481-1) ──
+/src/storage/exportDocx.ts               @talstilkol
+/src/storage/exportHtml.ts               @talstilkol
+/src/ui/PrintExport.tsx                  @talstilkol
+/src/commands/domains/export.ts          @talstilkol
+/src/publish/site.ts                     @talstilkol
+/src/cli/publish.ts                      @talstilkol
+/src/cli/convert.ts                      @talstilkol
+
+# ── What the preview parses, which redaction must read the same way (RR8-473-1, -2) ──
+/src/renderer/criticMarkup.ts            @talstilkol
+/src/renderer/pipeline.ts                @talstilkol
+
+# ── Frame sandboxes, and where the frame guard is installed (RR8-451) ──
+/src/plugins/EmbedBlock.tsx              @talstilkol
+/src/plugins/HtmlPreviewBlock.tsx        @talstilkol
+/src/plugins/LiveCssBlock.tsx            @talstilkol
+/src/plugins/PlaygroundBlock.tsx         @talstilkol
+/src/plugins/liveJsSandbox.ts            @talstilkol
+/src/main.tsx                            @talstilkol
+
+# ── Review 11 (RR11-481-1): what redaction, the preview and the frames also depend on ──
+#   An input of every redaction pass (prepareCriticMarkupMapped)
+/src/editor/suggesting.ts                @talstilkol
+#   What a long or embedding note's preview parses
+/src/renderer/blocks.ts                  @talstilkol
+/src/renderer/incrementalPreview.ts      @talstilkol
+/src/renderer/Preview.tsx                @talstilkol
+/src/renderer/embeds.ts                  @talstilkol
+#   Frame sandboxes and sinks
+/src/plugins/sandbox.ts                  @talstilkol
+/src/lib/trustedTypes.ts                 @talstilkol
+/src/playground/runner.ts                @talstilkol
+/src/plugins/liveJsRunner.ts             @talstilkol
+#   CSPs outside /deploy/ and public/_headers (index.html's frame-src must equal EMBED_ORIGINS)
+/index.html                              @talstilkol
+/playground-runner.html                  @talstilkol
+/livejs-runner.html                      @talstilkol
+
+# ── Native permissions and updates ──
+/src-tauri/capabilities/                 @talstilkol
+/src-tauri/tauri.conf.json               @talstilkol
+/src-tauri/src/updates.rs                @talstilkol
+
+# ── This rule itself ──
+/.github/CODEOWNERS                      @talstilkol
+/scripts/lib/humanReview.mjs             @talstilkol
+/scripts/lib/independentReview.mjs       @talstilkol
+/scripts/lib/prGate.mjs                  @talstilkol
+/scripts/pr-check.mjs                    @talstilkol

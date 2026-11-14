@@ -32,12 +32,17 @@ export interface NoteStorage {
 }
 
 const yaml = (s: string) => JSON.stringify(s);
+/** A remote name on one line (review 20, RR20-3): a line break in a record must not start a new line of the note. */
+const oneLine = (s: string) => s.replace(/[\r\n\u2028\u2029]+/g, " ").trim();
 const fileName = (s: string) =>
   s
     .replace(/[\\/:*?"<>|]/g, "")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 120);
+
+/** The source and rights as a line of the note, not only in the frontmatter, so an export keeps them (RR20-6). */
+const creditLine = (url: string, retrieved: string) => `מקור: [הכנסת](${url}) · נשלף ${retrieved} · סעיף 6 לחוק זכות יוצרים, התשס״ח-2007 (אין זכות יוצרים בחוקים ובדברי הכנסת)`;
 
 export const lawNotePath = (law: Pick<Law, "name">) => `${LAWS_DIR}/${fileName(law.name)}.md`;
 export const billNotePath = (bill: Pick<Bill, "id" | "name">) => `${BILLS_DIR}/${bill.id} ${fileName(bill.name)}.md`;
@@ -62,7 +67,7 @@ export function renderLawNote(law: Law, retrieved: string, text = ""): string {
     "---",
     "",
   ];
-  return [...fm, `# ${law.name}`, "", "## נוסח", "", text.trim(), ""].join("\n");
+  return [...fm, `# ${oneLine(law.name)}`, "", creditLine(recordUrl("KNS_IsraelLaw", law.id), retrieved), "", "## נוסח", "", text.trim(), ""].join("\n");
 }
 
 export function renderBillNote(bill: Bill, retrieved: string): string {
@@ -81,7 +86,9 @@ export function renderBillNote(bill: Bill, retrieved: string): string {
     ...(bill.publicationDate ? [`published: ${bill.publicationDate}`] : []),
     "---",
     "",
-    `# ${bill.name}`,
+    `# ${oneLine(bill.name)}`,
+    "",
+    creditLine(recordUrl("KNS_Bill", bill.id), retrieved),
     "",
     ...(bill.summary ? ["## תקציר", "", bill.summary.trim(), ""] : []),
   ].join("\n");
