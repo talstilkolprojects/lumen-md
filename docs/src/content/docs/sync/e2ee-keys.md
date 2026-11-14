@@ -106,10 +106,16 @@ what it uploads. The banner says so.
   change, Lumen waits for it to finish (at most 10 minutes) instead of
   making its own on top. The 10 minutes count from your first try, so a lost
   device that keeps starting key changes of its own can't hold back its
-  removal: try again after 10 minutes and the removal goes through.
+  removal that way. Once the key change you waited on has finished, the
+  next one is waited on in full again.
+- **A lost device can still block its removal while it has your storage
+  login.** It can rewrite the device list every time you try, so the removal
+  never goes through. Lumen says so from the second try. That's why the
+  steps under *Removing a lost device* start with the storage password.
 - **No pairing code during a key change.** While this device is changing
-  keys, it doesn't make a pairing code: the code would be for the keys being
-  replaced. Make it once the change has finished.
+  keys, in any of its tabs, it doesn't make a pairing code or answer: the
+  code would be for the keys being replaced. Make it once the change has
+  finished.
 - **A new passphrase keeps Argon2id.** A passphrase change keeps the way the
   passphrase is protected, as the vault's signed header says; it never moves
   an Argon2id vault to PBKDF2.
@@ -120,17 +126,23 @@ what it uploads. The banner says so.
 ## Removing a lost device
 
 A device can be enrolled with its own key (an age X25519 key pair), so it
-opens the vault without the passphrase. To remove a lost device, re-key and
-leave it out. It then can't open any manifest written after that, because
-the new epoch was never wrapped for it. If whoever has the device also knows
-the passphrase, change the passphrase in the same re-key. A device can't
+opens the vault without the passphrase. To remove a lost device:
+
+1. **Change the storage password or token first** (WebDAV, S3, Dropbox or
+   Drive), so the lost device can't write to the storage any more. While it
+   can, it can keep the removal from going through.
+2. Re-key and leave it out. It then can't open any manifest written after
+   that, because the new epoch was never wrapped for it. If whoever has the
+   device also knows the passphrase, change the passphrase in the same
+   re-key. A device can't
 be handed an old keyring either: every device remembers the newest epoch it
 has seen.
 
 The list of enrolled devices is sealed with the vault's keys, so the sync
 provider can't add a device of its own or bring back a removed one. A removed
 device can't be enrolled again under its old name or key either: enroll it
-as a new device with a new key.
+as a new device with a new key. To use a removed device with the vault
+again, pair it as a new device.
 
 A storage can still keep showing your *other* devices the vault from before
 the removal. Each of them then sees a consistent vault, so none of them can
