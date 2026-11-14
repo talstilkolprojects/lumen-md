@@ -13,6 +13,8 @@ import { execFileSync } from "node:child_process";
 import { parseArgs, report, runChecks } from "../../scripts/pr-check.mjs";
 // @ts-expect-error — plain .mjs module without type declarations
 import { REQUIRED_SECTIONS } from "../../scripts/lib/prGate.mjs";
+// @ts-expect-error — plain .mjs script without type declarations
+import { keygen, registryEntry, signReceipt } from "../../scripts/review-sign.mjs";
 
 const ROOT = resolve(__dirname, "../..");
 
@@ -91,6 +93,10 @@ describe("pr:check", () => {
     try {
       mkdirSync(join(r0.dir, ".github"));
       writeFileSync(join(r0.dir, ".github/CODEOWNERS"), "/src/sync/e2ee/ @talstilkol\n");
+      // W10.D3: only receipts signed with a key in security/reviewers.json count.
+      const sKey = keygen();
+      mkdirSync(join(r0.dir, "security"));
+      writeFileSync(join(r0.dir, "security/reviewers.json"), JSON.stringify({ reviewers: registryEntry("S", sKey.privatePem) }));
       r0.git("add", "-A");
       r0.git("commit", "-q", "-m", "chore: owners [skip ci]");
       mkdirSync(join(r0.dir, "src/sync/e2ee"), { recursive: true });
@@ -155,6 +161,10 @@ describe("pr:check", () => {
     try {
       mkdirSync(join(r0.dir, ".github"));
       writeFileSync(join(r0.dir, ".github/CODEOWNERS"), "/src/sync/e2ee/ @talstilkol\n");
+      // W10.D3: only receipts signed with a key in security/reviewers.json count.
+      const sKey = keygen();
+      mkdirSync(join(r0.dir, "security"));
+      writeFileSync(join(r0.dir, "security/reviewers.json"), JSON.stringify({ reviewers: registryEntry("S", sKey.privatePem) }));
       r0.git("add", "-A");
       r0.git("commit", "-q", "-m", "chore: owners [skip ci]");
       mkdirSync(join(r0.dir, "src/sync/e2ee"), { recursive: true });
@@ -162,17 +172,23 @@ describe("pr:check", () => {
       r0.git("add", "-A");
       r0.git("commit", "-q", "-m", "feat: kdf [skip ci]");
       const head = r0.git("rev-parse", "HEAD").trim();
-      const receipt = (o: Record<string, unknown> = {}) => ({
+      const unsigned = (o: Record<string, unknown> = {}) => ({
         format: "lumen-review", version: 1, head, author: "K", reviewer: "S", access: "read-only", date: "2026-11-12T18:00:00Z",
         files: ["/src/sync/e2ee/"], attackTests: [{ path: "src/__tests__/kdfAttack.test.ts", result: "4/4 pass" }], findings: [], verdict: "approve", ...o,
       });
+      const receipt = (o: Record<string, unknown> = {}) => signReceipt(unsigned(o), sKey.privatePem);
       const comment = (r: object) => "Review\n\n```lumen-review\n" + JSON.stringify(r) + "\n```\n";
-      const pr = (bodies: string[]) => () => ({ number: 9, labels: [], author: "a", headSha: head, headDate: "2026-11-12T09:00:00Z", reviews: [], events: [], comments: bodies.map((body, i) => ({ id: i + 1, user: "a", body })) });
+      const pr = (bodies: string[]) => () => ({ number: 9, labels: [], author: "a", headSha: head, headDate: "2026-11-12T09:00:00Z", reviews: [], events: [], comments: bodies.map((body, i) => ({ id: i + 1, user: "rev", association: "OWNER", body })) });
       const section = (o: Record<string, unknown>, extra: string[] = []) =>
         runChecks({ ...parseArgs(["--cwd", r0.dir, "--base", "main~1", "--no-size", ...(o.pr ? ["--pr", "9"] : []), ...extra]), ...o }).sections.find((s: { title: string }) => s.title === "Independent review of sensitive paths");
       expect(section({}).status).toBe("warn");
       expect(section({ pr: "9", loadPr: pr([]) }).status).toBe("fail");
       expect(section({ pr: "9", loadPr: pr([comment(receipt())]) }).status).toBe("ok");
+      // Review 14.11: a comment by an account without write access (anyone, on a public repository) does not count.
+      const stranger = () => ({ ...pr([])(), comments: [{ id: 7, user: "someone", association: "NONE", body: comment(receipt()) }] });
+      const st = section({ pr: "9", loadPr: stranger });
+      expect(st.status).toBe("fail");
+      expect(st.lines.join("\n")).toMatch(/@someone has no write access/);
       // A push after the review: the receipt is for an older head.
       const stale = section({ pr: "9", loadPr: pr([comment(receipt({ head: "a".repeat(40) }))]) });
       expect(stale.status).toBe("fail");
@@ -180,6 +196,17 @@ describe("pr:check", () => {
       // The author reviewing itself, or an open high finding, does not count.
       expect(section({ pr: "9", loadPr: pr([comment(receipt({ reviewer: "k" }))]) }).status).toBe("fail");
       expect(section({ pr: "9", loadPr: pr([comment(receipt({ findings: [{ id: "F1", severity: "high", status: "open" }] }))]) }).status).toBe("fail");
+      // W10.D3: unsigned does not count; the PR author's own comment does not count; nor does a
+      // reviewer who wrote or committed a commit in the range (here git user "T").
+      expect(section({ pr: "9", loadPr: pr([comment(unsigned())]) }).lines.join("\n")).toMatch(/not signed/);
+      const own = () => ({ ...pr([])(), comments: [{ id: 8, user: "a", association: "OWNER", body: comment(receipt()) }] });
+      expect(section({ pr: "9", loadPr: own }).lines.join("\n")).toMatch(/@a is the PR's author/);
+      const tKey = keygen();
+      writeFileSync(join(r0.dir, "security/reviewers.json"), JSON.stringify({ reviewers: { ...registryEntry("S", sKey.privatePem), ...registryEntry("T", tKey.privatePem) } }));
+      const byCommitter = signReceipt(unsigned({ reviewer: "T" }), tKey.privatePem);
+      const ct = section({ pr: "9", loadPr: pr([comment(byCommitter)]) });
+      expect(ct.status).toBe("fail");
+      expect(ct.lines.join("\n")).toMatch(/T is the PR's author or wrote or committed a commit in its range/);
       // Offline: a receipt file for this checkout's HEAD.
       writeFileSync(join(r0.dir, "review.json"), JSON.stringify(receipt()));
       expect(section({}, ["--review", "review.json"]).status).toBe("ok");

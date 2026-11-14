@@ -50,7 +50,7 @@ import { pathToFileURL } from "node:url";
 import { addedLinesFromDiff, AI_LABEL, bodyProblems, domainMentions, licenceChanges, skipCiViolations, unregisteredNetworkCalls, untestedChanges, writtenByAi } from "./lib/prGate.mjs";
 import { bundleDiffMarkdown } from "./bundle-diff.mjs";
 import { HUMAN_REVIEW_LABEL, humanReviewVerdict, independentPatterns, parseCodeowners, sensitiveChanges } from "./lib/humanReview.mjs";
-import { extractReceipts, independentReviewVerdict } from "./lib/independentReview.mjs";
+import { commentReceipts, excludedIdentities, independentReviewVerdict, parseReviewers } from "./lib/independentReview.mjs";
 import { RATCHET_FILES, raiseLine, raisesFor } from "./lib/budgetRatchet.mjs";
 import { MAX_AGE_DAYS, baseVerdict, branchName, currentTrain, driftVerdicts, worst } from "./lib/trainBase.mjs";
 import { EXCEPTIONS_FILE } from "./lib/sensitivePaths.mjs";
@@ -124,7 +124,7 @@ export function loadPr(repo, n) {
   const pull = ghJson([`repos/${repo}/pulls/${n}`]);
   const events = ghJson(["--paginate", `repos/${repo}/issues/${n}/events?per_page=100`]).map((e) => ({ event: e.event, label: e.label?.name, created_at: e.created_at, actor: e.actor?.login }));
   const reviews = ghJson(["--paginate", `repos/${repo}/pulls/${n}/reviews?per_page=100`]).map((r) => ({ user: r.user?.login, state: r.state, submitted_at: r.submitted_at, commit_id: r.commit_id }));
-  const comments = ghJson(["--paginate", `repos/${repo}/issues/${n}/comments?per_page=100`]).map((c) => ({ id: c.id, user: c.user?.login, created_at: c.created_at, body: c.body ?? "" }));
+  const comments = ghJson(["--paginate", `repos/${repo}/issues/${n}/comments?per_page=100`]).map((c) => ({ id: c.id, user: c.user?.login, association: c.author_association, created_at: c.created_at, body: c.body ?? "" }));
   const head = ghJson([`repos/${repo}/commits/${pull.head.sha}`]);
   return { number: Number(n), labels: pull.labels.map((l) => l.name), events, reviews, comments, author: pull.user?.login, headSha: pull.head.sha, headDate: head.commit?.committer?.date ?? null };
 }
@@ -205,8 +205,7 @@ export function runChecks(opts) {
     add("Human review of sensitive paths", mismatch ? "fail" : v.status, mismatch ? [mismatch, "", ...v.lines] : v.lines);
 
     // Independent review receipt for the head (plan W6.11)
-    const receipts = [];
-    for (const c of pr?.comments ?? []) for (const receipt of extractReceipts(c.body)) receipts.push({ source: `comment${c.id ? ` ${c.id}` : ""} by @${c.user ?? "?"}`, receipt });
+    const receipts = commentReceipts(pr?.comments, { prAuthor: pr?.author ?? null });
     for (const f of opts.review ?? []) {
       let receipt;
       try {
@@ -217,7 +216,20 @@ export function runChecks(opts) {
       receipts.push({ source: `\`${f}\``, receipt });
     }
     const head = pr?.headSha ?? git(cwd, "rev-parse", "HEAD").trim();
-    const iv = independentReviewVerdict(sensitive, receipts, { head, strict: !!opts.pr || (opts.review ?? []).length > 0 });
+    const reviewersFile = join(cwd, "security", "reviewers.json");
+    const reviewers = existsSync(reviewersFile) ? parseReviewers(readFileSync(reviewersFile, "utf8")) : null;
+    // W10.D3: neither the PR's author nor anyone who wrote or committed a commit in the range may review it.
+    const commits = git(cwd, "log", "--format=%an%x1f%ae%x1f%cn%x1f%ce", range)
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => {
+        const [authorName, authorEmail, committerName, committerEmail] = l.split("\x1f");
+        return { authorName, authorEmail, committerName, committerEmail };
+      });
+    const excluded = excludedIdentities({ prAuthor: pr?.author ?? null, commits });
+    const iv = independentReviewVerdict(sensitive, receipts, { head, strict: !!opts.pr || (opts.review ?? []).length > 0, reviewers, excluded });
+    if (!reviewers) iv.lines.push("", "- security/reviewers.json is missing: no receipt can be verified, so none counts.");
+    if (reviewers?.problems.length) iv.lines.push("", ...reviewers.problems.map((x) => `- ${x}`));
     add("Independent review of sensitive paths", mismatch ? "fail" : iv.status, mismatch ? [mismatch, "", ...iv.lines] : iv.lines);
   } else {
     add("Human review of sensitive paths", "skipped", [".github/CODEOWNERS is not on this branch."]);

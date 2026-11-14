@@ -13,8 +13,13 @@ import {
   receiptFor,
   receiptProblems,
   uncovered,
+  parseReviewers,
+  commentReceipts,
+  excludedIdentities,
   // @ts-expect-error -- plain .mjs script, no types
 } from "../../scripts/lib/independentReview.mjs";
+// @ts-expect-error -- plain .mjs script, no types
+import { keygen, registryEntry, signReceipt } from "../../scripts/review-sign.mjs";
 // @ts-expect-error -- plain .mjs script, no types
 import { parseCodeowners, sensitiveChanges } from "../../scripts/lib/humanReview.mjs";
 
@@ -38,6 +43,12 @@ const receipt = (o: Record<string, unknown> = {}) => ({
   ...o,
 });
 
+// W10.D3: only a signed receipt counts, so the receipts here are signed with
+// S's key and checked against a registry that lists it.
+const sKey = keygen();
+const registry = parseReviewers(JSON.stringify({ reviewers: registryEntry("S", sKey.privatePem) }));
+const signed = (o: Record<string, unknown> = {}) => signReceipt(receipt(o), sKey.privatePem);
+
 describe("review receipts", () => {
   it("only CODEOWNERS paths are sensitive here", () => {
     expect(sensitive.map((s: { file: string }) => s.file)).toEqual(["src/sync/e2ee/lan/rpc.ts", "src/storage/vault/atomic.ts"]);
@@ -45,14 +56,14 @@ describe("review receipts", () => {
 
   it("a well-formed receipt for the head counts", () => {
     expect(receiptProblems(receipt())).toEqual([]);
-    expect(receiptFor(receipt(), HEAD, sensitive)).toEqual([]);
-    const v = independentReviewVerdict(sensitive, [{ source: "file", receipt: receipt() }], { head: HEAD, strict: true });
+    expect(receiptFor(signed(), HEAD, sensitive, registry)).toEqual([]);
+    const v = independentReviewVerdict(sensitive, [{ source: "file", receipt: signed() }], { head: HEAD, strict: true, reviewers: registry });
     expect(v.status).toBe("ok");
     expect(v.lines[0]).toMatch(/by S \(author train-2, read-only\).*1 attack test, findings 1 medium/);
   });
 
   it("each rule that makes a review independent and complete", () => {
-    const why = (o: Record<string, unknown>) => receiptFor(receipt(o), HEAD, sensitive).join(" | ");
+    const why = (o: Record<string, unknown>) => receiptFor(signed(o), HEAD, sensitive, registry).join(" | ");
     expect(why({ reviewer: "Train-2" })).toMatch(/reviewer is the author/);
     expect(why({ access: "write" })).toMatch(/read-only/);
     expect(why({ head: HEAD.slice(0, 9) })).toMatch(/40-character/);
@@ -87,14 +98,82 @@ describe("review receipts", () => {
     const v = independentReviewVerdict(
       sensitive,
       [
-        { source: "comment 1", receipt: receipt({ head: "a".repeat(40) }) },
-        { source: "comment 2", receipt: receipt() },
+        { source: "comment 1", receipt: signed({ head: "a".repeat(40) }) },
+        { source: "comment 2", receipt: signed() },
       ],
-      { head: HEAD, strict: true },
+      { head: HEAD, strict: true, reviewers: registry },
     );
     expect(v.status).toBe("ok");
     expect(v.lines.join("\n")).toMatch(/comment 1: not counted — it is for `aaaaaaaaa`/);
-    const stale = independentReviewVerdict(sensitive, [{ source: "comment 1", receipt: receipt({ head: "a".repeat(40) }) }], { head: HEAD, strict: true });
+    const stale = independentReviewVerdict(sensitive, [{ source: "comment 1", receipt: signed({ head: "a".repeat(40) }) }], { head: HEAD, strict: true, reviewers: registry });
     expect(stale.status).toBe("fail");
   });
 });
+
+/**
+ * W10.D3 (research R3.3): the 8-case matrix. Only a receipt from an account
+ * with write access, signed with the registered key of its reviewer, for the
+ * head, by someone who neither opened the PR nor wrote or committed any of
+ * its commits, counts.
+ */
+describe("W10.D3: who may approve", () => {
+  const regWithIds = parseReviewers(JSON.stringify({ reviewers: { S: { ...registryEntry("S", sKey.privatePem).S, login: "s-reviewer", email: "s@example.org" } } }));
+  const ctx = (o: Record<string, unknown> = {}) => ({ head: HEAD, strict: true, reviewers: regWithIds, ...o });
+  const comment = (user: string, association: string, r: object) => ({ id: 1, user, association, body: receiptComment(r) });
+  const verdict = (receipts: unknown[], o: Record<string, unknown> = {}) => independentReviewVerdict(sensitive, receipts, ctx(o));
+
+  it("1. a valid signed receipt from a collaborator counts", () => {
+    const v = verdict(commentReceipts([comment("s-reviewer", "COLLABORATOR", signed())], { prAuthor: "talstilkol" }));
+    expect(v.status).toBe("ok");
+    expect(v.lines[0]).toMatch(/signature verified/);
+  });
+
+  it("2. a stranger's receipt (author_association NONE or CONTRIBUTOR) is refused, even when validly signed", () => {
+    for (const assoc of ["NONE", "CONTRIBUTOR", "FIRST_TIME_CONTRIBUTOR", undefined]) {
+      const v = verdict(commentReceipts([comment("stranger", assoc as string, signed())]));
+      expect(v.status, String(assoc)).toBe("fail");
+      expect(v.lines.join("\n")).toMatch(/has no write access/);
+    }
+  });
+
+  it("3. the PR author's own receipt is refused, as a comment and by identity", () => {
+    expect(verdict(commentReceipts([comment("s-reviewer", "OWNER", signed())], { prAuthor: "s-reviewer" })).lines.join("\n")).toMatch(/is the PR's author/);
+    const ex = excludedIdentities({ prAuthor: "s-reviewer" });
+    expect(verdict([{ source: "file", receipt: signed() }], { excluded: ex }).lines.join("\n")).toMatch(/S is the PR's author or wrote or committed a commit in its range/);
+  });
+
+  it("4. a receipt by an author or committer of a commit in the range is refused (by name or email)", () => {
+    const byEmail = excludedIdentities({ commits: [{ authorName: "Someone", authorEmail: "x@example.org", committerName: "Other", committerEmail: "S@example.org" }] });
+    expect(verdict([{ source: "file", receipt: signed() }], { excluded: byEmail }).status).toBe("fail");
+    const byName = excludedIdentities({ commits: [{ authorName: "S", authorEmail: "y@example.org" }] });
+    expect(verdict([{ source: "file", receipt: signed() }], { excluded: byName }).status).toBe("fail");
+    const clean = excludedIdentities({ prAuthor: "talstilkol", commits: [{ authorName: "Claude", authorEmail: "noreply@anthropic.com" }] });
+    expect(verdict([{ source: "file", receipt: signed() }], { excluded: clean }).status).toBe("ok");
+  });
+
+  it("5. a receipt for an older head is refused", () => {
+    expect(verdict([{ source: "file", receipt: signed({ head: "b".repeat(40) }) }]).lines.join("\n")).toMatch(/not the head/);
+  });
+
+  it("6. an unsigned receipt is refused, and with no registry nothing counts", () => {
+    expect(verdict([{ source: "file", receipt: receipt() }]).lines.join("\n")).toMatch(/not signed/);
+    const none = independentReviewVerdict(sensitive, [{ source: "file", receipt: signed() }], { head: HEAD, strict: true, reviewers: null });
+    expect(none.status).toBe("fail");
+    expect(none.lines.join("\n")).toMatch(/security\/reviewers.json is missing, and an unsigned receipt does not count/);
+  });
+
+  it("7-9. tampering: a field changed after signing, a signature by another key, a reviewer swapped", () => {
+    const t1 = { ...signed(), verdict: "approve", files: ["/src/"] };
+    expect(verdict([{ source: "file", receipt: t1 }]).lines.join("\n")).toMatch(/does not verify/);
+    const mallory = keygen();
+    const t2 = signReceipt(receipt(), mallory.privatePem);
+    expect(verdict([{ source: "file", receipt: t2 }]).lines.join("\n")).toMatch(/does not verify with S's key/);
+    const t3 = { ...signed(), reviewer: "T" };
+    expect(verdict([{ source: "file", receipt: t3 }]).lines.join("\n")).toMatch(/reviewer T is not in security\/reviewers.json/);
+  });
+
+  it("a catch-all file list never counts", () => {
+    expect(verdict([{ source: "file", receipt: signed({ files: ["*"] }) }]).status).toBe("fail");
+  });
+});
+

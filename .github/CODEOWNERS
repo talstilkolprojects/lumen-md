@@ -259,3 +259,6 @@
 /src/commands/domains/journalistActions.ts @talstilkol
 /src/pdf/zoteroSend.ts                   @talstilkol
 /src/ui/AcademicExportDialog.tsx         @talstilkol
+/scripts/review-sign.mjs                 @talstilkol
+/scripts/review-coverage.mjs             @talstilkol
+/security/reviewers.json                 @talstilkol
