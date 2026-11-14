@@ -9,11 +9,12 @@
  *    random one unless it is already in the environment.
  * 2. `wrangler deploy` of edge-workers/collab (Worker + two SQLite Durable
  *    Objects, both on the Workers Free plan).
- * 3. Checks /healthz and prints the two build variables to set in the
+ * 3. Checks /healthz and prints the build variables to set in the
  *    Vercel project, so the app (and its CSP, through cspEndpoints) uses
  *    the server:
  *      VITE_YJS_WEBSOCKET_URL      wss://<worker>/
  *      VITE_WEBRTC_SIGNALING_URL   wss://<worker>/signal
+ *      VITE_SYNC_RELAY_URL         https://<worker>   (the vault relay, #483, decision 5.16)
  *
  * Wrangler is run with npx at a pinned version; it is not a dependency of
  * the app.
@@ -59,5 +60,6 @@ console.log(`
 Set these in the Vercel project (Settings → Environment Variables, Production), then redeploy:
   VITE_YJS_WEBSOCKET_URL=wss://${host}/
   VITE_WEBRTC_SIGNALING_URL=wss://${host}/signal
+  VITE_SYNC_RELAY_URL=https://${host}
 An uptime check (free): add https://${host}/healthz to a monitor such as UptimeRobot.
 If the server is down, the app keeps working peer to peer (WebRTC) and on this device.`);

@@ -10,6 +10,12 @@
  *   wss://<host>/signal         WebRTC signaling (the y-webrtc protocol of
  *                               sync-server/server.js), for peer-to-peer.
  *   GET /healthz                {"ok":true}
+ *   /v1/vault/o/…               the encrypted vault relay (plan W4.19, #483;
+ *                               decision 5.16): GET (list), GET, PUT and
+ *                               DELETE of objects the app encrypted, one
+ *                               Durable Object per space (vaultRelay.mjs).
+ *                               Same rules: ciphertext only, deleted when
+ *                               unused for 90 days, no addresses in logs.
  *
  * What the server keeps (PRIVACY.he.md, "הערכת השפעה"):
  *   - Encrypted rooms only. Every update is checked before it is applied
@@ -51,6 +57,7 @@
  */
 import { createHmac } from "node:crypto";
 import { createRelayRoom } from "../../sync-server/collab/relay.mjs";
+import { handleVault, isVaultPath } from "./vaultRelay.mjs";
 import {
   accessKeyOk,
   commitmentOk,
@@ -147,7 +154,9 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, "");
-    if (/\/health(z)?$/.test(path)) return json({ ok: true, status: "ok", service: "lumen-collab", persistence: "durable-objects", e2eeOnly: true });
+    // The vault relay is plain HTTP (no WebSocket); its list path ends in "/".
+    if (isVaultPath(url.pathname)) return handleVault(request, env);
+    if (/\/health(z)?$/.test(path)) return json({ ok: true, status: "ok", service: "lumen-collab", persistence: "durable-objects", e2eeOnly: true, vaultRelay: Boolean(env.VAULT) });
     if (request.headers.get("upgrade")?.toLowerCase() !== "websocket") return json({ error: "websocket only" }, 426);
     if (path.endsWith("/token")) return tokenSocket(env);
     if (path.endsWith("/signal")) return env.SIGNAL.get(env.SIGNAL.idFromName("signal")).fetch(request);
@@ -763,3 +772,5 @@ export class Quota {
     return c.stored;
   }
 }
+
+export { VaultSpace, VaultQuota } from "./vaultRelay.mjs";

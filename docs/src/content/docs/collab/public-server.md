@@ -23,6 +23,27 @@ Lumen's public server does both, free, and **never sees what you write**.
 | Cursors and display names | Passed between the people in the room while they are connected. Never stored. The name is a random one ("Saffron", "Willow"), not yours. |
 | Room names, times and sizes | Visible to the server. Room names are random. |
 
+## Encrypted vault sync (relay)
+
+The same server also holds the encrypted relay that sync setup
+offers on phones and in browsers that can't open a folder. It's the same
+service, under the same rules:
+
+- **Ciphertext only.** The app encrypts every file before it sends it, with
+  keys the server never sees. The server keeps the encrypted objects under
+  opaque names. A vault is a "space" named by a hash of a token that the app
+  derives from your recovery words. The token itself is never kept, and
+  there are no accounts.
+- **Deleted after 90 days unused.** A space nobody read or wrote for 90 days
+  is deleted, as rooms are. Reads count.
+- **No IP addresses in logs.** The daily limits count an address the way
+  rooms do: as a keyed hash, under a key for the day.
+- **Limits** (the Free plan holds 5 GB, and rooms may use 4 GB): 0.9 GB for
+  all vaults together, 100 MiB per vault and 25 MiB per file. Per address
+  per day, 5 new vaults and 100 MiB written. Per vault, 600 requests a
+  minute. A new vault costs the app a few seconds of work. Past a limit the
+  server says so, and a desktop sync folder or WebDAV still works.
+
 ## If the server is down
 
 The app keeps working. Rooms connect peer to peer over WebRTC, and your
