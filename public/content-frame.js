@@ -7,21 +7,19 @@
  *   #{"kind":"img","src":"https://…","srcset":"…","alt":"…","title":"…"}
  *   #{"kind":"video"|"audio","src":"https://…","loop":true,"muted":true}
  *   #{"kind":"embed","src":"https://provider/…","title":"…","allow":"…","referrerPolicy":"…"}
- *   #{"kind":"gist","user":"…","id":"…"}
  *
  * The request travels in the #fragment, which is never sent to a server and
  * is not part of the service worker's cache key. Everything is built with
  * createElement and properties — no HTML sink — and the page has no network
  * of its own (connect-src 'none'); its policy allows https: images and media
  * and the embed providers' frames, which the app's own policy does not.
+ * A Gist is not shown here (W10.D2): the app shows a link.
  *
  * The page tells its parent the size its content wants:
  *   parent.postMessage({ type: "lumen-content-frame", width, height }, origin)
  * (the parent matches event.source to the frame; frame-ancestors 'self'
  * makes the app the only parent).
- *
- * A classic script, not a module: a Gist's embed script document.write()s
- * the gist, which works only while this page is being parsed.
+
  */
 (function () {
   "use strict";
@@ -140,36 +138,10 @@
     return;
   }
 
-  if (req.kind === "gist") {
-    var user = typeof req.user === "string" && /^[\w-]{1,100}$/.test(req.user) ? req.user : null;
-    var id = typeof req.id === "string" && /^[\w]{1,100}$/.test(req.id) ? req.id : null;
-    // A Gist is GitHub's script writing into this document: only in an
-    // opaque-origin frame (sandbox without allow-same-origin), never with
-    // the app's origin.
-    if (!user || !id || !opaque) return fallback("gist.github.com");
-    var base = document.createElement("base");
-    base.target = "_blank";
-    document.head.appendChild(base);
-    body.className = "lumen-cf-gist";
-    var url = "https://gist.github.com/" + user + "/" + id + ".js";
-    // Parser-inserted while this script runs, so the gist's own
-    // document.write() lands in the page. Built from the two checked parts.
-    document.write('<script src="' + url + '"></scr' + "ipt>");
-    window.addEventListener("load", function () {
-      var gist = document.querySelector(".gist");
-      if (!gist) {
-        var a = document.createElement("a");
-        a.href = "https://gist.github.com/" + user + "/" + id;
-        a.textContent = "gist.github.com/" + user + "/" + id;
-        a.rel = "noopener noreferrer";
-        body.replaceChildren(a);
-        watchHeight(a);
-        return;
-      }
-      watchHeight(gist);
-    });
-    return;
-  }
+  // W10.D2: a Gist is not shown here any more. Its embed is GitHub's script
+  // document.write()ing into this page; the app shows a link instead, so no
+  // third-party script runs in a page of ours. An old request gets its words.
+  if (req.kind === "gist") return fallback("gist.github.com");
 
   fallback("");
 })();

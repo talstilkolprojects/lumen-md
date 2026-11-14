@@ -3,7 +3,7 @@
   "routes": {
     "app": {
       "kind": "document",
-      "why": "The editor: index.html and every SPA route. No eval on the page (Graphviz, ruby.wasm and the TypeScript checker run in workers with their own policy); WebAssembly compiles ('wasm-unsafe-eval'). Trusted Types guard every DOM sink (src/lib/trustedTypes.ts). img-src lists only the hosts the app itself loads images from (the map block's OpenStreetMap tiles, GitHub / Google account avatars): there is no https: in img-src or media-src and frame-src is 'self' alone (plan W4.15). Images, video and audio from other sites in notes, and embeds (the embed block, raw <iframe> in notes, Gist), render only after the user allows them, inside /content-frame.html (route content-frame), a same-origin page with its own policy (src/lib/contentFrame.ts); the renderer holds them back until then (src/lib/remoteImages.ts). connect-src has no bare ws: / wss:: the WebSockets the app opens are collaboration signaling (the deployment's own server, and the two public servers when the user opts in: signaling.yjs.dev and y-webrtc-eu.fly.dev, the y-webrtc package's own default since the Heroku servers went away) and the deployment's own collab servers, which the build adds from VITE_WEBRTC_SIGNALING_URL / VITE_YJS_WEBSOCKET_URL (src/build/cspEndpoints.ts). Supabase is not listed: a deployment that uses it sets VITE_SUPABASE_URL, which the build adds the same way. The font hosts stay in connect-src: the service worker's runtime cache fetches the Google Fonts stylesheet and files. webr.r-wasm.org (webR's own CDN) and cdn.jsdelivr.net (its npm package, the fallback) are for one thing only: the webR download the user starts from an R block (plan W1.34; every file checked against the build's checksums), so connect-src, never script-src: the code runs from this origin's cache.",
+      "why": "The editor: index.html and every SPA route. No eval on the page (Graphviz, ruby.wasm and the TypeScript checker run in workers with their own policy); WebAssembly compiles ('wasm-unsafe-eval'). Trusted Types guard every DOM sink (src/lib/trustedTypes.ts). img-src lists only the hosts the app itself loads images from (the map block's OpenStreetMap tiles, GitHub / Google account avatars): there is no https: in img-src or media-src and frame-src is 'self' alone (plan W4.15). Images, video and audio from other sites in notes, and embeds (the embed block, raw <iframe> in notes), render only after the user allows them, inside /content-frame.html (route content-frame), a same-origin page with its own policy (src/lib/contentFrame.ts); a GitHub Gist is a link, never GitHub's script in a page of ours (W10.D2); the renderer holds them back until then (src/lib/remoteImages.ts). connect-src has no bare ws: / wss:: the WebSockets the app opens are collaboration signaling (the deployment's own server, and the two public servers when the user opts in: signaling.yjs.dev and y-webrtc-eu.fly.dev, the y-webrtc package's own default since the Heroku servers went away) and the deployment's own collab servers, which the build adds from VITE_WEBRTC_SIGNALING_URL / VITE_YJS_WEBSOCKET_URL (src/build/cspEndpoints.ts). Supabase is not listed: a deployment that uses it sets VITE_SUPABASE_URL, which the build adds the same way. The font hosts stay in connect-src: the service worker's runtime cache fetches the Google Fonts stylesheet and files. webr.r-wasm.org (webR's own CDN) and cdn.jsdelivr.net (its npm package, the fallback) are for one thing only: the webR download the user starts from an R block (plan W1.34; every file checked against the build's checksums), so connect-src, never script-src: the code runs from this origin's cache.",
       "samples": [
         "/",
         "/index.html",
@@ -209,7 +209,7 @@
     "content-frame": {
       "kind": "document",
       "frameable": true,
-      "why": "Content frame (plan W4.15): the same-origin page in which the app shows what other sites serve into a note, after the user allowed it: an image, a video or audio file, a provider embed (the embed block, a raw <iframe>) or a GitHub Gist. It keeps https: in img-src / media-src and the embed providers in frame-src out of the app's own policy. The app frames it (src/lib/contentFrame.ts) with sandbox=\"allow-scripts\" (opaque origin) for images, media and Gists, and with the providers' old sandbox (allow-same-origin included, which the providers' own frames inherit and need) for embeds; its script (public/content-frame.js) only builds elements from the request in its #fragment — no HTML sink, no network of its own (connect-src 'none'). frame-src: the providers the embed block knows (src/plugins/EmbedBlock.tsx). script-src https://gist.github.com and style-src https://github.githubassets.com: a Gist embed is a script that document.write()s the gist and its stylesheet; the page writes it only in an opaque-origin frame. The nonce is the build's one public nonce, for WebKit, which does not match 'self' in an opaque-origin frame (as the runner pages).",
+      "why": "Content frame (plan W4.15, W10.D2): the same-origin page in which the app shows what other sites serve into a note, after the user allowed it: an image, a video or audio file, or a provider embed (the embed block, a raw <iframe>). It keeps https: in img-src / media-src and the embed providers in frame-src out of the app's own policy. The app frames it (src/lib/contentFrame.ts) with sandbox=\"allow-scripts\" (opaque origin) for images and media, and with the providers' old sandbox (allow-same-origin included, which the providers' own frames inherit and need) for embeds; its script (public/content-frame.js) only builds elements from the request in its #fragment — no HTML sink, no network of its own (connect-src 'none'). frame-src: the providers the embed block knows (src/plugins/EmbedBlock.tsx). No third-party script runs here: since W10.D2 a GitHub Gist is a link (its embed is GitHub's script document.write()ing into the page), so script-src has no gist.github.com and style-src no github.githubassets.com. The nonce is the build's one public nonce, for WebKit, which does not match 'self' in an opaque-origin frame (as the runner pages); W10.D1 replaces it.",
       "samples": [
         "/content-frame.html"
       ],
@@ -219,13 +219,11 @@
         ],
         "script-src": [
           "'self'",
-          "'nonce-lumen-livejs-runner'",
-          "https://gist.github.com"
+          "'nonce-lumen-livejs-runner'"
         ],
         "style-src": [
           "'self'",
-          "'unsafe-inline'",
-          "https://github.githubassets.com"
+          "'unsafe-inline'"
         ],
         "img-src": [
           "'self'",
@@ -422,15 +420,29 @@
       "lineLimitWhy": "Cloudflare's _headers parser skips, without failing the deploy, any line longer than 2,000 characters (workers-sdk parseHeaders.ts, MAX_LINE_LENGTH). The app policy was 1,994 characters on one line, so the first endpoint origin the build adds would have dropped the whole header CSP on that host (plan W6.9).",
       "split": [
         {
-          "routes": ["app"],
+          "routes": [
+            "app"
+          ],
           "directive": "connect-src",
-          "superset": ["'self'", "blob:", "data:", "https:", "http:", "wss:", "ws:"],
+          "superset": [
+            "'self'",
+            "blob:",
+            "data:",
+            "https:",
+            "http:",
+            "wss:",
+            "ws:"
+          ],
           "why": "The app policy is sent as two policies on two lines of the same rule, which Cloudflare (and Netlify) join with a comma. The first carries every directive, with connect-src widened to the schemes of the second; the second carries the real connect-src. A browser enforces both, so the result is exactly the policy's connect-src, and the long, build-extended list sits on a line of its own."
         }
       ],
       "samples": {
-        "playground-runner": ["/playground-runner"],
-        "livejs-runner": ["/livejs-runner"]
+        "playground-runner": [
+          "/playground-runner"
+        ],
+        "livejs-runner": [
+          "/livejs-runner"
+        ]
       },
       "samplesWhy": "Cloudflare Pages answers /x.html with a 308 to /x and serves the page there, so the runner pages are framed at their extension-less paths: those need the runner policy too."
     },

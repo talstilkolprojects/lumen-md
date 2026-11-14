@@ -93,7 +93,9 @@ describe("the content frame's own policy", () => {
     expect(d.get("frame-ancestors")).toEqual(["'self'"]);
     expect(d.get("default-src")).toEqual(["'none'"]);
     expect(d.get("connect-src")).toEqual(["'none'"]);
-    expect(d.get("script-src")).toEqual(["'self'", "'nonce-lumen-livejs-runner'", "https://gist.github.com"]);
+    // W10.D2: no third-party script: gist.github.com is gone (a Gist is a link).
+    expect(d.get("script-src")).toEqual(["'self'", "'nonce-lumen-livejs-runner'"]);
+    expect(d.get("style-src")).not.toContain("https://github.githubassets.com");
     expect(d.get("img-src")).toContain("https:");
     expect(d.get("media-src")).toContain("https:");
   });
@@ -138,13 +140,12 @@ describe("the content frame's own policy", () => {
     expect(html).toMatch(/<script src="\/content-frame\.js" nonce="lumen-livejs-runner"><\/script>/);
   });
 
-  it("its script builds elements, never HTML, and writes a Gist only in an opaque-origin frame", () => {
-    // The code, without its comments (they describe document.write too).
+  it("its script builds elements, never HTML, and never writes a third-party script (W10.D2)", () => {
+    // The code, without its comments.
     const js = read("public/content-frame.js").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
     expect(js).not.toMatch(/innerHTML|outerHTML|insertAdjacentHTML|srcdoc|\beval\(|new Function/);
-    // The one document.write is the Gist script, behind the opaque-origin check.
-    expect(js.match(/document\.write\(/g)).toHaveLength(1);
-    expect(js).toMatch(/if \(!user \|\| !id \|\| !opaque\) return fallback/);
-    expect(js).toContain('var opaque = self.origin === "null";');
+    expect(js).not.toMatch(/document\.write|createElement\("script"\)|gist\.github\.com\/"/);
+    // A Gist request (an old link) gets words, nothing loaded.
+    expect(js).toContain('if (req.kind === "gist") return fallback("gist.github.com");');
   });
 });
