@@ -66,22 +66,21 @@
       "ollama": null,
       "ollamaRevision": null,
       "licence": {
-        "name": null,
-        "class": "unknown",
-        "verified": false,
-        "source": "not verified: Hugging Face is unreachable from the build environment and the paper does not state the weights' licence. Search results list dicta-il/DictaLM-3.0-24B-Base and dicta-il/DictaLM-3.0-24B-Thinking only through third-party mirrors, so neither name nor licence is taken from them."
+        "name": "Apache-2.0",
+        "class": "allowed",
+        "verified": true,
+        "source": "Model card of dicta-il/DictaLM-3.0-24B-Thinking on Hugging Face, read 14.11.2026 (plan W10.B20, the plan's correction of 12.11): \"License: apache-2.0\", \"The model supports tool-calling, enabling integration with external tools and APIs\", initialised from Mistral-Small-3.1-24B-Base-2503. The repository id and revision stay owner checks: this records the licence of the 24B Thinking model, not which build Lumen evaluates."
       },
       "ramGB": 16,
       "compareWith": "qwen3:14b",
       "tools": false,
       "runtimes": {
-        "ollama": "GGUF — official or converted: owner check",
+        "ollama": "GGUF — official or converted: owner check. Tool calling is stated on the model card; `tools` stays false until the agent eval shows the Ollama build answering tool calls",
         "web-llm": "too large for the browser tier",
         "transformers.js": "too large for the browser tier"
       },
       "ownerChecks": [
-        "repo: the exact dicta-il repository id of the 24B chat (instruct / thinking) model",
-        "licence: the weights' licence on that model card, and its class (allowed / conditional / forbidden)",
+        "repo: the exact dicta-il repository id of the 24B chat model Lumen evaluates (the Thinking card above is Apache-2.0 with tool calling; a different 24B repository needs its own licence check)",
         "ollama: an Ollama-pullable GGUF name (hf.co/<owner>/<repo>) and who publishes it",
         "revision and ollamaRevision: the commit shas evaluated"
       ]
