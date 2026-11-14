@@ -356,5 +356,34 @@ describe("the Quota object (worker.mjs)", () => {
     expect(await q.admit(quotaIds(SECRET, "198.51.100.40"), "n1")).toBe("rooms-full");
     expect(asks).toBeLessThanOrEqual(256);
   });
+
+  it("RR18-469-1: a co-editor's writes count against the co-editor, not the creator, and still lift protection", async () => {
+    const st = memState();
+    const evicted: string[] = [];
+    // 8,000 bytes, 10 rooms: 40 bytes per owner, one room's share 800.
+    const env: Record<string, unknown> = { COLLAB_TOKEN_SECRET: SECRET, COLLAB_MAX_ROOMS: "10", COLLAB_MAX_STORED_BYTES: "8000" };
+    env.ROOMS = { idFromString: (d: string) => d, get: (d: string) => ({ canEvict: async () => true, evict: async () => (evicted.push(d), true) }) };
+    const q = new Quota(st, env);
+    at("2026-11-12T10:00:00Z");
+    const creator = quotaIds(SECRET, "198.51.100.70");
+    const me = { o: ownerOf(SECRET, creator), p: null };
+    const editor = ownerOf(SECRET, quotaIds(SECRET, "203.0.113.71"));
+    expect(await q.admit(creator, "shared")).toBeNull();
+    // 10 bytes from the creator, 3,000 from a co-editor.
+    await q.saved("shared", 3010, "shared", me, { [`${me.o}:`]: 10, [`${editor}:`]: 3000 });
+    expect(q.counts.ownerBytes.get(me.o)).toBe(10);
+    expect(q.counts.ownerBytes.get(editor)).toBe(3000);
+    // The creator is under its 40 bytes, so it can still make a room.
+    expect(await q.admit(creator, "second")).toBeNull();
+    // The co-editor is past its cap and wrote most of the room: it loses its protection and makes way first.
+    expect(await q.joined("shared", { o: visitor, p: null })).toBe(true);
+    await q.saved("second", 5, "second", me);
+    expect(await q.admit(quotaIds(SECRET, "198.51.100.72"), "n1")).toBeNull();
+    await q.saved("n1", 5000 - 2000, "n1");
+    await q.saved("second", 2000, "second", me, { [`${editor}:`]: 2000 });
+    expect(q.counts.bytes).toBeGreaterThanOrEqual(8000);
+    expect(await q.admit(quotaIds(SECRET, "198.51.100.73"), "n2")).toBeNull();
+    expect(evicted).toContain("shared");
+  });
 });
 
