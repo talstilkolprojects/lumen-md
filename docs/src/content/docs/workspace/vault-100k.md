@@ -35,7 +35,8 @@ slow down. Lumen is measured against a synthetic vault of 100,000 notes:
   modification time and its size still match the file; a saved index from an
   older version of Lumen, which has no sizes, is not used, and its notes are
   read once. Two edits that leave both the time and the size the same can't be
-  told apart. Search, backlinks, the tags panel,
+  told apart. Each vault gets a random id of its own, kept in
+  `.lumen/vault-id`, so two folders never share a saved index. Search, backlinks, the tags panel,
   the graph, link completion and the other views wait for that check, so
   what they first show is already up to date. If that check is slow, a view
   that lists notes doesn't wait for it: it shows them once the check is done; if the
