@@ -35,7 +35,7 @@ ledger) מופיע מסלול שלא מתועד כאן.
 | Ollama | הפרומפט והטקסט | `Ollama (this machine / LAN)` במחשב שלכם או ברשת המקומית; `Ollama on a remote server` אם הגדרתם שרת מרוחק | אצלכם, או לפי מי שמפעיל את השרת המרוחק | `local-ai` / `cloud-ai` |
 | בדיקת דקדוק | טקסט הפסקה שנבדקת | `LanguageTool grammar check` (‏api.languagetool.org, או שרת שהגדרתם), או `LanguageTool (this machine / LAN)` | לפי מדיניות LanguageTool | `cloud-text` / `local-ai` |
 | דיאגרמות PlantUML | קוד הדיאגרמה | `PlantUML rendering (kroki.io)`, רק אחרי שאישרתם | לפי מדיניות kroki.io | `cloud-text` |
-| הורדת מודלים ומילונים | בקשה לקובץ, בלי תוכן שלכם (השרת רואה את כתובת ה-IP) | `Model download (Hugging Face)`,‏ `Dictionary / OCR model download (GitHub)`,‏ `webR (R runtime) download` | יומני השרת של הספק | `model-download` |
+| הורדת מודלים ומילונים | בקשה לקובץ, בלי תוכן שלכם (השרת רואה את כתובת ה-IP) | `Model download (Hugging Face)`,‏ `Model download (Lumen's mirror)` (כשהבנייה מגדירה `VITE_MODEL_MIRROR_URL`; כל קובץ נבדק ב-sha256),‏ `Dictionary / OCR model download (GitHub)`,‏ `webR (R runtime) download` | יומני השרת של הספק | `model-download` |
 | ספקי CDN שלא אמורים להופיע | בקשה לקובץ | `jsDelivr CDN (only the webR download is expected)`,‏ `Excalidraw font fallback CDN (not needed: fonts are served locally)` | יומני הספק. מופיע בפנקס כאזהרה | `third-party` |
 | מחקר | שאילתת החיפוש וכתובות הדפים | `Research service`,‏ `Research (local service)`,‏ `Research (local SearXNG)` | לפי מי שמפעיל את שירות המחקר | `research` / `local-ai` |
 | כלי רשת של סוכן | הבקשה שהסוכן שולח, רק בהסכמה או לשירות שהוגדר | `Agent tool <שם הכלי>`. סוכן Python לא מקבל רשת: `Agent tool run_python: the Python sandbox has no network` | לפי היעד | `research` |
@@ -46,6 +46,11 @@ ledger) מופיע מסלול שלא מתועד כאן.
 | תוספים | הבקשה שהתוסף שולח | `Plugin <מזהה>` | לפי היעד | `plugin` |
 | בדיקת עדכונים (אפליקציה למחשב) | גרסה ומערכת הפעלה בלבד | `Desktop update check (app version and platform only)` | יומני GitHub Releases | `static-asset` |
 | מקורות יהודיים | ההפניה שביקשתם ("ברכות ב ע״א"), ושום דבר מהפתקים | `Jewish sources (Sefaria): the reference only` (‏sefaria.org), כשאתם מחפשים מקור | לפי מדיניות ספריא | `cloud-text` |
+| רשומות הכנסת | שם החוק או הצעת החוק שביקשתם, ושום דבר מהפתקים | `Knesset records (OData): the law or bill name only` (‏knesset.gov.il), כשאתם מחפשים | לפי מדיניות הכנסת | `cloud-text` |
+| נתונים ממשלתיים | מילות החיפוש, מזהה מאגר הנתונים או הסדרה שביקשתם | `Government data (data.gov.il, CBS): the search words or dataset id only` (‏data.gov.il,‏ apis.cbs.gov.il), כשאתם מחפשים | לפי מדיניות האתר הממשלתי | `cloud-text` |
+| Zotero | בקשות לספרייה שלכם ב-Zotero עם המפתח שלכם; נכתבות רק ההדגשות מ-PDF שאתם שולחים ומאשרים | `Zotero Web API (your library; writes only the PDF highlights you send)` (‏api.zotero.org) | בספרייה שלכם ב-Zotero, לפי מדיניות Zotero | `research` |
+| פרסום ב-Bluesky (‏Standard.site) | הפתק שאתם מפרסמים, כרשומה ציבורית (קטעים שסומנו `<redact>` והערות מוסתרות מוסרים קודם), ושם המשתמש וה-App Password להתחברות הזו בלבד | `Publish to the AT Protocol (Standard.site), your PDS`, וגם `AT Protocol identity lookup (plc.directory)` כדי למצוא את השרת של החשבון, רק אחרי שאישרתם | ציבורי, בחשבון ה-AT Protocol שלכם עד שתסירו; ממסרים ואפליקציות שומרים עותקים משלהם | `third-party` |
+| חיבורי לוח שנה | ב-CalDAV: המשימות שלכם, לשרת לוח השנה שהגדרתם, עם שם המשתמש והסיסמה. במינוי: בקשת קריאה בלבד לכתובת ה-ICS שהוספתם | `CalDAV task sync (your calendar server)`,‏ `Calendar subscription (ICS, read only)`, רק אחרי שהגדרתם חיבור | בשרת לוח השנה, לפי מי שמפעיל אותו; ביומני שרת ה-ICS | `third-party` |
 | ערכות נושא וקטעי CSS | בקשת קובץ מגיליון סגנון שהתקנתם (גופן או תמונה) | `A stylesheet (theme or CSS snippet) loaded it` | ביומני השרת. מופיע כדי שתראו אותו | `third-party` |
 | סנכרון מוצפן ברשת המקומית | הפתקים, מוצפנים מקצה לקצה, רק למכשיר השני שלכם | `Encrypted sync on the local network (no cloud)` | במכשיר השני. שום דבר לא עובר בשרת | `local-ai` |
 | כל בקשה אחרת (מצב ביקורת) | מה שהבקשה נושאת | `Other request (audit mode)`: כשמצב הביקורת פועל, כל בקשה שיוצאת מהמכשיר ושהכללים למעלה לא מזהים מופיעה גם היא | לפי היעד | `network` |
