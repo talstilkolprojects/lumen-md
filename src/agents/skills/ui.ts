@@ -32,7 +32,14 @@ export async function availableSkills(): Promise<Skill[]> {
   } catch {
     store = null; // no vault open: the starters only
   }
-  return (await loadSkills(store)).skills;
+  // A vault that came with git (a clone, a shared repository) is someone else's: its skills are outside ones (review 21, D1).
+  let sharedFrom: string | undefined;
+  try {
+    if (store && (await getVaultBackend().stat(".git"))) sharedFrom = "a git repository";
+  } catch {
+    sharedFrom = undefined;
+  }
+  return (await loadSkills(store, sharedFrom ? { sharedFrom } : {})).skills;
 }
 
 /** The palette's items for a `/` query. */
@@ -80,6 +87,7 @@ export async function runSkillFromUi(skill: Skill, request: string): Promise<voi
           }),
       },
     );
+    if (run.errorCode === "skill-refused") return;
     if (run.status !== "ok" || typeof run.output !== "string") {
       showAiToast(t("skills.failed", { name: title, error: run.error ?? run.status }), "error");
       return;

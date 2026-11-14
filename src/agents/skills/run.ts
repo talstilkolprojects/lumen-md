@@ -16,7 +16,7 @@ import { runAgent } from "../runtime";
 import { WORKSPACE_TOOLS } from "../tools/workspace";
 import { EDITOR_TOOLS } from "../tools/editor";
 import { VALIDATE_TOOLS } from "../tools/validate";
-import { isTrusted, skillFingerprint, sourceLabel, TOOL_ALIASES, type Skill } from "./skillFile";
+import { isOutside, isTrusted, skillFingerprint, sourceLabel, TOOL_ALIASES, type Skill } from "./skillFile";
 
 /**
  * The tools a skill may declare: the vault's and the open note's, and the
@@ -61,16 +61,17 @@ export const SKILL_RULES =
 /** The agent definition the runtime runs for a skill. */
 export function skillAgent(skill: Skill, guarded?: string): AgentDefinition<SkillInput, string> {
   const { tools, unknown } = resolveSkillTools(skill.allowedTools);
-  const trusted = isTrusted(skill.source);
-  // An untrusted skill's instructions only ever reach the model through the injection guard (runSkill).
-  if (!trusted && guarded === undefined) throw new SkillRefusedError(`skill "${skill.name}" is untrusted: its instructions must pass the injection guard`);
-  const instructions = trusted ? skill.body : guarded!;
-  const missing = unknown.length ? `\nThese tools the skill names are not available here and must not be assumed: ${unknown.join(", ")}.` : "";
+  const outside = isOutside(skill.source);
+  // An outside skill's words (description and body) only ever reach the model through the injection guard (runSkill).
+  if (outside && guarded === undefined) throw new SkillRefusedError(`skill "${skill.name}" is untrusted: its instructions must pass the injection guard`);
+  // Unknown tool names are counted, never quoted: they are the skill's text too (review 21, D2).
+  const missing = unknown.length ? `\n${unknown.length} tool name(s) the skill lists are not available here; use only the tools you are given.` : "";
   const scopes = [...new Set(tools.map((t) => t.scope).filter((s): s is Exclude<ToolScope, "read"> => s !== "read"))];
+  const head = outside ? `# Skill: ${skill.name}\n\n${guarded}` : `# Skill: ${skill.name}\n${skill.description}\n\n${skill.body}`;
   return {
     id: `skill:${skill.name}`,
-    description: skill.description,
-    system: `${SKILL_RULES}${missing}\n\n# Skill: ${skill.name}\n${skill.description}\n\n${instructions}`,
+    description: skill.name,
+    system: `${SKILL_RULES}${missing}\n\n${head}`,
     user: (input) => input.text || "Run the skill.",
     tools,
     requires: scopes,
@@ -90,19 +91,23 @@ export interface RunSkillOptions extends RunOptions {
   allowed?: { has(fp: string): boolean; add(fp: string): void };
 }
 
-/** Run a skill on the user's request. Untrusted skills ask first and run tainted. */
+/** Run a skill on the user's request. Every skill but the starters asks before its first run of each version; outside ones run guarded and tainted. */
 export async function runSkill(skill: Skill, input: SkillInput, opts: RunSkillOptions = {}): Promise<AgentRun<string>> {
-  const trusted = isTrusted(skill.source);
-  if (!trusted) {
-    const fp = skillFingerprint(skill);
+  if (!isTrusted(skill.source)) {
+    const fp = await skillFingerprint(skill);
     if (!opts.allowed?.has(fp)) {
       const ok = opts.confirmFirstRun ? await opts.confirmFirstRun(skill, fp) : false;
-      if (!ok) throw new SkillRefusedError(`skill "${skill.name}" was not allowed to run`);
+      if (!ok) {
+        // Refused: nothing runs. A finished run (status "aborted"), so callers need no special case.
+        const now = Date.now();
+        return { id: `skill-refused-${now.toString(36)}`, agentId: `skill:${skill.name}`, executor: null, model: null, startedAt: now, endedAt: now, status: "aborted", errorCode: "skill-refused", error: `skill "${skill.name}" was not allowed to run`, attempts: 0, steps: [], suggestions: [], tokens: { input: 0, output: 0, estimated: true } };
+      }
       opts.allowed?.add(fp);
     }
   }
+  const outside = isOutside(skill.source);
   // The guard loads on demand, as in the runtime (agents/untrusted.ts carries its strings).
-  const guarded = trusted ? undefined : (await import("../untrusted")).guardUntrusted(skill.body, [sourceLabel(skill.source)]).text;
+  const guarded = outside ? (await import("../untrusted")).guardUntrusted(`${skill.description}\n\n${skill.body}`, [sourceLabel(skill.source)]).text : undefined;
   const def = skillAgent(skill, guarded);
   const { confirmFirstRun: _c, allowed: _a, ...run } = opts;
   void _c;
@@ -110,6 +115,6 @@ export async function runSkill(skill: Skill, input: SkillInput, opts: RunSkillOp
   return runAgent(def, input, {
     ...run,
     grants: (def.requires ?? []) as ToolScope[],
-    ...(trusted ? {} : { untrusted: [...(run.untrusted ?? []), sourceLabel(skill.source)] }),
+    ...(outside ? { untrusted: [...(run.untrusted ?? []), sourceLabel(skill.source)] } : {}),
   });
 }

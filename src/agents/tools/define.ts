@@ -87,6 +87,24 @@ export function safeWorkspacePath(path: string): string {
   return p;
 }
 
+/** Files that steer other agents (Claude Code, Codex, Copilot): an agent of Lumen never writes them. */
+export const AGENT_CONTROL_FILES = /^(claude|agents|gemini|copilot-instructions)\.md$|^\.(cursorrules|windsurfrules|mcp\.json)$/i;
+
+/**
+ * A path an agent may WRITE (review 21, D3): `safeWorkspacePath`, and not an
+ * absolute path, not under a dot folder (`.lumen/` holds skills and MCP
+ * grants, `.claude/` and `.git/` steer other tools), not an agent control
+ * file — the same rule the MCP server applies to outside clients.
+ */
+export function safeWriteTarget(path: string): string {
+  if (/^([a-zA-Z]:)?[\\/]/.test(path)) throw new ToolError("denied", `Agents write only inside the vault, not to ${path}`);
+  const p = safeWorkspacePath(path);
+  const parts = p.split("/");
+  if (parts.some((seg) => seg.startsWith("."))) throw new ToolError("denied", `Agents do not write under dot folders (${p}): they hold Lumen's skills and permissions and other tools' settings`);
+  if (AGENT_CONTROL_FILES.test(parts[parts.length - 1]!)) throw new ToolError("denied", `Agents do not write ${p}: it steers other agents`);
+  return p;
+}
+
 /**
  * Small models often send `"10"` for a number or `"true"` for a boolean.
  * Top-level arguments whose schema says number / integer / boolean are

@@ -102,9 +102,18 @@ export function parseSkill(text: string, source: SkillSource, folder?: string): 
   };
 }
 
-/** A skill runs without asking only when it is Lumen's own or the user's own vault's. */
+/**
+ * A skill runs without asking only when it is one of Lumen's starters. A
+ * vault skill may have come with a shared folder, a git clone or a download
+ * (review 21, D1): it asks once per version, on this device.
+ */
 export function isTrusted(source: SkillSource): boolean {
-  return source.kind === "starter" || source.kind === "vault";
+  return source.kind === "starter";
+}
+
+/** Outside skills (a plugin's, a shared vault's): guarded and tainted on every run, even after the first-run approval. */
+export function isOutside(source: SkillSource): boolean {
+  return source.kind === "plugin" || source.kind === "shared";
 }
 
 export function sourceLabel(source: SkillSource): string {
@@ -125,15 +134,9 @@ export function skillTitle(skill: Skill, locale: string): string {
   return skill.metadata[`title-${locale.slice(0, 2)}`] ?? skill.metadata.title ?? skill.name;
 }
 
-/** A stable fingerprint of what the skill would do (its text and tools): a trust decision is for this exact version. */
-export function skillFingerprint(skill: Skill): string {
-  const s = `${skill.name}\n${skill.allowedTools.join(" ")}\n${skill.body}`;
-  let h1 = 0x811c9dc5;
-  let h2 = 0x01000193;
-  for (let i = 0; i < s.length; i++) {
-    const c = s.charCodeAt(i);
-    h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
-    h2 = Math.imul(h2 ^ c, 0x5bd1e995) >>> 0;
-  }
-  return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0");
+/** SHA-256 of everything that reaches the model (name, description, tools, body): a trust decision is for this exact version (review 21, D2). */
+export async function skillFingerprint(skill: Skill): Promise<string> {
+  const s = JSON.stringify([skill.name, skill.description, skill.allowedTools, skill.metadata, skill.body]);
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }

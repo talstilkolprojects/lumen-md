@@ -8,7 +8,7 @@
  */
 
 import YAML from "yaml";
-import { defineTool, optionalNumber, requireString, safeWorkspacePath, stageChange, throwIfAborted, ToolError } from "./define";
+import { defineTool, optionalNumber, requireString, safeWorkspacePath, safeWriteTarget, stageChange, throwIfAborted, ToolError } from "./define";
 import { rangeContext } from "../staging";
 import type { StagedReceipt } from "../types";
 import {
@@ -82,7 +82,7 @@ export const writeFileTool = defineTool<{ path: string; content: string }, Stage
   scope: "write",
   run: async (args, ctx) => {
     needWorkspace();
-    const path = safeWorkspacePath(requireString(args, "path"));
+    const path = safeWriteTarget(requireString(args, "path"));
     // A missing or non-string body is a malformed call, never an empty file.
     if (typeof args.content !== "string") throw new ToolError("bad-args", '"content" must be a string');
     const content = args.content;
