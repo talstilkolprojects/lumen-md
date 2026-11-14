@@ -1804,6 +1804,27 @@
       "group": "Insert",
       "hint": "Search the laws you saved, on this device; every answer is an exact, verified section",
       "icon": "FileText"
+    },
+    {
+      "id": "sources.datagovInsert",
+      "label": "Insert government data (data.gov.il)…",
+      "group": "Insert",
+      "hint": "Search datasets; the rows are saved as a CSV in your vault, shown as a table or chart, with the attribution",
+      "icon": "Table"
+    },
+    {
+      "id": "sources.cbsSeries",
+      "label": "Insert a CBS series…",
+      "group": "Insert",
+      "hint": "A Central Bureau of Statistics time series by its id (120010 is the CPI), with the attribution its licence asks for",
+      "icon": "BarChart3"
+    },
+    {
+      "id": "sources.datasetRefresh",
+      "label": "Refresh this dataset",
+      "group": "Insert",
+      "hint": "Fetch the dataset under the cursor again and see what changed before switching to the new snapshot",
+      "icon": "Download"
     }
   ],
   "full": [
@@ -3760,6 +3781,27 @@
       "group": "Insert",
       "hint": "Search the laws you saved, on this device; every answer is an exact, verified section",
       "icon": "FileText"
+    },
+    {
+      "id": "sources.datagovInsert",
+      "label": "Insert government data (data.gov.il)…",
+      "group": "Insert",
+      "hint": "Search datasets; the rows are saved as a CSV in your vault, shown as a table or chart, with the attribution",
+      "icon": "Table"
+    },
+    {
+      "id": "sources.cbsSeries",
+      "label": "Insert a CBS series…",
+      "group": "Insert",
+      "hint": "A Central Bureau of Statistics time series by its id (120010 is the CPI), with the attribution its licence asks for",
+      "icon": "BarChart3"
+    },
+    {
+      "id": "sources.datasetRefresh",
+      "label": "Refresh this dataset",
+      "group": "Insert",
+      "hint": "Fetch the dataset under the cursor again and see what changed before switching to the new snapshot",
+      "icon": "Download"
     }
   ],
   "autoSaveOn": [
@@ -4031,6 +4073,9 @@
     "sources.knessetLaw",
     "sources.knessetBill",
     "sources.knessetProtocol",
-    "sources.askLaw"
+    "sources.askLaw",
+    "sources.datagovInsert",
+    "sources.cbsSeries",
+    "sources.datasetRefresh"
   ]
 }

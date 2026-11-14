@@ -57,11 +57,13 @@ const ROUTES: Route[] = [
   // W5.1: the reference only, after the user confirms each lookup; a saved copy needs no request.
   // W7.5: a law or bill name, after the user turns Knesset sources on and confirms each lookup.
   { id: "knesset-odata", file: "sources/knesset/app.ts", marker: /withGate\(\{ source: "knesset", reason: LEDGER_REASON/, gate: /enabled: \(\) => isSourceEnabled\("knesset"\)/ },
+  // W7.6: search words, a dataset id or a series id, after the user turns government data on and confirms.
+  { id: "datagov-ckan", file: "sources/datagov/app.ts", marker: /withGate\(gate\(confirm\)/, gate: /enabled: \(\) => isSourceEnabled\("datagov"\)/ },
   { id: "sefaria-texts", file: "sources/sefaria/app.ts", marker: /ledgerFetch\(\{ force: \{ category: "cloud-text", reason: LEDGER_REASON \}, consent: true \}\)/, gate: /asked \?\?= await confirm\(\);\s*if \(!asked\) throw new DeclinedError\(\)/ },
 ];
 
 /** Names of cloud AI hosts and browser services that talk to their vendor. */
-const CLOUD_MARKER = /knesset\.gov\.il\/Odata|www\.sefaria\.org\/api|api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com|api\.mistral\.ai|api\.languagetool\.org|kroki\.io\/|\bSpeechRecognition\b|speechSynthesis\.speak/;
+const CLOUD_MARKER = /data\.gov\.il\/api|apis\.cbs\.gov\.il|knesset\.gov\.il\/Odata|www\.sefaria\.org\/api|api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com|api\.mistral\.ai|api\.languagetool\.org|kroki\.io\/|\bSpeechRecognition\b|speechSynthesis\.speak/;
 
 /**
  * Files that name a cloud host without sending anything: classification and
@@ -70,7 +72,7 @@ const CLOUD_MARKER = /knesset\.gov\.il\/Odata|www\.sefaria\.org\/api|api\.openai
  * has a speech service; it starts it through VoiceDictation's gated
  * startBrowserSpeech.
  */
-const NAMES_ONLY = new Set(["ai/privacyLedger.ts", "types/fileSystemAccess.d.ts", "ui/LiveDictation.tsx", "sources/sefaria/client.ts", "sources/knesset/odata.ts"]);
+const NAMES_ONLY = new Set(["ai/privacyLedger.ts", "types/fileSystemAccess.d.ts", "ui/LiveDictation.tsx", "sources/sefaria/client.ts", "sources/knesset/odata.ts", "sources/datagov/api.ts", "sources/datagov/snapshot.ts"]);
 
 const SRC = join(__dirname, "..");
 const ROOT = join(SRC, "..");
