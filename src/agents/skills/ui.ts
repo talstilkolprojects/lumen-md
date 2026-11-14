@@ -15,6 +15,7 @@ import { allowedStore, loadSkills, matchSkills, parseSlash, type SkillStore } fr
 import { runSkill, SkillRefusedError } from "./run";
 import { isTrusted, skillTitle, sourceLabel, type Skill } from "./skillFile";
 import "./strings";
+import { explainError } from "../../lib/userError";
 
 /** The vault's `.lumen/skills` through the storage backend. */
 export function workspaceSkillStore(): SkillStore {
@@ -104,6 +105,6 @@ export async function runSkillFromUi(skill: Skill, request: string): Promise<voi
     if (staged) window.dispatchEvent(new Event("lumen-open-agent-review"));
   } catch (e) {
     if (e instanceof SkillRefusedError) return;
-    showAiToast(t("skills.failed", { name: title, error: (e as Error)?.message ?? String(e) }), "error");
+    showAiToast(t("skills.failed", { name: title, error: explainError(e, "skills") }), "error");
   }
 }

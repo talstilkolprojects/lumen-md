@@ -29,7 +29,7 @@ import { WrongPassphraseError } from "../header";
 import { explainError } from "../../../lib/userError";
 
 const muted: React.CSSProperties = { fontSize: 13, color: "hsl(var(--fg-muted))" };
-const errorStyle: React.CSSProperties = { fontSize: 13, color: "hsl(0 70% 50%)" };
+const errorStyle: React.CSSProperties = { fontSize: 13, color: "hsl(var(--danger))" };
 const big: React.CSSProperties = { padding: "10px 18px", border: "none", borderRadius: 8, background: "hsl(var(--accent))", color: "white", cursor: "pointer", fontSize: 15, justifySelf: "start" };
 const field: React.CSSProperties = { width: "100%", padding: "8px 10px", border: "1px solid hsl(var(--border))", borderRadius: 6, background: "transparent", color: "inherit", font: "inherit" };
 
@@ -139,7 +139,7 @@ export function SetupWizard({
   const attention = files.filter(([, f]) => f.state === "conflict" || f.state === "error" || f.state === "pending").slice(0, 50);
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "hsl(0 0% 0% / 0.4)", display: "grid", placeItems: "center", zIndex: 1000 }} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div style={{ position: "fixed", inset: 0, background: "var(--overlay)", display: "grid", placeItems: "center", zIndex: 1000 }} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div
         role="dialog"
         aria-modal="true"
@@ -200,7 +200,7 @@ export function SetupWizard({
                     <li key={i}>{w}</li>
                   ))}
                 </ol>
-                <div role="note" style={{ ...errorStyle, color: "hsl(30 80% 40%)" }}>
+                <div role="note" style={{ ...errorStyle, color: "hsl(var(--warning))" }}>
                   {t("e2ee.guide.lossWarning")}
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

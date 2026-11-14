@@ -18,6 +18,7 @@
 import english from "../i18n/lazy/hostmove.json";
 import { isRTL, registerEnglish, t } from "../i18n";
 import { moveTarget } from "./moveTarget";
+import { explainError } from "../lib/userError";
 
 registerEnglish(english);
 
@@ -55,7 +56,7 @@ export function showMoveBanner(movedTo: string, doc: Document = document): HTMLE
     download.disabled = true;
     void exportAndSave(doc)
       .then((n) => (status.textContent = t("pwa.move.downloaded", { count: n })))
-      .catch((e: unknown) => (status.textContent = t("pwa.move.failed", { error: e instanceof Error ? e.message : String(e) })))
+      .catch((e: unknown) => (status.textContent = t("pwa.move.failed", { error: explainError(e, "host-move") })))
       .finally(() => (download.disabled = false));
   });
   const open = doc.createElement("a");

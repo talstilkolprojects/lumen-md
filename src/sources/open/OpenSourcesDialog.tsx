@@ -16,6 +16,7 @@ import "../../citations/CiteDialog.css";
 import "./OpenSourcesDialog.css";
 import { enabledSources, setSourceEnabled, type OpenSourceId } from "./gate";
 import { KINDS, merge, type Kind, type LocalSources, type OpenResult } from "./search";
+import { explainError } from "../../lib/userError";
 
 export interface DialogDeps {
   /** Saved laws and the downloaded library (read from the vault once). */
@@ -66,7 +67,7 @@ export function OpenSourcesDialog(d: DialogDeps) {
         setStatus(t("openSources.found", { count: r.length }));
       }
     } catch (e) {
-      setStatus(t("openSources.failed", { error: e instanceof Error ? e.message : String(e) }));
+      setStatus(t("openSources.failed", { error: explainError(e, "open-sources") }));
     } finally {
       setBusy(false);
     }
@@ -82,7 +83,7 @@ export function OpenSourcesDialog(d: DialogDeps) {
         d.onClose();
       } else setStatus(t("openSources.declined"));
     } catch (e) {
-      setStatus(t("openSources.failed", { error: e instanceof Error ? e.message : String(e) }));
+      setStatus(t("openSources.failed", { error: explainError(e, "open-sources") }));
     } finally {
       setBusy(false);
     }

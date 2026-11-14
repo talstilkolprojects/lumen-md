@@ -150,7 +150,7 @@ export function LanJoin({ onLinked }: { onLinked: () => Promise<void> }) {
     try {
       setFound(await findDevices());
     } catch (err) {
-      setError(lanError(err));
+      setError(describeLanError(err));
     } finally {
       setFinding(false);
     }

@@ -36,6 +36,7 @@ import { describeAnnotation, shortId, type PdfAnnotation } from "../pdf/annotati
 import { ZOTERO_API, type ZoteroWebState, type FetchLike } from "./zoteroWeb";
 
 export const SENT_FILE = ".lumen/zotero-annotations.json";
+// design-allow: the annotation colour Zotero stores with each highlight (data sent to its API, not an interface colour)
 export const HIGHLIGHT_COLOR = "#ffd400";
 const MAX_BATCH = 50;
 

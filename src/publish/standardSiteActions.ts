@@ -14,6 +14,7 @@ import "./standardSiteStrings";
 import { t } from "../i18n";
 import { showAiToast } from "../ui/AiToast";
 import { REFRESH_SECRET, atprotoFetch, login, noteTitle, publishNote, resume, unpublishNote, DeclinedError, type AtSession } from "./standardSite";
+import { explainError } from "../lib/userError";
 
 const ACCOUNT_KEY = "lumen.atproto.account";
 const PUBLISHED_KEY = "lumen.atproto.published";
@@ -107,7 +108,7 @@ export async function publishOpenNote(doc: { path: string; markdown: string }): 
   } catch (e) {
     if (e instanceof DeclinedError) return;
     session = null;
-    showAiToast(t("atproto.failed", { error: e instanceof Error ? e.message : String(e) }), "error");
+    showAiToast(t("atproto.failed", { error: explainError(e, "atproto") }), "error");
   }
 }
 
@@ -129,6 +130,6 @@ export async function unpublishOpenNote(doc: { path: string; markdown: string })
   } catch (e) {
     if (e instanceof DeclinedError) return;
     session = null;
-    showAiToast(t("atproto.failed", { error: e instanceof Error ? e.message : String(e) }), "error");
+    showAiToast(t("atproto.failed", { error: explainError(e, "atproto") }), "error");
   }
 }
