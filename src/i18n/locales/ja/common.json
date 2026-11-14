@@ -1551,6 +1551,8 @@
   "organizer.resume": "再開",
   "organizer.sent": "{count} 件中 {staged} 件をレビュー画面に送信",
   "organizer.title": "ボールトを整理",
+  "organizer.model": "ローカルモデルで再評価",
+  "organizer.model.about": "次の実行から、Ollama またはブラウザ内モデルがこの端末で各提案を評価します。何も送信されず、すべての変更はこれまでどおり承認を待ちます。",
   "pageView.jump": "ページへ移動",
   "pageView.next": "次のページ",
   "pageView.of": "/ {total}",

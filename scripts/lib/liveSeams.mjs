@@ -77,7 +77,6 @@ export function deadSeams(srcDir) {
  * coordinator decides (wire or delete); it is never silently fine.
  */
 export const LIVE_SEAM_EXCEPTIONS = {
-  setOrganizerModel: { kind: "pending", task: "W10.C16", reason: "the organizer's local model" },
   setToolPermission: { kind: "pending", task: "W10.C2", reason: "per-tool MCP permissions from the servers screen" },
   registerGrammarRanker: { kind: "pending", task: "W10.B9", reason: "the model ranking of grammar findings" },
   setArgon2idImplementation: { kind: "pending", task: "W10.D5", reason: "hash-wasm's Argon2id once it is in the lockfile" },

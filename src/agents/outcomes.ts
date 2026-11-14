@@ -111,3 +111,40 @@ export function __resetOutcomes(): void {
   db = null;
   pending.clear();
 }
+
+/*
+ * Feature tallies (plan W2.1 → 5.6, audit W10.C16): the organizer's
+ * approvals and rejections live in this same book, under
+ * `feature\u0000<scope>\u0000<feature>`, instead of a separate store, so
+ * the learning critic holds every "did it work here" in one place.
+ */
+const featureKey = (scope: string, feature: string) => `feature\u0000${scope}\u0000${feature}`;
+
+/** A feature's tally in the book: approved (ok) and rejected (fail). */
+export async function featureTally(scope: string, feature: string): Promise<{ ok: number; fail: number } | null> {
+  const b = await loadOutcomes();
+  const t = b[featureKey(scope, feature)];
+  return t ? { ok: t.ok, fail: t.fail } : null;
+}
+
+/** Every feature tally of a scope, by feature. */
+export async function featureTallies(scope: string): Promise<Record<string, { ok: number; fail: number }>> {
+  const b = await loadOutcomes();
+  const prefix = featureKey(scope, "");
+  const out: Record<string, { ok: number; fail: number }> = {};
+  for (const [k, t] of Object.entries(b)) if (k.startsWith(prefix)) out[k.slice(prefix.length)] = { ok: t.ok, fail: t.fail };
+  return out;
+}
+
+/** Record one decision on each of `features` (approved or rejected). */
+export async function recordFeatureOutcome(scope: string, features: readonly string[], approved: boolean): Promise<void> {
+  const b = await loadOutcomes();
+  for (const f of features) {
+    const t = (b[featureKey(scope, f)] ??= { ok: 0, fail: 0, last: 0 });
+    if (approved) t.ok++;
+    else t.fail++;
+    t.last = Date.now();
+  }
+  await save();
+}
+

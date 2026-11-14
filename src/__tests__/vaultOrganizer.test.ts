@@ -219,4 +219,47 @@ describe("the job: staged for review, nothing written", () => {
     const end = await job.done;
     expect(end.suggestions.map((s) => [s.id, s.confidence])).toEqual([["link:a.md→Project Aurora.md", 0.97]]);
   });
+
+  it("with consent, the local model (through the agent runtime) re-scores the suggestions, which still only wait for review (W10.C16)", async () => {
+    const { registerOrganizerModel, setOrganizerModelConsent } = await import("../agents/organizer/model");
+    const { registerExecutor, resetExecutors } = await import("../agents/executors");
+    const { fakeExecutor, reply } = await import("./helpers/fakeExecutor");
+    resetExecutors();
+    localStorage.setItem("lumen.ai.cache", "off");
+    // A scripted local model: it rates the Hiring Plan link low and the Aurora one high.
+    const ex = fakeExecutor((req) => reply(/Suggestion: link \(link:a\.md→Hiring/.test(req.messages.map((m) => m.content).join("\n")) ? '{"confidence": 0.1}' : '{"confidence": 0.97}'));
+    registerExecutor(ex);
+    const files = { "a.md": "Project Aurora and the Hiring Plan.\n", "Project Aurora.md": "# Project Aurora\n", "Hiring Plan.md": "# Hiring Plan\n" };
+    try {
+      // No consent: nothing registered, the model is never asked.
+      setOrganizerModelConsent(false);
+      expect(registerOrganizerModel()).toBe(false);
+      expect((await startOrganizer(source(files)).done).suggestions).toHaveLength(2);
+      expect(ex.calls).toHaveLength(0);
+      // Consent: every suggestion goes to the model; the low one is dropped.
+      setOrganizerModelConsent(true);
+      expect(registerOrganizerModel()).toBe(true);
+      const job = startOrganizer(source(files));
+      const end = await job.done;
+      expect(ex.calls.length).toBe(2);
+      expect(end.suggestions.map((x) => [x.id, x.confidence])).toEqual([["link:a.md→Project Aurora.md", 0.97]]);
+      expect(job.stageNext()).toBe(1);
+      expect(listStagedChanges().map((c) => [c.agentId, c.status, c.summary.slice(0, 4)])).toEqual([[ORGANIZER_AGENT, "pending", "97% "]]);
+      job.dispose();
+    } finally {
+      setOrganizerModelConsent(false);
+      setOrganizerModel(null);
+      resetExecutors();
+    }
+  });
+
+  it("decisions are learned in the learning critic's book (agents/outcomes.ts), not a store of their own (W10.C16)", async () => {
+    __resetLearning();
+    const { featureTally } = await import("../agents/outcomes");
+    await recordDecision(["link", "tag:x"], true);
+    await recordDecision(["link"], false);
+    expect(await featureTally("organizer", "link")).toEqual({ ok: 1, fail: 1 });
+    expect(await featureTally("organizer", "tag:x")).toEqual({ ok: 1, fail: 0 });
+  });
 });
+

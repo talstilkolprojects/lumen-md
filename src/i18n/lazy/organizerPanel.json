@@ -17,5 +17,7 @@
   "organizer.ready": "{count} suggestions: {link} links, {tag} tags, {merge} merges, {moc} maps of content",
   "organizer.resume": "Resume",
   "organizer.sent": "{staged} of {count} sent to the review screen",
-  "organizer.title": "Organize the vault"
+  "organizer.title": "Organize the vault",
+  "organizer.model": "Re-score with the local model",
+  "organizer.model.about": "Ollama or the in-browser model rates each suggestion on this device, from the next run. Nothing is sent anywhere, and every change still waits for your approval."
 }

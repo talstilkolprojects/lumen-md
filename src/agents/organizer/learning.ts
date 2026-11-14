@@ -1,16 +1,19 @@
 /**
- * What the organizer learns from your approvals and rejections (plan W2.1),
- * the way the learning critic (T30 / plan 5.6, agents/outcomes.ts) learns
- * which suggestion worked: a tally per feature (`link`, `tag`, `tag:<tag>`,
- * `merge`, `moc`) in IndexedDB, on this device only.
+ * What the organizer learns from your approvals and rejections (plan W2.1):
+ * a tally per feature (`link`, `tag`, `tag:<tag>`, `merge`, `moc`), kept by
+ * the learning critic itself (T30 / plan 5.6, agents/outcomes.ts, scope
+ * `organizer`; audit W10.C16) instead of a store of its own, in IndexedDB,
+ * on this device only. A tally from the older `lumen-organizer` store is
+ * folded in once.
  *
  * A suggestion's confidence is scaled by how its features fared here
  * (Laplace-smoothed approval rate, 0.5 when nothing is known yet), and a
  * feature rejected at least 3 times with under a 25% approval rate is not
  * suggested again.
  */
-import { createStore, get, set, type UseStore } from "idb-keyval";
+import { createStore, del, get, type UseStore } from "idb-keyval";
 import type { OrganizerSuggestion } from "./analyze";
+import { __resetOutcomes, featureTallies, recordFeatureOutcome } from "../outcomes";
 
 export interface Tally {
   ok: number;
@@ -18,23 +21,34 @@ export interface Tally {
 }
 export type Book = Record<string, Tally>;
 
-const KEY = "organizer.v1";
-let db: UseStore | null = null;
+/** The older store (before W10.C16): read once and folded into the outcomes book. */
+const LEGACY_KEY = "organizer.v1";
+export const OUTCOME_SCOPE = "organizer";
 let book: Book | null = null;
 
-function store(): UseStore | null {
+async function legacyBook(): Promise<Book | null> {
   if (typeof indexedDB === "undefined") return null;
-  return (db ??= createStore("lumen-organizer", "kv"));
+  try {
+    const s: UseStore = createStore("lumen-organizer", "kv");
+    const old = (await get(LEGACY_KEY, s)) as Book | undefined;
+    if (old && Object.keys(old).length) await del(LEGACY_KEY, s);
+    return old ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function loadBook(): Promise<Book> {
   if (book) return book;
-  const s = store();
-  try {
-    book = (s ? ((await get(KEY, s)) as Book | undefined) : undefined) ?? {};
-  } catch {
-    book = {};
+  const old = await legacyBook();
+  if (old) {
+    for (const [f, t] of Object.entries(old)) {
+      for (let i = 0; i < t.ok; i++) await recordFeatureOutcome(OUTCOME_SCOPE, [f], true);
+      for (let i = 0; i < t.no; i++) await recordFeatureOutcome(OUTCOME_SCOPE, [f], false);
+    }
   }
+  const tallies = await featureTallies(OUTCOME_SCOPE);
+  book = Object.fromEntries(Object.entries(tallies).map(([f, t]) => [f, { ok: t.ok, no: t.fail }]));
   return book;
 }
 
@@ -64,7 +78,7 @@ export function applyLearning(list: readonly OrganizerSuggestion[], b: Book, min
     .sort((x, y) => y.confidence - x.confidence || x.id.localeCompare(y.id));
 }
 
-/** Record a decision on a suggestion (all of its features). */
+/** Record a decision on a suggestion (all of its features), in the learning critic's book. */
 export async function recordDecision(features: readonly string[], approved: boolean): Promise<Book> {
   const b = await loadBook();
   for (const f of features) {
@@ -72,18 +86,12 @@ export async function recordDecision(features: readonly string[], approved: bool
     if (approved) t.ok++;
     else t.no++;
   }
-  const s = store();
-  if (s) {
-    try {
-      await set(KEY, b, s);
-    } catch {
-      /* storage denied: learning stays for the session */
-    }
-  }
+  await recordFeatureOutcome(OUTCOME_SCOPE, features, approved);
   return b;
 }
 
 /** Tests: forget everything (in memory; the next save overwrites the stored book). */
 export function __resetLearning(): void {
   book = {};
+  __resetOutcomes();
 }

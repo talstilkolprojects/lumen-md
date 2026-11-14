@@ -1551,6 +1551,8 @@
   "organizer.resume": "继续",
   "organizer.sent": "已将 {staged} / {count} 条送到审阅界面",
   "organizer.title": "整理笔记库",
+  "organizer.model": "用本地模型重新评分",
+  "organizer.model.about": "从下一次运行起，Ollama 或浏览器内模型在本设备上为每条建议评分。不会发送任何内容，每项更改仍需你批准。",
   "pageView.jump": "跳转到页面",
   "pageView.next": "下一页",
   "pageView.of": "共 {total} 页",
