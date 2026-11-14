@@ -27,7 +27,10 @@ function repo() {
   writeFileSync(join(dir, "src/ai/privacyLedger.ts"), 'const RULES = [{ host: "api.openai.com" }];\n');
   writeFileSync(join(dir, "src/a.ts"), "export const a = 1;\n");
   writeFileSync(join(dir, "package-lock.json"), JSON.stringify({ packages: { "node_modules/ok": { version: "1.0.0", license: "MIT" } } }));
+  // The real budget script and the helper it imports (the source-map check, plan 11.5).
   cpSync(join(ROOT, "scripts/bundle-budget.mjs"), join(dir, "scripts/bundle-budget.mjs"));
+  mkdirSync(join(dir, "scripts/lib"), { recursive: true });
+  cpSync(join(ROOT, "scripts/lib/sourcemaps.mjs"), join(dir, "scripts/lib/sourcemaps.mjs"));
   git("add", "-A");
   git("commit", "-q", "-m", "base [skip ci]");
   return { dir, git, done: () => rmSync(dir, { recursive: true, force: true }) };
