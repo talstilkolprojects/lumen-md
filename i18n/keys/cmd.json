@@ -394,6 +394,26 @@
       "vars": []
     },
     {
+      "key": "cmd.book.addChapter",
+      "en": "Book: add this note as a chapter",
+      "vars": []
+    },
+    {
+      "key": "cmd.book.addChapter.hint",
+      "en": "Adds the note to the end of the book whose index is in the same folder",
+      "vars": []
+    },
+    {
+      "key": "cmd.book.open",
+      "en": "Book: chapters, goals and export",
+      "vars": []
+    },
+    {
+      "key": "cmd.book.open.hint",
+      "en": "Chapter order, word goals, today's words and streak; export a Hebrew EPUB or print to PDF",
+      "vars": []
+    },
+    {
       "key": "cmd.canvas.migrate",
       "en": "🎨 Canvas: convert tldraw canvases to Excalidraw",
       "vars": []

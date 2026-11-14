@@ -1240,6 +1240,20 @@
       "group": "Insert",
       "hint": "[[Page|label]]",
       "icon": "Link"
+    },
+    {
+      "id": "book.open",
+      "label": "Book: chapters, goals and export",
+      "group": "View",
+      "hint": "Chapter order, word goals, today's words and streak; export a Hebrew EPUB or print to PDF",
+      "icon": "FileText"
+    },
+    {
+      "id": "book.addChapter",
+      "label": "Book: add this note as a chapter",
+      "group": "View",
+      "hint": "Adds the note to the end of the book whose index is in the same folder",
+      "icon": "FileText"
     }
   ],
   "full": [
@@ -2618,6 +2632,20 @@
       "group": "Insert",
       "hint": "[[Page|label]]",
       "icon": "Link"
+    },
+    {
+      "id": "book.open",
+      "label": "Book: chapters, goals and export",
+      "group": "View",
+      "hint": "Chapter order, word goals, today's words and streak; export a Hebrew EPUB or print to PDF",
+      "icon": "FileText"
+    },
+    {
+      "id": "book.addChapter",
+      "label": "Book: add this note as a chapter",
+      "group": "View",
+      "hint": "Adds the note to the end of the book whose index is in the same folder",
+      "icon": "FileText"
     }
   ],
   "autoSaveOn": [
@@ -2806,6 +2834,8 @@
     "insert.embed",
     "insert.htmlpreview",
     "insert.bibtex",
-    "insert.wikilink"
+    "insert.wikilink",
+    "book.open",
+    "book.addChapter"
   ]
 }
