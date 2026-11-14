@@ -2354,6 +2354,8 @@
   "usage.week": "Starts diese Woche: {opens} · Fehler: {errors}",
   "usage.weekly": "Erinnere mich einmal pro Woche daran, diesen Bericht zu senden",
   "usage.yes": "ja",
+  "vault.watch.unreadable.body": "Änderungen außerhalb von Lumen in „{folder}“ werden erst bemerkt, wenn er wieder gelesen werden kann.",
+  "vault.watch.unreadable.title": "Ein Ordner kann nicht gelesen werden",
   "vaultCheck.checking": "Jede Datei im Vault wird geprüft…",
   "vaultCheck.clean": "{files} Dateien in {seconds} s geprüft: keine Probleme.",
   "vaultCheck.confirm": "{n} Probleme reparieren? Jede Datei wird vor der Änderung nach {folder} kopiert. In einem Tab geöffnete Notizen bleiben unberührt.",

@@ -258,6 +258,17 @@ export function setOnVaultReplaced(fn: () => void): void {
 let stopWatching: (() => void) | null = null;
 
 /**
+ * The one-time notice for a sub-folder the watcher skips because it keeps
+ * failing to list (review t5, L1): changes in it are not noticed until it can
+ * be read again. The toast store and i18n load here, off the startup path.
+ */
+function warnUnreadable(dir: string): void {
+  void Promise.all([import("../../store/useToastStore"), import("../../i18n")])
+    .then(([{ toast }, { t }]) => toast.warn(t("vault.watch.unreadable.title"), t("vault.watch.unreadable.body", { folder: dir })))
+    .catch(() => undefined);
+}
+
+/**
  * Watch a folder vault for changes made outside Lumen (plan 4.4). OPFS is
  * private to this origin: nothing else writes it, so it is not watched.
  */
@@ -271,6 +282,7 @@ function watch(loc: StoredLocation, backend: VaultBackend): void {
       observe: (poke) => observeDirectoryHandle(handle, poke),
       // The observer reports changes at once; polling is the backstop.
       intervalMs: hasObserver ? 5000 : 1000,
+      onUnreadable: warnUnreadable,
     });
   } else if (loc.kind === "mobile") {
     // Phones have no folder watcher Lumen can use: compare sizes and times
@@ -278,6 +290,7 @@ function watch(loc: StoredLocation, backend: VaultBackend): void {
     // (the usual moment: back from the Files app or another editor).
     stopWatching = watchExternalChanges(backend, {
       intervalMs: 3000,
+      onUnreadable: warnUnreadable,
       observe: (poke) => {
         if (typeof document === "undefined") return null;
         const onShow = () => {

@@ -154,6 +154,29 @@ describe("the real policy", () => {
     }
   });
 
+  it("every framed .html route has its extension-less twin on Cloudflare Pages (review t5, M1)", () => {
+    // Cloudflare Pages answers /x.html with a 308 to /x: a framed page without a /x rule
+    // takes only the /* catch-all (the app's policy, X-Frame-Options: DENY, no sandbox).
+    const routes = policy.routes as Record<string, { frameable?: boolean; samples?: string[] }>;
+    const cfSamples = (policy.hosts.cloudflare.samples ?? {}) as Record<string, string[]>;
+    const rules = readFileSync(join(ROOT, "public/_headers"), "utf8").split("\n");
+    const framed = Object.entries(routes).filter(([, r]) => r.frameable && (r.samples ?? []).some((s) => s.endsWith(".html")));
+    expect(framed.map(([id]) => id).sort()).toEqual(["content-frame", "livejs-runner", "playground-runner"]);
+    for (const [id, r] of framed) {
+      for (const html of (r.samples ?? []).filter((s) => s.endsWith(".html"))) {
+        const bare = html.slice(0, -".html".length);
+        expect(cfSamples[id], id).toContain(bare);
+        const at = rules.indexOf(bare);
+        expect(at, `${bare} rule in public/_headers`).toBeGreaterThan(-1);
+        const block = rules.slice(at + 1, rules.findIndex((l, i) => i > at && !l.startsWith("  ")));
+        expect(block, bare).toContain("  ! X-Frame-Options");
+        expect(block.find((l) => l.startsWith("  Content-Security-Policy:")), bare).toBe(`  ${renderHeaderLine(policy, id)}`);
+      }
+    }
+    const cf = rules[rules.indexOf("/content-frame") + 3];
+    expect(cf).toMatch(/; sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox$/);
+  });
+
   it("build-time endpoint origins extend the app policy but never connect-src 'none'", () => {
     const origin = "https://lumen-auth.acme.workers.dev";
     const runner = renderHeaderLine(policy, "livejs-runner");

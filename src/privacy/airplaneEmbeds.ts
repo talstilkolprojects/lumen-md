@@ -5,6 +5,8 @@
  * records an attempt or reads the switch: airplane.ts passes it in.
  */
 
+import { contentFrameOrigin } from "../lib/contentFrame";
+
 /** Origin + path only. */
 export function egressTarget(url: string, base: string = typeof location !== "undefined" ? location.href : "http://localhost/"): string {
   try {
@@ -50,6 +52,17 @@ export const EMBED_ORIGINS: ReadonlySet<string> = new Set([
   "https://www.youtube-nocookie.com",
 ]);
 
+/**
+ * A site whose frames keep `allow-same-origin`: EMBED_ORIGINS, and the frame
+ * site this build was made with. That one comes from VITE_CONTENT_FRAME_URL
+ * (src/lib/contentFrame.ts, a build-time value, with the same checks as
+ * cspEndpoints.ts's frame-src entry), so a self-hosted frame site keeps its
+ * embeds' players working without an edit here (review t5, L4).
+ */
+export function isKnownEmbedOrigin(origin: string): boolean {
+  return EMBED_ORIGINS.has(origin) || origin === contentFrameOrigin();
+}
+
 const NO_POPUPS = new Set(["allow-popups", "allow-popups-to-escape-sandbox"]);
 
 /**
@@ -62,7 +75,7 @@ export function guardedSandbox(sandbox: string, src: string | null, base: string
   if (src) {
     try {
       const u = new URL(src, base);
-      foreign = /^https?:$/.test(u.protocol) && u.origin !== new URL(base).origin && !EMBED_ORIGINS.has(u.origin);
+      foreign = /^https?:$/.test(u.protocol) && u.origin !== new URL(base).origin && !isKnownEmbedOrigin(u.origin);
     } catch {
       foreign = true; // why: a URL that doesn't parse gets no powers
     }

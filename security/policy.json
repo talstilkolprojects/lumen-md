@@ -436,9 +436,10 @@
       ],
       "samples": {
         "playground-runner": ["/playground-runner"],
-        "livejs-runner": ["/livejs-runner"]
+        "livejs-runner": ["/livejs-runner"],
+        "content-frame": ["/content-frame"]
       },
-      "samplesWhy": "Cloudflare Pages answers /x.html with a 308 to /x and serves the page there, so the runner pages are framed at their extension-less paths: those need the runner policy too."
+      "samplesWhy": "Cloudflare Pages answers /x.html with a 308 to /x and serves the page there, so the runner pages and the content frame are framed (or opened) at their extension-less paths: those need their own policy too. Without /content-frame the frame would take only the /* catch-all (the app's policy and X-Frame-Options: DENY) and lose its sandbox (review t5, M1)."
     },
     "vercel": {
       "why": "deploy/vercel.base.json headers. Vercel reads vercel.ts, which runs at build time with the project's environment: it loads this file and fills the placeholder below with the deployment's endpoint origins (vercel.ts, src/build/cspEndpoints.ts).",

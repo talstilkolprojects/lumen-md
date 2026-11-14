@@ -95,6 +95,14 @@ export function loosens(key: string, value: string, current: string | null): boo
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
+/** The longest item of a `list` setting (a snippet's file name, a toolbar action id). */
+const MAX_LIST_ITEM = 256;
+/** A `list` value: an array of at most `maxItems` strings, none empty or over MAX_LIST_ITEM. */
+const isStringList = (entry: SettingEntry, v: unknown): v is string[] =>
+  Array.isArray(v) &&
+  v.length <= (entry.maxItems ?? 200) &&
+  v.every((x) => typeof x === "string" && x.length > 0 && x.length <= MAX_LIST_ITEM);
+
 function storageKeys(storage: SettingsTarget["storage"]): string[] {
   const keys: string[] = [];
   for (let i = 0; i < storage.length; i++) {
@@ -122,6 +130,8 @@ export function validAppValue(entry: SettingEntry, value: unknown): boolean {
       return typeof value === "string" || value === null;
     case "json":
       return isPlainObject(value);
+    case "list":
+      return isStringList(entry, value);
     default:
       return false;
   }
@@ -146,6 +156,12 @@ export function validLocalValue(entry: SettingEntry, value: unknown): value is s
       try {
         JSON.parse(value);
         return true;
+      } catch {
+        return false;
+      }
+    case "list":
+      try {
+        return isStringList(entry, JSON.parse(value));
       } catch {
         return false;
       }
