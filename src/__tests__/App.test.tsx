@@ -507,9 +507,10 @@ describe("App keyboard shortcuts", () => {
 describe("App file actions", () => {
   it("a failed save says why; a cancelled Save-As stays silent", async () => {
     await renderApp();
-    h.saveFile.mockRejectedValueOnce(new Error("disk full"));
+    // W3.2: the reason in words (the raw error goes to the log, never to the screen).
+    h.saveFile.mockRejectedValueOnce(new DOMException("The disk is full", "QuotaExceededError"));
     await run(() => opts().handleSave(false));
-    expect(h.uiAlert).toHaveBeenCalledWith({ message: t("doc.alert.saveFailed", { error: "disk full" }) });
+    expect(h.uiAlert).toHaveBeenCalledWith({ message: t("doc.alert.saveFailed", { error: t("error.quota") }) });
     h.uiAlert.mockClear();
     h.saveFile.mockRejectedValueOnce(new DOMException("cancelled", "AbortError"));
     await run(() => opts().handleSave(true));
@@ -535,9 +536,9 @@ describe("App file actions", () => {
     await renderApp();
     await run(() => opts().handleExportHtml());
     expect(h.exportToHtml).toHaveBeenCalledWith("# E", "e.md");
-    h.exportToHtml.mockRejectedValueOnce(new Error("blocked"));
+    h.exportToHtml.mockRejectedValueOnce(new DOMException("blocked", "NotAllowedError"));
     await run(() => opts().handleExportHtml());
-    expect(h.uiAlert).toHaveBeenCalledWith({ message: t("doc.alert.exportFailed", { error: "blocked" }) });
+    expect(h.uiAlert).toHaveBeenCalledWith({ message: t("doc.alert.exportFailed", { error: t("error.permission") }) });
   });
 
   it("save to workspace: explains when OPFS is missing", async () => {
