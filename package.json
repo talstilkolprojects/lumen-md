@@ -76,7 +76,7 @@
     "@ruby/3.4-wasm-wasi": "2.10.1",
     "@ruby/wasm-wasi": "2.10.1",
     "@sentry/browser": "^10.50.0",
-    "@sentry/react": "^10.50.0",
+    "@sentry/react": "^11.7.0",
     "@tauri-apps/api": "^2.10.1",
     "abcjs": "^6.6.3",
     "acorn": "^8.19.0",
