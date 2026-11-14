@@ -122,9 +122,14 @@ export function Preview({ markdownText, docKey = null }: Props) {
           (path, heading) =>
             window.dispatchEvent(
               new CustomEvent("lumen-open-file", {
-                // Same slugger rehype-slug gives the rendered headings
-                // (Unicode-aware: Hebrew / CJK headings keep their text).
-                detail: heading ? { path, heading: headingSlug(heading) } : { path },
+                // A PDF takes the fragment as written (`page=3&highlight=…`,
+                // plan 4.14). A note: the same slugger rehype-slug gives the
+                // rendered headings (Unicode-aware: Hebrew / CJK keep their text).
+                detail: /\.pdf$/i.test(path)
+                  ? { path, fragment: heading ?? null }
+                  : heading
+                    ? { path, heading: headingSlug(heading) }
+                    : { path },
               }),
             ),
         );

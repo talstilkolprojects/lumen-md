@@ -62,6 +62,9 @@ export function AiToastContainer() {
 
   return (
     <div
+      // Stays live under a modal overlay that makes the app inert (the PDF
+      // reader): a save error must still be shown and announced.
+      data-modal-exempt=""
       style={{
         position: "fixed",
         bottom: 40,

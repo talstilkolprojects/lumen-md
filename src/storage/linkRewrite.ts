@@ -16,6 +16,7 @@
  */
 
 import { noteKey } from "../lib/slug";
+import { decodeWikiPath, encodeWikiPath } from "../lib/wikiPath";
 import { basename, dirname, listWorkspace, readWorkspaceFile, writeWorkspaceFile } from "./workspace";
 
 const MD_EXT = /\.(md|markdown)$/i;
@@ -119,13 +120,17 @@ export function rewriteLinks(content: string, notePath: string, oldPath: string,
 
   const wiki = (text: string) =>
     text.replace(/\[\[([^\]\r\n|#]+)((?:#[^\]\r\n|]*)?)((?:\|[^\]\r\n]*)?)\]\]/g, (m, target: string, heading: string, label: string) => {
-      const t = target.trim();
+      // A generated link (a PDF highlight, plan 4.14) percent-encodes the
+      // characters that are wiki syntax: compare decoded, write back encoded.
+      const written = target.trim();
+      const t = decodeWikiPath(written);
+      const out = (p: string) => (t === written ? p : encodeWikiPath(p));
       if (t.includes("/")) {
         const parts = t.replace(MD_EXT, "").split("/");
         const n = oldParts.length;
         if (folder ? parts.length <= n : parts.length !== n) return m;
         if (!oldParts.every((k, i) => noteKey(parts[i]) === k)) return m;
-        return `[[${[newFull, ...parts.slice(n)].join("/")}${heading}${label}]]`;
+        return `[[${out([newFull, ...parts.slice(n)].join("/"))}${heading}${label}]]`;
       }
       if (folder || noteKey(t) !== oldKey) return m;
       // `[[Old]]` with two notes called Old: only the one it opens moved?
@@ -133,7 +138,7 @@ export function rewriteLinks(content: string, notePath: string, oldPath: string,
         const target = resolveShort(t, opts.vault);
         if (target && target !== oldPath) return m;
       }
-      return `[[${newStem}${heading}${label}]]`;
+      return `[[${out(newStem)}${heading}${label}]]`;
     });
 
   /** New destination for `dest` (as written), or null to keep it. */

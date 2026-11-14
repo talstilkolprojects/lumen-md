@@ -1,6 +1,7 @@
 import { noteKey } from "../lib/slug";
 import { WORKSPACE_CHANGED, changeOf } from "./workspaceEvents";
 import { hasHebrew, hebrewFind } from "../text/hebrew";
+import { isIndexableTextPath } from "../lib/textPaths";
 import {
   basename,
   isAssetName,
@@ -40,6 +41,14 @@ const cache = {
 export const REVALIDATE_MS = 30_000;
 const WIKI_RE = /\[\[([^\]\r\n|]+?)(?:\|[^\]\r\n]+?)?\]\]/g;
 
+/**
+ * Notes and plain text only: a PDF or another binary read as text would put
+ * megabytes of gibberish into the index (review #272, step 2.17).
+ */
+function indexable(path: string): boolean {
+  return !isAssetName(path) && isIndexableTextPath(path);
+}
+
 /** Read one file into an index entry, or null if unreadable. */
 async function indexFile(e: { path: string; name: string; modified: number }): Promise<IndexedFile | null> {
   try {
@@ -73,7 +82,7 @@ async function build(): Promise<void> {
   const list = await listWorkspace({ includeAssets: false });
   const next = new Map<string, IndexedFile>();
   await mapLimit(
-    list.filter((e) => !isAssetName(e.path)),
+    list.filter((e) => indexable(e.path)),
     16,
     async (e) => {
       const f = await indexFile(e);
@@ -87,7 +96,7 @@ async function build(): Promise<void> {
 /** Fallback for unannounced writes: re-read what the listing says changed. */
 async function revalidate(): Promise<void> {
   cache.checkedAt = Date.now();
-  const list = (await listWorkspace({ includeAssets: false })).filter((e) => !isAssetName(e.path));
+  const list = (await listWorkspace({ includeAssets: false })).filter((e) => indexable(e.path));
   const seen = new Set(list.map((e) => e.path));
   for (const path of [...cache.byPath.keys()]) if (!seen.has(path)) cache.byPath.delete(path);
   await mapLimit(
@@ -106,7 +115,7 @@ async function revalidate(): Promise<void> {
  * vault. Returns false when a full rebuild is needed instead.
  */
 async function refreshDirty(): Promise<void> {
-  const paths = [...cache.dirty];
+  const paths = [...cache.dirty].filter(indexable);
   cache.dirty.clear();
   await Promise.all(
     paths.map(async (path) => {

@@ -13,6 +13,7 @@
 
 import { get, set } from "idb-keyval";
 import { log } from "../lib/logger";
+import { isIndexableTextPath } from "../lib/textPaths";
 import {
   ensureIndex,
 } from "../storage/workspaceIndex";
@@ -110,7 +111,9 @@ export async function buildRagIndex(): Promise<void> {
 
   await Promise.all(
     list
-      .filter((e) => !isAssetName(e.path))
+      // Notes and plain text only: a PDF or another binary decoded as text
+      // is gibberish in the search worker (review #272, step 2.17).
+      .filter((e) => !isAssetName(e.path) && isIndexableTextPath(e.path))
       .map(async (e) => {
         try {
           const content = await readWorkspaceFile(e.path);

@@ -25,6 +25,8 @@ const AiDoctorPanel = lazy(() => import("./ui/AiDoctorPanel").then(m => ({ defau
 const FineTuneSettings = lazy(() => import("./ui/FineTuneSettings").then(m => ({ default: m.FineTuneSettings })));
 const VersionHistory = lazy(() => import("./ui/VersionHistory").then(m => ({ default: m.VersionHistory })));
 const MarkdownTableEditor = lazy(() => import("./ui/MarkdownTableEditor").then(m => ({ default: m.MarkdownTableEditor })));
+// PDF reader (plan 4.14): pdf.js and the reader load only when a PDF is opened.
+const PdfReader = lazy(() => import("./pdf/PdfReader").then(m => ({ default: m.PdfReaderOverlay })));
 import { htmlToMarkdown } from "./storage/fileFormats";
 import { wirePluginAPI, registerPlugin, unregisterPlugin, wordCountPlugin } from "./plugins/pluginSystem";
 import { CommandPalette } from "./ui/CommandPalette";
@@ -32,7 +34,9 @@ import { AiFab } from "./ui/AiFab";
 import { FileTree } from "./ui/FileTree";
 import { SidebarResizer } from "./ui/SidebarResizer";
 import { uiAlert, uiConfirm, uiPrompt } from "./ui/PromptDialog";
-import { openInsertTextDialog } from "./ui/InsertTextDialog";
+// The Insert-text dialog (and its smart detector) loads on first use, off the
+// startup path — it made room in the startup budget for the PDF reader (4.14).
+const openInsertTextDialog = () => import("./ui/InsertTextDialog").then((m) => m.openInsertTextDialog());
 import { BacklinksPanel } from "./ui/BacklinksPanel";
 // SearchDialog imports the CodeMirror search-highlight extension; lazy so
 // the boot path stays CodeMirror-free (the dialog opens on ⌘⇧F).
@@ -130,6 +134,13 @@ export default function App() {
   }, [searchOpen]);
   const [findReplaceOpen, setFindReplaceOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
+  /** The PDF open in the reader, with the link fragment that opened it (`page=N&highlight=ID`). */
+  const [pdfView, setPdfView] = useState<{ path: string; fragment: string | null; seq: number } | null>(null);
+  /** The open reader's save gate: replacing the reader waits until its highlights are saved. */
+  const pdfSaveGate = useRef<((then: () => void) => void) | null>(null);
+  const registerPdfSaveGate = useCallback((gate: ((then: () => void) => void) | null) => {
+    pdfSaveGate.current = gate;
+  }, []);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [tableEditorOpen, setTableEditorOpen] = useState(false);
   const [canvasOpen, setCanvasOpen] = useState(false);
@@ -426,8 +437,16 @@ export default function App() {
   // hub keeps the open path consistent (recents, dirty handling, etc).
   useEffect(() => {
     async function onOpen(e: Event) {
-      const detail = (e as CustomEvent<{ path: string; heading?: string }>).detail;
+      const detail = (e as CustomEvent<{ path: string; heading?: string; fragment?: string }>).detail;
       if (!detail?.path) return;
+      // A PDF opens in the reader, at the page / highlight the link names.
+      if (/\.pdf$/i.test(detail.path)) {
+        const open = () => setPdfView((prev) => ({ path: detail.path, fragment: detail.fragment ?? null, seq: (prev?.seq ?? 0) + 1 }));
+        // Another PDF replaces the open reader: only once its highlights are saved.
+        if (pdfSaveGate.current) pdfSaveGate.current(open);
+        else open();
+        return;
+      }
       try {
         const { readWorkspaceFile } = await import("./storage/workspace");
         const content = await readWorkspaceFile(detail.path);
@@ -1039,6 +1058,14 @@ export default function App() {
             });
           }}
         />
+        </Suspense>
+      )}
+
+      {/* PDF reader overlay (plan 4.14) */}
+      {pdfView && (
+        <Suspense fallback={null}>
+          {/* A new PDF gets a fresh reader: no page, search or OCR state carries over. */}
+          <PdfReader key={pdfView.path} path={pdfView.path} fragment={pdfView.fragment} openSeq={pdfView.seq} onClose={() => setPdfView(null)} registerSaveGate={registerPdfSaveGate} />
         </Suspense>
       )}
 

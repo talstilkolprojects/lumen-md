@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-10-18T12:22:55.812Z",
+  "generated_at": "2026-10-20T22:11:06.311Z",
   "source": "src/i18n/index.ts (en bundle)",
-  "count": 1432,
+  "count": 1458,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -1804,6 +1804,154 @@
       "vars": [
         "error"
       ]
+    },
+    {
+      "key": "cmd.pdf.open",
+      "en": "Open a PDF for reading…",
+      "vars": []
+    },
+    {
+      "key": "cmd.pdf.open.hint",
+      "en": "Highlights go to a .pdf.md note",
+      "vars": []
+    },
+    {
+      "key": "pdf.failed",
+      "en": "Couldn't open this PDF: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "pdf.noWorkspace",
+      "en": "PDFs need the workspace, which this browser can't provide.",
+      "vars": []
+    },
+    {
+      "key": "pdf.page.of",
+      "en": "Page {n} of {total}",
+      "vars": [
+        "n",
+        "total"
+      ]
+    },
+    {
+      "key": "pdf.page.label",
+      "en": "Page {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "pdf.zoomIn",
+      "en": "Zoom in",
+      "vars": []
+    },
+    {
+      "key": "pdf.zoomOut",
+      "en": "Zoom out",
+      "vars": []
+    },
+    {
+      "key": "pdf.zoomFit",
+      "en": "Fit width",
+      "vars": []
+    },
+    {
+      "key": "pdf.search.placeholder",
+      "en": "Search in this PDF",
+      "vars": []
+    },
+    {
+      "key": "pdf.search.count",
+      "en": "{i} of {n}",
+      "vars": [
+        "i",
+        "n"
+      ]
+    },
+    {
+      "key": "pdf.highlight",
+      "en": "Highlight",
+      "vars": []
+    },
+    {
+      "key": "pdf.highlight.hint",
+      "en": "Select text, then press H",
+      "vars": []
+    },
+    {
+      "key": "pdf.highlights",
+      "en": "Highlights",
+      "vars": []
+    },
+    {
+      "key": "pdf.highlights.empty",
+      "en": "Select text and press Highlight.",
+      "vars": []
+    },
+    {
+      "key": "pdf.note.placeholder",
+      "en": "Add a note…",
+      "vars": []
+    },
+    {
+      "key": "pdf.unanchored",
+      "en": "Text not found on the page.",
+      "vars": []
+    },
+    {
+      "key": "pdf.openNotes",
+      "en": "Open the notes",
+      "vars": []
+    },
+    {
+      "key": "pdf.saveFailed",
+      "en": "Couldn't save the highlights: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "pdf.noteTitle",
+      "en": "Highlights — {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "pdf.notePage",
+      "en": "p. {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "pdf.noteEmpty",
+      "en": "_No highlights yet._",
+      "vars": []
+    },
+    {
+      "key": "pdf.notesUnreadable",
+      "en": "the highlights block in {name} can't be read. Fix or remove it to highlight again.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "pdf.ocr.scanned",
+      "en": "This page is a scanned image.",
+      "vars": []
+    },
+    {
+      "key": "pdf.ocr.run",
+      "en": "Recognise text (OCR)",
+      "vars": []
+    },
+    {
+      "key": "pdf.ocr.running",
+      "en": "Recognising text on this device…",
+      "vars": []
     },
     {
       "key": "cmd.ai.cancel",

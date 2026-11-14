@@ -6,6 +6,7 @@
  */
 
 import { slug as headingSlug } from "github-slugger";
+import { decodeWikiPath } from "../lib/wikiPath";
 
 /**
  * Split `Note#Heading` into the note and the heading fragment. A target
@@ -18,14 +19,37 @@ export function splitWikiTarget(target: string): { note: string; heading: string
   return { note: target.slice(0, hash).trim(), heading: heading || null };
 }
 
-/** Workspace path for a wiki target, matching file name or path, case-insensitively. */
+/**
+ * Workspace path for a wiki target, matching file name or path,
+ * case-insensitively. A file named exactly as written wins over a note that
+ * matches without its extension: `[[paper.pdf]]` is the PDF, not its
+ * companion note `paper.pdf.md` (plan 4.14).
+ */
 export function resolveWikiTarget(target: string, paths: readonly string[]): string | null {
-  const want = target.trim().toLowerCase().replace(/\.(md|markdown)$/, "");
-  if (!want) return null;
+  // Generated links percent-encode the characters that are wiki syntax
+  // (`draft%232.pdf` for `draft#2.pdf`) and whitespace at either end
+  // (`%20paper.pdf`, plan 4.14). Such a target is most likely a generated
+  // link, so the file it was made for (decoded) wins over a file literally
+  // named with the escape (review #272, step 2.24). The decoded name is not
+  // trimmed again: its edge whitespace was encoded on purpose (step 2.20).
+  const written = target.trim();
+  const decoded = decodeWikiPath(written);
+  if (decoded !== written) return resolveExact(decoded, paths) ?? resolveExact(written, paths);
+  return resolveExact(written, paths);
+}
+
+/** `target` is already trimmed (or deliberately keeps its decoded edge whitespace). */
+function resolveExact(target: string, paths: readonly string[]): string | null {
+  const raw = target.toLowerCase();
+  const want = raw.replace(/\.(md|markdown)$/, "");
+  if (!want.trim()) return null;
   const strip = (p: string) => p.toLowerCase().replace(/\.(md|markdown)$/, "");
+  const name = (p: string) => p.split("/").pop() ?? p;
   return (
+    paths.find((p) => p.toLowerCase() === raw) ??
     paths.find((p) => strip(p) === want) ??
-    paths.find((p) => strip(p.split("/").pop() ?? p) === want) ??
+    paths.find((p) => name(p).toLowerCase() === raw) ??
+    paths.find((p) => strip(name(p)) === want) ??
     null
   );
 }

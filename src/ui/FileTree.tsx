@@ -27,7 +27,7 @@ import { t } from "../i18n";
 import { uiAlert, uiConfirm, uiPrompt } from "./PromptDialog";
 import { FileContextMenu, buildFileActions } from "./FileContextMenu";
 import { useAppStore } from "../store/useStore";
-import { movedPath, safeMove, trashPaths, undoTrash, type MoveResult } from "../storage/fileOps";
+import { duplicateFile, movedPath, renamedFileName, safeMoveWithCompanion, trashPaths, undoTrash, withoutCompanions, type MoveResult } from "../storage/fileOps";
 import { flushActiveWorkspaceDoc, syncOpenDocsAfterMove } from "../store/openDocs";
 import type { TrashItem } from "../storage/trash";
 import { toast, useToastStore } from "../store/useToastStore";
@@ -146,15 +146,20 @@ export function FileTree({
     if (target === null) return;
     const dir = target.trim().replace(/^\/+|\/+$/g, "");
     const updated = new Set<string>();
-    for (const p of selectedPaths) {
+    // A selected PDF and its selected highlights note move as one unit.
+    for (const p of withoutCompanions([...selectedPaths])) {
       const name = basename(p);
       const newPath = dir ? `${dir}/${name}` : name;
       try {
         await flushActiveWorkspaceDoc();
-        const r = await safeMove(p, newPath, { confirmReplace, folder: kindOf(p) === "directory" });
-        if (!r) continue;
-        r.linksUpdated.forEach((x) => updated.add(x));
-        afterMove(p, r);
+        // A PDF's highlights note moves with it (plan 4.14).
+        const m = await safeMoveWithCompanion(p, newPath, { confirmReplace, folder: kindOf(p) === "directory" });
+        if (!m) continue;
+        for (const [from, r] of [[p, m.main], [`${p}.md`, m.companion]] as const) {
+          if (!r) continue;
+          r.linksUpdated.forEach((x) => updated.add(x));
+          afterMove(from, r);
+        }
       } catch (e) {
         await uiAlert({ message: t("tree.alert.renameFailed", { error: (e as Error).message }) });
       }
@@ -278,6 +283,11 @@ export function FileTree({
 
   async function open(node: WorkspaceNode) {
     if (node.kind !== "file") return;
+    // A PDF opens in the reader (plan 4.14), not as text.
+    if (/\.pdf$/i.test(node.path)) {
+      window.dispatchEvent(new CustomEvent("lumen-open-file", { detail: { path: node.path } }));
+      return;
+    }
     try {
       const text = await readWorkspaceFile(node.path);
       onOpenFile(node.path, text);
@@ -294,15 +304,15 @@ export function FileTree({
       await uiAlert({ message: t("tree.alert.renameNoSlashes") });
       return;
     }
-    const ext = next.match(/\.[^./]+$/) ? "" : ".md";
-    const target = joinPath(dirname(oldPath), next + ext);
+    const target = joinPath(dirname(oldPath), renamedFileName(oldPath, next));
     try {
       const isFolder = findNode(tree, oldPath)?.kind === "directory";
       await flushActiveWorkspaceDoc();
-      const r = await safeMove(oldPath, isFolder ? joinPath(dirname(oldPath), next) : target, { confirmReplace, folder: isFolder });
-      if (!r) return;
-      afterMove(oldPath, r);
-      announceMove(r.linksUpdated);
+      const m = await safeMoveWithCompanion(oldPath, isFolder ? joinPath(dirname(oldPath), next) : target, { confirmReplace, folder: isFolder });
+      if (!m) return;
+      afterMove(oldPath, m.main);
+      if (m.companion) afterMove(`${oldPath}.md`, m.companion);
+      announceMove([...m.main.linksUpdated, ...(m.companion?.linksUpdated ?? [])]);
       await refresh();
     } catch (e) {
       await uiAlert({
@@ -311,18 +321,11 @@ export function FileTree({
     }
   }
 
-  /** Duplicate a single file as `<name> copy.<ext>` (folders skipped). */
+  /** Duplicate a single file as `<name> copy.<ext>` (folders skipped), byte for byte. */
   async function duplicate(node: WorkspaceNode): Promise<void> {
     if (node.kind !== "file") return;
     try {
-      const body = await readWorkspaceFile(node.path);
-      const dotIdx = node.name.lastIndexOf(".");
-      const stem = dotIdx >= 0 ? node.name.slice(0, dotIdx) : node.name;
-      const ext = dotIdx >= 0 ? node.name.slice(dotIdx) : "";
-      const dirPart = dirname(node.path);
-      const candidate = joinPath(dirPart, `${stem} copy${ext}`);
-      const newPath = await uniqueWorkspaceName(candidate);
-      await writeWorkspaceFile(newPath, body);
+      await duplicateFile(node.path);
       await refresh();
     } catch (e) {
       await uiAlert({ message: (e as Error).message });
