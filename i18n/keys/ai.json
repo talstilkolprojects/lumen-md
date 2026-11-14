@@ -395,6 +395,11 @@
       "vars": []
     },
     {
+      "key": "ai.doctor.check.speculative",
+      "en": "Speculative decoding (Ollama 0.34+)",
+      "vars": []
+    },
+    {
       "key": "ai.doctor.check.spellEn",
       "en": "English spelling on this device",
       "vars": []

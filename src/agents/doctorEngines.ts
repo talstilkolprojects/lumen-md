@@ -144,5 +144,19 @@ export async function engineFindings(probe?: Partial<EngineProbe>): Promise<Doct
     out.push({ id: "engines.caption", title: "ai.doctor.check.caption", status: "ok", detail: ready.length ? ready.map((k) => k.split(".").pop()).join(", ") : "on first use (consent)" });
   }
 
+  // Speculative decoding in Ollama ≥ 0.34 (W7.15): the measured tok/s with and without, per model.
+  {
+    const { readMeasurements } = await import("../ai/speculative");
+    const { describeMeasurement } = await import("../ai/speculativeMeasure");
+    const all = Object.values(readMeasurements(p.storage));
+    out.push({
+      id: "engines.speculative",
+      title: "ai.doctor.check.speculative",
+      // Information, not a problem: a model that has not answered yet is simply not measured yet.
+      status: "ok",
+      detail: all.length ? all.map(describeMeasurement).join("; ") : "measured after a model first answers on Ollama 0.34+",
+    });
+  }
+
   return out;
 }

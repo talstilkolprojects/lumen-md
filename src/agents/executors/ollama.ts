@@ -18,6 +18,7 @@ import { useAppStore } from "../../store/useStore";
 import type { AgentTool, Availability, Executor, ExecutorMessage, ExecutorRequest, ExecutorResponse, ModelTier, ToolCall } from "../types";
 import { getBaseUrl } from "../../ai/ollamaProvider";
 import { AiPolicyError, getAiPolicy, isLocalOrigin } from "../../ai/policy";
+import { draftOptions } from "../../ai/speculative";
 
 /** Under local-only, an Ollama on another machine is a third party: the prompt must not go there. */
 function remoteRefused(): boolean {
@@ -308,6 +309,8 @@ export const ollamaExecutor: Executor = {
         ...(req.temperature !== undefined ? { temperature: req.temperature } : {}),
         ...(req.maxTokens ? { num_predict: req.maxTokens } : {}),
         ...(req.seed !== undefined ? { seed: req.seed } : {}),
+        // Speculative decoding (plan W7.15): pinned off for reproducible runs and for models it slows down.
+        ...draftOptions(model, state.version),
       },
     };
     if (req.think !== undefined) body.think = req.think;
@@ -332,6 +335,7 @@ export const ollamaExecutor: Executor = {
       const data = (await res.json()) as Record<string, unknown>;
       if (typeof data.error === "string") throw new Error(`Ollama API error: ${data.error}`);
       const msg = (data.message ?? {}) as Record<string, unknown>;
+      afterAnswer(model, base);
       return {
         content: String(msg.content ?? "").trim(),
         toolCalls: parseToolCalls(msg.tool_calls),
@@ -387,9 +391,17 @@ export const ollamaExecutor: Executor = {
     // A stream that ends without its terminal `done` record was cut off
     // (server, proxy, network): a prefix is not an answer.
     if (!sawDone) throw new Error("Ollama API error: stream ended before the final record");
+    afterAnswer(model, base);
     return { content: content.trim(), toolCalls, model: answeredModel, usage };
   },
 };
+
+/** Once a model has answered: measure speculative decoding for it in the background, if not yet done (W7.15). */
+function afterAnswer(model: string, base: string): void {
+  if (!state.version) return;
+  const version = state.version;
+  void import("../../ai/speculativeMeasure").then((m) => m.scheduleMeasurement(model, version, base)).catch(() => undefined);
+}
 
 /** Tests. */
 export function __resetOllamaState(): void {
