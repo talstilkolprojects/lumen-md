@@ -30,6 +30,7 @@
     "lumen": "tsx bin/lumen.ts",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
+    "test:sr": "playwright test -c sr/playwright.sr.config.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "e2e:gate": "node scripts/e2e-gate.mjs",

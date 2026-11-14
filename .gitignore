@@ -99,3 +99,6 @@ public/excalidraw/
 
 # Reports written by the scheduled scripts (plan 0.11 / 14.3) — artifacts, never committed
 reports/
+
+# W4.21: Guidepup screen-reader results (sr/)
+sr-results/
