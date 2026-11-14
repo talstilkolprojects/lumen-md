@@ -63,6 +63,7 @@
     "plan": "node scripts/plan/build.mjs",
     "plan:check": "node scripts/plan/build.mjs --check",
     "models:registry": "node scripts/models/registry-from-run.mjs",
+    "models:mirror": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/models/mirror.mjs",
     "dod": "node scripts/dod.mjs",
     "unused": "node scripts/check-unused-files.mjs",
     "ci:real-model": "node scripts/real-tiny-model.mjs",

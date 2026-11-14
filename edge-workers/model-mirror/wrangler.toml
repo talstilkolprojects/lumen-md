@@ -1,0 +1,14 @@
+# Lumen's model mirror (plan W4.14): a read-only CORS proxy in front of the
+# GitHub releases that hold a copy of every model file. Free tier: Workers
+# on *.workers.dev (100,000 requests a day); the bytes stream through, so the
+# 10 ms CPU limit is not reached. Deploy: `npx wrangler deploy` in this
+# folder, then build the app with VITE_MODEL_MIRROR_URL=https://<name>.<account>.workers.dev
+name = "lumen-model-mirror"
+main = "worker.ts"
+compatibility_date = "2026-04-01"
+account_id = "REPLACE_WITH_CLOUDFLARE_ACCOUNT_ID"
+workers_dev = true
+
+[vars]
+# The repository whose releases hold the models (tags models-*).
+REPO = "talstilkol/lumen-md"

@@ -4,7 +4,7 @@
  * dictation works offline afterwards. Fetches go through `window.fetch`, so
  * the privacy ledger records them (category "model-download").
  */
-import { DICTATION_CACHE, VAD_FILE, ZIPFORMER_FILES, type ModelFile } from "./models";
+import { DICTATION_CACHE, VAD_FILE, ZIPFORMER_FILES, ZIPFORMER_REPO, ZIPFORMER_REVISION, type ModelFile } from "./models";
 
 export interface DictationFiles {
   encoder: Uint8Array;
@@ -49,26 +49,15 @@ async function fetchFile(f: ModelFile, cache: Cache | null, onBytes: (n: number)
     onBytes(b.length);
     return b;
   }
-  const res = await fetch(url, { signal });
-  if (!res.ok || !res.body) throw new Error(`download failed (${res.status}) — ${url}`);
-  const reader = res.body.getReader();
-  const parts: Uint8Array[] = [];
-  let n = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    parts.push(value);
-    n += value.length;
-    onBytes(value.length);
-  }
-  const out = new Uint8Array(n);
-  let at = 0;
-  for (const p of parts) {
-    out.set(p, at);
-    at += p.length;
-  }
-  if (f.bytes && n !== f.bytes) throw new Error(`download size mismatch for ${url}: ${n} bytes, expected ${f.bytes}`);
-  if (f.sha256 && (await sha256Hex(out)) !== f.sha256) throw new Error(`download checksum mismatch for ${url}`);
+  // Plan W4.14: Hugging Face at the pinned revision first, then Lumen's
+  // mirror and the user's own copy — each answer checked by size and sha256.
+  // A file without a sha256 (tokens.txt) comes only from the pinned revision.
+  const { candidates, currentSources, fetchVerified } = await import("../modelHosting");
+  const cands = f.path
+    ? candidates({ id: ZIPFORMER_REPO, hosting: { hf: ZIPFORMER_REPO, revision: ZIPFORMER_REVISION } }, { path: f.path, sha256: f.sha256 ?? "", bytes: f.bytes }, await currentSources())
+    : [{ kind: "hf" as const, url }];
+  // privacy-ledger: model-download — window.fetch, so the ledger records each source tried
+  const { data: out } = await fetchVerified({ path: f.path ?? url, sha256: f.sha256 ?? "", bytes: f.bytes }, cands, { fetch: (u, init) => fetch(u, init), onBytes, signal, digest: sha256Hex });
   try {
     await cache?.put(url, new Response(out, { headers: { "content-type": "application/octet-stream" } }));
   } catch {

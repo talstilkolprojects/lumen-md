@@ -1,0 +1,13 @@
+{
+  "modelSources.title": "Model download sources",
+  "modelSources.about": "Models download from Hugging Face first, then from Lumen's mirror, then from your own copy. Every file is checked against its checksum in the model registry, whichever source it came from.",
+  "modelSources.mirrorOn": "Lumen's mirror: on ({host})",
+  "modelSources.mirrorOff": "Lumen's mirror: not set up on this deployment",
+  "modelSources.userLabel": "Your own copy",
+  "modelSources.userHint": "A web address laid out like the mirror's releases: <address>/<release tag>/<file>. This deployment's security policy must allow it.",
+  "modelSources.save": "Save",
+  "modelSources.saved": "Saved.",
+  "modelSources.invalid": "Enter an http(s) address, or leave it empty.",
+  "modelSources.importFiles": "Add model files from this device…",
+  "modelSources.imported": "{stored} files added, {unknown} not recognised."
+}
