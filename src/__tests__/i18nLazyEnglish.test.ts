@@ -33,7 +33,7 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   // imported from outside, and must not reach the strings.
   "e2ee.json": {
     module: "sync/e2ee/strings.ts",
-    users: ["sync/e2ee/classroom/ClassroomPanel.tsx", "sync/e2ee/conflict.ts", "sync/e2ee/ui/FreshnessBanner.tsx", "sync/e2ee/ui/LanPairing.tsx", "sync/e2ee/ui/PassphraseForm.tsx", "sync/e2ee/ui/SetupWizard.tsx", "sync/e2ee/ui/SyncActivity.tsx", "sync/e2ee/ui/SyncPanel.tsx", "sync/e2ee/ui/SyncRulesForm.tsx", "sync/e2ee/ui/errorText.ts", "sync/e2ee/ui/treeBadges.ts"],
+    users: ["sync/e2ee/classroom/ClassroomPanel.tsx", "sync/e2ee/conflict.ts", "sync/e2ee/ui/FreshnessBanner.tsx", "sync/e2ee/ui/LanPairing.tsx", "sync/e2ee/ui/PairingCompare.tsx", "sync/e2ee/ui/PassphraseForm.tsx", "sync/e2ee/ui/SetupWizard.tsx", "sync/e2ee/ui/SyncActivity.tsx", "sync/e2ee/ui/SyncPanel.tsx", "sync/e2ee/ui/SyncRulesForm.tsx", "sync/e2ee/ui/errorText.ts", "sync/e2ee/ui/treeBadges.ts"],
     prefixes: ["e2ee."],
     within: "sync/e2ee/",
     shared: ["sync/e2ee/age.ts", "sync/e2ee/bytes.ts", "sync/e2ee/keys.ts", "sync/e2ee/lan/address.ts", "sync/e2ee/kdf.ts", "sync/e2ee/kdfCalibrate.ts", "sync/e2ee/primitives/argon2.ts", "sync/e2ee/primitives/blake2b.ts", "sync/e2ee/primitives/chacha20poly1305.ts", "sync/e2ee/primitives/scrypt.ts"],
