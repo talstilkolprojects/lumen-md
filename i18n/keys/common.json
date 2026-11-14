@@ -1795,6 +1795,119 @@
       ]
     },
     {
+      "key": "lexicon.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "lexicon.definition",
+      "en": "Definition",
+      "vars": []
+    },
+    {
+      "key": "lexicon.downloadConfirm",
+      "en": "Download the Hebrew dictionary ({count} entries, {mb} MB) from Hebrew Wiktionary? It stays on this device; lookups never leave it. Licence: CC BY-SA 4.0.",
+      "vars": [
+        "count",
+        "mb"
+      ]
+    },
+    {
+      "key": "lexicon.failed",
+      "en": "The dictionary could not be downloaded: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "lexicon.installed",
+      "en": "Hebrew dictionary installed: {count} entries. Right-click a Hebrew word.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "lexicon.loading",
+      "en": "Looking it up…",
+      "vars": []
+    },
+    {
+      "key": "lexicon.nikud",
+      "en": "Niqqud of the word",
+      "vars": []
+    },
+    {
+      "key": "lexicon.noDefinition",
+      "en": "No definition for this word, only synonyms.",
+      "vars": []
+    },
+    {
+      "key": "lexicon.noNikud",
+      "en": "The dictionary has no pointed form of this word.",
+      "vars": []
+    },
+    {
+      "key": "lexicon.noSynonyms",
+      "en": "No synonyms listed for this word.",
+      "vars": []
+    },
+    {
+      "key": "lexicon.noWord",
+      "en": "Put the cursor on a Hebrew word.",
+      "vars": []
+    },
+    {
+      "key": "lexicon.notFound",
+      "en": "This word is not in the dictionary.",
+      "vars": []
+    },
+    {
+      "key": "lexicon.notInstalled",
+      "en": "Get the Hebrew dictionary first (palette: Hebrew dictionary and synonyms).",
+      "vars": []
+    },
+    {
+      "key": "lexicon.prefixNote",
+      "en": "The prefix “{prefix}” is kept unpointed.",
+      "vars": [
+        "prefix"
+      ]
+    },
+    {
+      "key": "lexicon.removeConfirm",
+      "en": "Remove the Hebrew dictionary from this device?",
+      "vars": []
+    },
+    {
+      "key": "lexicon.removed",
+      "en": "The Hebrew dictionary was removed.",
+      "vars": []
+    },
+    {
+      "key": "lexicon.replaceWith",
+      "en": "Replace the word with “{word}”",
+      "vars": [
+        "word"
+      ]
+    },
+    {
+      "key": "lexicon.synonyms",
+      "en": "Synonyms",
+      "vars": []
+    },
+    {
+      "key": "lexicon.title",
+      "en": "Dictionary: {word}",
+      "vars": [
+        "word"
+      ]
+    },
+    {
+      "key": "lexicon.unavailable",
+      "en": "The dictionary pack is not published yet.",
+      "vars": []
+    },
+    {
       "key": "loading.generic",
       "en": "Loading…",
       "vars": []

@@ -49,6 +49,8 @@ import { markdownLintExtension } from "./lintExtension";
 // positions) — loaded on demand in the collab effect, like ySync below.
 import { searchHighlightExtension } from "./searchHighlight";
 import { showSpokenRange, speechHighlightExtension } from "./speechHighlight";
+import { lexiconInstalled } from "../lexicon/installed";
+import { wordAt } from "../lexicon/wordAt";
 import { inlineSuggestion } from "./inlineSuggestion";
 import { aiAuthored, aiAuthorshipExtension } from "./aiAuthorship";
 import { formatKeymap } from "./formatKeymap";
@@ -341,6 +343,17 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
         if (files.length === 0) return false;
         event.preventDefault();
         void handleAssetFiles(view, files);
+        return true;
+      },
+      // Right-click on a Hebrew word (plan W5.26): synonyms, definition and niqqud from the offline
+      // lexicon — only once its pack is installed; Shift+right-click keeps the browser's menu.
+      contextmenu(event, view) {
+        if (event.shiftKey || !lexiconInstalled()) return false;
+        const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+        if (pos === null || !wordAt(view, pos)) return false;
+        event.preventDefault();
+        const at = { x: event.clientX, y: event.clientY };
+        void import("../lexicon/LexiconPopover").then(({ openLexicon }) => openLexicon(view, pos, at));
         return true;
       },
       drop(event, view) {

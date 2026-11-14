@@ -16,6 +16,7 @@
     "hygiene": "node scripts/check-code-hygiene.mjs",
     "i18n:review": "node scripts/i18n-review.mjs",
     "licenses": "node scripts/licenses.mjs",
+    "lexicon:build": "node scripts/build-hebrew-lexicon.mjs",
     "golden": "node scripts/golden.mjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",

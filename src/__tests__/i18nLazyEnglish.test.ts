@@ -43,6 +43,8 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "vaultEncryption.json": { module: "storage/vault/encrypted/strings.ts", users: ["ui/VaultEncryptionDialog.tsx", "ui/VaultUnlock.tsx"], prefixes: ["vaultEnc."] },
   // The webR download offer (plan W1.34), in the lazily rendered live-R block.
   "webr.json": { module: "plugins/r/webrStrings.ts", users: ["plugins/LiveRBlock.tsx"], prefixes: ["block.liveR.install."] },
+  // The Hebrew lexicon (plan W5.26): its popover and palette actions, both loaded with a dynamic import.
+  "lexicon.json": { module: "lexicon/strings.ts", users: ["lexicon/LexiconPopover.tsx", "lexicon/commands.ts"], prefixes: ["lexicon."] },
 };
 
 function sources(dir: string): string[] {

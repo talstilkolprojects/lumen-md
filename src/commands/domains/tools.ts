@@ -29,8 +29,8 @@ export function buildWritingGoalCommands({ writingGoalWords, setWritingGoal }: C
   ];
 }
 
-/** Download or remove the Hebrew spelling dictionary. */
-export function buildHebrewDictionaryCommands(): Command[] {
+/** Download or remove the Hebrew spelling dictionary; the Hebrew lexicon (plan W5.26). */
+export function buildHebrewDictionaryCommands({ getEditorView }: CommandContext): Command[] {
   return [
     {
       id: "spell.hebrewDictionary",
@@ -53,6 +53,30 @@ export function buildHebrewDictionaryCommands(): Command[] {
         } catch (e) {
           showAiToast(t("spell.he.failed", { error: (e as Error).message }), "error");
         }
+      },
+    },
+    {
+      id: "lexicon.pack",
+      label: t("cmd.lexicon.pack"),
+      hint: t("cmd.lexicon.pack.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: async () => {
+        const { runLexiconPackCommand } = await import("../../lexicon/commands");
+        await runLexiconPackCommand();
+      },
+    },
+    {
+      id: "lexicon.lookup",
+      label: t("cmd.lexicon.lookup"),
+      hint: t("cmd.lexicon.lookup.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: async () => {
+        const view = getEditorView?.();
+        if (!view) return;
+        const { runLexiconLookupCommand } = await import("../../lexicon/commands");
+        await runLexiconLookupCommand(view);
       },
     },
   ];

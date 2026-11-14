@@ -522,6 +522,25 @@
       "notes": "Plan 9.2. Shipped unmodified next to its licence (public/dict/LICENSE.md), so ShareAlike binds only the list itself, not the app; every spelling hint names the list and its licence (HEBREW_FREQ_CREDIT). Suggestion-only: the list comes from subtitles and has typos of its own. Content licence from the repo README (\"CC-by-sa-4.0 for content\"; code is MIT), checked 2026-10-19 at commit 525f9b5."
     },
     {
+      "id": "hewiktionary-lexicon",
+      "kind": "other",
+      "source": "https://dumps.wikimedia.org/hewiktionary/",
+      "license": "CC-BY-SA-4.0",
+      "class": "allowed",
+      "commercial": "yes",
+      "attribution": "Hebrew dictionary and synonyms: Hebrew Wiktionary (he.wiktionary.org) contributors, licensed CC BY-SA 4.0. Definitions shortened, examples removed.",
+      "size": "not built yet (scripts/build-hebrew-lexicon.mjs writes the size and sha256 to public/lexicon/manifest.json)",
+      "runs": "browser",
+      "delivery": "user-download",
+      "catalog": "LEXICON_PACK_PATH (src/lexicon/store.ts) → public/lexicon/he-wiktionary.json, downloaded on request into Cache Storage",
+      "match": [
+        "hewiktionary",
+        "lexicon/he-wiktionary.json"
+      ],
+      "verified": true,
+      "notes": "Plan W5.26. Built from the hewiktionary pages-articles dump; the pack is a separate file next to its licence (public/lexicon/LICENSE.md), so ShareAlike binds the pack, not the app (same as frequencywords-he-50k). Chosen over Hspell-derived lists, which are AGPL-3.0 and cannot ship inside the MIT app. Text licence: Wikimedia projects are CC BY-SA 4.0 since 2023 (Terms of Use §7)."
+    },
+    {
       "id": "DictaLM-3.0-1.7B",
       "kind": "llm",
       "source": "https://huggingface.co/dicta-il",

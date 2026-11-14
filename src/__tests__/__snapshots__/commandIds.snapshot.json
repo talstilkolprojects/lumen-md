@@ -516,6 +516,20 @@
       "icon": "Sparkles"
     },
     {
+      "id": "lexicon.pack",
+      "label": "Hebrew dictionary and synonyms (download / remove)",
+      "group": "Tools",
+      "hint": "Definitions, synonyms and niqqud from Hebrew Wiktionary, on this device; right-click a Hebrew word to use them",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "lexicon.lookup",
+      "label": "Look up the Hebrew word at the cursor",
+      "group": "Tools",
+      "hint": "Synonyms, definition and niqqud of the word, from the offline dictionary",
+      "icon": "Sparkles"
+    },
+    {
       "id": "vault.export",
       "label": "Export the whole vault…",
       "group": "File",
@@ -1792,6 +1806,20 @@
       "icon": "Sparkles"
     },
     {
+      "id": "lexicon.pack",
+      "label": "Hebrew dictionary and synonyms (download / remove)",
+      "group": "Tools",
+      "hint": "Definitions, synonyms and niqqud from Hebrew Wiktionary, on this device; right-click a Hebrew word to use them",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "lexicon.lookup",
+      "label": "Look up the Hebrew word at the cursor",
+      "group": "Tools",
+      "hint": "Synonyms, definition and niqqud of the word, from the offline dictionary",
+      "icon": "Sparkles"
+    },
+    {
       "id": "vault.export",
       "label": "Export the whole vault…",
       "group": "File",
@@ -2703,6 +2731,8 @@
     "ai.marks.toggle",
     "ai.agentSettings",
     "spell.hebrewDictionary",
+    "lexicon.pack",
+    "lexicon.lookup",
     "vault.export",
     "vault.import",
     "vault.toFolder",

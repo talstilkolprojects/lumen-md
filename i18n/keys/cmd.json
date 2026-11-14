@@ -973,6 +973,26 @@
       "vars": []
     },
     {
+      "key": "cmd.lexicon.lookup",
+      "en": "Look up the Hebrew word at the cursor",
+      "vars": []
+    },
+    {
+      "key": "cmd.lexicon.lookup.hint",
+      "en": "Synonyms, definition and niqqud of the word, from the offline dictionary",
+      "vars": []
+    },
+    {
+      "key": "cmd.lexicon.pack",
+      "en": "Hebrew dictionary and synonyms (download / remove)",
+      "vars": []
+    },
+    {
+      "key": "cmd.lexicon.pack.hint",
+      "en": "Definitions, synonyms and niqqud from Hebrew Wiktionary, on this device; right-click a Hebrew word to use them",
+      "vars": []
+    },
+    {
       "key": "cmd.new",
       "en": "New document",
       "vars": []
