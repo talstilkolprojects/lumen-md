@@ -77,7 +77,8 @@ function isEscaped(s: string, i: number): boolean {
   return n % 2 === 1;
 }
 
-function codeSpanRanges(line: string): Span[] {
+/** Code spans of one line (CommonMark backtick runs), as [from, to) offsets including the backticks. */
+export function codeSpanRanges(line: string): Span[] {
   const out: Span[] = [];
   let i = 0;
   const runAt = (k: number) => {
