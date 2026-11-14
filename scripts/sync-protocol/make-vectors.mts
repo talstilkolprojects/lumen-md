@@ -162,8 +162,11 @@ async function pairingVectors(vs: Array<{ objects: Record<string, string>; passp
         commitI: flow === "one-way" ? commitI : undefined,
         commitJ: flow === "two-way" ? commitJ : undefined,
         symbols: si.symbols,
-        confirmIssuer: Buffer.from(await confirmTag(si, "issuer")).toString("base64url"),
-        confirmJoiner: Buffer.from(await confirmTag(sj, "joiner")).toString("base64url"),
+        // S27-1: each confirmation states, under its MAC, the ms its side still holds.
+        windowIssuer: 80_000,
+        windowJoiner: 120_000,
+        confirmIssuer: Buffer.from(await confirmTag(si, "issuer", 80_000)).toString("base64url"),
+        confirmJoiner: Buffer.from(await confirmTag(sj, "joiner", 120_000)).toString("base64url"),
       });
     }
   }

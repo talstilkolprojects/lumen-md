@@ -171,11 +171,17 @@ async function hmacRaw(key: Uint8Array, data: Uint8Array): Promise<Uint8Array<Ar
   return new Uint8Array(await crypto.subtle.sign("HMAC", k, bs(data)));
 }
 
-/** `role`'s confirmation: only a device that derived the same secret and transcript can make it. */
-export function confirmTag(sas: Sas, role: PairingRole): Promise<Uint8Array<ArrayBuffer>> {
-  return hmacRaw(sas.confirm[role], concat(utf8(`${SAS_LABEL}/confirm\u0000`), sas.th));
+/**
+ * `role`'s confirmation: only a device that derived the same secret and
+ * transcript can make it. It also covers `window` (review 27, S27-1): how
+ * many milliseconds this device's side still holds — the joiner's time left
+ * to commit, the issuer's hold — so neither the storage nor a holder of the
+ * pairing key can change it.
+ */
+export function confirmTag(sas: Sas, role: PairingRole, window: number): Promise<Uint8Array<ArrayBuffer>> {
+  return hmacRaw(sas.confirm[role], concat(utf8(`${SAS_LABEL}/confirm-window\u0000`), sas.th, utf8(`\u0000${window}`)));
 }
 
-export async function confirmValid(sas: Sas, role: PairingRole, tag: Uint8Array): Promise<boolean> {
-  return equalBytes(await confirmTag(sas, role), tag);
+export async function confirmValid(sas: Sas, role: PairingRole, tag: Uint8Array, window: number): Promise<boolean> {
+  return equalBytes(await confirmTag(sas, role, window), tag);
 }

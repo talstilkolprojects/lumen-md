@@ -338,11 +338,11 @@ one-way code, nor the reverse:
 | `answer` | `lumen-pair-answer:3:` | 3 | `kind, vaultId, request, nonce, counter, digest, epoch, ringRev, ringDigest, answeredAt, pub` |
 | `code` | `lumen-pair:4:` | 4 | `kind, vaultId, counter, digest, epoch, ringRev, ringDigest, issuedAt, nonce, commit` |
 | `reveal` | `lumen-pair-reveal:1:` | 1 | `kind, vaultId, session, role, pub` (§6a, through the storage) |
-| `confirm` | `lumen-pair-confirm:1:` | 1 | `kind, vaultId, session, role, tag` (§6a, through the storage) |
+| `confirm` | `lumen-pair-confirm:2:` | 2 | `kind, vaultId, session, role, tag, window` (§6a, through the storage) |
 
 Messages of earlier builds (`lumen-pair:2:`, `lumen-pair:3:`,
 `lumen-pair-request:1:`, `lumen-pair-request:2:`, `lumen-pair-answer:1:`,
-`lumen-pair-answer:2:`) are refused as "from an older build": the last three
+`lumen-pair-answer:2:`, `lumen-pair-confirm:1:`) are refused as "from an older build": the last three
 carry no comparison key (§6a), so they could never be confirmed.
 
 **Two-way pairing** (third review 12.11, N3), the default:
@@ -432,19 +432,28 @@ the code), trimmed.
     symbols    = the top 30 bits of sas, six bits each, most significant first:
                  five indices into the 64-symbol list (src/sync/e2ee/sas.ts)
     confirm_R  = HMAC-SHA256(HKDF-SHA256(shared, salt, "lumen-pair-sas/1/confirm/" + R, 32),
-                             "lumen-pair-sas/1/confirm\0" ‖ salt),  R ∈ {issuer, joiner}
+                             "lumen-pair-sas/1/confirm-window\0" ‖ salt ‖ "\0" ‖ decimal(window)),
+                 R ∈ {issuer, joiner}; window: the ms that side still holds (0 … 6 min)
 
-When its user presses "They match", the joiner posts its `confirm` once and
-commits (the checks of `pair` run again) when the issuer's confirmation
-verifies under its own `shared`. **The issuer confirms last** (review 13,
-S13-1): after its user's "They match" it posts nothing until the joiner's
-confirmation is there and verifies. Before it posts its own, it sets
-`pairingKept = until + 60 s` (`until`: when its code or answer stops
-holding; 60 s: the clock difference a code's `issuedAt` may have), and no
-key change happens before then, **cancel included**. The joiner's window
-ends when the offer does: the code's `issuedAt + 2 min` or the request's
-life (5 min on its own clock; the answer came after the request), never
-later than that, so every commit falls inside the issuer's hold.
+When its user presses "They match", the joiner posts its `confirm` once,
+with `window` = the time it can still commit (its `until` minus its now, a
+duration, so no clock is compared). **The issuer confirms last** (review
+13, S13-1): after its user's "They match" it posts nothing until the
+joiner's confirmation is there and verifies. Then (review 27, S27-1) it sets
+`hold = min(window, until − now) + 60 s` (`until`: when its code or answer
+stops holding), stores `pairingKept = now + hold`, and posts its own
+`confirm` with `window = hold`. No key change happens before `pairingKept`,
+**cancel included**. The joiner commits only if the issuer's confirmation
+verifies *and* it is still within `hold` of when it posted its own: the
+issuer read the joiner's confirmation after it was posted, so every commit
+falls inside the issuer's hold whatever either clock says. The joiner's
+window ends when the offer does: the code's `issuedAt + 2 min` or the
+request's life. A code or an answer more than 60 s in the joiner's future
+(`issuedAt`, `answeredAt`) is refused when entered.
+
+No pairing holds longer than an answer's life plus 60 s (S27-2): a
+`pairingUntil` or `pairingKept` stored further ahead than that (a clock that
+was fast, then corrected) is void and cleared.
 
 A confirmation that doesn't verify aborts that side. "They don't match" (or
 a stop, or a cancel before the issuer confirmed) aborts and records nothing:

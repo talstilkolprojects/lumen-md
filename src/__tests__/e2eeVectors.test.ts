@@ -112,7 +112,7 @@ describe("the sync protocol's test vectors", () => {
   }, 60_000);
 
   it("the pairing comparison (plan W8.5): both sides derive the stated symbols and confirmations from the transcript", async () => {
-    const sas = (V as unknown as { sas: Array<{ flow: string; issuerKey: string; joinerKey: string; transcript: string; commitI?: string; commitJ?: string; symbols: number[]; confirmIssuer: string; confirmJoiner: string }> }).sas;
+    const sas = (V as unknown as { sas: Array<{ flow: string; issuerKey: string; joinerKey: string; transcript: string; commitI?: string; commitJ?: string; symbols: number[]; confirmIssuer: string; confirmJoiner: string; windowIssuer: number; windowJoiner: number }> }).sas;
     expect(sas).toHaveLength(4);
     for (const sv of sas) {
       const i = await sasKeyPair(Buffer.from(sv.issuerKey, "hex"));
@@ -123,13 +123,15 @@ describe("the sync protocol's test vectors", () => {
       const sj = await deriveSas(j.priv, i.pub, t);
       expect(si.symbols).toEqual(sv.symbols);
       expect(sj.symbols).toEqual(sv.symbols);
-      expect(Buffer.from(await confirmTag(si, "issuer")).toString("base64url")).toBe(sv.confirmIssuer);
-      expect(Buffer.from(await confirmTag(sj, "joiner")).toString("base64url")).toBe(sv.confirmJoiner);
+      expect(Buffer.from(await confirmTag(si, "issuer", sv.windowIssuer)).toString("base64url")).toBe(sv.confirmIssuer);
+      expect(Buffer.from(await confirmTag(sj, "joiner", sv.windowJoiner)).toString("base64url")).toBe(sv.confirmJoiner);
+      // S27-1: the window is under the MAC.
+      expect(Buffer.from(await confirmTag(sj, "joiner", sv.windowJoiner + 1)).toString("base64url")).not.toBe(sv.confirmJoiner);
       if (sv.commitI) expect(await sasCommit(i.pub)).toBe(sv.commitI);
       if (sv.commitJ) expect(await sasCommit(j.pub)).toBe(sv.commitJ);
       // Another transcript (one field changed) gives other symbols or other confirmations.
       const other = await deriveSas(i.priv, j.pub, { ...t, counter: t.counter + 1 });
-      expect(Buffer.from(await confirmTag(other, "issuer")).toString("base64url")).not.toBe(sv.confirmIssuer);
+      expect(Buffer.from(await confirmTag(other, "issuer", sv.windowIssuer)).toString("base64url")).not.toBe(sv.confirmIssuer);
     }
   });
 });

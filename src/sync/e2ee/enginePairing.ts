@@ -29,6 +29,7 @@ import {
   PAIRING_CLOCK_SKEW_MS,
   PAIRING_REQUEST_TTL_MS,
   PAIRING_TTL_MS,
+  PAIRING_WINDOW_MAX_MS,
   PairingEpochError,
   PairingError,
   pairingRequestHash,
@@ -77,7 +78,8 @@ interface JoinerSession {
   sas?: Sas;
   /** This device's clock: after this the comparison can't commit. */
   until: number;
-  confirmed?: boolean;
+  /** This device's clock when it posted its confirmation (S27-1): the issuer's stated hold is counted from here. */
+  confirmedAt?: number;
 }
 
 const ABORTED_MISMATCH = "The other device's confirmation doesn't match this pairing, so nothing was paired. Start again, and pair only with the device in front of you.";
@@ -389,16 +391,26 @@ export abstract class E2eeSyncPairing extends E2eeSyncKeys {
       throw new PairingAbortedError("The pairing has expired, so nothing was paired; start again");
     }
     const session = j.offer.sas.session;
-    if (!j.confirmed) {
-      await this.o.provider.put(await this.pairName(session, "confirm-joiner"), utf8(await createPairingConfirm(this.o.keys, session, "joiner", await confirmTag(j.sas, "joiner"))));
-      j.confirmed = true;
+    if (j.confirmedAt === undefined) {
+      // S27-1: say, under the comparison's MAC, how long this side can still commit (a duration, so no clock is compared).
+      const now = this.o.now();
+      const window = Math.min(Math.max(0, j.until - now), PAIRING_WINDOW_MAX_MS);
+      await this.o.provider.put(await this.pairName(session, "confirm-joiner"), utf8(await createPairingConfirm(this.o.keys, session, "joiner", await confirmTag(j.sas, "joiner", window), window)));
+      j.confirmedAt = now;
     }
     const text = await this.readPairObject(session, "confirm-issuer");
     if (!text) return "waiting";
-    const tag = await readPairingConfirm(this.o.keys, text, session, "issuer").catch(() => null);
-    if (!tag || !(await confirmValid(j.sas, "issuer", tag))) {
+    const got = await readPairingConfirm(this.o.keys, text, session, "issuer").catch(() => null);
+    if (!got || !(await confirmValid(j.sas, "issuer", got.tag, got.window))) {
       await this.endJoining();
       throw new PairingAbortedError(ABORTED_MISMATCH);
+    }
+    // S27-1: the issuer holds key changes for `got.window` from when it read this
+    // device's confirmation, which came after this device posted it: commit only
+    // within that long of posting it, on this device's own clock.
+    if (this.o.now() > j.confirmedAt + got.window) {
+      await this.endJoining();
+      throw new PairingAbortedError("The pairing has expired, so nothing was paired; start again");
     }
     // Both users confirmed: commit, after the same checks as `pair`.
     this.joining = null;
@@ -408,12 +420,12 @@ export abstract class E2eeSyncPairing extends E2eeSyncKeys {
       this.requestKey = null;
     }
     for (const what of ["reveal-joiner", "confirm-joiner", "reveal-issuer", "confirm-issuer"] as const) await this.o.provider.delete(await this.pairName(session, what)).catch(() => undefined);
-    const got = j.offer;
-    if (this.checkOffer(s, got) === "ok") {
+    const offer = j.offer;
+    if (this.checkOffer(s, offer) === "ok") {
       const mine = s.ring ?? anchorOf(this.o.keys);
-      const ringNewer = got.ring.epoch > mine.epoch || (got.ring.epoch === mine.epoch && got.ring.rev > mine.rev);
-      s.anchor = { counter: got.counter, digest: got.digest };
-      if (got.ring.epoch > 0 && (ringNewer || !s.ring)) s.ring = await sealAnchor(got.ring, this.o.keys.secret, this.o.keys.vaultId);
+      const ringNewer = offer.ring.epoch > mine.epoch || (offer.ring.epoch === mine.epoch && offer.ring.rev > mine.rev);
+      s.anchor = { counter: offer.counter, digest: offer.digest };
+      if (offer.ring.epoch > 0 && (ringNewer || !s.ring)) s.ring = await sealAnchor(offer.ring, this.o.keys.secret, this.o.keys.vaultId);
       s.freshness = "paired";
     }
     await this.save();
@@ -426,19 +438,23 @@ export abstract class E2eeSyncPairing extends E2eeSyncKeys {
     if (!i.sas) throw new PairingError("Compare the symbols on both devices first");
     const text = await this.readPairObject(i.session, "confirm-joiner");
     if (!text) return "waiting"; // S13-1: the issuer confirms last
-    const tag = await readPairingConfirm(this.o.keys, text, i.session, "joiner").catch(() => null);
-    if (!tag || !(await confirmValid(i.sas, "joiner", tag))) {
+    const got = await readPairingConfirm(this.o.keys, text, i.session, "joiner").catch(() => null);
+    if (!got || !(await confirmValid(i.sas, "joiner", got.tag, got.window))) {
       await this.endIssuing();
       await this.save();
       throw new PairingAbortedError(ABORTED_MISMATCH);
     }
-    // From the moment the confirmation is out, the new device may commit until
-    // its window ends: hold key changes until then (its clock may be behind
-    // this one by up to PAIRING_CLOCK_SKEW_MS), and a cancel doesn't release it.
+    // From the moment its confirmation is out, the new device may commit: hold
+    // key changes, cancel included, for the window it stated (a duration under
+    // the comparison's MAC, review 27 S27-1), capped at what's left of this
+    // code or answer, plus the allowance; and tell the new device that hold,
+    // so it commits only inside it.
+    const now = this.o.now();
+    const hold = Math.min(got.window, Math.max(0, i.until - now)) + PAIRING_CLOCK_SKEW_MS;
     const s = await this.loadState();
-    s.pairingKept = Math.max(s.pairingKept ?? 0, i.until + PAIRING_CLOCK_SKEW_MS);
+    s.pairingKept = Math.max(s.pairingKept ?? 0, now + hold);
     await this.save();
-    await this.o.provider.put(await this.pairName(i.session, "confirm-issuer"), utf8(await createPairingConfirm(this.o.keys, i.session, "issuer", await confirmTag(i.sas, "issuer"))));
+    await this.o.provider.put(await this.pairName(i.session, "confirm-issuer"), utf8(await createPairingConfirm(this.o.keys, i.session, "issuer", await confirmTag(i.sas, "issuer", hold), hold)));
     await this.endIssuing(true);
     return "done";
   }
