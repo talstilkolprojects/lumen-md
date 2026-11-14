@@ -286,6 +286,21 @@ export function withoutCompanions(paths: readonly string[]): string[] {
   return paths.filter((p) => !(/\.pdf\.md$/i.test(p) && set.has(p.slice(0, -3))));
 }
 
+/** A move that would put a PDF on its own highlights note's path, or that note on the PDF's. Nothing moved. */
+export class CompanionPathError extends Error {
+  constructor(
+    readonly from: string,
+    readonly to: string,
+  ) {
+    super(
+      /\.pdf$/i.test(from)
+        ? `"${to}" is the highlights note of "${from}": the PDF can't take its note's name`
+        : `"${from}" is the highlights note of "${to}": the note can't take its PDF's name`,
+    );
+    this.name = "CompanionPathError";
+  }
+}
+
 /**
  * `safeMove` for a file that has a companion note (a PDF and its
  * `<file>.pdf.md`): both move together. Both destinations are checked first,
@@ -299,6 +314,16 @@ export async function safeMoveWithCompanion(
   to: string,
   opts: { folder?: boolean; confirmReplace?: (path: string) => Promise<boolean>; alsoMoving?: ReadonlySet<string> } = {},
 ): Promise<{ main: MoveResult; companion: MoveResult | null } | null> {
+  // Before anything moves (review #272, step 2.19): a PDF renamed onto its
+  // own highlights note (`paper.pdf` → `paper.pdf.md`) would put the note in
+  // the trash and the PDF's bytes at `paper.pdf.md.md`; a highlights note
+  // renamed onto its PDF's name would replace the PDF.
+  if (!opts.folder && from !== to) {
+    const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
+    const ownNote = companionNoteOf(from);
+    const targetsNote = companionNoteOf(to);
+    if ((ownNote && same(to, ownNote)) || (targetsNote && same(targetsNote, from))) throw new CompanionPathError(from, to);
+  }
   const note = opts.folder ? null : companionNoteOf(from);
   if (!note || from === to || opts.alsoMoving?.has(note) || !(await workspaceHasEntry(note))) {
     const main = await safeMove(from, to, opts);

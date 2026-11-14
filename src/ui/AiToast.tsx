@@ -116,11 +116,13 @@ export function AiToastContainer() {
   } as const;
   // Two live regions, always present (a region added with its message is not read).
   return (
+    // data-modal-exempt: both regions stay live under a modal overlay that makes
+    // the app inert (the PDF reader): a save error must still be shown and announced.
     <>
-      <div role="alert" aria-live="assertive" aria-atomic="false" data-testid="toasts-alert" style={{ ...box, bottom: 40 + 64 * toasts.filter((x) => x.type !== "error").length }}>
+      <div data-modal-exempt="" role="alert" aria-live="assertive" aria-atomic="false" data-testid="toasts-alert" style={{ ...box, bottom: 40 + 64 * toasts.filter((x) => x.type !== "error").length }}>
         {renderToasts(toasts.filter((x) => x.type === "error"))}
       </div>
-      <div role="status" aria-live="polite" aria-atomic="false" data-testid="toasts-status" style={box}>
+      <div data-modal-exempt="" role="status" aria-live="polite" aria-atomic="false" data-testid="toasts-status" style={box}>
         {renderToasts(toasts.filter((x) => x.type !== "error"))}
       </div>
     </>

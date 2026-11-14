@@ -18,6 +18,15 @@ export interface PageSize {
   h: number;
 }
 
+/** `sizes` with page `page` (1-based) at its real `size`; the same array when nothing changed (step 2.18). */
+export function withPageSize(sizes: PageSize[], page: number, size: PageSize): PageSize[] {
+  const cur = sizes[page - 1];
+  if (!cur || (cur.w === size.w && cur.h === size.h)) return sizes;
+  const next = sizes.slice();
+  next[page - 1] = size;
+  return next;
+}
+
 interface PageProps {
   doc: PdfDocument;
   page: number;
@@ -33,6 +42,8 @@ interface PageProps {
   query: string;
   occurrence: number;
   registerEl: (page: number, el: HTMLDivElement | null) => void;
+  /** The page's real size at scale 1, once it is loaded. */
+  onSize: (page: number, size: PageSize) => void;
   onText: (page: number, text: string) => void;
   onOcr: (page: number, value: OcrPage) => void;
   onAnchored: (missing: string[], all: string[]) => void;
@@ -58,6 +69,7 @@ export const PdfPageView = memo(function PdfPageView({
   query,
   occurrence,
   registerEl,
+  onSize,
   onText,
   onOcr,
   onAnchored,
@@ -83,6 +95,8 @@ export const PdfPageView = memo(function PdfPageView({
     (async () => {
       const [pdfjs, p] = await Promise.all([loadPdfjs(), doc.getPage(page)]);
       if (cancelled) return;
+      const base = p.getViewport({ scale: 1 });
+      onSize(page, { w: base.width, h: base.height });
       const viewport = p.getViewport({ scale });
       const dpr = Math.min(window.devicePixelRatio || 1, 3);
       const canvas = document.createElement("canvas");
@@ -116,7 +130,7 @@ export const PdfPageView = memo(function PdfPageView({
       layer.replaceChildren();
       setDrawn([]);
     };
-  }, [active, doc, page, scale, onText]);
+  }, [active, doc, page, scale, onSize, onText]);
 
   // Where this page's highlights (and the current search hit) are.
   useEffect(() => {
