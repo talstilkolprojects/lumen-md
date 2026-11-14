@@ -4,6 +4,8 @@
  * every open tab inside it, inactive tabs included.
  */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { installFakeOpfs } from "./helpers/fakeOpfs";
 import { useAppStore } from "../store/useStore";
 import { readWorkspaceFile, workspaceHasEntry, writeWorkspaceFile } from "../storage/workspace";
@@ -446,6 +448,36 @@ describe("the Ctrl+Z key handler", () => {
     }
     expect(trashUndoDepth()).toBe(1);
     expect(await workspaceHasEntry("a.md")).toBe(false);
+  });
+
+  it("inside the Excalidraw canvas Ctrl+Z is the canvas's undo: a deleted file is not restored (W10.C17)", async () => {
+    await writeWorkspaceFile("a.md", "A");
+    await trashPaths(["a.md"]);
+    // The canvas as CanvasExcalidraw renders it: the dialog, Excalidraw's root, its drawing surface.
+    const dialog = document.createElement("div");
+    dialog.className = "lumen-canvas";
+    const headButton = document.createElement("button");
+    const root = document.createElement("div");
+    root.className = "excalidraw excalidraw-container";
+    const surface = document.createElement("canvas");
+    surface.className = "interactive";
+    root.append(surface);
+    dialog.append(headButton, root);
+    document.body.append(dialog);
+    for (const el of [surface, root, headButton]) {
+      expect(isEditingTarget(el)).toBe(true);
+      const { handled, event } = press(el);
+      expect(handled).toBe(false);
+      expect(event.defaultPrevented).toBe(false);
+    }
+    await settle();
+    expect(trashUndoDepth()).toBe(1);
+    expect(await workspaceHasEntry("a.md")).toBe(false);
+  });
+
+  it("the shortcut names no tldraw selector any more (W10.C17)", () => {
+    const src = readFileSync(join(process.cwd(), "src/ui/trashUndoShortcut.ts"), "utf8");
+    expect(src).not.toMatch(/tl-container|tldraw/);
   });
 
   it("leaves the key alone when there is nothing to undo, when it was handled already, and for Shift+Z", async () => {

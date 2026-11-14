@@ -10,9 +10,11 @@ import { toast } from "../store/useToastStore";
 
 /**
  * Places with their own undo: CodeMirror, the WYSIWYG editor (ProseMirror),
- * text fields, anything contenteditable, the tldraw canvas.
+ * text fields, anything contenteditable, and the canvas: Excalidraw's root
+ * (`.excalidraw`) and the canvas dialog around it (`.lumen-canvas`, plan
+ * 4.19), so undoing a stroke never brings back a deleted file (W10.C17).
  */
-const EDITING = 'input, textarea, select, [contenteditable]:not([contenteditable="false"]), .cm-editor, .ProseMirror, .wysiwyg-root, .tl-container';
+const EDITING = 'input, textarea, select, [contenteditable]:not([contenteditable="false"]), .cm-editor, .ProseMirror, .wysiwyg-root, .excalidraw, .lumen-canvas';
 
 /** Is focus somewhere that owns Ctrl+Z? */
 export function isEditingTarget(target: EventTarget | null): boolean {
