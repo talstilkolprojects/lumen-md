@@ -4443,6 +4443,16 @@
       "vars": []
     },
     {
+      "key": "importWizard.warn.notionComputed",
+      "en": "a Notion formula or rollup column: its values came across, the formula did not (add it as a formula column in the base)",
+      "vars": []
+    },
+    {
+      "key": "importWizard.warn.notionUnparsed",
+      "en": "a Notion value that does not fit its column's type was kept as text",
+      "vars": []
+    },
+    {
       "key": "israeliTime.dayOff",
       "en": "Falls on {reason}",
       "vars": [

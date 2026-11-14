@@ -73,12 +73,38 @@ export function notionDate(s: string): string | null {
 /** `Page (Page%20<id>.md)` or `Page (https://www.notion.so/…)` → the page title. */
 const RELATION = /^(.+?) \(((?:[^()]|\([^()]*\))+\.(?:md|html)|https:\/\/www\.notion\.so\/[^)]+)\)$/;
 
+/**
+ * A number as Notion's number formats show it: `1,200`, `$1,200.00`,
+ * `₪45`, `€3.5`, `-12 %`, `45%` (a percent is the fraction Notion stores,
+ * 0.45). Null when it is not one.
+ */
+export function notionNumber(s: string): number | null {
+  const v = s.trim().replace(/ /g, " ");
+  const m = /^([-+]?)\s*(?:[$€£¥₪₹]|US\$|NIS|ILS)?\s*([-+]?)(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?\s*(%)?\s*(?:[$€£¥₪₹]|NIS|ILS)?$/.exec(v);
+  if (!m) return null;
+  const n = Number(`${m[1] || m[2]}${m[3].replace(/,/g, "")}${m[4] ?? ""}`);
+  if (!Number.isFinite(n)) return null;
+  return m[5] ? Math.round(n * 1e10) / 1e12 : n;
+}
+
+/** Notion's date range `January 1, 2026 → January 5, 2026`: its two ends, or null. */
+export function notionRange(s: string): [string, string] | null {
+  const parts = s.split(/\s+→\s+/);
+  if (parts.length !== 2) return null;
+  const a = notionDate(parts[0]);
+  const b = notionDate(parts[1]);
+  return a && b ? [a, b] : null;
+}
+
 /** A column's values typed the way Bases filters and sorts them: every cell of a column decides together. */
 export function typeColumn(cells: string[]): (string | number | boolean | string[] | null)[] {
   const filled = cells.filter((c) => c.trim() !== "");
   if (filled.length && filled.every((c) => /^(Yes|No)$/.test(c.trim()))) return cells.map((c) => (c.trim() === "" ? null : c.trim() === "Yes"));
   if (filled.length && filled.every((c) => /^-?\d+(\.\d+)?$/.test(c.trim().replace(/,/g, "")))) return cells.map((c) => (c.trim() === "" ? null : Number(c.trim().replace(/,/g, ""))));
+  if (filled.length && filled.every((c) => notionNumber(c) !== null)) return cells.map((c) => (c.trim() === "" ? null : notionNumber(c)));
   if (filled.length && filled.every((c) => notionDate(c) !== null)) return cells.map((c) => (c.trim() === "" ? null : notionDate(c)));
+  // A date range: its start, as a date (the end goes to `<column> end`, see convertNotion).
+  if (filled.length && filled.every((c) => notionDate(c) !== null || notionRange(c) !== null)) return cells.map((c) => (c.trim() === "" ? null : (notionDate(c) ?? notionRange(c)![0])));
   if (filled.length && filled.every((c) => c.split(/, (?=[^,]+ \()/).every((p) => RELATION.test(p.trim())))) {
     return cells.map((c) => (c.trim() === "" ? null : c.split(/, (?=[^,]+ \()/).map((p) => `[[${RELATION.exec(p.trim())![1]}]]`)));
   }
@@ -92,6 +118,8 @@ const ID = /\s[0-9a-f]{32}(?=(\.[a-z0-9]+)?$)/i;
 interface Database {
   /** The .base file, relative to the import folder. */
   base: string;
+  /** Columns the HTML export marks as formulas or rollups (`typesFormula`, `typesRollup`). */
+  computed?: string[];
   /** The rows' folder, relative to the import folder. */
   folder: string;
   title: string;
@@ -158,7 +186,10 @@ export function convertNotion(files: Map<string, Uint8Array>, opts: NotionOption
     const table = /<table class="collection-content">([\s\S]*?)<\/table>/i.exec(html);
     if (!table) continue;
     const head = /<thead>([\s\S]*?)<\/thead>/i.exec(table[1])?.[1] ?? "";
-    const columns = [...head.matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)].map((m) => decodeEntities(m[1].replace(/<[^>]+>/g, "")).trim());
+    const ths = [...head.matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)];
+    const columns = ths.map((m) => decodeEntities(m[1].replace(/<[^>]+>/g, "")).trim());
+    // The header's icon names the property's type: a formula or a rollup is exported as its values only.
+    const computed = ths.map((m, i) => (/class="[^"]*\btypes(Formula|Rollup)\b/.test(m[1]) ? columns[i] : null)).filter((c): c is string => !!c);
     if (!columns.length) continue;
     const rows = [...table[1].matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)]
       .slice(1)
@@ -167,17 +198,32 @@ export function convertNotion(files: Map<string, Uint8Array>, opts: NotionOption
     const base = claimPath(taken, md.replace(/\.md$/, ".base"));
     finalOf.set(p, base);
     htmlDbs.add(p);
-    dbs.push({ base, folder: md.replace(/\.md$/, ""), title: stemOf(md), columns, rows });
+    dbs.push({ base, folder: md.replace(/\.md$/, ""), title: stemOf(md), columns, rows, computed });
   }
   const notesByPath = new Map([...finalOf.entries()].filter(([, t]) => t.endsWith(".md")).map(([s, t]) => [t.normalize("NFC").toLowerCase(), s]));
   for (const db of dbs) {
     const typed = db.columns.map((_, i) => typeColumn(db.rows.map((r) => r[i] ?? "")));
+    for (const c of db.computed ?? []) vault.warnings.push({ path: db.base, reason: "notionComputed", detail: c });
+    // A column that is nearly all numbers or dates kept as text because of a few odd cells: say which.
+    db.columns.forEach((c, i) => {
+      if (i === 0) return;
+      const filled = db.rows.map((r) => (r[i] ?? "").trim()).filter(Boolean);
+      if (filled.length < 3 || typed[i].some((v) => v !== null && typeof v !== "string")) return;
+      const odd = filled.filter((v) => notionNumber(v) === null && notionDate(v) === null && notionRange(v) === null);
+      if (odd.length && odd.length <= filled.length * 0.2) vault.warnings.push({ path: db.base, reason: "notionUnparsed", detail: `${c}: ${odd.slice(0, 3).join(", ")}` });
+    });
+    // Date ranges: the start stays in the column, the end goes to `<column> end`.
+    const cols = db.columns;
+    const rangeEnd = cols.map((_, i) => db.rows.map((r) => notionRange(r[i] ?? "")?.[1] ?? null));
+    db.columns = cols.flatMap((c, i) => (rangeEnd[i].some((v) => v !== null) ? [c, `${c} end`] : [c]));
     db.rows.forEach((r, ri) => {
       const title = (r[0] ?? "").trim() || "Untitled";
       const props: Props = {};
-      db.columns.slice(1).forEach((c, ci) => {
+      cols.slice(1).forEach((c, ci) => {
         const v = typed[ci + 1][ri];
         if (v !== null) props[c] = v;
+        const end = rangeEnd[ci + 1][ri];
+        if (end) props[`${c} end`] = end;
       });
       const want = `${db.folder}/${safePath(title)}.md`.normalize("NFC").toLowerCase();
       const src = notesByPath.get(want);
