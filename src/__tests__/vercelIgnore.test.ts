@@ -35,6 +35,7 @@ function cleanEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
   delete env.VERCEL_GIT_COMMIT_REF;
   delete env.VERCEL_GIT_COMMIT_SHA;
   delete env.LUMEN_BUILD_ALL;
+  delete env.VERCEL_GIT_PULL_REQUEST_ID;
   return { ...env, ...extra };
 }
 
@@ -169,6 +170,36 @@ describe("scripts/vercel-ignore.sh", () => {
     expect(run("verify/train")).toBe(BUILD);
     expect(run("verify/e2e-probe-1")).toBe(BUILD);
     expect(run("feat/something", { LUMEN_BUILD_ALL: "1" })).toBe(BUILD);
+  });
+
+  it("W10.D4: a branch with an open pull request builds, so its preview runs every gate", () => {
+    decide(["src/lib/branch.ts"]);
+    const run = (ref: string, extra: Record<string, string> = {}) => {
+      try {
+        execFileSync("bash", ["scripts/vercel-ignore.sh"], {
+          cwd: repo,
+          stdio: "ignore",
+          env: cleanEnv({ VERCEL_GIT_COMMIT_REF: ref, VERCEL_GIT_COMMIT_SHA: "0".repeat(40), LUMEN_IGNORE_REMOTE: join(repo, "no-remote"), ...extra }),
+        });
+        return 0;
+      } catch (e) {
+        return (e as { status?: number }).status ?? -1;
+      }
+    };
+    expect(run("w10/d4-ci", { VERCEL_GIT_PULL_REQUEST_ID: "642" })).toBe(BUILD);
+    expect(run("w10/d4-ci", { VERCEL_GIT_PULL_REQUEST_ID: "" })).toBe(SKIP);
+    expect(run("w10/d4-ci")).toBe(SKIP);
+  });
+
+  it("W10.D4: a PR branch's docs-only change is still skipped by the file rules", () => {
+    decide(["docs/readme-only.md"]);
+    let code = 0;
+    try {
+      execFileSync("bash", ["scripts/vercel-ignore.sh"], { cwd: repo, stdio: "ignore", env: cleanEnv({ VERCEL_GIT_COMMIT_REF: "w10/x", VERCEL_GIT_COMMIT_SHA: "0".repeat(40), VERCEL_GIT_PULL_REQUEST_ID: "7", LUMEN_IGNORE_REMOTE: join(repo, "no-remote") }) });
+    } catch (e) {
+      code = (e as { status?: number }).status ?? -1;
+    }
+    expect(code).toBe(SKIP);
   });
 
   it("builds when there is no parent commit to diff against", () => {

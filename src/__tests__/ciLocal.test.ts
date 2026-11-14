@@ -12,7 +12,7 @@ const byId = (steps: Step[]) => Object.fromEntries(steps.map((s) => [s.id, s]));
 describe("ci:local steps", () => {
   it("a full run has every CI step; tools this branch lacks are 'not here', not failures", () => {
     const s = byId(plan(null));
-    expect(Object.keys(s)).toEqual(["typecheck", "hygiene", "lint", "i18n", "licenses", "headers", "test", "build", "budget", "ocr", "e2e"]);
+    expect(Object.keys(s)).toEqual(["typecheck", "hygiene", "lint", "i18n", "licenses", "headers", "gitleaks", "semgrep", "cargo-audit", "test", "build", "budget", "ocr", "e2e"]);
     for (const id of ["typecheck", "hygiene", "i18n", "licenses", "test", "build", "budget", "ocr", "e2e"]) expect(s[id].skipReason, id).toBeUndefined();
     expect(s.lint.skipReason).toMatch(/not here/);
     expect(s.headers.skipReason).toMatch(/not here/);

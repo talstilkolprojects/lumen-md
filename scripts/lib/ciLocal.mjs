@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { delimiter as pathDelimiter, join as pathJoin } from "node:path";
 /**
  * The steps `npm run ci:local` runs (plan 0.14), as data, so the choice of
  * steps is testable without running any of them.
@@ -8,6 +10,20 @@
  */
 
 /** @typedef {{ id: string, title: string, cmd: string[], needs?: string[], slow?: boolean, skipReason?: string, coverageMin?: number }} Step */
+
+/** Whether `bin` is an executable on PATH (no shell, no `which`). */
+export function onPath(bin, env = {}) {
+  return String(env.PATH ?? "")
+    .split(pathDelimiter)
+    .some((d) => d && existsSync(pathJoin(d, bin)));
+}
+
+/** The scanners ci:local runs when their binary is on PATH (W10.D14). */
+export const SECURITY_STEPS = [
+  { id: "gitleaks", tool: "gitleaks", bin: "gitleaks", title: "gitleaks (secrets)" },
+  { id: "semgrep", tool: "semgrep", bin: "semgrep", title: "semgrep (OSS rules)" },
+  { id: "cargo-audit", tool: "cargo-audit", bin: "cargo-audit", title: "cargo audit (with audit-lock)" },
+];
 
 /** CI's coverage gate (.github/workflows/ci.yml "Coverage gate (lines >= 65%)"). */
 export const COVERAGE_MIN = 65;
@@ -65,7 +81,7 @@ const has = (pkg, name) => Boolean(pkg?.scripts?.[name]);
  *   `dynamicTargets`: module stems some source loads with a dynamic import (dynamicImportTargets).
  * @returns {Step[]}
  */
-export function planSteps({ pkg, exists, changed, flags, dynamicTargets }) {
+export function planSteps({ pkg, exists, changed, flags, dynamicTargets, hasBin = () => false }) {
   const skip = new Set(flags.skip ?? []);
   const only = flags.only?.length ? new Set(flags.only) : null;
   // A deleted file is a change too: what referenced it may break at build time or at run time.
@@ -86,6 +102,9 @@ export function planSteps({ pkg, exists, changed, flags, dynamicTargets }) {
     { id: "i18n", title: "i18n keys + drift", cmd: ["node", "scripts/extract-i18n-keys.mjs", "--check"], needs: ["scripts/extract-i18n-keys.mjs"] },
     has(pkg, "licenses") ? { id: "licenses", title: "Licence gate", cmd: ["npm", "run", "-s", "licenses"] } : { id: "licenses", title: "Licence gate", cmd: [], skipReason: "not here (plan 0.10)" },
     exists("scripts/headers.mjs") ? { id: "headers", title: "Security headers", cmd: ["node", "scripts/headers.mjs", "--check"] } : { id: "headers", title: "Security headers", cmd: [], skipReason: "not here (plan 0.17)" },
+    // W10.D14: the scanners Buildkite runs on every PR, here when the binary is installed
+    // (scripts/security-scan.mjs; npm audit needs the registry, so it stays Buildkite's).
+    ...SECURITY_STEPS.map((t) => ({ id: t.id, title: t.title, cmd: ["node", "scripts/security-scan.mjs", t.tool], needs: ["scripts/security-scan.mjs"], needsBin: t.bin })),
     changed === null
       ? coverage
         ? { id: "test", title: `Vitest + coverage gate (lines >= ${COVERAGE_MIN}%)`, cmd: ["npx", "vitest", "run", "--coverage"], slow: true, coverageMin: COVERAGE_MIN }
@@ -111,6 +130,7 @@ export function planSteps({ pkg, exists, changed, flags, dynamicTargets }) {
     if (only && !only.has(s.id)) s.skipReason = "not selected";
     else if (skip.has(s.id)) s.skipReason = "skipped (--skip)";
     else if (s.needs?.some((p) => !exists(p))) s.skipReason = "not here";
+    else if (s.needsBin && !hasBin(s.needsBin)) s.skipReason = `${s.needsBin} is not installed`;
     else if (changed !== null && s.id === "test" && s.empty) s.skipReason = "no unit-test inputs in the diff";
     else if (changed !== null && (s.id === "build" || s.id === "budget" || s.id === "e2e") && !codeChanged) s.skipReason = "diff touches no app code";
     else if (changed !== null && s.id === "ocr" && !changed.some(isOcrInput)) s.skipReason = "diff touches no OCR input";
@@ -158,7 +178,7 @@ export function buildState(results) {
 }
 
 /** Step ids, for --only / --skip. */
-export const STEP_IDS = ["typecheck", "hygiene", "lint", "i18n", "licenses", "headers", "test", "build", "budget", "ocr", "e2e"];
+export const STEP_IDS = ["typecheck", "hygiene", "lint", "i18n", "licenses", "headers", "gitleaks", "semgrep", "cargo-audit", "test", "build", "budget", "ocr", "e2e"];
 const BOOL_FLAGS = ["--help", "--h", "-h", "--changed", "--coverage", "--bail", "--install-hook", "--force"];
 const VALUE_FLAGS = ["--base", "--skip", "--only"];
 

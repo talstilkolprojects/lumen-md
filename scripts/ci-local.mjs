@@ -23,7 +23,7 @@ import { existsSync, readFileSync, readdirSync, writeFileSync, chmodSync, mkdirS
 import { createServer } from "node:net";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { planSteps, e2eSpecs, i18nDrift, summary, coverageGate, hookPlan, buildState, argErrors, dynamicImportTargets } from "./lib/ciLocal.mjs";
+import { planSteps, e2eSpecs, i18nDrift, summary, coverageGate, hookPlan, buildState, argErrors, dynamicImportTargets, onPath } from "./lib/ciLocal.mjs";
 
 // fileURLToPath, not `.pathname`: a checkout in "lumen md/" is "lumen%20md/" in the URL.
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -199,7 +199,7 @@ function sourcesUnder(dir) {
   return out;
 }
 const dynamicTargets = changed === null ? undefined : dynamicImportTargets(sourcesUnder("src"));
-const steps = planSteps({ pkg, exists: existsSync, changed, dynamicTargets, flags: { skip: list("skip"), only: list("only"), coverage: flag("coverage") } });
+const steps = planSteps({ pkg, exists: existsSync, changed, dynamicTargets, hasBin: (b) => onPath(b, process.env), flags: { skip: list("skip"), only: list("only"), coverage: flag("coverage") } });
 const results = [];
 let failed = false;
 for (const s of steps) {

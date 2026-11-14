@@ -32,6 +32,20 @@ ci.yml's steps.
 | `lighthouse` | main and PRs labelled `lighthouse` only, as in ci.yml | linux |
 | `receipt` | the signed receipt, after every gate (pass or fail) | linux |
 
+Three more jobs are Buildkite's own, with no ci.yml step (`NATIVE_JOBS` in
+`scripts/buildkite/lib.mjs`). They run on every build, without a condition:
+
+| Job | What it runs | Queue |
+|---|---|---|
+| `pr-check` | `npm run pr:check` on the pull request (its base, its body, its comments); a build that isn't for a PR passes | linux |
+| `security` | `scripts/security-scan.mjs`: gitleaks, npm audit (high and critical), cargo audit with audit-lock, semgrep with OSS rules (in place of CodeQL). A scanner missing from the agent fails the job | linux |
+| `security-nightly` | the scheduled build only: osv-scanner on every lockfile, cargo deny, OpenSSF Scorecard (needs `GITHUB_AUTH_TOKEN`, read-only) and a CycloneDX SBOM (syft) | linux |
+
+The agent needs `gh` with a read token for `pr-check`, and `gitleaks`,
+`semgrep`, `cargo-audit` for `security` (`osv-scanner`, `cargo-deny`,
+`scorecard` and `syft` for the nightly run). `npm run ci:local` runs gitleaks,
+semgrep and cargo audit too, when they are installed.
+
 The steps ci.yml has that are not gates (installs, PR comments, the
 main-only size cache, diagnostics) are listed with a reason in
 `NOT_GATES` in `scripts/buildkite/lib.mjs`.
