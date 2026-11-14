@@ -488,6 +488,8 @@
   "cmd.view.graphView.hint": "visual map of file connections",
   "cmd.view.hebrewGrammarLevel": "Hebrew grammar: change the writing level",
   "cmd.view.hebrewGrammarLevel.hint": "Everyday, academic or legal: academic and legal also flag informal style. Checked on this device.",
+  "cmd.view.hebrewGrammarModel": "Hebrew grammar: check suggestions with a local model (on / off)",
+  "cmd.view.hebrewGrammarModel.hint": "Ollama on this computer (DictaLM first) drops the grammar suggestions it rejects. Off by default; nothing leaves this computer.",
   "cmd.view.language": "Language: {label}",
   "cmd.view.language.ltr": "left-to-right",
   "cmd.view.language.rtl": "right-to-left",

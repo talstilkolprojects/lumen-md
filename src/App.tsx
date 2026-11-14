@@ -121,6 +121,11 @@ export default function App() {
   const outlineSheet = useAppStore((s) => s.outlineSheet);
   // Phone width (plan 10.2.4): the outline shows as a bottom sheet, opened on demand.
   const [narrow, setNarrow] = useState(isNarrowScreen);
+  // Plan W10.B9: the local grammar model, registered only when the user turned it on
+  // (view.hebrewGrammarModel). Off: no request, no ranker, nothing added to typing.
+  useEffect(() => {
+    void import("./ai/grammarModel").then((m) => m.setupGrammarRanker());
+  }, []);
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return;
     const mq = window.matchMedia("(max-width: 760px)");

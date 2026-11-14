@@ -30,9 +30,40 @@ function sentenceAround(text: string, m: GrammarMatch): { start: number; end: nu
   return { start, end: rest < 0 ? text.length : m.offset + m.length + rest + 1 };
 }
 
-/** Keep the findings the ranker accepts (all of them without a ranker, or when it fails). Only grammar findings are judged. */
-export async function rankFindings(text: string, matches: GrammarMatch[], r: GrammarRanker | null = ranker): Promise<GrammarMatch[]> {
+/** Whether a ranker is registered (the shipped path registers one only when the user turned the model on). */
+export function hasGrammarRanker(): boolean {
+  return ranker !== null;
+}
+
+/**
+ * The ranker's time budget per check (plan W10.B9). When the model has not
+ * judged every finding within it, the rules' findings are shown as they are:
+ * a slow model never holds up the squiggles.
+ */
+export const RANK_BUDGET_MS = 300;
+
+/**
+ * Keep the findings the ranker accepts (all of them without a ranker, when
+ * it fails, or when it runs past `budgetMs`). Only grammar findings are judged.
+ */
+export async function rankFindings(text: string, matches: GrammarMatch[], r: GrammarRanker | null = ranker, budgetMs: number = RANK_BUDGET_MS): Promise<GrammarMatch[]> {
   if (!r) return matches;
+  const ac = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<GrammarMatch[]>((resolve) => {
+    timer = setTimeout(() => {
+      ac.abort();
+      resolve(matches);
+    }, budgetMs);
+  });
+  try {
+    return await Promise.race([judge(text, matches, r, ac.signal), late]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function judge(text: string, matches: GrammarMatch[], r: GrammarRanker, signal: AbortSignal): Promise<GrammarMatch[]> {
   const out: GrammarMatch[] = [];
   for (const m of matches) {
     if (!m.rule.id.startsWith("HE_") || m.rule.category !== "GRAMMAR" || !m.replacements.length) {
@@ -42,8 +73,9 @@ export async function rankFindings(text: string, matches: GrammarMatch[], r: Gra
     const { start, end } = sentenceAround(text, m);
     const original = text.slice(start, end).trim();
     const corrected = (text.slice(start, m.offset) + m.replacements[0] + text.slice(m.offset + m.length, end)).trim();
+    if (signal.aborted) return matches;
     try {
-      if ((await r(original, corrected)) >= KEEP_ABOVE) out.push(m);
+      if ((await r(original, corrected, signal)) >= KEEP_ABOVE) out.push(m);
     } catch {
       out.push(m);
     }

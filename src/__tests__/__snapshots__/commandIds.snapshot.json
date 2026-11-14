@@ -445,6 +445,13 @@
       "icon": "Pencil"
     },
     {
+      "id": "view.hebrewGrammarModel",
+      "label": "Hebrew grammar: check suggestions with a local model (on / off)",
+      "group": "View",
+      "hint": "Ollama on this computer (DictaLM first) drops the grammar suggestions it rejects. Off by default; nothing leaves this computer.",
+      "icon": "Pencil"
+    },
+    {
       "id": "tools.writingGoal",
       "label": "✍️ Set a daily writing goal",
       "group": "Tools",
@@ -2483,6 +2490,13 @@
       "icon": "Pencil"
     },
     {
+      "id": "view.hebrewGrammarModel",
+      "label": "Hebrew grammar: check suggestions with a local model (on / off)",
+      "group": "View",
+      "hint": "Ollama on this computer (DictaLM first) drops the grammar suggestions it rejects. Off by default; nothing leaves this computer.",
+      "icon": "Pencil"
+    },
+    {
       "id": "tools.writingGoal",
       "label": "✍️ Writing goal: 750 words/day",
       "group": "Tools",
@@ -4232,6 +4246,7 @@
     "view.tsChecks",
     "view.grammarCheck",
     "view.hebrewGrammarLevel",
+    "view.hebrewGrammarModel",
     "tools.writingGoal",
     "ai.localToggle",
     "tools.vaultDoctor",

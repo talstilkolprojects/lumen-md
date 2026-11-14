@@ -489,6 +489,8 @@
   "cmd.view.graphView.hint": "ファイル間のつながりを可視化したマップ",
   "cmd.view.hebrewGrammarLevel": "ヘブライ語の文法：文体レベルを変更",
   "cmd.view.hebrewGrammarLevel.hint": "日常・学術・法律：学術と法律ではくだけた表現も指摘します。この端末で確認します。",
+  "cmd.view.hebrewGrammarModel": "ヘブライ語の文法：ローカルモデルで提案を確認（オン／オフ）",
+  "cmd.view.hebrewGrammarModel.hint": "このコンピューターの Ollama（DictaLM を優先）が、却下した文法の提案を除外します。既定はオフ。このコンピューターの外には何も送られません。",
   "cmd.view.language": "言語: {label}",
   "cmd.view.language.ltr": "左から右",
   "cmd.view.language.rtl": "右から左",
