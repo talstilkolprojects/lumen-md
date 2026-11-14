@@ -10,7 +10,7 @@
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Instead, please email **security@lumen.md** with:
+Instead, report it privately through GitHub: **[Report a vulnerability](https://github.com/talstilkol/lumen-md/security/advisories/new)** (Security → Advisories), with:
 
 1. A description of the vulnerability
 2. Steps to reproduce
