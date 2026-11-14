@@ -32,10 +32,10 @@ const read = (rel: string) => readFileSync(path.join(vault, rel), "utf8");
 const ctx = (client = "claude-code") => ({ vault, client, index: new VaultIndex(vault) });
 const textOf = (r: { content: { text: string }[] }) => r.content.map((c) => c.text).join("\n");
 
-function cli(args: string[]) {
+function cli(args: string[], person: { tty?: boolean; answer?: string } = {}) {
   const out: string[] = [];
   const err: string[] = [];
-  return runVaultCli([...args, "--vault", vault], { out: (l) => out.push(l), err: (l) => err.push(l), env: {}, cwd: vault }).then((code) => ({ code, out, err }));
+  return runVaultCli([...args, "--vault", vault], { out: (l) => out.push(l), err: (l) => err.push(l), env: {}, cwd: vault, tty: person.tty, ask: async () => person.answer ?? "" }).then((code) => ({ code, out, err }));
 }
 
 function snapshot(): Record<string, string> {
@@ -246,9 +246,18 @@ describe("lumen bases update", () => {
     expect(snapshot()).toEqual(before);
   });
 
-  it("--approve writes the batch (you are the user at the keyboard)", async () => {
-    const r = await cli(["bases", "update", "--edits", editsFile(), "--approve"]);
+  it("--approve without a TTY (an agent's shell) writes nothing; at a terminal it shows each diff and writes what you confirm", async () => {
+    const before = snapshot();
+    expect((await cli(["bases", "update", "--edits", editsFile(), "--approve"])).code).toBe(1);
+    expect(snapshot()).toEqual(before);
+    expect((await cli(["mcp", "reject", "--all"])).code).toBe(0);
+    const no = await cli(["bases", "update", "--edits", editsFile(), "--approve"], { tty: true, answer: "no" });
+    expect(no.out.at(-1)).toBe("wrote 0 note(s)");
+    expect(snapshot()).toEqual(before);
+    expect((await cli(["mcp", "reject", "--all"])).code).toBe(0);
+    const r = await cli(["bases", "update", "--edits", editsFile(), "--approve"], { tty: true, answer: "yes" });
     expect(r.code).toBe(0);
+    expect(r.out.some((l) => l === "+ status: doing")).toBe(true);
     expect(r.out.at(-1)).toBe("wrote 2 note(s)");
     expect(read("Tasks/a.md")).toContain("status: doing");
     expect(await listPending(vault)).toEqual([]);

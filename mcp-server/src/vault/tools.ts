@@ -66,7 +66,7 @@ export const TOOLS: readonly ToolDef[] = [
   {
     name: "create_note",
     scope: "propose",
-    description: "Propose a new note. Nothing is written until the user approves it in Lumen or with `lumen mcp approve`.",
+    description: "Propose a new note. Nothing is written until the user approves it in Lumen.",
     inputSchema: { type: "object", properties: { path: str(), content: str("Markdown body.") }, required: ["path", "content"] },
   },
   {
@@ -109,7 +109,7 @@ export const TOOLS: readonly ToolDef[] = [
   {
     name: "bases_update",
     scope: "propose",
-    description: "Propose changing note properties (rows of a base): one proposal per changed note, in one batch. Nothing is written until the user approves it in Lumen or with `lumen mcp approve`.",
+    description: "Propose changing note properties (rows of a base): one proposal per changed note, in one batch. Nothing is written until the user approves it in Lumen.",
     inputSchema: {
       type: "object",
       properties: {
@@ -181,7 +181,7 @@ export async function callTool(ctx: ToolContext, name: string, rawArgs: unknown)
 async function propose(ctx: ToolContext, client: string, tool: string, rel: string, before: string | null, after: string): Promise<ToolResult> {
   if (before === after) return text(`No change to ${rel}.`);
   const p = await proposeWrite(ctx.vault, { client, tool, path: rel, before, after });
-  return { ...text(`Proposed ${before === null ? "a new note" : "a change to"} ${rel} (id ${p.id}). Nothing is written until the user approves it in Lumen (review screen) or with \`lumen mcp approve ${p.id}\`.`), proposalId: p.id };
+  return { ...text(`Proposed ${before === null ? "a new note" : "a change to"} ${rel} (id ${p.id}). Nothing is written until the user approves it; only the user can (do not try to approve it yourself).`), proposalId: p.id };
 }
 
 async function run(ctx: ToolContext, client: string, def: ToolDef, args: Record<string, unknown>, onPath: (p: string) => void): Promise<ToolResult> {
@@ -282,7 +282,7 @@ async function run(ctx: ToolContext, client: string, def: ToolDef, args: Record<
       const props = plan.summary.properties.join(", ");
       return {
         ...text(
-          `Proposed changes to ${plan.changes.length} note(s) (${props}; batch ${batch.id}). Nothing is written until the user approves them in Lumen (review screen) or with \`lumen mcp approve --all\`.`,
+          `Proposed changes to ${plan.changes.length} note(s) (${props}; batch ${batch.id}). Nothing is written until the user approves them; only the user can (do not try to approve them yourself).`,
         ),
         batchId: batch.id,
       };

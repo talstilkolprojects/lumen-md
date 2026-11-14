@@ -285,7 +285,7 @@ export class McpEndpoint {
           method: "elicitation/create",
           params: {
             mode: "form",
-            message: `Lumen is waiting for you to approve this change (${tool}) in Lumen's review screen, or with \`lumen mcp review\`. Continue once you have decided.`,
+            message: `Lumen is waiting for you to approve this change (${tool}) in Lumen's review screen. Continue once you have decided.`,
             requestedSchema: { type: "object", properties: {} },
           },
         },

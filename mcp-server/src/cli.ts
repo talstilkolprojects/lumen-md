@@ -14,7 +14,7 @@
  *   lumen mcp enable <client> [--scopes search,read,propose]
  *   lumen mcp disable <client>
  *   lumen mcp review                   proposals from MCP clients, as diffs
- *   lumen mcp approve <id>|--all       write them
+ *   lumen mcp approve <id>|--client c  show each diff, ask, write (TTY only)
  *   lumen mcp reject <id>|--all        drop them
  *   lumen mcp log [--limit n]          the ledger
  *   lumen mcp serve [--client id]      the MCP server on stdio
@@ -27,7 +27,7 @@
 import { promises as fs } from "node:fs";
 import * as path from "node:path";
 import { spawn } from "node:child_process";
-import { ALL_SCOPES, DEFAULT_SCOPES, disableClient, enableClient, parseScopes, readConfig, writeFileAtomic } from "./vault/config.js";
+import { ALL_SCOPES, DEFAULT_SCOPES, disableClient, enableClient, normalizeClientId, parseScopes, readConfig, writeFileAtomic } from "./vault/config.js";
 import { appendLedger, readLedger } from "./vault/ledger.js";
 import { approvePending, lineDiff, listPending, readNote, rejectPending } from "./vault/pending.js";
 import { absPath, notePath } from "./vault/paths.js";
@@ -42,7 +42,24 @@ export interface CliIO {
   now?: () => Date;
   /** Opens a file in the system's default app (tests pass a fake). */
   openFile?: (abs: string) => void;
+  /**
+   * A person at a terminal (stdin and stdout are a TTY) and a way to ask
+   * them. Approving writes needs both: an agent that runs `lumen` through
+   * a shell gets no TTY, so it cannot approve anything (review 21, B1).
+   */
+  tty?: boolean;
+  ask?: (question: string) => Promise<string>;
 }
+
+/** Ask the person to type "yes" for one change, after its diff. False without a TTY. */
+async function confirmChange(io: CliIO, header: string, before: string | null, after: string): Promise<boolean> {
+  io.out(header);
+  for (const l of lineDiff(before, after)) io.out(l);
+  if (!io.tty || !io.ask) return false;
+  return (await io.ask('Type "yes" to write this change: ')).trim().toLowerCase() === "yes";
+}
+
+const NO_TTY = "Approving needs you at a terminal (a TTY) to read each diff and type yes. Nothing was written. You can also approve in Lumen's review screen.";
 
 export const VAULT_COMMANDS = ["search", "open", "new", "append", "daily", "bases", "mcp"] as const;
 
@@ -53,9 +70,9 @@ export const USAGE = [
   "       lumen append <path> <text…>",
   "       lumen daily [text…] [--folder journal]",
   "       lumen bases query <file.base> [--view name] [--offset n] [--limit n] [--json]",
-  "       lumen bases update --edits <edits.json> [--dry-run] [--approve]",
+  "       lumen bases update --edits <edits.json> [--dry-run] [--approve]   (--approve asks for each note)",
   "       lumen mcp status | enable <client> [--scopes search,read,propose] | disable <client>",
-  "       lumen mcp review | approve <id>|--all | reject <id>|--all | log [--limit n] | serve [--client id]",
+  "       lumen mcp review [--client id] | approve <id>|--client <id> | reject <id>|--all | log [--limit n] | serve [--client id]",
   "       (vault: --vault <dir>, $LUMEN_VAULT, or the current folder)",
 ].join("\n");
 
@@ -208,7 +225,8 @@ async function runCommand(argv: string[], io: CliIO): Promise<number> {
  * `query` prints a view's rows (tab-separated, or JSON). `update` takes the
  * same edits as `lumen.bases.update` / the `bases_update` MCP tool and
  * queues them in the approval queue — `--dry-run` only shows what would
- * change, `--approve` approves the batch right away (you are the user).
+ * change, `--approve` shows each note's diff and writes the ones you
+ * confirm (a TTY only: an agent's shell cannot approve).
  */
 async function runBases(vault: string, rest: string[], flags: Record<string, string>, io: CliIO): Promise<number> {
   const [sub, arg] = rest;
@@ -246,18 +264,30 @@ async function runBases(vault: string, rest: string[], flags: Record<string, str
     }
     const batch = await proposeBatch(vault, "cli", "bases_update", plan.changes);
     if (!flags.approve) {
-      io.out(`Queued as batch ${batch.id}: review with \`lumen mcp review\`, then \`lumen mcp approve --all\` (or in Lumen's review screen).`);
+      io.out(`Queued as batch ${batch.id}: review it in Lumen's review screen or at a terminal.`);
       return 0;
     }
+    if (!io.tty || !io.ask) {
+      io.err(NO_TTY);
+      return 1;
+    }
     let failed = 0;
+    let written = 0;
     for (const id of batch.ids) {
+      const p = (await listPending(vault)).find((x) => x.id === id);
+      if (!p) continue;
+      if (!(await confirmChange(io, `── ${p.path}`, p.before, p.after))) {
+        io.out(`left in the queue: ${p.path}`);
+        continue;
+      }
       const r = await approvePending(vault, id, "cli");
-      if (r.status !== "applied") {
+      if (r.status === "applied") written++;
+      else {
         failed++;
         io.err(r.status === "missing" ? `no proposal ${id}` : `not written: ${r.reason} (${r.pending.path})`);
       }
     }
-    io.out(`wrote ${batch.ids.length - failed} note(s)`);
+    io.out(`wrote ${written} note(s)`);
     return failed ? 1 : 0;
   }
   io.err(USAGE);
@@ -304,7 +334,7 @@ async function runMcp(vault: string, rest: string[], flags: Record<string, strin
       return 0;
     }
     case "review": {
-      const list = await listPending(vault);
+      const list = (await listPending(vault)).filter((p) => !flags.client || p.client === normalizeClientId(flags.client));
       if (!list.length) io.out("No proposals waiting.");
       for (const p of list) {
         io.out(`── ${p.id}  ${p.client} · ${p.tool} · ${p.path}${p.before === null ? " (new)" : ""} · ${p.createdAt}`);
@@ -312,8 +342,41 @@ async function runMcp(vault: string, rest: string[], flags: Record<string, strin
       }
       return 0;
     }
-    case "approve":
+    case "approve": {
+      // No --all (review 21, B1): one client's agent must not be able to approve another client's changes,
+      // and every change is approved by a person who saw its diff.
+      if (flags.all) {
+        io.err("`lumen mcp approve --all` was removed: approve one proposal (<id>) or one client's (--client <id>), each after its diff.");
+        return 1;
+      }
+      const all = await listPending(vault);
+      const list = arg ? all.filter((p) => p.id === arg) : flags.client ? all.filter((p) => p.client === normalizeClientId(flags.client)) : [];
+      if (!arg && !flags.client) break;
+      if (!list.length) {
+        io.err(arg ? `no proposal ${arg}` : `No proposals waiting from ${flags.client}.`);
+        return arg ? 1 : 0;
+      }
+      if (!io.tty || !io.ask) {
+        io.err(NO_TTY);
+        return 1;
+      }
+      let failed = 0;
+      for (const p of list) {
+        if (!(await confirmChange(io, `── ${p.id}  ${p.client} · ${p.tool} · ${p.path}${p.before === null ? " (new)" : ""}`, p.before, p.after))) {
+          io.out(`left in the queue: ${p.id} (${p.path})`);
+          continue;
+        }
+        const r = await approvePending(vault, p.id);
+        if (r.status === "applied") io.out(`wrote ${r.pending.path} (${p.id})`);
+        else {
+          failed++;
+          io.err(r.status === "missing" ? `no proposal ${p.id}` : `not written: ${r.reason} (${p.id}, ${r.pending.path})`);
+        }
+      }
+      return failed ? 1 : 0;
+    }
     case "reject": {
+      // Rejecting writes nothing, so it may be done in bulk.
       const ids = flags.all ? (await listPending(vault)).map((p) => p.id) : arg ? [arg] : [];
       if (!ids.length) {
         if (flags.all) {
@@ -324,20 +387,11 @@ async function runMcp(vault: string, rest: string[], flags: Record<string, strin
       }
       let failed = 0;
       for (const id of ids) {
-        if (sub === "reject") {
-          const p = await rejectPending(vault, id);
-          if (p) io.out(`rejected ${id} (${p.path})`);
-          else {
-            failed++;
-            io.err(`no proposal ${id}`);
-          }
-          continue;
-        }
-        const r = await approvePending(vault, id);
-        if (r.status === "applied") io.out(`wrote ${r.pending.path} (${id})`);
+        const p = await rejectPending(vault, id);
+        if (p) io.out(`rejected ${id} (${p.path})`);
         else {
           failed++;
-          io.err(r.status === "missing" ? `no proposal ${id}` : `not written: ${r.reason} (${id}, ${r.pending.path})`);
+          io.err(`no proposal ${id}`);
         }
       }
       return failed ? 1 : 0;
@@ -356,6 +410,6 @@ async function runMcp(vault: string, rest: string[], flags: Record<string, strin
       return -1;
     }
   }
-  io.err(`usage: lumen mcp status | enable <client> [--scopes ${ALL_SCOPES.join(",")}] | disable <client> | review | approve <id>|--all | reject <id>|--all | log | serve`);
+  io.err(`usage: lumen mcp status | enable <client> [--scopes ${ALL_SCOPES.join(",")}] | disable <client> | review [--client id] | approve <id>|--client <id> | reject <id>|--all | log | serve`);
   return 1;
 }
