@@ -140,6 +140,8 @@
   "cmd.copyBlockLink": "复制块链接",
   "cmd.copyBlockLink.hint": "为光标所在的块添加 ^id 并复制 [[笔记#^id]]",
   "cmd.edit.bidiFix": "清理方向标记并修正括号",
+  "cmd.edit.toggleDirection": "切换段落方向（从右到左 ↔ 从左到右）",
+  "cmd.edit.toggleDirection.hint": "以不可见的方向标记保存在段落开头；frontmatter 中的 dir: rtl | ltr | auto 作用于整篇笔记",
   "cmd.edit.bidiFix.hint": "删除不改变显示效果的标记，并交换反向输入的括号——一次撤销即可还原",
   "cmd.edit.fixPdfHebrew": "修正反向的希伯来语（来自 PDF）",
   "cmd.edit.fixPdfHebrew.hint": "把从 PDF 复制的希伯来语恢复为阅读顺序，数字和英文保持正确方向，并修正词尾字母",

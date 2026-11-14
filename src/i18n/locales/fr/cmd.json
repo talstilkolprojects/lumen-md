@@ -140,6 +140,8 @@
   "cmd.copyBlockLink": "Copier le lien vers le bloc",
   "cmd.copyBlockLink.hint": "Donne au bloc sous le curseur un ^id et copie [[Note#^id]]",
   "cmd.edit.bidiFix": "Nettoyer les marques de direction et corriger les parenthèses",
+  "cmd.edit.toggleDirection": "Changer le sens du paragraphe (droite à gauche ↔ gauche à droite)",
+  "cmd.edit.toggleDirection.hint": "Enregistré dans la note sous forme de marque de direction invisible en début de paragraphe ; dir: rtl | ltr | auto dans le frontmatter règle toute la note",
   "cmd.edit.bidiFix.hint": "Retirer les marques qui ne changent rien à l’écran et inverser les parenthèses tapées à l’envers — une seule annulation",
   "cmd.edit.fixPdfHebrew": "Corriger l’hébreu inversé (depuis un PDF)",
   "cmd.edit.fixPdfHebrew.hint": "Remet dans l’ordre de lecture l’hébreu copié d’un PDF, en gardant chiffres et anglais dans le bon sens, et corrige les lettres finales",

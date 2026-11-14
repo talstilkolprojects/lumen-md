@@ -140,6 +140,8 @@
   "cmd.copyBlockLink": "העתקת קישור לבלוק",
   "cmd.copyBlockLink.hint": "נותן לבלוק שבסמן מזהה ^id ומעתיק [[פתק#^id]]",
   "cmd.edit.bidiFix": "ניקוי סימני כיוון ותיקון סוגריים",
+  "cmd.edit.toggleDirection": "החלפת כיוון הפסקה (ימין לשמאל ↔ שמאל לימין)",
+  "cmd.edit.toggleDirection.hint": "נשמר בפתק כסימן כיוון בלתי נראה בתחילת הפסקה; dir: rtl | ltr | auto ב-frontmatter קובע את כל הפתק",
   "cmd.edit.bidiFix.hint": "הסרת סימנים שלא משנים דבר על המסך והחלפת סוגריים שהוקלדו הפוך — ביטול אחד מחזיר הכול",
   "cmd.edit.fixPdfHebrew": "תיקון עברית הפוכה (מ-PDF)",
   "cmd.edit.fixPdfHebrew.hint": "מחזיר עברית שהועתקה מ-PDF לסדר הקריאה, עם מספרים ואנגלית בכיוון הנכון, ומתקן אותיות סופיות",

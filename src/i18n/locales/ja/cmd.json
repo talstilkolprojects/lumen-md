@@ -140,6 +140,8 @@
   "cmd.copyBlockLink": "ブロックへのリンクをコピー",
   "cmd.copyBlockLink.hint": "カーソル位置のブロックに ^id を付け、[[ノート#^id]] をコピーします",
   "cmd.edit.bidiFix": "方向マークを整理して括弧を修正",
+  "cmd.edit.toggleDirection": "段落の方向を切り替え（右から左 ↔ 左から右）",
+  "cmd.edit.toggleDirection.hint": "段落の先頭に見えない方向マークとしてノートに保存されます。frontmatter の dir: rtl | ltr | auto はノート全体に適用されます",
   "cmd.edit.bidiFix.hint": "画面表示を変えないマークを削除し、逆向きに入力された括弧を入れ替える（1回で元に戻せます）",
   "cmd.edit.fixPdfHebrew": "反転したヘブライ語を修正（PDF から）",
   "cmd.edit.fixPdfHebrew.hint": "PDF からコピーしたヘブライ語を読み順に戻し、数字と英語は正しい向きのまま、語末形の文字も修正します",

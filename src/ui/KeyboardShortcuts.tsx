@@ -48,6 +48,7 @@ function buildSections(mod: string) {
         { keys: `${mod}+A`, label: () => "Select All" },
         { keys: `${mod}+F`, label: () => t("cmd.search") },
         { keys: mod === "⌘" ? "⇧⌥F" : "Shift+Alt+F", label: () => t("cmd.edit.formatDocument") },
+        { keys: `${mod}+Shift+X`, label: () => t("cmd.edit.toggleDirection") },
       ],
     },
     {

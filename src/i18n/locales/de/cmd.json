@@ -140,6 +140,8 @@
   "cmd.copyBlockLink": "Link zum Block kopieren",
   "cmd.copyBlockLink.hint": "Gibt dem Block am Cursor eine ^id und kopiert [[Notiz#^id]]",
   "cmd.edit.bidiFix": "Richtungszeichen bereinigen und Klammern korrigieren",
+  "cmd.edit.toggleDirection": "Absatzrichtung umschalten (rechts nach links ↔ links nach rechts)",
+  "cmd.edit.toggleDirection.hint": "Wird als unsichtbares Richtungszeichen am Absatzanfang in der Notiz gespeichert; dir: rtl | ltr | auto im Frontmatter gilt für die ganze Notiz",
   "cmd.edit.bidiFix.hint": "Zeichen entfernen, die nichts an der Anzeige ändern, und verkehrt getippte Klammern tauschen – ein Rückgängig",
   "cmd.edit.fixPdfHebrew": "Umgedrehtes Hebräisch reparieren (aus PDF)",
   "cmd.edit.fixPdfHebrew.hint": "Bringt aus einem PDF kopiertes Hebräisch in Leserichtung, Zahlen und Englisch bleiben richtig herum, und korrigiert Endbuchstaben",

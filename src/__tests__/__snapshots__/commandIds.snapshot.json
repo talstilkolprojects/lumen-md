@@ -1746,6 +1746,14 @@
       "icon": "Calculator"
     },
     {
+      "id": "edit.toggleDirection",
+      "label": "Switch paragraph direction (right-to-left ↔ left-to-right)",
+      "group": "Edit",
+      "hint": "Saved in the note as an invisible direction mark at the paragraph's start; frontmatter dir: rtl | ltr | auto sets the whole note",
+      "shortcut": "⇧⌘X",
+      "icon": "Pencil"
+    },
+    {
       "id": "insert.inlineMath",
       "label": "Insert inline formula",
       "group": "Insert",
@@ -3900,6 +3908,14 @@
       "icon": "Calculator"
     },
     {
+      "id": "edit.toggleDirection",
+      "label": "Switch paragraph direction (right-to-left ↔ left-to-right)",
+      "group": "Edit",
+      "hint": "Saved in the note as an invisible direction mark at the paragraph's start; frontmatter dir: rtl | ltr | auto sets the whole note",
+      "shortcut": "⇧⌘X",
+      "icon": "Pencil"
+    },
+    {
       "id": "insert.inlineMath",
       "label": "Insert inline formula",
       "group": "Insert",
@@ -4420,6 +4436,7 @@
     "insert.mermaid",
     "insert.map",
     "insert.math",
+    "edit.toggleDirection",
     "insert.inlineMath",
     "insert.callout",
     "insert.graphviz",

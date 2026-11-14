@@ -139,6 +139,8 @@
   "cmd.copyBlockLink": "Copy link to block",
   "cmd.copyBlockLink.hint": "Gives the block at the cursor a ^id and copies [[Note#^id]]",
   "cmd.edit.bidiFix": "Clean direction marks and fix brackets",
+  "cmd.edit.toggleDirection": "Switch paragraph direction (right-to-left ↔ left-to-right)",
+  "cmd.edit.toggleDirection.hint": "Saved in the note as an invisible direction mark at the paragraph's start; frontmatter dir: rtl | ltr | auto sets the whole note",
   "cmd.edit.bidiFix.hint": "Remove marks that change nothing on screen and swap brackets typed backwards — one undo",
   "cmd.edit.fixPdfHebrew": "Fix reversed Hebrew (from a PDF)",
   "cmd.edit.fixPdfHebrew.hint": "Puts Hebrew copied from a PDF back in reading order, keeping numbers and English the right way round, and fixes final letters",

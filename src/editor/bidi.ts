@@ -30,26 +30,15 @@ import { Decoration, Direction, EditorView, ViewPlugin, keymap, type DecorationS
 import { syntaxTree } from "@codemirror/language";
 import { CharCategory, EditorSelection, Prec, findClusterBreak, type EditorState, type SelectionRange } from "@codemirror/state";
 import { markdownLineDirection } from "../lib/bidiDirection";
+import { explicitDirection, frontmatterDir, frontmatterEnd, type Dir } from "../lib/paragraphDirection";
 import { displayMathLines } from "../lib/mathIsolate";
 
 export { firstStrongDirection } from "../lib/textDirection";
 
-export type Dir = "auto" | "ltr" | "rtl";
+export type { Dir };
 
-/** End offset of a leading YAML frontmatter block (just past its closing fence), or -1. */
-export function frontmatterEnd(doc: string): number {
-  if (!doc.startsWith("---")) return -1;
-  const end = doc.indexOf("\n---", 3);
-  return end < 0 ? -1 : end + 4;
-}
-
-/** `dir: rtl|ltr|auto` from a note's YAML frontmatter, else null. */
-export function frontmatterDir(doc: string): Dir | null {
-  const end = frontmatterEnd(doc);
-  if (end < 0) return null;
-  const m = /^dir:\s*["']?(auto|ltr|rtl)["']?\s*$/m.exec(doc.slice(3, end - 4));
-  return m ? (m[1] as Dir) : null;
-}
+// Moved to lib/paragraphDirection (W11.H4), re-exported for existing importers.
+export { frontmatterEnd, frontmatterDir } from "../lib/paragraphDirection";
 
 const ATTR = {
   auto: Decoration.line({ attributes: { dir: "auto" } }),
@@ -142,6 +131,8 @@ function build(view: EditorView): DecorationSet {
       const inCode = ltr.some(([a, b]) => line.from >= a && line.from < b) || mathLines(view.state).has(line.number);
       let dir: Dir;
       if (inCode) dir = "ltr";
+      // A paragraph switched with "Switch paragraph direction" (W11.H4) wins over the note's pin.
+      else if (explicitDirection(line.text)) dir = explicitDirection(line.text)!;
       else if (pinned && pinned !== "auto") dir = pinned;
       else dir = markdownLineDirection(line.text) ?? (base ??= noteDirection(view.state, fm));
       ranges.push(ATTR[dir].range(line.from));

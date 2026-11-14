@@ -786,6 +786,16 @@
       "vars": []
     },
     {
+      "key": "cmd.edit.toggleDirection",
+      "en": "Switch paragraph direction (right-to-left ↔ left-to-right)",
+      "vars": []
+    },
+    {
+      "key": "cmd.edit.toggleDirection.hint",
+      "en": "Saved in the note as an invisible direction mark at the paragraph's start; frontmatter dir: rtl | ltr | auto sets the whole note",
+      "vars": []
+    },
+    {
       "key": "cmd.epub.open",
       "en": "Open an EPUB for reading…",
       "vars": []
