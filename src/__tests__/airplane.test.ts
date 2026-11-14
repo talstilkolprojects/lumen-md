@@ -31,7 +31,10 @@ import {
   verdict,
 } from "../privacy/airplane";
 import { AIRPLANE_CSP, AIRPLANE_KEY, AIRPLANE_TAB, airplaneFlagOn, airplaneWorkerName, answerWorkers, followOtherTab, __setAirplaneFlag } from "../privacy/airplaneBoot";
-import { buildCertificate, canonicalJson, CERTIFICATE_FORMAT, CERTIFICATE_FORMAT_V2, reachedNetwork, sealCertificate, verifyCertificate } from "../privacy/airplaneCertificate";
+import { buildCertificate, canonicalJson, CERTIFICATE_FORMAT, CERTIFICATE_FORMAT_V2, reachedNetwork, sealCertificate, signedCertificateFile, verifyCertificate } from "../privacy/airplaneCertificate";
+import { newSigningKey, publicKeyText } from "../privacy/report";
+// @ts-expect-error — plain .mjs script without type declarations
+import { verifyData } from "../../scripts/supply-chain/minisign.mjs";
 import { AIRPLANE_WAIT_MS, installWorkerLedger, type AirplaneMessage } from "../ai/workerLedger";
 
 const BASE = "https://lumen-md.vercel.app/notes/x";
@@ -288,6 +291,32 @@ describe("certificate", () => {
     expect((await verifyCertificate(forged)).ok).toBe(false);
     const signed = await sealCertificate(cert, async (text) => `sig:${text.length}`);
     expect(signed.signature).toBe(`sig:${sealed.text.length}`);
+  });
+
+  it("every certificate the monitor exports is signed with the device's minisign key, and a changed byte is rejected (W10.C11)", async () => {
+    enableAirplaneMode();
+    const from = Date.now();
+    await fake.win.fetch("https://evil.example.com/a").catch(() => {});
+    const cert = buildCertificate(egressAttempts(), from, Date.now() + 1, "test");
+    const key = await newSigningKey();
+    const file = await signedCertificateFile(cert, key);
+    expect(file.publicKey).toBe(await publicKeyText(key.publicRaw));
+    // minisign's own check (scripts/supply-chain/minisign.mjs, Node's Ed25519), independent of the signer.
+    expect(verifyData(Buffer.from(file.certificate, "utf8"), file.minisig, file.publicKey)).toMatch(/^lumen-md airplane certificate test .* sha256:[0-9a-f]{64}$/);
+    expect(verifyData(Buffer.from(file.certificate, "utf8"), file.minisig, file.publicKey)).toContain(`sha256:${file.sha256}`);
+    const changed = file.certificate.replace('"blocked":1', '"blocked":2');
+    expect(changed).not.toBe(file.certificate);
+    expect(() => verifyData(Buffer.from(changed, "utf8"), file.minisig, file.publicKey)).toThrow(/does not match/);
+    expect((await verifyCertificate({ text: file.certificate, sha256: file.sha256 })).ok).toBe(true);
+    // Another device's key does not verify it.
+    const otherKey = await publicKeyText((await newSigningKey()).publicRaw);
+    expect(() => verifyData(Buffer.from(file.certificate, "utf8"), file.minisig, otherKey)).toThrow();
+  });
+
+  it("the monitor's download goes through the signer (W10.C11)", () => {
+    const src = readFileSync(resolve(process.cwd(), "src/privacy/NetworkMonitor.tsx"), "utf8");
+    expect(src).toMatch(/signedCertificateFile\(buildCertificate\(/);
+    expect(src).not.toMatch(/sealCertificate\(/);
   });
 
   it("10,000 blocked attempts after one real leak: the leak is still listed, and every attempt is counted (review 14)", async () => {

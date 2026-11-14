@@ -13,7 +13,7 @@ import { createRoot } from "react-dom/client";
 import { Plane, X } from "lucide-react";
 import { t, getLocale } from "../i18n";
 import { airplaneModeOn, airplaneSince, disableAirplaneMode, egressAttempts, egressTally, enableAirplaneMode, subscribeEgress, type EgressAttempt } from "./airplane";
-import { buildCertificate, reachedNetwork, sealCertificate } from "./airplaneCertificate";
+import { buildCertificate, reachedNetwork, signedCertificateFile } from "./airplaneCertificate";
 import { HelpButton } from "../ui/HelpButton";
 
 /**
@@ -81,8 +81,9 @@ export function NetworkMonitor({ onClose }: { onClose: () => void }) {
   const certificate = async () => {
     if (since === null) return;
     const to = Date.now();
-    const sealed = await sealCertificate(buildCertificate(list, since, to, undefined, egressTally()));
-    download(JSON.stringify({ certificate: sealed.text, sha256: sealed.sha256 }, null, 2) + "\n", `lumen-airplane-${new Date(since).toISOString().replace(/[:.]/g, "-")}.json`);
+    // Signed with this device's key (W10.C11): a changed byte fails the minisign check.
+    const file = await signedCertificateFile(buildCertificate(list, since, to, undefined, egressTally()));
+    download(JSON.stringify(file, null, 2) + "\n", `lumen-airplane-${new Date(since).toISOString().replace(/[:.]/g, "-")}.json`);
   };
 
   return (
