@@ -216,6 +216,9 @@ steps:
       gate 'No VITE_* secrets in the bundle' VITE_RESEARCH_TOKEN=ci-canary-research-token-4e9b1c VITE_CI_CANARY_SECRET=ci-canary-vite-secret-8d2f7a <<'LUMEN_STEP'
       node scripts/check-vite-secrets.mjs dist
       LUMEN_STEP
+      gate 'No e2e test surface in the production build (plan W1.31)' <<'LUMEN_STEP'
+      npm run check:test-surface
+      LUMEN_STEP
       gate 'Bundle-size budget' <<'LUMEN_STEP'
       npm run budget -- --json bundle-sizes.json
       LUMEN_STEP
@@ -323,7 +326,7 @@ steps:
     key: "e2e-prod"
     command: |-
       LUMEN_CI_JOB=e2e-prod LUMEN_CI_BROWSERS=chromium bash scripts/buildkite/run.sh <<'LUMEN_JOB'
-      gate 'Build production bundle' <<'LUMEN_STEP'
+      gate 'Build production bundle' VITE_LUMEN_TEST_SURFACE=1 <<'LUMEN_STEP'
       npm run build
       LUMEN_STEP
       gate 'Serve dist with http-server' <<'LUMEN_STEP'

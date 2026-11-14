@@ -57,7 +57,7 @@ export const JOBS = [
     key: "build",
     label: ":package: build + budget",
     job: "check",
-    steps: ["Build", "No collab secrets in the bundle", "No VITE_* secrets in the bundle", "Bundle-size budget"],
+    steps: ["Build", "No collab secrets in the bundle", "No VITE_* secrets in the bundle", "No e2e test surface in the production build (plan W1.31)", "Bundle-size budget"],
     artifacts: ["bundle-sizes.json"],
     timeout: 25,
   },
