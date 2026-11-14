@@ -163,6 +163,7 @@ export default defineConfig({
             { label: "Android and iOS builds", slug: "self-hosting/mobile", translations: { he: "בניית Android ו-iOS" } },
             { label: "A second host and tests without Vercel", slug: "self-hosting/second-host", translations: { he: "אירוח שני ובדיקות בלי Vercel" } },
             { label: "The verification factory", slug: "self-hosting/verification-factory", translations: { he: "מפעל האימות" } },
+            { label: "CI on Buildkite", slug: "self-hosting/buildkite", translations: { he: "CI ב-Buildkite" } },
           ],
         },
         {
