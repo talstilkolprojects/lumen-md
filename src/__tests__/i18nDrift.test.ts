@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { lazyEnglish } from "./helpers/i18nLazy";
 import { readFileSync } from "fs";
 import { join } from "path";
 
@@ -18,6 +19,8 @@ describe("i18n locale drift", () => {
   const re = /"([^"]+)":\s*"/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(enBlock)) !== null) enKeys.add(m[1]);
+  // English of lazily loaded domains lives next to its chunk.
+  for (const k of Object.keys(lazyEnglish())) enKeys.add(k);
 
   const locales = ["he", "ar", "de", "fr", "ja", "ru", "zh-CN"];
   const localeDir = join(__dirname, "..", "i18n", "locales");

@@ -122,10 +122,10 @@ export function Preview({ markdownText, docKey = null }: Props) {
           (path, heading) =>
             window.dispatchEvent(
               new CustomEvent("lumen-open-file", {
-                // A PDF takes the fragment as written (`page=3&highlight=…`,
+                // A PDF or a book takes the fragment as written (`page=3&highlight=…`, `chapter=2&…`,
                 // plan 4.14). A note: the same slugger rehype-slug gives the
                 // rendered headings (Unicode-aware: Hebrew / CJK keep their text).
-                detail: /\.pdf$/i.test(path)
+                detail: /\.(pdf|epub)$/i.test(path)
                   ? { path, fragment: heading ?? null }
                   : heading
                     ? { path, heading: headingSlug(heading) }

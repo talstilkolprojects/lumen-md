@@ -579,6 +579,22 @@ export function useCommands({
         action: () => void import("../pdf/openPdf").then((m) => m.pickAndOpenPdf()),
       },
       {
+        id: "epub.open",
+        label: t("cmd.epub.open"),
+        icon: cmdIcons.FileText,
+        group: t("group.file"),
+        // Plan W1.14: copies the book into the vault and opens it in the reader.
+        action: () => void import("../epub/openEpub").then((m) => m.pickAndOpenEpub()),
+      },
+      {
+        id: "view.reading",
+        label: t("cmd.reading.mode"),
+        icon: cmdIcons.FileText,
+        group: t("group.file"),
+        // Plan W1.14: the open note (a clip, typically) as a page to read and highlight.
+        action: () => void import("../epub/ReadingMode").then((m) => m.openReadingMode()),
+      },
+      {
         id: "view.calendar",
         label: t("cmd.view.calendar"),
         hint: t("cmd.view.calendar.hint"),

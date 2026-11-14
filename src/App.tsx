@@ -27,6 +27,7 @@ const VersionHistory = lazy(() => import("./ui/VersionHistory").then(m => ({ def
 const MarkdownTableEditor = lazy(() => import("./ui/MarkdownTableEditor").then(m => ({ default: m.MarkdownTableEditor })));
 // PDF reader (plan 4.14): pdf.js and the reader load only when a PDF is opened.
 const PdfReader = lazy(() => import("./pdf/PdfReader").then(m => ({ default: m.PdfReaderOverlay })));
+const EpubReader = lazy(() => import("./epub/EpubReader").then(m => ({ default: m.EpubReaderOverlay })));
 import { htmlToMarkdown } from "./storage/fileFormats";
 import { wirePluginAPI, registerPlugin, unregisterPlugin, wordCountPlugin } from "./plugins/pluginSystem";
 import { CommandPalette } from "./ui/CommandPalette";
@@ -136,6 +137,7 @@ export default function App() {
   const [graphOpen, setGraphOpen] = useState(false);
   /** The PDF open in the reader, with the link fragment that opened it (`page=N&highlight=ID`). */
   const [pdfView, setPdfView] = useState<{ path: string; fragment: string | null; seq: number } | null>(null);
+  const [epubView, setEpubView] = useState<{ path: string; fragment: string | null; seq: number } | null>(null);
   /** The open reader's save gate: replacing the reader waits until its highlights are saved. */
   const pdfSaveGate = useRef<((then: () => void) => void) | null>(null);
   const registerPdfSaveGate = useCallback((gate: ((then: () => void) => void) | null) => {
@@ -439,6 +441,11 @@ export default function App() {
     async function onOpen(e: Event) {
       const detail = (e as CustomEvent<{ path: string; heading?: string; fragment?: string }>).detail;
       if (!detail?.path) return;
+      // A book opens in the EPUB reader, at the chapter / highlight the link names (W1.14).
+      if (/\.epub$/i.test(detail.path)) {
+        setEpubView((prev) => ({ path: detail.path, fragment: detail.fragment ?? null, seq: (prev?.seq ?? 0) + 1 }));
+        return;
+      }
       // A PDF opens in the reader, at the page / highlight the link names.
       if (/\.pdf$/i.test(detail.path)) {
         const open = () => setPdfView((prev) => ({ path: detail.path, fragment: detail.fragment ?? null, seq: (prev?.seq ?? 0) + 1 }));
@@ -1066,6 +1073,13 @@ export default function App() {
         <Suspense fallback={null}>
           {/* A new PDF gets a fresh reader: no page, search or OCR state carries over. */}
           <PdfReader key={pdfView.path} path={pdfView.path} fragment={pdfView.fragment} openSeq={pdfView.seq} onClose={() => setPdfView(null)} registerSaveGate={registerPdfSaveGate} />
+        </Suspense>
+      )}
+
+      {/* EPUB reader overlay (plan W1.14) */}
+      {epubView && (
+        <Suspense fallback={null}>
+          <EpubReader key={epubView.path} path={epubView.path} fragment={epubView.fragment} openSeq={epubView.seq} onClose={() => setEpubView(null)} />
         </Suspense>
       )}
 

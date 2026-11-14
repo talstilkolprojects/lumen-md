@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-10-20T22:11:06.311Z",
-  "source": "src/i18n/index.ts (en bundle)",
-  "count": 1458,
+  "generated_at": "2026-11-10T01:43:25.164Z",
+  "source": "src/i18n/index.ts (en bundle) + src/i18n/lazy/*.json",
+  "count": 1493,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -1816,141 +1816,13 @@
       "vars": []
     },
     {
-      "key": "pdf.failed",
-      "en": "Couldn't open this PDF: {error}",
-      "vars": [
-        "error"
-      ]
-    },
-    {
-      "key": "pdf.noWorkspace",
-      "en": "PDFs need the workspace, which this browser can't provide.",
+      "key": "cmd.epub.open",
+      "en": "Open an EPUB for reading…",
       "vars": []
     },
     {
-      "key": "pdf.page.of",
-      "en": "Page {n} of {total}",
-      "vars": [
-        "n",
-        "total"
-      ]
-    },
-    {
-      "key": "pdf.page.label",
-      "en": "Page {n}",
-      "vars": [
-        "n"
-      ]
-    },
-    {
-      "key": "pdf.zoomIn",
-      "en": "Zoom in",
-      "vars": []
-    },
-    {
-      "key": "pdf.zoomOut",
-      "en": "Zoom out",
-      "vars": []
-    },
-    {
-      "key": "pdf.zoomFit",
-      "en": "Fit width",
-      "vars": []
-    },
-    {
-      "key": "pdf.search.placeholder",
-      "en": "Search in this PDF",
-      "vars": []
-    },
-    {
-      "key": "pdf.search.count",
-      "en": "{i} of {n}",
-      "vars": [
-        "i",
-        "n"
-      ]
-    },
-    {
-      "key": "pdf.highlight",
-      "en": "Highlight",
-      "vars": []
-    },
-    {
-      "key": "pdf.highlight.hint",
-      "en": "Select text, then press H",
-      "vars": []
-    },
-    {
-      "key": "pdf.highlights",
-      "en": "Highlights",
-      "vars": []
-    },
-    {
-      "key": "pdf.highlights.empty",
-      "en": "Select text and press Highlight.",
-      "vars": []
-    },
-    {
-      "key": "pdf.note.placeholder",
-      "en": "Add a note…",
-      "vars": []
-    },
-    {
-      "key": "pdf.unanchored",
-      "en": "Text not found on the page.",
-      "vars": []
-    },
-    {
-      "key": "pdf.openNotes",
-      "en": "Open the notes",
-      "vars": []
-    },
-    {
-      "key": "pdf.saveFailed",
-      "en": "Couldn't save the highlights: {error}",
-      "vars": [
-        "error"
-      ]
-    },
-    {
-      "key": "pdf.noteTitle",
-      "en": "Highlights — {name}",
-      "vars": [
-        "name"
-      ]
-    },
-    {
-      "key": "pdf.notePage",
-      "en": "p. {n}",
-      "vars": [
-        "n"
-      ]
-    },
-    {
-      "key": "pdf.noteEmpty",
-      "en": "_No highlights yet._",
-      "vars": []
-    },
-    {
-      "key": "pdf.notesUnreadable",
-      "en": "the highlights block in {name} can't be read. Fix or remove it to highlight again.",
-      "vars": [
-        "name"
-      ]
-    },
-    {
-      "key": "pdf.ocr.scanned",
-      "en": "This page is a scanned image.",
-      "vars": []
-    },
-    {
-      "key": "pdf.ocr.run",
-      "en": "Recognise text (OCR)",
-      "vars": []
-    },
-    {
-      "key": "pdf.ocr.running",
-      "en": "Recognising text on this device…",
+      "key": "cmd.reading.mode",
+      "en": "Reading mode",
       "vars": []
     },
     {
@@ -7840,6 +7712,330 @@
     {
       "key": "chart.alternatives",
       "en": "Chart suggestions",
+      "vars": []
+    },
+    {
+      "key": "epub.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "epub.failed",
+      "en": "Couldn't open this book: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "epub.noWorkspace",
+      "en": "Books need the workspace, which this browser can't provide.",
+      "vars": []
+    },
+    {
+      "key": "epub.loading",
+      "en": "Opening…",
+      "vars": []
+    },
+    {
+      "key": "epub.toc",
+      "en": "Contents",
+      "vars": []
+    },
+    {
+      "key": "epub.prev",
+      "en": "Previous chapter",
+      "vars": []
+    },
+    {
+      "key": "epub.next",
+      "en": "Next chapter",
+      "vars": []
+    },
+    {
+      "key": "epub.chapterOf",
+      "en": "Chapter {n} of {total}",
+      "vars": [
+        "n",
+        "total"
+      ]
+    },
+    {
+      "key": "epub.theme.light",
+      "en": "Light",
+      "vars": []
+    },
+    {
+      "key": "epub.theme.sepia",
+      "en": "Sepia",
+      "vars": []
+    },
+    {
+      "key": "epub.theme.dark",
+      "en": "Dark",
+      "vars": []
+    },
+    {
+      "key": "epub.fontSmaller",
+      "en": "Smaller text",
+      "vars": []
+    },
+    {
+      "key": "epub.fontLarger",
+      "en": "Larger text",
+      "vars": []
+    },
+    {
+      "key": "epub.narrower",
+      "en": "Narrower lines",
+      "vars": []
+    },
+    {
+      "key": "epub.wider",
+      "en": "Wider lines",
+      "vars": []
+    },
+    {
+      "key": "epub.highlight",
+      "en": "Highlight",
+      "vars": []
+    },
+    {
+      "key": "epub.highlight.hint",
+      "en": "Select text, then press H",
+      "vars": []
+    },
+    {
+      "key": "epub.highlights",
+      "en": "Highlights",
+      "vars": []
+    },
+    {
+      "key": "epub.highlights.empty",
+      "en": "Select text and press Highlight.",
+      "vars": []
+    },
+    {
+      "key": "epub.note.placeholder",
+      "en": "Add a note…",
+      "vars": []
+    },
+    {
+      "key": "epub.remove",
+      "en": "Remove",
+      "vars": []
+    },
+    {
+      "key": "epub.unanchored",
+      "en": "Text not found in the chapter.",
+      "vars": []
+    },
+    {
+      "key": "epub.openNotes",
+      "en": "Open the notes",
+      "vars": []
+    },
+    {
+      "key": "epub.saveFailed",
+      "en": "Couldn't save the highlights: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "epub.noteTitle",
+      "en": "Highlights — {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "epub.noteChapter",
+      "en": "ch. {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "epub.noteChapterNamed",
+      "en": "ch. {n}: {label}",
+      "vars": [
+        "n",
+        "label"
+      ]
+    },
+    {
+      "key": "epub.noteEmpty",
+      "en": "_No highlights yet._",
+      "vars": []
+    },
+    {
+      "key": "epub.notesUnreadable",
+      "en": "the highlights block in {name} can't be read. Fix or remove it to highlight again.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "epub.external",
+      "en": "This link leads outside the book and is not opened here: {url}",
+      "vars": [
+        "url"
+      ]
+    },
+    {
+      "key": "reading.title",
+      "en": "Reading mode",
+      "vars": []
+    },
+    {
+      "key": "reading.source",
+      "en": "From {source} · clipped {clipped}",
+      "vars": [
+        "source",
+        "clipped"
+      ]
+    },
+    {
+      "key": "reading.highlightFailed",
+      "en": "That passage can't be marked: select text within one paragraph, outside links and formatting.",
+      "vars": []
+    },
+    {
+      "key": "pdf.failed",
+      "en": "Couldn't open this PDF: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "pdf.noWorkspace",
+      "en": "PDFs need the workspace, which this browser can't provide.",
+      "vars": []
+    },
+    {
+      "key": "pdf.page.of",
+      "en": "Page {n} of {total}",
+      "vars": [
+        "n",
+        "total"
+      ]
+    },
+    {
+      "key": "pdf.page.label",
+      "en": "Page {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "pdf.zoomIn",
+      "en": "Zoom in",
+      "vars": []
+    },
+    {
+      "key": "pdf.zoomOut",
+      "en": "Zoom out",
+      "vars": []
+    },
+    {
+      "key": "pdf.zoomFit",
+      "en": "Fit width",
+      "vars": []
+    },
+    {
+      "key": "pdf.search.placeholder",
+      "en": "Search in this PDF",
+      "vars": []
+    },
+    {
+      "key": "pdf.search.count",
+      "en": "{i} of {n}",
+      "vars": [
+        "i",
+        "n"
+      ]
+    },
+    {
+      "key": "pdf.highlight",
+      "en": "Highlight",
+      "vars": []
+    },
+    {
+      "key": "pdf.highlight.hint",
+      "en": "Select text, then press H",
+      "vars": []
+    },
+    {
+      "key": "pdf.highlights",
+      "en": "Highlights",
+      "vars": []
+    },
+    {
+      "key": "pdf.highlights.empty",
+      "en": "Select text and press Highlight.",
+      "vars": []
+    },
+    {
+      "key": "pdf.note.placeholder",
+      "en": "Add a note…",
+      "vars": []
+    },
+    {
+      "key": "pdf.unanchored",
+      "en": "Text not found on the page.",
+      "vars": []
+    },
+    {
+      "key": "pdf.openNotes",
+      "en": "Open the notes",
+      "vars": []
+    },
+    {
+      "key": "pdf.saveFailed",
+      "en": "Couldn't save the highlights: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "pdf.noteTitle",
+      "en": "Highlights — {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "pdf.notePage",
+      "en": "p. {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "pdf.noteEmpty",
+      "en": "_No highlights yet._",
+      "vars": []
+    },
+    {
+      "key": "pdf.notesUnreadable",
+      "en": "the highlights block in {name} can't be read. Fix or remove it to highlight again.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "pdf.ocr.scanned",
+      "en": "This page is a scanned image.",
+      "vars": []
+    },
+    {
+      "key": "pdf.ocr.run",
+      "en": "Recognise text (OCR)",
+      "vars": []
+    },
+    {
+      "key": "pdf.ocr.running",
+      "en": "Recognising text on this device…",
       "vars": []
     }
   ]

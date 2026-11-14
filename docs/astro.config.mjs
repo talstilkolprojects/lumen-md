@@ -47,6 +47,7 @@ export default defineConfig({
             { label: "Search (BM25 + Smart)", slug: "workspace/search" },
             { label: "Vault Doctor", slug: "workspace/doctor" },
             { label: "PDF reader and highlights", slug: "workspace/pdf-reader" },
+            { label: "EPUB reader and reading mode", translations: { he: "קורא EPUB ומצב קריאה" }, slug: "workspace/epub-reader" },
           ],
         },
         {

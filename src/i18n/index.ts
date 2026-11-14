@@ -430,30 +430,8 @@ const en: Strings = {
   "daily.failed": "Couldn't open the daily note: {error}",
   "cmd.pdf.open": "Open a PDF for reading…",
   "cmd.pdf.open.hint": "Highlights go to a .pdf.md note",
-  "pdf.failed": "Couldn't open this PDF: {error}",
-  "pdf.noWorkspace": "PDFs need the workspace, which this browser can't provide.",
-  "pdf.page.of": "Page {n} of {total}",
-  "pdf.page.label": "Page {n}",
-  "pdf.zoomIn": "Zoom in",
-  "pdf.zoomOut": "Zoom out",
-  "pdf.zoomFit": "Fit width",
-  "pdf.search.placeholder": "Search in this PDF",
-  "pdf.search.count": "{i} of {n}",
-  "pdf.highlight": "Highlight",
-  "pdf.highlight.hint": "Select text, then press H",
-  "pdf.highlights": "Highlights",
-  "pdf.highlights.empty": "Select text and press Highlight.",
-  "pdf.note.placeholder": "Add a note…",
-  "pdf.unanchored": "Text not found on the page.",
-  "pdf.openNotes": "Open the notes",
-  "pdf.saveFailed": "Couldn't save the highlights: {error}",
-  "pdf.noteTitle": "Highlights — {name}",
-  "pdf.notePage": "p. {n}",
-  "pdf.noteEmpty": "_No highlights yet._",
-  "pdf.notesUnreadable": "the highlights block in {name} can't be read. Fix or remove it to highlight again.",
-  "pdf.ocr.scanned": "This page is a scanned image.",
-  "pdf.ocr.run": "Recognise text (OCR)",
-  "pdf.ocr.running": "Recognising text on this device…",
+  "cmd.epub.open": "Open an EPUB for reading…",
+  "cmd.reading.mode": "Reading mode",
   "cmd.ai.cancel": "AI: Cancel",
   "cmd.ai.cancel.hint": "Stops every running AI request (Esc does the same)",
   "toast.aiCancelled": "AI request cancelled ({count})",
@@ -1635,6 +1613,17 @@ export function applyLocale(locale: Locale): void {
   if (!SYNCHRONOUS_LOCALES.has(locale) && !(locale in BUNDLES)) {
     void loadLocale(locale);
   }
+}
+
+/**
+ * English for a lazily loaded domain. Its strings live in
+ * `src/i18n/lazy/<domain>.json` and ship in that domain's chunk, not in the
+ * startup bundle; the domain registers them when it loads (other locales
+ * keep the keys in their own JSON as usual). Keys already in `en` win. The
+ * i18n tools and tests read these files together with the `en` block.
+ */
+export function registerEnglish(strings: Strings): void {
+  for (const [k, v] of Object.entries(strings)) if (!(k in en)) en[k] = v;
 }
 
 /** Translate `id` using the active locale, with optional `{name}` substitutions. */

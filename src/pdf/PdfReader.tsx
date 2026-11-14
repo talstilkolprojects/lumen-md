@@ -21,6 +21,7 @@
  */
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import "./strings";
 import { t } from "../i18n";
 import { showAiToast } from "../ui/AiToast";
 import { ErrorBoundary } from "../ui/ErrorBoundary";

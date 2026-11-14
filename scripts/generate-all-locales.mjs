@@ -5,6 +5,7 @@
  * Usage: node scripts/generate-all-locales.mjs
  */
 import { readFileSync, writeFileSync } from "fs";
+import { lazyEnglishEntries } from "./lib/i18n-lazy.mjs";
 
 // Extract EN keys from i18n/index.ts
 const content = readFileSync("src/i18n/index.ts", "utf8");
@@ -15,6 +16,7 @@ const pairs = [];
 const re = /"([^"]+)":\s*"([^"]*(?:\\.[^"]*)*)"/g;
 let m;
 while ((m = re.exec(enBlock)) !== null) pairs.push([m[1], m[2]]);
+pairs.push(...lazyEnglishEntries().map(([k, v]) => [k, JSON.stringify(v).slice(1, -1)]));
 const enMap = Object.fromEntries(pairs);
 console.log(`EN keys: ${pairs.length}`);
 

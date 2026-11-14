@@ -3,6 +3,7 @@
  * the vault and open it in the reader. Its own chunk, loaded by the command.
  */
 
+import "./strings";
 import { t } from "../i18n";
 import { showAiToast } from "../ui/AiToast";
 import { isOPFSAvailable, uniqueWorkspaceName, writeWorkspaceBlob } from "../storage/workspace";

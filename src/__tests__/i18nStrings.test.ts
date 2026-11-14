@@ -15,6 +15,7 @@
  */
 
 import { describe, it, expect } from "vitest";
+import { lazyEnglish } from "./helpers/i18nLazy";
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -66,7 +67,7 @@ function loadBundle(): { en: Record<string, string>; he: Record<string, string> 
     return out;
   }
   return {
-    en: parseKeys(enBlock[1]),
+    en: { ...parseKeys(enBlock[1]), ...lazyEnglish() },
     he: Object.fromEntries(Object.keys(heJson).map((k) => [k, ""])),
   };
 }

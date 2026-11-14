@@ -283,8 +283,8 @@ export function FileTree({
 
   async function open(node: WorkspaceNode) {
     if (node.kind !== "file") return;
-    // A PDF opens in the reader (plan 4.14), not as text.
-    if (/\.pdf$/i.test(node.path)) {
+    // A PDF or an EPUB opens in its reader (plans 4.14, W1.14), not as text.
+    if (/\.(pdf|epub)$/i.test(node.path)) {
       window.dispatchEvent(new CustomEvent("lumen-open-file", { detail: { path: node.path } }));
       return;
     }

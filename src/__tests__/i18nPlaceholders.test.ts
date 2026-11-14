@@ -14,6 +14,7 @@
  */
 
 import { describe, it, expect } from "vitest";
+import { lazyEnglish } from "./helpers/i18nLazy";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -41,7 +42,7 @@ function extractBundle(name: string): Bundle {
   return out;
 }
 
-const en = extractBundle("en");
+const en = { ...extractBundle("en"), ...lazyEnglish() };
 // Hebrew moved to a lazy JSON chunk (A7 lever 4) — read it from disk.
 const he: Bundle = JSON.parse(
   readFileSync(resolve(__dirname, "..", "i18n", "locales", "he.json"), "utf8"),
