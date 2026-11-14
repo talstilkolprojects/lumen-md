@@ -70,6 +70,27 @@
 /src/sync/publish.ts                     @talstilkol
 /src/ai/dictation/desktopOffload.ts      @talstilkol
 
+# ── Every other door an export leaves by: each must call prepareForExport (review 8, RR8-481-1) ──
+/src/storage/exportDocx.ts               @talstilkol
+/src/storage/exportHtml.ts               @talstilkol
+/src/ui/PrintExport.tsx                  @talstilkol
+/src/commands/domains/export.ts          @talstilkol
+/src/publish/site.ts                     @talstilkol
+/src/cli/publish.ts                      @talstilkol
+/src/cli/convert.ts                      @talstilkol
+
+# ── What the preview parses, which redaction must read the same way (RR8-473-1, -2) ──
+/src/renderer/criticMarkup.ts            @talstilkol
+/src/renderer/pipeline.ts                @talstilkol
+
+# ── Frame sandboxes, and where the frame guard is installed (RR8-451) ──
+/src/plugins/EmbedBlock.tsx              @talstilkol
+/src/plugins/HtmlPreviewBlock.tsx        @talstilkol
+/src/plugins/LiveCssBlock.tsx            @talstilkol
+/src/plugins/PlaygroundBlock.tsx         @talstilkol
+/src/plugins/liveJsSandbox.ts            @talstilkol
+/src/main.tsx                            @talstilkol
+
 # ── Native permissions and updates ──
 /src-tauri/capabilities/                 @talstilkol
 /src-tauri/tauri.conf.json               @talstilkol
