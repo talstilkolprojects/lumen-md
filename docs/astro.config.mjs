@@ -123,6 +123,7 @@ export default defineConfig({
             { label: "Export and import", slug: "workspace/export-import", translations: { he: "ייצוא וייבוא" } },
             { label: "Academic submission (Word)", slug: "workspace/academic-docx", translations: { he: "הגשה אקדמית (Word)" } },
             { label: "Tasks across the vault", slug: "workspace/tasks" },
+            { label: "Calendar sync (CalDAV and ICS)", translations: { he: "סנכרון יומן (CalDAV ו-ICS)" }, slug: "workspace/caldav" },
             { label: "Ask a PDF", translations: { he: "שאלו את ה-PDF" }, slug: "workspace/pdf-chat" },
             { label: "Vault in a folder on the phone", slug: "workspace/mobile-vault-folder" },
             { label: "JSON Canvas (Obsidian .canvas)", slug: "workspace/json-canvas", translations: { he: "JSON Canvas (‏.canvas של Obsidian)" } },
