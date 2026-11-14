@@ -79,6 +79,7 @@
     "lint:prune": "eslint src --prune-suppressions",
     "plan": "node scripts/plan/build.mjs",
     "plan:check": "node scripts/plan/build.mjs --check",
+    "owner:session": "node scripts/owner/session.mjs",
     "models:registry": "node scripts/models/registry-from-run.mjs",
     "models:mirror": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/models/mirror.mjs",
     "dod": "node scripts/dod.mjs",

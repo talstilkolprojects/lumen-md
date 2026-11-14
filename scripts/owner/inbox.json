@@ -1,0 +1,1950 @@
+{
+ "$comment": "Every owner command in the open PRs' owner sections, deduplicated and assigned (npm run owner:session -- collect --write).",
+ "collectedAt": "2026-11-12T18:04:13.726Z",
+ "openPrs": 375,
+ "prsWithSection": 79,
+ "counts": {
+  "accounts/factory": 9,
+  "accounts/github": 4,
+  "accounts/hosts": 8,
+  "accounts/signing": 8,
+  "accounts/test-clouds": 6,
+  "accounts/vercel-hf": 2,
+  "agent": 58,
+  "coordinator": 4,
+  "deferred": 1,
+  "devices/desktop-release": 18,
+  "devices/live-and-merge": 2,
+  "devices/manual-checks": 8,
+  "devices/mobile": 5,
+  "gpu/archives": 4,
+  "gpu/cargo-zip": 31,
+  "gpu/golden": 3,
+  "gpu/models-day": 41,
+  "none": 1,
+  "obsolete": 1,
+  "people": 2,
+  "recurring": 20
+ },
+ "items": [
+  {
+   "text": "curl -fsSL https://raw.githubusercontent.com/talstilkol/lumen-md/chore/verify-factory/scripts/factory/bootstrap.sh -o /tmp/lumen-bootstrap.sh",
+   "kind": "command",
+   "prs": [
+    509
+   ],
+   "to": "accounts/factory"
+  },
+  {
+   "text": "gh repo create talstilkol/lumen-md-receipts --public --add-readme --description \"Signed nightly test receipts of lumen-md (plan W6.5)\"",
+   "kind": "command",
+   "prs": [
+    509
+   ],
+   "to": "accounts/factory"
+  },
+  {
+   "text": "gh repo deploy-key add /tmp/lumen-factory-key.pub --repo talstilkol/lumen-md-receipts --allow-write --title lumen-factory",
+   "kind": "command",
+   "prs": [
+    509
+   ],
+   "to": "accounts/factory"
+  },
+  {
+   "text": "printf 'Paste the github_pat_ token: '; read -rs TOKEN; echo",
+   "kind": "command",
+   "prs": [
+    509
+   ],
+   "to": "accounts/factory"
+  },
+  {
+   "text": "rm -f /tmp/lumen-factory-key /tmp/lumen-factory-key.pub; unset TOKEN",
+   "kind": "command",
+   "prs": [
+    509
+   ],
+   "to": "accounts/factory"
+  },
+  {
+   "text": "scp /tmp/lumen-bootstrap.sh \"$VM\":/tmp/",
+   "kind": "command",
+   "prs": [
+    509
+   ],
+   "to": "accounts/factory"
+  },
+  {
+   "text": "ssh-keygen -q -t ed25519 -N \"\" -C lumen-factory -f /tmp/lumen-factory-key",
+   "kind": "command",
+   "prs": [
+    509
+   ],
+   "to": "accounts/factory"
+  },
+  {
+   "text": "VM=ubuntu@<the factory's IP>",
+   "kind": "command",
+   "prs": [
+    510
+   ],
+   "to": "accounts/factory"
+  },
+  {
+   "text": "VM=ubuntu@<the VM's public IP>",
+   "kind": "command",
+   "prs": [
+    509
+   ],
+   "to": "accounts/factory"
+  },
+  {
+   "text": "gh api -X PATCH repos/talstilkol/lumen-md --input - <<'JSON'",
+   "kind": "command",
+   "prs": [
+    481
+   ],
+   "to": "accounts/github"
+  },
+  {
+   "text": "gh api -X PUT repos/talstilkol/lumen-md/private-vulnerability-reporting",
+   "kind": "command",
+   "prs": [
+    481
+   ],
+   "to": "accounts/github"
+  },
+  {
+   "text": "gh auth login",
+   "kind": "command",
+   "prs": [
+    476
+   ],
+   "to": "accounts/github"
+  },
+  {
+   "text": "gh label create human-reviewed --repo talstilkol/lumen-md --color 0E8A16 --description \"A person reviewed the diff after the last commit (W4.28)\"",
+   "kind": "command",
+   "prs": [
+    481
+   ],
+   "to": "accounts/github"
+  },
+  {
+   "text": "for h in https://lumen-md.vercel.app https://lumen-md.pages.dev; do curl -s \"$h/\" | grep -o 'assets/index-[A-Za-z0-9_-]*\\.js'; done",
+   "kind": "command",
+   "prs": [
+    484
+   ],
+   "to": "accounts/hosts"
+  },
+  {
+   "text": "git checkout chore/second-host && npm ci",
+   "kind": "command",
+   "prs": [
+    484
+   ],
+   "to": "accounts/hosts"
+  },
+  {
+   "text": "node scripts/collab-latency.mjs wss://<worker>/",
+   "kind": "command",
+   "prs": [
+    469
+   ],
+   "to": "accounts/hosts"
+  },
+  {
+   "text": "npm run collab:deploy",
+   "kind": "command",
+   "prs": [
+    469
+   ],
+   "to": "accounts/hosts"
+  },
+  {
+   "text": "npm run pages:deploy -- --prod",
+   "kind": "command",
+   "prs": [
+    484
+   ],
+   "to": "accounts/hosts"
+  },
+  {
+   "text": "npx wrangler login",
+   "kind": "command",
+   "prs": [
+    469,
+    484
+   ],
+   "to": "accounts/hosts"
+  },
+  {
+   "text": "npx wrangler pages project create lumen-md --production-branch main",
+   "kind": "command",
+   "prs": [
+    484
+   ],
+   "to": "accounts/hosts"
+  },
+  {
+   "text": "VAULT_RELAY=1 VAULT_RELAY_DIR=/data node sync-server/server.js",
+   "kind": "command",
+   "prs": [
+    483
+   ],
+   "to": "accounts/hosts"
+  },
+  {
+   "text": "cp ~/.lumen-release/lumen-release.pub security/release-key.pub",
+   "kind": "command",
+   "prs": [
+    492
+   ],
+   "to": "accounts/signing"
+  },
+  {
+   "text": "cp ~/.tauri/lumen-updater.key.pub security/updater-key.pub",
+   "kind": "command",
+   "prs": [
+    492
+   ],
+   "to": "accounts/signing"
+  },
+  {
+   "text": "git add security/updater-key.pub security/release-key.pub && git commit -m \"chore(release): public keys\"",
+   "kind": "command",
+   "prs": [
+    492
+   ],
+   "to": "accounts/signing"
+  },
+  {
+   "text": "keytool -genkeypair -v -keystore ~/.lumen-android/upload.jks -alias lumen -keyalg RSA -keysize 4096 -validity 10000",
+   "kind": "command",
+   "prs": [
+    493
+   ],
+   "to": "accounts/signing"
+  },
+  {
+   "text": "LUMEN_RELEASE_PASSPHRASE=… node scripts/supply-chain/keys.mjs",
+   "kind": "command",
+   "prs": [
+    492
+   ],
+   "to": "accounts/signing"
+  },
+  {
+   "text": "LUMEN_RELEASE_PASSPHRASE=… node scripts/supply-chain/keys.mjs --out ~/.lumen-release",
+   "kind": "command",
+   "prs": [
+    361
+   ],
+   "to": "accounts/signing"
+  },
+  {
+   "text": "node scripts/supply-chain/keys.mjs",
+   "kind": "command",
+   "prs": [
+    395
+   ],
+   "to": "accounts/signing"
+  },
+  {
+   "text": "npx tauri signer generate -w ~/.tauri/lumen-updater.key",
+   "kind": "command",
+   "prs": [
+    492
+   ],
+   "to": "accounts/signing"
+  },
+  {
+   "text": "Copy the Automate Username and Access Key, then from the Mac:",
+   "kind": "step",
+   "prs": [
+    510
+   ],
+   "to": "accounts/test-clouds"
+  },
+  {
+   "text": "npm run models:cloud -- setup",
+   "kind": "command",
+   "prs": [
+    504
+   ],
+   "to": "accounts/test-clouds"
+  },
+  {
+   "text": "pip install kaggle",
+   "kind": "command",
+   "prs": [
+    504
+   ],
+   "to": "accounts/test-clouds"
+  },
+  {
+   "text": "printf 'BrowserStack username: '; read -r BSU; printf 'Access key: '; read -rs BSK; echo",
+   "kind": "command",
+   "prs": [
+    510
+   ],
+   "to": "accounts/test-clouds"
+  },
+  {
+   "text": "printf 'BROWSERSTACK_USERNAME=%s\\nBROWSERSTACK_ACCESS_KEY=%s\\n' \"$BSU\" \"$BSK\" | ssh \"$VM\" 'sudo install -m 600 -o root /dev/stdin /etc/lumen-factory/browserstack.env && sudo systemctl daemon-reload'",
+   "kind": "command",
+   "prs": [
+    510
+   ],
+   "to": "accounts/test-clouds"
+  },
+  {
+   "text": "unset BSU BSK",
+   "kind": "command",
+   "prs": [
+    510
+   ],
+   "to": "accounts/test-clouds"
+  },
+  {
+   "text": "npx vercel env ls",
+   "kind": "command",
+   "prs": [
+    486
+   ],
+   "to": "accounts/vercel-hf"
+  },
+  {
+   "text": "openssl rand -hex 32",
+   "kind": "command",
+   "prs": [
+    225
+   ],
+   "to": "accounts/vercel-hf"
+  },
+  {
+   "text": "curl -L -o /tmp/ar.dic https://raw.githubusercontent.com/wooorm/dictionaries/main/dictionaries/ar/index.dic && node scripts/eval-arabic-spell.mjs /tmp/ar.dic",
+   "kind": "command",
+   "prs": [
+    466
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "gh pr checkout <pr>",
+   "kind": "command",
+   "prs": [
+    418,
+    421
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "gh pr checkout <pr> && npm ci",
+   "kind": "command",
+   "prs": [
+    423,
+    426,
+    429,
+    434,
+    437,
+    438,
+    440,
+    441
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "gh pr checkout <pr> && npm ci && npx playwright install chromium",
+   "kind": "command",
+   "prs": [
+    424
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "node scripts/grammar/make-probe.mjs | diff - eval/probes/hebrew-grammar.json",
+   "kind": "command",
+   "prs": [
+    437
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "node scripts/scan-plugins.mjs && git diff --exit-code public/plugins/examples/scan.json",
+   "kind": "command",
+   "prs": [
+    418
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm --prefix packages/create-lumen-plugin/template test",
+   "kind": "command",
+   "prs": [
+    418
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm ci",
+   "kind": "command",
+   "prs": [
+    418,
+    443
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm ci && npm --prefix mcp-server ci && npm --prefix mcp-server run build && npm --prefix sync-server ci && npm audit --omit=dev && npm --prefix mcp-server audit",
+   "kind": "command",
+   "prs": [
+    499
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm ci && npm run build && node scripts/bundle-budget.mjs",
+   "kind": "command",
+   "prs": [
+    401
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm ci && npm run mobile:check",
+   "kind": "command",
+   "prs": [
+    493
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm ci && npm run release -- 0.2.0-beta.1 --dry-run",
+   "kind": "command",
+   "prs": [
+    492
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm ci && npx playwright install chromium",
+   "kind": "command",
+   "prs": [
+    421
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm ci && npx playwright test e2e/canvas-excalidraw.spec.ts --project=chromium",
+   "kind": "command",
+   "prs": [
+    494
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm ci && npx vitest run -u src/__tests__/commandIds.test.ts && npx vitest run src/__tests__/whatsNew.test.ts src/__tests__/releasePipeline.test.ts",
+   "kind": "command",
+   "prs": [
+    413
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm ci && npx vitest run src/__tests__/citationStyles.test.ts src/__tests__/citationsPandoc.test.ts src/__tests__/citeDialog.test.tsx",
+   "kind": "command",
+   "prs": [
+    411
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm ci && npx vitest run src/__tests__/highlightImport.test.ts src/__tests__/koboDatabase.test.ts src/__tests__/highlightsHub.test.ts",
+   "kind": "command",
+   "prs": [
+    408
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm ci && npx vitest run src/__tests__/mermaidPrep.test.ts src/__tests__/mermaidGolden.test.ts src/__tests__/canvasDrawAgent.test.ts src/__tests__/agentRuntime.test.ts",
+   "kind": "command",
+   "prs": [
+    404
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm ci && npx vitest run src/__tests__/slidesDeck.test.ts src/__tests__/presentation.test.tsx",
+   "kind": "command",
+   "prs": [
+    406
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm run budget:history",
+   "kind": "command",
+   "prs": [
+    505
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm run budget:ratchet -- --sizes-log train-3.log --train train-3 --sha <head> --first-party startup.log",
+   "kind": "command",
+   "prs": [
+    505
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm run budget:ratchet -- --sizes-log train-3.log --train train-3 --sha <head> --first-party startup.log --write",
+   "kind": "command",
+   "prs": [
+    505
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm run build",
+   "kind": "command",
+   "prs": [
+    418,
+    426
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm run build && npm run perf:gate -- --out perf-gate.md",
+   "kind": "command",
+   "prs": [
+    424
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm run build && npx playwright test e2e/whats-new.spec.ts",
+   "kind": "command",
+   "prs": [
+    413
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm run ci:docker",
+   "kind": "command",
+   "prs": [
+    484
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm run dev",
+   "kind": "command",
+   "prs": [
+    429,
+    440,
+    441
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm run eval:crosslingual",
+   "kind": "command",
+   "prs": [
+    434
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm run hygiene",
+   "kind": "command",
+   "prs": [
+    500
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm run perf:gate -- --url https://<preview>.vercel.app --profiles desktop",
+   "kind": "command",
+   "prs": [
+    424
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm run test:sr -- --project=nvda-chrome",
+   "kind": "command",
+   "prs": [
+    467
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm run test:sr -- --project=voiceover",
+   "kind": "command",
+   "prs": [
+    467
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm run test:visual",
+   "kind": "command",
+   "prs": [
+    514
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm run typecheck && npx vitest run && npm run build && npm run budget",
+   "kind": "command",
+   "prs": [
+    473,
+    483
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npm run typecheck && npx vitest run && npm run build && npm run budget && npx playwright test --project=chromium --project=firefox --project=webkit",
+   "kind": "command",
+   "prs": [
+    499
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx playwright test e2e/canvas-mermaid.spec.ts",
+   "kind": "command",
+   "prs": [
+    404
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx playwright test e2e/canvas-note-cards.spec.ts",
+   "kind": "command",
+   "prs": [
+    401
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx playwright test e2e/canvas-note-cards.spec.ts --update-snapshots",
+   "kind": "command",
+   "prs": [
+    401
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx playwright test e2e/citations.spec.ts && npm run licenses",
+   "kind": "command",
+   "prs": [
+    411
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx playwright test e2e/daily-notes.spec.ts",
+   "kind": "command",
+   "prs": [
+    440
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx playwright test e2e/highlight-import.spec.ts",
+   "kind": "command",
+   "prs": [
+    408
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx playwright test e2e/plugin-dev.spec.ts e2e/plugin-install.spec.ts",
+   "kind": "command",
+   "prs": [
+    418
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx playwright test e2e/slides.spec.ts",
+   "kind": "command",
+   "prs": [
+    406
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx playwright test e2e/slides.spec.ts --update-snapshots",
+   "kind": "command",
+   "prs": [
+    406
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx vitest run src/__tests__/benchModels.test.ts",
+   "kind": "command",
+   "prs": [
+    421
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx vitest run src/__tests__/blind/",
+   "kind": "command",
+   "prs": [
+    507
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx vitest run src/__tests__/crossLingualSearch.test.ts src/__tests__/hebrewSearch.test.ts src/__tests__/searchDialogGates.test.tsx src/__tests__/semanticSearch.test.ts",
+   "kind": "command",
+   "prs": [
+    434
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx vitest run src/__tests__/fsrsGolden.test.ts",
+   "kind": "command",
+   "prs": [
+    394
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx vitest run src/__tests__/hebrewGrammar.test.ts src/__tests__/grammarExtension.test.ts src/__tests__/hebrewFreq.test.ts",
+   "kind": "command",
+   "prs": [
+    437
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx vitest run src/__tests__/litReview.test.ts src/__tests__/pdfChat.test.ts",
+   "kind": "command",
+   "prs": [
+    438
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx vitest run src/__tests__/modelCredits.test.ts src/__tests__/creditsDialog.test.tsx src/__tests__/dictation-segmenter.test.ts",
+   "kind": "command",
+   "prs": [
+    429
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx vitest run src/__tests__/morning.test.ts src/__tests__/hebrewCalendar.test.ts src/__tests__/fsrs.test.ts src/__tests__/i18nLazyReaders.test.ts",
+   "kind": "command",
+   "prs": [
+    440
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx vitest run src/__tests__/packaging.test.ts",
+   "kind": "command",
+   "prs": [
+    423
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx vitest run src/__tests__/perfGate.test.ts",
+   "kind": "command",
+   "prs": [
+    424
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx vitest run src/__tests__/pluginDx.test.ts src/__tests__/pluginDevPanel.test.tsx src/__tests__/plugins-host.test.ts src/__tests__/plugins-sandbox.test.ts src/__tests__/pluginScan.test.ts src/__tests__/i18nLazyPluginDev.test.ts",
+   "kind": "command",
+   "prs": [
+    418
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx vitest run src/__tests__/prGate.test.ts src/__tests__/prCheck.test.ts",
+   "kind": "command",
+   "prs": [
+    426
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "npx vitest run src/__tests__/studentMode.test.ts src/__tests__/lectureRecorder.test.tsx src/__tests__/transformersWorker.test.ts src/__tests__/voiceCapture.test.ts",
+   "kind": "command",
+   "prs": [
+    441
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "On a phone, after the Sandbox run: check that the resume notice reads well on iOS and Android.",
+   "kind": "step",
+   "prs": [
+    378
+   ],
+   "to": "agent"
+  },
+  {
+   "text": "Add the printed catalogue line, or keep the default.",
+   "kind": "step",
+   "prs": [
+    379
+   ],
+   "to": "coordinator"
+  },
+  {
+   "text": "npm run headers:write",
+   "kind": "command",
+   "prs": [
+    485
+   ],
+   "to": "coordinator"
+  },
+  {
+   "text": "Open migration tasks: React 19 (<pr>), Sentry 11 (<pr>) and jsdom 30 (<pr>).",
+   "kind": "step",
+   "prs": [
+    499
+   ],
+   "to": "coordinator"
+  },
+  {
+   "text": "PRIVACY.he.md (<pr>) \"הערכת השפעה\": the three actions are now in code (90-day retention, no IP logs, encrypted rooms only). That file is on <pr>'s branch, so it gets updated there or after merge.",
+   "kind": "step",
+   "prs": [
+    469
+   ],
+   "to": "coordinator"
+  },
+  {
+   "text": "Register free OAuth apps (plan 15.5) to add Drive and Dropbox to the guided list. They appear automatically once configured:",
+   "kind": "step",
+   "prs": [
+    483
+   ],
+   "to": "deferred"
+  },
+  {
+   "text": "(cd release/packages/aur/lumen-md-bin && makepkg -si && namcap PKGBUILD)",
+   "kind": "command",
+   "prs": [
+    423
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "brew audit --new --cask release/packages/homebrew/lumen-md.rb",
+   "kind": "command",
+   "prs": [
+    423
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "brew install mitmproxy",
+   "kind": "command",
+   "prs": [
+    395
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "cargo build",
+   "kind": "command",
+   "prs": [
+    491
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "cargo check --locked --manifest-path src-tauri/Cargo.toml && npm ci && npm run tauri:build",
+   "kind": "command",
+   "prs": [
+    479
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "export LUMEN_RELEASE_KEY=~/.lumen-release/lumen-release.key LUMEN_RELEASE_PASSPHRASE=…",
+   "kind": "command",
+   "prs": [
+    492
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "export TAURI_SIGNING_PRIVATE_KEY=\"$(cat ~/.tauri/lumen-updater.key)\" TAURI_SIGNING_PRIVATE_KEY_PASSWORD=…",
+   "kind": "command",
+   "prs": [
+    492
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "flatpak-builder --user --install build-dir release/packages/flatpak/io.github.talstilkol.Lumen.json",
+   "kind": "command",
+   "prs": [
+    423
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "git fetch origin feat/desktop-native && git checkout feat/desktop-native",
+   "kind": "command",
+   "prs": [
+    479
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "LUMEN_RELEASE_PASSPHRASE=… node scripts/privacy/audit.mjs --sign ~/.lumen-release/lumen-release.key --publish",
+   "kind": "command",
+   "prs": [
+    395
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "node scripts/release.mjs build --desktop",
+   "kind": "command",
+   "prs": [
+    423
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "node scripts/release.mjs packages",
+   "kind": "command",
+   "prs": [
+    423
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "node scripts/release.mjs rollback 0.2.0-beta.2 --to 0.2.0-beta.1",
+   "kind": "command",
+   "prs": [
+    492
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "npm run release -- 0.2.0-beta.1 --publish",
+   "kind": "command",
+   "prs": [
+    492
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "npm run release -- 0.2.0-beta.2 --publish",
+   "kind": "command",
+   "prs": [
+    492
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "npm run repro && npm run build && LUMEN_RELEASE_PASSPHRASE=… npm run release:sign -- --key ~/.lumen-release/lumen-release.key --artifact <each dmg/msi/AppImage/apk/ipa>",
+   "kind": "command",
+   "prs": [
+    361
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev",
+   "kind": "command",
+   "prs": [
+    479
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "winget validate release/packages/winget/manifests/t/Talstilkol/Lumen/<v>",
+   "kind": "command",
+   "prs": [
+    423
+   ],
+   "to": "devices/desktop-release"
+  },
+  {
+   "text": "npm run live:meta -- --self-test",
+   "kind": "command",
+   "prs": [
+    498
+   ],
+   "to": "devices/live-and-merge"
+  },
+  {
+   "text": "Request a re-crawl, about 10 minutes:",
+   "kind": "step",
+   "prs": [
+    498
+   ],
+   "to": "devices/live-and-merge"
+  },
+  {
+   "text": "cd src-tauri && cargo build && cd .. && npm run tauri dev",
+   "kind": "command",
+   "prs": [
+    406
+   ],
+   "to": "devices/manual-checks"
+  },
+  {
+   "text": "Check the margins (Layout → Margins), the David 12 body, the 1.5 spacing, the unnumbered cover, the page numbers after F9 on the TOC, footnotes on the right in RTL, and the bibliography's hanging indent.",
+   "kind": "step",
+   "prs": [
+    464
+   ],
+   "to": "devices/manual-checks"
+  },
+  {
+   "text": "npm run tauri:dev",
+   "kind": "command",
+   "prs": [
+    383
+   ],
+   "to": "devices/manual-checks"
+  },
+  {
+   "text": "npx @guidepup/setup",
+   "kind": "command",
+   "prs": [
+    467
+   ],
+   "to": "devices/manual-checks"
+  },
+  {
+   "text": "On a Pixel 7: time the unlock.",
+   "kind": "step",
+   "prs": [
+    472
+   ],
+   "to": "devices/manual-checks"
+  },
+  {
+   "text": "Real device: install the PWA on a phone, long-press → *Voice note*, measure press → red timer (< 1 s), with the privacy ledger open under *local only*.",
+   "kind": "step",
+   "prs": [
+    376
+   ],
+   "to": "devices/manual-checks"
+  },
+  {
+   "text": "Run the protocol with NVDA, VoiceOver (macOS + iOS) and TalkBack in Hebrew, fill in the results table, and file each blocker.",
+   "kind": "step",
+   "prs": [
+    360
+   ],
+   "to": "devices/manual-checks"
+  },
+  {
+   "text": "Tal: on a Mac or PC with Word, open each of the 5 files.",
+   "kind": "step",
+   "prs": [
+    464
+   ],
+   "to": "devices/manual-checks"
+  },
+  {
+   "text": "export ANDROID_HOME=~/Library/Android/sdk ANDROID_KEYSTORE_PATH=~/.lumen-android/upload.jks ANDROID_KEYSTORE_PASSWORD=… ANDROID_KEY_ALIAS=lumen ANDROID_KEY_PASSWORD=…",
+   "kind": "command",
+   "prs": [
+    493
+   ],
+   "to": "devices/mobile"
+  },
+  {
+   "text": "export APPLE_TEAM_ID=… ASC_KEY_ID=… ASC_ISSUER_ID=… ASC_KEY_PATH=~/.lumen-ios/AuthKey_<id>.p8",
+   "kind": "command",
+   "prs": [
+    493
+   ],
+   "to": "devices/mobile"
+  },
+  {
+   "text": "gcloud firebase test android run --type robo --app release/mobile/lumen-0.2.0-beta.1-debug.apk --device model=<id>,version=<api>",
+   "kind": "command",
+   "prs": [
+    493
+   ],
+   "to": "devices/mobile"
+  },
+  {
+   "text": "npm run mobile:android -- --version 0.2.0-beta.1",
+   "kind": "command",
+   "prs": [
+    493
+   ],
+   "to": "devices/mobile"
+  },
+  {
+   "text": "npm run mobile:ios -- --version 0.2.0-beta.1",
+   "kind": "command",
+   "prs": [
+    493
+   ],
+   "to": "devices/mobile"
+  },
+  {
+   "text": "15.x: export 10 real chats (WhatsApp Android + iPhone in Hebrew, English and Arabic; Telegram Desktop JSON) and run ⌘K → *Import a WhatsApp or Telegram chat…* on each. Compare the message count in the toast with the app's. Anything misread: send the first lines (redacted) and they become fixtures.",
+   "kind": "step",
+   "prs": [
+    478
+   ],
+   "to": "gpu/archives"
+  },
+  {
+   "text": "cd src-tauri && cargo test zotero_local && cd ..",
+   "kind": "command",
+   "prs": [
+    408,
+    411
+   ],
+   "to": "gpu/archives"
+  },
+  {
+   "text": "Create a read-only key at zotero.org → Settings → Security → Applications, then run ⌘K → *Citations: sync the Zotero library from zotero.org* in the web app. Check the count against your library, change one item in Zotero, and sync again: the toast should say 1 changed. Time a ~1,000-item library (≤ 60 s).",
+   "kind": "step",
+   "prs": [
+    485
+   ],
+   "to": "gpu/archives"
+  },
+  {
+   "text": "Time a real mbox of 5,000+ messages in Chrome. The test measures parsing and planning; the OPFS writes come on top.",
+   "kind": "step",
+   "prs": [
+    482
+   ],
+   "to": "gpu/archives"
+  },
+  {
+   "text": "cargo tree -i zip",
+   "kind": "command",
+   "prs": [
+    494
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "cargo update -p zip --precise <9.x>",
+   "kind": "command",
+   "prs": [
+    494
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "cd src-tauri && cargo update -p tauri-plugin-updater --precise 2.14.1 && cargo tree -i zip && cargo build",
+   "kind": "command",
+   "prs": [
+    494
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "cd src-tauri && cargo update -p tauri-plugin-updater --precise 2.14.1 && cargo update -p tauri -p tauri-build -p tauri-plugin-dialog && cargo tree -i zip && cargo build && cargo audit",
+   "kind": "command",
+   "prs": [
+    499
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "Check this PR's locks:",
+   "kind": "step",
+   "prs": [
+    499
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "curl -LO https://dumps.wikimedia.org/hewiktionary/latest/hewiktionary-latest-pages-articles.xml.bz2",
+   "kind": "command",
+   "prs": [
+    453
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "git add public/lexicon/he-wiktionary.json public/lexicon/manifest.json",
+   "kind": "command",
+   "prs": [
+    453
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "node packages/create-lumen-plugin/bin.js demo-plugin && cd demo-plugin && npm install && npm run build",
+   "kind": "command",
+   "prs": [
+    494
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm --prefix docs install astro@^7.4.5 @astrojs/starlight@^0.42.8",
+   "kind": "command",
+   "prs": [
+    499
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm --prefix docs update postcss-selector-parser esbuild",
+   "kind": "command",
+   "prs": [
+    491,
+    494
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm --prefix mcp-server ci && npm --prefix mcp-server run build",
+   "kind": "command",
+   "prs": [
+    494
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm --prefix mcp-server update body-parser",
+   "kind": "command",
+   "prs": [
+    494
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm --prefix mcp-server update body-parser zod fast-uri",
+   "kind": "command",
+   "prs": [
+    491
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm --prefix mcp-server update fast-uri",
+   "kind": "command",
+   "prs": [
+    494
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm --prefix sync-server install @y/websocket-server@0.1.5 --save-optional",
+   "kind": "command",
+   "prs": [
+    499
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm audit",
+   "kind": "command",
+   "prs": [
+    491
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm dedupe",
+   "kind": "command",
+   "prs": [
+    491
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm dedupe && npm ci && npm test",
+   "kind": "command",
+   "prs": [
+    491
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm install --no-save ts-fsrs@4 && node scripts/fsrs-golden.mjs",
+   "kind": "command",
+   "prs": [
+    394
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm install --package-lock-only",
+   "kind": "command",
+   "prs": [
+    491,
+    494
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm install --save-dev fast-check",
+   "kind": "command",
+   "prs": [
+    361
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm install -D @guidepup/guidepup @guidepup/playwright",
+   "kind": "command",
+   "prs": [
+    467
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm install -D vue@3.5.44 @playwright/test@^1.64.1 axe-core@^4.14.0 fake-indexeddb@^6.2.6 @testing-library/dom@^10.4.2 @testing-library/react@^16.3.3 @testing-library/user-event@^14.6.8",
+   "kind": "command",
+   "prs": [
+    499
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm install hash-wasm --save",
+   "kind": "command",
+   "prs": [
+    399
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm install isomorphic-git@^1.38.6 @hpcc-js/wasm@^2.36.0 abcjs@^6.7.2 katex@^0.19.1 shiki@^4.6.0 yjs@^13.6.33 y-codemirror.next@^0.3.6 @tauri-apps/cli@^2.12.2",
+   "kind": "command",
+   "prs": [
+    499
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm outdated",
+   "kind": "command",
+   "prs": [
+    491
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm run lexicon:build -- hewiktionary-latest-pages-articles.xml.bz2 20261101",
+   "kind": "command",
+   "prs": [
+    453
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm update @milkdown/core @milkdown/ctx @milkdown/plugin-clipboard @milkdown/plugin-history @milkdown/plugin-listener @milkdown/plugin-slash @milkdown/plugin-tooltip @milkdown/preset-commonmark '@codemirror/*' @lezer/highlight @replit/codemirror-vim",
+   "kind": "command",
+   "prs": [
+    499
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm update fast-uri minimatch glob rimraf",
+   "kind": "command",
+   "prs": [
+    491,
+    494
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "npm update minimatch glob rimraf && npm --prefix docs update postcss-selector-parser esbuild",
+   "kind": "command",
+   "prs": [
+    499
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "Real install check of this PR's lock edits:",
+   "kind": "step",
+   "prs": [
+    494
+   ],
+   "to": "gpu/cargo-zip"
+  },
+  {
+   "text": "LUMEN_EPUB_GOLDEN=~/epub-golden npx playwright test e2e/epub-reader.spec.ts -g golden --project=chromium",
+   "kind": "command",
+   "prs": [
+    391
+   ],
+   "to": "gpu/golden"
+  },
+  {
+   "text": "mkdir -p ~/epub-golden",
+   "kind": "command",
+   "prs": [
+    391
+   ],
+   "to": "gpu/golden"
+  },
+  {
+   "text": "npm run tts:mos -- score tts-ratings.csv",
+   "kind": "command",
+   "prs": [
+    388
+   ],
+   "to": "gpu/golden"
+  },
+  {
+   "text": "brew install whisper-cpp",
+   "kind": "command",
+   "prs": [
+    383
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "curl -L -o \"$HOME/Library/Application Support/app.lumen.editor/whisper/<file>\" \"https://huggingface.co/<repo>/resolve/<sha>/<file>\"",
+   "kind": "command",
+   "prs": [
+    383
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "curl …/api/models?author=ivrit-ai&search=ggml",
+   "kind": "command",
+   "prs": [
+    383
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "for r in $(curl -s \"https://huggingface.co/api/models?author=dicta-il&search=DictaLM-3.0\" | jq -r '.[].id'); do echo \"$r $(curl -s https://huggingface.co/api/models/$r | jq -r '[.sha, (.cardData.license // .tags[]? | select(startswith(\"license:\")))] | @tsv')\"; done",
+   "kind": "command",
+   "prs": [
+    379
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "git add eval/heldout && git commit -m \"eval(heldout): record the seals [skip ci]\"",
+   "kind": "command",
+   "prs": [
+    503
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "git diff models/registry.json",
+   "kind": "command",
+   "prs": [
+    421
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "git switch -c eval/day-<run> && git add -f eval/results/day/<run> && git commit -m \"eval: real models day <run> [skip ci]\" && git push -u origin HEAD",
+   "kind": "command",
+   "prs": [
+    443
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "LUMEN_EVAL_LIT_FILES=<gold-20.json> npm run eval:lit-review",
+   "kind": "command",
+   "prs": [
+    438
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "LUMEN_EVAL_XL_FILES=<belebele-he-en.json> npm run eval:crosslingual",
+   "kind": "command",
+   "prs": [
+    434
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "mlc_llm convert_weight <local DictaLM-3.0-1.7B-Instruct> --quantization q4f16_1 -o out/DictaLM-3.0-1.7B-Instruct-q4f16_1-MLC && mlc_llm gen_config <same dir> --quantization q4f16_1 --conv-template qwen2 -o out/DictaLM-3.0-1.7B-Instruct-q4f16_1-MLC",
+   "kind": "command",
+   "prs": [
+    379
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "node scripts/meetings/der.mjs --golden <dir> --out der-scores.json",
+   "kind": "command",
+   "prs": [
+    398
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "node scripts/meetings/diarization-pin.mjs",
+   "kind": "command",
+   "prs": [
+    398
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "node scripts/meetings/diarization-pin.mjs --model embedding --repo <owner/name> --revision <40-hex> --file <path.onnx> --bytes <pr> --sha256 <64-hex> --license <licence>",
+   "kind": "command",
+   "prs": [
+    398
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "node scripts/meetings/diarization-pin.mjs --model segmentation --repo <owner/name> --revision <40-hex> --file <path.onnx> --bytes <pr> --sha256 <64-hex> --license MIT",
+   "kind": "command",
+   "prs": [
+    398
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run bench:models -- --backends webgpu,wasm --write",
+   "kind": "command",
+   "prs": [
+    421
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run bench:models -- --limit 2 --backends webgpu,wasm",
+   "kind": "command",
+   "prs": [
+    421
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run dictalm3 -- decide --json eval/results/dictalm3-decision.json",
+   "kind": "command",
+   "prs": [
+    379
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run dictalm3 -- eval --size 1.7B",
+   "kind": "command",
+   "prs": [
+    379
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run eval:tool-calls -- --models qwen2.5:7b,gemma3:12b",
+   "kind": "command",
+   "prs": [
+    449
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run eval:voice-commands -- --script > commands.json",
+   "kind": "command",
+   "prs": [
+    458
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run heldout -- build --record",
+   "kind": "command",
+   "prs": [
+    503
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run heldout -- keygen",
+   "kind": "command",
+   "prs": [
+    503
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run models:cloud -- --ref <branch with the evals> --push",
+   "kind": "command",
+   "prs": [
+    504
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run models:day",
+   "kind": "command",
+   "prs": [
+    443,
+    454
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run models:day -- --voice-dir <folder>",
+   "kind": "command",
+   "prs": [
+    458
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run models:day -- check",
+   "kind": "command",
+   "prs": [
+    443
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run models:mirror -- --pin",
+   "kind": "command",
+   "prs": [
+    476
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run models:mirror -- --upload",
+   "kind": "command",
+   "prs": [
+    476
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run models:mirror -- --upload --dry-run",
+   "kind": "command",
+   "prs": [
+    476
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run models:mirror -- --upload --only opus-mt-en-he --from-dir out/opus-mt-en-he",
+   "kind": "command",
+   "prs": [
+    476
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run whisper:desktop -- pin",
+   "kind": "command",
+   "prs": [
+    383
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run whisper:desktop -- pin --repo <repo> --revision <sha> --file <file.bin> --bytes <size> --sha256 <oid>",
+   "kind": "command",
+   "prs": [
+    383
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "npm run whisper:desktop -- wer --split test=$RUNNER_TEMP/golden/asr-he/test --model \"<that file>\"",
+   "kind": "command",
+   "prs": [
+    383
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "ollama pull hf.co/dicta-il/DictaLM-3.0-1.7B-Thinking-GGUF && ollama pull qwen3:4b",
+   "kind": "command",
+   "prs": [
+    379
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "ollama pull qwen2.5:7b && npm run eval:canvas-draw -- --model qwen2.5:7b",
+   "kind": "command",
+   "prs": [
+    404
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "ollama pull qwen2.5:7b && npm run eval:lit-review",
+   "kind": "command",
+   "prs": [
+    438
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "optimum-cli export onnx --model dicta-il/DictaLM-3.0-1.7B-Instruct --revision <sha> --task text-generation-with-past out/dictalm3-1.7b-onnx",
+   "kind": "command",
+   "prs": [
+    379
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "pip install -r scripts/golden/requirements.txt",
+   "kind": "command",
+   "prs": [
+    503
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "python3 -I scripts/asr/fleurs_spike.py --out /tmp/fleurs-val --n 30 && npm run eval:asr-web -- --fleurs /tmp/fleurs-val",
+   "kind": "command",
+   "prs": [
+    454
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "shasum -a 256 <that file>",
+   "kind": "command",
+   "prs": [
+    383
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "shasum -a 256 <voice>.onnx <voice>.onnx.json",
+   "kind": "command",
+   "prs": [
+    388
+   ],
+   "to": "gpu/models-day"
+  },
+  {
+   "text": "None",
+   "kind": "none",
+   "prs": [
+    373,
+    381,
+    387,
+    402,
+    473,
+    495,
+    496,
+    500,
+    502,
+    507,
+    508,
+    513,
+    514
+   ],
+   "to": "none"
+  },
+  {
+   "text": "gh workflow run golden-sets.yml -f task=dev -f parts=all",
+   "kind": "command",
+   "prs": [
+    225
+   ],
+   "to": "obsolete"
+  },
+  {
+   "text": "gh api -X PUT repos/talstilkol/lumen-md/collaborators/<login> -f permission=maintain",
+   "kind": "command",
+   "prs": [
+    481
+   ],
+   "to": "people"
+  },
+  {
+   "text": "npm run tts:mos -- sheet --raters <5 names>",
+   "kind": "command",
+   "prs": [
+    388
+   ],
+   "to": "people"
+  },
+  {
+   "text": "gh pr comment <pr> --body-file pr-check.md",
+   "kind": "command",
+   "prs": [
+    426
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "gh pr view <pr> --json body --jq .body > pr-body.md",
+   "kind": "command",
+   "prs": [
+    426
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "git am rev12/fixes/train2-lansync.patch",
+   "kind": "command",
+   "prs": [
+    497
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "node scripts/check-max-lines.mjs --shrink",
+   "kind": "command",
+   "prs": [
+    500
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "node scripts/restack.mjs --all --fetch > restack-plan.txt",
+   "kind": "command",
+   "prs": [
+    506
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "node scripts/restack.mjs --pr <pr>",
+   "kind": "command",
+   "prs": [
+    506
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "npm run docs:parity",
+   "kind": "command",
+   "prs": [
+    496
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "npm run models:mirror -- --check --strict",
+   "kind": "command",
+   "prs": [
+    476
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "npm run models:mirror -- --verify --deep --mirror https://lumen-model-mirror.<account>.workers.dev",
+   "kind": "command",
+   "prs": [
+    476
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "npm run plan:check -- --wip-strict",
+   "kind": "command",
+   "prs": [
+    502
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "npm run pr:check -- --base <base> --pr <pr> --no-size",
+   "kind": "command",
+   "prs": [
+    497
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "npm run pr:check -- --base origin/<base> --pr <pr> --no-size",
+   "kind": "command",
+   "prs": [
+    481
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-check.md",
+   "kind": "command",
+   "prs": [
+    426
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "npm run pr:triage -- --close in-main",
+   "kind": "command",
+   "prs": [
+    501
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "npm run pr:triage -- --close in-main --go",
+   "kind": "command",
+   "prs": [
+    501
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "npm run pr:triage -- --close superseded --go",
+   "kind": "command",
+   "prs": [
+    501
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "npm run pr:triage -- --write",
+   "kind": "command",
+   "prs": [
+    501
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "npm run train:build -- --train verify/train-3 --onto origin/verify/train-2 --prs 464-494 --max 31",
+   "kind": "command",
+   "prs": [
+    512
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "npm run train:build -- --train verify/train-4 --onto origin/verify/train-3 --from-api",
+   "kind": "command",
+   "prs": [
+    512
+   ],
+   "to": "recurring"
+  },
+  {
+   "text": "npm run train:status",
+   "kind": "command",
+   "prs": [
+    512
+   ],
+   "to": "recurring"
+  }
+ ]
+}

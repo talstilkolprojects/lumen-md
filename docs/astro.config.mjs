@@ -328,6 +328,7 @@ export default defineConfig({
             { label: "Community and the beta", slug: "project/community", translations: { he: "הקהילה והבטא" } },
             { label: "Owner sessions", slug: "project/owner-sessions", translations: { he: "ישיבות הבעלים" } },
             { label: "Sustainability", slug: "project/sustainability", translations: { he: "קיימות" } },
+            { label: "Owner session command", slug: "project/owner-session-command", translations: { he: "פקודת ישיבת הבעלים" } },
           ],
         },
       ],
