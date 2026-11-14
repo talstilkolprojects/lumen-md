@@ -30,7 +30,7 @@ function staticImports(from: string, text: string): string[] {
 
 const DOMAINS = [
   { file: "epub.json", module: "epub/strings", prefixes: ["epub.", "reading."], users: ["epub/EpubReader.tsx", "epub/ReadingMode.tsx", "epub/openEpub.ts", "highlights/HighlightsPanel.tsx"] },
-  { file: "pdf.json", module: "pdf/strings", prefixes: ["pdf."], users: ["pdf/PdfReader.tsx", "pdf/openPdf.ts", "highlights/HighlightsPanel.tsx"] },
+  { file: "pdf.json", module: "pdf/strings", prefixes: ["pdf."], users: ["pdf/PdfReader.tsx", "pdf/openPdf.ts", "pdf/zoteroSend.ts", "highlights/HighlightsPanel.tsx"] },
   { file: "highlights.json", module: "highlights/strings", prefixes: ["hl."], users: ["highlights/HighlightsPanel.tsx"] },
   { file: "srs.json", module: "srs/strings", prefixes: ["srs."], users: ["srs/ReviewPanel.tsx"] },
 ];
