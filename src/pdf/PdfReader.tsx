@@ -28,6 +28,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import "./strings";
 import { t } from "../i18n";
 import { showAiToast } from "../ui/AiToast";
+import { ErrorBoundary } from "../ui/ErrorBoundary";
 import { companionNotePath, createPdfAnnotation, describeAnnotation, findAll, nextMatchIndex, readAnnotationsNote, parsePdfFragment, shortId, unionRect, upsertAnnotationsNote, withNote, type PdfAnnotation } from "./annotations";
 import { layerText, offsetsToRange, pageTextFromItems, rangePageRects, rangeToOffsets } from "./textMap";
 import { openPdf, type PdfDocument } from "./pdfjs";
@@ -39,10 +40,38 @@ import { PdfPageView } from "./PdfPageView";
 import type { PageSize } from "./PdfPageView";
 import type { OcrPage } from "./ocrPages";
 import { positionAt, scrollTopFor } from "./readingPosition";
-import { baseName, EMPTY, isMissing, MAX_SCALE, MIN_SCALE, newUuid, pageBoxes, POSITION_SAVE_MS, positionsIO, ROOT_MARGIN, type Props } from "./pdfReaderParts";
+import { annotationsByPage, baseName, byPosition, EMPTY, isMissing, MAX_SCALE, MIN_SCALE, newUuid, pageBoxes, POSITION_SAVE_MS, positionsIO, ROOT_MARGIN, type Props } from "./pdfReaderParts";
 
 /** "Ask this PDF" (plan 6.8): its own chunk, loaded on the first click of Ask. */
 const PdfChatPanel = lazy(() => import("./PdfChatPanel").then((m) => ({ default: m.PdfChatPanel })));
+
+/**
+ * What the app mounts: the reader in an error boundary; "Open the notes"
+ * closes it and opens the companion note through the app's open-file hub.
+ */
+export function PdfReaderOverlay(props: Omit<Props, "onOpenNotes">) {
+  const { onClose } = props;
+  return (
+    <ErrorBoundary
+      fallback={
+        <div className="pdf-reader pdf-message pdf-error" role="alert">
+          <p>{t("errorBoundary.heading")}</p>
+          <button type="button" className="icon-btn pdf-text-btn" onClick={onClose}>
+            {t("privacy.close")}
+          </button>
+        </div>
+      }
+    >
+      <PdfReader
+        {...props}
+        onOpenNotes={(notePath) => {
+          onClose();
+          window.dispatchEvent(new CustomEvent("lumen-open-file", { detail: { path: notePath } }));
+        }}
+      />
+    </ErrorBoundary>
+  );
+}
 
 export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenNotes, registerSaveGate }: Props) {
   const notePath = companionNotePath(path);
@@ -474,24 +503,9 @@ export function PdfReader({ path, fragment = null, openSeq = 0, onClose, onOpenN
     return () => window.removeEventListener("keydown", onKey, true);
   }, [close, highlightSelection]);
 
-  const byPage = useMemo(() => {
-    const m = new Map<number, PdfAnnotation[]>();
-    for (const a of annotations) {
-      const p = describeAnnotation(a).page;
-      m.set(p, [...(m.get(p) ?? []), a]);
-    }
-    return m;
-  }, [annotations]);
+  const byPage = useMemo(() => annotationsByPage(annotations), [annotations]);
 
-  const sorted = useMemo(
-    () =>
-      [...annotations].sort((a, b) => {
-        const da = describeAnnotation(a);
-        const db = describeAnnotation(b);
-        return da.page - db.page || (da.position?.start ?? 0) - (db.position?.start ?? 0);
-      }),
-    [annotations],
-  );
+  const sorted = useMemo(() => [...annotations].sort(byPosition), [annotations]);
 
   const onAnchored = useCallback((missing: string[], all: string[]) => {
     setUnanchored((prev) => {

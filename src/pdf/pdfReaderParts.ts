@@ -1,8 +1,9 @@
 /**
  * The PDF reader's props, constants and small helpers (plan W6.25: moved out
- * of PdfReader.tsx unchanged).
+ * of PdfReader.tsx; the highlight grouping and order are its two useMemo
+ * bodies, unchanged).
  */
-import { type PdfAnnotation } from "./annotations";
+import { describeAnnotation, type PdfAnnotation } from "./annotations";
 import { type PageBox, type PositionsIO } from "./readingPosition";
 
 export interface Props {
@@ -72,4 +73,21 @@ export const positionsIO: PositionsIO = {
 /** The pages' boxes in the scroll container, page 1 first. */
 export function pageBoxes(els: Map<number, HTMLDivElement>): PageBox[] {
   return [...els.entries()].sort(([a], [b]) => a - b).map(([, el]) => ({ top: el.offsetTop, height: el.offsetHeight }));
+}
+
+/** The highlights of each page (the reader's `byPage`). */
+export function annotationsByPage(annotations: PdfAnnotation[]): Map<number, PdfAnnotation[]> {
+  const m = new Map<number, PdfAnnotation[]>();
+  for (const a of annotations) {
+    const p = describeAnnotation(a).page;
+    m.set(p, [...(m.get(p) ?? []), a]);
+  }
+  return m;
+}
+
+/** The order of the reader's highlight list: by page, then by place on the page. */
+export function byPosition(a: PdfAnnotation, b: PdfAnnotation): number {
+  const da = describeAnnotation(a);
+  const db = describeAnnotation(b);
+  return da.page - db.page || (da.position?.start ?? 0) - (db.position?.start ?? 0);
 }
