@@ -152,6 +152,7 @@ export default defineConfig({
             { label: "Local translation", slug: "ai/translation" },
             { label: "English spelling on this device", slug: "ai/spelling" },
             { label: "Image descriptions on this device", slug: "ai/image-captions" },
+            { label: "Screenshot to note", translations: { he: "צילום מסך לפתק" }, slug: "ai/screenshot-note" },
             { label: "Hebrew niqqud on this device", slug: "ai/nikud" },
             { label: "AI doctor", slug: "ai/doctor" },
             { label: "Image search by description", slug: "ai/image-search" },
