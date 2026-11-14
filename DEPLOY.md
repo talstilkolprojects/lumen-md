@@ -60,35 +60,46 @@ VITE_WEBRTC_SIGNALING_URL=wss://lumen-signal.fly.dev,wss://signaling.yjs.dev
 
 ---
 
-## 2. Persistent collab server (P2-03) — 30 min
+## 2. Persistent collab server (P2-03, plan 3.6) — 30 min
 
-Same Fly.io flow with the y-websocket starter:
+`sync-server/collab-server.mjs`: Hocuspocus (MIT) with per-room token auth
+and SQLite storage (Node's built-in `node:sqlite`, Node ≥ 22.13) plus
+backups. Image: `docker/Dockerfile.collab`; on its own:
+`docker compose -f docker/collab.yml up -d`.
 
 ```bash
-cd sync-server
-npm install @y/websocket-server y-leveldb
-fly launch --name lumen-collab --dockerfile  # generate Dockerfile
-fly volumes create yjs_data --region iad --size 1
-# Mount the volume in fly.toml:
-#   [[mounts]]
-#   source = "yjs_data"
-#   destination = "/data"
-# and tell the server where to store LevelDB data:
-fly secrets set YJS_STORAGE_DIR=/data/yjs   # or [env] in fly.toml
+# Fly.io, from the repo root
+fly launch --name lumen-collab --dockerfile docker/Dockerfile.collab --no-deploy
+fly volumes create collab_data --size 1
+# fly.toml: [[mounts]] source = "collab_data", destination = "/data"
+fly secrets set COLLAB_ACCESS_KEY=$(openssl rand -hex 24) COLLAB_TOKEN_SECRET=$(openssl rand -hex 32)
 fly deploy
 ```
 
-Storage env: `YJS_STORAGE_DIR` (preferred; `LEVELDB_PATH` is accepted as a
-legacy alias). Defaults to `sync-server/.yjs-persistence`, which is **not**
-persistent on Fly — always point it at the mounted volume. Health checks:
-`/healthz` or `/health`. Persistence is LevelDB only; there is no Postgres
-archive and `DATABASE_URL` is not read by `persistent-server.js`.
+| Variable | Meaning |
+|---|---|
+| `COLLAB_ACCESS_KEY` | Operator key users enter in Collab settings → "Server access token". It only buys a short-lived token for one room. Unset = anyone who knows a room name gets one (warned at start). `COLLAB_TOKEN` is the older name. |
+| `COLLAB_TOKEN_SECRET` | HMAC key that signs room tokens, ≥ 32 characters. Never leaves the server. Unset = random per start. |
+| `COLLAB_TOKEN_TTL_S` | Room token lifetime, default 600. The client asks for a new one on every reconnect. |
+| `COLLAB_DATA_DIR` | `collab.sqlite` and `backups/` (the image uses `/data/collab`, on the volume). |
+| `COLLAB_BACKUP_INTERVAL_MS` / `COLLAB_BACKUP_KEEP` | Backup every hour by default and on shutdown; keep the newest 24. |
 
-`.env.production`:
+Health: `/healthz` → `{"ok":true,"service":"lumen-collab","persistence":"sqlite"}`.
+CI checks it on every push to main once the repository variable
+`COLLAB_URL` (and `SIGNAL_URL` for the signaling server) is set; until then
+the job reports "skipped".
+
+`.env.production` (no token here — nothing secret goes into the build):
 
 ```
 VITE_YJS_WEBSOCKET_URL=wss://lumen-collab.fly.dev
 ```
+
+The old y-websocket + LevelDB server (`persistent-server.js`) speaks a
+different protocol; the app no longer connects to it. Its rooms are not
+lost: at start the new server imports, once, every room in
+`COLLAB_LEGACY_LEVELDB_DIR` (the image sets `/data/yjs`, where the old one
+stored them) without overwriting rooms SQLite already has.
 
 ---
 

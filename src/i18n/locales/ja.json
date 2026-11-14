@@ -786,7 +786,7 @@
   "billing.upgrade.auditLog": "監査ログは Team プランで利用できます。",
   "billing.upgrade.persistentCollab": "永続コラボサーバーは Pro 機能です。セッションはピアツーピアの WebRTC を使用します。",
   "billing.upgrade.close": "閉じる",
-  "collab.persistent.label": "永続サーバー (y-websocket)",
+  "collab.persistent.label": "永続サーバー (Hocuspocus)",
   "collab.persistent.hint": "任意。参加者がオンラインでなくてもドキュメントを同期し続けます。",
   "toast.learnMore": "詳細",
   "toast.region": "通知",

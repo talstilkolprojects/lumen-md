@@ -786,7 +786,7 @@
   "billing.upgrade.auditLog": "Le journal d'audit est disponible avec l'offre Team.",
   "billing.upgrade.persistentCollab": "Un serveur de collaboration persistant est une fonctionnalité Pro. Les sessions utilisent WebRTC en pair à pair.",
   "billing.upgrade.close": "Fermer",
-  "collab.persistent.label": "Serveur persistant (y-websocket)",
+  "collab.persistent.label": "Serveur persistant (Hocuspocus)",
   "collab.persistent.hint": "Facultatif. Garde les documents synchronisés même quand aucun participant n'est en ligne.",
   "toast.learnMore": "En savoir plus",
   "toast.region": "Notifications",

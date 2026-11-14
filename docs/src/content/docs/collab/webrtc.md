@@ -35,7 +35,7 @@ their colour. The list of active peers shows in the status bar.
 
 Without a password, the room is **not** end-to-end encrypted. Peers sync
 the plaintext Yjs document, so any signaling server that relays
-messages, any `y-websocket` server and anyone with the room link can
+messages, the persistent collab server and anyone with the room link can
 read it.
 
 Set `localStorage["lumen.collab.password"]` (or append `&password=…` to
@@ -80,4 +80,4 @@ collaborators insert paragraphs above. Open the comments panel from
 
 For documents larger than ~50k characters or sessions with >20 peers,
 move to [persistent collab](/collab/persistent/) which uses
-`y-websocket` + a server-side store.
+the persistent collab server (Hocuspocus + SQLite, `sync-server/collab-server.mjs`).

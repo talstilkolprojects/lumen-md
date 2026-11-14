@@ -786,7 +786,7 @@
   "billing.upgrade.auditLog": "سجل التدقيق متاح في خطة Team.",
   "billing.upgrade.persistentCollab": "خادم التعاون الدائم ميزة في خطة Pro. تستخدم الجلسات اتصال WebRTC المباشر بين الأقران.",
   "billing.upgrade.close": "إغلاق",
-  "collab.persistent.label": "خادم دائم (y-websocket)",
+  "collab.persistent.label": "خادم دائم (Hocuspocus)",
   "collab.persistent.hint": "اختياري. يبقي المستندات متزامنة حتى عند عدم اتصال أي مشارك.",
   "toast.learnMore": "اعرف المزيد",
   "toast.region": "الإشعارات",

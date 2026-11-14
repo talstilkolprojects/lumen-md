@@ -14,9 +14,8 @@ export interface CollabUser {
 }
 
 /**
- * Lightweight `WebsocketProvider`-shaped contract — we declare this locally so
- * the optional `y-websocket` package doesn't have to be bundled for users on
- * the WebRTC-only path.
+ * The persistent provider's contract (see `persistentProvider.ts`), declared
+ * here so this module does not import the provider package eagerly.
  */
 /**
  * How long join-time seeding waits for a configured persistent server to
@@ -27,7 +26,7 @@ export const PERSISTENT_SYNC_TIMEOUT_MS = 8000;
 
 interface WebsocketLike {
   destroy(): void;
-  /** y-websocket: true once the server's state has been applied. */
+  /** True once the server's state has been applied. */
   synced?: boolean;
   on?(event: "sync", fn: (isSynced: boolean) => void): void;
   off?(event: "sync", fn: (isSynced: boolean) => void): void;
@@ -50,7 +49,7 @@ export interface CollabSession {
   ytext: Y.Text;
   awareness: Awareness;
   provider: WebrtcProvider;
-  /** Optional persistent provider (y-websocket) — null on WebRTC-only sessions. */
+  /** Optional persistent provider (Hocuspocus) — null on WebRTC-only sessions. */
   websocketProvider: WebsocketLike | null;
   roomName: string;
   /**
@@ -172,7 +171,7 @@ export function makeRoomPassword(): string {
 export const SEED_FALLBACK_MS = 1500;
 
 /**
- * Optional persistent collab WebSocket URL (y-websocket compatible), as
+ * Optional persistent collab server URL (Hocuspocus, sync-server/collab-server.mjs), as
  * configured — before the plan check (see `connectCollab`).
  */
 function configuredWebsocketUrl(): string | null {
@@ -190,17 +189,11 @@ function configuredWebsocketUrl(): string | null {
   return envUrl?.trim() || null;
 }
 
-function configuredWebsocketToken(): string {
-  const env = typeof import.meta !== "undefined"
-    ? (import.meta as ImportMeta & { env?: { VITE_YJS_WEBSOCKET_TOKEN?: string } }).env?.VITE_YJS_WEBSOCKET_TOKEN
-    : undefined;
-  return env?.trim() ?? "";
-}
-
 /**
- * Best-effort attach of a persistent y-websocket provider in the background.
- * The package is dynamically imported so a build without it never pays the
- * bundle cost. Failures are swallowed — the session still works over WebRTC.
+ * Best-effort attach of the persistent collab provider (Hocuspocus, plan
+ * 3.6) in the background. The provider package is dynamically imported so
+ * a session without a server never pays its bundle cost. Failures are
+ * swallowed — the session still works over WebRTC.
  */
 async function attachWebsocketProvider(
   url: string,
@@ -208,28 +201,13 @@ async function attachWebsocketProvider(
   doc: Y.Doc,
 ): Promise<WebsocketLike | null> {
   try {
-    // Static-string dynamic import so vi.mock("y-websocket") resolves
-    // here in tests. The previous indirection-via-variable defeated
-    // the mock graph. Vite's import-analysis plugin would try to
-    // resolve this at dev-server start, which crashes when the user
-    // hasn't installed the package — so vite.config.ts adds a
-    // resolve.alias mapping "y-websocket" → the test stub so the
-    // analyzer always finds *something*. The try/catch handles any
-    // runtime failure regardless.
-    const mod = (await import("y-websocket")) as unknown as {
-      WebsocketProvider: new (
-        url: string,
-        room: string,
-        doc: Y.Doc,
-        opts?: Record<string, unknown>,
-      ) => WebsocketLike;
-    };
-    // A persistent server started with COLLAB_TOKEN only accepts clients
-    // that present it (T49); the token is kept in the secret store.
-    const token = getSecret("lumen.collab.wsToken") || configuredWebsocketToken();
-    return new mod.WebsocketProvider(url, roomName, doc, { connect: true, ...(token ? { params: { token } } : {}) });
+    const { createPersistentProvider } = await import("./persistentProvider");
+    // The server's optional access key (Collab settings → "Server access
+    // token"), kept in the secret store. It only buys a short-lived token
+    // for this room; there is no build-time token (no secret in the bundle).
+    return await createPersistentProvider(url, roomName, doc, getSecret("lumen.collab.wsToken"));
   } catch (err) {
-    log.warn("y-websocket attach failed", err);
+    log.warn("persistent collab attach failed", err);
     return null;
   }
 }
@@ -239,7 +217,7 @@ async function attachWebsocketProvider(
  * or `?password=…` in the URL hash. When present, the editor's doc stays
  * local and only AES-GCM ciphertext envelopes are handed to the providers
  * (see `./e2e.ts`) — the WebRTC mesh, signaling servers and the optional
- * y-websocket server never see document content (P3-13).
+ * persistent server never see document content (P3-13).
  */
 function hashRoomPassword(): string | null {
   if (typeof location === "undefined") return null;
@@ -366,7 +344,7 @@ export function connectCollab(
         p.off?.("sync", onSync);
         p.off?.("connection-error" as "sync", onError);
         if (state === "none") {
-          // Declared unavailable: tear it down. y-websocket reconnects on its
+          // Declared unavailable: tear it down. The provider reconnects on its
           // own, and a later reconnect would merge the server's history into
           // a document we may now seed — two independent docs, corrupted room.
           // This session continues WebRTC-only.

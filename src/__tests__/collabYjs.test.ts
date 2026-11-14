@@ -7,12 +7,14 @@
 
 import { describe, it, expect, vi, afterEach } from "vitest";
 
-// Mock heavy collab deps that would try to open WebSocket connections
-vi.mock("y-websocket", () => {
+// Mock heavy collab deps that would try to open WebSocket connections.
+// The persistent provider (Hocuspocus, plan 3.6) is replaced by a double
+// with the same `sync` surface; `WebsocketProvider` is the double's class.
+vi.mock("../collab/persistentProvider", () => {
   const instances: unknown[] = [];
   class WebsocketProvider {
     static instances: unknown[] = instances;
-    /** Set by a test to model y-websocket's sync handshake; plain stubs settle at once. */
+    /** Set by a test to model the server's sync handshake; plain stubs settle at once. */
     static withSync = false;
     destroy = vi.fn(() => {
       return;
@@ -33,8 +35,9 @@ vi.mock("y-websocket", () => {
       this.syncListeners.forEach((fn) => fn(v));
     }
   }
-  return { WebsocketProvider };
+  return { WebsocketProvider, createPersistentProvider: async () => new WebsocketProvider() };
 });
+type PersistentMock = { WebsocketProvider: { instances: unknown[]; withSync: boolean } };
 vi.mock("y-webrtc", () => ({
   // Minimal stand-in: an event emitter with controllable awareness peers and
   // WebRTC connections so tests can drive the `synced` seeding logic.
@@ -236,7 +239,7 @@ describe("connectCollab lifecycle", () => {
     useEntitlement.setState({ capabilities: FREE_CAPS, entitlement: null, loading: false });
     try {
       const mod = await import("../collab/yjs");
-      const moduleMock = await import(/* @vite-ignore */ "y-websocket");
+      const moduleMock = ((await import("../collab/persistentProvider")) as unknown as PersistentMock);
       const before = (moduleMock.WebsocketProvider as unknown as { instances: unknown[] }).instances.length;
       const session = mod.connectCollab("lumen-free-room", "");
       await new Promise((r) => setTimeout(r, 20));
@@ -256,7 +259,7 @@ describe("connectCollab lifecycle", () => {
     useEntitlement.setState({ capabilities: FREE_CAPS, entitlement: null, loading: true, failed: false });
     try {
       const mod = await import("../collab/yjs");
-      const moduleMock = await import(/* @vite-ignore */ "y-websocket");
+      const moduleMock = ((await import("../collab/persistentProvider")) as unknown as PersistentMock);
       const count = () => (moduleMock.WebsocketProvider as unknown as { instances: unknown[] }).instances.length;
       const before = count();
       const session = mod.connectCollab("lumen-paid-room", "");
@@ -275,13 +278,13 @@ describe("connectCollab lifecycle", () => {
   it("does not retain websocket provider when destroy happens before attach completes", async () => {
     localStorage.setItem("lumen.collab.ws", "ws://localhost:4444");
     const mod = await import("../collab/yjs");
-    const moduleMock = await import(/* @vite-ignore */ "y-websocket");
+    const moduleMock = ((await import("../collab/persistentProvider")) as unknown as PersistentMock);
     const instancesBefore = (moduleMock.WebsocketProvider as unknown as { instances: unknown[] }).instances.length;
 
     const session = mod.connectCollab("lumen-seed-room", "");
     session.destroy();
-    // The attach path is `await import('y-websocket')` → `new
-    // WebsocketProvider(...)` → the consumer's `.then(p => …)`. Microtask
+    // The attach path is `await import('./persistentProvider')` →
+    // `createPersistentProvider(...)` → the consumer's `.then(p => …)`. Microtask
     // counts differ between vitest module runners, so poll instead of
     // flushing a fixed number of ticks.
     await vi.waitFor(() => {
@@ -495,14 +498,14 @@ describe("connectCollab join-time seeding", () => {
   });
 });
 
-describe("seeding with a persistent (y-websocket) server", () => {
+describe("seeding with a persistent (Hocuspocus) server", () => {
   afterEach(() => {
     localStorage.removeItem("lumen.collab.ws");
   });
 
   it("waits for the server's sync before seeding, and doesn't seed over its history", async () => {
     localStorage.setItem("lumen.collab.ws", "ws://localhost:4444");
-    const ws = (await import(/* @vite-ignore */ "y-websocket")) as unknown as {
+    const ws = (((await import("../collab/persistentProvider")) as unknown as PersistentMock)) as unknown as {
       WebsocketProvider: { withSync: boolean; instances: { emitSync(v: boolean): void }[] };
     };
     ws.WebsocketProvider.withSync = true;
@@ -525,7 +528,7 @@ describe("seeding with a persistent (y-websocket) server", () => {
 
   it("seeds once the server reports an empty room", async () => {
     localStorage.setItem("lumen.collab.ws", "ws://localhost:4444");
-    const ws = (await import(/* @vite-ignore */ "y-websocket")) as unknown as {
+    const ws = (((await import("../collab/persistentProvider")) as unknown as PersistentMock)) as unknown as {
       WebsocketProvider: { withSync: boolean; instances: { emitSync(v: boolean): void }[] };
     };
     ws.WebsocketProvider.withSync = true;
@@ -545,7 +548,7 @@ describe("seeding with a persistent (y-websocket) server", () => {
 
   it("falls back to WebRTC-only seeding when the server never syncs (offline)", async () => {
     localStorage.setItem("lumen.collab.ws", "ws://localhost:4444");
-    const ws = (await import(/* @vite-ignore */ "y-websocket")) as unknown as {
+    const ws = (((await import("../collab/persistentProvider")) as unknown as PersistentMock)) as unknown as {
       WebsocketProvider: { withSync: boolean };
     };
     ws.WebsocketProvider.withSync = true;

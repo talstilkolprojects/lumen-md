@@ -786,7 +786,7 @@
   "billing.upgrade.auditLog": "Das Audit-Log ist im Team-Tarif verfügbar.",
   "billing.upgrade.persistentCollab": "Ein dauerhafter Collaboration-Server ist eine Pro-Funktion. Sitzungen laufen per Peer-to-Peer-WebRTC.",
   "billing.upgrade.close": "Schließen",
-  "collab.persistent.label": "Dauerhafter Server (y-websocket)",
+  "collab.persistent.label": "Dauerhafter Server (Hocuspocus)",
   "collab.persistent.hint": "Optional. Hält Dokumente synchron, auch wenn kein Teilnehmer online ist.",
   "toast.learnMore": "Mehr erfahren",
   "toast.region": "Benachrichtigungen",

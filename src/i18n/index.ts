@@ -1348,7 +1348,7 @@ const en: Strings = {
   "cmd.billing.manage": "Billing: Manage subscription",
   "cmd.billing.managePersonal": "Billing: Manage personal subscription",
   "billing.upgrade.smartSearch": "Smart search (semantic, embedding-based) is a Pro feature. Keyword search stays available.",
-  "collab.persistent.label": "Persistent server (y-websocket)",
+  "collab.persistent.label": "Persistent server (Hocuspocus)",
   "collab.persistent.hint": "Optional. Keeps documents synced when no peer is online.",
   "toast.learnMore": "Learn more",
   "toast.region": "Notifications",

@@ -16,11 +16,11 @@ description: Run Lumen on your own infrastructure with the docker-compose bundle
 |---|---|---|
 | `lumen-web` | 80 | nginx serving the React SPA + strict CSP |
 | `lumen-signal` | 4444 | y-webrtc signaling — peers find each other |
-| `lumen-collab` | 4445 | Persistent y-websocket (LevelDB on the `collab-data` volume; health: `/healthz`) |
+| `lumen-collab` | 4445 | Persistent Hocuspocus server (SQLite + backups on the `collab-data` volume; health: `/healthz`) |
 | `lumen-billing` | 4446 | Stripe webhook handler (optional) |
 | `postgres` | 5432 | Entitlements + audit log (collab does **not** write here — a Postgres snapshot archive is not implemented) |
 
-A LevelDB volume (`collab-data`) and a Postgres volume (`postgres-data`)
+A collab volume (`collab-data`: SQLite + its own hourly backups) and a Postgres volume (`postgres-data`)
 persist outside container lifecycles.
 
 ## Prerequisites
@@ -125,7 +125,7 @@ The two Docker volumes are the only state Lumen owns:
 # Postgres dump
 docker compose exec postgres pg_dump -U lumen lumen | gzip > lumen-pg-$(date +%F).sql.gz
 
-# LevelDB collab snapshots
+# Collab volume (collab.sqlite and backups/; the server also keeps hourly backups itself)
 docker run --rm -v lumen_collab-data:/data -v "$(pwd)":/backup alpine \
   tar czf /backup/lumen-collab-$(date +%F).tar.gz -C /data .
 ```

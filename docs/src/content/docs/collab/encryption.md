@@ -5,7 +5,7 @@ description: Add a room password and no relay, signaling server or sync server c
 
 Lumen's WebRTC mesh is unencrypted by default: peers sync the Yjs
 document directly, so a signaling server that relays messages, a
-`y-websocket` persistence server, or anyone who joins with the room
+persistent collab server (Hocuspocus), or anyone who joins with the room
 link can read the content. Setting a **room password** switches the
 room to an end-to-end encrypted transport. Document content is then
 only ever readable by peers that know the password.
@@ -37,7 +37,7 @@ Each peer keeps **two** Yjs documents:
 | Document | Contents | Attached to the network? |
 |---|---|---|
 | Plaintext doc | Text, comments, everything the editor shows | **No.** It stays in the tab. |
-| Transport doc | One append-only `Y.Array` of ciphertext envelopes | Yes (y-webrtc, and y-websocket if configured) |
+| Transport doc | One append-only `Y.Array` of ciphertext envelopes | Yes (y-webrtc, and the persistent server if configured) |
 
 1. **Key derivation:** PBKDF2-SHA-256, 200 000 iterations, salt
    `lumen.collab.v2|<room name>`. The same password in two different
@@ -71,12 +71,12 @@ Each peer keeps **two** Yjs documents:
 | Peer with the password | Yes | Yes | Yes | Yes |
 | Peer without the password | **No** | Yes | Only through a persistence server it can reach | **No** — it can't complete the WebRTC handshake |
 | Signaling server | **No** | Yes | Traffic shape only (its messages are encrypted with the password) | **No** |
-| `y-websocket` persistence server | **No** (it stores only ciphertext) | Yes | Yes | **No** — Lumen publishes no presence to it |
+| persistent collab server (Hocuspocus) | **No** (it stores only ciphertext) | Yes | Yes | **No** — Lumen publishes no presence to it |
 | Network eavesdropper | No (WebRTC is DTLS-encrypted anyway) | Depends on the signaling transport | Traffic shape | No |
 
 ### Persistent rooms store only ciphertext
 
-With [persistent collab](/collab/persistent/) the `y-websocket` server
+With [persistent collab](/collab/persistent/) the persistent server
 syncs the **transport** doc. Its database holds the envelope array and
 never a key, so a leaked server backup reveals no document content. A
 peer that joins later still needs the password to read the history.
@@ -91,7 +91,7 @@ peer that joins later still needs the password to read the history.
   Presence itself is not wrapped in Lumen's envelopes, though: every
   password holder sees it. Cursor positions are Yjs *relative positions*
   (item IDs: client id + clock, no document text). The persistent
-  `y-websocket` server receives no presence from Lumen.
+  persistent server receives no presence from Lumen.
 - **Metadata:** room name, number of peers, number and size of
   envelopes, and when they are written. Size and timing can hint at
   how much is being typed.

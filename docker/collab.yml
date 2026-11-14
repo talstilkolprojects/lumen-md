@@ -1,0 +1,39 @@
+# Persistent collaboration server on its own (plan 3.6):
+#
+#   COLLAB_ACCESS_KEY=$(openssl rand -hex 24) \
+#   COLLAB_TOKEN_SECRET=$(openssl rand -hex 32) \
+#   docker compose -f docker/collab.yml up -d
+#
+# Then in Lumen: Collab settings → Persistent server = wss://<your host>
+# (behind TLS) and Server access token = the COLLAB_ACCESS_KEY value.
+# The access key and the signing secret stay here; the app only receives
+# short-lived per-room tokens.
+#
+# Health: curl http://localhost:4445/healthz
+# Backups: /data/collab/backups inside the volume (hourly + on shutdown).
+
+services:
+  lumen-collab:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.collab
+    restart: unless-stopped
+    ports:
+      - "4445:4445"
+    environment:
+      PORT: "4445"
+      COLLAB_DATA_DIR: /data/collab
+      # Rooms the legacy y-websocket server left in /data/yjs are imported once at start.
+      COLLAB_LEGACY_LEVELDB_DIR: /data/yjs
+      COLLAB_ACCESS_KEY: ${COLLAB_ACCESS_KEY:-}
+      COLLAB_TOKEN_SECRET: ${COLLAB_TOKEN_SECRET:?set COLLAB_TOKEN_SECRET (at least 32 characters)}
+      COLLAB_TOKEN_TTL_S: ${COLLAB_TOKEN_TTL_S:-600}
+      COLLAB_BACKUP_INTERVAL_MS: ${COLLAB_BACKUP_INTERVAL_MS:-3600000}
+      COLLAB_BACKUP_KEEP: ${COLLAB_BACKUP_KEEP:-24}
+    volumes:
+      - collab-data:/data
+    # SIGTERM stores every open room and takes a last backup before exit.
+    stop_grace_period: 20s
+
+volumes:
+  collab-data:

@@ -6,6 +6,8 @@ on:
   # Every pull request, whatever its base: stacked PRs (a feature branch
   # on top of another) were getting no CI at all with `branches: [main]`.
   pull_request:
+  # Manual runs (e.g. the server health check right after a deploy).
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -55,6 +57,22 @@ jobs:
 
       - name: Build
         run: npm run build
+        # Canaries in the collab server's secret variables (plan 3.6.2):
+        # the next step fails if any of them, or the server's code, ends up
+        # in dist/. (No VITE_* canary: Vite inlines every VITE_* variable
+        # wherever import.meta.env is read whole, so those are public by
+        # design; a unit test checks the client reads no VITE_* token.)
+        env:
+          COLLAB_TOKEN_SECRET: ci-canary-collab-token-secret-7f3a9c2e1b
+          COLLAB_ACCESS_KEY: ci-canary-collab-access-key-5d8e
+          LUMEN_COLLAB_TOKEN: ci-canary-lumen-collab-token-2c4b
+
+      - name: No collab secrets in the bundle
+        run: node scripts/check-bundle-secrets.mjs dist
+        env:
+          COLLAB_TOKEN_SECRET: ci-canary-collab-token-secret-7f3a9c2e1b
+          COLLAB_ACCESS_KEY: ci-canary-collab-access-key-5d8e
+          LUMEN_COLLAB_TOKEN: ci-canary-lumen-collab-token-2c4b
 
       - name: Bundle-size budget
         run: npm run budget -- --json bundle-sizes.json
@@ -310,21 +328,23 @@ jobs:
           path: playwright-report/
 
   signal-health:
-    name: signaling server health
+    name: signaling + collab server health
     runs-on: ubuntu-latest
-    timeout-minutes: 2
-    # Only on main pushes — the signaling server must be deployed first.
-    if: github.event_name == 'push'
+    timeout-minutes: 3
+    # Main pushes (the servers are deployed from main) and manual runs.
+    # Fails when a configured endpoint is unhealthy (plan 3.6.3); skips
+    # cleanly while SIGNAL_URL / COLLAB_URL are not set as repository
+    # variables (the deploy is owner action 15.4).
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Node 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
       - name: Healthcheck
-        run: |
-          URL="${SIGNAL_URL:-https://signal.lumen.md}"
-          echo "Checking $URL/healthz..."
-          status=$(curl -s -o /dev/null -w '%{http_code}' -m 10 "$URL/healthz" || true)
-          if [ "$status" = "200" ]; then
-            echo "✅ Signal server healthy ($status)"
-          else
-            echo "::warning::Signaling server unreachable (HTTP $status). Deploy pending."
-          fi
+        run: node scripts/collab-health.mjs
         env:
-          SIGNAL_URL: ${{ vars.SIGNAL_URL || 'https://signal.lumen.md' }}
+          SIGNAL_URL: ${{ vars.SIGNAL_URL }}
+          COLLAB_URL: ${{ vars.COLLAB_URL }}

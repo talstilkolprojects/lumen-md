@@ -786,7 +786,7 @@
   "billing.upgrade.auditLog": "יומן הביקורת זמין בתוכנית Team.",
   "billing.upgrade.persistentCollab": "שרת שיתוף קבוע הוא תכונת Pro. השיתוף מתבצע ישירות בין המשתתפים (WebRTC).",
   "billing.upgrade.close": "סגור",
-  "collab.persistent.label": "שרת קבוע (y-websocket)",
+  "collab.persistent.label": "שרת קבוע (Hocuspocus)",
   "collab.persistent.hint": "אופציונלי. שומר על סנכרון המסמכים גם כשאין משתתף מחובר.",
   "toast.learnMore": "מידע נוסף",
   "toast.region": "התראות",

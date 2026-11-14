@@ -1,4 +1,8 @@
 /**
+ * LEGACY — superseded by collab-server.mjs (Hocuspocus + SQLite, plan 3.6).
+ * The app no longer speaks this server's y-websocket protocol; it is kept
+ * only so an existing LevelDB store can still be read out.
+ *
  * Lumen persistent collab server (P2-03).
  *
  * Drop-in y-websocket signalling + storage backend. Each room becomes a Y.Doc

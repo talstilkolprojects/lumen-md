@@ -359,6 +359,7 @@ export function EditorLayout({
               grammarCheck={grammarCheck}
               typewriterMode={typewriterMode}
               suggesting={suggestingMode}
+              collab={collab}
             />
           </Suspense>
         </section>

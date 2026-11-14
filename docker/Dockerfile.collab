@@ -1,27 +1,31 @@
-# Lumen persistent collaboration server.
-# Wraps `sync-server/persistent-server.js` (y-websocket + LevelDB storage)
-# and exposes port 4445. There is no Postgres archive — LevelDB on the /data
-# volume is the only persistence layer.
+# Lumen persistent collaboration server (plan 3.6).
+# Runs `sync-server/collab-server.mjs`: Hocuspocus (MIT) with room-token
+# auth and SQLite storage (Node's built-in node:sqlite) plus backups, on
+# port 4445. The legacy y-websocket + LevelDB server (persistent-server.js)
+# is no longer what this image runs.
 
 FROM node:22-alpine
 WORKDIR /app
 
 COPY sync-server/package.json sync-server/package-lock.json* ./
+# Optional deps included: y-leveldb reads rooms left by the legacy server.
 RUN npm ci --omit=dev || npm install --omit=dev
 
-COPY sync-server/persistent-server.js sync-server/token.js ./
+COPY sync-server/collab-server.mjs ./
+COPY sync-server/collab ./collab
 
 ENV NODE_ENV=production
 ENV PORT=4445
 EXPOSE 4445
 
-# LevelDB persists under /data, which docker-compose mounts as a named
-# volume. persistent-server.js reads YJS_STORAGE_DIR (LEVELDB_PATH is still
-# accepted as a legacy alias).
+# collab.sqlite and backups/ live on the /data volume.
 VOLUME /data
-ENV YJS_STORAGE_DIR=/data/yjs
+ENV COLLAB_DATA_DIR=/data/collab
+# Rooms stored by the legacy y-websocket server are imported once at start.
+ENV COLLAB_LEGACY_LEVELDB_DIR=/data/yjs
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget -q -O - http://localhost:4445/healthz > /dev/null || exit 1
 
-CMD ["node", "persistent-server.js"]
+# node:sqlite is still flagged experimental on Node 22; silence the banner.
+CMD ["node", "--disable-warning=ExperimentalWarning", "collab-server.mjs"]

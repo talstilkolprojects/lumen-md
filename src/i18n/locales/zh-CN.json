@@ -786,7 +786,7 @@
   "billing.upgrade.auditLog": "审计日志仅在 Team 套餐中提供。",
   "billing.upgrade.persistentCollab": "持久协作服务器是 Pro 功能。当前会话使用点对点 WebRTC。",
   "billing.upgrade.close": "关闭",
-  "collab.persistent.label": "持久服务器 (y-websocket)",
+  "collab.persistent.label": "持久服务器 (Hocuspocus)",
   "collab.persistent.hint": "可选。即使没有协作者在线，也能保持文档同步。",
   "toast.learnMore": "了解更多",
   "toast.region": "通知",

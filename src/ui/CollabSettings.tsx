@@ -1,6 +1,6 @@
 /**
  * CollabSettings – small dialog to set/clear the custom signaling server URL
- * (`lumen.collab.signaling`) and the optional persistent y-websocket server
+ * (`lumen.collab.signaling`) and the optional persistent Hocuspocus server
  * (`lumen.collab.ws`, read by src/collab/yjs.ts).
  *
  * The persistent server is a Pro capability (`Capabilities.persistentCollab`).

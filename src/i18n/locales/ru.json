@@ -786,7 +786,7 @@
   "billing.upgrade.auditLog": "Журнал аудита доступен на тарифе Team.",
   "billing.upgrade.persistentCollab": "Постоянный сервер совместной работы — функция Pro. Сессии используют одноранговый WebRTC.",
   "billing.upgrade.close": "Закрыть",
-  "collab.persistent.label": "Постоянный сервер (y-websocket)",
+  "collab.persistent.label": "Постоянный сервер (Hocuspocus)",
   "collab.persistent.hint": "Необязательно. Синхронизирует документы, даже когда никого нет в сети.",
   "toast.learnMore": "Подробнее",
   "toast.region": "Уведомления",
