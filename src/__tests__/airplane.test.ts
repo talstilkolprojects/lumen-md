@@ -18,18 +18,20 @@ import {
   codeOrigin,
   disableAirplaneMode,
   egressAttempts,
+  egressTally,
   egressTarget,
   enableAirplaneMode,
   EMBED_ORIGINS,
   guardedSandbox,
   installAirplaneMode,
+  record,
   stopFrames,
   trackOpen,
   subscribeEgress,
   verdict,
 } from "../privacy/airplane";
 import { AIRPLANE_CSP, AIRPLANE_KEY, AIRPLANE_TAB, airplaneFlagOn, airplaneWorkerName, answerWorkers, followOtherTab, __setAirplaneFlag } from "../privacy/airplaneBoot";
-import { buildCertificate, reachedNetwork, sealCertificate, verifyCertificate } from "../privacy/airplaneCertificate";
+import { buildCertificate, canonicalJson, CERTIFICATE_FORMAT, CERTIFICATE_FORMAT_V2, reachedNetwork, sealCertificate, verifyCertificate } from "../privacy/airplaneCertificate";
 import { AIRPLANE_WAIT_MS, installWorkerLedger, type AirplaneMessage } from "../ai/workerLedger";
 
 const BASE = "https://lumen-md.vercel.app/notes/x";
@@ -277,7 +279,7 @@ describe("certificate", () => {
     await fake.win.fetch("/assets/app.js");
     await fake.win.fetch("http://127.0.0.1:11434/api/tags");
     const cert = buildCertificate(egressAttempts(), from, Date.now() + 1, "test");
-    expect(cert.summary).toEqual({ attempts: 3, blocked: 1, local: 1, cacheOnly: 1, inFlight: 0, left: 0 });
+    expect(cert.summary).toEqual({ attempts: 3, blocked: 1, local: 1, cacheOnly: 1, inFlight: 0, left: 0, popups: 0, listed: 3, dropped: 0 });
     const sealed = await sealCertificate(cert);
     expect(sealed.sha256).toMatch(/^[0-9a-f]{64}$/);
     expect((await verifyCertificate(sealed)).ok).toBe(true);
@@ -286,6 +288,35 @@ describe("certificate", () => {
     expect((await verifyCertificate(forged)).ok).toBe(false);
     const signed = await sealCertificate(cert, async (text) => `sig:${text.length}`);
     expect(signed.signature).toBe(`sig:${sealed.text.length}`);
+  });
+
+  it("10,000 blocked attempts after one real leak: the leak is still listed, and every attempt is counted (review 14)", async () => {
+    enableAirplaneMode();
+    const from = Date.now();
+    // One request that reached the network (the page let it through), then a flood of blocked ones.
+    record({ kind: "fetch", target: "https://leak.example.com/up", method: "POST", decision: "allowed", origin: "test" });
+    for (let i = 0; i < 10_000; i++) await fake.win.fetch(`https://evil.example.com/${i}`).catch(() => {});
+    const list = egressAttempts();
+    expect(list.length).toBeLessThanOrEqual(501);
+    expect(list.some((a) => a.target === "https://leak.example.com/up")).toBe(true);
+    const cert = buildCertificate(list, from, Date.now() + 1, "test", egressTally());
+    expect(cert.format).toBe(CERTIFICATE_FORMAT);
+    expect(cert.summary).toMatchObject({ attempts: 10_001, blocked: 10_000, left: 1, listed: list.length, dropped: 10_001 - list.length });
+    const sealed = await sealCertificate(cert);
+    expect((await verifyCertificate(sealed)).ok).toBe(true);
+    // A /3 certificate that hides the leak (drops it from the list and the count) doesn't check.
+    const hidden = { ...cert, attempts: cert.attempts.filter((a) => a.target !== "https://leak.example.com/up"), summary: { ...cert.summary, left: 0, listed: cert.summary.listed - 1, dropped: cert.summary.dropped } };
+    expect((await verifyCertificate(await sealCertificate(hidden))).ok).toBe(false);
+  });
+
+  it("a /2 certificate is still read and checked", async () => {
+    const attempts = [{ id: 1, ts: 5, kind: "fetch" as const, target: "https://evil.example.com/a", method: "GET", decision: "blocked" as const, origin: "x" }];
+    const v2 = { format: CERTIFICATE_FORMAT_V2, app: "test", from: 1, to: 10, summary: { attempts: 1, blocked: 1, local: 0, cacheOnly: 0, inFlight: 0, left: 0 }, counts: [], notCounted: [], attempts };
+    const text = canonicalJson(v2);
+    const sha = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)))].map((b) => b.toString(16).padStart(2, "0")).join("");
+    expect((await verifyCertificate({ text, sha256: sha })).ok).toBe(true);
+    const bad = canonicalJson({ ...v2, summary: { ...v2.summary, blocked: 0 } });
+    expect((await verifyCertificate({ text: bad, sha256: sha })).ok).toBe(false);
   });
 
   it("a resource that transferred bytes counts as having reached the network", () => {

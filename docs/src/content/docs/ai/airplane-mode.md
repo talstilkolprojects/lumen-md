@@ -46,6 +46,12 @@ is 0). It counts attempts, not bytes:
   with scripts, embed) still open when you turned the mode on. These count as
   having reached the network, and are stopped at that moment.
 
+Every attempt of the time span is counted, however many there are. The file lists every
+attempt that reached the network, and the newest 500 of the others (blocked, local,
+cache-only); `dropped` says how many it counts without listing. So a flood of blocked
+requests can't push a request that got through out of the file. Older files (format 2)
+can still be checked.
+
 The file also lists what it doesn't prove (`notCounted`). For example, a request made
 through a copy of `fetch` that a library took before the wrappers loaded isn't listed,
 although the page's policy still refuses it to any other site. The file is canonical
