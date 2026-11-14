@@ -60,6 +60,13 @@ two or three columns. The CI measurement (`OCR_CER=1`,
 ≤ 5 %, degraded ≤ 12 %) and, on the column pages, the share of lines whose
 words come out in reading order (≥ 95 %).
 
+Every pull request that touches OCR (the code under `src/ai/ocr*`, the
+traineddata in `public/tesseract/`, the golden set or `scripts/ocr/`) runs the
+same gates on the set's public dev split with `npm run ci:local`: its `ocr`
+step is `node scripts/ocr/cer-node.mjs`, the app's own models and
+post-processing in Node. A full `npm run ci:local` always runs it. The
+held-out test split is measured only where `GOLDEN_SEED` is set.
+
 ## Limits
 
 - Handwriting and very low-resolution photos are out of scope.
