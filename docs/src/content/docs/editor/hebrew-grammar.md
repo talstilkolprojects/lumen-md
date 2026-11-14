@@ -36,8 +36,13 @@ levels:
 
 The rules never need a model. If you want one, a model running in Ollama
 on this computer (DictaLM 3.0 1.7B, for example) can judge each grammar
-suggestion and drop the ones it rejects. The checker talks to `localhost`
-only.
+suggestion and drop the ones it rejects. Turn it on with
+`⌘K → Hebrew grammar: check suggestions with a local model`. Lumen then
+uses the first DictaLM model Ollama has, or another model with strong
+Hebrew. The checker talks to `localhost` only. The model gets 300 ms per
+check; when it is slower, the suggestions are shown as the rules found them.
+While it is off (the default), nothing is requested and typing is not
+slowed.
 
 ## How it is measured
 

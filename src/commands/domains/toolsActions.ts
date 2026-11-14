@@ -17,6 +17,17 @@ export const cycleHebrewGrammarLevel = async (): Promise<void> => {
   showAiToast(t("grammar.he.levelSet", { level: name }), "success");
 };
 
+/** `view.hebrewGrammarModel` (plan W10.B9): turn the local grammar model on or off, and register it now. */
+export const toggleHebrewGrammarModel = async (): Promise<void> => {
+  const { grammarModelEnabled, setGrammarModelEnabled, setupGrammarRanker } = await import("../../ai/grammarModel");
+  const on = !grammarModelEnabled();
+  setGrammarModelEnabled(on);
+  const r = await setupGrammarRanker({ enabled: on });
+  if (r.registered) showAiToast(t("grammar.he.model.on", { model: r.model }), "success");
+  else if (r.reason === "off") showAiToast(t("grammar.he.model.off"), "info");
+  else showAiToast(t({ "no-ollama": "grammar.he.model.noOllama", "no-hebrew-model": "grammar.he.model.noHebrewModel", "not-local": "grammar.he.model.notLocal" }[r.reason]), "info");
+};
+
 /** `spell.hebrewDictionary` (moved from tools.ts, which loads this module when the command runs; W4.9). */
 export const toggleHebrewDictionary = async (): Promise<void> => {
   const svc = await import("../../ai/hebrewSpellService");

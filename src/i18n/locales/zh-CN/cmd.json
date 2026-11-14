@@ -489,6 +489,8 @@
   "cmd.view.graphView.hint": "文件之间连接关系的可视化图谱",
   "cmd.view.hebrewGrammarLevel": "希伯来语语法：更改写作级别",
   "cmd.view.hebrewGrammarLevel.hint": "日常、学术或法律：学术和法律级别还会标出口语风格。在此设备上检查。",
+  "cmd.view.hebrewGrammarModel": "希伯来语语法：用本地模型检查建议（开 / 关）",
+  "cmd.view.hebrewGrammarModel.hint": "此电脑上的 Ollama（优先 DictaLM）会去掉它否定的语法建议。默认关闭；不会有任何内容离开此电脑。",
   "cmd.view.language": "语言:{label}",
   "cmd.view.language.ltr": "从左到右",
   "cmd.view.language.rtl": "从右到左",

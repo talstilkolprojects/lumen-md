@@ -489,6 +489,8 @@
   "cmd.view.graphView.hint": "visuelle Karte der Dateiverknüpfungen",
   "cmd.view.hebrewGrammarLevel": "Hebräische Grammatik: Schreibstil wechseln",
   "cmd.view.hebrewGrammarLevel.hint": "Alltag, akademisch oder juristisch: akademisch und juristisch markieren auch informellen Stil. Geprüft auf diesem Gerät.",
+  "cmd.view.hebrewGrammarModel": "Hebräische Grammatik: Vorschläge mit einem lokalen Modell prüfen (an / aus)",
+  "cmd.view.hebrewGrammarModel.hint": "Ollama auf diesem Computer (zuerst DictaLM) verwirft Grammatikvorschläge, die es ablehnt. Standardmäßig aus; nichts verlässt diesen Computer.",
   "cmd.view.language": "Sprache: {label}",
   "cmd.view.language.ltr": "links nach rechts",
   "cmd.view.language.rtl": "rechts nach links",

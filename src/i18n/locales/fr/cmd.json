@@ -489,6 +489,8 @@
   "cmd.view.graphView.hint": "carte visuelle des liens entre fichiers",
   "cmd.view.hebrewGrammarLevel": "Grammaire hébraïque : changer le niveau d’écriture",
   "cmd.view.hebrewGrammarLevel.hint": "Courant, académique ou juridique : les niveaux académique et juridique signalent aussi le style familier. Vérifié sur cet appareil.",
+  "cmd.view.hebrewGrammarModel": "Grammaire hébraïque : vérifier les suggestions avec un modèle local (activer / désactiver)",
+  "cmd.view.hebrewGrammarModel.hint": "Ollama sur cet ordinateur (DictaLM d’abord) écarte les suggestions de grammaire qu’il rejette. Désactivé par défaut ; rien ne quitte cet ordinateur.",
   "cmd.view.language": "Langue : {label}",
   "cmd.view.language.ltr": "de gauche à droite",
   "cmd.view.language.rtl": "de droite à gauche",

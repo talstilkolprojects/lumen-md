@@ -17,6 +17,15 @@ export function buildWritingGoalCommands({ writingGoalWords, setWritingGoal }: C
       action: () => import("./toolsActions").then((m) => m.cycleHebrewGrammarLevel()),
     },
     {
+      // Plan W10.B9: the local model step of the grammar checker, off by default.
+      id: "view.hebrewGrammarModel",
+      label: t("cmd.view.hebrewGrammarModel"),
+      hint: t("cmd.view.hebrewGrammarModel.hint"),
+      icon: cmdIcons.Pencil,
+      group: t("group.view"),
+      action: () => import("./toolsActions").then((m) => m.toggleHebrewGrammarModel()),
+    },
+    {
       id: "tools.writingGoal",
       label: writingGoalWords > 0
         ? t("cmd.tools.writingGoal.set", { words: writingGoalWords })
