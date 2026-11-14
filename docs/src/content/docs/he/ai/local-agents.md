@@ -384,3 +384,7 @@ npm run eval:agents -- --model llama3.1:8b --only tagger-he,tasker-he
 ומגדיר `LUMEN_REAL_MODEL_REQUIRED=1`, כך ששם דילוג נחשב לכישלון. הוא בודק גם
 את LanguageTool (באנגלית בלבד; אין לו עברית) ואת SearXNG כשירותים אמיתיים.
 לתרחישים מרובי שלבים השתמשו ב-`--model qwen3:1.7b`.
+
+הריצה מדפיסה את ה-**digest** של המודל שבו השתמשה (Ollama שומר כל מודל לפי ה-digest של התוכן שלו) וכותבת אותו בדוח. כדי לקבע גרסה, העבירו `--digest sha256:…` או הגדירו `LUMEN_REAL_MODEL_DIGEST`: אם למודל המקומי יש digest אחר, הריצה נעצרת ביציאה 1 ולא מודדת גרסה אחרת תחת אותו שם.
+
+`npm run ci:real-model -- --hebrew-smoke` הוא בדיקת העשן בעברית. הוא מריץ את DictaLM 3.0 1.7B (`hf.co/dicta-il/DictaLM-3.0-1.7B-Thinking-GGUF`, Apache-2.0) על שלוש בקשות קצרות בעברית, בטמפרטורה 0, seed 42 ובלי שלב חשיבה. כל תשובה צריכה להיות לא ריקה ולפחות 60% מהאותיות שלה בעברית, ובבקשות העובדתיות צריכה להופיע המילה הצפויה. הדוח נכתב ל-`eval/results/real-hebrew-<date>-<model>.md` (ו-`.json`), והריצה יוצאת ב-1 אם בקשה כלשהי נכשלה. זו בדיקת עשן ולא ציון איכות; ההשוואה האיכותית היא `npm run dictalm3 -- eval` ([DictaLM 3.0](/he/ai/dictalm3/)).
