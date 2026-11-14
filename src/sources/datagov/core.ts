@@ -3,7 +3,7 @@
  * passed in, so the whole path runs in tests against recorded answers.
  */
 import { fetchSeries, fetchTable, showDataset, type DatasetHit, type Table } from "./api";
-import { diffSnapshots, insertion, parseBlock, personalColumns, renderBlock, snapshotPath, toCsv, type DatasetBlock, type SnapshotDiff } from "./snapshot";
+import { diffSnapshots, insertion, parseBlock, personalColumns, renderBlock, sha256Hex, snapshotPath, toCsv, type DatasetBlock, type SnapshotDiff } from "./snapshot";
 
 export interface FileStore {
   read(path: string): Promise<string | null>;
@@ -23,8 +23,9 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 async function keep(table: Table, block: Omit<DatasetBlock, "snapshot">, store: FileStore): Promise<Imported> {
   const snapshot = snapshotPath(block.source, block.id, block.retrieved);
-  await store.write(snapshot, toCsv(table));
-  const full: DatasetBlock = { ...block, snapshot };
+  const csv = toCsv(table);
+  await store.write(snapshot, csv);
+  const full: DatasetBlock = { ...block, snapshot, sha256: await sha256Hex(csv) };
   return { block: full, markdown: insertion(full), rows: table.rows.length, personal: personalColumns(table.fields.map((f) => f.id)) };
 }
 
