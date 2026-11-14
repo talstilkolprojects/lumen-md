@@ -30,6 +30,10 @@
  *   - No stacks (plan W6.22): the base is the current train (the highest
  *     verify/train-N) or main, else a warning; commits behind the base warn;
  *     a merge base older than 7 days, or a criss-cross, fails.
+ *   - Every sensitive file the PR adds or changes has an owner in
+ *     CODEOWNERS or a dated exception (plan W8.6; sensitive is worked out
+ *     from the code: scripts/lib/sensitivePaths.mjs). When the PR changes
+ *     CODEOWNERS or the exceptions, the whole tree is checked.
  *
  *   npm run pr:check -- --base origin/main --body pr-body.md
  *   npm run build && npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-check.md
@@ -49,6 +53,8 @@ import { HUMAN_REVIEW_LABEL, humanReviewVerdict, parseCodeowners, sensitiveChang
 import { extractReceipts, independentReviewVerdict } from "./lib/independentReview.mjs";
 import { RATCHET_FILES, raiseLine, raisesFor } from "./lib/budgetRatchet.mjs";
 import { MAX_AGE_DAYS, baseVerdict, branchName, currentTrain, driftVerdicts, worst } from "./lib/trainBase.mjs";
+import { EXCEPTIONS_FILE } from "./lib/sensitivePaths.mjs";
+import { coverageLines, treeCoverage } from "./codeowners-coverage.mjs";
 
 export function parseArgs(argv) {
   const opt = (n) => (argv.includes(n) ? argv[argv.indexOf(n) + 1] : undefined);
@@ -206,6 +212,16 @@ export function runChecks(opts) {
   } else {
     add("Human review of sensitive paths", "skipped", [".github/CODEOWNERS is not on this branch."]);
     add("Independent review of sensitive paths", "skipped", [".github/CODEOWNERS is not on this branch."]);
+  }
+
+  // Every sensitive file has an owner (plan W8.6)
+  {
+    const whole = changed.includes(".github/CODEOWNERS") || changed.includes(EXCEPTIONS_FILE);
+    const paths = whole ? git(cwd, "ls-files", "-z").split("\0").filter(Boolean) : changed;
+    const c = treeCoverage(cwd, paths, opts.today ?? new Date());
+    const title = "Sensitive files have an owner";
+    if (!c) add(title, "skipped", [".github/CODEOWNERS is not on this branch."]);
+    else add(title, c.uncovered.length || c.problems.length ? "fail" : "ok", [whole ? "CODEOWNERS or its exceptions changed: the whole tree is checked." : `The ${changed.length} changed file${changed.length === 1 ? "" : "s"} are checked (\`npm run codeowners:check\` checks the whole tree).`, "", ...coverageLines(c)]);
   }
 
   const untested = untestedChanges(changed);

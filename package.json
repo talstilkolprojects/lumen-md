@@ -148,7 +148,8 @@
     "hosts:parity": "node scripts/host-parity.mjs",
     "hosting:gate": "node scripts/hosting-gate.mjs",
     "perf:responsiveness": "node scripts/perf/responsiveness.mjs",
-    "obsidian:compare": "node --experimental-transform-types --import ./scripts/lib/ts-register.mjs scripts/obsidian-compare.mjs"
+    "obsidian:compare": "node --experimental-transform-types --import ./scripts/lib/ts-register.mjs scripts/obsidian-compare.mjs",
+    "codeowners:check": "node scripts/codeowners-coverage.mjs"
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "0.4.2",

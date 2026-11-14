@@ -50,6 +50,15 @@ npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-c
   ה־startup, את תאריך התפוגה של חריגה, את מרווח ה־ratchet, סף FCP/LCP של
   שער הביצועים או בדיקה של Lighthouse נכשל. כך גם מספר תקציב שנכתב בתוך
   `scripts/bundle-budget.mjs` עצמו. ראו [תקציבים שרק יורדים](/he/contributing/budgets/).
+- **לכל קובץ רגיש יש בעלים (משימה W8.6).** אילו קבצים רגישים מחושב מהקוד,
+  ולא נשמר ביד (`scripts/lib/sensitivePaths.mjs`): קוד שנשלח למשתמשים
+  שהנתיב או הטקסט שלו מראים הצפנה, דלת ייצוא או פרסום, sanitizer, ‏sandbox
+  של מסגרת, CSP או כותרות אבטחה, קריאת רשת, השחרה, ‏criticMarkup, או צינור
+  ה־Markdown ל־HTML והמקומות שמכניסים HTML גולמי. כל קובץ כזה שהשתנה צריך
+  שורה ב־`.github/CODEOWNERS`, או רשומה ב־`security/codeowners-exceptions.json`
+  עם סיבה ותאריך תפוגה (לכל היותר 90 יום קדימה). חריגה שפג תוקפה או שאין לה
+  תאריך מכשילה. כש־PR משנה את CODEOWNERS או את החריגות, נבדק כל העץ. הדוח
+  מדפיס את השורות להוספה ל־CODEOWNERS.
 
 הפקודה גם מזהירה:
 - כשקוד השתנה ואף בדיקה לא השתנתה;
@@ -83,3 +92,15 @@ npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-c
 | ‏`--train <branch>` | הרכבת הנוכחית, כשהיא לא ה־`verify/train-N` הגבוה ביותר בשרת |
 | ‏`--max-age-days <n>` | מגבלת הגיל של בסיס המיזוג (ברירת מחדל 7) |
 | ‏`--out <file>` | כתיבת הדוח לקובץ |
+
+## כל העץ
+
+‏`npm run codeowners:check` מריץ את בדיקת הבעלים על כל קובץ בריפו ויוצא
+עם 1 כשיש פער. ‏`-- --list` מדפיס גם כל קובץ רגיש, הכללים שהוא תאם ושורת
+ה־CODEOWNERS שמכסה אותו. כך נראית חריגה:
+
+```json
+[
+  { "path": "src/storage/exportOdt.ts", "reason": "The second maintainer takes it over in W9.1.", "expires": "2027-01-31" }
+]
+```

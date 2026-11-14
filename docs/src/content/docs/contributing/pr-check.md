@@ -46,6 +46,17 @@ with 1 when a check fails. Warnings do not fail it.
   and its time are read from GitHub (`gh api`) and the check fails without
   them; without `--pr` it only warns. Tal runs it with `--pr` before every
   merge. See [Second maintainer](/contributing/second-maintainer/).
+- **Sensitive files have an owner (plan W8.6).** Which files are sensitive
+  is worked out from the code, not kept by hand
+  (`scripts/lib/sensitivePaths.mjs`): shipped code whose path or text shows
+  cryptography, an export or publish door, a sanitizer, a frame sandbox,
+  CSP or security headers, a network call, redaction, criticMarkup, or the
+  Markdown-to-HTML pipeline and its raw-HTML sinks. Each changed file of
+  that kind needs a line in `.github/CODEOWNERS`, or an entry in
+  `security/codeowners-exceptions.json` with a reason and an expiry date
+  (at most 90 days ahead). An expired or undated exception fails. When the
+  PR changes CODEOWNERS or the exceptions, the whole tree is checked. The
+  report prints the CODEOWNERS lines to add.
 
 The same sensitive paths also need an independent review receipt for the
 head commit, from a reviewer that did not write the change, with attack tests
@@ -91,3 +102,16 @@ See [Every PR on the train head](/contributing/train-base/).
 | `--train <branch>` | The current train, when it isn't the highest `verify/train-N` on the remote |
 | `--max-age-days <n>` | The age limit of the merge base (default 7) |
 | `--out <file>` | Write the report |
+
+## The whole tree
+
+`npm run codeowners:check` runs the owner check on every file in the
+repository and exits with 1 on a gap. `-- --list` also prints every
+sensitive file, the rules it matched and the CODEOWNERS line that covers
+it. An exception looks like this:
+
+```json
+[
+  { "path": "src/storage/exportOdt.ts", "reason": "The second maintainer takes it over in W9.1.", "expires": "2027-01-31" }
+]
+```
