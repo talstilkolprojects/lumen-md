@@ -45,8 +45,8 @@ npx -p @lumen-md/mcp-server lumen mcp status
 | Scope | Tools |
 |---|---|
 | `search` | `search_notes` — BM25 over Hebrew and English (prefix letters ו ה ב ל מ ש כ and niqqud are handled) |
-| `read` | `read_note`, `list_notes`, `list_tags`, `get_backlinks` |
-| `propose` | `create_note`, `append_note`, `write_note`, `update_frontmatter` — proposals only |
+| `read` | `read_note`, `list_notes`, `list_tags`, `get_backlinks`, `bases_query` |
+| `propose` | `create_note`, `append_note`, `write_note`, `update_frontmatter`, `bases_update` — proposals only |
 
 `lumen mcp enable <client>` without `--scopes` grants `search,read`. Add
 `propose` only for a client you want suggestions from. `lumen mcp disable
@@ -102,12 +102,73 @@ the client nothing is written yet. You decide:
 
   ```bash
   lumen mcp review              # every proposal as a diff
-  lumen mcp approve <id>        # or --all
+  lumen mcp approve <id>        # or --client <id>: each diff, then type yes (needs a terminal)
   lumen mcp reject <id>         # or --all
   ```
 
 A proposal keeps the text it was computed from. If the note changed since,
 approving writes nothing and the proposal is dropped as a conflict.
+
+## Protocol versions
+
+The server speaks the [MCP 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28/changelog)
+protocol and, on the same process, the older `initialize` handshake
+(2025-11-25, 2025-06-18, 2025-03-26, 2024-11-05), so clients of either
+generation connect.
+
+- **2026-07-28:** no handshake and no session. Every request names its
+  protocol version and client capabilities in `_meta`; `server/discover`
+  lists the versions, capabilities and server identity. Tool lists say how
+  long they stay fresh (`ttlMs`) and that they are `private` (they depend on
+  what you granted that client), and come in one fixed order.
+- **A write waits for you:** on a 2026-07-28 connection a proposal answers
+  `input_required` with a signed `requestState`. The client retries the same
+  call with it, and gets "written", "rejected" or "conflict" once you decide
+  — or `input_required` again while you have not. Nothing the client sends
+  can approve a change: the state is signed with a key that stays in
+  `.lumen/mcp/state.key`, bound to that client and that call, and expires
+  after an hour (then the client simply proposes again).
+- **Not offered:** Roots, Sampling and Logging (deprecated in 2026-07-28).
+  The server logs to stderr only.
+- **Errors:** an unknown version gets `-32022` with the supported list; a
+  request without the required `_meta` (and no handshake) gets `-32602`.
+
+### Checking a client by hand
+
+1. Build and enable the client as above, then add `--client claude-code`
+   (or `claude-desktop`) to its config.
+2. Ask the client to *search the vault for "launch"*, then to *read* one of
+   the results: both answer from your notes.
+3. Ask it to *create a note*: the client says it is waiting for approval,
+   and the proposal is in Lumen's review screen. Approve it; the note
+   appears, and `lumen mcp log` shows `proposed` then `approved`.
+
+## Bases
+
+`bases_query` returns the rows of a `.base` view as JSON: `{ view, columns,
+rows: [{ path, cells }], total, errors }`, 200 rows at a time (`offset`,
+`limit` up to 10,000). The rows come from Lumen's own Bases engine, bundled
+into the server at build time, so they are exactly the rows the app shows.
+
+`bases_update` takes the same edits as the plugin API
+(`[{ "path": "Tasks/a.md", "set": { "status": "done" } }]`, up to 5,000
+rows). Each note that would change becomes a proposal in the approval queue,
+all under one batch; nothing is written until you approve them. Over MCP
+2026-07-28 the client waits (`input_required`) until you have decided on
+every note of the batch, then learns how many were written, rejected or not
+written because the note changed.
+
+From a terminal:
+
+```bash
+lumen bases query Tasks.base --view Open          # tab-separated; --json for JSON
+lumen bases update --edits edits.json --dry-run   # what would change; nothing written
+lumen bases update --edits edits.json             # queued for the review screen
+lumen bases update --edits edits.json --approve   # each diff at the terminal; type yes to write
+```
+
+Bases need the engine bundle: build the server with `npm ci` in the
+repository root first, then `npm run build` in `mcp-server/`.
 
 ## The ledger
 

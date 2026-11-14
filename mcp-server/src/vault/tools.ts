@@ -15,6 +15,7 @@ import { proposeWrite, readNote } from "./pending.js";
 import { notePath, safeRel, VaultPathError } from "./paths.js";
 import { VaultIndex } from "./search.js";
 import { parseFrontmatter, serializeFrontmatter } from "../frontmatter.js";
+import { BasesUnavailableError, planBasesUpdate, proposeBatch, queryVaultBase } from "./bases.js";
 
 export interface ToolDef {
   name: string;
@@ -26,6 +27,10 @@ export interface ToolDef {
 export interface ToolResult {
   content: { type: "text"; text: string }[];
   isError?: boolean;
+  /** Set when the call queued a proposal: its id in the approval queue (not sent to the client as such). */
+  proposalId?: string;
+  /** Set when the call queued several proposals at once (a Bases update): the batch id (bases.ts). */
+  batchId?: string;
 }
 
 export interface ToolContext {
@@ -61,7 +66,7 @@ export const TOOLS: readonly ToolDef[] = [
   {
     name: "create_note",
     scope: "propose",
-    description: "Propose a new note. Nothing is written until the user approves it in Lumen or with `lumen mcp approve`.",
+    description: "Propose a new note. Nothing is written until the user approves it in Lumen.",
     inputSchema: { type: "object", properties: { path: str(), content: str("Markdown body.") }, required: ["path", "content"] },
   },
   {
@@ -86,7 +91,41 @@ export const TOOLS: readonly ToolDef[] = [
       required: ["path"],
     },
   },
+  {
+    name: "bases_query",
+    scope: "read",
+    description: "Rows of a Lumen/Obsidian .base view, computed by Lumen's own Bases engine: the same rows the app shows. Returns JSON { view, columns, rows: [{ path, cells }], total, errors }.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        base: str("Vault-relative path of the .base file, e.g. 'projects/tasks.base'"),
+        view: { type: ["string", "number"], description: "View name or index (default: the first view)." },
+        offset: { type: "number", default: 0 },
+        limit: { type: "number", default: 200, description: "At most 10,000." },
+      },
+      required: ["base"],
+    },
+  },
+  {
+    name: "bases_update",
+    scope: "propose",
+    description: "Propose changing note properties (rows of a base): one proposal per changed note, in one batch. Nothing is written until the user approves it in Lumen.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        edits: {
+          type: "array",
+          description: "At most 5,000 rows.",
+          items: { type: "object", properties: { path: str("The note (.md)."), set: { type: "object", description: "property: value (text, number, true/false, null or a list of texts)." } }, required: ["path", "set"] },
+        },
+      },
+      required: ["edits"],
+    },
+  },
 ];
+
+/** Rows `bases_query` returns when the client does not say. */
+export const BASES_DEFAULT_LIMIT = 200;
 
 /** Old names from the first MCP server, still answered. */
 const ALIASES: Record<string, string> = { search_workspace: "search_notes" };
@@ -142,7 +181,7 @@ export async function callTool(ctx: ToolContext, name: string, rawArgs: unknown)
 async function propose(ctx: ToolContext, client: string, tool: string, rel: string, before: string | null, after: string): Promise<ToolResult> {
   if (before === after) return text(`No change to ${rel}.`);
   const p = await proposeWrite(ctx.vault, { client, tool, path: rel, before, after });
-  return text(`Proposed ${before === null ? "a new note" : "a change to"} ${rel} (id ${p.id}). Nothing is written until the user approves it in Lumen (review screen) or with \`lumen mcp approve ${p.id}\`.`);
+  return { ...text(`Proposed ${before === null ? "a new note" : "a change to"} ${rel} (id ${p.id}). Nothing is written until the user approves it; only the user can (do not try to approve it yourself).`), proposalId: p.id };
 }
 
 async function run(ctx: ToolContext, client: string, def: ToolDef, args: Record<string, unknown>, onPath: (p: string) => void): Promise<ToolResult> {
@@ -217,6 +256,36 @@ async function run(ctx: ToolContext, client: string, def: ToolDef, args: Record<
       const data: Record<string, unknown> = { ...fm.data, ...((args.set && typeof args.set === "object" ? args.set : {}) as Record<string, unknown>) };
       for (const k of Array.isArray(args.unset) ? args.unset.map(String) : []) delete data[k];
       return propose(ctx, client, def.name, rel, before, serializeFrontmatter(data) + before.slice(fm.bodyStart));
+    }
+    case "bases_query": {
+      const base = String(args.base ?? "");
+      onPath(base);
+      try {
+        const r = await queryVaultBase(ctx.vault, base, args.view, { offset: args.offset, limit: args.limit ?? BASES_DEFAULT_LIMIT });
+        return text(JSON.stringify(r));
+      } catch (e) {
+        if (e instanceof BasesUnavailableError || e instanceof VaultPathError) return text(e.message, true);
+        return text(`Lumen: ${(e as Error)?.message ?? String(e)}`, true);
+      }
+    }
+    case "bases_update": {
+      let plan;
+      try {
+        plan = await planBasesUpdate(ctx.vault, args.edits);
+      } catch (e) {
+        if (e instanceof BasesUnavailableError || e instanceof VaultPathError) return text(e.message, true);
+        return text(`Lumen: ${(e as Error)?.message ?? String(e)}`, true);
+      }
+      if (!plan.changes.length) return text(`No change: ${plan.summary.unchanged} row(s) already have these values.`);
+      const batch = await proposeBatch(ctx.vault, client, def.name, plan.changes);
+      onPath(plan.changes[0]!.path);
+      const props = plan.summary.properties.join(", ");
+      return {
+        ...text(
+          `Proposed changes to ${plan.changes.length} note(s) (${props}; batch ${batch.id}). Nothing is written until the user approves them; only the user can (do not try to approve them yourself).`,
+        ),
+        batchId: batch.id,
+      };
     }
     default:
       return text(`Unknown tool: ${def.name}`, true);
