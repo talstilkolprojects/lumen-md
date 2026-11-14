@@ -176,6 +176,28 @@ export async function sealCertificate(cert: AirplaneCertificate, sign?: (text: s
   return sealed;
 }
 
+/** The file the monitor downloads: the certificate, its digest, its minisign signature and the key that made it. */
+export interface CertificateFile {
+  certificate: string;
+  sha256: string;
+  /** minisign signature of `certificate` (its UTF-8 bytes): `minisign -Vm cert.txt -P <key>` checks it. */
+  minisig: string;
+  /** minisign public key of the device that signed it. */
+  publicKey: string;
+}
+
+/**
+ * Seal and sign a certificate with this device's report key (W2.24's
+ * signer, ./report.ts; audit W10.C11): every certificate the monitor
+ * exports is signed, so a changed byte fails its check.
+ */
+export async function signedCertificateFile(cert: AirplaneCertificate, key?: import("./report").SigningKey): Promise<CertificateFile> {
+  const r = await import("./report");
+  const k = key ?? (await r.deviceSigningKey());
+  const sealed = await sealCertificate(cert, async (text) => r.minisign(text, k, `lumen-md airplane certificate ${cert.app} ${new Date(cert.to).toISOString()} sha256:${await sha256Hex(text)}`));
+  return { certificate: sealed.text, sha256: sealed.sha256, minisig: sealed.signature!, publicKey: await r.publicKeyText(k.publicRaw) };
+}
+
 /** Check a certificate's text against its digest, and that its summary matches its attempts. */
 export async function verifyCertificate(sealed: SealedCertificate): Promise<{ ok: boolean; cert: AirplaneCertificate | null }> {
   let cert: AirplaneCertificate | null = null;

@@ -54,9 +54,12 @@ can still be checked.
 
 The file also lists what it doesn't prove (`notCounted`). For example, a request made
 through a copy of `fetch` that a library took before the wrappers loaded isn't listed,
-although the page's policy still refuses it to any other site. The file is canonical
-JSON with its SHA-256. It is not signed yet: signing with this device's key comes with
-the signed privacy report.
+although the page's policy still refuses it to any other site. The certificate is
+canonical JSON with its SHA-256, signed with this device's key (the same minisign
+Ed25519 key as the privacy report). The file holds the certificate, its `sha256`, its
+`minisig` signature and the device's `publicKey`. Save the certificate text and the
+signature to two files and check them with
+`minisign -Vm cert.json -x cert.json.minisig -P <key>`: one changed byte fails.
 
 ## Limits
 
