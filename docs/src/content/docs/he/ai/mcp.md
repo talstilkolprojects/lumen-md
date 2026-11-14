@@ -44,8 +44,8 @@ npx -p @lumen-md/mcp-server lumen mcp status
 | הרשאה | כלים |
 |---|---|
 | `search` | `search_notes` — BM25 בעברית ובאנגלית (אותיות השימוש ו ה ב ל מ ש כ וניקוד מטופלים) |
-| `read` | `read_note`, `list_notes`, `list_tags`, `get_backlinks` |
-| `propose` | `create_note`, `append_note`, `write_note`, `update_frontmatter` — הצעות בלבד |
+| `read` | `read_note`, `list_notes`, `list_tags`, `get_backlinks`, `bases_query` |
+| `propose` | `create_note`, `append_note`, `write_note`, `update_frontmatter`, `bases_update` — הצעות בלבד |
 
 `lumen mcp enable <client>` בלי `--scopes` נותן `search,read`. מוסיפים
 `propose` רק ללקוח שרוצים ממנו הצעות. `lumen mcp disable <client>` חל מהקריאה
@@ -99,7 +99,7 @@ npx -p @lumen-md/mcp-server lumen mcp enable claude-code --vault "$HOME/Document
 
   ```bash
   lumen mcp review              # כל ההצעות כ-diff
-  lumen mcp approve <id>        # או --all
+  lumen mcp approve <id>        # או --client <id>: כל diff, ואז להקליד yes (צריך טרמינל)
   lumen mcp reject <id>         # או --all
   ```
 
@@ -135,6 +135,31 @@ npx -p @lumen-md/mcp-server lumen mcp enable claude-code --vault "$HOME/Document
 3. בקש ממנו *ליצור פתק*: הלקוח אומר שהוא מחכה לאישור, וההצעה נמצאת במסך
    האישור של Lumen. אשר אותה; הפתק מופיע, ו-`lumen mcp log` מראה `proposed`
    ואחר כך `approved`.
+
+## Bases
+
+`bases_query` מחזיר את השורות של תצוגה בקובץ `.base` כ-JSON: ‏`{ view, columns,
+rows: [{ path, cells }], total, errors }`, ‏200 שורות בכל פעם (`offset`, ‏`limit`
+עד 10,000). השורות מחושבות במנוע ה-Bases של Lumen עצמו, שנארז לתוך השרת בזמן
+הבנייה, ולכן הן בדיוק השורות שהאפליקציה מציגה.
+
+`bases_update` מקבל את אותם עדכונים כמו ה-API של התוספים
+(`[{ "path": "Tasks/a.md", "set": { "status": "done" } }]`, עד 5,000 שורות). כל
+פתק שישתנה הופך להצעה בתור האישורים, כולן תחת אצווה אחת; שום דבר לא נכתב עד
+שתאשר. ב-MCP 2026-07-28 הלקוח מחכה (`input_required`) עד שהחלטת על כל פתקי
+האצווה, ואז מקבל כמה נכתבו, כמה נדחו וכמה לא נכתבו כי הפתק השתנה.
+
+מהטרמינל:
+
+```bash
+lumen bases query Tasks.base --view Open          # מופרד בטאבים; ‏--json ל-JSON
+lumen bases update --edits edits.json --dry-run   # מה ישתנה; שום דבר לא נכתב
+lumen bases update --edits edits.json             # נכנס לתור של מסך האישור
+lumen bases update --edits edits.json --approve   # כל diff בטרמינל; מקלידים yes כדי לכתוב
+```
+
+Bases דורשים את חבילת המנוע: בנה את השרת אחרי `npm ci` בשורש המאגר, ואז
+`npm run build` בתיקייה `mcp-server/`.
 
 ## היומן
 
