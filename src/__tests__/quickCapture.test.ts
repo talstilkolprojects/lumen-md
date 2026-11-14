@@ -14,7 +14,7 @@ import { useAppStore } from "../store/useStore";
 import { listWorkspace, readWorkspaceFile, writeWorkspaceFile } from "../storage/workspace";
 import { DEFAULT_DAILY } from "../daily/dailyNote";
 import { appendEntry, captureShared, captureToInbox, formatEntry, INBOX_PATH, openInbox, sharedText } from "../capture/quickCapture";
-import { parseLaunch, sharedItem } from "../pwa/launch";
+import { parseLaunch, sharedChat, sharedItem } from "../pwa/launch";
 import { registerGlobalCapture } from "../capture/desktopShortcut";
 
 const at = new Date(2026, 9, 20, 9, 5); // 20 Oct 2026, 09:05 local time
@@ -214,6 +214,25 @@ describe("share target → inbox", () => {
     expect(text.startsWith("# Inbox\n\n- older\n")).toBe(true);
     expect(text).toMatch(/- \[\[journal\/\d{4}-\d{2}-\d{2}\]\] \d{2}:\d{2} כתבה <https:\/\/example\.com\/a>\n {2}שווה לקרוא\n$/);
     expect(useAppStore.getState().doc.workspaceName).toBe(INBOX_PATH);
+  });
+
+  // The share sheet's text, as WhatsApp's "copy" and share send a message (synthetic, in the parser's documented formats).
+  const WA = "[14:03, 12.11.2026] טל: לקנות חלב ולחם";
+  const TG = "Dana Levi, [12.11.2026 09:30]\nThe meeting moved to Thursday";
+
+  it("a WhatsApp or Telegram message shared to the app lands in the inbox with its author and source (W10.C10)", async () => {
+    await writeWorkspaceFile(INBOX_PATH, "# Inbox\n");
+    for (const msg of [WA, TG]) expect(await captureShared(sharedItem("?text=" + encodeURIComponent(msg))!)).toBe(INBOX_PATH);
+    const text = await readWorkspaceFile(INBOX_PATH);
+    expect(text).toMatch(/\d{2}:\d{2} WhatsApp · טל · 2026-11-12 14:03\n {2}לקנות חלב ולחם\n/);
+    expect(text).toMatch(/\d{2}:\d{2} Telegram · Dana Levi · 2026-11-12 09:30\n {2}The meeting moved to Thursday\n/);
+  });
+
+  it("where the vault can't be written, the shared message's note keeps its author and source too (W10.C10)", () => {
+    expect(parseLaunch("?text=" + encodeURIComponent(WA))).toEqual({ kind: "share", title: "WhatsApp · טל", body: "# WhatsApp · טל\n\nWhatsApp · טל · 2026-11-12 14:03\nלקנות חלב ולחם\n" });
+    // Not a chat message, or a link: as before.
+    expect(parseLaunch("?text=" + encodeURIComponent("just a thought"))).toMatchObject({ kind: "share", title: "just a thought" });
+    expect(sharedChat({ title: "", text: WA, link: "https://ex.com" })).toBeNull();
   });
 
   it("?capture=1 and ?action=capture open the capture box", () => {
