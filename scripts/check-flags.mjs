@@ -14,7 +14,9 @@ const registry = JSON.parse(readFileSync("src/flags/flags.json", "utf8"));
 // English also lives in the lazy domains (src/i18n/lazy/*.json, e.g. featureFlagsPanel.json): read both.
 const keys = new Set([...Object.keys(readLocale("en")), ...lazyEnglishEntries().map(([k]) => k)]);
 const he = readLocale("he");
-const problems = checkFlags(registry, { keys, he });
+// Plan W11.S1: a flag that needs an external audit stays experimental until one is published.
+const audit = JSON.parse(readFileSync("security/crypto-audit.json", "utf8"));
+const problems = checkFlags(registry, { keys, he, audit });
 if (problems.length) {
   for (const p of problems) console.error(`✖ ${p}`);
   process.exit(1);

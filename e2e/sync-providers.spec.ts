@@ -74,6 +74,8 @@ function writeNote(page: Page, name: string, text: string) {
 async function open(context: BrowserContext): Promise<Page> {
   const page = await context.newPage();
   await page.addInitScript(() => localStorage.setItem("lumen-tour-done", "1"));
+  // Plan W11.S1: encrypted sync is an experimental flag, off by default; the user turns it on.
+  await page.addInitScript(() => localStorage.setItem("lumen-flags", JSON.stringify({ "sync.e2ee": true })));
   await page.goto("/");
   await expect(page.locator(".cm-content").first()).toContainText("Welcome to", { timeout: 15_000 });
   return page;

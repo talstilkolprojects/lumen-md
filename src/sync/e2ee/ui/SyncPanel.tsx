@@ -24,6 +24,7 @@ import { LanLinkError } from "../lan/link";
 import { LanNoVaultError, LanNotConnectedError } from "../lan";
 import { loadMigrationRecord, migratePlaintext, planPlaintextMigration, revertPlaintextMigration, type MigrationPlan, type MigrationRecord } from "../providers/migrate";
 import { HelpButton } from "../../../ui/HelpButton";
+import { UnauditedNotice } from "./unaudited";
 import { explainError } from "../../../lib/userError";
 
 const NAMES: Record<ProviderKind, string> = { webdav: "WebDAV", s3: "S3", dropbox: "Dropbox", gdrive: "Google Drive", lan: "LAN", folder: "📁", relay: "Lumen relay" };
@@ -470,6 +471,7 @@ export function SyncPanel({ onClose, session = syncSession() }: { onClose: () =>
             ×
           </button>
         </div>
+        <UnauditedNotice />
 
         {s.phase === "disconnected" && s.error && (
           <div role="alert" style={errorStyle}>

@@ -3,6 +3,17 @@ title: Encrypted sync (E2EE)
 description: The end-to-end encrypted sync protocol — what is encrypted, what the sync service sees, rollback protection and its trust-on-first-use limit.
 ---
 
+:::caution[Experimental — not externally security-audited]
+Encrypted sync is **off by default in every build** (web, desktop, mobile
+and beta). Its cryptography was written in this project and has not been
+reviewed by an outside security firm. To try it, run *Encrypted sync…* from
+the command palette and choose **Turn on (experimental)**, or turn on
+*Encrypted sync (experimental)* in Settings → Feature flags. Keep your own
+backup of anything you can't afford to lose. The audit status is recorded
+in `security/crypto-audit.json`; this notice stays until a full report is
+published.
+:::
+
 Encrypted sync keeps a copy of your vault at a storage service
 ([WebDAV, S3, Dropbox, Google Drive](/sync/cloud/)) so that the
 service stores **only ciphertext under random-looking names**. Your notes

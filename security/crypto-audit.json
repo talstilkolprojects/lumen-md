@@ -1,0 +1,6 @@
+{
+  "$comment": "Plan W11.S1. The state of an external security audit of Lumen's cryptography (src/sync/e2ee, src/collab/encryption.ts, src/storage/vault/encrypted, src/storage/lockedNote.ts). While `external` is null: the encrypted sync stays behind the experimental flag sync.e2ee (off in every channel), its setup screen says it has not had an external security audit, and no user-facing text may call the cryptography audited (scripts/security/audit-claims.mjs). When a report is published, set `external` to {\"auditor\", \"date\" (YYYY-MM-DD), \"report\" (https URL of the full report), \"openFindings\" (URL)}.",
+  "external": null,
+  "scope": ["src/sync/e2ee/", "src/collab/encryption.ts", "src/storage/vault/encrypted/", "src/storage/lockedNote.ts"],
+  "planned": "W11.O6"
+}

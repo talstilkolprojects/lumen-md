@@ -6,6 +6,11 @@
  * "beta" is on in beta builds and off in stable ones, until a later release
  * promotes it (src/flags/flags.json, checked by `npm run flags:check`).
  *
+ * A flag in stage "experimental" is off in every channel, beta included,
+ * and only a user's own choice turns it on. It is for features that must
+ * not be on for anyone by default: the encrypted sync stays there until an
+ * external security audit is published (plan W11.S1, security/crypto-audit.json).
+ *
  * Everything is local: no remote config, no request, no identifier. A user
  * can turn any flag on or off for themselves (Settings → Feature flags);
  * that choice lives in this browser's storage and wins over the channel.
@@ -14,12 +19,14 @@
 import registry from "./flags.json";
 
 export type Channel = "stable" | "beta";
-export type FlagStage = "beta" | "stable";
+export type FlagStage = "experimental" | "beta" | "stable";
 
 export interface FlagDef {
   id: string;
   stage: FlagStage;
   since: { beta: string; stable?: string };
+  /** The flag may leave "experimental" only after this kind of external audit is published (security/crypto-audit.json). */
+  requiresAudit?: "crypto";
 }
 
 export const FLAGS: readonly FlagDef[] = (registry as { flags: FlagDef[] }).flags;
@@ -34,8 +41,8 @@ export function buildChannel(env: { VITE_LUMEN_CHANNEL?: string } | undefined = 
   return (env?.VITE_LUMEN_CHANNEL ?? "").trim().toLowerCase() === "beta" ? "beta" : "stable";
 }
 
-/** On or off by default in a channel. */
-export const defaultFor = (flag: FlagDef, channel: Channel): boolean => flag.stage === "stable" || channel === "beta";
+/** On or off by default in a channel. An experimental flag is off in every channel. */
+export const defaultFor = (flag: FlagDef, channel: Channel): boolean => flag.stage === "stable" || (flag.stage === "beta" && channel === "beta");
 
 type Overrides = Record<string, boolean>;
 
