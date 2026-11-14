@@ -38,7 +38,11 @@ const EXACT_SECRETS = new Set([
   "lumen.cloud.dropbox.refresh",
   "lumen.cloud.gdrive.token",
   "lumen.cloud.gdrive.refresh",
+  // The Gist feature is gone (plan 3.5); a token it left in plain
+  // localStorage is still swept into the encrypted store rather than left there.
   "lumen.cloud.github.token",
+  "lumen.sync.webdav.password",
+  "lumen.sync.s3.secretAccessKey",
   "lumen.collab.password",
   "lumen.collab.wsToken",
   "lumen.research.searchKey",

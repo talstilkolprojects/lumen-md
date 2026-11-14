@@ -7,7 +7,7 @@
  */
 
 import { sha256Hex, utf8 } from "./bytes";
-import { VaultError, type VaultBackend } from "../../storage/vault/types";
+import { VaultError, type VaultBackend } from "../../storage/vault";
 
 export interface LocalFile {
   path: string;

@@ -1,25 +1,16 @@
 /**
- * Google Drive cloud-sync provider — symmetric to dropbox.ts.
+ * Google Drive — OAuth (PKCE, `drive.file` scope: only files Lumen created)
+ * and the plain-text side the migration to encrypted sync reads from
+ * (plan 3.5). The encrypted `SyncProvider` over Drive is
+ * src/sync/e2ee/providers/gdrive.ts; it uses `gdriveFetch` from here.
  *
- * Uses Google's REST v3 API directly (no SDK), with the OAuth 2.0 PKCE
- * flow so the browser never sees a client secret. We scope to
- * `drive.file` so the app can only read / write files it created or that
- * the user opened with the Lumen picker — Drive's app-folder equivalent.
- *
- * Environment:
- *   - VITE_GDRIVE_CLIENT_ID   — Google Cloud Console OAuth client (Web).
- *   - VITE_GDRIVE_REDIRECT    — defaults to `${origin}/oauth/gdrive`.
- *
- * Tokens land in `localStorage["lumen.cloud.gdrive.token"]` and refresh
- * silently on 401. The bound folder defaults to a Lumen-specific app
- * folder (`appProperties.lumen=true`) so cross-app contamination is
- * impossible without the user explicitly picking other files.
+ * Configuration: `VITE_GDRIVE_CLIENT_ID` — the OAuth client id (a public
+ * identifier, not a secret; plan 15.5). Without it the OAuth flow is
+ * unavailable and `gdriveConfigured()` is false. Tokens live in the secret store.
  */
 
-import { log } from "../../lib/logger";
-import { randomId } from "../../lib/cryptoRandom";
 import { fetchWithRetry } from "../../lib/fetchRetry";
-import type { CloudFile, CloudProvider } from "./types";
+import type { CloudFile, LegacyCloudStore } from "./types";
 import { getSecret, setSecret } from "../../lib/secretStore";
 
 const TOKEN_KEY = "lumen.cloud.gdrive.token";
@@ -30,6 +21,11 @@ interface TokenSet {
   access: string;
   refresh?: string;
   expiresAt: number;
+}
+
+/** Is the OAuth client configured? (plan 15.5) */
+export function gdriveConfigured(): boolean {
+  return !!clientId();
 }
 
 function clientId(): string {
@@ -114,6 +110,22 @@ async function getAccessToken(): Promise<string> {
   return refreshAccessToken();
 }
 
+/**
+ * An authenticated request to the Drive API (`path` under
+ * `https://www.googleapis.com`, or a full URL). Returns the raw response.
+ */
+export async function gdriveFetch(
+  path: string,
+  init: RequestInit = {},
+  fetchImpl: (input: string, init?: RequestInit) => Promise<Response> = (i, o) => fetch(i, o),
+): Promise<Response> {
+  const access = await getAccessToken();
+  const url = path.startsWith("http") ? path : `https://www.googleapis.com${path}`;
+  const headers = new Headers(init.headers ?? {});
+  headers.set("Authorization", `Bearer ${access}`);
+  return fetchImpl(url, { ...init, headers });
+}
+
 async function api<T>(path: string, opts: RequestInit = {}): Promise<T> {
   const access = await getAccessToken();
   const url = path.startsWith("http") ? path : `https://www.googleapis.com${path}`;
@@ -128,31 +140,41 @@ async function api<T>(path: string, opts: RequestInit = {}): Promise<T> {
   return (ct.includes("json") ? await res.json() : await res.text()) as T;
 }
 
-/* ─── Folder management ──────────────────────────────────────────────── */
+/* ─── The plain-text folder (migration reads it) ─────────────────────── */
 
-async function ensureLumenFolder(): Promise<string> {
-  // Look for an existing folder marked with appProperties.lumen=true.
+/** The folder an earlier Lumen synced plain-text notes into: `appProperties.lumen=true`. Null when there is none. */
+async function legacyFolder(): Promise<string | null> {
   const search = await api<{ files: { id: string }[] }>(
     `/drive/v3/files?q=${encodeURIComponent(
       "mimeType='application/vnd.google-apps.folder' and appProperties has { key='lumen' and value='true' } and trashed=false",
     )}&fields=files(id,name)`,
   );
-  if (search.files.length > 0) return search.files[0].id;
+  return search.files[0]?.id ?? null;
+}
+
+async function fileId(folder: string, name: string): Promise<string | null> {
+  const search = await api<{ files: { id: string }[] }>(
+    `/drive/v3/files?q=${encodeURIComponent(`'${folder}' in parents and name='${name.replace(/'/g, "\\'")}' and trashed=false`)}&fields=files(id)`,
+  );
+  return search.files[0]?.id ?? null;
+}
+
+async function subfolder(parent: string, name: string): Promise<string> {
+  const existing = await api<{ files: { id: string }[] }>(
+    `/drive/v3/files?q=${encodeURIComponent(
+      `'${parent}' in parents and name='${name.replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    )}&fields=files(id)`,
+  );
+  if (existing.files[0]) return existing.files[0].id;
   const created = await api<{ id: string }>("/drive/v3/files", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      name: "Lumen",
-      mimeType: "application/vnd.google-apps.folder",
-      appProperties: { lumen: "true" },
-    }),
+    body: JSON.stringify({ name, mimeType: "application/vnd.google-apps.folder", parents: [parent] }),
   });
   return created.id;
 }
 
-/* ─── Provider implementation ────────────────────────────────────────── */
-
-export const gdriveProvider: CloudProvider = {
+export const gdriveLegacy: LegacyCloudStore = {
   name: "gdrive",
   isConnected(): boolean {
     return !!getSecret(TOKEN_KEY);
@@ -179,92 +201,53 @@ export const gdriveProvider: CloudProvider = {
     clearToken();
   },
   async listFiles(): Promise<CloudFile[]> {
-    const folder = await ensureLumenFolder();
-    type Entry = {
-      id: string;
-      name: string;
-      size?: string;
-      modifiedTime?: string;
-      md5Checksum?: string;
-    };
+    const folder = await legacyFolder();
+    if (!folder) return [];
+    type Entry = { id: string; name: string; size?: string; modifiedTime?: string; md5Checksum?: string; mimeType?: string };
     const out: CloudFile[] = [];
     let pageToken: string | undefined;
     do {
       const url =
         `/drive/v3/files?q=${encodeURIComponent(`'${folder}' in parents and trashed=false`)}` +
-        `&fields=nextPageToken,files(id,name,size,modifiedTime,md5Checksum)` +
+        `&fields=nextPageToken,files(id,name,size,modifiedTime,md5Checksum,mimeType)` +
         (pageToken ? `&pageToken=${pageToken}` : "");
       const page = await api<{ nextPageToken?: string; files: Entry[] }>(url);
       for (const f of page.files) {
-        out.push({
-          path: f.name,
-          size: Number(f.size ?? 0),
-          modified: f.modifiedTime ? Date.parse(f.modifiedTime) : 0,
-          hash: f.md5Checksum,
-        });
+        if (f.mimeType === "application/vnd.google-apps.folder") continue;
+        out.push({ path: f.name, size: Number(f.size ?? 0), modified: f.modifiedTime ? Date.parse(f.modifiedTime) : 0, hash: f.md5Checksum });
       }
       pageToken = page.nextPageToken;
     } while (pageToken);
     return out;
   },
-  async readFile(path: string): Promise<string> {
-    const folder = await ensureLumenFolder();
-    const search = await api<{ files: { id: string }[] }>(
-      `/drive/v3/files?q=${encodeURIComponent(
-        `'${folder}' in parents and name='${path.replace(/'/g, "\\'")}' and trashed=false`,
-      )}&fields=files(id)`,
-    );
-    if (!search.files[0]) throw new Error(`Not found: ${path}`);
-    return api<string>(
-      `/drive/v3/files/${search.files[0].id}?alt=media`,
-    );
+  async readFile(path: string): Promise<Uint8Array> {
+    const folder = await legacyFolder();
+    const id = folder ? await fileId(folder, path) : null;
+    if (!id) throw new Error(`Not found: ${path}`);
+    const res = await gdriveFetch(`/drive/v3/files/${id}?alt=media`);
+    if (!res.ok) throw new Error(`Google Drive ${res.status}`);
+    return new Uint8Array(await res.arrayBuffer());
   },
-  async writeFile(path: string, content: string): Promise<void> {
-    const folder = await ensureLumenFolder();
-    // Multipart upload: metadata JSON + body.
-    const search = await api<{ files: { id: string }[] }>(
-      `/drive/v3/files?q=${encodeURIComponent(
-        `'${folder}' in parents and name='${path.replace(/'/g, "\\'")}' and trashed=false`,
-      )}&fields=files(id)`,
-    );
-    const existing = search.files[0]?.id ?? null;
-    // Multipart boundary — must not collide with body bytes. randomId(8)
-    // gives 64 bits of entropy, which is enough for a single request even
-    // if the body contained near-random base64.
-    const boundary = "lumen-" + randomId(8);
-    const meta = existing
-      ? {}
-      : { name: path, parents: [folder], mimeType: "text/markdown" };
-    const body =
-      `--${boundary}\r\n` +
-      `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
-      `${JSON.stringify(meta)}\r\n` +
-      `--${boundary}\r\n` +
-      `Content-Type: text/markdown\r\n\r\n` +
-      `${content}\r\n` +
-      `--${boundary}--`;
-    const url = existing
-      ? `/upload/drive/v3/files/${existing}?uploadType=multipart`
-      : "/upload/drive/v3/files?uploadType=multipart";
-    await api(url, {
-      method: existing ? "PATCH" : "POST",
-      headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
-      body,
+  async moveFile(from: string, to: string): Promise<void> {
+    // Both paths are "<name>" or "<backup folder>/<name>" (a subfolder of the
+    // legacy folder): the backup step moves one way, revert the other.
+    const folder = await legacyFolder();
+    if (!folder) throw new Error(`Not found: ${from}`);
+    const split = (p: string) => {
+      const slash = p.lastIndexOf("/");
+      return slash >= 0 ? { dir: p.slice(0, slash), name: p.slice(slash + 1) } : { dir: "", name: p };
+    };
+    const src = split(from);
+    const dst = split(to);
+    const source = src.dir ? await subfolder(folder, src.dir) : folder;
+    const id = await fileId(source, src.name);
+    if (!id) throw new Error(`Not found: ${from}`);
+    const target = dst.dir ? await subfolder(folder, dst.dir) : folder;
+    await api(`/drive/v3/files/${id}?addParents=${target}&removeParents=${source}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: dst.name }),
     });
-  },
-  async deleteFile(path: string): Promise<void> {
-    try {
-      const folder = await ensureLumenFolder();
-      const search = await api<{ files: { id: string }[] }>(
-        `/drive/v3/files?q=${encodeURIComponent(
-          `'${folder}' in parents and name='${path.replace(/'/g, "\\'")}' and trashed=false`,
-        )}&fields=files(id)`,
-      );
-      const id = search.files[0]?.id;
-      if (id) await api(`/drive/v3/files/${id}`, { method: "DELETE" });
-    } catch (err) {
-      log.warn("gdrive delete failed", err);
-    }
   },
 };
 

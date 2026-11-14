@@ -69,3 +69,7 @@ flake-results/
 visual-results/
 # On-device OCR (scripts/copy-tesseract.mjs)
 public/tesseract/
+
+# Python bytecode (scripts/sync-protocol)
+__pycache__/
+*.py[cod]

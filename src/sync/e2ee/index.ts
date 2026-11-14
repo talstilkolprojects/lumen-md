@@ -6,15 +6,16 @@
  * docs/src/content/docs/sync/e2ee.md.
  */
 
-export { createVault, unlockVault, E2eeSync, NoVaultError, VaultExistsError } from "./engine";
+export { createVault, unlockVault, DeviceBusyError, E2eeSync, DropDevicesRequiredError, KeyChangeInProgressError, NoVaultError, PairingDuringKeyChangeError, RevocationContestedError, UnverifiedDeviceError, VaultExistsError } from "./engine";
 export type { E2eeSyncOptions, SyncResult } from "./engine";
 export type { SyncProvider, StoredObject, PutCondition } from "./provider";
-export { memoryProvider, PreconditionFailedError, ProviderUnavailableError } from "./provider";
+export { CasUnsupportedError, memoryProvider, PreconditionFailedError, proveCas, ProviderUnavailableError } from "./provider";
+export { DroppedFromVaultError, KeyringForkError, KeyringRollbackError, PreReleaseKeyringError, RevokedError } from "./keyring";
 export { vaultLocalFiles, memoryFiles, type LocalFiles } from "./localFiles";
 export { idbStateStore, memoryStateStore, type DeviceState, type FreshnessSource, type SyncStateStore } from "./state";
 export { dialogResolver, keepBothResolver, type ConflictResolver, type ConflictResolution } from "./conflict";
 export { RollbackError } from "./manifest";
-export { PairingError } from "./pairing";
+export { PairingEpochError, PairingError } from "./pairing";
 export { WrongPassphraseError, UnsupportedProtocolError, PROTOCOL_VERSION } from "./header";
 export { KdfUnavailableError, WeakKdfError, PBKDF2_MIN_ITERATIONS } from "./kdf";
 export { DecryptError } from "./keys";

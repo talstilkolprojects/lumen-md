@@ -7,10 +7,11 @@
  *
  *   • "pbkdf2-sha256" — implemented with WebCrypto, ≥ 600,000 iterations
  *     (OWASP Password Storage Cheat Sheet, 2023). Used today.
- *   • "argon2id"      — the plan's choice (memory-hard). Reserved: WebCrypto
- *     has no Argon2id, and the `hash-wasm` package that brings it is not in
- *     the lockfile yet. A header that asks for it is refused with
- *     `KdfUnavailableError` instead of being misread.
+ *   • "argon2id"      — memory-hard (RFC 9106), what a new vault gets since
+ *     plan W1.7: 46 MiB, one pass, one lane (OWASP's first option). It runs
+ *     in plain TypeScript (./primitives/argon2.ts, about a second); a faster
+ *     WebAssembly build (hash-wasm) can be plugged in with
+ *     `setArgon2idImplementation` and must give the same bytes.
  *
  * Passphrases are NFC-normalised first, so the same Hebrew passphrase typed on
  * macOS (which may produce decomposed characters) and on Windows derives the
@@ -18,6 +19,7 @@
  */
 
 import { bs, randomBytes, toB64u, fromB64u, utf8 } from "./bytes";
+import { argon2id, type Argon2Input } from "./primitives/argon2";
 
 /** OWASP 2023 minimum for PBKDF2-HMAC-SHA256. */
 export const PBKDF2_MIN_ITERATIONS = 600_000;
@@ -31,7 +33,7 @@ export interface Pbkdf2Params {
   salt: string;
 }
 
-/** Reserved for hash-wasm's Argon2id; the fields follow RFC 9106. */
+/** Argon2id (RFC 9106, version 0x13); 32-byte tag, no secret, no associated data. */
 export interface Argon2idParams {
   alg: "argon2id";
   memoryKiB: number;
@@ -58,6 +60,28 @@ export class WeakKdfError extends Error {
   }
 }
 
+/** What a new vault gets: OWASP 2023's first Argon2id option. */
+export const ARGON2_DEFAULT = { memoryKiB: 47_104, iterations: 1, parallelism: 1 } as const;
+/**
+ * The floor when opening a vault: OWASP's options trade memory for passes
+ * (46 MiB × 1, 19 MiB × 2, 12 MiB × 3, 9 MiB × 4, 7 MiB × 5), so at least
+ * 7 MiB, and memory × passes at least 37 MiB.
+ */
+export const ARGON2_MIN_MEMORY_KIB = 7_168;
+export const ARGON2_MIN_COST_KIB = 37_888;
+
+export type Argon2idImplementation = (input: Argon2Input) => Uint8Array | Promise<Uint8Array>;
+let argon2Impl: Argon2idImplementation = argon2id;
+
+/**
+ * Use a faster Argon2id (hash-wasm's, once it is in the lockfile). It must
+ * give the same bytes as ./primitives/argon2.ts: the test vectors check it.
+ * null restores the built-in one.
+ */
+export function setArgon2idImplementation(fn: Argon2idImplementation | null): void {
+  argon2Impl = fn ?? argon2id;
+}
+
 export interface KdfPolicy {
   /**
    * The fewest PBKDF2 iterations accepted when opening a vault. Production
@@ -65,11 +89,20 @@ export interface KdfPolicy {
    * so 10,000 sync rounds stay fast.
    */
   minPbkdf2Iterations?: number;
+  /** The smallest Argon2id memory × passes accepted (KiB); tests lower it. */
+  minArgon2CostKiB?: number;
 }
 
-/** Fresh parameters for a new vault (production defaults unless a test overrides the iterations). */
-export function newKdfParams(iterations = PBKDF2_DEFAULT_ITERATIONS): Pbkdf2Params {
-  return { alg: "pbkdf2-sha256", iterations, salt: toB64u(randomBytes(16)) };
+/**
+ * Fresh parameters for a new vault: Argon2id with the production defaults.
+ * Passing PBKDF2 `iterations` (the tests, and vaults that must open in
+ * builds before plan W1.7) gives PBKDF2-SHA256 instead; `argon2` overrides
+ * the Argon2id cost.
+ */
+export function newKdfParams(iterations?: number, argon2?: Partial<Omit<Argon2idParams, "alg" | "salt">>): KdfParams {
+  const salt = toB64u(randomBytes(16));
+  if (iterations !== undefined) return { alg: "pbkdf2-sha256", iterations, salt };
+  return { alg: "argon2id", ...ARGON2_DEFAULT, ...argon2, salt };
 }
 
 /** Throws unless `p` is well-formed, known and strong enough under `policy`. */
@@ -84,13 +117,28 @@ export function validateKdfParams(p: unknown, policy: KdfPolicy = {}): KdfParams
     }
     return { alg: "pbkdf2-sha256", iterations: o.iterations, salt: o.salt };
   }
-  if (o.alg === "argon2id") throw new KdfUnavailableError("argon2id");
+  if (o.alg === "argon2id") {
+    const int = (x: unknown) => typeof x === "number" && Number.isSafeInteger(x) && x >= 1;
+    if (!int(o.memoryKiB) || !int(o.iterations) || !int(o.parallelism)) throw new WeakKdfError("bad Argon2id parameters");
+    const m = o.memoryKiB as number;
+    const t = o.iterations as number;
+    const p = o.parallelism as number;
+    const minCost = policy.minArgon2CostKiB ?? ARGON2_MIN_COST_KIB;
+    if (p > 16 || m < 8 * p) throw new WeakKdfError("bad Argon2id parallelism");
+    if (m > 4 * 1024 * 1024 || t > 64) throw new WeakKdfError("Argon2id cost too high to open here");
+    if ((minCost >= ARGON2_MIN_COST_KIB && m < ARGON2_MIN_MEMORY_KIB) || m * t < minCost) throw new WeakKdfError(`Argon2id memory × passes below ${minCost} KiB`);
+    return { alg: "argon2id", memoryKiB: m, iterations: t, parallelism: p, salt: o.salt };
+  }
   throw new KdfUnavailableError(String(o.alg));
 }
 
 /** 32 bytes of key material from `passphrase` under `params`. */
 export async function deriveMasterKey(passphrase: string, params: KdfParams): Promise<Uint8Array<ArrayBuffer>> {
-  if (params.alg !== "pbkdf2-sha256") throw new KdfUnavailableError(params.alg);
+  if (params.alg === "argon2id") {
+    const tag = await argon2Impl({ password: utf8(passphrase.normalize("NFC")), salt: fromB64u(params.salt), memoryKiB: params.memoryKiB, iterations: params.iterations, parallelism: params.parallelism, tagLength: 32 });
+    return new Uint8Array(tag);
+  }
+  if (params.alg !== "pbkdf2-sha256") throw new KdfUnavailableError((params as { alg: string }).alg);
   const material = await crypto.subtle.importKey("raw", bs(utf8(passphrase.normalize("NFC"))), "PBKDF2", false, [
     "deriveBits",
   ]);

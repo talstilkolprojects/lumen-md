@@ -1,33 +1,35 @@
 /**
- * Dropbox cloud-sync provider.
+ * Dropbox — OAuth (PKCE, no client secret in the browser) and the plain-text
+ * side the migration to encrypted sync reads from (plan 3.5). The encrypted
+ * `SyncProvider` over Dropbox is src/sync/e2ee/providers/dropbox.ts; it uses
+ * `dropboxFetch` from here.
  *
- * Uses the public REST API (`api.dropboxapi.com`, `content.dropboxapi.com`)
- * over `fetch` — no SDK is bundled. The OAuth flow follows the PKCE variant so
- * we never have to ship a client secret in the browser.
- *
- * Environment / runtime configuration:
- *   - `VITE_DROPBOX_APP_KEY`   — your Dropbox app key (public).
- *   - `VITE_DROPBOX_REDIRECT`  — defaults to `${origin}/oauth/dropbox`.
- *
- * Tokens land in `localStorage["lumen.cloud.dropbox.token"]` and are silently
- * refreshed on 401. The bound folder defaults to `/Apps/Lumen` so Dropbox can
- * scope the app to a single sub-tree (App folder permission).
+ * Configuration: `VITE_DROPBOX_APP_KEY` — the app key (a public identifier,
+ * not a secret; plan 15.5). Without it the OAuth flow is unavailable and
+ * `dropboxConfigured()` is false. Tokens live in the secret store.
  */
 
-import { log } from "../../lib/logger";
 import { fetchWithRetry } from "../../lib/fetchRetry";
-import type { CloudFile, CloudProvider } from "./types";
+import type { CloudFile, LegacyCloudStore } from "./types";
 import { getSecret, setSecret } from "../../lib/secretStore";
 
 const TOKEN_KEY = "lumen.cloud.dropbox.token";
 const REFRESH_KEY = "lumen.cloud.dropbox.refresh";
-const FOLDER_KEY = "lumen.cloud.dropbox.folder";
+/** Where an earlier Lumen synced plain-text notes (App folder permission). */
+export const DROPBOX_LEGACY_FOLDER = "/Apps/Lumen";
+/** The encrypted vault's folder inside the legacy one (`DROPBOX_DEFAULT_FOLDER` = "/Apps/Lumen/vault"). */
+const LEGACY_VAULT_SUBFOLDER = "vault";
 const PKCE_KEY = "lumen.cloud.dropbox.pkce";
 
 interface TokenSet {
   access: string;
   refresh?: string;
   expiresAt: number;
+}
+
+/** Is the OAuth client configured? (plan 15.5) */
+export function dropboxConfigured(): boolean {
+  return !!appKey();
 }
 
 function appKey(): string {
@@ -113,42 +115,40 @@ async function getAccessToken(): Promise<string> {
   return refreshAccessToken();
 }
 
-async function api<T = unknown>(
+/**
+ * An authenticated request to Dropbox: `path` on the RPC endpoint, or on the
+ * content endpoint with `contentEndpoint`. Returns the raw response (callers
+ * read status and headers themselves — the encrypted provider needs 409
+ * bodies and `Dropbox-API-Result`).
+ */
+export async function dropboxFetch(
   path: string,
-  body?: unknown,
-  opts: { contentEndpoint?: boolean; raw?: BodyInit; rawHeaders?: Record<string, string> } = {},
-): Promise<T> {
+  init: { body?: BodyInit; headers?: Record<string, string>; contentEndpoint?: boolean } = {},
+  fetchImpl: (input: string, init?: RequestInit) => Promise<Response> = (i, o) => fetch(i, o),
+): Promise<Response> {
   const access = await getAccessToken();
-  const url = (opts.contentEndpoint ? "https://content.dropboxapi.com" : "https://api.dropboxapi.com") + path;
-  const headers: Record<string, string> = { Authorization: `Bearer ${access}` };
-  if (opts.raw) {
-    Object.assign(headers, opts.rawHeaders ?? {});
-  } else {
-    headers["Content-Type"] = "application/json";
-  }
+  const url = (init.contentEndpoint ? "https://content.dropboxapi.com" : "https://api.dropboxapi.com") + path;
+  const headers: Record<string, string> = { Authorization: `Bearer ${access}`, ...(init.headers ?? {}) };
+  if (!init.contentEndpoint && !("Content-Type" in headers)) headers["Content-Type"] = "application/json";
+  return fetchImpl(url, { method: "POST", headers, body: init.body });
+}
+
+async function rpc<T>(path: string, body: unknown): Promise<T> {
   const res = await fetchWithRetry(
-    url,
-    {
-      method: "POST",
-      headers,
-      body: opts.raw ?? (body !== undefined ? JSON.stringify(body) : undefined),
-    },
-    { label: `dropbox.api.${opts.contentEndpoint ? "content" : "metadata"}`, maxRetries: 2, baseDelayMs: 700, maxDelayMs: 2500 },
+    "https://api.dropboxapi.com" + path,
+    { method: "POST", headers: { Authorization: `Bearer ${await getAccessToken()}`, "Content-Type": "application/json" }, body: JSON.stringify(body) },
+    { label: "dropbox.rpc", maxRetries: 2, baseDelayMs: 700, maxDelayMs: 2500 },
   );
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`Dropbox ${res.status}: ${text.slice(0, 200)}`);
   }
-  if (opts.contentEndpoint && body === undefined) {
-    return (await res.text()) as unknown as T;
-  }
-  const ct = res.headers.get("content-type") ?? "";
-  return (ct.includes("json") ? await res.json() : await res.text()) as T;
+  return (await res.json()) as T;
 }
 
-/* ─── Provider implementation ────────────────────────────────────────── */
+/* ─── The plain-text side (migration reads it) ───────────────────────── */
 
-export const dropboxProvider: CloudProvider = {
+export const dropboxLegacy: LegacyCloudStore = {
   name: "dropbox",
   isConnected(): boolean {
     return !!getSecret(TOKEN_KEY);
@@ -173,10 +173,10 @@ export const dropboxProvider: CloudProvider = {
     clearToken();
   },
   async listFiles(): Promise<CloudFile[]> {
-    const folder = localStorage.getItem(FOLDER_KEY) ?? "";
     type Entry = {
       [".tag"]: "file" | "folder";
       path_lower: string;
+      path_display?: string;
       size?: number;
       server_modified?: string;
       content_hash?: string;
@@ -184,53 +184,42 @@ export const dropboxProvider: CloudProvider = {
     const out: CloudFile[] = [];
     let cursor: string | undefined;
     do {
-      const body = cursor
-        ? { cursor }
-        : { path: folder, recursive: true, include_non_downloadable_files: false };
-      const res = await api<{ entries: Entry[]; cursor?: string; has_more: boolean }>(
-        cursor ? "/2/files/list_folder/continue" : "/2/files/list_folder",
-        body,
-      );
+      const body = cursor ? { cursor } : { path: DROPBOX_LEGACY_FOLDER, recursive: true, include_non_downloadable_files: false };
+      let res: { entries: Entry[]; cursor?: string; has_more: boolean };
+      try {
+        res = await rpc(cursor ? "/2/files/list_folder/continue" : "/2/files/list_folder", body);
+      } catch (e) {
+        // No legacy folder at all: nothing to migrate.
+        if (/not_found/.test((e as Error).message)) return [];
+        throw e;
+      }
       for (const e of res.entries) {
         if (e[".tag"] !== "file") continue;
-        out.push({
-          path: e.path_lower,
-          size: e.size ?? 0,
-          modified: e.server_modified ? Date.parse(e.server_modified) : 0,
-          hash: e.content_hash,
-        });
+        const full = e.path_display ?? e.path_lower;
+        const rel = full.toLowerCase().startsWith(DROPBOX_LEGACY_FOLDER.toLowerCase() + "/") ? full.slice(DROPBOX_LEGACY_FOLDER.length + 1) : full.replace(/^\//, "");
+        // The encrypted vault lives in "vault/" under the same app folder: ciphertext, never plain text.
+        if (rel.toLowerCase().startsWith(LEGACY_VAULT_SUBFOLDER + "/")) continue;
+        out.push({ path: rel, size: e.size ?? 0, modified: e.server_modified ? Date.parse(e.server_modified) : 0, hash: e.content_hash });
       }
       cursor = res.has_more ? res.cursor : undefined;
     } while (cursor);
     return out;
   },
-  async readFile(path: string): Promise<string> {
-    return api<string>("/2/files/download", undefined, {
+  async readFile(path: string): Promise<Uint8Array> {
+    const res = await dropboxFetch("/2/files/download", {
       contentEndpoint: true,
-      rawHeaders: { "Dropbox-API-Arg": JSON.stringify({ path }) },
-      raw: "",
+      headers: { "Dropbox-API-Arg": JSON.stringify({ path: `${DROPBOX_LEGACY_FOLDER}/${path}` }) },
     });
+    if (!res.ok) throw new Error(`Dropbox ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+    return new Uint8Array(await res.arrayBuffer());
   },
-  async writeFile(path: string, content: string): Promise<void> {
-    await api("/2/files/upload", undefined, {
-      contentEndpoint: true,
-      raw: content,
-      rawHeaders: {
-        "Content-Type": "application/octet-stream",
-        "Dropbox-API-Arg": JSON.stringify({
-          path,
-          mode: "overwrite",
-          mute: true,
-        }),
-      },
+  async moveFile(from: string, to: string): Promise<void> {
+    await rpc("/2/files/move_v2", {
+      from_path: `${DROPBOX_LEGACY_FOLDER}/${from}`,
+      to_path: `${DROPBOX_LEGACY_FOLDER}/${to}`,
+      autorename: false,
+      allow_ownership_transfer: false,
     });
-  },
-  async deleteFile(path: string): Promise<void> {
-    try {
-      await api("/2/files/delete_v2", { path });
-    } catch (err) {
-      log.warn("dropbox delete failed", err);
-    }
   },
 };
 

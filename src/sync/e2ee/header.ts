@@ -84,6 +84,30 @@ export function decodeHeader(bytes: Uint8Array, policy: KdfPolicy = {}): VaultHe
   return { format: FORMAT, protocol: PROTOCOL_VERSION, vaultId: o.vaultId, kdf: validateKdfParams(o.kdf, policy), mac: o.mac };
 }
 
+/**
+ * A new header for an existing vault (plan W1.7, a passphrase change at a
+ * re-key): fresh KDF parameters, the same vault id. Returns the master key
+ * material the keyring wraps the new epoch for.
+ */
+export async function rekeyHeader(vaultId: string, passphrase: string, opts: { pbkdf2Iterations?: number } = {}): Promise<{ header: VaultHeader; master: Uint8Array }> {
+  const body = { format: FORMAT, protocol: PROTOCOL_VERSION, vaultId, kdf: newKdfParams(opts.pbkdf2Iterations) } as const;
+  const master = await deriveMasterKey(passphrase, body.kdf);
+  const keys = await deriveVaultKeys(master.slice(), vaultId);
+  const mac = toB64u(await hmac(keys.header, headerMacInput(body)));
+  return { header: { ...body, mac }, master };
+}
+
+/** Does `header`'s MAC verify under `key` (the passphrase's header key)? Fifth review 12.11, F5: what a passphrase change reads of the stored header. */
+export async function headerMacValid(header: VaultHeader, key: CryptoKey): Promise<boolean> {
+  let tag: Uint8Array;
+  try {
+    tag = fromB64u(header.mac);
+  } catch {
+    return false;
+  }
+  return verifyHmac(key, tag, headerMacInput({ format: header.format, protocol: header.protocol, vaultId: header.vaultId, kdf: header.kdf })).catch(() => false);
+}
+
 /** Derive the keys for `header` from `passphrase` and check its MAC. */
 export async function unlockHeader(header: VaultHeader, passphrase: string): Promise<VaultKeys> {
   const keys = await deriveVaultKeys(await deriveMasterKey(passphrase, header.kdf), header.vaultId);

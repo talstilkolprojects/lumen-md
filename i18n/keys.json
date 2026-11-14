@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-10-20T19:56:34.410Z",
+  "generated_at": "2026-11-14T17:59:06.048Z",
   "source": "src/i18n/index.ts (en bundle) + src/i18n/lazy/*.json",
-  "count": 1487,
+  "count": 1558,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -1963,6 +1963,11 @@
     {
       "key": "cmd.file.trash.hint",
       "en": "Restore deleted notes (kept 30 days)",
+      "vars": []
+    },
+    {
+      "key": "cmd.sync.open",
+      "en": "Encrypted sync…",
       "vars": []
     },
     {
@@ -8007,6 +8012,388 @@
     {
       "key": "e2ee.fresh.verified",
       "en": "Freshness verified",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.title",
+      "en": "Sync",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.provider",
+      "en": "Where to keep the encrypted vault",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.kind.webdav",
+      "en": "WebDAV (Nextcloud, ownCloud, a NAS)",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.kind.s3",
+      "en": "S3-compatible storage (AWS, Cloudflare R2, Backblaze B2, MinIO)",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.oauthMissing",
+      "en": "Not available in this build: it needs Lumen's {name} app id, which is not configured.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.sync.url",
+      "en": "Folder address",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.username",
+      "en": "User name",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.password",
+      "en": "Password or app password",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.endpoint",
+      "en": "Endpoint",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.region",
+      "en": "Region",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.bucket",
+      "en": "Bucket",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.prefix",
+      "en": "Folder inside the bucket",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.accessKey",
+      "en": "Access key ID",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.secretKey",
+      "en": "Secret access key",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.pathStyle",
+      "en": "Path-style addresses (MinIO and most self-hosted servers)",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.keepSecret",
+      "en": "Leave empty to keep the saved one",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.connect",
+      "en": "Connect",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.signIn",
+      "en": "Sign in to {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.sync.connecting",
+      "en": "Checking…",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.cors",
+      "en": "Lumen could not reach {host}. The server must allow this site (CORS, and expose the ETag header); a self-hosted Lumen must also list it in VITE_CSP_CONNECT_EXTRA.",
+      "vars": [
+        "host"
+      ]
+    },
+    {
+      "key": "e2ee.sync.unsupported",
+      "en": "This server cannot do safe concurrent writes, so Lumen will not sync with it: {detail}",
+      "vars": [
+        "detail"
+      ]
+    },
+    {
+      "key": "e2ee.sync.auth",
+      "en": "The server refused the credentials.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.connectedTo",
+      "en": "Connected: {where}",
+      "vars": [
+        "where"
+      ]
+    },
+    {
+      "key": "e2ee.sync.newVault",
+      "en": "There is no vault there yet. Choose a passphrase to create it.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.existingVault",
+      "en": "A vault is already there. Enter its passphrase.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.syncNow",
+      "en": "Sync now",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.syncing",
+      "en": "Syncing…",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.result",
+      "en": "Last sync {time}: {up} up, {down} down, {deleted} deleted",
+      "vars": [
+        "time",
+        "up",
+        "down",
+        "deleted"
+      ]
+    },
+    {
+      "key": "e2ee.sync.held",
+      "en": "{n} notes wait for a decision",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.sync.lock",
+      "en": "Lock",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.disconnect",
+      "en": "Disconnect",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.disconnectNote",
+      "en": "Forgets the provider on this device. Nothing at the provider is deleted.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.choose",
+      "en": "Change provider",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.back",
+      "en": "Back",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.pairCode",
+      "en": "Pairing code for another device",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.pairCodeNote",
+      "en": "Enter it on the other device within 2 minutes. It proves to that device which state is current; this device changes no keys meanwhile. Pairing from the new device's request (two-way) is safer.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.migrate.title",
+      "en": "Readable notes from an earlier Lumen",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.migrate.found",
+      "en": "{n} unencrypted notes are in your {name} folder. Import them into the encrypted vault; the readable copies are moved into a backup folder at {name}, not deleted.",
+      "vars": [
+        "n",
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.sync.migrate.clashes",
+      "en": "{n} of them differ from notes here; both versions are kept.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.sync.migrate.run",
+      "en": "Import and back up",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.migrate.done",
+      "en": "Imported {n} notes. The readable copies are in “{folder}” at {name}; delete that folder yourself when you are satisfied.",
+      "vars": [
+        "n",
+        "folder",
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.sync.migrate.revert",
+      "en": "Undo: move the readable copies back",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.migrate.reverted",
+      "en": "Moved {n} files back.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.fresh.olderKeys",
+      "en": "The other device is at a newer key epoch than this one sees: the sync service may be showing this device old keys. Sync both devices and try again; if it stays like this, don't trust this service.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.held",
+      "en": "Until then, changes made on this device stay on it and are not uploaded: it can't tell yet whether it has the vault's latest keys, and a device removed meanwhile could read what it uploads.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.request",
+      "en": "Show a pairing request",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.requestHint",
+      "en": "Enter this request on a device you already use. It checks it against the vault as it is now and shows an answer: enter that answer above.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.answerTitle",
+      "en": "Pairing request from a new device",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.answer",
+      "en": "Answer",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.stale",
+      "en": "The new device is being shown older keys than this one has: the sync service may be showing it an old state. Don't pair it; sync it and try again, and if it stays like this, don't trust this service.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.pending",
+      "en": "A pairing code from this device is still valid, so it makes no key change for now: a device paired with that code wouldn't learn of the change. Try again in a couple of minutes.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.rekey.unconfirmed",
+      "en": "The revocation may not have taken effect: right after this key change was written, the sync service returned another device's instead (it ignored a conditional write). Sync this device: it revokes again, or says why it can't. If this happens again, don't use this service for key changes.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fork.reapplied",
+      "en": "The sync service replaced this device's key change with another device's. The revocation may not have taken effect for what was written in between; this device has made it again. Sync every device, and don't use this service for key changes.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.wrap.tampered",
+      "en": "This device's key in the vault's keyring doesn't open it: the sync service changed it or put back an old one. Nothing on this device was changed. Try again later; if it stays like this, pair this device again from one you trust.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.answerHint",
+      "en": "Paste the request the new device shows. This device checks it against the vault as it is now; enter the answer on the new device within 5 minutes.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.drive.syncOnly",
+      "en": "Google Drive can't refuse a second \"create\" of the same file atomically, so with Drive this vault syncs, but keys and devices can't be changed here (no re-key, no revocation, no new device key). Make those changes with another storage, or move the vault.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.drive.limits",
+      "en": "With Google Drive, you can't remove a lost device or change a leaked passphrase in this vault. To do either, move the vault to WebDAV, S3 or Dropbox first.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.cancel",
+      "en": "Cancel pairing",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.cancelled",
+      "en": "Pairing cancelled: this device can change keys again. Don't use that answer or code on the other device; pair it again after the key change.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fork.refused",
+      "en": "The sync service returned keys that don't follow from the ones this device verified, so this device stopped (nothing on it was changed). Don't change keys or add devices until every device agrees; pair this device again from one you trust.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fork.atRisk",
+      "en": "The sync service returned keys that don't follow from the ones this device verified, and they may let back in a device you removed here. This device stopped; nothing on it was changed. Once every device agrees, remove that device again from a device you trust, and don't use this service for key changes.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.dropped",
+      "en": "This device wasn't carried over to the vault's new keys: either a device that couldn't verify the vault's device list changed them, or this device was removed. Nothing on it was changed. To use it with the vault again, unlock it with the passphrase, or pair it from a device you trust (as a new device, if it was removed).",
+      "vars": []
+    },
+    {
+      "key": "e2ee.revoked",
+      "en": "This device was removed from the vault, so it can't open the current keys. The notes already on it stay.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.rekey.dropConfirm",
+      "en": "This device can't verify it has the vault's latest keys, so a key change from it would leave out {devices}: they would have to be paired again. Pair this device from one you trust first, or confirm to leave them out.",
+      "vars": [
+        "devices"
+      ]
+    },
+    {
+      "key": "e2ee.rekey.busy",
+      "en": "Another device is changing the vault's keys right now. Sync, and try again once it has finished (10 minutes at most).",
+      "vars": []
+    },
+    {
+      "key": "e2ee.pair.rekeying",
+      "en": "This device is changing the vault's keys right now. Make the pairing code once the change has finished.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.revokedHere.reset",
+      "en": "This device's own list of the devices it removed couldn't be verified, so it was set aside. It now checks against the vault's sealed list of removed devices. Check the device list on a device you trust.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.rekey.contested",
+      "en": "Removing {devices} didn't go through, again: each time, the vault's device list was rewritten at the same moment by something that still has the vault's keys and the storage login, most likely the device you're removing. Change the storage password or token first, so that device can't write any more, then remove it again.",
+      "vars": [
+        "devices"
+      ]
+    },
+    {
+      "key": "e2ee.busy",
+      "en": "This device is syncing in another tab right now, so nothing was changed. Try again in a moment; if it keeps happening, reload or close the other tabs of Lumen.",
       "vars": []
     }
   ]
