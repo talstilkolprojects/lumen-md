@@ -17,10 +17,16 @@
  * Saving: the editor reports every change; a change to the drawing itself
  * (not a selection or a pan) is written 500 ms later, and the last one when
  * the canvas closes or another one is opened.
+ *
+ * Live (plan W6.48): during a collab session the open canvas is shared with
+ * the room through the session's Yjs document (`src/canvas/liveCanvas.ts`):
+ * everyone's edits and pointers appear as they happen, over the same
+ * encrypted transport as the note. Each person still saves their own copy.
  */
 
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Excalidraw, convertToExcalidrawElements } from "@excalidraw/excalidraw";
+import { CaptureUpdateAction, Excalidraw, convertToExcalidrawElements } from "@excalidraw/excalidraw";
+import { bindLiveCanvas, type LiveApi, type LiveAwareness, type LiveCanvas, type LiveDoc, type LiveElement } from "../canvas/liveCanvas";
 import "@excalidraw/excalidraw/index.css";
 import "./CanvasExcalidraw.css";
 import "../canvas/NoteCard.css";
@@ -68,6 +74,8 @@ if (typeof window !== "undefined") window.EXCALIDRAW_ASSET_PATH = `${import.meta
 interface Props {
   open: boolean;
   onClose: () => void;
+  /** The note's collab session, when there is one: the canvas goes live in its room (W6.48). */
+  collab?: { doc: unknown; awareness: unknown } | null;
 }
 
 /** What the canvas uses of Excalidraw's imperative API. */
@@ -128,7 +136,7 @@ function isDark(theme: string): boolean {
   return typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches;
 }
 
-export function CanvasExcalidraw({ open, onClose }: Props) {
+export function CanvasExcalidraw({ open, onClose, collab = null }: Props) {
   const theme = useAppStore((s) => s.theme);
   const locale = useAppStore((s) => s.locale);
   const store = useMemo(() => opfsCanvasStore(), []);
@@ -141,6 +149,9 @@ export function CanvasExcalidraw({ open, onClose }: Props) {
   const savedStamp = useRef<string>("");
   const saverRef = useRef<{ schedule(): void; flush(): void } | null>(null);
   const apiRef = useRef<CanvasApi | null>(null);
+  /** The mounted Excalidraw's API, as state: the live binding starts once it is there. */
+  const [api, setApi] = useState<CanvasApi | null>(null);
+  const liveRef = useRef<LiveCanvas | null>(null);
   const [exporting, setExporting] = useState<ExportKind | null>(null);
   const [diagramOpen, setDiagramOpen] = useState(false);
 
@@ -203,8 +214,22 @@ export function CanvasExcalidraw({ open, onClose }: Props) {
 
   const onChange = useCallback((elements: readonly SceneElement[], appState: SceneAppState, files: Record<string, ExBinaryFile>) => {
     latest.current = { elements, appState, files };
+    // Excalidraw's elements always carry version and versionNonce (SceneElement keeps them optional).
+    liveRef.current?.push(elements as unknown as readonly LiveElement[]);
     if (sceneStamp(elements, appState) !== savedStamp.current) saverRef.current?.schedule();
   }, []);
+
+  // Live canvas: bind this canvas to the session's document while both are there.
+  const sceneName = scene?.name ?? null;
+  useEffect(() => {
+    if (!collab || !api || !sceneName) return;
+    const live = bindLiveCanvas(collab.doc as LiveDoc, sceneName, api as unknown as LiveApi, { awareness: collab.awareness as LiveAwareness, captureNever: CaptureUpdateAction.NEVER });
+    liveRef.current = live;
+    return () => {
+      live.destroy();
+      if (liveRef.current === live) liveRef.current = null;
+    };
+  }, [collab, api, sceneName]);
 
   const handleNew = useCallback(async () => {
     const name = await uiPrompt({ message: t("canvas.new.prompt"), defaultValue: `canvas-${Date.now().toString(36)}` });
@@ -491,9 +516,12 @@ export function CanvasExcalidraw({ open, onClose }: Props) {
             theme={isDark(theme) ? "dark" : "light"}
             langCode={excalidrawLangOf(locale)}
             aiEnabled={false}
-            excalidrawAPI={(api: unknown) => {
-              apiRef.current = api as CanvasApi;
+            excalidrawAPI={(a: unknown) => {
+              apiRef.current = a as CanvasApi;
+              setApi(a as CanvasApi);
             }}
+            isCollaborating={collab !== null}
+            onPointerUpdate={collab ? (p: { pointer: { x: number; y: number; tool: "pointer" | "laser" }; button: "down" | "up" }) => liveRef.current?.pointer(p) : undefined}
             // Note cards (plan W1.16): lumen-note: embeds are ours, drawn by NoteCard; other embeds keep Excalidraw's rules.
             validateEmbeddable={(link: string) => (link.startsWith(NOTE_LINK) ? true : undefined)}
             renderEmbeddable={(el: { id: string; type: string; link: string | null }, appState: { activeEmbeddable: { element: { id: string }; state: string } | null }) => {

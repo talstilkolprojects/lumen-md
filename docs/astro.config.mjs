@@ -159,6 +159,7 @@ export default defineConfig({
             { label: "Suggestions and named versions", slug: "collab/suggestions-versions", translations: { he: "הצעות וגרסאות בשם" } },
             { label: "Encrypted share link", slug: "collab/share-link", translations: { he: "קישור שיתוף מוצפן" } },
             { label: "The public server", slug: "collab/public-server", translations: { he: "השרת הציבורי" } },
+            { label: "Live canvas", slug: "collab/live-canvas", translations: { he: "קנבס חי" } },
           ],
         },
         {
