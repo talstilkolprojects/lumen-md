@@ -37,7 +37,9 @@ COLLAB_STORED_ROOMS_PER_ADDRESS = "50"
 COLLAB_STORED_ROOMS_PER_48 = "50"
 # Review 11 (RR11-469-1): bytes per address and per /48, 1/200 of the store, so 20
 # addresses can't hold it; and only a return by someone other than the creator
-# protects a room. Several small rooms may free one room's share together.
+# (another address, not the creator's /48) protects a room. Several smaller rooms
+# may free one room's share together. Review 14: an owner whose rooms grew past
+# this cap after admission loses their protection, and they make way first.
 COLLAB_STORED_BYTES_PER_ADDRESS = "20000000"
 COLLAB_PROTECT_DAYS = "14"
 
