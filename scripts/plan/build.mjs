@@ -677,7 +677,12 @@ export function belowFloor(task, floor = WIP_FLOOR) {
 }
 
 /** A task is started once it has a status (a PR, work in progress, or done). */
-export const isStarted = (task) => String(task.status ?? "").trim() !== "";
+/** The placeholder a wave's tasks carry before any work ("⏳ גל 10 — לא התחיל"): not started (W10.G6). */
+export const NOT_STARTED = /^⏳\s*גל\s+\d+\s+—\s+לא התחיל/;
+export const isStarted = (task) => {
+  const s = String(task.status ?? "").trim();
+  return s !== "" && !NOT_STARTED.test(s);
+};
 
 /**
  * Every wave over its limit whose next wave has started:

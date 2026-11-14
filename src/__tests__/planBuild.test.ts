@@ -31,6 +31,7 @@ import {
   waveNumber,
   belowFloor,
   WIP_LIMIT,
+  isStarted,
   // @ts-expect-error — plain .mjs script without type declarations
 } from "../../scripts/plan/build.mjs";
 // @ts-expect-error — plain .mjs script without type declarations
@@ -409,5 +410,22 @@ describe("work-in-progress limit (plan W6.39)", () => {
     expect(cli("--wip-limit", "0", "--wip-strict").status).toBe(wipWarnings(p, { limit: 0 }).length ? 1 : 0);
     expect(cli("--wip-limit", "100000", "--wip-strict").status).toBe(0);
     expect(cli("--wip-limit", "x").status).toBe(1);
+  });
+});
+
+describe("work in progress: what counts as started (W10.G6)", () => {
+  it("a wave's placeholder status is not started; real work is", () => {
+    expect(isStarted({ status: "⏳ גל 10 — לא התחיל" })).toBe(false);
+    expect(isStarted({ status: "⏳ גל 11 — לא התחיל (מחכה ל-W10.Z1)" })).toBe(false);
+    expect(isStarted({ status: "" })).toBe(false);
+    expect(isStarted({})).toBe(false);
+    expect(isStarted({ status: "⏳ #618 — בעבודה" })).toBe(true);
+    expect(isStarted({ status: "✅ #1" })).toBe(true);
+    const wave = (n: number, tasks: object[]) => ({ title: `גל ${n} — x`, tasks });
+    const open = Array.from({ length: 6 }, (_, i) => ({ id: `W1.${i}`, status: "⏳ #1", verified: "built" }));
+    const placeholder = { phases: [wave(1, open), wave(2, [{ id: "W2.1", status: "⏳ גל 2 — לא התחיל" }])] };
+    expect(wipWarnings(placeholder)).toEqual([]);
+    const started = { phases: [wave(1, open), wave(2, [{ id: "W2.1", status: "⏳ #9 בעבודה" }])] };
+    expect(wipWarnings(started)).toHaveLength(1);
   });
 });
