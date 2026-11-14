@@ -12,7 +12,7 @@ export type { SyncProvider, StoredObject, PutCondition } from "./provider";
 export { memoryProvider, PreconditionFailedError, ProviderUnavailableError } from "./provider";
 export { vaultLocalFiles, memoryFiles, type LocalFiles } from "./localFiles";
 export { idbStateStore, memoryStateStore, type DeviceState, type FreshnessSource, type SyncStateStore } from "./state";
-export { dialogResolver, keepBothResolver, type ConflictResolver, type ConflictResolution } from "./conflict";
+export { dialogResolver, keepBothResolver, mergeFirst, type ConflictResolver, type ConflictResolution } from "./conflict";
 export { RollbackError } from "./manifest";
 export { PairingError } from "./pairing";
 export { WrongPassphraseError, UnsupportedProtocolError, PROTOCOL_VERSION } from "./header";

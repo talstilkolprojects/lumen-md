@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent } from "@testing-library/react";
 import { AiFab } from "../ui/AiFab";
 
-vi.mock("../i18n", () => ({ t: (k: string) => k }));
+vi.mock("../i18n", () => ({ registerEnglish: () => undefined, t: (k: string) => k }));
 vi.mock("../lib/logger", () => ({
   log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));

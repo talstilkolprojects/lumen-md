@@ -1,0 +1,121 @@
+<!doctype html>
+<!--
+  Plan W2.25: the Hebrew beta — what it is, and how to join.
+
+  Local-first and private by construction:
+  - no scripts or fonts from elsewhere, no analytics, no cookies;
+  - joining happens on GitHub Discussions (the person's own click, on
+    GitHub, with their own account): this page sends nothing;
+  - an optional e-mail list is a seam (`data-signup-endpoint` on <body>,
+    empty by default = hidden). The owner picks a service (see
+    launch/README.md); even then nothing is sent until the person ticks
+    the consent box and presses the button, and only the address goes.
+  - the only thing kept is in this browser: "you opened the join page".
+-->
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Lumen — בטא בעברית</title>
+    <meta name="description" content="Lumen: עורך פתקים בעברית, מקומי ופתוח. הצטרפו לבטא." />
+    <style>
+      :root {
+        --bg: #0c0f17;
+        --fg: #e8e8e8;
+        --muted: #a7adbd;
+        --accent: #9b85ff;
+        --card: #151a26;
+        --border: #262d3d;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #fbfbfd;
+          --fg: #14161c;
+          --muted: #4d5363;
+          --accent: #5b3fd6;
+          --card: #ffffff;
+          --border: #dfe2ea;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 17px/1.65 system-ui, -apple-system, "Segoe UI", Arial, "Noto Sans Hebrew", sans-serif;
+      }
+      main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+      header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+      h1 { font-size: clamp(28px, 6vw, 40px); line-height: 1.2; margin: 24px 0 8px; }
+      h2 { font-size: 22px; margin: 32px 0 8px; }
+      p, li { color: var(--fg); }
+      .lead { font-size: 19px; color: var(--muted); }
+      .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin: 12px 0; }
+      .pillars { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+      .pillars .card h3 { margin: 0 0 4px; font-size: 17px; }
+      .pillars .card p { margin: 0; color: var(--muted); font-size: 15px; }
+      a { color: var(--accent); }
+      .btn {
+        display: inline-block; padding: 10px 18px; border-radius: 8px; border: 1px solid var(--accent);
+        background: var(--accent); color: #fff; font: inherit; font-weight: 600; text-decoration: none; cursor: pointer;
+      }
+      .btn.secondary { background: transparent; color: var(--accent); }
+      .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+      .lang { background: transparent; border: 1px solid var(--border); color: var(--fg); border-radius: 6px; padding: 4px 10px; font: inherit; cursor: pointer; }
+      label { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; }
+      input[type="email"] { width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--fg); font: inherit; }
+      .small { font-size: 14px; color: var(--muted); }
+      [hidden] { display: none !important; }
+      :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    </style>
+  </head>
+  <body data-signup-endpoint="">
+    <main>
+      <header>
+        <strong>Lumen</strong>
+        <button type="button" class="lang" id="lang-toggle" data-i18n="langToggle">English</button>
+      </header>
+
+      <h1 data-i18n="title">עורך פתקים שנבנה לעברית</h1>
+      <p class="lead" data-i18n="lead">Lumen הוא עורך Markdown מקומי ופתוח: הפתקים שלכם נשארים אצלכם, העברית מתנהגת כמו שצריך, וכל פתק הוא קובץ רגיל שאפשר לקחת לכל מקום.</p>
+
+      <div class="pillars">
+        <div class="card"><h3 data-i18n="p1t">עברית קודם</h3><p data-i18n="p1">ממשק בעברית, כיוון לכל שורה, חיפוש שמבין תחיליות וניקוד.</p></div>
+        <div class="card"><h3 data-i18n="p2t">מקומי ופרטי</h3><p data-i18n="p2">הפתקים במכשיר שלכם. בלי חשבון, ועובד גם בלי אינטרנט.</p></div>
+        <div class="card"><h3 data-i18n="p3t">קבצים שלכם</h3><p data-i18n="p3">כל פתק הוא קובץ Markdown. ייצוא של הכול בלחיצה.</p></div>
+      </div>
+
+      <h2 data-i18n="betaTitle">מה זו הבטא</h2>
+      <p data-i18n="beta1">גרסה מוקדמת, עם הפיצ'רים החדשים לפני כולם. אנחנו מחפשים אנשים שכותבים בעברית — סטודנטים, חוקרים, כותבים ומפתחים — שישתמשו ב-Lumen כמה פעמים בשבוע ויספרו לנו מה עובד ומה לא.</p>
+      <ul>
+        <li data-i18n="beta2">זו בטא: צפו לפינות לא מלוטשות, ושמרו גיבוי.</li>
+        <li data-i18n="beta3">משוב נכנס ל-GitHub Discussions, בגלוי, וכל אחד יכול לקרוא ולהגיב.</li>
+        <li data-i18n="beta4">פעם בשבוע יש סקר קצר מרצון. הוא הדרך היחידה שבה אנחנו יודעים מי משתמש: האפליקציה לא סופרת אתכם.</li>
+      </ul>
+
+      <h2 data-i18n="joinTitle">הצטרפות</h2>
+      <div class="card">
+        <p data-i18n="join1">פותחים דיון בקטגוריית הבטא ב-GitHub. ממלאים טופס קצר (שם משתמש, מכשיר, במה אתם כותבים היום), וזהו. צריך חשבון GitHub.</p>
+        <p><a class="btn" id="join-github" href="https://github.com/talstilkol/lumen-md/discussions/new?category=beta" rel="noopener noreferrer" data-i18n="joinBtn">הצטרפות ב-GitHub Discussions</a></p>
+        <p class="small" data-i18n="join2">הקישור פותח את GitHub; הדף הזה לא שולח שום דבר.</p>
+      </div>
+
+      <div class="card" id="email-signup" hidden>
+        <p data-i18n="email1">אין לכם GitHub? השאירו כתובת מייל, ונשלח הודעה כשיש גרסת בטא חדשה. רק הכתובת נשלחת, ורק אחרי שאתם מסמנים את התיבה.</p>
+        <form id="email-form" novalidate>
+          <input type="email" id="email" autocomplete="email" required aria-label="Email" data-i18n-aria="emailLabel" />
+          <label><input type="checkbox" id="consent" /> <span data-i18n="consent">אני מסכים/ה שהכתובת תישמר כדי לקבל הודעות על הבטא, ושאפשר לבקש למחוק אותה בכל רגע.</span></label>
+          <button type="submit" class="btn" id="email-submit" disabled data-i18n="emailBtn">שמרו לי מקום</button>
+          <p class="small" role="status" aria-live="polite" id="email-status"></p>
+        </form>
+      </div>
+
+      <h2 data-i18n="tryTitle">רוצים קודם לנסות?</h2>
+      <p><a class="btn secondary" href="/" data-i18n="tryBtn">פתיחת Lumen בדפדפן</a></p>
+      <p class="small"><a href="https://github.com/talstilkol/lumen-md/blob/main/docs/src/content/docs/he/project/compare.md" data-i18n="compare">איך Lumen משתווה ל-Obsidian, ‏Notion ו-Google Docs — עם מקור לכל טענה</a> · <a href="https://github.com/talstilkol/lumen-md/blob/main/COMMUNITY.md" data-i18n="community">מדריך הקהילה וכללי ההתנהגות</a></p>
+    </main>
+
+    <script src="/beta.js" defer></script>
+  </body>
+</html>

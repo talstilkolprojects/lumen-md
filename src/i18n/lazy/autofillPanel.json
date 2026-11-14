@@ -1,0 +1,10 @@
+{
+  "autofill.approve": "Approve",
+  "autofill.approveAll": "Approve all ({n})",
+  "autofill.empty": "No proposals waiting",
+  "autofill.hint": "Nothing is written until you approve. A note that changed since is skipped.",
+  "autofill.reject": "Reject",
+  "autofill.stale": "{n} notes changed since the proposal and were not written",
+  "autofill.title": "Property proposals",
+  "autofill.written": "Properties written to {n} notes"
+}

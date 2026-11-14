@@ -4,7 +4,7 @@
  */
 
 import { createRoot, type Root } from "react-dom/client";
-import { SyncPanel, takePendingOAuth, connectError } from "./SyncPanel";
+import { SyncPanel, takePendingOAuth, describeConnectError } from "./SyncPanel";
 import { syncSession } from "./session";
 
 let root: Root | null = null;
@@ -44,6 +44,6 @@ export async function finishOAuthReturn(kind: "dropbox" | "gdrive", code: string
   if (pending?.kind === kind) {
     await syncSession()
       .connect(pending, null)
-      .catch((e) => syncSession().reportError(connectError(e, pending)));
+      .catch((e) => syncSession().reportError(describeConnectError(e, pending)));
   }
 }

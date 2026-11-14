@@ -55,13 +55,41 @@ folder (`Library/`, or `ספרייה/` when Lumen is in Hebrew).
 
 | Site | Folder | Extra |
 |---|---|---|
-| Wikipedia (any language) | `Library/Wikipedia` | `license: CC BY-SA 4.0` |
-| ynet | `Library/ynet` | `tags: [clip, news]` |
-| Haaretz | `Library/Haaretz` | `tags: [clip, news]` |
+| Wikipedia (any language) | `Library/Wikipedia` | `license: CC BY-SA 4.0`, `summary` |
+| ynet | `Library/ynet` | `summary`, `topics`, `tags: [clip, news]` |
+| Haaretz | `Library/Haaretz` | `summary`, `topics`, `tags: [clip, news]` |
+| YouTube | `Library/YouTube` | `channel`, `published`, `summary`; the transcript when its panel is open |
+| arXiv | `Library/arXiv` | `authors`, `arxiv`, `published`, `pdf`, `contribution`; the abstract |
+| GitHub repositories | `Library/GitHub` | `description`, `purpose` |
 | Pages marked as a schema.org `Recipe` | `Library/Recipes` | `tags: [clip, recipe]` |
 
 A template is picked by its triggers: an address prefix, a `/regular expression/`
 or `schema:@Type`. The first match wins.
+
+Besides `{{title}}`, `{{url}}`, `{{content}}` and the rest, a template can read
+the page with `{{meta:name}}` (a `<meta>` tag, by name, property or itemprop;
+several tags of one name are joined) and `{{selector:css}}` (the text of the
+elements a CSS selector picks).
+
+## Interpreter: fields a local model fills in
+
+A template can ask questions about the page: `{{"a one-sentence summary"}}`,
+`{{"three key topics"|lower}}`. When a clip uses such a template, Lumen asks a
+**model on your own device** — Ollama on this computer or your local network,
+or the in-browser model if it is already loaded — and writes the answers into
+the note. There is no cloud route: under any AI policy, the interpreter never
+sends a page to an AI provider. With no local model running, those fields are
+left out and the clip is saved as usual.
+
+- The model reads only what the template points at (its `context` selectors:
+  the abstract on arXiv, the lead section on Wikipedia, the transcript on
+  YouTube), cut to about 6 000 characters, so a small model's window is
+  enough. No `OLLAMA_ORIGINS` or context-size setting is needed in the
+  desktop app.
+- All questions of a template go in one request.
+- The page text passes the prompt-injection guard before the model sees it,
+  marked as outside data, and every answer is checked again before it is
+  written into the note.
 
 ## Safety
 

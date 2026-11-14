@@ -11,7 +11,8 @@ import { test, expect, type Page } from "@playwright/test";
  *   2. raw HTML keeps only the classes the Markdown pipeline itself emits
  *      (a note cannot borrow the app's styling to cover it);
  *   3. an <iframe> without a scheme (it would load the app itself, with
- *      allow-same-origin) is removed;
+ *      allow-same-origin) is removed; an https one waits for a click and
+ *      then loads in the content frame (plan W4.15);
  *   4. a note with every kind of block causes 0 CSP / Trusted Types
  *      violations — against a build, under the production header policy;
  *   5. a key entered in the UI is nowhere in plain text in the browser's
@@ -175,7 +176,7 @@ test("raw HTML keeps only Lumen's own classes; styling cannot cover the app", as
   }
 });
 
-test("an iframe without a scheme is removed; an https embed is sandboxed", async ({ page }) => {
+test("an iframe without a scheme is removed; an https embed waits for a click, then loads in the content frame", async ({ page }) => {
   const traffic = await watchFakeHosts(page);
   await page.goto("/");
   await writeNote(
@@ -194,20 +195,32 @@ test("an iframe without a scheme is removed; an https embed is sandboxed", async
     ].join("\n"),
   );
   await expect(preview(page).locator("text=after")).toBeVisible({ timeout: 10_000 });
+  // Plan W4.15: the one https embed is a click-to-load placeholder; nothing is framed yet.
+  const gate = preview(page).locator('[data-remote-frame="frames.lumen-e2e.test"]');
+  await expect(gate).toHaveCount(1);
+  await expect(preview(page).locator("iframe")).toHaveCount(0);
+  expect(traffic.left()).toEqual([]);
+  await gate.getByRole("button", { name: "Load" }).click();
+  // Loaded: the content frame (same origin, its own policy), carrying the embed in its #fragment.
   const frames = preview(page).locator("iframe");
   await expect(frames).toHaveCount(1);
-  await expect(frames.first()).toHaveAttribute("src", "https://frames.lumen-e2e.test/embed");
-  await expect(frames.first()).toHaveAttribute("sandbox", "allow-scripts allow-popups allow-presentation allow-same-origin");
-  await expect(frames.first()).toHaveAttribute("referrerpolicy", "no-referrer");
-  // No frame shows the app (or anything on its origin).
-  const origins = await page.evaluate(() => [...document.querySelectorAll(".prose-lumen iframe")].map((f) => new URL((f as HTMLIFrameElement).src).origin));
-  expect(origins).not.toContain(new URL(page.url()).origin);
+  const frame = frames.first();
+  await expect(frame).toHaveAttribute("data-content-frame", "embed");
+  await expect(frame).toHaveAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-presentation allow-forms");
+  const req = await frame.evaluate((f) => {
+    const src = (f as HTMLIFrameElement).getAttribute("src") ?? "";
+    return { path: src.split("#")[0], req: JSON.parse(decodeURIComponent(src.split("#")[1] ?? "null")) as { kind: string; src: string; referrerPolicy: string } };
+  });
+  expect(req.path).toBe("/content-frame.html");
+  expect(req.req).toMatchObject({ kind: "embed", src: "https://frames.lumen-e2e.test/embed", referrerPolicy: "no-referrer" });
+  // Inside it, the embed's frame exists, but the host is not one of the content
+  // frame's providers (frame-src): it is refused there and never reached.
+  const inner = page.frameLocator('.prose-lumen iframe[data-content-frame="embed"]').locator("iframe");
+  await expect(inner).toHaveAttribute("src", "https://frames.lumen-e2e.test/embed");
+  await expect(inner).toHaveAttribute("referrerpolicy", "no-referrer");
+  await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+  expect(traffic.left()).toEqual([]);
   expect(traffic.left().filter((u) => u.includes(EVIL))).toEqual([]);
-  // The embed host is not in frame-src: the page's CSP refuses it, and the
-  // violation listener the CSP test relies on sees that.
-  await expect
-    .poll(() => page.evaluate(() => (window as unknown as { __cspViolations?: string[] }).__cspViolations ?? []))
-    .toContainEqual(expect.stringMatching(/^frame-src https:\/\/frames\.lumen-e2e\.test/));
 });
 
 /**

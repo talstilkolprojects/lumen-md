@@ -20,7 +20,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 serde_json = "1"
 serde = { version = "1", features = ["derive"] }
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-dialog = "2"
 # Desktop updates (plan 11.5): checked and installed from Rust commands
 # (`update_check`, `update_install`); signed with Tal's updater key (15.7).
@@ -32,6 +32,14 @@ lumen-vault = { path = "vault" }
 # Web clipper v2 (plan 4.15.2): the extension hands clips to the desktop app
 # as lumen://clip?data=…; a second launch forwards the link to the running one.
 tauri-plugin-deep-link = "2"
+# Plan W3.9: windows, tray, file associations and `lumen://` links. The
+# decisions are in this std-only crate (tested offline); src/shell.rs is the glue.
+lumen-desktop = { path = "desktop" }
+tauri-plugin-deep-link = "2"
+
+[target.'cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))'.dependencies]
+# One instance: a second launch forwards its files and links (Windows, Linux).
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 
 # OS keychain for API keys and tokens (T36): Keychain on macOS, Credential
 # Manager on Windows, in its own crate (keychain/) so CI tests it on both

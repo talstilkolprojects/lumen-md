@@ -1,0 +1,27 @@
+# Tasks — from the template Task
+filters:
+  and:
+    - 'type == "task"'
+properties:
+  file.name:
+    displayName: "Task"
+  note.project:
+    displayName: "Project"
+  note.priority:
+    displayName: "Priority"
+  note.due:
+    displayName: "Due"
+  note.done:
+    displayName: "Done"
+views:
+  - type: table
+    name: "Tasks"
+    order:
+      - file.name
+      - note.project
+      - note.priority
+      - note.due
+      - note.done
+    sort:
+      - property: note.due
+        direction: DESC

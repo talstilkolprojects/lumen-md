@@ -28,6 +28,9 @@ import {
   type PropertyType,
   type PropertyValue,
 } from "../properties/frontmatter";
+import "./propertiesPanelStrings";
+import { HelpButton } from "./HelpButton";
+import { explainError } from "../lib/userError";
 
 interface Props {
   open: boolean;
@@ -357,7 +360,8 @@ export function PropertiesPanel({ open, onClose, text, applyEdit }: Props) {
         const files = indexedFiles();
         if (cancelled) return;
         setVault({
-          suggestions: collectPropertySuggestions(files),
+          // W2.22: the frontmatter block the index keeps is all the suggestions read.
+          suggestions: collectPropertySuggestions(files.map((f) => ({ path: f.path, content: f.frontmatter ?? "" }))),
           notes: files.filter((f) => /\.(md|markdown)$/i.test(f.path)).map((f) => f.name.replace(/\.(md|markdown)$/i, "")),
         });
       } catch {
@@ -386,7 +390,7 @@ export function PropertiesPanel({ open, onClose, text, applyEdit }: Props) {
       try {
         applyEdit(fn);
       } catch (e) {
-        toast.error(t("props.writeFailed", { error: e instanceof Error ? e.message : String(e) }));
+        toast.error(t("props.writeFailed", { error: explainError(e) }));
       }
     },
     [applyEdit],
@@ -448,6 +452,7 @@ export function PropertiesPanel({ open, onClose, text, applyEdit }: Props) {
       >
         <SlidersHorizontal size={14} aria-hidden />
         <span style={{ fontWeight: 600, fontSize: 13 }}>{t("props.title")}</span>
+        <HelpButton topic="workspace/properties" />
         <button type="button" onClick={onClose} aria-label={t("props.close")} title={t("props.close")} style={{ ...iconBtn, marginInlineStart: "auto" }}>
           <X size={14} />
         </button>
@@ -455,11 +460,12 @@ export function PropertiesPanel({ open, onClose, text, applyEdit }: Props) {
 
       <div style={{ flex: 1, overflowY: "auto", paddingBlock: 8, paddingInline: 12 }}>
         {parsed.status === "invalid" && (
-          <div role="alert" style={{ fontSize: 12, color: "hsl(0 70% 55%)", lineHeight: 1.5, paddingBlockEnd: 8 }}>
+          <div role="alert" style={{ fontSize: 12, color: "hsl(var(--danger))", lineHeight: 1.5, paddingBlockEnd: 8 }}>
             {t("props.invalid", { error: parsed.error ?? "" })}
           </div>
         )}
         {parsed.status !== "invalid" && parsed.properties.length === 0 && (
+          // empty-action: the "Add property" row at the bottom of this panel
           <div style={{ fontSize: 12, color: "hsl(var(--fg-muted))", paddingBlockEnd: 8 }}>{t("props.empty")}</div>
         )}
         {parsed.properties.map((p) => {

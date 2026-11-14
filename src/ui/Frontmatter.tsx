@@ -1,5 +1,20 @@
 import { t } from "../i18n";
 
+import { lazy, Suspense } from "react";
+
+// The Hebrew date and a deadline's working-day note (plan W5.15), loaded only for date values.
+const DateHint = lazy(() => import("../daily/DateHint"));
+const looksLikeDate = (v: unknown) => v instanceof Date || (typeof v === "string" && /^\d{4}-\d{2}-\d{2}(?:$|[T ])/.test(v.trim()));
+
+function WithDate({ name, value }: { name: string; value: unknown }) {
+  if (!looksLikeDate(value)) return null;
+  return (
+    <Suspense fallback={null}>
+      <DateHint name={name} value={value} />
+    </Suspense>
+  );
+}
+
 interface Props {
   data: Record<string, unknown> | null;
 }
@@ -81,7 +96,12 @@ export function Frontmatter({ data }: Props) {
             </span>
           </span>
         )}
-        {date && <span>{date}</span>}
+        {date && (
+          <span>
+            {date}
+            <WithDate name="date" value={data.date} />
+          </span>
+        )}
         {tags.length > 0 && (
           <span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap" }}>
             {tags.map((t, i) => (
@@ -108,6 +128,7 @@ export function Frontmatter({ data }: Props) {
           <span key={k}>
             <span>{k}:</span>{" "}
             <span style={{ color: "hsl(var(--fg))" }}>{stringOf(v)}</span>
+            <WithDate name={k} value={v} />
           </span>
         ))}
       </div>

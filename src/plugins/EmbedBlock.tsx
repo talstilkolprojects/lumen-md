@@ -1,4 +1,20 @@
+/**
+ * ```embed block: a pasted link becomes the provider's player (plan W4.15).
+ *
+ * Nothing loads until the user allows the provider's host ("Load" / "Always
+ * allow", the same choice as for images, src/lib/remoteImages.ts); then the
+ * player renders inside the content frame (src/lib/contentFrame.ts), whose
+ * policy frames these providers — the app's own frames nothing but itself.
+ * A Gist is GitHub's embed script, run in an opaque-origin content frame. A
+ * link to any other site stays a link.
+ */
+import "../renderer/contentFrameStrings";
+import { lazy, Suspense } from "react";
 import { t } from "../i18n";
+import { remoteImageHost, remoteImagesUnavailable } from "../lib/remoteImages";
+
+// The gate and the content frame load with the first embed that is a player.
+const RemoteFrameGate = lazy(() => import("../renderer/RemoteFrame").then((m) => ({ default: m.RemoteFrameGate })));
 
 interface Props {
   source: string;
@@ -10,6 +26,10 @@ interface Embed {
   paddingPct: number;
   title: string;
   allow: string;
+  /** A GitHub Gist: its embed script, not a frame. */
+  gist?: { user: string; id: string };
+  /** Not a provider the content frame may frame: shown as a link. */
+  generic?: boolean;
 }
 
 const ALLOW =
@@ -211,15 +231,16 @@ function parse(line: string): Embed | null {
       allow: ALLOW,
     };
   }
-  // GitHub Gist (renders the gist HTML in an iframe via an HTML wrapper page).
-  m = url.match(/gist\.github\.com\/([^/]+)\/([\w]+)/);
+  // GitHub Gist: its embed script (document.write) runs in an opaque-origin
+  // content frame — the only page whose policy allows gist.github.com.
+  m = url.match(/gist\.github\.com\/([\w-]+)\/(\w+)/);
   if (m) {
-    const html = `<html><body><script src="https://gist.github.com/${m[1]}/${m[2]}.js"></script></body></html>`;
     return {
-      src: `data:text/html;base64,${btoa(html)}`,
+      src: `https://gist.github.com/${m[1]}/${m[2]}`,
       paddingPct: 80,
       title: "GitHub Gist",
       allow: ALLOW,
+      gist: { user: m[1], id: m[2] },
     };
   }
   // SoundCloud
@@ -231,13 +252,14 @@ function parse(line: string): Embed | null {
       allow: "autoplay; encrypted-media",
     };
   }
-  // Generic: just iframe the URL.
+  // Any other site: no policy frames it, so a link.
   if (/^https?:\/\//i.test(url)) {
     return {
       src: url,
       paddingPct: 60,
       title: "Embed",
       allow: ALLOW,
+      generic: true,
     };
   }
   return null;
@@ -271,32 +293,34 @@ export default function EmbedBlock({ source }: Props) {
           {t("block.embed.open")}
         </a>
       </div>
-      <div
-        style={{
-          position: "relative",
-          paddingBottom: `${embed.paddingPct}%`,
-          height: 0,
-          overflow: "hidden",
-        }}
-      >
-        <iframe
-          src={embed.src}
-          title={embed.title}
-          loading="lazy"
-          allow={embed.allow}
-          allowFullScreen
-          referrerPolicy="strict-origin-when-cross-origin"
-          sandbox="allow-scripts allow-same-origin allow-popups allow-presentation allow-forms"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            border: 0,
-          }}
-        />
-      </div>
+      <EmbedBody embed={embed} />
     </div>
+  );
+}
+
+const notice = { padding: "0.75rem 1rem", fontSize: 13, color: "hsl(var(--fg-muted))" } as const;
+
+function EmbedBody({ embed }: { embed: Embed }) {
+  const host = remoteImageHost(embed.src) ?? "";
+  if (embed.generic) {
+    return <div style={notice} dir="auto">{t("block.embed.notEmbeddable", { host })}</div>;
+  }
+  if (embed.gist) {
+    // The desktop app's policy runs no script from gist.github.com.
+    if (remoteImagesUnavailable()) return <div style={notice} dir="auto">{t("block.embed.gistDesktop")}</div>;
+    return (
+      <Suspense fallback={null}>
+        <RemoteFrameGate gateUrl={embed.src} request={{ kind: "gist", ...embed.gist }} />
+      </Suspense>
+    );
+  }
+  return (
+    <Suspense fallback={null}>
+      <RemoteFrameGate
+        gateUrl={embed.src}
+        request={{ kind: "embed", src: embed.src, title: embed.title, allow: embed.allow, referrerPolicy: "strict-origin-when-cross-origin" }}
+        box={{ position: "relative", width: "100%", aspectRatio: `100 / ${embed.paddingPct}`, overflow: "hidden" }}
+      />
+    </Suspense>
   );
 }

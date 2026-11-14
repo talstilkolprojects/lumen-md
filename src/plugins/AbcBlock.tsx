@@ -37,6 +37,7 @@ export default function AbcBlock({ source }: Props) {
           paddingright: 10,
         });
       } catch (e) {
+        if (!cancelled) // raw-error-allow: the syntax error of the person's own diagram source, with its line
         if (!cancelled) setError((e as Error).message);
       }
     })();

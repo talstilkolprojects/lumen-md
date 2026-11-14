@@ -28,6 +28,18 @@ Dialogs are announced with their names (`role="dialog"`, `aria-modal`, a
 label). The editor has a label, the palette is a combobox with a listbox,
 and the sidebar edge reports its width (`aria-valuenow`).
 
+In the editor, moving the cursor onto a heading, a task, a code fence or a
+quote speaks what it is ("Heading 2: Plan", "Task, done"), in the interface
+language. A new suggestion and long AI work (when it starts and when it
+ends) are spoken too. From the palette:
+
+- **Announce cursor position**: the line, the column and the heading above.
+- **Screen reader announcements**: switch between headings and structure
+  (the default), every line, and off.
+
+See the [accessibility statement](/editor/accessibility-statement/) and the
+[screen reader protocol](/editor/screen-reader-protocol/).
+
 ## Contrast
 
 Text meets WCAG AA (at least 4.5:1) in light and dark mode: the accent

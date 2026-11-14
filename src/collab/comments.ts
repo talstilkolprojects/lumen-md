@@ -24,6 +24,12 @@
  * The store API is intentionally narrow — `addComment` / `resolve` /
  * `reply` / `subscribe`. UI lives in a separate `CommentsPanel.tsx`
  * (sidebar + per-comment thread expansion).
+ *
+ * Plan W1.19: comments and replies carry the @mentions in their text
+ * (`mentions`), and in a room with share links the map lives in the room's
+ * comments document (`CollabSession.commentsDoc`) while the anchors still
+ * point into the note's text — so every function takes the document that
+ * holds the map, and `resolveAnchor` the note's.
  */
 
 import * as Y from "yjs";
@@ -35,6 +41,8 @@ export interface Reply {
   authorColor: string;
   createdAt: number;
   body: string;
+  /** @mentions in `body` (plan W1.19); absent on replies written before. */
+  mentions?: string[];
 }
 
 export interface Comment {
@@ -48,18 +56,48 @@ export interface Comment {
   anchorStart: string;
   anchorEnd: string;
   replies: Reply[];
+  /** @mentions in `body` (plan W1.19); absent on comments written before. */
+  mentions?: string[];
+}
+
+/**
+ * The names mentioned in a text: `@` followed by letters (Hebrew included,
+ * niqqud too), digits, `_`, `.` or `-`, at the start or after a space or an
+ * opening bracket — so an e-mail address is not a mention. Unique, in order.
+ */
+export function extractMentions(body: string): string[] {
+  const out: string[] = [];
+  // After a space, an opening bracket or quote, or a Hebrew prefix ("ו-@דנה", maqaf too).
+  for (const m of body.matchAll(/(?:^|[\s(\[{"'״׳\-־])@([\p{L}\p{M}\p{N}_.-]{1,40})/gu)) {
+    const name = m[1].replace(/[.-]+$/, "");
+    if (name && !out.includes(name)) out.push(name);
+  }
+  return out;
+}
+
+/** Everyone mentioned in a thread (the comment and its replies). */
+export function threadMentions(c: Comment): string[] {
+  const out: string[] = [];
+  for (const n of [...(c.mentions ?? extractMentions(c.body)), ...c.replies.flatMap((r) => r.mentions ?? extractMentions(r.body))]) if (!out.includes(n)) out.push(n);
+  return out;
+}
+
+/** Threads that mention `name` (case-insensitive), newest first. */
+export function commentsMentioning(doc: Y.Doc, name: string): Comment[] {
+  const n = name.toLocaleLowerCase();
+  return listComments(doc).filter((c) => threadMentions(c).some((m) => m.toLocaleLowerCase() === n));
 }
 
 const MAP_KEY = "lumen-comments";
 
-function encodeRel(rel: Y.RelativePosition): string {
+export function encodeRel(rel: Y.RelativePosition): string {
   const bytes = Y.encodeRelativePosition(rel);
   let bin = "";
   for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
   return btoa(bin);
 }
 
-function decodeRel(s: string): Y.RelativePosition | null {
+export function decodeRel(s: string): Y.RelativePosition | null {
   try {
     const bin = atob(s);
     const bytes = new Uint8Array(bin.length);
@@ -89,8 +127,11 @@ export function addComment(
   author: { name: string; color: string },
 ): Comment {
   const map = getCommentsMap(doc);
+  // The start sticks to the first commented character and the end to the
+  // last one (assoc -1), so text typed right before or right after the
+  // range stays outside it (plan W1.19).
   const relStart = Y.createRelativePositionFromTypeIndex(ytext, from);
-  const relEnd = Y.createRelativePositionFromTypeIndex(ytext, to);
+  const relEnd = Y.createRelativePositionFromTypeIndex(ytext, to, -1);
   const comment: Comment = {
     id: randomId(8),
     authorName: author.name,
@@ -101,6 +142,7 @@ export function addComment(
     anchorStart: encodeRel(relStart),
     anchorEnd: encodeRel(relEnd),
     replies: [],
+    mentions: extractMentions(body),
   };
   map.set(comment.id, comment);
   return comment;
@@ -123,6 +165,7 @@ export function replyToComment(
     authorColor: author.color,
     createdAt: Date.now(),
     body,
+    mentions: extractMentions(body),
   };
   map.set(commentId, { ...c, replies: [...c.replies, reply] });
 }

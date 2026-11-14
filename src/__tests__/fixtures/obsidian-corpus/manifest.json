@@ -1,0 +1,1580 @@
+{
+  "about": "Real Obsidian vaults (plan W4.30). Files are byte-for-byte copies at the pinned commit; regenerate with `node scripts/obsidian-corpus.mjs --fetch`.",
+  "vaults": [
+    {
+      "id": "kepano-obsidian",
+      "repo": "https://github.com/kepano/kepano-obsidian",
+      "commit": "473697347a0eaac790a6596229c741b3915f3b77",
+      "licence": "MIT",
+      "licenceFile": "LICENSE",
+      "files": [
+        {
+          "path": "Categories/Albums.md",
+          "sha256": "73e4e7af5102d45ca7383f9461274d837e77b1fd17433577d1a03f8d3ee88ec9"
+        },
+        {
+          "path": "Categories/Board games.md",
+          "sha256": "b1095ff3909e8c0d1da60a9bedf3f9a21aaa13fb404a92afb660a4914268faf6"
+        },
+        {
+          "path": "Categories/Books.md",
+          "sha256": "583da93f3b9f3b2fc94dd689db21576b90d38ca66ab3b44c7944a3d2b4066d52"
+        },
+        {
+          "path": "Categories/Clippings.md",
+          "sha256": "64347808670cd4d9ca3f2843ea30967f935759cefd1b87b00ec1aab91d96a4c8"
+        },
+        {
+          "path": "Categories/Companies.md",
+          "sha256": "1925b9ac6d494c874eea90ee48fa61a83dd6172e2ffbeb264655749abf02fe5c"
+        },
+        {
+          "path": "Categories/Events.md",
+          "sha256": "51b7b5c55546dcbcf9750c19d63b831cc1f406d27691e2c8c52d4d2788ffd997"
+        },
+        {
+          "path": "Categories/Evergreen.md",
+          "sha256": "6092012d25c3a9d94dc4112d3727f7599e8b7af492aa7ef5ae89c95ef3f1deb5"
+        },
+        {
+          "path": "Categories/Games.md",
+          "sha256": "975913af6191d02dd8ad5786d0539531cd45c0ce7556dbc097437fce84de67b2"
+        },
+        {
+          "path": "Categories/Journal.md",
+          "sha256": "76e4dd3a8caf29f049103e18986b9a5d03181a772f6737b29ab78aabbfd1ac9f"
+        },
+        {
+          "path": "Categories/Meetings.md",
+          "sha256": "44ba7614811ff4b6c13ae1fffeb4b197ec32f98473807f168050b7f63fcacdcb"
+        },
+        {
+          "path": "Categories/Movies.md",
+          "sha256": "e9c5df9854aa572fa115472b084b81996019a9b52c0be71dabcb5d1ad01bcdc5"
+        },
+        {
+          "path": "Categories/People.md",
+          "sha256": "6ee3222d37dbef01408f0dfc2b30688d3856f3579602da97026bb415b3ac0489"
+        },
+        {
+          "path": "Categories/Places.md",
+          "sha256": "825a8a33f52efddfbe54e6550e7090f2d08ffdfbba2ecbe314e049d7b8a01455"
+        },
+        {
+          "path": "Categories/Podcast episodes.md",
+          "sha256": "8299e248e13744a671d925267c5b6106aad63766a02312845e6fe2f47ef81792"
+        },
+        {
+          "path": "Categories/Podcasts.md",
+          "sha256": "e5ed93dbda40e642c34c152f76585af10ab10e4725ed3881a5c45db45a1d7149"
+        },
+        {
+          "path": "Categories/Posts.md",
+          "sha256": "9ccf04bb1e0530b9fcd8068efd38ceff786fd12a71efec334fb60c86d3225ca4"
+        },
+        {
+          "path": "Categories/Products.md",
+          "sha256": "d5d8341a31063ef5f0ea89a4f0beb245ec29e537267bc6a1402098b26bbee7ca"
+        },
+        {
+          "path": "Categories/Projects.md",
+          "sha256": "590b289d1528e5c161eba1bcaeb50a45b0074508ea04609075ed7569ecabbbd9"
+        },
+        {
+          "path": "Categories/Recipes.md",
+          "sha256": "386e494b91a75eb57b13fee22512f43910f9c3549362bc0d0ac2cf1f0b94f325"
+        },
+        {
+          "path": "Categories/Shows.md",
+          "sha256": "e3521e1add7e7cfe40741919a6ecd877364e9f1be0ee22413e964fdba6751a34"
+        },
+        {
+          "path": "Categories/Trips.md",
+          "sha256": "2c690e9ba9381bfdc3e85aa4e10e9e0781b89870076479be6749041f18f4b7ea"
+        },
+        {
+          "path": "Clippings/68 Bits of Unsolicited Advice.md",
+          "sha256": "51da5f5c7a8e3f5ec71092eabb64cb87155ea27bde772a9826df485b0b440724"
+        },
+        {
+          "path": "Clippings/Buy wisely.md",
+          "sha256": "c7cdf6f4ed01fd720dd8c4434c1ff27630284c007114001593fde06cd5b4a084"
+        },
+        {
+          "path": "Clippings/In good hands.md",
+          "sha256": "16a577a6a519aace623efeaf7789aa4900da84fecc1c9fdcb75b0ab131e716ba"
+        },
+        {
+          "path": "Daily/2023-09-12.md",
+          "sha256": "3f2295f82f899ef84a8af5b18fe40a6a195bd47357c1d629e52e74e6bd933153"
+        },
+        {
+          "path": "Daily/2023-09-30.md",
+          "sha256": "8ee7e00283740f50fe2ebe30a50623fb8108088b4204aec3855e274d9e205b70"
+        },
+        {
+          "path": "Notes/2023 Japan Trip.md",
+          "sha256": "6a01f86fc11f26cc0f27cdaff7aa2b88e6def79e6c802842d48cb7f4cf26d2c3"
+        },
+        {
+          "path": "Notes/2023-09-12 Meeting with Steph.md",
+          "sha256": "01808777b6825259a64421390bf6c1697d4e04eefa80a437c587b005180fbb66"
+        },
+        {
+          "path": "Notes/Evergreen notes turn ideas into objects that you can manipulate.md",
+          "sha256": "c98cf2bac28cca87cb19d1e1fef7567d92fb067fd12f5643a38dbad478fb7e72"
+        },
+        {
+          "path": "Notes/Minimal Theme.md",
+          "sha256": "0d58b897e5e60fcfa1871b92d1abf233095722be621099e339794a9d1242e604"
+        },
+        {
+          "path": "Notes/Product usage analysis.md",
+          "sha256": "666b58aed01ec734d255b1b55c1ffcee21457e5761c9b3e029e5a4a98954b9a8"
+        },
+        {
+          "path": "References/Bass on Top.md",
+          "sha256": "ccefb77612144862868b0780682e5444d3c6f0921d9b18781ef23358f5747a71"
+        },
+        {
+          "path": "References/Blade Runner.md",
+          "sha256": "0772bfde08de9c705903fb976e29b606b9f6295d4450d97f26f16045a6482090"
+        },
+        {
+          "path": "References/Brown butter nectarine tart.md",
+          "sha256": "374a97cea251da6c26251184c57e6b0dc2ba30a930ff838431b9c49ba9b1ce1f"
+        },
+        {
+          "path": "References/Catan.md",
+          "sha256": "943dbf8813c91c4b1e5c2aac762c1f2dd3ad09d7b36fa71126add9a29a45fce5"
+        },
+        {
+          "path": "References/Fushimi Inari.md",
+          "sha256": "af8a72954fbd1662ee88166c58df1127d5e25403e7c475c59cff89a62124e5c6"
+        },
+        {
+          "path": "References/Futurama.md",
+          "sha256": "09a4e5f6b634f37e4abd0894f9a2c8b449fb756a5a70d562dedfd06b5049fcc9"
+        },
+        {
+          "path": "References/Jazz.md",
+          "sha256": "c5112b14d827141396198ad64c9150907f8f5e5f4d2e88807ecc37061277a852"
+        },
+        {
+          "path": "References/Kevin Kelly.md",
+          "sha256": "f90290c27be36d66b515ee1f4cc71464cbdef97f8079d1eff6b31f67c8d06222"
+        },
+        {
+          "path": "References/Kyoto.md",
+          "sha256": "a5f90abc68b09168c15be2296754a828b6968a5e70b4fbb01ba6667fb986f22b"
+        },
+        {
+          "path": "References/Obsidian.md",
+          "sha256": "277d3406c42dba9c45fca72cd0e62c741111efee78c378625e06dfe7bd3db11f"
+        },
+        {
+          "path": "References/Out of Control.md",
+          "sha256": "b5dfcd970cb0c8849b71e74e7cb905ee10a00a8b93cdeca0671829b6e43d38ce"
+        },
+        {
+          "path": "References/Parks.md",
+          "sha256": "7e2540df343e22fcd2eeb2dc7f737a222940a3823f3d2b5fb3331ab8c5068378"
+        },
+        {
+          "path": "References/Paul Chambers.md",
+          "sha256": "577e30263bb07f3038fac900ae2f0d75423cf9c4444c83f467108c9241826d49"
+        },
+        {
+          "path": "References/Sci-fi.md",
+          "sha256": "225d618d8489efa952c3ecde5d50b9a29d3394c82b283318454612febcc176da"
+        },
+        {
+          "path": "References/Steph Ango.md",
+          "sha256": "09a841d9c8cf91f7e73d6d4ac7794dd79de7a03230885eaafaff4126d36683c3"
+        },
+        {
+          "path": "References/The Legend of Zelda Breath of the Wild.md",
+          "sha256": "0c7bca8becc5ecdac0f58e6a38b4488e0f3833f48a6e67abab94b075206177e3"
+        },
+        {
+          "path": "References/The Machine Stops.md",
+          "sha256": "3191ec2931b7957ba8bc00d4fe3df7d552bef688deccff15b5c1793c7cef863c"
+        },
+        {
+          "path": "References/Well Made 145 Kevin Kelly.md",
+          "sha256": "eadcab50e1860656dcb9d02917f97a7c7314e7fc3ca64b189d61582908c743ab"
+        },
+        {
+          "path": "References/Well Made.md",
+          "sha256": "5c20d487686e97b1d87db49a80b6dc19ad3f772c49d9b05ef758e92e6987e0dc"
+        },
+        {
+          "path": "Templates/Actor Template.md",
+          "sha256": "ff60bfe240ec64ae310e1a7a0212cef3557cac51a7c640751e5a4468c6d5c5aa"
+        },
+        {
+          "path": "Templates/Album Template.md",
+          "sha256": "977fb00635a822ebbf4d9411d77e99745d839bab697d3fa45648e5b8486dfe11"
+        },
+        {
+          "path": "Templates/App Template.md",
+          "sha256": "b69ea5325a3d129f0aeafd756d099cb8a21ae29f9c764ef4f368d5092e1b1f5b"
+        },
+        {
+          "path": "Templates/Author Template.md",
+          "sha256": "7c2a6c20399590be7f6dd76eff940e791da6d4f6ab1f655340a00f32dbc7aaff"
+        },
+        {
+          "path": "Templates/Bases/Albums.base",
+          "sha256": "15e488aa1e03a23fafa6f80eef44067f0a3ba89b755598d2cd9871b1f0129e5f"
+        },
+        {
+          "path": "Templates/Bases/Attachments.base",
+          "sha256": "0465197b4060af2dee4f0e1450983dabf288464af3e0be9996b36d72e2dbf94f"
+        },
+        {
+          "path": "Templates/Bases/Backlinks.base",
+          "sha256": "0f54c99e6d1be1a0d7eb125f21a4af8adcae21a259cd3ec75a4cc04428c7d58e"
+        },
+        {
+          "path": "Templates/Bases/Board games.base",
+          "sha256": "7221e891256a4d27c498fda79c5f2acd624bd0119498325d8a53889f55fbbff8"
+        },
+        {
+          "path": "Templates/Bases/Books.base",
+          "sha256": "375dfc5d3114e29d5f6254f82391c311403a9af83221d50a12a64b38a9df4a40"
+        },
+        {
+          "path": "Templates/Bases/Clippings.base",
+          "sha256": "dba7032c7b4804a5f2d77e9dbd9a11dd764312d3de5bc404eda4f376e68dae6e"
+        },
+        {
+          "path": "Templates/Bases/Companies.base",
+          "sha256": "8f036df122a684e4f27345993fb860d5291cc3985f1b81555a296ca8da901770"
+        },
+        {
+          "path": "Templates/Bases/Daily.base",
+          "sha256": "feabe6fb8ed70eef74d1f0b71d8afaaff21dda810908d8a2c09e602fe56b0047"
+        },
+        {
+          "path": "Templates/Bases/Events.base",
+          "sha256": "a670609e459b4f8c5df163432f6f956b2b8c83c498eb6359021c337220fd850c"
+        },
+        {
+          "path": "Templates/Bases/Evergreen.base",
+          "sha256": "09dbab9144b78f5b796765bec8cfe4cb25e43d1ebec331b16b1008ffc8a09fe3"
+        },
+        {
+          "path": "Templates/Bases/Everything.base",
+          "sha256": "6509ce541bfbc7ff55d9f6dfd127357ea8dc1aeaab201a2ac7d7802c321eebd4"
+        },
+        {
+          "path": "Templates/Bases/Games.base",
+          "sha256": "3c20a52180dd6a32d45db23169a9cf9c629e214ae7466c178f1e2b52cba41074"
+        },
+        {
+          "path": "Templates/Bases/Genre.base",
+          "sha256": "85cdae490aaab09a3cdfe4d0b06f522c80919af85d5239c2b4c761438d861541"
+        },
+        {
+          "path": "Templates/Bases/Journal.base",
+          "sha256": "471071b03112e0ae729184691c5495dd28ae67b953108b1ec994aeecaf4d1c19"
+        },
+        {
+          "path": "Templates/Bases/Map.base",
+          "sha256": "e22d6ffb376f4b7cc8fdd58c2b8425f0db42806149da59e8f85a0f26826906f0"
+        },
+        {
+          "path": "Templates/Bases/Meetings.base",
+          "sha256": "4421ae7232d41907d6f798a09e3a3ee6b27c2b9863989c2843a031eade605441"
+        },
+        {
+          "path": "Templates/Bases/Movies.base",
+          "sha256": "0c6363382d624e70ace71ea0084d4dde412634bae6a58b459ac9e5376e7f4f1a"
+        },
+        {
+          "path": "Templates/Bases/People.base",
+          "sha256": "1ddc4851fd9051f1f904b6792b27f7f7c76136ad3b2b3a856a314031e3fcfae8"
+        },
+        {
+          "path": "Templates/Bases/Places.base",
+          "sha256": "bb1bceaf821d4e7dc2aa4239e4db015607316b60fb689b90a1a5abe89d080d4d"
+        },
+        {
+          "path": "Templates/Bases/Podcast episodes.base",
+          "sha256": "1558b7be520a3d9e702d205b1cefd0bf7b4100391ee9c65efd939df8a1c52870"
+        },
+        {
+          "path": "Templates/Bases/Podcasts.base",
+          "sha256": "afcaf3a94b765a8390a9d66650a9a81e7ab7fb69f300236398b34b0e1d8b6dc0"
+        },
+        {
+          "path": "Templates/Bases/Posts.base",
+          "sha256": "48a2dffa380a62e60de7c70b9ccf1b578048279c493414edffc2441d56a71e34"
+        },
+        {
+          "path": "Templates/Bases/Products.base",
+          "sha256": "c8a1a6cab8f7afc7d2f8d6fc6678430e60bce511f210287633e9636808e0a17a"
+        },
+        {
+          "path": "Templates/Bases/Projects.base",
+          "sha256": "df104fc2888960c73782444e44ba60bb26a06fa8b5838dbe313eb4165763288c"
+        },
+        {
+          "path": "Templates/Bases/Ratings.base",
+          "sha256": "bf477df86d6bd32504d9b93905a19f84261df99d0fbae46308db25b5bdfa78cc"
+        },
+        {
+          "path": "Templates/Bases/Recipes.base",
+          "sha256": "fbf2d93be96b0e8c642a92d41d907f107249ed105ce1103ad3e3f5f02d5e20f2"
+        },
+        {
+          "path": "Templates/Bases/Related.base",
+          "sha256": "95cc109147af1cf364350e274c7a42d14ffcc2ca0d963fd925f85b189e955fa1"
+        },
+        {
+          "path": "Templates/Bases/Shows.base",
+          "sha256": "cc74f1efbc34644a8070ab6abee2cba96da7e478b249f26b48e753222714f7eb"
+        },
+        {
+          "path": "Templates/Bases/Templates.base",
+          "sha256": "8293a483214dec131e46f2fcf53290ecad2052f82ec2bca995b67fd4b43de8ed"
+        },
+        {
+          "path": "Templates/Bases/Trips.base",
+          "sha256": "95bd201f747c11116e3342420604a560d430127d0558f76ef1b2a65089877d54"
+        },
+        {
+          "path": "Templates/Board Game Template.md",
+          "sha256": "ae807d9856c61347fd15cf43fb64375f8c3402e45c22d991252c2691dad6ff63"
+        },
+        {
+          "path": "Templates/Book Template.md",
+          "sha256": "193a28a7949bf3ccaf6125da3209cd36b45760f166c49cdeac6c02a79a08b691"
+        },
+        {
+          "path": "Templates/City Template.md",
+          "sha256": "acbcf824f72052e40e4c954077f807b4d43c44ba26d4b33d035000f1e5fe701d"
+        },
+        {
+          "path": "Templates/Clipping Template.md",
+          "sha256": "48af394245a059316defad5b3277fcbac55d97f4b84083a81bdcc6f4294cbb63"
+        },
+        {
+          "path": "Templates/Coffee Template.md",
+          "sha256": "b3565d8c1ec58fc1ffe530b4bb642b98132e043c464af8373ece1b10f082862a"
+        },
+        {
+          "path": "Templates/Company Template.md",
+          "sha256": "12de4c1796c4ffcc514736ddd902806bbb26d9b9b49c4c327837b474b91de099"
+        },
+        {
+          "path": "Templates/Conference Session Template.md",
+          "sha256": "60d2e22092ef360fadf9b485f821ee96bd9f773ea089dc08238f64cff431fc06"
+        },
+        {
+          "path": "Templates/Conference Template.md",
+          "sha256": "12c5774865a8f24b4b32a9b7bfce849f76717469f95c5fb9a159fbe055b5a4f6"
+        },
+        {
+          "path": "Templates/Contact Template.md",
+          "sha256": "795ad498b969806eb9fa05686bcf9fc853b243a51e45012856985748ceecf823"
+        },
+        {
+          "path": "Templates/Daily Note Template.md",
+          "sha256": "5ec89f0e0af133a4efdd5cfc8aa02e4220bd4e500637d0d24a6006ea6dfcf2a0"
+        },
+        {
+          "path": "Templates/Director Template.md",
+          "sha256": "1bfe9749a3c4ab280df9ef150cc48ec7ee46768f8690445cdeb4f28d33914fa2"
+        },
+        {
+          "path": "Templates/Email Template.md",
+          "sha256": "d3217e59d98021d61ff50488381faac4634eed1c72a3d67fc7b4bcfe66ccf86b"
+        },
+        {
+          "path": "Templates/Event Template.md",
+          "sha256": "8be367b1db6ac39a8f5c19545cd3305a64afebef4a64a38cc99125836269c018"
+        },
+        {
+          "path": "Templates/Evergreen Template.md",
+          "sha256": "eaad9796f6f9fed0fd362a43a275d80bf6a327dfad810f78cb22875c71e50273"
+        },
+        {
+          "path": "Templates/Food Template.md",
+          "sha256": "a0bb2bba2279c6873c7fc2c4ce99a7fdd93f1adb98e0ffcc4e65f56f9821948c"
+        },
+        {
+          "path": "Templates/Game Studio Template.md",
+          "sha256": "7069f66966b5f9588a0b7aa3c5426a7f452c1bc31eb7133b4b4fb86f3e0b6f9d"
+        },
+        {
+          "path": "Templates/Genre Template.md",
+          "sha256": "225d618d8489efa952c3ecde5d50b9a29d3394c82b283318454612febcc176da"
+        },
+        {
+          "path": "Templates/Hosting Template.md",
+          "sha256": "3e36ae5ade5f23c8876d13410b34d60329c2642c0e55bfedc6613c1fbdc0d6d3"
+        },
+        {
+          "path": "Templates/Job Interview Template.md",
+          "sha256": "40f6d92daf47eb20b1ccb1e3600976e5b6c2fbb27fef3fd6a7001fed6068f9f7"
+        },
+        {
+          "path": "Templates/Journal Template.md",
+          "sha256": "26e7b83a0d456619b87a3d3e7af52f4db3785cc36d57d19914c7c2adae080696"
+        },
+        {
+          "path": "Templates/Meditation Template.md",
+          "sha256": "fdf870d167e8e172b308fedc7ec7f01cdc13271d0b6dd19fbe6927f8fb8b6971"
+        },
+        {
+          "path": "Templates/Meeting Template.md",
+          "sha256": "7f2e653299c1e2204fcb83a601c8e981d3d66643ab368c6989dba81b1aa9e6d3"
+        },
+        {
+          "path": "Templates/Meeting Type Template.md",
+          "sha256": "69843e1bad41b910873b4929031ac9979679a4920ecc9f63766897cca8c1f5dd"
+        },
+        {
+          "path": "Templates/Meetings List Template.md",
+          "sha256": "c59e02b12153432bbf821d106b8e7699d99899c676deffd8f739a7b826083309"
+        },
+        {
+          "path": "Templates/Monthly Note Template.md",
+          "sha256": "83fd5520bb568ab4051cc05167a68bfa05728f10032895f4b6c929a4d011df4c"
+        },
+        {
+          "path": "Templates/Movie Genre Template.md",
+          "sha256": "455167594c393330df8103d7ad34002abf4dd0fee1cacd473e41657aa7b3b68f"
+        },
+        {
+          "path": "Templates/Movie Template.md",
+          "sha256": "3a751d2d80ebf32edae3504d3e5f481770c1067ec9b59423c8e45182078fe933"
+        },
+        {
+          "path": "Templates/Music Genre Template.md",
+          "sha256": "c5112b14d827141396198ad64c9150907f8f5e5f4d2e88807ecc37061277a852"
+        },
+        {
+          "path": "Templates/Musician Template.md",
+          "sha256": "63d0fa4afc585b0248a6fdcf0660f2dc6f3fff424f1db034a143f309fe506fa8"
+        },
+        {
+          "path": "Templates/People Template.md",
+          "sha256": "54b2d00eb6847278f566a20edd9d4965aaee18ed37d95655faae0f340ef52dc3"
+        },
+        {
+          "path": "Templates/Place Template.md",
+          "sha256": "3058c6837c5f470c5d742be478c948d0403a3b1ba005e63e14c14d8c84a1f049"
+        },
+        {
+          "path": "Templates/Place Type Template.md",
+          "sha256": "3fedcef743af08d6749e1135777aabc19b654ffd021eff3ee461896190b8f264"
+        },
+        {
+          "path": "Templates/Podcast Episode Template.md",
+          "sha256": "77538f7eb7371726eb9c70a592b9fd8ac565e2cfa653e87959c765562006db00"
+        },
+        {
+          "path": "Templates/Podcast Template.md",
+          "sha256": "1d8425e3e00322a446afee60021d74256ed0a26fe4fc644c327253bf26f2e79a"
+        },
+        {
+          "path": "Templates/Post Template.md",
+          "sha256": "e676e1f10c154d47fdc30e6638760f59cf76145e0e727c0e5f4064c9465e1da7"
+        },
+        {
+          "path": "Templates/Product Template.md",
+          "sha256": "0398f02743f2c0273f57769cb08c48bfb154223535dd28f2383cdf04e3cb93ed"
+        },
+        {
+          "path": "Templates/Product Type Template.md",
+          "sha256": "0ebe5fbfc15026764df50f4a9bcd30828012e0c00bffa68d8a51672f35f4e6ba"
+        },
+        {
+          "path": "Templates/Project Template.md",
+          "sha256": "5ef693825f3149277e57480fcdb9c61dc88843f5c0807e98c657092f5889656a"
+        },
+        {
+          "path": "Templates/Quote Template.md",
+          "sha256": "988ff4c789f1f9883daa1e40833657dfcb7265de1d798e8c5537f26a0627494d"
+        },
+        {
+          "path": "Templates/Real Estate Template.md",
+          "sha256": "26c338b4bd18f4d20f9273602eda59bdc8d3b80f91be57715b8385e2f38d3e2a"
+        },
+        {
+          "path": "Templates/Recipe Template.md",
+          "sha256": "3b0f7e06115b32b2a5150bb79b078453632a7fc065e417572f55d556f0efc39b"
+        },
+        {
+          "path": "Templates/Restaurant Template.md",
+          "sha256": "d326d49236a1e659ba6180063da8404c7b0e399872d0e904e263126dd933c023"
+        },
+        {
+          "path": "Templates/Show Episode Template.md",
+          "sha256": "93fee8cc75ea1611597c9e7baaac9893b3f84cda09a32f07ec9c5cb8cae509e4"
+        },
+        {
+          "path": "Templates/Show Template.md",
+          "sha256": "dd844647bd9b93b8d01566bcf887b9e4227ee812ea82c79108bbe348fab54719"
+        },
+        {
+          "path": "Templates/Stock Trade Template.md",
+          "sha256": "524abdb3b1d3142fd368cf97d2d384185aab78922aacd0eb505d5829b3e01db0"
+        },
+        {
+          "path": "Templates/Trip Template.md",
+          "sha256": "08096b03903d15e83e8f33a303b3d3edc484efd77bfb4b1a0bc06f738135ab51"
+        },
+        {
+          "path": "Templates/Video Game Genre Template.md",
+          "sha256": "02ca48287602a34b4fc71deda9d2aac463d890c16f6470a3fc9cf1fc73acc330"
+        },
+        {
+          "path": "Templates/Video Game Template.md",
+          "sha256": "69c708dd4f68928bfada1510c316f8b8696b90531493a0cb0c3201c67f726dbe"
+        }
+      ]
+    },
+    {
+      "id": "template-vault",
+      "repo": "https://github.com/masuda-so/Template-Vault",
+      "commit": "7b46e7f5d924bc32de64778ef765e26528651b9d",
+      "licence": "MIT",
+      "licenceFile": "LICENSE",
+      "files": [
+        {
+          "path": ".agents/skills/Template-Vault/SKILL.md",
+          "sha256": "02d09264e07b2eeda59e7d76daa6faf8f4d4ad0c7b7872cc13c077bbfbbbd4f7"
+        },
+        {
+          "path": ".codex/AGENTS.md",
+          "sha256": "8293dad228346321989b2c74fecba502daec9e28e404426640fe482e95445d33"
+        },
+        {
+          "path": ".github/pull_request_template.md",
+          "sha256": "173b4765e9e3b1afc639acaa5a8e9f68c6ec714dad799fee1b6ed4345e4d166b"
+        },
+        {
+          "path": "Bases/Books.base",
+          "sha256": "ab6711d1cd5d806ef28481f49fdc02278f59cd193de97183e8284571ceaeb32f"
+        },
+        {
+          "path": "Bases/Clippings.base",
+          "sha256": "ab6711d1cd5d806ef28481f49fdc02278f59cd193de97183e8284571ceaeb32f"
+        },
+        {
+          "path": "Bases/Journal.base",
+          "sha256": "ab6711d1cd5d806ef28481f49fdc02278f59cd193de97183e8284571ceaeb32f"
+        },
+        {
+          "path": "Bases/Meetings.base",
+          "sha256": "ab6711d1cd5d806ef28481f49fdc02278f59cd193de97183e8284571ceaeb32f"
+        },
+        {
+          "path": "Bases/Movies.base",
+          "sha256": "ab6711d1cd5d806ef28481f49fdc02278f59cd193de97183e8284571ceaeb32f"
+        },
+        {
+          "path": "Bases/Music.base",
+          "sha256": "ab6711d1cd5d806ef28481f49fdc02278f59cd193de97183e8284571ceaeb32f"
+        },
+        {
+          "path": "Bases/People.base",
+          "sha256": "ab6711d1cd5d806ef28481f49fdc02278f59cd193de97183e8284571ceaeb32f"
+        },
+        {
+          "path": "Bases/Places.base",
+          "sha256": "ab6711d1cd5d806ef28481f49fdc02278f59cd193de97183e8284571ceaeb32f"
+        },
+        {
+          "path": "Bases/Podcasts.base",
+          "sha256": "ab6711d1cd5d806ef28481f49fdc02278f59cd193de97183e8284571ceaeb32f"
+        },
+        {
+          "path": "Bases/Projects.base",
+          "sha256": "ab6711d1cd5d806ef28481f49fdc02278f59cd193de97183e8284571ceaeb32f"
+        },
+        {
+          "path": "Bases/README.ja.md",
+          "sha256": "06bf42a5a87cc9e6b638411fc20f289e99d8373715ea0a49318457d9a1b46d05"
+        },
+        {
+          "path": "Bases/README.md",
+          "sha256": "02d7269faa069581e770c13abf4836355d4e709c7926ca6e592795a331ecfa56"
+        },
+        {
+          "path": "Bases/Ratings.base",
+          "sha256": "ab6711d1cd5d806ef28481f49fdc02278f59cd193de97183e8284571ceaeb32f"
+        },
+        {
+          "path": "Bases/Recipes.base",
+          "sha256": "ab6711d1cd5d806ef28481f49fdc02278f59cd193de97183e8284571ceaeb32f"
+        },
+        {
+          "path": "Bases/Shows.base",
+          "sha256": "ab6711d1cd5d806ef28481f49fdc02278f59cd193de97183e8284571ceaeb32f"
+        },
+        {
+          "path": "Bases/Trips.base",
+          "sha256": "ab6711d1cd5d806ef28481f49fdc02278f59cd193de97183e8284571ceaeb32f"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "sha256": "1968d3f80aec1de51b7d911f1aa5a89501afd03f4a6e634aedc993cf44c422c1"
+        },
+        {
+          "path": "Canvases/README.ja.md",
+          "sha256": "c52b17f106f53d700791bdd5de8de3674d5427bb3ae5415e7af3357bc0e9ce30"
+        },
+        {
+          "path": "Canvases/README.md",
+          "sha256": "d0813495458c418c03f67eca7b9cbd70ef5c0e62ae883cb23623a7bacd4563af"
+        },
+        {
+          "path": "Clippings/README.ja.md",
+          "sha256": "a923d9bf72898eb5ec23e16e36bafaf625016af1e903b8ae67b639cdc8ca33f0"
+        },
+        {
+          "path": "Clippings/README.md",
+          "sha256": "f554b9c84a70529dc09302e91a7bc2d1cbdf10242c0c2cba3829a3b8713eabf2"
+        },
+        {
+          "path": "Daily/README.ja.md",
+          "sha256": "4859b0eae6bcad27fc5609193d350fc1e64cfd5ffbf8f441f955ca8a0986f86c"
+        },
+        {
+          "path": "Daily/README.md",
+          "sha256": "925adf5f728796fda16bff45f8de835adea1b7d514f2aac82fe6b2a78e77ab43"
+        },
+        {
+          "path": "GOVERNANCE.md",
+          "sha256": "4b857cee5658bed410d4cf9bafe5b9a3d7cf6d1bf3e398c1a5437d0158b3fc7e"
+        },
+        {
+          "path": "Ideas/README.ja.md",
+          "sha256": "50e1b7ccc69d041b8fe749bd789dd72b0db95bdd6c2e1400d2e48f19e548d062"
+        },
+        {
+          "path": "Ideas/README.md",
+          "sha256": "8ee9cb2776d71fe567c521dd1411f8924f03a623de5878da0952dfaa8b2098e6"
+        },
+        {
+          "path": "MARKETPLACE_RESOURCES.md",
+          "sha256": "e8a3d03f5e2cf56002cd04bace2d2de8c96bb229959c21b6fb7d7ff0c863b749"
+        },
+        {
+          "path": "Meta/Archive policy.ja.md",
+          "sha256": "a8176568e8e0a2bc0784d238b682d18811249e84d9496d860968b6d5e1e167f1"
+        },
+        {
+          "path": "Meta/Archive policy.md",
+          "sha256": "c8f3338404f3e5b9c2cd64cae669d0232cdd805119495c01df70b94c6f284b0a"
+        },
+        {
+          "path": "Meta/Folder conventions.ja.md",
+          "sha256": "6df4375f3ee69cf9d0f70b5751e9c85ed340d0f486a440266532361b2a94ca33"
+        },
+        {
+          "path": "Meta/Folder conventions.md",
+          "sha256": "de1efaa78d6cc11a653b3561b67097924f065ce78d44ceec687ac708624d6664"
+        },
+        {
+          "path": "Meta/Profile/preferences.md",
+          "sha256": "8462eda817c8f45234caadbda2cd17e1f60da590026caf0647efb48e9e992dad"
+        },
+        {
+          "path": "Meta/Profile/promotion-policy.md",
+          "sha256": "94c58238f47d3185d5b5f5312707b277e212ccf467c8e1749804242d5053a09c"
+        },
+        {
+          "path": "Meta/Profile/review-policy.md",
+          "sha256": "c830a843636e889266ba214ba210fb0200c88c23c25c20cb8fd78abb69da8992"
+        },
+        {
+          "path": "Meta/Profile/working-style.md",
+          "sha256": "0c9fde711566efc88f51465cf08d74c5ea4f201f7611e1ea78019ca0d76b9528"
+        },
+        {
+          "path": "Meta/README.ja.md",
+          "sha256": "8d9b1e88c88d30568eb1dc55d6b1911b99cbe0c49701ce0acdcfeb9baa15dc47"
+        },
+        {
+          "path": "Meta/README.md",
+          "sha256": "0af27575208beaad6f15c1c9fe85ea4f20cb6fe3de9f2e36981b263194d80f24"
+        },
+        {
+          "path": "Meta/Review cadence.ja.md",
+          "sha256": "bc38432d872242b6054416e3272da3ac49144d55c7075164975361db4c906127"
+        },
+        {
+          "path": "Meta/Review cadence.md",
+          "sha256": "5b4b984b7c01e54c38c076de247f243afb5bd91dd43cea66fa8296d435041793"
+        },
+        {
+          "path": "Monthly/README.ja.md",
+          "sha256": "d47b4063b127cf5b27ab15531b4a20b7160def725ca0474da6353b11ace127e3"
+        },
+        {
+          "path": "Monthly/README.md",
+          "sha256": "7c0f327ec4c0162cfa6fa0d29549a68eef4ee208d68f56a0f05d47f79a290369"
+        },
+        {
+          "path": "Projects/README.ja.md",
+          "sha256": "6c6539bb57567730b03eb57777f452f5076cd021a72d1a9980301e3c1f4bb291"
+        },
+        {
+          "path": "Projects/README.md",
+          "sha256": "1ff4eada8ee1f590738db05e56f0371d31ebe90b2e857210fa2f58294d41e6f4"
+        },
+        {
+          "path": "README.md",
+          "sha256": "02f3d82a5de8b62a85ef0047e49959f01e2b95e4b0cada4d506574ed91e434fc"
+        },
+        {
+          "path": "References/README.ja.md",
+          "sha256": "559b1596cf7ab415980138948befd69f4d562db1ba6bd04b5dd9bd979636abac"
+        },
+        {
+          "path": "References/README.md",
+          "sha256": "d98df7f9602376a5ee774e09aef524b7a21e6a5561c1222018aaa98de8500831"
+        },
+        {
+          "path": "SECURITY.md",
+          "sha256": "f0de60f959d3d989a6635d4e1c6387e23ffbfe8e242d23e0119a38521a49cf82"
+        },
+        {
+          "path": "Sandbox/Adventurer/From plain-text note-taking.md",
+          "sha256": "9b12dec82ce5221eb00bd35da14de85b29ba23ee13447211c54249ff133377f0"
+        },
+        {
+          "path": "Sandbox/Adventurer/From standard note-taking.md",
+          "sha256": "ba238890dce675fe849de8b2a66b2ea7b38f538f88db4c75239b85bf6ea84d91"
+        },
+        {
+          "path": "Sandbox/Adventurer/No prior experience.md",
+          "sha256": "1dca8398bb52c47bf051e3f2de63678439bfc4e281b7ecc09e926ccb3a7269d2"
+        },
+        {
+          "path": "Sandbox/Formatting/Blockquote.md",
+          "sha256": "a14331ae13f3fe85f31a8c7b19ece8e561f47041160fb11813614129825fc1af"
+        },
+        {
+          "path": "Sandbox/Formatting/Callout.md",
+          "sha256": "58ea2f7cb85be1ef1fed7752816643f420035dc60226126f993947dff9812372"
+        },
+        {
+          "path": "Sandbox/Formatting/Code block.md",
+          "sha256": "140d6d6a4b3cae8ff1d490c965f6ccae7ad64720790516b960ce4a6c10b3542b"
+        },
+        {
+          "path": "Sandbox/Formatting/Comment.md",
+          "sha256": "b6675d30946bfbf16b5bb2519fb7ca87030119d3964e62ee7653c768637d2cd3"
+        },
+        {
+          "path": "Sandbox/Formatting/Diagram.md",
+          "sha256": "ae63d3debf5b8b853cd3520e9a331d202a784ef46ad60ad7e543623a995f870b"
+        },
+        {
+          "path": "Sandbox/Formatting/Embeds.md",
+          "sha256": "dcf078d86ca61f8e14a3744c4022868fe99561ae85b1165a4ae6f8c1c0c3fccb"
+        },
+        {
+          "path": "Sandbox/Formatting/Emphasis.md",
+          "sha256": "b3d4c77faaddc35be7928422aebcd38d8ecdbb5e4b0a267f67d689a120788b65"
+        },
+        {
+          "path": "Sandbox/Formatting/Footnote.md",
+          "sha256": "b3d31043c50db127dd8101e24480276927f49c2a6d13669f456ba247d0b177e2"
+        },
+        {
+          "path": "Sandbox/Formatting/Format your notes.md",
+          "sha256": "8582f2b25a11a7be36910ff8461fdf668c72cb7d3bd0e28ddca29126b7596b23"
+        },
+        {
+          "path": "Sandbox/Formatting/Heading.md",
+          "sha256": "13eda6c9c67bdd759a13021c2a80c7ba0c4c06e6be809330a69858aef93debff"
+        },
+        {
+          "path": "Sandbox/Formatting/Highlighting.md",
+          "sha256": "4008ec65e19f548cd0a03db474ee48f9be634393d5884a0b4ce781f8287908cd"
+        },
+        {
+          "path": "Sandbox/Formatting/Horizontal divider.md",
+          "sha256": "4ad04c4aaf10b575e7397aaba308e4714d6a72757aad7cb4435963fa56f14452"
+        },
+        {
+          "path": "Sandbox/Formatting/Images.md",
+          "sha256": "e639ef2fd5830d733c1c2992cb78466cce8e16627ea25d06cc7add8a40f61d43"
+        },
+        {
+          "path": "Sandbox/Formatting/Inline code.md",
+          "sha256": "09386f42d5d1af162ab965e7af81f9e8fa7b1ce19ba47ac63e7db22b26ea04bd"
+        },
+        {
+          "path": "Sandbox/Formatting/Internal link.md",
+          "sha256": "10022bda6a144ba086d3583fdbc904d8f866a115d3497773dd32b77904d94220"
+        },
+        {
+          "path": "Sandbox/Formatting/Links.md",
+          "sha256": "be33241dbb20babf0419351e9f55b5e6a25ae19a5988358a50f7c539d82b98d7"
+        },
+        {
+          "path": "Sandbox/Formatting/Lists.md",
+          "sha256": "cbb5f1f177b899ba3d3b6e1fb8a0a1ad865bab1b0b1884f57e42b61720b94236"
+        },
+        {
+          "path": "Sandbox/Formatting/Math.md",
+          "sha256": "5439cf3ab8cd987afa3660e9009b35aa6c7e49d870667a7524cbd8d10a2d8130"
+        },
+        {
+          "path": "Sandbox/Formatting/Strikethrough.md",
+          "sha256": "8cd3e4ef711824c0090de96686eb38380f524208fb1484b19c172065ee3ac7d2"
+        },
+        {
+          "path": "Sandbox/Formatting/Table.md",
+          "sha256": "7e5a8ad59b29610842272e3a530cf05acd5b835bd4c8d3241ce0d4242b3e0e00"
+        },
+        {
+          "path": "Sandbox/Formatting/Task.md",
+          "sha256": "e86302b1b7c8e7d47ec980aae99bdd4792bdee88d5bbf9378c8cc8101ab737dc"
+        },
+        {
+          "path": "Sandbox/Guides/Create a vault.md",
+          "sha256": "4db48e0dcec725d61b9c2bf15e79830166471b8dc1c2fcf587bafa4f23e2b669"
+        },
+        {
+          "path": "Sandbox/Guides/Create your first note.md",
+          "sha256": "bf351af6a87bfee71d1330102822f35c9438fada630c4bdd88dcd89133412221"
+        },
+        {
+          "path": "Sandbox/Guides/Get started with Obsidian.md",
+          "sha256": "9870cb1fe6ba0b705a54650249aab07dedf702bf0aa3df6902594c0e8dabf13c"
+        },
+        {
+          "path": "Sandbox/Guides/Link notes.md",
+          "sha256": "d0d6e12e5eca2f19343efdc1c67f0545918929aadc1056f6b1ae29e1c958e05e"
+        },
+        {
+          "path": "Sandbox/Plugins make Obsidian special for you.md",
+          "sha256": "d9877be748e310a7dd52dc32bc0637d29ceab6bf307b85104adc5076aa239243"
+        },
+        {
+          "path": "Sandbox/README.ja.md",
+          "sha256": "d00226bc7d79635958fff85b6d1e6757a36d2449d54670716f005779db506c18"
+        },
+        {
+          "path": "Sandbox/README.md",
+          "sha256": "a7a5a60134fce2ade530cf00d59dc7ec9136203f69b26d02708648ba51b30759"
+        },
+        {
+          "path": "Sandbox/Start here.md",
+          "sha256": "c417c2bb34d2e1ae198eb3a022be70fcf8028c2e05a312b0a60148feea929996"
+        },
+        {
+          "path": "Sandbox/Vault is just a local folder.md",
+          "sha256": "b499dd3e0001f33f9356f74ccf0283d0f0e5d84bfb576a02ce37bd7c01153107"
+        },
+        {
+          "path": "THIRD_PARTY_NOTICES.md",
+          "sha256": "1b2489a4f8120d23fa00838036be2c5e90a233c0c9f4d4a74011ccc1d2129b29"
+        },
+        {
+          "path": "Templates/clipping.md",
+          "sha256": "7467c0ad5b989d7021538a25f051f451b2fcbd3228de8cd5494181fb25c6f68b"
+        },
+        {
+          "path": "Templates/daily.md",
+          "sha256": "a84bba01b742a60f98076491e162360c9545c2d1343b4622cce9de81e86f656b"
+        },
+        {
+          "path": "Templates/idea.md",
+          "sha256": "bab9f53cd465d8ad65d67209788e9793b7dd0ff075ba25410bc8b7cdf53b8e76"
+        },
+        {
+          "path": "Templates/monthly.md",
+          "sha256": "653e9439a6bb9245f1d390b3e143e3a4bafb0abe6bf3a9d718820b598ccc347e"
+        },
+        {
+          "path": "Templates/project.md",
+          "sha256": "ca7eb55e8c8c9eac32c28116971a8f7f58fcae6dedaea746889b4e6e1455004a"
+        },
+        {
+          "path": "Templates/reference.md",
+          "sha256": "30628417a6cbd6464e2e13be73c0ea5aa1a23f3f9ca12ce78e20faedbfcc875e"
+        },
+        {
+          "path": "Templates/weekly.md",
+          "sha256": "2b332f94844738b9f0816385f3ad485d1aa51266296fa0f64951593d014e9bbc"
+        },
+        {
+          "path": "Weekly/README.ja.md",
+          "sha256": "2b0cbd8868367dd93ca03f303c0670ee7063a7076d3647a900a705ad8e68994e"
+        },
+        {
+          "path": "Weekly/README.md",
+          "sha256": "a104df061d413ac0f065e3437e38c3db6390417d7a4d48870db50a65de21db1f"
+        },
+        {
+          "path": "docs/public-vault-safety.md",
+          "sha256": "9ff7bcd5439a66bed7350752c49443fd47aa12a2ecf63a30eeedf99a94931fbe"
+        },
+        {
+          "path": "ようこそ.md",
+          "sha256": "6ac5b09f8b372fb4c2847d2324883aee092f3895c5dd87f5a930035985864e9a"
+        }
+      ]
+    },
+    {
+      "id": "obsidian-dataview",
+      "repo": "https://github.com/blacksmithgu/obsidian-dataview",
+      "commit": "5ad0994ff384cbb797de382e7edff2388141b73a",
+      "licence": "MIT",
+      "licenceFile": "LICENSE.txt",
+      "files": [
+        {
+          "path": "docs/docs/annotation/add-metadata.md",
+          "sha256": "c14f19f33981938c42570f394c4ea6afeb03b1dcd47421e42e035a356f497d4d"
+        },
+        {
+          "path": "docs/docs/annotation/metadata-pages.md",
+          "sha256": "6ca13f693def098729329b4ba4f8165c08da7ed47ef993829963e782ef09e04a"
+        },
+        {
+          "path": "docs/docs/annotation/metadata-tasks.md",
+          "sha256": "cc4a64dfef7a3703c0961bb83e68eeb07d95b031d0ee4f3e804d495ff5a62660"
+        },
+        {
+          "path": "docs/docs/annotation/types-of-metadata.md",
+          "sha256": "9ed3f62d000997249addf54620470b323ccb8371b46b970165c89eb474074e44"
+        },
+        {
+          "path": "test-vault/.obsidian/plugins/hot-reload-master/README.md",
+          "sha256": "accef284bac5ec14a9fe2c6cd7ebcbc73792d2ad6af6303e169e51db343ffd6a"
+        },
+        {
+          "path": "test-vault/Books.md",
+          "sha256": "cab6e4ec5dc161b369773d6bc61cee6565f44b9e898c8725190943088465d292"
+        },
+        {
+          "path": "test-vault/Home.md",
+          "sha256": "9320631170df5939db3e4ce5c367d45941d3b2ddfb3fc8bce7efcb4d15789b94"
+        },
+        {
+          "path": "test-vault/blog/2020-08-08-an-earlier-post.md",
+          "sha256": "aa73b79f35706785b315db40c4bbfc47abfdc0d198120737a94fb3b9d2346919"
+        },
+        {
+          "path": "test-vault/blog/2021-08-08-a-post.md",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "test-vault/books/Catcher in the Rye.md",
+          "sha256": "29c355c3aa433d12dac79b8251fe141fb7b92e68b093bd2ddf9ca24fe4b71a29"
+        },
+        {
+          "path": "test-vault/books/Origin of Species.md",
+          "sha256": "b62857734e1c57ac39c5184dbd028eab6bc91523533dfc9c3cdc46eb06007332"
+        },
+        {
+          "path": "test-vault/books/The Great Gatsby.md",
+          "sha256": "bcedf6fb55c7ea1a150f573a14b1fc7578b703666c61067c3181bee1d58df4be"
+        },
+        {
+          "path": "test-vault/example calendars.md",
+          "sha256": "f1b72ef70413f46e894bce0e7d8bf89df0e4c2b917f0ebbe6faa1724922089b4"
+        },
+        {
+          "path": "test-vault/example lists.md",
+          "sha256": "ea96b97c9475f6bdcd725aa4de29970ca175edba20edd45621a9504b20313bae"
+        },
+        {
+          "path": "test-vault/example tables.md",
+          "sha256": "31a9ec4bb87be2fba38b99bf4d6117732391a4e44663eaa27c9072be1060a582"
+        },
+        {
+          "path": "test-vault/recipes/pbj.md",
+          "sha256": "0d61af625c7a513b838c68ecdf9561cc49326e8a96d4e9a54c0a32df96c69526"
+        },
+        {
+          "path": "test-vault/recipes/toast.md",
+          "sha256": "7a689df781f4c8202556e7fbc2743c2d2feda6d41df68727ffe146c4f13e2e8d"
+        },
+        {
+          "path": "test-vault/tasks/Annotated Tasks.md",
+          "sha256": "740d0bc89633e7e8f06b3b87f35a9df9e75a036b2ab397c5669a802b07b24384"
+        },
+        {
+          "path": "test-vault/tasks/Completed Tasks.md",
+          "sha256": "96884d505e0b561b19f29d47e14581a319fdcb445e04513561d2723402ff3725"
+        },
+        {
+          "path": "test-vault/tasks/Grouped Sorted Tasks.md",
+          "sha256": "c2aa920a934f2c01bc8122efb2cce4508224b69a06dcba5ad7feef471c5d8383"
+        },
+        {
+          "path": "test-vault/tasks/Sorted Tasks.md",
+          "sha256": "4b4964eb0402ee7c4cdeed40417861f2681ce7223e6f19966be37034784955dd"
+        },
+        {
+          "path": "test-vault/tasks/Tasks Completed on specific Date.md",
+          "sha256": "b065f84d0e60363dc847de59b305c53ca2aede667f8ce2863c08f6ed7bb66b32"
+        },
+        {
+          "path": "test-vault/tasks/Tasks in a specific section.md",
+          "sha256": "0a1d30ea22cf0bb9e982741302c34fbd54a46d6147c1f015cb20b4b720293f16"
+        },
+        {
+          "path": "test-vault/tasks/Uncompleted Tasks.md",
+          "sha256": "36b044ab63935c8222d5f641115d826c07a1cf5a4b630bb407ad183ce6066c31"
+        },
+        {
+          "path": "test-vault/tasks/checklist.md",
+          "sha256": "6bb3bde5f0e1a2d9f20d6987a41e469663753bf545d394dad288d288403829e4"
+        },
+        {
+          "path": "test-vault/tasks/example tasks.md",
+          "sha256": "7151955054f0c784c9552158b9a57de2f80ac8228d54ca94eb5860e15f5cfea8"
+        },
+        {
+          "path": "test-vault/untracked/README.md",
+          "sha256": "f60f8c348e20a374440096d8aa86ed5493344a086d27473604fd5f2c17c08bc5"
+        }
+      ]
+    },
+    {
+      "id": "jsoncanvas",
+      "repo": "https://github.com/obsidianmd/jsoncanvas",
+      "commit": "456f843cb293df4f4ab1763e22ccb46a80b307c8",
+      "licence": "MIT",
+      "licenceFile": "LICENSE",
+      "files": [
+        {
+          "path": "sample.canvas",
+          "sha256": "ad089f3cbf255924d912a1e6fdc29d3414d9c7264b2c6c878e38680c3f33a7ce"
+        }
+      ]
+    },
+    {
+      "id": "obsidian-skills",
+      "repo": "https://github.com/kepano/obsidian-skills",
+      "commit": "398127736bd4ba42d767b1419fee1a927508370b",
+      "licence": "MIT",
+      "licenceFile": "LICENSE",
+      "files": [
+        {
+          "path": "README.md",
+          "sha256": "a37cf306c7182bd733db06c5830e9cd5784c8687b86be1bd562e546311458247"
+        },
+        {
+          "path": "plugins/obsidian/README.md",
+          "sha256": "6b4ed64ad1f03221934761a4cb11a39f6db59180b85bc111018d602f464d70bb"
+        },
+        {
+          "path": "plugins/obsidian/skills/defuddle/SKILL.md",
+          "sha256": "58902192d0433d133a35efc1b46cc49ceef891a465f9fd4e709d6e824c9561fb"
+        },
+        {
+          "path": "plugins/obsidian/skills/json-canvas/SKILL.md",
+          "sha256": "4db4e69eea910b598c249e41bcdda85a70856348adaf11c35371198e258d50a6"
+        },
+        {
+          "path": "plugins/obsidian/skills/json-canvas/references/EXAMPLES.md",
+          "sha256": "f5ce15a4b74643122396265e8c37c828874a4005794de2aee7030662968768eb"
+        },
+        {
+          "path": "plugins/obsidian/skills/knap/SKILL.md",
+          "sha256": "252d2146d9acc76e1b184bd75e4212a3eae3a8b2a77ad8c578b1d8d6a813e22a"
+        },
+        {
+          "path": "plugins/obsidian/skills/obsidian-bases/SKILL.md",
+          "sha256": "7a1659e2c00e7b74c8767002213dd977967ddd30dd15a7f33b693e783a4546e9"
+        },
+        {
+          "path": "plugins/obsidian/skills/obsidian-bases/references/FUNCTIONS_REFERENCE.md",
+          "sha256": "208fd63aead9bca1975626fea52605e6ab9434dc0529d923feb36b18b8877d3b"
+        },
+        {
+          "path": "plugins/obsidian/skills/obsidian-cli/SKILL.md",
+          "sha256": "28f66289b1cf1d245807766d4dafb6f5f76eadc986fe4a7f224da51f50aa7524"
+        },
+        {
+          "path": "plugins/obsidian/skills/obsidian-headless/SKILL.md",
+          "sha256": "8baf2318c12a085e260684ccb4f95012d7d8217f677188f58b1de22f31db4754"
+        },
+        {
+          "path": "plugins/obsidian/skills/obsidian-markdown/SKILL.md",
+          "sha256": "f1c4ff5257d3f9743af797d755cabeef129f553704d5ff67ebf1239f9569f081"
+        },
+        {
+          "path": "plugins/obsidian/skills/obsidian-markdown/references/CALLOUTS.md",
+          "sha256": "9912ec2e3f8711f65b8ceb82cc19cbffc5e6f8ccf2ab627e18926c522c383d8b"
+        },
+        {
+          "path": "plugins/obsidian/skills/obsidian-markdown/references/EMBEDS.md",
+          "sha256": "63b6205507e28fb58cf200bc348a2b139e50ae739743e2e6316732148973cb7a"
+        },
+        {
+          "path": "plugins/obsidian/skills/obsidian-markdown/references/PROPERTIES.md",
+          "sha256": "f2d01b096a1c981a675e86b6a8c46bab271b278497646d465467b8120043b87c"
+        }
+      ]
+    },
+    {
+      "id": "beginner-vault",
+      "repo": "https://github.com/andrewmcodes/obsidian-beginner-vault-template",
+      "commit": "771f1a4d6e8a37f420974eb6c5425dfeb4890c22",
+      "licence": "MIT",
+      "licenceFile": "LICENSE.md",
+      "files": [
+        {
+          "path": "GETTING STARTED.md",
+          "sha256": "840b21e12e6ca6910fd8786ee7649a68eee08313115e68898365429f532cfc0b"
+        },
+        {
+          "path": "_assets/templates/t_daily.md",
+          "sha256": "d31092e3f71b503e0c532a24da67cfd1af7cd60e090d9027aa241304ff27ad89"
+        }
+      ]
+    },
+    {
+      "id": "awesome-test-vault",
+      "repo": "https://github.com/PtiCalin/Awesome-Test-Vault",
+      "commit": "dd7800cb17f8d726fe902cf2c5f0dd4cbb8eebb2",
+      "licence": "MIT AND CC-BY-4.0",
+      "licenceFile": "LICENSE",
+      "files": [
+        {
+          "path": "Vault/Archive/Archive.md",
+          "sha256": "5856ab8666f18c562561c01ce2ff36770ffb4bc1ede5638fafd392d986ca59dd"
+        },
+        {
+          "path": "Vault/Files and Media/Audio/Audio.md",
+          "sha256": "75498e0deb7375485108b2b3f8595dd609723a8fb25010ea38a9eee6d8d50ebb"
+        },
+        {
+          "path": "Vault/Files and Media/Documents/Documents.md",
+          "sha256": "59d9487237e275ca8b4726fc4b888d32a32ae84de3adfe1222846acd78f15756"
+        },
+        {
+          "path": "Vault/Files and Media/Files and Media.md",
+          "sha256": "e17a3f7429a3ca4d073feecd5e4d9112ba4ca2b8f3271a9182947df7799a3bc6"
+        },
+        {
+          "path": "Vault/Files and Media/Images/Images.md",
+          "sha256": "5eab2d9fbee316121582dc730c92956f9cde4baa9643a5b17debaaf4c58933a4"
+        },
+        {
+          "path": "Vault/Files and Media/Images/Inspo/Inspo.md",
+          "sha256": "dfd10051bfcac594559a985d7aeab9523fd2439823995b4f6408c78c65e9f7e7"
+        },
+        {
+          "path": "Vault/Files and Media/Images/Obsidian Settings/Obsidian Settings.md",
+          "sha256": "45d7798041b5cfd37d85163f9af007299ec02974ff62d77cad38954fdfaf4112"
+        },
+        {
+          "path": "Vault/Files and Media/Images/Vault Overview/Vault Cards/Vault Cards.md",
+          "sha256": "2b41a7d3c4bcaacc1bb90d633a93a62fe63817aa0e4ceb8fa0fe0f786b493058"
+        },
+        {
+          "path": "Vault/Files and Media/Images/Vault Overview/Vault Overview.md",
+          "sha256": "dd46bca9bc3433d7429a1e69dbca15065ddf689288952a8cec4011ec31e424c6"
+        },
+        {
+          "path": "Vault/Files and Media/Other Media/Other Media.md",
+          "sha256": "eccd87c3e7ab4cdcafa9d9574cb405bf53750926fa80d2bcc4653b3def13f136"
+        },
+        {
+          "path": "Vault/Files and Media/Video/Video.md",
+          "sha256": "64cc1d7a31c8d5ab09aaae6b3e6a456dcacde4e146b0d02cd144ce3f2fd43197"
+        },
+        {
+          "path": "Vault/Files and Media/Web Clippings/Web Clippings.md",
+          "sha256": "5c33741b6541908f66a0727e2e0818ad5cad128fd3eae5b7ced0c141cc9734c7"
+        },
+        {
+          "path": "Vault/Learnings/CLI Helper/examples/extract-helper.md",
+          "sha256": "853bb84c6d472be1773edcf1c982b8300817d7d4e2c4cba467032c2af311f7d0"
+        },
+        {
+          "path": "Vault/Learnings/CLI Helper/examples/gitlog-pretty-helper.md",
+          "sha256": "e98236f717396d9a2bc00fa927fbafbef82b155efd618858c6ce38a38f01a4b4"
+        },
+        {
+          "path": "Vault/Learnings/CLI Helper/examples/mkcd-helper.md",
+          "sha256": "7d8635361fbfd7926e070023ce3f3cb7e46bff2b01d2817a38e15cd3a5ae3bb8"
+        },
+        {
+          "path": "Vault/Learnings/CLI Helper/lesson_cli-helper.md",
+          "sha256": "c32e51edd28e7aab871aa9c616a519a7b45d00ebe2e288775bdbcd74b6877200"
+        },
+        {
+          "path": "Vault/Museum/Hall of Knowledge/Hall of Knowledge.md",
+          "sha256": "7a67f93472ef3edfcfbe5688decfe5ec9b83ded0a1aa9736e9aba354b238c255"
+        },
+        {
+          "path": "Vault/Museum/Hall of Knowledge/Main Hall/Main Hall.md",
+          "sha256": "05aec9ee25e3b74f2d35bd63f2290799be5f7bc3322cf76b2386868df5672270"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Computing and AI.md",
+          "sha256": "c60d141b1a9afef7cb2f794aab7148f771f6b6aefcc76f8be95371f247d6feb2"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Cybersecurity/Cryptography.md",
+          "sha256": "81710fa7c42c1348ff9be7fe5ac5f866a652aad447cc715e385a7bf7e835d81f"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Cybersecurity/Encryption Basics Cheatsheet.md",
+          "sha256": "3a5737b285f5302afe5c08306bfae3495c3a36d0732a0745fe5dd962974a27e9"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Cybersecurity/Encryption.md",
+          "sha256": "0103c999728ee85ebc6bd33b6005976c469dcbc24c28473b0bc51109273c2ebf"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Digital Electronics/Logic Gates.md",
+          "sha256": "cd9753b8298c5b1a97cf21aaf556575de9d8e90d984574a740cc9b05e1984831"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Networks/Networks.md",
+          "sha256": "3250684729a8f4725cd3b22286b46b8490ef3c9c052eb6152ef0cf2ff3f2261a"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/About Bash.md",
+          "sha256": "a5d2581655ca2f701c6b21d14d3373bd55f43a2824a49ccd51d7cb0ea6c591a7"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Advanced Bash/note_bash_debugging.md",
+          "sha256": "10965e6853e52ef60e202e4cf8aa830a3246e772056ccd2812808a0798006264"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Advanced Bash/note_bash_parameter-expansion.md",
+          "sha256": "578d408924f09758f35c094c37d098cabbf0b0a11d81eda9ed7a64eda83fae72"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Advanced Bash/note_bash_scripting-style.md",
+          "sha256": "20510bf8dc8814f6aa5e6a30533d50520b8dba952a1b4d46520e96c22a52864b"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Advanced Bash/note_bash_subshells.md",
+          "sha256": "66a055dbbefadd32a56977f78b76cab0fad4cb49fef76a153f9cea5762c8d2a3"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Advanced Bash/note_bash_traps.md",
+          "sha256": "a901f934d5e417fb4e9dfc24e5aaa528760ea835b7d438c2199a82d429bea857"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Fundamentals/note_bash_arithmetic.md",
+          "sha256": "c87e28a13054b9e376cd34f04b1040f836c2b4001ab9be6e327be830bf1c0c26"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Fundamentals/note_bash_conditionals.md",
+          "sha256": "d1e8c1f9e58b79ccb9a9866edc01c8cb45e75fa161ec3526ab36dcea10ae227a"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Fundamentals/note_bash_functions.md",
+          "sha256": "579a0fafda3747fc45bb81c8b7d1ec40b5825f369b94effb3cfc451b49ba2797"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Fundamentals/note_bash_input-output.md",
+          "sha256": "a5304ebec104cb11f0a84cff4b8994455a25b0484afdbf0dc50650458573a6d8"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Fundamentals/note_bash_loops.md",
+          "sha256": "08e4ea61e01a84ff4b0d0d46d1eb161cec75bf6c84cf94de278c3497a6a335be"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Fundamentals/note_bash_strings.md",
+          "sha256": "2ffbdd171453e6bdc15ba7028de66c0638242c64aae4f0da369b540aedf57f49"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Fundamentals/note_bash_variables.md",
+          "sha256": "7aa5723dee97cd0335dfcde3a45268ac6340cea46fdaf3d50a9e937aec1746e5"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Getting Started/note_bash_install.md",
+          "sha256": "d474f6e0378afa457b8a9d004583dfb81629eb6c94683ed7dbe17a14ba713135"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Getting Started/note_bash_intro.md",
+          "sha256": "d2f196f6bddb66226fdb92e62ad26b50a786f77bf603155cc9f0b74e6d2dadd1"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Getting Started/note_bash_running-scripts.md",
+          "sha256": "91ae430f5150dc47034037579abaddc3f7545575cec3079a11340da125bda13f"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Intermediate Bash/note_bash_arrays.md",
+          "sha256": "9ccef9e0ba550f0813ece818dcb782674d6b834f6ac0aa53f22d99d5d387ed46"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Intermediate Bash/note_bash_case.md",
+          "sha256": "2b42d674f60a03ceafd5c0e10f7e52de8e158f2d99d961a17ec88c9848559401"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Intermediate Bash/note_bash_script-arguments.md",
+          "sha256": "afd2decea3d9b8a8056c50a68c2758bf4752e3ed96dad614a05c18ffa2f1d04a"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Intermediate Bash/note_bash_while-read.md",
+          "sha256": "688918792314b7964cf8bf1a742b383b0faea2b5fb8fa19387d594b4b2b4681d"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Projects & Practice/note_bash_cronjobs.md",
+          "sha256": "693df290dc49580c290e3511d380a0d15a52e8dc7a135902128d0f373106e0be"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Projects & Practice/note_bash_log-processor.md",
+          "sha256": "fc23f40135d5ef8049d76ac2b943010c93ba9893a6df4cad92d9e06871fdadb6"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Projects & Practice/note_bash_project-boilerplate.md",
+          "sha256": "fe9d38ecb366249cc3669fb8e8a4f89e210d93caa5947951678a1fd378214d8a"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Reference/note_bash_cheatsheet.md",
+          "sha256": "2a9c57d06a3985361507dc820f61541d984bce6c9576492d2907c5b332e40aa1"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Reference/note_bash_glossary.md",
+          "sha256": "2e97a3ee5626ca77e0ea7987ba9f0be591d98aed36e7411c9dac0d8c5d6554ac"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Tools & Utilities/note_bash_aliases.md",
+          "sha256": "a51915c919277d4139b6fd54711ddd01fb9090a17b135f8655f1138f1729cc8a"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Tools & Utilities/note_bash_exit-codes.md",
+          "sha256": "a9ee3194911370815f26f421a9823526cf2316b98b5baf4b51e44f62d5198ae5"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Tools & Utilities/note_bash_globbing.md",
+          "sha256": "548dd3ae3e9bf78f9ab270e355b12202670cd28362e347dd286caea7e1f70f3b"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Tools & Utilities/note_bash_pipes.md",
+          "sha256": "54fd8e71ae4e8aadc11535c75f2f1b904e8ffb241836088b70e5c28823d4385f"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Bash/Tools & Utilities/note_bash_redirection.md",
+          "sha256": "4292163163772bd9107e9457191101ae25c3b58eb4ebbe843296ec694a2de6aa"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Markdown/About Markdown.md",
+          "sha256": "5b183c2101060e0e01d70a52fbfe7ee659970b2d892b9ff94654f31cf9003988"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Advanced Python/note_py_dunder-methods.md",
+          "sha256": "bc04fce7b4a54a485565020d76484fcc8c46b38b9b60cecc454472197d07f33d"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Advanced Python/note_py_error-handling.md",
+          "sha256": "501e50cbaf160d8e0b85427fcc614913e598ec78b0478336c90a4d22ef1f4bdd"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Advanced Python/note_py_introspection.md",
+          "sha256": "065b6f58a7cbbf111b22fd0a174110584a34b6eb099d1cbd6938704861d71cc2"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Advanced Python/note_py_lang-ref.md",
+          "sha256": "ab639fa2830bace6f91aadedc2f6b02d989785a3164d15ac80dc2285e148bec3"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Advanced Python/note_py_type-hints.md",
+          "sha256": "51c1479f2eb8d5b21d570570e3cbdb0a3a164c746b488d7671730b20843fbfa1"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Async & Concurrency/note_py_asyncio.md",
+          "sha256": "9cc29109fe14f344b061a23c486847a12efc133f70f73a758c38f6ca70c3e1fa"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Async & Concurrency/note_py_multiprocessing.md",
+          "sha256": "2313d90d9c33e8fb3f699e4ac9f3aa9ee164fa465c28cbb47993b7ed1ee53fce"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Async & Concurrency/note_py_threading.md",
+          "sha256": "e072b0471704d66aaf53cc47120162c3e77a6e0679089950e6762177f14dca8a"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Functional Programming/note_py_closures.md",
+          "sha256": "8ce4f165ce69ddee3ede6ac6aa1b263bab630393c26901d0899516a3109b8faa"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Functional Programming/note_py_decorators.md",
+          "sha256": "629a9af9eddf15ae5a6d1caaf92bf2016d9973cd4d11cc2ae45c6a38abc59896"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Functional Programming/note_py_lambda.md",
+          "sha256": "c53934c8f35478142d726f7f799d1a745ebe112ed5e83d677ca312b4137943f7"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Functional Programming/note_py_map-filter-reduce.md",
+          "sha256": "2449c2e6cbd57cc146484453a456d74ac6e632778ababf7f5b31bd814b0c9bb1"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Functional Programming/note_py_partial-functions.md",
+          "sha256": "13285081e5f9758e9f58652d778b4bdf91ef6b7b1de27cc8e0b4c48f08536c6e"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Fundamentals/note_py_conditions.md",
+          "sha256": "837b4aedeac60ffe2b7aefd8b7657502251d0911fa0e566d3fd769ee3fe5807b"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Fundamentals/note_py_exceptions.md",
+          "sha256": "ba46657dd3300fa0c673f39baf660f5bc06290f3f1ab15caf7b31b47c711a4ba"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Fundamentals/note_py_function-args.md",
+          "sha256": "be221d6a396953d4723c57e7625d836dd692fb9690211d0df92cc94c988a592e"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Fundamentals/note_py_functions.md",
+          "sha256": "61b926e889d17591895cba4c995c5fea073ee34e3a20f65fcb00ac3699d836b3"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Fundamentals/note_py_input-output.md",
+          "sha256": "5ce4fbe067f907f1b2281ec418755d19ddc0944d618cf7a1304274a7027c214b"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Fundamentals/note_py_list-comprehensions.md",
+          "sha256": "d28a9eae656f7994037ee2659e26ee5a8bdd5bee2eac8ea1df39af7b6f2a2d86"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Fundamentals/note_py_loops.md",
+          "sha256": "3f90c014f24033b0cb07382581d4fe2915a61b8988c777f36301f0a499b86617"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Fundamentals/note_py_operators.md",
+          "sha256": "1e5bbc46ccd83f33d2a68726004d3da96c338bb5ef34d4c01e1da65267c3744f"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Fundamentals/note_py_string-formatting.md",
+          "sha256": "f0c8c5670c414d45519d361ae3323b00c4dd6e7fba408cea48bc307229ce3756"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Fundamentals/note_py_strings-basic.md",
+          "sha256": "815c994d09f3b73f7d1327f9f5338382058d495a2d848e088b3ca25d542adb99"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Fundamentals/note_py_syntax-basics.md",
+          "sha256": "1b257738fa8d17dc6defd95ab906d09ace178192bdcca31453ce7525a080517d"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Fundamentals/note_py_syntax-cheatsheet.md",
+          "sha256": "c183b2287f7ad06e71e7e26ddeaf81787d46e934f06a40ce07947c74929d3fd7"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Fundamentals/note_py_variables.md",
+          "sha256": "3d7409bcc84177b7afe6a81578788c7cd507241a531027a1430c9c55893a2258"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Getting Started/note_py_glossary.md",
+          "sha256": "18585548eb42a085866db2c7cf243b16b16bead5149c6b11678bb52c8d0d6e0c"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Getting Started/note_py_intro.md",
+          "sha256": "3a7428e6b5847b0848172863f759e860d9e30faee5d38651eacbb8215b9df88d"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Getting Started/note_py_script-runner.md",
+          "sha256": "6863cbefd5f165a4b2d59444c7615996264c6110b77c31337d612e39ae568b3c"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Getting Started/note_py_setup-windows.md",
+          "sha256": "e2598598673f38de0f946729b758108e2e518be66c601e430f606bbe972e7358"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Getting Started/note_py_venv-guide.md",
+          "sha256": "a24bf3f2f8d4d6d34f33cb6ddf2256c7cde68a6018545e4e40e9e99826d35655"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Modules & Libraries/note_py_csv-parsing.md",
+          "sha256": "720d8eefaddb0d0ee5894b14c994b9bd45e6a11114368de5cfb4af489be0292c"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Modules & Libraries/note_py_modules.md",
+          "sha256": "2d29ac49ce5497d3c9a838cc28add86f54b01de4632ed69b707a2b2c71eb8718"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Modules & Libraries/note_py_regex.md",
+          "sha256": "2eb29c566947eca7e6e84b8f91e63cf4e7815160c48c34765175d18dbbe201f7"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Modules & Libraries/note_py_serialization.md",
+          "sha256": "e78ac8f5fbdfc8d3e6d997b86fb3990b82ef961a9a3a7b0ba364e765cd7e3ffc"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Modules & Libraries/note_py_stdlib.md",
+          "sha256": "715533876274585934bee3432e6e626f7bedc781be690f5fc4f37d72a7d72dda"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Object-Oriented Programming/note_py_classes.md",
+          "sha256": "100b6ce591057df7d80a39771610c7f9bcb023165e3685923fe331c44e8662a9"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Object-Oriented Programming/note_py_inheritance.md",
+          "sha256": "502ac35c7a3b14ec111456bea46d3a6bde2d89673a9d7f45b195ac13bad8f487"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Object-Oriented Programming/note_py_static-class-methods.md",
+          "sha256": "50019d4183022d9779502a03f126cf817d1b0d5222cb733a3aa69172b8565fa8"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Python/Unsorted/note_py_generators.md",
+          "sha256": "954e0655de919b88488bfade04db431da505f7928816256a1923c11855f0866c"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Programming Languages/Yaml/Yaml.md",
+          "sha256": "260fa437f8684d7bdd96bd9e2947e30b3886dfc6600392e805e77d7c3b6a4dc0"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Version Control/Git Bash.md",
+          "sha256": "2fbb47718092646e09e4b40d8da2146b782d234a67e9befced89bc3dd2edbe61"
+        },
+        {
+          "path": "Vault/Notes/Personal Encyclopedia/Science and Technology/Computing and AI/Version Control/Git Essentials Cheatsheet.md",
+          "sha256": "143a2c82ac9bb91320092ddb4229d334183bada2b644a65fab6372f6cd0aa194"
+        },
+        {
+          "path": "Vault/System/Backend/Scripts/Media Acquisition/Pinterest Board Scraper/Pinterest Scraping & Automation Options.md",
+          "sha256": "9019e43c281d6d786cc3ca6ad6efb2b4368797614debd3b86bb59b808017408e"
+        },
+        {
+          "path": "Vault/System/Backend/Scripts/Plugins/draft-vaultos/test/module_registry.md",
+          "sha256": "0e856273f4a689b49b5d1ed3e9b40429218060d4f51e830a95cf2ce79db2f8a7"
+        },
+        {
+          "path": "Vault/System/Backend/Scripts/Structure Builder Scripts/Vault Structure Construction/Notes Section/Inspo/Linked with Pinterest Scrapper/README_inspo-folder-from-pinterest.md",
+          "sha256": "fa47432ec2d9cbd03e31c984b89af340cacf4649a750975651115a1d22752caa"
+        },
+        {
+          "path": "Vault/System/Documentation and Meta/VaultOS build checklist.md",
+          "sha256": "6d8b24ce6b9f97e24080e7fa194f5f0456b6e37c3b1c8582bbf0230583b0de71"
+        },
+        {
+          "path": "Vault/System/Documentation and Meta/🚀 Getting Started.md",
+          "sha256": "36068495dbd047420ca90b5a5fe06fd56590627405058a29b1c47fb80de9d442"
+        },
+        {
+          "path": "Vault/System/Frontend/Templates/Obsidian/Vault-Wide Standard Page Template v1.1.md",
+          "sha256": "43755f2a1b63c1a228f513ecea46a3a8d938e721a4c8313dd70a63053c3f486a"
+        },
+        {
+          "path": "Vault/System/Frontend/Templates/Obsidian/Vault-Wide Standard Page Template v1.2.md",
+          "sha256": "4b238c902ef0ba5c654e71a2982cc7c33f6c97df3b37eaa48dd9478f86bf2779"
+        },
+        {
+          "path": "Vault/System/Frontend/Templates/Obsidian/Vault-Wide Standard Page Template v1.3.md",
+          "sha256": "75444cc00faff2559a8cb304b0e4f46637228d8b739de114676341902fe5c495"
+        },
+        {
+          "path": "Vault/System/Frontend/Templates/Obsidian/universal_vault_template.md",
+          "sha256": "f064c4457efddb2b625f75de90fedb9fb318634ce20702595a505a68cca3beb8"
+        }
+      ]
+    }
+  ]
+}

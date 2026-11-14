@@ -11,6 +11,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Code2, Play, RotateCcw, Terminal } from "lucide-react";
 import { t } from "../i18n";
 import { buildProject, type RunnerMessage, type RunnerRequest } from "../playground/files";
+import "./playgroundBlockStrings";
+import { airplaneFlagOn } from "../privacy/airplaneBoot";
+import "../privacy/airplaneStrings";
 
 interface Props {
   source: string;
@@ -48,6 +51,8 @@ export default function PlaygroundBlock({ source, meta }: Props) {
   const [frameKey, setFrameKey] = useState(0);
   /** The runner page hasn't said `ready` within RUNNER_LOAD_MS of this run. */
   const [stalled, setStalled] = useState(false);
+  /** Run refused: airplane mode is on (the runner page's own policy allows images from any site). */
+  const [paused, setPaused] = useState(false);
   const frameRef = useRef<HTMLIFrameElement | null>(null);
   const runRef = useRef(0);
   const lineId = useRef(0);
@@ -103,6 +108,11 @@ export default function PlaygroundBlock({ source, meta }: Props) {
   }, []);
 
   function run() {
+    if (airplaneFlagOn()) {
+      setPaused(true);
+      return;
+    }
+    setPaused(false);
     runRef.current++;
     setStalled(false);
     received.current = 0;
@@ -188,6 +198,11 @@ export default function PlaygroundBlock({ source, meta }: Props) {
         {elapsed !== null && ` · ${elapsed} ms`}
         {errors ? ` · ${t("block.playground.errors", { n: errors })}` : ""}
       </div>
+      {paused && (
+        <div role="status" data-testid="playground-airplane" style={{ marginBottom: 6, fontSize: 12, color: "hsl(40 90% 45%)" }}>
+          {t("airplane.runner.paused")}
+        </div>
+      )}
       {stalled && (
         <div role="status" data-testid="playground-stalled" style={{ marginBottom: 6, fontSize: 12, color: "hsl(40 90% 45%)" }}>
           {t("block.playground.runnerBlocked")}

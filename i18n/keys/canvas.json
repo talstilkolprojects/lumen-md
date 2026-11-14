@@ -19,8 +19,157 @@
       "vars": []
     },
     {
+      "key": "canvas.card.add",
+      "en": "Note card",
+      "vars": []
+    },
+    {
+      "key": "canvas.card.editHint",
+      "en": "Double-click to edit · ⌘Enter saves",
+      "vars": []
+    },
+    {
+      "key": "canvas.card.editLabel",
+      "en": "Edit {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "canvas.card.empty",
+      "en": "(empty note)",
+      "vars": []
+    },
+    {
+      "key": "canvas.card.missing",
+      "en": "The note “{path}” isn't in the vault (moved or deleted?)",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "canvas.card.notFound",
+      "en": "No note “{ref}” in the vault",
+      "vars": [
+        "ref"
+      ]
+    },
+    {
+      "key": "canvas.card.open",
+      "en": "Open",
+      "vars": []
+    },
+    {
+      "key": "canvas.card.prompt",
+      "en": "Note to place on the canvas (a name or ![[note]]):",
+      "vars": []
+    },
+    {
       "key": "canvas.close",
       "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "canvas.diagram.code",
+      "en": "Mermaid (flowchart, sequence, class, state or ER)",
+      "vars": []
+    },
+    {
+      "key": "canvas.diagram.describe",
+      "en": "Describe it and a model on this device draws it",
+      "vars": []
+    },
+    {
+      "key": "canvas.diagram.describePlaceholder",
+      "en": "e.g. the order process: request, approval, shipping",
+      "vars": []
+    },
+    {
+      "key": "canvas.diagram.draw",
+      "en": "Draw",
+      "vars": []
+    },
+    {
+      "key": "canvas.diagram.drawFailed",
+      "en": "The model didn't produce a valid diagram: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "canvas.diagram.drawing",
+      "en": "Drawing…",
+      "vars": []
+    },
+    {
+      "key": "canvas.diagram.drawn",
+      "en": "Drawn. Check the diagram, then insert it.",
+      "vars": []
+    },
+    {
+      "key": "canvas.diagram.empty",
+      "en": "Paste or draw a diagram first.",
+      "vars": []
+    },
+    {
+      "key": "canvas.diagram.insert",
+      "en": "Insert",
+      "vars": []
+    },
+    {
+      "key": "canvas.diagram.insertedAsImage",
+      "en": "Inserted as a picture: this diagram type can't be made editable.",
+      "vars": []
+    },
+    {
+      "key": "canvas.diagram.inserting",
+      "en": "Converting…",
+      "vars": []
+    },
+    {
+      "key": "canvas.diagram.invalid",
+      "en": "Mermaid can't read it: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "canvas.diagram.localOnly",
+      "en": "Runs only on a local model (Ollama or in the browser); nothing leaves the device.",
+      "vars": []
+    },
+    {
+      "key": "canvas.diagram.missing",
+      "en": "Inserted, but these labels are missing from the drawing: {labels}",
+      "vars": [
+        "labels"
+      ]
+    },
+    {
+      "key": "canvas.diagram.noLocalModel",
+      "en": "No local model is available. Start Ollama with a model, or load one in Settings → AI.",
+      "vars": []
+    },
+    {
+      "key": "canvas.diagram.notEditable",
+      "en": "A {kind} diagram is inserted as a picture, not as shapes you can edit.",
+      "vars": [
+        "kind"
+      ]
+    },
+    {
+      "key": "canvas.diagram.open",
+      "en": "Diagram…",
+      "vars": []
+    },
+    {
+      "key": "canvas.diagram.title",
+      "en": "Diagram on the canvas",
+      "vars": []
+    },
+    {
+      "key": "canvas.diagram.unknown",
+      "en": "This isn't a Mermaid diagram: the first line should be its type (flowchart TD, sequenceDiagram, …).",
       "vars": []
     },
     {
@@ -31,6 +180,23 @@
     {
       "key": "canvas.done",
       "en": "Done",
+      "vars": []
+    },
+    {
+      "key": "canvas.export.failed",
+      "en": "Export failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "canvas.export.label",
+      "en": "Export image",
+      "vars": []
+    },
+    {
+      "key": "canvas.export.working",
+      "en": "Exporting…",
       "vars": []
     },
     {
@@ -176,6 +342,23 @@
       "vars": []
     },
     {
+      "key": "canvas.present",
+      "en": "Present",
+      "vars": []
+    },
+    {
+      "key": "canvas.present.failed",
+      "en": "Couldn't start the presentation: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "canvas.present.noFrames",
+      "en": "Add frames to the canvas to present it: each frame is a slide, arrows between frames set the order.",
+      "vars": []
+    },
+    {
       "key": "canvas.saveFailed",
       "en": "Couldn't save the canvas “{name}”: {error}",
       "vars": [
@@ -217,6 +400,11 @@
     {
       "key": "graphView.empty",
       "en": "No workspace files found. Open the workspace panel and add files to see the knowledge graph.",
+      "vars": []
+    },
+    {
+      "key": "graphView.openWorkspace",
+      "en": "Open the workspace",
       "vars": []
     },
     {

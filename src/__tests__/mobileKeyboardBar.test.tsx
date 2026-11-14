@@ -5,14 +5,14 @@
  * Previously this test only asserted `container is defined` — theatre
  * that would pass even if the bar never rendered. The real component
  * gates rendering on (a) `matchMedia('(pointer: coarse)')`, (b) editor
- * focused, (c) `visualViewport.height < window.innerHeight - 100`.
+ * focused, (c) nothing else: the row sits on top of the keyboard when there is one
+ * (VisualViewport) and at the bottom of the screen when there isn't.
  *
  * We test two coordinates of the contract:
  *   1. On a non-touch device (default in jsdom) the bar is hidden.
- *   2. When all three gating conditions are met, the bar renders a
- *      toolbar with the expected aria-label and a button for the
- *      Heading shortcut (which dispatches `lumen-mobile-insert` on
- *      mousedown).
+ *   2. On a touch screen with the source editor focused, the bar renders
+ *      the user's row (store `mobileToolbar`, plan W1.25) above the
+ *      keyboard, and a tap sends `lumen-mobile-action` {id}.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -47,8 +47,7 @@ describe("MobileKeyboardBar", () => {
     expect(container.querySelector('[role="toolbar"]')).toBeNull();
   });
 
-  it("renders a Markdown-shortcuts toolbar when touch + keyboard-up conditions are met, and dispatches lumen-mobile-insert on click", async () => {
-    // Touch device + visualViewport shrunk to simulate keyboard up.
+  it("on a touch screen with the editor focused: the user's row, 44 px targets, and a tap sends lumen-mobile-action without taking focus", async () => {
     Object.defineProperty(window, "matchMedia", {
       configurable: true,
       value: (q: string) => ({
@@ -63,46 +62,49 @@ describe("MobileKeyboardBar", () => {
       }),
     });
     Object.defineProperty(window, "innerHeight", { configurable: true, value: 800 });
-    const listeners = new Set<EventListener>();
     Object.defineProperty(window, "visualViewport", {
       configurable: true,
-      value: {
-        height: 500, // 300px shrink → keyboard up
-        addEventListener: (_t: string, l: EventListener) => listeners.add(l),
-        removeEventListener: (_t: string, l: EventListener) => listeners.delete(l),
-      } as unknown as VisualViewport,
+      value: { height: 500, offsetTop: 0, addEventListener: () => {}, removeEventListener: () => {} } as unknown as VisualViewport,
     });
-    // Editor focused — the bar checks `document.activeElement.classList.contains("cm-content")`.
+    // Focus inside the source editor (CodeMirror's .cm-editor).
+    const host = document.createElement("div");
+    host.className = "cm-editor";
     const editor = document.createElement("div");
     editor.className = "cm-content";
     editor.tabIndex = 0;
-    document.body.appendChild(editor);
+    host.appendChild(editor);
+    document.body.appendChild(host);
     editor.focus();
 
+    const { useAppStore } = await import("../store/useStore");
+    useAppStore.setState({ mobileToolbar: ["task", "indent", "hideKeyboard"] });
     const { MobileKeyboardBar } = await import("../ui/MobileKeyboardBar");
     const { container } = render(<MobileKeyboardBar />);
-
-    // Fire the visualViewport.resize that the component listens for, so
-    // useState flips `visible` to true.
     await act(async () => {
-      listeners.forEach((l) => l(new Event("resize")));
+      document.dispatchEvent(new FocusEvent("focusin"));
     });
 
-    const toolbar = container.querySelector('[role="toolbar"][aria-label="Markdown shortcuts"]');
+    const toolbar = container.querySelector('[role="toolbar"][aria-label="Editing toolbar"]');
     expect(toolbar).not.toBeNull();
-    const headingBtn = toolbar!.querySelector('button[aria-label="Insert heading"]') as HTMLButtonElement | null;
-    expect(headingBtn).not.toBeNull();
+    // The stored row, then ⋯ (customise); placed on top of the 300 px keyboard.
+    expect(Array.from(toolbar!.querySelectorAll<HTMLButtonElement>("button")).map((b) => b.getAttribute("data-action"))).toEqual(["task", "indent", "hideKeyboard", "customize"]);
+    expect((toolbar as HTMLElement).style.bottom).toBe("300px");
+    const task = toolbar!.querySelector('button[aria-label="Task checkbox"]') as HTMLButtonElement;
+    expect(task.style.minWidth).toBe("44px");
+
     let captured: CustomEvent | null = null;
     const handler = (e: Event) => {
       captured = e as CustomEvent;
     };
-    window.addEventListener("lumen-mobile-insert", handler);
-    // The bar uses onMouseDown (preserves keyboard focus), not click.
-    fireEvent.mouseDown(headingBtn!);
-    window.removeEventListener("lumen-mobile-insert", handler);
-    expect(captured).not.toBeNull();
-    expect((captured as unknown as CustomEvent).detail?.insert).toBe("# ");
+    window.addEventListener("lumen-mobile-action", handler);
+    // mousedown is cancelled (the editor keeps focus and the keyboard stays up); click acts.
+    const down = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+    task.dispatchEvent(down);
+    expect(down.defaultPrevented).toBe(true);
+    fireEvent.click(task);
+    window.removeEventListener("lumen-mobile-action", handler);
+    expect((captured as unknown as CustomEvent).detail?.id).toBe("task");
 
-    document.body.removeChild(editor);
+    document.body.removeChild(host);
   });
 });

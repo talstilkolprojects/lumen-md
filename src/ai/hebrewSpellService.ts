@@ -8,6 +8,41 @@ import type { GrammarMatch } from "./grammar";
 import { HEBREW_DICT_URL, hebrewRules } from "./hebrewSpell";
 import { HEBREW_FREQ_PATH, lonePrefixRule } from "./hebrewFreq";
 import { hebrewRatio } from "../text/hebrew";
+import { GRAMMAR_LEVELS, mergeGrammar, type GrammarLevel, type HebrewGrammarMatch } from "./hebrewGrammar";
+import { t } from "../i18n";
+
+/** The writing level for Hebrew grammar and style (plan W5.3): everyday, academic or legal. */
+export const GRAMMAR_LEVEL_KEY = "lumen.grammar.he.level";
+
+let sessionLevel: GrammarLevel | null = null;
+
+export function getGrammarLevel(): GrammarLevel {
+  if (sessionLevel) return sessionLevel;
+  try {
+    const v = localStorage.getItem(GRAMMAR_LEVEL_KEY);
+    return (GRAMMAR_LEVELS as readonly string[]).includes(v ?? "") ? (v as GrammarLevel) : "everyday";
+  } catch {
+    return "everyday";
+  }
+}
+
+export function setGrammarLevel(level: GrammarLevel): void {
+  sessionLevel = level;
+  try {
+    localStorage.setItem(GRAMMAR_LEVEL_KEY, level);
+  } catch {
+    /* storage denied: sessionLevel keeps it until the page closes */
+  }
+  announceDictionaryChange();
+}
+
+/** Grammar findings carry i18n keys (they are made in the worker): the message and its short explanation, in the UI language. */
+export function localize(matches: GrammarMatch[]): GrammarMatch[] {
+  return matches.map((m) => {
+    const g = m as HebrewGrammarMatch;
+    return g.messageKey ? { ...m, message: `${t(g.messageKey, g.vars)} — ${t(g.explainKey, g.vars)}` } : m;
+  });
+}
 
 const DICT_KEY = "lumen.dict.he.v1";
 /** Window event after the dictionary is installed or removed: open editors re-check. */
@@ -56,7 +91,7 @@ const pending = new Map<number, { text: string; resolve: (m: GrammarMatch[]) => 
 /** Settle every outstanding check with the dictionary-free rules: a caller must never wait forever. */
 /** What runs on the main thread when there is no worker: the rules that need no list. */
 function mainThreadRules(text: string): GrammarMatch[] {
-  return [...hebrewRules(text), ...lonePrefixRule(text)].sort((a, b) => a.offset - b.offset);
+  return localize(mergeGrammar([...hebrewRules(text), ...lonePrefixRule(text)].sort((a, b) => a.offset - b.offset), text, getGrammarLevel()));
 }
 
 /** The bundled frequency list's address (public/dict/, served with the app and precached). */
@@ -86,7 +121,7 @@ function startWorker(): Promise<Worker | null> {
     const w = new Worker(new URL("./hebrewSpell.worker.ts", import.meta.url), { type: "module" });
     w.onmessage = (e: MessageEvent<{ type: string; id?: number; matches?: GrammarMatch[] }>) => {
       if (e.data.type === "result" && e.data.id !== undefined) {
-        pending.get(e.data.id)?.resolve(e.data.matches ?? []);
+        pending.get(e.data.id)?.resolve(localize(e.data.matches ?? []));
         pending.delete(e.data.id);
       } else if (e.data.type === "freq-loaded") {
         // Checks answered before the list arrived had no hints: open editors check again.
@@ -110,12 +145,17 @@ function startWorker(): Promise<Worker | null> {
  * the bundled frequency list; Hspell's spelling once the user installed it.
  */
 export async function checkHebrew(text: string): Promise<GrammarMatch[]> {
+  const { rankFindings } = await import("./grammarRanker");
+  return rankFindings(text, await checkHebrewRules(text));
+}
+
+async function checkHebrewRules(text: string): Promise<GrammarMatch[]> {
   const w = await startWorker().catch(() => null);
   if (!w) return mainThreadRules(text);
   const id = ++seq;
   return new Promise((resolve) => {
     pending.set(id, { text, resolve });
-    w.postMessage({ type: "check", id, text });
+    w.postMessage({ type: "check", id, text, level: getGrammarLevel() });
   });
 }
 

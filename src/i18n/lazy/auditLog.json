@@ -1,0 +1,16 @@
+{
+  "audit.clearFilters": "Clear the filters",
+  "audit.close": "Close",
+  "audit.col.action": "Action",
+  "audit.col.payload": "Payload",
+  "audit.col.ts": "Time",
+  "audit.col.user": "User",
+  "audit.empty": "No events match the current filter.",
+  "audit.export": "Export CSV",
+  "audit.exportDone": "✅ Exported {count} rows to CSV",
+  "audit.fetchFailed": "Audit fetch failed: {error}",
+  "audit.filter.action": "Filter by action…",
+  "audit.filter.user": "Filter by user id…",
+  "audit.refresh": "Refresh",
+  "audit.rows": "rows"
+}

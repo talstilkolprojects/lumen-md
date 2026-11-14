@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "lumen.example.hebrew-date",
+  "name": "Hebrew date",
+  "version": "1.0.0",
+  "description": "Inserts today's Hebrew date (י״ט בחשוון תשפ״ז) at the cursor, and renders ```hebrew-date blocks that convert Gregorian dates. Computed in the plugin: no network.",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    { "id": "commands", "reason": "Adds the “Insert Hebrew date” command" },
+    { "id": "document:write", "reason": "Inserts the date at the cursor" },
+    { "id": "renderer", "reason": "Renders the `hebrew-date` code-block language" }
+  ]
+}

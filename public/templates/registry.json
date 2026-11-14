@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-04-26",
+  "updated": "2026-11-10",
   "templates": [
     {
       "id": "daily-journal-pro",
@@ -16,7 +16,12 @@
       "url": "templates/daily-journal-pro.md",
       "rating": 4.9,
       "downloads": 0,
-      "tags": ["journal", "morning", "evening", "habits"]
+      "tags": [
+        "journal",
+        "morning",
+        "evening",
+        "habits"
+      ]
     },
     {
       "id": "weekly-review",
@@ -32,7 +37,11 @@
       "url": "templates/weekly-review.md",
       "rating": 4.8,
       "downloads": 0,
-      "tags": ["review", "gtd", "planning"]
+      "tags": [
+        "review",
+        "gtd",
+        "planning"
+      ]
     },
     {
       "id": "book-review",
@@ -48,7 +57,11 @@
       "url": "templates/book-review.md",
       "rating": 4.7,
       "downloads": 0,
-      "tags": ["books", "reading", "database"]
+      "tags": [
+        "books",
+        "reading",
+        "database"
+      ]
     },
     {
       "id": "1-1-meeting",
@@ -64,7 +77,11 @@
       "url": "templates/one-on-one.md",
       "rating": 4.6,
       "downloads": 0,
-      "tags": ["meetings", "work", "management"]
+      "tags": [
+        "meetings",
+        "work",
+        "management"
+      ]
     },
     {
       "id": "rfc",
@@ -80,7 +97,11 @@
       "url": "templates/rfc.md",
       "rating": 4.9,
       "downloads": 0,
-      "tags": ["engineering", "rfc", "design"]
+      "tags": [
+        "engineering",
+        "rfc",
+        "design"
+      ]
     },
     {
       "id": "literature-note",
@@ -96,7 +117,11 @@
       "url": "templates/literature-note.md",
       "rating": 4.8,
       "downloads": 0,
-      "tags": ["research", "zettelkasten", "academic"]
+      "tags": [
+        "research",
+        "zettelkasten",
+        "academic"
+      ]
     },
     {
       "id": "okrs-quarterly",
@@ -112,7 +137,11 @@
       "url": "templates/okrs-quarterly.md",
       "rating": 4.7,
       "downloads": 0,
-      "tags": ["okrs", "planning", "leadership"]
+      "tags": [
+        "okrs",
+        "planning",
+        "leadership"
+      ]
     },
     {
       "id": "interview-template",
@@ -128,7 +157,11 @@
       "url": "templates/user-interview.md",
       "rating": 4.7,
       "downloads": 0,
-      "tags": ["research", "ux", "interview"]
+      "tags": [
+        "research",
+        "ux",
+        "interview"
+      ]
     },
     {
       "id": "sprint-retro",
@@ -144,7 +177,11 @@
       "url": "templates/sprint-retro.md",
       "rating": 4.5,
       "downloads": 0,
-      "tags": ["scrum", "engineering", "retro"]
+      "tags": [
+        "scrum",
+        "engineering",
+        "retro"
+      ]
     },
     {
       "id": "trip-plan",
@@ -160,7 +197,529 @@
       "url": "templates/trip-plan.md",
       "rating": 4.8,
       "downloads": 0,
-      "tags": ["travel", "personal"]
+      "tags": [
+        "travel",
+        "personal"
+      ]
+    },
+    {
+      "id": "il-daily-journal",
+      "name": "Daily journal (Hebrew date)",
+      "category": "Journaling",
+      "author": "Lumen Team",
+      "description": "Mood, three intentions, what happened, gratitude — with the Hebrew date beside the civil one.",
+      "name_he": "יומן יומי (עם תאריך עברי)",
+      "description_he": "מצב רוח, שלוש כוונות, מה קרה והכרת תודה — עם התאריך העברי ליד הלועזי.",
+      "url_he": "templates/he/il-daily-journal.md",
+      "icon": "📔",
+      "version": "1.0.0",
+      "url": "templates/il-daily-journal.md",
+      "base": "templates/bases/il-daily-journal.base",
+      "base_he": "templates/he/bases/il-daily-journal.base",
+      "base_name": "Journal",
+      "base_name_he": "יומן",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "journal"
+      ]
+    },
+    {
+      "id": "il-weekly-review",
+      "name": "Weekly review (Sunday–Thursday)",
+      "category": "Reflection",
+      "author": "Lumen Team",
+      "description": "The Israeli work week in review: wins, what slipped, next week's three priorities, and Shabbat plans.",
+      "name_he": "סיכום שבועי (ראשון–חמישי)",
+      "description_he": "סיכום שבוע העבודה הישראלי: הצלחות, מה נדחה, שלושת היעדים לשבוע הבא ותוכניות לשבת.",
+      "url_he": "templates/he/il-weekly-review.md",
+      "icon": "🗓️",
+      "version": "1.0.0",
+      "url": "templates/il-weekly-review.md",
+      "base": "templates/bases/il-weekly-review.base",
+      "base_he": "templates/he/bases/il-weekly-review.base",
+      "base_name": "Weekly reviews",
+      "base_name_he": "סיכומים שבועיים",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "weekly-review"
+      ]
+    },
+    {
+      "id": "il-course",
+      "name": "University course",
+      "category": "Student",
+      "author": "Lumen Team",
+      "description": "One note per course: code, lecturer, semester (A / B / summer), credits (נ\"ז), grading, office hours.",
+      "name_he": "קורס באוניברסיטה",
+      "description_he": "פתק לכל קורס: מספר קורס, מרצה, סמסטר (א / ב / קיץ), נקודות זכות, הרכב ציון ושעות קבלה.",
+      "url_he": "templates/he/il-course.md",
+      "icon": "🎓",
+      "version": "1.0.0",
+      "url": "templates/il-course.md",
+      "base": "templates/bases/il-course.base",
+      "base_he": "templates/he/bases/il-course.base",
+      "base_name": "Courses",
+      "base_name_he": "קורסים",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "course"
+      ]
+    },
+    {
+      "id": "il-exam",
+      "name": "Exam (Moed A / B)",
+      "category": "Student",
+      "author": "Lumen Team",
+      "description": "Date, moed, material, a study plan by days, and the grade when it comes.",
+      "name_he": "מבחן (מועד א׳ / ב׳)",
+      "description_he": "תאריך, מועד, חומר, תוכנית לימוד לפי ימים, והציון כשהוא מגיע.",
+      "url_he": "templates/he/il-exam.md",
+      "icon": "📝",
+      "version": "1.0.0",
+      "url": "templates/il-exam.md",
+      "base": "templates/bases/il-exam.base",
+      "base_he": "templates/he/bases/il-exam.base",
+      "base_name": "Exams",
+      "base_name_he": "מבחנים",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "exam"
+      ]
+    },
+    {
+      "id": "il-lecture",
+      "name": "Lecture summary",
+      "category": "Student",
+      "author": "Lumen Team",
+      "description": "Course, lecture number, main ideas, examples, and questions for the TA (מתרגל).",
+      "name_he": "סיכום הרצאה",
+      "description_he": "קורס, מספר הרצאה, רעיונות מרכזיים, דוגמאות ושאלות למתרגל.",
+      "url_he": "templates/he/il-lecture.md",
+      "icon": "🧑‍🏫",
+      "version": "1.0.0",
+      "url": "templates/il-lecture.md",
+      "base": "templates/bases/il-lecture.base",
+      "base_he": "templates/he/bases/il-lecture.base",
+      "base_name": "Lectures",
+      "base_name_he": "הרצאות",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "lecture"
+      ]
+    },
+    {
+      "id": "il-seminar-paper",
+      "name": "Seminar paper",
+      "category": "Student",
+      "author": "Lumen Team",
+      "description": "Research question, advisor, milestones to the submission date, and the sources list.",
+      "name_he": "עבודה סמינריונית",
+      "description_he": "שאלת מחקר, מנחה, אבני דרך עד ההגשה ורשימת מקורות.",
+      "url_he": "templates/he/il-seminar-paper.md",
+      "icon": "📚",
+      "version": "1.0.0",
+      "url": "templates/il-seminar-paper.md",
+      "base": "templates/bases/il-seminar-paper.base",
+      "base_he": "templates/he/bases/il-seminar-paper.base",
+      "base_name": "Papers",
+      "base_name_he": "עבודות",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "paper"
+      ]
+    },
+    {
+      "id": "il-article-reading",
+      "name": "Article to read",
+      "category": "Research",
+      "author": "Lumen Team",
+      "description": "Authors, year, DOI, status, the claim in one sentence, method, and what it means for your work.",
+      "name_he": "מאמר לקריאה",
+      "description_he": "מחברים, שנה, DOI, סטטוס, הטענה במשפט אחד, השיטה ומה זה אומר על העבודה שלך.",
+      "url_he": "templates/he/il-article-reading.md",
+      "icon": "🔬",
+      "version": "1.0.0",
+      "url": "templates/il-article-reading.md",
+      "base": "templates/bases/il-article-reading.base",
+      "base_he": "templates/he/bases/il-article-reading.base",
+      "base_name": "Literature",
+      "base_name_he": "ספרות",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "article"
+      ]
+    },
+    {
+      "id": "il-research-log",
+      "name": "Research log / experiment",
+      "category": "Research",
+      "author": "Lumen Team",
+      "description": "Hypothesis, setup, what was run, results, and the next step — one entry per session.",
+      "name_he": "יומן מחקר / ניסוי",
+      "description_he": "השערה, מערך, מה הורץ, תוצאות והצעד הבא — רשומה לכל מפגש עבודה.",
+      "url_he": "templates/he/il-research-log.md",
+      "icon": "🧪",
+      "version": "1.0.0",
+      "url": "templates/il-research-log.md",
+      "base": "templates/bases/il-research-log.base",
+      "base_he": "templates/he/bases/il-research-log.base",
+      "base_name": "Research log",
+      "base_name_he": "יומן מחקר",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "experiment"
+      ]
+    },
+    {
+      "id": "il-team-meeting",
+      "name": "Team meeting",
+      "category": "Work",
+      "author": "Lumen Team",
+      "description": "Participants, agenda, decisions, and action items with owners and dates.",
+      "name_he": "ישיבת צוות",
+      "description_he": "משתתפים, סדר יום, החלטות ומשימות עם אחראי ותאריך.",
+      "url_he": "templates/he/il-team-meeting.md",
+      "icon": "👥",
+      "version": "1.0.0",
+      "url": "templates/il-team-meeting.md",
+      "base": "templates/bases/il-team-meeting.base",
+      "base_he": "templates/he/bases/il-team-meeting.base",
+      "base_name": "Meetings",
+      "base_name_he": "ישיבות",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "meeting"
+      ]
+    },
+    {
+      "id": "il-one-on-one",
+      "name": "One-on-one",
+      "category": "Work",
+      "author": "Lumen Team",
+      "description": "What's on their mind, what's on yours, feedback both ways, and follow-ups.",
+      "name_he": "שיחת אחד על אחד",
+      "description_he": "מה על הלב שלו/ה, מה על הלב שלך, משוב לשני הכיוונים ומשימות המשך.",
+      "url_he": "templates/he/il-one-on-one.md",
+      "icon": "🤝",
+      "version": "1.0.0",
+      "url": "templates/il-one-on-one.md",
+      "base": "templates/bases/il-one-on-one.base",
+      "base_he": "templates/he/bases/il-one-on-one.base",
+      "base_name": "One-on-ones",
+      "base_name_he": "שיחות אחד על אחד",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "one-on-one"
+      ]
+    },
+    {
+      "id": "il-project",
+      "name": "Project",
+      "category": "Work",
+      "author": "Lumen Team",
+      "description": "Goal, owner, status, due date, milestones and risks — on a kanban board by status.",
+      "name_he": "פרויקט",
+      "description_he": "מטרה, אחראי, סטטוס, תאריך יעד, אבני דרך וסיכונים — בלוח קנבן לפי סטטוס.",
+      "url_he": "templates/he/il-project.md",
+      "icon": "🚀",
+      "version": "1.0.0",
+      "url": "templates/il-project.md",
+      "base": "templates/bases/il-project.base",
+      "base_he": "templates/he/bases/il-project.base",
+      "base_name": "Projects",
+      "base_name_he": "פרויקטים",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "project"
+      ]
+    },
+    {
+      "id": "il-task",
+      "name": "Task",
+      "category": "Work",
+      "author": "Lumen Team",
+      "description": "One task with its priority, due date and the project it belongs to.",
+      "name_he": "משימה",
+      "description_he": "משימה אחת עם עדיפות, תאריך יעד והפרויקט שהיא שייכת אליו.",
+      "url_he": "templates/he/il-task.md",
+      "icon": "✅",
+      "version": "1.0.0",
+      "url": "templates/il-task.md",
+      "base": "templates/bases/il-task.base",
+      "base_he": "templates/he/bases/il-task.base",
+      "base_name": "Tasks",
+      "base_name_he": "משימות",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "task"
+      ]
+    },
+    {
+      "id": "il-recipe",
+      "name": "Recipe (meat / dairy / pareve)",
+      "category": "Home",
+      "author": "Lumen Team",
+      "description": "Kashrut, servings, time, whether it keeps for Shabbat, ingredients and steps — as cards.",
+      "name_he": "מתכון (בשרי / חלבי / פרווה)",
+      "description_he": "כשרות, מנות, זמן, האם מתאים לשבת, מצרכים ושלבים — בתצוגת כרטיסים.",
+      "url_he": "templates/he/il-recipe.md",
+      "icon": "🍲",
+      "version": "1.0.0",
+      "url": "templates/il-recipe.md",
+      "base": "templates/bases/il-recipe.base",
+      "base_he": "templates/he/bases/il-recipe.base",
+      "base_name": "Recipes",
+      "base_name_he": "מתכונים",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "recipe"
+      ]
+    },
+    {
+      "id": "il-reading",
+      "name": "Book I'm reading",
+      "category": "Reading",
+      "author": "Lumen Team",
+      "description": "Author, status, rating, quotes and what stayed with you.",
+      "name_he": "ספר שאני קורא/ת",
+      "description_he": "סופר/ת, סטטוס, דירוג, ציטוטים ומה נשאר איתך.",
+      "url_he": "templates/he/il-reading.md",
+      "icon": "📖",
+      "version": "1.0.0",
+      "url": "templates/il-reading.md",
+      "base": "templates/bases/il-reading.base",
+      "base_he": "templates/he/bases/il-reading.base",
+      "base_name": "Reading list",
+      "base_name_he": "רשימת קריאה",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "book"
+      ]
+    },
+    {
+      "id": "il-book-chapter",
+      "name": "Book chapter",
+      "category": "Writing",
+      "author": "Lumen Team",
+      "description": "Chapter number, point of view, word goal and status; scenes, and what the chapter must change.",
+      "name_he": "פרק בספר",
+      "description_he": "מספר פרק, נקודת מבט, יעד מילים וסטטוס; סצנות, ומה הפרק חייב לשנות.",
+      "url_he": "templates/he/il-book-chapter.md",
+      "icon": "✍️",
+      "version": "1.0.0",
+      "url": "templates/il-book-chapter.md",
+      "base": "templates/bases/il-book-chapter.base",
+      "base_he": "templates/he/bases/il-book-chapter.base",
+      "base_name": "Manuscript",
+      "base_name_he": "כתב היד",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "chapter"
+      ]
+    },
+    {
+      "id": "il-character",
+      "name": "Character",
+      "category": "Writing",
+      "author": "Lumen Team",
+      "description": "Role, age, what they want, what they fear, how they speak — for every character in the story.",
+      "name_he": "דמות",
+      "description_he": "תפקיד, גיל, מה היא רוצה, ממה היא חוששת ואיך היא מדברת — לכל דמות בסיפור.",
+      "url_he": "templates/he/il-character.md",
+      "icon": "🎭",
+      "version": "1.0.0",
+      "url": "templates/il-character.md",
+      "base": "templates/bases/il-character.base",
+      "base_he": "templates/he/bases/il-character.base",
+      "base_name": "Characters",
+      "base_name_he": "דמויות",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "character"
+      ]
+    },
+    {
+      "id": "il-reserve-duty",
+      "name": "Reserve duty (miluim) log",
+      "category": "Personal",
+      "author": "Lumen Team",
+      "description": "Dates, unit, days served, approvals and refunds to claim — for the employer, the university and Bituach Leumi.",
+      "name_he": "יומן מילואים",
+      "description_he": "תאריכים, יחידה, ימי שירות, אישורים והחזרים לתבוע — מול המעסיק, האוניברסיטה וביטוח לאומי.",
+      "url_he": "templates/he/il-reserve-duty.md",
+      "icon": "🪖",
+      "version": "1.0.0",
+      "url": "templates/il-reserve-duty.md",
+      "base": "templates/bases/il-reserve-duty.base",
+      "base_he": "templates/he/bases/il-reserve-duty.base",
+      "base_name": "Reserve duty",
+      "base_name_he": "מילואים",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "reserve-duty"
+      ]
+    },
+    {
+      "id": "il-holiday",
+      "name": "Holiday plan",
+      "category": "Home",
+      "author": "Lumen Team",
+      "description": "Which holiday, where, guests, menu (linked recipes), shopping and tasks.",
+      "name_he": "תכנון חג",
+      "description_he": "איזה חג, איפה, אורחים, תפריט (עם קישור למתכונים), קניות ומשימות.",
+      "url_he": "templates/he/il-holiday.md",
+      "icon": "🕯️",
+      "version": "1.0.0",
+      "url": "templates/il-holiday.md",
+      "base": "templates/bases/il-holiday.base",
+      "base_he": "templates/he/bases/il-holiday.base",
+      "base_name": "Holidays",
+      "base_name_he": "חגים",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "holiday"
+      ]
+    },
+    {
+      "id": "il-apartment",
+      "name": "Apartment hunting",
+      "category": "Home",
+      "author": "Lumen Team",
+      "description": "Neighbourhood, rent in ₪, rooms, floor, elevator, arnona, va'ad bayit — one note per apartment.",
+      "name_he": "חיפוש דירה",
+      "description_he": "שכונה, שכירות ב-₪, חדרים, קומה, מעלית, ארנונה, ועד בית — פתק לכל דירה.",
+      "url_he": "templates/he/il-apartment.md",
+      "icon": "🏠",
+      "version": "1.0.0",
+      "url": "templates/il-apartment.md",
+      "base": "templates/bases/il-apartment.base",
+      "base_he": "templates/he/bases/il-apartment.base",
+      "base_name": "Apartments",
+      "base_name_he": "דירות",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "apartment"
+      ]
+    },
+    {
+      "id": "il-job-application",
+      "name": "Job application",
+      "category": "Personal",
+      "author": "Lumen Team",
+      "description": "Company, role, stage, contact, salary expectation — and a kanban of every application by stage.",
+      "name_he": "מועמדות לעבודה",
+      "description_he": "חברה, תפקיד, שלב, איש קשר וציפיות שכר — ולוח קנבן של כל המועמדויות לפי שלב.",
+      "url_he": "templates/he/il-job-application.md",
+      "icon": "💼",
+      "version": "1.0.0",
+      "url": "templates/il-job-application.md",
+      "base": "templates/bases/il-job-application.base",
+      "base_he": "templates/he/bases/il-job-application.base",
+      "base_name": "Job applications",
+      "base_name_he": "מועמדויות",
+      "rating": 0,
+      "downloads": 0,
+      "tags": [
+        "israel",
+        "application"
+      ]
+    },
+    {
+      "id": "bagrut-math",
+      "name": "Math exam practice",
+      "category": "Study",
+      "author": "Lumen Team",
+      "description": "Bagrut-style math practice: quadratic equation, derivative and extremum, sequences. Formulas inline in the text with $…$.",
+      "name_he": "תרגול לבגרות במתמטיקה",
+      "description_he": "תרגול בסגנון בגרות: משוואה ריבועית, נגזרת ונקודות קיצון, סדרות. נוסחאות בתוך הטקסט עם $…$.",
+      "url_he": "templates/he/bagrut-math.md",
+      "icon": "📐",
+      "version": "1.0.0",
+      "url": "templates/bagrut-math.md",
+      "rating": 4.8,
+      "downloads": 0,
+      "tags": [
+        "study",
+        "math",
+        "bagrut"
+      ]
+    },
+    {
+      "id": "intro-physics",
+      "name": "Physics lab report",
+      "category": "Study",
+      "author": "Lumen Team",
+      "description": "Intro physics lab report: goal, theory with formulas, a measurement table, error analysis and conclusion.",
+      "name_he": "דוח מעבדה בפיזיקה",
+      "description_he": "דוח מעבדה למבוא לפיזיקה: מטרה, רקע תאורטי עם נוסחאות, טבלת מדידות, ניתוח שגיאות ומסקנה.",
+      "url_he": "templates/he/intro-physics.md",
+      "icon": "🧪",
+      "version": "1.0.0",
+      "url": "templates/intro-physics.md",
+      "rating": 4.7,
+      "downloads": 0,
+      "tags": [
+        "study",
+        "physics",
+        "lab"
+      ]
+    },
+    {
+      "id": "intro-stats",
+      "name": "Statistics problem set",
+      "category": "Study",
+      "author": "Lumen Team",
+      "description": "Intro statistics problem set: descriptive statistics, standard score, hypothesis test and probability, with the formulas in place.",
+      "name_he": "תרגיל בסטטיסטיקה",
+      "description_he": "תרגיל במבוא לסטטיסטיקה: סטטיסטיקה תיאורית, ציון תקן, בדיקת השערות והסתברות, עם הנוסחאות במקומן.",
+      "url_he": "templates/he/intro-stats.md",
+      "icon": "📊",
+      "version": "1.0.0",
+      "url": "templates/intro-stats.md",
+      "rating": 4.7,
+      "downloads": 0,
+      "tags": [
+        "study",
+        "statistics"
+      ]
     }
   ]
 }

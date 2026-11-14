@@ -1,0 +1,20 @@
+filters:
+  and:
+    - file.inFolder("Projects")
+views:
+  - type: kanban
+    name: Board
+    order: [file.name, priority]
+    groupBy:
+      property: status
+      direction: ASC
+    sort:
+      - property: file.name
+        direction: ASC
+  - type: table
+    name: Done only
+    filters: 'status == "done"'
+    order: [file.name]
+    sort:
+      - property: priority
+        direction: ASC

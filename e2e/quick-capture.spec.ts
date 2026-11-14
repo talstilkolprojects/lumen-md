@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * Plan 4.16 — quick capture in two steps on every platform:
@@ -65,8 +66,8 @@ const inbox = (page: Page) =>
 
 const ENTRY = /^- \[\[journal\/\d{4}-\d{2}-\d{2}\]\] \d{2}:\d{2} /m;
 
-test("⌥⌘N, type, Enter → the line is at the end of inbox.md", async ({ page }) => {
-  test.skip(!(await opfsWritable(page)), "this engine refuses OPFS writes here, so there is no vault for inbox.md");
+test("⌥⌘N, type, Enter → the line is at the end of inbox.md", async ({ page, browserName }) => {
+  vaultOrSkip(await opfsWritable(page), browserName);
   expect(await inbox(page)).toBeNull();
 
   await page.keyboard.press("ControlOrMeta+Alt+KeyN");
@@ -95,8 +96,8 @@ test("⌥⌘N, type, Enter → the line is at the end of inbox.md", async ({ pag
   expect(after.indexOf("second thought")).toBeGreaterThan(after.indexOf("call the plumber"));
 });
 
-test("the PWA shortcut /?capture=1 opens the box; type, click Add → inbox.md", async ({ page }) => {
-  test.skip(!(await opfsWritable(page)), "this engine refuses OPFS writes here, so there is no vault for inbox.md");
+test("the PWA shortcut /?capture=1 opens the box; type, click Add → inbox.md", async ({ page, browserName }) => {
+  vaultOrSkip(await opfsWritable(page), browserName);
   await page.goto("/?capture=1");
   const box = page.getByTestId("quick-capture");
   await expect(box).toBeVisible({ timeout: 15_000 });
@@ -108,8 +109,8 @@ test("the PWA shortcut /?capture=1 opens the box; type, click Add → inbox.md",
   expect((await inbox(page)) ?? "").toMatch(ENTRY);
 });
 
-test("a share to the installed app is appended to inbox.md", async ({ page }) => {
-  test.skip(!(await opfsWritable(page)), "this engine refuses OPFS writes here, so there is no vault for inbox.md");
+test("a share to the installed app is appended to inbox.md", async ({ page, browserName }) => {
+  vaultOrSkip(await opfsWritable(page), browserName);
   // Something already in the inbox must stay.
   await page.evaluate(async () => {
     const root = await navigator.storage.getDirectory();

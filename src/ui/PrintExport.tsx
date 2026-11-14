@@ -5,7 +5,9 @@
  * then triggers window.print() which on modern browsers offers "Save as PDF".
  */
 
-import { renderMarkdown } from "../renderer/pipeline";
+import { extractFrontmatter, renderMarkdown } from "../renderer/pipeline";
+import { applyPageBreaks, buildToc, contentDirection, contentLang, printCss, printFrontmatter } from "../print/printLayout";
+import { getLocale, t } from "../i18n";
 import { safeSetHtml, safeClearHtml } from "../lib/trustedTypes";
 
 /**
@@ -17,73 +19,86 @@ export async function printDocument(
   markdownText: string,
   docName: string,
 ): Promise<void> {
-  const isDark = () => document.documentElement.classList.contains("dark");
-  const tree = await renderMarkdown(markdownText, isDark);
-
-  // We need to serialize the React tree. We'll render to a temporary div.
-  const { createRoot } = await import("react-dom/client");
-  const { createElement, Fragment } = await import("react");
-
-  const temp = document.createElement("div");
-  const root = createRoot(temp);
-
-  await new Promise<void>((resolve) => {
-    root.render(
-      createElement(Fragment, null, tree),
-    );
-    // Give React a tick to flush
-    setTimeout(resolve, 100);
-  });
-
-  const htmlContent = temp.innerHTML;
-  root.unmount();
-
-  // Gather all stylesheets from the current document
-  const styles: string[] = [];
-  for (const sheet of document.styleSheets) {
-    try {
-      const rules = [...sheet.cssRules].map((r) => r.cssText).join("\n");
-      styles.push(rules);
-    } catch {
-      // why: Cross-origin sheets — skip
-    }
-  }
-
-  // Get current theme class
-  const themeClass = document.documentElement.classList.contains("dark")
-    ? "dark"
-    : "";
-  const dir = document.documentElement.dir || "ltr";
-
-  const safeDocName = docName || "Untitled";
-  const safeStyles = styles.join("\n\n");
-  // Sanitized at the sink by the `lumen` Trusted Types policy (safeSetHtml).
-  const printContent = htmlContent;
-
+  const { title, themeClass, dir, lang, styles, html } = await preparePrint(markdownText, docName);
   const printWindow = window.open("", "_blank");
   if (printWindow?.document) {
-    hydratePrintDocument(
-      printWindow.document,
-      safeDocName,
-      themeClass,
-      dir,
-      safeStyles,
-      printContent,
-    );
+    hydratePrintDocument(printWindow.document, title, themeClass, dir, lang, styles, html);
     setTimeout(() => {
       printWindow.focus();
       printWindow.print();
     }, 120);
     return;
   }
+  printInlineFallback(title, themeClass, dir, styles, html);
+}
 
-  printInlineFallback(
-    safeDocName,
-    themeClass,
+interface PreparedPrint {
+  title: string;
+  themeClass: string;
+  dir: "rtl" | "ltr";
+  lang: string;
+  styles: string;
+  html: string;
+}
+
+/** Render the note and lay it out for print (W2.23). Exposed for the print golden tests. */
+export async function preparePrint(markdownText: string, docName: string, opts: { appStyles?: boolean } = {}): Promise<PreparedPrint> {
+  const isDark = () => document.documentElement.classList.contains("dark");
+  const tree = await renderMarkdown(markdownText, isDark);
+
+  // Serialize the React tree through a temporary root.
+  const { createRoot } = await import("react-dom/client");
+  const { createElement, Fragment } = await import("react");
+  const temp = document.createElement("div");
+  const root = createRoot(temp);
+  await new Promise<void>((resolve) => {
+    root.render(createElement(Fragment, null, tree));
+    setTimeout(resolve, 100);
+  });
+
+  const fm = extractFrontmatter(markdownText);
+  const title = docName || (typeof fm?.title === "string" ? fm.title : "") || t("print.untitled");
+  const dir = contentDirection(markdownText);
+  const lang = contentLang(temp.textContent ?? "", getLocale());
+
+  applyPageBreaks(temp);
+  const settings = printFrontmatter(fm);
+  if (settings.toc) {
+    const toc = buildToc(temp, t("print.toc"));
+    if (toc) temp.prepend(toc);
+  }
+  const html = temp.innerHTML;
+  root.unmount();
+
+  // The app's own styles (theme, callouts, code, math, fonts), then the print layout.
+  const styles: string[] = [];
+  if (opts.appStyles !== false) {
+    for (const sheet of document.styleSheets) {
+      try {
+        styles.push([...sheet.cssRules].map((r) => r.cssText).join("\n"));
+      } catch {
+        // why: Cross-origin sheets — skip
+      }
+    }
+  }
+  styles.push(printCss({ title, dir, ...settings }));
+  return {
+    title,
+    // Paper is white: print in the light theme whatever the screen shows.
+    themeClass: "",
     dir,
-    safeStyles,
-    printContent,
-  );
+    lang,
+    styles: styles.join("\n\n"),
+    html,
+  };
+}
+
+/** The whole print document as HTML (for tests: render it, print it to PDF). */
+export async function buildPrintHtml(markdownText: string, docName: string): Promise<string> {
+  const p = await preparePrint(markdownText, docName);
+  const doc = document.implementation.createHTMLDocument("");
+  hydratePrintDocument(doc, p.title, p.themeClass, p.dir, p.lang, p.styles, p.html);
+  return "<!doctype html>" + doc.documentElement.outerHTML;
 }
 
 function hydratePrintDocument(
@@ -91,6 +106,7 @@ function hydratePrintDocument(
   safeDocName: string,
   themeClass: string,
   dir: string,
+  lang: string,
   safeStyles: string,
   printContent: string,
 ): void {
@@ -102,21 +118,19 @@ function hydratePrintDocument(
 
   htmlElement.className = themeClass;
   htmlElement.setAttribute("dir", dir);
-  htmlElement.setAttribute("lang", "en");
-  targetDocument.title = `${safeDocName} — Lumen`;
+  htmlElement.setAttribute("lang", lang);
+  targetDocument.title = safeDocName;
 
   const head = targetDocument.head;
   const body = targetDocument.body;
   if (!head || !body) return;
 
+  const meta = targetDocument.createElement("meta");
+  meta.setAttribute("charset", "utf-8");
+  head.appendChild(meta);
   const styleEl = targetDocument.createElement("style");
-  styleEl.textContent = getPrintStyleBlock(safeStyles);
+  styleEl.textContent = safeStyles;
   head.appendChild(styleEl);
-
-  const headerEl = targetDocument.createElement("div");
-  headerEl.className = "print-header";
-  headerEl.id = "lumen-print-title";
-  headerEl.textContent = `${safeDocName} — Exported from Lumen`;
 
   const contentEl = targetDocument.createElement("div");
   contentEl.className = "prose-lumen";
@@ -124,7 +138,6 @@ function hydratePrintDocument(
   safeSetHtml(contentEl, printContent);
 
   safeClearHtml(body);
-  body.appendChild(headerEl);
   body.appendChild(contentEl);
 }
 
@@ -140,12 +153,10 @@ function printInlineFallback(
 
   const styleEl = document.createElement("style");
   styleEl.id = "lumen-inline-print-fallback";
-  styleEl.textContent = getPrintStyleBlock(safeStyles) + getInlinePrintStyleBlock();
-
-  const headerEl = document.createElement("div");
-  headerEl.className = "print-header";
-  headerEl.id = "lumen-print-title";
-  headerEl.textContent = `${safeDocName} — Exported from Lumen`;
+  styleEl.textContent = safeStyles + getInlinePrintStyleBlock();
+  // The PDF's file name comes from the document title.
+  const prevTitle = document.title;
+  document.title = safeDocName;
 
   const contentEl = document.createElement("div");
   contentEl.className = "prose-lumen";
@@ -154,7 +165,7 @@ function printInlineFallback(
 
   printRoot.setAttribute("class", themeClass);
   printRoot.setAttribute("dir", dir);
-  printRoot.append(headerEl, contentEl);
+  printRoot.append(contentEl);
   document.head.appendChild(styleEl);
   document.body.appendChild(printRoot);
 
@@ -162,6 +173,7 @@ function printInlineFallback(
     if (printRoot.parentNode) printRoot.remove();
     if (styleEl.parentNode) styleEl.remove();
     document.documentElement.removeAttribute("data-lumen-print-fallback");
+    document.title = prevTitle;
     window.removeEventListener("afterprint", onAfterPrint);
   };
 
@@ -181,47 +193,6 @@ function printInlineFallback(
   }, 120);
 }
 
-function getPrintStyleBlock(safeStyles: string): string {
-  return `${safeStyles}
-
-  /* Print overrides */
-  @media print {
-    body {
-      margin: 0;
-      padding: 20mm;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-      color-adjust: exact !important;
-    }
-    .prose-lumen {
-      max-width: none;
-      padding: 0;
-    }
-    * {
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-  }
-
-  @media screen {
-    body {
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-  }
-
-  .print-header {
-    text-align: center;
-    padding-bottom: 16px;
-    margin-bottom: 24px;
-    border-bottom: 2px solid hsl(var(--border, 220 10% 30%));
-    font-size: 11px;
-    color: hsl(var(--fg-muted, 220 10% 60%));
-  }`;
-}
-
 function getInlinePrintStyleBlock(): string {
   return `
   #lumen-inline-print-root {
@@ -238,7 +209,13 @@ function getInlinePrintStyleBlock(): string {
     min-height: 100%;
   }
 
-  [data-lumen-print-fallback] :not(#lumen-inline-print-root) {
+  /* Only the print root: hiding every other element also hid the root's own
+     content, so the fallback (popups blocked: installed apps, iOS) printed
+     blank pages. */
+  [data-lumen-print-fallback] body > :not(#lumen-inline-print-root) {
     display: none !important;
+  }
+  @media print {
+    #lumen-inline-print-root { position: static; overflow: visible; }
   }`;
 }

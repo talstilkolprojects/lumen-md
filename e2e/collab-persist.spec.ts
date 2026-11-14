@@ -17,6 +17,7 @@ import { join } from "node:path";
  */
 
 // One engine is enough for a server round trip; the client code is the same.
+// skip-reason: the flow under test is the collab server's persistence, which no engine changes; one engine runs it | task: 3.6 | until: 2027-05-12
 test.skip(({ browserName }) => browserName !== "chromium", "server-backed flow, chromium only");
 
 const ACCESS_KEY = "e2e-collab-access-key";

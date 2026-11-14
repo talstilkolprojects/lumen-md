@@ -47,7 +47,7 @@
  */
 
 import * as Y from "yjs";
-import { decryptOp, encryptOp } from "./encryption";
+import { decryptOp, encryptOp, roomSalt } from "./encryption";
 
 export const E2E_REMOTE_ORIGIN = "e2e-remote";
 export const E2E_LOCAL_ORIGIN = "e2e-local";
@@ -84,7 +84,7 @@ export interface E2EChannel {
 }
 
 export function e2eSalt(room: string): string {
-  return `lumen.collab.v2|${room}`;
+  return roomSalt(room);
 }
 
 function aadFor(snapshot: boolean): Uint8Array {

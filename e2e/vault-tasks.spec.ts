@@ -1,10 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * Plan 4.13 — a ```tasks``` block lists tasks from other notes in the vault,
  * and ticking one updates the note it lives in.
  */
-test("a tasks block gathers tasks from the vault and ticking one writes it back", async ({ page }) => {
+test("a tasks block gathers tasks from the vault and ticking one writes it back", async ({ page, browserName }) => {
   await page.addInitScript(() => localStorage.setItem("lumen-tour-done", "1"));
   await page.goto("/");
   await expect(page.locator(".cm-content").first()).toBeVisible({ timeout: 15_000 });
@@ -21,7 +22,7 @@ test("a tasks block gathers tasks from the vault and ticking one writes it back"
       return false;
     }
   });
-  test.skip(!ok, "OPFS writes are unavailable in this engine's test context");
+  vaultOrSkip(ok, browserName);
   await page.evaluate(() => window.dispatchEvent(new CustomEvent("lumen-workspace-changed")));
 
   await page.keyboard.press("ControlOrMeta+2");

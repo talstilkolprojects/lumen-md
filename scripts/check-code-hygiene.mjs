@@ -25,6 +25,11 @@
  * Production = `src/**\/*.{ts,tsx}` excluding `__tests__/` directories,
  * `*.test.*` / `*.spec.*` files and `*.d.ts` declarations.
  *
+ * Skipped tests (plan W4.12): every `test.skip` / `it.skipIf` / `*.todo` /
+ * `*.fixme` in src/ and e2e/ needs `// skip-reason: <why> | task: <id> |
+ * until: YYYY-MM-DD`, in date, and e2e/ holds at most MAX_E2E_SKIPS of them
+ * (scripts/lib/skipAudit.mjs; `npm run skips` lists them).
+ *
  * It also fails when an e2e file (`e2e/**\/*.ts`) calls `waitForTimeout`:
  * a fixed sleep is either too short on a slow runner (a flake) or longer
  * than needed everywhere. Wait for the condition instead (plan 0.5).
@@ -53,6 +58,7 @@ import { join, relative, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import postcss from "postcss";
+import { auditSkips, MAX_E2E_SKIPS } from "./lib/skipAudit.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const srcDir = join(root, "src");
@@ -102,6 +108,7 @@ export const DIRECT_FS_ALLOWLIST = {
   "src/ai/piiNer.ts": "checks whether the converted NER model is cached in OPFS (plan 2.6): model files, not vault files",
   "src/ai/transformers.worker.ts": "the worker's model cache root for converted models (plan 6.0): model files, not vault files",
   "src/ai/imageSearchService.ts": "checks whether the converted image-search model is cached in OPFS (plan 6.7): model files, not vault files",
+  "src/ai/modelCache.ts": "the verified model cache of plan 6.0 (models/, outside the vault): downloaded ONNX files checked against their sha256, never notes",
 };
 
 /** Handle methods that read or change a file system directly. */
@@ -201,9 +208,11 @@ export function findViolations(fileName, text, { e2e = false } = {}) {
         (p && ts.isElementAccessExpression(p) && p.expression === outer && ts.isStringLiteralLike(p.argumentExpression));
       if (!oneName) report(node, "env-whole");
     }
-    if (ts.isCallExpression(node) && isDirectFsCall(node)) {
+    // Direct file-system calls are a rule for the app; e2e tests seed OPFS on purpose.
+    if (!e2e && ts.isCallExpression(node) && isDirectFsCall(node)) {
       report(node, "direct-fs");
     } else if (
+      !e2e &&
       (ts.isStringLiteral(node) ||
         ts.isNoSubstitutionTemplateLiteral(node) ||
         ts.isTemplateHead(node) ||
@@ -365,6 +374,8 @@ function main() {
   for (const file of e2eFiles) {
     for (const v of findViolations(file, readFileSync(file, "utf8"), { e2e: true })) violations.push({ file: relKey(file), ...v });
   }
+  const skips = auditSkips(root);
+  violations.push(...skips.violations);
   for (const v of violations) console.error(`${v.file}:${v.line}  [${v.rule}]  ${v.text}`);
   for (const k of stale) {
     console.error(`${k}  [direct-fs-allowlist]  listed in DIRECT_FS_ALLOWLIST but makes no direct file-system call: remove the entry`);
@@ -386,6 +397,7 @@ function main() {
           "for the condition; take secrets from the secret store, not VITE_* [vite-secret]; " +
           "read import.meta.env one name at a time (src/lib/publicEnv.ts) [env-whole]; " +
           "or add `// hygiene-allow: <reason>`. " +
+          "Give a skipped test `// skip-reason: <why> | task: <id> | until: YYYY-MM-DD` [skip-reason], or fix it. " +
           "Read and write vault files through src/storage/workspace.ts / src/storage/vault, not file-system handles.",
       );
     if (cssTotal > 0)
@@ -399,7 +411,8 @@ function main() {
     `✓ code hygiene: ${files.length} production files clean (no \`as any\`, no console.log, no secret VITE_*, no whole import.meta.env, ` +
       `no direct file-system calls outside the vault layer and ${Object.keys(DIRECT_FS_ALLOWLIST).length} allowlisted files); ` +
       `${sheets.length} stylesheets use logical properties in .prose-lumen / .cm-* rules; ` +
-      `${e2eFiles.length} e2e files without waitForTimeout.`,
+      `${e2eFiles.length} e2e files without waitForTimeout; ` +
+      `${skips.sites.length} skipped tests each with a reason, task and date (${skips.e2eCount} of at most ${MAX_E2E_SKIPS} in e2e).`,
   );
 }
 

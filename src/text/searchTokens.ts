@@ -14,11 +14,22 @@
  * Queries drop a few function words (question words, prepositions,
  * pronouns) that carry no topic; documents keep them (BM25's idf already
  * makes them cheap, and a note may be searched for one).
+ *
+ * Plan W2.11 adds morphology (text/hebrewMorph): every Hebrew word, and
+ * each of its prefix-less forms, also yields its full/defective spelling
+ * key (`≈`) and its lemma keys (`≃`), and a query word also asks for its
+ * synonyms and, for a Hebrew word, its English equivalents. All of these
+ * weigh less than the exact word.
  */
 
 import { hasHebrew, normalizeForMatch, prefixVariants, words } from "./hebrew";
+import { englishOf, ktivKey, lemmaKeys, synonymsOf } from "./hebrewMorph";
 
 export const STEM = "~";
+/** Full/defective spelling key of a Hebrew word (W2.11), marked with a leading `≈`. */
+export const KTIV = "≈";
+/** Lemma keys of a Hebrew word (W2.11), marked with a leading `≃`. */
+export const LEMMA = "≃";
 
 /**
  * Comparison forms of the words of `text`, in order (no stems). The text
@@ -54,6 +65,32 @@ export function stemTerms(token: string): string[] {
   return [...out];
 }
 
+/**
+ * The morphology terms of one comparison form: ktiv and lemma keys of the
+ * word and of its prefix-less forms. `stripped`: the key comes from a
+ * prefix-less form (weaker, like a stem; and never a two-letter key, which
+ * would join unrelated short words).
+ */
+export function morphForms(token: string): Array<{ term: string; stripped: boolean }> {
+  if (!hasHebrew(token) || token.includes("-")) return [];
+  const out = new Map<string, boolean>();
+  const add = (term: string, stripped: boolean) => {
+    if (!out.has(term) || !stripped) out.set(term, stripped && (out.get(term) ?? true));
+  };
+  prefixVariants(token).forEach((v, i) => {
+    const stripped = i > 0;
+    const k = ktivKey(v);
+    if (k && (!stripped || k.length >= 3)) add(KTIV + k, stripped);
+    for (const l of lemmaKeys(v)) if (!stripped || l.length >= 3) add(LEMMA + l, stripped);
+  });
+  return [...out].map(([term, stripped]) => ({ term, stripped }));
+}
+
+/** The morphology terms of one comparison form, as index terms. */
+export function morphTerms(token: string): string[] {
+  return morphForms(token).map((m) => m.term);
+}
+
 /** Stem terms by surface form: words repeat across a vault, their stems are computed once (bounded). */
 const stemCache = new Map<string, string[]>();
 const STEM_CACHE_MAX = 50_000;
@@ -76,7 +113,7 @@ export function documentTerms(text: string): string[] {
     for (const p of hyphenParts(t)) out.push(p);
     let stems = stemCache.get(t);
     if (!stems) {
-      stems = stemTerms(t);
+      stems = [...stemTerms(t), ...morphTerms(t)];
       if (stemCache.size >= STEM_CACHE_MAX) stemCache.clear();
       stemCache.set(t, stems);
     }
@@ -114,6 +151,18 @@ export interface QueryTerm {
 
 /** Stem terms count this much of an exact match. */
 export const STEM_WEIGHT = 0.6;
+/**
+ * A full/defective spelling key (W2.11): the same word in the other
+ * spelling, so nearly an exact match — but not quite, since the key also
+ * joins words that only share their consonants (שעור / שער).
+ */
+export const KTIV_WEIGHT = 0.85;
+/** A lemma key (W2.11): another inflection of the word. */
+export const LEMMA_WEIGHT = 0.45;
+/** A synonym of the query word (W2.11). */
+export const SYNONYM_WEIGHT = 0.5;
+/** An English equivalent of a Hebrew query word (W2.11): an English note on the topic comes after the Hebrew ones. */
+export const ENGLISH_WEIGHT = 0.2;
 
 /**
  * The terms of a query with their weights. Function words are dropped
@@ -129,12 +178,25 @@ export function queryTerms(query: string): QueryTerm[] {
   for (const t of tokens) {
     if (seen.has(t)) continue;
     seen.add(t);
-    out.push(
+    const terms: QueryTerm[] = [
       { term: t, weight: 1, group },
       // A hyphenated query word also matches its parts, as a weaker form.
       ...hyphenParts(t).map((p) => ({ term: p, weight: STEM_WEIGHT, group })),
       ...stemTerms(t).map((s) => ({ term: s, weight: STEM_WEIGHT, group })),
-    );
+      ...morphForms(t).map((m) => ({ term: m.term, weight: (m.term.startsWith(KTIV) ? KTIV_WEIGHT : LEMMA_WEIGHT) * (m.stripped ? STEM_WEIGHT : 1), group })),
+    ];
+    // W2.11: synonyms and English equivalents, of the word and of its prefix-less forms.
+    for (const v of hasHebrew(t) ? prefixVariants(t) : [t]) {
+      for (const syn of synonymsOf(v)) {
+        terms.push({ term: syn, weight: SYNONYM_WEIGHT, group });
+        for (const s of stemTerms(syn)) terms.push({ term: s, weight: SYNONYM_WEIGHT * STEM_WEIGHT, group });
+      }
+      for (const en of englishOf(v)) terms.push({ term: en, weight: ENGLISH_WEIGHT, group });
+    }
+    // One term once per word, at its best weight.
+    const best = new Map<string, QueryTerm>();
+    for (const q of terms) if ((best.get(q.term)?.weight ?? -1) < q.weight) best.set(q.term, q);
+    out.push(...best.values());
     group++;
   }
   return out;

@@ -1,0 +1,162 @@
+/* Note cards on the canvas (plan W1.16). Logical properties: they mirror under dir="rtl". */
+.lumen-note-card {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  inline-size: 100%;
+  block-size: 100%;
+  padding-block: 10px;
+  padding-inline: 12px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: hsl(var(--bg));
+  color: hsl(var(--fg));
+  font-family: "Assistant", "Nunito", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: start;
+}
+
+.lumen-note-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-block-end: 6px;
+}
+
+.lumen-note-card-title {
+  flex: 1;
+  overflow: hidden;
+  font-size: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lumen-note-card-open {
+  flex: none;
+  padding-block: 1px;
+  padding-inline: 8px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+  background: transparent;
+  color: hsl(var(--accent));
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.lumen-note-card-body {
+  flex: 1;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.lumen-note-card-hint {
+  margin-block-start: 6px;
+  color: hsl(var(--fg-muted));
+  font-size: 11px;
+}
+
+.lumen-note-card-edit {
+  flex: 1;
+  box-sizing: border-box;
+  inline-size: 100%;
+  resize: none;
+  border: 1px solid hsl(var(--accent));
+  border-radius: 4px;
+  background: hsl(var(--bg));
+  color: hsl(var(--fg));
+  font: inherit;
+  padding: 6px;
+}
+
+.lumen-note-card-missing {
+  margin: 0;
+  color: hsl(var(--fg-muted));
+  font-style: italic;
+}
+
+.lumen-canvas-export {
+  display: inline-flex;
+  gap: 4px;
+}
+
+/* The diagram dialog (plan W2.18). */
+.lumen-diagram-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.35);
+}
+
+.lumen-diagram {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  inline-size: min(640px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  background: hsl(var(--bg));
+  color: hsl(var(--fg));
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
+}
+
+.lumen-diagram-title {
+  margin: 0;
+  font-size: 15px;
+}
+
+.lumen-diagram-label {
+  font-size: 12px;
+  color: hsl(var(--fg-muted));
+}
+
+.lumen-diagram-row {
+  display: flex;
+  gap: 8px;
+}
+
+.lumen-diagram-input,
+.lumen-diagram-code {
+  flex: 1;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+  background: hsl(var(--bg));
+  color: hsl(var(--fg));
+  font: inherit;
+  font-size: 13px;
+}
+
+.lumen-diagram-code {
+  min-block-size: 200px;
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  resize: vertical;
+}
+
+.lumen-diagram-note {
+  margin: 0;
+  font-size: 11px;
+  color: hsl(var(--fg-muted));
+}
+
+.lumen-diagram-status {
+  margin: 0;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.lumen-diagram-status.error {
+  color: hsl(var(--danger, 0 70% 50%));
+}
+
+.lumen-diagram-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

@@ -47,6 +47,7 @@ export function referenceTasks(md: string): string[] {
   return out;
 }
 
+// skip-reason: an opt-in eval against a real local model (npm run eval:meetings), not a unit test | task: 7.3 | until: 2027-05-12
 describe.skipIf(!process.env.LUMEN_EVAL_MEETINGS)(`meeting notes eval — ${model} @ ${url}`, () => {
   it("finds the action items of every golden meeting and writes the report", async () => {
     expect(dir ? "ok" : "set LUMEN_EVAL_MEETINGS_DIR to the bundle's meetings/owner folder").toBe("ok");

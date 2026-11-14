@@ -1,0 +1,118 @@
+{
+  "$comment": "Plan 13.7: the store screenshots. `node scripts/store-screenshots.mjs` captures every scene on every device, in Hebrew and English, from a running build, into store/screenshots/<device>/<locale>/NN-<scene>.png. Sizes are the stores' required ones: viewport (CSS px) × scale = the PNG's pixels. Made-up notes only (seed below).",
+  "devices": {
+    "iphone-6.9": {
+      "store": "apple",
+      "viewport": [
+        440,
+        956
+      ],
+      "scale": 3,
+      "pixels": [
+        1320,
+        2868
+      ],
+      "mobile": true
+    },
+    "ipad-13": {
+      "store": "apple",
+      "viewport": [
+        1032,
+        1376
+      ],
+      "scale": 2,
+      "pixels": [
+        2064,
+        2752
+      ],
+      "mobile": true
+    },
+    "android-phone": {
+      "store": "google",
+      "viewport": [
+        360,
+        640
+      ],
+      "scale": 3,
+      "pixels": [
+        1080,
+        1920
+      ],
+      "mobile": true
+    },
+    "desktop": {
+      "store": "microsoft",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "scale": 1,
+      "pixels": [
+        1920,
+        1080
+      ],
+      "mobile": false
+    }
+  },
+  "scenes": [
+    {
+      "id": "editor",
+      "title": {
+        "en": "Hebrew and English in one note",
+        "he": "עברית ואנגלית באותו פתק"
+      },
+      "open": "seminar.md",
+      "mode": "split",
+      "phoneMode": "preview"
+    },
+    {
+      "id": "search",
+      "title": {
+        "en": "Search that understands Hebrew",
+        "he": "חיפוש שמבין עברית"
+      },
+      "command": "view.search",
+      "type": "ראיון"
+    },
+    {
+      "id": "palette",
+      "title": {
+        "en": "Everything from the command palette",
+        "he": "הכול מלוח הפקודות"
+      },
+      "keys": "Control+KeyK"
+    },
+    {
+      "id": "graph",
+      "title": {
+        "en": "See how your notes connect",
+        "he": "הקשרים בין הפתקים"
+      },
+      "command": "view.graphView",
+      "desktopOnly": true
+    },
+    {
+      "id": "capture",
+      "title": {
+        "en": "A quick note, one tap away",
+        "he": "פתק מהיר, בהקשה אחת"
+      },
+      "url": "/?capture=1",
+      "mobileOnly": true
+    }
+  ],
+  "seed": {
+    "seminar.md": {
+      "en": "# Research seminar\n\nWeekly meeting, Tuesdays at 14:00.\n\n## Next week\n\n- Literature review: three papers on project-based learning\n- Plan the interviews ([[Interview 1]])\n- Deadline: 1 December 2026\n\n#research",
+      "he": "# סמינר מחקר\n\nמפגש שבועי, ימי שלישי ב-14:00.\n\n## בשבוע הבא\n\n- סקירת ספרות: שלושה מאמרים על Project-Based Learning\n- תכנון הראיונות ([[ראיון ראשון]])\n- הגשה: 1 בדצמבר 2026\n\n#מחקר"
+    },
+    "interview-1.md": {
+      "en": "# Interview 1\n\nIn the interview, the teacher said students prefer small groups.\n\n#research",
+      "he": "# ראיון ראשון\n\nבראיון עלה שהתלמידים מעדיפים עבודה בקבוצות קטנות.\n\n#מחקר"
+    },
+    "course.md": {
+      "en": "# Algorithms course\n\n| Assignment | Due |\n|---|---|\n| Sorting | 20 Nov |\n| Graphs | 11 Dec |\n\n#course",
+      "he": "# קורס אלגוריתמים\n\n| מטלה | הגשה |\n|---|---|\n| מיון | 20 בנובמבר |\n| גרפים | 11 בדצמבר |\n\n#קורס"
+    }
+  }
+}

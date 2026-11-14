@@ -1,6 +1,6 @@
 import { headingSlugger } from "../lib/slug";
 import { countWords } from "../text/hebrew";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, useRef } from "react";
 import { useFocusTrap } from "./useFocusTrap";
 import { Search, Download, Trash2, ExternalLink, BadgeCheck } from "lucide-react";
 import { getRegisteredPlugins, registerPlugin, unregisterPlugin } from "../plugins/pluginSystem";
@@ -8,6 +8,10 @@ import type { LumenPlugin } from "../plugins/pluginSystem";
 import { log } from "../lib/logger";
 import { t } from "../i18n";
 import { fetchWithRetry } from "../lib/fetchRetry";
+// The sandboxed-plugin list loads with its section (it brings the trust and developer strings).
+const SandboxedPlugins = lazy(() => import("../plugins/runtime/SandboxedPlugins").then((m) => ({ default: m.SandboxedPlugins })));
+import { HelpButton } from "./HelpButton";
+import "./pluginGalleryStrings";
 
 interface RemotePluginEntry {
   id: string;
@@ -312,7 +316,7 @@ export function PluginGallery({ open, onClose }: Props) {
         position: "fixed",
         inset: 0,
         zIndex: 200,
-        background: "rgba(0,0,0,0.7)",
+        background: "var(--overlay)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -387,6 +391,7 @@ export function PluginGallery({ open, onClose }: Props) {
               }}
             />
           </div>
+          <HelpButton topic="plugins/sdk" />
           <button
             type="button"
             onClick={onClose}
@@ -502,7 +507,6 @@ export function PluginGallery({ open, onClose }: Props) {
                       borderRadius: 12,
                       background: "hsl(var(--bg-subtle) / 0.5)",
                       border: "1px solid hsl(var(--border))",
-                      transition: "all 150ms ease",
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
@@ -512,7 +516,7 @@ export function PluginGallery({ open, onClose }: Props) {
                           width: 38,
                           height: 38,
                           borderRadius: 8,
-                          background: "linear-gradient(135deg, #7c5cfc, #c084fc)",
+                          background: "var(--gradient-brand)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -578,9 +582,8 @@ export function PluginGallery({ open, onClose }: Props) {
                           fontWeight: 600,
                           background: isInstalled
                             ? "hsl(var(--border))"
-                            : "linear-gradient(135deg, #7c5cfc, #c084fc)",
+                            : "var(--gradient-brand)",
                           color: isInstalled ? "hsl(var(--fg))" : "white",
-                          transition: "all 150ms ease",
                         }}
                       >
                         {isInstalled ? <Trash2 size={12} /> : <Download size={12} />}
@@ -619,6 +622,11 @@ export function PluginGallery({ open, onClose }: Props) {
             )}
           </div>
         </div>
+
+        {/* Sandboxed plugins: permissions shown before install, every version scanned (W1.20). */}
+        <Suspense fallback={null}>
+          <SandboxedPlugins />
+        </Suspense>
 
         {/* Footer */}
         <div

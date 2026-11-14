@@ -27,6 +27,7 @@ const model = process.env.LUMEN_EVAL_MODEL || "qwen2.5:7b";
 const dirs = (process.env.LUMEN_EVAL_SUMMARY_DIRS || "eval/golden/summarize/dev").split(",").map((s) => s.trim()).filter(Boolean);
 const outDir = process.env.LUMEN_EVAL_OUT || "eval/results";
 
+// skip-reason: an opt-in eval against a real local model (npm run eval:summarize), not a unit test | task: 7.3 | until: 2027-05-12
 describe.skipIf(!process.env.LUMEN_EVAL_SUMMARY)(`summary eval — ${model} @ ${url}`, () => {
   it("summarises every document and writes the report", async () => {
     const tags = await fetch(`${url}/api/tags`, { signal: AbortSignal.timeout(3000) }).catch((e: Error) => e);

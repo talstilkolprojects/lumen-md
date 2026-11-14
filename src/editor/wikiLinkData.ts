@@ -5,13 +5,14 @@
  * one backlinks, search and tags read — never from an index of its own.
  */
 
-import { ensureIndex, indexVersion, indexedFiles } from "../storage/workspaceIndex";
+import { ensureIndex, indexVersion, indexedFiles, indexedNotes } from "../storage/workspaceIndex";
 import { basename, createWorkspaceFile, isOPFSAvailable } from "../storage/workspace";
 import { notifyWorkspaceChanged } from "../storage/workspaceEvents";
 import { useAppStore } from "../store/useStore";
 import { showAiToast } from "../ui/AiToast";
 import { t } from "../i18n";
 import { noteCatalog, type CurrentNote, type NoteCatalog, type WikiSuggestion } from "./wikiComplete";
+import { explainError } from "../lib/userError";
 
 /**
  * The notes to complete. Once the index is built, answers from it at once
@@ -24,7 +25,8 @@ export async function linkCatalog(): Promise<NoteCatalog> {
   if (!indexedFiles().length) await refresh;
   // Rebuilt only when the index changed — not on every keystroke.
   const version = indexVersion();
-  if (memo?.version !== version) memo = { version, catalog: noteCatalog(indexedFiles()) };
+  // W2.22: the notes' text (aliases, headings, blocks) comes from the index.
+  if (memo?.version !== version) memo = { version, catalog: noteCatalog(await indexedNotes()) };
   return memo.catalog;
 }
 
@@ -54,7 +56,7 @@ export async function createLinkedNote(path: string): Promise<boolean> {
     showAiToast(t("wikiComplete.created", { name }), "success");
     return true;
   } catch (e) {
-    showAiToast(t("wikiComplete.createFailed", { name, error: (e as Error)?.message ?? String(e) }), "error");
+    showAiToast(t("wikiComplete.createFailed", { name, error: explainError(e) }), "error");
     return false;
   }
 }

@@ -17,9 +17,11 @@ import {
   setGitToken,
 } from "../sync/git";
 import { generateAiCommitMessage } from "../ai/commands";
-import { uiAlert, uiPrompt } from "../ui/PromptDialog";
+import { uiAlert, uiConfirm, uiPrompt } from "../ui/PromptDialog";
 import { showAiToast } from "../ui/AiToast";
 import { t } from "../i18n";
+import { explainError } from "../lib/userError";
+import "./useGitStrings";
 
 export interface UseGitOptions {
   setDoc: (d: Partial<DocFile>) => void;
@@ -48,7 +50,7 @@ export function useGit({ setDoc: _setDoc, showWorkspace, toggleWorkspace, active
       if (!showWorkspace) toggleWorkspace();
       window.dispatchEvent(new Event("lumen-workspace-changed"));
     } catch (e) {
-      await uiAlert({ message: t("git.alert.cloneFailed", { error: (e as Error).message }) });
+      await uiAlert({ message: t("git.alert.cloneFailed", { error: explainError(e) }) });
     }
   }, [showWorkspace, toggleWorkspace]);
 
@@ -73,7 +75,7 @@ export function useGit({ setDoc: _setDoc, showWorkspace, toggleWorkspace, active
       await commitAndPush(repoFolder, message, identity);
       showAiToast(t("toast.pushedToRemote"), "info");
     } catch (e) {
-      await uiAlert({ message: t("git.alert.pushFailed", { error: (e as Error).message }) });
+      await uiAlert({ message: t("git.alert.pushFailed", { error: explainError(e) }) });
     }
   }, [activeFile]);
 
@@ -83,13 +85,14 @@ export function useGit({ setDoc: _setDoc, showWorkspace, toggleWorkspace, active
       await uiAlert({ message: t("git.alert.noRepo") });
       return;
     }
+    if (!(await uiConfirm({ message: t("git.pull.confirm", { folder: repoFolder }) }))) return;
     try {
       showAiToast(t("toast.pulling"), "info");
       const result = await pullRepo(repoFolder);
       showAiToast(t("toast.pulledChangedFiles", { count: result.changedFiles }), "info");
       window.dispatchEvent(new Event("lumen-workspace-changed"));
     } catch (e) {
-      await uiAlert({ message: t("git.alert.pullFailed", { error: (e as Error).message }) });
+      await uiAlert({ message: t("git.alert.pullFailed", { error: explainError(e) }) });
     }
   }, [activeFile]);
 
@@ -121,7 +124,7 @@ export function useGit({ setDoc: _setDoc, showWorkspace, toggleWorkspace, active
       const msg = `Added: ${summary.added}, Modified: ${summary.modified}, Deleted: ${summary.deleted}`;
       showAiToast(msg, "info");
     } catch (e) {
-      await uiAlert({ message: t("git.alert.statusFailed", { error: (e as Error).message }) });
+      await uiAlert({ message: t("git.alert.statusFailed", { error: explainError(e) }) });
     }
   }, [activeFile]);
 

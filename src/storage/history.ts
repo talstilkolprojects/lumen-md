@@ -31,7 +31,7 @@ import { forStore, fromStore, isSealedValue, type SealedValue } from "./vault/re
 
 const LABEL = "history";
 
-export type SnapshotReason = "autosave" | "save" | "auto-backup" | "vault" | "close" | "restore" | "manual" | "collab" | "migrated" | "git-pull";
+export type SnapshotReason = "autosave" | "save" | "auto-backup" | "vault" | "close" | "restore" | "manual" | "collab" | "migrated" | "git-pull" | "merge";
 
 export interface Snapshot {
   id: number;

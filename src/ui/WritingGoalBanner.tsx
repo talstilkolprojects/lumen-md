@@ -45,7 +45,7 @@ export function WritingGoalBanner() {
         fontSize: 11,
         color: done ? "white" : "hsl(var(--fg-muted))",
         background: done
-          ? "linear-gradient(135deg,#10b981,#22d3ee)"
+          ? "var(--gradient-success)"
           : "hsl(var(--bg-subtle))",
         borderBottom: "1px solid hsl(var(--border))",
         flexShrink: 0,
@@ -64,9 +64,11 @@ export function WritingGoalBanner() {
             insetInlineStart: 0,
             bottom: 0,
             height: 2,
-            width: `${pct}%`,
-            background: "linear-gradient(90deg,#7c5cff,#22d3ee)",
-            transition: "width 200ms ease",
+            width: "100%",
+            transform: `scaleX(${pct / 100})`,
+            transformOrigin: "var(--progress-origin, left)",
+            background: "var(--gradient-brand)",
+            transition: "transform var(--duration-base) var(--ease-out)",
           }}
         />
       )}

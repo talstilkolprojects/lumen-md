@@ -9,6 +9,7 @@ import type { DictationFiles } from "./modelStore";
 import type { DictationIn, DictationOut } from "./dictation.worker";
 import { finishSegment, interimText, type DictationAction } from "./punctuate";
 import { Resampler } from "./segmenter";
+import { SegmentAudio, type SegmentCorrector } from "./correction";
 import { ortBaseUrl } from "../transformersEngine";
 
 export interface DictationCallbacks {
@@ -38,6 +39,12 @@ export interface SessionOptions {
    * model load — suspended; one made in the gesture starts running.
    */
   audioContext?: AudioContext;
+  /**
+   * Re-reads each finished sentence with Whisper before it is inserted
+   * (plan W4.13, ./correction.ts): resolves to the text to insert, the
+   * streaming text on any failure or after its deadline.
+   */
+  correct?: SegmentCorrector;
 }
 
 /** An AudioContext for dictation, made synchronously in the user's click (see SessionOptions.audioContext). */
@@ -58,16 +65,28 @@ export async function startDictationSession(files: DictationFiles, cb: Dictation
   const worker = new Worker(new URL("./dictation.worker.ts", import.meta.url), { type: "module" });
   const send = (m: DictationIn, transfer: Transferable[] = []) => worker.postMessage(m, transfer);
   let stopped: (() => void) | null = null;
+  const segmentAudio = opts.correct ? new SegmentAudio() : null;
+  let finals: Promise<void> = Promise.resolve();
   worker.onmessage = (ev: MessageEvent<DictationOut>) => {
     const m = ev.data;
     if (m.type === "ready") cb.onReady?.(m);
     else if (m.type === "speaking") cb.onSpeaking?.(m.active);
     else if (m.type === "interim") cb.onInterim?.(interimText(m.text, opts));
     else if (m.type === "final") {
-      const seg = finishSegment(m.text, opts);
-      cb.onFinal?.(seg.text, seg.actions);
+      if (!opts.correct || !segmentAudio) {
+        const seg = finishSegment(m.text, opts);
+        cb.onFinal?.(seg.text, seg.actions);
+      } else {
+        // In order: a sentence is inserted only after the one before it.
+        const audio = segmentAudio.take();
+        const correct = opts.correct;
+        finals = finals.then(async () => {
+          const seg = finishSegment(await correct(audio, m.text), opts);
+          cb.onFinal?.(seg.text, seg.actions);
+        });
+      }
     } else if (m.type === "error") cb.onError?.(m.message);
-    else if (m.type === "stopped") stopped?.();
+    else if (m.type === "stopped") void finals.then(() => stopped?.()); // the last sentence may still be in its Whisper pass
   };
   let failLoad: ((e: Error) => void) | null = null;
   worker.onerror = (e) => {
@@ -137,6 +156,7 @@ export async function startDictationSession(files: DictationFiles, cb: Dictation
       let at = 0;
       for (; at + BLOCK <= all.length; at += BLOCK) {
         const block = all.slice(at, at + BLOCK);
+        segmentAudio?.push(block); // copied: the block's buffer is transferred next
         send({ type: "audio", samples: block }, [block.buffer]);
       }
       pending = all.slice(at);

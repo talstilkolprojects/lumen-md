@@ -1,0 +1,10 @@
+{
+  "canvas.addNote": "+ Add Note",
+  "canvas.back": "← Back to Editor",
+  "canvas.done": "Done",
+  "canvas.new.placeholder": "ideas",
+  "canvas.new.title": "Create a new canvas",
+  "canvas.switch": "Switch canvas",
+  "canvas.unsaved": "{name} (unsaved)",
+  "canvas.zoom": "Zoom: {pct}%"
+}

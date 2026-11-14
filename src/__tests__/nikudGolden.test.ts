@@ -12,6 +12,7 @@ import { devItems, modelPath, score } from "../../scripts/golden/evals/nikud.mjs
 
 const have = existsSync(modelPath());
 
+// skip-reason: needs the Nakdimon ONNX model, which is not in the repo (NAKDIMON_ONNX or models/nakdimon/) | task: 6.3 | until: 2027-05-12
 describe.skipIf(!have)("nikud — Nakdimon on the dev split (plan 6.3)", () => {
   it("skeleton 100%; modern word accuracy reported, classical separately", async () => {
     const items = devItems();

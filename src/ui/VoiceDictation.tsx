@@ -11,13 +11,12 @@
  *     agrees; every use is in the privacy ledger.
  *   - **Memo mode** (when `aiKey` is set OR Privacy Mode is on):
  *     `MediaRecorder` captures the audio, on stop we Whisper-transcribe
- *     + AI-summarize and insert a `> 🎙 Voice memo` block at the cursor.
+ *     + AI-summarize (or, for a meeting, write meeting notes — plan 6.16)
+ *     and insert the block at the cursor.
  *
  * The memo flow follows the AI policy — by default Whisper runs on this
  * device through transformers.js (src/ai/transformersEngine.ts) and the
  * summary through the local model, so no audio bytes leave the browser.
- *
- * `startVoiceMemo()` wraps the memo flow.
  */
 
 import { createRoot } from "react-dom/client";
@@ -29,7 +28,11 @@ import { aiOperation, isAbort } from "../ai/aiAbort";
 import { log } from "../lib/logger";
 import { getAiPolicy, onAiPolicyChange, thirdPartyServicesAllowed } from "../ai/policy";
 import { recordBrowserService, recordSpeechRecognition } from "../ai/privacyLedger";
+import { airplaneFlagOn } from "../privacy/airplaneBoot";
 import { chooseDictationEngine, webSpeechOptedIn, WEB_SPEECH_KEY, Segmenter, SerialQueue } from "../ai/dictation";
+import { explainError } from "../lib/userError";
+import { HelpButton } from "./HelpButton";
+import "./voiceDictationStrings";
 
 // SpeechRecognition is poorly + inconsistently typed across DOM lib
 // variants; keep the surface deliberately loose so we don't fight the
@@ -72,7 +75,7 @@ function showRecordingPill(label: string, onStop: () => void): () => void {
           border: "1px solid hsl(var(--border-strong))",
           borderRadius: 12,
           padding: "10px 16px",
-          boxShadow: "0 8px 32px hsl(0 0% 0%/0.3)",
+          boxShadow: "var(--shadow-md)",
           fontSize: 13,
           color: "hsl(var(--fg))",
         }}
@@ -82,7 +85,7 @@ function showRecordingPill(label: string, onStop: () => void): () => void {
             width: 10,
             height: 10,
             borderRadius: "50%",
-            background: "#ef4444",
+            background: "hsl(var(--danger))",
             animation: "pulse 1s infinite",
           }}
         />
@@ -90,7 +93,7 @@ function showRecordingPill(label: string, onStop: () => void): () => void {
         <button
           onClick={onStop}
           style={{
-            background: "#ef4444",
+            background: "hsl(var(--danger))",
             color: "white",
             border: "none",
             borderRadius: 6,
@@ -176,10 +179,10 @@ export function dictationSink(): DictationSink {
 }
 
 /**
- * Dictate into the open note (plan 1.3). Default: Whisper on this device, in
- * ~5-second segments. The browser speech service (which sends the audio to
- * the vendor) is used only when the policy is not local-only AND the user
- * agreed — never silently; each use is recorded in the privacy ledger.
+ * Dictate into the open note. The live engine first (plan 6.1: Hebrew
+ * streams on this device; the panel asks before any download); its
+ * fallbacks are the browser's speech service (only where the policy allows
+ * the cloud, after the panel's offer) and plan 1.3's recorded dictation.
  */
 export function startVoiceRecording(lang: string): void {
   if (lang.split(/[-_]/)[0].toLowerCase() !== "he") {
@@ -198,7 +201,7 @@ export function startVoiceRecording(lang: string): void {
     )
     .catch((err: unknown) => {
       log.error("dictation failed to start", err);
-      showAiToast(t("dictation.error", { error: (err as Error).message }), "error");
+      showAiToast(t("dictation.error", { error: explainError(err) }), "error");
     });
 }
 
@@ -277,7 +280,8 @@ async function offerWebSpeech(Ctor: SpeechCtor | null, lang: string): Promise<vo
 
 /** Read the policy now (it may have changed in another tab): under local-only, log the block and say so. */
 function refuseUnderLocalOnly(): boolean {
-  if (getAiPolicy() !== "local-only") return false;
+  // Airplane mode (plan W5.9) stops the browser's cloud speech service too.
+  if (getAiPolicy() !== "local-only" && !airplaneFlagOn()) return false;
   recordSpeechRecognition("blocked");
   showAiToast(t("toast.dictate.localOnlyBlocked"), "error");
   return true;
@@ -329,6 +333,7 @@ function startWebSpeech(Ctor: SpeechCtor, lang: string): void {
     showAiToast(t("toast.dictate.stoppedLocalOnly"), "info");
   });
   hidePill = showRecordingPill(t("voice.recording", { lang }), stop);
+      <HelpButton topic="editor/tools#voice-memos-and-dictation" />
   recognition.start();
 }
 
@@ -410,7 +415,7 @@ async function startLocalDictation(lang: string, onFailure: () => void): Promise
             // why: one failure means the worker or model is unusable — say so once, release the mic, offer the fallback
             failed = true;
             log.warn("dictation segment failed", err);
-            showAiToast(t("toast.dictate.localFailed", { error: (err as Error)?.message ?? String(err) }), "error");
+            showAiToast(t("toast.dictate.localFailed", { error: explainError(err) }), "error");
             stop(true);
             onFailure();
           }
@@ -495,7 +500,7 @@ export async function startVoiceMemo(opts: { language?: string; plain?: boolean;
   } catch (err) {
     stream.getTracks().forEach((t) => t.stop());
     log.warn("voice memo: MediaRecorder unavailable", err);
-    showAiToast(t("toast.recordingIsNotSupportedIn", { error: (err as Error).message }), "error");
+    showAiToast(t("toast.recordingIsNotSupportedIn", { error: explainError(err) }), "error");
     return;
   }
   const chunks: Blob[] = [];
@@ -534,7 +539,7 @@ export async function startVoiceMemo(opts: { language?: string; plain?: boolean;
       } catch (err) {
         if (op.signal.aborted || isAbort(err)) return;
         log.error("voice memo transcribe failed", err);
-        showAiToast(t("toast.transcribeFailed", { error: (err as Error).message }), "error");
+        showAiToast(t("toast.transcribeFailed", { error: explainError(err) }), "error");
         return;
       }
       if (op.signal.aborted) return;
@@ -608,7 +613,7 @@ export async function startVoiceMemo(opts: { language?: string; plain?: boolean;
         border: "1px solid hsl(var(--border-strong))",
         borderRadius: 12,
         padding: "10px 16px",
-        boxShadow: "0 8px 32px hsl(0 0% 0%/0.3)",
+        boxShadow: "var(--shadow-md)",
         fontSize: 13,
         color: "hsl(var(--fg))",
       }}
@@ -618,16 +623,17 @@ export async function startVoiceMemo(opts: { language?: string; plain?: boolean;
           width: 10,
           height: 10,
           borderRadius: "50%",
-          background: "#ef4444",
+          background: "hsl(var(--danger))",
           animation: "pulse 1s infinite",
         }}
       />
       <span>🎙 {opts.plain ? t("dictation.localRecording") : t("voice.memo.recording")}</span>
+      <HelpButton topic="editor/tools#voice-memos-and-dictation" />
       <button
         type="button"
         onClick={() => recorder.stop()}
         style={{
-          background: "#ef4444",
+          background: "hsl(var(--danger))",
           color: "white",
           border: "none",
           borderRadius: 6,

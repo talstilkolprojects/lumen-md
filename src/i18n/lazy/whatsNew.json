@@ -1,0 +1,7 @@
+{
+  "whatsNew.title": "What's new in Lumen {version}",
+  "whatsNew.untranslated": "These notes aren't translated yet, so they're in English.",
+  "whatsNew.loading": "…",
+  "whatsNew.none": "There are no release notes for this version.",
+  "whatsNew.close": "Got it"
+}

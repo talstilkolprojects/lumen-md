@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.UriPermission;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
 import android.provider.DocumentsContract.Document;
 import android.util.Base64;
@@ -22,6 +23,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -158,9 +160,15 @@ public class LumenVaultFolderPlugin extends Plugin {
                 id = DocumentsContract.getDocumentId(created);
             }
             // "wt": truncate, so a shorter note leaves no tail of the old one.
-            try (OutputStream out = resolver().openOutputStream(DocumentsContract.buildDocumentUriUsingTree(tree, id), "wt")) {
-                if (out == null) throw new FileNotFoundException("could not write " + path);
-                out.write(bytes);
+            // The app writes a temporary file and renames it (plan W1.5), so
+            // the bytes must be on the disk before that rename: sync them.
+            try (ParcelFileDescriptor pfd = resolver().openFileDescriptor(DocumentsContract.buildDocumentUriUsingTree(tree, id), "wt")) {
+                if (pfd == null) throw new FileNotFoundException("could not write " + path);
+                try (FileOutputStream out = new FileOutputStream(pfd.getFileDescriptor())) {
+                    out.write(bytes);
+                    out.flush();
+                    out.getFD().sync();
+                }
             }
             call.resolve();
         } catch (Exception e) {

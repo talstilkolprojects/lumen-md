@@ -1,0 +1,9 @@
+{
+  "related.close": "Close",
+  "related.hint": "Link to {name}",
+  "related.link": "Link",
+  "related.links": "Mentioned, not linked",
+  "related.none": "Nothing related to this paragraph yet.",
+  "related.off": "Off for this note or its folder.",
+  "related.title": "Related"
+}

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Plan W3.4: Android App Shortcuts (long-press the icon; also suggested by the launcher). -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="capture" android:enabled="true" android:icon="@android:drawable/ic_menu_edit"
+        android:shortcutShortLabel="@string/shortcut_capture_short" android:shortcutLongLabel="@string/shortcut_capture_long">
+        <intent android:action="android.intent.action.VIEW" android:data="lumen://capture"
+            android:targetPackage="com.lumen.editor" android:targetClass="com.lumen.editor.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="voice" android:enabled="true" android:icon="@android:drawable/ic_btn_speak_now"
+        android:shortcutShortLabel="@string/shortcut_voice_short" android:shortcutLongLabel="@string/shortcut_voice_long">
+        <intent android:action="android.intent.action.VIEW" android:data="lumen://capture?mode=voice"
+            android:targetPackage="com.lumen.editor" android:targetClass="com.lumen.editor.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="search" android:enabled="true" android:icon="@android:drawable/ic_menu_search"
+        android:shortcutShortLabel="@string/shortcut_search_short" android:shortcutLongLabel="@string/shortcut_search_long">
+        <intent android:action="android.intent.action.VIEW" android:data="lumen://search"
+            android:targetPackage="com.lumen.editor" android:targetClass="com.lumen.editor.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="daily" android:enabled="true" android:icon="@android:drawable/ic_menu_today"
+        android:shortcutShortLabel="@string/shortcut_daily_short" android:shortcutLongLabel="@string/shortcut_daily_long">
+        <intent android:action="android.intent.action.VIEW" android:data="lumen://daily"
+            android:targetPackage="com.lumen.editor" android:targetClass="com.lumen.editor.MainActivity" />
+    </shortcut>
+</shortcuts>

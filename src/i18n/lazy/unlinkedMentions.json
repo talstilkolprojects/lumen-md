@@ -1,0 +1,9 @@
+{
+  "backlinks.changed": "the note changed; look again",
+  "backlinks.link": "Link",
+  "backlinks.linkAria": "Link “{text}” in {note}",
+  "backlinks.linkFailed": "Couldn't link in {note}: {error}",
+  "backlinks.linked": "Linked in {note}",
+  "backlinks.unlinked": "Unlinked mentions",
+  "backlinks.unlinkedEmpty": "No unlinked mentions."
+}

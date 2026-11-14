@@ -101,13 +101,13 @@ export function AiInlinePromptOverlay() {
         position: "fixed",
         inset: 0,
         zIndex: 10000,
-        background: "hsl(var(--bg) / 0.5)",
+        background: "var(--overlay)",
         backdropFilter: "blur(4px)",
         display: "flex",
         alignItems: "flex-start",
         justifyContent: "center",
         paddingTop: "18vh",
-        animation: "cmdFadeIn 120ms ease",
+        animation: "cmdFadeIn var(--duration-fast) var(--ease-out)",
       }}
     >
       <div
@@ -117,10 +117,9 @@ export function AiInlinePromptOverlay() {
           background: "hsl(var(--bg))",
           border: "1px solid hsl(var(--border-strong))",
           borderRadius: 12,
-          boxShadow:
-            "0 20px 60px -10px hsl(0 0% 0% / 0.4), 0 8px 20px -4px hsl(0 0% 0% / 0.2)",
+          boxShadow: "var(--shadow-xl)",
           overflow: "hidden",
-          animation: "cmdSlideIn 160ms cubic-bezier(0.2, 0.9, 0.3, 1.2)",
+          animation: "cmdSlideIn var(--duration-fast) var(--ease-out)",
         }}
       >
         <div

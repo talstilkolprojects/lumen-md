@@ -70,6 +70,7 @@ test("Mermaid block renders inline SVG inside the preview", async ({ page }) => 
  * --update-snapshots`) — see CONTRIBUTING.md.
  */
 test("Mermaid block matches the pixel baseline", async ({ page, browserName }, testInfo) => {
+  // skip-reason: the pixel baseline is one engine's rendering; fonts and anti-aliasing differ per engine | task: 0.5 | until: 2027-05-12
   test.skip(browserName !== "chromium", "pixel baseline is chromium-only");
   test.setTimeout(60_000);
   await page.setViewportSize({ width: 1280, height: 800 });

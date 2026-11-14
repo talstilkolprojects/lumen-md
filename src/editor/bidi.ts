@@ -30,6 +30,7 @@ import { Decoration, Direction, EditorView, ViewPlugin, keymap, type DecorationS
 import { syntaxTree } from "@codemirror/language";
 import { CharCategory, EditorSelection, Prec, findClusterBreak, type EditorState, type SelectionRange } from "@codemirror/state";
 import { markdownLineDirection } from "../lib/bidiDirection";
+import { displayMathLines } from "../lib/mathIsolate";
 
 export { firstStrongDirection } from "../lib/textDirection";
 
@@ -108,6 +109,20 @@ export function noteDirection(state: EditorState, fm: number): "ltr" | "rtl" {
   return found;
 }
 
+/** Lines (1-based) of `$$` display-math blocks: TeX, laid out left to right like code (W5.14). Cached per document. */
+const mathLinesCache = new WeakMap<object, Set<number>>();
+function mathLines(state: EditorState): Set<number> {
+  const doc = state.doc;
+  let set = mathLinesCache.get(doc);
+  if (!set) {
+    const lines: string[] = [];
+    for (let n = 1; n <= doc.lines; n++) lines.push(doc.line(n).text);
+    set = new Set([...displayMathLines(lines)].map((i) => i + 1));
+    mathLinesCache.set(doc, set);
+  }
+  return set;
+}
+
 function build(view: EditorView): DecorationSet {
   const head = view.state.sliceDoc(0, Math.min(view.state.doc.length, 2000));
   const pinned = frontmatterDir(head);
@@ -124,7 +139,7 @@ function build(view: EditorView): DecorationSet {
     let pos = from;
     while (pos <= to) {
       const line = view.state.doc.lineAt(pos);
-      const inCode = ltr.some(([a, b]) => line.from >= a && line.from < b);
+      const inCode = ltr.some(([a, b]) => line.from >= a && line.from < b) || mathLines(view.state).has(line.number);
       let dir: Dir;
       if (inCode) dir = "ltr";
       else if (pinned && pinned !== "auto") dir = pinned;

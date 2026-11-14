@@ -1,0 +1,24 @@
+# Job applications — from the template Job application
+filters:
+  and:
+    - 'type == "application"'
+properties:
+  file.name:
+    displayName: "Application"
+  note.company:
+    displayName: "Company"
+  note.role:
+    displayName: "Role"
+  note.applied_on:
+    displayName: "Applied"
+views:
+  - type: kanban
+    name: "Job applications"
+    order:
+      - file.name
+      - note.company
+      - note.role
+      - note.applied_on
+    groupBy:
+      property: note.stage
+      direction: ASC

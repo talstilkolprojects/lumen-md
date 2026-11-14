@@ -14,6 +14,11 @@ const PORT = 5173;
  * the production build — never in the per-browser PR jobs.
  */
 const NIGHTLY = /@nightly/;
+/** Plan W1.22: the responsiveness budget (e2e/inp-budget.spec.ts), only in the "inp" project. */
+const INP = /@inp/;
+/** Plan W2.21: cold-start budgets (e2e/cold-start.spec.ts), only in the "coldstart" projects. */
+const COLD = /@coldstart/;
+const NOT_IN_PR_RUNS = /@nightly|@inp|@coldstart/;
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`;
 /** A Chromium executable to use when Playwright's own is not installed (docs/dev/ci-local.md). */
 const CHROMIUM = process.env.PW_CHROMIUM;
@@ -37,10 +42,10 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   projects: [
-    { name: "chromium", grepInvert: NIGHTLY, use: { ...devices["Desktop Chrome"], ...(CHROMIUM ? { launchOptions: { executablePath: CHROMIUM } } : {}) } },
+    { name: "chromium", grepInvert: NOT_IN_PR_RUNS, use: { ...devices["Desktop Chrome"], ...(CHROMIUM ? { launchOptions: { executablePath: CHROMIUM } } : {}) } },
     {
       name: "firefox",
-      grepInvert: NIGHTLY,
+      grepInvert: NOT_IN_PR_RUNS,
       use: {
         ...devices["Desktop Firefox"],
         // Headless Firefox on CI runners (no GPU) blocks WebGL by default,
@@ -57,9 +62,14 @@ export default defineConfig({
         },
       },
     },
-    { name: "webkit", grepInvert: NIGHTLY, use: { ...devices["Desktop Safari"] } },
+    { name: "webkit", grepInvert: NOT_IN_PR_RUNS, use: { ...devices["Desktop Safari"] } },
     // `npx playwright test --project=perf` (.github/workflows/nightly-perf.yml).
     { name: "perf", grep: NIGHTLY, use: { ...devices["Desktop Chrome"] } },
+    // `npm run perf:inp`: 20 interactions and keypress → paint with the CPU 4× slower (plan W1.22).
+    { name: "inp", grep: INP, use: { ...devices["Desktop Chrome"] } },
+    // `npm run perf:coldstart` against a production build (PLAYWRIGHT_BASE_URL): the desktop and a phone profile.
+    { name: "coldstart", grep: COLD, use: { ...devices["Desktop Chrome"] } },
+    { name: "coldstart-phone", grep: COLD, use: { ...devices["Pixel 7"] } },
   ],
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined

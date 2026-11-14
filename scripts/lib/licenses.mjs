@@ -441,6 +441,8 @@ export const CATALOG_PATTERNS = [
   { file: "src/ai/hebrewSpell.ts", re: /_DICT_URL\s*=\s*"([^"]+)"/g, exact: true },
   // The bundled word list (plan 9.2): swapping the file must meet a registry entry for the new one.
   { file: "src/ai/hebrewFreq.ts", re: /_FREQ_PATH\s*=\s*"([^"]+)"/g, exact: true },
+  // The Hebrew lexicon pack (plan W5.26), downloaded on request.
+  { file: "src/lexicon/store.ts", re: /_PACK_PATH\s*=\s*"([^"]+)"/g, exact: true },
 ];
 
 export function discoverCatalogIds(sources, patterns = CATALOG_PATTERNS) {

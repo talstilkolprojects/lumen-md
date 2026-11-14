@@ -33,9 +33,10 @@ async function installOffline(page: Page, context: BrowserContext, browserName: 
   await page.goto("/");
   await expect(page.locator(".cm-content").first()).toBeVisible({ timeout: 15_000 });
   const dev = await page.evaluate(() => !!document.querySelector('script[src*="/@vite/client"]'));
-  test.skip(dev, "the service worker runs on the production build only");
-  test.skip(browserName !== "chromium", "service-worker offline checks run on Chromium");
-  test.skip(!(await page.evaluate(() => "serviceWorker" in navigator)), "no service worker support");
+  // skip-reason: the service worker exists on the production build only, and Playwright can take only Chromium offline with a worker in control | task: 0.5 | until: 2027-05-12
+  test.skip(dev || browserName !== "chromium", "the service-worker offline checks run on the production build in Chromium");
+  // Chromium has service workers: their absence on a production build is a regression, not a skip.
+  expect(await page.evaluate(() => "serviceWorker" in navigator)).toBe(true);
   // `ready` resolves once the worker is active, i.e. after the precache was filled.
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;

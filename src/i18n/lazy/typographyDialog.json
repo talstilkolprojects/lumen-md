@@ -1,0 +1,16 @@
+{
+  "typo.applied": "{count} typography changes applied",
+  "typo.apply": "Apply to the note",
+  "typo.asYouType": "Fix as I type",
+  "typo.close": "Close",
+  "typo.none": "Nothing to change in this note.",
+  "typo.preview": "{count} changes in this note",
+  "typo.rule.dash": "Dash between words: אחד - שניים → אחד – שניים",
+  "typo.rule.geresh": "Geresh: ג'ירפה → ג׳ירפה",
+  "typo.rule.gershayim": "Gershayim: צה\"ל → צה״ל",
+  "typo.rule.maqaf": "Maqaf: בית-ספר → בית־ספר",
+  "typo.rule.mixedLine": "Mixed lines: a Hebrew line that starts in English reads right to left",
+  "typo.rule.numbers": "Numbers: 50 % → 50%, %50 → 50%, 10–20 → 10-20",
+  "typo.rule.quotes": "Hebrew quotation marks: \"שלום\" → „שלום”",
+  "typo.title": "Hebrew typography"
+}

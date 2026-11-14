@@ -9,6 +9,7 @@ import type { EditorView } from "@codemirror/view";
 import { t } from "../i18n";
 import { showAiToast } from "../ui/AiToast";
 import { resolveAll } from "./suggesting";
+import { resolveByAuthor, suggestionAuthors } from "./suggestAuthors";
 import type { ViewLike } from "./suggestingExtension";
 
 // CodeMirror-backed helpers load with the editor, not with the palette (C1):
@@ -74,6 +75,31 @@ export function buildSuggestingCommands(deps: SuggestingCommandDeps): Suggesting
     if (after === before) showAiToast(t("suggest.none"), "info");
     else deps.setContent(after);
   };
+  // W3.11 — accept / reject everything one author suggested (the AI included).
+  const byAuthor = (author: string | null, mode: "accept" | "reject") => async () => {
+    const view = deps.getView();
+    if (view) {
+      const m = await ext();
+      if (m.resolveAuthorSuggestions(view, author, mode)) view.focus();
+      else showAiToast(t("suggest.none"), "info");
+      return;
+    }
+    const before = deps.getContent();
+    const after = resolveByAuthor(before, author, mode);
+    if (after === before) showAiToast(t("suggest.none"), "info");
+    else deps.setContent(after);
+  };
+  const authorName = (a: { author: string | null; ai: boolean }) =>
+    a.ai ? t("suggest.author.ai") : a.author ?? t("suggest.author.unknown");
+  const authorCommands = suggestionAuthors(deps.getContent()).flatMap((a) =>
+    (["accept", "reject"] as const).map((mode) => ({
+      id: `edit.suggesting.${mode}Author.${a.author ?? "-"}`,
+      label: t(mode === "accept" ? "cmd.suggest.acceptAuthor" : "cmd.suggest.rejectAuthor", { author: authorName(a), count: a.count }),
+      hint: t("cmd.suggest.byAuthor.hint"),
+      group,
+      action: byAuthor(a.author, mode),
+    })),
+  );
   return [
     {
       id: "edit.suggesting.toggle",
@@ -120,5 +146,6 @@ export function buildSuggestingCommands(deps: SuggestingCommandDeps): Suggesting
       group,
       action: withView((m) => m.prevSuggestionCommand, false, (a) => a.jump(-1)),
     },
+    ...authorCommands,
   ];
 }

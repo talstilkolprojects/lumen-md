@@ -3,11 +3,14 @@
  * `sync-server/collab-server.mjs`, adapted to the small `sync` /
  * `connection-error` surface that `connectCollab` waits on.
  *
- * Every (re)connect asks the server for a fresh short-lived room token
- * (`requestRoomToken`); nothing secret is built into the app.
+ * Every (re)connect asks the server for a fresh short-lived room token;
+ * nothing secret is built into the app. Plan W1.19: the token is bought
+ * with the session's share link when it has one (else the owner secret and
+ * the operator's access key), the server answers with the role it granted
+ * (`onRole`), and `docName` opens a room's comments document.
  */
 import type * as Y from "yjs";
-import { requestRoomToken } from "./roomToken";
+import { isRole, tokenPayload, tokenRequest, type Role } from "./sharing";
 
 type SyncListener = (isSynced: boolean) => void;
 
@@ -27,11 +30,25 @@ interface HocuspocusLike {
   destroy(): void;
 }
 
+export interface PersistentOptions {
+  /** The share link's id when the session was opened from one. */
+  share?: string | null;
+  /** The server document (default: the room itself; `<room>~comments` for comments). */
+  docName?: string;
+  /** Share presence with another provider (server-only rooms have no WebRTC awareness of their own). */
+  awareness?: unknown;
+  /** The role the server granted with each token. */
+  onRole?: (role: Role) => void;
+  /** The session is end-to-end encrypted: ask the server to seal the room (plan W2.20). */
+  e2ee?: boolean;
+}
+
 export async function createPersistentProvider(
   url: string,
   roomName: string,
   doc: Y.Doc,
   accessKey: string | null,
+  opts: PersistentOptions = {},
 ): Promise<PersistentProvider> {
   const mod = (await import("@hocuspocus/provider")) as unknown as {
     HocuspocusProvider: new (cfg: Record<string, unknown>) => HocuspocusLike;
@@ -42,10 +59,16 @@ export async function createPersistentProvider(
   };
   const provider = new mod.HocuspocusProvider({
     url,
-    name: roomName,
+    name: opts.docName ?? roomName,
     document: doc,
-    // Called on every connect, so a reconnect after expiry gets a new token.
-    token: async () => (await requestRoomToken(url, roomName, accessKey)).token,
+    ...(opts.awareness ? { awareness: opts.awareness } : {}),
+    // Called on every connect, so a reconnect after expiry gets a new token
+    // (and a revoked share link gets none).
+    token: async () => {
+      const r = await tokenRequest<{ token: string; expiresAt: number; role?: unknown }>(url, tokenPayload(roomName, { share: opts.share ?? null, accessKey, e2ee: opts.e2ee === true }));
+      opts.onRole?.(isRole(r.role) ? r.role : "edit");
+      return r.token;
+    },
   });
   provider.on("synced", (data) => emit("sync", (data as { state?: boolean } | undefined)?.state !== false));
   provider.on("authenticationFailed", () => emit("connection-error", false));

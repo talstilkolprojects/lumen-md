@@ -1,0 +1,24 @@
+# מילואים — נוצר מהתבנית יומן מילואים
+filters:
+  and:
+    - 'type == "reserve-duty"'
+properties:
+  file.name:
+    displayName: "תקופה"
+  note.from:
+    displayName: "מ-"
+  note.to:
+    displayName: "עד"
+  note.days:
+    displayName: "ימים"
+  note.approval_sent:
+    displayName: "אישור נשלח"
+views:
+  - type: table
+    name: "מילואים"
+    order:
+      - file.name
+      - note.from
+      - note.to
+      - note.days
+      - note.approval_sent

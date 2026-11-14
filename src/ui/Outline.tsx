@@ -5,6 +5,8 @@ import type { IncrementalToc, TocEntry } from "../renderer/incrementalToc";
 import { t } from "../i18n";
 import { scrollBehavior } from "../lib/motion";
 import { useAppStore } from "../store/useStore";
+import { EmptyState } from "./EmptyState";
+import { HelpButton } from "./HelpButton";
 
 interface Props {
   markdownText: string;
@@ -104,6 +106,7 @@ export const Outline = React.memo(function Outline({ markdownText, sheet = false
       {sheet && <div className="outline-sheet-grip" aria-hidden="true" />}
       <div className="px-2 mb-2 text-[11px] uppercase tracking-wider text-fg-muted font-semibold outline-sheet-head">
         <span>{t("outline.title")}</span>
+        <HelpButton topic="workspace/panels#outline" />
         {sheet && (
           <button type="button" className="icon-btn outline-sheet-close" onClick={() => useAppStore.getState().toggleOutline()} aria-label={t("outline.close")}>
             ✕
@@ -111,9 +114,11 @@ export const Outline = React.memo(function Outline({ markdownText, sheet = false
         )}
       </div>
       {toc.length === 0 ? (
-        <div className="px-2 text-[12px] text-fg-muted">
-          {t("outline.empty")}
-        </div>
+        <EmptyState
+          style={{ padding: "0 8px" }}
+          message={t("outline.empty")}
+          action={{ label: t("outline.addHeading"), onClick: () => window.dispatchEvent(new CustomEvent("lumen-mobile-insert", { detail: { insert: "\n# ", cursorOffset: 0 } })) }}
+        />
       ) : (
         <nav aria-label={t("outline.title")}>
           {toc.map((h, i) => (

@@ -1,6 +1,7 @@
 /** A list of tasks with their note, dates and a checkbox (plan 4.13), shared by the block and the panel. */
 import { t } from "../i18n";
 import type { Task } from "./taskParser";
+import { EmptyState, learnHow } from "../ui/EmptyState";
 
 const PRIORITY_MARK: Record<string, string> = { highest: "🔺", high: "⏫", medium: "🔼", low: "🔽", lowest: "⏬", none: "" };
 
@@ -14,7 +15,7 @@ export interface TaskListProps {
 const open = (task: Task) => window.dispatchEvent(new CustomEvent("lumen-open-file", { detail: { path: task.path, heading: task.heading ?? undefined } }));
 
 export function TaskList({ tasks, hide = new Set(), onToggle, today }: TaskListProps) {
-  if (!tasks.length) return <p className="lumen-tasks-empty">{t("tasks.none")}</p>;
+  if (!tasks.length) return <EmptyState style={{ padding: 0 }} message={<span className="lumen-tasks-empty">{t("tasks.none")}</span>} action={learnHow("workspace/tasks#queries")} />;
   return (
     <ul className="lumen-tasks" style={{ listStyle: "none", paddingInlineStart: 0, margin: 0 }}>
       {tasks.map((task) => {

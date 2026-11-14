@@ -38,7 +38,8 @@
 import { createStore, get, set, del, keys, type UseStore } from "idb-keyval";
 
 const KEY_ENTRY = "__key__";
-const PREFIX_SECRETS = ["lumen.ai.key."];
+// lumen.collab.owner.<room>: a room's owner secret for sharing (plan W1.19).
+const PREFIX_SECRETS = ["lumen.ai.key.", "lumen.collab.owner."];
 const EXACT_SECRETS = new Set([
   "lumen.cloud.dropbox.token",
   "lumen.cloud.dropbox.refresh",
@@ -141,8 +142,7 @@ async function initKeychain(): Promise<boolean> {
   if (!isTauri()) return false;
   let inv: Invoke;
   try {
-    const core = await import("@tauri-apps/api/core");
-    inv = core.invoke as Invoke;
+    inv = keychainForTests ?? ((await import("@tauri-apps/api/core")).invoke as Invoke);
     if (!(await inv<boolean>("secret_available"))) return false;
   } catch {
     return false;
@@ -355,6 +355,17 @@ export async function flushSecrets(): Promise<void> {
     failures.length = 0;
     throw first instanceof Error ? first : new Error(String(first));
   }
+}
+
+let keychainForTests: Invoke | null = null;
+
+/**
+ * Test hook (plan 0.15): the keychain commands, standing in for Tauri's
+ * `invoke`, so the keychain mode can be tested without the desktop runtime.
+ * Used only while `window.__TAURI_INTERNALS__` is set; null restores Tauri.
+ */
+export function __setKeychainForTests(invoke: Invoke | null): void {
+  keychainForTests = invoke;
 }
 
 /** Test hook: forget everything in memory and start over. */

@@ -6,9 +6,13 @@ import { useState, useSyncExternalStore, useRef } from "react";
 import { useFocusTrap } from "./useFocusTrap";
 import { ShieldCheck, X } from "lucide-react";
 import { t, getLocale } from "../i18n";
-import { clearLedger, leftDevice, ledgerEntries, ledgerSummary, subscribeLedger, type LedgerEntry } from "../ai/privacyLedger";
+import { auditMode, clearLedger, leftDevice, ledgerEntries, ledgerSummary, subscribeLedger, type LedgerEntry } from "../ai/privacyLedger";
+import "../privacy/strings";
 import { getAiPolicy } from "../ai/policy";
 import { redactionLog, redactionTotals, subscribeRedactionLog } from "../ai/piiRedactor";
+import { EmptyState } from "./EmptyState";
+import { HelpButton } from "./HelpButton";
+import "./privacyLedgerPanelStrings";
 
 interface Props {
   open: boolean;
@@ -28,6 +32,21 @@ export function PrivacyLedgerPanel({ open, onClose }: Props) {
   const list = useSyncExternalStore(subscribeLedger, ledgerEntries, ledgerEntries);
   const [onlyCloud, setOnlyCloud] = useState(false);
   const redactions = useSyncExternalStore(subscribeRedactionLog, redactionLog, redactionLog);
+  const [exported, setExported] = useState<string | null>(null);
+
+  // Plan W2.24: the session's ledger as a signed report (lazy: the signing code loads on use).
+  const exportReport = () => {
+    setExported(null);
+    void import("../privacy/report")
+      .then((m) => m.exportPrivacyReport(ledgerEntries(), { auditMode: auditMode() }))
+      .then(
+        (b) => {
+          const r = JSON.parse(b.report) as { summary: { requests: number; leftDevice: number } };
+          setExported(t("privacy.report.done", { n: r.summary.requests, left: r.summary.leftDevice }));
+        },
+        (e: unknown) => setExported(t("privacy.report.failed", { error: String((e as Error)?.message ?? e) })),
+      );
+  };
 
   // Focus stays in the dialog while it is open and returns on close; Escape closes it (plan 10.1).
   const trapRef = useRef<HTMLDivElement | null>(null);
@@ -45,6 +64,7 @@ export function PrivacyLedgerPanel({ open, onClose }: Props) {
         <header style={{ padding: "12px 16px", borderBottom: "1px solid hsl(var(--border))", display: "flex", gap: 10, alignItems: "center" }}>
           <ShieldCheck size={16} />
           <strong style={{ flex: 1 }}>{t("privacy.title")}</strong>
+          <HelpButton topic="ai/privacy#the-privacy-ledger" />
           <button type="button" style={btn} onClick={onClose} aria-label={t("privacy.close")}>
             <X size={14} />
           </button>
@@ -54,8 +74,8 @@ export function PrivacyLedgerPanel({ open, onClose }: Props) {
           <span>{t("privacy.cloudRequests", { n: sum.cloudRequests, size: bytes(sum.cloudBytesOut) })}</span>
           <span>{t("privacy.localRequests", { n: sum.local })}</span>
           <span>{t("privacy.downloads", { n: sum.downloads })}</span>
+          <span style={{ color: sum.blocked ? "hsl(var(--danger))" : undefined }}>{t("privacy.blocked", { n: sum.blocked })}</span>
           {sum.staticAssets > 0 && <span>{t("privacy.staticAssets", { n: sum.staticAssets })}</span>}
-          <span style={{ color: sum.blocked ? "hsl(0 70% 55%)" : undefined }}>{t("privacy.blocked", { n: sum.blocked })}</span>
           <span data-testid="privacy-redacted">{t("pii.ledger.redacted", { n: redactionTotals(redactions).items, requests: redactionTotals(redactions).requests })}</span>
         </div>
         <div style={{ padding: "8px 16px", display: "flex", gap: 8, alignItems: "center", fontSize: 12 }}>
@@ -63,13 +83,32 @@ export function PrivacyLedgerPanel({ open, onClose }: Props) {
             <input type="checkbox" checked={onlyCloud} onChange={(e) => setOnlyCloud(e.target.checked)} />
             {t("privacy.onlyLeaving")}
           </label>
+          <button type="button" style={btn} onClick={exportReport} data-testid="privacy-export">
+            {t("privacy.report.export")}
+          </button>
           <button type="button" style={btn} onClick={clearLedger} disabled={!list.length}>
             {t("privacy.clear")}
           </button>
         </div>
+        {(auditMode() || exported) && (
+          <div style={{ padding: "0 16px 8px", fontSize: 12, display: "grid", gap: 4 }}>
+            {auditMode() && <span data-testid="privacy-audit-mode">{t("privacy.audit.on")}</span>}
+            {exported && <span role="status">{exported}</span>}
+          </div>
+        )}
         <div style={{ overflow: "auto", flex: 1 }}>
           {shown.length === 0 ? (
-            <p style={{ padding: "16px", color: "hsl(var(--fg-muted))", fontSize: 13, margin: 0 }}>{t("privacy.empty")}</p>
+            <EmptyState
+              style={{ fontSize: 13 }}
+              message={t("privacy.empty")}
+              action={{
+                label: t("privacy.openAiSettings"),
+                onClick: () => {
+                  onClose();
+                  window.dispatchEvent(new CustomEvent("lumen-open-ai-settings"));
+                },
+              }}
+            />
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
               <thead>
@@ -90,7 +129,7 @@ export function PrivacyLedgerPanel({ open, onClose }: Props) {
                     <td style={{ padding: "6px 10px" }}>{e.reason}</td>
                     <td style={{ padding: "6px 10px", whiteSpace: "nowrap" }}>{bytes(e.bytesOut)}</td>
                     <td style={{ padding: "6px 10px", whiteSpace: "nowrap" }}>{bytes(e.bytesIn)}</td>
-                    <td style={{ padding: "6px 10px", whiteSpace: "nowrap", color: e.decision === "blocked" ? "hsl(0 70% 55%)" : undefined }}>
+                    <td style={{ padding: "6px 10px", whiteSpace: "nowrap", color: e.decision === "blocked" ? "hsl(var(--danger))" : undefined }}>
                       {t(`privacy.decision.${e.decision}`)}
                     </td>
                   </tr>

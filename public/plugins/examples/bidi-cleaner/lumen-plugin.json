@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "lumen.example.bidi-cleaner",
+  "name": "Bidi cleaner",
+  "version": "1.0.0",
+  "description": "Removes the invisible direction marks (RLM, LRM, embeddings, isolates) and zero-width characters that text pasted from Word, WhatsApp or the web leaves in Hebrew and Arabic notes — in the selection, or in the whole note.",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    { "id": "commands", "reason": "Adds the “Remove invisible direction marks” command" },
+    { "id": "document:read", "reason": "To find the marks in the selection or the note" },
+    { "id": "document:write", "reason": "Writes the text back without them" },
+    { "id": "notifications", "reason": "Tells you how many were removed" }
+  ]
+}

@@ -13,6 +13,8 @@ export interface LocalFile {
   path: string;
   /** SHA-256 hex of the bytes. */
   hash: string;
+  /** Size in bytes, when the listing knows it (selective sync judges sizes before reading, plan W1.8). */
+  size?: number;
 }
 
 export interface LocalFiles {
@@ -75,7 +77,8 @@ export function memoryFiles(): MemoryFiles {
       const out: LocalFile[] = [];
       for (const path of [...files.keys()]) {
         const hash = await hashOf(path);
-        if (hash !== null) out.push({ path, hash });
+        const d = files.get(path);
+        if (hash !== null && d) out.push({ path, hash, size: d.length });
       }
       return out;
     },
@@ -158,7 +161,10 @@ export function vaultLocalFiles(backend: VaultBackend): LocalFiles {
         for (const e of await backend.list(dir)) {
           if (!isSyncedPath(e.path)) continue;
           if (e.kind === "directory") await walk(e.path);
-          else out.push({ path: e.path, hash: await sha256Hex(new Uint8Array(await (await backend.read(e.path)).arrayBuffer())) });
+          else {
+            const bytes = new Uint8Array(await (await backend.read(e.path)).arrayBuffer());
+            out.push({ path: e.path, hash: await sha256Hex(bytes), size: bytes.length });
+          }
         }
       };
       await walk("");

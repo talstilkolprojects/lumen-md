@@ -15,7 +15,7 @@ vi.mock("../ui/PromptDialog", () => ({
   uiPrompt: vi.fn().mockResolvedValue(null),
   uiAlert: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("../i18n", () => ({ t: (k: string) => k }));
+vi.mock("../i18n", () => ({ registerEnglish: () => undefined, t: (k: string) => k }));
 vi.mock("../lib/logger", () => ({
   log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));

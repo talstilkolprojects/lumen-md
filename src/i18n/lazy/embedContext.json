@@ -1,0 +1,6 @@
+{
+  "embed.cycle": "{target} is not embedded again: it would embed itself (circular embed).",
+  "embed.depth": "{target} is not embedded: embeds nest at most {max} levels deep.",
+  "embed.notFound": "Can't embed {target}: not found in the workspace.",
+  "embed.sectionNotFound": "Can't embed {section}: there is no such section in {note}."
+}

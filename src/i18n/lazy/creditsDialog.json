@@ -1,0 +1,16 @@
+{
+  "credits.close": "Close",
+  "credits.hebrew": "Hebrew models (ivrit.ai, Dicta)",
+  "credits.intro": "Models and data Lumen can download, and the attribution their licences ask for.",
+  "credits.licence": "Licence",
+  "credits.models": "Model credits",
+  "credits.other": "Other models and data",
+  "credits.req.apache": "Apache 2.0: the copyright and licence notice (and NOTICE file, if any) are kept.",
+  "credits.req.ccBy": "CC BY 4.0: the creator is credited, the licence is linked, and changes are noted.",
+  "credits.req.gemma": "Gemma Terms of Use: the terms come with the model; Google's Prohibited Use Policy applies.",
+  "credits.req.llama": "Llama Community License: the licence notice and “Built with Llama” are shown; Meta's Acceptable Use Policy applies.",
+  "credits.req.mit": "MIT: the copyright and licence notice are kept.",
+  "credits.req.mpl": "MPL 2.0: the notice is kept and the MPL-covered source stays available.",
+  "credits.source": "Source",
+  "credits.title": "Credits"
+}

@@ -8,6 +8,7 @@ import { useState, type FormEvent } from "react";
 import { t } from "../../../i18n";
 import { WrongPassphraseError } from "../header";
 import "../strings";
+import { explainError } from "../../../lib/userError";
 
 export const MIN_PASSPHRASE_LENGTH = 12;
 
@@ -44,7 +45,7 @@ export function PassphraseForm({ mode, onSubmit }: Props) {
     try {
       await onSubmit(pass);
     } catch (err) {
-      setError(err instanceof WrongPassphraseError ? t("e2ee.setup.wrong") : String((err as Error)?.message ?? err));
+      setError(err instanceof WrongPassphraseError ? t("e2ee.setup.wrong") : explainError(err));
     } finally {
       setBusy(false);
     }

@@ -70,7 +70,7 @@ vi.mock("../ui/FileTree", () => ({ FileTree: h.stub("FileTree") }));
 vi.mock("../ui/SidebarResizer", () => ({ SidebarResizer: h.stub("SidebarResizer") }));
 vi.mock("../ui/BacklinksPanel", () => ({ BacklinksPanel: h.stub("BacklinksPanel") }));
 vi.mock("../ui/AiSuggestionsPanel", () => ({ AiSuggestionsPanel: h.stub("AiSuggestionsPanel") }));
-vi.mock("../ui/MobileKeyboardBar", () => ({ MobileKeyboardBar: h.stub("MobileKeyboardBar") }));
+vi.mock("../ui/MobileKeyboardBarHost", () => ({ MobileKeyboardBarHost: h.stub("MobileKeyboardBarHost") }));
 vi.mock("../ui/TagsPanel", () => ({ TagsPanel: h.stub("TagsPanel") }));
 vi.mock("../ui/AiInlinePrompt", () => ({ AiInlinePromptOverlay: h.stub("AiInlinePromptOverlay"), openAiPrompt: () => {} }));
 vi.mock("../ui/RuntimeMetricsPanel", () => ({ RuntimeMetricsPanel: h.stub("RuntimeMetricsPanel") }));

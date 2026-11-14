@@ -1,0 +1,21 @@
+# Meetings — from the template Team meeting
+filters:
+  and:
+    - 'type == "meeting"'
+properties:
+  file.name:
+    displayName: "Meeting"
+  note.date:
+    displayName: "Date"
+  note.participants:
+    displayName: "Participants"
+views:
+  - type: table
+    name: "Meetings"
+    order:
+      - file.name
+      - note.date
+      - note.participants
+    sort:
+      - property: note.date
+        direction: DESC

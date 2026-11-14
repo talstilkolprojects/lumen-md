@@ -3,15 +3,16 @@ title: בדיקות בכל ענף (Vercel)
 description: השערים של Lumen רצים בבניית Vercel של כל ענף, בלי GitHub Actions — מה רץ, מה המשמעות של סטטוס אדום, ולאן עברו בדיקות ה-CI הישנות.
 ---
 
-כל ענף שנדחף ל-GitHub מקבל בנייה ב-Vercel, ו-Vercel מדווח עליה ב-commit
-כסטטוס **Vercel**. הבנייה הזו היא השער של Lumen: פקודת הבנייה היא
+‏`main` ורכבות האינטגרציה (`verify/…`) מקבלים בנייה ב-Vercel כשהם נדחפים,
+ו-Vercel מדווח עליה ב-commit כסטטוס **Vercel**; הענף של בקשת משיכה נבדק דרך
+הרכבת (ראו [בניות שמדולגות](#בניות-שמדולגות)). הבנייה הזו היא השער של Lumen: פקודת הבנייה היא
 `node scripts/vercel-build.mjs` (ב-`deploy/vercel.base.json`), ובניית preview
 מריצה את כל הבדיקות. בקשת משיכה עם בדיקה שנכשלת או שער שבור מקבלת סטטוס
 **Vercel** אדום; בקשה נקייה מקבלת ירוק. לא נצרכות דקות של GitHub Actions.
 
 | בנייה | מה רץ, לפי הסדר |
 |---|---|
-| ‏Preview (כל ענף חוץ מ-`main`) | build, תקציב החבילה, vitest, ‏e2e (smoke ב-chromium וב-firefox), ‏`i18n:check`, ‏hygiene, ‏`docs:sync`, שער הרישיונות |
+| ‏Preview (רכבות `verify/…`) | build, תקציב החבילה, סריקת הסודות של `dist/`, vitest, ‏e2e (smoke ב-chromium וב-firefox), ‏`i18n:check`, ‏hygiene, ‏`docs:sync`, שער הרישיונות |
 | ‏Production (`main`) | build, תקציב החבילה — כמו קודם |
 
 השערים נעצרים בכישלון הראשון. יומן הבנייה מסתיים בשער שנכשל ובאלה שעברו
@@ -27,6 +28,9 @@ Vercel בונה פריסה אחת בכל פעם, כך שכל בנייה בתור
 ‏`scripts/vercel-ignore.sh` (ה-`ignoreCommand` של התצורה) מדלג על בנייה לפני
 שהיא מתחילה כאשר:
 
+- הענף שלה איננו `main` (פרודקשן) ואיננו רכבת אינטגרציה (`verify/…`): ענף של
+  pull request נבדק דרך הרכבת (`verify/train-2`), ולכן לא נבנה בעצמו. משתנה
+  הפרויקט ב-Vercel ‏`LUMEN_BUILD_ALL=1` מחזיר בנייה של כל ענף;
 - ה-commit שלה כבר איננו ראש הענף: push חדש יותר ממתין בתור וייבנה במקומה.
   כשאי אפשר לקרוא את ראש הענף (אין רשת, הענף נמחק), הכלל הבא מחליט;
 - ה-commit לא משנה שום דבר שבניית האתר קוראת (Markdown מחוץ ל-`src/`
@@ -46,7 +50,8 @@ node scripts/vercel-build.mjs --dry-run    # print the gates, run nothing
 מחוץ ל-Vercel (בלי `VERCEL_ENV`) הסקריפט מריץ את סט ה-preview, כך שהרצה
 מקומית היא מה שהבנייה של הענף תעשה. כל שער הוא גם סקריפט npm בפני עצמו:
 ‏`npm run build`, ‏`npm run budget`, ‏`npm test`, ‏`npm run e2e:gate` (אחרי `VITE_E2E=1 npm run build`: הבדיקות מגיעות למודולים של האפליקציה דרך `window.__lumenTest`, שקיים רק בבנייה כזו), ‏`npm run i18n:check`,
-‏`npm run hygiene`, ‏`npm run docs:sync`, ‏`npm run licenses`.
+‏`npm run hygiene`, ‏`npm run docs:sync`, ‏`npm run licenses`, ‏`npm run secrets:dist` (ראו
+[סריקת סודות בבנייה](/he/security/secret-scan/)).
 
 ## מה לא רץ בבנייה
 

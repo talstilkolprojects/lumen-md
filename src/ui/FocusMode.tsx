@@ -55,7 +55,7 @@ export function FocusMode({ active, onExit, children }: Props) {
           display: "flex",
           justifyContent: "flex-end",
           opacity: 0.3,
-          transition: "opacity 200ms",
+          transition: "opacity var(--duration-base) var(--ease-out)",
         }}
         onMouseEnter={(e) => {
           (e.currentTarget as HTMLElement).style.opacity = "1";

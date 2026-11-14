@@ -27,9 +27,9 @@ interface AnchoredComment {
  * and clamp to the current doc length so we never produce an out-of-range
  * Decoration. Returns sorted, non-overlapping markers.
  */
-function resolveAll(doc: Y.Doc, docLen: number): AnchoredComment[] {
+function resolveAll(doc: Y.Doc, commentsDoc: Y.Doc, docLen: number): AnchoredComment[] {
   const out: AnchoredComment[] = [];
-  for (const c of listComments(doc)) {
+  for (const c of listComments(commentsDoc)) {
     const range = resolveAnchor(doc, c);
     if (!range) continue;
     const from = Math.max(0, Math.min(range.from, docLen));
@@ -59,6 +59,8 @@ function decorationsFor(anchored: AnchoredComment[]): DecorationSet {
 export interface CommentDecorationsOptions {
   /** Yjs doc currently driving the editor. May be null when offline. */
   doc: Y.Doc | null;
+  /** The doc holding the comment threads when it is not `doc` (a room with share links, plan W1.19). */
+  commentsDoc?: Y.Doc | null;
 }
 
 /**
@@ -69,6 +71,7 @@ export function commentDecorations(opts: CommentDecorationsOptions): Extension {
   if (!opts.doc) return [];
   // Capture as a non-null local so the view-plugin closure keeps the narrow.
   const ydoc: Y.Doc = opts.doc;
+  const cdoc: Y.Doc = opts.commentsDoc ?? opts.doc;
 
   return ViewPlugin.fromClass(
     class {
@@ -78,7 +81,7 @@ export function commentDecorations(opts: CommentDecorationsOptions): Extension {
 
       constructor(view: EditorView) {
         this.refresh(view);
-        this.unsubscribe = onCommentsChanged(ydoc, () => this.refresh(view));
+        this.unsubscribe = onCommentsChanged(cdoc, () => this.refresh(view));
         this.clickHandler = (e) => {
           const target = e.target as HTMLElement | null;
           const el = target?.closest?.("[data-comment-id]") as HTMLElement | null;
@@ -115,7 +118,7 @@ export function commentDecorations(opts: CommentDecorationsOptions): Extension {
       }
 
       refresh(view: EditorView) {
-        const anchored = resolveAll(ydoc, view.state.doc.length);
+        const anchored = resolveAll(ydoc, cdoc, view.state.doc.length);
         this.decorations = decorationsFor(anchored);
         // Force redraw so newly arrived comments appear without a keystroke.
         view.dispatch({});

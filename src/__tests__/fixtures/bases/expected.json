@@ -1,0 +1,23 @@
+{
+  "_comment": "Written by hand from the Bases rules (Obsidian help: Bases syntax and functions), not by running Lumen. Owner check: open the same vault (vault.ts) in Obsidian 1.14 and confirm each view's rows and order; see the docs page.",
+  "01-all-books": { "rows": ["Books/Dune.md", "Books/Emma.md", "Books/Foundation.md", "Books/Neuromancer.md", "Books/הנסיך הקטן.md"], "cells": { "Books/Emma.md": { "note.author": "Jane Austen" } } },
+  "02-folder": { "rows": ["Projects/Archive/Old site.md", "Projects/Garden.md", "Projects/Website.md"] },
+  "03-and-or": { "rows": ["Books/Dune.md", "Books/הנסיך הקטן.md", "Books/Neuromancer.md"] },
+  "04-not": { "rows": ["Books/Emma.md", "Books/Neuromancer.md"] },
+  "05-formula-price-per-page": { "rows": ["Books/Emma.md", "Books/Dune.md", "Books/Foundation.md", "Books/Neuromancer.md", "Books/הנסיך הקטן.md"], "cells": { "Books/Emma.md": { "formula.ppp": "1.05" }, "Books/Dune.md": { "formula.ppp": "2.42" }, "Books/Foundation.md": { "formula.ppp": "2.94" }, "Books/Neuromancer.md": { "formula.ppp": "4.43" }, "Books/הנסיך הקטן.md": { "formula.ppp": "40.63" } }, "labels": ["file.name", "price", "pages", "Price per 100 pages"] },
+  "06-reading-time": { "rows": ["Books/Emma.md", "Books/Dune.md", "Books/Neuromancer.md", "Books/Foundation.md", "Books/הנסיך הקטן.md"], "cells": { "Books/Emma.md": { "formula.hours": 9.5 }, "Books/Dune.md": { "formula.hours": 8.2 }, "Books/Neuromancer.md": { "formula.hours": 5.4 }, "Books/Foundation.md": { "formula.hours": 5.1 }, "Books/הנסיך הקטן.md": { "formula.hours": 1.9 } } },
+  "07-group-status": { "rows": ["Books/Dune.md", "Books/Foundation.md", "Books/הנסיך הקטן.md", "Books/Neuromancer.md", "Books/Emma.md"], "groups": [["read", 3], ["reading", 1], ["to-read", 1]] },
+  "08-limit": { "rows": ["Books/Dune.md", "Books/הנסיך הקטן.md"], "total": 5 },
+  "09-cards": { "rows": ["Movies/Blade Runner.md", "Movies/Arrival.md"], "kind": "cards" },
+  "10-kanban": { "rows": ["Projects/Website.md", "Projects/Garden.md", "Projects/Archive/Old site.md"], "groups": [["active", 1], ["done", 2]], "kind": "kanban", "view2": ["Projects/Archive/Old site.md", "Projects/Garden.md"] },
+  "11-map": { "rows": ["Places/Haifa.md", "Places/Tel Aviv.md"], "kind": "map", "points": [[32.794, 34.9896], [32.0853, 34.7818]] },
+  "12-dates": { "rows": ["Projects/Garden.md", "Projects/Archive/Old site.md"], "cells": { "Projects/Garden.md": { "formula.overdue": 40, "formula.dueText": "1 October 2026" }, "Projects/Archive/Old site.md": { "formula.overdue": 619, "formula.dueText": "1 March 2025" } } },
+  "13-links": { "rows": ["Daily/2026-11-09.md", "Movies/Arrival.md", "Index.md"] },
+  "14-nested-tags": { "rows": ["Movies/Blade Runner.md", "Books/Dune.md", "Books/Foundation.md", "Books/Neuromancer.md"] },
+  "15-inline-tags": { "rows": ["Daily/2026-11-09.md", "Daily/2026-11-10.md"] },
+  "16-attachments": { "rows": ["map.png"], "cells": { "map.png": { "file.ext": "png", "file.size": 2048 } } },
+  "17-strings": { "rows": ["Daily/2026-11-10.md", "Daily/2026-11-09.md"], "cells": { "Daily/2026-11-10.md": { "formula.weekday": "Tuesday", "formula.label": "10/11/2026" }, "Daily/2026-11-09.md": { "formula.weekday": "Monday", "formula.label": "09/11/2026" } } },
+  "18-lists": { "rows": ["Books/Emma.md", "Books/הנסיך הקטן.md"], "cells": { "Books/Emma.md": { "formula.tagCount": 2, "formula.others": "classic" }, "Books/הנסיך הקטן.md": { "formula.tagCount": 2, "formula.others": "ספר" } } },
+  "19-this": { "rows": ["Books/Emma.md", "Books/Foundation.md", "Books/Neuromancer.md", "Books/הנסיך הקטן.md"], "this": "Books/Dune.md" },
+  "20-summaries": { "rows": ["Books/Dune.md", "Books/Emma.md", "Books/Foundation.md", "Books/Neuromancer.md", "Books/הנסיך הקטן.md"], "summaries": { "note.price": 73.49, "note.rating": 4.2, "note.pages": 2 }, "labels": ["file.name", "מחיר", "rating", "pages"] }
+}

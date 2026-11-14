@@ -11,6 +11,8 @@ import { Stethoscope, X } from "lucide-react";
 import { t } from "../i18n";
 import "../agents/doctorStrings";
 import type { DoctorFinding, DoctorReport, DoctorStatus } from "../agents/doctor";
+import { HelpButton } from "./HelpButton";
+import "./aiDoctorPanelStrings";
 
 interface Props {
   open: boolean;
@@ -33,9 +35,9 @@ const row: React.CSSProperties = { display: "flex", gap: 8, alignItems: "center"
 const pre: React.CSSProperties = { margin: 0, padding: "6px 8px", fontSize: 11, borderRadius: 6, background: "hsl(var(--bg))", border: "1px solid hsl(var(--border))", whiteSpace: "pre-wrap", direction: "ltr", textAlign: "start", userSelect: "all" };
 
 const COLOR: Record<DoctorStatus, string> = {
-  ok: "hsl(142 70% 45%)",
-  warn: "hsl(38 92% 50%)",
-  fail: "hsl(0 80% 60%)",
+  ok: "hsl(var(--success))",
+  warn: "hsl(var(--warning))",
+  fail: "hsl(var(--danger))",
   skip: "hsl(var(--fg-muted))",
 };
 const MARK: Record<DoctorStatus, string> = { ok: "✓", warn: "!", fail: "✗", skip: "–" };
@@ -163,6 +165,7 @@ export function AiDoctorPanel({ open, onClose }: Props) {
               {t("ai.doctor.summary", { ok: report.summary.ok, warn: report.summary.warn, fail: report.summary.fail })}
             </span>
           )}
+          <HelpButton topic="ai/doctor" />
           <button type="button" style={ghost} onClick={onClose} aria-label={t("ai.doctor.close")}>
             <X size={16} />
           </button>

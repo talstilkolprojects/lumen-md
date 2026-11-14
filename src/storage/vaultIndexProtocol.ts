@@ -7,8 +7,26 @@
  * Both answer through `handleIndexRequest`, so they answer the same.
  */
 
-import type { BacklinkHit, IndexInput, IndexStats, SearchHit, SearchOptions } from "./vaultIndexCore";
+import type { BacklinkHit, IndexInput, IndexStats, NoteText, SearchHit, SearchOptions } from "./vaultIndexCore";
 import type { QueryResult } from "../tasks/taskQuery";
+import type { RelatedHit } from "../related/related";
+import type { NoteSummary } from "./noteSummary";
+
+/** A note restored from the snapshot, as the main thread keeps it. */
+export interface RestoredNote extends NoteSummary {
+  path: string;
+  name: string;
+  modified: number;
+}
+
+/** What the related-notes panel asks the index (plan W2.2). */
+export interface RelatedQuery {
+  paragraph: string;
+  self?: string | null;
+  offFolders?: string[];
+  semantic?: { path: string; score: number }[];
+  limit?: number;
+}
 
 export type IndexRequestBody =
   | { op: "upsert"; files: IndexInput[] }
@@ -17,7 +35,13 @@ export type IndexRequestBody =
   | { op: "search"; query: string; opts: SearchOptions }
   | { op: "backlinks"; target: string }
   | { op: "stats" }
-  | { op: "tasks"; query: string; today: string };
+  | { op: "tasks"; query: string; today: string }
+  // W2.22: the text stays in the index; these work on what it holds.
+  | { op: "move"; moves: { from: string; to: string; name: string }[] }
+  | { op: "texts"; paths?: string[] }
+  | { op: "related"; query: RelatedQuery }
+  | { op: "snapshotSave"; vault: string }
+  | { op: "snapshotRestore"; vault: string; listing: { path: string; name: string; modified: number }[] };
 
 export type IndexRequest = IndexRequestBody & { id: number };
 
@@ -34,6 +58,19 @@ export interface IndexEngine {
   stats(): Promise<IndexStats>;
   /** Run a ```tasks``` query (plan 4.13); `today` is YYYY-MM-DD in the user's time zone. */
   tasks(query: string, today: string): Promise<QueryResult>;
+  /** Move notes inside the index (no text sent). */
+  move(moves: { from: string; to: string; name: string }[]): Promise<void>;
+  /** The text of these notes (all when omitted), read from the index (W2.22). */
+  texts(paths?: string[]): Promise<NoteText[]>;
+  /** Notes related to a paragraph, ranked in the index (plan W2.2). */
+  related(query: RelatedQuery): Promise<RelatedHit[]>;
+  /** Save the indexed notes for the next session (indexSnapshot.ts). */
+  saveSnapshot(vault: string): Promise<void>;
+  /**
+   * Index every listed note the snapshot holds with the same mtime; returns
+   * their summaries (the caller reads only the others).
+   */
+  restoreSnapshot(vault: string, listing: { path: string; name: string; modified: number }[]): Promise<RestoredNote[]>;
   dispose(): void;
 }
 
@@ -47,6 +84,11 @@ export function engineOver(kind: IndexEngine["kind"], send: (req: IndexRequestBo
     backlinks: (target) => send({ op: "backlinks", target }) as Promise<BacklinkHit[]>,
     stats: () => send({ op: "stats" }) as Promise<IndexStats>,
     tasks: (query, today) => send({ op: "tasks", query, today }) as Promise<QueryResult>,
+    move: async (moves) => void (await send({ op: "move", moves })),
+    texts: (paths) => send({ op: "texts", paths }) as Promise<NoteText[]>,
+    related: (query) => send({ op: "related", query }) as Promise<RelatedHit[]>,
+    saveSnapshot: async (vault) => void (await send({ op: "snapshotSave", vault })),
+    restoreSnapshot: (vault, listing) => send({ op: "snapshotRestore", vault, listing }) as Promise<RestoredNote[]>,
     dispose,
   };
 }

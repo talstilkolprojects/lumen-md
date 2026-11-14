@@ -12,12 +12,13 @@
 import { buildDictionary, hebrewRules, hebrewSpelling } from "./hebrewSpell";
 import { offlineHebrewChecks, parseFrequencyList, type FrequencyList } from "./hebrewFreq";
 import type { GrammarMatch } from "./grammar";
+import { mergeGrammar, type GrammarLevel } from "./hebrewGrammar";
 
 let dict: Set<string> | null = null;
 let freq: FrequencyList | null = null;
 let freqLoad: Promise<void> | null = null;
 
-type In = { type: "load"; dic: string } | { type: "freq"; url: string } | { type: "check"; id: number; text: string };
+type In = { type: "load"; dic: string } | { type: "freq"; url: string } | { type: "check"; id: number; text: string; level?: GrammarLevel };
 type Out = { type: "loaded"; words: number } | { type: "freq-loaded"; words: number } | { type: "result"; id: number; matches: GrammarMatch[] };
 
 self.onmessage = (e: MessageEvent<In>) => {
@@ -38,7 +39,7 @@ self.onmessage = (e: MessageEvent<In>) => {
       .catch(() => undefined);
   } else if (msg.type === "check") {
     const d = dict;
-    const matches = offlineHebrewChecks(freq, msg.text, hebrewRules, d ? (t) => hebrewSpelling(d, t) : undefined);
+    const matches = mergeGrammar(offlineHebrewChecks(freq, msg.text, hebrewRules, d ? (t) => hebrewSpelling(d, t) : undefined), msg.text, msg.level ?? "everyday");
     (self as unknown as Worker).postMessage({ type: "result", id: msg.id, matches } satisfies Out);
   }
 };

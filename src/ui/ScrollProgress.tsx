@@ -81,8 +81,7 @@ export function ScrollProgress() {
         fontSize: 11,
         color: "hsl(var(--fg-muted))",
         cursor: "default",
-        transition: "all 150ms ease",
-        boxShadow: hover ? "0 4px 12px hsl(0 0% 0% / 0.2)" : "none",
+        boxShadow: hover ? "var(--shadow-sm)" : "none",
       }}
     >
       {/* Progress bar */}
@@ -97,11 +96,14 @@ export function ScrollProgress() {
       >
         <div
           style={{
-            width: `${progress}%`,
+            // Scaled, not resized: the bar moves without relayout (plan W3.1).
+            width: "100%",
+            transform: `scaleX(${progress / 100})`,
+            transformOrigin: "var(--progress-origin, left)",
             height: "100%",
             background: "hsl(var(--accent))",
             borderRadius: 2,
-            transition: "width 100ms ease",
+            transition: "transform var(--duration-fast) var(--ease-out)",
           }}
         />
       </div>

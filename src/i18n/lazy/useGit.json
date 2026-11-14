@@ -1,0 +1,18 @@
+{
+  "git.alert.noRepo": "This workspace isn't a Git repo. Run `git clone` first or use `Init repository`.",
+  "git.alert.pushFailed": "Push failed: {error}",
+  "git.alert.statusFailed": "Status failed: {error}",
+  "git.defaultCommitMessage": "Update files",
+  "git.placeholder.name": "Your name",
+  "git.prompt.cloneUrl": "Repository URL (https://… or git@…):",
+  "git.prompt.email": "Git email:",
+  "git.prompt.name": "Git name:",
+  "toast.clonedFilesIntoWorkspace": "✅ Cloned files into the workspace: {count}",
+  "toast.cloningRepository": "Cloning repository…",
+  "toast.generatingCommitMessage": "Generating commit message…",
+  "toast.gitIdentitySet": "✅ Git identity set: {name} <{email}>",
+  "toast.pulledChangedFiles": "✅ Pulled changed files: {count}",
+  "toast.pulling": "Pulling…",
+  "toast.pushedToRemote": "✅ Pushed to remote",
+  "toast.pushing": "Pushing…"
+}

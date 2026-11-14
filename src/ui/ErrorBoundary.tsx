@@ -1,6 +1,7 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 import { log } from "../lib/logger";
 import { t } from "../i18n";
+import { ErrorActions } from "./ErrorActions";
 
 interface Props {
   children?: ReactNode;
@@ -37,6 +38,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <p style={{ marginTop: "8px", opacity: 0.8, fontSize: "12px", fontFamily: "monospace" }}>
             {this.state.error?.message ?? t("errorBoundary.unexpected")}
           </p>
+          <ErrorActions compact />
         </div>
       );
     }

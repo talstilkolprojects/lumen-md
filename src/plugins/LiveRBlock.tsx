@@ -17,6 +17,8 @@ import { t } from "../i18n";
 import { resetWebR, runR, webrAvailable, type ROutputLine } from "./r/rRuntime";
 import type { WebRInstallError, WebRManifest } from "./r/webrInstall";
 import "./r/webrStrings";
+import "./liveRBlockStrings";
+import { explainError } from "../lib/userError";
 
 interface Props {
   source: string;
@@ -54,9 +56,10 @@ function Plot({ image }: { image: ImageBitmap }) {
   );
 }
 
-function installErrorText(e: unknown): string {
+/** An R install failure in words; the detail is explainError's sentence, never the raw text. */
+function describeInstallError(e: unknown): string {
   const err = e as Partial<WebRInstallError> | null;
-  const detail = e instanceof Error ? e.message : String(e);
+  const detail = explainError(e, "webr-install");
   switch (err?.code) {
     case "no-manifest":
       return t("block.liveR.install.error.noManifest");
@@ -81,7 +84,7 @@ function WebRInstallOffer({ onInstalled }: { onInstalled: () => void }) {
       .then((m) => m.fetchWebRManifest())
       .then(
         (m) => alive && setManifest(m),
-        (e) => alive && setError(installErrorText(e)),
+        (e) => alive && setError(describeInstallError(e)),
       );
     return () => {
       alive = false;
@@ -107,7 +110,7 @@ function WebRInstallOffer({ onInstalled }: { onInstalled: () => void }) {
         return;
       }
       setPercent(null);
-      setError(installErrorText(e));
+      setError(describeInstallError(e));
     }
   }
 

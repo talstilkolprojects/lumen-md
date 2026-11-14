@@ -1,0 +1,13 @@
+{
+  "dictation.download.body": "Hebrew dictation runs entirely on this device — no audio leaves it. It needs a one-time download of {size}, kept for offline use.",
+  "dictation.download.browser": "Use the browser's speech service instead (the audio goes to the browser's vendor)",
+  "dictation.download.cancel": "Cancel",
+  "dictation.download.credits": "Speech model: ivrit.ai Zipformer2 (CC BY 4.0). Voice detection: Silero VAD (MIT).",
+  "dictation.download.start": "Download {size}",
+  "dictation.download.title": "Live dictation on this device",
+  "dictation.downloading": "Downloading… {percent}%",
+  "dictation.listening": "Listening — speak, then pause",
+  "dictation.loading": "Loading the speech model…",
+  "dictation.speaking": "Hearing you…",
+  "dictation.stop": "⏹ Stop"
+}

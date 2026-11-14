@@ -24,6 +24,7 @@ import {
 import type { ChangeSpec, Extension, Range, TransactionSpec } from "@codemirror/state";
 import { Decoration, EditorView } from "@codemirror/view";
 import { showAiToast } from "../ui/AiToast";
+import { authorHue, isAiAuthor } from "./suggestAuthors";
 import { t } from "../i18n";
 import type { DecorationSet } from "@codemirror/view";
 import {
@@ -177,9 +178,11 @@ const highlightMark = Decoration.mark({ class: "cm-sugg-highlight" });
 
 /** The same mark, with a tooltip naming the change's author. */
 function withAuthor(_base: Decoration, className: string, author: string): Decoration {
+  // W3.11 — each author in their own colour (one of eight), the AI marked as such.
+  const ai = isAiAuthor(author);
   return Decoration.mark({
-    class: className,
-    attributes: { title: t("suggesting.byAuthor", { name: author }), "data-author": author },
+    class: `${className} cm-author-${Math.floor(authorHue(author) / 45) % 8}${ai ? " cm-sugg-ai" : ""}`,
+    attributes: { title: ai ? t("suggest.author.ai") : t("suggesting.byAuthor", { name: author }), "data-author": author },
   });
 }
 
@@ -299,6 +302,17 @@ function jump(view: ViewLike, dir: 1 | -1): boolean {
   const s = dir === 1 ? nextSuggestion(all, Math.max(to - 1, from)) : prevSuggestion(all, from);
   if (!s) return false;
   view.dispatch({ selection: { anchor: s.from, head: s.to }, scrollIntoView: true });
+  return true;
+}
+
+/** W3.11 — accept or reject one author's suggestions (null: those without an author tag). */
+export function resolveAuthorSuggestions(view: ViewLike, author: string | null, mode: Resolution): boolean {
+  const { state } = view;
+  const mine = suggestionsOf(state).filter(
+    (s) => (s.kind === "insert" || s.kind === "delete" || s.kind === "substitute") && (s.author ?? null) === author,
+  );
+  if (mine.length === 0) return false;
+  view.dispatch({ changes: resolutionChanges(state.doc.toString(), mine, mode) });
   return true;
 }
 

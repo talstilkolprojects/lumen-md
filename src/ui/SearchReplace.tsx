@@ -70,17 +70,19 @@ export function SearchReplace({ open, onClose, content, onChange }: Props) {
         background: "hsl(var(--bg))",
         border: "1px solid hsl(var(--border-strong))",
         borderRadius: 10,
-        boxShadow: "0 12px 40px -8px hsl(0 0% 0% / 0.4)",
+        boxShadow: "var(--shadow-lg)",
         padding: "10px 12px",
         display: "flex",
         flexDirection: "column",
         gap: 8,
-        minWidth: 320,
-        animation: "cmdSlideIn 120ms ease",
+        // Fits a 320 px window (400 % zoom, plan W1.23): never wider than the window less its margins.
+        width: "min(320px, calc(100vw - 32px))",
+        boxSizing: "border-box",
+        animation: "cmdSlideIn var(--duration-fast) var(--ease-out)",
       }}
     >
       {/* Search row */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
         <Search size={13} style={{ color: "hsl(var(--fg-muted))", flexShrink: 0 }} />
         <input
           ref={inputRef}
@@ -120,7 +122,7 @@ export function SearchReplace({ open, onClose, content, onChange }: Props) {
       </div>
 
       {/* Replace row */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
         <button onClick={() => setShowReplace(!showReplace)} className="icon-btn" style={{ width: 20, height: 20 }} title={t("findReplace.toggleReplace")} aria-label={t("findReplace.toggleReplace")} aria-pressed={showReplace}>
           <Replace size={13} />
         </button>

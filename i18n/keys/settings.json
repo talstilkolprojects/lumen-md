@@ -4,6 +4,11 @@
   "source": "src/i18n/locales/en/settings.json",
   "entries": [
     {
+      "key": "audit.clearFilters",
+      "en": "Clear the filters",
+      "vars": []
+    },
+    {
       "key": "audit.close",
       "en": "Close",
       "vars": []
@@ -565,6 +570,11 @@
       "vars": []
     },
     {
+      "key": "privacy.audit.on",
+      "en": "Audit mode: every request that leaves this device is listed, not only AI.",
+      "vars": []
+    },
+    {
       "key": "privacy.blocked",
       "en": "Blocked: {n}",
       "vars": [
@@ -594,6 +604,11 @@
     {
       "key": "privacy.cat.monitoring",
       "en": "Error report — only with your consent, content removed",
+      "vars": []
+    },
+    {
+      "key": "privacy.cat.network",
+      "en": "Other request (audit mode): listed, never blocked",
       "vars": []
     },
     {
@@ -704,6 +719,11 @@
       "vars": []
     },
     {
+      "key": "privacy.openAiSettings",
+      "en": "Open AI settings",
+      "vars": []
+    },
+    {
       "key": "privacy.policy",
       "en": "Policy: {policy}",
       "vars": [
@@ -724,6 +744,26 @@
       "key": "privacy.policyName.local-only",
       "en": "local only",
       "vars": []
+    },
+    {
+      "key": "privacy.report.done",
+      "en": "Saved the signed report ({n} requests, {left} left this device). Check it with node scripts/privacy/verify-report.mjs.",
+      "vars": [
+        "n",
+        "left"
+      ]
+    },
+    {
+      "key": "privacy.report.export",
+      "en": "Export signed report",
+      "vars": []
+    },
+    {
+      "key": "privacy.report.failed",
+      "en": "Couldn't export the report: {error}",
+      "vars": [
+        "error"
+      ]
     },
     {
       "key": "privacy.staticAssets",
@@ -957,6 +997,11 @@
       "vars": []
     },
     {
+      "key": "themeSettings.font.hebrew",
+      "en": "Hebrew serif",
+      "vars": []
+    },
+    {
       "key": "themeSettings.font.mono",
       "en": "Monospace",
       "vars": []
@@ -1035,6 +1080,11 @@
     {
       "key": "themeSettings.preset.default",
       "en": "Default",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.preset.hebrew",
+      "en": "Ktav (Hebrew reading)",
       "vars": []
     },
     {

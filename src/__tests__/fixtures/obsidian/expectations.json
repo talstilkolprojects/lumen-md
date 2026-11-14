@@ -1,0 +1,542 @@
+{
+  "01-callout-note.md": {
+    "count": {
+      ".callout.callout-note": 1,
+      ".callout-title": 1,
+      ".callout-content": 1
+    },
+    "text": [
+      "Note",
+      "Bring the slides."
+    ],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "02-callout-title.md": {
+    "count": {
+      ".callout.callout-warning[data-callout=\"warning\"]": 1
+    },
+    "text": [
+      "Mind the gap",
+      "The platform is curved."
+    ],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "03-callout-all-types.md": {
+    "count": {
+      ".callout": 13,
+      ".callout-note": 1,
+      ".callout-abstract": 1,
+      ".callout-info": 1,
+      ".callout-todo": 1,
+      ".callout-tip": 1,
+      ".callout-success": 1,
+      ".callout-question": 1,
+      ".callout-warning": 1,
+      ".callout-failure": 1,
+      ".callout-danger": 1,
+      ".callout-bug": 1,
+      ".callout-example": 1,
+      ".callout-quote": 1
+    },
+    "text": [
+      "quote body"
+    ],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "04-callout-aliases.md": {
+    "count": {
+      ".callout-abstract": 1,
+      ".callout-tip": 1,
+      ".callout-success": 1,
+      ".callout-question": 1,
+      ".callout-warning": 1,
+      ".callout-failure": 1,
+      ".callout-danger": 1,
+      ".callout-quote": 1,
+      "[data-callout=\"error\"]": 1
+    },
+    "text": [],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "05-callout-title-only.md": {
+    "count": {
+      ".callout-tip": 1,
+      ".callout-content": 0
+    },
+    "text": [
+      "Just a title",
+      "After."
+    ],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "06-callout-fold-open.md": {
+    "count": {
+      "details.callout[open]": 1,
+      "summary.callout-title": 1
+    },
+    "text": [
+      "Can I fold this?",
+      "It starts open."
+    ],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "07-callout-fold-closed.md": {
+    "count": {
+      "details.callout:not([open])": 1,
+      "summary.callout-title": 1,
+      "details pre": 1
+    },
+    "text": [
+      "Show the example"
+    ],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "08-callout-fold-mixed.md": {
+    "count": {
+      "details.callout": 2,
+      "details[open]": 1,
+      "input[type=\"checkbox\"]": 2
+    },
+    "text": [],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "09-callout-nested.md": {
+    "count": {
+      ".callout": 2,
+      ".callout .callout.callout-danger": 1
+    },
+    "text": [
+      "Outer text",
+      "Inner text"
+    ],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "10-callout-hebrew.md": {
+    "count": {
+      ".callout[dir=\"rtl\"]": 2,
+      ".callout-title[dir=\"auto\"]": 2
+    },
+    "text": [
+      "שימו לב",
+      "טיפ בלי כותרת."
+    ],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "11-comment-inline.md": {
+    "count": {},
+    "text": [
+      "Visible",
+      "text."
+    ],
+    "absent": [
+      "hidden note",
+      "%%"
+    ]
+  },
+  "12-comment-block.md": {
+    "count": {
+      "li": 0
+    },
+    "text": [
+      "Before.",
+      "After."
+    ],
+    "absent": [
+      "private",
+      "%%"
+    ]
+  },
+  "13-comment-unclosed.md": {
+    "count": {},
+    "text": [
+      "Shown."
+    ],
+    "absent": [
+      "Draft",
+      "Not shown",
+      "%%"
+    ]
+  },
+  "14-comment-code.md": {
+    "count": {
+      "code": 2
+    },
+    "text": [
+      "%%kept in code%%",
+      "%% kept in a block %%"
+    ],
+    "absent": [
+      "[!"
+    ]
+  },
+  "15-highlight.md": {
+    "count": {
+      "mark.obsidian-highlight": 2
+    },
+    "text": [
+      "important",
+      "this too"
+    ],
+    "absent": [
+      "==",
+      "%%"
+    ]
+  },
+  "16-highlight-colors.md": {
+    "count": {
+      "mark.hl-red": 1,
+      "mark.hl-orange": 1,
+      "mark.hl-yellow": 1,
+      "mark.hl-green": 1,
+      "mark.hl-blue": 1,
+      "mark.hl-purple": 1
+    },
+    "text": [
+      "red",
+      "purple"
+    ],
+    "absent": [
+      "==",
+      "🔴",
+      "🟣"
+    ]
+  },
+  "17-highlight-inline.md": {
+    "count": {
+      "mark strong": 1,
+      "mark em": 1,
+      "mark a": 1
+    },
+    "text": [],
+    "absent": [
+      "=="
+    ]
+  },
+  "18-highlight-not.md": {
+    "count": {
+      "mark": 0
+    },
+    "text": [
+      "a == b == c",
+      "x === y",
+      "==code=="
+    ],
+    "absent": [
+      "%%"
+    ]
+  },
+  "19-highlight-table.md": {
+    "count": {
+      "td mark.hl-green": 1,
+      "td mark.hl-red": 1
+    },
+    "text": [
+      "done",
+      "late"
+    ],
+    "absent": [
+      "=="
+    ]
+  },
+  "20-highlight-hebrew.md": {
+    "count": {
+      "mark.obsidian-highlight": 2,
+      "mark.hl-yellow": 1,
+      "p[dir=\"auto\"]": 1
+    },
+    "text": [
+      "הדגשה צהובה",
+      "הדגשה רגילה"
+    ],
+    "absent": [
+      "=="
+    ]
+  },
+  "21-footnote.md": {
+    "count": {
+      "sup a[data-footnote-ref]": 1,
+      "section[data-footnotes] li": 1
+    },
+    "text": [
+      "The source."
+    ],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "22-footnotes-many.md": {
+    "count": {
+      "a[data-footnote-ref]": 3,
+      "section[data-footnotes] li": 3,
+      "section[data-footnotes] strong": 1
+    },
+    "text": [],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "23-footnote-hebrew.md": {
+    "count": {
+      "a[data-footnote-ref]": 1,
+      "section[data-footnotes] li": 1
+    },
+    "text": [
+      "מקור בעברית."
+    ],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "24-footnote-callout.md": {
+    "count": {
+      ".callout a[data-footnote-ref]": 1
+    },
+    "text": [
+      "Inside a callout."
+    ],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "25-footnote-repeat.md": {
+    "count": {
+      "a[data-footnote-ref]": 2,
+      "section[data-footnotes] li": 1
+    },
+    "text": [],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "26-math-inline.md": {
+    "count": {
+      ".katex": 1
+    },
+    "text": [
+      "is neat."
+    ],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "27-math-block.md": {
+    "count": {
+      ".katex-display": 1
+    },
+    "text": [],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "28-math-callout.md": {
+    "count": {
+      ".callout .katex": 1
+    },
+    "text": [
+      "Pythagoras"
+    ],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "29-math-hebrew.md": {
+    "count": {
+      ".katex": 2
+    },
+    "text": [
+      "המשוואה"
+    ],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "30-embed-image.md": {
+    "count": {
+      "img.obsidian-embed[src*=\"photo.png\"]": 1
+    },
+    "text": [],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "31-embed-width.md": {
+    "count": {
+      "img[width=\"300\"]": 1,
+      "img[data-md-target=\"diagram.svg\"]": 1
+    },
+    "text": [],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "32-embed-width-height.md": {
+    "count": {
+      "img[width=\"640\"][height=\"360\"]": 1,
+      "img[src*=\"shot%20one.jpg\"]": 1
+    },
+    "text": [],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "33-embed-alt.md": {
+    "count": {
+      "img[alt=\"A sleeping cat\"][width=\"200\"]": 1
+    },
+    "text": [],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "34-markdown-image-size.md": {
+    "count": {
+      "img[alt=\"Logo\"][width=\"120\"]": 1,
+      "img[alt=\"Banner\"][height=\"200\"]": 1
+    },
+    "text": [],
+    "absent": [
+      "|120",
+      "[!"
+    ]
+  },
+  "35-mixed-meeting.md": {
+    "count": {
+      ".callout-todo": 1,
+      "mark.hl-red": 1,
+      "input[type=\"checkbox\"]": 2,
+      "a[data-footnote-ref]": 1
+    },
+    "text": [
+      "Actions",
+      "From Tuesday."
+    ],
+    "absent": [
+      "budget",
+      "%%",
+      "[!",
+      "title: Weekly"
+    ]
+  },
+  "36-mixed-study.md": {
+    "count": {
+      "details.callout-abstract": 1,
+      "mark": 1,
+      ".katex": 1,
+      "img[width=\"400\"]": 1
+    },
+    "text": [
+      "Summary"
+    ],
+    "absent": [
+      "TODO",
+      "%%",
+      "=="
+    ]
+  },
+  "37-mixed-hebrew-study.md": {
+    "count": {
+      ".callout-tip[dir=\"rtl\"]": 1,
+      "mark.hl-blue": 1,
+      "a[data-footnote-ref]": 1
+    },
+    "text": [
+      "נקודה מרכזית",
+      "פונקציה רציפה"
+    ],
+    "absent": [
+      "לבדוק",
+      "%%",
+      "=="
+    ]
+  },
+  "38-wikilinks-embeds.md": {
+    "count": {
+      "a.wiki-link": 2,
+      "img[width=\"250\"]": 1
+    },
+    "text": [
+      "this one"
+    ],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "39-callout-table.md": {
+    "count": {
+      ".callout table": 1,
+      ".callout td mark": 1
+    },
+    "text": [
+      "Status"
+    ],
+    "absent": [
+      "%%",
+      "[!"
+    ]
+  },
+  "40-kitchen-sink.md": {
+    "count": {
+      "details.callout[open]": 1,
+      ".callout-quote": 1,
+      "mark": 2,
+      "mark.hl-purple": 1,
+      "img[width=\"10\"]": 1,
+      "img[width=\"30\"]": 1,
+      ".katex-display": 1,
+      "a[data-footnote-ref]": 1
+    },
+    "text": [
+      "stays",
+      "הערה."
+    ],
+    "absent": [
+      "gone",
+      "%%",
+      "=="
+    ]
+  }
+}

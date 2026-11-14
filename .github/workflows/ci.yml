@@ -129,6 +129,9 @@ jobs:
           VITE_RESEARCH_TOKEN: ci-canary-research-token-4e9b1c
           VITE_CI_CANARY_SECRET: ci-canary-vite-secret-8d2f7a
 
+      - name: No e2e test surface in the production build (plan W1.31)
+        run: npm run check:test-surface
+
       - name: Bundle-size budget
         run: npm run budget -- --json bundle-sizes.json
 
@@ -469,6 +472,10 @@ jobs:
       - name: Install Playwright browsers (chromium only — saves ~6 min)
         run: npx playwright install --with-deps chromium
       - name: Build production bundle
+        # The e2e specs drive window.__lumen.agentReview, which a normal
+        # production build leaves out (plan W1.31); this build keeps it.
+        env:
+          VITE_LUMEN_TEST_SURFACE: "1"
         run: npm run build
       - name: Serve dist with http-server
         run: |

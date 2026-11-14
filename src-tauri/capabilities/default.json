@@ -1,9 +1,12 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capabilities granted to the main Lumen window. No fs: permission: the vault is reached only through the app's vault_* commands, confined to the folder the user picked (plan 4.3).",
+  "description": "Capabilities granted to the main Lumen window. No fs: permission: the vault is reached only through the app's vault_* commands, confined to the folder the user picked (plan 4.3). Editor windows main and w-N, and the quick-capture window, share these capabilities (plan W3.9).",
   "windows": [
-    "main"
+    "main",
+    "presenter",
+    "w-*",
+    "capture"
   ],
   "permissions": [
     "core:default",

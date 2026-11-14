@@ -17,6 +17,11 @@
  * they are recorded from the Resource Timing API after they load. The
  * ledger can log those, not block them.
  *
+ * Audit mode (plan W2.24, `lumen.privacy.audit` = "1"): every other fetch
+ * to a host off this device and the LAN is listed too, as "network" (never
+ * blocked: it only makes the ledger complete), so an outside observer
+ * (mitmproxy, scripts/privacy/audit.mjs) can be compared with it.
+ *
  * Not covered: requests made from inside Web Workers (web-llm and
  * transformers.js fetch model weights there — downloads, no user text),
  * unless the module that starts the worker reports them with
@@ -30,7 +35,7 @@ import { researchEndpoint } from "../research/client";
 import { LEDGER_CHANNEL, type WorkerLedgerMessage } from "./workerLedger";
 import { monitoringEndpoint } from "../lib/telemetry";
 
-export type LedgerCategory = "cloud-ai" | "cloud-text" | "local-ai" | "model-download" | "static-asset" | "research" | "third-party" | "monitoring" | "plugin";
+export type LedgerCategory = "cloud-ai" | "cloud-text" | "local-ai" | "model-download" | "static-asset" | "research" | "third-party" | "monitoring" | "plugin" | "network";
 
 /** How an error report is listed (plan 12.4: sent only with consent and a DSN). */
 export const MONITORING_REASON = "Error report (Sentry / GlitchTip), content removed";
@@ -72,6 +77,8 @@ const RULES: Rule[] = [
   { test: (h) => h === "api.mistral.ai", category: "cloud-ai", reason: "Mistral" },
   { test: (h) => h === "api.languagetool.org", category: "cloud-text", reason: "LanguageTool grammar check" },
   { test: (h) => h === "kroki.io", category: "cloud-text", reason: "PlantUML rendering (kroki.io)" },
+  // Jewish sources (plan W5.1): the reference the user asked for, nothing else.
+  { test: (h) => h === "www.sefaria.org" || h === "sefaria.org", category: "cloud-text", reason: "Jewish sources (Sefaria): the reference only" },
   {
     test: (h) => h === "huggingface.co" || h.endsWith(".huggingface.co") || h.endsWith(".hf.co") || h === "hf.co",
     category: "model-download",
@@ -102,6 +109,23 @@ let entries: LedgerEntry[] = [];
 let nextId = 1;
 const listeners = new Set<() => void>();
 let installed = false;
+/** When this tab's ledger started: the privacy report covers entries from here on. */
+let sessionStart = Date.now();
+
+export const AUDIT_MODE_KEY = "lumen.privacy.audit";
+
+/** Audit mode: the ledger lists every request that leaves this device, not only AI traffic. */
+export function auditMode(): boolean {
+  try {
+    return localStorage.getItem(AUDIT_MODE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function ledgerSessionStart(): number {
+  return sessionStart;
+}
 let onBlocked: ((entry: LedgerEntry) => void) | null = null;
 
 function load(): void {
@@ -276,13 +300,33 @@ function querySize(url: string): number {
   }
 }
 
+/** Audit mode: list a request the rules don't track, when it goes off this device and the LAN. Never blocked. */
+async function audited(inner: typeof fetch, input: RequestInfo | URL, init: RequestInit | undefined, url: string): Promise<Response> {
+  let u: URL;
+  try {
+    u = new URL(url, typeof location !== "undefined" ? location.href : "http://localhost/");
+  } catch {
+    return inner(input, init);
+  }
+  if ((u.protocol !== "http:" && u.protocol !== "https:") || isLocalOrigin(u.href)) return inner(input, init);
+  const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
+  const id = record({ host: u.hostname.toLowerCase(), method, bytesOut: bodySize(init?.body), bytesIn: null, category: "network", reason: "Other request (audit mode)", policy: getAiPolicy(), decision: "allowed" });
+  const res = await inner(input, init);
+  const len = Number(res.headers.get("content-length"));
+  patch(id, { bytesIn: Number.isFinite(len) && res.headers.has("content-length") ? len : null, status: res.status });
+  return res;
+}
+
 /** Wrap a fetch implementation with the ledger. Exported for tests. */
 export function withLedger(inner: typeof fetch, opts: LedgerOptions = {}): typeof fetch {
   return async function ledgerFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
     const classified = classify(url);
     const hit = opts.force ? { host: classified?.host ?? hostOf(url), category: opts.force.category, reason: opts.force.reason } : classified;
-    if (!hit) return inner(input, init);
+    if (!hit) {
+      if (!auditMode()) return inner(input, init);
+      return audited(inner, input, init, url);
+    }
     const policy = getAiPolicy();
     const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
     const bytesOut = bodySize(init?.body) + querySize(url);
@@ -343,6 +387,19 @@ export function addSpeechVoiceBytes(id: number, bytes: number): boolean {
  */
 export function recordSpeechRecognition(decision: "allowed" | "blocked"): LedgerEntry | null {
   const id = record({ host: "browser speech recognition", method: "AUDIO", bytesOut: 0, bytesIn: null, category: "cloud-text", reason: "Dictation through the browser's speech service", policy: getAiPolicy(), decision });
+  return entries.find((x) => x.id === id) ?? null;
+}
+
+/** How the usage report the user sends is listed (plan W4.26: counts only, sent by the user's click). */
+export const USAGE_REPORT_REASON = "Weekly usage report you sent (counts only, no content)";
+
+/**
+ * Record text the user sent by hand through a page they opened (the weekly
+ * usage report as a prefilled GitHub issue): the app fetched nothing, but
+ * the data left with the user's click, so it is listed with its size.
+ */
+export function recordUserShare(url: string, bytes: number, reason: string = USAGE_REPORT_REASON): LedgerEntry | null {
+  const id = record({ host: hostOf(url), method: "OPEN", bytesOut: bytes, bytesIn: null, category: "third-party", reason, policy: getAiPolicy(), decision: "allowed" });
   return entries.find((x) => x.id === id) ?? null;
 }
 
@@ -515,6 +572,23 @@ export function recordPluginRequest(pluginId: string, url: string, method: strin
   return entry;
 }
 
+/**
+ * A request a stylesheet made (plan W1.21): theme and snippet CSS is
+ * sanitized so it cannot load anything, and the theme layer watches the
+ * page's resource timing for any "css" request to another origin — should
+ * one ever slip through, it is recorded here rather than going unseen.
+ */
+export function recordStyleRequest(url: string): LedgerEntry {
+  let host = "?";
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    /* keep "?" */
+  }
+  const id = record({ host, method: "GET", bytesOut: 0, bytesIn: null, category: "third-party", reason: "A stylesheet (theme or CSS snippet) loaded it", policy: getAiPolicy(), decision: "allowed" });
+  return entries.find((x) => x.id === id)!;
+}
+
 /** Response size and status of a recorded request. */
 export function completeLedgerEntry(id: number, status: number, bytesIn: number | null): void {
   patch(id, { status, bytesIn });
@@ -528,6 +602,19 @@ export function completeLedgerEntry(id: number, status: number, bytesIn: number 
 export function recordAppUpdateCheck(host: string, decision: "allowed" | "blocked"): LedgerEntry | null {
   const id = record({ host, method: "GET", bytesOut: 0, bytesIn: null, category: "static-asset", reason: "Desktop update check (app version and platform only)", policy: getAiPolicy(), decision });
   return entries.find((x) => x.id === id) ?? null;
+}
+
+/**
+ * Record a LAN sync link (plan W2.19): the other device's address on the
+ * local network, never a server. "On this device / LAN" in the panel; the
+ * bytes are updated as the link carries them. Returns the entry's id.
+ */
+export function recordLanSync(host: string): number {
+  return record({ host, method: "LAN", bytesOut: 0, bytesIn: 0, category: "local-ai", reason: "Encrypted sync on the local network (no cloud)", policy: getAiPolicy(), decision: "allowed" });
+}
+
+export function setLanSyncBytes(id: number, bytesOut: number, bytesIn: number): void {
+  if (entries.some((x) => x.id === id)) patch(id, { bytesOut, bytesIn });
 }
 
 /** Install once at startup. `blocked` is called for every blocked request. */
@@ -590,6 +677,7 @@ export function ledgerSummary(list: readonly LedgerEntry[] = entries) {
 /** Test hook. */
 export function __resetLedger(): void {
   rawFetch = null;
+  sessionStart = Date.now();
   entries = [];
   nextId = 1;
   installed = false;

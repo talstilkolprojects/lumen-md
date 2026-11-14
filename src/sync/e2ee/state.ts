@@ -33,6 +33,8 @@ export interface DeviceState {
   pending: string[];
   /** Blobs a manifest write in progress would replace; reconciled if its outcome is unknown. */
   committing?: string[];
+  /** The highest keyring epoch this device has seen (plan W1.7): an older keyring is a rollback. */
+  epoch?: number;
 }
 
 export interface SyncStateStore {

@@ -1,4 +1,5 @@
 import { test, expect, type Route } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 import { readFileSync } from "node:fs";
 
 /**
@@ -10,7 +11,7 @@ import { readFileSync } from "node:fs";
  */
 const FIXTURE = readFileSync(new URL("./fixtures/bilingual.pdf", import.meta.url)).toString("base64");
 
-test("ask a PDF: the answer cites its page and line, and the citation opens the page", async ({ page }) => {
+test("ask a PDF: the answer cites its page and line, and the citation opens the page", async ({ page, browserName }) => {
   test.setTimeout(90_000);
   const cloud: string[] = [];
   page.on("request", (r) => {
@@ -55,7 +56,7 @@ test("ask a PDF: the answer cites its page and line, and the citation opens the 
       return false;
     }
   }, FIXTURE);
-  test.skip(!stored, "this engine refuses OPFS writes here, so there is no vault to keep the PDF in");
+  vaultOrSkip(stored, browserName);
 
   await page.evaluate(() => window.dispatchEvent(new CustomEvent("lumen-open-file", { detail: { path: "bilingual.pdf" } })));
   const reader = page.getByTestId("pdf-reader");

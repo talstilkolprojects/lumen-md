@@ -50,6 +50,7 @@ interface Item {
   alt: string[];
 }
 
+// skip-reason: an opt-in eval against a real local model (npm run eval:pdf-chat), not a unit test | task: 7.3 | until: 2027-05-12
 describe.skipIf(!process.env.LUMEN_EVAL_PDF)(`pdf chat eval — ${model} @ ${url}`, () => {
   it("answers every question and writes the report", async () => {
     const tags = await fetch(`${url}/api/tags`, { signal: AbortSignal.timeout(3000) }).catch((e: Error) => e);

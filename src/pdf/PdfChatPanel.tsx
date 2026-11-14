@@ -7,6 +7,9 @@
 import { useEffect, useRef, useState } from "react";
 import { t } from "../i18n";
 import type { PdfAnswer, PdfIndexProgress, PdfSummary } from "./pdfChat";
+import "./pdfChatPanelStrings";
+import { HelpButton } from "../ui/HelpButton";
+import { explainError } from "../lib/userError";
 
 interface Props {
   path: string;
@@ -56,7 +59,7 @@ export function PdfChatPanel({ path, onCite, onClose }: Props) {
         setStatus({ kind: "idle" });
         return;
       }
-      setStatus({ kind: "error", message: e instanceof Error ? e.message : String(e) });
+      setStatus({ kind: "error", message: explainError(e) });
     }
   };
 
@@ -91,7 +94,7 @@ export function PdfChatPanel({ path, onCite, onClose }: Props) {
         setStatus({ kind: "idle" });
         return;
       }
-      setStatus({ kind: "error", message: e instanceof Error ? e.message : String(e) });
+      setStatus({ kind: "error", message: explainError(e) });
     }
   };
 
@@ -99,6 +102,7 @@ export function PdfChatPanel({ path, onCite, onClose }: Props) {
     <aside className="pdf-side pdf-ask" aria-label={t("pdf.ask.title")} data-testid="pdf-ask-panel">
       <div className="pdf-ask-head">
         <h3>{t("pdf.ask.title")}</h3>
+        <HelpButton topic="workspace/pdf-chat" />
         <button type="button" className="icon-btn pdf-text-btn" onClick={onClose}>
           {t("privacy.close")}
         </button>

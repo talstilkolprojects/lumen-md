@@ -1,0 +1,14 @@
+{
+  "hlimport.pick": "Import highlights from…",
+  "hlimport.kindle": "Kindle — My Clippings.txt",
+  "hlimport.kobo": "Kobo — KoboReader.sqlite (in the reader's .kobo folder)",
+  "hlimport.readwise": "Readwise — CSV export",
+  "hlimport.zotero": "Zotero — on this computer (Zotero 7)",
+  "hlimport.done": "Highlights imported: {added} new, {updated} updated, {unchanged} already there, in {books} notes under Highlights/.",
+  "hlimport.none": "No highlights found in that file.",
+  "hlimport.skipped": "{n} entries were left out (bookmarks, image annotations or entries without text).",
+  "hlimport.failed": "Couldn't import the highlights: {error}",
+  "hlimport.zotero.disabled": "Zotero's local API is off. In Zotero: Settings → Advanced → \"Allow other applications on this computer to communicate with Zotero\", then try again.",
+  "hlimport.zotero.notRunning": "Zotero isn't running on this computer. Open Zotero 7 and try again.",
+  "hlimport.zotero.browser": "Zotero only answers apps on this computer, not web pages: import from Zotero in the desktop app."
+}

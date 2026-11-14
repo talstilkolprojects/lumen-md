@@ -6,7 +6,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { appendSegment, finishSegment, interimText } from "../ai/dictation/punctuate";
 import { polishDictation } from "../ai/dictation/polish";
-import { chooseEngine, type EngineContext, type EngineId } from "../ai/dictation/engines";
+import { chooseCorrection, chooseEngine, type EngineContext, type EngineId } from "../ai/dictation/engines";
 
 describe("finishSegment", () => {
   it("ends a segment with a full stop, or a question mark after a question word", () => {
@@ -87,10 +87,18 @@ describe("chooseEngine", () => {
     expect(chooseEngine(ctx({ policy: "cloud", downloaded: new Set(["zipformer-he"]) })).candidates[0]).toBe("zipformer-he");
     expect(chooseEngine(ctx({ webSpeech: false })).webSpeechBlocked).toBe("unsupported");
   });
-  it("transcribes files with ivrit.ai turbo only on a GPU that holds it, else whisper-base", () => {
-    expect(chooseEngine(ctx({ mode: "file", webgpu: true, f16: true, vramMB: 2048 })).candidates).toEqual(["whisper-turbo-he", "whisper-base"]);
-    expect(chooseEngine(ctx({ mode: "file", webgpu: true, f16: false, vramMB: 2048 })).candidates).toEqual(["whisper-base"]);
+  it("transcribes Hebrew files with ivrit.ai turbo only on a GPU that holds it, else Ozen v1 (W4.13), else whisper-base", () => {
+    expect(chooseEngine(ctx({ mode: "file", webgpu: true, f16: true, vramMB: 2048 })).candidates).toEqual(["whisper-turbo-he", "ozen-he", "whisper-base"]);
+    expect(chooseEngine(ctx({ mode: "file", webgpu: true, f16: false, vramMB: 2048 })).candidates).toEqual(["ozen-he", "whisper-base"]);
     expect(chooseEngine(ctx({ mode: "file", language: "en", webgpu: true, f16: true, vramMB: 4096 })).candidates).toEqual(["whisper-base"]);
     expect(chooseEngine(ctx({ mode: "file" })).candidates).not.toContain("web-speech");
+  });
+  it("re-reads each live Hebrew sentence with a Whisper already on the device: turbo on a GPU, else Ozen (also without WebGPU), never a download", () => {
+    const gpu = { webgpu: true, f16: true, vramMB: 2048 };
+    expect(chooseCorrection(ctx({ ...gpu, downloaded: new Set(["whisper-turbo-he", "ozen-he"]) }))).toBe("whisper-turbo-he");
+    expect(chooseCorrection(ctx({ ...gpu, vramMB: 512, downloaded: new Set(["whisper-turbo-he", "ozen-he"]) }))).toBe("ozen-he");
+    expect(chooseCorrection(ctx({ webgpu: false, downloaded: new Set(["ozen-he"]) }))).toBe("ozen-he");
+    expect(chooseCorrection(ctx({ ...gpu, downloaded: new Set() }))).toBeNull();
+    expect(chooseCorrection(ctx({ ...gpu, language: "en", downloaded: new Set(["whisper-turbo-he"]) }))).toBeNull();
   });
 });

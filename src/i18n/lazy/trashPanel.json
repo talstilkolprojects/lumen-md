@@ -1,0 +1,12 @@
+{
+  "trash.backToNotes": "Back to the notes",
+  "trash.close": "Close",
+  "trash.daysLeft": "deleted for good in {n} days",
+  "trash.deleteForever": "Delete forever",
+  "trash.deleteForeverConfirm": "Delete “{path}” for good? It cannot be restored afterwards.",
+  "trash.empty": "The trash is empty.",
+  "trash.emptyAll": "Empty trash",
+  "trash.emptyAllConfirm": "Delete all {n} items in the trash for good? They cannot be restored afterwards.",
+  "trash.restore": "Restore",
+  "trash.title": "Trash"
+}

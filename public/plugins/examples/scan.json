@@ -1,0 +1,300 @@
+{
+  "scanner": 1,
+  "results": [
+    {
+      "id": "lumen.example.word-stats",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "document:read",
+          "reason": "To count the words of the open note"
+        },
+        {
+          "id": "commands",
+          "reason": "Adds the “Word stats” command"
+        },
+        {
+          "id": "panel",
+          "reason": "Shows the numbers in a side panel"
+        },
+        {
+          "id": "settings",
+          "reason": "Remembers your reading speed"
+        }
+      ],
+      "used": [
+        "commands",
+        "document:read",
+        "panel",
+        "settings"
+      ],
+      "sha256": "e249d2e40943eaf4ae190f0653192bf8308823949793b1af9cf2bd6557001e5b",
+      "path": "word-stats"
+    },
+    {
+      "id": "lumen.example.callout",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "renderer",
+          "reason": "Renders the `callout` code-block language"
+        },
+        {
+          "id": "storage",
+          "reason": "Remembers which checklist items you ticked"
+        }
+      ],
+      "used": [
+        "renderer",
+        "storage"
+      ],
+      "sha256": "76b1af447d0dbad4880395b8b5bce98c03261dbc91f0994176446d403f7d23c3",
+      "path": "callout"
+    },
+    {
+      "id": "lumen.example.daily-quote",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "commands",
+          "reason": "Adds the “Insert quote of the day” command"
+        },
+        {
+          "id": "document:write",
+          "reason": "Inserts the quote at the cursor"
+        },
+        {
+          "id": "network:https://example.com",
+          "reason": "Fetches today's quote from example.com — and from nowhere else"
+        },
+        {
+          "id": "notifications",
+          "reason": "Tells you when the quote could not be fetched"
+        }
+      ],
+      "used": [
+        "commands",
+        "document:write",
+        "network:https://example.com",
+        "notifications"
+      ],
+      "sha256": "d7fcb0ab47cd437dcf2b5cdb700709395bd685058768eb595337c9c125c84e1c",
+      "path": "daily-quote"
+    },
+    {
+      "id": "lumen.example.toc",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "commands",
+          "reason": "Adds the “Insert table of contents” command"
+        },
+        {
+          "id": "document:read",
+          "reason": "To find the headings of the open note"
+        },
+        {
+          "id": "document:write",
+          "reason": "Inserts the table at the cursor"
+        },
+        {
+          "id": "settings",
+          "reason": "Remembers the deepest heading level to include"
+        }
+      ],
+      "used": [
+        "commands",
+        "document:read",
+        "document:write",
+        "settings"
+      ],
+      "sha256": "5530d82a93715204ba7b2f2440e5363ca4f92c2c62f1a82d02121197f1fd8db7",
+      "path": "toc"
+    },
+    {
+      "id": "lumen.example.hebrew-date",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "commands",
+          "reason": "Adds the “Insert Hebrew date” command"
+        },
+        {
+          "id": "document:write",
+          "reason": "Inserts the date at the cursor"
+        },
+        {
+          "id": "renderer",
+          "reason": "Renders the `hebrew-date` code-block language"
+        }
+      ],
+      "used": [
+        "commands",
+        "document:write",
+        "renderer"
+      ],
+      "sha256": "a1f352ee7dcaa5be525104c1e1ddd91c2e99a6e6a4de41327095d3e3742d9a9f",
+      "path": "hebrew-date"
+    },
+    {
+      "id": "lumen.example.tasks-overview",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "commands",
+          "reason": "Adds the “Tasks overview” command"
+        },
+        {
+          "id": "vault:read",
+          "reason": "Reads your notes to find their tasks (nothing is changed or sent)"
+        },
+        {
+          "id": "panel",
+          "reason": "Shows the tasks in a side panel"
+        }
+      ],
+      "used": [
+        "commands",
+        "panel",
+        "vault:read"
+      ],
+      "sha256": "51ef8fb4dd5e63d5456e537fe736b23feaf74f8e791b4632f0758de6c981e418",
+      "path": "tasks-overview"
+    },
+    {
+      "id": "lumen.example.bidi-cleaner",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "commands",
+          "reason": "Adds the “Remove invisible direction marks” command"
+        },
+        {
+          "id": "document:read",
+          "reason": "To find the marks in the selection or the note"
+        },
+        {
+          "id": "document:write",
+          "reason": "Writes the text back without them"
+        },
+        {
+          "id": "notifications",
+          "reason": "Tells you how many were removed"
+        }
+      ],
+      "used": [
+        "commands",
+        "document:read",
+        "document:write",
+        "notifications"
+      ],
+      "sha256": "4086260fcea7540f08bcb46136f7352162260b00156d0041b3d21b1928f18f3a",
+      "path": "bidi-cleaner"
+    },
+    {
+      "id": "lumen.example.text-format",
+      "version": "1.0.0",
+      "passed": true,
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "rule": "unsigned",
+          "severity": "warning",
+          "detail": "no signature"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "commands",
+          "reason": "Adds the “Text format: …” commands"
+        },
+        {
+          "id": "document:read",
+          "reason": "Reads the selected text"
+        },
+        {
+          "id": "document:write",
+          "reason": "Replaces the selection with the formatted text"
+        }
+      ],
+      "used": [
+        "commands",
+        "document:read",
+        "document:write"
+      ],
+      "sha256": "ceeef72d9cde1334d6017505ba97d4a150a1e2f12b62e829b15e24b5ee00682f",
+      "path": "text-format"
+    }
+  ]
+}

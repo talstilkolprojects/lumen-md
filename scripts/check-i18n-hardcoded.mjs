@@ -54,6 +54,8 @@ export const VISIBLE_PROPS = new Set([
 export const UI_SINKS = new Set([
   "showAiToast",
   "showToast",
+  // toast.info / toast.success / toast.warn / toast.error (src/store/useToastStore.ts)
+  "toast",
   "uiAlert",
   "uiConfirm",
   "uiPrompt",
@@ -150,6 +152,9 @@ function calleeName(expr) {
   if (ts.isIdentifier(expr)) return expr.text;
   if (ts.isPropertyAccessExpression(expr) && ts.isIdentifier(expr.expression) && ["window", "globalThis"].includes(expr.expression.text)) {
     return expr.name.text;
+  }
+  if (ts.isPropertyAccessExpression(expr) && ts.isIdentifier(expr.expression) && expr.expression.text === "toast" && ["info", "success", "warn", "error"].includes(expr.name.text)) {
+    return "toast";
   }
   return null;
 }

@@ -14,6 +14,12 @@ export class FakePluginWorker {
   private emit(m: WorkerToHost) {
     queueMicrotask(() => this.onmessage?.({ data: m } as MessageEvent<WorkerToHost>));
   }
+  /** As host.worker.ts does: CPU and memory after the load and after each event (W3.10). */
+  private statsTimer: ReturnType<typeof setTimeout> | undefined;
+  private stats() {
+    clearTimeout(this.statsTimer);
+    if (this.sandbox) this.emit({ type: "stats", ...this.sandbox.stats(), denied: Object.fromEntries(this.sandbox.denied) });
+  }
   postMessage(m: HostToWorker) {
     if (m.type === "load") {
       void createSandbox({
@@ -35,6 +41,7 @@ export class FakePluginWorker {
         (sb) => {
           this.sandbox = sb;
           this.emit({ type: "ready", loadMs: 1 });
+          this.stats();
         },
         (e: Error) => this.emit({ type: "fatal", error: e.message }),
       );
@@ -48,8 +55,11 @@ export class FakePluginWorker {
         if (m.denied) e.name = "PluginDenied";
         p.reject(e);
       }
-    } else if (m.type === "event") void this.sandbox?.dispatch(m.name, m.payload);
+      clearTimeout(this.statsTimer);
+      this.statsTimer = setTimeout(() => this.stats(), 100);
+    } else if (m.type === "event") void this.sandbox?.dispatch(m.name, m.payload).then(() => this.stats());
     else if (m.type === "unload") {
+      clearTimeout(this.statsTimer);
       this.sandbox?.dispose();
       this.emit({ type: "unloaded" });
     }

@@ -1,0 +1,13 @@
+[package]
+name = "lumen-desktop"
+version = "0.1.0"
+edition = "2021"
+description = "Desktop shell logic (plan W3.9): deep links, file opening, windows and tab transfer, the tray. Plain std, no Tauri, no dependencies."
+license = "MIT"
+publish = false
+
+# No dependencies on purpose: `cargo test --offline --manifest-path src-tauri/desktop/Cargo.toml`
+# (or `rustc --edition 2021 --test src-tauri/desktop/src/lib.rs`) runs anywhere,
+# without the WebView libraries or a crate cache. The Tauri glue in src-tauri/src/shell.rs
+# only calls these functions.
+[dependencies]

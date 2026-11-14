@@ -1,0 +1,30 @@
+/* Daily review (plan W3.3); the panel frame is the highlights panel's. */
+.srs-body {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+.srs-card {
+  max-width: 40em;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 0;
+}
+.srs-front {
+  font-size: 1.25em;
+  line-height: 1.5;
+  margin: 0;
+}
+.srs-back {
+  margin: 0;
+  opacity: 0.9;
+  border-inline-start: 3px solid hsl(var(--border-strong));
+  padding-inline-start: 10px;
+}
+.srs-rate {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

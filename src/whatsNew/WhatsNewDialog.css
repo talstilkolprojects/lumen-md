@@ -1,0 +1,55 @@
+/* "What's new" (plan 14.6). Logical properties: it mirrors under dir="rtl". */
+.wn-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.35);
+}
+
+.wn-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  inline-size: min(640px, calc(100vw - 32px));
+  max-block-size: min(80vh, 720px);
+  padding: 20px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
+  background: hsl(var(--bg));
+  color: hsl(var(--fg));
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.3);
+}
+
+.wn-dialog h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.wn-date,
+.wn-note {
+  margin: 0;
+  color: hsl(var(--fg-muted));
+  font-size: 12px;
+}
+
+.wn-body {
+  overflow: auto;
+}
+
+.wn-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.wn-actions button {
+  padding-block: 5px;
+  padding-inline: 14px;
+  border: 1px solid hsl(var(--accent));
+  border-radius: 5px;
+  background: transparent;
+  color: hsl(var(--accent));
+  font: inherit;
+  cursor: pointer;
+}

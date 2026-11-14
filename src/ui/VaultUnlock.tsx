@@ -13,6 +13,8 @@ import { t } from "../i18n";
 import { encryptionStatus, recover, unlock, UNLOCKED_EVENT } from "../storage/vault/encrypted/session";
 import { WrongPassphraseError, MIN_PASSPHRASE_LENGTH } from "../storage/vault/encrypted/format";
 import "../storage/vault/encrypted/strings";
+import { HelpButton } from "./HelpButton";
+import { explainError } from "../lib/userError";
 
 
 const field: React.CSSProperties = {
@@ -27,7 +29,8 @@ const field: React.CSSProperties = {
 const button: React.CSSProperties = { padding: "8px 16px", border: "none", borderRadius: 6, background: "hsl(var(--accent))", color: "white", cursor: "pointer", justifySelf: "start" };
 const link: React.CSSProperties = { background: "none", border: 0, padding: 0, color: "hsl(var(--accent))", cursor: "pointer", font: "inherit", fontSize: 13, justifySelf: "start" };
 
-const messageOf = (err: unknown) => (err instanceof WrongPassphraseError ? t("vaultEnc.wrong") : String((err as Error)?.message ?? err));
+/** A vault-lock failure in words (never the error's own text: explainError). */
+const describeVaultError = (err: unknown) => (err instanceof WrongPassphraseError ? t("vaultEnc.wrong") : explainError(err, "vault-encryption"));
 
 export function VaultUnlockScreen() {
   const status = encryptionStatus();
@@ -56,7 +59,7 @@ export function VaultUnlockScreen() {
       if (mode === "passphrase") await unlock(pass);
       else await recover(key, next);
     } catch (err) {
-      setError(messageOf(err));
+      setError(describeVaultError(err));
     } finally {
       setBusy(false);
     }
@@ -74,6 +77,7 @@ export function VaultUnlockScreen() {
         <div id="vault-unlock-title" style={{ fontWeight: 700, fontSize: 18 }}>
           🔐 {t("vaultEnc.lockedTitle")}
         </div>
+        <HelpButton topic="security/vault-encryption#passphrase-recovery-key-lock" />
         {status.headerError ? (
           <div role="alert" style={{ fontSize: 13 }}>
             {t("vaultEnc.headerBroken", { reason: status.headerError })}
@@ -103,7 +107,7 @@ export function VaultUnlockScreen() {
           </>
         )}
         {error && (
-          <div role="alert" style={{ fontSize: 13, color: "hsl(0 70% 50%)" }}>
+          <div role="alert" style={{ fontSize: 13, color: "hsl(var(--danger))" }}>
             {error}
           </div>
         )}

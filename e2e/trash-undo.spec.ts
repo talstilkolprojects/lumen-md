@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * Plan 3.1: Ctrl+Z / ⌘Z outside the editor restores the last delete from the
@@ -60,9 +61,9 @@ async function readVault(page: Page, path: string): Promise<string | null> {
   }, path);
 }
 
-test("Ctrl+Z outside the editor restores deletes newest first, with every open tab's latest edits", async ({ page }) => {
+test("Ctrl+Z outside the editor restores deletes newest first, with every open tab's latest edits", async ({ page, browserName }) => {
   const seeded = await writeVault(page, { "other.md": "Other note", "proj/a.md": "A saved", "proj/b.md": "B saved" });
-  test.skip(!seeded, "OPFS writes are unavailable in this engine's test context");
+  vaultOrSkip(seeded, browserName);
 
   // proj/b.md is the open note; proj/a.md is an inactive tab holding an edit
   // the debounced autosave never wrote (the user switched tabs within 600 ms).

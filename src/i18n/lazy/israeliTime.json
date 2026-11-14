@@ -1,0 +1,9 @@
+{
+  "israeliTime.dayOff": "Falls on {reason}",
+  "israeliTime.dueToday": "Due today",
+  "israeliTime.left.one": "{n} working day left",
+  "israeliTime.left.other": "{n} working days left",
+  "israeliTime.moved": "Falls on {reason}: suggested {date}",
+  "israeliTime.overdue.one": "{n} working day overdue",
+  "israeliTime.overdue.other": "{n} working days overdue"
+}

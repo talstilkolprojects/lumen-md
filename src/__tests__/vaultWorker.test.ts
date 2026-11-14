@@ -50,14 +50,17 @@ class FakeWorker implements WorkerLike {
   private readonly index = new VaultIndex();
   crashOnNext = false;
   terminate(): void {}
+  // In order, like the worker's queue (W2.22: snapshot requests are asynchronous).
+  private queue: Promise<void> = Promise.resolve();
   postMessage(message: IndexRequest): void {
     const req = JSON.parse(JSON.stringify(message)) as IndexRequest;
-    queueMicrotask(() => {
+    this.queue = this.queue.then(async () => {
       if (this.crashOnNext) {
         this.onerror?.({ message: "boom", preventDefault() {} } as ErrorEvent);
         return;
       }
-      this.onmessage?.({ data: JSON.parse(JSON.stringify(handleIndexRequest(this.index, req))) } as MessageEvent<IndexResponse>);
+      const res = await handleIndexRequest(this.index, req);
+      this.onmessage?.({ data: JSON.parse(JSON.stringify(res)) } as MessageEvent<IndexResponse>);
     });
   }
 }

@@ -1,0 +1,12 @@
+# Embedded in Books/Dune.md: the other books in the same folder.
+filters:
+  and:
+    - file.folder == this.file.folder
+    - file.path != this.file.path
+views:
+  - type: table
+    name: Same shelf
+    order: [file.name]
+    sort:
+      - property: file.name
+        direction: ASC

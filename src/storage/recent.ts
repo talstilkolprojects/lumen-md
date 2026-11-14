@@ -1,4 +1,5 @@
 import { get, set } from "idb-keyval";
+import { readText } from "./textCodec";
 
 const KEY = "lumen.recents.v1";
 const MAX = 10;
@@ -54,7 +55,7 @@ export async function reopenRecent(
   }
   try {
     const file = await handle.getFile();
-    const content = await file.text();
+    const content = await readText(file);
     return { name: file.name, content, handle };
   } catch {
     return null;

@@ -183,7 +183,8 @@ handles them like this:
   tool, what it would do and where the outside content came from. Under
   **local only**, a network call's own prompt carries the same warning.
   Without your yes nothing is staged or sent. Approving a staged change
-  is still a separate step.
+  is still a separate step. For a git repository you own you can turn the
+  write question off: see [Trusted repositories](/security/trusted-repos/).
 
 The rules are deterministic, so they work the same in Hebrew and English
 and need no model. They do not catch a politely worded request ("please

@@ -97,6 +97,7 @@ export function ImageSearchPanel({ query, onPick }: Props) {
     <div data-testid="image-search-results">
       {state.translated && <div style={muted}>{t("imageSearch.translated", { query: state.translated })}</div>}
       {state.hits.length === 0 ? (
+        // empty-action: the search query this panel answers, in the search field above
         <div style={muted}>{t("imageSearch.none")}</div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 8, padding: 10 }}>

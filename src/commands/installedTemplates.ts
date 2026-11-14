@@ -42,6 +42,18 @@ export function useInstalledTemplates(): InstalledTemplate[] {
   return templates;
 }
 
+/** Let the user pick one Markdown file (to import as a template); null when cancelled. */
+export function pickMarkdownFile(): Promise<File | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".md,.markdown,text/markdown";
+    input.onchange = () => resolve(input.files?.[0] ?? null);
+    input.addEventListener("cancel", () => resolve(null));
+    input.click();
+  });
+}
+
 export interface InstalledTemplateCommandDeps {
   /** Localized group label, e.g. t("group.templates"). */
   groupLabel: string;

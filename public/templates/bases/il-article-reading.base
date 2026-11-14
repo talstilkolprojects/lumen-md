@@ -1,0 +1,21 @@
+# Literature — from the template Article to read
+filters:
+  and:
+    - 'type == "article"'
+properties:
+  file.name:
+    displayName: "Article"
+  note.authors:
+    displayName: "Authors"
+  note.year:
+    displayName: "Year"
+  note.status:
+    displayName: "Status"
+views:
+  - type: table
+    name: "Literature"
+    order:
+      - file.name
+      - note.authors
+      - note.year
+      - note.status

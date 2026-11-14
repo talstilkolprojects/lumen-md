@@ -34,7 +34,8 @@ const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
 const vercelBase = JSON.parse(read("deploy/vercel.base.json"));
 const headersText = read("public/_headers");
 const policy = loadPolicy(ROOT);
-const FILES: string[] = [...BUILT_FILES, "favicon.svg"];
+// public/ files the probes ask for: the favicon and the content frame (plan W4.15).
+const FILES: string[] = [...BUILT_FILES, "favicon.svg", "content-frame.html", "content-frame.js"];
 
 type Probe = { path: string; same: boolean; accepted?: string; diffs: string[] };
 type Report = { ok: boolean; same: number; accepted: number; failed: number; results: Probe[] };
@@ -51,9 +52,9 @@ describe("host parity: the checked-in configs", () => {
     for (const x of r.results.filter((y) => y.accepted)) expect(Object.keys(ACCEPTED)).toContain(x.path);
   });
 
-  it("the runner pages keep their own policy at the path Pages redirects them to", () => {
+  it("the runner pages and the content frame keep their own policy at the path Pages redirects them to", () => {
     const rules = parseHeadersRules(headersText);
-    for (const page of ["playground-runner", "livejs-runner"]) {
+    for (const page of ["playground-runner", "livejs-runner", "content-frame"]) {
       const r = pagesServe(rules, FILES, `/${page}.html`);
       expect(r.hops).toEqual([`/${page}.html`, `/${page}`]);
       expect(r.served).toBe(`${page}.html`);
@@ -95,7 +96,9 @@ describe("host parity catches what #484's configuration missed", () => {
 });
 
 describe("the 2,000-character line limit of Cloudflare's _headers", () => {
-  const origins = Array.from({ length: 12 }, (_, i) => `https://endpoint-${i}.lumen-workers.example.dev`);
+  // Twenty: on train 2 the app policy is shorter (no https: in img-src or frame-src, plan W4.15), so a dozen origins no longer
+  // reach the limit on one line; the split layout still has to hold well past it.
+  const origins = Array.from({ length: 20 }, (_, i) => `https://endpoint-${i}.lumen-workers.example.dev`);
 
   it("the split app policy is enforced as exactly the policy", () => {
     const parts: string[] = renderCspParts(policy, "app", "cloudflare");
@@ -105,7 +108,7 @@ describe("the 2,000-character line limit of Cloudflare's _headers", () => {
     expect(Object.fromEntries(enforced)).toEqual(Object.fromEntries(parseCsp(renderCsp(policy, "app", "cloudflare"))));
   });
 
-  it("with a dozen endpoint origins every built line still fits, and both hosts match", () => {
+  it("with twenty endpoint origins every built line still fits, and both hosts match", () => {
     const built = extendHeadersFileCsp(headersText, origins);
     expect(pagesProblems([{ path: "index.html", bytes: 1 }], built, "").problems).toEqual([]);
     expect(failing(compare(built, { origins }))).toEqual([]);

@@ -9,6 +9,7 @@
  */
 
 import type { AgentTool, JsonSchema, ToolCall } from "./types";
+import { lenientJson, unwrapTurn } from "./toolRepair";
 
 export interface ToolSpec {
   name: string;
@@ -93,23 +94,18 @@ export function extractJsonObject(text: string): string | null {
  * Interpret one assistant reply under the protocol. Plain text (a model
  * that ignored the format) is returned as `text`, so a text agent still
  * gets its answer and a JSON agent fails validation with a clear reason.
+ * With the agent's `tools`, the slips small models make are accepted too
+ * (plan W4.31): JSON with trailing commas or Python literals, and a call in
+ * another common shape (`{"name", "arguments"}`, `{"function": …}`,
+ * `{"action", "action_input"}`) that names one of those tools.
  */
-export function parseProtocolTurn(text: string): ProtocolTurn {
+export function parseProtocolTurn(text: string, tools: AgentTool[] = []): ProtocolTurn {
   const json = extractJsonObject(text);
   if (json) {
-    try {
-      const obj = JSON.parse(json) as Record<string, unknown>;
-      if (typeof obj.tool === "string") {
-        const args = obj.args && typeof obj.args === "object" && !Array.isArray(obj.args) ? (obj.args as Record<string, unknown>) : {};
-        return { kind: "tool", call: { id: `call_${++callSeq}`, name: obj.tool, args } };
-      }
-      if ("final" in obj) {
-        const f = obj.final;
-        return { kind: "final", content: typeof f === "string" ? f : JSON.stringify(f) };
-      }
-    } catch {
-      /* why: not JSON after all */
-    }
+    const obj = lenientJson(json);
+    const turn = unwrapTurn(obj, tools);
+    if (turn && "tool" in turn) return { kind: "tool", call: { id: `call_${++callSeq}`, name: turn.tool, args: turn.args } };
+    if (turn) return { kind: "final", content: typeof turn.final === "string" ? turn.final : JSON.stringify(turn.final) };
   }
   return { kind: "text", content: text.trim() };
 }

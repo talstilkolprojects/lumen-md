@@ -1,0 +1,24 @@
+# Holidays — from the template Holiday plan
+filters:
+  and:
+    - 'type == "holiday"'
+properties:
+  file.name:
+    displayName: "Plan"
+  note.holiday:
+    displayName: "Holiday"
+  note.date:
+    displayName: "Date"
+  note.host:
+    displayName: "Host"
+views:
+  - type: table
+    name: "Holidays"
+    order:
+      - file.name
+      - note.holiday
+      - note.date
+      - note.host
+    sort:
+      - property: note.date
+        direction: DESC

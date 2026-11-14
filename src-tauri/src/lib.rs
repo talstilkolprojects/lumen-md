@@ -3,7 +3,10 @@ use tauri::menu::{
 };
 use tauri::{Emitter, Manager};
 
+mod shell;
 mod updates;
+
+mod whisper_core;
 
 /// Build the native menu bar and emit `lumen-menu` events when an item fires.
 /// The frontend listens for these events in `useTauriMenu` and dispatches the
@@ -39,6 +42,7 @@ fn build_menu(app: &tauri::AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::
 
     let file_menu = SubmenuBuilder::new(app, "File")
         .item(&MenuItemBuilder::with_id("file.new", "New").accelerator("CmdOrCtrl+N").build(app)?)
+        .item(&MenuItemBuilder::with_id("window.new", "New window").accelerator("CmdOrCtrl+Shift+N").build(app)?)
         .item(&MenuItemBuilder::with_id("file.open", "Open…").accelerator("CmdOrCtrl+O").build(app)?)
         .item(&MenuItemBuilder::with_id("file.insertText", "Insert text…").build(app)?)
         // No accelerator: Ctrl+Alt+N is AltGr+N on Windows (ń); the web view's ⌥⌘N handler skips AltGr.
@@ -135,13 +139,24 @@ mod desktop_vault {
     }
 
     /// The folder chosen earlier, if it still exists: granted and active.
+    /// Folders used as the vault before (`known`, plan W3.9) are granted too,
+    /// so a file opened from Finder or Explorer opens in its own vault.
     pub fn load(app: &AppHandle) -> Granted {
         let mut g = Granted::default();
         let saved = config_file(app)
             .and_then(|f| std::fs::read_to_string(f).ok())
-            .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
-            .and_then(|v| v.get("root").and_then(|r| r.as_str()).map(str::to_string));
-        if let Some(Ok(v)) = saved.map(Vault::open) {
+            .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok());
+        let root = saved.as_ref().and_then(|v| v.get("root").and_then(|r| r.as_str()).map(str::to_string));
+        let known: Vec<String> = saved
+            .as_ref()
+            .and_then(|v| v.get("known").and_then(|k| k.as_array()).map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect()))
+            .unwrap_or_default();
+        for k in known {
+            if let Ok(v) = Vault::open(&k) {
+                g.roots.insert(key(&v), v);
+            }
+        }
+        if let Some(Ok(v)) = root.map(Vault::open) {
             let k = key(&v);
             g.active = Some(k.clone());
             g.roots.insert(k, v);
@@ -149,12 +164,21 @@ mod desktop_vault {
         g
     }
 
-    fn save(app: &AppHandle, root: Option<&str>) -> Result<(), String> {
+    /// Every granted folder (the known vaults), for placing an opened file.
+    pub fn known_roots(state: &State<VaultState>) -> Vec<String> {
+        state.0.lock().map(|g| g.roots.keys().cloned().collect()).unwrap_or_default()
+    }
+
+    pub fn active_root(state: &State<VaultState>) -> Option<String> {
+        state.0.lock().ok()?.active.clone()
+    }
+
+    fn save(app: &AppHandle, root: Option<&str>, known: &[String]) -> Result<(), String> {
         let file = config_file(app).ok_or("EIO: no config folder")?;
         match root {
             Some(r) => {
                 std::fs::create_dir_all(file.parent().unwrap()).map_err(|e| format!("EIO: {e}"))?;
-                let body = serde_json::json!({ "root": r }).to_string();
+                let body = serde_json::json!({ "root": r, "known": known }).to_string();
                 std::fs::write(&file, body).map_err(|e| format!("EIO: {e}"))
             }
             None => match std::fs::remove_file(&file) {
@@ -202,7 +226,9 @@ mod desktop_vault {
         if !g.roots.contains_key(&root) {
             return Err("ENOVAULT: this folder was not chosen in the dialog".into());
         }
-        save(&app, Some(&root))?;
+        let mut known: Vec<String> = g.roots.keys().cloned().collect();
+        known.sort();
+        save(&app, Some(&root), &known)?;
         g.active = Some(root);
         Ok(())
     }
@@ -211,7 +237,7 @@ mod desktop_vault {
     /// every granted folder. The folders on disk are not touched.
     #[tauri::command]
     pub fn vault_forget(app: AppHandle, state: State<VaultState>) -> Result<(), String> {
-        save(&app, None)?;
+        save(&app, None, &[])?;
         *lock(&state)? = Granted::default();
         Ok(())
     }
@@ -331,7 +357,6 @@ fn secret_set(name: String, value: Option<String>) -> Result<(), String> {
     lumen_keychain::set(lumen_keychain::SERVICE, &name, value.as_deref())
 }
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
 /// A `lumen://` link (plan 4.15.2: `lumen://clip?data=…` from the web
 /// clipper), passed to the window. Anything else is ignored.
 fn forward_deep_links(app: &tauri::AppHandle, urls: Vec<String>) {
@@ -348,13 +373,189 @@ pub fn is_lumen_link(url: &str) -> bool {
     url.len() <= 4 * 1024 * 1024 && url.to_ascii_lowercase().starts_with("lumen://")
 }
 
+// ── Desktop Whisper (plan W1.17) ────────────────────────────────────────
+//
+// ivrit.ai's Hebrew Whisper as ggml through the whisper.cpp CLI
+// (`whisper-cli`, MIT), which the user installs; Lumen bundles neither the
+// binary nor the model. The model file must be the pinned one (size +
+// sha256 from the app); nothing here downloads anything. Logic and tests:
+// whisper_core.rs.
+
+#[derive(serde::Serialize)]
+struct WhisperStatus {
+    cli: Option<String>,
+    model: &'static str,
+    model_path: Option<String>,
+}
+
+#[derive(serde::Serialize)]
+struct WhisperSegment {
+    start_ms: u64,
+    end_ms: u64,
+    text: String,
+}
+
+fn whisper_dirs(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
+    app.path().app_data_dir().map_err(|e| e.to_string())
+}
+
+fn whisper_cli(app_data: &std::path::Path) -> Option<std::path::PathBuf> {
+    let env = std::env::var("LUMEN_WHISPER_CLI").ok();
+    let path = std::env::var("PATH").ok();
+    whisper_core::find_cli(&whisper_core::cli_candidates(env.as_deref(), app_data, path.as_deref()))
+}
+
+/// Is desktop Whisper usable: a `whisper-cli` binary and the pinned model file?
+#[tauri::command]
+async fn whisper_status(app: tauri::AppHandle, file: String, bytes: u64, sha256: String) -> Result<WhisperStatus, String> {
+    let data = whisper_dirs(&app)?;
+    let cli = whisper_cli(&data).map(|p| p.display().to_string());
+    let Some(model) = whisper_core::model_path(&data, &file) else { return Err("invalid model file name".into()) };
+    let state = tauri::async_runtime::spawn_blocking({
+        let model = model.clone();
+        move || whisper_core::check_model(&model, bytes, &sha256)
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    Ok(WhisperStatus { cli, model: state.as_str(), model_path: Some(model.display().to_string()) })
+}
+
+/// Transcribe raw 16 kHz mono 16-bit LE PCM (the request body) with
+/// whisper-cli. Headers: x-lumen-lang (ISO-639-1), x-lumen-model-file,
+/// x-lumen-model-bytes, x-lumen-model-sha256. The audio is written to a
+/// temporary WAV that is removed afterwards; it never leaves the machine.
+#[tauri::command]
+async fn whisper_transcribe(app: tauri::AppHandle, request: tauri::ipc::Request<'_>) -> Result<Vec<WhisperSegment>, String> {
+    let tauri::ipc::InvokeBody::Raw(pcm) = request.body() else { return Err("expected raw PCM".into()) };
+    let pcm = pcm.clone();
+    let header = |name: &str| request.headers().get(name).and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let lang = header("x-lumen-lang");
+    let file = header("x-lumen-model-file");
+    let sha256 = header("x-lumen-model-sha256");
+    let bytes: u64 = header("x-lumen-model-bytes").parse().map_err(|_| "x-lumen-model-bytes".to_string())?;
+    if !whisper_core::valid_language(&lang) {
+        return Err("invalid language".into());
+    }
+    let data = whisper_dirs(&app)?;
+    let cli = whisper_cli(&data).ok_or("whisper-cli not found")?;
+    let model = whisper_core::model_path(&data, &file).ok_or("invalid model file name")?;
+    tauri::async_runtime::spawn_blocking(move || -> Result<Vec<WhisperSegment>, String> {
+        let state = whisper_core::check_model(&model, bytes, &sha256);
+        if state != whisper_core::ModelState::Ok {
+            return Err(format!("model {}", state.as_str()));
+        }
+        let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
+        let tmp = std::env::temp_dir().join(format!("lumen-whisper-{}-{}", std::process::id(), stamp));
+        std::fs::create_dir_all(&tmp).map_err(|e| e.to_string())?;
+        let wav = tmp.join("in.wav");
+        let out_prefix = tmp.join("out");
+        let run = (|| -> Result<Vec<WhisperSegment>, String> {
+            let mut f = std::fs::File::create(&wav).map_err(|e| e.to_string())?;
+            whisper_core::write_wav(&mut f, &pcm).map_err(|e| e.to_string())?;
+            drop(f);
+            let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
+            let status = std::process::Command::new(&cli)
+                .args(whisper_core::cli_args(&model, &wav, &lang, &out_prefix, threads))
+                .stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::piped())
+                .output()
+                .map_err(|e| e.to_string())?;
+            if !status.status.success() {
+                let err = String::from_utf8_lossy(&status.stderr);
+                return Err(format!("whisper-cli failed: {}", err.chars().rev().take(300).collect::<String>().chars().rev().collect::<String>()));
+            }
+            let srt = std::fs::read_to_string(tmp.join("out.srt")).map_err(|e| e.to_string())?;
+            Ok(whisper_core::parse_srt(&srt)
+                .into_iter()
+                .map(|s| WhisperSegment { start_ms: s.start_ms, end_ms: s.end_ms, text: s.text })
+                .collect())
+        })();
+        let _ = std::fs::remove_dir_all(&tmp);
+        run
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Plan W2.17: the presenter view on its own window. With a second screen,
+/// the slides (the main window, full screen) go to the other screen and the
+/// presenter view opens where the app was; with one screen the presenter
+/// view opens beside it. The view is the app itself at `#lumen-presenter`,
+/// kept in step with the slides over a BroadcastChannel.
+#[cfg(desktop)]
+#[tauri::command]
+fn open_presenter_window(app: tauri::AppHandle) -> Result<bool, String> {
+    use tauri::{WebviewUrl, WebviewWindowBuilder};
+    if let Some(w) = app.get_webview_window("presenter") {
+        let _ = w.set_focus();
+        return Ok(false);
+    }
+    let main = app.get_webview_window("main").ok_or("no main window")?;
+    let here = main.current_monitor().map_err(|e| e.to_string())?;
+    let monitors = app.available_monitors().map_err(|e| e.to_string())?;
+    let other = here.as_ref().and_then(|h| monitors.iter().find(|m| m.position() != h.position()).cloned());
+    let mut builder = WebviewWindowBuilder::new(&app, "presenter", WebviewUrl::App("index.html#lumen-presenter".into()))
+        .title("Lumen — presenter")
+        .inner_size(1100.0, 720.0);
+    if let Some(h) = here.as_ref() {
+        let s = h.scale_factor();
+        builder = builder.position(h.position().x as f64 / s + 60.0, h.position().y as f64 / s + 60.0);
+    }
+    builder.build().map_err(|e| e.to_string())?;
+    if let Some(o) = other {
+        main.set_position(*o.position()).map_err(|e| e.to_string())?;
+        main.set_fullscreen(true).map_err(|e| e.to_string())?;
+        return Ok(true);
+    }
+    Ok(false)
+}
+
+/// The end of a presentation: the presenter window closes and the main window leaves full screen.
+#[cfg(desktop)]
+#[tauri::command]
+fn close_presenter_window(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(w) = app.get_webview_window("presenter") {
+        let _ = w.close();
+    }
+    if let Some(main) = app.get_webview_window("main") {
+        if main.is_fullscreen().unwrap_or(false) {
+            main.set_fullscreen(false).map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
+}
+
+mod zotero_local;
+
+/// Zotero's answer for the web view (plan W2.15).
+#[derive(serde::Serialize)]
+struct ZoteroAnswer {
+    status: u16,
+    total: Option<u64>,
+    body: String,
+}
+
+/// GET from Zotero's local API on this computer (127.0.0.1:23119, /api/ only).
+#[tauri::command]
+async fn zotero_local_get(path: String) -> Result<ZoteroAnswer, String> {
+    let r = tauri::async_runtime::spawn_blocking(move || zotero_local::get(zotero_local::ZOTERO_PORT, &path))
+        .await
+        .map_err(|e| e.to_string())??;
+    Ok(ZoteroAnswer { status: r.status, total: r.total, body: r.body })
+}
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default();
-    // Must be the first plugin: a second launch (the OS opening lumen://…)
-    // hands its arguments to the running app and exits.
+    // Must be the first plugin: a second launch (the OS opening lumen://…, a
+    // double-clicked file) hands its arguments to the running app and exits.
+    // Clip links go to the window (plan 4.15); files and open/new/capture
+    // links to the desktop shell (plan W3.9).
     #[cfg(desktop)]
-    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
-        forward_deep_links(app, argv);
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+        forward_deep_links(app, argv.clone());
+        shell::handle_args(app, argv.into_iter().skip(1).collect(), std::path::Path::new(&cwd));
     }));
     #[cfg(desktop)]
     let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
@@ -362,6 +563,7 @@ pub fn run() {
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(desktop_vault::VaultState::default())
+        .manage(shell::Shell::default())
         .invoke_handler(tauri::generate_handler![
             secret_available,
             secret_get,
@@ -379,10 +581,31 @@ pub fn run() {
             desktop_vault::vault_rename,
             desktop_vault::vault_remove,
             desktop_vault::vault_backup,
+            whisper_status,
+            whisper_transcribe,
+            shell::shell_ready,
+            shell::external_read,
+            shell::external_write,
+            shell::external_close,
+            shell::window_new,
+            shell::tabs_sync,
+            shell::tab_drag_out,
+            shell::tab_take,
+            shell::tab_pending,
+            shell::tab_accept,
+            shell::tab_cancel,
+            shell::tray_set_menu,
+            shell::capture_format,
             #[cfg(desktop)]
             updates::imp::update_check,
             #[cfg(desktop)]
             updates::imp::update_install,
+            // The presenter window (plan W2.17) is desktop-only.
+            #[cfg(desktop)]
+            open_presenter_window,
+            #[cfg(desktop)]
+            close_presenter_window,
+            zotero_local_get,
         ])
         .setup(|app| {
             // The folder chosen on an earlier run (plan 4.3).
@@ -394,12 +617,22 @@ pub fn run() {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 let handle = app.handle().clone();
                 app.deep_link().on_open_url(move |event| {
-                    forward_deep_links(&handle, event.urls().iter().map(|u| u.to_string()).collect());
+                    let urls: Vec<String> = event.urls().iter().map(|u| u.to_string()).collect();
+                    // Clip links (plan 4.15) to the window; the shell's own links (plan W3.9).
+                    forward_deep_links(&handle, urls.clone());
+                    for url in &urls {
+                        shell::open_link(&handle, url);
+                    }
                 });
                 // Linux and Windows register the scheme at run time (installers do it too).
                 #[cfg(any(target_os = "linux", all(debug_assertions, windows)))]
                 let _ = app.deep_link().register_all();
+                // Plan W3.9: the files this launch was given.
+                let cwd = std::env::current_dir().unwrap_or_default();
+                shell::handle_args(app.handle(), std::env::args().skip(1).collect(), &cwd);
             }
+            #[cfg(desktop)]
+            shell::build_tray(app.handle())?;
             #[cfg(desktop)]
             {
                 let handle = app.handle().clone();
@@ -407,6 +640,10 @@ pub fn run() {
                 app.set_menu(menu)?;
                 app.on_menu_event(move |app, event| {
                     let id = event.id().0.as_str();
+                    if id == "window.new" {
+                        let _ = shell::window_new(app.clone());
+                        return;
+                    }
                     if id == "help.github" {
                         // Open in default browser via the dialog plugin's url handler.
                         tauri_plugin_dialog::DialogExt::dialog(app)
@@ -419,8 +656,29 @@ pub fn run() {
             }
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running Lumen");
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::Destroyed = event {
+                shell::window_closed(window.app_handle(), window.label());
+            }
+        })
+        .build(tauri::generate_context!())
+        .expect("error while building Lumen")
+        .run(|app, event| {
+            // macOS hands files and links to a running app as an event, not argv.
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Opened { urls } = &event {
+                for url in urls {
+                    if url.scheme() == "file" {
+                        if let Ok(path) = url.to_file_path() {
+                            shell::open_file(app, &path);
+                        }
+                    } else {
+                        shell::open_link(app, url.as_str());
+                    }
+                }
+            }
+            let _ = (app, &event);
+        });
 }
 
 #[cfg(test)]

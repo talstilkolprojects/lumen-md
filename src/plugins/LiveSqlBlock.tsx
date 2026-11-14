@@ -7,6 +7,8 @@
 import { useRef, useState } from "react";
 import { Database, Play, Code2 } from "lucide-react";
 import { t } from "../i18n";
+import { explainError } from "../lib/userError";
+import "./liveSqlBlockStrings";
 
 interface Props {
   source: string;
@@ -73,7 +75,7 @@ export default function LiveSqlBlock({ source, meta }: Props) {
     } catch (err) {
       if (seq !== runSeq.current) return;
       setState("error");
-      setError(`Failed to load the SQLite runtime (sql.js). ${(err as Error).message}`);
+      setError(t("block.liveSql.loadFailed", { error: explainError(err, "sql.js") }));
       return;
     }
     if (seq !== runSeq.current) return;
@@ -86,6 +88,7 @@ export default function LiveSqlBlock({ source, meta }: Props) {
       setState("success");
     } catch (err) {
       if (seq !== runSeq.current) return;
+      // raw-error-allow: the error of the person's own SQL (line and token), which is what they need to fix it
       setError(String((err as Error).message ?? err));
       setState("error");
     } finally {

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "lumen.example.daily-quote",
+  "name": "Quote of the day",
+  "version": "1.0.0",
+  "description": "Inserts a quote of the day into the open note, from one address you allow — the example of a plugin that reaches the network.",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    { "id": "commands", "reason": "Adds the “Insert quote of the day” command" },
+    { "id": "document:write", "reason": "Inserts the quote at the cursor" },
+    { "id": "network:https://example.com", "reason": "Fetches today's quote from example.com — and from nowhere else" },
+    { "id": "notifications", "reason": "Tells you when the quote could not be fetched" }
+  ]
+}

@@ -41,4 +41,34 @@ On the dev split of the `nikud` golden set, with
 | Letters unchanged (all) | 25 | 100% | — |
 
 Nakdimon is trained on modern Hebrew; classical and poetic text needs the
-larger "high quality" model, which is not part of Lumen yet.
+larger "high quality" model below.
+
+## High quality: DictaBERT-char-menaked
+
+[DictaBERT-char-menaked](https://huggingface.co/dicta-il/dictabert-large-char-menaked)
+(DICTA, CC BY 4.0) is the model behind Dicta's Nakdan, the reference for
+Hebrew niqqud. Lumen runs it as an int8 ONNX model in the same background
+worker. When it is published on Lumen's model host, *add niqqud* offers it
+first, with its own dialog (size, licence, attribution). Decline once and
+this device keeps using Nakdimon. Either way, every result passes the same
+letters-unchanged check before anything is written.
+
+Until the model is exported and published, Nakdimon is used; nothing
+changes in how the commands behave.
+
+## Other readings of a word
+
+After *add niqqud*, every pointed word remembers its next most likely
+readings, as in Dicta's Nakdan:
+
+- words the model found ambiguous get a **dotted underline** — click one to
+  see its readings, with how likely each is;
+- **Alt+click** any pointed word to see its readings too;
+- pick a reading to replace the word; **Esc** closes the list.
+
+The readings come from the model's own probabilities for each letter, so
+they cost no second model run. Every reading keeps the word's letters.
+
+*Add partial niqqud* points only the ambiguous words, and the same list is
+there for them. Pointing only nouns or only verbs needs a part-of-speech
+tagger, which Lumen does not have yet.

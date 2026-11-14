@@ -7,13 +7,17 @@
  *
  * Hebrew dates come from the browser's own ICU Hebrew calendar
  * (`Intl.DateTimeFormat("he-u-ca-hebrew")`) — no calendar library. Holidays
- * and Torah portions are out of scope.
+ * and the week's Torah portion ({{holiday}}, {{parasha}}) come from our own
+ * Hebrew calendar (hebrewCalendar.ts, plan W2.10).
  */
 
 import { t } from "../i18n";
 import { useAppStore } from "../store/useStore";
 
 import { DEFAULT_DAILY, isValidDailyPattern, type DailySettings } from "./defaults";
+import { gematria } from "./gematria";
+import { defaultIsrael, holidaysOn, weeklyReading } from "./hebrewCalendar";
+import { holidayLabel, nameLang, readingName } from "./hebrewCalendarNames";
 
 export { DEFAULT_DAILY, isValidDailyPattern, type DailySettings };
 
@@ -112,29 +116,7 @@ export function hebrewParts(day: Day): { day: number; month: string; year: numbe
   return { day: Number(p.day), month: p.month, year: Number(p.year) };
 }
 
-const LETTERS: Array<[number, string]> = [
-  [400, "ת"], [300, "ש"], [200, "ר"], [100, "ק"], [90, "צ"], [80, "פ"], [70, "ע"], [60, "ס"], [50, "נ"],
-  [40, "מ"], [30, "ל"], [20, "כ"], [10, "י"], [9, "ט"], [8, "ח"], [7, "ז"], [6, "ו"], [5, "ה"], [4, "ד"], [3, "ג"], [2, "ב"], [1, "א"],
-];
-
-/**
- * A number in Hebrew numerals (1–999): 7 → ז׳, 16 → ט״ז, 787 → תשפ״ז. Only
- * the digits are ours; the calendar itself is Intl's.
- */
-export function gematria(n: number): string {
-  let s = "";
-  let rest = n;
-  while (rest > 0) {
-    if (rest === 15 || rest === 16) {
-      s += rest === 15 ? "טו" : "טז"; // never יה / יו
-      break;
-    }
-    const [v, l] = LETTERS.find(([v]) => v <= rest)!;
-    s += l;
-    rest -= v;
-  }
-  return s.length === 1 ? `${s}׳` : `${s.slice(0, -1)}״${s.slice(-1)}`;
-}
+export { gematria };
 
 /** The Hebrew date as it is written in Hebrew: `ז׳ בחשוון תשפ״ז` (year without the thousands). */
 export function hebrewDate(day: Day): string {
@@ -152,16 +134,28 @@ export const isolatedHebrewDate = (day: Day) => `\u2067${hebrewDate(day)}\u2069`
 
 // ── Template ────────────────────────────────────────────────────────────
 
-/** Fill a daily-note template. `locale` names the weekday and the title's date. */
-export function renderTemplate(template: string, day: Day, locale: string): string {
+/** Israel or the diaspora for the holidays and the portion: the setting, else from the locale / time zone. */
+export const isIsrael = (settings: Pick<DailySettings, "israel">, locale: string): boolean => settings.israel ?? defaultIsrael(locale);
+
+/**
+ * Fill a daily-note template. `locale` names the weekday and the title's
+ * date, and picks Hebrew or English names for {{holiday}} (the day's holidays,
+ * " · " between them, or nothing) and {{parasha}} (this week's portion: the
+ * Shabbat on or after the day, or the holiday read instead).
+ */
+export function renderTemplate(template: string, day: Day, locale: string, opts: { israel?: boolean } = {}): string {
   const date = noonUtc(day);
-  const vars: Record<string, string> = {
-    date: isoOf(day),
-    hebrewDate: isolatedHebrewDate(day),
-    weekday: new Intl.DateTimeFormat(locale, { weekday: "long", timeZone: "UTC" }).format(date),
-    title: new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" }).format(date),
+  const israel = opts.israel ?? defaultIsrael(locale);
+  const lang = nameLang(locale);
+  const vars: Record<string, () => string> = {
+    date: () => isoOf(day),
+    hebrewDate: () => isolatedHebrewDate(day),
+    weekday: () => new Intl.DateTimeFormat(locale, { weekday: "long", timeZone: "UTC" }).format(date),
+    title: () => new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" }).format(date),
+    holiday: () => holidaysOn(day, { israel }).map((h) => holidayLabel(h, lang)).join(" · "),
+    parasha: () => readingName(weeklyReading(day, { israel }), lang),
   };
-  return template.replace(/\{\{\s*(date|hebrewDate|weekday|title)\s*\}\}/g, (_, k: string) => vars[k]);
+  return template.replace(/\{\{\s*(date|hebrewDate|weekday|title|holiday|parasha)\s*\}\}/g, (_, k: string) => vars[k]());
 }
 
 // ── Open or create ──────────────────────────────────────────────────────
@@ -180,7 +174,7 @@ export function ensureDailyNote(day: Day, settings: DailySettings, locale: strin
   const job = (async () => {
     const ws = await import("../storage/workspace");
     if (!(await ws.workspaceHasEntry(path))) {
-      await ws.writeWorkspaceFile(path, renderTemplate(settings.template, day, locale));
+      await ws.writeWorkspaceFile(path, renderTemplate(settings.template, day, locale, { israel: isIsrael(settings, locale) }));
       const { notifyWorkspaceChanged } = await import("../storage/workspaceEvents");
       notifyWorkspaceChanged({ kind: "structure", paths: [path] });
     }
@@ -203,6 +197,11 @@ export async function openDailyNote(day: Day, settings: DailySettings, locale: s
     return null;
   }
   const path = await ensureDailyNote(day, settings, locale);
+  // Plan W5.19: today's "Your morning" block, when it is on and the note is not open with edits.
+  const open = useAppStore.getState();
+  if (settings.morning && isoOf(day) === isoOf(dayOf(new Date())) && open.doc.workspaceName !== path && !open.openTabs.some((x) => x.workspaceName === path)) {
+    await import("./morning").then((m) => m.refreshMorningFile(day, settings, locale)).catch(() => undefined);
+  }
   const store = useAppStore.getState();
   if (store.doc.workspaceName === path) return path;
   const tab = store.openTabs.find((x) => x.workspaceName === path);

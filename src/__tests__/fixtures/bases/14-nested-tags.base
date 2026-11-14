@@ -1,0 +1,8 @@
+filters: file.hasTag("scifi")
+views:
+  - type: table
+    name: Science fiction
+    order: [file.name, file.tags]
+    sort:
+      - property: file.name
+        direction: ASC

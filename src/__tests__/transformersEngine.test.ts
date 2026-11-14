@@ -70,11 +70,12 @@ describe("transformersEngine (worker client)", () => {
     expect(await transformersDevice()).toBe("wasm");
   });
 
-  it("picks ivrit.ai's turbo for Hebrew on a GPU with f16 and the VRAM, else whisper-base (plan 6.1)", () => {
+  it("picks ivrit.ai's turbo for Hebrew on a GPU with f16 and the VRAM, else Ozen v1 (plans 6.1, W4.13)", () => {
     expect(whisperModelForLanguage(hardware, "webgpu", "he")).toBe(WHISPER_MODELS.turboHe);
-    expect(whisperModelForLanguage({ ...hardware, f16: false }, "webgpu", "he")).toBe(WHISPER_MODELS.base);
-    expect(whisperModelForLanguage({ ...hardware, mobile: true }, "webgpu", "he")).toBe(WHISPER_MODELS.base);
-    expect(whisperModelForLanguage({ ...hardware, webgpu: false }, "wasm", "he")).toBe(WHISPER_MODELS.base);
+    // Without the turbo's GPU budget, Hebrew gets Ozen v1 (plan W4.13), on WebGPU or wasm.
+    expect(whisperModelForLanguage({ ...hardware, f16: false }, "webgpu", "he")).toBe(WHISPER_MODELS.ozenHe);
+    expect(whisperModelForLanguage({ ...hardware, mobile: true }, "webgpu", "he")).toBe(WHISPER_MODELS.ozenHe);
+    expect(whisperModelForLanguage({ ...hardware, webgpu: false }, "wasm", "he")).toBe(WHISPER_MODELS.ozenHe);
     expect(whisperModelForLanguage(hardware, "webgpu", "en")).toBe(WHISPER_MODELS.turbo);
     expect(whisperModelForLanguage({ ...hardware, webgpu: false }, "wasm", undefined)).toBe(WHISPER_MODELS.tiny);
   });

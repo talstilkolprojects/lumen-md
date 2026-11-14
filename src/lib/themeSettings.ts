@@ -20,8 +20,8 @@
 
 import { contrastRatio, hexToHslTriplet, isHexColor, normalizeHex, bestTextOn } from "./contrast";
 
-export type PresetId = "default" | "sepia" | "nord" | "highContrast";
-export type FontChoice = "system" | "serif" | "mono" | "custom";
+export type PresetId = "default" | "sepia" | "nord" | "highContrast" | "hebrew";
+export type FontChoice = "system" | "serif" | "mono" | "hebrew" | "custom";
 
 export interface ThemeSettings {
   preset: PresetId;
@@ -59,8 +59,8 @@ export interface ThemePreset {
   dark: Palette | null;
 }
 
-export const PRESET_IDS: readonly PresetId[] = ["default", "sepia", "nord", "highContrast"];
-export const FONT_CHOICES: readonly FontChoice[] = ["system", "serif", "mono", "custom"];
+export const PRESET_IDS: readonly PresetId[] = ["default", "sepia", "nord", "highContrast", "hebrew"];
+export const FONT_CHOICES: readonly FontChoice[] = ["system", "serif", "mono", "hebrew", "custom"];
 
 export const LIMITS = {
   fontSize: { min: 11, max: 24, step: 1 },
@@ -171,12 +171,53 @@ export const PRESETS: Record<PresetId, ThemePreset> = {
       accentFg: "#000000",
     },
   },
+  // "כתב" (W1.21): paper and ink for long Hebrew reading and writing — a
+  // Hebrew serif with room between the lines (PRESET_TYPOGRAPHY below).
+  hebrew: {
+    id: "hebrew",
+    light: {
+      bg: "#fbf8f1",
+      bgSubtle: "#f5f0e4",
+      bgMuted: "#ede6d6",
+      bgInset: "#e4dbc7",
+      fg: "#1e1b16",
+      fgSubtle: "#35302a",
+      fgMuted: "#5a5247",
+      border: "#ddd3be",
+      borderStrong: "#b9ab8e",
+      accent: "#1f4e8c",
+      accentFg: "#ffffff",
+    },
+    dark: {
+      bg: "#17181c",
+      bgSubtle: "#1c1d22",
+      bgMuted: "#24262c",
+      bgInset: "#2d2f36",
+      fg: "#ece6da",
+      fgSubtle: "#d6cfc1",
+      fgMuted: "#aaa294",
+      border: "#33353d",
+      borderStrong: "#4a4c55",
+      accent: "#8fb6ea",
+      accentFg: "#17181c",
+    },
+  },
+};
+
+/**
+ * Typography a preset brings with it (applied when the preset is chosen;
+ * the user can change it after). Only "כתב" has one.
+ */
+export const PRESET_TYPOGRAPHY: Partial<Record<PresetId, Pick<ThemeSettings, "fontFamily" | "fontSize" | "lineHeight" | "contentWidth">>> = {
+  hebrew: { fontFamily: "hebrew", fontSize: 16, lineHeight: 1.85, contentWidth: 70 },
 };
 
 const FONT_STACKS: Record<Exclude<FontChoice, "custom">, string> = {
   system: 'system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif',
   serif: '"Source Serif 4", "Iowan Old Style", "Apple Garamond", Baskerville, ui-serif, serif',
   mono: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+  // Hebrew serifs that ship with the systems (no download), then Hebrew-capable sans.
+  hebrew: '"Frank Ruehl CLM", "Frank Ruhl Libre", "David CLM", "David", "Noto Serif Hebrew", "Times New Roman", "Arial Hebrew", serif',
 };
 
 /**
@@ -238,6 +279,8 @@ export const MANAGED_VARS: readonly string[] = [
   "--editor-line-height",
   "--content-width",
   "--preview-width",
+  "--font-serif",
+  "--preview-line-height",
 ];
 
 /** CSS custom properties for `settings` in the given colour mode. */
@@ -251,6 +294,11 @@ export function cssVariablesFor(s: ThemeSettings, dark: boolean): Record<string,
     // keep the stylesheet's 80ch : 72ch editor : preview ratio.
     "--preview-width": `${Math.round(s.contentWidth * 0.9)}ch`,
   };
+  // Hebrew typography reaches the preview too: its body font and line spacing.
+  if (s.fontFamily === "hebrew") {
+    vars["--font-serif"] = FONT_STACKS.hebrew;
+    vars["--preview-line-height"] = String(Math.max(1.7, s.lineHeight));
+  }
   const palette = resolvePalette(s, dark);
   if (palette) {
     for (const [k, hex] of Object.entries(palette) as Array<[keyof Palette, string]>) {

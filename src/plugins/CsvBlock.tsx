@@ -10,6 +10,7 @@ import { Table2, BarChart3, Sparkles, RefreshCw } from "lucide-react";
 import { log } from "../lib/logger";
 import { useFetchSource } from "./useFetchSource";
 import { t } from "../i18n";
+import "./csvBlockStrings";
 
 interface Props {
   source: string;

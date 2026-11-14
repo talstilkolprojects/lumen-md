@@ -87,12 +87,58 @@
     --warn: 35 90% 32%;
     --danger: 12 90% 42%;
 
+    /* ── Design tokens (plan W3.1; src/ui/tokens.ts, docs: design system) ── */
+    /* Status colours, HSL triplets like the palette: hsl(var(--danger) / 0.1). */
+    --danger: 0 72% 51%;
+    --success: 145 63% 36%;
+    --warning: 32 95% 44%;
+    --info: 217 80% 52%;
+    /* Brand gradients (decorative surfaces only: the logo, the AI button, progress). */
+    --gradient-brand: linear-gradient(135deg, hsl(252 100% 68%), hsl(188 86% 53%));
+    --gradient-ai: linear-gradient(135deg, hsl(270 95% 75%), hsl(25 95% 53%));
+    --gradient-success: linear-gradient(135deg, hsl(160 84% 39%), hsl(188 86% 53%));
+    /* What lies behind a modal, and the elevation scale. */
+    --overlay: hsl(0 0% 0% / 0.5);
+    --shadow-sm: 0 2px 8px hsl(0 0% 0% / 0.15);
+    --shadow-md: 0 8px 30px hsl(0 0% 0% / 0.2);
+    --shadow-lg: 0 12px 40px -8px hsl(0 0% 0% / 0.4);
+    --shadow-xl: 0 20px 60px -10px hsl(0 0% 0% / 0.45);
+    /* A glow in the accent colour, for the brand mark and the AI button. */
+    --shadow-accent: 0 6px 20px -6px hsl(var(--accent) / 0.45);
+    /* Space (4 px steps), radii, type sizes. */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 10px;
+    --radius-full: 999px;
+    --text-xs: 11px;
+    --text-sm: 12px;
+    --text-md: 13px;
+    --text-lg: 15px;
+    --text-xl: 18px;
+    /* Motion: three durations, two curves; only transform and opacity move. */
+    --duration-fast: 100ms;
+    --duration-base: 250ms;
+    --duration-slow: 350ms;
+    --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --ease-in-out: cubic-bezier(0.45, 0, 0.2, 1);
+
     /* z-index layer strategy */
     --z-dropdown: 100;
     --z-sticky: 200;
     --z-modal: 500;
     --z-overlay: 9999;
     --z-toast: 10000;
+  }
+
+  /* Progress bars scale from the inline start (plan W3.1). */
+  [dir="rtl"] {
+    --progress-origin: right;
   }
 
   .dark {
@@ -110,7 +156,12 @@
     --accent-fg: 224 24% 7%;
     --ok: 145 60% 45%;
     --warn: 35 90% 55%;
-    --danger: 12 90% 60%;
+    /* Status colours read on the dark background. */
+    --danger: 0 84% 66%;
+    --success: 145 55% 52%;
+    --warning: 38 92% 58%;
+    --info: 217 90% 68%;
+    --overlay: hsl(0 0% 0% / 0.6);
   }
 
   html,
@@ -164,19 +215,22 @@
   /* Skip-to-content link revealed when focused */
   .skip-link {
     position: fixed;
-    inset-inline-start: 50%;
-    top: -40px;
-    transform: translateX(-50%);
+    /* Physical left: inset-inline-start + translateX(-50%) pushed it off the
+       screen in right-to-left layouts (reflow check, plan W1.23). */
+    left: 50%;
+    top: 0;
+    /* Off screen until focused; it slides in (transform, not top: plan W3.1). */
+    transform: translate(-50%, -110%);
     background: hsl(var(--accent));
     color: white;
     padding: 6px 14px;
     border-radius: 0 0 8px 8px;
     z-index: var(--z-modal);
     font-size: 13px;
-    transition: top 120ms ease;
+    transition: transform var(--duration-fast) var(--ease-out);
   }
   .skip-link:focus-visible {
-    top: 0;
+    transform: translate(-50%, 0);
     outline: none;
   }
 
@@ -268,7 +322,6 @@
   .cm-editor .cm-activeLineGutter {
     background-color: hsl(var(--accent) / 0.08);
     color: hsl(var(--accent));
-    transition: color 200ms ease;
   }
 
   /* Markdown syntax accents */
@@ -313,13 +366,16 @@
   }
 
   /* === Preview prose === */
+  /* Reading options (plan W3.5, src/reading/settings.ts) override these per note or globally. */
   .prose-lumen {
     color: hsl(var(--fg));
-    max-width: var(--preview-width, 72ch);
+    max-width: var(--reading-width, var(--preview-width, 72ch));
     margin: 0 auto;
-    font-family: var(--font-serif);
-    font-size: 17px;
-    line-height: 1.7;
+    font-family: var(--reading-font, var(--font-serif));
+    font-size: var(--reading-size, 17px);
+    line-height: var(--reading-line-height, var(--preview-line-height, 1.7));
+    word-spacing: var(--reading-word-spacing, normal);
+    letter-spacing: var(--reading-letter-spacing, normal);
     padding: 2.5rem 2rem 30vh;
   }
   .prose-lumen :is(h1, h2, h3, h4, h5, h6) {
@@ -398,9 +454,14 @@
   .prose-lumen li > ol {
     margin: 0.25rem 0;
   }
+  /* The checkbox takes the bullet's place inside the list's own padding;
+     a negative margin pushed it past the window's edge when narrow (plan W1.23). */
+  .prose-lumen ul.contains-task-list {
+    padding-inline-start: 0.25rem;
+  }
   .prose-lumen li.task-list-item {
     list-style: none;
-    margin-inline-start: -1.25rem;
+    margin-inline-start: 0;
     padding-inline-start: 0;
     display: flex;
     align-items: flex-start;
@@ -622,6 +683,61 @@
     --admon-bg: hsl(0 80% 60% / 0.1);
   }
 
+  /* W1.3 — Obsidian callouts (preview; WYSIWYG marks its quotes the same way) */
+  .callout {
+    --co: 220 90% 60%;
+    margin: 1.25rem 0;
+    padding: 0.75rem 1rem;
+    border-inline-start: 4px solid hsl(var(--co));
+    background: hsl(var(--co) / 0.08);
+    border-start-end-radius: 0.5rem;
+    border-end-end-radius: 0.5rem;
+  }
+  .callout-title {
+    font-weight: 600;
+    color: hsl(var(--co));
+  }
+  summary.callout-title { cursor: pointer; }
+  .callout-content > :first-child { margin-top: 0.5rem; }
+  .callout-content > :last-child { margin-bottom: 0; }
+  .callout-abstract, .callout-info, .callout-todo { --co: 200 85% 50%; }
+  .callout-tip, .callout-success { --co: 160 70% 40%; }
+  .callout-question, .callout-warning { --co: 38 92% 50%; }
+  .callout-failure, .callout-danger, .callout-bug { --co: 0 80% 58%; }
+  .callout-example { --co: 265 70% 60%; }
+  .callout-quote { --co: 0 0% 55%; }
+  blockquote.callout > p:first-child { font-weight: 600; color: hsl(var(--co)); }
+
+  /* ==highlights== (both editors and the preview) */
+  mark.obsidian-highlight, .cm-obs-highlight { background: hsl(50 100% 60% / 0.45); color: inherit; border-radius: 2px; }
+  .hl-red { background: hsl(0 90% 65% / 0.4) !important; }
+  .hl-orange { background: hsl(28 95% 60% / 0.4) !important; }
+  .hl-yellow { background: hsl(50 100% 60% / 0.45) !important; }
+  .hl-green { background: hsl(130 60% 55% / 0.4) !important; }
+  .hl-blue { background: hsl(210 90% 65% / 0.4) !important; }
+  .hl-purple { background: hsl(275 70% 65% / 0.4) !important; }
+  .cm-obs-comment, .obs-comment { opacity: 0.55; font-style: italic; }
+  .cm-obs-callout { font-weight: 600; }
+
+  /* Footnote preview on hover / focus */
+  .footnote-popover {
+    position: fixed;
+    z-index: 60;
+    max-width: min(28rem, calc(100vw - 2rem));
+    padding: 0.5rem 0.75rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    background: hsl(var(--bg));
+    color: hsl(var(--fg));
+    box-shadow: 0 6px 24px hsl(0 0% 0% / 0.18);
+    font-size: 14px;
+  }
+  .footnote-popover > :first-child { margin-top: 0; }
+  .footnote-popover > :last-child { margin-bottom: 0; }
+
+  /* Drag-to-resize images (writes ![[img|300]]) */
+  img[data-md-offset][data-resize-edge] { cursor: ew-resize; outline: 2px solid hsl(var(--accent) / 0.5); }
+
   /* KaTeX */
   .prose-lumen .katex-display {
     margin: 1.25rem 0;
@@ -731,7 +847,7 @@
   .data-table thead {
     background: hsl(var(--bg-muted));
     position: sticky;
-    top: 0;
+    transform: translate(-50%, 0);
   }
   .data-table th {
     padding: 0.5rem 0.85rem;
@@ -801,9 +917,6 @@
     border-radius: 0.4rem;
     color: hsl(var(--fg-muted));
     cursor: pointer;
-    transition:
-      background 80ms,
-      color 80ms;
   }
   .icon-btn:hover {
     background: hsl(var(--bg-muted));
@@ -1023,6 +1136,34 @@
     outline: none;
     min-height: 60vh;
   }
+  /* W5.4 — direction-control tags (the source editor styles its own). */
+  .wysiwyg-root .cm-bidi-tag {
+    display: inline-block;
+    direction: ltr;
+    unicode-bidi: isolate;
+    font: 600 0.62em/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+    padding: 0 0.25em;
+    margin: 0 0.08em;
+    border-radius: 0.25em;
+    vertical-align: 0.18em;
+    user-select: none;
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+  .wysiwyg-root .cm-bidi-tag-risk {
+    background: #fee2e2;
+    color: #991b1b;
+    outline: 1px solid #dc2626;
+  }
+  .dark .wysiwyg-root .cm-bidi-tag {
+    background: #312e81;
+    color: #e0e7ff;
+  }
+  .dark .wysiwyg-root .cm-bidi-tag-risk {
+    background: #7f1d1d;
+    color: #fee2e2;
+    outline-color: #f87171;
+  }
   .wysiwyg-root .ProseMirror p.is-editor-empty:first-child::before,
   .wysiwyg-root .ProseMirror p:empty::before {
     color: hsl(var(--fg-muted));
@@ -1136,6 +1277,7 @@
      Pulses the yellow background twice so the user gets a visible
      confirmation that the click was registered. The animation ends
      and the class is auto-removed (via animationend listener). */
+  /* design-allow: a CodeMirror mark has no element of its own to fade, so the text range's background flashes */
   @keyframes lumen-comment-flash {
     0%   { background: hsl(48 95% 60% / 0.20); }
     25%  { background: hsl(48 95% 60% / 0.65); }
@@ -1144,6 +1286,7 @@
     100% { background: hsl(48 95% 60% / 0.20); }
   }
   .cm-lumen-comment-flash {
+    /* design-allow: two beats of the flash above, ended by animationend */
     animation: lumen-comment-flash 720ms ease-in-out;
   }
   .milkdown-tooltip button {
@@ -1477,7 +1620,7 @@
   box-shadow: 0 12px 40px -8px hsl(0 0% 0% / 0.45);
   padding: 6px 0;
   font-family: Inter, ui-sans-serif, system-ui;
-  animation: slashSlideIn 110ms ease;
+  animation: slashSlideIn var(--duration-fast) var(--ease-out);
 }
 @keyframes slashSlideIn {
   from { opacity: 0; transform: translateY(-4px); }
@@ -1624,9 +1767,16 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* The motion tokens collapse too, so inline styles that use them stop. */
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
   *,
   *::before,
   *::after {
+    /* design-allow: the reduced-motion reset itself */
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
@@ -1941,3 +2091,89 @@
   color: hsl(var(--fg-muted));
   font-size: 12px;
 }
+
+/* ── Forced colours and reflow (plan W1.23) ─────────────────────────────
+   Windows high contrast / forced-colors: the system palette replaces ours,
+   so state must not rest on background colour alone. Focus gets a system
+   outline, controls a border, selected items the system highlight. */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid CanvasText !important;
+    outline-offset: 2px;
+  }
+  button,
+  [role="button"],
+  [role="tab"],
+  input,
+  select,
+  textarea {
+    border: 1px solid ButtonText;
+  }
+  [aria-selected="true"],
+  [aria-pressed="true"],
+  [aria-current]:not([aria-current="false"]) {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+  }
+  .cm-editor .cm-cursor {
+    border-inline-start-color: CanvasText !important;
+  }
+  .cm-editor .cm-selectionBackground {
+    background: Highlight !important;
+  }
+}
+
+/* 400 % zoom is a 320 px-wide window (WCAG 1.4.10): media and wide blocks
+   stay inside it, and long words wrap instead of pushing the page wider.
+   Code scrolls inside its own box (the WCAG exception). Tables keep
+   display: table — display: block would drop their table semantics for
+   screen readers. */
+.prose-lumen img,
+.prose-lumen video,
+.prose-lumen iframe,
+.prose-lumen svg {
+  max-inline-size: 100%;
+  block-size: auto;
+}
+.prose-lumen {
+  overflow-wrap: anywhere;
+}
+.prose-lumen pre {
+  max-inline-size: 100%;
+  overflow-x: auto;
+}
+[role="dialog"] {
+  max-inline-size: 100vw;
+}
+/* Narrow windows (and 200–400 % zoom): the title bar and the status bar wrap
+   onto a second row instead of pushing their last buttons off the screen. */
+@media (max-width: 760px) {
+  .titlebar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 44px;
+    row-gap: 2px;
+  }
+  .status-bar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 26px;
+    row-gap: 2px;
+  }
+}
+
+/* W3.11 — suggestion authors in their own colours (source editor), the AI marked. */
+.cm-author-0 { --sugg-author: 0 70% 45%; }
+.cm-author-1 { --sugg-author: 35 85% 40%; }
+.cm-author-2 { --sugg-author: 80 60% 35%; }
+.cm-author-3 { --sugg-author: 140 55% 35%; }
+.cm-author-4 { --sugg-author: 185 70% 35%; }
+.cm-author-5 { --sugg-author: 220 75% 50%; }
+.cm-author-6 { --sugg-author: 280 60% 50%; }
+.cm-author-7 { --sugg-author: 320 65% 45%; }
+[class*="cm-author-"] { box-shadow: inset 0 -2px 0 hsl(var(--sugg-author)); }
+.cm-sugg-ai { background-image: repeating-linear-gradient(135deg, hsl(280 60% 50% / 0.12) 0 4px, transparent 4px 8px); }
+.cm-sugg-ai::after { content: "AI"; font-size: 0.65em; vertical-align: super; color: hsl(280 60% 45%); margin-inline-start: 1px; }
+.version-diff ins { text-decoration: none; background: hsl(140 60% 45% / 0.2); }
+.version-diff del { background: hsl(0 80% 60% / 0.18); }

@@ -5,7 +5,7 @@
  */
 import { describe, it, expect } from "vitest";
 // @ts-expect-error — plain .mjs module without types
-import { editDistance, errors, normalizeAsr, percentile, rates, scoreWith, transcribeLive, wordLatencies, wordSpans } from "../../scripts/golden/evals/asr-he.mjs";
+import { editDistance, errors, hebrewNumberValue, hebrewNumbersToDigits, normalizeAsr, normalizeAsrV2, percentile, rates, scoreWith, transcribeLive, wordLatencies, wordSpans } from "../../scripts/golden/evals/asr-he.mjs";
 
 describe("normalizeAsr", () => {
   it("drops niqqud, cantillation and punctuation, keeps letters", () => {
@@ -149,5 +149,33 @@ describe("word latency", () => {
     // about 0.2 s, not 1.5 s of padding on top of that.
     expect(out.latencies[4]).toBeGreaterThan(0.19);
     expect(out.latencies[4]).toBeLessThan(0.3);
+  });
+});
+
+describe("normal form v2 (plan W4.13)", () => {
+  it("reads Hebrew number words as digits, in every form", () => {
+    expect(hebrewNumberValue(["שלושת", "אלפים", "מאתיים", "חמישה"])).toBe(3205);
+    expect(hebrewNumberValue(["שלושה", "עשר"])).toBe(13);
+    expect(hebrewNumberValue(["אחת", "עשרה"])).toBe(11);
+    expect(hebrewNumberValue(["שלוש", "מאות", "עשרים"])).toBe(320);
+    expect(hebrewNumberValue(["אלפיים", "עשרים"])).toBe(2020);
+    expect(hebrewNumberValue(["שלוש", "שתיים"])).toBeNull();
+    expect(hebrewNumbersToDigits("לפני שלוש שנים")).toBe("לפני 3 שנים");
+    expect(hebrewNumbersToDigits("שלוש שתיים")).toBe("3 2");
+    expect(hebrewNumbersToDigits("באלף שקל ובשלושה ימים")).toBe("ב 1000 שקל וב 3 ימים");
+    expect(hebrewNumbersToDigits("ב2020")).toBe("ב 2020");
+  });
+  it("counts the same sentence written with digits or words, % or אחוז, as the same", () => {
+    const ref = "בשנת אלפיים ועשרים היו חמישים אחוז פחות";
+    const hyp = "בשנת 2020 היו 50% פחות";
+    expect(normalizeAsrV2(ref)).toBe(normalizeAsrV2(hyp));
+    expect(errors(ref, hyp).wordErrors).toBe(4);
+    expect(errors(ref, hyp, normalizeAsrV2).wordErrors).toBe(0);
+    expect(normalizeAsrV2("1,000 ו-3.5 מיליון")).toBe("1000 ו 3.5 מיליון");
+  });
+  it("leaves words alone: Latin is not transliterated, v1 is unchanged", () => {
+    expect(normalizeAsrV2("Google הודיעה")).toBe("google הודיעה");
+    expect(errors("גוגל הודיעה", "Google הודיעה", normalizeAsrV2).wordErrors).toBe(1);
+    expect(normalizeAsr("3.5")).toBe("35");
   });
 });

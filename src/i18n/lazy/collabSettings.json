@@ -1,0 +1,9 @@
+{
+  "collab.persistent.hint": "Optional. Keeps documents synced when no peer is online.",
+  "collab.persistent.token": "Server access token (if the server requires one)",
+  "collab.settings.cancel": "Cancel",
+  "collab.settings.cspBlocked": "This deployment's security policy blocks {url}, so it won't be used. Add it at build time (VITE_CSP_CONNECT_EXTRA).",
+  "collab.settings.publicSignaling.hint": "yjs.dev and others — a fallback if Lumen's server is down. They can see who connects to which room (not the content).",
+  "collab.settings.save": "Save",
+  "billing.upgrade.persistentCollab": "A persistent collaboration server is a Pro feature. Sessions use peer-to-peer WebRTC."
+}

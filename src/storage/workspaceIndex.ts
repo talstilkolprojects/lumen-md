@@ -30,21 +30,30 @@ import {
 } from "./workspace";
 import { getVaultBackend, watchVault, type VaultEvent } from "./vault";
 import type { BacklinkHit, IndexInput, IndexStats, SearchHit } from "./vaultIndexCore";
-import { wikiTargetsOf } from "./wikiTargets";
 import type { IndexEngine } from "./vaultIndexProtocol";
 import { log } from "../lib/logger";
+import { scheduleIdle } from "../lib/idle";
+import { dropSnapshot } from "./indexSnapshot";
+import { summarize, type NoteSummary } from "./noteSummary";
 
 export type { BacklinkHit, SearchHit } from "./vaultIndexCore";
 
-export interface IndexedFile {
+/**
+ * A note as the main thread knows it. W2.22: a compact summary
+ * (./noteSummary.ts), not its text — the text lives once, in the index.
+ */
+export interface IndexedFile extends NoteSummary {
   /** Full workspace path. */
   path: string;
   /** Basename. */
   name: string;
-  content: string;
   modified: number;
-  /** Wiki-link targets referenced by this file (raw `[[target]]` text). */
-  wikiTargets: string[];
+}
+
+/** A note just read: its summary, and its text for the index (then dropped). */
+interface ReadNote {
+  file: IndexedFile;
+  content: string;
 }
 
 const cache = {
@@ -121,17 +130,20 @@ async function withEngine<T>(fn: (e: IndexEngine) => Promise<T>): Promise<T> {
     e.dispose();
     const local = await localIndexEngine();
     engine = Promise.resolve(local);
-    await upsertAll(local, [...cache.byPath.values()]);
+    // The text died with the worker (W2.22: this thread keeps summaries only):
+    // fill the new index from the snapshot, reading only what it lacks.
+    const filled = await fillEngine(local, [...cache.byPath.values()]);
+    for (const [path, f] of filled) cache.byPath.set(path, f);
     return fn(local);
   }
 }
 
-function toInput(f: IndexedFile): IndexInput {
-  return { path: f.path, name: f.name, content: f.content, modified: f.modified };
+function toInput(r: ReadNote): IndexInput {
+  return { path: r.file.path, name: r.file.name, content: r.content, modified: r.file.modified };
 }
 
-async function upsertAll(e: IndexEngine, files: IndexedFile[]): Promise<void> {
-  for (let i = 0; i < files.length; i += UPSERT_BATCH) await e.upsert(files.slice(i, i + UPSERT_BATCH).map(toInput));
+async function upsertAll(e: IndexEngine, notes: ReadNote[]): Promise<void> {
+  for (let i = 0; i < notes.length; i += UPSERT_BATCH) await e.upsert(notes.slice(i, i + UPSERT_BATCH).map(toInput));
 }
 
 // ── Reading notes ───────────────────────────────────────────────────────
@@ -150,13 +162,13 @@ async function mtimeOf(path: string): Promise<number> {
  * null (a save announced by an event): ask the vault, so the next listing
  * check does not take the note for changed again.
  */
-async function indexFile(e: { path: string; name: string; modified: number | null }): Promise<IndexedFile | null> {
+async function indexFile(e: { path: string; name: string; modified: number | null }): Promise<ReadNote | null> {
   try {
     // The mtime before the read: a write landing in between then looks
     // newer than what was read, and the next listing check reads it again.
     const modified = e.modified ?? (await mtimeOf(e.path));
     const content = await readWorkspaceFile(e.path);
-    return { path: e.path, name: e.name, content, modified, wikiTargets: wikiTargetsOf(content) };
+    return { file: { path: e.path, name: e.name, modified, ...summarize(content) }, content };
   } catch {
     return null;
   }
@@ -202,6 +214,83 @@ async function listNotes(reuseTree: boolean): Promise<WorkspaceEntry[]> {
 
 // ── Keeping the index in step ───────────────────────────────────────────
 
+// ── W2.22: the index survives a restart (./indexSnapshot.ts) ─────────────
+
+/** How the last full build got its notes: from the snapshot or by reading them. */
+export const snapshotCounters = { fromSnapshot: 0, read: 0 };
+const SNAPSHOT_DELAY_MS = 5_000;
+let snapshotTimer: ReturnType<typeof setTimeout> | null = null;
+let snapshotReset: Promise<void> = Promise.resolve();
+let snapshotGen = 0;
+
+function snapshotVault(): string {
+  try {
+    return getVaultBackend().id;
+  } catch {
+    return "default";
+  }
+}
+
+/**
+ * The snapshot holds note text in IndexedDB, written by the index worker,
+ * which has no key to seal it with: in an encrypted vault (plan 11.4) there
+ * is no snapshot at all, and the vault opens with a full build.
+ */
+async function snapshotAllowed(): Promise<boolean> {
+  try {
+    const { storesMustSeal } = await import("./vault/restStore");
+    return !(await storesMustSeal());
+  } catch {
+    return false;
+  }
+}
+
+/** Write the snapshot a little after the last change, while idle (never on the typing path). */
+function scheduleSnapshot(): void {
+  if (snapshotTimer) clearTimeout(snapshotTimer);
+  const gen = snapshotGen;
+  snapshotTimer = setTimeout(() => {
+    snapshotTimer = null;
+    scheduleIdle(() => {
+      if (gen !== snapshotGen) return;
+      void snapshotAllowed()
+        .then((ok) => (ok ? withEngine((eng) => eng.saveSnapshot(snapshotVault())) : dropSnapshot()))
+        .catch(() => {});
+    });
+  }, SNAPSHOT_DELAY_MS);
+}
+
+/**
+ * Fill an empty index with `entries`: the worker takes every note the
+ * snapshot holds unchanged; the others are read here, their text sent to the
+ * index and dropped. Returns the summaries.
+ */
+async function fillEngine(eng: IndexEngine, entries: { path: string; name: string; modified: number }[]): Promise<Map<string, IndexedFile>> {
+  const out = new Map<string, IndexedFile>();
+  const restored = (await snapshotAllowed()) ? await eng.restoreSnapshot(snapshotVault(), entries.map((e) => ({ path: e.path, name: e.name, modified: e.modified }))) : [];
+  for (const r of restored) out.set(r.path, r);
+  snapshotCounters.fromSnapshot += restored.length;
+  let batch: ReadNote[] = [];
+  await mapLimit(
+    entries.filter((e) => !out.has(e.path)),
+    16,
+    async (e) => {
+      const r = await indexFile(e);
+      snapshotCounters.read++;
+      if (!r) return;
+      out.set(e.path, r.file);
+      batch.push(r);
+      if (batch.length >= UPSERT_BATCH) {
+        const send = batch;
+        batch = [];
+        await upsertAll(eng, send);
+      }
+    },
+  );
+  if (batch.length) await upsertAll(eng, batch);
+  return out;
+}
+
 /** Build the whole index (first use, or `ensureIndex(true)`). */
 async function build(): Promise<void> {
   if (!isOPFSAvailable()) return;
@@ -212,15 +301,15 @@ async function build(): Promise<void> {
   cache.stale = false;
   const list = await listNotes(false);
   const next = new Map<string, IndexedFile>();
-  await mapLimit(list, 16, async (e) => {
-    const f = await indexFile(e);
-    if (f) next.set(e.path, f);
-  });
-  cache.byPath = next;
+  snapshotCounters.fromSnapshot = 0;
+  snapshotCounters.read = 0;
+  await snapshotReset;
   await withEngine(async (eng) => {
     await eng.clear();
-    await upsertAll(eng, [...next.values()]);
+    for (const [path, f] of await fillEngine(eng, list)) next.set(path, f);
   });
+  cache.byPath = next;
+  scheduleSnapshot();
   cache.builtAt = cache.checkedAt = Date.now();
   cache.version++;
 }
@@ -238,14 +327,16 @@ function under(path: string): string[] {
  * structural change, the ones whose mtime differs from the listing).
  */
 async function refresh(): Promise<void> {
-  const gone: string[] = [];
-  const toWrite: IndexedFile[] = [];
+  // W2.22: the index holds the text, so moves happen inside it; this list
+  // keeps removes and moves in the order they happened.
+  const indexOps: ({ kind: "remove"; path: string } | { kind: "move"; from: string; to: string; name: string })[] = [];
+  const toWrite: ReadNote[] = [];
   // In order: deleting A/x.md and then moving A to B must not bring x back as B/x.md.
   for (const op of cache.ops.splice(0)) {
     if (op.type === "remove") {
       for (const p of under(op.path)) {
         cache.byPath.delete(p);
-        gone.push(p);
+        indexOps.push({ kind: "remove", path: p });
       }
       continue;
     }
@@ -253,12 +344,13 @@ async function refresh(): Promise<void> {
     for (const p of under(from)) {
       const f = cache.byPath.get(p)!;
       cache.byPath.delete(p);
-      gone.push(p);
       const dest = to + p.slice(from.length);
-      if (!indexable(dest)) continue;
-      const moved = { ...f, path: dest, name: nameOf(dest) };
-      cache.byPath.set(dest, moved);
-      toWrite.push(moved);
+      if (!indexable(dest)) {
+        indexOps.push({ kind: "remove", path: p });
+        continue;
+      }
+      cache.byPath.set(dest, { ...f, path: dest, name: nameOf(dest) });
+      indexOps.push({ kind: "move", from: p, to: dest, name: nameOf(dest) });
     }
     // Moved out of a hidden folder (e.g. restored from the trash): read it.
     if (indexable(to) && !under(to).length) cache.stale = true;
@@ -274,7 +366,7 @@ async function refresh(): Promise<void> {
     for (const path of [...cache.byPath.keys()]) {
       if (!seen.has(path)) {
         cache.byPath.delete(path);
-        gone.push(path);
+        indexOps.push({ kind: "remove", path });
       }
     }
     for (const e of list) if (cache.byPath.get(e.path)?.modified !== e.modified) toRead.set(e.path, e);
@@ -286,22 +378,29 @@ async function refresh(): Promise<void> {
     toRead.set(path, { path, name: cache.byPath.get(path)?.name ?? nameOf(path), modified: null });
   }
   await mapLimit([...toRead.values()], 16, async (e) => {
-    const f = await indexFile(e);
-    if (f) {
-      cache.byPath.set(e.path, f);
-      toWrite.push(f);
-    } else if (cache.byPath.delete(e.path)) gone.push(e.path);
+    const r = await indexFile(e);
+    if (r) {
+      cache.byPath.set(e.path, r.file);
+      toWrite.push(r);
+    } else if (cache.byPath.delete(e.path)) indexOps.push({ kind: "remove", path: e.path });
   });
+  if (!indexOps.length && !toWrite.length) return;
   // Views that cache what they derive from the index (wiki-link completion) re-derive.
-  if (gone.length || toWrite.length) cache.version++;
-  const written = new Set(toWrite.map((f) => f.path));
-  const removedNow = gone.filter((p) => !written.has(p) && !cache.byPath.has(p));
-  if (!removedNow.length && !toWrite.length) return;
+  cache.version++;
+  scheduleSnapshot();
   await withEngine(async (eng) => {
-    if (removedNow.length) await eng.remove(removedNow);
-    // Only what the index holds now: a path moved again (A → B → C) or
-    // deleted after a move is not sent; last write wins for a re-read.
-    const latest = new Map(toWrite.filter((f) => cache.byPath.get(f.path) === f).map((f) => [f.path, f]));
+    // Runs of removes and of moves, each as one request, in order.
+    for (let i = 0; i < indexOps.length; ) {
+      const kind = indexOps[i].kind;
+      let j = i;
+      while (j < indexOps.length && indexOps[j].kind === kind) j++;
+      const run = indexOps.slice(i, j);
+      if (kind === "remove") await eng.remove(run.map((o) => (o as { path: string }).path));
+      else await eng.move(run as { from: string; to: string; name: string }[]);
+      i = j;
+    }
+    // Only what the vault holds now; last read wins.
+    const latest = new Map(toWrite.filter((r) => cache.byPath.get(r.file.path) === r.file).map((r) => [r.file.path, r]));
     if (latest.size) await upsertAll(eng, [...latest.values()]);
   });
 }
@@ -419,6 +518,35 @@ export async function searchWorkspace(
 }
 
 /**
+ * W2.22 — the text of indexed notes, read from the index (the main thread
+ * keeps summaries only). For a view that reads the text once and lets it go:
+ * each note's summary with its `content`. All notes when `paths` is omitted.
+ */
+export async function indexedNotes(paths?: readonly string[]): Promise<Array<IndexedFile & { content: string }>> {
+  if (!cache.byPath.size) return [];
+  const want = paths ? paths.filter((p) => cache.byPath.has(p)) : undefined;
+  if (want && !want.length) return [];
+  const texts = await withEngine((e) => e.texts(want ? [...want] : undefined));
+  const out: Array<IndexedFile & { content: string }> = [];
+  for (const t of texts) {
+    const f = cache.byPath.get(t.path);
+    if (f) out.push({ ...f, content: t.content });
+  }
+  return out;
+}
+
+/** One note's text from the index, or null when it is not indexed. */
+export async function indexedNoteText(path: string): Promise<string | null> {
+  return (await indexedNotes([path]))[0]?.content ?? null;
+}
+
+/** Notes related to a paragraph (plan W2.2), ranked by the index's BM25 in the index worker. */
+export async function relatedInIndex(query: import("./vaultIndexProtocol").RelatedQuery): Promise<import("../related/related").RelatedHit[]> {
+  await ensureIndex();
+  return withEngine((e) => e.related(query));
+}
+
+/**
  * Run a ```tasks``` query over every note in the vault (plan 4.13), in the
  * index worker. Dates in the query are relative to the user's local today.
  */
@@ -428,15 +556,15 @@ export async function queryVaultTasks(query: string, today = new Date()): Promis
   return withEngine((e) => e.tasks(query, iso));
 }
 
+/** Changes whenever the indexed files do: a cache of something derived from them is good while it is the same. */
+export function indexVersion(): number {
+  return cache.version;
+}
+
 /** Work counters of the index (files, notes indexed so far…) — for tests and the perf spec. */
 export async function indexStats(): Promise<IndexStats & { engine: IndexEngine["kind"] }> {
   const stats = await withEngine((e) => e.stats());
   return { ...stats, engine: (await getEngine()).kind };
-}
-
-/** Changes whenever the indexed files do: a cache of something derived from them is good while it is the same. */
-export function indexVersion(): number {
-  return cache.version;
 }
 
 /** Test hook. `engineFactory` replaces the worker (e.g. with a fake one). */
@@ -453,4 +581,9 @@ export function __resetWorkspaceIndex(engineFactory?: () => IndexEngine): void {
   void engine?.then((e) => e.dispose(), () => undefined);
   engine = null;
   engineOverride = engineFactory ?? null;
+  // Tests start from an empty vault: no snapshot from an earlier one.
+  if (snapshotTimer) clearTimeout(snapshotTimer);
+  snapshotTimer = null;
+  snapshotGen++;
+  snapshotReset = dropSnapshot();
 }

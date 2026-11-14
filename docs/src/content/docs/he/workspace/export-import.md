@@ -13,7 +13,7 @@ description: להוציא את כל הכספת כ-.zip או כתיקייה, לה
 `lumen-vault-<date>`, כך ששום דבר שכבר נמצא בתיקייה שבחרתם לא נדרס. הפתק
 שאתם עורכים נשמר קודם.
 
-**ייבוא:** `⌘K → Import notes (zip / folder: Obsidian, Notion, Lumen)…`.
+**ייבוא:** `⌘K → Import notes from another app (Obsidian, Notion, Evernote, Bear, Keep, Logseq, OneNote…)…`.
 בוחרים ‎.zip או תיקייה. Lumen מזהה:
 
 | מקור | מזוהה לפי | מה הייבוא עושה |

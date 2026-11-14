@@ -10,7 +10,7 @@ import { SCHEMA, newCanary, readJson, writeJson } from "../lib/golden.mjs";
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 export const GOLDEN = join(ROOT, "eval", "golden");
 
-const PART_KEYS = ["id", "items", "dev", "test", "status", "license", "workflow", "token", "owner", "review"];
+export const PART_KEYS = ["id", "items", "dev", "test", "status", "license", "workflow", "token", "owner", "review"];
 
 /**
  * The set's folder with a manifest. A new set gets fresh dev and test

@@ -297,7 +297,14 @@ impl Vault {
             file.write_all(data)?;
             file.sync_all()?;
             drop(file);
-            fs::rename(&tmp, &p)
+            fs::rename(&tmp, &p)?;
+            // The rename itself is only durable once the folder is synced
+            // (plan W1.5); without that a power cut can bring the old name back.
+            #[cfg(unix)]
+            if let Some(parent) = p.parent() {
+                fs::File::open(parent)?.sync_all()?;
+            }
+            Ok(())
         })();
         if let Err(e) = result {
             let _ = fs::remove_file(&tmp);

@@ -28,7 +28,15 @@ import { noteKey } from "../lib/slug";
 import { hasHebrew, hebrewFind, normalizeForMatch, prefixVariants } from "../text/hebrew";
 import { WIKI_RE } from "./wikiTargets";
 import { Bm25Index } from "../search/bm25";
-import { matchesOps, noteTags, opLocation, parseQuery } from "../search/queryOps";
+import { matchesOps, noteTags, opLocation, parseQuery, type Matchable } from "../search/queryOps";
+import { relatedNotes, type RelatedHit } from "../related/related";
+import { folderOff } from "../related/prefs";
+
+/** A note's text, read from the index (W2.22). */
+export interface NoteText {
+  path: string;
+  content: string;
+}
 
 export interface IndexInput {
   /** Full workspace path. */
@@ -101,16 +109,11 @@ interface Entry {
   /** Insertion order: a re-indexed note keeps its place, like a Map entry. */
   order: number;
   nameLower: string;
-  /** The name folded like `folded`, for Hebrew name matches without normalising per query. */
+  /** The name folded for search, for Hebrew name matches without normalising per query. */
   nameFolded: string | null;
   pathLower: string;
-  lower: string;
-  /**
-   * `normalizeWithMap(content).text` (niqqud, finals and case folded) for
-   * notes that have Hebrew letters; null for the rest, which a Hebrew
-   * search can only match through `lower`.
-   */
-  folded: string | null;
+  // W2.22: no lower-cased or folded copy of the text per note — content is
+  // ranked by BM25, and a snippet lower-cases only the hits it shows.
   links: Link[];
   /** Front matter `tags:` and body `#tags` (plan 11.3), lower-case. */
   tags: string[];
@@ -121,6 +124,8 @@ const MAY_FOLD_TO_HEBREW = /[֐-׿יִ-ﭏ]/;
 
 const foldMemo = new Map<string, string>();
 
+const WHOLE_TEXT_SAFE = /^[\t\n\r -~\u00A0-\u00FF\u0590-\u05FF\u2000-\u206F\u20AA\uFB1D-\uFB4F]*$/;
+
 /**
  * `normalizeWithMap(text).text` without the map: the same per-character
  * `normalizeForMatch`, memoised per character (a note has few distinct
@@ -128,6 +133,12 @@ const foldMemo = new Map<string, string>();
  * `normalizeForMatch` does to it.
  */
 export function foldForSearch(text: string): string {
+  // W2.22 — for text of ASCII, Latin-1, Hebrew and general punctuation, the
+  // whole text through `normalizeForMatch` at once (a few regex passes in
+  // native code) gives the same result as character by character: nothing
+  // there composes across characters under NFC, and nothing lower-cases by
+  // context. Anything else takes the per-character path.
+  if (WHOLE_TEXT_SAFE.test(text)) return normalizeForMatch(text);
   let out = "";
   for (const ch of text) {
     const code = ch.charCodeAt(0);
@@ -237,8 +248,6 @@ export class VaultIndex {
       nameLower: input.name.toLowerCase(),
       nameFolded: MAY_FOLD_TO_HEBREW.test(input.name) ? foldForSearch(input.name) : null,
       pathLower: input.path.toLowerCase(),
-      lower: content.toLowerCase(),
-      folded: MAY_FOLD_TO_HEBREW.test(content) ? foldForSearch(content) : null,
       links,
       tags: noteTags(content),
     };
@@ -255,6 +264,50 @@ export class VaultIndex {
     }
     this.counters.indexed++;
     return true;
+  }
+
+  /**
+   * W2.22 — move a note to a new path with the text the index already holds
+   * (the main thread keeps no copy to send). False if the note is unknown.
+   */
+  move(from: string, to: string, name: string): boolean {
+    const e = this.files.get(from);
+    if (!e) return false;
+    this.remove(from);
+    this.upsert({ path: to, name, content: e.content, modified: e.modified });
+    return true;
+  }
+
+  /** The notes as indexed: for the snapshot (indexSnapshot.ts), in index order. */
+  *notes(): IterableIterator<IndexInput> {
+    for (const e of this.files.values()) yield { path: e.path, name: e.name, content: e.content, modified: e.modified };
+  }
+
+  /**
+   * W2.22 — the text of these notes (all when `paths` is omitted), for a
+   * main-thread view that reads it once and lets it go; unknown paths are left out.
+   */
+  texts(paths?: readonly string[]): NoteText[] {
+    const out: NoteText[] = [];
+    if (!paths) {
+      for (const e of this.files.values()) out.push({ path: e.path, content: e.content });
+      return out;
+    }
+    for (const p of paths) {
+      const e = this.files.get(p);
+      if (e) out.push({ path: p, content: e.content });
+    }
+    return out;
+  }
+
+  /**
+   * Notes related to a paragraph (plan W2.2), ranked by this index's BM25:
+   * the side panel asks here, so the main thread keeps no index of its own.
+   * Notes in `offFolders` are never suggested.
+   */
+  related(paragraph: string, opts: { self?: string | null; offFolders?: readonly string[]; semantic?: ReadonlyArray<{ path: string; score: number }>; limit?: number } = {}): RelatedHit[] {
+    const folders = opts.offFolders ?? [];
+    return relatedNotes(this.bm25, paragraph, { self: opts.self, semantic: opts.semantic, limit: opts.limit, filter: (p) => !folderOff(p, folders) });
   }
 
   /** Remove one note. O(its links). */
@@ -357,7 +410,7 @@ export class VaultIndex {
     if (invalid.length) return [];
     const q = query.trim().toLowerCase();
     const scope = opts.paths ? new Set(opts.paths) : null;
-    const pass = (e: Entry) => (!scope || scope.has(e.path)) && (!ops.length || matchesOps(ops, e));
+    const pass = (e: Entry) => (!scope || scope.has(e.path)) && (!ops.length || matchesOps(ops, matchable(e)));
     const allow = scope || ops.length ? new Set([...this.files.values()].filter(pass).map((e) => e.path)) : null;
     if (!q) {
       return [...this.files.values()]
@@ -366,7 +419,7 @@ export class VaultIndex {
         .slice(0, limit)
         .map((f) => {
           // An operator-only query shows where it matched.
-          const at = ops.length ? opLocation(ops, f) : null;
+          const at = ops.length ? opLocation(ops, matchable(f)) : null;
           if (!at) return { path: f.path, name: f.name, score: 0, snippet: null };
           const ctx = snippetAround(f.content, at.start, 80);
           const local = findIn(ctx, ctx.toLowerCase(), f.content.slice(at.start, at.end).replace(/\s+/g, " ").toLowerCase());
@@ -400,9 +453,10 @@ export class VaultIndex {
     const out: SearchHit[] = [];
     for (const { e, score: base, matched, phraseable } of candidates) {
       let score = base;
-      const phrase = phraseable ? findIn(e.content, e.lower, q) : null;
+      const lower = e.content.toLowerCase();
+      const phrase = phraseable ? findIn(e.content, lower, q) : null;
       if (phrase) score += PHRASE_BONUS;
-      const at = phrase ?? (matched.length ? locateTerm(e.content, e.lower, matched) : base > 1 ? findIn(e.content, e.lower, q) : null);
+      const at = phrase ?? (matched.length ? locateTerm(e.content, lower, matched) : base > 1 ? findIn(e.content, lower, q) : null);
       const hit: SearchHit = { path: e.path, name: e.name, score, snippet: null };
       if (at) {
         const ctx = snippetAround(e.content, at.start, 80);
@@ -417,6 +471,9 @@ export class VaultIndex {
     return out.slice(0, limit);
   }
 }
+
+/** What the search operators read (plan 11.3); the lower-cased text is made only for an operator query (W2.22). */
+const matchable = (e: Entry): Matchable => ({ content: e.content, lower: e.content.toLowerCase(), pathLower: e.pathLower, nameLower: e.nameLower, tags: e.tags });
 
 /** The phrase (several words) is in the text as written: a few points on top of BM25. */
 export const PHRASE_BONUS = 4;

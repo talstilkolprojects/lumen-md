@@ -62,6 +62,7 @@ describe("code health (12.1)", () => {
     expect(swallowedWithoutWhy()).toEqual([]);
   });
 
+  // skip-reason: documents W4.11: 16 production files are still over 800 lines; W4.11 splits them and turns this into a real test | task: W4.11 | until: 2027-05-12
   it.todo(`no production file is longer than ${MAX_LINES} lines (12.1 splits)`);
 
   it("the ESLint baseline records neither rule", () => {

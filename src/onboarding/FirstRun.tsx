@@ -6,14 +6,17 @@
  * later. Loaded lazily, only on a first visit or from ⌘K.
  */
 import { useEffect, useRef, useState } from "react";
-import { SUPPORTED_LOCALES, getLocale, isLocaleLoaded, loadLocale, t, type Locale } from "../i18n";
+import { SUPPORTED_LOCALES, getLocale, isLocaleLoaded, loadLocale, systemLanguages, t, type Locale } from "../i18n";
 import { useAppStore, type Theme } from "../store/useStore";
 import { PRESET_IDS, type PresetId } from "../lib/themeSettings";
-import { createFirstNote, currentVault, importInto, markSetupDone, openBrowserVault, openFolderVault, reconnectFolderVault, type StartChoice } from "./setup";
+import { createFirstNote, currentVault, importInto, languageOrder, languagePlan, markSetupDone, openBrowserVault, openFolderVault, reconnectFolderVault, setupDue, type StartChoice } from "./setup";
 import "./FirstRun.css";
 import { useFocusTrap } from "../ui/useFocusTrap";
+import "./firstRunStrings";
+import { HelpButton } from "../ui/HelpButton";
+import { explainError } from "../lib/userError";
 
-const STEPS = ["lang", "vault", "look", "start"] as const;
+const ALL_STEPS = ["lang", "vault", "look", "start"] as const;
 const THEMES: Theme[] = ["light", "dark", "system"];
 
 export interface FirstRunResult {
@@ -37,6 +40,12 @@ export default function FirstRun({ onDone }: Props) {
   // The language applies once its strings have loaded; the choice shows at once.
   const [pickedLocale, setPickedLocale] = useState<Locale | null>(null);
   const shownLocale = pickedLocale ?? locale;
+  // Plan W4.35: a system that lists Hebrew starts in Hebrew with no language
+  // question; otherwise one question, "Which language will you write in?".
+  // Reopened from ⌘K (setup already done), the language step is always there.
+  const [plan] = useState(() => languagePlan(systemLanguages()));
+  const [showLang, setShowLang] = useState(() => plan.ask || !setupDue());
+  const STEPS = showLang ? ALL_STEPS : ALL_STEPS.filter((s) => s !== "lang");
   const [step, setStep] = useState(0);
   const [folder, setFolder] = useState<string | null>(null);
   /** The folder vault needs permission again (browser restart): it can't be written until reconnected. */
@@ -128,7 +137,7 @@ export default function FirstRun({ onDone }: Props) {
       window.dispatchEvent(new Event("lumen-workspace-changed"));
       setStatus(t("onboard.import.done", { notes: String(r.notes), folder: r.folder }));
     } catch (e) {
-      setStatus(t("onboard.import.failed", { error: (e as Error).message }));
+      setStatus(t("onboard.import.failed", { error: explainError(e) }));
     } finally {
       setBusy(false);
     }
@@ -151,7 +160,7 @@ export default function FirstRun({ onDone }: Props) {
       onDone({ note });
     } catch (e) {
       setBusy(false);
-      setStatus(t("onboard.failed", { error: (e as Error).message }));
+      setStatus(t("onboard.failed", { error: explainError(e) }));
     }
   };
 
@@ -164,7 +173,24 @@ export default function FirstRun({ onDone }: Props) {
       <div className="lumen-firstrun" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="lumen-firstrun-title" aria-describedby="lumen-firstrun-sub" data-testid="first-run">
         <header className="lumen-firstrun-head">
           <h2 id="lumen-firstrun-title">{t("onboard.title")}</h2>
+          <HelpButton topic="getting-started/quickstart" />
           <p id="lumen-firstrun-sub">{t("onboard.subtitle")}</p>
+          {!showLang && (
+            <p className="lumen-firstrun-hint">
+              {t("onboard.lang.current", { language: SUPPORTED_LOCALES.find((l) => l.code === shownLocale)?.label ?? shownLocale })}{" "}
+              <button
+                type="button"
+                className="lumen-firstrun-link"
+                data-testid="first-run-change-language"
+                onClick={() => {
+                  setShowLang(true);
+                  setStep(0);
+                }}
+              >
+                {t("onboard.lang.change")}
+              </button>
+            </p>
+          )}
           <ol className="lumen-firstrun-dots" aria-label={t("onboard.step", { n: step + 1, total: STEPS.length })}>
             {STEPS.map((s, i) => (
               <li key={s} data-on={i <= step} aria-current={i === step ? "step" : undefined} />
@@ -175,10 +201,10 @@ export default function FirstRun({ onDone }: Props) {
         <div className="lumen-firstrun-body" ref={panel}>
           {current === "lang" && (
             <fieldset>
-              <legend>{t("onboard.lang.title")}</legend>
-              <p className="lumen-firstrun-hint">{t("onboard.lang.body")}</p>
+              <legend>{t("onboard.lang.write")}</legend>
+              <p className="lumen-firstrun-hint">{t("onboard.lang.write.body")}</p>
               <div className="lumen-firstrun-grid">
-                {SUPPORTED_LOCALES.map((l) => (
+                {languageOrder(SUPPORTED_LOCALES).map((l) => (
                   <label key={l.code} className="lumen-firstrun-choice" data-checked={shownLocale === l.code}>
                     <input
                       type="radio"
@@ -272,6 +298,7 @@ export default function FirstRun({ onDone }: Props) {
                 <label className="lumen-firstrun-choice wide" data-checked={start === "empty"}>
                   <input type="radio" name="fr-start" checked={start === "empty"} onChange={() => setStart("empty")} />
                   <span>
+                    {/* empty-allow: the "start empty" choice's label, not an empty state */}
                     <strong>{t("onboard.start.empty")}</strong>
                     <small>{t("onboard.start.empty.desc")}</small>
                   </span>

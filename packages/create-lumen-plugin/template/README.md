@@ -1,41 +1,35 @@
 # __PLUGIN_TITLE__
 
-A Lumen plugin scaffolded with `create-lumen-plugin`.
+A [Lumen](https://github.com/talstilkol/lumen-md) plugin. It runs in Lumen's sandbox (QuickJS): no network, no DOM, only the `lumen` API, and only the capabilities `lumen-plugin.json` asks for and the user grants.
 
-## Develop
+## In five minutes
 
 ```bash
-npm install
-npm run dev
+npm run dev        # serves this folder at http://127.0.0.1:5199 and watches it
 ```
 
-The bundler watches `src/` and rebuilds `dist/__PLUGIN_NAME__.js` on save.
+1. In Lumen, open **Plugin gallery → Developer mode**, keep `http://127.0.0.1:5199` and press **Connect**. The plugin starts, with the capabilities it asks for.
+2. Press `⌘K` and run **__PLUGIN_TITLE__**: the side panel shows the word count.
+3. Edit `main.js` (try changing the text in `show()`) and save. Lumen reloads the plugin in under a second; the Developer panel shows the reload time.
 
-## Try it in Lumen
+No `npm install` is needed: the dev server and the test kit have no dependencies.
 
-Open Lumen → `⌘K` → **Plugin gallery** → **Load unpacked** → pick
-`dist/__PLUGIN_NAME__.js`. Lumen reloads the plugin every time the file
-changes — perfect for the dev loop.
+## Test
 
-## Customise
+```bash
+npm test
+```
 
-- **Add a new block type** → `src/block.tsx`. Lumen mounts your component
-  whenever the user types ` ```your-language ` followed by source.
-- **Add a command** → in `src/index.ts` register another
-  `api.registerCommand({...})` — it shows up in `⌘K` and the palette.
-- **Listen to document changes** → `api.onDocChange((content) => ...)`.
-- **Read / write the workspace** is intentionally NOT exposed by default
-  — request the `workspace-read` / `workspace-write` permissions in
-  `lumen-plugin.json` and the user gets an explicit approval prompt.
+`tools/testkit.mjs` runs `main.js` against a mock of the `lumen` API with the sandbox's rules (a call without its capability rejects with `PluginDenied`). See `test/main.test.mjs`.
 
-## Publish to the registry
+## The Developer panel
 
-1. `npm run build`.
-2. Open a PR against
-   [public/plugins/registry.json](https://github.com/your-org/lumen) with a
-   new entry pointing at the JSDelivr URL of your release.
-3. Lumen's Plugin Gallery picks it up automatically.
+While your plugin runs, the Developer panel shows:
 
-## License
+- which capabilities it used, and which granted ones it never used (ask only for what you use);
+- its last calls to Lumen (method, time, refused or not);
+- the CPU time spent in your code and the sandbox's memory.
 
-MIT — yours to do with as you please.
+## Publish
+
+Bump `version` in `lumen-plugin.json` and open a pull request adding the folder under `public/plugins/examples/` (or your registry). Every version is scanned (`node scripts/scan-plugins.mjs`) before it is listed.

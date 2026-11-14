@@ -1,0 +1,21 @@
+# מתכונים — נוצר מהתבנית מתכון (בשרי / חלבי / פרווה)
+filters:
+  and:
+    - 'type == "recipe"'
+properties:
+  file.name:
+    displayName: "מתכון"
+  note.kashrut:
+    displayName: "כשרות"
+  note.minutes:
+    displayName: "דקות"
+  note.shabbat:
+    displayName: "לשבת"
+views:
+  - type: cards
+    name: "מתכונים"
+    order:
+      - file.name
+      - note.kashrut
+      - note.minutes
+      - note.shabbat

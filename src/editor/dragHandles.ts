@@ -122,6 +122,38 @@ function makeHandle(view: EditorView, blockPos: number): HTMLElement {
     window.addEventListener("pointercancel", end);
   });
 
+  // Touch and pen (plan 10.2.1): HTML5 drag-and-drop doesn't start from a
+  // finger on most mobile browsers, so a pointer drag does the same move —
+  // press the handle, slide, lift where the block should go. Mouse keeps the
+  // native drag above.
+  el.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse") return;
+    e.preventDefault();
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      /* no capture (an unknown pointer): the window listeners below still see it */
+    }
+    view.dispatch(view.state.tr.setMeta(HANDLE_KEY, { fromPos: blockPos, hoverPos: null }));
+    let last = { x: e.clientX, y: e.clientY };
+    const move = (ev: PointerEvent) => {
+      if (ev.pointerId !== e.pointerId) return;
+      last = { x: ev.clientX, y: ev.clientY };
+    };
+    const end = (ev: PointerEvent) => {
+      if (ev.pointerId !== e.pointerId) return;
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", end);
+      if (ev.type === "pointerup" && (Math.abs(last.x - e.clientX) > 4 || Math.abs(last.y - e.clientY) > 4)) moveBlockTo(view, blockPos, last.x, last.y);
+      else view.dispatch(view.state.tr.setMeta(HANDLE_KEY, initial));
+    };
+    // On window: with or without capture, the pointer's later events reach these.
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+  });
+
   // Keyboard a11y — focus the handle then ↑/↓ moves the block one step
   // in either direction; Enter / Space behaves the same as a click on
   // the block (focus the editor at the block start). Without this,

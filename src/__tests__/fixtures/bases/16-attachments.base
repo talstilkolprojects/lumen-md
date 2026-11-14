@@ -1,0 +1,5 @@
+filters: 'file.ext != "md"'
+views:
+  - type: table
+    name: Attachments
+    order: [file.name, file.ext, file.size]

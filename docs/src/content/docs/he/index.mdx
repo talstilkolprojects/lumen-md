@@ -1,0 +1,60 @@
+---
+title: Lumen — Markdown, מואר
+description: עורך Markdown שעובד קודם כול על המכשיר שלכם, עם הצגת נתונים מהשורה הראשונה, עברית מימין לשמאל, AI ועבודה משותפת.
+template: splash
+hero:
+  tagline: פתקים, מחברות, לוחות מחוונים ומאגרי ידע — הכול ב-Markdown פשוט.
+  actions:
+    - text: התחלה מהירה
+      link: /he/getting-started/quickstart/
+      icon: right-arrow
+      variant: primary
+    - text: מעבר מאפליקציה אחרת
+      link: /he/getting-started/from-obsidian/
+      icon: right-arrow
+    - text: לפתוח את Lumen
+      link: https://lumen.app
+      icon: external
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+## מה מייחד את Lumen
+
+<CardGrid>
+  <Card title="קודם כול על המכשיר" icon="laptop">
+    הפתקים נשמרים באחסון הפרטי של הדפדפן (OPFS). אפשר לסנכרן עם Git, ‏Dropbox
+    או שרת משלכם — או לא לסנכרן בכלל: Lumen עובד במלואו גם בלי חיבור.
+  </Card>
+  <Card title="נתונים ← טבלאות וגרפים, אוטומטית" icon="bars">
+    גוררים בלוק CSV, ‏JSON או SQL ו-Lumen מציע את הגרף המתאים בלחיצה. נתונים
+    חיים דרך כתובות `src=` שמתרעננות לבד.
+  </Card>
+  <Card title="תרשימים, מתמטיקה, מוזיקה, תלת־ממד" icon="puzzle">
+    Mermaid · Graphviz · PlantUML · KaTeX · תווי ABC · model-viewer · מפות
+    Leaflet · ECharts. כולם אזרחים מלאים.
+  </Card>
+  <Card title="עברית מימין לשמאל, מהיסוד" icon="translate">
+    עברית וערבית זורמות מימין לשמאל בכל הממשק. בלוקי קוד, מתמטיקה והעורך
+    נשארים משמאל לימין.
+  </Card>
+  <Card title="AI בשליטה שלכם" icon="rocket">
+    חיפוש חכם, תיוג אוטומטי והצעות קישורים. מפתח OpenAI משלכם, או מודל מקומי
+    (web-llm ו-WebGPU) — הבקשות לא יוצאות מהמחשב.
+  </Card>
+  <Card title="MCP לסוכנים" icon="setting">
+    ל-Lumen יש שרת MCP, כך ש-Claude Desktop או Cursor יכולים לקרוא, לכתוב
+    ולחפש בסביבת העבודה שלכם ([שילוב MCP](/he/ai/mcp/)).
+  </Card>
+</CardGrid>
+
+## שלוש שורות כדי להתחיל
+
+```bash
+git clone https://github.com/talstilkol/lumen-md
+cd lumen-md && npm ci && npm run dev
+# פותחים http://localhost:5173
+```
+
+או פשוט נכנסים ל-[lumen.app](https://lumen.app) ומתחילים להקליד — אין מה
+להתקין.

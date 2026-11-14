@@ -1,0 +1,20 @@
+{
+  "reading.title": "Reading options",
+  "reading.close": "Close",
+  "reading.scope": "Apply to",
+  "reading.scope.all": "Every note",
+  "reading.scope.note": "This note only",
+  "reading.font": "Hebrew font",
+  "reading.font.default": "The app's font",
+  "reading.font.download": "{kb} KB download",
+  "reading.font.local": "Fonts come from this app, never from a font service, and download only when you choose them; after that they also work offline.",
+  "reading.size": "Text size",
+  "reading.lineHeight": "Line height",
+  "reading.width": "Column width",
+  "reading.spacedHebrew": "Spaced Hebrew (more room between words, letters and lines)",
+  "reading.dyslexia": "Dyslexia-friendly font for English text",
+  "reading.loading": "Downloading the font…",
+  "reading.failed": "The font could not be downloaded. The text stays in its current font; try again when you are online.",
+  "reading.reset": "Back to the defaults",
+  "reading.license": "Every font here is under the SIL Open Font License 1.1; the licences are in fonts/reading/."
+}

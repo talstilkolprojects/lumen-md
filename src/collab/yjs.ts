@@ -1,12 +1,15 @@
 import * as Y from "yjs";
 import { WebrtcProvider } from "y-webrtc";
-import type { Awareness } from "y-protocols/awareness";
+import { Awareness } from "y-protocols/awareness";
 import { randomChoice, randomId, randomInt } from "../lib/cryptoRandom";
 import { log } from "../lib/logger";
 import { effectiveCapabilities, entitlementResolved, waitForEntitlement } from "../billing/gates";
 import { wireE2E, type E2EChannel, type E2EErrorReason } from "./e2e";
+import { wireE2EAwareness, type AwarenessLike, type E2EAwarenessBridge } from "./e2eAwareness";
 import { getSecret } from "../lib/secretStore";
 import { connectAllowedByCsp, isIpv6LiteralUrl } from "../lib/cspConnect";
+import { canComment, canEdit, commentsDocName, isServerOnly, readShareFromHash, type Role } from "./sharing";
+import type { PersistentOptions } from "./persistentProvider";
 
 export interface CollabUser {
   name: string;
@@ -48,6 +51,11 @@ export interface CollabSession {
   /** True when the room password is set and the E2E transport is active. */
   encrypted: boolean;
   ytext: Y.Text;
+  /**
+   * Presence (names, colours, cursors) as the editor sees it. In password
+   * rooms this one is local too: the providers sync a transport awareness
+   * whose states are sealed under the room key (plan W2.20, `./e2eAwareness.ts`).
+   */
   awareness: Awareness;
   provider: WebrtcProvider;
   /** Optional persistent provider (Hocuspocus) — null on WebRTC-only sessions. */
@@ -60,6 +68,23 @@ export interface CollabSession {
    */
   sharePassword: string | null;
   user: CollabUser;
+  /**
+   * Plan W1.19: the room's comment threads, a document of their own
+   * (`<room>~comments` on the server) so the server can let "comment"
+   * participants write comments but not the note. Anchors still point into
+   * `ytext`. Encrypted like the note in password rooms.
+   */
+  commentsDoc: Y.Doc;
+  /** The share link this session was opened from, or null. */
+  share: string | null;
+  /** Synced through the server only (a room with share links): no WebRTC mesh. */
+  serverOnly: boolean;
+  /** This participant's role: "edit" until the server says otherwise; "view" until then for a share link. */
+  role(): Role;
+  canEdit(): boolean;
+  canComment(): boolean;
+  /** Called when the server grants a different role. Returns the unsubscribe function. */
+  onRoleChange(fn: (role: Role) => void): () => void;
   /** Tear down providers + free Yjs structures. */
   destroy: () => void;
 }
@@ -74,9 +99,13 @@ export interface CollabSession {
  * Override at runtime via `localStorage["lumen.collab.signaling"]` or the
  * `VITE_WEBRTC_SIGNALING_URL` env var (single URL or comma-separated list).
  */
+// Plan W4.15: the Heroku server (y-webrtc-signaling-eu.herokuapp.com) is
+// gone — Heroku ended free dynos in November 2022, and y-webrtc itself (the
+// 10.3.0 in package-lock.json) replaced it with y-webrtc-eu.fly.dev as its
+// default `signaling`. That is the second public server now.
 const PUBLIC_SIGNALING_FALLBACK = [
   "wss://signaling.yjs.dev",
-  "wss://y-webrtc-signaling-eu.herokuapp.com",
+  "wss://y-webrtc-eu.fly.dev",
 ];
 
 const getSignalingUrls = (): string[] => {
@@ -97,7 +126,7 @@ const getSignalingUrls = (): string[] => {
     log.warn(`Collab signaling ${u} skipped: ${cspAdvice(u, "VITE_WEBRTC_SIGNALING_URL")}`);
   }
   // T49: by default only the configured signaling server (none when the
-  // build sets none). The public third-party servers (yjs.dev, heroku) see
+  // build sets none). The public third-party servers (yjs.dev, fly.dev) see
   // who meets whom, so they are used only when the user opts in (Collab
   // settings) — then also as a fallback behind a custom server.
   if (!publicSignalingAllowed()) return configured;
@@ -219,13 +248,14 @@ async function attachWebsocketProvider(
   url: string,
   roomName: string,
   doc: Y.Doc,
+  popts: PersistentOptions = {},
 ): Promise<WebsocketLike | null> {
   try {
     const { createPersistentProvider } = await import("./persistentProvider");
     // The server's optional access key (Collab settings → "Server access
     // token"), kept in the secret store. It only buys a short-lived token
     // for this room; there is no build-time token (no secret in the bundle).
-    return await createPersistentProvider(url, roomName, doc, getSecret("lumen.collab.wsToken"));
+    return await createPersistentProvider(url, roomName, doc, getSecret("lumen.collab.wsToken"), popts);
   } catch (err) {
     log.warn("persistent collab attach failed", err);
     return null;
@@ -282,10 +312,21 @@ export function connectCollab(
      * its name). The callback gets `share()`, which seeds it on request.
      */
     onEncryptedRoomEmpty?: (share: () => void) => void;
+    /** The share link's id (default: `share=` in the URL hash). */
+    share?: string | null;
   } = {},
 ): CollabSession {
   const doc = new Y.Doc();
   const ytext = doc.getText("lumen");
+  const share = opts.share === undefined ? readShareFromHash() : opts.share;
+  // Plan W1.19: a share-link session sees the note read-only until the server grants more.
+  let role: Role = share ? "view" : "edit";
+  const roleListeners = new Set<(r: Role) => void>();
+  const setRole = (r: Role) => {
+    if (r === role) return;
+    role = r;
+    for (const l of [...roleListeners]) l(r);
+  };
 
   const password = opts.password ?? getRoomPassword();
   const sharePassword = opts.password ?? hashRoomPassword();
@@ -312,6 +353,44 @@ export function connectCollab(
   }
   const syncedDoc = transportDoc ?? doc;
 
+  // Plan W2.20: presence is end-to-end encrypted like the document. The
+  // editor binds to `plainAwareness`; the providers only ever see
+  // `transportAwareness`, whose states are `{ e2e: <sealed> }`.
+  let plainAwareness: Awareness | null = null;
+  let transportAwareness: Awareness | null = null;
+  let awarenessBridge: E2EAwarenessBridge | null = null;
+  if (password && transportDoc) {
+    plainAwareness = new Awareness(doc);
+    transportAwareness = new Awareness(transportDoc);
+    awarenessBridge = wireE2EAwareness(plainAwareness as unknown as AwarenessLike, transportAwareness as unknown as AwarenessLike, {
+      password,
+      room: roomName,
+      onDecryptError: (reason) => log.warn("collab e2e: could not open a participant's presence", reason),
+    });
+  }
+
+  // A room with share links syncs through the server only: the server holds
+  // every participant to their role, a WebRTC mesh could not (plan W1.19).
+  const serverOnly = isServerOnly(roomName, share) && !!configuredWebsocketUrl();
+
+  // There, comment threads live in a document of their own, encrypted the
+  // same way, so "comment" participants can write comments but not the note.
+  // Rooms without share links keep them in the note's document, as before.
+  const commentsDoc = serverOnly ? new Y.Doc() : doc;
+  if (serverOnly) commentsDoc.clientID = doc.clientID;
+  let commentsTransport: Y.Doc | null = null;
+  let commentsE2e: E2EChannel | null = null;
+  if (password && serverOnly) {
+    commentsTransport = new Y.Doc();
+    commentsTransport.clientID = doc.clientID;
+    commentsE2e = wireE2E(commentsDoc, commentsTransport, {
+      password,
+      room: commentsDocName(roomName),
+      onDecryptError: (reason) => log.warn("collab e2e: could not decrypt a comments update", reason),
+    });
+  }
+  const commentsSynced = commentsTransport ?? commentsDoc;
+
   // Public rooms only — obscure name suffices for casual pair editing. Users
   // wanting more privacy should set a room password and/or run their own
   // signaling server.
@@ -321,10 +400,13 @@ export function connectCollab(
   // handshake, so presence (names, colours, cursors) only ever reaches
   // peers that hold the password; the signaling server sees ciphertext.
   const provider = new WebrtcProvider(roomName, syncedDoc, {
-    signaling: getSignalingUrls(),
+    signaling: serverOnly ? [] : getSignalingUrls(),
     maxConns: 20,
     ...(password ? { password } : {}),
+    ...(transportAwareness ? { awareness: transportAwareness } : {}),
   });
+  const awareness = plainAwareness ?? provider.awareness;
+  let commentsWebsocket: WebsocketLike | null = null;
 
   // If a persistent server is configured, attach a WebsocketProvider in the
   // background. It syncs the same doc as WebRTC (the ciphertext transport
@@ -347,7 +429,13 @@ export function connectCollab(
     onPersistentSettled?.();
   };
   const startPersistent = (url: string) => {
-    void attachWebsocketProvider(url, roomName, syncedDoc).then((p) => {
+    if (serverOnly) {
+      void attachWebsocketProvider(url, roomName, commentsSynced, { share, docName: commentsDocName(roomName), e2ee: !!password }).then((p) => {
+        if (destroyed) p?.destroy();
+        else commentsWebsocket = p;
+      });
+    }
+    void attachWebsocketProvider(url, roomName, syncedDoc, { share, onRole: setRole, e2ee: !!password, ...(serverOnly ? { awareness: transportAwareness ?? provider.awareness } : transportAwareness ? { awareness: transportAwareness } : {}) }).then((p) => {
       if (destroyed) {
         p?.destroy();
         return;
@@ -478,7 +566,26 @@ export function connectCollab(
   }
 
   const user = randomUser();
-  provider.awareness.setLocalStateField("user", user);
+  awareness.setLocalStateField("user", user);
+
+  // Comments made before the room had share links live in the note's
+  // document: in a server-only room an editor moves them into the comments
+  // document once (anchors point into the note, so they move as they are).
+  const legacy = doc.getMap("lumen-comments");
+  const migrateLegacyComments = () => {
+    if (destroyed || commentsDoc === doc || !canEdit(role) || legacy.size === 0) return;
+    const target = commentsDoc.getMap("lumen-comments");
+    commentsDoc.transact(() => {
+      legacy.forEach((v, k) => {
+        if (!target.has(k)) target.set(k, v);
+      });
+    });
+    doc.transact(() => {
+      for (const k of [...legacy.keys()]) legacy.delete(k);
+    });
+  };
+  legacy.observe(migrateLegacyComments);
+  roleListeners.add(migrateLegacyComments);
 
   // Wire version-history snapshots (5-min interval during collab).
   let stopSnapshots: (() => void) | null = null;
@@ -495,7 +602,7 @@ export function connectCollab(
     transportDoc,
     encrypted: transportDoc !== null,
     ytext,
-    awareness: provider.awareness,
+    awareness,
     provider,
     get websocketProvider() {
       return websocketProvider;
@@ -503,8 +610,28 @@ export function connectCollab(
     roomName,
     sharePassword,
     user,
+    commentsDoc,
+    share,
+    serverOnly,
+    role: () => role,
+    canEdit: () => canEdit(role),
+    canComment: () => canComment(role),
+    onRoleChange(fn) {
+      roleListeners.add(fn);
+      return () => roleListeners.delete(fn);
+    },
     destroy() {
       destroyed = true;
+      roleListeners.clear();
+      legacy.unobserve(migrateLegacyComments);
+      commentsE2e?.destroy();
+      try {
+        commentsWebsocket?.destroy();
+        if (commentsDoc !== doc) commentsDoc.destroy();
+        commentsTransport?.destroy();
+      } catch {
+        /* */
+      }
       onPersistentSettled = null;
       stopSeedWait();
       if (stopSnapshots) {
@@ -512,6 +639,7 @@ export function connectCollab(
         stopSnapshots = null;
       }
       e2e?.destroy();
+      awarenessBridge?.destroy();
       try {
         provider.destroy();
       } catch {
@@ -521,6 +649,13 @@ export function connectCollab(
         websocketProvider?.destroy();
       } catch {
         /* why: teardown is best effort; one failure must not keep the doc or socket open */
+      }
+      // After the providers, which still announce this participant's departure.
+      try {
+        plainAwareness?.destroy();
+        transportAwareness?.destroy();
+      } catch {
+        /* */
       }
       try {
         doc.destroy();

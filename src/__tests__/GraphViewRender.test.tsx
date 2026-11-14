@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, waitFor } from "@testing-library/react";
 
-vi.mock("../i18n", () => ({ t: (k: string, p?: Record<string, string>) => {
+vi.mock("../i18n", () => ({ registerEnglish: () => undefined, t: (k: string, p?: Record<string, string>) => {
   if (p) return Object.entries(p).reduce((s, [k2, v]) => s.replace(`{${k2}}`, v), k);
   return k;
 }}));
@@ -12,9 +12,10 @@ vi.mock("../storage/workspace", () => ({
   listWorkspace: vi.fn().mockResolvedValue([]),
   readWorkspaceFile: vi.fn().mockResolvedValue(""),
 }));
-vi.mock("../views/louvain", () => ({
-  louvain: vi.fn().mockReturnValue({ communities: new Map() }),
-  communityPalette: vi.fn().mockReturnValue(["hsl(0 0% 50%)"]),
+// The graph (plan W1.10) is built from the vault index.
+vi.mock("../storage/workspaceIndex", () => ({
+  ensureIndex: vi.fn().mockResolvedValue(undefined),
+  indexedFiles: vi.fn().mockReturnValue([]),
 }));
 
 describe("GraphView", () => {

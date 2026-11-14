@@ -3,19 +3,11 @@
   "version": "0.1.0",
   "description": "A Lumen plugin.",
   "license": "MIT",
+  "private": true,
   "type": "module",
-  "files": ["dist", "lumen-plugin.json"],
   "scripts": {
-    "dev": "vite build --watch",
-    "build": "vite build"
+    "dev": "node tools/dev-server.mjs",
+    "test": "node --test"
   },
-  "peerDependencies": {
-    "react": ">=18"
-  },
-  "devDependencies": {
-    "@types/react": "^18.0.0",
-    "react": "^18.0.0",
-    "typescript": "^5.5.0",
-    "vite": "^5.0.0"
-  }
+  "engines": { "node": ">=20" }
 }

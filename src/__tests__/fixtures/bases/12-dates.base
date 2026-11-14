@@ -1,0 +1,14 @@
+filters:
+  and:
+    - file.inFolder("Projects")
+    - note.due < today()
+formulas:
+  overdue: (today() - date(note.due)).days
+  dueText: date(note.due).format("D MMMM YYYY")
+views:
+  - type: table
+    name: Overdue
+    order: [file.name, note.due, formula.overdue, formula.dueText]
+    sort:
+      - property: note.due
+        direction: DESC

@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * First run (plan 14.1): a brand-new user — no lumen-tour-done — gets the
@@ -50,12 +51,12 @@ async function opfsWritable(page: Page): Promise<boolean> {
   });
 }
 
-test("a new user reaches their first note in under 60 s: setup, sample vault, tour skipped", async ({ page }) => {
+test("a new user reaches their first note in under 60 s: setup, sample vault, tour skipped", async ({ page, browserName }) => {
   const started = Date.now();
   await page.goto("/");
   const setup = page.getByRole("dialog", { name: "Welcome to Lumen" });
   await expect(setup).toBeVisible({ timeout: 15_000 });
-  test.skip(!(await opfsWritable(page)), "this engine refuses OPFS writes here, so there is no vault for the sample");
+  vaultOrSkip(await opfsWritable(page), browserName);
 
   // Language → vault → look → start: the defaults are fine for this user.
   await expect(setup.getByRole("radio", { name: "English" })).toBeChecked();
@@ -93,11 +94,11 @@ test("a new user reaches their first note in under 60 s: setup, sample vault, to
   await expect(page.getByRole("dialog", { name: "Welcome to Lumen" })).toHaveCount(0);
 });
 
-test("an empty vault: the first note, then every tour step to Done", async ({ page }) => {
+test("an empty vault: the first note, then every tour step to Done", async ({ page, browserName }) => {
   await page.goto("/");
   const setup = page.getByRole("dialog", { name: "Welcome to Lumen" });
   await expect(setup).toBeVisible({ timeout: 15_000 });
-  test.skip(!(await opfsWritable(page)), "this engine refuses OPFS writes here, so there is no vault for the first note");
+  vaultOrSkip(await opfsWritable(page), browserName);
   for (let i = 0; i < 3; i++) await setup.getByRole("button", { name: "Next" }).click();
   await setup.getByRole("radio", { name: /An empty vault/ }).check();
   await setup.getByRole("button", { name: "Start writing" }).click();

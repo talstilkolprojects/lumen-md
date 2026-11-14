@@ -1,0 +1,195 @@
+/* The presentation (plan W2.17). Logical properties: it mirrors under dir="rtl". */
+.lumen-slides-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  background: #111318;
+  color: #f2f2f2;
+}
+
+.lumen-slides-stage {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-block-size: 0;
+  padding: 2vmin;
+}
+
+.lumen-slide {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  inline-size: min(96vw, calc((100vh - 64px) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  padding-block: 5%;
+  padding-inline: 7%;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #fff;
+  color: #1b1d22;
+  font-family: "Assistant", "Inter", system-ui, sans-serif;
+  font-size: clamp(14px, 2.4vmin, 40px);
+  line-height: 1.45;
+  text-align: start;
+}
+
+.lumen-slide[hidden] {
+  display: none;
+}
+
+.lumen-slide h1 {
+  font-size: 2.3em;
+  margin-block: 0 0.4em;
+}
+
+.lumen-slide h2 {
+  font-size: 1.8em;
+  margin-block: 0 0.4em;
+}
+
+.lumen-slide img,
+.lumen-slide svg {
+  max-inline-size: 100%;
+  max-block-size: 100%;
+}
+
+.lumen-slides-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-block: 8px;
+  padding-inline: 16px;
+  font-size: 13px;
+  opacity: 0.55;
+  transition: opacity 0.2s;
+}
+
+.lumen-slides-bar:hover,
+.lumen-slides-bar:focus-within {
+  opacity: 1;
+}
+
+.lumen-slides-bar button {
+  padding-block: 3px;
+  padding-inline: 10px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.lumen-slides-bar button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.lumen-slides-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* PDF: every slide on its own landscape page, nothing else of the app. */
+@media print {
+  @page {
+    size: 297mm 167mm;
+    margin: 0;
+  }
+  html.lumen-printing-slides body > :not(.lumen-slides-root) {
+    display: none !important;
+  }
+  html.lumen-printing-slides .lumen-slides-root {
+    position: static;
+    display: block;
+    background: #fff;
+  }
+  html.lumen-printing-slides .lumen-slides-bar {
+    display: none;
+  }
+  html.lumen-printing-slides .lumen-slides-stage {
+    display: block;
+    padding: 0;
+  }
+  html.lumen-printing-slides .lumen-slide,
+  html.lumen-printing-slides .lumen-slide[hidden] {
+    display: flex !important;
+    inline-size: 297mm;
+    block-size: 167mm;
+    border-radius: 0;
+    break-after: page;
+    font-size: 16pt;
+  }
+}
+
+/* The presenter view (its own window). */
+.lumen-presenter {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  grid-template-rows: auto 1fr auto;
+  gap: 16px;
+  block-size: 100vh;
+  padding: 16px;
+  background: #111318;
+  color: #f2f2f2;
+  font-family: "Assistant", "Inter", system-ui, sans-serif;
+}
+
+.lumen-presenter-head {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 15px;
+}
+
+.lumen-presenter-timer {
+  font-variant-numeric: tabular-nums;
+  font-size: 28px;
+}
+
+.lumen-presenter-current,
+.lumen-presenter-next {
+  overflow: hidden;
+}
+
+.lumen-presenter-current .lumen-slide,
+.lumen-presenter-next .lumen-slide {
+  inline-size: 100%;
+  font-size: 12px;
+}
+
+.lumen-presenter-next {
+  opacity: 0.7;
+}
+
+.lumen-presenter-notes {
+  grid-column: 1 / -1;
+  max-block-size: 30vh;
+  overflow: auto;
+  font-size: 22px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.lumen-presenter-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.lumen-presenter-controls button {
+  padding-block: 6px;
+  padding-inline: 14px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}

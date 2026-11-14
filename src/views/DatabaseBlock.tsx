@@ -64,6 +64,16 @@ import { log } from "../lib/logger";
 import { onWorkspaceChanged } from "../storage/workspaceEvents";
 import { showAiToast } from "../ui/AiToast";
 import { t } from "../i18n";
+import "./databaseBlockStrings";
+import { useAppStore } from "../store/useStore";
+import { dateCell, type DateCellOptions } from "../daily/dateCells";
+import { deadlineText } from "../daily/deadlineText";
+import "../daily/israeliTimeStrings";
+import { defaultIsrael, holidaysOn } from "../daily/hebrewCalendar";
+import { holidayLabel, nameLang } from "../daily/hebrewCalendarNames";
+import { dayOfValue } from "../daily/israeliTime";
+import { explainError } from "../lib/userError";
+import { EmptyState, learnHow } from "../ui/EmptyState";
 
 // Leaflet comes with the map view only, when it is first picked.
 const DatabaseMapView = lazy(() => import("./DatabaseMapView"));
@@ -117,6 +127,7 @@ export default function DatabaseBlock({ source, meta }: Props) {
       .catch((e: Error) => {
         if (cancelled) return;
         log.warn("database query failed", e);
+        // raw-error-allow: names the part of the block's own query that is wrong
         setError(e.message);
       })
       .finally(() => !cancelled && setLoading(false));
@@ -188,7 +199,7 @@ export default function DatabaseBlock({ source, meta }: Props) {
       await writeCell(row.path, key, value);
     } catch (e) {
       setRows((rs) => rs.map((r) => (r.path === row.path ? { ...r, fm: put(r.fm, old, had) } : r)));
-      showAiToast(t("db.saveFailed", { note: titleOf(row), error: (e as Error)?.message ?? String(e) }), "error");
+      showAiToast(t("db.saveFailed", { note: titleOf(row), error: explainError(e) }), "error");
     }
   }, []);
 
@@ -235,11 +246,17 @@ export default function DatabaseBlock({ source, meta }: Props) {
       <div style={{ padding: 8 }}>
         {error && <div style={{ padding: 12, color: "hsl(0 80% 60%)" }}>{error}</div>}
         {!error && shown.length === 0 && !loading && (
-          <div style={{ padding: 24, textAlign: "center", color: "hsl(var(--fg-muted))", fontSize: 13 }}>
-            {t("db.empty")}
-            <br />
-            <span style={{ fontSize: 11, opacity: 0.7 }}>{t("db.emptyHint", { type: spec.type ?? "…", source: spec.source ?? t("db.workspaceRoot") })}</span>
-          </div>
+          <EmptyState
+            style={{ padding: 24, alignItems: "center", textAlign: "center", fontSize: 13 }}
+            message={
+              <>
+                {t("db.empty")}
+                <br />
+                <span style={{ fontSize: 11, opacity: 0.7 }}>{t("db.emptyHint", { type: spec.type ?? "…", source: spec.source ?? t("db.workspaceRoot") })}</span>
+              </>
+            }
+            action={learnHow("workspace/database-views#tag-your-notes")}
+          />
         )}
         {!error && shown.length > 0 && view === "table" && <TableView {...props} />}
         {!error && shown.length > 0 && view === "cards" && <CardsView {...props} />}
@@ -322,6 +339,7 @@ function Toolbar({
       <label style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
         <span>{t("db.sort.label")}</span>
         <select value={first?.key ?? ""} onChange={(e) => setSort(e.target.value ? [{ key: e.target.value, desc: first?.desc ?? false }] : [])} style={field} data-testid="database-sort">
+          {/* empty-allow: a "sort: none" option */}
           <option value="">{t("db.sort.none")}</option>
           {keys.map((k) => (
             <option key={k} value={k}>{k}</option>
@@ -336,6 +354,7 @@ function Toolbar({
       <label style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
         <span>{t("db.group.label")}</span>
         <select value={groupBy} onChange={(e) => setGroupBy(e.target.value)} style={field} data-testid="database-group">
+          {/* empty-allow: a "group: none" option */}
           <option value="">{t("db.group.none")}</option>
           {keys.map((k) => (
             <option key={k} value={k}>{k}</option>
@@ -398,7 +417,7 @@ function SectionHeading({ label, count }: { label: string; count: number }) {
 
 /* ─── Editable cell ──────────────────────────────────────────────────── */
 
-function EditableCell({ row, field, type, edit }: { row: DatabaseRow; field: string; type: ReturnType<typeof columnType>; edit: ViewProps["edit"] }) {
+function EditableCell({ row, field, type, edit, dates }: { row: DatabaseRow; field: string; type: ReturnType<typeof columnType>; edit: ViewProps["edit"]; dates: CellDates }) {
   const value = row.fm[field];
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -406,7 +425,7 @@ function EditableCell({ row, field, type, edit }: { row: DatabaseRow; field: str
   if (!editableValue(value)) {
     return (
       <span title={t("db.readOnly")} style={{ opacity: 0.7 }}>
-        {displayValue(value)}
+        <CellValue value={value} dates={dates} />
       </span>
     );
   }
@@ -455,8 +474,55 @@ function EditableCell({ row, field, type, edit }: { row: DatabaseRow; field: str
       data-note={row.path}
       style={{ all: "unset", display: "block", minBlockSize: "1.2em", inlineSize: "100%", cursor: "text", textAlign: "start", whiteSpace: "pre-wrap" }}
     >
-      {displayValue(value)}
+      <CellValue value={value} dates={dates} />
     </button>
+  );
+}
+
+/* ─── Date cells (plan W5.15) ────────────────────────────────────────── */
+
+/** The date options of this block: the UI locale and the calendar settings. */
+type DateOpts = Omit<DateCellOptions, "deadline">;
+/** What a cell needs to show a date: the options, and whether its column is the block's deadline column. */
+interface CellDates {
+  opts: DateOpts;
+  deadline: boolean;
+}
+
+function useDateOptions(spec: DatabaseSpec): DateOpts {
+  const locale = useAppStore((s) => s.locale) as string;
+  const settings = useAppStore((s) => s.dailyNotes);
+  return useMemo(() => ({ locale, settings, hebrewDates: spec.hebrewDate }), [locale, settings, spec.hebrewDate]);
+}
+
+/** A cell's value: a date with its Hebrew date; the deadline column with its suggested working day and the working days left. */
+function CellValue({ value, dates }: { value: unknown; dates: CellDates }) {
+  const { opts, deadline } = dates;
+  const cell = dateCell(value, { ...opts, deadline });
+  if (!cell) return <>{displayValue(value)}</>;
+  const d = cell.deadline && deadlineText(cell.deadline);
+  return (
+    <span style={{ display: "inline-flex", flexDirection: "column", gap: 1 }}>
+      <span>
+        {cell.iso}
+        {cell.hebrew && (
+          <span lang="he" dir={opts.locale === "he" ? "rtl" : "auto"} style={{ marginInlineStart: 6, color: "hsl(var(--fg-muted))", fontSize: 11 }}>
+            {cell.hebrew}
+          </span>
+        )}
+      </span>
+      {d?.moved && (
+        <span role="note" data-testid="db-deadline-moved" style={{ fontSize: 11, color: "hsl(var(--warning, 35 90% 40%))" }}>
+          ⚠ {d.moved}
+        </span>
+      )}
+      {d && (
+        <span data-testid="db-deadline-left" style={{ fontSize: 11, color: cell.deadline!.left < 0 ? "hsl(0 70% 50%)" : "hsl(var(--fg-muted))" }}>
+          {d.left}
+          {d.notes ? ` · ${d.notes}` : ""}
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -590,7 +656,8 @@ type Item = { kind: "group"; key: string; count: number } | { kind: "row"; row: 
 /** Above this many lines the table renders only what is on screen. */
 const VIRTUAL_FROM = 60;
 
-function TableView({ rows, allRows, fields, groupBy, edit, formulaNames, formulaErrors }: ViewProps) {
+function TableView({ rows, allRows, spec, fields, groupBy, edit, formulaNames, formulaErrors }: ViewProps) {
+  const dateOpts = useDateOptions(spec);
   const types = useMemo(() => Object.fromEntries(fields.map((f) => [f, columnType(allRows.map((r) => r.fm[f]), f)])), [allRows, fields]);
   const columns = useMemo<ColumnDef<DatabaseRow>[]>(
     () => [
@@ -603,12 +670,12 @@ function TableView({ rows, allRows, fields, groupBy, edit, formulaNames, formula
             formulaNames.has(f) ? (
               <FormulaCell value={c.row.original.fm[f]} error={formulaErrors.get(c.row.original.path)?.get(f)} />
             ) : (
-              <EditableCell row={c.row.original} field={f} type={types[f]} edit={edit} />
+              <EditableCell row={c.row.original} field={f} type={types[f]} edit={edit} dates={{ opts: dateOpts, deadline: f === spec.deadline }} />
             ),
         }),
       ),
     ],
-    [fields, types, edit, formulaNames, formulaErrors],
+    [fields, types, edit, formulaNames, formulaErrors, dateOpts, spec.deadline],
   );
   const table = useReactTable({ data: rows, columns, getCoreRowModel: getCoreRowModel(), getRowId: (r) => r.path });
   const byPath = new Map(table.getRowModel().rows.map((r) => [r.id, r]));
@@ -843,6 +910,7 @@ function KanbanCard({ row, fields }: { row: DatabaseRow; fields: string[] }) {
         {fields.map((f) => (
           <div key={f} style={{ fontSize: 11, color: "hsl(var(--fg-muted))", marginBlockStart: 2 }} dir="auto">
             <span style={{ opacity: 0.7 }}>{f}:</span> {displayValue(row.fm[f])}
+            {/* empty-allow: the name of a column without a value, not an empty state */}
           </div>
         ))}
       </div>
@@ -922,6 +990,7 @@ function ListView({ rows, fields, groupBy }: ViewProps) {
 /* ─── Calendar view (an agenda) ──────────────────────────────────────── */
 
 function CalendarView({ rows, spec }: { rows: DatabaseRow[]; spec: DatabaseSpec }) {
+  const opts = useDateOptions(spec);
   const dateField = spec.dateField;
   if (!dateField) {
     return <div style={{ padding: 12, color: "hsl(var(--fg-muted))", fontSize: 12 }}>{t("db.calendar.needDate")}</div>;
@@ -942,16 +1011,48 @@ function CalendarView({ rows, spec }: { rows: DatabaseRow[]; spec: DatabaseSpec 
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {sorted.map(([date, items]) => (
         <div key={date} style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: 12, padding: 8, borderRadius: 6, background: "hsl(var(--bg-subtle))" }}>
-          <div style={{ fontSize: 11, color: "hsl(var(--fg-muted))", fontWeight: 600 }}>{date}</div>
+          <CalendarDayHeader iso={date} opts={opts} />
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {items.map((r) => (
               <div key={r.path}>
                 <RowLink row={r} />
+                {spec.deadline === dateField && <CalendarDeadline value={r.fm[dateField]} opts={opts} />}
               </div>
             ))}
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** A day in the agenda: the date, its Hebrew date and the day's holidays (plan W5.15). */
+function CalendarDayHeader({ iso, opts }: { iso: string; opts: DateOpts }) {
+  const cell = dateCell(iso, opts);
+  const day = dayOfValue(iso);
+  const israel = opts.settings.israel ?? defaultIsrael(opts.locale);
+  const holidays = day ? holidaysOn(day, { israel }).filter((h) => h.kind !== "roshChodesh") : [];
+  return (
+    <div style={{ fontSize: 11, color: "hsl(var(--fg-muted))", fontWeight: 600, display: "flex", flexDirection: "column", gap: 1 }}>
+      <span>{iso}</span>
+      {cell?.hebrew && (
+        <span lang="he" dir={opts.locale === "he" ? "rtl" : "auto"} style={{ fontWeight: 400 }}>
+          {cell.hebrew}
+        </span>
+      )}
+      {holidays.length > 0 && <span style={{ fontWeight: 400 }}>{holidays.map((h) => holidayLabel(h, nameLang(opts.locale))).join(" · ")}</span>}
+    </div>
+  );
+}
+
+/** Under an item whose deadline is a day off: the suggested working day (plan W5.15). */
+function CalendarDeadline({ value, opts }: { value: unknown; opts: DateOpts }) {
+  const cell = dateCell(value, { ...opts, deadline: true });
+  const d = cell?.deadline && deadlineText(cell.deadline);
+  if (!d?.moved) return null;
+  return (
+    <div role="note" data-testid="db-deadline-moved" style={{ fontSize: 11, color: "hsl(var(--warning, 35 90% 40%))" }}>
+      ⚠ {d.moved} · {d.left}
     </div>
   );
 }

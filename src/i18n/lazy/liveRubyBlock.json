@@ -1,0 +1,18 @@
+{
+  "block.liveRuby.clear": "Clear output",
+  "block.liveRuby.loadFailed": "Failed to load the Ruby runtime.",
+  "block.liveRuby.loadTimeout": "Ruby took too long to load.",
+  "block.liveRuby.loading": "Loading Ruby…",
+  "block.liveRuby.prompt": "Click Run to execute this Ruby block. The first run downloads Ruby (~30 MB, cached afterwards).",
+  "block.liveRuby.run": "Run",
+  "block.liveRuby.state.error": "Error",
+  "block.liveRuby.state.idle": "Not run",
+  "block.liveRuby.state.loading": "Loading…",
+  "block.liveRuby.state.running": "Running…",
+  "block.liveRuby.state.success": "Completed",
+  "block.liveRuby.state.timeout": "Timed out",
+  "block.liveRuby.stop": "Stop",
+  "block.liveRuby.stopped": "Stopped.",
+  "block.liveRuby.timedOut": "Execution timed out after {ms} ms.",
+  "block.liveRuby.title": "Live Ruby"
+}

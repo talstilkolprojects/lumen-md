@@ -1,0 +1,13 @@
+{
+  "agents.netConsent.body": "The {tool} tool wants to send {sends} to {host}.",
+  "agents.netConsent.credential": "Your {provider} API key goes with it, so the service can search for you.",
+  "agents.netConsent.exact": "Exactly this is sent: “{value}”. The agent wrote it and may have included text from your notes.",
+  "agents.netConsent.ok": "Send this once",
+  "agents.netConsent.perCall": "Under the \"local only\" policy you are asked for every call.",
+  "agents.netConsent.title": "Let the agent go online?",
+  "agents.netConsent.untrusted": "Careful: this run has read content from outside ({sources}), which may contain planted instructions.",
+  "agents.netConsent.visits": "The service then opens the page, so {host} sees a visit.",
+  "agents.netConsent.what.page-address": "the page address",
+  "agents.netConsent.what.search-query": "the search query",
+  "agents.netConsent.what.tool-args": "the tool's arguments"
+}

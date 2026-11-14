@@ -1,0 +1,17 @@
+filters: file.hasTag("book")
+properties:
+  note.price:
+    displayName: מחיר
+summaries:
+  long: values.filter(value >= 300).length
+views:
+  - type: table
+    name: Totals
+    order: [file.name, note.price, note.rating, note.pages]
+    sort:
+      - property: file.name
+        direction: ASC
+    summaries:
+      note.price: Sum
+      note.rating: Average
+      pages: long

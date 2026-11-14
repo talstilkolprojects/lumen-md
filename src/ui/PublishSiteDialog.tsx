@@ -14,6 +14,9 @@ import { createRoot } from "react-dom/client";
 import { Globe, X } from "lucide-react";
 import { t, getLocale } from "../i18n";
 import type { SiteNote } from "../publish/site";
+import "./publishSiteDialogStrings";
+import { HelpButton } from "./HelpButton";
+import { explainError } from "../lib/userError";
 
 const SETTINGS_KEY = "lumen.publishSite.v1";
 const TOKEN_SECRET = "lumen.publish.github.token";
@@ -164,7 +167,7 @@ export function PublishSiteDialog({ onClose }: { onClose: () => void }) {
       });
       setResult({ text: t("publish.done.github", { count: site.pages.length, url: res.url }) + missing, url: res.url });
     } catch (e) {
-      setResult({ text: t("publish.failed", { error: (e as Error).message }), error: true });
+      setResult({ text: t("publish.failed", { error: explainError(e) }), error: true });
     } finally {
       setBusy(null);
     }
@@ -184,6 +187,7 @@ export function PublishSiteDialog({ onClose }: { onClose: () => void }) {
         <header style={{ padding: "14px 18px", borderBottom: "1px solid hsl(var(--border))", display: "flex", gap: 10, alignItems: "center" }}>
           <Globe size={18} style={{ color: "hsl(var(--accent))" }} />
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, flex: 1 }}>{t("publish.title")}</h2>
+          <HelpButton topic="sync/own-site" />
           <button ref={closeRef} type="button" style={ghost} onClick={onClose} aria-label={t("publish.close")}>
             <X size={16} />
           </button>
@@ -199,6 +203,7 @@ export function PublishSiteDialog({ onClose }: { onClose: () => void }) {
                 {t("publish.all")}
               </button>
               <button type="button" style={ghost} onClick={() => setPicked(new Set())}>
+                {/* empty-allow: the "select none" button's label */}
                 {t("publish.none")}
               </button>
             </div>
@@ -263,7 +268,7 @@ export function PublishSiteDialog({ onClose }: { onClose: () => void }) {
             </div>
           )}
           {result && (
-            <div role={result.error ? "alert" : "status"} style={{ fontSize: 13, color: result.error ? "hsl(0 70% 55%)" : undefined }} data-testid="publish-result">
+            <div role={result.error ? "alert" : "status"} style={{ fontSize: 13, color: result.error ? "hsl(var(--danger))" : undefined }} data-testid="publish-result">
               {result.text}
               {result.url && (
                 <>

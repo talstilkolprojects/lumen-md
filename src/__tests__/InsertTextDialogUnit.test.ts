@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("../i18n", () => ({
+vi.mock("../i18n", () => ({ registerEnglish: () => undefined,
   t: (k: string) => k,
 }));
 vi.mock("../data/smartDetect", () => ({

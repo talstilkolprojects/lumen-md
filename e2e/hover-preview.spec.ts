@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * Hover preview and unlinked mentions (MASTER_PLAN 4.6): pointing at — or
@@ -41,8 +42,8 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(".cm-content").first()).toContainText("Welcome to", { timeout: 15_000 });
 });
 
-test("hover and focus on a [[link]] preview the note; the editor's hover too", async ({ page }) => {
-  test.skip(!(await seed(page, { "Plans.md": PLANS })), "this engine cannot write OPFS files here");
+test("hover and focus on a [[link]] preview the note; the editor's hover too", async ({ page, browserName }) => {
+  vaultOrSkip(await seed(page, { "Plans.md": PLANS }), browserName);
   const editor = page.locator(".cm-content").first();
   await editor.click();
   await editor.fill("# Hub\n\nSee [[Plans]] for more.\n");
@@ -80,10 +81,10 @@ test("hover and focus on a [[link]] preview the note; the editor's hover too", a
   await expect(tip).toContainText("Plan line 1.");
 });
 
-test("the backlinks panel lists unlinked mentions and links one", async ({ page }) => {
-  test.skip(
-    !(await seed(page, { "Tel Aviv.md": "# Tel Aviv\n", "Trip.md": "We flew to tel aviv yesterday.\n", "Linked.md": "Already [[Tel Aviv]].\n" })),
-    "this engine cannot write OPFS files here",
+test("the backlinks panel lists unlinked mentions and links one", async ({ page, browserName }) => {
+  vaultOrSkip(
+    await seed(page, { "Tel Aviv.md": "# Tel Aviv\n", "Trip.md": "We flew to tel aviv yesterday.\n", "Linked.md": "Already [[Tel Aviv]].\n" }),
+    browserName,
   );
   const tree = page.locator("aside.file-tree");
   if (!(await tree.isVisible())) await run(page, "view.workspace");

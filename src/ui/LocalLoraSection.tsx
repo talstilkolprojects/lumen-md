@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { t } from "../i18n";
 import "../ai/localLoraStrings";
+import { explainError } from "../lib/userError";
 
 type Platform = "mac" | "nvidia";
 
@@ -46,7 +47,7 @@ export function LocalLoraSection() {
       downloadBytes("lumen-lora.zip", bytes, "application/zip");
       setStats(ds.stats);
     } catch (e) {
-      setError((e as Error).message);
+      setError(explainError(e));
     } finally {
       setBusy(false);
     }

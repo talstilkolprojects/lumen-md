@@ -1,0 +1,10 @@
+{
+  "$comment": "Feature flags (plan 14.4). A feature ships as stage \"beta\" (on in beta builds, off in stable) and is promoted to \"stable\" in a later release. since.beta is the first beta that had it; since.stable the release that turned it on for everyone. Checked by `npm run flags:check`. Names and descriptions are i18n keys flag.<id>.name and flag.<id>.desc.",
+  "flags": [
+    {
+      "id": "update.checkOnLaunch",
+      "stage": "beta",
+      "since": { "beta": "0.2.0-beta.1" }
+    }
+  ]
+}

@@ -70,10 +70,10 @@ export function FileContextMenu({ x, y, onClose, actions }: Props) {
         background: "hsl(var(--bg))",
         border: "1px solid hsl(var(--border-strong))",
         borderRadius: 10,
-        boxShadow: "0 12px 40px -8px hsl(0 0% 0% / 0.45)",
+        boxShadow: "var(--shadow-lg)",
         zIndex: 10001,
         padding: "6px 0",
-        animation: "cmdSlideIn 120ms ease",
+        animation: "cmdSlideIn var(--duration-fast) var(--ease-out)",
       }}
     >
       {actions.map((a) => (
@@ -92,14 +92,14 @@ export function FileContextMenu({ x, y, onClose, actions }: Props) {
             padding: "6px 14px",
             border: "none",
             background: "transparent",
-            color: a.destructive ? "hsl(0 80% 65%)" : "hsl(var(--fg))",
+            color: a.destructive ? "hsl(var(--danger))" : "hsl(var(--fg))",
             fontSize: 13,
             cursor: "pointer",
             textAlign: "start",
           }}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLElement).style.background = a.destructive
-              ? "hsl(0 80% 60% / 0.10)"
+              ? "hsl(var(--danger) / 0.10)"
               : "hsl(var(--accent) / 0.10)";
           }}
           onMouseLeave={(e) => {

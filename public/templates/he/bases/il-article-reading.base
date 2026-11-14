@@ -1,0 +1,21 @@
+# ספרות — נוצר מהתבנית מאמר לקריאה
+filters:
+  and:
+    - 'type == "article"'
+properties:
+  file.name:
+    displayName: "מאמר"
+  note.authors:
+    displayName: "מחברים"
+  note.year:
+    displayName: "שנה"
+  note.status:
+    displayName: "סטטוס"
+views:
+  - type: table
+    name: "ספרות"
+    order:
+      - file.name
+      - note.authors
+      - note.year
+      - note.status

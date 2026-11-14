@@ -12,7 +12,7 @@ import { createRoot, type Root } from "react-dom/client";
 import type { ReactElement } from "react";
 import { renderMarkdownFast } from "./pipeline";
 import { resolveWikiTarget, splitWikiTarget } from "./wikiLinks";
-import { ensureIndex, indexedFiles } from "../storage/workspaceIndex";
+import { ensureIndex, indexedFiles, indexedNoteText } from "../storage/workspaceIndex";
 import { isOPFSAvailable } from "../storage/workspace";
 import { headingSlugger, wikiFragmentId } from "../lib/slug";
 import { noteHeadingLines } from "../lint/vaultDoctor";
@@ -95,7 +95,10 @@ async function noteFor(target: string): Promise<{ path: string; content: string;
   const files = indexedFiles();
   const path = resolveWikiTarget(note, files.map((f) => f.path));
   const file = path ? files.find((f) => f.path === path) : undefined;
-  return file ? { path: file.path, content: file.content, modified: file.modified, fragment: heading } : null;
+  if (!file) return null;
+  // W2.22: the text lives in the index; read it for this card.
+  const content = await indexedNoteText(file.path);
+  return content === null ? null : { path: file.path, content, modified: file.modified, fragment: heading };
 }
 
 /** The rendered card for a target, or null for a note that isn't in the vault. */

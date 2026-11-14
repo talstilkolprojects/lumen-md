@@ -1,0 +1,18 @@
+{
+  "templates.installedWithBase": "Installed “{name}” to {path}, with its table view in {base}.",
+  "templates.importFromFile": "Import from file…",
+  "templates.imported": "Imported “{name}”: it's in ⌘K → Templates.",
+  "templates.importFailed": "Couldn't import the template: {error}",
+  "templates.importNotMarkdown": "Pick a Markdown file (.md).",
+  "templates.category.Engineering": "Engineering",
+  "templates.category.Home": "Home",
+  "templates.category.Journaling": "Journaling",
+  "templates.category.Personal": "Personal",
+  "templates.category.Planning": "Planning",
+  "templates.category.Reading": "Reading",
+  "templates.category.Reflection": "Reflection",
+  "templates.category.Research": "Research",
+  "templates.category.Student": "Student",
+  "templates.category.Work": "Work",
+  "templates.category.Writing": "Writing"
+}

@@ -12,6 +12,7 @@
 import { unzip, unzipText } from "./zip";
 import { iworkToMarkdown } from "./iwork";
 import { parseInertDocument } from "../lib/trustedTypes";
+import { readText } from "./textCodec";
 
 /* ─── HTML → Markdown (zero-dep, uses DOMParser) ─── */
 
@@ -382,7 +383,7 @@ export async function fileToMarkdown(file: File): Promise<{ name: string; conten
     case "mkd":
     case "md":
     case "txt":
-      return { name: file.name, content: await file.text() };
+      return { name: file.name, content: await readText(file) };
     default:
       return { name: file.name, content: await file.text() };
   }
@@ -1332,32 +1333,6 @@ export function fountainToMarkdown(text: string): string {
   );
 }
 
-export const SUPPORTED_IMPORT_EXTENSIONS = [
-  // Plain text + markdown family
-  "md", "markdown", "mdown", "mkd", "txt", "text",
-  // Tabular
-  "csv", "tsv", "json", "xml", "yaml", "yml", "toml",
-  // Office
-  "rtf", "doc", "docx", "odt", "pptx", "xlsx",
-  // Apple iWork
-  "pages", "numbers", "key",
-  // Archives (Notion export / Obsidian vault)
-  "zip",
-  // Web
-  "html", "htm", "mhtml", "mht", "eml",
-  // Documents
-  "pdf", "epub",
-  // Outlines
-  "opml",
-  // Other markup
-  "tex", "ltx", "rst", "adoc", "asciidoc", "org",
-  // Notebooks
-  "ipynb",
-  // Screenwriting
-  "fountain", "spmd",
-];
-
-export function isSupportedFormat(filename: string): boolean {
-  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
-  return SUPPORTED_IMPORT_EXTENSIONS.includes(ext);
-}
+// The list lives in a module of its own, so the file picker can name the
+// formats without loading the converters (startup budget).
+export { SUPPORTED_IMPORT_EXTENSIONS, isSupportedFormat } from "./importExtensions";

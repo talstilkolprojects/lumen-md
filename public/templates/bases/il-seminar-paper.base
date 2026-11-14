@@ -1,0 +1,24 @@
+# Papers — from the template Seminar paper
+filters:
+  and:
+    - 'type == "paper"'
+properties:
+  file.name:
+    displayName: "Paper"
+  note.advisor:
+    displayName: "Advisor"
+  note.due:
+    displayName: "Due"
+  note.status:
+    displayName: "Status"
+views:
+  - type: table
+    name: "Papers"
+    order:
+      - file.name
+      - note.advisor
+      - note.due
+      - note.status
+    sort:
+      - property: note.due
+        direction: DESC

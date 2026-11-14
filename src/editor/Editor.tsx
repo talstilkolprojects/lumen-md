@@ -9,12 +9,21 @@
  *   canonical example. Same rule applies to any code path inside
  *   `update(u: ViewUpdate)` that wants to dispatch synchronously.
  */
+import { screenReaderAnnouncements } from "./srAnnouncements";
+import { announce } from "../a11y/announce";
 import { readyToReveal } from "./revealLine";
 import { useEffect, useImperativeHandle, useRef, useState, forwardRef } from "react";
 import { Compartment, EditorState } from "@codemirror/state";
+import { lineSeparatorFor } from "./lineEndings";
+import { obsidianSourceExtension } from "./obsidianSource";
+import { pastedHtmlToMarkdown, shouldConvertPaste } from "../paste/htmlPaste";
+import { wysiwygTakesPaste, type PasteDetail } from "../paste/pasteCommands";
+import { FIX_PDF_HEBREW_EVENT, fixSourceSelection, offerInSourceEditor } from "../paste/pdfPaste";
 import { EditorView, keymap, highlightActiveLine, Decoration, WidgetType } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
-import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
+import { defaultKeymap, history, historyKeymap, indentWithTab, redo, undo } from "@codemirror/commands";
+import { actionById, applyTextAction, type ToolbarActionId } from "../mobile/toolbarActions";
+import { wikiLinkCompletion } from "./wikiLinkComplete";
 import { searchKeymap, search } from "@codemirror/search";
 import {
   syntaxHighlighting,
@@ -28,6 +37,9 @@ import {
 } from "@codemirror/autocomplete";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { bidiExtension } from "./bidi";
+import { hebrewTypographyExtension } from "./hebrewTypographyExtension";
+import { bidiMarksExtension } from "./bidiMarks";
+import { mathBidiExtension } from "./mathBidi";
 import { languages } from "@codemirror/language-data";
 import { tags as t } from "@lezer/highlight";
 import { StateField, StateEffect } from "@codemirror/state";
@@ -48,13 +60,16 @@ import { markdownLintExtension } from "./lintExtension";
 // commentDecorations imports yjs (comment anchors are Y.Map relative
 // positions) — loaded on demand in the collab effect, like ySync below.
 import { searchHighlightExtension } from "./searchHighlight";
-import { showSpokenRange, speechHighlightExtension } from "./speechHighlight";
+import { showSpokenRange, showSpokenWord, speechHighlightExtension } from "./speechHighlight";
+import { lexiconInstalled } from "../lexicon/installed";
+import { wordAt } from "../lexicon/wordAt";
 import { inlineSuggestion } from "./inlineSuggestion";
 import { aiAuthored, aiAuthorshipExtension } from "./aiAuthorship";
 import { formatKeymap } from "./formatKeymap";
 import { setSuggesting, suggestingAuthor, suggestingExtension, suggestingSkip } from "./suggestingExtension";
 import { useAuth } from "../auth/useAuth";
 import type { CollabSession } from "../collab/yjs";
+import { joinTextEnvelope, splitTextEnvelope, type TextEnvelope } from "../storage/textCodec";
 
 const mdHighlight = HighlightStyle.define([
   { tag: t.heading1, class: "tok-heading tok-heading1" },
@@ -121,6 +136,10 @@ const typewriterCompartment = new Compartment();
 const tsChecksCompartment = new Compartment();
 const commentsCompartment = new Compartment();
 const grammarCompartment = new Compartment();
+// Outline mode: folding, zoom and block operations (plan W2.13), loaded after mount.
+const outlineCompartment = new Compartment();
+// W1.2 — the document's own line ending, so a CRLF file saves as CRLF.
+const lineSeparatorCompartment = new Compartment();
 
 let vimExtensionPromise: Promise<unknown> | null = null;
 async function loadVimExtension() {
@@ -220,6 +239,7 @@ function ghostTextExtension(): Extension {
               const text = await runAgentOrThrow(completerAgent, { text: textBefore, extra: { mode: "ghost" } }, { signal: controller.signal, ownPrompt: true });
               if (text && view.state.selection.main.head === pos) {
                 view.dispatch({ effects: setGhostText.of({ pos, text }) });
+                announce(i18nT("sr.suggestion", { text: text.trim() }));
               }
             } catch {
               // why: Silently ignore abort / API errors for completions
@@ -279,9 +299,15 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
   onChangeRef.current = onChange;
   const onAddAssetRef = useRef(onAddAsset);
   onAddAssetRef.current = onAddAsset;
+  /** The paste/drop image path, for the mobile toolbar's image button. */
+  const assetFilesRef = useRef<((view: EditorView, files: File[]) => Promise<void>) | null>(null);
   // When the parent pushes a new value into the editor (file open),
   // we want to suppress the resulting onChange notification.
   const syncingRef = useRef(false);
+  // The note's BOM and CRLF line breaks: hidden from CodeMirror (which shows
+  // LF), written back on every change so a save keeps the file's bytes (W4.30).
+  const envelopeRef = useRef<TextEnvelope>(splitTextEnvelope(value).envelope);
+  const lastEmittedRef = useRef<string>(value);
   // The line gutter was removed — instead, the current cursor line is shown
   // in a small overlay pill that fades in next to the scrollbar on hover or
   // while the user is actively editing.
@@ -338,9 +364,31 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
             if (f) files.push(f);
           }
         }
-        if (files.length === 0) return false;
+        if (files.length === 0) {
+          // W1.4 — HTML from Word, Google Docs or a website pastes as clean Markdown.
+          const html = event.clipboardData?.getData("text/html");
+          const text = event.clipboardData?.getData("text/plain");
+          if (!html || !shouldConvertPaste(html, text)) return false;
+          const md = pastedHtmlToMarkdown(html);
+          if (!md) return false;
+          event.preventDefault();
+          const { from, to } = view.state.selection.main;
+          view.dispatch({ changes: { from, to, insert: md }, selection: { anchor: from + md.length }, userEvent: "input.paste" });
+          return true;
+        }
         event.preventDefault();
         void handleAssetFiles(view, files);
+        return true;
+      },
+      // Right-click on a Hebrew word (plan W5.26): synonyms, definition and niqqud from the offline
+      // lexicon — only once its pack is installed; Shift+right-click keeps the browser's menu.
+      contextmenu(event, view) {
+        if (event.shiftKey || !lexiconInstalled()) return false;
+        const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+        if (pos === null || !wordAt(view, pos)) return false;
+        event.preventDefault();
+        const at = { x: event.clientX, y: event.clientY };
+        void import("../lexicon/LexiconPopover").then(({ openLexicon }) => openLexicon(view, pos, at));
         return true;
       },
       drop(event, view) {
@@ -357,12 +405,16 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
     });
 
     // Local storage acts as truth for the document.
-    const initialDoc = value;
+    const initialDoc = splitTextEnvelope(value).body;
 
     const baseExtensions = [
+      lineSeparatorCompartment.of(EditorState.lineSeparator.of(lineSeparatorFor(initialDoc))),
       vimCompartment.of([]),
       embedHintExtension(),
+      // W1.3 — ==highlights==, %%comments%% and callout heads, marked.
+      obsidianSourceExtension,
       insertSlashMenuExtension(),
+      wikiLinkCompletion(),
       history(),
       bracketMatching(),
       indentOnInput(),
@@ -388,11 +440,18 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
       EditorView.lineWrapping,
       // Hebrew and English lines each read in their own direction (T25).
       bidiExtension(),
+      // Hebrew typography as you type: ״ ׳ „” ־ – (plan W2.9).
+      hebrewTypographyExtension(),
+      bidiMarksExtension(),
+      // W5.14 — inline formulas as LTR isolates, Ctrl/⌘+M, Hebrew layout inside math.
+      mathBidiExtension(),
       // Accessible name for the contenteditable (role=textbox) surface —
       // without it, screen readers announce an unnamed input (axe:
       // aria-input-field-name).
       // tabindex makes the content explicitly focusable, so its scroller counts as keyboard-reachable (axe scrollable-region-focusable, plan 10.1).
       EditorView.contentAttributes.of({ "aria-label": i18nT("editor.ariaLabel"), tabindex: "0" }),
+      // Spoken structure of the line the cursor lands on (plan W1.23).
+      screenReaderAnnouncements(),
       spellCheckCompartment.of(
         EditorView.contentAttributes.of({ spellcheck: spellCheck ? "true" : "false" }),
       ),
@@ -412,6 +471,7 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
       // self-hosted backend can flip this on with no other config change.
       // Loaded dynamically when toggled on to keep the initial bundle small.
       grammarCompartment.of([]),
+      outlineCompartment.of([]),
       // Live markdown lint — wavy underlines for trailing whitespace,
       // mixed-indent, heading-skip, broken wiki-links. Runs every 250 ms
       // after the user stops typing.
@@ -435,6 +495,16 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
         return user?.name?.trim() || user?.email?.split("@")[0] || null;
       }),
       imageDropPasteHandlers,
+      // W5.5 — Hebrew pasted from a PDF in visual order (or with broken finals): offer the fix.
+      EditorView.updateListener.of((u) => {
+        for (const tr of u.transactions) {
+          if (!tr.isUserEvent("input.paste")) continue;
+          tr.changes.iterChanges((_fa, _ta, fromB, _tb, text) => {
+            const pasted = text.toString();
+            if (pasted.length > 1) offerInSourceEditor(u.view, fromB, pasted);
+          });
+        }
+      }),
       // Shift-Alt-F → format document (Prettier, lazy-loaded on first use).
       formatKeymap(),
       keymap.of([
@@ -446,7 +516,9 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
       ]),
       EditorView.updateListener.of((u) => {
         if (u.docChanged && !syncingRef.current) {
-          onChangeRef.current(u.state.doc.toString());
+          const next = joinTextEnvelope(u.state.doc.toString(), envelopeRef.current);
+          lastEmittedRef.current = next;
+          onChangeRef.current(next);
         }
         // Track the current line for the floating line-number badge.
         if (u.docChanged || u.selectionSet) {
@@ -503,6 +575,7 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
 
     const view = new EditorView({ state: startState, parent: hostRef.current });
     viewRef.current = view;
+    assetFilesRef.current = handleAssetFiles;
 
 
 
@@ -521,11 +594,22 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
     const view = viewRef.current;
     if (!view) return;
     const current = view.state.doc.toString();
-    if (current === value) return;
+    const { body, envelope } = splitTextEnvelope(value);
+    // A value from outside (file open, sync) brings its own BOM / line breaks;
+    // our own emission keeps the ones the note was opened with.
+    if (value !== lastEmittedRef.current) envelopeRef.current = envelope;
+    lastEmittedRef.current = value;
+    if (current === body) return;
     syncingRef.current = true;
     try {
+      // A newly opened file may use other line endings: switch first, since
+      // the inserted text is split with the separator in force before it.
+      const sep = lineSeparatorFor(value);
+      if (view.state.lineBreak !== sep) {
+        view.dispatch({ effects: lineSeparatorCompartment.reconfigure(EditorState.lineSeparator.of(sep)) });
+      }
       view.dispatch({
-        changes: { from: 0, to: current.length, insert: value },
+        changes: { from: 0, to: current.length, insert: body },
       });
     } finally {
       syncingRef.current = false;
@@ -590,8 +674,17 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
             (tr as unknown as { annotations: ReadonlyArray<{ value: unknown }> }).annotations
               .some((a) => a.value === syncConf),
           ),
+          // Plan W1.19: a "view" or "comment" participant can't change the
+          // note (the server refuses it too); remote edits still apply.
+          EditorState.transactionFilter.of((tr) =>
+            !tr.docChanged ||
+            collab.canEdit() ||
+            (tr as unknown as { annotations: ReadonlyArray<{ value: unknown }> }).annotations.some((a) => a.value === syncConf)
+              ? tr
+              : [],
+          ),
         ];
-        if (collab.doc) commentsExt = commentDecorations({ doc: collab.doc });
+        if (collab.doc) commentsExt = commentDecorations({ doc: collab.doc, commentsDoc: collab.commentsDoc });
       }
       if (cancelled || !viewRef.current) return;
       viewRef.current.dispatch({
@@ -663,6 +756,19 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
     })();
     return () => { cancelled = true; };
   }, [grammarCheck]);
+
+  // Outline mode and block operations (plan W2.13): its own lazy chunk.
+  useEffect(() => {
+    let cancelled = false;
+    void import("./outlineExtension").then((m) => {
+      const view = viewRef.current;
+      if (cancelled || !view) return;
+      view.dispatch({ effects: outlineCompartment.reconfigure(m.outlineExtension()) });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Mobile shortcut bar dispatches `lumen-mobile-insert` events. Listen at
   // window level so we receive them regardless of which surface dispatched.
@@ -740,12 +846,83 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
     };
   }, []);
 
+  // W1.4 — "Paste as plain text" / "Paste with formatting" from the palette,
+  // when the WYSIWYG editor is not the one showing.
+  useEffect(() => {
+    function onPaste(e: Event) {
+      const view = viewRef.current;
+      const detail = (e as CustomEvent<PasteDetail>).detail;
+      if (!view || !detail || wysiwygTakesPaste()) return;
+      const insert = detail.mode === "plain" ? detail.text : detail.markdown;
+      const { from, to } = view.state.selection.main;
+      view.dispatch({ changes: { from, to, insert }, selection: { anchor: from + insert.length }, userEvent: "input.paste" });
+      view.focus();
+    }
+    window.addEventListener("lumen-paste", onPaste);
+    return () => window.removeEventListener("lumen-paste", onPaste);
+  }, []);
+
+  // The mobile toolbar (plan W1.25) sends `lumen-mobile-action` {id}. Text
+  // actions are one transaction each, so one undo takes one back.
+  useEffect(() => {
+    function onAction(e: Event) {
+      const view = viewRef.current;
+      const id = (e as CustomEvent<{ id: ToolbarActionId }>).detail?.id;
+      const action = id ? actionById(id) : undefined;
+      if (!view || !action) return;
+      if (action.kind === "history") {
+        (id === "undo" ? undo : redo)(view);
+      } else if (action.kind === "keyboard") {
+        view.contentDOM.blur();
+        return;
+      } else if (action.kind === "image") {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+        input.multiple = true;
+        input.onchange = () => {
+          const files = Array.from(input.files ?? []);
+          if (files.length && assetFilesRef.current) void assetFilesRef.current(view, files);
+        };
+        input.click();
+        return;
+      } else {
+        const { from, to } = view.state.selection.main;
+        const edit = applyTextAction(id!, view.state.doc.toString(), from, to);
+        if (edit && (edit.changes.length || edit.anchor !== from || edit.head !== to)) {
+          view.dispatch({
+            changes: edit.changes,
+            selection: { anchor: edit.anchor, head: edit.head },
+            scrollIntoView: true,
+            userEvent: "input.mobile-toolbar",
+          });
+        }
+      }
+      view.focus();
+    }
+    window.addEventListener("lumen-mobile-action", onAction);
+    return () => window.removeEventListener("lumen-mobile-action", onAction);
+  }, []);
+
+  // W5.5 — "Fix reversed Hebrew (from a PDF)" on the selection, from the palette.
+  useEffect(() => {
+    function onFix(e: Event) {
+      const view = viewRef.current;
+      const done = (e as CustomEvent<{ done: (message: string | null) => void }>).detail?.done;
+      if (!view || !done || wysiwygTakesPaste()) return;
+      done(fixSourceSelection(view));
+    }
+    window.addEventListener(FIX_PDF_HEBREW_EVENT, onFix);
+    return () => window.removeEventListener(FIX_PDF_HEBREW_EVENT, onFix);
+  }, []);
+
   // `lumen-reveal-line` {line} (1-based): jump to and select that line —
   // used by vault citations (T29). With `content` it waits until the
   // just-opened note has actually loaded into the editor.
   useEffect(() => {
     function onReveal(e: Event) {
-      const detail = (e as CustomEvent<{ line: number; content?: string }>).detail;
+      // `select: false` (a tap on reading view, W1.25) puts the cursor at the line's end instead of selecting it.
+      const detail = (e as CustomEvent<{ line: number; content?: string; select?: boolean }>).detail;
       const line = detail?.line;
       if (!line || line < 1) return;
       let tries = 0;
@@ -759,7 +936,7 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
           return;
         }
         const l = view.state.doc.line(line);
-        view.dispatch({ selection: { anchor: l.from, head: l.to }, effects: EditorView.scrollIntoView(l.from, { y: "center" }) });
+        view.dispatch({ selection: detail.select === false ? { anchor: l.to } : { anchor: l.from, head: l.to }, effects: EditorView.scrollIntoView(l.from, { y: "center" }) });
         view.focus();
       };
       go();
@@ -777,8 +954,18 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
       if (!view) return;
       showSpokenRange(view, (e as CustomEvent<{ from: number; to: number } | null>).detail ?? null);
     }
+    // `lumen-speech-word` {from, to} | null: the word inside it (plan W5.6).
+    function onWord(e: Event) {
+      const view = viewRef.current;
+      if (!view) return;
+      showSpokenWord(view, (e as CustomEvent<{ from: number; to: number } | null>).detail ?? null);
+    }
     window.addEventListener("lumen-speech-range", onSelect);
-    return () => window.removeEventListener("lumen-speech-range", onSelect);
+    window.addEventListener("lumen-speech-word", onWord);
+    return () => {
+      window.removeEventListener("lumen-speech-range", onSelect);
+      window.removeEventListener("lumen-speech-word", onWord);
+    };
   }, []);
 
   return (

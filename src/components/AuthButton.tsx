@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { LogIn, LogOut, AlertTriangle } from "lucide-react";
 import { useAuth } from "../auth/useAuth";
 import { describeAuthStatus } from "../auth/authStatus";
-import { AuthDialog } from "./AuthDialog";
 import { t } from "../i18n";
+
+// The dialog loads when it is first opened (startup budget).
+const AuthDialog = lazy(() => import("./AuthDialog").then((m) => ({ default: m.AuthDialog })));
 
 /**
  * Toolbar entry-point for sign in / out. Renders a tiny pill on the right
@@ -164,7 +166,11 @@ export function AuthButton() {
         )}{" "}
         {t("auth.signIn")}
       </button>
-      <AuthDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
+      {dialogOpen && (
+        <Suspense fallback={null}>
+          <AuthDialog open onClose={() => setDialogOpen(false)} />
+        </Suspense>
+      )}
     </>
   );
 }

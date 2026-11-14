@@ -45,8 +45,19 @@ an individual is officially representing the community in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the project maintainers. All complaints will be reviewed and
-investigated promptly and fairly.
+reported to the project maintainers, as described in the
+[community guide](COMMUNITY.md#reporting). All complaints will be reviewed and
+investigated promptly and fairly, and the reporter's identity is kept
+confidential. A Hebrew translation is in [CODE_OF_CONDUCT.he.md](CODE_OF_CONDUCT.he.md).
+
+## Enforcement Guidelines
+
+1. **Correction:** a private, written request from the maintainers explaining
+   what was wrong. A public apology may be requested.
+2. **Warning:** a warning with consequences for continued behavior, and no
+   interaction with the people involved for a specified time.
+3. **Temporary ban:** a temporary ban from any interaction with the community.
+4. **Permanent ban:** a permanent ban from any interaction with the community.
 
 ## Attribution
 

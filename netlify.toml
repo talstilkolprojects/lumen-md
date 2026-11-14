@@ -17,7 +17,7 @@
 # too and block those origins.
 #
 # Netlify's _headers grammar cannot detach the catch-all headers (Cloudflare's
-# `! Header`), so the two runner pages would inherit the app's X-Frame-Options
+# `! Header`), so the two runner pages (and the content frame, plan W4.15) would inherit the app's X-Frame-Options
 # and CSP and the Web Playground / live-js blocks could not run here. The edge
 # function below replaces those two headers for those two paths with the
 # runner policies from security/policy.json (plan 13.2).
@@ -27,6 +27,10 @@
 
 [[edge_functions]]
   path = "/livejs-runner.html"
+  function = "runner-headers"
+
+[[edge_functions]]
+  path = "/content-frame.html"
   function = "runner-headers"
 
 [[headers]]

@@ -1,7 +1,7 @@
 {
   "name": "create-lumen-plugin",
-  "version": "0.1.0",
-  "description": "Scaffold a new Lumen plugin in seconds. Run `npx create-lumen-plugin <name>`.",
+  "version": "0.2.0",
+  "description": "Scaffold a sandboxed Lumen plugin with hot reload and a test kit. Run `npx create-lumen-plugin <name>`.",
   "license": "MIT",
   "type": "module",
   "bin": {

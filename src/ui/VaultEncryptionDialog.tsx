@@ -14,20 +14,25 @@ import {
   changePassphrase,
   disableEncryption,
   enableEncryption,
+  kdfUpgradeAvailable,
   lock,
   repair,
   setAutoLockMinutes,
+  upgradeKdf,
 } from "../storage/vault/encrypted/session";
 import type { ConvertProgress, ConvertReport } from "../storage/vault/encrypted/convert";
 import { WrongPassphraseError, MIN_PASSPHRASE_LENGTH } from "../storage/vault/encrypted/format";
 import "../storage/vault/encrypted/strings";
+import { HelpButton } from "./HelpButton";
+import { explainError } from "../lib/userError";
 
 const field: React.CSSProperties = { width: "100%", padding: "6px 8px", border: "1px solid hsl(var(--border))", borderRadius: 6, background: "transparent", color: "inherit", font: "inherit" };
 const primary: React.CSSProperties = { padding: "6px 14px", border: "none", borderRadius: 6, background: "hsl(var(--accent))", color: "white", cursor: "pointer", justifySelf: "start" };
 const secondary: React.CSSProperties = { padding: "6px 14px", border: "1px solid hsl(var(--border))", borderRadius: 6, background: "transparent", color: "inherit", cursor: "pointer", justifySelf: "start" };
 const muted: React.CSSProperties = { fontSize: 12, color: "hsl(var(--fg-muted))" };
 
-const messageOf = (err: unknown) => (err instanceof WrongPassphraseError ? t("vaultEnc.wrong") : String((err as Error)?.message ?? err));
+/** A vault-lock failure in words (never the error's own text: explainError). */
+const describeVaultError = (err: unknown) => (err instanceof WrongPassphraseError ? t("vaultEnc.wrong") : explainError(err, "vault-encryption"));
 
 function Field({ label, value, onChange, autoComplete = "new-password" }: { label: string; value: string; onChange: (v: string) => void; autoComplete?: string }) {
   return (
@@ -40,7 +45,7 @@ function Field({ label, value, onChange, autoComplete = "new-password" }: { labe
 
 function Alert({ children }: { children: ReactNode }) {
   return (
-    <div role="alert" style={{ fontSize: 12, color: "hsl(0 70% 50%)" }}>
+    <div role="alert" style={{ fontSize: 12, color: "hsl(var(--danger))" }}>
       {children}
     </div>
   );
@@ -84,7 +89,7 @@ function TurnOn({ onDone }: { onDone: () => void }) {
       setRecovery(null);
       if (r) setLines([t("vaultEnc.doneOn"), ...reportLines(r.report)]);
     } catch (err) {
-      setError(messageOf(err));
+      setError(describeVaultError(err));
     } finally {
       setBusy(false);
     }
@@ -137,7 +142,7 @@ function TurnOn({ onDone }: { onDone: () => void }) {
   return (
     <form onSubmit={submit} style={{ display: "grid", gap: 10 }}>
       <div style={{ fontSize: 13 }}>{t("vaultEnc.intro")}</div>
-      <div role="note" style={{ fontSize: 13, padding: "8px 10px", borderInlineStart: "3px solid hsl(40 90% 50%)", background: "hsl(40 90% 50% / 0.08)" }}>
+      <div role="note" style={{ fontSize: 13, padding: "8px 10px", borderInlineStart: "3px solid hsl(var(--warning))", background: "hsl(var(--warning) / 0.08)" }}>
         {t("vaultEnc.warning")}
       </div>
       <Field label={t("vaultEnc.passphrase")} value={pass} onChange={setPass} />
@@ -153,7 +158,9 @@ function TurnOn({ onDone }: { onDone: () => void }) {
 
 function Manage({ onDone }: { onDone: () => void }) {
   const [minutes, setMinutes] = useState(autoLockMinutes());
-  const [panel, setPanel] = useState<"none" | "change" | "off">("none");
+  const [panel, setPanel] = useState<"none" | "change" | "off" | "kdf">("none");
+  // Review 12.11: a PBKDF2 vault moves to Argon2id only when the user asks.
+  const [canUpgrade, setCanUpgrade] = useState(kdfUpgradeAvailable());
   const [cur, setCur] = useState("");
   const [pass, setPass] = useState("");
   const [again, setAgain] = useState("");
@@ -168,7 +175,7 @@ function Manage({ onDone }: { onDone: () => void }) {
     try {
       setInfo(await job());
     } catch (err) {
-      setError(messageOf(err));
+      setError(describeVaultError(err));
     } finally {
       setBusy(false);
       setProgress(null);
@@ -226,7 +233,34 @@ function Manage({ onDone }: { onDone: () => void }) {
         <button type="button" onClick={() => setPanel(panel === "off" ? "none" : "off")} style={secondary}>
           {t("vaultEnc.turnOff")}
         </button>
+        {canUpgrade && (
+          <button type="button" onClick={() => setPanel(panel === "kdf" ? "none" : "kdf")} style={secondary} data-testid="vault-kdf-upgrade">
+            {t("vaultEnc.kdfUpgrade")}
+          </button>
+        )}
       </div>
+      {panel === "kdf" && canUpgrade && (
+        <form
+          style={{ display: "grid", gap: 8 }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            void run(async () => {
+              await upgradeKdf(cur);
+              setCanUpgrade(kdfUpgradeAvailable());
+              setPanel("none");
+              return [t("vaultEnc.kdfUpgraded")];
+            });
+          }}
+        >
+          <div role="note" style={{ fontSize: 13, padding: "8px 10px", borderInlineStart: "3px solid hsl(40 90% 50%)", background: "hsl(40 90% 50% / 0.08)" }}>
+            {t("vaultEnc.kdfUpgradeNote")}
+          </div>
+          <Field label={t("vaultEnc.current")} value={cur} onChange={setCur} autoComplete="current-password" />
+          <button type="submit" disabled={busy || !cur} style={primary}>
+            {t("vaultEnc.kdfUpgrade")}
+          </button>
+        </form>
+      )}
       {panel === "change" && (
         <form
           style={{ display: "grid", gap: 8 }}
@@ -289,7 +323,7 @@ export function VaultEncryptionDialog({ onClose }: { onClose: () => void }) {
   }, [onClose]);
 
   return (
-    <div role="presentation" onClick={(e) => e.target === e.currentTarget && onClose()} style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgb(0 0 0 / 0.35)", display: "grid", placeItems: "center", padding: 16 }}>
+    <div role="presentation" onClick={(e) => e.target === e.currentTarget && onClose()} style={{ position: "fixed", inset: 0, zIndex: 9000, background: "var(--overlay)", display: "grid", placeItems: "center", padding: 16 }}>
       <div
         role="dialog"
         aria-modal="true"
@@ -301,6 +335,7 @@ export function VaultEncryptionDialog({ onClose }: { onClose: () => void }) {
           <strong id="vault-enc-title" style={{ flex: 1 }}>
             🔐 {t("vaultEnc.title")}
           </strong>
+          <HelpButton topic="security/vault-encryption" />
           <button type="button" onClick={onClose} aria-label={t("vaultEnc.close")} style={{ background: "none", border: 0, cursor: "pointer", color: "inherit" }}>
             ✕
           </button>

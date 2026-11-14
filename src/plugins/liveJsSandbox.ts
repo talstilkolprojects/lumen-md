@@ -10,6 +10,7 @@
  * removes the iframe, which kills the worker with it.
  */
 import type { WorkerLike, WorkerRunPayload } from "./liveJsShared";
+import { airplaneFlagOn } from "../privacy/airplaneBoot";
 
 export const RUNNER_CHANNEL = "lumen-livejs";
 
@@ -115,10 +116,14 @@ export class SandboxedWorker implements WorkerLike {
   }
 }
 
-/** A sandboxed live-js worker, or null where iframes can't be created. */
+/**
+ * A sandboxed live-js worker, or null where iframes can't be created, or
+ * while airplane mode is on (the runner is a URL-loaded frame with its own
+ * header policy, which the airplane CSP does not govern; review 12.11).
+ */
 export function makeSandboxedWorker(): SandboxedWorker | null {
   try {
-    if (typeof document === "undefined" || !document.body) return null;
+    if (typeof document === "undefined" || !document.body || airplaneFlagOn()) return null;
     return new SandboxedWorker();
   } catch {
     return null;

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "lumen.example.toc",
+  "name": "Table of contents",
+  "version": "1.0.0",
+  "description": "Inserts a table of contents of the open note's headings at the cursor, as [[#Heading]] links — Hebrew and English.",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    { "id": "commands", "reason": "Adds the “Insert table of contents” command" },
+    { "id": "document:read", "reason": "To find the headings of the open note" },
+    { "id": "document:write", "reason": "Inserts the table at the cursor" },
+    { "id": "settings", "reason": "Remembers the deepest heading level to include" }
+  ]
+}

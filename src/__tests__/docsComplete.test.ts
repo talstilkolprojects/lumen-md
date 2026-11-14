@@ -32,6 +32,7 @@ const ALL = {
   "blocks/ref.md": "",
   "he/blocks/ref.md": "",
   "index.mdx": "",
+  "he/index.mdx": "",
 };
 
 describe("docs-complete (plan 13.1)", () => {
@@ -66,7 +67,7 @@ describe("docs-complete (plan 13.1)", () => {
   });
 
   it("an orphan page (exists, not linked from the sidebar) is reported", () => {
-    const problems = check({ config: CONFIG, required: {}, ...tree({ ...ALL, "ai/local-agents.md": "" }) });
+    const problems = check({ config: CONFIG, required: {}, ...tree({ ...ALL, "ai/local-agents.md": "", "he/ai/local-agents.md": "" }) });
     expect(problems).toEqual(["ai/local-agents: the page exists but nothing in the sidebar links to it"]);
   });
 
@@ -90,6 +91,15 @@ describe("docs-complete (plan 13.1)", () => {
     expect(check({ config: CONFIG, required: pending, ...tree(files) })).toEqual([]);
     expect(check({ config: CONFIG, required: pending, ...tree(ALL) })).toEqual([
       'sync/git: is listed as pending (#269) but the page exists — remove it from docs/required-pages.json "pending"',
+    ]);
+  });
+
+  it("parity (plan W1.28): every page in both languages, the splash page and pages outside the sidebar too", () => {
+    const files: Record<string, string> = { ...ALL, "he/extra.md": "" };
+    delete files["he/index.mdx"];
+    expect(check({ config: CONFIG, required: { areas: { intro: "start/intro" } }, ...tree(files) })).toEqual([
+      "index.mdx: no Hebrew twin (docs/src/content/docs/he/index.mdx)",
+      "he/extra.md: a Hebrew page with no English twin (extra.md)",
     ]);
   });
 

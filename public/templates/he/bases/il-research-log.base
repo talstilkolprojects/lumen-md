@@ -1,0 +1,24 @@
+# יומן מחקר — נוצר מהתבנית יומן מחקר / ניסוי
+filters:
+  and:
+    - 'type == "experiment"'
+properties:
+  file.name:
+    displayName: "רשומה"
+  note.date:
+    displayName: "תאריך"
+  note.project:
+    displayName: "פרויקט"
+  note.outcome:
+    displayName: "תוצאה"
+views:
+  - type: table
+    name: "יומן מחקר"
+    order:
+      - file.name
+      - note.date
+      - note.project
+      - note.outcome
+    sort:
+      - property: note.date
+        direction: DESC

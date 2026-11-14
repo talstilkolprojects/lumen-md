@@ -11,7 +11,7 @@
  * (`lfsSkipped`); copying the real bytes over the pointer would commit the
  * whole object as an ordinary blob and undo the repository's LFS tracking.
  */
-import { isLfsPointer } from "./gitMerge";
+import { isLfsPointer } from "./gitText";
 
 /** The part of a promise-based fs the mirror uses (lightning-fs, node's fs.promises). */
 export interface MirrorFs {

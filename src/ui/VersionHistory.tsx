@@ -33,7 +33,7 @@ function StorageStatus() {
         ? t("versionHistory.storage.persisted")
         : t("versionHistory.storage.notPersisted");
   return (
-    <div data-testid="storage-status" data-persisted={String(state.persisted)} style={{ marginBlockStart: 6, fontSize: 11, lineHeight: 1.4, color: state.persisted === false || (percent ?? 0) >= 80 ? "hsl(30 90% 45%)" : "hsl(var(--fg-muted))" }}>
+    <div data-testid="storage-status" data-persisted={String(state.persisted)} style={{ marginBlockStart: 6, fontSize: 11, lineHeight: 1.4, color: state.persisted === false || (percent ?? 0) >= 80 ? "hsl(var(--warning))" : "hsl(var(--fg-muted))" }}>
       <div>{text}</div>
       {percent !== null && <div>{t("versionHistory.storage.usage", { used: formatBytes(state.usage ?? 0), quota: formatBytes(state.quota ?? 0), percent: String(percent) })}</div>}
       {state.persisted === false && (
@@ -48,6 +48,9 @@ function StorageStatus() {
     </div>
   );
 }
+import { EmptyState } from "./EmptyState";
+import { HelpButton } from "./HelpButton";
+import "./versionHistoryStrings";
 
 /** Save a snapshot (kept for callers of the old API). */
 export async function saveSnapshot(name: string, content: string): Promise<void> {
@@ -103,7 +106,7 @@ export function VersionHistory({ fileName, currentContent, onRestore, onClose }:
         inset: 0,
         zIndex: 9999,
         display: "flex",
-        background: "hsl(0 0% 0% / 0.5)",
+        background: "var(--overlay)",
         backdropFilter: "blur(4px)",
       }}
     >
@@ -145,9 +148,19 @@ export function VersionHistory({ fileName, currentContent, onRestore, onClose }:
           </button>
         ))}
         {snapshots.length === 0 && (
-          <div style={{ padding: 16, color: "hsl(var(--fg-muted))", fontSize: 12 }}>
-            {t("versionHistory.noVersions")}
-          </div>
+          <EmptyState
+            message={t("versionHistory.noVersions")}
+            action={{
+              label: t("versionHistory.keepNow"),
+              onClick: () => {
+                void recordSnapshot(fileName, currentContent, "manual")
+                  .catch(() => false)
+                  .then(() => loadSnapshots(fileName))
+                  .then(setSnapshots)
+                  .catch(() => undefined);
+              },
+            }}
+          />
         )}
       </div>
 
@@ -179,6 +192,7 @@ export function VersionHistory({ fileName, currentContent, onRestore, onClose }:
                 {t("versionHistory.restore")}
               </button>
             )}
+            <HelpButton topic="workspace/panels#version-history" />
             <button onClick={onClose} aria-label={t("versionHistory.close")} className="icon-btn" style={{ width: "auto", padding: "4px 12px", fontSize: 12 }}>
               {t("versionHistory.close")}
             </button>

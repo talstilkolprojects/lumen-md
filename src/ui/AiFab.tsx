@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkles, X, Search } from "lucide-react";
 import type { Command } from "./CommandPalette";
 import { t } from "../i18n";
+import { countCommand } from "../metrics/count";
 
 /**
  * Floating "AI Prompts" button anchored beside the document body.
@@ -59,6 +60,7 @@ export function AiFab({ commands }: Props) {
   function run(cmd: Command) {
     setOpen(false);
     setQuery("");
+    countCommand(cmd.id);
     cmd.action();
   }
 
@@ -93,9 +95,9 @@ export function AiFab({ commands }: Props) {
           fontSize: 13,
           fontWeight: 600,
           color: "white",
-          background: "linear-gradient(135deg,#c084fc 0%,#f97316 100%)",
-          boxShadow: "0 8px 24px -6px hsl(280 92% 55% / 0.45)",
-          transition: "transform 120ms ease, box-shadow 120ms ease",
+          background: "var(--gradient-ai)",
+          boxShadow: "var(--shadow-accent)",
+          transition: "transform var(--duration-fast) var(--ease-out)",
         }}
       >
         {open ? <X size={16} aria-hidden /> : <Sparkles size={16} aria-hidden />}
@@ -116,9 +118,9 @@ export function AiFab({ commands }: Props) {
             background: "hsl(var(--bg))",
             border: "1px solid hsl(var(--border-strong))",
             borderRadius: 12,
-            boxShadow: "0 16px 48px -8px hsl(0 0% 0% / 0.45)",
+            boxShadow: "var(--shadow-xl)",
             padding: "6px 0",
-            animation: "cmdSlideIn 140ms ease",
+            animation: "cmdSlideIn var(--duration-fast) var(--ease-out)",
           }}
         >
           <div

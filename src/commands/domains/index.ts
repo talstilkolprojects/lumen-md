@@ -8,17 +8,19 @@ import { buildFileCommands, buildRecentCommands, buildSyncCommands, buildTemplat
 import { buildExportCommands } from "./export";
 import { buildLanguageCommands, buildPanelCommands, buildThemeToggleCommands, buildViewCommands } from "./view";
 import { buildEditCommands, buildInsertCommands } from "./edit";
-import { buildHebrewDictionaryCommands, buildPluginCommands, buildWritingGoalCommands } from "./tools";
+import { buildHebrewDictionaryCommands, buildPluginCommands, buildUsabilityStudyCommands, buildWritingGoalCommands } from "./tools";
 import { buildAiCancelCommands, buildAiCapabilityCommands, buildAiControlCommands, buildAiModelCommands, buildAiProviderCommands, buildPrivacyModeCommands } from "./ai";
 import { buildAltTextCommands, buildDocumentAgentCommands, buildGrammarCommands, buildNikudCommands, buildPromptTemplateCommands } from "./agents";
 import { buildBatchCommands } from "./batch";
 import { buildResearchCommands } from "./research";
 import { buildDigestCommands, buildEncryptionCommands, buildVaultDoctorCommands, buildVaultTransferCommands } from "./vault";
-import { buildDesktopUpdateCommands, buildVaultLocationCommands } from "./vaultLocation";
+import { buildDesktopUpdateCommands, buildVaultLocationCommands, buildWhatsNewCommands, buildFeatureFlagCommands } from "./vaultLocation";
 import { buildReadAloudCommands, buildVoiceCommands } from "./voice";
 import { buildGitCommands } from "./git";
 import { buildCollabCommands, buildCommentCommands } from "./collab";
-import { buildBillingCommands, buildOptionalPanelCommands } from "./settings";
+import { buildBillingCommands, buildOptionalPanelCommands, buildAirplaneCommands } from "./settings";
+import { buildAccessibilityCommands } from "./a11y";
+import { buildSourceCommands } from "./sources";
 
 export const COMMAND_SECTIONS: ReadonlyArray<(ctx: CommandContext) => Command[]> = [
   buildRecentCommands,
@@ -34,9 +36,12 @@ export const COMMAND_SECTIONS: ReadonlyArray<(ctx: CommandContext) => Command[]>
   buildBatchCommands,
   buildAiModelCommands,
   buildHebrewDictionaryCommands,
+  buildUsabilityStudyCommands,
   buildVaultTransferCommands,
   buildVaultLocationCommands,
   buildDesktopUpdateCommands,
+  buildWhatsNewCommands,
+  buildFeatureFlagCommands,
   buildTrashCommands,
   buildSyncCommands,
   buildTaskCommands,
@@ -50,6 +55,7 @@ export const COMMAND_SECTIONS: ReadonlyArray<(ctx: CommandContext) => Command[]>
   buildLanguageCommands,
   buildPanelCommands,
   buildOptionalPanelCommands,
+  buildAirplaneCommands,
   buildCommentCommands,
   buildTemplateCommands,
   buildVoiceCommands,
@@ -64,4 +70,7 @@ export const COMMAND_SECTIONS: ReadonlyArray<(ctx: CommandContext) => Command[]>
   buildWorkspaceFileCommands,
   buildThemeToggleCommands,
   buildInsertCommands,
+  // Appended (plan W1.23) so the earlier order stays as pinned.
+  buildAccessibilityCommands,
+  buildSourceCommands,
 ];

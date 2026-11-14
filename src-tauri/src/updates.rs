@@ -1,20 +1,54 @@
 //! Desktop updates (plan 11.5.1): `tauri-plugin-updater`, driven from two
 //! commands so the WebView never talks to the update server itself.
 //!
-//! The update key and server are build settings, not code:
-//!   LUMEN_UPDATER_PUBKEY    minisign public key (Tal's, plan 15.7)
-//!   LUMEN_UPDATER_ENDPOINT  https URL of latest.json (GitHub Releases)
+//! The update key and servers are build settings, not code:
+//!   LUMEN_UPDATER_PUBKEY         minisign public key (Tal's, plan 15.7)
+//!   LUMEN_UPDATER_ENDPOINT       https URL of the stable latest.json (GitHub Releases)
+//!   LUMEN_UPDATER_ENDPOINT_BETA  https URL of the beta channel's latest.json (plan 14.4);
+//!                                without it, the beta channel follows stable
+//! The WebView names a channel ("stable" or "beta"), never a URL.
 //! A build without them has no updater: the commands say so, and nothing
 //! is ever fetched. Checks run only when the user asks (or turns on
 //! automatic checks); the app's privacy policy is enforced by the caller.
 
 use serde::Serialize;
 
-/// The build's update settings, if it has them.
-pub fn configured() -> Option<(&'static str, &'static str)> {
+/// Which releases a user follows (plan 14.4).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Channel {
+    Stable,
+    Beta,
+}
+
+impl Channel {
+    /// Anything but "beta" is stable, so a bad value never widens what is installed.
+    pub fn parse(s: Option<&str>) -> Channel {
+        match s.map(str::trim) {
+            Some("beta") => Channel::Beta,
+            _ => Channel::Stable,
+        }
+    }
+}
+
+/// The endpoint for a channel, from the build's settings: beta uses its own
+/// endpoint when the build has one, and the stable one otherwise.
+pub fn endpoint_for(channel: Channel, stable: &'static str, beta: &'static str) -> Option<&'static str> {
+    let pick = match channel {
+        Channel::Beta if valid_endpoint(beta.trim()) => beta.trim(),
+        _ => stable.trim(),
+    };
+    valid_endpoint(pick).then_some(pick)
+}
+
+/// The build's update settings for a channel, if it has them.
+pub fn configured(channel: Channel) -> Option<(&'static str, &'static str)> {
     let key = option_env!("LUMEN_UPDATER_PUBKEY").unwrap_or("").trim();
-    let url = option_env!("LUMEN_UPDATER_ENDPOINT").unwrap_or("").trim();
-    if key.is_empty() || !valid_endpoint(url) {
+    let url = endpoint_for(
+        channel,
+        option_env!("LUMEN_UPDATER_ENDPOINT").unwrap_or(""),
+        option_env!("LUMEN_UPDATER_ENDPOINT_BETA").unwrap_or(""),
+    )?;
+    if key.is_empty() {
         return None;
     }
     Some((key, url))
@@ -38,11 +72,11 @@ pub enum UpdateStatus {
 
 #[cfg(desktop)]
 pub mod imp {
-    use super::{configured, UpdateStatus};
+    use super::{configured, Channel, UpdateStatus};
     use tauri_plugin_updater::UpdaterExt;
 
-    fn updater(app: &tauri::AppHandle) -> Result<Option<tauri_plugin_updater::Updater>, String> {
-        let Some((key, url)) = configured() else { return Ok(None) };
+    fn updater(app: &tauri::AppHandle, channel: Channel) -> Result<Option<tauri_plugin_updater::Updater>, String> {
+        let Some((key, url)) = configured(channel) else { return Ok(None) };
         let endpoint = url.parse().map_err(|e| format!("{e}"))?;
         app.updater_builder()
             .pubkey(key)
@@ -54,9 +88,9 @@ pub mod imp {
     }
 
     #[tauri::command]
-    pub async fn update_check(app: tauri::AppHandle) -> Result<UpdateStatus, String> {
+    pub async fn update_check(app: tauri::AppHandle, channel: Option<String>) -> Result<UpdateStatus, String> {
         let current = app.package_info().version.to_string();
-        let Some(u) = updater(&app)? else { return Ok(UpdateStatus::NotConfigured) };
+        let Some(u) = updater(&app, Channel::parse(channel.as_deref()))? else { return Ok(UpdateStatus::NotConfigured) };
         match u.check().await.map_err(|e| e.to_string())? {
             Some(up) => Ok(UpdateStatus::Available { current, version: up.version, notes: up.body }),
             None => Ok(UpdateStatus::UpToDate { current }),
@@ -66,8 +100,8 @@ pub mod imp {
     /// Download, verify the signature (the plugin refuses an unsigned or
     /// wrongly signed file) and install; the app restarts.
     #[tauri::command]
-    pub async fn update_install(app: tauri::AppHandle) -> Result<(), String> {
-        let Some(u) = updater(&app)? else { return Err("updates are not configured in this build".into()) };
+    pub async fn update_install(app: tauri::AppHandle, channel: Option<String>) -> Result<(), String> {
+        let Some(u) = updater(&app, Channel::parse(channel.as_deref()))? else { return Err("updates are not configured in this build".into()) };
         let Some(up) = u.check().await.map_err(|e| e.to_string())? else { return Ok(()) };
         up.download_and_install(|_, _| {}, || {}).await.map_err(|e| e.to_string())?;
         app.restart();
@@ -91,8 +125,24 @@ mod tests {
     fn a_build_without_a_key_has_no_updater() {
         // CI and local builds do not set LUMEN_UPDATER_PUBKEY.
         if option_env!("LUMEN_UPDATER_PUBKEY").is_none() {
-            assert_eq!(configured(), None);
+            assert_eq!(configured(Channel::Stable), None);
+            assert_eq!(configured(Channel::Beta), None);
         }
+    }
+
+    #[test]
+    fn beta_has_its_own_endpoint_and_falls_back_to_stable() {
+        let stable = "https://github.com/talstilkol/lumen-md/releases/latest/download/latest.json";
+        let beta = "https://github.com/talstilkol/lumen-md/releases/download/beta-channel/latest.json";
+        assert_eq!(endpoint_for(Channel::Stable, stable, beta), Some(stable));
+        assert_eq!(endpoint_for(Channel::Beta, stable, beta), Some(beta));
+        assert_eq!(endpoint_for(Channel::Beta, stable, ""), Some(stable));
+        // A beta endpoint off the release hosts is ignored, never used.
+        assert_eq!(endpoint_for(Channel::Beta, stable, "https://evil.example/latest.json"), Some(stable));
+        assert_eq!(endpoint_for(Channel::Stable, "", beta), None);
+        assert_eq!(Channel::parse(Some("beta")), Channel::Beta);
+        assert_eq!(Channel::parse(Some("nightly")), Channel::Stable);
+        assert_eq!(Channel::parse(None), Channel::Stable);
     }
 
     #[test]

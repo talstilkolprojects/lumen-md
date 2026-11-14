@@ -76,6 +76,7 @@ export const PROBES = [
   ["/tesseract/worker.min.js", "the OCR worker"],
   ["/playground-runner.html", "the playground runner (Pages: 308 to /playground-runner)"],
   ["/livejs-runner.html", "the live-js runner (Pages: 308 to /livejs-runner)"],
+  ["/content-frame.html", "the content frame for allowed remote media and embeds (Pages: 308 to /content-frame)"],
   ["/playground/vue.esm-browser.js", "a playground vendor file (CORS)"],
   ["/favicon.svg", "a static file"],
   ["/missing-image.png", "a missing top-level file"],

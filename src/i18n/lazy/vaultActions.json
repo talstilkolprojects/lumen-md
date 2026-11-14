@@ -1,0 +1,15 @@
+{
+  "vault.export.done": "Exported {n} files.",
+  "vault.export.doneFolder": "Exported {n} files into the folder “{folder}”.",
+  "vault.export.failed": "Export failed: {error}",
+  "vault.export.folder": "Into a folder on this computer",
+  "vault.export.where": "Export as…",
+  "vault.export.zip": "One .zip file",
+  "vault.prompt.decryptPassword": "Enter decryption password:",
+  "vault.prompt.encryptPassword": "Enter encryption password:",
+  "toast.digest.readFailed": "Digest not saved: {count} changed notes couldn't be read. Try again.",
+  "toast.documentDecrypted": "🔓 Document decrypted",
+  "toast.documentEncrypted": "🔒 Document encrypted",
+  "toast.documentIsNotEncrypted": "Document is not encrypted",
+  "toast.wrongPassword": "❌ Wrong password"
+}

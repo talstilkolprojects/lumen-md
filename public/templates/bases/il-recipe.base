@@ -1,0 +1,21 @@
+# Recipes — from the template Recipe (meat / dairy / pareve)
+filters:
+  and:
+    - 'type == "recipe"'
+properties:
+  file.name:
+    displayName: "Recipe"
+  note.kashrut:
+    displayName: "Kashrut"
+  note.minutes:
+    displayName: "Minutes"
+  note.shabbat:
+    displayName: "Shabbat"
+views:
+  - type: cards
+    name: "Recipes"
+    order:
+      - file.name
+      - note.kashrut
+      - note.minutes
+      - note.shabbat

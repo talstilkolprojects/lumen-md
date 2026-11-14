@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi } from "vitest";
 import { Bm25Index, MAX_PREFIX_POSTINGS } from "../search/bm25";
-import { documentTerms, queryTerms, stemTerms, surfaceTokens } from "../text/searchTokens";
+import { documentTerms, queryTerms, stemTerms, surfaceTokens, KTIV, LEMMA } from "../text/searchTokens";
 
 describe("Hebrew search tokens", () => {
   it("strip niqqud and fold final letters, keeping the word's own form", () => {
@@ -14,9 +14,11 @@ describe("Hebrew search tokens", () => {
   });
 
   it("add prefix-less stems beside the exact form, without stripping below three letters", () => {
-    expect(documentTerms("והבית")).toEqual(["והבית", "~והבית", "~הבית", "~בית"]);
+    // (W2.11's morphology terms, ≈ and ≃, are tested in hebrewMorph.test.ts.)
+    const surfaceAndStems = (text: string) => documentTerms(text).filter((t) => !t.startsWith(KTIV) && !t.startsWith(LEMMA));
+    expect(surfaceAndStems("והבית")).toEqual(["והבית", "~והבית", "~הבית", "~בית"]);
     // ש is a prefix letter, but "לומ" keeps three letters and is only a weaker stem; "שלומ" itself stays exact.
-    expect(documentTerms("שלום")).toEqual(["שלומ", "~שלומ", "~לומ"]);
+    expect(surfaceAndStems("שלום")).toEqual(["שלומ", "~שלומ", "~לומ"]);
     expect(stemTerms("בית")).toEqual(["~בית"]); // three letters: nothing stripped
     expect(stemTerms("hello")).toEqual([]);
   });
@@ -76,7 +78,8 @@ describe("Bm25Index", () => {
     expect(ix.size).toBe(4);
     ix.set("b.md", "גינה ופרחים", "b");
     expect(ix.search("ספר")).toEqual([]);
-    expect(ix.search("גינה").map((h) => h.id)).toEqual(["b.md"]);
+    // b.md has the word; d.md ("garden") only its English equivalent (W2.11), so it comes after.
+    expect(ix.search("גינה").map((h) => h.id)).toEqual(["b.md", "d.md"]);
     ix.remove("a.md");
     expect(ix.size).toBe(3);
     expect(ix.search("הבית").map((h) => h.id)).not.toContain("a.md");
@@ -127,7 +130,8 @@ describe("Bm25Index", () => {
 
   it("filters before the limit", () => {
     const ix = index();
-    expect(ix.search("בית", { filter: (id) => id !== "b.md" }).map((h) => h.id)).toEqual(["a.md"]);
+    // d.md ("house") matches only through the English equivalent of בית (W2.11), after the Hebrew note.
+    expect(ix.search("בית", { filter: (id) => id !== "b.md" }).map((h) => h.id)).toEqual(["a.md", "d.md"]);
     expect(ix.search("בית", { limit: 1 })).toHaveLength(1);
   });
 });

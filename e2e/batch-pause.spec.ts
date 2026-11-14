@@ -1,4 +1,5 @@
 import { test, expect, type Route } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * Plan 5.8 — a local batch job pauses, survives a reload paused, resumes
@@ -6,7 +7,7 @@ import { test, expect, type Route } from "@playwright/test";
  * model is a scripted Ollama on localhost (routed here), whose answers the
  * test releases one at a time, so nothing depends on timing.
  */
-test("batch: pause → reload → resume finishes the job; the panel shows progress", async ({ page }) => {
+test("batch: pause → reload → resume finishes the job; the panel shows progress", async ({ page, browserName }) => {
   test.setTimeout(120_000);
   const held: Array<() => void> = [];
   let auto = false;
@@ -57,7 +58,7 @@ test("batch: pause → reload → resume finishes the job; the panel shows progr
       return false;
     }
   });
-  test.skip(!wrote, "OPFS writes from the page are unavailable in this engine's test context");
+  vaultOrSkip(wrote, browserName);
 
   const run = (id: string) => page.evaluate((cmd) => window.dispatchEvent(new CustomEvent("lumen-run-command", { detail: { id: cmd } })), id);
   const prompt = page.locator(".prompt-backdrop");

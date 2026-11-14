@@ -5,6 +5,7 @@
  * returns the three logit tensors.
  */
 import { argmax, chunks, decodeChunk, encode, margin, removeNikud, sameSkeleton, canNiqqud } from "./nikud";
+import { nakdimonOptions, wordAlternatives, type LetterOption, type WordAlternatives } from "./nikudAlt";
 
 export interface Logits {
   /** [rows, length, 16] */
@@ -30,41 +31,126 @@ export interface NikudOptions {
 
 const HEBREW_WORD = /[א-ת][א-תְ-ׇ'"״׳]*/g;
 
+/** What a niqqud model gives for one batch of chunks: each chunk pointed, its letters' options (W2.5) and which letters it is unsure of. */
+export interface ChunkResult {
+  text: string;
+  /** Per character of the chunk: the letter's options, best first (undefined for a non-letter). */
+  options?: Array<LetterOption[] | undefined>;
+  unsure: boolean[];
+}
+
+/** A niqqud model, whichever: Nakdimon (`nakdimonEngine`) or DictaBERT-char-menaked (src/text/menaked.ts). */
+export interface NikudEngine {
+  /** Longest chunk, in characters. */
+  maxlen: number;
+  run(batch: string[], opts: { partialMargin: number; withOptions: boolean }): Promise<ChunkResult[]>;
+}
+
+/** Nakdimon behind the engine interface: `infer` returns its three logit tensors. */
+export function nakdimonEngine(infer: Infer, maxlen = 100): NikudEngine {
+  return {
+    maxlen,
+    async run(batch, o) {
+      const { ids, length } = encode(batch);
+      const logits = await infer(ids, batch.length, length);
+      const pred = {
+        niqqud: argmax(logits.N, batch.length, length, 16),
+        dagesh: argmax(logits.D, batch.length, length, 3),
+        sin: argmax(logits.S, batch.length, length, 4),
+      };
+      const probs = softmaxRows(logits.N, batch.length * length, 16);
+      return batch.map((chunk, row) => ({
+        text: decodeChunk(chunk, pred, row, length),
+        // UTF-16 units, as the model reads them (chunks() splits surrogate pairs).
+        options: o.withOptions ? chunk.split("").map((c, i) => (/[א-ת]/.test(c) ? nakdimonOptions(c, logits, row * length + i) : undefined)) : undefined,
+        unsure: chunk.split("").map((c, i) => canNiqqud(c) && margin(probs, row * length + i, 16) < o.partialMargin),
+      }));
+    },
+  };
+}
+
+/** The pointed text and, per pointed word, its alternatives (plan W2.5). */
+export interface DetailedNikud {
+  text: string;
+  words: WordAlternatives[];
+}
+
 /**
  * Point `text`. Existing points are removed first (the model reads plain
  * letters). Throws when the result's consonant skeleton differs from the
  * input's (the validator, 6.3.4) — that would be a bug, never shown.
  */
-export async function addNikud(text: string, infer: Infer, opts: NikudOptions = {}): Promise<string> {
+export async function addNikud(text: string, model: Infer | NikudEngine, opts: NikudOptions = {}): Promise<string> {
+  return (await pointDetailed(text, model, opts, false)).text;
+}
+
+/**
+ * Point `text` and return, for every pointed word, its most probable
+ * readings (the first is the one in the text). Every reading passes the
+ * consonant validator. With `partial`, only the ambiguous words are pointed
+ * and listed.
+ */
+export async function addNikudDetailed(text: string, model: Infer | NikudEngine, opts: NikudOptions = {}): Promise<DetailedNikud> {
+  return pointDetailed(text, model, opts, true);
+}
+
+async function pointDetailed(text: string, model: Infer | NikudEngine, opts: NikudOptions, withOptions: boolean): Promise<DetailedNikud> {
+  const engine = typeof model === "function" ? nakdimonEngine(model, opts.maxlen ?? 100) : model;
   const plain = removeNikud(text);
-  const parts = chunks(plain, opts.maxlen ?? 100);
+  const parts = chunks(plain, opts.maxlen ?? engine.maxlen);
   const per = opts.batch ?? 16;
   let out = "";
   const unsure: Array<[number, number]> = []; // [start, end) in `plain` of letters the model is unsure about
+  const options: Array<LetterOption[] | undefined> = []; // per character of `plain`
   let offset = 0;
   for (let b = 0; b < parts.length; b += per) {
     if (opts.signal?.aborted) throw new DOMException("aborted", "AbortError");
     const batch = parts.slice(b, b + per);
-    const { ids, length } = encode(batch);
-    const logits = await infer(ids, batch.length, length);
-    const pred = {
-      niqqud: argmax(logits.N, batch.length, length, 16),
-      dagesh: argmax(logits.D, batch.length, length, 3),
-      sin: argmax(logits.S, batch.length, length, 4),
-    };
+    const results = await engine.run(batch, { partialMargin: opts.partialMargin ?? 0.5, withOptions });
     batch.forEach((chunk, row) => {
-      out += decodeChunk(chunk, pred, row, length);
-      if (opts.partial) {
-        const probs = softmaxRows(logits.N, batch.length * length, 16);
-        for (let i = 0; i < chunk.length; i++) {
-          if (canNiqqud(chunk[i]) && margin(probs, row * length + i, 16) < (opts.partialMargin ?? 0.5)) unsure.push([offset + i, offset + i + 1]);
-        }
-      }
+      const r = results[row];
+      out += r.text;
+      if (opts.partial) r.unsure.forEach((u, i) => u && unsure.push([offset + i, offset + i + 1]));
+      if (withOptions) for (let i = 0; i < chunk.length; i++) options.push(r.options?.[i]);
       offset += chunk.length;
     });
   }
   if (!sameSkeleton(out, plain)) throw new Error("niqqud: the consonants changed");
-  return opts.partial ? keepAmbiguousWords(plain, out, unsure) : out;
+  const final = opts.partial ? keepAmbiguousWords(plain, out, unsure) : out;
+  return { text: final, words: withOptions ? wordsOf(plain, final, options) : [] };
+}
+
+/** Every pointed word of `pointed` (the output for `plain`) with its alternatives; unpointed words (partial mode) are left out. */
+function wordsOf(plain: string, pointed: string, options: ReadonlyArray<LetterOption[] | undefined>): WordAlternatives[] {
+  const starts = plainToPointed(plain, pointed);
+  const out: WordAlternatives[] = [];
+  for (const m of plain.matchAll(HEBREW_WORD)) {
+    const a = m.index!;
+    const e = a + m[0].length;
+    const from = starts[a];
+    const to = starts[e];
+    const shown = pointed.slice(from, to);
+    if (shown === m[0]) continue; // left plain (partial)
+    const alts = wordAlternatives(m[0], options.slice(a, e));
+    // The text's own reading first, whatever the beam found.
+    const rest = alts.filter((x) => x.text !== shown);
+    const own = alts.find((x) => x.text === shown) ?? { text: shown, p: alts[0]?.p ?? 1 };
+    out.push({ from, to, alternatives: [own, ...rest] });
+  }
+  return out;
+}
+
+/** For each character of `plain` (and its end), where it starts in `pointed`. */
+function plainToPointed(plain: string, pointed: string): number[] {
+  const starts: number[] = [];
+  let j = 0;
+  for (let i = 0; i < plain.length; i++) {
+    while (j < pointed.length && pointed[j] !== plain[i]) j++;
+    starts.push(j);
+    j++;
+  }
+  starts.push(pointed.length);
+  return starts;
 }
 
 function softmaxRows(data: ArrayLike<number>, positions: number, classes: number): Float32Array {
@@ -82,14 +168,7 @@ function softmaxRows(data: ArrayLike<number>, positions: number, classes: number
 /** The pointed text where a word has an unsure letter; the plain word elsewhere. */
 export function keepAmbiguousWords(plain: string, pointed: string, unsure: Array<[number, number]>): string {
   // Map every plain character to its span in the pointed text.
-  const starts: number[] = [];
-  let j = 0;
-  for (let i = 0; i < plain.length; i++) {
-    while (j < pointed.length && pointed[j] !== plain[i]) j++;
-    starts.push(j);
-    j++;
-  }
-  starts.push(pointed.length);
+  const starts = plainToPointed(plain, pointed);
   const isUnsure = new Uint8Array(plain.length);
   for (const [a, e] of unsure) for (let i = a; i < e; i++) isUnsure[i] = 1;
   let out = "";

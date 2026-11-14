@@ -25,6 +25,7 @@ const outDir = process.env.LUMEN_EVAL_OUT || "eval/results";
 
 type Doc = { id: string; text: string };
 
+// skip-reason: an opt-in eval against a real reranker model (npm run eval:rerank), not a unit test | task: 7.3 | until: 2027-05-12
 describe.skipIf(!process.env.LUMEN_EVAL_RERANK)(`reranker eval — ${RERANK_MODEL}`, () => {
   it("measures BM25 against BM25 + the model and writes the decision", async () => {
     const { AutoTokenizer, AutoModelForSequenceClassification } = await import("@huggingface/transformers");

@@ -57,6 +57,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         // Called when the app was launched with a url. Feel free to add additional processing here,
         // but if you want the App API to support tracking app url opens, make sure to keep this call
+        // Plan W3.4: lumen:// action links (widgets, App Shortcuts, other apps) go to the WebView.
+        if url.scheme == "lumen" {
+            LumenLaunch.deliver(url)
+            return true
+        }
         return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
     }
 

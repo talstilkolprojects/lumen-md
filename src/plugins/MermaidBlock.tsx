@@ -148,6 +148,7 @@ export default function MermaidBlock({ source }: Props) {
         bindFunctions?.(contentRef.current);
         setState("ready");
       } catch (e) {
+        if (!cancelled) // raw-error-allow: the syntax error of the person's own diagram source, with its line
         if (!cancelled) setError((e as Error).message);
         if (!cancelled) setState("failed");
       }

@@ -1,0 +1,8 @@
+"Add to ${applicationName} inbox" = "הוסף לתיבת הלכידה של ${applicationName}";
+"Add to my ${applicationName} inbox" = "הוסף לתיבה שלי ב-${applicationName}";
+"Quick note in ${applicationName}" = "פתק מהיר ב-${applicationName}";
+"New ${applicationName} note" = "פתק חדש ב-${applicationName}";
+"Voice note in ${applicationName}" = "פתק קולי ב-${applicationName}";
+"Search ${applicationName}" = "חפש ב-${applicationName}";
+"Today's ${applicationName} note" = "הפתק של היום ב-${applicationName}";
+"Open today in ${applicationName}" = "פתח את היום ב-${applicationName}";
