@@ -74,39 +74,91 @@ export const unescapeUserSentinels = (s: string) =>
 
 /** Replace CriticMarkup delimiters (outside code) with sentinels. */
 export function prepareCriticMarkup(source: string): string {
+  return prepare(source, null);
+}
+
+/**
+ * `prepareCriticMarkup`, with each output character's place in `source`
+ * (review 8, RR8-473-1): the redaction passes read the text the preview
+ * parses, then map their marks back to the note. `at[i]` is where output
+ * character `i` comes from: a copied character's own offset, a sentinel's
+ * delimiter's start, both characters of an escaped user glyph that glyph's
+ * offset. `at[text.length]` is `source.length`. Never decreasing.
+ */
+export function prepareCriticMarkupMapped(source: string): { text: string; at: Int32Array } {
+  const at: number[] = [];
+  const text = prepare(source, at);
+  return { text, at: Int32Array.from(at) };
+}
+
+function prepare(source: string, at: number[] | null): string {
   const markdown = escapeUserSentinels(source);
-  if (!mayContainCriticMarkup(markdown)) return markdown;
-  const suggestions = parseSuggestions(markdown);
-  if (suggestions.length === 0) return markdown;
+  // The escaped text's offsets → the source's (an escaped glyph is two characters).
+  let toSource: Int32Array | null = null;
+  if (at) {
+    toSource = new Int32Array(markdown.length + 1);
+    for (let i = 0, j = 0; i <= source.length; i++) {
+      toSource[j++] = i;
+      const c = source.charCodeAt(i);
+      if (c >= 0xe000 && c <= 0xe00b) toSource[j++] = i;
+    }
+  }
+  const suggestions = mayContainCriticMarkup(markdown) ? parseSuggestions(markdown) : [];
+  if (suggestions.length === 0) {
+    if (at && toSource) for (const o of toSource) at.push(o);
+    return markdown;
+  }
   let out = "";
   let pos = 0;
+  /** `markdown[a, b)` as it is. */
+  const copy = (a: number, b: number) => {
+    out += markdown.slice(a, b);
+    if (at && toSource) for (let o = a; o < b; o++) at.push(toSource[o]);
+  };
+  /** Generated characters, standing for the delimiter at `o`. */
+  const put = (s: string, o: number) => {
+    out += s;
+    if (at && toSource) for (let x = 0; x < s.length; x++) at.push(toSource[o]);
+  };
   for (const s of suggestions) {
-    out += markdown.slice(pos, s.from);
-    const body = (a: number, b: number) => markdown.slice(a, b);
+    copy(pos, s.from);
     switch (s.kind) {
       case "insert":
-        out += S.insOpen + body(s.contentFrom, s.contentTo) + S.insClose;
+        put(S.insOpen, s.from);
+        copy(s.contentFrom, s.contentTo);
+        put(S.insClose, s.contentTo);
         break;
       case "delete":
-        out += S.delOpen + body(s.contentFrom, s.contentTo) + S.delClose;
+        put(S.delOpen, s.from);
+        copy(s.contentFrom, s.contentTo);
+        put(S.delClose, s.contentTo);
         break;
       case "substitute":
-        out +=
-          S.subOpen + body(s.contentFrom, s.contentTo) + S.subMid + body(s.newFrom!, s.newTo!) + S.subClose;
+        put(S.subOpen, s.from);
+        copy(s.contentFrom, s.contentTo);
+        put(S.subMid, s.contentTo);
+        copy(s.newFrom!, s.newTo!);
+        put(S.subClose, s.newTo!);
         break;
       case "comment":
-        out += S.comOpen + body(s.contentFrom, s.contentTo) + S.comClose;
+        put(S.comOpen, s.from);
+        copy(s.contentFrom, s.contentTo);
+        put(S.comClose, s.contentTo);
         break;
       case "highlight":
-        out += S.hlOpen + body(s.contentFrom, s.contentTo) + S.hlClose;
+        put(S.hlOpen, s.from);
+        copy(s.contentFrom, s.contentTo);
+        put(S.hlClose, s.contentTo);
         break;
     }
     // An author tag (`{>>@name<<}`) folded into the change still shows as
     // the small comment it is in the source.
-    if (s.authorFrom !== undefined) out += S.comOpen + "@" + s.author + S.comClose;
+    if (s.authorFrom !== undefined) put(S.comOpen + "@" + s.author + S.comClose, s.authorFrom);
     pos = s.to;
   }
-  return out + markdown.slice(pos);
+  copy(pos, markdown.length);
+  if (at && toSource) at.push(toSource[markdown.length]);
+  return out;
 }
 
 /** Drop CriticMarkup delimiters, keeping every part's text (TOC slugs). */

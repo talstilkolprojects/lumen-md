@@ -143,6 +143,8 @@ export default defineConfig({
             { label: "Secrets and encryption", slug: "security/vault" },
             { label: "Monitoring and web vitals", slug: "security/monitoring", translations: { he: "ניטור ומדדי ביצועים" } },
             { label: "Vault encryption at rest", slug: "security/vault-encryption", translations: { he: "הצפנת הכספת במנוחה" } },
+            { label: "Photo metadata", slug: "security/photo-metadata", translations: { he: "מטא-נתונים של תמונות" } },
+            { label: "Journalist mode: redaction and locked notes", slug: "security/journalist-mode", translations: { he: "מצב עיתונאי: השחרה ופתקים נעולים" } },
           ],
         },
         {

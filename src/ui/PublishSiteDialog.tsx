@@ -128,6 +128,7 @@ export function PublishSiteDialog({ onClose }: { onClose: () => void }) {
     setResult(null);
     try {
       setBusy(t("publish.building", { count: chosen.length }));
+      await import("../lib/journalistStrings");
       const [{ buildSite, wordsFor }, { renderHtmlDocument }, { readWorkspaceBlob }] = await Promise.all([
         import("../publish/site"),
         import("../storage/exportHtml"),
@@ -147,7 +148,9 @@ export function PublishSiteDialog({ onClose }: { onClose: () => void }) {
           }
         },
       });
-      const missing = site.missing.length ? ` ${t("publish.missing", { count: site.missing.length })}` : "";
+      const missing =
+        (site.missing.length ? ` ${t("publish.missing", { count: site.missing.length })}` : "") +
+        (site.withheld.length ? ` ${t("publish.withheld", { count: site.withheld.length })}` : "");
       if (settings.target === "zip" || !repo) {
         const name = `${(settings.title.trim() || "site").replace(/[^\p{L}\p{N}._-]+/gu, "-")}.zip`;
         download(await siteZip(site.files), name);

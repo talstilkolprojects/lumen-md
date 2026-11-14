@@ -43,6 +43,13 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "vaultEncryption.json": { module: "storage/vault/encrypted/strings.ts", users: ["ui/VaultEncryptionDialog.tsx", "ui/VaultUnlock.tsx"], prefixes: ["vaultEnc."] },
   // The webR download offer (plan W1.34), in the lazily rendered live-R block.
   "webr.json": { module: "plugins/r/webrStrings.ts", users: ["plugins/LiveRBlock.tsx"], prefixes: ["block.liveR.install."] },
+  // Journalist mode (plan W5.11): the note-password flow, the redact command, the settings switch,
+  // and the photo-metadata refusals of the editor and Publish site, all behind a dynamic import.
+  "journalist.json": {
+    module: "lib/journalistStrings.ts",
+    users: ["ui/SettingsScreen.tsx", "ui/notePassword.ts"],
+    prefixes: ["notePw.", "redact.", "settings.keepImageMetadata", "photoMeta.", "publish.withheld"],
+  },
 };
 
 function sources(dir: string): string[] {

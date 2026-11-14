@@ -2056,6 +2056,102 @@
       ]
     },
     {
+      "key": "notePw.change",
+      "en": "Change the password",
+      "vars": []
+    },
+    {
+      "key": "notePw.failed",
+      "en": "The note could not be opened: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "notePw.lockNow",
+      "en": "Lock now",
+      "vars": []
+    },
+    {
+      "key": "notePw.lockWarning",
+      "en": "This note will be locked with a password of its own. Nobody can open it without that password: not Lumen, not a backup, not sync. If you forget it, the note is lost — there is no recovery key. Its earlier versions in history are deleted, because they are plain text.",
+      "vars": []
+    },
+    {
+      "key": "notePw.locked",
+      "en": "The note is locked. It stays open until you lock it again or close Lumen.",
+      "vars": []
+    },
+    {
+      "key": "notePw.mismatch",
+      "en": "The two passwords are different. Try again.",
+      "vars": []
+    },
+    {
+      "key": "notePw.needsVault",
+      "en": "Only a note saved in the vault can have its own password. Save it to the vault first.",
+      "vars": []
+    },
+    {
+      "key": "notePw.newMessage",
+      "en": "At least {n} characters. Keep it somewhere safe: it can't be recovered.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "notePw.newTitle",
+      "en": "New note password",
+      "vars": []
+    },
+    {
+      "key": "notePw.openMessage",
+      "en": "This note is locked with its own password and is open now.",
+      "vars": []
+    },
+    {
+      "key": "notePw.remove",
+      "en": "Remove the password (save as plain text)",
+      "vars": []
+    },
+    {
+      "key": "notePw.removeConfirm",
+      "en": "The note will be saved as plain text again, readable by anyone who can open the vault. Continue?",
+      "vars": []
+    },
+    {
+      "key": "notePw.repeat",
+      "en": "Type the password again",
+      "vars": []
+    },
+    {
+      "key": "notePw.title",
+      "en": "Note password",
+      "vars": []
+    },
+    {
+      "key": "notePw.tooShort",
+      "en": "The password needs at least {n} characters.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "notePw.unlockMessage",
+      "en": "This note has its own password.",
+      "vars": []
+    },
+    {
+      "key": "notePw.unlockTitle",
+      "en": "Open a locked note",
+      "vars": []
+    },
+    {
+      "key": "notePw.wrong",
+      "en": "Wrong password, or the note was changed outside Lumen.",
+      "vars": []
+    },
+    {
       "key": "onboard.back",
       "en": "Back",
       "vars": []
@@ -2512,6 +2608,13 @@
       "vars": []
     },
     {
+      "key": "photoMeta.refused",
+      "en": "{count} photo(s) were not added: their location, time and camera details could not be removed. Save a copy from an image editor and add that instead.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
       "key": "pii.ledger.redacted",
       "en": "Hidden before sending: {n} in {requests} requests",
       "vars": [
@@ -2921,6 +3024,13 @@
       "vars": []
     },
     {
+      "key": "publish.withheld",
+      "en": "{count} photo(s) were left out of the site: their location, time and camera details could not be removed.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
       "key": "pwa.dismiss",
       "en": "Dismiss",
       "vars": []
@@ -2938,6 +3048,11 @@
     {
       "key": "pwa.updateAvailable",
       "en": "A new version is available",
+      "vars": []
+    },
+    {
+      "key": "redact.empty",
+      "en": "Select the text to redact first.",
       "vars": []
     },
     {
@@ -3043,6 +3158,11 @@
         "n",
         "skipped"
       ]
+    },
+    {
+      "key": "settings.keepImageMetadata",
+      "en": "Keep photos' location, time and camera details (when adding photos and when exporting)",
+      "vars": []
     },
     {
       "key": "settings.language",

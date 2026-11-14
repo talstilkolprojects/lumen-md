@@ -27,6 +27,7 @@
  */
 
 import { log } from "../lib/logger";
+import { lockedNotes } from "./lockedNotesRegistry";
 import { forStore, fromStore, isSealedValue, type SealedValue } from "./vault/restStore";
 
 const LABEL = "history";
@@ -420,6 +421,8 @@ export function onHistoryQuota(fn: QuotaListener): () => void {
  */
 export async function recordSnapshot(name: string, content: string, reason: SnapshotReason = "autosave", now = Date.now(), author?: string): Promise<boolean> {
   if (!name || typeof indexedDB === "undefined") return false;
+  // W5.11: an unlocked note with its own password is kept in history sealed.
+  content = lockedNotes.atRest(name, content);
   // Typing autosaves every pause; keep one autosave snapshot per document
   // per AUTOSAVE_EVERY_MS so a document's 100 slots cover hours, not
   // minutes. Explicit saves, closes, restores and backups always record.

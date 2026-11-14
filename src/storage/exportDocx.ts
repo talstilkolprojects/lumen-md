@@ -19,6 +19,7 @@
  */
 import { firstStrongDirection, markdownBaseDirection, type BaseDirection } from "../lib/textDirection";
 import { zip } from "./zip";
+import { exportReadyText } from "./exportReady";
 
 const DOCX_MIME =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -542,7 +543,8 @@ export async function markdownToDocxBlob(content: string): Promise<Blob> {
 /** Export markdown content as a downloadable .docx file. */
 export async function exportToDocx(content: string, fileName: string): Promise<void> {
   const baseName = fileName.replace(/\.[^.]+$/, "");
-  const blob = await markdownToDocxBlob(content);
+  // W5.11: marked passages and hidden comments never reach the document's XML.
+  const blob = await markdownToDocxBlob(await exportReadyText(content));
 
   if ("showSaveFilePicker" in window) {
     try {

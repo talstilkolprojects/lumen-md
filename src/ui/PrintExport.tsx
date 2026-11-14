@@ -7,6 +7,7 @@
 
 import { renderMarkdown } from "../renderer/pipeline";
 import { safeSetHtml, safeClearHtml } from "../lib/trustedTypes";
+import { exportReadyText } from "../storage/exportReady";
 
 /**
  * Generate a printable document from markdown content.
@@ -18,7 +19,9 @@ export async function printDocument(
   docName: string,
 ): Promise<void> {
   const isDark = () => document.documentElement.classList.contains("dark");
-  const tree = await renderMarkdown(markdownText, isDark);
+  // W5.11: the PDF gets the text without its marked passages (removed, not
+  // covered), and photos inlined without metadata (Chromium embeds a JPEG as is).
+  const tree = await renderMarkdown(await exportReadyText(markdownText, true), isDark);
 
   // We need to serialize the React tree. We'll render to a temporary div.
   const { createRoot } = await import("react-dom/client");

@@ -14,11 +14,19 @@
  * (./siteLinks.ts, shared with `lumen publish`). A link to a note that was
  * not picked keeps its text and loses its href, so the site neither 404s
  * nor reveals where an unpublished note lives.
+ *
+ * Redaction (plan W5.11, review 12.11): every note goes through
+ * prepareForExport before anything is made of it (page, title, search
+ * index), so `<redact>` passages and hidden comments never reach the site,
+ * and every photo it copies loses its metadata; a photo whose metadata can't
+ * be removed is left out (`withheld`).
  */
 
 import type { HtmlDocumentOptions } from "../storage/exportHtml";
 import { escapeHtml } from "../lib/escapeHtml";
 import { MD_RE, PUBLISH_CSS, encodePath, pageTitle, rewriteMarkdownLinks, rewriteWikiLinks } from "./siteLinks";
+import { prepareForExport } from "../lib/redaction";
+import { cleanPublishedFile, keepImageMetadata } from "../lib/imageMetadata";
 
 export interface SiteNote {
   /** Vault-relative path, POSIX separators (`Projects/Plan.md`). */
@@ -48,6 +56,8 @@ export interface SiteOptions {
   readAsset?: (path: string) => Promise<Uint8Array | null>;
   /** Navigation and search words, in `lang`. */
   words?: Partial<SiteWords>;
+  /** Keep photos' metadata (Settings). Defaults to the user's choice. */
+  keepImageMetadata?: boolean;
 }
 
 export interface SiteWords {
@@ -259,6 +269,8 @@ export interface SiteResult {
   pages: SitePage[];
   /** Files a page references that could not be read (they are left as links). */
   missing: string[];
+  /** Photos left out because their metadata could not be removed. */
+  withheld: string[];
 }
 
 /** Build the site from the picked notes. */
@@ -272,7 +284,9 @@ export async function buildSite(notes: readonly SiteNote[], opts: SiteOptions): 
     const output = outputOf(n.path);
     if (seen.has(output.toLowerCase())) continue;
     seen.add(output.toLowerCase());
-    pages.push({ source: n.path, output, title: pageTitle(n.content, n.path), md: n.content });
+    // W5.11: the published text is the export text, never the note as written.
+    const { text: md } = await prepareForExport(n.content, { keepImageMetadata: opts.keepImageMetadata });
+    pages.push({ source: n.path, output, title: pageTitle(md, n.path), md });
   }
   const outputs = new Set(pages.map((p) => p.output));
   const hasIndex = outputs.has("index.html");
@@ -281,6 +295,8 @@ export async function buildSite(notes: readonly SiteNote[], opts: SiteOptions): 
   const files: SiteFile[] = [];
   const assets = new Map<string, Uint8Array>();
   const missing = new Set<string>();
+  const withheld = new Set<string>();
+  const keepMeta = opts.keepImageMetadata ?? keepImageMetadata();
 
   const pageShell = async (md: string, output: string, title: string, extra = ""): Promise<string> => {
     const prefix = up(output);
@@ -308,10 +324,19 @@ export async function buildSite(notes: readonly SiteNote[], opts: SiteOptions): 
       // Only the note's own body: the site's stylesheet and script are not vault files.
       const body = /<main\b[\s\S]*<\/main>/.exec(html)?.[0] ?? "";
       for (const ref of referencedFiles(body, dir)) {
-        if (assets.has(ref) || missing.has(ref) || outputs.has(ref)) continue;
+        if (assets.has(ref) || missing.has(ref) || withheld.has(ref) || outputs.has(ref)) continue;
         const data = await opts.readAsset(ref);
-        if (data) assets.set(ref, data);
-        else missing.add(ref);
+        if (!data) missing.add(ref);
+        else if (keepMeta) assets.set(ref, data);
+        else {
+          // By content, not by extension (review 2: a JPEG named .jfif, a HEIC named .jpg): a photo goes
+          // out without its metadata at the same path; one that can't be cleaned that way (HEIC, AVIF,
+          // TIFF, a video) stays out and is reported.
+          const r = await cleanPublishedFile(data);
+          if (r.action === "copy") assets.set(ref, data);
+          else if (r.action === "clean") assets.set(ref, r.bytes);
+          else withheld.add(ref);
+        }
       }
     }
     files.push({ path: p.output, data: html });
@@ -335,5 +360,5 @@ export async function buildSite(notes: readonly SiteNote[], opts: SiteOptions): 
   files.push({ path: ".nojekyll", data: "" });
   for (const [path, data] of assets) if (!files.some((f) => f.path === path)) files.push({ path, data });
 
-  return { files, pages: navPages, missing: [...missing].sort() };
+  return { files, pages: navPages, missing: [...missing].sort(), withheld: [...withheld].sort() };
 }

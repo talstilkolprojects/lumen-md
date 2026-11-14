@@ -11,6 +11,7 @@ import {
   sanitizeThemeSettings,
   type ThemeSettings,
 } from "../lib/themeSettings";
+import { lockedNotes } from "../storage/lockedNotesRegistry";
 
 /** The phone layout's breakpoint (index.css: max-width 760px). */
 export function isNarrowScreen(): boolean {
@@ -303,16 +304,17 @@ const partializeAppState = (s: AppState) =>
     ...(vaultEncryptionState() === "locked" || vaultEncryptionState() === "unlocked"
       ? {}
       : {
+          // W5.11: a note unlocked with its own password is kept sealed.
           doc: {
             name: s.doc.name,
-            content: s.doc.content,
+            content: lockedNotes.atRest(s.doc.workspaceName, s.doc.content),
             dirty: s.doc.dirty,
             workspaceName: s.doc.workspaceName ?? null,
           },
           // Persist open tabs so the user's session resumes after reload.
           // Heavy `handle` references are intentionally excluded (not
           // structured-cloneable through localStorage anyway).
-          openTabs: s.openTabs,
+          openTabs: lockedNotes.paths().length ? s.openTabs.map((t) => ({ ...t, content: lockedNotes.atRest(t.workspaceName, t.content) })) : s.openTabs,
         }),
   });
 

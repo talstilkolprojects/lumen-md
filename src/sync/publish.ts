@@ -25,6 +25,7 @@ import { useEntitlement } from "../billing/useEntitlement";
 import { useAuth } from "../auth/useAuth";
 import { recordAudit } from "../lib/audit";
 import { fetchWithRetry } from "../lib/fetchRetry";
+import { exportReadyText } from "../storage/exportReady";
 
 interface MockPublishRecord {
   path: string;
@@ -223,9 +224,11 @@ export async function publishNote(
   } = {},
 ): Promise<PublishResult> {
   ensurePro();
+  // W5.11: what is published is the export text (no <redact> passage, no hidden comment, clean photos).
+  const ready = await exportReadyText(content, true);
   const body = opts.password
-    ? await encryptForPublish(content, opts.password)
-    : content;
+    ? await encryptForPublish(ready, opts.password)
+    : ready;
   if (publishTarget() === "mock") {
     return publishToMock({
       path,

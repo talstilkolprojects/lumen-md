@@ -12,6 +12,7 @@
 import { randomId } from "../lib/cryptoRandom";
 import { getVaultBackend, VaultNotFoundError, type VaultData, type VaultEntry } from "./vault";
 import { basename, dirname, splitPath } from "./vault/shared";
+import { lockedNotes, noteSealer } from "./lockedNotesRegistry";
 
 export { basename, dirname, joinPath, splitPath } from "./vault/shared";
 export { WorkspaceConflictError } from "./vault/types";
@@ -158,7 +159,11 @@ export async function writeWorkspaceFile(
   path: string,
   content: string,
 ): Promise<void> {
-  return withPathLock(path, () => writeUnlocked(path, content));
+  return withPathLock(path, async () => {
+    // W5.11: a note locked with its own password is sealed before it is written.
+    const seal = noteSealer();
+    await writeUnlocked(path, seal ? await seal(path, content) : content);
+  });
 }
 
 /** Write arbitrary binary content (e.g. an image asset). */
@@ -237,6 +242,7 @@ export async function renameWorkspaceFile(
   if (oldPath !== newPath) prov.moveUntrustedNotes(oldPath, newPath);
   try {
     await vault().rename(oldPath, newPath, opts);
+    lockedNotes.rename(oldPath, newPath);
   } catch (e) {
     try {
       prov.restoreRecords(before);
