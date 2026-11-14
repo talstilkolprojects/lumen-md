@@ -2354,6 +2354,8 @@
   "usage.week": "פתיחות השבוע: {opens} · שגיאות: {errors}",
   "usage.weekly": "להזכיר לי פעם בשבוע לשלוח את הדוח הזה",
   "usage.yes": "כן",
+  "vault.watch.unreadable.body": "שינויים שנעשים מחוץ ל-Lumen בתיקייה “{folder}” לא ייקלטו עד שאפשר יהיה לקרוא אותה שוב.",
+  "vault.watch.unreadable.title": "לא ניתן לקרוא תיקייה",
   "vaultCheck.checking": "בודק כל קובץ בכספת…",
   "vaultCheck.clean": "נבדקו {files} קבצים ב-{seconds} שניות: אין בעיות.",
   "vaultCheck.confirm": "לתקן {n} בעיות? כל קובץ מועתק ל-{folder} לפני שהוא משתנה. פתקים שפתוחים בלשונית לא נוגעים בהם.",

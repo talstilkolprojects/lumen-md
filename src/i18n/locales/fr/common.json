@@ -2354,6 +2354,8 @@
   "usage.week": "Démarrages cette semaine : {opens} · erreurs : {errors}",
   "usage.weekly": "Me rappeler une fois par semaine d’envoyer ce rapport",
   "usage.yes": "oui",
+  "vault.watch.unreadable.body": "Les modifications faites hors de Lumen dans « {folder} » ne sont pas détectées tant qu’il ne peut pas être lu.",
+  "vault.watch.unreadable.title": "Un dossier est illisible",
   "vaultCheck.checking": "Vérification de chaque fichier du coffre…",
   "vaultCheck.clean": "{files} fichiers vérifiés en {seconds} s : aucun problème.",
   "vaultCheck.confirm": "Réparer {n} problèmes ? Chaque fichier est copié dans {folder} avant d'être modifié. Les notes ouvertes dans un onglet ne sont pas touchées.",

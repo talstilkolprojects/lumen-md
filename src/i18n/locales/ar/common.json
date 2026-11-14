@@ -2354,6 +2354,8 @@
   "usage.week": "مرات التشغيل هذا الأسبوع: {opens} · الأخطاء: {errors}",
   "usage.weekly": "ذكّرني مرة في الأسبوع بإرسال هذا التقرير",
   "usage.yes": "نعم",
+  "vault.watch.unreadable.body": "لن تُلاحَظ التغييرات التي تُجرى خارج Lumen في “{folder}” حتى تمكن قراءته مجددًا.",
+  "vault.watch.unreadable.title": "تعذّرت قراءة مجلد",
   "vaultCheck.checking": "جارٍ فحص كل ملف في الخزنة…",
   "vaultCheck.clean": "تم فحص {files} ملفًا في {seconds} ث: لا مشكلات.",
   "vaultCheck.confirm": "إصلاح {n} مشكلة؟ يُنسخ كل ملف إلى {folder} قبل أن يتغير. الملاحظات المفتوحة في علامة تبويب لا تُمس.",

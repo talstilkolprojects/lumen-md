@@ -2354,6 +2354,8 @@
   "usage.week": "今週の起動: {opens} · エラー: {errors}",
   "usage.weekly": "週に 1 回、このレポートを送るよう知らせる",
   "usage.yes": "はい",
+  "vault.watch.unreadable.body": "「{folder}」で Lumen の外で行われた変更は、再び読み取れるようになるまで検出されません。",
+  "vault.watch.unreadable.title": "フォルダーを読み取れません",
   "vaultCheck.checking": "ボールト内のすべてのファイルをチェックしています…",
   "vaultCheck.clean": "{files} 個のファイルを {seconds} 秒でチェック: 問題はありません。",
   "vaultCheck.confirm": "{n} 件の問題を修復しますか? 変更前に各ファイルを {folder} にコピーします。タブで開いているノートには触れません。",

@@ -2354,6 +2354,8 @@
   "usage.week": "本周启动：{opens} · 错误：{errors}",
   "usage.weekly": "每周提醒我发送一次此报告",
   "usage.yes": "是",
+  "vault.watch.unreadable.body": "在 Lumen 之外对“{folder}”所做的更改，在它可再次读取之前不会被发现。",
+  "vault.watch.unreadable.title": "无法读取文件夹",
   "vaultCheck.checking": "正在检查库中的每个文件…",
   "vaultCheck.clean": "已在 {seconds} 秒内检查 {files} 个文件：没有问题。",
   "vaultCheck.confirm": "修复 {n} 个问题？每个文件在更改前都会复制到 {folder}。在标签页中打开的笔记不会被改动。",

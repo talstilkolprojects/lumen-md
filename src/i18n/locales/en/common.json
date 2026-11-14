@@ -405,6 +405,8 @@
   "update.notConfigured": "This build has no update server or key yet; install new versions by hand.",
   "update.reload": "Reload",
   "update.upToDate": "Lumen {version} is the latest version.",
+  "vault.watch.unreadable.body": "Changes made outside Lumen in “{folder}” are not noticed until it can be read again.",
+  "vault.watch.unreadable.title": "A folder can't be read",
   "widgets.captured": "Added to the inbox from Siri / Shortcuts",
   "wikiComplete.aliasOf": "alias of {name}",
   "wikiComplete.create": "Create note «{name}»",

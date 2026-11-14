@@ -37,29 +37,67 @@ function isNotFound(e: unknown): boolean {
   return err?.name === "NotFoundError" || err?.name === "TypeMismatchError" || err?.code === "ENOENT";
 }
 
+/** How listSnapshot treats a sub-folder that fails to list (review t5, L1). */
+export interface SnapshotOptions {
+  /** The previous snapshot: a skipped sub-folder keeps its entries from here, so nothing in it reads as deleted. */
+  prev?: Snapshot | null;
+  /**
+   * Consecutive failures per sub-folder, kept by the caller across snapshots.
+   * With it, a sub-folder's failure rejects the snapshot (a passing error: the
+   * watcher keeps its baseline) until it has failed `skipAfter` times in a
+   * row; from then on it is skipped. Without it, a failing sub-folder is
+   * skipped at once.
+   */
+  failures?: Map<string, number>;
+  /** Failures in a row before a sub-folder is skipped (default 3). */
+  skipAfter?: number;
+  /** Called for each sub-folder skipped in this snapshot. */
+  onSkip?: (dir: string, err: unknown) => void;
+}
+
+/** The skip threshold the watcher uses: a few polls, so a passing error never skips a folder. */
+export const SKIP_AFTER = 3;
+
 /**
  * Every file of `backend` with size and mtime (by listing; dot folders
- * included). A sub-folder that vanished while walking is skipped; any other
- * listing failure — a revoked permission, an I/O error, or the vault root
- * itself not listing — rejects, so the watcher keeps its previous baseline
+ * included). A sub-folder that vanished while walking is skipped. The vault
+ * root failing to list rejects, so the watcher keeps its previous baseline
  * instead of reporting the whole vault as deleted (2.83, Codex P2 on #258).
+ * Any other failure of a sub-folder — a revoked permission, an I/O error —
+ * rejects while it may be passing; a sub-folder that keeps failing (EACCES,
+ * a cloud-drive placeholder) is skipped, keeping its entries from `prev`, so
+ * one unreadable folder no longer stops every check (review t5, L1).
  */
-export async function listSnapshot(backend: VaultBackend): Promise<Snapshot> {
+export async function listSnapshot(backend: VaultBackend, opts: SnapshotOptions = {}): Promise<Snapshot> {
   const out: Snapshot = new Map();
+  const skipAfter = opts.skipAfter ?? SKIP_AFTER;
+  const seen = new Set<string>();
   const walk = async (dir: string): Promise<void> => {
     let entries;
     try {
       entries = await backend.list(dir);
     } catch (err) {
-      if (dir !== "" && isNotFound(err)) return; // vanished while walking
-      throw err;
+      if (dir === "") throw err;
+      if (isNotFound(err)) return; // vanished while walking
+      const n = (opts.failures?.get(dir) ?? 0) + 1;
+      seen.add(dir);
+      opts.failures?.set(dir, n);
+      if (opts.failures && n < skipAfter) throw err;
+      // Skipped: what the last snapshot knew under it stays as it was.
+      for (const [path, e] of opts.prev ?? []) if (path.startsWith(dir + "/")) out.set(path, e);
+      opts.onSkip?.(dir, err);
+      return;
     }
+    seen.add(dir);
+    opts.failures?.delete(dir);
     for (const e of entries) {
       if (e.kind === "directory") await walk(e.path);
       else out.set(e.path, { size: e.size ?? 0, mtime: e.mtime ?? 0 });
     }
   };
   await walk("");
+  // A folder that is gone (or not walked: under a skipped one) forgets its count.
+  for (const dir of [...(opts.failures?.keys() ?? [])]) if (!seen.has(dir)) opts.failures!.delete(dir);
   return out;
 }
 
@@ -112,6 +150,12 @@ export interface WatchOptions {
    * FileSystemObserver); returns its stop function.
    */
   observe?: (poke: () => void) => (() => void) | null;
+  /**
+   * Called once per sub-folder (per watcher) when it is skipped because it
+   * keeps failing to list: the place to tell the user that changes in it are
+   * not noticed (review t5, L1).
+   */
+  onUnreadable?: (dir: string) => void;
 }
 
 /**
@@ -119,8 +163,22 @@ export interface WatchOptions {
  * `backend.notifyExternal`. Returns the stop function.
  */
 export function watchExternalChanges(backend: VaultBackend, opts: WatchOptions = {}): () => void {
-  const take = opts.snapshot ?? (() => listSnapshot(backend));
   let baseline: Snapshot | null = null;
+  const failures = new Map<string, number>();
+  const warned = new Set<string>();
+  const take =
+    opts.snapshot ??
+    (() =>
+      listSnapshot(backend, {
+        prev: baseline,
+        failures,
+        onSkip: (dir, err) => {
+          if (warned.has(dir)) return;
+          warned.add(dir);
+          log.warn("vault change check skips a folder it cannot list", err);
+          opts.onUnreadable?.(dir);
+        },
+      }));
   let running = false;
   let again = false;
   let stopped = false;
