@@ -9,6 +9,8 @@
  * - Fuzzy matching via Levenshtein distance
  */
 
+import { stripNiqqud } from "../text/hebrew";
+
 // ── Stopwords (EN + HE) ────────────────────────────────────────────────
 
 const EN_STOPWORDS = new Set([
@@ -39,7 +41,9 @@ const ALL_STOPWORDS = new Set([...EN_STOPWORDS, ...HE_STOPWORDS]);
 // ── Enhanced Tokenizer ──────────────────────────────────────────────────
 
 export function tokenize(text: string): string[] {
-  return text
+  // Niqqud and cantillation first: as non-letters they would split a
+  // pointed word into fragments ("שָׁלוֹם" → "ש", "לו", "ם").
+  return stripNiqqud(text)
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .split(/\s+/)

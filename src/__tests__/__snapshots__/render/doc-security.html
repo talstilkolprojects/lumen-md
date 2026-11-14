@@ -1,0 +1,135 @@
+<h1 id="security-policy" dir="auto">Security Policy</h1>
+<h2 id="supported-versions" dir="auto">Supported versions</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table dir="ltr"><thead><tr><th dir="auto">Version</th><th dir="auto">Supported</th></tr></thead><tbody><tr><td dir="auto">0.1.x</td><td dir="auto">✅ Current</td></tr></tbody></table>
+<h2 id="reporting-a-vulnerability" dir="auto">Reporting a vulnerability</h2>
+<p dir="auto"><strong>Do not open a public GitHub issue for security vulnerabilities.</strong></p>
+<p dir="auto">Instead, report it privately through GitHub: <strong><a href="https://github.com/talstilkol/lumen-md/security/advisories/new">Report a vulnerability</a></strong> (Security → Advisories), with:</p>
+<ol dir="ltr">
+<li dir="ltr">A description of the vulnerability</li>
+<li dir="ltr">Steps to reproduce</li>
+<li dir="ltr">Impact assessment (what data or functionality is affected)</li>
+<li dir="ltr">Your suggested fix, if any</li>
+</ol>
+<p dir="auto">We will acknowledge receipt within <strong>48 hours</strong> and provide a timeline for a fix within <strong>5 business days</strong>.</p>
+<h2 id="security-architecture" dir="auto">Security architecture</h2>
+<p dir="auto">Lumen is a <strong>local-first</strong> application. By default, no data leaves the browser.</p>
+<h3 id="data-at-rest" dir="auto">Data at rest</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table dir="ltr"><thead><tr><th dir="auto">Store</th><th dir="auto">Encryption</th><th dir="auto">Scope</th></tr></thead><tbody><tr><td dir="auto">OPFS workspace</td><td dir="auto">Plaintext (browser-sandboxed)</td><td dir="auto">Same origin only</td></tr><tr><td dir="auto">IndexedDB (git, search index)</td><td dir="auto">Plaintext (browser-sandboxed)</td><td dir="auto">Same origin only</td></tr><tr><td dir="auto">Secrets vault (<code>⌘K → Vault</code>)</td><td dir="auto">AES-256-GCM, PBKDF2-derived key</td><td dir="auto">User passphrase required</td></tr><tr><td dir="auto">localStorage (preferences)</td><td dir="auto">Plaintext</td><td dir="auto">Same origin only</td></tr></tbody></table>
+<h3 id="data-in-transit" dir="auto">Data in transit</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table dir="ltr"><thead><tr><th dir="auto">Feature</th><th dir="auto">Transport</th><th dir="auto">Encryption</th></tr></thead><tbody><tr><td dir="auto">P2P collaboration</td><td dir="auto">WebRTC (DTLS/SRTP)</td><td dir="auto">Transport encrypted via WebRTC DTLS (hop-by-hop between peers; signaling servers, relays and the optional persistent y-websocket server are not covered). Password-protected rooms additionally encrypt document updates end-to-end — see <a href="docs/src/content/docs/collab/encryption.md"><code>docs/src/content/docs/collab/encryption.md</code></a>. Rooms without a password are <strong>not</strong> end-to-end encrypted.</td></tr><tr><td dir="auto">Signaling server</td><td dir="auto">WSS (TLS 1.2+)</td><td dir="auto">Transport-layer only</td></tr><tr><td dir="auto">AI prompts (OpenAI)</td><td dir="auto">HTTPS (TLS 1.2+)</td><td dir="auto">Transport-layer only</td></tr><tr><td dir="auto">Smart search embeddings</td><td dir="auto">HTTPS to OpenAI</td><td dir="auto">Transport-layer only</td></tr><tr><td dir="auto">Git clone/push</td><td dir="auto">HTTPS</td><td dir="auto">Transport-layer only</td></tr></tbody></table>
+<h3 id="plugin-sandbox" dir="auto">Plugin sandbox</h3>
+<p dir="auto">Third-party plugins run in a sandboxed <code>&lt;iframe&gt;</code> with:</p>
+<ul dir="ltr">
+<li dir="ltr"><code>sandbox=&quot;allow-scripts&quot;</code> — <strong>no</strong> <code>allow-same-origin</code></li>
+<li dir="ltr">CSP: <code>default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; https: data:; connect-src https:</code></li>
+<li dir="ltr">Communication restricted to a <code>postMessage</code> API with an explicit allowlist of callable methods</li>
+<li dir="ltr">Plugin signatures verified via Ed25519 (WebCrypto <code>verify()</code>) before installation</li>
+</ul>
+<h3 id="telemetry" dir="auto">Telemetry</h3>
+<ul dir="ltr">
+<li dir="ltr">Error reports are <strong>off by default</strong>. They are sent only when the user turns them on (the Telemetry pill in the status bar) <strong>and</strong> the build sets <code>VITE_SENTRY_DSN</code>. Without both, the Sentry SDK is never loaded and no request is made.</li>
+<li dir="ltr">A Sentry DSN is <strong>public by design, not a secret</strong>: it only lets a client submit events. A build-time <code>VITE_*</code> variable is the intended place for it.</li>
+<li dir="ltr"><code>beforeSend</code> rebuilds each event from an allowlist: the error&#x27;s class name, plus stack frames reduced to script file names. The message is never sent, because it may embed user text without quotes. The request URL, user, breadcrumbs, tags, extra and contexts are dropped. There is no session replay, no tracing and no session tracking.</li>
+<li dir="ltr">Reports go through the privacy ledger under the &quot;monitoring&quot; category, and the local-only policy refuses them. The DSN&#x27;s host reaches the CSP only through the build-time endpoint mechanism (<code>src/build/cspEndpoints.ts</code>); no tracker host or wildcard is hard-coded.</li>
+<li dir="ltr">Web vitals are measured locally and never sent.</li>
+</ul>
+<h3 id="authentication" dir="auto">Authentication</h3>
+<ul dir="ltr">
+<li dir="ltr">Auth is always optional — Lumen works fully without an account</li>
+<li dir="ltr">When configured, auth uses Supabase (JWT-based) or a custom <code>AuthProvider</code></li>
+<li dir="ltr">API keys are stored in the encrypted secrets vault, not in plaintext localStorage</li>
+<li dir="ltr">The <code>localProvider</code> (default) always returns an anonymous session</li>
+</ul>
+<h3 id="known-limitations" dir="auto">Known limitations</h3>
+<ul dir="ltr">
+<li dir="ltr">OPFS data is not encrypted at rest (relies on browser origin isolation)</li>
+<li dir="ltr">WebRTC P2P rooms are ephemeral. Signaling servers see room names and peer metadata; without a room password, anything routed through a signaling/relay or persistent sync server is not end-to-end encrypted. Use a room password for end-to-end encryption of document updates (see <code>docs/src/content/docs/collab/encryption.md</code>)</li>
+<li dir="ltr">PlantUML rendering uses the public Kroki API (diagram source is sent to <code>kroki.io</code>)</li>
+<li dir="ltr"><code>htmlpreview</code> fenced blocks execute user-authored HTML/JS in a sandboxed iframe</li>
+</ul>
+<h2 id="dependencies" dir="auto">Dependencies</h2>
+<ul dir="ltr">
+<li dir="ltr"><code>npm audit</code> is run in CI on every push — the gate requires <strong>0 critical / 0 high</strong> vulnerabilities</li>
+<li dir="ltr">Dependabot is configured for automated security updates (<code>.github/dependabot.yml</code>)</li>
+<li dir="ltr">The <code>uuid</code> package is pinned via <code>overrides</code> to avoid transitive vulnerabilities</li>
+</ul>
+<h2 id="disclosure-timeline" dir="auto">Disclosure timeline</h2>
+<p dir="auto">We follow a <strong>90-day disclosure policy</strong>. If a fix is not released within 90 days of the initial report, the reporter may publish details publicly.</p>

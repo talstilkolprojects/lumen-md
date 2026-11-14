@@ -1,0 +1,20 @@
+/*
+ * Applied only while a visual-regression screenshot is taken (plan 10.3,
+ * `stylePath` in playwright.visual.config.ts). It removes what changes from
+ * run to run without being a regression: the text caret, transitions and
+ * animations, scrollbars, and the PWA update banner.
+ */
+*,
+*::before,
+*::after {
+  transition: none !important;
+  animation: none !important;
+  caret-color: transparent !important;
+  scrollbar-width: none !important;
+}
+*::-webkit-scrollbar {
+  display: none !important;
+}
+.pwa-update-banner {
+  visibility: hidden !important;
+}

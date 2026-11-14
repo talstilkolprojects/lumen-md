@@ -35,8 +35,13 @@ vi.mock("../storage/workspace", () => {
 });
 
 import * as ws from "../storage/workspace";
-const setFiles = (d: Record<string, string>) =>
+import { __resetWorkspaceIndex } from "../storage/workspaceIndex";
+// The tags view reads the shared workspace index; a new set of files is a
+// structural change, so start each case from an empty index.
+const setFiles = (d: Record<string, string>) => {
+  __resetWorkspaceIndex();
   (ws as unknown as { __setFiles(d: Record<string, string>): void }).__setFiles(d);
+};
 
 beforeEach(() => setFiles({}));
 

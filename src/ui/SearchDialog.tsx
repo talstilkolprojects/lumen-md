@@ -1,22 +1,27 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useFocusTrap } from "./useFocusTrap";
 import type { ReactElement } from "react";
-import { Search, FileText, Sparkles, Loader2, FileCode2, Wand2 } from "lucide-react";
+import { Search, FileText, Sparkles, Loader2, FileCode2, Wand2, Image as ImageIcon } from "lucide-react";
 import { t, tPlural } from "../i18n";
+import "../ai/imageSearchStrings";
 import { searchWorkspace, type SearchHit } from "../storage/workspaceIndex";
 import { isOPFSAvailable, readWorkspaceFile } from "../storage/workspace";
-import { chat, AiError } from "../ai/llm";
+import { AiError } from "../ai/llm";
 import type { ChatMessage } from "../ai/llm";
-import { PROMPTS } from "../ai/prompts";
 import { renderMarkdown } from "../renderer/pipeline";
 import { log } from "../lib/logger";
 import { showAiToast } from "../ui/AiToast";
 import { semanticSearch, type RagResult } from "../ai/embeddings";
 import { indexWorkspace, searchHybrid, type SemanticHit } from "../ai/semanticSearch";
+import { rerank } from "../ai/reranker";
+import { CITE_INSTRUCTIONS, verifyVaultCitations, type VaultCitation } from "../ai/vaultCitations";
 import { useCapability } from "../billing/gates";
 import { UpgradeNotice } from "./UpgradeNotice";
-import { useAppStore } from "../store/useStore";
 import { rememberSearch, getSearchHistory, forgetSearch } from "../storage/searchHistory";
 import { flashSearchHighlight } from "../editor/searchHighlight";
+
+// The Images tab (plan 6.7) and its model code load only when it is opened.
+const ImageSearchPanel = lazy(() => import("./ImageSearchPanel").then((m) => ({ default: m.ImageSearchPanel })));
 
 interface Props {
   open: boolean;
@@ -26,7 +31,7 @@ interface Props {
 }
 
 export function SearchDialog({ open, onClose, onOpenFile }: Props) {
-  const [mode, setMode] = useState<"search" | "smart" | "ai">("search");
+  const [mode, setMode] = useState<"search" | "smart" | "ai" | "images">("search");
   // Smart (embedding) search is a Pro capability when billing is enforced;
   // self-hosted setups always have it.
   const smartAllowed = useCapability("smartSearch");
@@ -38,24 +43,29 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
   const [active, setActive] = useState(0);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  // A tab button takes focus when clicked: hand it back to the query box, so
+  // typing after switching to Images (or any tab) searches instead of going
+  // nowhere (e2e image-search, W4.2).
+  const pickMode = (m: "search" | "smart" | "ai" | "images") => {
+    setMode(m);
+    inputRef.current?.focus();
+  };
   const listRef = useRef<HTMLDivElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
-  const previousFocusRef = useRef<Element | null>(null);
-  const aiKey = useAppStore((s) => s.aiKey);
 
   const [aiAnswer, setAiAnswer] = useState<string | null>(null);
   const [aiRendered, setAiRendered] = useState<ReactElement | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSources, setAiSources] = useState<RagResult[]>([]);
+  const [aiCitations, setAiCitations] = useState<{ citations: VaultCitation[]; verifiedCount: number } | null>(null);
   const [conversation, setConversation] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
     if (open) {
-      previousFocusRef.current = document.activeElement;
       setQuery("");
       // Honour an optional `lumen-search-mode` event that lets command
       // palette entries open the dialog already on a specific tab.
-      const requested = (window as unknown as { __lumenSearchMode?: "search" | "smart" | "ai" })
+      const requested = (window as unknown as { __lumenSearchMode?: "search" | "smart" | "ai" | "images" })
         .__lumenSearchMode;
       setMode(requested ?? "search");
       (window as unknown as { __lumenSearchMode?: string }).__lumenSearchMode = undefined;
@@ -66,33 +76,11 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
       setSmartHits([]);
       setActive(0);
       setTimeout(() => inputRef.current?.focus(), 0);
-    } else {
-      const prev = previousFocusRef.current as HTMLElement | null;
-      prev?.focus?.();
     }
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== "Tab" || !dialogRef.current) return;
-      const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
-        'button, input, [tabindex]:not([tabindex="-1"])',
-      );
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+  // Focus trap while open; focus returns to the opener; Escape closes from anywhere in the dialog (plan 10.1).
+  useFocusTrap(dialogRef, { active: open, onEscape: onClose });
 
   useEffect(() => {
     if (!open) return;
@@ -128,10 +116,17 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
       return;
     }
     let cancelled = false;
+    // Abort a stale model rerank on the next keystroke: the worker runs jobs
+    // one at a time, so obsolete inferences would delay the current query.
+    const abort = new AbortController();
     setLoading(true);
     const handle = setTimeout(async () => {
       try {
-        const results = await searchHybrid(query, 20);
+        const fused = await searchHybrid(query, 30);
+        if (cancelled) return;
+        // T29: reorder the 30 candidates by relevance (local reranker).
+        const ranked = await rerank(query, fused.map((h) => ({ ...h, text: `${h.path}\n${h.snippet}` })), { signal: abort.signal });
+        const results = ranked.slice(0, 20).map(({ text: _text, rerankScore: _r, ...h }) => h);
         if (cancelled) return;
         setSmartHits(results);
         setActive(0);
@@ -146,23 +141,22 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
     return () => {
       cancelled = true;
       clearTimeout(handle);
+      abort.abort();
     };
   }, [open, query, mode, smartAllowed]);
 
   async function rebuildSmartIndex() {
-    if (!aiKey) {
-      showAiToast("Configure your AI Key (⌘K → AI Settings) to use Smart search", "error");
-      return;
-    }
+    // Embeddings are computed on this device by default (Ollama or
+    // transformers.js); no cloud key is needed.
     setSmartIndexing(true);
-    showAiToast("🧠 Building semantic index…", "info");
+    showAiToast(t("toast.buildingSemanticIndex"), "info");
     try {
       const idx = await indexWorkspace({ force: true });
       setSmartIndexedAt(idx.builtAt || Date.now());
-      showAiToast(`✅ Indexed ${Object.keys(idx.files).length} files`, "success");
+      showAiToast(t("toast.indexedFiles", { count: Object.keys(idx.files).length }), "success");
     } catch (e) {
       log.error("indexWorkspace failed", e);
-      showAiToast(`Indexing failed: ${(e as Error).message}`, "error");
+      showAiToast(t("toast.indexingFailed", { error: (e as Error).message }), "error");
     } finally {
       setSmartIndexing(false);
     }
@@ -189,7 +183,7 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
       // their hit lives. Slight delay so the doc has loaded into the editor.
       if (q) setTimeout(() => flashSearchHighlight(q), 80);
     } catch {
-      /* file gone */
+      /* why: the file was deleted since the search ran; nothing to open */
     }
   }
 
@@ -202,7 +196,7 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
       onOpenFile(hit.path, content);
       if (q) setTimeout(() => flashSearchHighlight(q), 80);
     } catch {
-      /* file gone */
+      /* why: the file was deleted since the search ran; nothing to open */
     }
   }
 
@@ -231,20 +225,36 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
     }
   }
 
+  // T55: closing the dialog (or Esc anywhere) cancels a running answer.
+  const askOp = useRef<{ end(): void; abort(): void } | null>(null);
+  useEffect(() => {
+    if (!open) askOp.current?.abort();
+  }, [open]);
+
   async function askAi() {
     // Each question is one LLM prompt against the monthly AI quota, counted
     // when it is actually sent (ownPrompt).
+    const { aiOperation, isAbort } = await import("../ai/aiAbort");
+    // A new question replaces one still running: abort that one, so only
+    // this invocation owns the handle, the loading state and the answer.
+    askOp.current?.abort();
+    const op = aiOperation();
+    const local = new AbortController();
+    op.signal.addEventListener("abort", () => local.abort(op.signal.reason), { once: true });
+    const mine = { end: op.end, abort: () => local.abort(new DOMException("closed", "AbortError")) };
+    askOp.current = mine;
     setAiLoading(true);
     setAiAnswer(t("searchDialog.searching"));
     setAiSources([]);
+    setAiCitations(null);
 
     try {
       // Hybrid retrieval — when the user has built the embedding index
       // (Smart tab → Build) we fuse BM25 + semantic via RRF for genuinely
       // semantic-aware Q&A. When the index is empty, `searchHybrid` falls
       // back to BM25 alone, so we never block the AI tab on a missing index.
-      const hybridHits = aiKey && smartAllowed
-        ? await searchHybrid(query, 8).catch(() => [] as SemanticHit[])
+      const hybridHits = smartAllowed
+        ? await searchHybrid(query, 30).catch(() => [] as SemanticHit[])
         : [];
       const fallback =
         hybridHits.length === 0
@@ -264,8 +274,16 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
             .catch(() => h.snippet),
         })),
       );
-      const results = hybridResults.length > 0 ? hybridResults : fallback;
+      // T29: rerank the candidates against the question, keep the best 8.
+      const pool = hybridResults.length > 0 ? hybridResults : fallback;
+      const results: RagResult[] = (
+        await rerank(query, pool.map((r) => ({ ...r, text: `${r.snippet ?? ""}\n${r.content.slice(0, 1500)}` })))
+      )
+        .slice(0, 8)
+        .map(({ text: _text, rerankScore: _r, ...r }) => r as RagResult);
+      if (local.signal.aborted) throw local.signal.reason; // superseded or closed
       setAiSources(results);
+      setAiCitations(null);
 
       // Build context from semantic results: only the parts relevant to the
       // question, within the AI mode's token budget (context packer).
@@ -275,21 +293,34 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
         results.map((r) => ({ path: r.path, content: r.content })),
         CONTEXT_BUDGET[getAiMode()],
       );
+      // Plan 2.7: a note from outside (clipped, imported, pulled) goes to the model cleaned and delimited, and taints the run.
+      const { ensureProvenanceBackfill, guardUntrusted, untrustedSourcesOfNote } = await import("../agents/untrusted");
+      await ensureProvenanceBackfill();
+      const untrusted: string[] = [];
       const contextStr = results.length > 0
-        ? packed.map((r, i) => `---\n📄 [${i + 1}] ${r.path}\n${r.text}`).join("\n")
+        ? packed
+            .map((r, i) => {
+              const entry = `📄 [${i + 1}] ${r.path}\n${r.text}`;
+              const from = untrustedSourcesOfNote(r.path, results.find((x) => x.path === r.path)?.content);
+              untrusted.push(...from);
+              return `---\n${from.length ? guardUntrusted(entry, from).text : entry}`;
+            })
+            .join("\n")
         : t("searchDialog.noRelevant");
 
       setAiAnswer(t("searchDialog.thinking"));
 
-      // Build multi-turn messages
-      const messages: ChatMessage[] = [
-        { role: "system", content: PROMPTS.ragAssistant + "\n\nWhen referencing information from context files, cite them as [1], [2], etc." },
-        ...conversation,
-        { role: "user", content: `Context Files:\n${contextStr}\n\nQuestion: ${query}` },
-      ];
-
-      const answer = await chat(messages, { ownPrompt: true });
+      // Plan 5.5: the `answerer` agent, through the runtime (earlier turns go along).
+      const [{ runAgentOrThrow }, { answererAgent }] = await Promise.all([import("../agents/runtime"), import("../agents/defs")]);
+      const answer = await runAgentOrThrow(
+        answererAgent,
+        { text: query, extra: { context: contextStr, history: conversation.filter((m): m is ChatMessage & { role: "user" | "assistant" } => m.role === "user" || m.role === "assistant"), citeInstructions: CITE_INSTRUCTIONS } },
+        { ownPrompt: true, signal: local.signal, untrusted },
+      );
+      if (local.signal.aborted) throw local.signal.reason;
       setAiAnswer(answer);
+      // Check every citation against the note it names (T29).
+      setAiCitations(verifyVaultCitations(answer, results.map((r) => ({ path: r.path, content: r.content }))));
 
       // Save to conversation history
       setConversation((prev) => [
@@ -302,18 +333,27 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
       const rendered = await renderMarkdown(answer, isDark);
       setAiRendered(rendered);
     } catch (e) {
+      if (isAbort(e) || local.signal.aborted) {
+        if (askOp.current === mine) setAiAnswer(t("toast.aiCancelled", { count: 1 }));
+        return;
+      }
       if (e instanceof AiError && e.code === "NO_KEY") {
         setAiAnswer("⚠️ Please configure your AI Key (⌘K → AI Settings).");
-        showAiToast("Please configure your AI Key (⌘K → AI Settings)", "error");
+        showAiToast(t("toast.pleaseConfigureYourAiKey"), "error");
       } else if (e instanceof Error && e.name === "AiQuotaExceededError") {
         setAiAnswer(e.message); // the quota toast was already shown
       } else {
         log.error("AI workspace search failed", e);
         setAiAnswer("Failed to reach AI API.");
-        showAiToast("AI workspace search failed", "error");
+        // 5.6.4: an agent failure opens the suggestions panel instead of a bare toast.
+        if (!(await import("../agents/suggestions")).reportAgentFailure(e, "search.askWorkspace")) showAiToast(t("toast.aiWorkspaceSearchFailed"), "error");
       }
     } finally {
-      setAiLoading(false);
+      op.end();
+      if (askOp.current === mine) {
+        askOp.current = null;
+        setAiLoading(false);
+      }
     }
   }
 
@@ -326,7 +366,7 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
   // Result-count badge: shown once a query has settled (not while the
   // debounced search is in flight, and not on the Ask tab).
   const resultCount = mode === "smart" ? smartHits.length : hits.length;
-  const showCount = !loading && query.trim().length > 0 && mode !== "ai";
+  const showCount = !loading && query.trim().length > 0 && mode !== "ai" && mode !== "images";
 
   if (!open) return null;
 
@@ -334,19 +374,22 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
     <div className="cmd-palette-backdrop" onClick={onClose} role="dialog" aria-modal>
       <div ref={dialogRef} className="cmd-palette" style={{ minHeight: "350px", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", borderBottom: "1px solid hsl(var(--border))", padding: "0 10px", alignItems: "center" }}>
-          <button className={`chart-block-tab ${mode === "search" ? "active" : ""}`} style={{ fontSize: 13, background: "transparent" }} onClick={() => setMode("search")}>
-             Search
+          <button className={`chart-block-tab ${mode === "search" ? "active" : ""}`} style={{ fontSize: 13, background: "transparent" }} onClick={() => pickMode("search")}>
+             {t("searchDialog.mode.search")}
           </button>
           <button
             className={`chart-block-tab ${mode === "smart" ? "active" : ""}`}
             style={{ fontSize: 13, background: "transparent" }}
-            onClick={() => setMode("smart")}
-            title="Hybrid semantic + keyword search (uses your AI key for embeddings)"
+            onClick={() => pickMode("smart")}
+            title={t("searchDialog.smartHint")}
           >
-            <Wand2 size={11} style={{ display: "inline", marginRight: 4 }} /> Smart
+            <Wand2 size={11} style={{ display: "inline", marginInlineEnd: 4 }} /> {t("searchDialog.mode.smart")}
           </button>
-          <button className={`chart-block-tab ${mode === "ai" ? "active" : ""}`} style={{ fontSize: 13, background: "transparent" }} onClick={() => setMode("ai")}>
-             <Sparkles size={11} style={{display:"inline", marginRight:4}}/> Ask Workspace
+          <button className={`chart-block-tab ${mode === "ai" ? "active" : ""}`} style={{ fontSize: 13, background: "transparent" }} onClick={() => pickMode("ai")}>
+             <Sparkles size={11} style={{display:"inline", marginInlineEnd:4}}/> {t("searchDialog.mode.ai")}
+          </button>
+          <button className={`chart-block-tab ${mode === "images" ? "active" : ""}`} style={{ fontSize: 13, background: "transparent" }} onClick={() => pickMode("images")} data-testid="search-tab-images">
+             <ImageIcon size={11} style={{ display: "inline", marginInlineEnd: 4 }} /> {t("imageSearch.tab")}
           </button>
           {mode === "smart" && smartAllowed && (
             <button
@@ -363,9 +406,9 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
                 color: "hsl(var(--fg-muted))",
                 cursor: smartIndexing ? "wait" : "pointer",
               }}
-              title="Rebuild the embedding index"
+              title={t("searchDialog.rebuildIndex")}
             >
-              {smartIndexing ? "Indexing…" : smartIndexedAt ? "Re-index" : "Build index"}
+              {smartIndexing ? t("searchDialog.indexing") : smartIndexedAt ? t("searchDialog.reindex") : t("searchDialog.buildIndex")}
             </button>
           )}
         </div>
@@ -404,14 +447,37 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
             </span>
           )}
         </div>
+        {mode !== "smart" && isOPFSAvailable() && (
+          // Plan 11.3: the operators, shown under the input (LTR syntax inside an RTL UI stays readable).
+          <div
+            data-testid="search-operators-hint"
+            dir="auto"
+            style={{ padding: "2px 14px 6px", fontSize: 11, color: "hsl(var(--fg-muted))", unicodeBidi: "plaintext" }}
+          >
+            {t("search.operatorsHint")}
+          </div>
+        )}
         <div className="cmd-palette-list" ref={listRef}>
+          {mode === "images" && (
+            <Suspense fallback={null}>
+              <ImageSearchPanel
+                query={query}
+                onPick={(path) => {
+                  // Copy the image as Markdown to paste it into the note.
+                  void navigator.clipboard?.writeText(`![](${path.split("/").map(encodeURIComponent).join("/")})`).catch(() => undefined);
+                  showAiToast(t("imageSearch.copied"), "success");
+                  onClose();
+                }}
+              />
+            </Suspense>
+          )}
           {mode === "smart" && !smartAllowed && (
             <UpgradeNotice compact plan="pro" message={t("billing.upgrade.smartSearch")} />
           )}
-          {empty && !(mode === "smart" && !smartAllowed) && (
+          {empty && mode !== "images" && !(mode === "smart" && !smartAllowed) && (
             <div className="cmd-palette-empty">
               {mode === "smart" && !smartIndexedAt && !query
-                ? "Click \u201CBuild index\u201D to enable Smart search."
+                ? t("searchDialog.buildHint")
                 : query
                   ? t("search.noMatches")
                   : t("search.empty")}
@@ -420,7 +486,7 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
           {/* Recent-searches chip row — only when the query is empty and the
               user has actually run searches before. Click a chip to re-run
               that query; click ✕ to forget it. */}
-          {!query && getSearchHistory().length > 0 && (
+          {!query && mode !== "images" && getSearchHistory().length > 0 && (
             <div
               style={{
                 display: "flex",
@@ -430,10 +496,10 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
                 borderBottom: "1px solid hsl(var(--border))",
               }}
               role="group"
-              aria-label="Recent searches"
+              aria-label={t("searchDialog.recent")}
             >
               <span style={{ fontSize: 10, color: "hsl(var(--fg-muted))", textTransform: "uppercase", letterSpacing: "0.05em", marginInlineEnd: 4, alignSelf: "center" }}>
-                Recent
+                {t("searchDialog.recentLabel")}
               </span>
               {getSearchHistory().map((q) => (
                 <span
@@ -452,7 +518,7 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
                   <button
                     type="button"
                     onClick={() => setQuery(q)}
-                    aria-label={`Re-run search "${q}"`}
+                    aria-label={t("searchDialog.rerun", { q })}
                     style={{
                       background: "transparent",
                       border: "none",
@@ -471,7 +537,7 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
                       // Force re-render — cheap nudge via setQuery toggle.
                       setQuery((s) => s);
                     }}
-                    aria-label={`Forget search "${q}"`}
+                    aria-label={t("searchDialog.forget", { q })}
                     style={{
                       background: "transparent",
                       border: "none",
@@ -503,7 +569,7 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
                 <div className="cmd-palette-label" style={{ fontWeight: 500 }}>
                   {hit.name}
                   {hit.path !== hit.name && (
-                    <span style={{ color: "hsl(var(--fg-muted))", fontWeight: 400, marginLeft: 6, fontSize: 11 }}>
+                    <span style={{ color: "hsl(var(--fg-muted))", fontWeight: 400, marginInlineStart: 6, fontSize: 11 }}>
                       {hit.path}
                     </span>
                   )}
@@ -535,7 +601,7 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
                 onMouseEnter={() => setActive(i)}
                 onClick={() => void openSmartHit(hit)}
                 style={{ alignItems: "flex-start" }}
-                title={`${hit.path} — score ${hit.score.toFixed(3)}`}
+                title={t("searchDialog.hitTitle", { path: hit.path, score: hit.score.toFixed(3) })}
               >
                 <Wand2 size={14} style={{ opacity: 0.7, marginTop: 1, flexShrink: 0, color: "hsl(var(--accent))" }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -582,6 +648,41 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
                 <div className="prose-lumen" style={{ padding: 0, fontSize: 13, lineHeight: 1.6, maxWidth: "none" }}>
                   {aiRendered}
                 </div>
+                {aiCitations && (
+                  <div data-testid="vault-citations" style={{ borderTop: "1px solid hsl(var(--border))", paddingTop: 8, marginTop: 4, fontSize: 11.5 }}>
+                    {aiCitations.verifiedCount === 0 ? (
+                      <div role="alert" style={{ color: "hsl(35 90% 45%)", fontWeight: 600, marginBottom: 4 }}>{t("vaultCite.unsupported")}</div>
+                    ) : (
+                      <div style={{ color: "hsl(var(--fg-muted))", fontWeight: 600, marginBottom: 4 }}>
+                        {t("vaultCite.summary", { ok: aiCitations.verifiedCount, total: aiCitations.citations.length })}
+                      </div>
+                    )}
+                    {aiCitations.citations.map((c, i) => (
+                      <button
+                        type="button"
+                        key={`${c.n}-${i}`}
+                        disabled={!c.path}
+                        data-verified={c.verified ? "1" : "0"}
+                        onClick={() => {
+                          const src = aiSources[c.n - 1];
+                          if (!src) return;
+                          onClose();
+                          onOpenFile(src.path, src.content);
+                          if (c.line) window.dispatchEvent(new CustomEvent("lumen-reveal-line", { detail: { line: c.line, content: src.content } }));
+                        }}
+                        style={{ display: "flex", gap: 6, alignItems: "baseline", width: "100%", textAlign: "start", padding: "3px 0", background: "none", border: 0, color: "inherit", cursor: c.path ? "pointer" : "default" }}
+                      >
+                        <span style={{ color: c.verified ? "hsl(145 60% 38%)" : "hsl(0 70% 55%)", fontWeight: 700 }} aria-label={c.verified ? t("vaultCite.verified") : t("vaultCite.notVerified")}>
+                          {c.verified ? "✓" : "✗"}
+                        </span>
+                        <span style={{ color: "hsl(var(--accent))", whiteSpace: "nowrap" }}>
+                          [{c.n}] <bdi>{c.path ?? t("vaultCite.noSource")}</bdi>{c.line ? `:${c.line}` : ""}
+                        </span>
+                        {c.quote && <span dir="auto" style={{ color: "hsl(var(--fg-muted))", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>“{c.quote}”</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {aiSources.length > 0 && (
                   <div style={{ borderTop: "1px solid hsl(var(--border))", paddingTop: 8, marginTop: 4 }}>
                     <div style={{ fontSize: 11, color: "hsl(var(--fg-muted))", marginBottom: 4, fontWeight: 600 }}>{t("searchDialog.sources")}</div>
@@ -590,18 +691,18 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
                         key={s.path}
                         onClick={() => { onClose(); onOpenFile(s.path, s.content); }}
                         style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 0", fontSize: 11, color: "hsl(var(--accent))", cursor: "pointer" }}
-                        title={`Relevance: ${(s.score * 100).toFixed(0)}%`}
+                        title={t("searchDialog.relevance", { pct: (s.score * 100).toFixed(0) })}
                       >
                         <FileCode2 size={11} />
                         <span>[{i + 1}] {s.path}</span>
-                        <span style={{ color: "hsl(var(--fg-muted))", marginLeft: "auto" }}>{(s.score * 100).toFixed(0)}%</span>
+                        <span style={{ color: "hsl(var(--fg-muted))", marginInlineStart: "auto" }}>{(s.score * 100).toFixed(0)}%</span>
                       </div>
                     ))}
                   </div>
                 )}
                 {conversation.length > 0 && (
                   <div style={{ fontSize: 11, color: "hsl(var(--fg-muted))", fontStyle: "italic" }}>
-                    {conversation.length / 2} turn{conversation.length > 2 ? "s" : ""} in this conversation
+                    {tPlural("searchDialog.turns", conversation.length / 2)}
                   </div>
                 )}
               </>

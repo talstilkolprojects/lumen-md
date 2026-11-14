@@ -1,0 +1,11 @@
+{
+  "about": "Measured translation quality per layer and language pair (plan 6.4): chrF (sacreBLEU chrF2, 0–100) on the mt-he-en golden set's dev split, both directions, from `node scripts/golden/evals/mt.mjs --dev`. `null` = not measured yet. The baseline is Opus-MT (layer 2): a layer whose measured chrF for a pair is below the baseline's is never chosen automatically for that pair; an unmeasured layer is chosen only when no measured one is available, and the result says so.",
+  "baseline": "opus",
+  "measuredOn": null,
+  "chrF": {
+    "chrome": { "he-en": null, "en-he": null },
+    "opus": { "he-en": null, "en-he": null },
+    "m2m100": { "he-en": null, "en-he": null },
+    "llm": { "he-en": null, "en-he": null }
+  }
+}

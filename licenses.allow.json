@@ -1,0 +1,44 @@
+{
+  "about": "Documented exceptions to the licence gate (scripts/licenses.mjs). Each entry caps a finding at `level` (warn by default; notice or ok also allowed) and must say why. `until` (YYYY-MM-DD) makes an exception lapse; an entry that matches nothing is reported so this file stays honest. `name` may end with * to match a prefix. `license` is the licence text the decision was about: a finding whose licence has changed since is reported again, not waived.",
+  "exceptions": [
+    {
+      "area": "model",
+      "name": "hspell-he-dictionary",
+      "license": "AGPL-3.0-only",
+      "level": "warn",
+      "reason": "AGPL-3.0 Hspell word list: never bundled. The app fetches it from upstream (wooorm/dictionaries) only after an explicit user command and names the licence first (HEBREW_DICT_LICENSE in src/ai/hebrewSpell.ts), so Lumen does not distribute it."
+    },
+    {
+      "area": "npm",
+      "name": "dictionary-en",
+      "license": "(MIT AND BSD)",
+      "level": "ok",
+      "reason": "\"BSD\" is the package's shorthand: its license file is MIT (the wooorm/dictionaries packaging) plus the SCOWL/en_US Hunspell word list terms — a permissive BSD-style grant (\"Redistribution and use in source and binary forms, with or without modification, are permitted…\", retain notice). Plan 6.10 lists it as MIT AND BSD (SCOWL). Bundled in the English spelling worker; the notice ships with the package.",
+      "decision": "6.10 (checked 2026-10-24 against node_modules/dictionary-en/license)"
+    },
+    {
+      "area": "npm",
+      "name": "format",
+      "license": "(missing)",
+      "level": "ok",
+      "reason": "MIT, verified for format@0.2.2 (via remark-frontmatter): its package.json at tag 0.2.2 (samsonjs/format, commit 4f898096759776b7c84fa7a25b13c923dadfe46e) declares it in the legacy field, licenses: [{ type: \"MIT\", url: \"http://sjs.mit-license.org\" }], and its Readme says \"MIT license\". The lockfile has no `license` for it because npm only copies a string `license`; with node_modules installed the gate reads the same field itself.",
+      "decision": "W1.1 train (checked 2026-11-10 against the upstream tag)"
+    },
+    {
+      "area": "npm",
+      "name": "fuzzy",
+      "license": "(missing)",
+      "level": "ok",
+      "reason": "MIT, verified for fuzzy@0.1.3 (via @excalidraw/excalidraw): at tag 0.1.3 (mattyork/fuzzy, commit 39e3f256ce44411bc20ee79bc6bbf616ac88d163) package.json declares licenses: [{ type: \"MIT\" }] and LICENSE-MIT is the MIT text (Copyright (c) 2012 Matt York). Missing from the lockfile only because npm copies a string `license` alone.",
+      "decision": "W1.1 train (checked 2026-11-10 against the upstream tag)"
+    },
+    {
+      "area": "npm",
+      "name": "khroma",
+      "license": "(missing)",
+      "level": "ok",
+      "reason": "MIT, verified for khroma@2.1.0 (via mermaid): at tag v2.1.0 (fabiospampinato/khroma, commit 4968165afb0d3d09be66497e7985a34f7bfe6d42) package.json has no licence field, and its `license` file is the MIT License (Copyright (c) 2019-present Fabio Spampinato, Andrew Maney). With node_modules installed the gate reads that file itself.",
+      "decision": "W1.1 train (checked 2026-11-10 against the upstream tag)"
+    }
+  ]
+}

@@ -1,11 +1,21 @@
 /**
- * Workspace storage using the Origin Private File System (OPFS).
- * Files and folders are addressed by forward-slash paths, e.g.
- * `notes/2026/april.md`. Path traversal walks (creating intermediate
- * directories on demand for write paths).
+ * The workspace: the user's notes and attachments, addressed by
+ * forward-slash paths relative to the vault root, e.g. `notes/2026/april.md`.
+ *
+ * Storage itself is the active vault backend (./vault — OPFS by default;
+ * plan 4.1). The functions here are thin wrappers over it that keep the
+ * workspace's own policy: dot entries (`.trash/`, `.obsidian/`) and pasted
+ * assets stay out of listings unless asked for, existence checks never
+ * throw. Nothing outside ./vault touches the browser's file-system handles.
  */
 
 import { randomId } from "../lib/cryptoRandom";
+import { getVaultBackend, VaultNotFoundError, type VaultData, type VaultEntry } from "./vault";
+import { basename, dirname, splitPath } from "./vault/shared";
+
+export { basename, dirname, joinPath, splitPath } from "./vault/shared";
+export { WorkspaceConflictError } from "./vault/types";
+export type { VaultEntry } from "./vault/types";
 
 export interface WorkspaceEntry {
   /** File path relative to the workspace root. */
@@ -29,110 +39,58 @@ export interface WorkspaceNode {
   children?: WorkspaceNode[];
 }
 
-async function root(): Promise<FileSystemDirectoryHandle> {
-  if (!navigator.storage?.getDirectory) {
-    throw new Error("OPFS is not available in this browser.");
-  }
-  return await navigator.storage.getDirectory();
-}
-
-// ── Path helpers ─────────────────────────────────────────────────────────
-
-export function splitPath(path: string): string[] {
-  return path.split("/").filter(Boolean);
-}
-
-export function joinPath(...parts: string[]): string {
-  return parts.flatMap(splitPath).join("/");
-}
-
-export function basename(path: string): string {
-  const parts = splitPath(path);
-  return parts[parts.length - 1] ?? "";
-}
-
-export function dirname(path: string): string {
-  const parts = splitPath(path);
-  parts.pop();
-  return parts.join("/");
-}
-
-async function walkDir(
-  parts: string[],
-  opts: { create?: boolean } = {},
-): Promise<FileSystemDirectoryHandle> {
-  let cur = await root();
-  for (const part of parts) {
-    cur = await cur.getDirectoryHandle(part, { create: !!opts.create });
-  }
-  return cur;
-}
-
-async function getFileHandleAt(
-  path: string,
-  opts: { create?: boolean } = {},
-): Promise<FileSystemFileHandle> {
-  const parts = splitPath(path);
-  const file = parts.pop();
-  if (!file) throw new Error("Empty workspace path");
-  const dir = await walkDir(parts, opts);
-  return await dir.getFileHandle(file, { create: !!opts.create });
-}
+const vault = () => getVaultBackend();
 
 // ── Recursive tree ───────────────────────────────────────────────────────
 
 async function readDirInto(
-  dir: FileSystemDirectoryHandle,
-  prefix: string,
-  opts: { includeAssets: boolean },
+  dir: string,
+  opts: { includeAssets: boolean; includeHidden: boolean },
 ): Promise<WorkspaceNode[]> {
   const out: WorkspaceNode[] = [];
-  for await (const [name, handle] of dir.entries()) {
-    const path = prefix ? `${prefix}/${name}` : name;
-    if (handle.kind === "directory") {
-      const children = await readDirInto(
-        handle as FileSystemDirectoryHandle,
-        path,
-        opts,
-      );
-      // Hide entirely-empty asset-only directories when not including assets.
+  for (const entry of await vault().list(dir)) {
+    const { name, path } = entry;
+    // Dot entries are app data (".trash", ".obsidian"), not notes (T46):
+    // hidden from the tree, search and the index. Sync callers still need
+    // real repository content such as `.github/` — only the trash stays out.
+    if (name.startsWith(".") && (!opts.includeHidden || (!dir && name === ".trash"))) continue;
+    if (entry.kind === "directory") {
+      let children: WorkspaceNode[];
+      try {
+        children = await readDirInto(path, opts);
+      } catch (e) {
+        // Deleted while we were listing: leave it out.
+        if (e instanceof VaultNotFoundError) continue;
+        throw e;
+      }
       out.push({ path, name, kind: "directory", children });
     } else {
       if (!opts.includeAssets && isAssetName(name)) continue;
-      try {
-        const file = await (handle as FileSystemFileHandle).getFile();
-        out.push({
-          path,
-          name,
-          kind: "file",
-          size: file.size,
-          modified: file.lastModified,
-        });
-      } catch {
-        out.push({ path, name, kind: "file" });
-      }
+      out.push(
+        entry.size === undefined
+          ? { path, name, kind: "file" }
+          : { path, name, kind: "file", size: entry.size, modified: entry.mtime ?? 0 },
+      );
     }
   }
-  out.sort((a, b) => {
-    if (a.kind !== b.kind) return a.kind === "directory" ? -1 : 1;
-    return a.name.localeCompare(b.name);
-  });
+  // The backend lists directories first, then files, by name.
   return out;
 }
 
 /** Recursive tree of all entries in the workspace. */
 export async function listWorkspaceTree(
-  opts: { includeAssets?: boolean } = {},
+  opts: { includeAssets?: boolean; includeHidden?: boolean } = {},
 ): Promise<WorkspaceNode[]> {
-  return readDirInto(await root(), "", { includeAssets: !!opts.includeAssets });
+  return readDirInto("", { includeAssets: !!opts.includeAssets, includeHidden: !!opts.includeHidden });
 }
 
 /**
  * Backwards-compatible flat listing — recurses through every directory and
- * returns a flat array of files only.
+ * returns a flat array of files only. `includeHidden` keeps dot entries
+ * (except the root `.trash/`) for callers that mirror the vault (git, cloud sync).
  */
 export async function listWorkspace(
-  opts: { includeAssets?: boolean } = {},
+  opts: { includeAssets?: boolean; includeHidden?: boolean } = {},
 ): Promise<WorkspaceEntry[]> {
   const tree = await listWorkspaceTree(opts);
   const out: WorkspaceEntry[] = [];
@@ -157,20 +115,50 @@ export async function listWorkspace(
 
 // ── File operations (path-aware) ─────────────────────────────────────────
 
+/**
+ * The direct children of folder `dir` ("" = the root), dot entries
+ * included, directories first. Rejects when `dir` is not a folder.
+ */
+export async function listWorkspaceDir(dir: string): Promise<VaultEntry[]> {
+  return vault().list(dir);
+}
+
 export async function readWorkspaceFile(path: string): Promise<string> {
-  const handle = await getFileHandleAt(path);
-  const file = await handle.getFile();
-  return await file.text();
+  return vault().readText(path);
+}
+
+/**
+ * Per-path serialization for workspace writes. Every write through this
+ * module holds the path's lock — a Web Lock, so other tabs of the app (and
+ * the sync / agent code running in them) queue behind it too; an in-process
+ * queue where Web Locks are missing. `createWorkspaceFile` checks and writes
+ * under it, so nothing lands between its check and its write.
+ */
+const localLocks = new Map<string, Promise<unknown>>();
+
+function withPathLock<T>(path: string, fn: () => Promise<T>): Promise<T> {
+  const name = `lumen-workspace:${splitPath(path).join("/")}`;
+  const locks = typeof navigator !== "undefined" ? (navigator as Navigator & { locks?: LockManager }).locks : undefined;
+  if (locks?.request) return locks.request(name, () => fn()) as Promise<T>;
+  const prev = localLocks.get(name) ?? Promise.resolve();
+  const run = prev.then(fn, fn);
+  const tail = run.catch(() => undefined);
+  localLocks.set(name, tail);
+  void tail.then(() => {
+    if (localLocks.get(name) === tail) localLocks.delete(name);
+  });
+  return run;
+}
+
+async function writeUnlocked(path: string, data: VaultData): Promise<void> {
+  await vault().write(path, data);
 }
 
 export async function writeWorkspaceFile(
   path: string,
   content: string,
 ): Promise<void> {
-  const handle = await getFileHandleAt(path, { create: true });
-  const writable = await handle.createWritable();
-  await writable.write(content);
-  await writable.close();
+  return withPathLock(path, () => writeUnlocked(path, content));
 }
 
 /** Write arbitrary binary content (e.g. an image asset). */
@@ -178,16 +166,28 @@ export async function writeWorkspaceBlob(
   path: string,
   data: Blob | ArrayBuffer | Uint8Array,
 ): Promise<void> {
-  const handle = await getFileHandleAt(path, { create: true });
-  const writable = await handle.createWritable();
-  await writable.write(data as FileSystemWriteChunkType);
-  await writable.close();
+  return withPathLock(path, () => writeUnlocked(path, data));
+}
+
+/**
+ * Create a file only if nothing exists at `path`: the check and the write
+ * hold the path's lock, so a write from another tab, sync or an agent can't
+ * slip in between and be truncated. Resolves to false (and writes nothing)
+ * when the path is taken.
+ */
+export async function createWorkspaceFile(path: string, content: string): Promise<boolean> {
+  return withPathLock(path, async () => {
+    // A lookup that fails for any reason but "not there" throws: it never
+    // turns into an overwrite (workspaceHasEntry would read it as "absent").
+    if ((await vault().stat(path)) !== null) return false;
+    await writeUnlocked(path, content);
+    return true;
+  });
 }
 
 /** Read raw bytes; useful for assets resolved into blob URLs. */
 export async function readWorkspaceBlob(path: string): Promise<Blob> {
-  const handle = await getFileHandleAt(path);
-  return await handle.getFile();
+  return vault().read(path);
 }
 
 const ASSET_PREFIX = "lumen-asset-";
@@ -206,28 +206,50 @@ export function makeAssetName(originalName: string): string {
 
 /** Delete a file at `path` — recursively when `path` refers to a directory. */
 export async function deleteWorkspaceFile(path: string): Promise<void> {
-  const parts = splitPath(path);
-  const last = parts.pop();
-  if (!last) throw new Error("Cannot delete the workspace root");
-  const parent = await walkDir(parts);
-  await parent.removeEntry(last, { recursive: true });
+  await vault().remove(path);
 }
 
+/** Does anything (file or folder) exist at `path`? */
+export async function workspaceHasEntry(path: string): Promise<boolean> {
+  try {
+    return (await vault().stat(path)) !== null;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Rename or move a file or a folder (T46). Refuses to replace anything at
+ * the target unless `overwrite` is set — it used to overwrite silently.
+ * Folders move recursively. (OPFS names are case-sensitive, so a change of
+ * letter case is an ordinary rename.)
+ */
 export async function renameWorkspaceFile(
   oldPath: string,
   newPath: string,
+  opts: { overwrite?: boolean } = {},
 ): Promise<void> {
-  if (oldPath === newPath) return;
-  // Read original (file only — directory rename would need a recursive copy).
-  const original = await readWorkspaceBlob(oldPath);
-  await writeWorkspaceBlob(newPath, original);
-  await deleteWorkspaceFile(oldPath);
+  // Plan 2.7: outside content stays outside content under its new name. The
+  // records move first: if they can't be stored, nothing is moved; if the
+  // move fails (conflict, quota, write error), they go back.
+  const prov = await import("../agents/provenance");
+  const before = prov.snapshotRecords();
+  if (oldPath !== newPath) prov.moveUntrustedNotes(oldPath, newPath);
+  try {
+    await vault().rename(oldPath, newPath, opts);
+  } catch (e) {
+    try {
+      prov.restoreRecords(before);
+    } catch {
+      /* why: the records stay on the new name as well: outside content is never lost */
+    }
+    throw e;
+  }
 }
 
 export async function workspaceHasFile(path: string): Promise<boolean> {
   try {
-    await getFileHandleAt(path);
-    return true;
+    return (await vault().stat(path))?.kind === "file";
   } catch {
     return false;
   }
@@ -235,13 +257,12 @@ export async function workspaceHasFile(path: string): Promise<boolean> {
 
 /** Create a directory at `path` (creating intermediate dirs as needed). */
 export async function createWorkspaceFolder(path: string): Promise<void> {
-  const parts = splitPath(path);
-  if (parts.length === 0) return;
-  await walkDir(parts, { create: true });
+  await vault().mkdir(path);
 }
 
+/** Can the active vault work here? (The name predates plan 4.1: it asks the active backend, OPFS by default.) */
 export function isOPFSAvailable(): boolean {
-  return typeof navigator !== "undefined" && !!navigator.storage?.getDirectory;
+  return vault().available();
 }
 
 /**
@@ -258,7 +279,8 @@ export async function uniqueWorkspaceName(base: string): Promise<string> {
   while (true) {
     const candidateName = i === 0 ? `${stem}${ext}` : `${stem} ${i + 1}${ext}`;
     const candidate = dir ? `${dir}/${candidateName}` : candidateName;
-    if (!(await workspaceHasFile(candidate))) return candidate;
+    // A folder of that name blocks the file as much as a file does.
+    if (!(await workspaceHasEntry(candidate))) return candidate;
     i++;
     if (i > 999) {
       const fallback = `${stem}-${Date.now()}${ext}`;

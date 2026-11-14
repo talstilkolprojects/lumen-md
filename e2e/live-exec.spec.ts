@@ -156,6 +156,19 @@ test("live-lua executes real Lua via wasmoon WASM in a worker", async ({ page })
 
 test("live-r executes real R via webR and draws a plot", async ({ page }) => {
   test.setTimeout(240_000);
+  // webR is GPL-3.0 and never part of the build (W1.34): this test needs a
+  // deployment's own copy under /webr/ (`npm run webr:local`, as the dev
+  // server in playwright.config.ts makes). The e2e gate's dist/ has none.
+  const served = await page.evaluate(async () => {
+    try {
+      const r = await fetch("/webr/webr.js", { cache: "no-store" });
+      return r.ok && /javascript/.test(r.headers.get("content-type") ?? "");
+    } catch {
+      return false;
+    }
+  });
+  // skip-reason: no webR under /webr/ here (the production build ships none; run with npm run webr:local) | task: W4.2 | until: 2027-05-12
+  test.skip(!served, "webR is not served under /webr/ (run `npm run webr:local` first)");
   await page.keyboard.press("Meta+2");
   const editor = page.locator(".cm-content").first();
   await editor.click();
@@ -187,6 +200,30 @@ test("live-r executes real R via webR and draws a plot", async ({ page }) => {
   await expect(block).toContainText("blocked");
   await expect(block.locator("canvas")).toHaveCount(1);
   await expect(block).toHaveAttribute("data-state", "success");
+});
+
+test("live-r without webR offers the download with its licence, and fetches nothing until asked", async ({ page }) => {
+  // No webR on this device or this server (plan W1.34).
+  await page.route("**/webr/**", (r) => r.fulfill({ status: 404, body: "" }));
+  const cdn: string[] = [];
+  page.on("request", (r) => {
+    if (/webr\.r-wasm\.org|cdn\.jsdelivr\.net/.test(r.url())) cdn.push(r.url());
+  });
+  await page.keyboard.press("Meta+2");
+  const editor = page.locator(".cm-content").first();
+  await editor.click();
+  await editor.press("ControlOrMeta+a");
+  await editor.fill("```live-r\ncat(1 + 1)\n```\n");
+  const block = page.locator('[data-testid="live-r"]');
+  await expect(block).toBeVisible({ timeout: 15_000 });
+  await block.getByRole("button", { name: "Run" }).click();
+  const offer = block.getByTestId("live-r-install");
+  await expect(offer).toBeVisible({ timeout: 15_000 });
+  await expect(offer).toContainText("GNU GPL version 3");
+  await expect(offer.getByRole("link", { name: /GPL-3\.0/ })).toHaveAttribute("href", /github\.com\/r-wasm\/webr\/blob\/v[\d.]+\/LICENSE\.md/);
+  await expect(offer.getByRole("button", { name: /Download R/ })).toBeEnabled();
+  await expect(block).toHaveAttribute("data-state", "install");
+  expect(cdn).toEqual([]);
 });
 
 test("live-ruby executes real Ruby via ruby.wasm in a sandboxed worker", async ({ page }) => {
@@ -268,4 +305,89 @@ test("live-ruby runs offline once the runtime was loaded (service-worker runtime
   } finally {
     await context.setOffline(false);
   }
+});
+
+/**
+ * Plan 6.14: the `run_python` agent tool on the same self-hosted Pyodide,
+ * called the way the agent runtime calls it (window.__lumen.runPython, the
+ * read scope only). It computes from `inputs`; every way to the network
+ * from Python fails inside the worker, nothing reaches the probe host, and
+ * each attempt is in the privacy ledger. A second call is stopped by its
+ * time limit.
+ */
+test("run_python agent tool computes offline and every network path fails", async ({ page, context }) => {
+  test.setTimeout(480_000);
+  const probeHits: string[] = [];
+  // Nothing may reach the probe host; if a request did leave, it is counted and dropped here.
+  await context.route(/^https?:\/\/example\.com\//, (route) => {
+    probeHits.push(route.request().url());
+    return route.abort();
+  });
+  context.on("request", (req) => {
+    if (/^(https?|wss?):\/\/example\.com\//.test(req.url())) probeHits.push(req.url());
+  });
+  await page.waitForFunction(() => typeof (window as unknown as { __lumen?: { runPython?: unknown } }).__lumen?.runPython === "function", null, { timeout: 15_000 });
+
+  const P = "https://example.com/lumen-sandbox-probe/";
+  const code = [
+    "print(sorted(inputs['xs'])[-1] * 100 + sum(range(100)) - 4950 + 7)",
+    "import js, sys, urllib.request",
+    "out = []",
+    "async def attempt(name, f):",
+    "    try:",
+    "        r = f()",
+    "        if hasattr(r, '__await__'):",
+    "            await r",
+    "        out.append(name + ':LEAKED')",
+    "    except BaseException:",
+    "        out.append(name + ':blocked')",
+    "from pyodide.http import pyfetch, open_url",
+    `await attempt('pyfetch', lambda: pyfetch('${P}pyfetch'))`,
+    `await attempt('js.fetch', lambda: js.fetch('${P}js-fetch'))`,
+    `await attempt('micropip', lambda: __import__('micropip').install('${P}pkg.whl'))`,
+    `await attempt('urllib', lambda: urllib.request.urlopen('${P}urllib', timeout=5))`,
+    `await attempt('open_url', lambda: open_url('${P}open-url'))`,
+    "await attempt('xhr', lambda: js.XMLHttpRequest.new())",
+    "await attempt('loadPackage', lambda: __import__('pyodide_js').loadPackage('numpy'))",
+    "await attempt('run_js', lambda: __import__('pyodide.code', fromlist=['run_js']).run_js('1'))",
+    "await attempt('vault', lambda: js.indexedDB.open('lumen'))",
+    "','.join(out)",
+  ].join("\n");
+
+  type Result = { ok: boolean; stdout: string; result: unknown; error: string | null; timedOut: boolean; blocked: Array<{ api: string }> };
+  const callTool = (args: Record<string, unknown>) =>
+    page.evaluate(
+      (a) => (window as unknown as { __lumen: { runPython: (x: Record<string, unknown>) => Promise<unknown> } }).__lumen.runPython(a),
+      args,
+    ) as Promise<Result>;
+
+  const res = await callTool({ code, inputs: { xs: [3, 41, 9] } });
+  expect(res.error).toBeNull();
+  expect(res.ok).toBe(true);
+  // 41 * 100 + 4950 - 4950 + 7 = 4107 — computed by CPython, not in the source.
+  expect(res.stdout).toContain("4107");
+  expect(String(res.result).split(",")).toEqual([
+    "pyfetch:blocked",
+    "js.fetch:blocked",
+    "micropip:blocked",
+    "urllib:blocked",
+    "open_url:blocked",
+    "xhr:blocked",
+    "loadPackage:blocked",
+    "run_js:blocked",
+    "vault:blocked",
+  ]);
+  const apis = res.blocked.map((b) => b.api);
+  for (const api of ["pyodide.http.pyfetch", "fetch", "micropip.install", "python:urllib.Request", "pyodide.http.open_url", "XMLHttpRequest", "pyodide.loadPackage", "pyodide.code.run_js"]) {
+    expect(apis, api).toContain(api);
+  }
+  const ledger = (await page.evaluate(() => (window as unknown as { __lumen: { ledger: () => unknown } }).__lumen.ledger())) as Array<{ reason: string; decision: string; host: string }>;
+  const blocked = ledger.filter((e) => e.reason.includes("run_python"));
+  expect(blocked.length).toBe(res.blocked.length);
+  expect(blocked.every((e) => e.decision === "blocked")).toBe(true);
+  expect(probeHits).toEqual([]);
+
+  const stuck = await callTool({ code: "while True:\n    pass", timeoutMs: 1500 });
+  expect(stuck).toMatchObject({ ok: false, timedOut: true });
+  expect(probeHits).toEqual([]);
 });

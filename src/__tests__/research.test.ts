@@ -1,5 +1,5 @@
 /** Research worker helpers, citation verifier and research agent (Plan D: D6, D7). */
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { charsetOf, htmlToText, isFetchableUrl } from "../../edge-workers/research/extract";
 import { formatCitationReport, parseCitations, quoteCoverage, verifyCitations } from "../research/citations";
 import { citedBlocksToMarkdown, parseAnswer, runResearch } from "../research/agent";
@@ -177,6 +177,7 @@ describe("research agent", () => {
       new Date("2026-10-16T00:00:00Z"),
     );
     expect(sources).toBe(2);
+    expect(markdown.startsWith("---\nuntrusted: true\nresearch: claude\n---\n")).toBe(true);
     expect(markdown).toContain("Prune in early spring.[^1] Use clean shears.[^2][^1]");
     const flagged = citedBlocksToMarkdown("Q", [
       { text: "## Findings\n", citations: [] },
@@ -201,91 +202,8 @@ describe("research agent", () => {
     expect(parseAnswer('R\n---QUOTES---\n[{"n":1,"quote":""},{"n":1,"quote":"b"}]').quotes.get(1)).toEqual(["", "b"]);
   });
 
-  describe("search route (Brave / Tavily via the research service)", () => {
-    beforeEach(() => localStorage.clear());
-    afterEach(() => vi.unstubAllGlobals());
-
-    it("plans, searches, reads, answers and verifies every quote", async () => {
-      setActiveProvider("mistral");
-      localStorage.setItem("lumen.ai.key.mistral", "m-key");
-      const answers = [
-        '["prune roses spring", "rose shears"]',
-        "Roses are pruned in early spring.[^1] Clean shears prevent disease.[^2] Bananas are blue.[^3]\n---QUOTES---\n" +
-          '[{"n":1,"quote":"Prune roses in early spring"},{"n":2,"quote":"Clean shears prevent the spread of disease"}]',
-      ];
-      vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ choices: [{ message: { content: answers.shift() } }] }), { status: 200 })));
-      const pages: Record<string, ExtractedPage> = {
-        "https://a.example/roses": { url: "https://a.example/roses", finalUrl: "https://a.example/roses", status: 200, title: "Roses", text: "Prune roses in early spring, when buds swell." },
-        "https://b.example/shears": { url: "https://b.example/shears", finalUrl: "https://b.example/shears", status: 200, title: "Shears", text: "Sharp shears make clean cuts." },
-      };
-      const result = await runResearch({
-        question: "How do I prune roses?",
-        deps: {
-          settings: { provider: "brave", key: "k" },
-          search: async (q) =>
-            q.includes("shears")
-              ? [{ title: "Shears", url: "https://b.example/shears", snippet: "" }]
-              : [{ title: "Roses", url: "https://a.example/roses", snippet: "" }, { title: "Roses again", url: "https://a.example/roses#top", snippet: "" }],
-          extract: async (u) => pages[u],
-        },
-      });
-      expect(result.sources).toBe(2);
-      expect(result.unverified).toBe(2); // source 2's quote isn't on the page; [^3] wasn't read
-      expect(result.markdown).toContain("[^1]: [Roses](https://a.example/roses) — “Prune roses in early spring”");
-      expect(result.markdown).toMatch(/\[\^2\]: \[Shears\]\(https:\/\/b\.example\/shears\) — “Clean shears prevent the spread of disease” ⚠️/);
-      // A marker for a source that wasn't read is flagged, not dropped.
-      expect(result.markdown).toContain("Bananas are blue. ⚠️ *cites a source that wasn't read*");
-      expect(result.markdown).not.toContain("[^3]");
-    });
-
-    it("gives every cited claim its own quote, and stops before searching on provider errors", async () => {
-      setActiveProvider("mistral");
-      localStorage.setItem("lumen.ai.key.mistral", "m-key");
-      const answers = [
-        '["roses"]',
-        "Prune in spring.[^1] Roses are blue.[^1] A separate unsupported claim follows here, quite long.\n\nAn unmarked paragraph that makes a claim without any footnote at all.\n---QUOTES---\n" +
-          '[{"n":1,"quote":"Prune roses in early spring"}]',
-      ];
-      vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ choices: [{ message: { content: answers.shift() } }] }), { status: 200 })));
-      const page: ExtractedPage = { url: "https://a.example/r", finalUrl: "https://a.example/r", status: 200, title: "Roses", text: "Prune roses in early spring." };
-      const deps = { settings: { provider: "brave" as const, key: "k" }, search: async () => [{ title: "Roses", url: "https://a.example/r", snippet: "" }], extract: async () => page };
-      const result = await runResearch({ question: "Roses?", deps });
-      expect(result.unverified).toBe(3);
-      expect(result.markdown).toContain("unsupported claim follows here, quite long. ⚠️ *no source cited*");
-      expect(result.markdown).toContain("Prune in spring.[^1] Roses are blue.[^2]");
-      expect(result.markdown).toContain("without any footnote at all. ⚠️ *no source cited*");
-      expect(result.markdown).toMatch(/\[\^2\]: \[Roses\]\(https:\/\/a\.example\/r\) ⚠️ \*no supporting quote given\*/);
-      // The planner call fails (provider error): no search is spent.
-      vi.stubGlobal("fetch", vi.fn(async () => new Response("quota", { status: 429 })));
-      const search = vi.fn(deps.search);
-      await expect(runResearch({ question: "Roses?", deps: { ...deps, search } })).rejects.toThrow();
-      expect(search).not.toHaveBeenCalled();
-    });
-
-    it("ignores markers in code, sees them after closing quotes, and checks prose under a heading", async () => {
-      setActiveProvider("mistral");
-      localStorage.setItem("lumen.ai.key.mistral", "m-key");
-      const answers = [
-        '["roses"]',
-        "## Findings\nThis unsupported claim sits right under the heading and is long enough.\n\n" +
-          "The source calls this “an exceptionally important result for every gardener.”[^1] Write `text[^1]` for a footnote.\n\n" +
-          "```md\nAn example sentence inside a code block that carries a marker.[^1]\n```\n---QUOTES---\n" +
-          '[{"n":1,"quote":"Prune roses in early spring"}]',
-      ];
-      vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ choices: [{ message: { content: answers.shift() } }] }), { status: 200 })));
-      const page: ExtractedPage = { url: "https://a.example/r", finalUrl: "https://a.example/r", status: 200, title: "Roses", text: "Prune roses in early spring." };
-      const result = await runResearch({
-        question: "Roses?",
-        deps: { settings: { provider: "brave", key: "k" }, search: async () => [{ title: "Roses", url: "https://a.example/r", snippet: "" }], extract: async () => page },
-      });
-      expect(result.unverified).toBe(1); // only the claim under the heading
-      expect(result.markdown).toContain("long enough. ⚠️ *no source cited*");
-      expect(result.markdown).not.toContain("Findings ⚠️");
-      expect(result.markdown).toContain("every gardener.”[^1] Write `text[^1]` for a footnote.");
-      expect(result.markdown).toContain("carries a marker.[^1]\n```");
-      expect(result.markdown).not.toContain("[^2]");
-    });
-  });
+  // The search route runs through the `researcher` agent since plan 5.4:
+  // see researcherAgent.test.ts (tool loop, verification, local-only).
 
   it("asks for the Anthropic provider for Claude web search", async () => {
     localStorage.clear();
@@ -386,5 +304,21 @@ describe("research agent", () => {
     expect(parseCitations('[^1]: [S](https://e.example "The \\"official\\" source") — “actual supporting passage here”')[0].quote).toBe("actual supporting passage here");
     const c = parseCitations('[^1]: [A](https://a.example) — “The article says "quoted words" are important.”');
     expect(c[0].quote).toBe('The article says "quoted words" are important.');
+  });
+});
+
+describe("research settings — keyless SearXNG default under local-only", () => {
+  it("defaults to searxng on a fresh local-only install and to claude when cloud is in play", async () => {
+    const { getResearchSettings } = await import("../research/client");
+    localStorage.removeItem("lumen.research.provider");
+    localStorage.removeItem("lumen.ai.policy");
+    localStorage.removeItem("lumen.ai.key.anthropic");
+    expect(getResearchSettings().provider).toBe("searxng");
+    localStorage.setItem("lumen.ai.policy", "local-first");
+    expect(getResearchSettings().provider).toBe("claude");
+    localStorage.removeItem("lumen.ai.policy");
+    localStorage.setItem("lumen.research.provider", "tavily");
+    expect(getResearchSettings().provider).toBe("tavily");
+    localStorage.removeItem("lumen.research.provider");
   });
 });

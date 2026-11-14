@@ -164,7 +164,7 @@ export function createLuaHandler(deps: {
       try {
         engine?.global.close();
       } catch {
-        /* already closed */
+        /* why: already closed */
       }
       deps.post({ type: "done", runId, ms: now() - started });
     }

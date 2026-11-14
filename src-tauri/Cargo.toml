@@ -1,3 +1,6 @@
+[workspace]
+members = ["keychain"]
+
 [package]
 name = "lumen"
 version = "0.1.0"
@@ -19,7 +22,24 @@ serde_json = "1"
 serde = { version = "1", features = ["derive"] }
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
-tauri-plugin-fs = "2"
+# Desktop updates (plan 11.5): checked and installed from Rust commands
+# (`update_check`, `update_install`); signed with Tal's updater key (15.7).
+tauri-plugin-updater = "2"
+# The desktop vault (plan 4.3): the only file-system access the WebView has,
+# confined to the folder the user picked. Replaces tauri-plugin-fs, whose
+# broad `fs:` scope nothing used.
+lumen-vault = { path = "vault" }
+# Web clipper v2 (plan 4.15.2): the extension hands clips to the desktop app
+# as lumen://clip?data=…; a second launch forwards the link to the running one.
+tauri-plugin-deep-link = "2"
+
+# OS keychain for API keys and tokens (T36): Keychain on macOS, Credential
+# Manager on Windows, in its own crate (keychain/) so CI tests it on both
+# without building Tauri (plan 2.5).
+lumen-keychain = { path = "keychain" }
+
+[target.'cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))'.dependencies]
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]

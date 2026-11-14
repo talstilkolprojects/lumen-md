@@ -38,7 +38,7 @@ describe("startCheckout", () => {
     vi.stubGlobal("fetch", fetchSpy);
     // Stub location.assign so we don't actually navigate
     const assignSpy = vi.fn();
-    vi.stubGlobal("location", { ...globalThis.location, assign: assignSpy, origin: "https://app.lumen.md" });
+    vi.stubGlobal("location", { ...globalThis.location, assign: assignSpy, origin: "https://app.example.com" });
 
     // Dynamically import after stubbing so the module reads the fresh env
     const mod = await import("../billing/checkout");

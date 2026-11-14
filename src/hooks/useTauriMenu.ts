@@ -33,6 +33,8 @@ export interface MenuActions {
   onExportHtml?: () => void;
   onExportPdf?: () => void;
   onPrint?: () => void;
+  /** File ▸ Quick capture… (plan 4.16). */
+  onQuickCapture?: () => void;
 }
 
 function isTauri(): boolean {
@@ -97,6 +99,9 @@ function dispatch(id: string, a: MenuActions): void {
       return;
     case "file.print":
       a.onPrint?.();
+      return;
+    case "file.quickCapture":
+      a.onQuickCapture?.();
       return;
     case "file.toggleWorkspace":
       a.onToggleWorkspace?.();

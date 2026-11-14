@@ -1,34 +1,15 @@
-# Lumen Web Clipper
+# Lumen Web Clipper (v2)
 
-A tiny Chrome / Firefox extension that captures the current web page (or text
-selection) as clean markdown and sends it to your running Lumen instance.
+A Chrome / Edge extension (MV3) that sends the current page, your selection
+and your highlights to Lumen, where it becomes a Markdown note with source
+and date. The extraction (Defuddle, with Readability as a fallback, then
+Turndown) runs in Lumen, not here. See `docs/src/content/docs/plugins/web-clipper.md`.
 
-## Install (developer mode)
+- `contentScript.js`: collects the page HTML, the selection and highlights; the highlighter.
+- `bridge.js`: injected on the Lumen tab only; hands the clip to the app with `postMessage`.
+- `background.js`: finds or opens the Lumen tab, or opens `lumen://clip?data=…` for the desktop app.
 
-1. Clone this repo.
-2. Open `chrome://extensions/`.
-3. Enable **Developer mode** (top-right toggle).
-4. Click **Load unpacked** and pick `extension/` from this repo.
-5. Right-click any web page → **Save selection to Lumen**, or click the
-   toolbar pin → **Save full page**.
+Install: `chrome://extensions/` → Developer mode → Load unpacked → this folder.
 
-## Configure
-
-Open the extension's **Settings** page (gear icon) and set the URL of your
-Lumen instance — defaults to `http://localhost:5173`. The extension then
-POSTs each clip as JSON to `<lumen>/api/clip` and falls back to opening the
-editor with the clip in the URL hash if the API isn't ready.
-
-## What gets captured
-
-- The page title + URL + capture timestamp (frontmatter).
-- The selected text (if any), or the article body (`<article>` / `<main>` /
-  `[role=main]` / `<body>`).
-- Headings, lists, links, code, blockquotes, images — converted to markdown
-  with a tiny inline serializer.
-
-## Future
-
-- Firefox MV3 manifest variant.
-- Side-panel UI (Chrome 114+) for tagging during capture.
-- Reader-mode pre-pass (à la Readability) for messier pages.
+Templates, triggers and the highlighter follow the Obsidian Web Clipper
+(MIT, © 2024 Obsidian). The code is ours and no Obsidian name or mark is used.

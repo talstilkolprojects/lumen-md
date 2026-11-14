@@ -14,6 +14,7 @@ import {
   mhtmlToMarkdown,
   legacyDocToMarkdown,
   pdfToMarkdown,
+  mergePdfPageTexts,
   ipynbToMarkdown,
   wxrToMarkdown,
   confluenceToMarkdown,
@@ -194,6 +195,22 @@ describe("pdfToMarkdown (real pdfjs-dist extraction)", () => {
     const out = await pdfToMarkdown(docFile(junk));
     expect(out).toMatch(/Couldn't read this PDF|no extractable text/i);
   }, 30000);
+
+  it("OCRs each blank page of a mixed PDF, not only all-blank PDFs", async () => {
+    const asked: number[] = [];
+    const out = await mergePdfPageTexts(["Cover title", "", "3"], async (n) => {
+      asked.push(n);
+      return `scanned page ${n}`;
+    });
+    expect(asked).toEqual([2]);
+    expect(out).toContain("Cover title");
+    expect(out).toContain("scanned page 2");
+    expect(out.indexOf("Cover title")).toBeLessThan(out.indexOf("scanned page 2"));
+    expect(out).toMatch(/OCR/);
+    // No OCR available (tests/node): the text pages, unchanged.
+    expect(await mergePdfPageTexts(["a", "", "b"], null)).toBe("a\n\n---\n\nb");
+    expect(await mergePdfPageTexts(["", ""], async () => "")).toMatch(/no extractable text/);
+  });
 });
 
 describe("ipynbToMarkdown (Jupyter notebook import)", () => {

@@ -114,7 +114,7 @@ export function MarkdownTableEditor({ initialMarkdown, onUpdate, onClose }: Prop
                 <th key={i} style={{ padding: 0, borderBottom: "2px solid hsl(var(--border-strong))" }}>
                   <input
                     value={h}
-                    aria-label={`Column ${i + 1} header`}
+                    aria-label={t("mdTable.columnHeader", { n: i + 1 })}
                     onChange={(e) => updateHeader(i, e.target.value)}
                     style={{
                       width: "100%",
@@ -130,7 +130,7 @@ export function MarkdownTableEditor({ initialMarkdown, onUpdate, onClose }: Prop
                   />
                   <button
                     onClick={() => cycleAlignment(i)}
-                    aria-label={`Cycle alignment for column ${i + 1}`}
+                    aria-label={t("mdTable.cycleAlign", { n: i + 1 })}
                     style={{
                       display: "block",
                       width: "100%",
@@ -142,7 +142,7 @@ export function MarkdownTableEditor({ initialMarkdown, onUpdate, onClose }: Prop
                       cursor: "pointer",
                     }}
                   >
-                    {alignments[i] === "left" ? "◀ left" : alignments[i] === "center" ? "◆ center" : "▶ right"}
+                    {alignments[i] === "left" ? t("mdTable.align.left") : alignments[i] === "center" ? t("mdTable.align.center") : t("mdTable.align.right")}
                   </button>
                 </th>
               ))}
@@ -155,7 +155,7 @@ export function MarkdownTableEditor({ initialMarkdown, onUpdate, onClose }: Prop
                   <td key={ci} style={{ padding: 0 }}>
                     <input
                       value={cell}
-                      aria-label={`Row ${ri + 1} column ${ci + 1}`}
+                      aria-label={t("mdTable.cell", { row: ri + 1, col: ci + 1 })}
                       onChange={(e) => updateCell(ri, ci, e.target.value)}
                       style={{
                         width: "100%",

@@ -101,7 +101,7 @@ describe("A7 lever 4 — only English ships eagerly", () => {
   });
 
   it("initLocale() falls back to English (LTR) when the locale chunk can't load", async () => {
-    vi.doMock("../i18n/locales/he.json", () => {
+    vi.doMock("../i18n/locales/he/common.json", () => {
       throw new Error("offline");
     });
     try {
@@ -111,13 +111,13 @@ describe("A7 lever 4 — only English ships eagerly", () => {
       expect(i18n.getLocale()).toBe("en");
       expect(document.documentElement.dir).not.toBe("rtl");
     } finally {
-      vi.doUnmock("../i18n/locales/he.json");
+      vi.doUnmock("../i18n/locales/he/common.json");
       localStorage.removeItem("lumen-md");
     }
   });
 
   it("boot fallback updates the rehydrated store so App's mount effect can't re-apply RTL", async () => {
-    vi.doMock("../i18n/locales/he.json", () => {
+    vi.doMock("../i18n/locales/he/common.json", () => {
       throw new Error("offline");
     });
     try {
@@ -132,13 +132,13 @@ describe("A7 lever 4 — only English ships eagerly", () => {
       i18n.applyLocale(useAppStore.getState().locale);
       expect(document.documentElement.dir).not.toBe("rtl");
     } finally {
-      vi.doUnmock("../i18n/locales/he.json");
+      vi.doUnmock("../i18n/locales/he/common.json");
       localStorage.removeItem("lumen-md");
     }
   });
 
   it("switching to a locale whose chunk can't load keeps the UI English and LTR", async () => {
-    vi.doMock("../i18n/locales/he.json", () => {
+    vi.doMock("../i18n/locales/he/common.json", () => {
       throw new Error("offline");
     });
     try {
@@ -150,7 +150,7 @@ describe("A7 lever 4 — only English ships eagerly", () => {
       expect(useAppStore.getState().locale).toBe("en");
       expect(document.documentElement.dir).not.toBe("rtl");
     } finally {
-      vi.doUnmock("../i18n/locales/he.json");
+      vi.doUnmock("../i18n/locales/he/common.json");
     }
   });
 

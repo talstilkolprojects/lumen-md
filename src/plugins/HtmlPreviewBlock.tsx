@@ -61,10 +61,10 @@ export default function HtmlPreviewBlock({ source, meta }: Props) {
     const el = containerRef.current;
     if (!el) return;
     if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {});
+      document.exitFullscreen().catch(() => { /* why: not in fullscreen any more (the user pressed Esc first) */ });
       setFullScreen(false);
     } else {
-      el.requestFullscreen().then(() => setFullScreen(true)).catch(() => {});
+      el.requestFullscreen().then(() => setFullScreen(true)).catch(() => { /* why: fullscreen refused (iframe policy or no user gesture): the block stays inline */ });
     }
   }
 
@@ -133,7 +133,7 @@ export default function HtmlPreviewBlock({ source, meta }: Props) {
               fontSize: 12,
             }}
           >
-            ⚠︎ Some HTML content was sanitized before preview for safety.
+            {t("block.htmlPreview.sanitized")}
           </div>
         )
       )}
@@ -143,7 +143,7 @@ export default function HtmlPreviewBlock({ source, meta }: Props) {
           sandbox={sandboxMode}
           referrerPolicy="no-referrer"
           loading="lazy"
-          title={titleMatch?.[1] ?? "HTML preview"}
+          title={titleMatch?.[1] ?? t("block.htmlPreview.title")}
           style={{
             width: "100%",
             height: fullScreen ? "100vh" : height,

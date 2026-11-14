@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "lumen.example.word-stats",
+  "name": "Word stats",
+  "version": "1.0.0",
+  "description": "Words, characters, reading time and the most frequent words of the open note — Hebrew and English — in a side panel.",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    { "id": "document:read", "reason": "To count the words of the open note" },
+    { "id": "commands", "reason": "Adds the “Word stats” command" },
+    { "id": "panel", "reason": "Shows the numbers in a side panel" },
+    { "id": "settings", "reason": "Remembers your reading speed" }
+  ]
+}

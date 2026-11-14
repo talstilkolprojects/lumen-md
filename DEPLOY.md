@@ -16,7 +16,7 @@ code is done.
 - [ ] Stripe account (free until you start billing).
 - [ ] Apple Developer Program ($99/yr).
 - [ ] Google Play Developer ($25 one-time).
-- [ ] Sentry account (free tier).
+- [ ] Sentry account (free tier) or a self-hosted GlitchTip — optional. Set `VITE_SENTRY_DSN` at build time (public by design, not a secret); reports are sent only from users who turn them on. See `docs/src/content/docs/security/monitoring.md` (on Vercel, also add the DSN's origin to `connect-src` in `vercel.json`).
 - [ ] Supabase project (free) — already optional; required for billing/sync/publish.
 - [ ] Chrome Web Store registration ($5 one-time).
 
@@ -60,54 +60,82 @@ VITE_WEBRTC_SIGNALING_URL=wss://lumen-signal.fly.dev,wss://signaling.yjs.dev
 
 ---
 
-## 2. Persistent collab server (P2-03) — 30 min
+## 2. Persistent collab server (P2-03, plan 3.6) — 30 min
 
-Same Fly.io flow with the y-websocket starter:
+`sync-server/collab-server.mjs`: Hocuspocus (MIT) with per-room token auth
+and SQLite storage (Node's built-in `node:sqlite`, Node ≥ 22.13) plus
+backups. Image: `docker/Dockerfile.collab`; on its own:
+`docker compose -f docker/collab.yml up -d`.
 
 ```bash
-cd sync-server
-npm install @y/websocket-server y-leveldb
-fly launch --name lumen-collab --dockerfile  # generate Dockerfile
-fly volumes create yjs_data --region iad --size 1
-# Mount the volume in fly.toml:
-#   [[mounts]]
-#   source = "yjs_data"
-#   destination = "/data"
-# and tell the server where to store LevelDB data:
-fly secrets set YJS_STORAGE_DIR=/data/yjs   # or [env] in fly.toml
+# Fly.io, from the repo root
+fly launch --name lumen-collab --dockerfile docker/Dockerfile.collab --no-deploy
+fly volumes create collab_data --size 1
+# fly.toml: [[mounts]] source = "collab_data", destination = "/data"
+fly secrets set COLLAB_ACCESS_KEY=$(openssl rand -hex 24) COLLAB_TOKEN_SECRET=$(openssl rand -hex 32)
 fly deploy
 ```
 
-Storage env: `YJS_STORAGE_DIR` (preferred; `LEVELDB_PATH` is accepted as a
-legacy alias). Defaults to `sync-server/.yjs-persistence`, which is **not**
-persistent on Fly — always point it at the mounted volume. Health checks:
-`/healthz` or `/health`. Persistence is LevelDB only; there is no Postgres
-archive and `DATABASE_URL` is not read by `persistent-server.js`.
+| Variable | Meaning |
+|---|---|
+| `COLLAB_ACCESS_KEY` | Operator key users enter in Collab settings → "Server access token". It only buys a short-lived token for one room. Unset = anyone who knows a room name gets one (warned at start). `COLLAB_TOKEN` is the older name. |
+| `COLLAB_TOKEN_SECRET` | HMAC key that signs room tokens, ≥ 32 characters. Never leaves the server. Unset = random per start. |
+| `COLLAB_TOKEN_TTL_S` | Room token lifetime, default 600. The client asks for a new one on every reconnect. |
+| `COLLAB_DATA_DIR` | `collab.sqlite` and `backups/` (the image uses `/data/collab`, on the volume). |
+| `COLLAB_BACKUP_INTERVAL_MS` / `COLLAB_BACKUP_KEEP` | Backup every hour by default and on shutdown; keep the newest 24. |
 
-`.env.production`:
+Health: `/healthz` → `{"ok":true,"service":"lumen-collab","persistence":"sqlite"}`.
+CI checks it on every push to main once the repository variable
+`COLLAB_URL` (and `SIGNAL_URL` for the signaling server) is set; until then
+the job reports "skipped".
+
+`.env.production` (no token here — nothing secret goes into the build):
 
 ```
 VITE_YJS_WEBSOCKET_URL=wss://lumen-collab.fly.dev
 ```
 
+The old y-websocket + LevelDB server (`persistent-server.js`) speaks a
+different protocol; the app no longer connects to it. Its rooms are not
+lost: at start the new server imports, once, every room in
+`COLLAB_LEGACY_LEVELDB_DIR` (the image sets `/data/yjs`, where the old one
+stored them) without overwriting rooms SQLite already has.
+
 ---
 
 ## 3. CSP + headers in production (DONE — verify only)
 
-The CSP lives in two places that are both enforced: the `<meta>` tag in
-`index.html` and `public/_headers` (copied to `dist/_headers`). Cloudflare
-Pages **and Netlify** serve `dist/_headers`; `netlify.toml` deliberately
-sets no CSP of its own. The self-hosted nginx image uses
-`docker/nginx.conf`.
+Every policy is written once, in `security/policy.json`, and rendered into
+the files each host reads: the `<meta>` tags in `index.html`,
+`livejs-runner.html` and `playground-runner.html`, `public/_headers`
+(copied to `dist/_headers`), `deploy/vercel.base.json` (read through
+`vercel.ts`, which adds the build's endpoint origins), `deploy/nginx.conf`
+(the one nginx image: `Dockerfile`, used by `fly.toml` and
+`docker-compose.yml`), `netlify/edge-functions/runner-headers.ts` and
+`src-tauri/tauri.conf.json`. Change the policy there and run
+`npm run headers:write`; CI (`npm run headers`) fails when any copy
+differs. Per-route decisions and per-host exceptions are explained in
+`docs/security/headers.md`. On the web the `<meta>` tag and the response
+header are both enforced. Cloudflare Pages **and Netlify** serve
+`dist/_headers`; `netlify.toml` deliberately sets no CSP of its own, and
+an edge function gives the two runner pages their own policy there (Netlify
+cannot detach the catch-all headers). What works on which host:
+`docs/src/content/docs/self-hosting/hosting.md`.
 
 Your own workers (SSO, billing/entitlements, publish, audit, marketplace,
-self-hosted LanguageTool, Supabase) are added to `connect-src`
+self-hosted LanguageTool, Supabase, the error tracker in `VITE_SENTRY_DSN`) and your collab servers
+(`VITE_WEBRTC_SIGNALING_URL`, `VITE_YJS_WEBSOCKET_URL`; the policies carry no
+bare `ws:` / `wss:`) are added to `connect-src`
 **automatically at build time** from the `VITE_*_ENDPOINT` / `VITE_*_URL`
 variables (see `src/build/cspEndpoints.ts`): set them before
 `npm run build`. For the Docker web image pass them as build args, e.g.
-`docker build -f docker/Dockerfile.web --build-arg VITE_WORKOS_ENDPOINT=https://auth.example.org .`
+`docker build --build-arg VITE_WORKOS_ENDPOINT=https://auth.example.org .`
+(or `[build.args]` in `fly.toml`, or `build.args` of `lumen-web` in `docker-compose.yml`).
 Verify after deploy: the response header and the meta tag both list your
-worker origins in `connect-src`.
+worker origins in `connect-src`. A desktop build with these variables also
+passes them to the Tauri CLI, because `tauri.conf.json` holds the public
+list only: `npm run tauri:build -- --config "$(node scripts/headers.mjs --tauri-config dist/.csp-connect-extra)"`
+after `npm run build` (see "Desktop (Tauri)" in `docs/security/headers.md`).
 
 `connect-src` is an explicit allowlist, so endpoints users set at
 **runtime** (a LAN Ollama host in `lumen.ollama.baseUrl`, a marketplace
@@ -418,7 +446,7 @@ After every step above is green:
 - [ ] Lighthouse: Performance ≥ 90, A11y ≥ 95, Best practices ≥ 95, SEO ≥ 95, PWA ≥ 90.
 - [ ] axe-core a11y test passes (no critical/serious violations).
 - [ ] `npm run budget` passes — bundle still within targets.
-- [ ] Sentry receiving events from at least one production session.
+- [ ] Sentry receiving events from at least one production session that turned error reports on (off by default).
 - [ ] First 10 users invited via TestFlight + Play Internal track.
 - [ ] `https://lumen.app/p/<test-slug>` returns a published note.
 - [ ] Right-click → "Save selection to Lumen" creates a clip.

@@ -1,0 +1,137 @@
+name: Security
+
+# Security checks on every pull request (plan 2.8): secrets (gitleaks),
+# known-vulnerable npm and Rust dependencies (npm audit, cargo audit) and what a PR adds to the
+# dependency tree (dependency-review). CodeQL and OSSF Scorecard run from
+# codeql.yml and scorecard.yml on main, since Scorecard only scores the default branch.
+#
+# Every action is pinned to a full commit SHA, with its version as a comment.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    name: secrets (gitleaks)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      # sha256 of gitleaks_8.30.1_linux_x64.tar.gz, from the release's checksums file.
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # The binary, not gitleaks-action: no licence key, and the exact
+      # release is checked against its checksum.
+      - name: Install gitleaks
+        run: |
+          curl -sSfL -o gitleaks.tgz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tgz" | sha256sum -c -
+          tar -xzf gitleaks.tgz gitleaks && rm gitleaks.tgz
+          ./gitleaks version
+      # The commits this PR (or push) adds. .gitleaks.toml and .gitleaksignore
+      # hold the reviewed false positives and fake test fixtures.
+      - name: Scan the new commits
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            range="$HEAD"
+          else
+            range="$BASE..$HEAD"
+          fi
+          # The count goes out as an annotation (readable from the API), so a
+          # green run of nothing would show.
+          echo "::notice title=gitleaks::scanning $(git rev-list --count "$range") commits ($range)"
+          ./gitleaks git . --log-opts="$range" --redact --no-banner --exit-code 1
+      - name: Scan the checked-out tree
+        run: |
+          ./gitleaks dir . --redact --no-banner --exit-code 1
+          echo "::notice title=gitleaks::checked-out tree clean ($(git ls-files | wc -l) tracked files)"
+
+  audit:
+    name: npm audit (high)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every lockfile in the repo: the app, its servers, the plugin
+        # scaffolder and the docs site.
+        dir: [., sync-server, mcp-server, packages/create-lumen-plugin, docs]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      # Fails on any high or critical advisory. A time-limited exception
+      # goes in security/audit-ignore.json (advisory id, reason, expiry) and
+      # is enforced by scripts/audit-gate.mjs; an expired one fails the job.
+      - name: npm audit --audit-level=high
+        working-directory: ${{ matrix.dir }}
+        run: node "$GITHUB_WORKSPACE/scripts/audit-gate.mjs"
+
+  cargo-audit:
+    name: cargo audit (high)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every Cargo.lock in the repo (the Tauri app and its keychain crate share one).
+        dir: [src-tauri]
+    env:
+      CARGO_AUDIT_VERSION: 0.22.2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      # The runner image's Rust builds the exact cargo-audit release from
+      # crates.io with its own lockfile; the binary is cached per version.
+      - uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
+        id: cache
+        with:
+          path: ~/.cargo-audit-bin
+          key: cargo-audit-${{ env.CARGO_AUDIT_VERSION }}-${{ runner.os }}
+      - name: Install cargo-audit
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: cargo install cargo-audit --version "$CARGO_AUDIT_VERSION" --locked --root ~/.cargo-audit-bin
+      # Fails on CVSS >= 7.0 or an unscored vulnerability. A time-limited
+      # exception goes in security/audit-ignore.json (RUSTSEC id, dir, reason, expiry).
+      - name: cargo audit
+        working-directory: ${{ matrix.dir }}
+        run: |
+          export PATH="$HOME/.cargo-audit-bin/bin:$PATH"
+          cargo audit --version
+          node "$GITHUB_WORKSPACE/scripts/audit-gate.mjs" --cargo
+
+  dependency-review:
+    name: dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure

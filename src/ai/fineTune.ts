@@ -19,12 +19,23 @@
 
 import { listWorkspace, readWorkspaceFile } from "../storage/workspace";
 import { getAiKey, AiError } from "./llm";
+import { assertCloudAllowed } from "./policy";
 import { log } from "../lib/logger";
 import { fetchWithRetry } from "../lib/fetchRetry";
 
+/** OpenAI's job statuses; the first three are still in progress. */
+export type FineTuneStatus = "validating_files" | "queued" | "running" | "succeeded" | "failed" | "cancelled";
+
+const FINISHED: ReadonlySet<string> = new Set(["succeeded", "failed", "cancelled"]);
+
+/** Is the job still in progress? Anything not finished counts (an unknown new status too), so its id is never dropped early. */
+export function fineTuneJobActive(status: string | undefined | null): boolean {
+  return !!status && !FINISHED.has(status);
+}
+
 export interface FineTuneJob {
   id: string;
-  status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
+  status: FineTuneStatus;
   /** Resulting model id when status === "succeeded". */
   fineTunedModel?: string;
   /** Created-at unix timestamp (ms). */
@@ -122,6 +133,7 @@ export async function uploadTrainingFile(
   jsonl: string,
   opts: FineTuneOptions = {},
 ): Promise<string> {
+  assertCloudAllowed("OpenAI fine-tuning (uploads your writing)");
   const key = getAiKey();
   if (!jsonl.trim()) {
     throw new AiError("PARSE_ERROR", "No training data to upload — write more notes in the last 90 days.");
@@ -159,6 +171,7 @@ export async function createFineTuneJob(
   trainingFileId: string,
   opts: FineTuneOptions = {},
 ): Promise<FineTuneJob> {
+  assertCloudAllowed("OpenAI fine-tuning");
   const key = getAiKey();
   const res = await fetchWithRetry(
     "https://api.openai.com/v1/fine_tuning/jobs",
@@ -198,6 +211,7 @@ export async function createFineTuneJob(
 
 /** Poll a job's current status. */
 export async function getFineTuneJob(jobId: string): Promise<FineTuneJob> {
+  assertCloudAllowed("OpenAI fine-tuning");
   const key = getAiKey();
   const res = await fetchWithRetry(
     `https://api.openai.com/v1/fine_tuning/jobs/${jobId}`,
@@ -233,6 +247,7 @@ export async function getFineTuneJob(jobId: string): Promise<FineTuneJob> {
 export async function startFineTune(
   opts: FineTuneOptions = {},
 ): Promise<FineTuneJob & { chunks: number; estimatedTokens: number }> {
+  assertCloudAllowed("OpenAI fine-tuning (uploads your writing)");
   const built = await buildTrainingJsonl(opts);
   log.info("fine-tune training set built", {
     chunks: built.chunks,

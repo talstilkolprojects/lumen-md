@@ -60,18 +60,20 @@ test("Backlinks toggle command runs and closes palette", async ({ page }) => {
   await expect(palette).not.toBeVisible({ timeout: 3000 });
 });
 
-test("Comments command exists and palette closes when invoked", async ({ page }) => {
-  const palette = await openPalette(page);
-  await page.keyboard.type("Comments");
-  // Comments may be hidden when collab is disabled. The smoke contract
-  // is: palette type-search produces matches OR cleanly closes — either
-  // way the wiring is intact.
-  await page.waitForTimeout(200);
-  await page.keyboard.press("Enter");
-  // Either palette is gone OR still open with no crash.
-  await page.waitForTimeout(500);
+test("Comments command is offered only with collaboration on; the palette handles a miss cleanly", async ({ page }) => {
+  // Listen first: an error thrown by the palette would otherwise be missed.
   const errs: string[] = [];
   page.on("pageerror", (e) => errs.push(e.message));
+  const palette = await openPalette(page);
+  await palette.locator("input").first().fill("View comments panel");
+  // The command exists only in a collaboration session (`collab` set);
+  // the default build has none, so the search comes back empty and
+  // Enter must not throw. (The old test waited 200 ms and asserted nothing.)
+  await expect(palette.locator('[role="option"]')).toHaveCount(0, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await expect(palette).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(palette).toBeHidden({ timeout: 3000 });
   expect(errs).toEqual([]);
 });
 
@@ -126,10 +128,6 @@ test("Print command fires via palette (window.open intent)", async ({ page }) =>
   ).toContainText(/Print/i, { timeout: 5000 });
   await page.keyboard.press("Enter");
   await expect(palette).not.toBeVisible({ timeout: 3000 });
-  // Action is dynamically imported; give it time.
-  await page.waitForTimeout(800);
-  const opened = await page.evaluate(
-    () => (window as unknown as { __openedPrint?: boolean }).__openedPrint === true,
-  );
-  expect(opened).toBe(true);
+  // The action is dynamically imported; wait for the stub to be hit.
+  await page.waitForFunction(() => (window as unknown as { __openedPrint?: boolean }).__openedPrint === true, null, { timeout: 10_000 });
 });

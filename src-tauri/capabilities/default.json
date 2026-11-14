@@ -1,13 +1,16 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capabilities granted to the main Lumen window.",
-  "windows": ["main"],
+  "description": "Capabilities granted to the main Lumen window. No fs: permission: the vault is reached only through the app's vault_* commands, confined to the folder the user picked (plan 4.3).",
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
     "dialog:default",
-    "fs:default",
-    "fs:allow-read-text-file",
-    "fs:allow-write-text-file"
+    "core:window:allow-show",
+    "core:window:allow-unminimize",
+    "core:window:allow-set-focus",
+    "deep-link:default"
   ]
 }

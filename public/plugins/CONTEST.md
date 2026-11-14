@@ -12,7 +12,7 @@
 
 ## 📋 Rules
 
-1. **Create a Lumen plugin** using our [Plugin SDK](https://docs.lumen.md/plugins)
+1. **Create a Lumen plugin** using our [Plugin SDK](https://github.com/talstilkol/lumen-md/blob/main/docs/src/content/docs/plugins/sdk.md)
 2. **Open source** — MIT license required
 3. **Original work** — no forks of existing plugins without significant improvement
 4. **Submit by** November 30, 2024 23:59 UTC
@@ -58,4 +58,4 @@ Scoring rubric published in `JUDGING_RUBRIC.md`
 | Dec 14 | Community voting closes |
 | Dec 20 | Winners announced |
 
-Questions? Open a [Discussion](https://github.com/lumen/lumen/discussions) or email plugins@lumen.md
+Questions? Open a [Discussion](https://github.com/lumen/lumen/discussions)

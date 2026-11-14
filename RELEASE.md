@@ -187,6 +187,29 @@ In Android Studio:
 - iOS / Android archives are NOT produced by CI (signing keys live on
   developer machines) — see sections 3 and 4 above.
 
+### Signing and updates (plan 11.5)
+
+Every secret is optional: without it the step is skipped with a warning and
+the build still succeeds (unsigned). Tal sets them up in plan 15.7.
+
+| Secret / variable | What it does | Without it |
+|---|---|---|
+| `TAURI_SIGNING_PRIVATE_KEY` (+ `_PASSWORD`) | Signs the update artifacts (`.sig`); `latest.json` is published | No auto-update |
+| `vars.LUMEN_UPDATER_PUBKEY` | The public key compiled into the app | The updater is off ("not configured") |
+| `vars.LUMEN_UPDATER_ENDPOINT` | Where `latest.json` lives (default: this repo's latest release) | — |
+| `WINDOWS_CERTIFICATE` (base64 .pfx) + `WINDOWS_CERTIFICATE_PASSWORD` | Authenticode-signs the Windows installer | Unsigned: SmartScreen warns |
+| `APPLE_CERTIFICATE`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` | Signs and notarises the macOS app | Ad-hoc signed, Gatekeeper warns |
+
+Create the updater key once: `npx tauri signer generate -w ~/.tauri/lumen.key`.
+The app checks for updates only when asked (*Check for updates…*), never under the
+"local only" privacy policy, and every check goes in the privacy log. The
+plugin refuses a download whose signature does not match, and
+`requireSignedVersion` refuses a downgrade.
+
+The build carries no source maps (`scripts/check-sourcemaps.mjs`; the startup
+budget fails a build that has any). `LUMEN_SOURCEMAP=1 npm run build` makes
+them for a local investigation only.
+
 ```bash
 # Cut a release:
 git tag v0.2.0

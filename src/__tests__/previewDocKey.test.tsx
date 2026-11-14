@@ -63,3 +63,26 @@ describe("docIdentity", () => {
     expect(docIdentity({ name: "" })).toBeNull();
   });
 });
+
+describe("docIdentity across loads of handle-less files", () => {
+  it("gives two same-named loads different identities, edits keep it", async () => {
+    const { docIdentity } = await import("../renderer/previewDoc");
+    const { useAppStore } = await import("../store/useStore");
+    const st = () => useAppStore.getState();
+    // <input type="file"> fallback: no handle, no workspace path.
+    st().setDoc({ name: "README.md", content: "first", handle: undefined, workspaceName: null, dirty: false });
+    const first = docIdentity(st().doc);
+    st().setContent("first, edited");
+    expect(docIdentity(st().doc)).toBe(first);
+    st().setDoc({ name: "README.md", content: "untrusted", handle: undefined, dirty: false });
+    expect(docIdentity(st().doc)).not.toBe(first);
+    const second = docIdentity(st().doc);
+    st().openTab({ name: "README.md", content: "third" });
+    expect(docIdentity(st().doc)).not.toBe(second);
+    // Workspace files keep their path identity across reloads.
+    st().setDoc({ name: "a.md", content: "x", workspaceName: "notes/a.md" });
+    const ws = docIdentity(st().doc);
+    st().setDoc({ name: "a.md", content: "y", workspaceName: "notes/a.md" });
+    expect(docIdentity(st().doc)).toBe(ws);
+  });
+});

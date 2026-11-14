@@ -9,6 +9,7 @@
  */
 
 import type { ChatMessage, ChatOptions } from "./llm";
+import { assertCloudAllowed } from "./policy";
 import { getProviderKey, AiError, reportOpenAiUsage, PROVIDER_DEFAULT_MODELS } from "./llm";
 
 const API_URL = "https://api.mistral.ai/v1/chat/completions";
@@ -45,6 +46,7 @@ export async function chatMistral(
   messages: ChatMessage[],
   opts: ChatOptions = {},
 ): Promise<string> {
+  assertCloudAllowed("Mistral");
   const res = await fetch(API_URL, {
     method: "POST",
     headers: headers(),
@@ -66,6 +68,7 @@ export async function* chatMistralStream(
   messages: ChatMessage[],
   opts: ChatOptions = {},
 ): AsyncGenerator<string, void, undefined> {
+  assertCloudAllowed("Mistral");
   const res = await fetch(API_URL, {
     method: "POST",
     headers: headers(),
@@ -97,7 +100,7 @@ export async function* chatMistralStream(
         const delta = json.choices?.[0]?.delta?.content;
         if (delta) yield delta;
       } catch {
-        /* skip */
+        /* why: a keep-alive or partial line that is not JSON carries no text */
       }
     }
   }

@@ -16,10 +16,18 @@
 # the publish directory; keeping a second static CSP here would be enforced
 # too and block those origins.
 #
-# Known limitation: Netlify's _headers grammar can't detach the catch-all
-# headers (Cloudflare's `! Header`), so /playground-runner.html inherits the
-# app's X-Frame-Options / CSP and the Web Playground block can't run here.
-# Use Cloudflare Pages, Vercel or the Docker image for the playground.
+# Netlify's _headers grammar cannot detach the catch-all headers (Cloudflare's
+# `! Header`), so the two runner pages would inherit the app's X-Frame-Options
+# and CSP and the Web Playground / live-js blocks could not run here. The edge
+# function below replaces those two headers for those two paths with the
+# runner policies from security/policy.json (plan 13.2).
+[[edge_functions]]
+  path = "/playground-runner.html"
+  function = "runner-headers"
+
+[[edge_functions]]
+  path = "/livejs-runner.html"
+  function = "runner-headers"
 
 [[headers]]
   for = "/assets/*"

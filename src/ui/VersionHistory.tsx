@@ -1,79 +1,62 @@
-import { useState, useEffect, useCallback } from "react";
-import { t } from "../i18n";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useFocusTrap } from "./useFocusTrap";
+import { t, getLocale } from "../i18n";
 
 /**
- * Version history stored in IndexedDB. Each "snapshot" captures the
- * document content + timestamp so the user can restore earlier states.
+ * Version history — reads the one history store (src/storage/history.ts)
+ * that every save path writes to (T35).
  */
 
-interface Snapshot {
-  id: number;
-  name: string;
-  content: string;
-  timestamp: number;
+import { listSnapshots, recordSnapshot, type Snapshot } from "../storage/history";
+import { requestPersistentStorage, storageState, type StorageState } from "../storage/persistentStorage";
+
+function formatBytes(n: number): string {
+  if (n < 1024 * 1024) return `${Math.max(1, Math.round(n / 1024))} KB`;
+  if (n < 1024 ** 3) return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  return `${(n / 1024 ** 3).toFixed(1)} GB`;
 }
 
-const DB_NAME = "lumen-history";
-const STORE_NAME = "snapshots";
-const MAX_SNAPSHOTS = 50;
-
-function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const store = db.createObjectStore(STORE_NAME, { keyPath: "id", autoIncrement: true });
-        store.createIndex("name", "name", { unique: false });
-      }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
+/**
+ * Plan 3.2: whether the browser keeps this storage (navigator.storage.persist)
+ * and how full it is, with a button to ask for persistence.
+ */
+function StorageStatus() {
+  const [state, setState] = useState<StorageState | null>(null);
+  const reload = useCallback(() => void storageState().then(setState), []);
+  useEffect(reload, [reload]);
+  if (!state) return null;
+  const percent = state.usage !== null && state.quota ? Math.round((state.usage / state.quota) * 100) : null;
+  const text =
+    state.persisted === null
+      ? t("versionHistory.storage.unsupported")
+      : state.persisted
+        ? t("versionHistory.storage.persisted")
+        : t("versionHistory.storage.notPersisted");
+  return (
+    <div data-testid="storage-status" data-persisted={String(state.persisted)} style={{ marginBlockStart: 6, fontSize: 11, lineHeight: 1.4, color: state.persisted === false || (percent ?? 0) >= 80 ? "hsl(30 90% 45%)" : "hsl(var(--fg-muted))" }}>
+      <div>{text}</div>
+      {percent !== null && <div>{t("versionHistory.storage.usage", { used: formatBytes(state.usage ?? 0), quota: formatBytes(state.quota ?? 0), percent: String(percent) })}</div>}
+      {state.persisted === false && (
+        <button
+          type="button"
+          onClick={() => void requestPersistentStorage().then(reload)}
+          style={{ marginBlockStart: 4, paddingBlock: 2, paddingInline: 8, fontSize: 11, borderRadius: 5, border: "1px solid hsl(var(--border))", background: "transparent", color: "hsl(var(--fg))", cursor: "pointer" }}
+        >
+          {t("versionHistory.storage.request")}
+        </button>
+      )}
+    </div>
+  );
 }
 
-/** Save a snapshot. Auto-deduplicates identical content. */
+/** Save a snapshot (kept for callers of the old API). */
 export async function saveSnapshot(name: string, content: string): Promise<void> {
-  const db = await openDB();
-  const tx = db.transaction(STORE_NAME, "readwrite");
-  const store = tx.objectStore(STORE_NAME);
-
-  // Don't save if content matches the most recent snapshot for this name
-  const index = store.index("name");
-  const existing: Snapshot[] = await new Promise((resolve) => {
-    const req = index.getAll(name);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => resolve([]);
-  });
-  
-  const latest = existing.sort((a, b) => b.timestamp - a.timestamp)[0];
-  if (latest && latest.content === content) return;
-
-  store.add({ name, content, timestamp: Date.now() });
-
-  // Prune old snapshots beyond MAX
-  if (existing.length >= MAX_SNAPSHOTS) {
-    const oldest = existing.sort((a, b) => a.timestamp - b.timestamp);
-    for (let i = 0; i < oldest.length - MAX_SNAPSHOTS + 1; i++) {
-      store.delete(oldest[i].id);
-    }
-  }
-
-  db.close();
+  await recordSnapshot(name, content, "manual");
 }
 
-/** Load all snapshots for a file name, newest first. */
+/** Load all snapshots for a document, newest first. */
 export async function loadSnapshots(name: string): Promise<Snapshot[]> {
-  const db = await openDB();
-  const tx = db.transaction(STORE_NAME, "readonly");
-  const index = tx.objectStore(STORE_NAME).index("name");
-  const results: Snapshot[] = await new Promise((resolve) => {
-    const req = index.getAll(name);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => resolve([]);
-  });
-  db.close();
-  return results.sort((a, b) => b.timestamp - a.timestamp);
+  return listSnapshots(name);
 }
 
 /* ─── React component ─── */
@@ -93,31 +76,42 @@ export function VersionHistory({ fileName, currentContent, onRestore, onClose }:
     loadSnapshots(fileName).then(setSnapshots).catch(() => setSnapshots([]));
   }, [fileName]);
 
-  const handleRestore = useCallback(() => {
-    if (selected) {
-      onRestore(selected.content);
-      onClose();
-    }
-  }, [selected, onRestore, onClose]);
+  const handleRestore = useCallback(async () => {
+    if (!selected) return;
+    // Keep what is being replaced, so a restore can itself be undone.
+    await recordSnapshot(fileName, currentContent, "restore").catch(() => false);
+    onRestore(selected.content);
+    onClose();
+  }, [selected, onRestore, onClose, fileName, currentContent]);
+
+  // Focus stays in the dialog and returns on close; Escape closes it (plan 10.1).
+  const trapRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(trapRef, { onEscape: onClose });
 
   const diffChars = selected
     ? Math.abs(selected.content.length - currentContent.length)
     : 0;
 
   return (
-    <div style={{
-      position: "fixed",
-      inset: 0,
-      zIndex: 9999,
-      display: "flex",
-      background: "hsl(0 0% 0% / 0.5)",
-      backdropFilter: "blur(4px)",
-    }}>
+    <div
+      ref={trapRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("versionHistory.title")}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        display: "flex",
+        background: "hsl(0 0% 0% / 0.5)",
+        backdropFilter: "blur(4px)",
+      }}
+    >
       {/* Sidebar: snapshot list */}
       <div style={{
         width: 280,
         background: "hsl(var(--bg))",
-        borderRight: "1px solid hsl(var(--border))",
+        borderInlineEnd: "1px solid hsl(var(--border))",
         display: "flex",
         flexDirection: "column",
         overflowY: "auto",
@@ -125,6 +119,7 @@ export function VersionHistory({ fileName, currentContent, onRestore, onClose }:
         <div style={{ padding: "12px 16px", borderBottom: "1px solid hsl(var(--border))" }}>
           <h3 style={{ margin: 0, fontSize: 14, color: "hsl(var(--fg))" }}>{t("versionHistory.title")}</h3>
           <p style={{ margin: "4px 0 0", fontSize: 11, color: "hsl(var(--fg-muted))" }}>{t("versionHistory.savedCount", { count: String(snapshots.length) })}</p>
+          <StorageStatus />
         </div>
         {snapshots.map((snap) => (
           <button
@@ -141,10 +136,11 @@ export function VersionHistory({ fileName, currentContent, onRestore, onClose }:
             }}
           >
             <div style={{ fontSize: 12, fontWeight: 500 }}>
-              {new Date(snap.timestamp).toLocaleString()}
+              {new Date(snap.timestamp).toLocaleString(getLocale())}
             </div>
             <div style={{ fontSize: 10, color: "hsl(var(--fg-muted))" }}>
-              {snap.content.length} chars
+              {t("status.chars", { n: snap.content.length })}{snap.reason ? ` · ${t(`versionHistory.reason.${snap.reason}`)}` : ""}
+              {snap.author ? ` · ${t("versionHistory.by", { author: snap.author })}` : ""}
             </div>
           </button>
         ))}
@@ -170,7 +166,7 @@ export function VersionHistory({ fileName, currentContent, onRestore, onClose }:
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             {selected && (
-              <button onClick={handleRestore} style={{
+              <button onClick={() => void handleRestore()} style={{
                 padding: "4px 12px",
                 fontSize: 12,
                 border: "none",

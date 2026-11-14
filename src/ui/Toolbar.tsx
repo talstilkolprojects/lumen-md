@@ -141,8 +141,20 @@ export function Toolbar({
         setOpenMenu(null);
       }
     }
+    // Escape closes an open menu, as every menu does; the e2e that
+    // "checked" this used to wait 150 ms and look at nothing.
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        setOpenMenu(null);
+      }
+    }
     document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [openMenu]);
 
   function exec(fn: () => void) {
@@ -491,7 +503,7 @@ export function Toolbar({
           title={doc.name}
         >
           {doc.name}
-          {doc.dirty && <span style={{ color: "hsl(var(--accent))", marginLeft: 4 }}>•</span>}
+          {doc.dirty && <span style={{ color: "hsl(var(--accent))", marginInlineStart: 4 }}>•</span>}
         </div>
       </div>
 
@@ -553,7 +565,7 @@ function MenuBarItem({
           style={{
             position: "absolute",
             top: "calc(100% + 2px)",
-            left: 0,
+            insetInlineStart: 0,
             minWidth: 280,
             maxWidth: "min(320px, calc(100vw - 24px))",
             maxHeight: "70vh",

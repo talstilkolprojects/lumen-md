@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Same policy as the deploy headers (rendered from security/policy.json
+         by `npm run headers:write`), but also in contexts that serve no header for
+         this page: Vite dev, Tauri, Capacitor. The user's code runs in a
+         blob: worker, which inherits it: no network at all (WebKit skips
+         script-src for a worker's import(); the worker refuses import itself).
+         The nonce is there for WebKit: in a sandboxed (opaque-origin) frame it
+         does not match 'self' against the page's own URL, so the runner's
+         script was blocked. It is fixed and public on purpose — nothing can
+         inject markup into this page (user code runs in the worker); the
+         build adds it to every script/preload tag (vite.config.ts html.cspNonce). -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'nonce-lumen-livejs-runner' blob: 'unsafe-eval'; worker-src blob:; connect-src 'none'; img-src 'none'; style-src 'none'; base-uri 'none'; form-action 'none'" />
+    <title>Lumen live-js runner</title>
+    <meta name="robots" content="noindex" />
+  </head>
+  <body>
+    <script type="module" nonce="lumen-livejs-runner" src="/src/plugins/liveJsRunner.ts"></script>
+  </body>
+</html>

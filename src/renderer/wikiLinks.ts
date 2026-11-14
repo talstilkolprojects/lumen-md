@@ -6,6 +6,7 @@
  */
 
 import { slug as headingSlug } from "github-slugger";
+import { decodeWikiPath } from "../lib/wikiPath";
 
 /**
  * Split `Note#Heading` into the note and the heading fragment. A target
@@ -18,14 +19,31 @@ export function splitWikiTarget(target: string): { note: string; heading: string
   return { note: target.slice(0, hash).trim(), heading: heading || null };
 }
 
-/** Workspace path for a wiki target, matching file name or path, case-insensitively. */
+/**
+ * Workspace path for a wiki target, matching file name or path,
+ * case-insensitively. A file named exactly as written wins over a note that
+ * matches without its extension: `[[paper.pdf]]` is the PDF, not its
+ * companion note `paper.pdf.md` (plan 4.14).
+ */
 export function resolveWikiTarget(target: string, paths: readonly string[]): string | null {
-  const want = target.trim().toLowerCase().replace(/\.(md|markdown)$/, "");
+  const found = resolveExact(target, paths);
+  // Generated links percent-encode the characters that are wiki syntax
+  // (`draft%232.pdf` for `draft#2.pdf`, plan 4.14).
+  const decoded = decodeWikiPath(target);
+  return found ?? (decoded === target ? null : resolveExact(decoded, paths));
+}
+
+function resolveExact(target: string, paths: readonly string[]): string | null {
+  const raw = target.trim().toLowerCase();
+  const want = raw.replace(/\.(md|markdown)$/, "");
   if (!want) return null;
   const strip = (p: string) => p.toLowerCase().replace(/\.(md|markdown)$/, "");
+  const name = (p: string) => p.split("/").pop() ?? p;
   return (
+    paths.find((p) => p.toLowerCase() === raw) ??
     paths.find((p) => strip(p) === want) ??
-    paths.find((p) => strip(p.split("/").pop() ?? p) === want) ??
+    paths.find((p) => name(p).toLowerCase() === raw) ??
+    paths.find((p) => strip(name(p)) === want) ??
     null
   );
 }
@@ -49,6 +67,13 @@ export function handleWikiLinkClick(
   // of the target — `[[שלום]]` to a Hebrew heading here.
   const targetId = headingSlug(el.getAttribute("data-wiki-target") ?? "");
   const byId = (want: string) => (want ? Array.from(root.querySelectorAll("[id]")).find((n) => n.id === want) : undefined);
+  // `[[#^id]]`: a block of this note (its id is `^id`, see remarkBlockIds).
+  const own = splitWikiTarget(el.getAttribute("data-wiki-target") ?? "");
+  if (!own.note && own.heading?.startsWith("^")) {
+    e.preventDefault();
+    byId(own.heading)?.scrollIntoView({ block: "start" });
+    return true;
+  }
   if (byId(id)) return false;
   const here = byId(targetId);
   if (here) {
@@ -70,7 +95,7 @@ export function handleWikiLinkClick(
       else open(path);
     })
     .catch(() => {
-      /* no workspace (OPFS unavailable) — nothing to open */
+      /* why: no workspace (OPFS unavailable) — nothing to open */
     });
   return true;
 }

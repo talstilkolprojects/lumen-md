@@ -1,3 +1,4 @@
+import { getLocale } from "../i18n";
 /**
  * AI usage meter: tokens and an estimated cost per provider / model per
  * month, kept in localStorage on this device only.
@@ -62,6 +63,13 @@ const PRICE_TABLE: Array<[prefix: string, input: number, output: number, cachedI
   ["claude-opus-5", 4, 20],
   ["claude-opus-4", 15, 75],
   // Google (implicit caching: 75% off)
+  // Gemini 3.x context caching is billed at 10% of input (Gemini API pricing page).
+  // Gemini 3.6 / 3.8 Flash: $0.75 / $3.75 (cached $0.075) through 2026,
+  // $1.50 / $7.50 (cached $0.15) from 1.1.2027.
+  ["gemini-3.8-flash", 0.75, 3.75, 0.075],
+  ["gemini-3.6-flash", 0.75, 3.75, 0.075],
+  ["gemini-3.5-flash-lite", 0.3, 2.5, 0.03],
+  ["gemini-3.1-flash-lite", 0.25, 1.5, 0.025],
   ["gemini-1.5-flash", 0.075, 0.3],
   ["gemini-1.5-pro", 1.25, 5],
   ["gemini-2.0-flash", 0.1, 0.4],
@@ -187,7 +195,7 @@ function save(store: Store): void {
   try {
     localStorage.setItem(KEY, JSON.stringify(store));
   } catch {
-    /* storage full or blocked: the meter is best-effort */
+    /* why: storage full or blocked: the meter is best-effort */
   }
   for (const fn of listeners) fn();
 }
@@ -255,7 +263,7 @@ export function usageSummary(month: string = monthOf()): UsageSummary {
 
 /** Plain-text report for the palette command. */
 export function formatUsageReport(s: UsageSummary): string {
-  const n = (x: number) => x.toLocaleString("en-US");
+  const n = (x: number) => x.toLocaleString(getLocale());
   const usd = (x: number) => (x < 0.01 && x > 0 ? "< $0.01" : `$${x.toFixed(2)}`);
   if (!s.rows.length) return `${s.month}: no AI requests on this device yet.`;
   const lines = [
@@ -286,7 +294,7 @@ export function clearUsage(): void {
   try {
     localStorage.removeItem(KEY);
   } catch {
-    /* */
+    /* why: storage denied: the in-memory meter is reset by the listeners below */
   }
   for (const fn of listeners) fn();
 }

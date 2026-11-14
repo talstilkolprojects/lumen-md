@@ -239,10 +239,12 @@ export interface SampleWorkspaceResult {
  */
 export async function createSampleWorkspace(
   root: string = SAMPLE_ROOT,
+  files: SampleFile[] = sampleWorkspaceFiles(root),
+  entry: string = SAMPLE_ENTRY,
 ): Promise<SampleWorkspaceResult> {
   const created: string[] = [];
   const skipped: string[] = [];
-  for (const file of sampleWorkspaceFiles(root)) {
+  for (const file of files) {
     const full = joinPath(root, file.path);
     if (await workspaceHasFile(full)) {
       skipped.push(full);
@@ -251,5 +253,15 @@ export async function createSampleWorkspace(
     await writeWorkspaceFile(full, file.content);
     created.push(full);
   }
-  return { root, entry: joinPath(root, SAMPLE_ENTRY), created, skipped };
+  return { root, entry: joinPath(root, entry), created, skipped };
+}
+
+/**
+ * The sample in the reader's language (plan 14.1): Hebrew for a Hebrew
+ * interface, English otherwise. The Hebrew notes load only when asked for.
+ */
+export async function createLocalizedSample(lang: string): Promise<SampleWorkspaceResult> {
+  if (lang !== "he") return createSampleWorkspace();
+  const { SAMPLE_ROOT_HE, SAMPLE_ENTRY_HE, sampleWorkspaceFilesHe } = await import("./sampleWorkspaceHe");
+  return createSampleWorkspace(SAMPLE_ROOT_HE, sampleWorkspaceFilesHe(SAMPLE_ROOT_HE), SAMPLE_ENTRY_HE);
 }

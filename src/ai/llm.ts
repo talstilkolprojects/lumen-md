@@ -10,6 +10,9 @@ import { fetchWithRetry } from "../lib/fetchRetry";
 import { t } from "../i18n";
 import { docsUrl } from "../lib/docsLinks";
 import { estimateTokens, recordCacheHit, recordUsage, type Usage } from "./usage";
+import { cloudAllowed, getAiPolicy, isCloudProvider, isLocalOrigin, providerAllowed } from "./policy";
+import { getSecret } from "../lib/secretStore";
+import { getOllamaConfigModel } from "./ollamaProvider";
 
 // ── Rate limiting ───────────────────────────────────────────────────────
 // Token bucket — protects the user's API key against runaway loops.
@@ -93,6 +96,11 @@ export interface ChatOptions {
    */
   ownPrompt?: boolean | "silent";
   /**
+   * Charges the quota instead of `prepaid` / `ownPrompt` — the agent
+   * runtime's once-per-run charge, called at dispatch like the others.
+   */
+  chargeHook?: () => void;
+  /**
    * Reuse an identical earlier answer from the local response cache (and
    * store this one). Only for deterministic transformations of the given
    * text; ignored when the user turned the cache off.
@@ -117,15 +125,23 @@ export interface ChatOptions {
   onUsage?: (u: Omit<Usage, "provider"> & { provider?: string }) => void;
   /** Internal: the provider a fallback actually sent the request to. */
   onRoute?: (provider: AiProvider, model: string) => void;
+  /**
+   * Internal: `model` was chosen by the model router for the selected
+   * provider, not pinned by the caller — a local reroute must drop it.
+   */
+  modelFromRouter?: boolean;
 }
 
 const DEFAULT_MODEL = "gpt-4o-mini";
 /** Each cloud provider's model when the user hasn't picked one (the provider modules use these). */
 export const PROVIDER_DEFAULT_MODELS = {
-  "local-webgpu": "Llama-3-8B-Instruct-q4f16_1-MLC",
+  // The in-browser default when the user picked none and the GPU wasn't
+  // probed yet; the model manager (./modelManager.ts) picks by hardware.
+  "local-webgpu": "Qwen3-4B-q4f16_1-MLC",
   // Sonnet 4.5 is deprecated (retires 30 Nov 2026); Sonnet 5.5 is the current general model.
   anthropic: "claude-sonnet-5-5",
-  gemini: "gemini-1.5-flash",
+  // Gemini 1.5 and 2.0 are shut down; 2.5 is closed to new users (Google AI models page, 10/2026).
+  gemini: "gemini-3.8-flash",
   mistral: "mistral-small-latest",
 } as const;
 const API_URL = "https://api.openai.com/v1/chat/completions";
@@ -145,11 +161,79 @@ export function getAiKey(): string {
 
 export class AiError extends Error {
   constructor(
-    public code: "NO_KEY" | "API_ERROR" | "PARSE_ERROR" | "ABORTED",
+    public code: "NO_KEY" | "API_ERROR" | "PARSE_ERROR" | "ABORTED" | "POLICY" | "NO_LOCAL",
     message: string,
   ) {
     super(message);
     this.name = "AiError";
+  }
+}
+
+/**
+ * The AI policy gate (./policy.ts). A cloud provider is contacted only
+ * when the policy allows it: as the selected provider under `cloud` /
+ * `local-first`, or as the fallback when a local provider is unavailable
+ * under `local-first`. Under `local-only` the request stops here with a
+ * clear code instead of silently reaching a third party.
+ */
+function assertCloudProvider(provider: AiProvider): void {
+  if (!providerAllowed(provider)) {
+    throw new AiError("POLICY", `AI policy is "${getAiPolicy()}": ${provider} is a cloud provider and was not contacted.`);
+  }
+}
+
+/**
+ * Where a request goes when a CLOUD provider is selected but the policy
+ * prefers local backends:
+ *
+ *   local-first  a reachable Ollama server, else in-browser WebGPU when the
+ *                user turned Privacy Mode on (never a surprise multi-GB
+ *                download for someone who picked a cloud provider), else
+ *                null — the cloud provider answers.
+ *   local-only   Ollama, else WebGPU, else NO_LOCAL — the cloud provider is
+ *                never contacted.
+ *   cloud        null.
+ *
+ * A selected local provider returns null and takes the normal branches.
+ */
+async function localRoute(provider: AiProvider): Promise<"ollama" | "local-webgpu" | null> {
+  if (!isCloudProvider(provider)) return null;
+  const policy = getAiPolicy();
+  if (policy === "cloud") return null;
+  const { isOllamaAvailable, getBaseUrl } = await import("./ollamaProvider");
+  // A custom Ollama URL on a public origin is a third party, not a local route.
+  if (isLocalOrigin(getBaseUrl()) && (await isOllamaAvailable())) return "ollama";
+  if (policy === "local-only" || useAppStore.getState().useLocalAi) {
+    const { localLlmAvailable } = await import("./localLlm");
+    if (localLlmAvailable().available) return "local-webgpu";
+  }
+  if (policy === "local-only") {
+    throw new AiError("NO_LOCAL", `AI policy is "local-only": ${provider} is a cloud provider and no local backend (Ollama, WebGPU) is available.`);
+  }
+  return null;
+}
+
+/** Under `local-only`, an Ollama server off this machine / network is a third party. */
+function assertOllamaOrigin(baseUrl: string): void {
+  if (getAiPolicy() === "local-only" && !isLocalOrigin(baseUrl)) {
+    throw new AiError("POLICY", `AI policy is "local-only": the Ollama server at ${baseUrl} is not on this machine or network.`);
+  }
+}
+
+/**
+ * Personal data out of a cloud request (plan 2.6): redacted on this device
+ * right before the provider is contacted, restored in the answer. Local
+ * routes (Ollama on this machine, WebGPU) never come through here.
+ */
+async function forCloud(messages: ChatMessage[], provider: string): Promise<{ messages: ChatMessage[]; restore: (s: string) => string; restoreStream: (c: AsyncIterable<string>) => AsyncIterable<string> }> {
+  const { redactForCloud } = await import("./piiRedactor");
+  const { messages: out, vault } = await redactForCloud(messages, provider);
+  return { messages: out, restore: (s) => vault.restore(s), restoreStream: (c) => (vault.size ? vault.restoreStream(c) : c) };
+}
+
+function assertCloudFallback(unavailable: string): void {
+  if (!cloudAllowed()) {
+    throw new AiError("NO_LOCAL", `${unavailable} is unavailable and the AI policy is "local-only", so no cloud fallback was used.`);
   }
 }
 
@@ -181,7 +265,7 @@ export function getActiveProvider(): AiProvider {
   try {
     const stored = localStorage.getItem("lumen.ai.provider") as AiProvider | null;
     if (stored && KNOWN_PROVIDERS.includes(stored)) return stored;
-  } catch { /* */ }
+  } catch { /* why: storage denied: fall back to the default provider below */ }
   const state = useAppStore.getState();
   if (state.useLocalAi) return "local-webgpu";
   return "openai";
@@ -193,14 +277,14 @@ export function setActiveProvider(provider: AiProvider): void {
 
 /**
  * Return the API key for a cloud provider. Per-provider keys live in
- * localStorage (`lumen.ai.key.<provider>`); OpenAI falls back to the primary
+ * the encrypted secret store (`lumen.ai.key.<provider>`, see lib/secretStore); OpenAI falls back to the primary
  * `aiKey` in the store for backwards compatibility. Throws if none is set.
  */
 export function getProviderKey(provider: AiProvider): string {
   let key = "";
   try {
-    key = localStorage.getItem(`lumen.ai.key.${provider}`) ?? "";
-  } catch { /* */ }
+    key = getSecret(`lumen.ai.key.${provider}`) ?? "";
+  } catch { /* why: secret store unavailable: fall through to the store key and then the missing-key error */ }
   if (!key && provider === "openai") key = useAppStore.getState().aiKey ?? "";
   if (!key) {
     throw new AiError(
@@ -223,9 +307,11 @@ export function effectiveModel(provider: AiProvider, opts: ChatOptions = {}): st
   }
   try {
     // Ollama keeps its model where the Ollama picker writes it.
-    if (provider === "ollama") return localStorage.getItem("lumen.ollama.model") || "llama3.1";
+    if (provider === "ollama") return getOllamaConfigModel(); // same default the provider runs (plan 1.7)
     const fallback = (PROVIDER_DEFAULT_MODELS as Record<string, string>)[provider] ?? "default";
-    return localStorage.getItem(`lumen.ai.model.${provider}`) || fallback;
+    const saved = localStorage.getItem(`lumen.ai.model.${provider}`);
+    if (provider === "gemini" && saved && isRetiredGeminiModel(saved)) return fallback;
+    return saved || fallback;
   } catch {
     return "default";
   }
@@ -235,9 +321,17 @@ export function effectiveModel(provider: AiProvider, opts: ChatOptions = {}): st
 export const LIGHT_MODELS: Partial<Record<AiProvider, string>> = {
   openai: "gpt-4o-mini",
   anthropic: "claude-haiku-5-5",
-  gemini: "gemini-2.5-flash",
+  gemini: "gemini-3.5-flash-lite",
   mistral: "mistral-small-latest",
 };
+
+/**
+ * Gemini models Google has shut down. A saved choice of one of these is
+ * ignored in favour of the current default, so old settings keep working.
+ */
+export function isRetiredGeminiModel(model: string): boolean {
+  return /^gemini-(1\.|2\.0)/i.test(model);
+}
 
 /**
  * Model router (Plan D: D4): picks the small model for light tasks (and,
@@ -248,8 +342,13 @@ export function routeOptions(provider: AiProvider, opts: ChatOptions, mode: "eco
   if (opts.model || mode === "quality") return opts;
   const light = LIGHT_MODELS[provider];
   if (!light) return opts;
-  if (opts.tier === "light" || mode === "economy") return { ...opts, model: light };
+  if (opts.tier === "light" || mode === "economy") return { ...opts, model: light, modelFromRouter: true };
   return opts;
+}
+
+/** Options for a request rerouted to a local backend: a router-chosen cloud model name must not travel with it. */
+function forLocal(opts: ChatOptions): ChatOptions {
+  return opts.modelFromRouter ? { ...opts, model: undefined, modelFromRouter: false } : opts;
 }
 
 async function routed(provider: AiProvider, opts: ChatOptions): Promise<ChatOptions> {
@@ -330,6 +429,7 @@ async function chatDirect(
   // (after availability, key and rate-limit checks), so a request that
   // fails locally never spends a prompt.
   const charge = () => {
+    if (opts.chargeHook) return opts.chargeHook();
     if (opts.prepaid) return;
     if (opts.ownPrompt) {
       if (!consumeAiPrompt(new Date(), { silent: opts.ownPrompt === "silent" })) {
@@ -340,69 +440,38 @@ async function chatDirect(
     chargeAiCommandDispatch();
   };
   const provider = getActiveProvider();
+  // At the monthly limit nothing goes out — not even the local probe.
+  if (!opts.prepaid && !opts.chargeHook && !aiQuotaStatus(new Date()).allowed) charge();
+  let localFirst = await localRoute(provider);
 
   // ── Ollama (local server) ──────────────────────────────────────
-  if (provider === "ollama") {
+  if (provider === "ollama" || localFirst === "ollama") {
     const { chatOllama, isOllamaAvailable, getBaseUrl } = await import("./ollamaProvider");
+    assertOllamaOrigin(getBaseUrl());
     if (await isOllamaAvailable()) {
       charge();
-      return chatOllama(messages, opts);
+      const local = forLocal(opts);
+      opts.onRoute?.("ollama", effectiveModel("ollama", local));
+      return chatOllama(messages, local);
     }
+    // A transient failure between the two probes: the selected provider
+    // takes the request again (never a different cloud provider).
+    if (localFirst === "ollama") localFirst = await localRoute(provider);
     toast.warn(
       t("ai.toast.ollamaUnavailable.title"),
       t("ai.toast.ollamaUnavailable.body", { url: getBaseUrl() }),
     );
-    // Ollama is unreachable. Execution continues below: the anthropic /
-    // gemini / mistral branches only match their own provider id, so they
-    // are skipped; the WebGPU branch runs only if `useLocalAi` is on; and
-    // otherwise we reach the OpenAI request at the end of this function,
-    // which throws NO_KEY when no OpenAI key is configured.
-  }
-
-  // ── Anthropic Claude (cloud) ───────────────────────────────────
-  if (provider === "anthropic") {
-    const { chatAnthropic } = await import("./anthropicProvider");
-    getProviderKey("anthropic"); // NO_KEY before anything is charged
-    checkRateLimit();
-    charge();
-    inflight++;
-    try {
-      return await chatAnthropic(messages, opts);
-    } finally {
-      inflight--;
-    }
-  }
-
-  // ── Google Gemini (cloud) ──────────────────────────────────────
-  if (provider === "gemini") {
-    const { chatGemini } = await import("./geminiProvider");
-    getProviderKey("gemini"); // NO_KEY before anything is charged
-    checkRateLimit();
-    charge();
-    inflight++;
-    try {
-      return await chatGemini(messages, opts);
-    } finally {
-      inflight--;
-    }
-  }
-
-  // ── Mistral (cloud, OpenAI-compatible) ─────────────────────────
-  if (provider === "mistral") {
-    const { chatMistral } = await import("./mistralProvider");
-    getProviderKey("mistral"); // NO_KEY before anything is charged
-    checkRateLimit();
-    charge();
-    inflight++;
-    try {
-      return await chatMistral(messages, opts);
-    } finally {
-      inflight--;
-    }
+    // Ollama is unreachable. Under `local-only` the request stops here.
+    // Otherwise execution continues below: the anthropic / gemini / mistral
+    // branches only match their own provider id, so they are skipped; the
+    // WebGPU branch runs only if `useLocalAi` is on; and otherwise we reach
+    // the OpenAI request at the end of this function, which throws NO_KEY
+    // when no OpenAI key is configured.
+    if (!useAppStore.getState().useLocalAi) assertCloudFallback("Ollama");
   }
 
   // ── WebGPU local (in-browser) ──────────────────────────────────
-  if (provider === "local-webgpu" || useAppStore.getState().useLocalAi) {
+  if (provider === "local-webgpu" || localFirst === "local-webgpu" || (!isCloudProvider(provider) && useAppStore.getState().useLocalAi)) {
     const { chatLocal, localLlmAvailable, onLocalLlmProgress } = await import(
       "./localLlm"
     );
@@ -423,10 +492,11 @@ async function chatDirect(
       });
       try {
         charge();
-        const text = await chatLocal(messages, { model: opts.model, maxTokens: opts.maxTokens, temperature: opts.temperature });
+        const localModel = forLocal(opts).model;
+        const text = await chatLocal(messages, { model: localModel, maxTokens: opts.maxTokens, temperature: opts.temperature });
         opts.onUsage?.({
           provider: "local-webgpu",
-          model: opts.model ?? PROVIDER_DEFAULT_MODELS["local-webgpu"],
+          model: localModel ?? PROVIDER_DEFAULT_MODELS["local-webgpu"],
           inputTokens: estimateTokens(promptChars(messages)),
           outputTokens: estimateTokens(text),
           estimated: true,
@@ -437,12 +507,68 @@ async function chatDirect(
       }
     }
     toast.warn(t("ai.toast.localUnavailable.title"), t("ai.toast.localUnavailable.body"), docsUrl("localLlm"));
+    assertCloudFallback("Local WebGPU AI");
+    localFirst = null;
+  }
+
+  // ── Anthropic Claude (cloud) ───────────────────────────────────
+  if (provider === "anthropic" && !localFirst) {
+    const { chatAnthropic } = await import("./anthropicProvider");
+    assertCloudProvider("anthropic");
+    getProviderKey("anthropic"); // NO_KEY before anything is charged
+    checkRateLimit();
+    // Redacted (and previewed) before the prompt is charged: a cancelled preview costs nothing.
+    const red = await forCloud(messages, "anthropic");
+    charge();
+    inflight++;
+    try {
+      return red.restore(await chatAnthropic(red.messages, opts));
+    } finally {
+      inflight--;
+    }
+  }
+
+  // ── Google Gemini (cloud) ──────────────────────────────────────
+  if (provider === "gemini" && !localFirst) {
+    const { chatGemini } = await import("./geminiProvider");
+    assertCloudProvider("gemini");
+    getProviderKey("gemini"); // NO_KEY before anything is charged
+    checkRateLimit();
+    // Redacted (and previewed) before the prompt is charged: a cancelled preview costs nothing.
+    const red = await forCloud(messages, "gemini");
+    charge();
+    inflight++;
+    try {
+      return red.restore(await chatGemini(red.messages, opts));
+    } finally {
+      inflight--;
+    }
+  }
+
+  // ── Mistral (cloud, OpenAI-compatible) ─────────────────────────
+  if (provider === "mistral" && !localFirst) {
+    const { chatMistral } = await import("./mistralProvider");
+    assertCloudProvider("mistral");
+    getProviderKey("mistral"); // NO_KEY before anything is charged
+    checkRateLimit();
+    // Redacted (and previewed) before the prompt is charged: a cancelled preview costs nothing.
+    const red = await forCloud(messages, "mistral");
+    charge();
+    inflight++;
+    try {
+      return red.restore(await chatMistral(red.messages, opts));
+    } finally {
+      inflight--;
+    }
   }
 
   // ── OpenAI (cloud) ─────────────────────────────────────────────
-  // Also the fallback when Ollama / WebGPU isn't available.
+  // Also the fallback when Ollama / WebGPU isn't available (never under
+  // `local-only`: the fallbacks above stop first).
+  assertCloudProvider("openai");
   const key = getAiKey();
   checkRateLimit();
+  const red = await forCloud(messages, "openai");
   charge();
   inflight++;
   // F3 — when the user has trained + enabled their personal model,
@@ -467,7 +593,7 @@ async function chatDirect(
         },
         body: JSON.stringify({
           model,
-          messages,
+          messages: red.messages,
           ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
           ...(opts.temperature !== undefined ? { temperature: opts.temperature } : {}),
         }),
@@ -484,7 +610,7 @@ async function chatDirect(
     reportOpenAiUsage(data.usage, data.model ?? model, opts);
     const text = data.choices?.[0]?.message?.content?.trim();
     if (!text) throw new AiError("PARSE_ERROR", "Empty AI response.");
-    return text;
+    return red.restore(text);
   } catch (err) {
     if (opts.signal?.aborted || (err instanceof DOMException && err.name === "AbortError")) {
       return "";
@@ -567,6 +693,7 @@ async function* chatStreamDirect(
   opts: ChatOptions = {},
 ): AsyncGenerator<string, void, undefined> {
   const charge = () => {
+    if (opts.chargeHook) return opts.chargeHook();
     if (opts.prepaid) return;
     if (opts.ownPrompt) {
       if (!consumeAiPrompt(new Date(), { silent: opts.ownPrompt === "silent" })) {
@@ -577,43 +704,87 @@ async function* chatStreamDirect(
     chargeAiCommandDispatch();
   };
   const provider = getActiveProvider();
+  if (!opts.prepaid && !opts.chargeHook && !aiQuotaStatus(new Date()).allowed) charge();
+  let localFirst = await localRoute(provider);
 
-  if (provider === "ollama") {
-    const { chatOllamaStream, isOllamaAvailable } = await import("./ollamaProvider");
+  if (provider === "ollama" || localFirst === "ollama") {
+    const { chatOllamaStream, isOllamaAvailable, getBaseUrl } = await import("./ollamaProvider");
+    assertOllamaOrigin(getBaseUrl());
     if (await isOllamaAvailable()) {
       charge();
-      yield* chatOllamaStream(messages, opts);
+      const local = forLocal(opts);
+      opts.onRoute?.("ollama", effectiveModel("ollama", local));
+      yield* chatOllamaStream(messages, local);
       return;
     }
+    if (localFirst === "ollama") localFirst = await localRoute(provider);
+    // As in chat(): with Privacy Mode on, the in-browser model below may
+    // still answer; only without it is the cloud fallback checked here.
+    else if (!useAppStore.getState().useLocalAi) assertCloudFallback("Ollama");
   }
 
-  if (provider === "anthropic") {
+  // ── WebGPU local (in-browser), streaming ───────────────────────
+  if (provider === "local-webgpu" || localFirst === "local-webgpu" || (!isCloudProvider(provider) && useAppStore.getState().useLocalAi)) {
+    const { chatLocalStream, localLlmAvailable, onLocalLlmProgress, defaultLocalModel } = await import("./localLlm");
+    if (localLlmAvailable().available) {
+      let lastPct = -1;
+      const off = onLocalLlmProgress(({ progress, text }) => {
+        const pct = Math.round(progress * 100);
+        if (pct >= lastPct + 5 || pct === 100) {
+          lastPct = pct;
+          toast.info(t("ai.toast.localLoading.title"), t("ai.toast.localLoading.body", { pct, status: text || t("ai.toast.localLoading.preparing") }));
+        }
+      });
+      try {
+        charge();
+        const model = forLocal(opts).model ?? (await defaultLocalModel());
+        opts.onRoute?.("local-webgpu", model);
+        yield* chatLocalStream(messages, { model, maxTokens: opts.maxTokens, temperature: opts.temperature, signal: opts.signal });
+        return;
+      } finally {
+        off();
+      }
+    }
+    toast.warn(t("ai.toast.localUnavailable.title"), t("ai.toast.localUnavailable.body"), docsUrl("localLlm"));
+    assertCloudFallback("Local WebGPU AI");
+    localFirst = null;
+  }
+
+  if (provider === "anthropic" && !localFirst) {
     const { chatAnthropicStream } = await import("./anthropicProvider");
+    assertCloudProvider("anthropic");
     getProviderKey("anthropic"); // NO_KEY before anything is charged
+    const red = await forCloud(messages, "anthropic");
     charge();
-    yield* chatAnthropicStream(messages, opts);
+    yield* red.restoreStream(chatAnthropicStream(red.messages, opts));
     return;
   }
 
-  if (provider === "gemini") {
+  if (provider === "gemini" && !localFirst) {
     const { chatGeminiStream } = await import("./geminiProvider");
+    assertCloudProvider("gemini");
     getProviderKey("gemini"); // NO_KEY before anything is charged
+    const red = await forCloud(messages, "gemini");
     charge();
-    yield* chatGeminiStream(messages, opts);
+    yield* red.restoreStream(chatGeminiStream(red.messages, opts));
     return;
   }
 
-  if (provider === "mistral") {
+  if (provider === "mistral" && !localFirst) {
     const { chatMistralStream } = await import("./mistralProvider");
+    assertCloudProvider("mistral");
     getProviderKey("mistral"); // NO_KEY before anything is charged
+    const red = await forCloud(messages, "mistral");
     charge();
-    yield* chatMistralStream(messages, opts);
+    yield* red.restoreStream(chatMistralStream(red.messages, opts));
     return;
   }
 
   // OpenAI — also the fallback when Ollama isn't available.
+  assertCloudProvider("openai");
   const key = getAiKey();
   checkRateLimit();
+  const red = await forCloud(messages, "openai");
   charge();
   inflight++;
   const model = opts.model ?? DEFAULT_MODEL;
@@ -630,7 +801,7 @@ async function* chatStreamDirect(
         },
         body: JSON.stringify({
           model,
-          messages,
+          messages: red.messages,
           stream: true,
           // The last chunk then carries `usage` (empty `choices`).
           stream_options: { include_usage: true },
@@ -648,7 +819,21 @@ async function* chatStreamDirect(
 
     const reader = res.body?.getReader();
     if (!reader) throw new AiError("API_ERROR", "No response body.");
+    // Tokens of the PII redactor (2.6) can arrive split across deltas.
+    yield* red.restoreStream(openAiDeltas(reader, model, opts));
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return;
+    }
+    throw err;
+  } finally {
+    inflight--;
+  }
+}
 
+/** The text deltas of an OpenAI SSE stream; `usage` is reported as it arrives. */
+async function* openAiDeltas(reader: ReadableStreamDefaultReader<Uint8Array>, model: string, opts: ChatOptions): AsyncGenerator<string, void, undefined> {
+  {
     const decoder = new TextDecoder();
     let buffer = "";
 
@@ -670,17 +855,10 @@ async function* chatStreamDirect(
           const delta = json.choices?.[0]?.delta?.content;
           if (delta) yield delta;
         } catch {
-          // skip malformed SSE lines
+          // why: skip malformed SSE lines
         }
       }
     }
-  } catch (err) {
-    if (err instanceof DOMException && err.name === "AbortError") {
-      return;
-    }
-    throw err;
-  } finally {
-    inflight--;
   }
 }
 

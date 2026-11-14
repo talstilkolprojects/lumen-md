@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CollabPeer, CollabSession } from "../collab/yjs";
 // URL helpers are yjs-free and safe on the boot path.
-import { readRoomFromHash, setRoomInHash } from "../collab/roomUrl";
+import { readRoomFromHash, roomShareLink, setRoomInHash } from "../collab/roomUrl";
 
 // The collab module pulls the whole yjs + y-webrtc stack (~60KB gz) — load it
 // only when a session actually starts, never on the boot path. Memoized so
@@ -52,11 +52,16 @@ export function useCollab(docContent: string): UseCollabReturn {
         log.error("collab module load failed", err);
         return;
       }
-      const { connectCollab, makeRoomName, snapshotPeers } = mod;
+      const { connectCollab, makeRoomName, makeRoomPassword, snapshotPeers } = mod;
       const name = joinName ?? makeRoomName();
+      // T49: every new room is end-to-end encrypted with its own random
+      // password, carried in the share link's #fragment (never sent to a
+      // server). Joining uses the password from the link.
+      const password = joinName ? null : makeRoomPassword();
       try {
         const session = connectCollab(name, contentRef.current, {
           isNewRoom: !joinName,
+          ...(password ? { password } : {}),
           // Wrong room password (or tampered ciphertext): nothing is
           // applied to the doc — tell the user why it isn't syncing.
           onE2EError: () =>
@@ -71,7 +76,7 @@ export function useCollab(docContent: string): UseCollabReturn {
             }),
         });
         setCollab(session);
-        setRoomInHash(name);
+        setRoomInHash(name, password);
 
         // Mirror Yjs text changes back into the doc store so the preview pane
         // stays current.
@@ -90,7 +95,7 @@ export function useCollab(docContent: string): UseCollabReturn {
           try {
             setCollabPeers(snapshotPeers(session));
           } catch {
-            /* awareness snapshot failed — non-fatal */
+            /* why: awareness snapshot failed — non-fatal */
           }
         };
         session.awareness.on("change", awarenessTick);
@@ -103,8 +108,8 @@ export function useCollab(docContent: string): UseCollabReturn {
         };
 
         if (!joinName) {
-          const link = `${location.origin}${location.pathname}#room=${name}`;
-          navigator.clipboard?.writeText(link).catch(() => {});
+          const link = roomShareLink(name, password);
+          navigator.clipboard?.writeText(link).catch(() => { /* why: clipboard denied: the share dialog shows the link to copy by hand */ });
         }
         // ε.2 — record start/join. Counts-only payload so the audit
         // log doesn't leak the room name (which can be brand-named).

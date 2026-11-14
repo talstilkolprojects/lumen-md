@@ -94,7 +94,7 @@ test("locale switch flips html dir and translates menu labels", async ({ page })
   const palette = page.getByRole("dialog");
   await expect(palette).toBeVisible({ timeout: 5_000 });
   await palette.getByRole("textbox").fill("Language: עברית");
-  await page.waitForTimeout(200);
+  await expect(palette.locator('[role="option"][aria-selected="true"]')).toContainText(/עברית/, { timeout: 5000 });
   await page.keyboard.press("Enter");
 
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");

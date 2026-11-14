@@ -1,0 +1,11 @@
+# Known non-secrets that gitleaks flags, one fingerprint per line
+# (commit:file:rule:line). Add a line only for a fake fixture or a false
+# positive, with a comment saying why; never for a real credential (rotate
+# it instead). Plan 2.8.
+
+# Fake Supabase session fixtures in the secret-store and storage-scan tests (PR #230).
+d79c50eb043897b15026612bf25ccdf311069e37:src/__tests__/secretStore.test.ts:generic-api-key:62
+d79c50eb043897b15026612bf25ccdf311069e37:src/__tests__/secretsScan.test.ts:jwt:16
+
+# A Hebrew plan line listing module names ("lib/secretStore, ..."), not a key.
+72ddb1eea5fbd4cbf26e4af56b9170484e2cba1b:MASTER_PLAN.md:generic-api-key:238

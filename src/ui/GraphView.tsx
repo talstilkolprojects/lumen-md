@@ -207,28 +207,42 @@ export function GraphView({ onOpenFile }: { onOpenFile: (path: string, content: 
     }
   }, [nodes, hoveredNode, palette]);
 
-  // Mouse hover detection
-  function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
+  // The node under a screen point. A finger is wider than a cursor (plan
+  // 10.2.1): touch and pen hit within 22 px, the mouse within 10 px.
+  function nodeAt(clientX: number, clientY: number, coarse: boolean): string | null {
     const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    if (!rect) return null;
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    const r2 = coarse ? 22 * 22 : 100;
     const found = nodes.find((n) => {
       const dx = n.x - x;
       const dy = n.y - y;
-      return dx * dx + dy * dy < 100;
+      return dx * dx + dy * dy < r2;
     });
-    setHoveredNode(found?.id ?? null);
+    return found?.id ?? null;
   }
 
-  // Click to open file
-  async function handleClick(_e: React.MouseEvent<HTMLCanvasElement>) {
-    if (!hoveredNode) return;
+  // Hover detection (mouse); a touch has no hover, so pointerdown sets it too.
+  function handlePointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (e.pointerType !== "mouse") return;
+    setHoveredNode(nodeAt(e.clientX, e.clientY, false));
+  }
+  function handlePointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
+    setHoveredNode(nodeAt(e.clientX, e.clientY, e.pointerType !== "mouse"));
+  }
+
+  // Click (or tap) to open file: the node at the click point, not only the
+  // last hovered one — on touch nothing was hovered before the tap.
+  async function handleClick(e: React.MouseEvent<HTMLCanvasElement>) {
+    const coarse = (e.nativeEvent as PointerEvent).pointerType ? (e.nativeEvent as PointerEvent).pointerType !== "mouse" : false;
+    const id = nodeAt(e.clientX, e.clientY, coarse) ?? hoveredNode;
+    if (!id) return;
     try {
-      const content = await readWorkspaceFile(hoveredNode);
-      onOpenFile(hoveredNode, content);
+      const content = await readWorkspaceFile(id);
+      onOpenFile(id, content);
     } catch (err) {
-      log.warn("graph view: failed to open file", hoveredNode, err);
+      log.warn("graph view: failed to open file", id, err);
     }
   }
 
@@ -266,14 +280,16 @@ export function GraphView({ onOpenFile }: { onOpenFile: (path: string, content: 
           width={dimensions.width}
           height={dimensions.height}
           style={{ cursor: hoveredNode ? "pointer" : "default" }}
-          onMouseMove={handleMouseMove}
+          data-testid="graph-canvas"
+          onPointerMove={handlePointerMove}
+          onPointerDown={handlePointerDown}
           onClick={handleClick}
         />
       )}
       <div style={{
         position: "absolute",
         top: 12,
-        left: 12,
+        insetInlineStart: 12,
         fontSize: 11,
         color: "hsl(var(--fg-muted))",
         background: "hsl(var(--bg) / 0.8)",

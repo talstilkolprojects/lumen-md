@@ -32,3 +32,11 @@ example `[[Projct Plan]]` → `[[Project Plan]]`. Labels and `#heading`
 parts are kept. You get a list of the changes to confirm first. Notes
 that are open in a tab are skipped, so unsaved edits are never
 overwritten.
+
+## Known limitations — status
+
+| Id | Limitation | Status |
+|---|---|---|
+| A1 | A code fence indented past a list item's content column | Fixed. Indented 4 or more spaces past the column, it is indented code inside the item (as CommonMark reads it), so links in it and after it at that indentation are ignored. |
+| A2 | An HTML block of type 7 after a line that is all inline code | Fixed. That line is paragraph text, so a lone tag on the next line is inline HTML and the links after it are checked. |
+| A3 | `&amp;` inside a double-backtick code span in a heading | Fixed. Character references stay literal in code spans of any backtick length, as in the rendered heading id. |

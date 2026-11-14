@@ -1,25 +1,20 @@
 {
   "manifest_version": 3,
   "name": "Lumen Web Clipper",
-  "version": "0.1.0",
-  "description": "Save the current page (or selection) to your Lumen workspace as clean markdown.",
-  "permissions": ["activeTab", "scripting", "storage", "contextMenus"],
-  "host_permissions": ["<all_urls>"],
+  "version": "0.2.0",
+  "description": "Clip pages, selections and highlights into your Lumen vault as Markdown, with source and date.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "action": {
     "default_title": "Save to Lumen",
-    "default_icon": {
-      "16": "icons/icon-16.png",
-      "32": "icons/icon-32.png",
-      "48": "icons/icon-48.png",
-      "128": "icons/icon-128.png"
-    },
     "default_popup": "popup.html"
-  },
-  "icons": {
-    "16": "icons/icon-16.png",
-    "32": "icons/icon-32.png",
-    "48": "icons/icon-48.png",
-    "128": "icons/icon-128.png"
   },
   "background": {
     "service_worker": "background.js",

@@ -4,18 +4,14 @@
  * Preserves existing human-reviewed translations.
  * Usage: node scripts/generate-all-locales.mjs
  */
-import { readFileSync, writeFileSync } from "fs";
+import { readLocale, writeLocale } from "./lib/i18n-files.mjs";
+import { lazyEnglishEntries } from "./lib/i18n-lazy.mjs";
 
-// Extract EN keys from i18n/index.ts
-const content = readFileSync("src/i18n/index.ts", "utf8");
-const enStart = content.indexOf("const en: Strings = {");
-const enEnd = content.indexOf("\n};\n", enStart) + 3;
-const enBlock = content.slice(enStart, enEnd);
-const pairs = [];
-const re = /"([^"]+)":\s*"([^"]*(?:\\.[^"]*)*)"/g;
-let m;
-while ((m = re.exec(enBlock)) !== null) pairs.push([m[1], m[2]]);
-const enMap = Object.fromEntries(pairs);
+// English: src/i18n/locales/en/*.json; every locale is written back as one
+// sorted file per domain (plan 0.3, scripts/lib/i18n-files.mjs).
+// English of lazily loaded domains (src/i18n/lazy/*.json) is translated like the rest.
+const enMap = { ...readLocale("en"), ...Object.fromEntries(lazyEnglishEntries()) };
+const pairs = Object.entries(enMap);
 console.log(`EN keys: ${pairs.length}`);
 
 // Common word translation tables per locale
@@ -144,10 +140,7 @@ function translateValue(enValue, locale) {
 
 // Process each locale
 for (const locale of Object.keys(DICT)) {
-  let existing = {};
-  try {
-    existing = JSON.parse(readFileSync(`src/i18n/locales/${locale}.json`, "utf8"));
-  } catch {}
+  const existing = readLocale(locale);
 
   // Remove metadata keys
   delete existing._placeholder;
@@ -162,14 +155,8 @@ for (const locale of Object.keys(DICT)) {
     }
   }
 
-  // Sort keys
-  const sorted = {};
-  Object.keys(existing).sort().forEach((k) => (sorted[k] = existing[k]));
-  writeFileSync(
-    `src/i18n/locales/${locale}.json`,
-    JSON.stringify(sorted, null, 2) + "\n",
-  );
-  const total = Object.keys(sorted).length;
+  writeLocale(locale, existing);
+  const total = Object.keys(existing).length;
   console.log(
     `${locale}: ${total}/${pairs.length} keys (${Math.round((total / pairs.length) * 100)}%) — added ${added}`,
   );

@@ -1,0 +1,1678 @@
+{
+  "version": 2,
+  "domain": "files",
+  "source": "src/i18n/locales/en/files.json",
+  "entries": [
+    {
+      "key": "backlinks.changed",
+      "en": "the note changed; look again",
+      "vars": []
+    },
+    {
+      "key": "backlinks.empty",
+      "en": "No other file links here yet.",
+      "vars": []
+    },
+    {
+      "key": "backlinks.link",
+      "en": "Link",
+      "vars": []
+    },
+    {
+      "key": "backlinks.linkAria",
+      "en": "Link “{text}” in {note}",
+      "vars": [
+        "text",
+        "note"
+      ]
+    },
+    {
+      "key": "backlinks.linkFailed",
+      "en": "Couldn't link in {note}: {error}",
+      "vars": [
+        "note",
+        "error"
+      ]
+    },
+    {
+      "key": "backlinks.linked",
+      "en": "Linked in {note}",
+      "vars": [
+        "note"
+      ]
+    },
+    {
+      "key": "backlinks.scanning",
+      "en": "Scanning workspace…",
+      "vars": []
+    },
+    {
+      "key": "backlinks.selectFile",
+      "en": "Select a workspace file to see backlinks.",
+      "vars": []
+    },
+    {
+      "key": "backlinks.title",
+      "en": "Backlinks",
+      "vars": []
+    },
+    {
+      "key": "backlinks.unlinked",
+      "en": "Unlinked mentions",
+      "vars": []
+    },
+    {
+      "key": "backlinks.unlinkedEmpty",
+      "en": "No unlinked mentions.",
+      "vars": []
+    },
+    {
+      "key": "clip.empty",
+      "en": "The clipboard has no text",
+      "vars": []
+    },
+    {
+      "key": "clip.failed",
+      "en": "Couldn't clip the page: {message}. Copy the part you want and use \"Clip from clipboard\".",
+      "vars": [
+        "message"
+      ]
+    },
+    {
+      "key": "clip.flagged",
+      "en": "{count} hidden or instruction-like passage(s) on the page were marked in the note — they are not instructions.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "clip.localOnly",
+      "en": "Under the local-only policy Lumen does not fetch web pages. Copy the page in your browser and use “Clip from clipboard” instead.",
+      "vars": []
+    },
+    {
+      "key": "clip.needsService",
+      "en": "This page can't be fetched from the browser on this deployment — it needs the research service (VITE_RESEARCH_ENDPOINT). Copy the part you want and use \"Clip from clipboard\".",
+      "vars": []
+    },
+    {
+      "key": "clip.saved",
+      "en": "Saved to the library: {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "clip.source.prompt",
+      "en": "Where is this from? (address, optional)",
+      "vars": []
+    },
+    {
+      "key": "clip.source.unknown",
+      "en": "clipboard",
+      "vars": []
+    },
+    {
+      "key": "clip.url.prompt",
+      "en": "Page address to clip",
+      "vars": []
+    },
+    {
+      "key": "collab.e2e.decryptFailed",
+      "en": "Can't decrypt this room",
+      "vars": []
+    },
+    {
+      "key": "collab.e2e.decryptFailed.body",
+      "en": "The room password doesn't match the one the other participants used. Nothing was applied to your document — check the password and rejoin.",
+      "vars": []
+    },
+    {
+      "key": "collab.e2e.emptyRoom",
+      "en": "No one with this password is here yet",
+      "vars": []
+    },
+    {
+      "key": "collab.e2e.emptyRoom.body",
+      "en": "If you expected other people in this room, check the password — a wrong one looks like an empty room. Otherwise share your document to start the room.",
+      "vars": []
+    },
+    {
+      "key": "collab.e2e.emptyRoom.share",
+      "en": "Share my document here",
+      "vars": []
+    },
+    {
+      "key": "collab.persistent.hint",
+      "en": "Optional. Keeps documents synced when no peer is online.",
+      "vars": []
+    },
+    {
+      "key": "collab.persistent.label",
+      "en": "Persistent server (y-websocket)",
+      "vars": []
+    },
+    {
+      "key": "collab.persistent.token",
+      "en": "Server access token (if the server requires one)",
+      "vars": []
+    },
+    {
+      "key": "collab.prompt.join",
+      "en": "Join collaborative session \"{room}\"? Your current document will be replaced if other peers are present.",
+      "vars": [
+        "room"
+      ]
+    },
+    {
+      "key": "collab.prompt.room",
+      "en": "Room name:",
+      "vars": []
+    },
+    {
+      "key": "collab.settings.cancel",
+      "en": "Cancel",
+      "vars": []
+    },
+    {
+      "key": "collab.settings.cspBlocked",
+      "en": "This deployment's security policy blocks {url}, so it won't be used. Add it at build time (VITE_CSP_CONNECT_EXTRA).",
+      "vars": [
+        "url"
+      ]
+    },
+    {
+      "key": "collab.settings.publicSignaling",
+      "en": "Also use public signaling servers",
+      "vars": []
+    },
+    {
+      "key": "collab.settings.publicSignaling.hint",
+      "en": "yjs.dev and others — a fallback if Lumen's server is down. They can see who connects to which room (not the content).",
+      "vars": []
+    },
+    {
+      "key": "collab.settings.save",
+      "en": "Save",
+      "vars": []
+    },
+    {
+      "key": "collab.settings.signalingHint",
+      "en": "Signaling server (how peers find each other). Empty = Lumen's own server. Every new room is end-to-end encrypted with its own password, so the server only sees ciphertext.",
+      "vars": []
+    },
+    {
+      "key": "collab.settings.title",
+      "en": "Collaboration settings",
+      "vars": []
+    },
+    {
+      "key": "contextMenu.copyPath",
+      "en": "Copy path",
+      "vars": []
+    },
+    {
+      "key": "contextMenu.delete",
+      "en": "Delete",
+      "vars": []
+    },
+    {
+      "key": "contextMenu.duplicate",
+      "en": "Duplicate",
+      "vars": []
+    },
+    {
+      "key": "contextMenu.newFileHere",
+      "en": "New file here",
+      "vars": []
+    },
+    {
+      "key": "contextMenu.newSubfolder",
+      "en": "New subfolder",
+      "vars": []
+    },
+    {
+      "key": "contextMenu.rename",
+      "en": "Rename",
+      "vars": []
+    },
+    {
+      "key": "contextMenu.title",
+      "en": "File actions",
+      "vars": []
+    },
+    {
+      "key": "doc.alert.exportFailed",
+      "en": "Export failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "doc.alert.reopenFailed",
+      "en": "Could not reopen file. The browser may have lost permission, or the file may have been moved.",
+      "vars": []
+    },
+    {
+      "key": "doc.alert.saveFailed",
+      "en": "Save failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "doc.alert.workspaceUnavailable",
+      "en": "Workspace storage isn't available in this browser.",
+      "vars": []
+    },
+    {
+      "key": "doc.confirm.discardUnsaved",
+      "en": "Discard unsaved changes and start a new document?",
+      "vars": []
+    },
+    {
+      "key": "doc.history.quota",
+      "en": "Version history is out of space even after removing the oldest versions.",
+      "vars": []
+    },
+    {
+      "key": "doc.history.quotaWarn",
+      "en": "Storage is {percent}% full. The oldest versions will be removed when it runs out.",
+      "vars": [
+        "percent"
+      ]
+    },
+    {
+      "key": "doc.save.failedRetrying",
+      "en": "Could not save “{name}” to the vault — retrying. Your text is still in this browser.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "doc.save.quota",
+      "en": "The browser's storage for this site is full — “{name}” was not saved. Free space or export your notes.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "doc.untitled",
+      "en": "Untitled",
+      "vars": []
+    },
+    {
+      "key": "git.alert.cloneFailed",
+      "en": "Clone failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "git.alert.cloned",
+      "en": "Cloned into \"{folder}/\" — {count} files.",
+      "vars": [
+        "folder",
+        "count"
+      ]
+    },
+    {
+      "key": "git.alert.commitFailed",
+      "en": "Commit/push failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "git.alert.corsHint",
+      "en": "The git host was not reached. In a browser it needs a CORS proxy: ⌘K → “Git: set CORS proxy…”.",
+      "vars": []
+    },
+    {
+      "key": "git.alert.corsProxyBlocked",
+      "en": "The app's security policy blocks {origin}. Use http://localhost:9999 or a proxy the deployment allows.",
+      "vars": [
+        "origin"
+      ]
+    },
+    {
+      "key": "git.alert.corsProxyCleared",
+      "en": "CORS proxy cleared: git connects directly.",
+      "vars": []
+    },
+    {
+      "key": "git.alert.corsProxyInvalid",
+      "en": "That is not an http(s) URL. Nothing was changed.",
+      "vars": []
+    },
+    {
+      "key": "git.alert.corsProxySaved",
+      "en": "CORS proxy saved.",
+      "vars": []
+    },
+    {
+      "key": "git.alert.identitySaved",
+      "en": "Identity saved.",
+      "vars": []
+    },
+    {
+      "key": "git.alert.noRepo",
+      "en": "This workspace isn't a Git repo. Run `git clone` first or use `Init repository`.",
+      "vars": []
+    },
+    {
+      "key": "git.alert.pullFailed",
+      "en": "Pull failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "git.alert.pulled",
+      "en": "Pulled — {changed} files updated.",
+      "vars": [
+        "changed"
+      ]
+    },
+    {
+      "key": "git.alert.pushFailed",
+      "en": "Push failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "git.alert.pushed",
+      "en": "Pushed.",
+      "vars": []
+    },
+    {
+      "key": "git.alert.statusFailed",
+      "en": "Status failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "git.alert.tokenCleared",
+      "en": "Token cleared.",
+      "vars": []
+    },
+    {
+      "key": "git.alert.tokenSaved",
+      "en": "Token saved.",
+      "vars": []
+    },
+    {
+      "key": "git.clone.kept",
+      "en": "{count} existing files were kept (not overwritten).",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "git.commit.lfsKept",
+      "en": "Committed as the repository's Git LFS pointer, not as the file in the vault (LFS is not supported): {files}",
+      "vars": [
+        "files"
+      ]
+    },
+    {
+      "key": "git.commit.skipped",
+      "en": "Not committed (file/folder clash): {files}",
+      "vars": [
+        "files"
+      ]
+    },
+    {
+      "key": "git.commit.unresolved",
+      "en": "Not committed: resolve the conflicts first: {files}",
+      "vars": [
+        "files"
+      ]
+    },
+    {
+      "key": "git.commit.unsaved",
+      "en": "Not committed: these open notes have edits that could not be saved first (a change made outside Lumen is being resolved): {files}",
+      "vars": [
+        "files"
+      ]
+    },
+    {
+      "key": "git.conflict.allResolved",
+      "en": "All conflicts resolved.",
+      "vars": []
+    },
+    {
+      "key": "git.conflict.body",
+      "en": "Both sides changed the same lines. Until you choose, the file keeps both between markers.",
+      "vars": []
+    },
+    {
+      "key": "git.conflict.later",
+      "en": "Resolve later",
+      "vars": []
+    },
+    {
+      "key": "git.conflict.left",
+      "en": "{count} conflicts left, still marked in their files.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "git.conflict.merge",
+      "en": "Apply merge",
+      "vars": []
+    },
+    {
+      "key": "git.conflict.mine",
+      "en": "mine",
+      "vars": []
+    },
+    {
+      "key": "git.conflict.takeMine",
+      "en": "Keep mine",
+      "vars": []
+    },
+    {
+      "key": "git.conflict.takeTheirs",
+      "en": "Take remote",
+      "vars": []
+    },
+    {
+      "key": "git.conflict.theirs",
+      "en": "remote",
+      "vars": []
+    },
+    {
+      "key": "git.conflict.title",
+      "en": "Git conflict — {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "git.defaultCommitMessage",
+      "en": "Update files",
+      "vars": []
+    },
+    {
+      "key": "git.lfs.unsupported",
+      "en": "Git LFS is not supported; these are LFS pointers: {files}",
+      "vars": [
+        "files"
+      ]
+    },
+    {
+      "key": "git.placeholder.name",
+      "en": "Your name",
+      "vars": []
+    },
+    {
+      "key": "git.prompt.cloneUrl",
+      "en": "Repository URL (https://… or git@…):",
+      "vars": []
+    },
+    {
+      "key": "git.prompt.commitMessage",
+      "en": "Commit message:",
+      "vars": []
+    },
+    {
+      "key": "git.prompt.commitMessageAi",
+      "en": "Commit message (AI suggested):",
+      "vars": []
+    },
+    {
+      "key": "git.prompt.corsProxy",
+      "en": "CORS proxy URL for git (empty: direct):",
+      "vars": []
+    },
+    {
+      "key": "git.prompt.email",
+      "en": "Git email:",
+      "vars": []
+    },
+    {
+      "key": "git.prompt.identityEmail",
+      "en": "Email:",
+      "vars": []
+    },
+    {
+      "key": "git.prompt.identityName",
+      "en": "Name:",
+      "vars": []
+    },
+    {
+      "key": "git.prompt.message",
+      "en": "Commit message:",
+      "vars": []
+    },
+    {
+      "key": "git.prompt.name",
+      "en": "Git name:",
+      "vars": []
+    },
+    {
+      "key": "git.prompt.openFileFirst",
+      "en": "Open a file inside a cloned repo first.",
+      "vars": []
+    },
+    {
+      "key": "git.prompt.token",
+      "en": "GitHub personal access token (leave blank to clear):",
+      "vars": []
+    },
+    {
+      "key": "git.prompt.url",
+      "en": "Repo URL (HTTPS):",
+      "vars": []
+    },
+    {
+      "key": "git.pull.copies",
+      "en": "Versions that could not be merged are kept as copies: {files}",
+      "vars": [
+        "files"
+      ]
+    },
+    {
+      "key": "git.pull.keptDeleted",
+      "en": "Deleted upstream, kept here ({count}): {files}",
+      "vars": [
+        "count",
+        "files"
+      ]
+    },
+    {
+      "key": "git.pull.kindClashes",
+      "en": "File/folder changed upstream, kept as is here: {files}",
+      "vars": [
+        "files"
+      ]
+    },
+    {
+      "key": "git.pull.mergedIntoOpen",
+      "en": "Merged into open notes with unsaved edits (not overwritten): {files}",
+      "vars": [
+        "files"
+      ]
+    },
+    {
+      "key": "git.pull.summary",
+      "en": "Pulled: {changed} files updated, {conflicts} conflicts. Nothing deleted.",
+      "vars": [
+        "changed",
+        "conflicts"
+      ]
+    },
+    {
+      "key": "git.pull.upToDate",
+      "en": "Already up to date.",
+      "vars": []
+    },
+    {
+      "key": "git.status.clean",
+      "en": "Working tree clean.",
+      "vars": []
+    },
+    {
+      "key": "git.status.summary",
+      "en": "{added} added · {modified} modified · {deleted} deleted",
+      "vars": [
+        "added",
+        "modified",
+        "deleted"
+      ]
+    },
+    {
+      "key": "git.watch.conflicts",
+      "en": "Auto-pull: {count} conflicts marked in the files. Pull to resolve them.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "sample.alert.failed",
+      "en": "Couldn't create the sample workspace: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "sample.toast.created",
+      "en": "Added {count} sample notes to “{folder}”.",
+      "vars": [
+        "count",
+        "folder"
+      ]
+    },
+    {
+      "key": "sample.toast.exists",
+      "en": "The sample workspace “{folder}” is already here — nothing was overwritten.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "search.empty",
+      "en": "Workspace is empty.",
+      "vars": []
+    },
+    {
+      "key": "search.noMatches",
+      "en": "No matches.",
+      "vars": []
+    },
+    {
+      "key": "search.operatorsHint",
+      "en": "Operators: tag:name  path:folder  \"exact phrase\"  /regex/  -exclude",
+      "vars": []
+    },
+    {
+      "key": "search.placeholder",
+      "en": "Search workspace files & content…",
+      "vars": []
+    },
+    {
+      "key": "search.results.one",
+      "en": "{n} result",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "search.results.other",
+      "en": "{n} results",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "search.unavailable",
+      "en": "Workspace storage isn't available in this browser.",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.askPlaceholder",
+      "en": "Type a question and press Enter to ask the AI workspace.",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.buildHint",
+      "en": "Click “Build index” to enable Smart search.",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.buildIndex",
+      "en": "Build index",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.forget",
+      "en": "Forget search \"{q}\"",
+      "vars": [
+        "q"
+      ]
+    },
+    {
+      "key": "searchDialog.hitTitle",
+      "en": "{path} — score {score}",
+      "vars": [
+        "path",
+        "score"
+      ]
+    },
+    {
+      "key": "searchDialog.indexing",
+      "en": "Indexing…",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.mode.ai",
+      "en": "Ask Workspace",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.mode.search",
+      "en": "Search",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.mode.smart",
+      "en": "Smart",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.noRelevant",
+      "en": "No relevant files found in workspace.",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.rebuildIndex",
+      "en": "Rebuild the embedding index",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.recent",
+      "en": "Recent searches",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.recentLabel",
+      "en": "Recent",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.reindex",
+      "en": "Re-index",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.relevance",
+      "en": "Relevance: {pct}%",
+      "vars": [
+        "pct"
+      ]
+    },
+    {
+      "key": "searchDialog.rerun",
+      "en": "Re-run search \"{q}\"",
+      "vars": [
+        "q"
+      ]
+    },
+    {
+      "key": "searchDialog.searching",
+      "en": "Searching workspace…",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.smartHint",
+      "en": "Hybrid semantic + keyword search (uses your AI key for embeddings)",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.sources",
+      "en": "Sources",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.thinking",
+      "en": "Thinking…",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.turns.one",
+      "en": "{n} turn in this conversation",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "searchDialog.turns.other",
+      "en": "{n} turns in this conversation",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "tagsPanel.close",
+      "en": "Close tags panel",
+      "vars": []
+    },
+    {
+      "key": "tagsPanel.emptyHint",
+      "en": "Add `tags: [foo, bar]` to a note's YAML frontmatter and it shows up here.",
+      "vars": []
+    },
+    {
+      "key": "tagsPanel.loading",
+      "en": "Indexing your tags…",
+      "vars": []
+    },
+    {
+      "key": "tagsPanel.summary",
+      "en": "{{tags}} tags · {{total}} notes",
+      "vars": [
+        "tags",
+        "total"
+      ]
+    },
+    {
+      "key": "tagsPanel.title",
+      "en": "Tags",
+      "vars": []
+    },
+    {
+      "key": "tagsPanel.untaggedCount",
+      "en": "{{count}} untagged note(s)",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "template.blank",
+      "en": "Blank document",
+      "vars": []
+    },
+    {
+      "key": "template.blank.desc",
+      "en": "Start with a clean slate",
+      "vars": []
+    },
+    {
+      "key": "template.blog",
+      "en": "Blog post",
+      "vars": []
+    },
+    {
+      "key": "template.blog.desc",
+      "en": "Title, intro, sections, conclusion",
+      "vars": []
+    },
+    {
+      "key": "template.journal",
+      "en": "Daily journal",
+      "vars": []
+    },
+    {
+      "key": "template.journal.desc",
+      "en": "Gratitude, goals, reflections",
+      "vars": []
+    },
+    {
+      "key": "template.letter",
+      "en": "Formal letter",
+      "vars": []
+    },
+    {
+      "key": "template.letter.desc",
+      "en": "Professional letter format",
+      "vars": []
+    },
+    {
+      "key": "template.meeting",
+      "en": "Meeting notes",
+      "vars": []
+    },
+    {
+      "key": "template.meeting.desc",
+      "en": "Date, attendees, agenda, action items",
+      "vars": []
+    },
+    {
+      "key": "template.readme",
+      "en": "Project README",
+      "vars": []
+    },
+    {
+      "key": "template.readme.desc",
+      "en": "Standard open-source README structure",
+      "vars": []
+    },
+    {
+      "key": "templates.allCategories",
+      "en": "All",
+      "vars": []
+    },
+    {
+      "key": "templates.byAuthor",
+      "en": "by {author}",
+      "vars": [
+        "author"
+      ]
+    },
+    {
+      "key": "templates.close",
+      "en": "Close gallery",
+      "vars": []
+    },
+    {
+      "key": "templates.contribute",
+      "en": "Contribute a template:",
+      "vars": []
+    },
+    {
+      "key": "templates.contributeLink",
+      "en": "lumen-templates-contrib →",
+      "vars": []
+    },
+    {
+      "key": "templates.downloads",
+      "en": "{count} installs",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "templates.empty",
+      "en": "No templates match your filter.",
+      "vars": []
+    },
+    {
+      "key": "templates.error",
+      "en": "Failed to load registry: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "templates.install",
+      "en": "Install",
+      "vars": []
+    },
+    {
+      "key": "templates.installFailed",
+      "en": "Install failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "templates.installed",
+      "en": "✅ Installed {name} → {path}",
+      "vars": [
+        "name",
+        "path"
+      ]
+    },
+    {
+      "key": "templates.installed.button",
+      "en": "Installed",
+      "vars": []
+    },
+    {
+      "key": "templates.installing",
+      "en": "Installing…",
+      "vars": []
+    },
+    {
+      "key": "templates.loadFailed",
+      "en": "Couldn't open template: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "templates.loading",
+      "en": "Loading templates…",
+      "vars": []
+    },
+    {
+      "key": "templates.rating",
+      "en": "{rating} stars",
+      "vars": [
+        "rating"
+      ]
+    },
+    {
+      "key": "templates.searchPlaceholder",
+      "en": "Search templates by name, description, or tag…",
+      "vars": []
+    },
+    {
+      "key": "templates.sort",
+      "en": "Sort",
+      "vars": []
+    },
+    {
+      "key": "templates.sort.downloads",
+      "en": "Most installed",
+      "vars": []
+    },
+    {
+      "key": "templates.sort.rating",
+      "en": "Rating",
+      "vars": []
+    },
+    {
+      "key": "templates.title",
+      "en": "Template gallery",
+      "vars": []
+    },
+    {
+      "key": "trash.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "trash.daysLeft",
+      "en": "deleted for good in {n} days",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "trash.deleteForever",
+      "en": "Delete forever",
+      "vars": []
+    },
+    {
+      "key": "trash.empty",
+      "en": "The trash is empty.",
+      "vars": []
+    },
+    {
+      "key": "trash.emptyAll",
+      "en": "Empty trash",
+      "vars": []
+    },
+    {
+      "key": "trash.restore",
+      "en": "Restore",
+      "vars": []
+    },
+    {
+      "key": "trash.restoreFailed",
+      "en": "Couldn't restore from the trash: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "trash.restored",
+      "en": "Restored to {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "trash.restoredMany",
+      "en": "{count} restored from the trash",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "trash.title",
+      "en": "Trash",
+      "vars": []
+    },
+    {
+      "key": "trash.undoShortcut",
+      "en": "Restore the last deleted file or folder (when focus is outside the editor)",
+      "vars": []
+    },
+    {
+      "key": "tree.alert.deleteFailed",
+      "en": "Delete failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "tree.alert.folderFailed",
+      "en": "Could not create folder: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "tree.alert.noSlashes",
+      "en": "Folder names can't contain slashes.",
+      "vars": []
+    },
+    {
+      "key": "tree.alert.openFailed",
+      "en": "Couldn't open file: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "tree.alert.renameFailed",
+      "en": "Rename failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "tree.alert.renameNoSlashes",
+      "en": "Use the rename field for the basename only — no slashes.",
+      "vars": []
+    },
+    {
+      "key": "tree.bulkDelete",
+      "en": "Delete",
+      "vars": []
+    },
+    {
+      "key": "tree.bulkMove",
+      "en": "Move…",
+      "vars": []
+    },
+    {
+      "key": "tree.bulkToolbar",
+      "en": "Bulk file actions",
+      "vars": []
+    },
+    {
+      "key": "tree.clearSelection",
+      "en": "Clear selection",
+      "vars": []
+    },
+    {
+      "key": "tree.collapse",
+      "en": "Collapse",
+      "vars": []
+    },
+    {
+      "key": "tree.confirm.bulkDelete",
+      "en": "Delete {{count}} selected items? This cannot be undone.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "tree.confirm.deleteFile",
+      "en": "Delete file \"{path}\"? This cannot be undone.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "tree.confirm.deleteFolder",
+      "en": "Delete folder (recursively) \"{path}\"? This cannot be undone.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "tree.confirm.replace",
+      "en": "“{path}” already exists. Replace it? (The existing one goes to the trash.)",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "tree.delete",
+      "en": "Delete",
+      "vars": []
+    },
+    {
+      "key": "tree.empty",
+      "en": "No files yet.",
+      "vars": []
+    },
+    {
+      "key": "tree.emptyHint",
+      "en": "No files yet. Click + to create one.",
+      "vars": []
+    },
+    {
+      "key": "tree.expand",
+      "en": "Expand",
+      "vars": []
+    },
+    {
+      "key": "tree.linksFailed",
+      "en": "Moved, but some links could not be updated: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "tree.linksUpdated",
+      "en": "Links updated in {count} notes",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "tree.newFile",
+      "en": "New file",
+      "vars": []
+    },
+    {
+      "key": "tree.newFileHere",
+      "en": "New file in this folder",
+      "vars": []
+    },
+    {
+      "key": "tree.newFileRoot",
+      "en": "New file at root",
+      "vars": []
+    },
+    {
+      "key": "tree.newFolder",
+      "en": "New folder",
+      "vars": []
+    },
+    {
+      "key": "tree.newFolderRoot",
+      "en": "New folder at root",
+      "vars": []
+    },
+    {
+      "key": "tree.newSubfolder",
+      "en": "New subfolder",
+      "vars": []
+    },
+    {
+      "key": "tree.opfsUnavailable",
+      "en": "OPFS isn't available in this browser. Use the file open / save commands instead.",
+      "vars": []
+    },
+    {
+      "key": "tree.prompt.bulkMoveTarget",
+      "en": "Move all selected files into folder (relative path, blank = workspace root):",
+      "vars": []
+    },
+    {
+      "key": "tree.prompt.folderName",
+      "en": "New folder name:",
+      "vars": []
+    },
+    {
+      "key": "tree.refresh",
+      "en": "Refresh",
+      "vars": []
+    },
+    {
+      "key": "tree.rename",
+      "en": "Rename",
+      "vars": []
+    },
+    {
+      "key": "tree.renameItem",
+      "en": "Rename {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "tree.selectedCount",
+      "en": "{{count}} selected",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "tree.showMore",
+      "en": "Show {count} more",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "tree.tagFilter",
+      "en": "# {tag} · {count} note(s)",
+      "vars": [
+        "tag",
+        "count"
+      ]
+    },
+    {
+      "key": "tree.tagFilter.clear",
+      "en": "Clear tag filter",
+      "vars": []
+    },
+    {
+      "key": "tree.tagFilter.empty",
+      "en": "No notes match this tag.",
+      "vars": []
+    },
+    {
+      "key": "tree.title",
+      "en": "Workspace",
+      "vars": []
+    },
+    {
+      "key": "tree.trashed",
+      "en": "{count} moved to the trash",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "tree.undo",
+      "en": "Undo",
+      "vars": []
+    },
+    {
+      "key": "vault.boot.failed",
+      "en": "Your notes can't be opened yet: part of Lumen didn't load (are you offline?).",
+      "vars": []
+    },
+    {
+      "key": "vault.boot.retry",
+      "en": "Try again",
+      "vars": []
+    },
+    {
+      "key": "vault.desktop.backedUp",
+      "en": "A backup of the app's notes was saved to {path}.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "vault.desktop.choose",
+      "en": "Choose folder…",
+      "vars": []
+    },
+    {
+      "key": "vault.desktop.firstRunBody",
+      "en": "Choose the folder where your notes live. Lumen keeps them there as plain Markdown files, so other apps such as Obsidian can open them too. Notes already in the app are backed up and copied there; nothing is deleted.",
+      "vars": []
+    },
+    {
+      "key": "vault.desktop.notNow",
+      "en": "Not now",
+      "vars": []
+    },
+    {
+      "key": "vault.export.done",
+      "en": "Exported {n} files.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "vault.export.doneFolder",
+      "en": "Exported {n} files into the folder “{folder}”.",
+      "vars": [
+        "n",
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.export.failed",
+      "en": "Export failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "vault.export.folder",
+      "en": "Into a folder on this computer",
+      "vars": []
+    },
+    {
+      "key": "vault.export.where",
+      "en": "Export as…",
+      "vars": []
+    },
+    {
+      "key": "vault.export.zip",
+      "en": "One .zip file",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.alreadyBrowser",
+      "en": "The vault is already in browser storage.",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.browserStorage",
+      "en": "browser storage",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.cancelMove",
+      "en": "Cancel move",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.conflict",
+      "en": "Not moved: {n} files in “{folder}” already exist with different content (for example {path}). Nothing was changed.",
+      "vars": [
+        "n",
+        "folder",
+        "path"
+      ]
+    },
+    {
+      "key": "vault.folder.failed",
+      "en": "Moving the vault stopped: {error}. Nothing was deleted, and you can resume.",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "vault.folder.interrupted",
+      "en": "Moving the vault to “{folder}” was interrupted. Nothing was deleted.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.folder.moved",
+      "en": "The vault is now in the folder “{folder}”: {n} files copied and checked. Your notes in browser storage were not deleted.",
+      "vars": [
+        "folder",
+        "n"
+      ]
+    },
+    {
+      "key": "vault.folder.movedBack",
+      "en": "The vault is back in browser storage: {n} files copied and checked. The folder “{folder}” was not changed.",
+      "vars": [
+        "n",
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.folder.moving",
+      "en": "Moving the vault… {done} of {total} files",
+      "vars": [
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "vault.folder.opened",
+      "en": "Lumen now works in the folder “{folder}”. Notes in browser storage stay where they are.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.folder.permissionDenied",
+      "en": "Lumen didn't get permission to edit the folder “{folder}”.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.folder.reconnect",
+      "en": "Reconnect folder",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.reconnectBody",
+      "en": "Your vault is the folder “{folder}”. Lumen needs your permission to open it again.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.folder.restoring",
+      "en": "Opening the vault…",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.resume",
+      "en": "Resume move",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.unsupported",
+      "en": "This browser can't open a folder on your computer, so your notes stay in the browser's private storage (OPFS). To keep the vault in a folder, use Chrome or Edge, or the desktop app.",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.useBrowser",
+      "en": "Use browser storage",
+      "vars": []
+    },
+    {
+      "key": "vault.import.done",
+      "en": "Imported {notes} notes and {files} files ({source}) into “{folder}”.",
+      "vars": [
+        "notes",
+        "files",
+        "source",
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.import.failed",
+      "en": "Import failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "vault.import.folder",
+      "en": "A folder",
+      "vars": []
+    },
+    {
+      "key": "vault.import.what",
+      "en": "Import from…",
+      "vars": []
+    },
+    {
+      "key": "vault.import.zip",
+      "en": "A .zip file",
+      "vars": []
+    },
+    {
+      "key": "vault.prompt.decryptPassword",
+      "en": "Enter decryption password:",
+      "vars": []
+    },
+    {
+      "key": "vault.prompt.encryptPassword",
+      "en": "Enter encryption password:",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.by",
+      "en": "by {author}",
+      "vars": [
+        "author"
+      ]
+    },
+    {
+      "key": "versionHistory.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.diffChars",
+      "en": "Δ {n} chars difference",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "versionHistory.noVersions",
+      "en": "No versions yet. A version is kept every couple of minutes while you type, on every save and when you close the tab.",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.reason.auto-backup",
+      "en": "backup",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.reason.autosave",
+      "en": "autosave",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.reason.close",
+      "en": "on close",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.reason.collab",
+      "en": "collab session",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.reason.git-pull",
+      "en": "before git pull",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.reason.manual",
+      "en": "manual",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.reason.migrated",
+      "en": "from old backups",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.reason.restore",
+      "en": "before restore",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.reason.save",
+      "en": "saved",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.reason.vault",
+      "en": "vault snapshot",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.restore",
+      "en": "Restore this version",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.savedCount",
+      "en": "{count} versions saved",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "versionHistory.selectVersion",
+      "en": "Select a version to preview",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.storage.notPersisted",
+      "en": "Storage is not persistent: the browser may clear it when the disk is low.",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.storage.persisted",
+      "en": "Storage is persistent: the browser won't clear it on its own.",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.storage.request",
+      "en": "Keep my storage",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.storage.unsupported",
+      "en": "This browser can't make storage persistent.",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.storage.usage",
+      "en": "{used} of {quota} used ({percent}%)",
+      "vars": [
+        "used",
+        "quota",
+        "percent"
+      ]
+    },
+    {
+      "key": "versionHistory.title",
+      "en": "Version History",
+      "vars": []
+    }
+  ]
+}

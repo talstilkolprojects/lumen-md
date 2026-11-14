@@ -146,13 +146,13 @@ function deleteEverywhere(obj: object | null, name: string): void {
       try {
         delete (o as Record<string, unknown>)[name];
       } catch {
-        /* non-configurable */
+        /* why: non-configurable */
       }
       if (Object.prototype.hasOwnProperty.call(o, name)) {
         try {
           Object.defineProperty(o, name, { value: undefined, configurable: false, writable: false });
         } catch {
-          /* leave it */
+          /* why: a frozen global stays as the engine made it */
         }
       }
     }

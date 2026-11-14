@@ -2,8 +2,9 @@
 /**
  * Translate Lumen's i18n keys to a target locale via OpenAI (β.4.2).
  *
- * Reads `i18n/keys.json` (from `extract-i18n-keys.mjs`) and writes
- * `src/i18n/locales/<locale>.json` with the model's translations.
+ * Reads `i18n/keys/*.json` (from `extract-i18n-keys.mjs`) and writes the
+ * model's translations to `src/i18n/locales/<locale>/<domain>.json`
+ * (plan 0.3: one sorted file per domain).
  *
  * Translation contract enforced through the system prompt:
  *   - Preserve every `{var}` placeholder verbatim.
@@ -14,15 +15,19 @@
  *
  * Usage:
  *   OPENAI_API_KEY=sk-… node scripts/translate-locale.mjs \
- *       --locale=fr [--model=gpt-4o-mini] [--in=i18n/keys.json] \
- *       [--out=src/i18n/locales/fr.json] [--batch=40]
+ *       --locale=fr [--model=gpt-4o-mini] [--in=i18n/keys] \
+ *       [--out=src/i18n/locales] [--batch=40]
+ *
+ * --in is the keys directory (or one keys file); --out is the locales
+ * directory the <locale>/ folder is written under.
  *
  * Idempotent: re-runs only fill gaps unless `--force` is passed.
  */
 
-import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { readFile } from "node:fs/promises";
+import { statSync } from "node:fs";
+import { relative, resolve, join } from "node:path";
+import { KEYS_DIR, LOCALES_DIR, ROOT, readKeyEntries, readLocale, writeLocale } from "./lib/i18n-files.mjs";
 import { argv, env, exit } from "node:process";
 
 function parseArgs(args) {
@@ -48,22 +53,21 @@ if (!apiKey) {
   exit(2);
 }
 
-const inPath = resolve(args.in ?? "i18n/keys.json");
-const outPath = resolve(args.out ?? `src/i18n/locales/${locale}.json`);
+const inPath = resolve(args.in ?? KEYS_DIR);
+const outDir = resolve(args.out ?? LOCALES_DIR);
+const outPath = join(outDir, locale);
 const model = args.model ?? "gpt-4o-mini";
 const batchSize = Number(args.batch ?? 40);
 
-const keysFile = JSON.parse(await readFile(inPath, "utf8"));
-const entries = keysFile.entries ?? [];
+const entries = statSync(inPath).isDirectory()
+  ? readKeyEntries(inPath)
+  : (JSON.parse(await readFile(inPath, "utf8")).entries ?? []);
 if (entries.length === 0) {
   console.error(`No entries in ${inPath}`);
   exit(2);
 }
 
-let existing = {};
-if (existsSync(outPath) && !args.force) {
-  existing = JSON.parse(await readFile(outPath, "utf8"));
-}
+const existing = args.force ? {} : readLocale(locale, outDir);
 const todo = entries.filter((e) => !(e.key in existing));
 if (todo.length === 0) {
   console.error(`✓ ${outPath} already complete (${entries.length} keys).`);
@@ -138,8 +142,7 @@ for (let i = 0; i < todo.length; i += batchSize) {
   }
 }
 
-await mkdir(dirname(outPath), { recursive: true });
-await writeFile(outPath, JSON.stringify(output, null, 2) + "\n");
+const files = writeLocale(locale, output, outDir);
 console.error(
-  `✓ wrote ${Object.keys(output).length} entries to ${outPath} (target ${locale})`,
+  `✓ wrote ${Object.keys(output).length} entries to ${relative(ROOT, outPath)}/ in ${files.length} domain files (target ${locale})`,
 );

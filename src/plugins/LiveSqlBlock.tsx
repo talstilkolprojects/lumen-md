@@ -6,6 +6,7 @@
  */
 import { useRef, useState } from "react";
 import { Database, Play, Code2 } from "lucide-react";
+import { t } from "../i18n";
 
 interface Props {
   source: string;
@@ -105,7 +106,7 @@ export default function LiveSqlBlock({ source, meta }: Props) {
       <div className="chart-block-header">
         <span>
           <Database size={12} style={{ display: "inline", marginInlineEnd: 4 }} />
-          Live SQL
+          {t("block.liveSql.title")}
         </span>
         <div className="chart-block-tabs">
           <button
@@ -113,21 +114,21 @@ export default function LiveSqlBlock({ source, meta }: Props) {
             className="chart-block-tab"
             onClick={run}
             disabled={state === "loading" || state === "running"}
-            title="Run SQL"
-            aria-label="Run SQL"
+            title={t("block.liveSql.run")}
+            aria-label={t("block.liveSql.run")}
           >
             <Play size={11} style={{ display: "inline", marginInlineEnd: 4 }} />
-            Run
+            {t("block.common.run")}
           </button>
           <button
             type="button"
             className={`chart-block-tab ${showSource ? "active" : ""}`}
             onClick={() => setShowSource((v) => !v)}
             aria-pressed={showSource}
-            title="Toggle source"
+            title={t("block.common.toggleSource")}
           >
             <Code2 size={11} style={{ display: "inline", marginInlineEnd: 4 }} />
-            Source
+            {t("block.common.source")}
           </button>
         </div>
       </div>
@@ -165,7 +166,7 @@ export default function LiveSqlBlock({ source, meta }: Props) {
           </div>
         ) : results.length === 0 ? (
           <span style={{ color: "hsl(var(--fg-muted))", fontStyle: "italic", fontSize: 12 }}>
-            {state === "success" ? "Statement executed (no result set)." : "Click Run to execute this SQL block."}
+            {state === "success" ? t("block.liveSql.noResult") : t("block.liveSql.prompt")}
           </span>
         ) : (
           results.map((r, i) => (

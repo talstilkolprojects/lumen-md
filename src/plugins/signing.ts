@@ -25,16 +25,12 @@
  */
 
 import { get, set } from "idb-keyval";
+import { publicEnv } from "../lib/publicEnv";
 
 type EnvShape = { VITE_PLUGIN_TRUSTED_KEYS?: string };
 
 function readEnvVar(key: keyof EnvShape): string {
-  try {
-    const env = (import.meta as ImportMeta & { env?: EnvShape }).env;
-    return env?.[key]?.trim() ?? "";
-  } catch {
-    return "";
-  }
+  return publicEnv(key);
 }
 
 function readBuiltinTrustRoots(): Record<string, string> {

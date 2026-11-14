@@ -1,4 +1,4 @@
-import { t } from "../i18n";
+import { t, getLocale } from "../i18n";
 
 export interface Template {
   id: string;
@@ -12,15 +12,15 @@ export function getTemplates(): Template[] {
   return [
     {
       id: "blank",
-      name: t("template.blank") ?? "Blank document",
-      description: t("template.blank.desc") ?? "Start with a clean slate",
+      name: t("template.blank"),
+      description: t("template.blank.desc"),
       emoji: "📄",
       content: "# Untitled\n\n",
     },
     {
       id: "meeting",
-      name: t("template.meeting") ?? "Meeting notes",
-      description: t("template.meeting.desc") ?? "Date, attendees, agenda, action items",
+      name: t("template.meeting"),
+      description: t("template.meeting.desc"),
       emoji: "📋",
       content: `# Meeting Notes
 
@@ -43,10 +43,10 @@ export function getTemplates(): Template[] {
     },
     {
       id: "journal",
-      name: t("template.journal") ?? "Daily journal",
-      description: t("template.journal.desc") ?? "Gratitude, goals, reflections",
+      name: t("template.journal"),
+      description: t("template.journal.desc"),
       emoji: "📓",
-      content: `# ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+      content: `# ${new Date().toLocaleDateString(getLocale(), { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
 
 ## 🙏 Gratitude
 1. 
@@ -67,8 +67,8 @@ export function getTemplates(): Template[] {
     },
     {
       id: "blog",
-      name: t("template.blog") ?? "Blog post",
-      description: t("template.blog.desc") ?? "Title, intro, sections, conclusion",
+      name: t("template.blog"),
+      description: t("template.blog.desc"),
       emoji: "✍️",
       content: `# Blog Post Title
 
@@ -93,13 +93,13 @@ Wrap up with a takeaway or call to action.
 
 ---
 
-*Written with [Lumen](https://lumen.md)*
+*Written with [Lumen](https://lumen-md.vercel.app)*
 `,
     },
     {
       id: "readme",
-      name: t("template.readme") ?? "Project README",
-      description: t("template.readme.desc") ?? "Standard open-source README structure",
+      name: t("template.readme"),
+      description: t("template.readme.desc"),
       emoji: "🛠️",
       content: `# Project Name
 
@@ -138,14 +138,14 @@ MIT
     },
     {
       id: "letter",
-      name: t("template.letter") ?? "Formal letter",
-      description: t("template.letter.desc") ?? "Professional letter format",
+      name: t("template.letter"),
+      description: t("template.letter.desc"),
       emoji: "✉️",
       content: `**Your Name**
 Your Address
 City, ZIP
 
-${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+${new Date().toLocaleDateString(getLocale(), { year: "numeric", month: "long", day: "numeric" })}
 
 **Recipient Name**
 Title

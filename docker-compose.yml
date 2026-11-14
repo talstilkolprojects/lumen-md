@@ -1,9 +1,9 @@
 # Lumen on-prem deployment.
 #
 # Brings up the full self-hosted stack on a single VM:
-#   - lumen-web      :80   (nginx serving the React SPA)
+#   - lumen-web      :80   (nginx serving the React SPA; the root Dockerfile, port 8080 inside)
 #   - lumen-signal   :4444 (y-webrtc signaling — peers find each other)
-#   - lumen-collab   :4445 (persistent y-websocket, LevelDB on the collab-data volume)
+#   - lumen-collab   :4445 (persistent Hocuspocus, SQLite on the collab-data volume)
 #   - lumen-billing  :4446 (Stripe webhook handler — optional)
 #   - postgres       :5432 (billing entitlements + audit log; not used by lumen-collab)
 #
@@ -34,7 +34,9 @@ services:
   lumen-web:
     build:
       context: .
-      dockerfile: docker/Dockerfile.web
+      # The same image as fly.toml (plan 13.2): one Dockerfile, one nginx
+      # config (deploy/nginx.conf), listening on 8080 as a non-root user.
+      dockerfile: Dockerfile
       # Baked into the SPA at build time (.env files aren't in the build
       # context). Point them at how browsers reach lumen-signal /
       # lumen-collab — see .env.onprem.example.
@@ -42,8 +44,12 @@ services:
         VITE_WEBRTC_SIGNALING_URL: ${LUMEN_SIGNAL_URL:-}
         VITE_YJS_WEBSOCKET_URL: ${LUMEN_COLLAB_URL:-}
         VITE_AUDIT_ENDPOINT: ${LUMEN_AUDIT_URL:-}
+        # full (default) | slim — slim drops the ≈145 MB of same-origin
+        # WebAssembly runtimes (live-python / live-r / live-ruby, OCR, local
+        # transcription); see docs/self-hosting/hosting.
+        LUMEN_RUNTIMES: ${LUMEN_RUNTIMES:-full}
     ports:
-      - "80:80"
+      - "80:8080"
     depends_on:
       - lumen-signal
       - lumen-collab
@@ -64,9 +70,16 @@ services:
     ports:
       - "4445:4445"
     environment:
-      # LevelDB directory on the mounted volume. (No Postgres archive is
-      # implemented for collab, so DATABASE_URL is intentionally not set.)
-      YJS_STORAGE_DIR: /data/yjs
+      # Hocuspocus + SQLite (plan 3.6): collab.sqlite and backups/ on the
+      # mounted volume. See docker/collab.yml to run it on its own.
+      COLLAB_DATA_DIR: /data/collab
+      # Rooms the legacy y-websocket server left in /data/yjs are imported once at start.
+      COLLAB_LEGACY_LEVELDB_DIR: /data/yjs
+      # The operator access key (Collab settings → "Server access token"):
+      # it buys a short-lived per-room token. Empty = open server (warned).
+      COLLAB_ACCESS_KEY: ${LUMEN_COLLAB_TOKEN:-}
+      # Signs the room tokens; never sent to the app. Random per start when unset.
+      COLLAB_TOKEN_SECRET: ${LUMEN_COLLAB_TOKEN_SECRET:-}
     volumes:
       - collab-data:/data
     <<: [*restart, *logging]

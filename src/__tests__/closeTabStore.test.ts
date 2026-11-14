@@ -76,3 +76,32 @@ describe("useAppStore — closeTab integration", () => {
     expect(useAppStore.getState().openTabs.map((t) => t.name)).toEqual(before);
   });
 });
+
+describe("useAppStore — adoptWorkspaceName", () => {
+  it("moves the active ad-hoc doc and its tab to the workspace identity", () => {
+    const s = useAppStore.getState();
+    s.openTab({ name: "Untitled.md", content: "# draft", workspaceName: null });
+    s.setContent("# draft, edited");
+    expect(useAppStore.getState().doc.dirty).toBe(true);
+    expect(useAppStore.getState().openTabs.some((t) => t.id === "Untitled.md")).toBe(true);
+
+    useAppStore.getState().adoptWorkspaceName("Untitled 2.md");
+
+    const after = useAppStore.getState();
+    expect(after.doc).toMatchObject({ name: "Untitled 2.md", workspaceName: "Untitled 2.md", dirty: false, content: "# draft, edited" });
+    expect(after.doc.handle).toBeUndefined();
+    // The tab followed: same slot, new id, clean — no orphan under the old id.
+    const tab = after.openTabs.find((t) => t.id === "Untitled 2.md");
+    expect(tab).toMatchObject({ name: "Untitled 2.md", workspaceName: "Untitled 2.md", dirty: false, content: "# draft, edited" });
+    expect(after.openTabs.some((t) => t.id === "Untitled.md")).toBe(false);
+    expect(tabIdOf(after.doc)).toBe("Untitled 2.md");
+  });
+
+  it("leaves the other tabs alone", () => {
+    const s = useAppStore.getState();
+    const others = s.openTabs.filter((t) => t.id !== tabIdOf(s.doc)).map((t) => t.id);
+    s.adoptWorkspaceName("adopted.md");
+    const after = useAppStore.getState().openTabs.filter((t) => t.id !== "adopted.md").map((t) => t.id);
+    expect(after).toEqual(others);
+  });
+});

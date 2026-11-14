@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 
@@ -46,38 +46,42 @@ test("command-palette-open", async ({ page }) => {
 
 test("file-menu-open", async ({ page }) => {
   await page.locator("header button:has-text('File')").click();
-  await page.waitForTimeout(150);
+  await expect(page.locator('[role="menu"]').first()).toBeVisible({ timeout: 3000 });
   await page.screenshot({ path: path.join(OUT, "03-file-menu.png") });
 });
 
 test("insert-menu-open", async ({ page }) => {
   await page.locator("header button:has-text('Insert')").click();
-  await page.waitForTimeout(150);
+  await expect(page.locator('[role="menu"]').first()).toBeVisible({ timeout: 3000 });
   await page.screenshot({ path: path.join(OUT, "04-insert-menu.png") });
 });
 
 test("view-mode-menu-open", async ({ page }) => {
   await page.locator("header button:has-text('View Mode')").click();
-  await page.waitForTimeout(150);
+  await expect(page.locator('[role="menu"]').first()).toBeVisible({ timeout: 3000 });
   await page.screenshot({ path: path.join(OUT, "05-view-mode-menu.png") });
 });
 
 test("help-menu-open", async ({ page }) => {
   await page.locator("header button:has-text('Help')").click();
-  await page.waitForTimeout(150);
+  await expect(page.locator('[role="menu"]').first()).toBeVisible({ timeout: 3000 });
   await page.screenshot({ path: path.join(OUT, "06-help-menu.png") });
 });
 
 test("keyboard-shortcuts-dialog", async ({ page }) => {
   // ⌘/ opens shortcuts dialog.
   await page.keyboard.press("Meta+/");
-  await page.waitForTimeout(300);
+  await expect(page.locator('[role="dialog"][aria-label="Keyboard shortcuts"]')).toBeVisible({ timeout: 3000 });
   await page.screenshot({ path: path.join(OUT, "07-shortcuts.png") });
 });
 
 test("preview-only-rendered-welcome", async ({ page }) => {
   await page.keyboard.press("Meta+3");
-  await page.waitForTimeout(2000); // give time for lazy charts to render
+  // The welcome note ends with a rendered block; wait for the preview to
+  // reach it instead of guessing how long the lazy chunks take.
+  await expect(page.locator(".prose-lumen").first()).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator(".prose-lumen h1").first()).toBeVisible({ timeout: 10_000 });
+  await page.locator(".prose-lumen .chart-block, .prose-lumen .mermaid-block").first().waitFor({ state: "visible", timeout: 15_000 }).catch(() => undefined);
   await page.screenshot({
     path: path.join(OUT, "08-preview-welcome-fullpage.png"),
     fullPage: true,
@@ -96,27 +100,20 @@ test("light-mode", async ({ page }) => {
     .locator('[role="dialog"][aria-modal="true"]')
     .filter({ has: page.locator("input") });
   await palette.waitFor({ timeout: 3000 });
-  await page.keyboard.type("Theme");
-  await page.waitForTimeout(300);
-  // Try to find a Light theme command.
-  const light = palette.getByText(/Light/i).first();
-  if (await light.isVisible({ timeout: 1500 }).catch(() => false)) {
-    await page.keyboard.press("Enter");
-    await page.waitForTimeout(500);
-  } else {
-    await page.keyboard.press("Escape");
-  }
+  await palette.locator("input").first().fill("light theme");
+  await expect(palette.locator('[role="option"][aria-selected="true"]')).toContainText(/light/i, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await expect(palette).toBeHidden({ timeout: 3000 });
+  await expect(page.locator("html")).not.toHaveClass(/dark/, { timeout: 3000 });
   await page.screenshot({ path: path.join(OUT, "10-light-mode.png") });
 });
 
 test("ai-fab-clicked", async ({ page }) => {
   // AI Fab is the floating button at bottom-right.
-  const fab = page
-    .locator("button[aria-label*='AI' i], button[title*='AI' i]")
-    .first();
-  if (await fab.isVisible({ timeout: 1500 }).catch(() => false)) {
-    await fab.click();
-    await page.waitForTimeout(500);
-  }
+  const fab = page.locator("button[aria-expanded][aria-label*='AI' i]").first();
+  await expect(fab).toBeVisible({ timeout: 5000 });
+  await fab.click();
+  await expect(fab).toHaveAttribute("aria-expanded", "true", { timeout: 3000 });
+  await expect(page.locator('[role="menu"]').first()).toBeVisible({ timeout: 3000 });
   await page.screenshot({ path: path.join(OUT, "11-ai-fab.png") });
 });

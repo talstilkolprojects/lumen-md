@@ -6,6 +6,7 @@ import { DataTable } from "./DataTable";
 import { ChartSuggestions } from "./ChartSuggestions";
 import { Table2, BarChart3, Sparkles, RefreshCw } from "lucide-react";
 import { useFetchSource } from "./useFetchSource";
+import { t } from "../i18n";
 
 interface Props {
   source: string;
@@ -34,7 +35,7 @@ export default function JsonTableBlock({ source, meta }: Props) {
     return (
       <div className="chart-block" style={{ padding: "1rem" }}>
         <div style={{ color: "hsl(0 80% 60%)", fontSize: 13 }}>
-          ⚠︎ JSON fetch failed: {fetchError}
+          {t("block.json.fetchFailed", { error: fetchError })}
         </div>
       </div>
     );
@@ -43,7 +44,7 @@ export default function JsonTableBlock({ source, meta }: Props) {
     return (
       <div className="chart-block" style={{ padding: "1rem" }}>
         <div style={{ color: "hsl(0 80% 60%)", fontSize: 13 }}>
-          ⚠︎ JSON table parse error: {result.error ?? "unknown"}
+          {t("block.json.parseError", { error: result.error ?? t("block.common.unknown") })}
         </div>
       </div>
     );
@@ -58,17 +59,17 @@ export default function JsonTableBlock({ source, meta }: Props) {
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
           <Sparkles size={13} style={{ opacity: 0.7 }} />
           {titleMatch?.[1] ??
-            `JSON • ${data.rows.length} rows × ${data.columns.length} cols`}
+            t("block.data.summary", { lang: "JSON", rows: data.rows.length, cols: data.columns.length })}
           {remote && (
             <span style={{ fontSize: 10, color: "hsl(var(--accent))", marginInlineStart: 4 }}>
-              · live
+              {t("block.common.live")}
             </span>
           )}
           {url && (
             <button
               type="button"
               onClick={refetch}
-              title={`Refetch ${url}`}
+              title={t("block.common.refetchUrl", { url })}
               style={{
                 marginInlineStart: 4,
                 border: "none",
@@ -79,7 +80,7 @@ export default function JsonTableBlock({ source, meta }: Props) {
                 borderRadius: 6,
               }}
               disabled={fetching}
-              aria-label="Refetch JSON data"
+              aria-label={t("block.json.refetch")}
             >
               <RefreshCw
                 size={11}
@@ -94,7 +95,7 @@ export default function JsonTableBlock({ source, meta }: Props) {
             onClick={() => setView("table")}
           >
             <Table2 size={12} style={{ display: "inline", marginRight: 4 }} />
-            Table
+            {t("block.data.table")}
           </button>
           {suggestions.length > 0 && (
             <button
@@ -102,7 +103,7 @@ export default function JsonTableBlock({ source, meta }: Props) {
               onClick={() => setView("chart")}
             >
               <BarChart3 size={12} style={{ display: "inline", marginRight: 4 }} />
-              Chart
+              {t("block.data.chart")}
             </button>
           )}
         </div>

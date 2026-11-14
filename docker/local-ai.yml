@@ -1,0 +1,56 @@
+# Local AI services for Lumen — nothing here talks to a third party except
+# SearXNG's upstream search engines (it is a metasearch proxy).
+#
+#   docker compose -f docker/local-ai.yml up -d
+#
+# Then in Lumen:
+#   ⌘K → Research: Settings → "SearXNG on this machine" → http://localhost:8787
+#   build with VITE_LANGUAGETOOL_URL=http://localhost:8010/v2/check (or set it
+#   in the AI settings panel) for grammar checks on this machine.
+#
+# Which app origins may call the research service: LUMEN_ORIGINS (comma-
+# separated). The default covers the hosted app, the canonical domain, the
+# desktop app and local dev; add a self-hosted origin like this:
+#   LUMEN_ORIGINS=https://notes.example.com docker compose -f docker/local-ai.yml up -d
+# (that replaces the default list — include every origin you use).
+#
+# The research service requires a shared token (it refuses every request
+# without one): pick any long random value, keep it, pass it as
+# RESEARCH_TOKEN and enter the same value in Lumen → AI settings → Research
+# token:
+#   export RESEARCH_TOKEN=$(openssl rand -hex 24); echo "$RESEARCH_TOKEN"
+#   docker compose -f docker/local-ai.yml up -d
+#
+# Ports: 8787 research service (search + page extraction), 8888 SearXNG,
+# 8010 LanguageTool. Lumen's CSP allows localhost/127.0.0.1 on 8787 and 8010.
+services:
+  searxng:
+    image: searxng/searxng:latest
+    ports: ["8888:8080"]
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+    restart: unless-stopped
+
+  research:
+    # The same Cloudflare worker Lumen deploys (edge-workers/research), run
+    # locally with wrangler. It extracts pages and queries SearXNG — no keys.
+    image: node:22-alpine
+    working_dir: /app/edge-workers/research
+    volumes:
+      - ../:/app
+    command: >
+      npx --yes wrangler@4 dev --ip 0.0.0.0 --port 8787
+      --var ALLOWED_ORIGINS:${LUMEN_ORIGINS:-https://lumen-md.vercel.app,tauri://localhost,http://tauri.localhost,https://tauri.localhost,http://localhost:5173,http://localhost:4173,http://localhost:8080}
+      --var SEARXNG_URL:http://searxng:8080
+      --var RESEARCH_TOKEN:${RESEARCH_TOKEN:?set RESEARCH_TOKEN (see the top of this file)}
+    ports: ["8787:8787"]
+    depends_on: [searxng]
+    restart: unless-stopped
+
+  languagetool:
+    image: erikvl87/languagetool:latest
+    ports: ["8010:8010"]
+    environment:
+      - Java_Xms=512m
+      - Java_Xmx=1g
+    restart: unless-stopped

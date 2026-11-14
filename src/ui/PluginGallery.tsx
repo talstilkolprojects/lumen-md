@@ -1,4 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { headingSlugger } from "../lib/slug";
+import { countWords } from "../text/hebrew";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { useFocusTrap } from "./useFocusTrap";
 import { Search, Download, Trash2, ExternalLink, BadgeCheck } from "lucide-react";
 import { getRegisteredPlugins, registerPlugin, unregisterPlugin } from "../plugins/pluginSystem";
 import type { LumenPlugin } from "../plugins/pluginSystem";
@@ -40,9 +43,9 @@ const COMMUNITY_PLUGINS: LumenPlugin[] = [
         hint: "Show estimated reading time",
         action: () => {
           const content = api.getContent();
-          const words = content.split(/\s+/).filter(Boolean).length;
+          const words = countWords(content);
           const minutes = Math.ceil(words / 200);
-          api.showToast(`📖 ~${minutes} min read (${words} words)`);
+          api.showToast(t("toast.minReadWords", { minutes, words }));
         },
       });
     },
@@ -83,7 +86,7 @@ const COMMUNITY_PLUGINS: LumenPlugin[] = [
           const lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.";
           const content = api.getContent();
           api.setContent(content + "\n\n" + lorem);
-          api.showToast("📄 Lorem ipsum inserted");
+          api.showToast(t("toast.loremIpsumInserted"));
         },
       });
     },
@@ -109,9 +112,9 @@ const COMMUNITY_PLUGINS: LumenPlugin[] = [
             if (lines[i].match(/  $/)) issues.push(`Line ${i + 1}: trailing whitespace`);
           }
           if (issues.length === 0) {
-            api.showToast("✅ No issues found!");
+            api.showToast(t("toast.noIssuesFound"));
           } else {
-            api.showToast(`⚠️ ${issues.length} issues: ${issues.slice(0, 3).join(", ")}`);
+            api.showToast(t("toast.issues", { count: issues.length, list: issues.slice(0, 3).join(", ") }));
           }
         },
       });
@@ -152,17 +155,18 @@ const COMMUNITY_PLUGINS: LumenPlugin[] = [
           const content = api.getContent();
           const headings = content.match(/^#{1,6}\s+.+$/gm) || [];
           if (headings.length === 0) {
-            api.showToast("No headings found");
+            api.showToast(t("toast.noHeadingsFound"));
             return;
           }
+          const slugger = headingSlugger();
           const toc = headings.map((h) => {
             const level = h.match(/^#+/)![0].length;
             const text = h.replace(/^#+\s+/, "");
-            const slug = text.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+            const slug = slugger.slug(text);
             return `${"  ".repeat(level - 1)}- [${text}](#${slug})`;
           }).join("\n");
           api.setContent("## Table of Contents\n\n" + toc + "\n\n---\n\n" + content);
-          api.showToast("📋 TOC inserted at top");
+          api.showToast(t("toast.tocInsertedAtTop"));
         },
       });
     },
@@ -215,7 +219,7 @@ export function PluginGallery({ open, onClose }: Props) {
             // Sandbox + script injection comes in a follow-up — for now we
             // simulate the install/activation flow so the UX exists.
             await new Promise((resolve) => setTimeout(resolve, 400));
-            api.showToast(`✅ Loaded ${p.name} from remote module`);
+            api.showToast(t("toast.loadedFromRemoteModule", { name: p.name }));
           },
         }));
         setRemotePlugins(mapped);
@@ -230,12 +234,16 @@ export function PluginGallery({ open, onClose }: Props) {
     };
   }, [open]);
 
-  if (!open) return null;
-
-  const allAvailable = [...COMMUNITY_PLUGINS, ...remotePlugins];
+  const allAvailable = useMemo(() => [...COMMUNITY_PLUGINS, ...remotePlugins], [remotePlugins]);
 
   // Index categories for the side rail. Built-ins live in "Community";
   // remote-registry plugins surface their declared category (or "Featured").
+  //
+  // This hook must run on every render, including the closed one: the
+  // gallery is mounted with `open={false}` from App and flipped open
+  // later, and a hook that only ran once open made React throw
+  // "Rendered more hooks than during the previous render" the first
+  // time the gallery was opened. Every hook stays above the early return.
   const categoryIndex = useMemo(() => {
     const map = new Map<string, number>();
     map.set("all", allAvailable.length);
@@ -246,6 +254,12 @@ export function PluginGallery({ open, onClose }: Props) {
     }
     return map;
   }, [allAvailable.length, remoteRaw]);
+
+  // Focus stays in the dialog while it is open and returns on close; Escape closes it (plan 10.1).
+  const trapRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(trapRef, { active: open, onEscape: onClose });
+
+  if (!open) return null;
 
   const matchesCategory = (id: string): boolean => {
     if (activeCategory === "all") return true;
@@ -290,6 +304,7 @@ export function PluginGallery({ open, onClose }: Props) {
 
   return (
     <div
+      ref={trapRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="plugin-gallery-title"
@@ -332,10 +347,10 @@ export function PluginGallery({ open, onClose }: Props) {
           <span style={{ fontSize: 22 }} aria-hidden>🔌</span>
           <div>
             <div id="plugin-gallery-title" style={{ fontWeight: 700, fontSize: 16 }}>
-              Plugin Gallery
+              {t("pluginGallery.title")}
             </div>
             <div style={{ fontSize: 12, color: "hsl(var(--fg-muted))" }}>
-              {installed.size} installed · {allAvailable.length} available
+              {t("pluginGallery.counts", { installed: installed.size, available: allAvailable.length })}
             </div>
           </div>
           <div style={{ flex: 1 }} />
@@ -345,7 +360,7 @@ export function PluginGallery({ open, onClose }: Props) {
               aria-hidden
               style={{
                 position: "absolute",
-                left: 10,
+                insetInlineStart: 10,
                 top: "50%",
                 transform: "translateY(-50%)",
                 color: "hsl(var(--fg-muted))",
@@ -355,13 +370,16 @@ export function PluginGallery({ open, onClose }: Props) {
               type="text"
               placeholder={t("pluginGallery.search")}
               aria-label={t("pluginGallery.search")}
+              data-testid="plugin-search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{
                 background: "hsl(var(--bg-subtle))",
                 border: "1px solid hsl(var(--border))",
                 borderRadius: 8,
-                padding: "7px 12px 7px 30px",
+                // Room for the search icon on the inline-start side (mirrors in RTL).
+                padding: "7px 12px",
+                paddingInlineStart: 30,
                 fontSize: 13,
                 color: "hsl(var(--fg))",
                 width: 240,
@@ -391,7 +409,7 @@ export function PluginGallery({ open, onClose }: Props) {
         <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
           {/* Side rail — categories */}
           <nav
-            aria-label="Plugin categories"
+            aria-label={t("pluginGallery.categoriesLabel")}
             style={{
               width: 200,
               borderInlineEnd: "1px solid hsl(var(--border))",
@@ -410,7 +428,7 @@ export function PluginGallery({ open, onClose }: Props) {
                 padding: "4px 10px 6px",
               }}
             >
-              Categories
+              {t("pluginGallery.categories")}
             </div>
             {categories.map((c) => {
               const isActive = activeCategory === c.id;
@@ -466,7 +484,7 @@ export function PluginGallery({ open, onClose }: Props) {
                   fontSize: 13,
                 }}
               >
-                No plugins matched your search.
+                {t("pluginGallery.noMatch")}
               </div>
             ) : (
               filtered.map((plugin) => {
@@ -475,6 +493,7 @@ export function PluginGallery({ open, onClose }: Props) {
                 return (
                   <div
                     key={plugin.id}
+                    data-testid="plugin-card"
                     style={{
                       display: "flex",
                       flexDirection: "column",
@@ -519,7 +538,7 @@ export function PluginGallery({ open, onClose }: Props) {
                           {verified && (
                             <BadgeCheck
                               size={14}
-                              aria-label="Verified by Lumen"
+                              aria-label={t("pluginGallery.verified")}
                               style={{ color: "hsl(var(--accent))", flexShrink: 0 }}
                             />
                           )}
@@ -565,7 +584,7 @@ export function PluginGallery({ open, onClose }: Props) {
                         }}
                       >
                         {isInstalled ? <Trash2 size={12} /> : <Download size={12} />}
-                        {isInstalled ? "Uninstall" : "Install"}
+                        {isInstalled ? t("pluginGallery.uninstall") : t("pluginGallery.install")}
                       </button>
                       {(() => {
                         const remote = remoteRaw.find((r) => r.id === plugin.id);
@@ -576,7 +595,7 @@ export function PluginGallery({ open, onClose }: Props) {
                             href={homepage}
                             target="_blank"
                             rel="noopener noreferrer"
-                            aria-label={`${plugin.name} homepage`}
+                            aria-label={t("pluginGallery.homepage", { name: plugin.name })}
                             style={{
                               display: "inline-flex",
                               alignItems: "center",
@@ -611,14 +630,14 @@ export function PluginGallery({ open, onClose }: Props) {
             color: "hsl(var(--fg-muted))",
           }}
         >
-          More plugins coming soon ·{" "}
+          {t("pluginGallery.comingSoon")}{" "}
           <a
             href="https://github.com/talstilkol/lumen-md"
             target="_blank"
             rel="noopener noreferrer"
             style={{ color: "hsl(var(--accent))" }}
           >
-            Submit a plugin
+            {t("pluginGallery.submit")}
           </a>
         </div>
       </div>

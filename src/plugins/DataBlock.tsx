@@ -10,6 +10,7 @@ import { suggestCharts, type ChartSuggestion } from "../data/suggest";
 import { DataTable } from "./DataTable";
 import { ChartSuggestions } from "./ChartSuggestions";
 import { Table2, BarChart3, Database } from "lucide-react";
+import { t } from "../i18n";
 
 interface Props {
   source: string;
@@ -59,8 +60,7 @@ export default function DataBlock({ source, meta, lang }: Props) {
     return (
       <div className="chart-block" style={{ padding: "1rem" }}>
         <div style={{ color: "hsl(0 80% 60%)", fontSize: 13 }}>
-          ⚠︎ {LABELS[lang ?? "data"]} parse error:{" "}
-          {result.error ?? "no rows detected"}
+          {t("block.data.parseError", { lang: LABELS[lang ?? "data"], error: result.error ?? t("block.data.noRows") })}
         </div>
       </div>
     );
@@ -75,7 +75,7 @@ export default function DataBlock({ source, meta, lang }: Props) {
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
           <Database size={13} style={{ opacity: 0.7 }} />
           {titleMatch?.[1] ??
-            `${LABELS[lang ?? "data"]} • ${data.rows.length} rows × ${data.columns.length} cols`}
+            t("block.data.summary", { lang: LABELS[lang ?? "data"], rows: data.rows.length, cols: data.columns.length })}
         </span>
         <div className="chart-block-tabs">
           <button
@@ -84,7 +84,7 @@ export default function DataBlock({ source, meta, lang }: Props) {
             onClick={() => setView("table")}
           >
             <Table2 size={12} style={{ display: "inline", marginRight: 4 }} />
-            Table
+            {t("block.data.table")}
           </button>
           {suggestions.length > 0 && (
             <button
@@ -93,7 +93,7 @@ export default function DataBlock({ source, meta, lang }: Props) {
               onClick={() => setView("chart")}
             >
               <BarChart3 size={12} style={{ display: "inline", marginRight: 4 }} />
-              Chart
+              {t("block.data.chart")}
             </button>
           )}
         </div>

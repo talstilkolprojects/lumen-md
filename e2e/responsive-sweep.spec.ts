@@ -41,7 +41,7 @@ for (const vp of VIEWPORTS) {
     });
 
     test("welcome doc default", async ({ page }) => {
-      await page.waitForTimeout(800); // give preview a moment
+      await expect(page.locator(".prose-lumen h1").first()).toBeVisible({ timeout: 10_000 });
       await page.screenshot({
         path: path.join(OUT, `${vp.name}-welcome.png`),
       });
@@ -49,7 +49,8 @@ for (const vp of VIEWPORTS) {
 
     test("source mode only", async ({ page }) => {
       await page.keyboard.press("Meta+1");
-      await page.waitForTimeout(300);
+      await expect(page.locator(".cm-content").first()).toBeVisible({ timeout: 5000 });
+      await expect(page.locator(".prose-lumen")).toHaveCount(0, { timeout: 5000 });
       await page.screenshot({
         path: path.join(OUT, `${vp.name}-source.png`),
       });
@@ -57,7 +58,8 @@ for (const vp of VIEWPORTS) {
 
     test("preview mode only", async ({ page }) => {
       await page.keyboard.press("Meta+3");
-      await page.waitForTimeout(1500);
+      await expect(page.locator(".prose-lumen h1").first()).toBeVisible({ timeout: 10_000 });
+      await expect(page.locator(".cm-content")).toHaveCount(0, { timeout: 5000 });
       await page.screenshot({
         path: path.join(OUT, `${vp.name}-preview.png`),
       });

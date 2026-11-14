@@ -1,0 +1,662 @@
+<h1 id="lumen--launch-deploy-guide" dir="auto">Lumen — Launch Deploy Guide</h1>
+<p dir="auto">Eight blockers stand between &quot;feature complete&quot; and &quot;Lumen 1.0 live to the<br/>
+public.&quot; This document walks each one in order, with the <strong>exact commands</strong><br/>
+and <strong>exact dashboard clicks</strong> required. Most are external-account work — the<br/>
+code is done.</p>
+<blockquote dir="ltr">
+<p dir="auto"><strong>Roughly 3 working days</strong> if you sequence them as listed.</p>
+</blockquote>
+<hr/>
+<h2 id="0-prerequisites-one-time-30-min" dir="auto">0. Prerequisites (one-time, ~30 min)</h2>
+<ul class="contains-task-list" dir="ltr">
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Buy <code>lumen.app</code> (or whichever domain) — Cloudflare Registrar / Namecheap.</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Cloudflare account (free) — used for DNS + Workers.</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Stripe account (free until you start billing).</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Apple Developer Program ($99/yr).</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Google Play Developer ($25 one-time).</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Sentry account (free tier) or a self-hosted GlitchTip — optional. Set <code>VITE_SENTRY_DSN</code> at build time (public by design, not a secret); reports are sent only from users who turn them on. See <code>docs/src/content/docs/security/monitoring.md</code> (on Vercel, also add the DSN&#x27;s origin to <code>connect-src</code> in <code>vercel.json</code>).</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Supabase project (free) — already optional; required for billing/sync/publish.</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Chrome Web Store registration ($5 one-time).</li>
+</ul>
+<hr/>
+<h2 id="1-signaling-server-for-collab-p1-09--30-min" dir="auto">1. Signaling server for collab (P1-09) — 30 min</h2>
+<p dir="auto">Lumen falls back to <code>wss://signaling.yjs.dev</code> (Yjs&#x27;s public server). For<br/>
+launch, run your own so a public outage doesn&#x27;t disable collab.</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="cd sync-server
+npm install
+# Test locally (PORT defaults to 4444)
+PORT=4444 node server.js
+curl http://localhost:4444/healthz   # → {&quot;ok&quot;:true,...}  (/health and / also work)
+
+# Deploy to Fly.io (free):
+brew install flyctl
+fly launch --name lumen-signal     # accept defaults
+fly deploy
+# → wss://lumen-signal.fly.dev/
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#0550AE;--shiki-dark:#79C0FF">cd</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> sync-server</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> install</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Test locally (PORT defaults to 4444)</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">PORT</span><span style="color:#CF222E;--shiki-dark:#FF7B72">=</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">4444</span><span style="color:#953800;--shiki-dark:#FFA657"> node</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> server.js</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">curl</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> http://localhost:4444/healthz</span><span style="color:#6E7781;--shiki-dark:#8B949E">   # → {&quot;ok&quot;:true,...}  (/health and / also work)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Deploy to Fly.io (free):</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">brew</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> install</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> flyctl</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">fly</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> launch</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --name</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> lumen-signal</span><span style="color:#6E7781;--shiki-dark:#8B949E">     # accept defaults</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">fly</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> deploy</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># → wss://lumen-signal.fly.dev/</span></span>
+<span class="line"></span></code></pre></div>
+<p dir="auto"><code>server.js</code> speaks the y-webrtc signaling protocol (<code>subscribe</code> /<br/>
+<code>unsubscribe</code> / <code>publish</code> / <code>ping</code>). Fly and the Docker <code>HEALTHCHECK</code> probe<br/>
+<code>/healthz</code>. Optional env: <code>SIGNAL_HEARTBEAT_MS</code> (default 30000),<br/>
+<code>SIGNAL_RATE_LIMIT_MAX</code> (messages/min/IP, default 120), and resource caps<br/>
+<code>SIGNAL_MAX_TOPICS_PER_CONN</code> (64), <code>SIGNAL_MAX_TOPIC_LENGTH</code> (256 chars),<br/>
+<code>SIGNAL_MAX_PAYLOAD</code> (262144 bytes/message), <code>SIGNAL_MAX_CONNS_PER_IP</code> (64).<br/>
+Behind a reverse proxy set <code>SIGNAL_TRUST_PROXY=1</code> (already in <code>sync-server/fly.toml</code>)<br/>
+so per-IP limits use <code>Fly-Client-IP</code> / <code>X-Forwarded-For</code> instead of the proxy&#x27;s address.</p>
+<p dir="auto">Update <code>.env.production</code>:</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">text</span><button class="icon-btn" data-copy="VITE_WEBRTC_SIGNALING_URL=wss://lumen-signal.fly.dev,wss://signaling.yjs.dev
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span>VITE_WEBRTC_SIGNALING_URL=wss://lumen-signal.fly.dev,wss://signaling.yjs.dev</span></span>
+<span class="line"><span></span></span></code></pre></div>
+<p dir="auto">(Comma-separated → first one is primary, second is fallback.)</p>
+<hr/>
+<h2 id="2-persistent-collab-server-p2-03-plan-36--30-min" dir="auto">2. Persistent collab server (P2-03, plan 3.6) — 30 min</h2>
+<p dir="auto"><code>sync-server/collab-server.mjs</code>: Hocuspocus (MIT) with per-room token auth<br/>
+and SQLite storage (Node&#x27;s built-in <code>node:sqlite</code>, Node ≥ 22.13) plus<br/>
+backups. Image: <code>docker/Dockerfile.collab</code>; on its own:<br/>
+<code>docker compose -f docker/collab.yml up -d</code>.</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="# Fly.io, from the repo root
+fly launch --name lumen-collab --dockerfile docker/Dockerfile.collab --no-deploy
+fly volumes create collab_data --size 1
+# fly.toml: [[mounts]] source = &quot;collab_data&quot;, destination = &quot;/data&quot;
+fly secrets set COLLAB_ACCESS_KEY=$(openssl rand -hex 24) COLLAB_TOKEN_SECRET=$(openssl rand -hex 32)
+fly deploy
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Fly.io, from the repo root</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">fly</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> launch</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --name</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> lumen-collab</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --dockerfile</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> docker/Dockerfile.collab</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --no-deploy</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">fly</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> volumes</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> create</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> collab_data</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --size</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> 1</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># fly.toml: [[mounts]] source = &quot;collab_data&quot;, destination = &quot;/data&quot;</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">fly</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> secrets</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> set</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> COLLAB_ACCESS_KEY=</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">$(</span><span style="color:#953800;--shiki-dark:#FFA657">openssl</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> rand</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -hex</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> 24</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">) </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">COLLAB_TOKEN_SECRET=</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">$(</span><span style="color:#953800;--shiki-dark:#FFA657">openssl</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> rand</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -hex</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> 32</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">)</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">fly</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> deploy</span></span>
+<span class="line"></span></code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table dir="ltr"><thead><tr><th dir="auto">Variable</th><th dir="auto">Meaning</th></tr></thead><tbody><tr><td dir="auto"><code>COLLAB_ACCESS_KEY</code></td><td dir="auto">Operator key users enter in Collab settings → &quot;Server access token&quot;. It only buys a short-lived token for one room. Unset = anyone who knows a room name gets one (warned at start). <code>COLLAB_TOKEN</code> is the older name.</td></tr><tr><td dir="auto"><code>COLLAB_TOKEN_SECRET</code></td><td dir="auto">HMAC key that signs room tokens, ≥ 32 characters. Never leaves the server. Unset = random per start.</td></tr><tr><td dir="auto"><code>COLLAB_TOKEN_TTL_S</code></td><td dir="auto">Room token lifetime, default 600. The client asks for a new one on every reconnect.</td></tr><tr><td dir="auto"><code>COLLAB_DATA_DIR</code></td><td dir="auto"><code>collab.sqlite</code> and <code>backups/</code> (the image uses <code>/data/collab</code>, on the volume).</td></tr><tr><td dir="auto"><code>COLLAB_BACKUP_INTERVAL_MS</code> / <code>COLLAB_BACKUP_KEEP</code></td><td dir="auto">Backup every hour by default and on shutdown; keep the newest 24.</td></tr></tbody></table>
+<p dir="auto">Health: <code>/healthz</code> → <code>{&quot;ok&quot;:true,&quot;service&quot;:&quot;lumen-collab&quot;,&quot;persistence&quot;:&quot;sqlite&quot;}</code>.<br/>
+CI checks it on every push to main once the repository variable<br/>
+<code>COLLAB_URL</code> (and <code>SIGNAL_URL</code> for the signaling server) is set; until then<br/>
+the job reports &quot;skipped&quot;.</p>
+<p dir="auto"><code>.env.production</code> (no token here — nothing secret goes into the build):</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">text</span><button class="icon-btn" data-copy="VITE_YJS_WEBSOCKET_URL=wss://lumen-collab.fly.dev
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span>VITE_YJS_WEBSOCKET_URL=wss://lumen-collab.fly.dev</span></span>
+<span class="line"><span></span></span></code></pre></div>
+<p dir="auto">The old y-websocket + LevelDB server (<code>persistent-server.js</code>) speaks a<br/>
+different protocol; the app no longer connects to it. Its rooms are not<br/>
+lost: at start the new server imports, once, every room in<br/>
+<code>COLLAB_LEGACY_LEVELDB_DIR</code> (the image sets <code>/data/yjs</code>, where the old one<br/>
+stored them) without overwriting rooms SQLite already has.</p>
+<hr/>
+<h2 id="3-csp--headers-in-production-done--verify-only" dir="auto">3. CSP + headers in production (DONE — verify only)</h2>
+<p dir="auto">Every policy is written once, in <code>security/policy.json</code>, and rendered into<br/>
+the files each host reads: the <code>&lt;meta&gt;</code> tags in <code>index.html</code>,<br/>
+<code>livejs-runner.html</code> and <code>playground-runner.html</code>, <code>public/_headers</code><br/>
+(copied to <code>dist/_headers</code>), <code>deploy/vercel.base.json</code> (read through<br/>
+<code>vercel.ts</code>, which adds the build&#x27;s endpoint origins), <code>deploy/nginx.conf</code><br/>
+(the one nginx image: <code>Dockerfile</code>, used by <code>fly.toml</code> and<br/>
+<code>docker-compose.yml</code>), <code>netlify/edge-functions/runner-headers.ts</code> and<br/>
+<code>src-tauri/tauri.conf.json</code>. Change the policy there and run<br/>
+<code>npm run headers:write</code>; CI (<code>npm run headers</code>) fails when any copy<br/>
+differs. Per-route decisions and per-host exceptions are explained in<br/>
+<code>docs/security/headers.md</code>. On the web the <code>&lt;meta&gt;</code> tag and the response<br/>
+header are both enforced. Cloudflare Pages <strong>and Netlify</strong> serve<br/>
+<code>dist/_headers</code>; <code>netlify.toml</code> deliberately sets no CSP of its own, and<br/>
+an edge function gives the two runner pages their own policy there (Netlify<br/>
+cannot detach the catch-all headers). What works on which host:<br/>
+<code>docs/src/content/docs/self-hosting/hosting.md</code>.</p>
+<p dir="auto">Your own workers (SSO, billing/entitlements, publish, audit, marketplace,<br/>
+self-hosted LanguageTool, Supabase, the error tracker in <code>VITE_SENTRY_DSN</code>) and your collab servers<br/>
+(<code>VITE_WEBRTC_SIGNALING_URL</code>, <code>VITE_YJS_WEBSOCKET_URL</code>; the policies carry no<br/>
+bare <code>ws:</code> / <code>wss:</code>) are added to <code>connect-src</code><br/>
+<strong>automatically at build time</strong> from the <code>VITE_*_ENDPOINT</code> / <code>VITE_*_URL</code><br/>
+variables (see <code>src/build/cspEndpoints.ts</code>): set them before<br/>
+<code>npm run build</code>. For the Docker web image pass them as build args, e.g.<br/>
+<code>docker build --build-arg VITE_WORKOS_ENDPOINT=https://auth.example.org .</code><br/>
+(or <code>[build.args]</code> in <code>fly.toml</code>, or <code>build.args</code> of <code>lumen-web</code> in <code>docker-compose.yml</code>).<br/>
+Verify after deploy: the response header and the meta tag both list your<br/>
+worker origins in <code>connect-src</code>. A desktop build with these variables also<br/>
+passes them to the Tauri CLI, because <code>tauri.conf.json</code> holds the public<br/>
+list only: <code>npm run tauri:build -- --config &quot;$(node scripts/headers.mjs --tauri-config dist/.csp-connect-extra)&quot;</code><br/>
+after <code>npm run build</code> (see &quot;Desktop (Tauri)&quot; in <code>docs/security/headers.md</code>).</p>
+<p dir="auto"><code>connect-src</code> is an explicit allowlist, so endpoints users set at<br/>
+<strong>runtime</strong> (a LAN Ollama host in <code>lumen.ollama.baseUrl</code>, a marketplace<br/>
+backend in <code>lumen.marketplace.url</code>) only work when their origin is allowed.<br/>
+List such origins in <code>VITE_CSP_CONNECT_EXTRA</code> (comma/space separated, e.g.<br/>
+<code>http://192.168.1.20:11434,https://market.example.org</code>) at build time; an<br/>
+override whose origin isn&#x27;t allowed is ignored with a console warning<br/>
+instead of failing silently.</p>
+<p dir="auto">Run <code>npm run build &amp;&amp; wrangler pages deploy dist</code> (Cloudflare) or let<br/>
+Netlify build from <code>netlify.toml</code>.</p>
+<hr/>
+<h2 id="4-stripe-billing-edge-worker-p2-05--1-hour" dir="auto">4. Stripe billing edge worker (P2-05) — 1 hour</h2>
+<p dir="auto">Code is in <code>edge-workers/billing/worker.ts</code>. Configure + deploy:</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="# 4a. Create the Supabase entitlements table (one-time)
+psql &quot;&lt;your-supabase-conn-string&gt;&quot; &lt;&lt;EOF
+-- user_id is text, not a uuid FK: besides Supabase user ids it holds
+-- &#x27;workos:&lt;user id&gt;&#x27; and &#x27;workos-org:&lt;organization id&gt;&#x27; rows for SSO users.
+create table if not exists entitlements (
+  user_id text primary key,
+  tier text not null default &#x27;free&#x27;,
+  status text not null default &#x27;active&#x27;,
+  stripe_customer_id text,
+  stripe_subscription_id text,
+  renews_at bigint,
+  updated_at timestamptz default now()
+);
+-- Upgrading a table created from an older version of this guide:
+--   alter table entitlements drop constraint if exists entitlements_user_id_fkey;
+--   alter table entitlements alter column user_id type text;
+EOF
+
+# 4b. Create Stripe products + prices
+# https://dashboard.stripe.com/products → New product → &quot;Lumen Pro&quot; → $8/mo
+# https://dashboard.stripe.com/products → New product → &quot;Lumen Team&quot; → $16/seat/mo
+# Copy the price IDs into src/billing/checkout.ts:
+#   PRICE_IDS = { pro: &quot;price_…&quot;, team: &quot;price_…&quot; }
+
+# 4c. Deploy worker
+cd edge-workers/billing
+npm i -g wrangler
+wrangler login
+wrangler secret put STRIPE_SECRET_KEY
+wrangler secret put STRIPE_WEBHOOK_SECRET
+wrangler secret put SUPABASE_URL
+wrangler secret put SUPABASE_SERVICE_ROLE
+# Sellable prices (same ids as VITE_PRICE_ID_PRO / VITE_PRICE_ID_TEAM);
+# /checkout refuses any other price and derives the tier from this list:
+wrangler secret put STRIPE_PRICE_PRO     # e.g. price_123 (comma-separate monthly,yearly)
+wrangler secret put STRIPE_PRICE_TEAM
+wrangler deploy
+# → https://lumen-billing.&lt;your&gt;.workers.dev
+
+# 4d. Wire the Stripe webhook to /webhook on that URL via the Stripe Dashboard.
+#     Events: checkout.session.completed, checkout.session.async_payment_succeeded,
+#     checkout.session.async_payment_failed, customer.subscription.created,
+#     customer.subscription.updated, customer.subscription.deleted.
+#     Access is granted only once Stripe reports the payment as paid.
+# 4e. Set client env:
+#   VITE_BILLING_ENDPOINT=https://lumen-billing.&lt;your&gt;.workers.dev/checkout
+#   VITE_ENTITLEMENT_ENDPOINT=https://lumen-billing.&lt;your&gt;.workers.dev/entitlements
+# 4f. List every web origin that calls the worker (comma-separated) in
+#     wrangler.toml → [vars] ALLOWED_ORIGIN, e.g. &quot;https://lumen.app,http://localhost:5173&quot;.
+#     The entitlement fetch uses credentials, so browsers need the exact origin
+#     echoed back — `*` is only returned to unlisted origins and won&#x27;t work there.
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 4a. Create the Supabase entitlements table (one-time)</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">psql</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> &quot;&lt;your-supabase-conn-string&gt;&quot;</span><span style="color:#CF222E;--shiki-dark:#FF7B72"> &lt;&lt;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">EOF</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">-- user_id is text, not a uuid FK: besides Supabase user ids it holds</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">-- &#x27;workos:&lt;user id&gt;&#x27; and &#x27;workos-org:&lt;organization id&gt;&#x27; rows for SSO users.</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">create table if not exists entitlements (</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">  user_id text primary key,</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">  tier text not null default &#x27;free&#x27;,</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">  status text not null default &#x27;active&#x27;,</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">  stripe_customer_id text,</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">  stripe_subscription_id text,</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">  renews_at bigint,</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">  updated_at timestamptz default now()</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">);</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">-- Upgrading a table created from an older version of this guide:</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">--   alter table entitlements drop constraint if exists entitlements_user_id_fkey;</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">--   alter table entitlements alter column user_id type text;</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">EOF</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 4b. Create Stripe products + prices</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># https://dashboard.stripe.com/products → New product → &quot;Lumen Pro&quot; → $8/mo</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># https://dashboard.stripe.com/products → New product → &quot;Lumen Team&quot; → $16/seat/mo</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Copy the price IDs into src/billing/checkout.ts:</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   PRICE_IDS = { pro: &quot;price_…&quot;, team: &quot;price_…&quot; }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 4c. Deploy worker</span></span>
+<span class="line"><span style="color:#0550AE;--shiki-dark:#79C0FF">cd</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> edge-workers/billing</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> i</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -g</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> wrangler</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> login</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> secret</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> put</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> STRIPE_SECRET_KEY</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> secret</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> put</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> STRIPE_WEBHOOK_SECRET</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> secret</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> put</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> SUPABASE_URL</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> secret</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> put</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> SUPABASE_SERVICE_ROLE</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Sellable prices (same ids as VITE_PRICE_ID_PRO / VITE_PRICE_ID_TEAM);</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># /checkout refuses any other price and derives the tier from this list:</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> secret</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> put</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> STRIPE_PRICE_PRO</span><span style="color:#6E7781;--shiki-dark:#8B949E">     # e.g. price_123 (comma-separate monthly,yearly)</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> secret</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> put</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> STRIPE_PRICE_TEAM</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> deploy</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># → https://lumen-billing.&lt;your&gt;.workers.dev</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 4d. Wire the Stripe webhook to /webhook on that URL via the Stripe Dashboard.</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#     Events: checkout.session.completed, checkout.session.async_payment_succeeded,</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#     checkout.session.async_payment_failed, customer.subscription.created,</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#     customer.subscription.updated, customer.subscription.deleted.</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#     Access is granted only once Stripe reports the payment as paid.</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 4e. Set client env:</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   VITE_BILLING_ENDPOINT=https://lumen-billing.&lt;your&gt;.workers.dev/checkout</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   VITE_ENTITLEMENT_ENDPOINT=https://lumen-billing.&lt;your&gt;.workers.dev/entitlements</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 4f. List every web origin that calls the worker (comma-separated) in</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#     wrangler.toml → [vars] ALLOWED_ORIGIN, e.g. &quot;https://lumen.app,http://localhost:5173&quot;.</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#     The entitlement fetch uses credentials, so browsers need the exact origin</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#     echoed back — `*` is only returned to unlisted origins and won&#x27;t work there.</span></span>
+<span class="line"></span></code></pre></div>
+<p dir="auto"><code>GET /entitlements</code> contract (consumed by <code>src/billing/useEntitlement.ts</code>):</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table dir="ltr"><thead><tr><th dir="auto">Request</th><th dir="auto">Response</th></tr></thead><tbody><tr><td dir="auto">no <code>Authorization</code> header</td><td dir="auto"><code>200 {&quot;entitlement&quot;:{&quot;tier&quot;:&quot;free&quot;,&quot;status&quot;:&quot;none&quot;}}</code></td></tr><tr><td dir="auto"><code>Authorization: Bearer &lt;supabase access token&gt;</code>, no row in <code>entitlements</code></td><td dir="auto"><code>200</code> free, as above</td></tr><tr><td dir="auto">valid token, row present</td><td dir="auto"><code>200 {&quot;entitlement&quot;:{&quot;tier&quot;:&quot;pro&quot;,&quot;status&quot;:&quot;active&quot;,&quot;renewsAt&quot;:1767225600,&quot;subscriptionId&quot;:&quot;sub_…&quot;}}</code></td></tr><tr><td dir="auto">invalid / expired token</td><td dir="auto"><code>401</code> (client falls back to Free)</td></tr><tr><td dir="auto">Supabase unreachable</td><td dir="auto"><code>502</code> (client falls back to Free)</td></tr></tbody></table>
+<p dir="auto">Stored Stripe statuses are normalised: <code>complete</code> → <code>active</code>, <code>unpaid</code> → <code>past_due</code>,<br/>
+anything unrecognised → <code>none</code>. Only <code>active</code> / <code>trialing</code> unlock paid capabilities.<br/>
+Responses are <code>Cache-Control: private, no-store</code>.</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="# Smoke test after deploy:
+curl -s https://lumen-billing.&lt;your&gt;.workers.dev/entitlements            # → free
+curl -s -H &quot;Authorization: Bearer $SUPABASE_ACCESS_TOKEN&quot; \
+     https://lumen-billing.&lt;your&gt;.workers.dev/entitlements                # → your plan
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Smoke test after deploy:</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">curl</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -s</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> https://lumen-billing.</span><span style="color:#CF222E;--shiki-dark:#FF7B72">&lt;</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">you</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">r</span><span style="color:#CF222E;--shiki-dark:#FF7B72">&gt;</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">.workers.dev/entitlements</span><span style="color:#6E7781;--shiki-dark:#8B949E">            # → free</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">curl</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -s</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -H</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> &quot;Authorization: Bearer </span><span style="color:#1F2328;--shiki-dark:#E6EDF3">$SUPABASE_ACCESS_TOKEN</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;</span><span style="color:#CF222E;--shiki-dark:#FF7B72"> \</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">     https://lumen-billing.</span><span style="color:#CF222E;--shiki-dark:#FF7B72">&lt;</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">you</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">r</span><span style="color:#CF222E;--shiki-dark:#FF7B72">&gt;</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">.workers.dev/entitlements</span><span style="color:#6E7781;--shiki-dark:#8B949E">                # → your plan</span></span>
+<span class="line"></span></code></pre></div>
+<hr/>
+<h2 id="5-publish-edge-worker-p3-08--30-min" dir="auto">5. Publish edge worker (P3-08) — 30 min</h2>
+<p dir="auto">Read-mode publishing. Same shape as the billing worker:</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="cd edge-workers/publish
+wrangler kv:namespace create PUBLISHED
+# → paste id into wrangler.toml under [[kv_namespaces]]
+wrangler secret put SUPABASE_URL
+wrangler secret put SUPABASE_SERVICE_ROLE
+wrangler deploy
+
+# Client env:
+#   VITE_PUBLISH_ENDPOINT=https://lumen-publish.&lt;your&gt;.workers.dev
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#0550AE;--shiki-dark:#79C0FF">cd</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> edge-workers/publish</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> kv:namespace</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> create</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> PUBLISHED</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># → paste id into wrangler.toml under [[kv_namespaces]]</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> secret</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> put</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> SUPABASE_URL</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> secret</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> put</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> SUPABASE_SERVICE_ROLE</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> deploy</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Client env:</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   VITE_PUBLISH_ENDPOINT=https://lumen-publish.&lt;your&gt;.workers.dev</span></span>
+<span class="line"></span></code></pre></div>
+<hr/>
+<h2 id="5b-sso-edge-worker--workos-ε1--f43--45-min" dir="auto">5b. SSO edge worker — WorkOS (ε.1 / F4.3) — 45 min</h2>
+<p dir="auto">Enterprise SAML / OIDC sign-in. Optional — skip it and Lumen keeps its<br/>
+local-only / Supabase auth. Details in <code>edge-workers/auth/README.md</code>.</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="# 5b-1. WorkOS dashboard: API Keys → copy the secret key (sk_…) + client id.
+#       Redirects → add https://&lt;worker host&gt;/api/sso/callback
+#       Organizations → create one per customer, add its email domain(s)
+#       and attach an SSO connection (SAML or OIDC).
+cd edge-workers/auth
+wrangler secret put WORKOS_API_KEY
+wrangler secret put WORKOS_CLIENT_ID
+wrangler secret put SESSION_SECRET        # openssl rand -base64 48
+# If billing is deployed too, let SSO users prove who they are to it:
+#   generate ONE new value (openssl rand -base64 48), then
+wrangler secret put BILLING_TOKEN_SECRET  # that value
+#   and in edge-workers/billing: wrangler secret put SSO_TOKEN_SECRET  (same value)
+#   Entitlement rows for SSO users are keyed `workos:&lt;user id&gt;`, or
+#   `workos-org:&lt;organization id&gt;` for an org-wide (enterprise) plan.
+# 5b-2. Set ALLOWED_ORIGINS in wrangler.toml to your app origin(s), and give
+#       the worker a host on the SAME SITE as the app (see below), e.g. the
+#       `routes` example in edge-workers/auth/wrangler.toml.
+wrangler deploy
+# verify: GET https://auth.&lt;your-domain&gt;/health → configured:true
+
+# Client env:
+#   VITE_WORKOS_ENDPOINT=https://auth.&lt;your-domain&gt;
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 5b-1. WorkOS dashboard: API Keys → copy the secret key (sk_…) + client id.</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#       Redirects → add https://&lt;worker host&gt;/api/sso/callback</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#       Organizations → create one per customer, add its email domain(s)</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#       and attach an SSO connection (SAML or OIDC).</span></span>
+<span class="line"><span style="color:#0550AE;--shiki-dark:#79C0FF">cd</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> edge-workers/auth</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> secret</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> put</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> WORKOS_API_KEY</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> secret</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> put</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> WORKOS_CLIENT_ID</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> secret</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> put</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> SESSION_SECRET</span><span style="color:#6E7781;--shiki-dark:#8B949E">        # openssl rand -base64 48</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># If billing is deployed too, let SSO users prove who they are to it:</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   generate ONE new value (openssl rand -base64 48), then</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> secret</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> put</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> BILLING_TOKEN_SECRET</span><span style="color:#6E7781;--shiki-dark:#8B949E">  # that value</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   and in edge-workers/billing: wrangler secret put SSO_TOKEN_SECRET  (same value)</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   Entitlement rows for SSO users are keyed `workos:&lt;user id&gt;`, or</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   `workos-org:&lt;organization id&gt;` for an org-wide (enterprise) plan.</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 5b-2. Set ALLOWED_ORIGINS in wrangler.toml to your app origin(s), and give</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#       the worker a host on the SAME SITE as the app (see below), e.g. the</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#       `routes` example in edge-workers/auth/wrangler.toml.</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">wrangler</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> deploy</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># verify: GET https://auth.&lt;your-domain&gt;/health → configured:true</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Client env:</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   VITE_WORKOS_ENDPOINT=https://auth.&lt;your-domain&gt;</span></span>
+<span class="line"></span></code></pre></div>
+<p dir="auto"><strong>Serve the SSO worker on the app&#x27;s own site.</strong> The nonce and session<br/>
+cookies are set by the worker. If it lives on a different registrable<br/>
+domain than the app (e.g. <code>lumen-auth.&lt;you&gt;.workers.dev</code> while the app is on<br/>
+<code>example.org</code>), they are third-party cookies — Safari blocks those<br/>
+outright, so sign-in ends in <code>state_mismatch</code> and sessions never stick.<br/>
+Use a sibling subdomain (<code>auth.example.org</code> for an app on<br/>
+<code>app.example.org</code> / <code>example.org</code>) or a route on the app&#x27;s own host<br/>
+(<code>example.org/api/sso/*</code>, then <code>VITE_WORKOS_ENDPOINT=https://example.org</code>).<br/>
+<code>*.workers.dev</code> is fine for local testing in Chrome only; the app logs a<br/>
+warning when the configured endpoint is cross-site. Cookies are<br/>
+<code>SameSite=None; Secure</code>, so serve over HTTPS (or <code>http://localhost</code>).</p>
+<hr/>
+<h2 id="6-cloud-sync-dropbox--1-hour-p2-04" dir="auto">6. Cloud sync (Dropbox) — 1 hour (P2-04)</h2>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="# 6a. Register a Dropbox app:
+# https://www.dropbox.com/developers/apps → Create app
+# Permissions: &quot;App folder&quot; + files.content.write + files.content.read
+# Redirect URIs: https://lumen.app/oauth/dropbox
+
+# 6b. Set env:
+#   VITE_DROPBOX_APP_KEY=&lt;your-app-key&gt;
+
+# 6c. Test:
+# In Lumen → Settings → Cloud sync → Connect Dropbox → OAuth flow → done.
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 6a. Register a Dropbox app:</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># https://www.dropbox.com/developers/apps → Create app</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Permissions: &quot;App folder&quot; + files.content.write + files.content.read</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Redirect URIs: https://lumen.app/oauth/dropbox</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 6b. Set env:</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   VITE_DROPBOX_APP_KEY=&lt;your-app-key&gt;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 6c. Test:</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># In Lumen → Settings → Cloud sync → Connect Dropbox → OAuth flow → done.</span></span>
+<span class="line"></span></code></pre></div>
+<hr/>
+<h2 id="7-mobile-p2-07--2-days-calendar-a-few-hours-work" dir="auto">7. Mobile (P2-07) — ~2 days calendar (a few hours work)</h2>
+<h3 id="ios" dir="auto">iOS</h3>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="# 7a. macOS prereq
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+xcodebuild -license accept
+
+# 7b. Sync + open
+npm run ios:open
+
+# 7c. In Xcode:
+#   Signing &amp; Capabilities → set Team to your Apple Developer team.
+#   Bundle ID stays com.lumen.editor (or change).
+#   Increment &quot;Build&quot; number on every TestFlight upload.
+
+# 7d. Archive + upload
+#   Product → Destination → &quot;Any iOS Device (arm64)&quot;
+#   Product → Archive
+#   Distribute App → App Store Connect → Upload
+#   Wait ~10 min for processing → add to internal TestFlight group.
+
+# 7e. Submit for review
+#   App Store Connect → My Apps → Lumen → &quot;+ Version&quot; → fill metadata
+#   Submit (typically 24–72 h review).
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 7a. macOS prereq</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">sudo</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> xcode-select</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -s</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> /Applications/Xcode.app/Contents/Developer</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">xcodebuild</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -license</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> accept</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 7b. Sync + open</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> ios:open</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 7c. In Xcode:</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   Signing &amp; Capabilities → set Team to your Apple Developer team.</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   Bundle ID stays com.lumen.editor (or change).</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   Increment &quot;Build&quot; number on every TestFlight upload.</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 7d. Archive + upload</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   Product → Destination → &quot;Any iOS Device (arm64)&quot;</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   Product → Archive</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   Distribute App → App Store Connect → Upload</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   Wait ~10 min for processing → add to internal TestFlight group.</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 7e. Submit for review</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   App Store Connect → My Apps → Lumen → &quot;+ Version&quot; → fill metadata</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   Submit (typically 24–72 h review).</span></span>
+<span class="line"></span></code></pre></div>
+<h3 id="android" dir="auto">Android</h3>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="# 7a. Prereq
+brew install --cask android-studio
+# Set ANDROID_HOME after first launch.
+
+# 7b. Add Android platform
+npm install @capacitor/android
+npx cap add android
+npm run android:open
+
+# 7c. In Android Studio:
+#   Build → Generate Signed Bundle / APK → Android App Bundle (.aab)
+#   Create keystore (KEEP IT — losing it locks you out of updates).
+#   release variant → app-release.aab.
+
+# 7d. Upload to Play Console (https://play.google.com/console).
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 7a. Prereq</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">brew</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> install</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --cask</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> android-studio</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Set ANDROID_HOME after first launch.</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 7b. Add Android platform</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> install</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> @capacitor/android</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npx</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> cap</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> add</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> android</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> android:open</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 7c. In Android Studio:</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   Build → Generate Signed Bundle / APK → Android App Bundle (.aab)</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   Create keystore (KEEP IT — losing it locks you out of updates).</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   release variant → app-release.aab.</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 7d. Upload to Play Console (https://play.google.com/console).</span></span>
+<span class="line"></span></code></pre></div>
+<hr/>
+<h2 id="8-web-app-deploy-cloudflare-pages--15-min" dir="auto">8. Web app deploy (Cloudflare Pages) — 15 min</h2>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="# 8a. Connect repo to Cloudflare Pages:
+# https://dash.cloudflare.com → Workers &amp; Pages → Create → Pages → Connect to Git
+
+# 8b. Build settings:
+#   Framework: Vite
+#   Build command: npm run build
+#   Output: dist
+#   Env vars: paste every VITE_* from steps 1–7
+
+# 8c. Custom domain:
+#   Pages → lumen-app → Custom domains → Add → lumen.app
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 8a. Connect repo to Cloudflare Pages:</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># https://dash.cloudflare.com → Workers &amp; Pages → Create → Pages → Connect to Git</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 8b. Build settings:</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   Framework: Vite</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   Build command: npm run build</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   Output: dist</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   Env vars: paste every VITE_* from steps 1–7</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 8c. Custom domain:</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">#   Pages → lumen-app → Custom domains → Add → lumen.app</span></span>
+<span class="line"></span></code></pre></div>
+<p dir="auto">PWA service worker auto-updates clients on next visit.</p>
+<h3 id="marketing-site-landinghtml--same-deploy" dir="auto">Marketing site (<code>/landing.html</code>) — same deploy</h3>
+<p dir="auto">The landing page lives at <code>public/landing.html</code> and ships in the same Pages<br/>
+deploy. Audit:</p>
+<ul class="contains-task-list" dir="ltr">
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Replace placeholder screenshots with real ones (use <code>npm run preview</code><br/>
+to capture).</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> <code>&lt;title&gt;</code> + Open Graph meta on every social card.</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Run <code>npx lhci autorun</code> and confirm Lighthouse Performance ≥ 90,<br/>
+Accessibility ≥ 95, SEO ≥ 95.</li>
+</ul>
+<hr/>
+<h2 id="9-tauri-macos--sign--notarize-15-min" dir="auto">9. Tauri macOS — sign + notarize (15 min)</h2>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="# 9a. Apple Developer ID Application certificate (one-time):
+# https://developer.apple.com/account/resources/certificates/add
+# Type: Developer ID Application
+
+# 9b. App-specific password:
+# https://appleid.apple.com → Sign-in &amp; Security → App-Specific Passwords
+
+# 9c. Build
+export APPLE_ID=&quot;you@example.com&quot;
+export APPLE_PASSWORD=&quot;abcd-efgh-ijkl-mnop&quot;
+export APPLE_TEAM_ID=&quot;ABCDEF1234&quot;
+export APPLE_SIGNING_IDENTITY=&quot;Developer ID Application: Your Name (ABCDEF1234)&quot;
+npm run tauri:build
+
+# 9d. Verify
+codesign --verify --deep --strict src-tauri/target/release/bundle/macos/Lumen.app
+spctl -a -t exec -vv      src-tauri/target/release/bundle/macos/Lumen.app
+# Both should report &quot;accepted&quot; with &quot;Notarized&quot;.
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 9a. Apple Developer ID Application certificate (one-time):</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># https://developer.apple.com/account/resources/certificates/add</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Type: Developer ID Application</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 9b. App-specific password:</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># https://appleid.apple.com → Sign-in &amp; Security → App-Specific Passwords</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 9c. Build</span></span>
+<span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">export</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> APPLE_ID</span><span style="color:#CF222E;--shiki-dark:#FF7B72">=</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;you@example.com&quot;</span></span>
+<span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">export</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> APPLE_PASSWORD</span><span style="color:#CF222E;--shiki-dark:#FF7B72">=</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;abcd-efgh-ijkl-mnop&quot;</span></span>
+<span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">export</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> APPLE_TEAM_ID</span><span style="color:#CF222E;--shiki-dark:#FF7B72">=</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;ABCDEF1234&quot;</span></span>
+<span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">export</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> APPLE_SIGNING_IDENTITY</span><span style="color:#CF222E;--shiki-dark:#FF7B72">=</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;Developer ID Application: Your Name (ABCDEF1234)&quot;</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> tauri:build</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 9d. Verify</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">codesign</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --verify</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --deep</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --strict</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> src-tauri/target/release/bundle/macos/Lumen.app</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">spctl</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -a</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -t</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> exec</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -vv</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">      src-tauri/target/release/bundle/macos/Lumen.app</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Both should report &quot;accepted&quot; with &quot;Notarized&quot;.</span></span>
+<span class="line"></span></code></pre></div>
+<p dir="auto">Upload <code>Lumen_*.dmg</code> to the GitHub Release that <code>release.yml</code> already<br/>
+created from your tag push.</p>
+<hr/>
+<h2 id="10-chrome-web-store-web-clipper--30-min" dir="auto">10. Chrome Web Store (Web Clipper) — 30 min</h2>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="# 10a. Generate icons (16/32/48/128 PNG) — use any of the existing favicons:
+cd extension/icons
+# (manually create 16x16.png, 32x32.png, 48x48.png, 128x128.png)
+
+# 10b. Zip
+cd ..
+zip -r lumen-clipper-0.1.0.zip extension/* -x &quot;*.DS_Store&quot;
+
+# 10c. Upload
+# https://chrome.google.com/webstore/devconsole → Add new item
+# Upload zip, fill description, screenshots, privacy policy URL.
+# Review takes 2-7 days.
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 10a. Generate icons (16/32/48/128 PNG) — use any of the existing favicons:</span></span>
+<span class="line"><span style="color:#0550AE;--shiki-dark:#79C0FF">cd</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> extension/icons</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># (manually create 16x16.png, 32x32.png, 48x48.png, 128x128.png)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 10b. Zip</span></span>
+<span class="line"><span style="color:#0550AE;--shiki-dark:#79C0FF">cd</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> ..</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">zip</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -r</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> lumen-clipper-0.1.0.zip</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> extension/</span><span style="color:#0550AE;--shiki-dark:#79C0FF">*</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -x</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> &quot;*.DS_Store&quot;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># 10c. Upload</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># https://chrome.google.com/webstore/devconsole → Add new item</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Upload zip, fill description, screenshots, privacy policy URL.</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Review takes 2-7 days.</span></span>
+<span class="line"></span></code></pre></div>
+<hr/>
+<h2 id="post-launch-checklist" dir="auto">Post-launch checklist</h2>
+<p dir="auto">After every step above is green:</p>
+<ul class="contains-task-list" dir="ltr">
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> All 9 Playwright E2E pass on CI Mac runner (chromium / firefox / webkit).</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Lighthouse: Performance ≥ 90, A11y ≥ 95, Best practices ≥ 95, SEO ≥ 95, PWA ≥ 90.</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> axe-core a11y test passes (no critical/serious violations).</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> <code>npm run budget</code> passes — bundle still within targets.</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Sentry receiving events from at least one production session that turned error reports on (off by default).</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> First 10 users invited via TestFlight + Play Internal track.</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> <code>https://lumen.app/p/&lt;test-slug&gt;</code> returns a published note.</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Right-click → &quot;Save selection to Lumen&quot; creates a clip.</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Subscribe → return to app → Pro features unlock.</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> <code>⌘K → &quot;AI: Switch to local AI&quot;</code> downloads + serves answers offline.</li>
+</ul>
+<hr/>
+<h2 id="rollback-plan" dir="auto">Rollback plan</h2>
+<p dir="auto">Every step is independently reversible:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table dir="ltr"><thead><tr><th dir="auto">Step</th><th dir="auto">Rollback</th></tr></thead><tbody><tr><td dir="auto">Signaling</td><td dir="auto">Remove <code>VITE_WEBRTC_SIGNALING_URL</code> → falls back to public Yjs</td></tr><tr><td dir="auto">Persistent collab</td><td dir="auto">Remove <code>VITE_YJS_WEBSOCKET_URL</code> → WebRTC-only</td></tr><tr><td dir="auto">Stripe</td><td dir="auto">Disable <code>VITE_BILLING_ENDPOINT</code> → entitlements default to Free</td></tr><tr><td dir="auto">Publish</td><td dir="auto">Remove <code>VITE_PUBLISH_ENDPOINT</code> → publish command throws &quot;offline&quot;</td></tr><tr><td dir="auto">Dropbox</td><td dir="auto">Remove <code>VITE_DROPBOX_APP_KEY</code> → cloud sync UI hidden</td></tr><tr><td dir="auto">Mobile</td><td dir="auto">App Store / Play &quot;Take down&quot; controls</td></tr><tr><td dir="auto">macOS DMG</td><td dir="auto">Re-upload signed binary via <code>release.yml</code></td></tr><tr><td dir="auto">Chrome</td><td dir="auto">Disable in Web Store dashboard</td></tr></tbody></table>
+<p dir="auto">The web app survives every backend going down — local-first by design.</p>
+<hr/>
+<p dir="auto">Ready to launch.</p>

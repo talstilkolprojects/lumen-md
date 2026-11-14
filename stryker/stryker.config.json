@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-js/master/packages/core/schema/stryker-schema.json",
+  "_comment": "Weekly mutation testing (plan 0.11): two small core modules and their own tests. Widen `mutate` (and the include list in stryker/vitest.config.mts) one module at a time; each must stay cheap.",
+  "testRunner": "vitest",
+  "vitest": { "configFile": "stryker/vitest.config.mts" },
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "mutate": ["src/text/hebrew.ts", "src/build/cspEndpoints.ts"],
+  "coverageAnalysis": "perTest",
+  "concurrency": 2,
+  "timeoutMS": 20000,
+  "tempDirName": ".stryker-tmp",
+  "reporters": ["clear-text", "progress", "json", "html"],
+  "jsonReporter": { "fileName": "reports/mutation/mutation.json" },
+  "htmlReporter": { "fileName": "reports/mutation/index.html" },
+  "thresholds": { "high": 80, "low": 60, "break": null }
+}

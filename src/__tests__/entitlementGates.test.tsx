@@ -290,7 +290,7 @@ describe("aiQuota counter", () => {
     const running = translate[0].action() as unknown as Promise<void>;
     // e.g. the AI commit message counts itself and dispatches as prepaid.
     expect(consumeAiPrompt(now)).toBe(true);
-    await chat([{ role: "user", content: "x" }], { prepaid: true, maxTokens: 1 }).catch(() => {});
+    await chat([{ role: "user", content: "x" }], { prepaid: true, maxTokens: 1 }).catch(() => { /* why: the test only needs the quota counted; the fake model's answer or failure does not matter */ });
     resume();
     await running;
     expect(getAiUsage(now)).toBe(2); // two model requests, two prompts
@@ -326,7 +326,8 @@ describe("aiQuota counter", () => {
     useAppStore.setState({ aiKey: null, useLocalAi: false });
     localStorage.setItem("lumen.ai.provider", "ollama"); // counts as usable credentials
     const now = new Date();
-    await expect(chat([{ role: "user", content: "x" }])).rejects.toThrow(/configure/i);
+    // Default policy is local-only: no cloud fallback (NO_LOCAL), still nothing spent.
+    await expect(chat([{ role: "user", content: "x" }])).rejects.toMatchObject({ code: "NO_LOCAL" });
     expect(getAiUsage(now)).toBe(0);
     localStorage.removeItem("lumen.ai.provider");
     vi.unstubAllGlobals();
@@ -360,7 +361,7 @@ describe("aiQuota counter", () => {
       useAppStore.setState({ aiKey: null, useLocalAi: false });
       localStorage.setItem("lumen.ai.provider", "ollama"); // unreachable, no fallback key
       const now = new Date();
-      await expect(chat([{ role: "user", content: "x" }], { ownPrompt: true })).rejects.toThrow(/configure/i);
+      await expect(chat([{ role: "user", content: "x" }], { ownPrompt: true })).rejects.toMatchObject({ code: "NO_LOCAL" });
       expect(getAiUsage(now)).toBe(0);
       localStorage.removeItem("lumen.ai.provider");
       vi.unstubAllGlobals();
@@ -376,7 +377,7 @@ describe("aiQuota counter", () => {
       const dialog = new Promise<void>((r) => (resume = r));
       const [cmd] = withAiQuota([{ id: "ai.translate", action: async () => { await dialog; chargeAiCommandDispatch(now); } }]);
       const running = cmd.action() as unknown as Promise<void>;
-      await chat([{ role: "user", content: "x" }], { ownPrompt: true, maxTokens: 1 }).catch(() => {});
+      await chat([{ role: "user", content: "x" }], { ownPrompt: true, maxTokens: 1 }).catch(() => { /* why: the test only needs the quota counted; the fake model's answer or failure does not matter */ });
       expect(getAiUsage(now)).toBe(1);
       resume();
       await running;
@@ -450,7 +451,7 @@ describe("aiQuota counter", () => {
     const running = translate[0].action() as unknown as Promise<void>;
     // Inline suggestion fires meanwhile: counts itself, then dispatches as prepaid.
     expect(consumeAiPrompt(new Date(), { silent: true })).toBe(true);
-    await chat([{ role: "user", content: "x" }], { prepaid: true, maxTokens: 1 }).catch(() => {});
+    await chat([{ role: "user", content: "x" }], { prepaid: true, maxTokens: 1 }).catch(() => { /* why: the test only needs the quota counted; the fake model's answer or failure does not matter */ });
     finishDialog(); // user cancels the translation
     await running;
     expect(getAiUsage()).toBe(1);

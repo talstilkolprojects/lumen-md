@@ -71,7 +71,7 @@ notably), this raises it.
 |---|---|---|
 | 1 | No mobile binary in app stores | 🔴 blocks half the market |
 | 2 | No desktop binary on releases page | 🔴 blocks Obsidian-style users |
-| 3 | lumen.md domain not pointed at the production build | 🔴 blocks any organic traffic |
+| 3 | No production web address pointed at the production build | 🔴 blocks any organic traffic |
 | 4 | 0 GitHub stars (private repo), 0 Discord, 0 external plugin authors | 🟧 community network effect |
 | 5 | No demo video, no comparison page, no hero screenshot | 🟧 zero share-link traffic |
 | 6 | Stripe billing wired but no live keys; entitlement claims rely on env vars | 🟧 monetisation blocked |
@@ -143,7 +143,7 @@ to anything broader than a beta cohort.
 
 | # | Task | Owner | ETA |
 |---|---|---|---|
-| A1 | Deploy lumen.md production web app (`fly deploy` web target) | infra | 1 day |
+| A1 | Deploy the production web app (`fly deploy` web target) | infra | 1 day |
 | A2 | Deploy signaling server to fly.io + add to status page | infra | 1 day |
 | A3 | Sentry DSN provisioned + e2e error-funnel verified | infra | 0.5 day |
 | A4 | iOS TestFlight build via `npm run ios:build` + signing cert | mobile | 5 days (Apple cert wait) |
@@ -192,7 +192,7 @@ to anything broader than a beta cohort.
 
 In strict ROI order, ignoring dependencies between them:
 
-1. **Deploy the web app to lumen.md.** Without it, nothing else
+1. **Deploy the production web app.** Without it, nothing else
    matters. ~1 hour. Highest leverage.
 2. **Real-browser collab test.** The flagship claim hasn't been
    end-to-end verified. ~30 min in 2 incognito windows.

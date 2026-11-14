@@ -35,7 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <div style={{ padding: "20px", color: "hsl(var(--destructive, 0 84% 60%))", border: "1px dashed currentcolor", borderRadius: "8px", margin: "16px", fontSize: "14px", background: "hsl(var(--destructive)/0.1)" }}>
           <strong>{t("errorBoundary.heading")}</strong>
           <p style={{ marginTop: "8px", opacity: 0.8, fontSize: "12px", fontFamily: "monospace" }}>
-            {this.state.error?.message ?? "An unexpected error occurred."}
+            {this.state.error?.message ?? t("errorBoundary.unexpected")}
           </p>
         </div>
       );

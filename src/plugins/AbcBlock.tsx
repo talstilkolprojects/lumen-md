@@ -48,7 +48,7 @@ export default function AbcBlock({ source }: Props) {
   if (error) {
     return (
       <div className="mermaid-block">
-        <div className="mermaid-error">⚠︎ ABC notation error:{"\n"}{error}</div>
+        <div className="mermaid-error">{t("block.abc.error")}{"\n"}{error}</div>
       </div>
     );
   }

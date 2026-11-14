@@ -7,6 +7,7 @@
  */
 import { useRef, useState } from "react";
 import { Code2, Play, Trash2 } from "lucide-react";
+import { t } from "../i18n";
 
 interface Props {
   source: string;
@@ -115,38 +116,38 @@ export default function LivePyBlock({ source, meta }: Props) {
   return (
     <div className="chart-block">
       <div className="chart-block-header">
-        <span>🐍 Live Python</span>
+        <span>{t("block.livePy.title")}</span>
         <div className="chart-block-tabs">
           <button
             type="button"
             className="chart-block-tab"
             onClick={run}
             disabled={state === "loading" || state === "running"}
-            title="Run Python"
-            aria-label="Run Python"
+            title={t("block.livePy.run")}
+            aria-label={t("block.livePy.run")}
           >
             <Play size={11} style={{ display: "inline", marginInlineEnd: 4 }} />
-            Run
+            {t("block.common.run")}
           </button>
           <button
             type="button"
             className="chart-block-tab"
             onClick={() => setOutput("")}
-            title="Clear output"
-            aria-label="Clear output"
+            title={t("block.common.clearOutput")}
+            aria-label={t("block.common.clearOutput")}
           >
             <Trash2 size={11} style={{ display: "inline", marginInlineEnd: 4 }} />
-            Clear
+            {t("block.common.clear")}
           </button>
           <button
             type="button"
             className={`chart-block-tab ${showSource ? "active" : ""}`}
             onClick={() => setShowSource((v) => !v)}
             aria-pressed={showSource}
-            title="Toggle source"
+            title={t("block.common.toggleSource")}
           >
             <Code2 size={11} style={{ display: "inline", marginInlineEnd: 4 }} />
-            Source
+            {t("block.common.source")}
           </button>
         </div>
       </div>
@@ -196,7 +197,7 @@ export default function LivePyBlock({ source, meta }: Props) {
       >
         {output || (
           <span style={{ color: "hsl(var(--fg-muted))", fontStyle: "italic" }}>
-            Click Run to execute this Python block.
+            {t("block.livePy.prompt")}
           </span>
         )}
       </div>

@@ -50,12 +50,23 @@ export function getBaseUrl(): string {
   }
 }
 
+/**
+ * Model used when the user has not picked one. Open licence (Apache-2.0), so a
+ * fresh install never runs a custom-licence model without an opt-in (plan 1.7).
+ */
+export const DEFAULT_OLLAMA_MODEL = "qwen2.5:7b";
+
 function getModel(): string {
   try {
-    return localStorage.getItem("lumen.ollama.model") || "llama3.1";
+    return localStorage.getItem("lumen.ollama.model") || DEFAULT_OLLAMA_MODEL;
   } catch {
-    return "llama3.1";
+    return DEFAULT_OLLAMA_MODEL;
   }
+}
+
+/** The configured Ollama chat model (`lumen.ollama.model`, default {@link DEFAULT_OLLAMA_MODEL}). */
+export function getOllamaConfigModel(): string {
+  return getModel();
 }
 
 export function setOllamaConfig(config: Partial<OllamaConfig>): void {
@@ -66,16 +77,35 @@ export function setOllamaConfig(config: Partial<OllamaConfig>): void {
 /**
  * Check if Ollama is running and reachable.
  */
+let lastProbe: { at: number; ok: boolean } | null = null;
+
 export async function isOllamaAvailable(): Promise<boolean> {
+  let ok = false;
   try {
     const res = await fetch(`${getBaseUrl()}/api/tags`, {
       method: "GET",
       signal: AbortSignal.timeout(2000),
     });
-    return res.ok;
+    ok = res.ok;
   } catch {
-    return false;
+    ok = false;
   }
+  lastProbe = { at: Date.now(), ok };
+  return ok;
+}
+
+/**
+ * Did the last probe find the server? For synchronous checks (the quota
+ * gate) that cannot wait for a request: a selected cloud provider only
+ * reroutes to Ollama once a probe has actually seen it.
+ */
+export function ollamaKnownAvailable(): boolean {
+  return lastProbe?.ok === true;
+}
+
+/** Tests. */
+export function __resetOllamaProbe(): void {
+  lastProbe = null;
 }
 
 /**
@@ -130,7 +160,7 @@ export async function* pullOllamaModel(
       if (!line.trim()) continue;
       try {
         yield JSON.parse(line);
-      } catch { /* skip */ }
+      } catch { /* why: a partial or non-JSON line from the stream carries no text */ }
     }
   }
 }
@@ -217,7 +247,7 @@ export async function* chatOllamaStream(
         const json = JSON.parse(trimmed.slice(6));
         const delta = json.choices?.[0]?.delta?.content;
         if (delta) yield delta;
-      } catch { /* skip */ }
+      } catch { /* why: a keep-alive or partial line that is not JSON carries no text */ }
     }
   }
 }

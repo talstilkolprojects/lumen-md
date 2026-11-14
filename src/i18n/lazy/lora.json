@@ -1,0 +1,16 @@
+{
+  "fineTune.cloudRoute": "Or in the cloud (OpenAI)",
+  "lora.title": "On this machine (recommended)",
+  "lora.intro": "Train a small LoRA adapter on your own notes, on this Mac or NVIDIA computer, and use it in Ollama. Nothing is uploaded: Lumen exports the training data and a script; you run the script.",
+  "lora.folder": "Notes to learn from (folder)",
+  "lora.folderAll": "All notes",
+  "lora.platform": "This computer",
+  "lora.platform.mac": "Mac (Apple silicon, MLX)",
+  "lora.platform.nvidia": "NVIDIA GPU (PEFT)",
+  "lora.export": "Export training data and script",
+  "lora.exporting": "Preparing…",
+  "lora.exported": "lumen-lora.zip: {notes} notes · {train} training samples · {valid} validation · {heldOut} held-out notes for the style check",
+  "lora.tooLittle": "Not enough writing to train on ({notes} usable notes): pick a folder with more notes of a few paragraphs.",
+  "lora.next.mac": "Unzip lumen-lora.zip and run: bash train-mac.sh — it trains on Mistral 7B (Apache-2.0) with MLX, fuses the adapter to GGUF and adds “lumen-style” to Ollama.",
+  "lora.next.nvidia": "Unzip lumen-lora.zip and run: bash train-nvidia.sh — it trains a LoRA with PEFT (Unsloth core, Apache-2.0), converts it with llama.cpp and adds “lumen-style” to Ollama."
+}

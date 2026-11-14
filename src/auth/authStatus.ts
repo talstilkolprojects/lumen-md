@@ -138,7 +138,7 @@ export function consumeSsoFlash(
     try {
       window.history.replaceState(window.history.state, "", url);
     } catch {
-      /* sandboxed iframe — leave the URL alone */
+      /* why: sandboxed iframe — leave the URL alone */
     }
   },
 ): { ok: true } | { ok: false; reason: string } | null {

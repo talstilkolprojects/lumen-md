@@ -1,0 +1,144 @@
+<h1 id="contributing-a-plugin-γ6" dir="auto">Contributing a Plugin (γ.6)</h1>
+<p dir="auto">Lumen plugins live in <a href="https://github.com/lumen-md/lumen-plugins-registry"><code>@lumen-md/lumen-plugins-registry</code></a><br/>
+(separate repo). This repo only ships the runtime + the schema.</p>
+<h2 id="tldr" dir="auto">TL;DR</h2>
+<ol dir="ltr">
+<li dir="ltr">
+<p dir="auto">Build your plugin with <code>create-lumen-plugin</code>:</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="npm create lumen-plugin@latest my-plugin
+cd my-plugin &amp;&amp; npm install &amp;&amp; npm run build
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> create</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> lumen-plugin@latest</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> my-plugin</span></span>
+<span class="line"><span style="color:#0550AE;--shiki-dark:#79C0FF">cd</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> my-plugin</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> &amp;&amp; </span><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> install</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> &amp;&amp; </span><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> build</span></span>
+<span class="line"></span></code></pre></div>
+</li>
+<li dir="ltr">
+<p dir="auto">Generate an Ed25519 signing key:</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="mkdir -p ~/.lumen
+openssl genpkey -algorithm Ed25519 -out ~/.lumen/author-ed25519.key
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#953800;--shiki-dark:#FFA657">mkdir</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -p</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> ~/.lumen</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">openssl</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> genpkey</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -algorithm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> Ed25519</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -out</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> ~/.lumen/author-ed25519.key</span></span>
+<span class="line"></span></code></pre></div>
+</li>
+<li dir="ltr">
+<p dir="auto">Open the registry PR via the publish CLI:</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="GITHUB_TOKEN=ghp_… node scripts/publish-plugin.mjs \
+  --dir ./my-plugin \
+  --key ~/.lumen/author-ed25519.key \
+  --bundle-url https://cdn.example.com/my-plugin/1.0.0/index.js \
+  --gh-pr lumen-md/lumen-plugins-registry
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">GITHUB_TOKEN</span><span style="color:#CF222E;--shiki-dark:#FF7B72">=</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">ghp_…</span><span style="color:#953800;--shiki-dark:#FFA657"> node</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> scripts/publish-plugin.mjs</span><span style="color:#CF222E;--shiki-dark:#FF7B72"> \</span></span>
+<span class="line"><span style="color:#0550AE;--shiki-dark:#79C0FF">  --dir</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> ./my-plugin</span><span style="color:#CF222E;--shiki-dark:#FF7B72"> \</span></span>
+<span class="line"><span style="color:#0550AE;--shiki-dark:#79C0FF">  --key</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> ~/.lumen/author-ed25519.key</span><span style="color:#CF222E;--shiki-dark:#FF7B72"> \</span></span>
+<span class="line"><span style="color:#0550AE;--shiki-dark:#79C0FF">  --bundle-url</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> https://cdn.example.com/my-plugin/1.0.0/index.js</span><span style="color:#CF222E;--shiki-dark:#FF7B72"> \</span></span>
+<span class="line"><span style="color:#0550AE;--shiki-dark:#79C0FF">  --gh-pr</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> lumen-md/lumen-plugins-registry</span></span>
+<span class="line"></span></code></pre></div>
+<p dir="auto">The CLI computes SHA-256, signs the bundle with your Ed25519 key,<br/>
+creates a branch, commits the patched <code>registry.json</code>, and opens<br/>
+the PR with bundle URL + signature in the body.</p>
+</li>
+</ol>
+<h2 id="what-the-registry-side-validateyml-does" dir="auto">What the registry-side validate.yml does</h2>
+<p dir="auto">When your PR lands at <code>lumen-plugins-registry</code>, this Action runs:</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">yaml</span><button class="icon-btn" data-copy="# .github/workflows/validate.yml — drop this in the registry repo.
+name: validate
+on:
+  pull_request:
+    paths: [registry.json]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Validate registry shape
+        run: |
+          node -e &#x27;
+            const reg = require(&quot;./registry.json&quot;);
+            for (const p of reg.plugins) {
+              if (!p.id || !p.version || !p.bundle || !p.sha256 || !p.signature) {
+                throw new Error(&quot;missing required field on &quot; + p.id);
+              }
+            }
+            console.log(&quot;✓ shape OK (&quot; + reg.plugins.length + &quot; plugins)&quot;);
+          &#x27;
+      - name: Verify Ed25519 signatures
+        run: node .github/scripts/verify-signatures.mjs
+      - name: Scan bundles for malicious patterns
+        run: node .github/scripts/scan-bundles.mjs
+      - name: Auto-merge when all checks pass
+        if: success()
+        uses: pascalgn/automerge-action@v0.16.4
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># .github/workflows/validate.yml — drop this in the registry repo.</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">name</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">validate</span></span>
+<span class="line"><span style="color:#0550AE;--shiki-dark:#79C0FF">on</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">:</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">  pull_request</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">:</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">    paths</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: [</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">registry.json</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">]</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">jobs</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">:</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">  validate</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">:</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">    runs-on</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">ubuntu-latest</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">    steps</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">:</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">      - </span><span style="color:#116329;--shiki-dark:#7EE787">uses</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">actions/checkout@v4</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">      - </span><span style="color:#116329;--shiki-dark:#7EE787">uses</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">actions/setup-node@v4</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">        with</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: { </span><span style="color:#116329;--shiki-dark:#7EE787">node-version</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0550AE;--shiki-dark:#79C0FF">20</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> }</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">      - </span><span style="color:#116329;--shiki-dark:#7EE787">name</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">Validate registry shape</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">        run</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#CF222E;--shiki-dark:#FF7B72">|</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">          node -e &#x27;</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">            const reg = require(&quot;./registry.json&quot;);</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">            for (const p of reg.plugins) {</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">              if (!p.id || !p.version || !p.bundle || !p.sha256 || !p.signature) {</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">                throw new Error(&quot;missing required field on &quot; + p.id);</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">              }</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">            }</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">            console.log(&quot;✓ shape OK (&quot; + reg.plugins.length + &quot; plugins)&quot;);</span></span>
+<span class="line"><span style="color:#0A3069;--shiki-dark:#A5D6FF">          &#x27;</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">      - </span><span style="color:#116329;--shiki-dark:#7EE787">name</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">Verify Ed25519 signatures</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">        run</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">node .github/scripts/verify-signatures.mjs</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">      - </span><span style="color:#116329;--shiki-dark:#7EE787">name</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">Scan bundles for malicious patterns</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">        run</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">node .github/scripts/scan-bundles.mjs</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">      - </span><span style="color:#116329;--shiki-dark:#7EE787">name</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">Auto-merge when all checks pass</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">        if</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">success()</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">        uses</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">pascalgn/automerge-action@v0.16.4</span></span>
+<span class="line"></span></code></pre></div>
+<p dir="auto">A reference implementation of the two scripts lives in<br/>
+<code>scripts/verify-signatures.mjs</code> and <code>scripts/scan-bundles.mjs</code> in the<br/>
+registry repo. Both have ~80 lines of Node — feel free to fork.</p>
+<h2 id="security-model" dir="auto">Security model</h2>
+<ul dir="ltr">
+<li dir="ltr">The registry is <strong>public</strong> — anyone can read; only signed PRs can<br/>
+modify.</li>
+<li dir="ltr">Each registry entry carries the bundle&#x27;s SHA-256 + an Ed25519<br/>
+signature from the author&#x27;s key. Lumen verifies the signature in<br/>
+the browser (<code>src/plugins/signing.ts</code>) before executing the<br/>
+bundle.</li>
+<li dir="ltr">A bundle that fails signature verification is shown in the gallery<br/>
+but disabled with a warning — the user can override but the UI<br/>
+makes it impossible to install accidentally.</li>
+<li dir="ltr">The bundle runs inside a sandboxed iframe with <code>allow-scripts</code><br/>
+but <strong>no</strong> <code>allow-same-origin</code> — the plugin can&#x27;t read OPFS or<br/>
+cookies directly. All host calls go through the postMessage<br/>
+broker.</li>
+</ul>
+<h2 id="what-we-reject" dir="auto">What we reject</h2>
+<ul dir="ltr">
+<li dir="ltr">Plugins requesting any DOM permission Lumen doesn&#x27;t offer.</li>
+<li dir="ltr">Plugins making outbound HTTP requests not declared in<br/>
+<code>permissions</code>.</li>
+<li dir="ltr">Plugins fetching ESM at runtime (any <code>import()</code> whose specifier<br/>
+isn&#x27;t a string literal).</li>
+<li dir="ltr">Plugins that ship pre-minified code without a sourcemap when<br/>
+<code>permissions</code> includes <code>network</code> — too easy to hide hostile code<br/>
+in a minified blob.</li>
+</ul>
+<h2 id="naming--ids" dir="auto">Naming + IDs</h2>
+<p dir="auto"><code>id</code> must match <code>^[a-z][a-z0-9-]{2,40}$</code>. We squat-park common IDs<br/>
+the same way npm does: if the id matches an active project&#x27;s name<br/>
+without their permission, the PR is rejected with a 1-line &quot;claim<br/>
+your namespace&quot; instruction.</p>
+<h2 id="license" dir="auto">License</h2>
+<p dir="auto">MIT-only for plugins in the official registry. If you need a<br/>
+different license, host your bundle yourself and ship as a 3rd-party<br/>
+plugin (the gallery shows a 🌐 icon for those + a clear &quot;not from<br/>
+the official registry&quot; warning).</p>

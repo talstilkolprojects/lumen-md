@@ -1,4 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+// The tree's own rules (width, background, the border that faces the editor,
+// header, rows, row actions). Nothing imported this file, so the tree drew
+// unstyled: no border, no hover, row actions always shown (e2e rtl-parity 6).
+import "./FileTree.css";
 import {
   ChevronDown,
   ChevronRight,
@@ -14,13 +18,10 @@ import {
 import {
   basename,
   createWorkspaceFolder,
-  deleteWorkspaceFile,
   dirname,
   isOPFSAvailable,
   joinPath,
-  listWorkspaceTree,
   readWorkspaceFile,
-  renameWorkspaceFile,
   uniqueWorkspaceName,
   writeWorkspaceFile,
 } from "../storage/workspace";
@@ -29,6 +30,61 @@ import { t } from "../i18n";
 import { uiAlert, uiConfirm, uiPrompt } from "./PromptDialog";
 import { FileContextMenu, buildFileActions } from "./FileContextMenu";
 import { useAppStore } from "../store/useStore";
+import { duplicateFile, movedPath, renamedFileName, safeMoveWithCompanion, undoTrash, withoutCompanions, type MoveResult } from "../storage/fileOps";
+import { flushActiveWorkspaceDoc, syncOpenDocsAfterMove, trashWithOpenEdits } from "../store/openDocs";
+import type { TrashItem } from "../storage/trash";
+import { toast, useToastStore } from "../store/useToastStore";
+import { onWorkspaceChanged } from "../storage/workspaceEvents";
+import { workspaceTree } from "../storage/workspaceIndex";
+import { scheduleIdle } from "../lib/idle";
+
+/**
+ * A vault with more notes than this opens with its folders collapsed
+ * (plan 8.4): rendering 10,000 rows at once is what made a big vault slow
+ * to open, and nobody scrolls through them all.
+ */
+export const LARGE_VAULT_FILES = 1000;
+
+/**
+ * In a large vault each folder (the root too) shows at most this many
+ * rows until the user asks for the rest: a flat vault of 10,000 notes has
+ * no folders to collapse.
+ */
+export const LARGE_VAULT_FOLDER_ROWS = 200;
+
+/**
+ * The children of one folder to render: the first `limit` rows (folders
+ * first, as listed) plus the active note and its folder; `hidden` is how
+ * many are left out. `limit` null: everything. A vault of 10,000 root
+ * folders is as limited as one of 10,000 root notes.
+ */
+export function visibleChildren(
+  nodes: WorkspaceNode[],
+  limit: number | null,
+  activePath: string | null,
+): { shown: WorkspaceNode[]; hidden: number } {
+  if (limit === null || nodes.length <= limit) return { shown: nodes, hidden: 0 };
+  let hidden = 0;
+  const shown = nodes.filter((n, i) => {
+    // The active note, and the folder on its way, always stay.
+    if (i < limit || n.path === activePath || (activePath?.startsWith(n.path + "/") ?? false)) return true;
+    hidden++;
+    return false;
+  });
+  return { shown, hidden };
+}
+
+/** Every folder path of `nodes`, and how many files they hold in all. */
+function folderStats(nodes: WorkspaceNode[], dirs: string[] = []): { dirs: string[]; files: number } {
+  let files = 0;
+  for (const n of nodes) {
+    if (n.kind === "directory") {
+      dirs.push(n.path);
+      files += folderStats(n.children ?? [], dirs).files;
+    } else files++;
+  }
+  return { dirs, files };
+}
 
 interface Props {
   /** Currently active workspace path (if any). */
@@ -40,6 +96,9 @@ interface Props {
   /** Called after the active file is deleted. */
   onActiveDeleted: () => void;
 }
+
+// The month calendar of daily notes (plan 4.12): its own chunk, loaded when shown.
+const CalendarPanel = lazy(() => import("./CalendarPanel"));
 
 export function FileTree({
   activePath,
@@ -60,6 +119,56 @@ export function FileTree({
     node: WorkspaceNode;
   } | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  /** The large-vault view (folders collapsed, rows limited) is switched on once. */
+  const autoCollapsed = useRef(false);
+  /** Large vault: notes shown per folder until "show more" (null: all). */
+  const [fileLimit, setFileLimit] = useState<number | null>(null);
+  /** Folders ("" = the root) whose notes are all shown. */
+  const [shownAll, setShownAll] = useState<Set<string>>(new Set());
+  const activePathRef = useRef(activePath);
+  activePathRef.current = activePath;
+
+  /** Ask before replacing anything (moves never overwrite silently — T46). */
+  const confirmReplace = (path: string) => uiConfirm({ message: t("tree.confirm.replace", { path }) });
+
+  /** Tell the user what a delete did, with Undo. */
+  function announceTrash(items: TrashItem[]): void {
+    if (!items.length) return;
+    useToastStore.getState().push({
+      kind: "info",
+      title: t("tree.trashed", { count: String(items.length) }),
+      ttlMs: 10_000,
+      action: {
+        label: t("tree.undo"),
+        run: () => {
+          void undoTrash(items).then(
+            () => refresh(),
+            (e: unknown) => toast.error(t("trash.restoreFailed", { error: e instanceof Error ? e.message : String(e) })),
+          );
+        },
+      },
+    });
+  }
+
+  function announceMove(linksUpdated: string[]): void {
+    if (linksUpdated.length) toast.info(t("tree.linksUpdated", { count: String(linksUpdated.length) }));
+  }
+
+  /**
+   * `from` is now at `r.path`: open notes follow (a note inside a moved
+   * folder too) and get the same link rewrite as the files on disk.
+   */
+  function afterMove(from: string, r: MoveResult): void {
+    syncOpenDocsAfterMove(from, r.path, r.rewrite, r.replaced?.originalPath ?? null);
+    const nextActive = activePath ? movedPath(activePath, from, r.path) : null;
+    if (nextActive) onActiveRenamed(nextActive);
+    if (r.linksError) toast.error(t("tree.linksFailed", { error: r.linksError.message }));
+  }
+
+  /** "file" / "directory" from the tree, not from the spelling (`project.v1/` is a folder). */
+  function kindOf(path: string): "file" | "directory" {
+    return findNode(tree, path)?.kind === "directory" ? "directory" : "file";
+  }
 
   function toggleSelect(path: string): void {
     setSelectedPaths((prev) => {
@@ -77,19 +186,15 @@ export function FileTree({
   async function bulkDelete(): Promise<void> {
     if (selectedPaths.size === 0) return;
     const paths = [...selectedPaths];
-    const ok = await uiConfirm({
-      message: t("tree.confirm.bulkDelete", { count: String(paths.length) }),
-    });
-    if (!ok) return;
-    for (const p of paths) {
-      try {
-        await deleteWorkspaceFile(p);
-        if (activePath && (activePath === p || activePath.startsWith(p + "/"))) {
-          onActiveDeleted();
-        }
-      } catch {
-        /* missing — ignore */
-      }
+    // No confirmation: it goes to the trash, and the toast offers Undo.
+    try {
+      // Unsaved edits of every open note inside go with it (and come back on Undo / Ctrl+Z).
+      const { items, settled } = await trashWithOpenEdits(paths, Object.fromEntries(paths.map((p) => [p, kindOf(p)])));
+      // Not settled: the open note was kept, detached, as an unsaved note with its newest text.
+      if (settled && activePath && paths.some((p) => activePath === p || activePath.startsWith(p + "/"))) onActiveDeleted();
+      announceTrash(items);
+    } catch (e) {
+      await uiAlert({ message: t("tree.alert.deleteFailed", { error: (e as Error).message }) });
     }
     clearSelection();
     await refresh();
@@ -104,16 +209,26 @@ export function FileTree({
     });
     if (target === null) return;
     const dir = target.trim().replace(/^\/+|\/+$/g, "");
-    for (const p of selectedPaths) {
+    const updated = new Set<string>();
+    // A selected PDF and its selected highlights note move as one unit.
+    for (const p of withoutCompanions([...selectedPaths])) {
       const name = basename(p);
       const newPath = dir ? `${dir}/${name}` : name;
       try {
-        await renameWorkspaceFile(p, newPath);
-        if (activePath === p) onActiveRenamed(newPath);
-      } catch {
-        /* skip on conflict */
+        await flushActiveWorkspaceDoc();
+        // A PDF's highlights note moves with it (plan 4.14).
+        const m = await safeMoveWithCompanion(p, newPath, { confirmReplace, folder: kindOf(p) === "directory" });
+        if (!m) continue;
+        for (const [from, r] of [[p, m.main], [`${p}.md`, m.companion]] as const) {
+          if (!r) continue;
+          r.linksUpdated.forEach((x) => updated.add(x));
+          afterMove(from, r);
+        }
+      } catch (e) {
+        await uiAlert({ message: t("tree.alert.renameFailed", { error: (e as Error).message }) });
       }
     }
+    announceMove([...updated]);
     clearSelection();
     await refresh();
   }
@@ -146,7 +261,23 @@ export function FileTree({
     () => async () => {
       if (!available) return;
       try {
-        const list = await listWorkspaceTree();
+        // The index's listing: after a structural change the vault is
+        // listed once for the tree and the index together.
+        const list = await workspaceTree();
+        // A vault that grows past LARGE_VAULT_FILES (first listing or a later
+        // import) switches to the large-vault view once.
+        if (!autoCollapsed.current) {
+          const { dirs, files } = folderStats(list);
+          if (files > LARGE_VAULT_FILES) {
+            autoCollapsed.current = true;
+            setFileLimit(LARGE_VAULT_FOLDER_ROWS);
+            // The active note's folders stay open (the effect below).
+            const keep = new Set<string>();
+            const active = activePathRef.current;
+            for (let p = active ? dirname(active) : ""; p; p = dirname(p)) keep.add(p);
+            setCollapsed(new Set(dirs.filter((d) => !keep.has(d))));
+          }
+        }
         setTree(list);
       } catch {
         setTree([]);
@@ -155,15 +286,15 @@ export function FileTree({
     [available],
   );
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  // First listing once the page is idle (plan 8.4): listing a 10,000-note
+  // vault must not compete with opening the app.
+  useEffect(() => scheduleIdle(() => void refresh(), 1000), [refresh]);
 
   useEffect(() => {
-    const onChange = () => refresh();
-    window.addEventListener("lumen-workspace-changed", onChange);
-    return () =>
-      window.removeEventListener("lumen-workspace-changed", onChange);
+    // A save that only changed a file's text leaves the tree as it is (C3).
+    return onWorkspaceChanged((c) => {
+      if (c.kind === "structure") void refresh();
+    }, { debounceMs: 150 });
   }, [refresh]);
 
   // Auto-expand all ancestors of the active file.
@@ -232,6 +363,11 @@ export function FileTree({
 
   async function open(node: WorkspaceNode) {
     if (node.kind !== "file") return;
+    // A PDF opens in the reader (plan 4.14), not as text.
+    if (/\.pdf$/i.test(node.path)) {
+      window.dispatchEvent(new CustomEvent("lumen-open-file", { detail: { path: node.path } }));
+      return;
+    }
     try {
       const text = await readWorkspaceFile(node.path);
       onOpenFile(node.path, text);
@@ -248,11 +384,15 @@ export function FileTree({
       await uiAlert({ message: t("tree.alert.renameNoSlashes") });
       return;
     }
-    const ext = next.match(/\.[^./]+$/) ? "" : ".md";
-    const target = joinPath(dirname(oldPath), next + ext);
+    const target = joinPath(dirname(oldPath), renamedFileName(oldPath, next));
     try {
-      await renameWorkspaceFile(oldPath, target);
-      if (oldPath === activePath) onActiveRenamed(target);
+      const isFolder = findNode(tree, oldPath)?.kind === "directory";
+      await flushActiveWorkspaceDoc();
+      const m = await safeMoveWithCompanion(oldPath, isFolder ? joinPath(dirname(oldPath), next) : target, { confirmReplace, folder: isFolder });
+      if (!m) return;
+      afterMove(oldPath, m.main);
+      if (m.companion) afterMove(`${oldPath}.md`, m.companion);
+      announceMove([...m.main.linksUpdated, ...(m.companion?.linksUpdated ?? [])]);
       await refresh();
     } catch (e) {
       await uiAlert({
@@ -261,18 +401,11 @@ export function FileTree({
     }
   }
 
-  /** Duplicate a single file as `<name> copy.<ext>` (folders skipped). */
+  /** Duplicate a single file as `<name> copy.<ext>` (folders skipped), byte for byte. */
   async function duplicate(node: WorkspaceNode): Promise<void> {
     if (node.kind !== "file") return;
     try {
-      const body = await readWorkspaceFile(node.path);
-      const dotIdx = node.name.lastIndexOf(".");
-      const stem = dotIdx >= 0 ? node.name.slice(0, dotIdx) : node.name;
-      const ext = dotIdx >= 0 ? node.name.slice(dotIdx) : "";
-      const dirPart = dirname(node.path);
-      const candidate = joinPath(dirPart, `${stem} copy${ext}`);
-      const newPath = await uniqueWorkspaceName(candidate);
-      await writeWorkspaceFile(newPath, body);
+      await duplicateFile(node.path);
       await refresh();
     } catch (e) {
       await uiAlert({ message: (e as Error).message });
@@ -284,19 +417,20 @@ export function FileTree({
     try {
       await navigator.clipboard.writeText(node.path);
     } catch {
-      /* clipboard denied — silently ignore */
+      /* why: clipboard denied — silently ignore */
     }
   }
 
   async function remove(node: WorkspaceNode) {
-    const msg =
-      node.kind === "directory"
-        ? t("tree.confirm.deleteFolder", { path: node.path })
-        : t("tree.confirm.deleteFile", { path: node.path });
-    if (!(await uiConfirm({ message: msg }))) return;
+    // Goes to the trash (Undo in the toast; restorable for 30 days).
     try {
-      await deleteWorkspaceFile(node.path);
+      // Unsaved edits of every open note inside go with it, inactive tabs
+      // included, and edits typed while it moves (they come back on Undo / Ctrl+Z).
+      const { items, settled } = await trashWithOpenEdits([node.path], { [node.path]: node.kind === "directory" ? "directory" : "file" });
+      announceTrash(items);
+      // Not settled: the open note was kept, detached, as an unsaved note with its newest text.
       if (
+        settled &&
         activePath &&
         (activePath === node.path || activePath.startsWith(node.path + "/"))
       ) {
@@ -408,15 +542,15 @@ export function FileTree({
             {t("tree.tagFilter", {
               tag: tagFilter.tag,
               count: String(tagFilter.paths.length),
-            }) ?? `# ${tagFilter.tag} · ${tagFilter.paths.length}`}
+            })}
           </span>
           <button
             type="button"
             onClick={() => setTagFilter(null)}
             aria-label={
-              t("tree.tagFilter.clear") ?? "Clear tag filter"
+              t("tree.tagFilter.clear")
             }
-            title={t("tree.tagFilter.clear") ?? "Clear tag filter"}
+            title={t("tree.tagFilter.clear")}
             style={{
               marginInlineStart: "auto",
               padding: "2px 6px",
@@ -441,7 +575,7 @@ export function FileTree({
           }}
         >
           {tagFilter
-            ? (t("tree.tagFilter.empty") ?? "No notes match this tag.")
+            ? (t("tree.tagFilter.empty"))
             : t("tree.emptyHint")}
         </div>
       ) : (
@@ -514,8 +648,7 @@ export function FileTree({
             </div>
           )}
           <ul className="file-tree-list" role="tree">
-            {displayedTree.map((node) =>
-              renderNode(node, 0, {
+            {renderChildren(displayedTree, "", 0, {
                 activePath,
                 collapsed,
                 editingPath,
@@ -532,8 +665,10 @@ export function FileTree({
                 selectedPaths,
                 toggleSelect,
                 openContextMenu: (x, y, n) => setContextMenu({ x, y, node: n }),
-              }),
-            )}
+                fileLimit,
+                shownAll,
+                showAll: (dir) => setShownAll((prev) => new Set(prev).add(dir)),
+            })}
           </ul>
         </>
       )}
@@ -562,6 +697,7 @@ export function FileTree({
           })}
         />
       )}
+      <CalendarSlot />
     </aside>
   );
 }
@@ -583,6 +719,31 @@ interface RenderCtx {
   selectedPaths: Set<string>;
   toggleSelect: (path: string) => void;
   openContextMenu: (x: number, y: number, node: WorkspaceNode) => void;
+  fileLimit: number | null;
+  shownAll: Set<string>;
+  showAll: (dir: string) => void;
+}
+
+/** The rows of one folder's children, with "show N more" when a large vault limits them. */
+function renderChildren(nodes: WorkspaceNode[], dir: string, depth: number, ctx: RenderCtx): React.ReactNode {
+  const { shown, hidden } = visibleChildren(nodes, ctx.shownAll.has(dir) ? null : ctx.fileLimit, ctx.activePath);
+  return (
+    <>
+      {shown.map((child) => renderNode(child, depth, ctx))}
+      {hidden > 0 && (
+        <li role="none">
+          <button
+            type="button"
+            className="file-tree-item file-tree-more"
+            style={{ paddingInlineStart: 6 + depth * 12 }}
+            onClick={() => ctx.showAll(dir)}
+          >
+            {t("tree.showMore", { count: String(hidden) })}
+          </button>
+        </li>
+      )}
+    </>
+  );
 }
 
 function renderNode(
@@ -644,7 +805,7 @@ function renderNode(
           <input
             ref={ctx.inputRef as React.RefObject<HTMLInputElement>}
             className="file-tree-input"
-            aria-label={`Rename ${node.name}`}
+            aria-label={t("tree.renameItem", { name: node.name })}
             value={ctx.editValue}
             onChange={(ev) => ctx.setEditValue(ev.target.value)}
             onBlur={() => ctx.commitRename(node.path)}
@@ -739,9 +900,30 @@ function renderNode(
 
       {isFolder && isOpen && node.children && (
         <ul className="file-tree-list" role="group">
-          {node.children.map((child) => renderNode(child, depth + 1, ctx))}
+          {renderChildren(node.children, node.path, depth + 1, ctx)}
         </ul>
       )}
     </li>
+  );
+}
+
+function findNode(nodes: WorkspaceNode[], path: string): WorkspaceNode | undefined {
+  for (const n of nodes) {
+    if (n.path === path) return n;
+    if (n.children) {
+      const hit = findNode(n.children, path);
+      if (hit) return hit;
+    }
+  }
+  return undefined;
+}
+
+function CalendarSlot() {
+  const show = useAppStore((s) => s.showCalendar);
+  if (!show) return null;
+  return (
+    <Suspense fallback={null}>
+      <CalendarPanel />
+    </Suspense>
   );
 }

@@ -1,0 +1,62 @@
+name: Lighthouse trend
+
+# Nightly (plan 0.11): Lighthouse desktop and mobile on the production build,
+# 3 runs each, the median of every score and key metric appended to a JSON
+# history (scripts/nightly/lighthouse-trend.mjs). The history moves from night
+# to night in the Actions cache; the report is the reports-lighthouse
+# artifact and the job summary. Nothing is committed. This is a trend, not a
+# gate: the Lighthouse CI job in ci.yml keeps the thresholds.
+on:
+  schedule:
+    - cron: "43 3 * * *" # 03:43 UTC, after the flake hunt has started
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/lighthouse-trend.yml
+      - scripts/nightly/lighthouse-trend.mjs
+      - scripts/nightly/lib.mjs
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lighthouse-trend-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  trend:
+    name: Lighthouse trend (desktop + mobile, median of 3)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build
+      # The newest history of this branch (keys are immutable: one per run).
+      - uses: actions/cache/restore@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
+        with:
+          path: .lighthouse-history
+          key: lighthouse-history-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            lighthouse-history-${{ github.ref_name }}-
+            lighthouse-history-main-
+      - name: Lighthouse, desktop and mobile
+        run: node scripts/nightly/lighthouse-trend.mjs .lighthouse-history/lighthouse-history.json
+      - name: Keep the history for the next night
+        if: success()
+        run: mkdir -p .lighthouse-history && cp reports/lighthouse-history.json .lighthouse-history/
+      - uses: actions/cache/save@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
+        if: success()
+        with:
+          path: .lighthouse-history
+          key: lighthouse-history-${{ github.ref_name }}-${{ github.run_id }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: reports-lighthouse
+          path: reports/
+          retention-days: 90

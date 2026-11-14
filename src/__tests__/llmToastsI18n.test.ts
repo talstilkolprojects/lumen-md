@@ -33,19 +33,28 @@ describe("llm.chat — Ollama unavailable toast", () => {
     applyLocale("en");
   });
 
-  it("shows a localized toast with the configured URL, then falls back to OpenAI (NO_KEY)", async () => {
+  it("shows a localized toast with the configured URL, then stops under the default local-only policy (NO_LOCAL)", async () => {
     applyLocale("en");
-    await expect(chat([{ role: "user", content: "hi" }])).rejects.toMatchObject({ code: "NO_KEY" });
+    await expect(chat([{ role: "user", content: "hi" }])).rejects.toMatchObject({ code: "NO_LOCAL" });
     expect(warn).toHaveBeenCalledWith(
       "Ollama unavailable",
       expect.stringContaining("http://127.0.0.1:11434"),
     );
   });
 
+  it("falls back to OpenAI under local-first (NO_KEY when no key is set)", async () => {
+    localStorage.setItem("lumen.ai.policy", "local-first");
+    try {
+      await expect(chat([{ role: "user", content: "hi" }])).rejects.toMatchObject({ code: "NO_KEY" });
+    } finally {
+      localStorage.removeItem("lumen.ai.policy");
+    }
+  });
+
   it("uses the active locale (he)", async () => {
     await loadLocale("he");
     applyLocale("he");
-    await expect(chat([{ role: "user", content: "hi" }])).rejects.toMatchObject({ code: "NO_KEY" });
+    await expect(chat([{ role: "user", content: "hi" }])).rejects.toMatchObject({ code: "NO_LOCAL" });
     const [title, body] = warn.mock.calls[0];
     expect(title).toBe("Ollama לא זמין");
     expect(body).toContain("http://127.0.0.1:11434");

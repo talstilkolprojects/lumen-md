@@ -1,0 +1,44 @@
+name: Nightly perf
+
+# Plan 8.4: the @nightly tests (e2e/perf-vault.spec.ts — typing in a 2 MB
+# note) are too slow for every pull request. They run here, against the
+# production build, in the "perf" Playwright project.
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  perf:
+    name: perf (2 MB note, 10,000-note vault)
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: npm }
+      - run: npm ci || npm install
+      - name: Install Playwright browser (chromium)
+        run: npx playwright install --with-deps chromium
+      - name: Build production bundle
+        run: npm run build
+      - name: Serve dist with http-server
+        run: |
+          npx -y http-server@14 dist -p 5180 -c-1 --cors --silent &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5180/ -o /dev/null; then echo "Server up."; break; fi
+            sleep 1
+          done
+      - name: Run the @nightly perf tests
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:5180
+        run: npx playwright test --project=perf --reporter=line,github,html
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-perf
+          path: playwright-report/

@@ -1,0 +1,494 @@
+{
+ "all_link_types.md": [
+  {
+   "line": 2,
+   "symbol": " "
+  },
+  {
+   "line": 3,
+   "symbol": " "
+  },
+  {
+   "line": 5,
+   "symbol": " "
+  },
+  {
+   "line": 6,
+   "symbol": " "
+  },
+  {
+   "line": 8,
+   "symbol": " "
+  },
+  {
+   "line": 9,
+   "symbol": " "
+  },
+  {
+   "line": 10,
+   "symbol": " "
+  },
+  {
+   "line": 11,
+   "symbol": " "
+  },
+  {
+   "line": 13,
+   "symbol": " "
+  },
+  {
+   "line": 14,
+   "symbol": " "
+  },
+  {
+   "line": 15,
+   "symbol": " "
+  },
+  {
+   "line": 16,
+   "symbol": " "
+  },
+  {
+   "line": 18,
+   "symbol": " "
+  },
+  {
+   "line": 19,
+   "symbol": " "
+  },
+  {
+   "line": 20,
+   "symbol": " "
+  },
+  {
+   "line": 21,
+   "symbol": " "
+  },
+  {
+   "line": 23,
+   "symbol": " "
+  },
+  {
+   "line": 24,
+   "symbol": " "
+  },
+  {
+   "line": 26,
+   "symbol": " "
+  },
+  {
+   "line": 27,
+   "symbol": " "
+  },
+  {
+   "line": 29,
+   "symbol": " "
+  },
+  {
+   "line": 30,
+   "symbol": " "
+  }
+ ],
+ "link_in_task_markdown_link.md": [
+  {
+   "line": 4,
+   "symbol": " "
+  },
+  {
+   "line": 8,
+   "symbol": " "
+  },
+  {
+   "line": 12,
+   "symbol": " "
+  },
+  {
+   "line": 16,
+   "symbol": " "
+  },
+  {
+   "line": 20,
+   "symbol": " "
+  },
+  {
+   "line": 24,
+   "symbol": " "
+  },
+  {
+   "line": 28,
+   "symbol": " "
+  },
+  {
+   "line": 32,
+   "symbol": " "
+  },
+  {
+   "line": 36,
+   "symbol": " "
+  },
+  {
+   "line": 40,
+   "symbol": " "
+  },
+  {
+   "line": 44,
+   "symbol": " "
+  },
+  {
+   "line": 47,
+   "symbol": " "
+  },
+  {
+   "line": 48,
+   "symbol": " "
+  }
+ ],
+ "link_in_task_wikilink.md": [
+  {
+   "line": 4,
+   "symbol": " "
+  },
+  {
+   "line": 8,
+   "symbol": " "
+  },
+  {
+   "line": 12,
+   "symbol": " "
+  },
+  {
+   "line": 16,
+   "symbol": " "
+  },
+  {
+   "line": 20,
+   "symbol": " "
+  },
+  {
+   "line": 24,
+   "symbol": " "
+  },
+  {
+   "line": 28,
+   "symbol": " "
+  },
+  {
+   "line": 32,
+   "symbol": " "
+  },
+  {
+   "line": 36,
+   "symbol": " "
+  },
+  {
+   "line": 40,
+   "symbol": " "
+  },
+  {
+   "line": 41,
+   "symbol": " "
+  },
+  {
+   "line": 42,
+   "symbol": " "
+  }
+ ],
+ "internal_heading_links.md": [
+  {
+   "line": 10,
+   "symbol": " "
+  },
+  {
+   "line": 14,
+   "symbol": " "
+  },
+  {
+   "line": 18,
+   "symbol": " "
+  },
+  {
+   "line": 22,
+   "symbol": " "
+  },
+  {
+   "line": 26,
+   "symbol": " "
+  },
+  {
+   "line": 30,
+   "symbol": " "
+  },
+  {
+   "line": 34,
+   "symbol": " "
+  },
+  {
+   "line": 38,
+   "symbol": " "
+  },
+  {
+   "line": 42,
+   "symbol": " "
+  }
+ ],
+ "list_styles.md": [
+  {
+   "line": 0,
+   "symbol": " "
+  },
+  {
+   "line": 1,
+   "symbol": " "
+  },
+  {
+   "line": 3,
+   "symbol": " "
+  },
+  {
+   "line": 4,
+   "symbol": " "
+  },
+  {
+   "line": 6,
+   "symbol": " "
+  },
+  {
+   "line": 7,
+   "symbol": " "
+  },
+  {
+   "line": 9,
+   "symbol": " "
+  },
+  {
+   "line": 10,
+   "symbol": " "
+  }
+ ],
+ "numbered_tasks_issue_3481.md": [
+  {
+   "line": 4,
+   "symbol": " "
+  },
+  {
+   "line": 5,
+   "symbol": " "
+  },
+  {
+   "line": 6,
+   "symbol": " "
+  },
+  {
+   "line": 7,
+   "symbol": " "
+  },
+  {
+   "line": 8,
+   "symbol": " "
+  },
+  {
+   "line": 9,
+   "symbol": " "
+  }
+ ],
+ "inheritance_rendering_sample.md": [
+  {
+   "line": 1,
+   "symbol": " "
+  },
+  {
+   "line": 2,
+   "symbol": " "
+  },
+  {
+   "line": 3,
+   "symbol": " "
+  },
+  {
+   "line": 5,
+   "symbol": " "
+  },
+  {
+   "line": 7,
+   "symbol": " "
+  },
+  {
+   "line": 8,
+   "symbol": " "
+  }
+ ],
+ "multiple_headings.md": [
+  {
+   "line": 6,
+   "symbol": " "
+  },
+  {
+   "line": 7,
+   "symbol": " "
+  },
+  {
+   "line": 11,
+   "symbol": " "
+  },
+  {
+   "line": 15,
+   "symbol": " "
+  },
+  {
+   "line": 16,
+   "symbol": " "
+  }
+ ],
+ "mixed_list_markers.md": [
+  {
+   "line": 0,
+   "symbol": " "
+  },
+  {
+   "line": 1,
+   "symbol": " "
+  },
+  {
+   "line": 2,
+   "symbol": " "
+  },
+  {
+   "line": 3,
+   "symbol": " "
+  },
+  {
+   "line": 4,
+   "symbol": " "
+  }
+ ],
+ "list_statuses.md": [
+  {
+   "line": 2,
+   "symbol": " "
+  },
+  {
+   "line": 3,
+   "symbol": "/"
+  },
+  {
+   "line": 4,
+   "symbol": "x"
+  },
+  {
+   "line": 5,
+   "symbol": "-"
+  }
+ ],
+ "list_items_nested_issue_4081_numbered.md": [
+  {
+   "line": 2,
+   "symbol": " "
+  },
+  {
+   "line": 3,
+   "symbol": " "
+  },
+  {
+   "line": 5,
+   "symbol": " "
+  },
+  {
+   "line": 6,
+   "symbol": " "
+  }
+ ],
+ "callouts_nested_issue_2890_labelled.md": [
+  {
+   "line": 4,
+   "symbol": " "
+  },
+  {
+   "line": 5,
+   "symbol": " "
+  },
+  {
+   "line": 6,
+   "symbol": " "
+  },
+  {
+   "line": 7,
+   "symbol": " "
+  }
+ ],
+ "numbered_list_items_with_paren.md": [
+  {
+   "line": 2,
+   "symbol": " "
+  },
+  {
+   "line": 4,
+   "symbol": " "
+  }
+ ],
+ "docs_sample_for_task_properties_reference.md": [
+  {
+   "line": 35,
+   "symbol": " "
+  },
+  {
+   "line": 36,
+   "symbol": " "
+  }
+ ],
+ "comments_markdown_style.md": [
+  {
+   "line": 7,
+   "symbol": " "
+  },
+  {
+   "line": 8,
+   "symbol": " "
+  }
+ ],
+ "comments_html_style.md": [
+  {
+   "line": 7,
+   "symbol": " "
+  },
+  {
+   "line": 8,
+   "symbol": " "
+  }
+ ],
+ "code_block_in_task.md": [
+  {
+   "line": 4,
+   "symbol": " "
+  },
+  {
+   "line": 16,
+   "symbol": " "
+  }
+ ],
+ "callout_custom.md": [
+  {
+   "line": 3,
+   "symbol": " "
+  },
+  {
+   "line": 4,
+   "symbol": " "
+  }
+ ],
+ "blockquote.md": [
+  {
+   "line": 2,
+   "symbol": " "
+  },
+  {
+   "line": 3,
+   "symbol": " "
+  }
+ ],
+ "zero_width.md": [
+  {
+   "line": 3,
+   "symbol": " "
+  }
+ ]
+}

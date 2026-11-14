@@ -94,7 +94,6 @@ describe("loadCanvas missing", () => {
 
 describe("flushCanvas", () => {
   it("flushCanvas() with no in-flight saves resolves cleanly", async () => {
-    await flushCanvas();
-    expect(true).toBe(true);
+    await expect(flushCanvas()).resolves.toBeUndefined();
   });
 });

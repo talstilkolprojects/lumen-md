@@ -1,10 +1,12 @@
 import * as Y from "yjs";
 import { WebrtcProvider } from "y-webrtc";
 import type { Awareness } from "y-protocols/awareness";
-import { randomChoice, randomInt } from "../lib/cryptoRandom";
+import { randomChoice, randomId, randomInt } from "../lib/cryptoRandom";
 import { log } from "../lib/logger";
 import { effectiveCapabilities, entitlementResolved, waitForEntitlement } from "../billing/gates";
 import { wireE2E, type E2EChannel, type E2EErrorReason } from "./e2e";
+import { getSecret } from "../lib/secretStore";
+import { connectAllowedByCsp, isIpv6LiteralUrl } from "../lib/cspConnect";
 
 export interface CollabUser {
   name: string;
@@ -13,9 +15,8 @@ export interface CollabUser {
 }
 
 /**
- * Lightweight `WebsocketProvider`-shaped contract — we declare this locally so
- * the optional `y-websocket` package doesn't have to be bundled for users on
- * the WebRTC-only path.
+ * The persistent provider's contract (see `persistentProvider.ts`), declared
+ * here so this module does not import the provider package eagerly.
  */
 /**
  * How long join-time seeding waits for a configured persistent server to
@@ -26,7 +27,7 @@ export const PERSISTENT_SYNC_TIMEOUT_MS = 8000;
 
 interface WebsocketLike {
   destroy(): void;
-  /** y-websocket: true once the server's state has been applied. */
+  /** True once the server's state has been applied. */
   synced?: boolean;
   on?(event: "sync", fn: (isSynced: boolean) => void): void;
   off?(event: "sync", fn: (isSynced: boolean) => void): void;
@@ -49,25 +50,31 @@ export interface CollabSession {
   ytext: Y.Text;
   awareness: Awareness;
   provider: WebrtcProvider;
-  /** Optional persistent provider (y-websocket) — null on WebRTC-only sessions. */
+  /** Optional persistent provider (Hocuspocus) — null on WebRTC-only sessions. */
   websocketProvider: WebsocketLike | null;
   roomName: string;
+  /**
+   * The room-specific password a share link carries (the one generated for
+   * a new room, or the one from the join link) — never a stored default
+   * password. null when the room has none.
+   */
+  sharePassword: string | null;
   user: CollabUser;
   /** Tear down providers + free Yjs structures. */
   destroy: () => void;
 }
 
 /**
- * Default signaling-server endpoints. Order matters — the first entry is
- * tried first; the rest are used only if it fails. `signal.lumen.md` is
- * Lumen's own deployed service (`sync-server/`); the public yjs.dev
- * endpoints are kept as last-resort fallbacks for users running off-cluster.
+ * Public signaling endpoints, used only when the user opts in (Collab
+ * settings). There is no built-in default server: a deployment sets its own
+ * (`sync-server/`) with `VITE_WEBRTC_SIGNALING_URL` at build time, and a user
+ * can point at one in settings. A hard-coded host the project doesn't
+ * control would see every room and peer, so none is shipped.
  *
  * Override at runtime via `localStorage["lumen.collab.signaling"]` or the
  * `VITE_WEBRTC_SIGNALING_URL` env var (single URL or comma-separated list).
  */
 const PUBLIC_SIGNALING_FALLBACK = [
-  "wss://signal.lumen.md",
   "wss://signaling.yjs.dev",
   "wss://y-webrtc-signaling-eu.herokuapp.com",
 ];
@@ -76,13 +83,41 @@ const getSignalingUrls = (): string[] => {
   const custom = typeof localStorage !== "undefined"
     ? localStorage.getItem("lumen.collab.signaling")
     : null;
-  if (custom) return custom.split(",").map((s) => s.trim()).filter(Boolean);
   const envUrl = typeof import.meta !== "undefined"
     ? (import.meta as ImportMeta & { env?: { VITE_WEBRTC_SIGNALING_URL?: string } }).env?.VITE_WEBRTC_SIGNALING_URL
     : undefined;
-  if (envUrl) return envUrl.split(",").map((s) => s.trim()).filter(Boolean);
-  return PUBLIC_SIGNALING_FALLBACK;
+  const listed = (custom || envUrl || "").split(",").map((s) => s.trim()).filter(Boolean);
+  // Plan 2.2: connect-src names its WebSocket hosts (no bare wss:). A server
+  // set at runtime that this deployment's policy does not list would only
+  // be blocked by the browser; skip it with a reason (Collab settings warns
+  // when it is entered). Build-time URLs are in the policy already, except
+  // IPv6 literals, which no CSP can name (the build warns about those).
+  const configured = listed.filter((u) => connectAllowedByCsp(u));
+  for (const u of listed.filter((x) => !configured.includes(x))) {
+    log.warn(`Collab signaling ${u} skipped: ${cspAdvice(u, "VITE_WEBRTC_SIGNALING_URL")}`);
+  }
+  // T49: by default only the configured signaling server (none when the
+  // build sets none). The public third-party servers (yjs.dev, heroku) see
+  // who meets whom, so they are used only when the user opts in (Collab
+  // settings) — then also as a fallback behind a custom server.
+  if (!publicSignalingAllowed()) return configured;
+  return [...new Set([...configured, ...PUBLIC_SIGNALING_FALLBACK])];
 };
+
+export const PUBLIC_SIGNALING_KEY = "lumen.collab.publicSignaling";
+
+function publicSignalingAllowed(): boolean {
+  try {
+    return localStorage.getItem(PUBLIC_SIGNALING_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Exported for tests: the signaling list the next session will use. */
+export function signalingUrls(): string[] {
+  return getSignalingUrls();
+}
 
 const NAMES = [
   "Aurora",
@@ -120,35 +155,22 @@ function randomUser(): CollabUser {
 }
 
 /** Generate a fresh, friendly room name. */
+/**
+ * A new room's name: 128 random bits (T49). The name is the room's address
+ * on the signaling and persistence servers, so it must not be guessable —
+ * the old "lumen-calm-river-42" had about 13 bits.
+ */
 export function makeRoomName(): string {
-  const adjectives = [
-    "calm",
-    "bright",
-    "swift",
-    "wild",
-    "pale",
-    "amber",
-    "hidden",
-    "lucky",
-    "open",
-    "kind",
-  ];
-  const nouns = [
-    "river",
-    "valley",
-    "comet",
-    "ember",
-    "cloud",
-    "harbor",
-    "meadow",
-    "summit",
-    "lantern",
-    "cipher",
-  ];
-  const a = randomChoice(adjectives);
-  const b = randomChoice(nouns);
-  const n = randomInt(90) + 10;
-  return `lumen-${a}-${b}-${n}`;
+  return `lumen-${randomId(16)}`;
+}
+
+/** A fresh room password: 128 random bits, URL-safe (T49). */
+export function makeRoomPassword(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 /**
@@ -158,15 +180,26 @@ export function makeRoomName(): string {
 export const SEED_FALLBACK_MS = 1500;
 
 /**
- * Optional persistent collab WebSocket URL (y-websocket compatible), as
+ * Optional persistent collab server URL (Hocuspocus, sync-server/collab-server.mjs), as
  * configured — before the plan check (see `connectCollab`).
  */
+/** Why the page's CSP blocks a collab server URL, and what to do about it. */
+function cspAdvice(url: string, envVar: string): string {
+  if (isIpv6LiteralUrl(url)) return "a CSP can't name an IPv6 address, so the browser would block it. Give the server a hostname.";
+  return `it isn't in this deployment's CSP connect-src. Add its origin with VITE_CSP_CONNECT_EXTRA (or ${envVar}) at build time.`;
+}
+
 function configuredWebsocketUrl(): string | null {
   const fromStorage =
     typeof localStorage !== "undefined"
       ? localStorage.getItem("lumen.collab.ws")
       : null;
-  if (fromStorage) return fromStorage;
+  if (fromStorage) {
+    // As for signaling (plan 2.2): a runtime URL the policy blocks is skipped.
+    if (connectAllowedByCsp(fromStorage)) return fromStorage;
+    log.warn(`Persistent collab server ${fromStorage} not used: ${cspAdvice(fromStorage, "VITE_YJS_WEBSOCKET_URL")}`);
+    return null;
+  }
   const envUrl =
     typeof import.meta !== "undefined"
       ? (import.meta as ImportMeta & { env?: { VITE_YJS_WEBSOCKET_URL?: string } })
@@ -177,9 +210,10 @@ function configuredWebsocketUrl(): string | null {
 }
 
 /**
- * Best-effort attach of a persistent y-websocket provider in the background.
- * The package is dynamically imported so a build without it never pays the
- * bundle cost. Failures are swallowed — the session still works over WebRTC.
+ * Best-effort attach of the persistent collab provider (Hocuspocus, plan
+ * 3.6) in the background. The provider package is dynamically imported so
+ * a session without a server never pays its bundle cost. Failures are
+ * swallowed — the session still works over WebRTC.
  */
 async function attachWebsocketProvider(
   url: string,
@@ -187,25 +221,13 @@ async function attachWebsocketProvider(
   doc: Y.Doc,
 ): Promise<WebsocketLike | null> {
   try {
-    // Static-string dynamic import so vi.mock("y-websocket") resolves
-    // here in tests. The previous indirection-via-variable defeated
-    // the mock graph. Vite's import-analysis plugin would try to
-    // resolve this at dev-server start, which crashes when the user
-    // hasn't installed the package — so vite.config.ts adds a
-    // resolve.alias mapping "y-websocket" → the test stub so the
-    // analyzer always finds *something*. The try/catch handles any
-    // runtime failure regardless.
-    const mod = (await import("y-websocket")) as unknown as {
-      WebsocketProvider: new (
-        url: string,
-        room: string,
-        doc: Y.Doc,
-        opts?: Record<string, unknown>,
-      ) => WebsocketLike;
-    };
-    return new mod.WebsocketProvider(url, roomName, doc, { connect: true });
+    const { createPersistentProvider } = await import("./persistentProvider");
+    // The server's optional access key (Collab settings → "Server access
+    // token"), kept in the secret store. It only buys a short-lived token
+    // for this room; there is no build-time token (no secret in the bundle).
+    return await createPersistentProvider(url, roomName, doc, getSecret("lumen.collab.wsToken"));
   } catch (err) {
-    log.warn("y-websocket attach failed", err);
+    log.warn("persistent collab attach failed", err);
     return null;
   }
 }
@@ -215,23 +237,26 @@ async function attachWebsocketProvider(
  * or `?password=…` in the URL hash. When present, the editor's doc stays
  * local and only AES-GCM ciphertext envelopes are handed to the providers
  * (see `./e2e.ts`) — the WebRTC mesh, signaling servers and the optional
- * y-websocket server never see document content (P3-13).
+ * persistent server never see document content (P3-13).
  */
+function hashRoomPassword(): string | null {
+  if (typeof location === "undefined") return null;
+  const m = location.hash.match(/[#&]password=([^&]+)/);
+  if (!m) return null;
+  try {
+    return decodeURIComponent(m[1]);
+  } catch {
+    return m[1];
+  }
+}
+
 function getRoomPassword(): string | null {
   // The share link's password is specific to its room: it wins over a
   // stored default left from another session.
-  if (typeof location !== "undefined") {
-    const m = location.hash.match(/[#&]password=([^&]+)/);
-    if (m) {
-      try {
-        return decodeURIComponent(m[1]);
-      } catch {
-        return m[1];
-      }
-    }
-  }
+  const fromLink = hashRoomPassword();
+  if (fromLink) return fromLink;
   if (typeof localStorage !== "undefined") {
-    const stored = localStorage.getItem("lumen.collab.password");
+    const stored = getSecret("lumen.collab.password");
     if (stored) return stored;
   }
   return null;
@@ -263,6 +288,7 @@ export function connectCollab(
   const ytext = doc.getText("lumen");
 
   const password = opts.password ?? getRoomPassword();
+  const sharePassword = opts.password ?? hashRoomPassword();
 
   // E2E: with a room password, `doc` (plaintext) is never attached to a
   // provider. A separate transport doc carrying only ciphertext envelopes
@@ -338,14 +364,14 @@ export function connectCollab(
         p.off?.("sync", onSync);
         p.off?.("connection-error" as "sync", onError);
         if (state === "none") {
-          // Declared unavailable: tear it down. y-websocket reconnects on its
+          // Declared unavailable: tear it down. The provider reconnects on its
           // own, and a later reconnect would merge the server's history into
           // a document we may now seed — two independent docs, corrupted room.
           // This session continues WebRTC-only.
           try {
             p.destroy();
           } catch {
-            /* already gone */
+            /* why: already gone */
           }
           if (websocketProvider === p) websocketProvider = null;
         }
@@ -386,7 +412,7 @@ export function connectCollab(
       try {
         provider.off("synced", onSynced);
       } catch {
-        /* */
+        /* why: the provider may already have dropped its listeners on disconnect */
       }
       onSynced = null;
     }
@@ -462,7 +488,7 @@ export function connectCollab(
       () => ytext.toString(),
       () => ({ name: user.name, clientId: doc.clientID }),
     );
-  }).catch(() => {});
+  }).catch((e) => log.warn("collab: version-history snapshots could not start", e));
 
   return {
     doc,
@@ -475,6 +501,7 @@ export function connectCollab(
       return websocketProvider;
     },
     roomName,
+    sharePassword,
     user,
     destroy() {
       destroyed = true;
@@ -488,18 +515,18 @@ export function connectCollab(
       try {
         provider.destroy();
       } catch {
-        /* */
+        /* why: teardown is best effort; one failure must not keep the doc or socket open */
       }
       try {
         websocketProvider?.destroy();
       } catch {
-        /* */
+        /* why: teardown is best effort; one failure must not keep the doc or socket open */
       }
       try {
         doc.destroy();
         transportDoc?.destroy();
       } catch {
-        /* */
+        /* why: teardown is best effort; one failure must not keep the doc or socket open */
       }
     },
   };

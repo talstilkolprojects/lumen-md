@@ -3,7 +3,7 @@ Allow: /
 Allow: /roadmap
 Allow: /benchmarks
 
-Sitemap: https://lumen.md/sitemap.xml
+Sitemap: https://lumen-md.vercel.app/sitemap.xml
 
 # Disallow indexing of API/internal routes
 Disallow: /api/

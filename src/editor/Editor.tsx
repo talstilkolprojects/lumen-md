@@ -9,6 +9,7 @@
  *   canonical example. Same rule applies to any code path inside
  *   `update(u: ViewUpdate)` that wants to dispatch synchronously.
  */
+import { readyToReveal } from "./revealLine";
 import { useEffect, useImperativeHandle, useRef, useState, forwardRef } from "react";
 import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView, keymap, highlightActiveLine, Decoration, WidgetType } from "@codemirror/view";
@@ -26,16 +27,18 @@ import {
   closeBracketsKeymap,
 } from "@codemirror/autocomplete";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
+import { bidiExtension } from "./bidi";
 import { languages } from "@codemirror/language-data";
 import { tags as t } from "@lezer/highlight";
 import { StateField, StateEffect } from "@codemirror/state";
 import type { Extension } from "@codemirror/state";
-import { chat } from "../ai/llm";
-import { PROMPTS } from "../ai/prompts";
+import { aiOperation } from "../ai/aiAbort";
 import { embedHintExtension } from "./embedHintExtension";
 import { insertSlashMenuExtension } from "./insertMenu";
+import { wikiLinkAutocomplete } from "./wikiLinkAutocomplete";
+import { wikiHover } from "./wikiHover";
 import { collabAwarenessExtension } from "./collabAwareness";
-import { t as i18nT } from "../i18n";
+import { t as i18nT, getLocale } from "../i18n";
 // y-codemirror.next (and the yjs stack behind it) is loaded on demand inside
 // the collab effect below — a static import dragged ~60KB gz of yjs into the
 // eager boot path for a feature that's off until a session starts.
@@ -45,8 +48,10 @@ import { markdownLintExtension } from "./lintExtension";
 // commentDecorations imports yjs (comment anchors are Y.Map relative
 // positions) — loaded on demand in the collab effect, like ySync below.
 import { searchHighlightExtension } from "./searchHighlight";
+import { showSpokenRange, speechHighlightExtension } from "./speechHighlight";
 import { inlineSuggestion } from "./inlineSuggestion";
-import { formatKeymap } from "./formatCommands";
+import { aiAuthored, aiAuthorshipExtension } from "./aiAuthorship";
+import { formatKeymap } from "./formatKeymap";
 import { setSuggesting, suggestingAuthor, suggestingExtension, suggestingSkip } from "./suggestingExtension";
 import { useAuth } from "../auth/useAuth";
 import type { CollabSession } from "../collab/yjs";
@@ -90,6 +95,15 @@ interface EditorProps {
   collab?: CollabSession | null;
   /** Suggesting mode (track changes): record edits as CriticMarkup. */
   suggesting?: boolean;
+}
+
+/** Automatic alt text for pasted images (T31); `lumen.ai.imageText` = "off" disables it. */
+function imageTextEnabled(): boolean {
+  try {
+    return localStorage.getItem("lumen.ai.imageText") !== "off";
+  } catch {
+    return true;
+  }
 }
 
 export interface EditorHandle {
@@ -196,20 +210,21 @@ function ghostTextExtension(): Extension {
           debounceTimer = setTimeout(async () => {
             // Explicit Ctrl-Space request: counts against the AI quota when
             // it is actually sent (ownPrompt), not before chat()'s checks.
+            // T55: registered, so Esc / "AI: Cancel" stop it too.
+            const op = aiOperation();
             try {
-              controller = new AbortController();
-              const text = await chat(
-                [
-                  { role: "system", content: PROMPTS.autocomplete },
-                  { role: "user", content: textBefore },
-                ],
-                { maxTokens: 15, signal: controller.signal, ownPrompt: true, tier: "light" },
-              );
+              const c = (controller = new AbortController());
+              op.signal.addEventListener("abort", () => c.abort(op.signal.reason), { once: true });
+              // Plan 5.5: the `completer` agent, through the runtime (local first, traced).
+              const [{ runAgentOrThrow }, { completerAgent }] = await Promise.all([import("../agents/runtime"), import("../agents/defs")]);
+              const text = await runAgentOrThrow(completerAgent, { text: textBefore, extra: { mode: "ghost" } }, { signal: controller.signal, ownPrompt: true });
               if (text && view.state.selection.main.head === pos) {
                 view.dispatch({ effects: setGhostText.of({ pos, text }) });
               }
             } catch {
-              // Silently ignore abort / API errors for completions
+              // why: Silently ignore abort / API errors for completions
+            } finally {
+              op.end();
             }
           }, 150);
           return true;
@@ -225,6 +240,7 @@ function ghostTextExtension(): Extension {
             changes: { from: ghost.pos, insert: ghost.text },
             selection: { anchor: ghost.pos + ghost.text.length },
             effects: setGhostText.of(null),
+            annotations: aiAuthored.of(true),
           });
           return true;
         },
@@ -360,12 +376,23 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
         base: markdownLanguage,
         codeLanguages: languages,
         addKeymap: true,
+        // No HTML-tag completion: the editor never offered it, and with the
+        // completion UI now on (for `[[` links) it would pop up on every `<`.
+        completeHTMLTags: false,
       }),
+      // `[[` → notes, `[[Note#` → headings, `[[Note#^` → blocks (4.5); the
+      // source itself loads on the first `[[`.
+      wikiLinkAutocomplete(),
+      // Hover over [[Note]] previews it (4.6).
+      wikiHover,
       EditorView.lineWrapping,
+      // Hebrew and English lines each read in their own direction (T25).
+      bidiExtension(),
       // Accessible name for the contenteditable (role=textbox) surface —
       // without it, screen readers announce an unnamed input (axe:
       // aria-input-field-name).
-      EditorView.contentAttributes.of({ "aria-label": i18nT("editor.ariaLabel") }),
+      // tabindex makes the content explicitly focusable, so its scroller counts as keyboard-reachable (axe scrollable-region-focusable, plan 10.1).
+      EditorView.contentAttributes.of({ "aria-label": i18nT("editor.ariaLabel"), tabindex: "0" }),
       spellCheckCompartment.of(
         EditorView.contentAttributes.of({ spellcheck: spellCheck ? "true" : "false" }),
       ),
@@ -392,6 +419,12 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
       // Workspace search → editor: when SearchDialog opens a hit, this
       // extension flashes the matches and scrolls the first one into view.
       searchHighlightExtension(),
+      speechHighlightExtension(),
+      // Plan 5.9: text the AI wrote is shown lighter until it is edited.
+      aiAuthorshipExtension(() => {
+        const d = useAppStore.getState().doc;
+        return d.workspaceName ?? `file:${d.name}`;
+      }),
       // Suggesting mode (track changes) — CriticMarkup decorations are
       // always on; the edit-rewriting filter only while the flag is set.
       suggestingExtension(suggesting),
@@ -433,6 +466,7 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
     async function handleAssetFiles(view: EditorView, files: File[]) {
       const onAsset = onAddAssetRef.current;
       const inserts: string[] = [];
+      const placed: Array<{ file: File; url: string; alt: string }> = [];
       for (const f of files) {
         let url: string | null = null;
         if (onAsset) {
@@ -453,6 +487,7 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
         }
         const alt = f.name.replace(/\.[^.]+$/, "");
         inserts.push(`![${alt}](${url})`);
+        placed.push({ file: f, url, alt });
       }
       const text = inserts.join("\n\n") + "\n";
       const { from, to } = view.state.selection.main;
@@ -460,6 +495,10 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
         changes: { from, to, insert: text },
         selection: { anchor: from + text.length },
       });
+      // T31: real alt text in the background (also for data-URL fallbacks).
+      if (imageTextEnabled() && placed.length) {
+        void import("./pastedImageText").then((m) => m.fillPastedImageText(view, placed, getLocale())).catch(() => undefined);
+      }
     }
 
     const view = new EditorView({ state: startState, parent: hostRef.current });
@@ -644,6 +683,104 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
     return () => window.removeEventListener("lumen-mobile-insert", onInsert);
   }, []);
 
+  // Live dictation (plan 6.1): `lumen-dictation-insert` {text} inserts a
+  // finished segment at the cursor with one separating space;
+  // `lumen-dictation-undo` {text} removes it again when it is still right
+  // before the cursor ("delete that"). preventDefault() tells the sender
+  // the editor handled it; `detail.inserted` is what was actually inserted.
+  useEffect(() => {
+    function onDictation(e: Event) {
+      const view = viewRef.current;
+      const detail = (e as CustomEvent<{ text: string; inserted?: string }>).detail;
+      const text = detail?.text;
+      if (!view || !text) return;
+      e.preventDefault();
+      const { from, to } = view.state.selection.main;
+      if (e.type === "lumen-dictation-undo") {
+        if (view.state.sliceDoc(Math.max(0, from - text.length), from) === text) view.dispatch({ changes: { from: from - text.length, to: from, insert: "" } });
+        return;
+      }
+      const before = from > 0 ? view.state.sliceDoc(from - 1, from) : "";
+      const insert = before && !/\s/.test(before) && !/^[\s.,?!:)]/.test(text) ? " " + text : text;
+      view.dispatch({ changes: { from, to, insert }, selection: { anchor: from + insert.length } });
+      detail.inserted = insert; // what to remove on "delete that"
+    }
+    window.addEventListener("lumen-dictation-insert", onDictation);
+    window.addEventListener("lumen-dictation-undo", onDictation);
+    return () => {
+      window.removeEventListener("lumen-dictation-insert", onDictation);
+      window.removeEventListener("lumen-dictation-undo", onDictation);
+    };
+  }, []);
+
+  // Plugins (plan 11.2): `lumen-plugin-insert` {text} replaces the selection
+  // with the text; `lumen-editor-selection` fills detail.result with the
+  // selection. preventDefault() tells the sender the editor handled it.
+  useEffect(() => {
+    function onPluginInsert(e: Event) {
+      const view = viewRef.current;
+      const text = (e as CustomEvent<{ text?: string }>).detail?.text;
+      if (!view || typeof text !== "string") return;
+      e.preventDefault();
+      const { from, to } = view.state.selection.main;
+      view.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + text.length } });
+    }
+    function onSelection(e: Event) {
+      const view = viewRef.current;
+      const detail = (e as CustomEvent<{ result?: { from: number; to: number; text: string } | null }>).detail;
+      if (!view || !detail) return;
+      const { from, to } = view.state.selection.main;
+      detail.result = { from, to, text: view.state.sliceDoc(from, to) };
+    }
+    window.addEventListener("lumen-plugin-insert", onPluginInsert);
+    window.addEventListener("lumen-editor-selection", onSelection);
+    return () => {
+      window.removeEventListener("lumen-plugin-insert", onPluginInsert);
+      window.removeEventListener("lumen-editor-selection", onSelection);
+    };
+  }, []);
+
+  // `lumen-reveal-line` {line} (1-based): jump to and select that line —
+  // used by vault citations (T29). With `content` it waits until the
+  // just-opened note has actually loaded into the editor.
+  useEffect(() => {
+    function onReveal(e: Event) {
+      const detail = (e as CustomEvent<{ line: number; content?: string }>).detail;
+      const line = detail?.line;
+      if (!line || line < 1) return;
+      let tries = 0;
+      const go = () => {
+        const view = viewRef.current;
+        // Wait for the opened note itself (not the previous one); after
+        // ~2 s fall back to whatever is shown.
+        const ready = !!view && readyToReveal(view.state.doc, line, tries < 20 ? detail.content : undefined);
+        if (!view || !ready) {
+          if (tries++ < 20) setTimeout(go, 100);
+          return;
+        }
+        const l = view.state.doc.line(line);
+        view.dispatch({ selection: { anchor: l.from, head: l.to }, effects: EditorView.scrollIntoView(l.from, { y: "center" }) });
+        view.focus();
+      };
+      go();
+    }
+    window.addEventListener("lumen-reveal-line", onReveal);
+    return () => window.removeEventListener("lumen-reveal-line", onReveal);
+  }, []);
+
+  // `lumen-speech-range` {from, to} | null: highlight and show the sentence
+  // being read aloud (T32) — a decoration, not the selection, so typing
+  // during playback can't replace the sentence; null clears it.
+  useEffect(() => {
+    function onSelect(e: Event) {
+      const view = viewRef.current;
+      if (!view) return;
+      showSpokenRange(view, (e as CustomEvent<{ from: number; to: number } | null>).detail ?? null);
+    }
+    window.addEventListener("lumen-speech-range", onSelect);
+    return () => window.removeEventListener("lumen-speech-range", onSelect);
+  }, []);
+
   return (
     <div
       className="flex-1 min-h-0 relative overflow-hidden"
@@ -673,7 +810,7 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
           zIndex: 5,
         }}
       >
-        Line {currentLine}
+        {i18nT("editor.line", { n: currentLine })}
       </div>
     </div>
   );

@@ -32,6 +32,8 @@ import {
 import { parseJSONTable } from "../data/csv";
 import { DataTable } from "./DataTable";
 import { toast } from "../store/useToastStore";
+import { t, tPlural } from "../i18n";
+import { tRich } from "../i18n/rich";
 
 interface Props {
   source: string;
@@ -94,13 +96,13 @@ export default function CodeDoctorBlock({ source, meta }: Props) {
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
           <Stethoscope size={13} style={{ opacity: 0.7 }} />
           {titleMatch?.[1] ??
-            `Code Doctor · ${isJsonl ? "JSONL" : "JSON"}`}
+            t("block.codeDoctor.title", { format: isJsonl ? "JSONL" : "JSON" })}
           <StatusPill repair={repair} count={docDiagnostics.length} />
         </span>
         <div className="chart-block-tabs" role="tablist">
-          <ViewTab view={view} target="diagnose" set={setView} icon={<AlertTriangle size={12} />} label="Diagnose" />
-          <ViewTab view={view} target="repaired" set={setView} icon={<Wand2 size={12} />} label="Repaired" />
-          <ViewTab view={view} target="compare" set={setView} icon={<ArrowRightLeft size={12} />} label="Compare" />
+          <ViewTab view={view} target="diagnose" set={setView} icon={<AlertTriangle size={12} />} label={t("block.codeDoctor.view.diagnose")} />
+          <ViewTab view={view} target="repaired" set={setView} icon={<Wand2 size={12} />} label={t("block.codeDoctor.view.repaired")} />
+          <ViewTab view={view} target="compare" set={setView} icon={<ArrowRightLeft size={12} />} label={t("block.codeDoctor.view.compare")} />
         </div>
       </div>
       {view === "diagnose" && (
@@ -144,7 +146,7 @@ function StatusPill({
           marginInlineStart: 4,
         }}
       >
-        <CheckCircle2 size={11} /> clean
+        <CheckCircle2 size={11} /> {t("block.codeDoctor.clean")}
       </span>
     );
   }
@@ -157,7 +159,7 @@ function StatusPill({
           marginInlineStart: 4,
         }}
       >
-        · {repair.patches.length} fix{repair.patches.length === 1 ? "" : "es"} ready
+        {tPlural("block.codeDoctor.fixesReady", repair.patches.length)}
       </span>
     );
   }
@@ -169,7 +171,7 @@ function StatusPill({
         marginInlineStart: 4,
       }}
     >
-      · {count} issue{count === 1 ? "" : "s"} — partial repair
+      {tPlural("block.codeDoctor.partial", count)}
     </span>
   );
 }
@@ -219,7 +221,7 @@ function DiagnosePanel({
           fontSize: 13,
         }}
       >
-        ✓ No issues detected. The input parses as valid JSON.
+        {t("block.codeDoctor.noIssues")}
       </div>
     );
   }
@@ -235,10 +237,10 @@ function DiagnosePanel({
       <table className="data-table" style={{ marginBottom: 8 }}>
         <thead>
           <tr>
-            <th style={{ textAlign: "left" }}>Issue</th>
-            <th className="num">Count</th>
-            <th>Confidence</th>
-            <th style={{ textAlign: "left" }}>Example</th>
+            <th style={{ textAlign: "left" }}>{t("block.codeDoctor.col.issue")}</th>
+            <th className="num">{t("block.codeDoctor.col.count")}</th>
+            <th>{t("block.codeDoctor.col.confidence")}</th>
+            <th style={{ textAlign: "left" }}>{t("block.codeDoctor.col.example")}</th>
           </tr>
         </thead>
         <tbody>
@@ -266,7 +268,7 @@ function DiagnosePanel({
             color: "hsl(var(--fg-muted))",
           }}
         >
-          {diagnostics.length} individual diagnostics
+          {t("block.codeDoctor.diagnostics", { n: diagnostics.length })}
         </summary>
         <ul
           style={{
@@ -279,7 +281,7 @@ function DiagnosePanel({
         >
           {diagnostics.map((d, i) => (
             <li key={i}>
-              <code>{d.code}</code> · char {d.span.start}–{d.span.end}: {d.message}
+              <code>{d.code}</code> {t("block.codeDoctor.charRange", { start: d.span.start, end: d.span.end, message: d.message })}
             </li>
           ))}
         </ul>
@@ -296,7 +298,7 @@ function DiagnosePanel({
             color: "hsl(var(--fg-muted))",
           }}
         >
-          ⚙ Switch to <strong>Repaired</strong> tab to see the auto-fixed output.
+          {tRich("block.codeDoctor.switchHint", { tab: <strong>{t("block.codeDoctor.view.repaired")}</strong> })}
         </div>
       )}
     </div>
@@ -336,8 +338,7 @@ function RepairedPanel({
               fontSize: 12,
             }}
           >
-            <CheckCircle2 size={13} /> Parses cleanly after {repair.patches.length} fix
-            {repair.patches.length === 1 ? "" : "es"}.
+            <CheckCircle2 size={13} /> {tPlural("block.codeDoctor.parsesCleanly", repair.patches.length)}
           </span>
         ) : (
           <span
@@ -349,9 +350,7 @@ function RepairedPanel({
               fontSize: 12,
             }}
           >
-            <AlertTriangle size={13} /> Best-effort repair —{" "}
-            {repair.remaining.length} issue
-            {repair.remaining.length === 1 ? "" : "s"} remain.
+            <AlertTriangle size={13} /> {tPlural("block.codeDoctor.bestEffort", repair.remaining.length)}
           </span>
         )}
         <button
@@ -371,7 +370,7 @@ function RepairedPanel({
             gap: 4,
           }}
         >
-          <CopyIcon size={12} /> Copy
+          <CopyIcon size={12} /> {t("block.common.copy")}
         </button>
       </div>
       <pre
@@ -398,7 +397,7 @@ function RepairedPanel({
             }}
           >
             <FileCode size={12} style={{ verticalAlign: "-2px", marginRight: 4 }} />
-            Repaired output, rendered as a table:
+            {t("block.codeDoctor.repairedTable")}
           </div>
           <DataTable data={dataTable} />
         </div>
@@ -423,7 +422,7 @@ function ComparePanel({
           fontSize: 13,
         }}
       >
-        Original and repaired outputs are identical — nothing to compare.
+        {t("block.codeDoctor.identical")}
       </div>
     );
   }
@@ -437,13 +436,13 @@ function ComparePanel({
       }}
     >
       <div>
-        <div style={Caption}>Original (broken)</div>
+        <div style={Caption}>{t("block.codeDoctor.original")}</div>
         <pre style={CodePane}>
           <code>{original}</code>
         </pre>
       </div>
       <div>
-        <div style={Caption}>Repaired</div>
+        <div style={Caption}>{t("block.codeDoctor.view.repaired")}</div>
         <pre style={CodePane}>
           <code>{repaired}</code>
         </pre>

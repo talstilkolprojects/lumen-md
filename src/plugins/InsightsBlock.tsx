@@ -48,6 +48,8 @@ import {
 import { useAppStore } from "../store/useStore";
 import { toast } from "../store/useToastStore";
 import { EChart } from "./EChart";
+import { t, tPlural } from "../i18n";
+import { tRich } from "../i18n/rich";
 
 interface Props {
   source: string;
@@ -99,12 +101,12 @@ export default function InsightsBlock({ source, meta }: Props) {
 
   if (parsed.error) {
     return (
-      <ErrorCard message={`Insights parse error: ${parsed.error}`} />
+      <ErrorCard message={t("block.insights.parseError", { error: parsed.error })} />
     );
   }
   if (parsed.records.length === 0) {
     return (
-      <ErrorCard message="Insights block is empty — paste JSONL (one object per line) or a JSON array." />
+      <ErrorCard message={t("block.insights.empty")} />
     );
   }
 
@@ -114,17 +116,17 @@ export default function InsightsBlock({ source, meta }: Props) {
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
           <Sparkles size={13} style={{ opacity: 0.7 }} />
           {titleMatch?.[1] ??
-            `Insights · ${parsed.records.length} records × ${shape.fields.length} fields`}
+            t("block.insights.header", { records: parsed.records.length, fields: shape.fields.length })}
         </span>
         <div className="chart-block-tabs" role="tablist">
-          <ViewTab view={view} target="conclusions" set={setView} icon={<Lightbulb size={12} />} label="Conclusions" />
-          <ViewTab view={view} target="probability" set={setView} icon={<Table2 size={12} />} label="Probabilities" />
-          <ViewTab view={view} target="charts" set={setView} icon={<BarChart3 size={12} />} label="Charts" />
+          <ViewTab view={view} target="conclusions" set={setView} icon={<Lightbulb size={12} />} label={t("block.insights.tab.conclusions")} />
+          <ViewTab view={view} target="probability" set={setView} icon={<Table2 size={12} />} label={t("block.insights.tab.probabilities")} />
+          <ViewTab view={view} target="charts" set={setView} icon={<BarChart3 size={12} />} label={t("block.insights.tab.charts")} />
           {shape.arrayFields.length > 0 && (
-            <ViewTab view={view} target="cooccur" set={setView} icon={<Network size={12} />} label="Co-occur" />
+            <ViewTab view={view} target="cooccur" set={setView} icon={<Network size={12} />} label={t("block.insights.tab.cooccur")} />
           )}
-          <ViewTab view={view} target="suggest" set={setView} icon={<Wand2 size={12} />} label="Suggestions" />
-          <ViewTab view={view} target="raw" set={setView} icon={<FileStack size={12} />} label="Records" />
+          <ViewTab view={view} target="suggest" set={setView} icon={<Wand2 size={12} />} label={t("block.insights.tab.suggestions")} />
+          <ViewTab view={view} target="raw" set={setView} icon={<FileStack size={12} />} label={t("block.insights.tab.records")} />
         </div>
       </div>
 
@@ -158,7 +160,7 @@ export default function InsightsBlock({ source, meta }: Props) {
         </div>
       )}
       {view === "cooccur" && (!cooc || cooc.labels.length === 0) && (
-        <Empty message="Pick an array-valued field to see how its values cluster together." />
+        <Empty message={t("block.insights.pickArrayField")} />
       )}
       {view === "suggest" && (
         <SuggestionsList records={parsed.records} suggestions={suggestions} />
@@ -231,29 +233,29 @@ function FieldPickers({
       }}
     >
       <label style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
-        Field:
+        {t("block.insights.field")}
         <select
           value={probField}
           onChange={(e) => setProbField(e.target.value)}
           style={selectStyle}
-          aria-label="Probability field"
+          aria-label={t("block.insights.probabilityField")}
         >
           {probOptions.map((f) => (
             <option key={f} value={f}>
               {f}
-              {shape.arrayFields.includes(f) ? "  (array)" : ""}
+              {shape.arrayFields.includes(f) ? `  ${t("block.insights.arrayTag")}` : ""}
             </option>
           ))}
         </select>
       </label>
       {view === "charts" && shape.groupableFields.length > 0 && (
         <label style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
-          Group by:
+          {t("block.insights.groupBy")}
           <select
             value={groupField}
             onChange={(e) => setGroupField(e.target.value)}
             style={selectStyle}
-            aria-label="Group field"
+            aria-label={t("block.insights.groupField")}
           >
             {shape.groupableFields.map((f) => (
               <option key={f} value={f}>
@@ -299,10 +301,10 @@ function ProbabilityTable({ freq }: { freq: ReturnType<typeof frequencyTable> })
       <table className="data-table">
         <thead>
           <tr>
-            <th style={{ textAlign: "left" }}>Value</th>
-            <th className="num">Count</th>
-            <th className="num">Probability</th>
-            <th className="num">Bar</th>
+            <th style={{ textAlign: "left" }}>{t("block.insights.col.value")}</th>
+            <th className="num">{t("block.insights.col.count")}</th>
+            <th className="num">{t("block.insights.col.probability")}</th>
+            <th className="num">{t("block.insights.col.bar")}</th>
           </tr>
         </thead>
         <tbody>
@@ -337,8 +339,7 @@ function ProbabilityTable({ freq }: { freq: ReturnType<typeof frequencyTable> })
           borderTop: "1px solid hsl(var(--border))",
         }}
       >
-        Field <code>{freq.field}</code> · {freq.total} occurrences ·{" "}
-        {freq.entries.length} distinct
+        {tRich("block.insights.freqSummary", { field: <code>{freq.field}</code>, total: freq.total, distinct: freq.entries.length })}
       </div>
     </div>
   );
@@ -378,7 +379,7 @@ function ChartsView({
         </div>
       )}
       {!freqOption && !groupOption && (
-        <Empty message="Pick a field above to chart its distribution." />
+        <Empty message={t("block.insights.pickField")} />
       )}
     </div>
   );
@@ -493,9 +494,7 @@ function SuggestionsList({
             background: "hsl(var(--bg-subtle))",
           }}
         >
-          Workspace storage is unavailable in this browser — running a
-          suggestion will open the first generated document in a new tab
-          instead of writing files.
+          {t("block.insights.noWorkspace")}
         </div>
       )}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 8 }}>
@@ -523,7 +522,7 @@ function SuggestionsList({
             </span>
             {s.estCount && (
               <span style={{ fontSize: 11, color: "hsl(var(--accent))" }}>
-                ≈ {s.estCount} file{s.estCount === 1 ? "" : "s"}
+                {tPlural("block.insights.estFiles", s.estCount)}
               </span>
             )}
           </button>
@@ -578,7 +577,7 @@ function RawRecords({
             borderTop: "1px solid hsl(var(--border))",
           }}
         >
-          Showing {cap} of {records.length} records.
+          {t("block.insights.showing", { shown: cap, total: records.length })}
         </div>
       )}
     </div>

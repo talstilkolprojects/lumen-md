@@ -1,0 +1,417 @@
+{
+ "_note": "Plan 6.13: Chicago author-date (18th ed.) and MLA 9 references and in-text citations for the 23 records of the 7.10 citations pool (scripts/golden/sets/small/citations.mjs), in English and Hebrew. Written out once and checked by hand against the style rules (the 7.10 gold set has APA only); a change here is a change of the rules.",
+ "Melville1851": {
+  "chicago.en": [
+   "Melville, Herman. 1851. *Moby-Dick; or, The Whale*. Harper & Brothers.",
+   "(Melville 1851)"
+  ],
+  "chicago.he": [
+   "Melville, Herman. 1851. *Moby-Dick; or, The Whale*. Harper & Brothers.",
+   "(Melville 1851)"
+  ],
+  "mla.en": [
+   "Melville, Herman. *Moby-Dick; or, The Whale*. Harper & Brothers, 1851.",
+   "(Melville)"
+  ],
+  "mla.he": [
+   "Melville, Herman. *Moby-Dick; or, The Whale*. Harper & Brothers, 1851.",
+   "(Melville)"
+  ]
+ },
+ "Austen1813": {
+  "chicago.en": [
+   "Austen, Jane. 1813. *Pride and Prejudice*. T. Egerton.",
+   "(Austen 1813)"
+  ],
+  "chicago.he": [
+   "Austen, Jane. 1813. *Pride and Prejudice*. T. Egerton.",
+   "(Austen 1813)"
+  ],
+  "mla.en": [
+   "Austen, Jane. *Pride and Prejudice*. T. Egerton, 1813.",
+   "(Austen)"
+  ],
+  "mla.he": [
+   "Austen, Jane. *Pride and Prejudice*. T. Egerton, 1813.",
+   "(Austen)"
+  ]
+ },
+ "Darwin1859": {
+  "chicago.en": [
+   "Darwin, Charles. 1859. *On the Origin of Species by Means of Natural Selection*. John Murray.",
+   "(Darwin 1859)"
+  ],
+  "chicago.he": [
+   "Darwin, Charles. 1859. *On the Origin of Species by Means of Natural Selection*. John Murray.",
+   "(Darwin 1859)"
+  ],
+  "mla.en": [
+   "Darwin, Charles. *On the Origin of Species by Means of Natural Selection*. John Murray, 1859.",
+   "(Darwin)"
+  ],
+  "mla.he": [
+   "Darwin, Charles. *On the Origin of Species by Means of Natural Selection*. John Murray, 1859.",
+   "(Darwin)"
+  ]
+ },
+ "Shelley1818": {
+  "chicago.en": [
+   "Shelley, Mary Wollstonecraft. 1818. *Frankenstein; or, The Modern Prometheus*. Lackington, Hughes, Harding, Mavor & Jones.",
+   "(Shelley 1818)"
+  ],
+  "chicago.he": [
+   "Shelley, Mary Wollstonecraft. 1818. *Frankenstein; or, The Modern Prometheus*. Lackington, Hughes, Harding, Mavor & Jones.",
+   "(Shelley 1818)"
+  ],
+  "mla.en": [
+   "Shelley, Mary Wollstonecraft. *Frankenstein; or, The Modern Prometheus*. Lackington, Hughes, Harding, Mavor & Jones, 1818.",
+   "(Shelley)"
+  ],
+  "mla.he": [
+   "Shelley, Mary Wollstonecraft. *Frankenstein; or, The Modern Prometheus*. Lackington, Hughes, Harding, Mavor & Jones, 1818.",
+   "(Shelley)"
+  ]
+ },
+ "Dickens1859": {
+  "chicago.en": [
+   "Dickens, Charles. 1859. *A Tale of Two Cities*. Chapman & Hall.",
+   "(Dickens 1859)"
+  ],
+  "chicago.he": [
+   "Dickens, Charles. 1859. *A Tale of Two Cities*. Chapman & Hall.",
+   "(Dickens 1859)"
+  ],
+  "mla.en": [
+   "Dickens, Charles. *A Tale of Two Cities*. Chapman & Hall, 1859.",
+   "(Dickens)"
+  ],
+  "mla.he": [
+   "Dickens, Charles. *A Tale of Two Cities*. Chapman & Hall, 1859.",
+   "(Dickens)"
+  ]
+ },
+ "Twain1884": {
+  "chicago.en": [
+   "Twain, Mark. 1884. *Adventures of Huckleberry Finn*. Chatto & Windus.",
+   "(Twain 1884)"
+  ],
+  "chicago.he": [
+   "Twain, Mark. 1884. *Adventures of Huckleberry Finn*. Chatto & Windus.",
+   "(Twain 1884)"
+  ],
+  "mla.en": [
+   "Twain, Mark. *Adventures of Huckleberry Finn*. Chatto & Windus, 1884.",
+   "(Twain)"
+  ],
+  "mla.he": [
+   "Twain, Mark. *Adventures of Huckleberry Finn*. Chatto & Windus, 1884.",
+   "(Twain)"
+  ]
+ },
+ "Thoreau1854": {
+  "chicago.en": [
+   "Thoreau, Henry David. 1854. *Walden; or, Life in the Woods*. Ticknor and Fields.",
+   "(Thoreau 1854)"
+  ],
+  "chicago.he": [
+   "Thoreau, Henry David. 1854. *Walden; or, Life in the Woods*. Ticknor and Fields.",
+   "(Thoreau 1854)"
+  ],
+  "mla.en": [
+   "Thoreau, Henry David. *Walden; or, Life in the Woods*. Ticknor and Fields, 1854.",
+   "(Thoreau)"
+  ],
+  "mla.he": [
+   "Thoreau, Henry David. *Walden; or, Life in the Woods*. Ticknor and Fields, 1854.",
+   "(Thoreau)"
+  ]
+ },
+ "Hawthorne1850": {
+  "chicago.en": [
+   "Hawthorne, Nathaniel. 1850. *The Scarlet Letter*. Ticknor, Reed & Fields.",
+   "(Hawthorne 1850)"
+  ],
+  "chicago.he": [
+   "Hawthorne, Nathaniel. 1850. *The Scarlet Letter*. Ticknor, Reed & Fields.",
+   "(Hawthorne 1850)"
+  ],
+  "mla.en": [
+   "Hawthorne, Nathaniel. *The Scarlet Letter*. Ticknor, Reed & Fields, 1850.",
+   "(Hawthorne)"
+  ],
+  "mla.he": [
+   "Hawthorne, Nathaniel. *The Scarlet Letter*. Ticknor, Reed & Fields, 1850.",
+   "(Hawthorne)"
+  ]
+ },
+ "Stoker1897": {
+  "chicago.en": [
+   "Stoker, Bram. 1897. *Dracula*. Archibald Constable and Company.",
+   "(Stoker 1897)"
+  ],
+  "chicago.he": [
+   "Stoker, Bram. 1897. *Dracula*. Archibald Constable and Company.",
+   "(Stoker 1897)"
+  ],
+  "mla.en": [
+   "Stoker, Bram. *Dracula*. Archibald Constable, 1897.",
+   "(Stoker)"
+  ],
+  "mla.he": [
+   "Stoker, Bram. *Dracula*. Archibald Constable, 1897.",
+   "(Stoker)"
+  ]
+ },
+ "Wells1895": {
+  "chicago.en": [
+   "Wells, H. G. 1895. *The Time Machine*. William Heinemann.",
+   "(Wells 1895)"
+  ],
+  "chicago.he": [
+   "Wells, H. G. 1895. *The Time Machine*. William Heinemann.",
+   "(Wells 1895)"
+  ],
+  "mla.en": [
+   "Wells, H. G. *The Time Machine*. William Heinemann, 1895.",
+   "(Wells)"
+  ],
+  "mla.he": [
+   "Wells, H. G. *The Time Machine*. William Heinemann, 1895.",
+   "(Wells)"
+  ]
+ },
+ "Carroll1865": {
+  "chicago.en": [
+   "Carroll, Lewis. 1865. *Alice's Adventures in Wonderland*. Macmillan.",
+   "(Carroll 1865)"
+  ],
+  "chicago.he": [
+   "Carroll, Lewis. 1865. *Alice's Adventures in Wonderland*. Macmillan.",
+   "(Carroll 1865)"
+  ],
+  "mla.en": [
+   "Carroll, Lewis. *Alice's Adventures in Wonderland*. Macmillan, 1865.",
+   "(Carroll)"
+  ],
+  "mla.he": [
+   "Carroll, Lewis. *Alice's Adventures in Wonderland*. Macmillan, 1865.",
+   "(Carroll)"
+  ]
+ },
+ "Brontë1847": {
+  "chicago.en": [
+   "Brontë, Charlotte. 1847. *Jane Eyre*. Smith, Elder & Co.",
+   "(Brontë 1847)"
+  ],
+  "chicago.he": [
+   "Brontë, Charlotte. 1847. *Jane Eyre*. Smith, Elder & Co.",
+   "(Brontë 1847)"
+  ],
+  "mla.en": [
+   "Brontë, Charlotte. *Jane Eyre*. Smith, Elder, 1847.",
+   "(Brontë)"
+  ],
+  "mla.he": [
+   "Brontë, Charlotte. *Jane Eyre*. Smith, Elder, 1847.",
+   "(Brontë)"
+  ]
+ },
+ "Wilde1891": {
+  "chicago.en": [
+   "Wilde, Oscar. 1891. *The Picture of Dorian Gray*. Ward, Lock and Company.",
+   "(Wilde 1891)"
+  ],
+  "chicago.he": [
+   "Wilde, Oscar. 1891. *The Picture of Dorian Gray*. Ward, Lock and Company.",
+   "(Wilde 1891)"
+  ],
+  "mla.en": [
+   "Wilde, Oscar. *The Picture of Dorian Gray*. Ward, Lock, 1891.",
+   "(Wilde)"
+  ],
+  "mla.he": [
+   "Wilde, Oscar. *The Picture of Dorian Gray*. Ward, Lock, 1891.",
+   "(Wilde)"
+  ]
+ },
+ "Stevenson1883": {
+  "chicago.en": [
+   "Stevenson, Robert Louis. 1883. *Treasure Island*. Cassell and Company.",
+   "(Stevenson 1883)"
+  ],
+  "chicago.he": [
+   "Stevenson, Robert Louis. 1883. *Treasure Island*. Cassell and Company.",
+   "(Stevenson 1883)"
+  ],
+  "mla.en": [
+   "Stevenson, Robert Louis. *Treasure Island*. Cassell, 1883.",
+   "(Stevenson)"
+  ],
+  "mla.he": [
+   "Stevenson, Robert Louis. *Treasure Island*. Cassell, 1883.",
+   "(Stevenson)"
+  ]
+ },
+ "Eliot1871": {
+  "chicago.en": [
+   "Eliot, George. 1871. *Middlemarch*. William Blackwood and Sons.",
+   "(Eliot 1871)"
+  ],
+  "chicago.he": [
+   "Eliot, George. 1871. *Middlemarch*. William Blackwood and Sons.",
+   "(Eliot 1871)"
+  ],
+  "mla.en": [
+   "Eliot, George. *Middlemarch*. William Blackwood and Sons, 1871.",
+   "(Eliot)"
+  ],
+  "mla.he": [
+   "Eliot, George. *Middlemarch*. William Blackwood and Sons, 1871.",
+   "(Eliot)"
+  ]
+ },
+ "Einstein1905": {
+  "chicago.en": [
+   "Einstein, Albert. 1905. “Zur Elektrodynamik bewegter Körper.” *Annalen der Physik* 17 (10): 891–921. https://doi.org/10.1002/andp.19053221004.",
+   "(Einstein 1905)"
+  ],
+  "chicago.he": [
+   "Einstein, Albert. 1905. “Zur Elektrodynamik bewegter Körper.” *Annalen der Physik* 17 (10): 891–921. https://doi.org/10.1002/andp.19053221004.",
+   "(Einstein 1905)"
+  ],
+  "mla.en": [
+   "Einstein, Albert. “Zur Elektrodynamik bewegter Körper.” *Annalen der Physik*, vol. 17, no. 10, 1905, pp. 891–921, https://doi.org/10.1002/andp.19053221004.",
+   "(Einstein)"
+  ],
+  "mla.he": [
+   "Einstein, Albert. “Zur Elektrodynamik bewegter Körper.” *Annalen der Physik*, כרך 17, גיליון 10, 1905, עמ׳ 891–921, https://doi.org/10.1002/andp.19053221004.",
+   "(Einstein)"
+  ]
+ },
+ "Mendel1866": {
+  "chicago.en": [
+   "Mendel, Gregor. 1866. “Versuche über Pflanzen-Hybriden.” *Verhandlungen des naturforschenden Vereines in Brünn* 4: 3–47.",
+   "(Mendel 1866)"
+  ],
+  "chicago.he": [
+   "Mendel, Gregor. 1866. “Versuche über Pflanzen-Hybriden.” *Verhandlungen des naturforschenden Vereines in Brünn* 4: 3–47.",
+   "(Mendel 1866)"
+  ],
+  "mla.en": [
+   "Mendel, Gregor. “Versuche über Pflanzen-Hybriden.” *Verhandlungen des naturforschenden Vereines in Brünn*, vol. 4, 1866, pp. 3–47.",
+   "(Mendel)"
+  ],
+  "mla.he": [
+   "Mendel, Gregor. “Versuche über Pflanzen-Hybriden.” *Verhandlungen des naturforschenden Vereines in Brünn*, כרך 4, 1866, עמ׳ 3–47.",
+   "(Mendel)"
+  ]
+ },
+ "Turing1936": {
+  "chicago.en": [
+   "Turing, Alan M. 1936. “On Computable Numbers, with an Application to the Entscheidungsproblem.” *Proceedings of the London Mathematical Society* s2-42 (1): 230–65. https://doi.org/10.1112/plms/s2-42.1.230.",
+   "(Turing 1936)"
+  ],
+  "chicago.he": [
+   "Turing, Alan M. 1936. “On Computable Numbers, with an Application to the Entscheidungsproblem.” *Proceedings of the London Mathematical Society* s2-42 (1): 230–65. https://doi.org/10.1112/plms/s2-42.1.230.",
+   "(Turing 1936)"
+  ],
+  "mla.en": [
+   "Turing, Alan M. “On Computable Numbers, with an Application to the Entscheidungsproblem.” *Proceedings of the London Mathematical Society*, vol. s2-42, no. 1, 1936, pp. 230–65, https://doi.org/10.1112/plms/s2-42.1.230.",
+   "(Turing)"
+  ],
+  "mla.he": [
+   "Turing, Alan M. “On Computable Numbers, with an Application to the Entscheidungsproblem.” *Proceedings of the London Mathematical Society*, כרך s2-42, גיליון 1, 1936, עמ׳ 230–65, https://doi.org/10.1112/plms/s2-42.1.230.",
+   "(Turing)"
+  ]
+ },
+ "Shannon1948": {
+  "chicago.en": [
+   "Shannon, Claude E. 1948. “A Mathematical Theory of Communication.” *Bell System Technical Journal* 27 (3): 379–423. https://doi.org/10.1002/j.1538-7305.1948.tb01338.x.",
+   "(Shannon 1948)"
+  ],
+  "chicago.he": [
+   "Shannon, Claude E. 1948. “A Mathematical Theory of Communication.” *Bell System Technical Journal* 27 (3): 379–423. https://doi.org/10.1002/j.1538-7305.1948.tb01338.x.",
+   "(Shannon 1948)"
+  ],
+  "mla.en": [
+   "Shannon, Claude E. “A Mathematical Theory of Communication.” *Bell System Technical Journal*, vol. 27, no. 3, 1948, pp. 379–423, https://doi.org/10.1002/j.1538-7305.1948.tb01338.x.",
+   "(Shannon)"
+  ],
+  "mla.he": [
+   "Shannon, Claude E. “A Mathematical Theory of Communication.” *Bell System Technical Journal*, כרך 27, גיליון 3, 1948, עמ׳ 379–423, https://doi.org/10.1002/j.1538-7305.1948.tb01338.x.",
+   "(Shannon)"
+  ]
+ },
+ "Watson1953": {
+  "chicago.en": [
+   "Watson, James D., and Francis H. C. Crick. 1953. “Molecular Structure of Nucleic Acids: A Structure for Deoxyribose Nucleic Acid.” *Nature* 171 (4356): 737–38. https://doi.org/10.1038/171737a0.",
+   "(Watson and Crick 1953)"
+  ],
+  "chicago.he": [
+   "Watson, James D., ו-Francis H. C. Crick. 1953. “Molecular Structure of Nucleic Acids: A Structure for Deoxyribose Nucleic Acid.” *Nature* 171 (4356): 737–38. https://doi.org/10.1038/171737a0.",
+   "(Watson ו-Crick 1953)"
+  ],
+  "mla.en": [
+   "Watson, James D., and Francis H. C. Crick. “Molecular Structure of Nucleic Acids: A Structure for Deoxyribose Nucleic Acid.” *Nature*, vol. 171, no. 4356, 1953, pp. 737–38, https://doi.org/10.1038/171737a0.",
+   "(Watson and Crick)"
+  ],
+  "mla.he": [
+   "Watson, James D., ו-Francis H. C. Crick. “Molecular Structure of Nucleic Acids: A Structure for Deoxyribose Nucleic Acid.” *Nature*, כרך 171, גיליון 4356, 1953, עמ׳ 737–38, https://doi.org/10.1038/171737a0.",
+   "(Watson ו-Crick)"
+  ]
+ },
+ "Shannon1949": {
+  "chicago.en": [
+   "Shannon, Claude E., and Warren Weaver. 1949. *The Mathematical Theory of Communication*. University of Illinois Press.",
+   "(Shannon and Weaver 1949)"
+  ],
+  "chicago.he": [
+   "Shannon, Claude E., ו-Warren Weaver. 1949. *The Mathematical Theory of Communication*. University of Illinois Press.",
+   "(Shannon ו-Weaver 1949)"
+  ],
+  "mla.en": [
+   "Shannon, Claude E., and Warren Weaver. *The Mathematical Theory of Communication*. U of Illinois P, 1949.",
+   "(Shannon and Weaver)"
+  ],
+  "mla.he": [
+   "Shannon, Claude E., ו-Warren Weaver. *The Mathematical Theory of Communication*. U of Illinois P, 1949.",
+   "(Shannon ו-Weaver)"
+  ]
+ },
+ "Marx1848": {
+  "chicago.en": [
+   "Marx, Karl, and Friedrich Engels. 1848. *Manifest der Kommunistischen Partei*. J. E. Burghard.",
+   "(Marx and Engels 1848)"
+  ],
+  "chicago.he": [
+   "Marx, Karl, ו-Friedrich Engels. 1848. *Manifest der Kommunistischen Partei*. J. E. Burghard.",
+   "(Marx ו-Engels 1848)"
+  ],
+  "mla.en": [
+   "Marx, Karl, and Friedrich Engels. *Manifest der Kommunistischen Partei*. J. E. Burghard, 1848.",
+   "(Marx and Engels)"
+  ],
+  "mla.he": [
+   "Marx, Karl, ו-Friedrich Engels. *Manifest der Kommunistischen Partei*. J. E. Burghard, 1848.",
+   "(Marx ו-Engels)"
+  ]
+ },
+ "Newton1687": {
+  "chicago.en": [
+   "Newton, Isaac. 1687. *Philosophiæ Naturalis Principia Mathematica*. Joseph Streater.",
+   "(Newton 1687)"
+  ],
+  "chicago.he": [
+   "Newton, Isaac. 1687. *Philosophiæ Naturalis Principia Mathematica*. Joseph Streater.",
+   "(Newton 1687)"
+  ],
+  "mla.en": [
+   "Newton, Isaac. *Philosophiæ Naturalis Principia Mathematica*. Joseph Streater, 1687.",
+   "(Newton)"
+  ],
+  "mla.he": [
+   "Newton, Isaac. *Philosophiæ Naturalis Principia Mathematica*. Joseph Streater, 1687.",
+   "(Newton)"
+  ]
+ }
+}

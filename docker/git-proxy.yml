@@ -1,0 +1,26 @@
+# CORS proxy for git in the browser (plan 3.3) — safe git clone / pull / push
+# from Lumen running in a browser. GitHub, GitLab and most git hosts send no
+# CORS headers, so a browser cannot talk to them directly.
+#
+#   docker compose -f docker/git-proxy.yml up -d
+#
+# Then in Lumen: ⌘K → "Git: set CORS proxy…" → http://localhost:9999
+# (Lumen's CSP allows localhost / 127.0.0.1 on 9999). A deployment can bake a
+# proxy in with VITE_GIT_CORS_PROXY at build time instead; Lumen has no
+# built-in default host.
+#
+# The proxy is @isomorphic-git/cors-proxy (MIT): it forwards only requests
+# that look like git smart-HTTP (info/refs, git-upload-pack, git-receive-pack)
+# and never stores anything. Tokens pass through it in the Authorization
+# header, so run it where you trust it — this machine, by default.
+#
+# Which app origins may use it: ALLOW_ORIGIN (one origin, or * for any).
+#   LUMEN_ORIGIN=https://notes.example.com docker compose -f docker/git-proxy.yml up -d
+services:
+  git-proxy:
+    image: node:22-alpine
+    command: npx --yes @isomorphic-git/cors-proxy@3.0.2 run --port 9999
+    environment:
+      ALLOW_ORIGIN: ${LUMEN_ORIGIN:-*}
+    ports: ["127.0.0.1:9999:9999"]
+    restart: unless-stopped

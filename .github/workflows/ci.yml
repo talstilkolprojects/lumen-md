@@ -3,8 +3,11 @@ name: CI
 on:
   push:
     branches: [main]
+  # Every pull request, whatever its base: stacked PRs (a feature branch
+  # on top of another) were getting no CI at all with `branches: [main]`.
   pull_request:
-    branches: [main]
+  # Manual runs (e.g. the server health check right after a deploy).
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -13,7 +16,7 @@ concurrency:
 jobs:
   check:
     name: typecheck • test • build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
     timeout-minutes: 15
     # Read-only: this job runs the PR's code. The comment is posted by
     # bundle-comment below, which runs none of it.
@@ -38,26 +41,93 @@ jobs:
       - name: Code hygiene (no `as any` / console.log in production src)
         run: npm run hygiene
 
+      - name: Security headers match security/policy.json
+        run: npm run headers
+
+      - name: Docs sync (docs name only commands and scripts that exist; no hand-typed counts in README)
+        run: npm run -s docs:sync
+
+      # plan/plan.json is the plan's source (plan 0.6): the board in
+      # MASTER_PLAN.md and plan/board.html must be what it generates.
+      - name: Plan matches plan/plan.json
+        run: npm run plan:check
+
+      - name: No hard-coded UI strings (plan 9.1)
+        # AST scan of src/: JSX text, user-visible props (aria-label, title,
+        # placeholder, alt…) and messages passed to toasts and dialogs must
+        # go through t(). Exceptions carry `i18n-allow: <reason>`.
+        run: npm run -s i18n:hardcoded
+
+      # Plan 0.7: every task marked ✅ re-runs the commands that proved it
+      # (its `dod` in plan/plan.json), so a regression un-✅s it here.
+      - name: Definition of done for every ✅ task
+        run: npm run dod -- --done
+
+      - name: Unused files (no new src/ file that nothing imports — plan 0.16)
+        run: npm run unused
+
+      # Plan 13.1: every feature has a docs page, in English and Hebrew; no orphan pages or dead internal links.
+      - name: Docs complete (every sidebar page in en + he; 13.1.1 areas covered; links resolve)
+        run: npm run -s docs:complete
+
       - name: Test
         run: npm run test
 
-      - name: Coverage gate (lines >= 40%)
-        # The old 60% gate was passing only because v8 coverage was
-        # accidentally counting executed node_modules code (3500+ entries,
-        # inflating the ratio to a meaningless 97%). Round-25 scoped
-        # coverage to first-party `src/**` via vite.config (correct), and
-        # the *honest* measurement on the current test suite is ~42% —
-        # the un-unit-testable UI surfaces (src/ui, src/editor, src/layouts,
-        # src/components) are explicitly excluded and covered by the 90+
-        # Playwright e2e specs instead. 40% is the truthful floor.
+      - name: Coverage gate (lines >= 65%)
+        # Measured on 17.10.2026 with src/ui and src/editor *included*
+        # (they used to be excluded): 66.7% lines. The gate sits just
+        # under the honest measurement, so it can only go up with real
+        # tests — never by excluding code that is hard to test.
         run: |
           npm run test:coverage
           pct=$(node -e 'console.log(require("./coverage/coverage-summary.json").total.lines.pct)')
           echo "Coverage lines: $pct%"
-          awk -v p="$pct" 'BEGIN { exit (p < 40) }' || (echo "::error::Lines coverage $pct% < 40% gate" && exit 1)
+          echo "::notice title=coverage::total lines $pct%"
+          node -e '
+            const s = require("./coverage/coverage-summary.json");
+            for (const part of ["/src/layouts/", "/src/components/", "/src/App.tsx", "/src/i18n/", "/src/plugins/", "/src/renderer/", "/src/views/"]) {
+              let total = 0, covered = 0;
+              for (const [file, m] of Object.entries(s)) {
+                if (file !== "total" && file.includes(part)) { total += m.lines.total; covered += m.lines.covered; }
+              }
+              const pct = total ? ((100 * covered) / total).toFixed(2) : "n/a";
+              console.log(`::notice title=coverage ${part}::${pct}% (${covered}/${total} lines)`);
+            }
+          '
+          awk -v p="$pct" 'BEGIN { exit (p < 65) }' || (echo "::error::Lines coverage $pct% < 65% gate" && exit 1)
 
       - name: Build
         run: npm run build
+        # Canaries in the collab server's secret variables (plan 3.6.2):
+        # the next step fails if any of them, or the server's code, ends up
+        # in dist/. (No VITE_* canary: Vite inlines every VITE_* variable
+        # wherever import.meta.env is read whole, so those are public by
+        # design; a unit test checks the client reads no VITE_* token.)
+        env:
+          COLLAB_TOKEN_SECRET: ci-canary-collab-token-secret-7f3a9c2e1b
+          COLLAB_ACCESS_KEY: ci-canary-collab-access-key-5d8e
+          LUMEN_COLLAB_TOKEN: ci-canary-lumen-collab-token-2c4b
+
+      - name: No collab secrets in the bundle
+        run: node scripts/check-bundle-secrets.mjs dist
+        env:
+          COLLAB_TOKEN_SECRET: ci-canary-collab-token-secret-7f3a9c2e1b
+          COLLAB_ACCESS_KEY: ci-canary-collab-access-key-5d8e
+          LUMEN_COLLAB_TOKEN: ci-canary-lumen-collab-token-2c4b
+        # Canaries in secret-named VITE_* variables: the next step fails if
+        # either value reaches dist/. VITE_RESEARCH_TOKEN was read by the app
+        # until it moved to the secret store; nothing reads
+        # VITE_CI_CANARY_SECRET, so finding it means import.meta.env was
+        # inlined whole.
+        env:
+          VITE_RESEARCH_TOKEN: ci-canary-research-token-4e9b1c
+          VITE_CI_CANARY_SECRET: ci-canary-vite-secret-8d2f7a
+
+      - name: No VITE_* secrets in the bundle
+        run: node scripts/check-vite-secrets.mjs dist
+        env:
+          VITE_RESEARCH_TOKEN: ci-canary-research-token-4e9b1c
+          VITE_CI_CANARY_SECRET: ci-canary-vite-secret-8d2f7a
 
       - name: Bundle-size budget
         run: npm run budget -- --json bundle-sizes.json
@@ -95,21 +165,141 @@ jobs:
 
       - name: i18n drift gate
         # Vitest already runs the i18nStrings test — this step also asserts
-        # that en + he (src/i18n/locales/he.json) stay within 10 keys of each other (catches lazy
+        # that en + he (src/i18n/locales/{en,he}/*.json) stay within 10 keys of each other (catches lazy
         # ports of new keys to one bundle and not the other).
         run: |
-          # The committed manifest feeds translation tooling: it must match.
+          # Every string in its sorted domain file (plan 0.3), and the
+          # committed manifest (i18n/keys/) that feeds translation tooling.
+          node scripts/i18n-split.mjs --check
           node scripts/extract-i18n-keys.mjs --check
-          node scripts/extract-i18n-keys.mjs > /dev/null
-          en_count=$(node -e 'const j=JSON.parse(require("fs").readFileSync("i18n/keys.json","utf8")); console.log(j.entries.length)')
-          # Hebrew ships as a lazy JSON bundle like the other locales.
-          he_count=$(node -e 'console.log(Object.keys(JSON.parse(require("fs").readFileSync("src/i18n/locales/he.json","utf8"))).length)')
+          count() { node --input-type=module -e "import { readLocale } from './scripts/lib/i18n-files.mjs'; console.log(Object.keys(readLocale('$1')).length)"; }
+          en_count=$(count en)
+          # Hebrew ships as lazy JSON chunks like the other locales.
+          he_count=$(count he)
           diff=$(( en_count > he_count ? en_count - he_count : he_count - en_count ))
           echo "i18n keys — en: $en_count, he: $he_count, diff: $diff"
           if [ "$diff" -gt 10 ]; then
             echo "::error::i18n drift > 10 keys; run `node scripts/print-missing-i18n-keys.mjs` and fix."
             exit 1
           fi
+
+  licenses:
+    name: licence gate (npm • models • datasets)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Node 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      # Only the registry download: no install scripts (they would fetch
+      # binaries), and the gate itself reads package-lock.json offline.
+      - name: Install (no scripts)
+        run: npm ci --ignore-scripts || npm install --ignore-scripts
+      - name: Licence gate
+        # The table goes to the job summary whether the gate passes or not.
+        run: |
+          status=0
+          npm run -s licenses > licenses.txt 2>&1 || status=$?
+          cat licenses.txt
+          { echo '```'; cat licenses.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: licenses
+          path: reports/licenses.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  lint:
+    name: lint (ESLint, with baseline)
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci || npm install
+
+      # Violations recorded in eslint-suppressions.json (plan 0.4) pass; any
+      # new one fails, and so does a suppression that is no longer needed
+      # (run `npm run lint:prune` and commit the smaller baseline).
+      - name: ESLint
+        run: npm run lint
+
+  local-ai:
+    name: local agents (fake Ollama)
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
+    needs: check
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Node 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci || npm install
+      - name: Start the fake Ollama server
+        run: |
+          npm run -s fake-ollama -- --port 11434 > fake-ollama.log 2>&1 &
+          for i in $(seq 1 20); do curl -sf http://localhost:11434/api/tags > /dev/null && break; sleep 0.5; done
+          cat fake-ollama.log
+      - name: Every agent once, over real HTTP
+        # The eval cases run through the real runtime and the real Ollama
+        # executor against the fake server; a wiring regression fails here
+        # even though no model is involved. Model quality is measured by
+        # `npm run eval:agents` on a machine with Ollama.
+        env:
+          LUMEN_EVAL_OLLAMA_URL: http://localhost:11434
+          LUMEN_EVAL_MODEL: qwen2.5:7b
+          LUMEN_EVAL_OUT: eval/results
+          # The fake server can't judge language or format: prompt cases
+          # check only that every prompt is answered (K1).
+          LUMEN_EVAL_WIRING: "1"
+        run: |
+          npm run -s eval:agents
+          # Compare with the committed baseline of the fake server: a case
+          # that used to pass and fails now is a regression.
+          npm run -s eval:compare -- eval/results/agents-*.json --baseline eval/baseline/agents-fake.json
+          npm run -s eval:compare -- eval/results/prompts-*.json --baseline eval/baseline/prompts-fake.json
+          node -e '
+            const fs = require("fs");
+            const f = fs.readdirSync("eval/results").find((n) => n.startsWith("agents-") && n.endsWith(".json"));
+            const r = JSON.parse(fs.readFileSync("eval/results/" + f, "utf8"));
+            const bad = r.results.filter((x) => x.status !== "ok" || x.checks.some((c) => !c.ok));
+            console.log(`${r.results.length - bad.length}/${r.results.length} cases passed against the fake server`);
+            if (bad.length) { console.error(bad.map((x) => `${x.id}: ${x.error ?? x.checks.filter((c) => !c.ok).map((c) => c.detail).join("; ")}`).join("\n")); process.exit(1); }
+          '
+      - name: Model manager — Ollama pull with progress, over real HTTP
+        # Plan 5.7: the app's pull client against the fake server (after the
+        # eval, and it deletes the model again, so the eval's list is untouched).
+        run: node --experimental-strip-types scripts/check-ollama-pull.mjs --url http://localhost:11434
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: local-agents-eval
+          path: eval/results/
+          if-no-files-found: ignore
 
   bundle-comment:
     name: bundle-size comment
@@ -118,7 +308,7 @@ jobs:
     # no PR code, so it alone holds a write token. Fork PRs get a read-only
     # token: the table stays in the check job's summary.
     if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
     timeout-minutes: 5
     permissions:
       pull-requests: write
@@ -144,8 +334,11 @@ jobs:
 
   lighthouse:
     name: Lighthouse CI
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
     needs: check
     # Lighthouse runs are slow + flaky on cold runners. Only required on
     # explicit triggers — main pushes and `lighthouse` PR labels — so day-to-day
@@ -159,10 +352,54 @@ jobs:
         with: { node-version: 22, cache: npm }
       - run: npm ci || npm install
       - run: npm run build
+      # Plan 8.1: mobile numbers on a quiet runner (a shared dev machine
+      # inflates them). Informational: they never fail the job.
+      # The numbers also go to a PR comment (job logs and summaries are not
+      # readable from every place the PR is worked on).
+      - name: Mobile startup profile and Lighthouse mobile TBT (plan 8.1)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          npx playwright install chromium
+          npx vite preview --port 4747 --strictPort > /dev/null 2>&1 &
+          PREVIEW=$!
+          for i in $(seq 1 30); do curl -sf -o /dev/null http://localhost:4747/ && break; sleep 1; done
+          { echo "<!-- lumen-perf-startup -->"; echo "## Mobile startup profile (plan 8.1) — $(git rev-parse --short HEAD), GitHub runner"; echo; } > perf.md
+          node scripts/perf/profile-startup.mjs --url http://localhost:4747/ --runs 5 --settle 15000 --out reports/perf-startup.json >> perf.md
+          { echo; echo "### Lighthouse mobile (default preset: simulated 4× CPU, slow 4G)"; echo; echo "| run | TBT (ms) | FCP | LCP | TTI | score |"; echo "|---|---:|---:|---:|---:|---:|"; } >> perf.md
+          for r in 1 2 3; do
+            npx -y lighthouse@12.8.2 http://localhost:4747/ --only-categories=performance --chrome-flags="--headless=new --no-sandbox" --output=json --output-path="lh-mobile-$r.json" --quiet || continue
+            node -e 'const j=require("./lh-mobile-'$r'.json"),a=j.audits,v=(k)=>Math.round(a[k].numericValue);console.log(`| '$r' | ${v("total-blocking-time")} | ${v("first-contentful-paint")} | ${v("largest-contentful-paint")} | ${v("interactive")} | ${j.categories.performance.score} |`)' >> perf.md
+          done
+          # Nothing of this step stays alive while Lighthouse CI measures.
+          kill "$PREVIEW" 2>/dev/null || true
+          cat perf.md >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${PR:-}" ]; then
+            id=$(gh api "repos/$REPO/issues/$PR/comments" --paginate --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("<!-- lumen-perf-startup -->"))) | .id' | tail -1)
+            if [ -n "$id" ]; then gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@perf.md > /dev/null; else gh api "repos/$REPO/issues/$PR/comments" -F body=@perf.md > /dev/null; fi
+          fi
       - name: Lighthouse CI
         run: npx -y @lhci/cli@0.13.x autorun --config=./lighthouserc.json
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+      # Job logs can't be read from everywhere the PR is worked on: the desktop
+      # assertions (lighthouserc.json) go into the same PR comment.
+      - name: Lighthouse CI assertions → PR comment
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          [ -f .lighthouseci/assertion-results.json ] || { echo "no assertion results"; exit 0; }
+          { echo; echo "### Lighthouse CI desktop assertions (lighthouserc.json)"; echo; echo "| audit | level | expected | actual | passed |"; echo "|---|---|---:|---:|---|"; } >> perf.md
+          node -e 'const r=require("./.lighthouseci/assertion-results.json");for(const a of r)console.log(`| ${a.auditId}${a.auditProperty?" ("+a.auditProperty+")":""} | ${a.level} | ${a.operator} ${a.expected} | ${Math.round(a.actual*1000)/1000} | ${a.passed?"yes":"**no**"} |`)' >> perf.md
+          id=$(gh api "repos/$REPO/issues/$PR/comments" --paginate --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("<!-- lumen-perf-startup -->"))) | .id' | tail -1)
+          if [ -n "$id" ]; then gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@perf.md > /dev/null; else gh api "repos/$REPO/issues/$PR/comments" -F body=@perf.md > /dev/null; fi
 
   e2e:
     # Per-browser matrix: each browser runs in its own runner so the
@@ -171,7 +408,7 @@ jobs:
     # minutes — past the timeout. Now each is ~10 min wall-clock, and
     # one failing browser doesn't cancel the others.
     name: e2e (${{ matrix.browser }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
     # Each browser independently: install + dev server cold-start +
     # tests. The dev server is slow on the Linux runner (~3 min to come
     # up vs. the prod static server's < 1s), so 20 min wasn't quite
@@ -216,7 +453,7 @@ jobs:
 
   e2e-prod:
     name: e2e against production build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
     timeout-minutes: 25
     needs: check
     # Vite dev mode and `vite preview` chunk modules differently;
@@ -258,22 +495,150 @@ jobs:
           name: playwright-report-prod
           path: playwright-report/
 
-  signal-health:
-    name: signaling server health
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    # Only on main pushes — the signaling server must be deployed first.
-    if: github.event_name == 'push'
+  e2e-headers:
+    # The e2e above run on the dev server or a plain static server: no
+    # response headers. This job serves the production build with each nginx
+    # config (as its image does) and runs the specs the deploy policies can
+    # break (plan 0.20): the playground runner (WebKit needs its nonce), the
+    # app under its headers, a worker under /assets/ (Lua) and the service
+    # worker under the app policy, and webR's eval_js under the eval-workers
+    # policy that Cloudflare and Vercel serve /webr/ with too (D6).
+    name: e2e under deploy headers (${{ matrix.conf }} nginx)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    needs: check
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        conf: [deploy]
     steps:
-      - name: Healthcheck
-        run: |
-          URL="${SIGNAL_URL:-https://signal.lumen.md}"
-          echo "Checking $URL/healthz..."
-          status=$(curl -s -o /dev/null -w '%{http_code}' -m 10 "$URL/healthz" || true)
-          if [ "$status" = "200" ]; then
-            echo "✅ Signal server healthy ($status)"
-          else
-            echo "::warning::Signaling server unreachable (HTTP $status). Deploy pending."
-          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Install Playwright browsers (chromium, webkit)
+        run: npx playwright install --with-deps chromium webkit
+      # A configured endpoint, so the nginx placeholder is filled for real.
+      - name: Build production bundle
         env:
-          SIGNAL_URL: ${{ vars.SIGNAL_URL || 'https://signal.lumen.md' }}
+          VITE_PUBLISH_ENDPOINT: https://publish.lumen-test.dev/v1
+        run: npm run build
+      - name: Serve dist with ${{ matrix.conf }}/nginx.conf
+        run: |
+          nginx -v
+          scripts/serve-dist-nginx.sh ${{ matrix.conf }} 8088
+      - name: Headers on the routes 0.20 covers
+        run: |
+          set -euo pipefail
+          csp() { curl -sfI "http://localhost:8088$1" | tr -d '\r' | sed -n 's/^content-security-policy: //Ip'; }
+          worker=$(ls dist/assets | grep -E '^(search|lua)\.worker-.*\.js$' | head -1)
+          for path in / "/assets/$worker" /sw.js; do
+            c=$(csp "$path"); echo "$path: ${c:0:80}…"
+            grep -q "https://publish.lumen-test.dev" <<<"$c" || { echo "::error::$path: endpoint origin missing from connect-src"; exit 1; }
+            ! grep -q "__CSP_CONNECT_EXTRA__" <<<"$c" || { echo "::error::$path: placeholder left"; exit 1; }
+          done
+          grep -q "'nonce-lumen-livejs-runner'" <<<"$(csp /playground-runner.html)" || { echo "::error::playground runner: no nonce"; exit 1; }
+          grep -q 'nonce="lumen-livejs-runner"' dist/playground-runner.html || { echo "::error::playground runner script has no nonce"; exit 1; }
+          grep -q "'unsafe-eval'" <<<"$(csp /webr/webr-worker.js)" || { echo "::error::webR worker: no eval policy"; exit 1; }
+      - name: Run E2E under the headers
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:8088
+        run: |
+          npx playwright test e2e/playground.spec.ts e2e/csp-violations.spec.ts --project=chromium --project=webkit --reporter=line,github,html
+          npx playwright test e2e/live-exec.spec.ts -g "live-r |live-lua" --project=chromium --project=webkit --reporter=line,github,html
+          # The service worker under the app policy, offline. Chromium only:
+          # WebKit's offline emulation fails the reload itself ("WebKit
+          # encountered an internal error") after the online run passed.
+          npx playwright test e2e/live-exec.spec.ts -g "offline" --project=chromium --reporter=line,github,html
+      - name: nginx error log
+        if: failure()
+        run: cat /tmp/tmp.*/logs/error.log 2>/dev/null | tail -50 || true
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report-headers-${{ matrix.conf }}
+          path: playwright-report/
+
+  ocr-cer:
+    # Plan 7.5: the on-device OCR measured on every PR. The production
+    # bundle, served like e2e-prod, runs its own OCR path (tesseract.js with
+    # the committed tessdata_fast heb+eng models, public/tesseract/lang/) on
+    # the golden set ocr-he (plan 7.1); e2e/ocr-cer.spec.ts gates the
+    # character error rate, Hebrew and English separately: clean print
+    # <= 5 %, degraded <= 12 %; nikud lines reported only. PRs never see
+    # GOLDEN_SEED, so this is the public dev split, and the job says so; the
+    # held-out test split is measured in golden-sets.yml (task=test).
+    name: OCR CER (Hebrew, English)
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: npm }
+      - run: npm ci || npm install
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Build production bundle
+        run: npm run build
+      - name: Serve dist
+        run: |
+          npx -y http-server@14 dist -p 5181 -c-1 --silent &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5181/ -o /dev/null; then echo "Server up."; break; fi
+            sleep 1
+          done
+      - name: Measure CER on ocr-he (dev split)
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:5181
+          OCR_CER: "1"
+          OCR_CER_OUT: reports/ocr-cer.json
+        run: npx playwright test e2e/ocr-cer.spec.ts --project=chromium --reporter=line
+      - name: Annotate the numbers
+        if: always()
+        run: |
+          [ -f reports/ocr-cer.json ] || { echo "::error title=OCR CER::no measurement was written (see the step above)"; exit 0; }
+          node -e '
+            const r = JSON.parse(require("fs").readFileSync("reports/ocr-cer.json", "utf8"));
+            const p = (c) => (c.length ? (100 * c.edits / c.length).toFixed(2) + "%" : "n/a");
+            const b = r.byCondition;
+            const split = r.split === "dev" ? "public DEV split - not the held-out test score (needs GOLDEN_SEED; plan 15.9)" : "held-out test split";
+            console.log(`::notice title=OCR CER::${split}: clean he ${p(b.clean.he)} en ${p(b.clean.en)} · degraded he ${p(b.degraded.he)} en ${p(b.degraded.en)} · nikud (reported only) letters ${p(b.nikud.all)} with points ${p(b.nikud.allNikud)}`);
+            for (const g of r.gates) if (g.verdict === "fail") console.log(`::error title=OCR CER gate::${g.script} ${g.condition} ${(100 * g.cer).toFixed(2)}% > ${100 * g.max}% (plan 7.5)`);
+          '
+      - name: Upload the measurement
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ocr-cer
+          path: reports/ocr-cer.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+  signal-health:
+    name: signaling + collab server health
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
+    timeout-minutes: 3
+    # Main pushes (the servers are deployed from main) and manual runs.
+    # Fails when a configured endpoint is unhealthy (plan 3.6.3); skips
+    # cleanly while SIGNAL_URL / COLLAB_URL are not set as repository
+    # variables (the deploy is owner action 15.4).
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Node 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Healthcheck
+        run: node scripts/collab-health.mjs
+        env:
+          SIGNAL_URL: ${{ vars.SIGNAL_URL }}
+          COLLAB_URL: ${{ vars.COLLAB_URL }}

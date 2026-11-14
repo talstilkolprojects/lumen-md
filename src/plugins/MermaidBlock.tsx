@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { sanitizeSvgMarkup } from "../lib/markupSanitizer";
 import { safeSetHtml } from "../lib/trustedTypes";
+import { t } from "../i18n";
 
 let mermaidPromise: Promise<typeof import("mermaid").default> | null = null;
 let initializedFor: "dark" | "light" | null = null;
@@ -159,7 +160,7 @@ export default function MermaidBlock({ source }: Props) {
   if (error) {
     return (
       <div className="mermaid-block">
-        <div className="mermaid-error">⚠︎ Mermaid error:{"\n"}{error}</div>
+        <div className="mermaid-error">{t("block.mermaid.error")}{"\n"}{error}</div>
       </div>
     );
   }
@@ -179,11 +180,11 @@ export default function MermaidBlock({ source }: Props) {
         <span>
           {state === "ready"
             ? durationMs == null
-              ? "Rendered (cache)"
-              : `Rendered in ${durationMs} ms`
+              ? t("block.diagram.renderedCache")
+              : t("block.diagram.renderedIn", { ms: durationMs })
             : state === "rendering"
-              ? "Rendering…"
-              : "Queued"}
+              ? t("block.diagram.rendering")
+              : t("block.diagram.queued")}
         </span>
       </div>
       <div ref={contentRef} />
@@ -197,7 +198,7 @@ export default function MermaidBlock({ source }: Props) {
             textAlign: "center",
           }}
         >
-          Mermaid diagram (scroll to render)
+          {t("block.mermaid.placeholder")}
         </div>
       )}
       {/* SVG host — innerHTML is set imperatively, separate from chrome.

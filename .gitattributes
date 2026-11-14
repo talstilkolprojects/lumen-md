@@ -1,0 +1,4 @@
+
+# Plan 9.2: the bundled FrequencyWords list (50 000 lines of data, CC BY-SA 4.0,
+# see public/dict/LICENSE.md) — not reviewed or diffed as source.
+public/dict/he_50k.txt linguist-generated=true -diff

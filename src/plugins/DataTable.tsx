@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { DataSet, DataColumn } from "../data/csv";
+import { t } from "../i18n";
 
 interface Props {
   data: DataSet;
@@ -51,7 +52,7 @@ export function DataTable({ data, maxRows = 200 }: Props) {
                 key={c.key}
                 className={c.type === "number" ? "num" : ""}
                 onClick={() => clickHeader(c)}
-                title={`${c.type} • ${c.distinct} distinct • ${c.filled} filled`}
+                title={t("block.dataTable.columnStats", { type: c.type, distinct: c.distinct, filled: c.filled })}
               >
                 {c.name}
                 <span className="col-type">{c.type}</span>
@@ -86,7 +87,7 @@ export function DataTable({ data, maxRows = 200 }: Props) {
             borderTop: "1px solid hsl(var(--border))",
           }}
         >
-          Showing {maxRows} of {data.rows.length} rows.
+          {t("block.data.showing", { shown: maxRows, total: data.rows.length })}
         </div>
       )}
     </div>

@@ -91,3 +91,50 @@ describe("dragHandlePlugin", () => {
     expect(dragHandlePlugin.getState(next)).toEqual({ fromPos: 0, hoverPos: 5 });
   });
 });
+
+describe("moveBlockTo by touch (plan 10.2.1)", () => {
+  // A fake view: just enough of EditorView for blockBoundary / moveBlockTo.
+  // Each top-level block is 20 px tall, stacked from y = 0.
+  async function setup(texts: string[]) {
+    const { moveBlockTo } = await import("../editor/dragHandles");
+    const doc = schema.node("doc", null, texts.map((t) => schema.node("paragraph", null, schema.text(t))));
+    let state = EditorState.create({ doc, schema, plugins: [dragHandlePlugin as Plugin] });
+    const starts: number[] = [];
+    state.doc.forEach((_n, off) => starts.push(off));
+    const view = {
+      get state() {
+        return state;
+      },
+      dispatch(tr: Parameters<typeof state.apply>[0]) {
+        state = state.apply(tr);
+      },
+      // The point (x, y) is inside block floor(y / 20), 2 characters in.
+      posAtCoords: ({ top }: { left: number; top: number }) => ({ pos: starts[Math.min(starts.length - 1, Math.floor(top / 20))] + 3, inside: -1 }),
+      nodeDOM: (pos: number) => {
+        const i = starts.indexOf(pos);
+        if (i < 0) return null;
+        const el = document.createElement("p");
+        el.getBoundingClientRect = () => ({ top: i * 20, height: 20, bottom: i * 20 + 20, left: 0, right: 100, width: 100, x: 0, y: i * 20, toJSON() {} }) as DOMRect;
+        return el;
+      },
+    };
+    const texts2 = () => {
+      const out: string[] = [];
+      state.doc.forEach((n) => out.push(n.textContent));
+      return out;
+    };
+    return { moveBlockTo, view: view as never, starts, texts: texts2 };
+  }
+
+  it("a drop in the lower half of a block lands after it, never splitting it", async () => {
+    const { moveBlockTo, view, starts, texts } = await setup(["One", "Two", "Second paragraph."]);
+    expect(moveBlockTo(view, starts[0], 10, 2 * 20 + 18)).toBe(true);
+    expect(texts()).toEqual(["Two", "Second paragraph.", "One"]);
+  });
+
+  it("a drop in the upper half lands before it", async () => {
+    const { moveBlockTo, view, starts, texts } = await setup(["One", "Two", "Three"]);
+    moveBlockTo(view, starts[2], 10, 20 + 3);
+    expect(texts()).toEqual(["One", "Three", "Two"]);
+  });
+});

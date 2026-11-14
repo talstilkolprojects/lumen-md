@@ -1,6 +1,6 @@
 /**
  * Tag index — scans every note in the workspace for `tags:` frontmatter
- * and produces an inverted index (tag → list of notes). The Tag panel
+ * and `#tags` in the text (plan 11.3, outside code) and produces an inverted index (tag → list of notes). The Tag panel
  * uses this to render a flat browse view; the auto-tag agent uses it
  * to bias suggestions toward the user's existing vocabulary.
  *
@@ -9,11 +9,10 @@
 
 import {
   isOPFSAvailable,
-  listWorkspace,
-  readWorkspaceFile,
   isAssetName,
 } from "../storage/workspace";
 import { extractFrontmatter } from "../renderer/pipeline";
+import { noteTags } from "../search/queryOps";
 
 export interface TagBucket {
   tag: string;
@@ -48,23 +47,21 @@ export async function buildTagsIndex(): Promise<TagsIndex> {
   if (!isOPFSAvailable()) {
     return { buckets: [], totalNotes: 0, untaggedPaths: [] };
   }
-  const list = await listWorkspace({ includeAssets: false });
+  // The shared workspace index re-reads only changed files (C3).
+  const { ensureIndex, indexedFiles } = await import("../storage/workspaceIndex");
+  await ensureIndex();
   const buckets = new Map<string, string[]>();
   const untagged: string[] = [];
   let totalNotes = 0;
 
-  for (const f of list) {
+  for (const f of indexedFiles().sort((a, b) => a.path.localeCompare(b.path))) {
     if (!/\.(md|markdown)$/i.test(f.path)) continue;
     if (isAssetName(f.name)) continue;
     totalNotes++;
-    let body: string;
-    try {
-      body = await readWorkspaceFile(f.path);
-    } catch {
-      continue;
-    }
+    const body = f.content;
     const fm = extractFrontmatter(body) ?? {};
-    const tags = tagsFromFrontmatter(fm);
+    // Front matter first (as YAML reads it), then the body's #tags.
+    const tags = [...new Set([...tagsFromFrontmatter(fm), ...noteTags(body)])];
     if (tags.length === 0) {
       untagged.push(f.path);
       continue;

@@ -8,6 +8,8 @@
  * copy of the docs site with `VITE_DOCS_URL`.
  */
 
+import { publicEnv } from "./publicEnv";
+
 const DEFAULT_DOCS_BASE = "https://docs.lumen.app";
 
 /** Topic → docs slug (path under the docs site, no leading slash). */
@@ -17,17 +19,17 @@ export const DOCS_TOPICS = {
   organization: "account/organization",
   pluginSigning: "plugins/signing",
   localLlm: "ai/local-llm",
+  localAgents: "ai/local-agents",
 } as const;
 
 export type DocsTopic = keyof typeof DOCS_TOPICS;
 
 function readDocsBase(): string {
   try {
-    const env = (import.meta as ImportMeta & { env?: { VITE_DOCS_URL?: string } }).env;
-    const raw = env?.VITE_DOCS_URL?.trim();
+    const raw = publicEnv("VITE_DOCS_URL");
     if (raw && /^https?:\/\//i.test(raw)) return raw.replace(/\/+$/, "");
   } catch {
-    /* no env in this runtime */
+    /* why: no env in this runtime */
   }
   return DEFAULT_DOCS_BASE;
 }

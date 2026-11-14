@@ -61,6 +61,8 @@ function blankFences(text: string): string {
   // list item's content offset (0 at the top level). Both belong to the
   // fence's container, so only they are stripped from later lines.
   let open: { ch: string; len: number; depth: number; indent: number } | null = null;
+  /** An indented code block inside a list item (A1): its item's content column. */
+  let itemCode: { depth: number; col: number } | null = null;
   /** Strip up to `n` block-quote markers; returns the rest and how many were found. */
   const unquote = (l: string, n = Infinity) => {
     let depth = 0;
@@ -68,8 +70,40 @@ function blankFences(text: string): string {
     for (let q: RegExpExecArray | null; depth < n && (q = /^ {0,3}>[ ]?/.exec(rest)); depth++) rest = rest.slice(q[0].length);
     return { rest, depth };
   };
+  /**
+   * Content columns of the open list items, outermost first. A line
+   * indented less than an item's column closes it (and the items nested
+   * in it); a marker line opens a new one.
+   */
+  // Each with the block-quote depth it sits in: leaving the quote closes it.
+  const cols: Array<{ col: number; quote: number }> = [];
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i];
+    const { rest: own, depth: quote } = unquote(raw);
+    let col = -1;
+    if (own.trim()) {
+      const lead = /^ */.exec(own)![0].length;
+      col = itemColumn(own);
+      while (cols.length && cols[cols.length - 1].quote > quote) cols.pop();
+      // Unindented text (no marker) is a lazy line or ends the list.
+      if (!lead && col < 0) cols.length = 0;
+      else while (cols.length && cols[cols.length - 1].col > lead) cols.pop();
+    }
+    // The item this line continues: the innermost one still open at its
+    // indentation (after a dedent, the parent's).
+    const item = cols.length ? cols[cols.length - 1].col : -1;
+    if (col >= 0) cols.push({ col, quote });
+    if (itemCode) {
+      // Blank lines and lines indented 4+ past the item's content column
+      // stay in the code block; anything else ends it.
+      const { rest, depth } = unquote(raw, itemCode.depth);
+      const lead = /^[ ]*/.exec(rest)![0].length;
+      if (depth === itemCode.depth && (!rest.trim() || lead >= itemCode.col + 4)) {
+        lines[i] = " ".repeat(raw.length);
+        continue;
+      }
+      itemCode = null;
+    }
     if (open) {
       const { rest, depth } = unquote(raw, open.depth);
       const lead = /^[ ]*/.exec(rest)![0].length;
@@ -94,16 +128,48 @@ function blankFences(text: string): string {
     // indented code block); inside a container its content offset applies.
     const { rest: quoted, depth } = unquote(raw);
     const listed = quoted.replace(/^[ \t]*(?:[-*+]|\d+[.)])[ \t]+/, "");
-    const continuation = /^ {2,}\S/.test(quoted) && i > 0 && /^\s*([-*+]|\d+[.)])\s/.test(unquote(lines.slice(0, i).reverse().find((l) => l.trim()) ?? "").rest);
+    const continuation = /^ {2,}\S/.test(quoted) && item >= 0;
     const inContainer: boolean = depth > 0 || listed !== quoted || continuation;
     const m: RegExpExecArray | null = (inContainer ? /^[ \t]*(`{3,}|~{3,})(.*)$/ : /^ {0,3}(`{3,}|~{3,})(.*)$/).exec(listed);
     if (m && !(m[1][0] === "`" && m[2].includes("`"))) {
-      const indent = listed !== quoted ? quoted.length - listed.length : continuation ? /^ */.exec(quoted)![0].length : 0;
+      // The list item's content column: the fence may sit up to 3 spaces
+      // past it. Indented 4+ past it, the line starts an indented code
+      // block inside the item (A1): the "fence" is code text, and so is
+      // everything after it at that indentation.
+      const lead = /^ */.exec(quoted)![0].length;
+      const indent = listed !== quoted ? quoted.length - listed.length : continuation ? Math.min(item, lead) : 0;
+      if (continuation && lead >= item + 4) {
+        itemCode = { depth, col: item };
+        lines[i] = " ".repeat(raw.length);
+        continue;
+      }
+      // On the marker line itself, 5+ spaces after the marker mean one
+      // space of padding and an indented code block (`-     ~~~`).
+      const marker = listed !== quoted ? /^[ ]*(?:[-*+]|\d{1,9}[.)])( *)/.exec(quoted) : null;
+      if (marker && marker[1].length > 4) {
+        itemCode = { depth, col: itemColumn(quoted) };
+        // Keep the marker: later passes still see the line opens a list item.
+        const keep = raw.length - quoted.length + marker[0].length - marker[1].length;
+        lines[i] = raw.slice(0, keep) + " ".repeat(raw.length - keep);
+        continue;
+      }
       open = { ch: m[1][0], len: m[1].length, depth, indent };
       lines[i] = " ".repeat(raw.length);
     }
   }
   return lines.join("\n");
+}
+
+/**
+ * The content column of a list-item line (`- x` → 2, `10. x` → 4), or -1
+ * when the line isn't one. Five or more spaces after the marker mean the
+ * content is indented code, so the column is just past the marker + 1.
+ */
+function itemColumn(line: string): number {
+  const m = /^([ ]*)([-*+]|\d{1,9}[.)])([ ]*)(.?)/.exec(line);
+  if (!m || (!m[3] && m[4])) return -1;
+  const at = m[1].length + m[2].length;
+  return !m[4] || m[3].length > 4 ? at + 1 : at + m[3].length;
 }
 
 /**
@@ -175,14 +241,19 @@ function blankIndentedCode(text: string): string {
   return lines.join("\n");
 }
 
-export function stripCode(text: string): string {
+/** Block-level code blanked: fences, indented code, `<pre>`-like blocks and comments (not inline code). */
+function stripBlockCode(text: string): string {
   let out = blankFences(text);
   out = blankIndentedCode(out);
   // HTML comments are invisible: their links aren't links.
   // Raw HTML blocks whose content isn't Markdown.
   out = out.replace(/<(pre|script|style|textarea)\b[\s\S]*?(?:<\/\1>|$)/gi, blank);
   // An unterminated comment runs to the end of the note (CommonMark HTML block).
-  out = out.replace(/<!--[\s\S]*?(?:-->|$)/g, blank);
+  return out.replace(/<!--[\s\S]*?(?:-->|$)/g, blank);
+}
+
+export function stripCode(text: string): string {
+  let out = stripBlockCode(text);
   out = blankCodeSpans(out);
   // Inline HTML tags: their attributes aren't Markdown (`<span title="[[x]]">`).
   out = out.replace(/<[A-Za-z][\w-]*\s[^<>\n]*\[\[[^<>\n]*>/g, blank);
@@ -203,13 +274,17 @@ const LONE_TAG = /^ {0,3}(?:<([A-Za-z][A-Za-z0-9-]*)(?:\s+[A-Za-z_:][\w.:-]*(?:\
  * by stripCode.) Inline `<img>` checks run on the text before this, since
  * HTML images in a block still render.
  */
-function blankHtmlBlocks(text: string): string {
+function blankHtmlBlocks(text: string, blocks: string = text): string {
   const lines = text.split("\n");
+  // `blocks` is the same text with only block-level code blanked: a line
+  // that is all inline code is still paragraph text there, and a type 7
+  // tag after it can't start a block (A2).
+  const prose = blocks.split("\n");
   let inBlock = false;
   let prevBlank = true;
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
-    const isBlank = !l.trim();
+    const isBlank = !l.trim() && !prose[i]?.trim();
     if (inBlock && isBlank) inBlock = false;
     else if (!inBlock && !isBlank) {
       const t6 = /^ {0,3}<\/?([A-Za-z][A-Za-z0-9-]*)(?=[\s/>]|$)/.exec(l);
@@ -225,7 +300,10 @@ function blankHtmlBlocks(text: string): string {
 }
 
 /** The text that wiki and Markdown links are scanned in: no front matter, code, or raw HTML. */
-const linkScanText = (text: string) => blankHtmlBlocks(stripCode(blankFrontmatter(text)));
+const linkScanText = (text: string) => {
+  const body = blankFrontmatter(text);
+  return blankHtmlBlocks(stripCode(body), stripBlockCode(body));
+};
 
 const lineAt = (text: string, index: number) => text.slice(0, index).split("\n").length;
 
@@ -241,7 +319,12 @@ function headingText(md: string): string {
       .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
       .replace(/\[([^\]]*)\]\[[^\]]*\]/g, "$1") // reference links: `[Setup][docs]`
       .replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_m, target: string, label?: string) => label ?? target)
-      .replace(/`([^`]*)`/g, (_m, code: string) => code.replace(/&/g, AMP))
+      // A span opens and closes with backtick runs of the same length
+      // (``a & `b` ``), so double-backtick spans keep their `&` too (A3);
+      // one leading and trailing space is stripped, as CommonMark does.
+      .replace(/(?<!`)(`+)(?!`)([\s\S]*?[^`])\1(?!`)/g, (_m, _ticks: string, code: string) =>
+        (/^ [\s\S]* $/.test(code) && code.trim() ? code.slice(1, -1) : code).replace(/&/g, AMP),
+      )
       .replace(/(\*\*|__|\*|_|~~)(.+?)\1/g, "$2")
       .replace(/<[^>]+>/g, ""),
   )
@@ -271,25 +354,48 @@ const markdownLinkRanges = (text: string): Array<[number, number]> =>
   [...text.matchAll(/\[((?:[^\[\]\n]|\[\[[^\]\n]*\]\])*)\](?:\([^)\n]*\)|\[[^\[\]\n]*\])/g)].map((l) => [l.index ?? 0, (l.index ?? 0) + l[0].length]);
 const insideAny = (ranges: ReadonlyArray<[number, number]>, at: number) => ranges.some(([a, b]) => at > a && at < b);
 
-function headingsOf(text: string): Set<string> {
-  const out = new Set<string>();
+/**
+ * A note's headings — their rendered text, in document order. ATX and
+ * setext headings, also inside block quotes; never in front matter, code
+ * or raw HTML. Also feeds the `[[Note#` completion (4.5).
+ */
+/** Not a paragraph line: a list item, a quote, an ATX heading, or a setext underline. */
+const NOT_TEXT = String.raw`(?! {0,3}(?:[-*+>]|\d+[.)])\s)(?! {0,3}#{1,6}(?:[ \t]|$))(?! {0,3}(?:=+|-+)[ \t]*$)`;
+const SETEXT_HEADING = new RegExp(String.raw`^(${NOT_TEXT} {0,3}\S[^\n]*\n(?:${NOT_TEXT}[ \t]*\S[^\n]*\n)*) {0,3}(?:=+|-+)[ \t]*$`, "gm");
+
+export function noteHeadings(text: string): string[] {
+  return noteHeadingLines(text).map((h) => h.text);
+}
+
+/** The same headings, each with the (0-based) line it starts on — for the hover preview (4.6). */
+export function noteHeadingLines(text: string): Array<{ text: string; line: number }> {
   // Inline code in headings matters for the rendered text, so scan only
   // with fenced blocks blanked.
   // Headings inside block quotes render (with ids) too: drop the `>` prefixes.
   // A `# line` inside a raw HTML block is HTML text, not a heading.
   const fenced = blankHtmlBlocks(blankFences(blankFrontmatter(text)).replace(/<(pre|script|style|textarea)\b[\s\S]*?(?:<\/\1>|$)/gi, blank))
     .replace(/^(?:[ \t]*>[ ]?)+/gm, "");
-  // In document order, with a stateful slugger: a repeated heading gets
-  // `-1`, `-2`… like rehype-slug, so `[[Note#setup-1]]` resolves.
   const found: Array<{ at: number; raw: string }> = [];
   // ATX headings may be indented up to 3 spaces (4+ is indented code).
   for (const m of fenced.matchAll(/^ {0,3}#{1,6}[ \t]+(.+?)\s*#*\s*$/gm)) found.push({ at: m.index ?? 0, raw: m[1] });
-  // Setext headings: a text line underlined with === or --- (the line
-  // above must be text, not a list item, quote or blank line).
-  for (const m of fenced.matchAll(/^(?! {0,3}([-*+>]|\d+[.)])\s)( {0,3}\S[^\n]*)\n {0,3}(=+|-+)[ \t]*$/gm)) found.push({ at: m.index ?? 0, raw: m[2].trim() });
+  // Setext headings: the whole paragraph above a === or --- underline (its
+  // lines must be text, not a list item, quote, ATX heading or another
+  // underline). A wrapped heading renders as one heading whose text keeps the
+  // line break, and its id is slugged from all of it (W1.32, Codex on #238).
+  for (const m of fenced.matchAll(SETEXT_HEADING)) found.push({ at: m.index ?? 0, raw: m[1].split("\n").map((x) => x.trim()).filter(Boolean).join("\n") });
+  // Only whole `>` prefixes were removed, never a line: line numbers are the text's.
+  return found.sort((a, b) => a.at - b.at).map((h) => ({ text: headingText(h.raw), line: lineAt(fenced, h.at) - 1 }));
+}
+
+function headingsOf(text: string): Set<string> {
+  const out = new Set<string>();
+  // Block ids count too: `[[Note#^id]]` (4.8) names a block, not a heading.
+  // Kept case-sensitive: the preview's ids are, so `[[Note#^foo]]` misses `^Foo`.
+  for (const m of stripCode(blankFrontmatter(text)).matchAll(/(?:^|[ \t])\^([A-Za-z0-9-]+)[ \t]*$/gm)) out.add(`^${m[1]}`);
+  // In document order, with a stateful slugger: a repeated heading gets
+  // `-1`, `-2`… like rehype-slug, so `[[Note#setup-1]]` resolves.
   const slugger = new GithubSlugger();
-  for (const h of found.sort((a, b) => a.at - b.at)) {
-    const rendered = headingText(h.raw);
+  for (const rendered of noteHeadings(text)) {
     out.add(slugger.slug(rendered));
     out.add(headingSlug(rendered));
     out.add(rendered.toLowerCase());
@@ -300,6 +406,8 @@ function headingsOf(text: string): Set<string> {
 // The wiki target's heading is decoded like the heading text (`[[#A &amp; B]]`).
 const hasHeading = (hs: Set<string> | undefined, raw: string) => {
   const h = decodeCharacterReferences(raw);
+  // A block id (`^id`) matches exactly; a heading by slug or text, in any case.
+  if (h.trim().startsWith("^")) return !!hs && hs.has(h.trim());
   return !!hs && (hs.has(headingSlug(h)) || hs.has(h.trim().toLowerCase()));
 };
 
@@ -409,8 +517,9 @@ export function runVaultDoctor(notes: readonly DoctorNote[], opts: DoctorOptions
     // Links are looked for outside front matter (the preview drops it) and
     // raw HTML blocks; `<img>` tags in those blocks still render, so the
     // alt-text check uses `code`.
-    const code = stripCode(blankFrontmatter(note.text));
-    const text = blankHtmlBlocks(code);
+    const body = blankFrontmatter(note.text);
+    const code = stripCode(body);
+    const text = blankHtmlBlocks(code, stripBlockCode(body));
     const dir = note.path.includes("/") ? note.path.slice(0, note.path.lastIndexOf("/") + 1) : "";
 
     // Wiki links: [[target]] / [[target|label]] (not ![[embeds]] of assets).
@@ -460,7 +569,7 @@ export function runVaultDoctor(notes: readonly DoctorNote[], opts: DoctorOptions
       try {
         decoded = decodeURIComponent(href);
       } catch {
-        /* keep as written */
+        /* why: a malformed %-escape: check the link as written */
       }
       const parts: string[] = [];
       let escapes = false;

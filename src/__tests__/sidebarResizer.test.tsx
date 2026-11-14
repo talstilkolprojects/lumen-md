@@ -53,17 +53,29 @@ describe("SidebarResizer", () => {
     ).toBe("");
   });
 
-  it("dragging mousedown → mousemove → mouseup updates and persists width", async () => {
+  // Pointer events since plan 10.2.1: the same drag for mouse, touch and pen.
+  for (const pointerType of ["mouse", "touch"] as const) {
+    it(`dragging by ${pointerType}: pointerdown → pointermove → pointerup updates and persists width`, async () => {
+      const { SidebarResizer } = await import("../ui/SidebarResizer");
+      const { container } = render(<SidebarResizer />);
+      const handle = container.querySelector('[role="separator"]') as HTMLElement;
+      expect(handle).not.toBeNull();
+      fireEvent.pointerDown(handle, { clientX: 200, pointerType, button: 0 });
+      fireEvent.pointerMove(window, { clientX: 280, pointerType });
+      expect(
+        document.documentElement.style.getPropertyValue("--sidebar-width"),
+      ).toBe("320px");
+      fireEvent.pointerUp(window, { pointerType });
+      expect(localStorage.getItem("lumen-sidebar-width")).toBe("320");
+    });
+  }
+
+  it("a right-button mouse press does not start a drag", async () => {
     const { SidebarResizer } = await import("../ui/SidebarResizer");
     const { container } = render(<SidebarResizer />);
     const handle = container.querySelector('[role="separator"]') as HTMLElement;
-    expect(handle).not.toBeNull();
-    fireEvent.mouseDown(handle, { clientX: 200 });
-    fireEvent.mouseMove(window, { clientX: 280 });
-    expect(
-      document.documentElement.style.getPropertyValue("--sidebar-width"),
-    ).toBe("320px");
-    fireEvent.mouseUp(window);
-    expect(localStorage.getItem("lumen-sidebar-width")).toBe("320");
+    fireEvent.pointerDown(handle, { clientX: 200, pointerType: "mouse", button: 2 });
+    fireEvent.pointerMove(window, { clientX: 280, pointerType: "mouse" });
+    expect(document.documentElement.style.getPropertyValue("--sidebar-width")).toBe("");
   });
 });

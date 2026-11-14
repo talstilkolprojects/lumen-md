@@ -1,3 +1,5 @@
+import { t } from "../i18n";
+
 interface Props {
   data: Record<string, unknown> | null;
 }
@@ -42,7 +44,7 @@ export function Frontmatter({ data }: Props) {
             marginBottom: "0.5rem",
           }}
         >
-          Document
+          {t("frontmatter.label")}
         </div>
       )}
       {subtitle && (
@@ -73,7 +75,7 @@ export function Frontmatter({ data }: Props) {
         {author && (
           <span>
             {/* no extra opacity on fg-muted — it dropped contrast below WCAG AA */}
-            <span>by </span>
+            <span>{t("frontmatter.by")} </span>
             <span style={{ color: "hsl(var(--fg))", fontWeight: 500 }}>
               {author}
             </span>

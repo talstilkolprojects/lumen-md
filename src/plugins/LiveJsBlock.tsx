@@ -10,7 +10,7 @@ import { PreviewDocKeyContext, docIdentity } from "../renderer/previewDoc";
 import { useAppStore } from "../store/useStore";
 import { hoistTopLevelBindings } from "./liveJsScope";
 import { SharedScopeRegistry, sharedScopeName } from "./liveJsShared";
-import type { WorkerLike } from "./liveJsShared";
+import { makeSandboxedWorker, type SandboxedWorker } from "./liveJsSandbox";
 
 type LogLevel = "log" | "info" | "warn" | "error";
 
@@ -40,122 +40,7 @@ interface WorkerLog {
   parts?: string[];
 }
 
-/**
- * The worker source ships as a string and is exported only so unit tests
- * can pin the throw/rejection containment properties without launching a
- * real Worker (which jsdom can't reliably emulate).
- */
-export const WORKER_SOURCE = `
-// A blob: worker inherits the page CSP, including
-// require-trusted-types-for 'script'. Running the fence body through
-// new Function() is this worker's whole purpose (it is isolated from the
-// page and has no DOM), so give it a default policy that accepts scripts.
-if (self.trustedTypes && !self.trustedTypes.defaultPolicy) {
-  try {
-    self.trustedTypes.createPolicy("default", {
-      createScript: function(s) { return s; },
-    });
-  } catch (e) {}
-}
-
-// Everything the runtime needs lives inside this IIFE, so none of it sits
-// in the global scope that user code shares: "live-js shared" blocks keep
-// their top-level bindings as globals, and a user's "const emit = ..." must
-// neither collide with nor clobber the runtime.
-(function() {
-  var post = self.postMessage.bind(self);
-  var closeWorker = self.close.bind(self);
-  var setT = setTimeout;
-  var clearT = clearTimeout;
-
-  var toParts = function(args) {
-    var list = Array.prototype.slice.call(args);
-    return list.map(function(a) {
-      if (a === undefined) return "undefined";
-      if (a === null) return "null";
-      if (typeof a === "string") return a;
-      if (typeof a === "function") return "[Function " + (a.name || "anonymous") + "]";
-      try {
-        return JSON.stringify(a, null, 2);
-      } catch (e) {
-        return String(a);
-      }
-    });
-  };
-
-  var emit = function(level, args, runId) {
-    try {
-      post({
-        type: "log",
-        runId: runId,
-        level: level,
-        parts: toParts(args),
-      });
-    } catch (e) {}
-  };
-
-  self.addEventListener("message", function(event) {
-    var payload = event.data || {};
-    if (payload.type !== "run") return;
-
-    var runId = payload.runId || 0;
-    var source = String(payload.source || "");
-    var timeoutMs = Number(payload.timeoutMs || 0);
-    var timer = timeoutMs > 0 ? setT(function() {
-      emit("error", ["Execution timed out"], runId);
-      post({ type: "done", runId: runId, timedOut: true });
-      closeWorker();
-    }, timeoutMs) : null;
-
-    self.onerror = function(msg, filename, lineno, colno) {
-      emit("error", [String(msg) + " (" + (filename || "inline") + ":" + (lineno || 0) + ":" + (colno || 0) + ")"], runId);
-      // Returning true suppresses the default action so the error does NOT
-      // bubble up to the parent (which would surface as a pageerror).
-      return true;
-    };
-    self.onunhandledrejection = function(e) {
-      var reason = e && e.reason ? e.reason : e;
-      emit("error", ["Unhandled rejection: " + (reason && reason.message ? reason.message : String(reason))], runId);
-      // Same as onerror — prevent default to keep the rejection from
-      // escaping the worker and surfacing as a pageerror in the parent.
-      if (e && typeof e.preventDefault === "function") e.preventDefault();
-    };
-
-    var finish = function() {
-      if (timer) clearT(timer);
-      post({ type: "done", runId: runId });
-    };
-
-    try {
-      var safeConsole = {
-        log: function() { emit("log", arguments, runId); },
-        info: function() { emit("info", arguments, runId); },
-        warn: function() { emit("warn", arguments, runId); },
-        error: function() { emit("error", arguments, runId); },
-      };
-      // Note the leading "return" — without it, the async IIFE's promise is
-      // discarded and any rejection (e.g. user code throwing) becomes an
-      // unhandled rejection in the worker, which propagates as a worker
-      // error and surfaces as pageerror in the parent. With "return", the
-      // outer .then(_, errHandler) catches it cleanly.
-      var runner = new Function(
-        "console",
-        "return (async function() {\\n" + source + "\\n})();"
-      );
-      Promise.resolve().then(function() { return runner(safeConsole); }).then(
-        finish,
-        function(err) {
-          emit("error", [err && err.stack ? err.stack : String(err)], runId);
-          finish();
-        },
-      );
-    } catch (err) {
-      emit("error", [err && err.stack ? err.stack : String(err)], runId);
-      finish();
-    }
-  });
-})();
-`;
+export { WORKER_SOURCE } from "./liveJsWorkerSource";
 
 const LEVEL_COLOR: Record<LogLevel, string> = {
   log: "hsl(var(--fg))",
@@ -165,36 +50,22 @@ const LEVEL_COLOR: Record<LogLevel, string> = {
 };
 
 const DEFAULT_TIMEOUT_MS = 8000;
-const WORKER_URL_KEY = "__lumenWorkerBlobUrl";
-type RunState = "running" | "success" | "error" | "timeout" | "reset";
+type RunState = "idle" | "running" | "success" | "error" | "timeout" | "reset";
 
-function makeWorker(): Worker | null {
-  try {
-    const blob = new Blob([WORKER_SOURCE], { type: "application/javascript;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const worker = new Worker(url, { type: "classic" });
-    (worker as Worker & { [WORKER_URL_KEY]?: string })[WORKER_URL_KEY] = url;
-    return worker;
-  } catch {
-    return null;
-  }
-}
+/**
+ * Documents whose live-js the user has run in this session (T48: code in a
+ * document never runs just because the document was opened — the first run
+ * is a click on "Run"; after that, edits re-run as before).
+ */
+const runApproved = new Set<string>();
 
-/** A worker for the shared registry that frees its blob: URL when terminated. */
-function makeSharedWorker(): WorkerLike | null {
-  const worker = makeWorker();
-  if (!worker) return null;
-  const terminate = worker.terminate.bind(worker);
-  worker.terminate = () => {
-    terminate();
-    const url = (worker as Worker & { [WORKER_URL_KEY]?: string })[WORKER_URL_KEY];
-    if (url) URL.revokeObjectURL(url);
-  };
-  return worker as unknown as WorkerLike;
+/** Test hook: forget every approval. */
+export function __resetLiveJsApprovals(): void {
+  runApproved.clear();
 }
 
 /** One shared worker per (document, scope name) — see ./liveJsShared. */
-const sharedScopes = new SharedScopeRegistry(makeSharedWorker);
+const sharedScopes = new SharedScopeRegistry(makeSandboxedWorker);
 
 export default function LiveJsBlock({ source, meta }: Props) {
   const heightMatch = meta?.match(/height=(\d+)/);
@@ -211,10 +82,12 @@ export default function LiveJsBlock({ source, meta }: Props) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [showSource, setShowSource] = useState(false);
   const [runId, setRunId] = useState(0);
-  const [runState, setRunState] = useState<RunState>("running");
+  const [, setApprovalTick] = useState(0);
+  const approved = runApproved.has(docKey ?? "");
+  const [runState, setRunState] = useState<RunState>(approved ? "running" : "idle");
   const [workerErr, setWorkerErr] = useState<string | null>(null);
   const idCounter = useRef(0);
-  const workerRef = useRef<Worker | null>(null);
+  const workerRef = useRef<SandboxedWorker | null>(null);
 
   // Keep the shared scope alive while any block that uses it is mounted.
   useEffect(() => {
@@ -223,6 +96,10 @@ export default function LiveJsBlock({ source, meta }: Props) {
   }, [scopeKey]);
 
   useEffect(() => {
+    if (!approved) {
+      setRunState("idle");
+      return;
+    }
     setLogs([]);
     setWorkerErr(null);
     setRunState("running");
@@ -259,7 +136,7 @@ export default function LiveJsBlock({ source, meta }: Props) {
     }
 
     const currentRun = runId;
-    const worker = makeWorker();
+    const worker = makeSandboxedWorker();
     if (!worker) {
       setWorkerErr("Live JS worker unavailable in this browser.");
       return;
@@ -329,13 +206,13 @@ export default function LiveJsBlock({ source, meta }: Props) {
       worker.removeEventListener("message", onMsg);
       worker.removeEventListener("error", onWorkerError);
       worker.terminate();
-      const workerUrl = (worker as Worker & { [WORKER_URL_KEY]?: string })[WORKER_URL_KEY];
-      if (workerUrl) URL.revokeObjectURL(workerUrl);
       workerRef.current = null;
     };
-  }, [source, runId, scopeKey]);
+  }, [source, runId, scopeKey, approved]);
 
   function reRun() {
+    runApproved.add(docKey ?? "");
+    setApprovalTick((n) => n + 1);
     setLogs([]);
     setRunId((n) => n + 1);
   }
@@ -349,6 +226,7 @@ export default function LiveJsBlock({ source, meta }: Props) {
   }
 
   const stateLabel = {
+    idle: t("block.liveJs.idle"),
     running: "Running…",
     success: "Completed",
     error: "Runtime error",
@@ -445,7 +323,7 @@ export default function LiveJsBlock({ source, meta }: Props) {
           textAlign: "right",
         }}
       >
-        JS run: {stateLabel}
+        {t("block.liveJs.runStatus", { state: stateLabel })}
       </div>
       <div
         role="log"
@@ -462,6 +340,10 @@ export default function LiveJsBlock({ source, meta }: Props) {
       >
         {workerErr ? (
           <div style={{ color: LEVEL_COLOR.error }}>{workerErr}</div>
+        ) : runState === "idle" ? (
+          <span style={{ color: "hsl(var(--fg-muted))", fontStyle: "italic" }} data-testid="livejs-idle">
+            {t("block.liveJs.idleHint")}
+          </span>
         ) : logs.length === 0 ? (
           <span style={{ color: "hsl(var(--fg-muted))", fontStyle: "italic" }}>
             {t("block.liveJs.noOutput")}

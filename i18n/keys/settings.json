@@ -1,0 +1,1214 @@
+{
+  "version": 2,
+  "domain": "settings",
+  "source": "src/i18n/locales/en/settings.json",
+  "entries": [
+    {
+      "key": "audit.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "audit.col.action",
+      "en": "Action",
+      "vars": []
+    },
+    {
+      "key": "audit.col.payload",
+      "en": "Payload",
+      "vars": []
+    },
+    {
+      "key": "audit.col.ts",
+      "en": "Time",
+      "vars": []
+    },
+    {
+      "key": "audit.col.user",
+      "en": "User",
+      "vars": []
+    },
+    {
+      "key": "audit.empty",
+      "en": "No events match the current filter.",
+      "vars": []
+    },
+    {
+      "key": "audit.export",
+      "en": "Export CSV",
+      "vars": []
+    },
+    {
+      "key": "audit.exportDone",
+      "en": "✅ Exported {count} rows to CSV",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "audit.fetchFailed",
+      "en": "Audit fetch failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "audit.filter.action",
+      "en": "Filter by action…",
+      "vars": []
+    },
+    {
+      "key": "audit.filter.user",
+      "en": "Filter by user id…",
+      "vars": []
+    },
+    {
+      "key": "audit.refresh",
+      "en": "Refresh",
+      "vars": []
+    },
+    {
+      "key": "audit.rows",
+      "en": "rows",
+      "vars": []
+    },
+    {
+      "key": "audit.title",
+      "en": "Audit log",
+      "vars": []
+    },
+    {
+      "key": "auth.accountMenu",
+      "en": "Account menu for {user}",
+      "vars": [
+        "user"
+      ]
+    },
+    {
+      "key": "auth.dialog.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "auth.dialog.createAccount",
+      "en": "Create account",
+      "vars": []
+    },
+    {
+      "key": "auth.dialog.email",
+      "en": "Email",
+      "vars": []
+    },
+    {
+      "key": "auth.dialog.github",
+      "en": "Continue with GitHub",
+      "vars": []
+    },
+    {
+      "key": "auth.dialog.google",
+      "en": "Continue with Google",
+      "vars": []
+    },
+    {
+      "key": "auth.dialog.haveAccount",
+      "en": "Have an account? Sign in",
+      "vars": []
+    },
+    {
+      "key": "auth.dialog.intro",
+      "en": "Sign-in is optional — Lumen works fully without an account. Sign in to unlock persistent collab rooms, cloud sync, and semantic search.",
+      "vars": []
+    },
+    {
+      "key": "auth.dialog.needAccount",
+      "en": "Need an account? Sign up",
+      "vars": []
+    },
+    {
+      "key": "auth.dialog.or",
+      "en": "or",
+      "vars": []
+    },
+    {
+      "key": "auth.dialog.password",
+      "en": "Password",
+      "vars": []
+    },
+    {
+      "key": "auth.dialog.signInTitle",
+      "en": "Sign in",
+      "vars": []
+    },
+    {
+      "key": "auth.dialog.signUpTitle",
+      "en": "Create an account",
+      "vars": []
+    },
+    {
+      "key": "auth.dialog.ssoContinue",
+      "en": "Continue with SSO",
+      "vars": []
+    },
+    {
+      "key": "auth.dialog.ssoDomain",
+      "en": "Work email domain (SSO)",
+      "vars": []
+    },
+    {
+      "key": "auth.error.invalidCredentials",
+      "en": "The email or password is incorrect. Check them or reset your password.",
+      "vars": []
+    },
+    {
+      "key": "auth.error.network",
+      "en": "Can't reach the sign-in service. Check your connection, VPN or proxy and try again — Lumen keeps working locally meanwhile.",
+      "vars": []
+    },
+    {
+      "key": "auth.error.sessionExpired",
+      "en": "Your session expired. Sign in again — your local documents are untouched.",
+      "vars": []
+    },
+    {
+      "key": "auth.error.ssoDenied",
+      "en": "Your identity provider refused the sign-in. Ask your IT admin to give you access to Lumen.",
+      "vars": []
+    },
+    {
+      "key": "auth.error.ssoNoConnection",
+      "en": "No SSO organization is set up for that domain. Check the spelling or ask your admin to add it.",
+      "vars": []
+    },
+    {
+      "key": "auth.error.ssoStateMismatch",
+      "en": "The sign-in link expired or was opened in another browser. Start the SSO sign-in again.",
+      "vars": []
+    },
+    {
+      "key": "auth.error.unknown",
+      "en": "Something went wrong while signing in. Try again; if it keeps happening, see the troubleshooting guide.",
+      "vars": []
+    },
+    {
+      "key": "auth.signIn",
+      "en": "Sign in",
+      "vars": []
+    },
+    {
+      "key": "auth.signOut",
+      "en": "Sign out",
+      "vars": []
+    },
+    {
+      "key": "auth.signedInAs",
+      "en": "Signed in as",
+      "vars": []
+    },
+    {
+      "key": "auth.sso.failed",
+      "en": "SSO sign-in failed",
+      "vars": []
+    },
+    {
+      "key": "auth.sso.success",
+      "en": "Signed in with SSO",
+      "vars": []
+    },
+    {
+      "key": "auth.status.error",
+      "en": "Sign-in error",
+      "vars": []
+    },
+    {
+      "key": "auth.status.loading",
+      "en": "Checking sign-in…",
+      "vars": []
+    },
+    {
+      "key": "auth.status.loading.hint",
+      "en": "Lumen is restoring your session.",
+      "vars": []
+    },
+    {
+      "key": "auth.status.notConfigured",
+      "en": "Sign-in not configured",
+      "vars": []
+    },
+    {
+      "key": "auth.status.notConfigured.hint",
+      "en": "This build runs in local-only mode — everything works offline. To enable accounts, set the auth environment variables and rebuild.",
+      "vars": []
+    },
+    {
+      "key": "auth.status.signedIn",
+      "en": "Signed in",
+      "vars": []
+    },
+    {
+      "key": "auth.status.signedIn.hint",
+      "en": "Signed in as {user}.",
+      "vars": [
+        "user"
+      ]
+    },
+    {
+      "key": "auth.status.signedIn.hintAnon",
+      "en": "Your account session is active.",
+      "vars": []
+    },
+    {
+      "key": "auth.status.signedOut",
+      "en": "Signed out",
+      "vars": []
+    },
+    {
+      "key": "auth.status.signedOut.hint",
+      "en": "Sign in to unlock cloud sync, persistent rooms and Smart search. Your local files keep working.",
+      "vars": []
+    },
+    {
+      "key": "billing.action.failed",
+      "en": "Billing is unavailable right now",
+      "vars": []
+    },
+    {
+      "key": "billing.action.manage",
+      "en": "Manage billing",
+      "vars": []
+    },
+    {
+      "key": "billing.action.signInFirst",
+      "en": "Sign in first to choose a plan.",
+      "vars": []
+    },
+    {
+      "key": "billing.action.upgradePro",
+      "en": "Upgrade to Pro",
+      "vars": []
+    },
+    {
+      "key": "billing.action.upgradeTeam",
+      "en": "Upgrade to Team",
+      "vars": []
+    },
+    {
+      "key": "billing.aiQuota.exceeded",
+      "en": "You've used all {limit} AI prompts for this month. Upgrade for more.",
+      "vars": [
+        "limit"
+      ]
+    },
+    {
+      "key": "billing.upgrade.auditLog",
+      "en": "The audit log is available on the Team plan.",
+      "vars": []
+    },
+    {
+      "key": "billing.upgrade.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "billing.upgrade.persistentCollab",
+      "en": "A persistent collaboration server is a Pro feature. Sessions use peer-to-peer WebRTC.",
+      "vars": []
+    },
+    {
+      "key": "billing.upgrade.smartSearch",
+      "en": "Smart search (semantic, embedding-based) is a Pro feature. Keyword search stays available.",
+      "vars": []
+    },
+    {
+      "key": "org.audit.open",
+      "en": "Open audit log",
+      "vars": []
+    },
+    {
+      "key": "org.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "org.domains.add",
+      "en": "Add",
+      "vars": []
+    },
+    {
+      "key": "org.domains.duplicate",
+      "en": "{domain} is already in the list.",
+      "vars": [
+        "domain"
+      ]
+    },
+    {
+      "key": "org.domains.help",
+      "en": "Members sign in with addresses on these domains. The first one is suggested for SSO sign-in.",
+      "vars": []
+    },
+    {
+      "key": "org.domains.invalid",
+      "en": "Enter a domain like acme.com.",
+      "vars": []
+    },
+    {
+      "key": "org.domains.label",
+      "en": "Allowed email domains",
+      "vars": []
+    },
+    {
+      "key": "org.domains.remove",
+      "en": "Remove {domain}",
+      "vars": [
+        "domain"
+      ]
+    },
+    {
+      "key": "org.localOnly",
+      "en": "Local only",
+      "vars": []
+    },
+    {
+      "key": "org.localOnly.hint",
+      "en": "These settings are stored only in this browser. Connect SSO to manage your organization across devices.",
+      "vars": []
+    },
+    {
+      "key": "org.members.directoryHint",
+      "en": "The full member list appears once Directory Sync is enabled for your organization.",
+      "vars": []
+    },
+    {
+      "key": "org.members.empty.cta",
+      "en": "How to connect SSO",
+      "vars": []
+    },
+    {
+      "key": "org.members.empty.hint",
+      "en": "Members come from your identity provider. In local-only mode there is nobody else to list.",
+      "vars": []
+    },
+    {
+      "key": "org.members.empty.title",
+      "en": "Connect SSO to see members",
+      "vars": []
+    },
+    {
+      "key": "org.members.title",
+      "en": "Members",
+      "vars": []
+    },
+    {
+      "key": "org.members.you",
+      "en": "You",
+      "vars": []
+    },
+    {
+      "key": "org.name.label",
+      "en": "Organization name",
+      "vars": []
+    },
+    {
+      "key": "org.name.placeholder",
+      "en": "Acme Inc.",
+      "vars": []
+    },
+    {
+      "key": "org.save",
+      "en": "Save",
+      "vars": []
+    },
+    {
+      "key": "org.saveFailed",
+      "en": "Couldn't save — browser storage is unavailable (private mode?).",
+      "vars": []
+    },
+    {
+      "key": "org.saved",
+      "en": "Organization settings saved",
+      "vars": []
+    },
+    {
+      "key": "org.sso.account",
+      "en": "Account",
+      "vars": []
+    },
+    {
+      "key": "org.sso.configured",
+      "en": "SSO available — not signed in",
+      "vars": []
+    },
+    {
+      "key": "org.sso.configured.hint",
+      "en": "The SSO worker is set up. Sign in with your work domain to connect this organization.",
+      "vars": []
+    },
+    {
+      "key": "org.sso.connected",
+      "en": "SSO connected",
+      "vars": []
+    },
+    {
+      "key": "org.sso.connected.hint",
+      "en": "Signed in through your identity provider (organization {org}).",
+      "vars": [
+        "org"
+      ]
+    },
+    {
+      "key": "org.sso.notConfigured",
+      "en": "SSO not configured",
+      "vars": []
+    },
+    {
+      "key": "org.sso.notConfigured.hint",
+      "en": "Deploy the SSO worker and set VITE_WORKOS_ENDPOINT to let members sign in with your identity provider.",
+      "vars": []
+    },
+    {
+      "key": "org.sso.title",
+      "en": "Single sign-on",
+      "vars": []
+    },
+    {
+      "key": "org.title",
+      "en": "Organization",
+      "vars": []
+    },
+    {
+      "key": "plugin.abc",
+      "en": "Music · ABC notation",
+      "vars": []
+    },
+    {
+      "key": "plugin.chart",
+      "en": "Chart",
+      "vars": []
+    },
+    {
+      "key": "plugin.chart.refetch",
+      "en": "Refetch chart data",
+      "vars": []
+    },
+    {
+      "key": "plugin.map",
+      "en": "Map",
+      "vars": []
+    },
+    {
+      "key": "pluginGallery.categories",
+      "en": "Categories",
+      "vars": []
+    },
+    {
+      "key": "pluginGallery.categoriesLabel",
+      "en": "Plugin categories",
+      "vars": []
+    },
+    {
+      "key": "pluginGallery.close",
+      "en": "Close plugin gallery",
+      "vars": []
+    },
+    {
+      "key": "pluginGallery.comingSoon",
+      "en": "More plugins coming soon ·",
+      "vars": []
+    },
+    {
+      "key": "pluginGallery.counts",
+      "en": "{installed} installed · {available} available",
+      "vars": [
+        "installed",
+        "available"
+      ]
+    },
+    {
+      "key": "pluginGallery.homepage",
+      "en": "{name} homepage",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "pluginGallery.install",
+      "en": "Install",
+      "vars": []
+    },
+    {
+      "key": "pluginGallery.noMatch",
+      "en": "No plugins matched your search.",
+      "vars": []
+    },
+    {
+      "key": "pluginGallery.search",
+      "en": "Search plugins…",
+      "vars": []
+    },
+    {
+      "key": "pluginGallery.submit",
+      "en": "Submit a plugin",
+      "vars": []
+    },
+    {
+      "key": "pluginGallery.title",
+      "en": "Plugin Gallery",
+      "vars": []
+    },
+    {
+      "key": "pluginGallery.uninstall",
+      "en": "Uninstall",
+      "vars": []
+    },
+    {
+      "key": "pluginGallery.verified",
+      "en": "Verified by Lumen",
+      "vars": []
+    },
+    {
+      "key": "privacy.blocked",
+      "en": "Blocked: {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "privacy.cat.cloud-ai",
+      "en": "Cloud AI — your text is sent",
+      "vars": []
+    },
+    {
+      "key": "privacy.cat.cloud-text",
+      "en": "Cloud service — your text is sent",
+      "vars": []
+    },
+    {
+      "key": "privacy.cat.local-ai",
+      "en": "On this device / LAN",
+      "vars": []
+    },
+    {
+      "key": "privacy.cat.model-download",
+      "en": "Model download — no text sent",
+      "vars": []
+    },
+    {
+      "key": "privacy.cat.monitoring",
+      "en": "Error report — only with your consent, content removed",
+      "vars": []
+    },
+    {
+      "key": "privacy.cat.plugin",
+      "en": "Plugin — sent to an address you allowed the plugin",
+      "vars": []
+    },
+    {
+      "key": "privacy.cat.research",
+      "en": "Research service — your query is sent",
+      "vars": []
+    },
+    {
+      "key": "privacy.cat.static-asset",
+      "en": "Static files (fonts, icons) — no text sent",
+      "vars": []
+    },
+    {
+      "key": "privacy.cat.third-party",
+      "en": "Third-party service — the page address is sent",
+      "vars": []
+    },
+    {
+      "key": "privacy.clear",
+      "en": "Clear",
+      "vars": []
+    },
+    {
+      "key": "privacy.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "privacy.cloudRequests",
+      "en": "Left this device: {n} ({size} sent)",
+      "vars": [
+        "n",
+        "size"
+      ]
+    },
+    {
+      "key": "privacy.col.decision",
+      "en": "Decision",
+      "vars": []
+    },
+    {
+      "key": "privacy.col.received",
+      "en": "Received",
+      "vars": []
+    },
+    {
+      "key": "privacy.col.sent",
+      "en": "Sent",
+      "vars": []
+    },
+    {
+      "key": "privacy.col.time",
+      "en": "Time",
+      "vars": []
+    },
+    {
+      "key": "privacy.col.where",
+      "en": "Where",
+      "vars": []
+    },
+    {
+      "key": "privacy.col.why",
+      "en": "Why",
+      "vars": []
+    },
+    {
+      "key": "privacy.decision.allowed",
+      "en": "Allowed",
+      "vars": []
+    },
+    {
+      "key": "privacy.decision.blocked",
+      "en": "Blocked",
+      "vars": []
+    },
+    {
+      "key": "privacy.downloads",
+      "en": "Model downloads: {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "privacy.empty",
+      "en": "No AI network requests yet.",
+      "vars": []
+    },
+    {
+      "key": "privacy.footer",
+      "en": "Recorded: time, host, size, reason. Never the text of prompts or answers. Model downloads made inside workers are listed too; their size may show as unknown.",
+      "vars": []
+    },
+    {
+      "key": "privacy.localRequests",
+      "en": "Local: {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "privacy.onlyLeaving",
+      "en": "Only what left this device",
+      "vars": []
+    },
+    {
+      "key": "privacy.policy",
+      "en": "Policy: {policy}",
+      "vars": [
+        "policy"
+      ]
+    },
+    {
+      "key": "privacy.policyName.cloud",
+      "en": "cloud",
+      "vars": []
+    },
+    {
+      "key": "privacy.policyName.local-first",
+      "en": "local first",
+      "vars": []
+    },
+    {
+      "key": "privacy.policyName.local-only",
+      "en": "local only",
+      "vars": []
+    },
+    {
+      "key": "privacy.staticAssets",
+      "en": "Static files: {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "privacy.title",
+      "en": "Privacy ledger",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.clear",
+      "en": "Clear",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.cleared",
+      "en": "Runtime metrics cleared",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.column.avgMs",
+      "en": "Avg (ms)",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.column.label",
+      "en": "Label",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.column.p95Ms",
+      "en": "p95 (ms)",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.column.rateLimits",
+      "en": "Rate limit",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.column.retries",
+      "en": "Retry %",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.column.success",
+      "en": "Success",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.column.timeouts",
+      "en": "Timeouts",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.column.total",
+      "en": "Total",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.column.totalRetries",
+      "en": "Retries",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.lastUpdated",
+      "en": "Last updated",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.noData",
+      "en": "No runtime data yet. Use the app and retry operations to populate metrics.",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.refresh",
+      "en": "Refresh",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.section.categories",
+      "en": "Categories",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.section.operations",
+      "en": "Operations",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.subtitle",
+      "en": "Session runtime telemetry for network + AI operations.",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.title",
+      "en": "Runtime metrics",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.totalRequests",
+      "en": "Total requests",
+      "vars": []
+    },
+    {
+      "key": "runtimeMetrics.vitals",
+      "en": "Web vitals — measured on this device, never sent",
+      "vars": []
+    },
+    {
+      "key": "theme.toggle",
+      "en": "Toggle theme",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.accent",
+      "en": "Accent color",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.accent.hex",
+      "en": "Accent color (hex)",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.accent.invalid",
+      "en": "Enter a hex color like #3366ff.",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.accent.picker",
+      "en": "Pick accent color",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.accent.usePreset",
+      "en": "Use preset accent",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.ch",
+      "en": "{n} ch",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "themeSettings.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.contentWidth",
+      "en": "Content width",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.contrast",
+      "en": "Contrast (WCAG AA)",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.contrast.accent",
+      "en": "Accent on background",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.contrast.fail",
+      "en": "Needs {min}:1",
+      "vars": [
+        "min"
+      ]
+    },
+    {
+      "key": "themeSettings.contrast.muted",
+      "en": "Secondary text",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.contrast.onAccent",
+      "en": "Text on accent buttons",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.contrast.pass",
+      "en": "Pass",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.contrast.text",
+      "en": "Text on background",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.export",
+      "en": "Export JSON",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.font",
+      "en": "Editor font",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.font.custom",
+      "en": "Custom…",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.font.customHelp",
+      "en": "Any font installed on this device, e.g. Fira Code. Falls back to monospace.",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.font.customInvalid",
+      "en": "Use letters, digits, spaces, hyphens or underscores only (max 64).",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.font.customName",
+      "en": "Font name",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.font.mono",
+      "en": "Monospace",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.font.serif",
+      "en": "Serif",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.font.system",
+      "en": "System sans-serif",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.fontSize",
+      "en": "Font size",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.import",
+      "en": "Import JSON",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.import.done",
+      "en": "Theme imported.",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.import.error.badVersion",
+      "en": "Not a Lumen theme file (missing \"lumenTheme\": 1).",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.import.error.invalidColor",
+      "en": "\"{key}\" must be a hex color like #3366ff.",
+      "vars": [
+        "key"
+      ]
+    },
+    {
+      "key": "themeSettings.import.error.invalidValue",
+      "en": "\"{key}\" has an invalid or out-of-range value.",
+      "vars": [
+        "key"
+      ]
+    },
+    {
+      "key": "themeSettings.import.error.notJson",
+      "en": "That file isn't valid JSON.",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.import.error.notObject",
+      "en": "A theme file must contain a single JSON object.",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.import.error.tooLarge",
+      "en": "That file is too large to be a theme (max 8 KB).",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.import.error.unknownKey",
+      "en": "Unknown setting \"{key}\" — the file was rejected.",
+      "vars": [
+        "key"
+      ]
+    },
+    {
+      "key": "themeSettings.lineHeight",
+      "en": "Line height",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.preset.default",
+      "en": "Default",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.preset.highContrast",
+      "en": "High contrast",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.preset.nord",
+      "en": "Nord",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.preset.sepia",
+      "en": "Sepia",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.presets",
+      "en": "Presets",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.preview",
+      "en": "Live preview",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.preview.body",
+      "en": "Body text uses the editor font, size and line height you pick below.",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.preview.heading",
+      "en": "# Heading in the accent color",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.preview.muted",
+      "en": "Secondary text stays readable too.",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.px",
+      "en": "{n} px",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "themeSettings.reset",
+      "en": "Reset to default",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.title",
+      "en": "Theme",
+      "vars": []
+    },
+    {
+      "key": "themeSettings.typography",
+      "en": "Typography & layout",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.add.help",
+      "en": "Paste an Ed25519 public key as PEM or base64 SPKI.",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.add.label",
+      "en": "Add a public key",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.add.submit",
+      "en": "Trust key",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.added",
+      "en": "Key trusted",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.alreadyTrusted",
+      "en": "This key is already trusted",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.builtinBadge",
+      "en": "Built-in",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.empty",
+      "en": "You haven't trusted any keys yet.",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.error.empty",
+      "en": "Paste a public key first.",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.error.notBase64",
+      "en": "That doesn't look like a PEM or base64 key — check that you copied the whole block.",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.error.notEd25519",
+      "en": "Not an Ed25519 public key. Only Ed25519 keys (44-byte SPKI) are accepted.",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.intro",
+      "en": "Plugins install only when signed by a key listed here. Compare the fingerprint with the one the publisher lists before trusting a key.",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.loading",
+      "en": "Loading keys…",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.remove.aria",
+      "en": "Remove key {fingerprint}",
+      "vars": [
+        "fingerprint"
+      ]
+    },
+    {
+      "key": "trustedKeys.remove.confirm",
+      "en": "Stop trusting key {fingerprint}…? Plugins signed only with it will no longer install.",
+      "vars": [
+        "fingerprint"
+      ]
+    },
+    {
+      "key": "trustedKeys.remove.title",
+      "en": "Remove key",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.removed",
+      "en": "Key removed",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.saveFailed",
+      "en": "Couldn't save the key: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "trustedKeys.section.builtin",
+      "en": "Built-in keys",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.section.user",
+      "en": "Your keys",
+      "vars": []
+    },
+    {
+      "key": "trustedKeys.title",
+      "en": "Trusted signing keys",
+      "vars": []
+    }
+  ]
+}

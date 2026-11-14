@@ -60,7 +60,7 @@ async function ensureLang(lang: string): Promise<string> {
         await hl.loadLanguage(lang);
         loadedLangs.add(lang);
       } catch {
-        /* unsupported lang — leave it unloaded; we'll fall back to text */
+        /* why: unsupported lang — leave it unloaded; we'll fall back to text */
       }
     })();
     inFlightLoads.set(lang, inFlight);
@@ -126,7 +126,8 @@ export function rehypeShiki(opts: ShikiOpts) {
           const wrapper: Element = {
             type: "element",
             tagName: "div",
-            properties: { className: ["code-block"] },
+            // Code reads left-to-right whatever the note's direction (T25).
+            properties: { className: ["code-block"], dir: "ltr" },
             children: [
               {
                 type: "element",
@@ -158,11 +159,17 @@ export function rehypeShiki(opts: ShikiOpts) {
           };
           parent.children[index] = wrapper;
         } catch {
-          // leave the original code block untouched on failure
+          // why: leave the original code block untouched on failure
         }
       });
     });
-    await Promise.all(tasks.map((fn) => fn()));
+    // One block per task, yielding to the browser between blocks (C1): a
+    // document with dozens of code blocks used to highlight in one long
+    // main-thread task — the biggest share of the startup blocking time.
+    for (const fn of tasks) {
+      await fn();
+      await new Promise<void>((r) => setTimeout(r, 0));
+    }
   };
 }
 

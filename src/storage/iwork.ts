@@ -340,7 +340,7 @@ export function extractIwaText(
       remaining -= stream.length;
       messages.push(...parseIwaMessages(stream));
     } catch {
-      /* skip unreadable (or over-budget) component; others may still yield text */
+      /* why: skip unreadable (or over-budget) component; others may still yield text */
     }
   }
   const paragraphs: string[] = [];
@@ -492,7 +492,7 @@ export async function gunzip(data: Uint8Array, maxBytes = IWORK_UNZIP_LIMITS.max
       total += value.length;
       // A small crafted gzip member can expand enormously: stop at the cap.
       if (total > maxBytes) {
-        await reader.cancel().catch(() => {});
+        await reader.cancel().catch(() => { /* why: the read is abandoned and the size error below is what the caller sees */ });
         throw new Error("gzip entry exceeds the size limit");
       }
       chunks.push(value);
@@ -557,7 +557,7 @@ export async function iworkToMarkdown(
       const inner = await unzip(nested.slice().buffer, IWORK_UNZIP_LIMITS);
       for (const [k, v] of inner) files.set(k.startsWith("Index/") ? k : `Index/${k}`, v);
     } catch {
-      /* ignore — fall through to whatever else the archive has */
+      /* why: fall through to whatever else the archive has */
     }
   }
 

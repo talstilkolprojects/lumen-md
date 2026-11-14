@@ -1,86 +1,73 @@
 #!/usr/bin/env node
 /**
- * Extract every i18n key + its English value from `src/i18n/index.ts`
- * (β.4.1). Emits a `i18n/keys.json` blob that an external translation
- * step can feed into Claude / GPT / a translator's TMS.
+ * Extract every i18n key, its English value and its {var} placeholders
+ * (β.4.1) into i18n/keys/<domain>.json: the input an external translation
+ * step (scripts/translate-locale.mjs, a translator's TMS) works from.
  *
- * The output shape is intentionally flat — each entry is just
- * `{ key: <id>, en: <english value>, vars: <list of {var} placeholder names> }`
- * so a translator can verify they preserved every interpolation.
+ * The English strings are read from src/i18n/locales/en/*.json (plan 0.3).
+ * One file per domain, entries sorted by key, no timestamp: the files only
+ * change when strings do, and two branches that add strings to different
+ * domains change different files.
+ *
+ * Each entry is `{ key, en, vars }` so a translator can verify they kept
+ * every interpolation.
  *
  * Usage:
- *   node scripts/extract-i18n-keys.mjs > i18n/keys.json
- *   node scripts/extract-i18n-keys.mjs --check   # CI: fail if keys.json is stale
+ *   node scripts/extract-i18n-keys.mjs           # write i18n/keys/*.json (and print them)
+ *   node scripts/extract-i18n-keys.mjs --check   # CI: fail if they are stale
  */
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { join, relative } from "node:path";
+import { KEYS_DIR, ROOT, SOURCE_LOCALE, buildKeyFiles, formatJson, readLocale } from "./lib/i18n-files.mjs";
+import { lazyEnglishEntries } from "./lib/i18n-lazy.mjs";
 
-const PATH = resolve("src/i18n/index.ts");
-const text = readFileSync(PATH, "utf8");
-
-// Pull the `en: Strings = { ... };` block.
-const match = /const en:\s*Strings\s*=\s*\{([\s\S]+?)^\};/m.exec(text);
-if (!match) {
-  console.error("Could not locate the `en` bundle in src/i18n/index.ts");
+// English of lazily loaded domains (src/i18n/lazy/*.json) is part of the key set too.
+const en = { ...readLocale(SOURCE_LOCALE), ...Object.fromEntries(lazyEnglishEntries(ROOT)) };
+if (Object.keys(en).length === 0) {
+  console.error("No English strings in src/i18n/locales/en/ (run `node scripts/i18n-split.mjs` on an old checkout).");
   process.exit(2);
 }
-
-const body = match[1];
-
-// Match each `"key": "value"` (including escaped quotes inside the value).
-// We don't need to support every JS quirk — the bundle is a flat object
-// of string-to-string entries authored by hand.
-const entryRe = /^\s*"([\w.\-]+)"\s*:\s*"((?:[^"\\]|\\.)*)"\s*,?\s*$/gm;
-
-// Each entry: { key, en, vars: [...] }
-const entries = [];
-let m;
-while ((m = entryRe.exec(body)) !== null) {
-  const [, key, raw] = m;
-  // Unescape \" and \\ — the raw match preserves them.
-  const en = raw.replace(/\\"/g, '"').replace(/\\\\/g, "\\");
-  // Capture every {var} placeholder so translators don't drop them.
-  const vars = [...en.matchAll(/\{(\w+)\}/g)].map((mm) => mm[1]);
-  entries.push({ key, en, vars: [...new Set(vars)] });
-}
-
-// Output deterministically (key order from the bundle is preserved by
-// extraction order, so we don't sort).
-
-const out = {
-  version: 1,
-  generated_at: new Date().toISOString(),
-  source: "src/i18n/index.ts (en bundle)",
-  count: entries.length,
-  entries,
-};
-
-const dest = resolve("i18n/keys.json");
+const files = buildKeyFiles(en);
+const count = Object.keys(en).length;
+const existing = existsSync(KEYS_DIR) ? readdirSync(KEYS_DIR).filter((n) => n.endsWith(".json")) : [];
+const stale = existing.filter((n) => !(n.slice(0, -5) in files));
 
 if (process.argv.includes("--check")) {
-  // Compare everything but the timestamp; never writes.
-  const committed = existsSync(dest) ? JSON.parse(readFileSync(dest, "utf8")) : { entries: [] };
-  const same = JSON.stringify(committed.entries) === JSON.stringify(entries) && committed.count === entries.length;
-  if (same) {
-    console.error(`✓ i18n/keys.json is up to date (${entries.length} entries)`);
+  const problems = [];
+  for (const [d, file] of Object.entries(files)) {
+    const path = join(KEYS_DIR, `${d}.json`);
+    if (!existsSync(path)) {
+      problems.push(`missing ${relative(ROOT, path)}`);
+      continue;
+    }
+    const committed = JSON.parse(readFileSync(path, "utf8"));
+    if (JSON.stringify(committed) === JSON.stringify(file)) continue;
+    const was = new Map((committed.entries ?? []).map((e) => [e.key, JSON.stringify(e)]));
+    const now = new Map(file.entries.map((e) => [e.key, JSON.stringify(e)]));
+    const added = [...now.keys()].filter((k) => !was.has(k));
+    const removed = [...was.keys()].filter((k) => !now.has(k));
+    const changed = [...now.keys()].filter((k) => was.has(k) && was.get(k) !== now.get(k));
+    problems.push(
+      `${relative(ROOT, path)}: ${added.length} missing, ${removed.length} removed, ${changed.length} changed` +
+        ` (${[...added, ...removed, ...changed].slice(0, 8).join(", ")})`,
+    );
+  }
+  for (const n of stale) problems.push(`stale ${relative(ROOT, join(KEYS_DIR, n))} (no strings in that domain)`);
+  if (existsSync(join(ROOT, "i18n", "keys.json"))) problems.push("i18n/keys.json is the old layout: delete it");
+  if (problems.length === 0) {
+    console.error(`✓ i18n/keys/ is up to date (${count} entries in ${Object.keys(files).length} domains)`);
     process.exit(0);
   }
-  const was = new Map((committed.entries ?? []).map((e) => [e.key, JSON.stringify(e)]));
-  const now = new Map(entries.map((e) => [e.key, JSON.stringify(e)]));
-  const added = [...now.keys()].filter((k) => !was.has(k));
-  const removed = [...was.keys()].filter((k) => !now.has(k));
-  const changed = [...now.keys()].filter((k) => was.has(k) && was.get(k) !== now.get(k));
-  console.error(`✗ i18n/keys.json is stale: ${added.length} missing, ${removed.length} removed, ${changed.length} changed.`);
-  for (const [label, keys] of [["missing", added], ["removed", removed], ["changed", changed]]) {
-    if (keys.length) console.error(`  ${label}: ${keys.slice(0, 20).join(", ")}${keys.length > 20 ? ", …" : ""}`);
-  }
-  console.error("  Run `npm run i18n:extract` and commit i18n/keys.json.");
+  console.error("✗ i18n/keys/ is stale:");
+  for (const p of problems) console.error(`  ${p}`);
+  console.error("  Run `npm run i18n:extract` and commit i18n/keys/.");
   process.exit(1);
 }
 
-mkdirSync("i18n", { recursive: true });
-writeFileSync(dest, JSON.stringify(out, null, 2) + "\n");
-console.error(`✓ wrote ${entries.length} entries to ${dest}`);
-// Echo the JSON to stdout too so the script can be piped.
-process.stdout.write(JSON.stringify(out, null, 2) + "\n");
+mkdirSync(KEYS_DIR, { recursive: true });
+for (const n of stale) rmSync(join(KEYS_DIR, n));
+for (const [d, file] of Object.entries(files)) writeFileSync(join(KEYS_DIR, `${d}.json`), formatJson(file));
+console.error(`✓ wrote ${count} entries to ${relative(ROOT, KEYS_DIR)}/ (${Object.keys(files).length} domains)`);
+// Echo everything to stdout too, so the script can still be piped.
+process.stdout.write(formatJson({ count, domains: files }));

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useFocusTrap } from "../ui/useFocusTrap";
 import { useAuth } from "../auth/useAuth";
 import { describeAuthError, describeAuthStatus, type AuthStatusDescription } from "../auth/authStatus";
 import { isWorkosEnabled, signInWithSso } from "../auth/workosProvider";
@@ -45,14 +46,8 @@ export function AuthDialog({ open, onClose }: Props) {
     setSsoDomain(loadOrgSettings().domains[0] ?? "");
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  // Focus stays in the dialog while it is open and returns on close; Escape closes it.
+  useFocusTrap(dialogRef, { active: open, onEscape: onClose });
 
   if (!open) return null;
 

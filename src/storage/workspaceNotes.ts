@@ -9,7 +9,7 @@ export async function readAllNotes(): Promise<Array<{ path: string; text: string
     try {
       notes.push({ path: f.path, text: await readWorkspaceFile(f.path) });
     } catch {
-      /* unreadable: skip */
+      /* why: unreadable: skip */
     }
   }
   return notes;

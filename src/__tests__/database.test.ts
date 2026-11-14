@@ -8,6 +8,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   parseDatabaseSpec,
   groupRows,
+  NO_VALUE,
   displayValue,
   resolveFields,
   runDatabaseQuery,
@@ -81,7 +82,7 @@ describe("groupRows", () => {
     const groups = groupRows(rows, "status");
     expect(groups.get("todo")).toHaveLength(2);
     expect(groups.get("done")).toHaveLength(1);
-    expect(groups.get("_")).toHaveLength(1);
+    expect(groups.get(NO_VALUE)).toHaveLength(1);
   });
 });
 

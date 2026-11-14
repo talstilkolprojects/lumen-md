@@ -1,0 +1,11 @@
+{
+ "$comment": "Plan 0.16 — production files under src/ that nothing imports, frozen when the gate landed. Only shrinks: delete the file or import it, then `node scripts/check-unused-files.mjs --prune`.",
+ "files": [
+  "src/agents/index.ts",
+  "src/hooks/useAppHandlers.ts",
+  "src/hooks/useGit.ts",
+  "src/lib/cryptoStorage.ts",
+  "src/plugins/sandbox.ts",
+  "src/ui/CanvasWhiteboard.tsx"
+ ]
+}

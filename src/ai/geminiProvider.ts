@@ -11,7 +11,8 @@
  */
 
 import type { ChatMessage, ChatOptions } from "./llm";
-import { getProviderKey, AiError, PROVIDER_DEFAULT_MODELS } from "./llm";
+import { assertCloudAllowed } from "./policy";
+import { getProviderKey, AiError, PROVIDER_DEFAULT_MODELS, isRetiredGeminiModel } from "./llm";
 
 const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const DEFAULT_MODEL = PROVIDER_DEFAULT_MODELS.gemini;
@@ -19,7 +20,8 @@ const DEFAULT_MODEL = PROVIDER_DEFAULT_MODELS.gemini;
 export function getGeminiModel(opts: ChatOptions): string {
   if (opts.model) return opts.model;
   try {
-    return localStorage.getItem("lumen.ai.model.gemini") || DEFAULT_MODEL;
+    const saved = localStorage.getItem("lumen.ai.model.gemini");
+    return saved && !isRetiredGeminiModel(saved) ? saved : DEFAULT_MODEL;
   } catch {
     return DEFAULT_MODEL;
   }
@@ -82,6 +84,7 @@ export async function chatGemini(
   messages: ChatMessage[],
   opts: ChatOptions = {},
 ): Promise<string> {
+  assertCloudAllowed("Google Gemini");
   const key = getProviderKey("gemini");
   const url = `${BASE}/${getGeminiModel(opts)}:generateContent?key=${encodeURIComponent(key)}`;
   const res = await fetch(url, {
@@ -106,6 +109,7 @@ export async function* chatGeminiStream(
   messages: ChatMessage[],
   opts: ChatOptions = {},
 ): AsyncGenerator<string, void, undefined> {
+  assertCloudAllowed("Google Gemini");
   const key = getProviderKey("gemini");
   const url = `${BASE}/${getGeminiModel(opts)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(key)}`;
   const res = await fetch(url, {
@@ -139,7 +143,7 @@ export async function* chatGeminiStream(
         const delta = extractText(json);
         if (delta) yield delta;
       } catch {
-        /* skip */
+        /* why: a keep-alive or partial line that is not JSON carries no text */
       }
     }
   }

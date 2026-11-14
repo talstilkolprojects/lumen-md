@@ -11,11 +11,13 @@
  */
 import { chunkMarkdown } from "./semanticSearch";
 import { estimateTokens } from "./usage";
+import type { AiMode } from "./aiMode";
+
+export type { AiMode };
+export { getAiMode, setAiMode } from "./aiMode";
 
 /** Tokens of the separators around one kept section ("\n\n[…]\n\n"). */
 const SEPARATOR_TOKENS = 3;
-
-export type AiMode = "economy" | "balanced" | "quality";
 
 /** Context budget (tokens) per AI mode. */
 export const CONTEXT_BUDGET: Record<AiMode, number> = { economy: 2_000, balanced: 5_000, quality: 12_000 };
@@ -174,23 +176,4 @@ export function packContext(query: string, docs: readonly PackInput[], budgetTok
     out = assemble();
   }
   return out;
-}
-
-/** The user's AI mode (economy / balanced / quality); balanced by default. */
-export function getAiMode(): AiMode {
-  try {
-    const v = localStorage.getItem("lumen.ai.mode");
-    return v === "economy" || v === "quality" ? v : "balanced";
-  } catch {
-    return "balanced";
-  }
-}
-
-export function setAiMode(mode: AiMode): void {
-  try {
-    if (mode === "balanced") localStorage.removeItem("lumen.ai.mode");
-    else localStorage.setItem("lumen.ai.mode", mode);
-  } catch {
-    /* */
-  }
 }

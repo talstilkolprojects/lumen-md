@@ -51,6 +51,9 @@ test.beforeEach(async ({ page }) => {
 test("malformed mermaid syntax shows error block, no pageerror", async ({
   page,
 }) => {
+  // Two 15 s render waits after the page load: more than the default 30 s
+  // test budget on a cold runner, by construction.
+  test.slow();
   const errs = captureErrors(page);
   await page.keyboard.press("Meta+2");
   const editor = page.locator(".cm-content").first();
@@ -58,23 +61,32 @@ test("malformed mermaid syntax shows error block, no pageerror", async ({
   await editor.fill(
     "```mermaid\nnot-a-valid-syntax => zzz\nbroken!!! [not a graph]\n```\n",
   );
-  await page.waitForTimeout(2000); // mermaid render attempt
+  // The block either renders or shows its own error view; never a page error.
+  await expect(page.locator(".mermaid-block").first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".mermaid-error").first()).toBeVisible({ timeout: 15_000 });
   expect(errs).toEqual([]);
 });
 
 test("malformed graphviz syntax doesn't crash the renderer", async ({
   page,
 }) => {
+  // Two 15 s render waits after the page load: more than the default 30 s
+  // test budget on a cold runner, by construction.
+  test.slow();
   const errs = captureErrors(page);
   await page.keyboard.press("Meta+2");
   const editor = page.locator(".cm-content").first();
   await editor.click();
   await editor.fill("```dot\nnot { valid graphviz at all\n```\n");
-  await page.waitForTimeout(2000);
+  await expect(page.locator(".mermaid-block").first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".mermaid-error").first()).toBeVisible({ timeout: 15_000 });
   expect(errs).toEqual([]);
 });
 
 test("massive CSV (1000 rows) renders without freezing", async ({ page }) => {
+  // Two 15 s render waits after the page load: more than the default 30 s
+  // test budget on a cold runner, by construction.
+  test.slow();
   const errs = captureErrors(page);
   await page.keyboard.press("Meta+2");
   const editor = page.locator(".cm-content").first();
@@ -85,7 +97,8 @@ test("massive CSV (1000 rows) renders without freezing", async ({ page }) => {
   await editor.fill(
     "```csv\nid,name,score,group\n" + rows.join("\n") + "\n```\n",
   );
-  await page.waitForTimeout(3000);
+  await expect(page.locator(".chart-block").first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".chart-block table").first()).toBeVisible({ timeout: 15_000 });
   expect(errs).toEqual([]);
 });
 
@@ -99,9 +112,10 @@ test("LiveJS with throw doesn't propagate up to pageerror", async ({
   await editor.fill(
     "```live-js\nthrow new Error(\"intentional from user code\");\n```\n",
   );
-  await page.waitForTimeout(2500);
-  // The live-js block should catch the throw internally and show a
-  // status message. No uncaught pageerror should leak.
+  await page.getByRole("button", { name: "Run", exact: true }).first().click();
+  // The live-js block catches the throw and shows its status; no
+  // uncaught pageerror leaks.
+  await expect(page.locator(".chart-block").first()).toContainText(/Runtime error|intentional from user code/i, { timeout: 15_000 });
   expect(errs).toEqual([]);
 });
 
@@ -115,11 +129,10 @@ test("LiveJS with infinite loop is timed out (block status reflects it)", async 
   await editor.fill(
     "```live-js\nwhile (true) { /* user typo */ }\n```\n",
   );
-  // The worker has a hard timeout (~3-5s). Wait long enough for the
-  // status to flip to "Timed out".
-  await page.waitForTimeout(6000);
+  await page.getByRole("button", { name: "Run", exact: true }).first().click();
+  // The worker has a hard timeout (~3-5s): the status flips to "Timed out".
   await expect(page.locator("text=/Timed out|Runtime error/i").first()).toBeVisible({
-    timeout: 4000,
+    timeout: 15_000,
   });
   expect(errs).toEqual([]);
 });
@@ -146,7 +159,7 @@ test("Print command with window.print stubbed (no real print) doesn't crash", as
     palette.locator('[role="option"][aria-selected="true"]'),
   ).toContainText(/Print/i, { timeout: 5000 });
   await page.keyboard.press("Enter");
-  await page.waitForTimeout(800);
+  await expect(palette).toBeHidden({ timeout: 5000 });
   expect(errs).toEqual([]);
 });
 
@@ -154,7 +167,9 @@ test("opening a malformed JSON file via paste produces a graceful state", async 
   page,
 }) => {
   const errs = captureErrors(page);
-  await page.keyboard.press("Meta+1");
+  // Split view: the renderer must actually see the block (in source-only
+  // mode the old version of this test rendered nothing and proved nothing).
+  await page.keyboard.press("Meta+2");
   const editor = page.locator(".cm-content").first();
   await editor.click();
   // Garbled JSON inside a json-table fence (the renderer attempts a
@@ -162,7 +177,7 @@ test("opening a malformed JSON file via paste produces a graceful state", async 
   await editor.fill(
     "```json-table\n[ { bad json, no quotes }, { also: bad } ]\n```\n",
   );
-  await page.waitForTimeout(1500);
+  await expect(page.locator(".chart-block").first()).toContainText(/parse error/i, { timeout: 15_000 });
   expect(errs).toEqual([]);
 });
 
@@ -174,7 +189,7 @@ test("typing a 5000-character heading line doesn't freeze the editor", async ({
   const editor = page.locator(".cm-content").first();
   await editor.click();
   await editor.fill("# " + "long heading text ".repeat(280));
-  await page.waitForTimeout(800);
+  await expect(editor).toContainText("long heading text long heading text");
   // Cursor should still be in the editor.
   await expect(editor).toBeVisible();
   expect(errs).toEqual([]);
@@ -188,11 +203,11 @@ test("rapid Cmd+S spam doesn't break the save pipeline", async ({ page }) => {
     };
   });
   const errs = captureErrors(page);
-  for (let i = 0; i < 10; i += 1) {
-    await page.keyboard.press("Meta+S");
-    await page.waitForTimeout(50);
-  }
-  await page.waitForTimeout(500);
+  for (let i = 0; i < 10; i += 1) await page.keyboard.press("Meta+S");
+  // Every cancelled save rejects on a microtask; a later turn of the event
+  // loop is the earliest a leaked rejection could surface.
+  await page.evaluate(() => new Promise((r) => setTimeout(r, 0)));
+  await expect(page.locator(".cm-content").first()).toBeVisible();
   expect(errs).toEqual([]);
 });
 
@@ -228,7 +243,7 @@ test("malformed KaTeX inline math doesn't propagate as pageerror", async ({
   await editor.fill(
     "Broken inline math: $\\frac{1}{}$ and $\\sqrt{$ — done.\n",
   );
-  await page.waitForTimeout(1500);
+  await expect(page.locator(".prose-lumen").first()).toContainText("done.", { timeout: 10_000 });
   expect(errs).toEqual([]);
 });
 
@@ -242,7 +257,8 @@ test("malformed KaTeX display math doesn't propagate as pageerror", async ({
   await editor.fill(
     "$$\n\\begin{matrix} a & b \\\\ c \\end{wrongenv}\n$$\n",
   );
-  await page.waitForTimeout(1500);
+  // KaTeX renders an error span for bad input; the preview still updates.
+  await expect(page.locator(".prose-lumen .katex, .prose-lumen .katex-error, .prose-lumen .katex-display").first()).toBeVisible({ timeout: 10_000 });
   expect(errs).toEqual([]);
 });
 
@@ -256,7 +272,7 @@ test("deeply nested blockquote (50 levels) renders without freezing or crashing"
   // Round-25 catches recursion-depth issues in the renderer pipeline.
   const nesting = ">".repeat(50);
   await editor.fill(`${nesting} deeply nested\n`);
-  await page.waitForTimeout(1000);
+  await expect(page.locator(".prose-lumen").first()).toContainText("deeply nested", { timeout: 10_000 });
   expect(errs).toEqual([]);
 });
 
@@ -270,13 +286,16 @@ test("wiki-link cycle ([[a]] → [[b]] → [[a]]) doesn't infinite-loop", async 
   // Self-referential wiki-link should render as a (possibly broken)
   // link, not trigger any recursive resolution loop.
   await editor.fill("[[self]] points to [[self]]. Also [[a]] → [[b]] → [[a]].\n");
-  await page.waitForTimeout(1000);
+  await expect(page.locator(".prose-lumen").first()).toContainText("points to", { timeout: 10_000 });
   expect(errs).toEqual([]);
 });
 
 test("pasting >100 KB of plain text into the editor doesn't pageerror", async ({
   page,
 }) => {
+  // Filling 100 KB and a 20 s wait for the preview to catch up: a stress
+  // test that does not fit the default 30 s budget on a cold runner.
+  test.slow();
   const errs = captureErrors(page);
   await page.keyboard.press("Meta+2");
   const editor = page.locator(".cm-content").first();
@@ -285,7 +304,8 @@ test("pasting >100 KB of plain text into the editor doesn't pageerror", async ({
   const para = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ";
   const huge = Array.from({ length: 800 }, () => para).join("\n\n");
   await editor.fill(huge);
-  await page.waitForTimeout(2500);
+  // The preview catches up with the whole document (debounced render).
+  await expect(page.locator(".prose-lumen p").last()).toContainText("magna aliqua.", { timeout: 20_000 });
   await expect(editor).toBeVisible();
   expect(errs).toEqual([]);
 });
@@ -300,8 +320,8 @@ test("malformed YAML frontmatter renders the doc body without crashing", async (
   await editor.fill(
     "---\ntitle: [unclosed bracket\nbroken: : :\nlist:\n  - a\n     bad indent\n---\n\n# Body still here\n",
   );
-  await page.waitForTimeout(1500);
-  // The frontmatter parser should fall back to "no frontmatter" or
-  // surface a small error, but never throw to the page.
+  // The frontmatter parser falls back to "no frontmatter" or surfaces a
+  // small error, but never throws to the page: the body still renders.
+  await expect(page.locator(".prose-lumen").first()).toContainText("Body still here", { timeout: 10_000 });
   expect(errs).toEqual([]);
 });

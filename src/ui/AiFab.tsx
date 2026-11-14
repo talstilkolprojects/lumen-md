@@ -22,7 +22,8 @@ export function AiFab({ commands }: Props) {
 
   useEffect(() => {
     if (!open) return;
-    function onMouseDown(e: MouseEvent) {
+    // pointerdown (plan 10.2.1): a tap outside closes it too, not only a mouse click.
+    function onPointerDown(e: PointerEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
         setQuery("");
@@ -34,10 +35,10 @@ export function AiFab({ commands }: Props) {
         setQuery("");
       }
     }
-    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKey);
     return () => {
-      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
@@ -80,6 +81,7 @@ export function AiFab({ commands }: Props) {
         aria-label={t("group.ai")}
         aria-expanded={open}
         aria-haspopup="menu"
+        data-testid="ai-fab"
         style={{
           display: "flex",
           alignItems: "center",
@@ -144,12 +146,14 @@ export function AiFab({ commands }: Props) {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={`${t("group.ai")} — search…`}
-                aria-label={`${t("group.ai")} search`}
+                placeholder={t("ai.fab.searchPlaceholder")}
+                aria-label={t("ai.fab.searchLabel")}
                 autoFocus
                 style={{
                   width: "100%",
-                  padding: "6px 10px 6px 28px",
+                  // The search icon sits on the inline-start side: the room for it must too.
+                  padding: "6px 10px",
+                  paddingInlineStart: 28,
                   background: "hsl(var(--bg-subtle))",
                   border: "1px solid hsl(var(--border))",
                   borderRadius: 8,

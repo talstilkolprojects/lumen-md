@@ -5,7 +5,7 @@
  * locale-native quotes — a UI calling `t("key", { var: "X" })` then
  * shows literal `{var}` instead of "X". This test asserts that every
  * key whose English value carries placeholders also carries the same
- * set of placeholders in Hebrew (`locales/he.json`).
+ * set of placeholders in Hebrew (`locales/he/*.json`).
  *
  * Lazy-loaded JSON locales (ar, ru, fr, de, ja, zh-CN) ship as `{}`
  * placeholder stubs at the moment, so they're skipped — they're
@@ -14,38 +14,16 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-
-const SRC = resolve(__dirname, "..", "i18n", "index.ts");
-const text = readFileSync(SRC, "utf8");
+import { readLocale } from "../../scripts/lib/i18n-files.mjs";
+import { lazyEnglish } from "./helpers/i18nLazy";
 
 interface Bundle {
   [key: string]: string;
 }
 
-function extractBundle(name: string): Bundle {
-  const re = new RegExp(
-    `const ${name}:\\s*Strings\\s*=\\s*\\{([\\s\\S]+?)^\\};`,
-    "m",
-  );
-  const match = re.exec(text);
-  if (!match) throw new Error(`Could not isolate the \`${name}\` bundle`);
-  const body = match[1];
-  const out: Bundle = {};
-  const entryRe = /^\s*"([\w.\-]+)"\s*:\s*"((?:[^"\\]|\\.)*)"/gm;
-  let m;
-  while ((m = entryRe.exec(body)) !== null) {
-    out[m[1]] = m[2].replace(/\\"/g, '"').replace(/\\\\/g, "\\");
-  }
-  return out;
-}
-
-const en = extractBundle("en");
-// Hebrew moved to a lazy JSON chunk (A7 lever 4) — read it from disk.
-const he: Bundle = JSON.parse(
-  readFileSync(resolve(__dirname, "..", "i18n", "locales", "he.json"), "utf8"),
-);
+// src/i18n/locales/<lang>/<domain>.json (plan 0.3).
+const en: Bundle = { ...readLocale("en"), ...lazyEnglish() };
+const he: Bundle = readLocale("he");
 
 function placeholders(s: string): Set<string> {
   return new Set([...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]));

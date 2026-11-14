@@ -3,13 +3,17 @@
  *
  * The page is served with BOTH the <meta> CSP in index.html and the
  * response-header CSP (public/_headers, served as dist/_headers by both
- * Cloudflare Pages and Netlify; netlify.toml deliberately has no CSP). Browsers enforce every policy, so a host has to be allowed in
- * all of them — drift silently breaks shipped features (this is how the AI
- * providers, Drive sync and the WebGPU model download were blocked).
+ * Cloudflare Pages and Netlify; deploy/vercel.base.json (Vercel, via vercel.ts); the two nginx images;
+ * netlify.toml deliberately has no CSP). Browsers enforce every policy, so
+ * a host has to be allowed in all of them — drift silently breaks shipped
+ * features (this is how the AI providers, Drive sync and the WebGPU model
+ * download were blocked). All of them are rendered from
+ * security/policy.json by scripts/headers.mjs (see headersPolicy.test.ts);
+ * this file checks what the app's code needs from that policy.
  *
  * Asserts:
- *  (a) index.html and public/_headers (and the connect-src of
- *      docker/nginx.conf) share the same connect-src host set;
+ *  (a) every app policy (meta, Cloudflare, Vercel, both nginx images)
+ *      shares the same connect-src host set;
  *  (b) every provider base URL constant in src/ai/*Provider.ts is allowed;
  *  plus Trusted Types / script-src invariants for the header policies.
  */
@@ -49,17 +53,39 @@ function cspFromHeadersFile(): Policy {
 }
 
 
-function connectSrcFromNginx(): string[] {
-  const m = read("docker/nginx.conf").match(/^\s*connect-src ([^;]+);/m);
-  if (!m) throw new Error("docker/nginx.conf: connect-src not found");
+/** The app document's CSP in an nginx config (`location /` or the http level). */
+function cspFromNginx(file: string, block: RegExp): Policy {
+  const text = read(file);
+  const at = text.search(block);
+  if (at < 0) throw new Error(`${file}: app block not found`);
+  const m = text.slice(at).match(/add_header Content-Security-Policy "([^"]+)"/);
+  if (!m) throw new Error(`${file}: app CSP not found`);
+  const policy = parsePolicy(m[1]);
   // The build-time placeholder for deployment worker origins isn't a host.
-  return m[1].trim().split(/\s+/).filter((t) => t !== "__CSP_CONNECT_EXTRA__");
+  const connect = policy.get("connect-src");
+  if (connect) policy.set("connect-src", connect.filter((t) => t !== "__CSP_CONNECT_EXTRA__"));
+  return policy;
+}
+
+function cspFromVercel(): Policy {
+  const vercel = JSON.parse(read("deploy/vercel.base.json")) as { headers: { source: string; headers: { key: string; value: string }[] }[] };
+  const entry = vercel.headers.find((h) => h.headers.some((x) => x.key === "X-Frame-Options"));
+  const value = entry?.headers.find((x) => x.key === "Content-Security-Policy")?.value;
+  if (!value) throw new Error("deploy/vercel.base.json: app CSP not found");
+  const policy = parsePolicy(value);
+  // The placeholder vercel.ts fills with the deployment's worker origins isn't a host.
+  const connect = policy.get("connect-src");
+  if (connect) policy.set("connect-src", connect.filter((t) => t !== "__CSP_CONNECT_EXTRA__"));
+  return policy;
 }
 
 const POLICIES: Record<string, Policy> = {
   "index.html": cspFromIndexHtml(),
   "public/_headers": cspFromHeadersFile(),
+  "deploy/vercel.base.json": cspFromVercel(),
+  "deploy/nginx.conf": cspFromNginx("deploy/nginx.conf", /^http \{/m),
 };
+const HEADER_POLICIES = Object.keys(POLICIES).filter((f) => f !== "index.html");
 
 const sorted = (xs: string[]) => [...new Set(xs)].sort();
 
@@ -120,7 +146,7 @@ describe("CSP alignment", () => {
     expect(read("netlify.toml")).not.toMatch(/Content-Security-Policy\s*=/);
   });
 
-  it("(a) index.html and public/_headers share one connect-src set", () => {
+  it("(a) every app policy shares one connect-src set", () => {
     const sets = Object.entries(POLICIES).map(([name, p]) => {
       const list = p.get("connect-src");
       expect(list, `${name} has no connect-src`).toBeDefined();
@@ -130,14 +156,26 @@ describe("CSP alignment", () => {
     for (const [name, set] of sets) expect(set, name).toEqual(reference);
   });
 
-  it("(a) docker/nginx.conf connect-src matches as well", () => {
-    expect(sorted(connectSrcFromNginx())).toEqual(sorted(POLICIES["index.html"].get("connect-src")!));
+  it("(a) deploy/nginx.conf keeps the placeholder the image build fills in", () => {
+    expect(read("deploy/nginx.conf")).toMatch(/connect-src [^"]*__CSP_CONNECT_EXTRA__/);
   });
 
-  it("(a) connect-src lists explicit hosts, not a blanket https:/http:/*", () => {
+  it("(a) connect-src lists explicit hosts, not a blanket https:/http:/ws:/wss:/*", () => {
     for (const [name, p] of Object.entries(POLICIES)) {
       const list = p.get("connect-src")!;
-      expect(list.filter((s) => s === "https:" || s === "http:" || s === "*"), name).toEqual([]);
+      expect(list.filter((s) => ["https:", "http:", "ws:", "wss:", "*"].includes(s)), name).toEqual([]);
+    }
+  });
+
+  it("(a) the WebSockets the app opens are listed (plan 2.2): collab signaling", () => {
+    // src/collab/yjs.ts PUBLIC_SIGNALING_FALLBACK: the public servers, used when
+    // the user opts in. Deployment servers come from the build.
+    const yjs = read("src/collab/yjs.ts");
+    const block = /const PUBLIC_SIGNALING_FALLBACK = \[([\s\S]*?)\];/.exec(yjs)![1];
+    const urls = [...block.matchAll(/"(wss?:\/\/[^"]+)"/g)].map((m) => m[1]);
+    expect(urls).toContain("wss://signaling.yjs.dev");
+    for (const [name, p] of Object.entries(POLICIES)) {
+      for (const url of urls) expect(connectAllows(p, url), `${name} blocks ${url}`).toBe(true);
     }
   });
 
@@ -187,7 +225,7 @@ describe("CSP alignment", () => {
   });
 
   it("no longer references unpkg (Leaflet CSS + model-viewer are self-hosted)", () => {
-    for (const file of ["index.html", "public/_headers", "netlify.toml", "docker/nginx.conf"]) {
+    for (const file of ["index.html", "public/_headers", "netlify.toml", "deploy/nginx.conf"]) {
       expect(read(file), file).not.toContain("unpkg.com");
     }
   });
@@ -214,7 +252,7 @@ describe("CSP script-src / Trusted Types invariants", () => {
     expect(html).not.toMatch(/\son[a-z]+="/i);
   });
 
-  it.each(["public/_headers"])(
+  it.each(HEADER_POLICIES)(
     "%s enforces Trusted Types and allows exactly the app's policy names",
     (file) => {
       const p = POLICIES[file];

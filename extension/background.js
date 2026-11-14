@@ -1,53 +1,62 @@
 /**
- * Lumen Web Clipper — service worker.
+ * Lumen Web Clipper v2 — service worker (plan 4.15.2).
  *
- * Owns:
- *   • Right-click "Save selection to Lumen" context-menu entry.
- *   • Receives clip payloads from popup.html / contentScript.js and POSTs
- *     them to the configured Lumen endpoint.
- *   • Caches the chosen Lumen URL + workspace name in chrome.storage.local.
- *
- * The destination URL defaults to `http://localhost:5173` (the dev server)
- * but options.html lets the user point it at any deployed Lumen instance.
+ * Delivery, in order: an open Lumen tab (the bridge content script hands the
+ * clip over with postMessage); else a new Lumen tab, then the bridge; on the
+ * desktop app, the deep link lumen://clip. Nothing is POSTed anywhere: the
+ * old /api/clip endpoint never existed.
  */
-
 const DEFAULT_LUMEN_URL = "http://localhost:5173";
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: "lumen-clip-selection",
-    title: "Save selection to Lumen",
-    contexts: ["selection", "page"],
-  });
+  chrome.contextMenus.create({ id: "lumen-clip", title: "Clip to Lumen", contexts: ["selection", "page"] });
+  chrome.contextMenus.create({ id: "lumen-highlight", title: "Lumen highlighter on/off", contexts: ["page", "selection"] });
 });
+
+async function inject(tabId) {
+  await chrome.scripting.executeScript({ target: { tabId }, files: ["contentScript.js"] });
+}
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (info.menuItemId !== "lumen-clip-selection" || !tab?.id) return;
-  await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    files: ["contentScript.js"],
-  });
-  chrome.tabs.sendMessage(tab.id, { type: "lumen-clip-page" });
+  if (!tab?.id) return;
+  await inject(tab.id);
+  if (info.menuItemId === "lumen-clip") chrome.tabs.sendMessage(tab.id, { type: "lumen-clip-page" });
+  if (info.menuItemId === "lumen-highlight") chrome.tabs.sendMessage(tab.id, { type: "lumen-highlight-mode" });
 });
 
-chrome.runtime.onMessage.addListener(async (msg, sender, sendResponse) => {
-  if (msg?.type !== "lumen-clip") return;
-  try {
-    const { lumenUrl } = await chrome.storage.local.get({ lumenUrl: DEFAULT_LUMEN_URL });
-    const res = await fetch(`${lumenUrl}/api/clip`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(msg.payload),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    sendResponse({ ok: true });
-  } catch (e) {
-    // No Lumen API endpoint yet — fall back to opening the editor with the
-    // payload in the URL hash so the user can paste the clip in manually.
-    const { lumenUrl } = await chrome.storage.local.get({ lumenUrl: DEFAULT_LUMEN_URL });
-    const url = `${lumenUrl}/#clip=${encodeURIComponent(JSON.stringify(msg.payload))}`;
-    chrome.tabs.create({ url });
-    sendResponse({ ok: true, fallback: true, error: String(e) });
+const waitComplete = (tabId) =>
+  new Promise((resolve) => {
+    const l = (id, info) => {
+      if (id === tabId && info.status === "complete") {
+        chrome.tabs.onUpdated.removeListener(l);
+        resolve();
+      }
+    };
+    chrome.tabs.onUpdated.addListener(l);
+  });
+
+async function deliver(payload) {
+  const { lumenUrl, target } = await chrome.storage.local.get({ lumenUrl: DEFAULT_LUMEN_URL, target: "web" });
+  if (target === "desktop") {
+    // The desktop app registers lumen://; a very large page is sent without its HTML.
+    const small = JSON.stringify(payload).length > 1_500_000 ? { ...payload, html: undefined } : payload;
+    await chrome.tabs.create({ url: `lumen://clip?data=${encodeURIComponent(JSON.stringify(small))}`, active: false });
+    return { ok: true };
   }
+  const origin = new URL(lumenUrl).origin;
+  let [tab] = await chrome.tabs.query({ url: `${origin}/*` });
+  if (!tab) {
+    tab = await chrome.tabs.create({ url: lumenUrl });
+    await waitComplete(tab.id);
+  }
+  await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["bridge.js"] });
+  const resp = await chrome.tabs.sendMessage(tab.id, { type: "lumen-bridge-deliver", payload });
+  await chrome.tabs.update(tab.id, { active: true });
+  return resp ?? { ok: false };
+}
+
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg?.type !== "lumen-clip") return;
+  deliver(msg.payload).then(sendResponse, (e) => sendResponse({ ok: false, error: String(e) }));
   return true;
 });

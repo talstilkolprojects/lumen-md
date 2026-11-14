@@ -1,0 +1,392 @@
+/* PDF reader (plan 4.14). Loaded with the reader's lazy chunk. */
+
+.pdf-reader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  background: hsl(var(--bg));
+  color: hsl(var(--fg));
+  outline: none;
+}
+
+.pdf-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 6px 12px;
+  border-bottom: 1px solid hsl(var(--border));
+  font-size: 13px;
+}
+
+.pdf-title {
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdf-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pdf-end {
+  margin-inline-start: auto;
+}
+
+.pdf-pageinfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pdf-pageinfo input {
+  width: 4.5em;
+}
+
+.pdf-toolbar input {
+  padding: 3px 6px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  background: hsl(var(--bg));
+  color: inherit;
+  font: inherit;
+}
+
+.pdf-search input {
+  width: 14em;
+}
+
+.pdf-count,
+.pdf-zoom,
+.pdf-muted {
+  color: hsl(var(--fg-muted));
+  font-size: 12px;
+}
+
+.pdf-zoom {
+  min-width: 3.5em;
+  text-align: center;
+}
+
+.pdf-text-btn {
+  width: auto;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.pdf-primary {
+  padding: 4px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: hsl(var(--accent, 220 90% 56%));
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.pdf-primary:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pdf-body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.pdf-scroll {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 12px 24px;
+  background: hsl(var(--fg) / 0.06);
+}
+
+/* Lets the last page scroll to the top, so any page can be "current". */
+.pdf-tail {
+  height: 70%;
+}
+
+.pdf-message {
+  padding: 2rem;
+  color: hsl(var(--fg-muted));
+}
+
+.pdf-error {
+  color: hsl(0 75% 55%);
+}
+
+.pdf-page-wrap {
+  margin: 0 auto 16px;
+  width: max-content;
+}
+
+.pdf-page {
+  position: relative;
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.18);
+  overflow: hidden;
+}
+
+.pdf-canvas,
+.pdf-hl-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.pdf-hl-layer {
+  pointer-events: none;
+  z-index: 1;
+}
+
+.pdf-hl-group {
+  position: absolute;
+  inset: 0;
+}
+
+.pdf-hl-rect {
+  position: absolute;
+  border-radius: 2px;
+  background: rgb(255 214 0 / 0.42);
+  mix-blend-mode: multiply;
+}
+
+.pdf-hl--search .pdf-hl-rect {
+  background: rgb(0 140 255 / 0.32);
+  outline: 1px solid rgb(0 110 230 / 0.7);
+}
+
+.pdf-hl-group[data-flash="true"] .pdf-hl-rect {
+  animation: pdf-flash 0.6s ease-in-out 3;
+}
+
+@keyframes pdf-flash {
+  50% {
+    background: rgb(255 120 0 / 0.75);
+    box-shadow: 0 0 0 3px rgb(255 120 0 / 0.45);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pdf-hl-group[data-flash="true"] .pdf-hl-rect {
+    animation: none;
+    box-shadow: 0 0 0 2px rgb(255 120 0 / 0.8);
+  }
+}
+
+.pdf-scanned {
+  position: absolute;
+  inset: auto 12px 12px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: hsl(var(--bg) / 0.92);
+  color: hsl(var(--fg));
+  font-size: 12px;
+}
+
+.pdf-scanned p {
+  margin: 0;
+}
+
+.pdf-ocr-wrap {
+  position: relative;
+  margin-top: 6px;
+}
+
+.pdf-ocr {
+  padding: 10px 12px;
+  border: 1px dashed hsl(var(--border));
+  border-radius: 6px;
+  background: hsl(var(--bg));
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.6;
+  unicode-bidi: plaintext;
+}
+
+.pdf-ocr-wrap .pdf-hl-layer {
+  z-index: 0;
+}
+
+.pdf-ocr-wrap .pdf-ocr {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
+.pdf-side {
+  width: 280px;
+  flex: none;
+  overflow: auto;
+  padding: 10px 12px;
+  border-inline-start: 1px solid hsl(var(--border));
+  font-size: 13px;
+}
+
+.pdf-side h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.pdf-hl-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pdf-hl-list li {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 8px 0;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.pdf-hl-quote {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.pdf-hl-page {
+  color: hsl(var(--fg-muted));
+  font-size: 11px;
+}
+
+.pdf-hl-list textarea {
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+  padding: 4px 6px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  background: hsl(var(--bg));
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+}
+
+.pdf-hl-list .pdf-text-btn {
+  align-self: flex-end;
+}
+
+.pdf-ask-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pdf-ask textarea {
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+  padding: 4px 6px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  background: hsl(var(--bg));
+  color: inherit;
+  font: inherit;
+}
+
+.pdf-ask-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.pdf-ask-answer p {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .pdf-side {
+    display: none;
+  }
+  /* The Ask panel stays: over the pages, on the reading side's end. */
+  .pdf-side.pdf-ask {
+    display: block;
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    width: min(100%, 340px);
+    background: hsl(var(--bg));
+    z-index: 3;
+  }
+  .pdf-scroll {
+    padding: 8px;
+  }
+}
+
+/* pdf.js text layer: transparent text over the canvas, for selection. */
+.pdf-page .textLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: clip;
+  opacity: 1;
+  line-height: 1;
+  text-align: initial;
+  letter-spacing: normal;
+  word-spacing: normal;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  caret-color: CanvasText;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+
+.pdf-page .textLayer :is(span, br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.pdf-page .textLayer > :not(.markedContent),
+.pdf-page .textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.pdf-page .textLayer .markedContent {
+  display: contents;
+}
+
+.pdf-page .textLayer ::selection {
+  background: rgb(0 90 255 / 0.25);
+  color: transparent;
+}
+
+.pdf-page .textLayer br::selection {
+  background: transparent;
+}

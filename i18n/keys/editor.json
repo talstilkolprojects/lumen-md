@@ -1,0 +1,1946 @@
+{
+  "version": 2,
+  "domain": "editor",
+  "source": "src/i18n/locales/en/editor.json",
+  "entries": [
+    {
+      "key": "bibtex.link",
+      "en": "link",
+      "vars": []
+    },
+    {
+      "key": "bibtex.noEntries",
+      "en": "No BibTeX entries detected.",
+      "vars": []
+    },
+    {
+      "key": "bibtex.references",
+      "en": "References ({n})",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "bibtex.style",
+      "en": "Citation style",
+      "vars": []
+    },
+    {
+      "key": "block.abc.error",
+      "en": "⚠︎ ABC notation error:",
+      "vars": []
+    },
+    {
+      "key": "block.chart.error",
+      "en": "⚠︎ Chart error: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "block.chart.fetchFailed",
+      "en": "⚠︎ Chart fetch failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "block.codeDoctor.bestEffort.one",
+      "en": "Best-effort repair — {n} issue remains.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "block.codeDoctor.bestEffort.other",
+      "en": "Best-effort repair — {n} issues remain.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "block.codeDoctor.charRange",
+      "en": "· char {start}–{end}: {message}",
+      "vars": [
+        "start",
+        "end",
+        "message"
+      ]
+    },
+    {
+      "key": "block.codeDoctor.clean",
+      "en": "clean",
+      "vars": []
+    },
+    {
+      "key": "block.codeDoctor.col.confidence",
+      "en": "Confidence",
+      "vars": []
+    },
+    {
+      "key": "block.codeDoctor.col.count",
+      "en": "Count",
+      "vars": []
+    },
+    {
+      "key": "block.codeDoctor.col.example",
+      "en": "Example",
+      "vars": []
+    },
+    {
+      "key": "block.codeDoctor.col.issue",
+      "en": "Issue",
+      "vars": []
+    },
+    {
+      "key": "block.codeDoctor.diagnostics",
+      "en": "{n} individual diagnostics",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "block.codeDoctor.fixesReady.one",
+      "en": "· {n} fix ready",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "block.codeDoctor.fixesReady.other",
+      "en": "· {n} fixes ready",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "block.codeDoctor.identical",
+      "en": "Original and repaired outputs are identical — nothing to compare.",
+      "vars": []
+    },
+    {
+      "key": "block.codeDoctor.noIssues",
+      "en": "✓ No issues detected. The input parses as valid JSON.",
+      "vars": []
+    },
+    {
+      "key": "block.codeDoctor.original",
+      "en": "Original (broken)",
+      "vars": []
+    },
+    {
+      "key": "block.codeDoctor.parsesCleanly.one",
+      "en": "Parses cleanly after {n} fix.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "block.codeDoctor.parsesCleanly.other",
+      "en": "Parses cleanly after {n} fixes.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "block.codeDoctor.partial.one",
+      "en": "· {n} issue — partial repair",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "block.codeDoctor.partial.other",
+      "en": "· {n} issues — partial repair",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "block.codeDoctor.repairedTable",
+      "en": "Repaired output, rendered as a table:",
+      "vars": []
+    },
+    {
+      "key": "block.codeDoctor.switchHint",
+      "en": "⚙ Switch to {tab} tab to see the auto-fixed output.",
+      "vars": [
+        "tab"
+      ]
+    },
+    {
+      "key": "block.codeDoctor.title",
+      "en": "Code Doctor · {format}",
+      "vars": [
+        "format"
+      ]
+    },
+    {
+      "key": "block.codeDoctor.view.compare",
+      "en": "Compare",
+      "vars": []
+    },
+    {
+      "key": "block.codeDoctor.view.diagnose",
+      "en": "Diagnose",
+      "vars": []
+    },
+    {
+      "key": "block.codeDoctor.view.repaired",
+      "en": "Repaired",
+      "vars": []
+    },
+    {
+      "key": "block.common.clear",
+      "en": "Clear",
+      "vars": []
+    },
+    {
+      "key": "block.common.clearOutput",
+      "en": "Clear output",
+      "vars": []
+    },
+    {
+      "key": "block.common.copy",
+      "en": "Copy",
+      "vars": []
+    },
+    {
+      "key": "block.common.live",
+      "en": "· live",
+      "vars": []
+    },
+    {
+      "key": "block.common.refetchUrl",
+      "en": "Refetch {url}",
+      "vars": [
+        "url"
+      ]
+    },
+    {
+      "key": "block.common.run",
+      "en": "Run",
+      "vars": []
+    },
+    {
+      "key": "block.common.source",
+      "en": "Source",
+      "vars": []
+    },
+    {
+      "key": "block.common.toggleSource",
+      "en": "Toggle source",
+      "vars": []
+    },
+    {
+      "key": "block.common.unknown",
+      "en": "unknown",
+      "vars": []
+    },
+    {
+      "key": "block.csv.refetch",
+      "en": "Refetch CSV data",
+      "vars": []
+    },
+    {
+      "key": "block.data.aiChart",
+      "en": "AI Chart",
+      "vars": []
+    },
+    {
+      "key": "block.data.aiGenerating",
+      "en": "🤖 Generating AI visualization...",
+      "vars": []
+    },
+    {
+      "key": "block.data.aiNone",
+      "en": "No AI visualization available.",
+      "vars": []
+    },
+    {
+      "key": "block.data.chart",
+      "en": "Chart",
+      "vars": []
+    },
+    {
+      "key": "block.data.fetchFailed",
+      "en": "⚠︎ {lang} fetch failed: {error}",
+      "vars": [
+        "lang",
+        "error"
+      ]
+    },
+    {
+      "key": "block.data.noRows",
+      "en": "no rows detected",
+      "vars": []
+    },
+    {
+      "key": "block.data.parseError",
+      "en": "⚠︎ {lang} parse error: {error}",
+      "vars": [
+        "lang",
+        "error"
+      ]
+    },
+    {
+      "key": "block.data.parseFailed",
+      "en": "⚠︎ Could not parse {lang} data.",
+      "vars": [
+        "lang"
+      ]
+    },
+    {
+      "key": "block.data.showing",
+      "en": "Showing {shown} of {total} rows.",
+      "vars": [
+        "shown",
+        "total"
+      ]
+    },
+    {
+      "key": "block.data.summary",
+      "en": "{lang} • {rows} rows × {cols} cols",
+      "vars": [
+        "lang",
+        "rows",
+        "cols"
+      ]
+    },
+    {
+      "key": "block.data.table",
+      "en": "Table",
+      "vars": []
+    },
+    {
+      "key": "block.dataTable.columnStats",
+      "en": "{type} • {distinct} distinct • {filled} filled",
+      "vars": [
+        "type",
+        "distinct",
+        "filled"
+      ]
+    },
+    {
+      "key": "block.database.addFrontmatter",
+      "en": "Add YAML frontmatter {code} to notes under {source}.",
+      "vars": [
+        "code",
+        "source"
+      ]
+    },
+    {
+      "key": "block.database.calendarNeeds",
+      "en": "Calendar needs a {field} column. Add one to the database spec.",
+      "vars": [
+        "field"
+      ]
+    },
+    {
+      "key": "block.database.invalid",
+      "en": "invalid",
+      "vars": []
+    },
+    {
+      "key": "block.database.kanbanNeeds",
+      "en": "Kanban needs a {field} column. Add one to the database spec.",
+      "vars": [
+        "field"
+      ]
+    },
+    {
+      "key": "block.database.loading",
+      "en": "· loading…",
+      "vars": []
+    },
+    {
+      "key": "block.database.noDates",
+      "en": "No notes have a parseable {field} value.",
+      "vars": [
+        "field"
+      ]
+    },
+    {
+      "key": "block.database.noMatch",
+      "en": "No notes match this query.",
+      "vars": []
+    },
+    {
+      "key": "block.database.none",
+      "en": "(none)",
+      "vars": []
+    },
+    {
+      "key": "block.database.specError",
+      "en": "Database spec error: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "block.database.title",
+      "en": "Title",
+      "vars": []
+    },
+    {
+      "key": "block.database.view.calendar",
+      "en": "Calendar",
+      "vars": []
+    },
+    {
+      "key": "block.database.view.gallery",
+      "en": "Gallery",
+      "vars": []
+    },
+    {
+      "key": "block.database.view.kanban",
+      "en": "Kanban",
+      "vars": []
+    },
+    {
+      "key": "block.database.view.table",
+      "en": "Table",
+      "vars": []
+    },
+    {
+      "key": "block.database.workspaceRoot",
+      "en": "the workspace root",
+      "vars": []
+    },
+    {
+      "key": "block.diagram.queued",
+      "en": "Queued",
+      "vars": []
+    },
+    {
+      "key": "block.diagram.renderedCache",
+      "en": "Rendered (cache)",
+      "vars": []
+    },
+    {
+      "key": "block.diagram.renderedIn",
+      "en": "Rendered in {ms} ms",
+      "vars": [
+        "ms"
+      ]
+    },
+    {
+      "key": "block.diagram.rendering",
+      "en": "Rendering…",
+      "vars": []
+    },
+    {
+      "key": "block.diagram.scrollToRender",
+      "en": "Scroll to render",
+      "vars": []
+    },
+    {
+      "key": "block.embed.open",
+      "en": "Open ↗",
+      "vars": []
+    },
+    {
+      "key": "block.embed.unrecognized",
+      "en": "⚠︎ Could not recognize the embed URL.",
+      "vars": []
+    },
+    {
+      "key": "block.glsl.error",
+      "en": "⚠︎ GLSL error:",
+      "vars": []
+    },
+    {
+      "key": "block.glsl.title",
+      "en": "GLSL fragment",
+      "vars": []
+    },
+    {
+      "key": "block.graphviz.error",
+      "en": "⚠︎ Graphviz error:",
+      "vars": []
+    },
+    {
+      "key": "block.graphviz.placeholder",
+      "en": "Graphviz diagram (scroll to render)",
+      "vars": []
+    },
+    {
+      "key": "block.htmlPreview.exitFullscreen",
+      "en": "Exit fullscreen",
+      "vars": []
+    },
+    {
+      "key": "block.htmlPreview.fullscreen",
+      "en": "Fullscreen",
+      "vars": []
+    },
+    {
+      "key": "block.htmlPreview.openFullscreen",
+      "en": "Fullscreen preview",
+      "vars": []
+    },
+    {
+      "key": "block.htmlPreview.sanitized",
+      "en": "⚠︎ Some HTML content was sanitized before preview for safety.",
+      "vars": []
+    },
+    {
+      "key": "block.htmlPreview.scriptsOff",
+      "en": "Scripts off",
+      "vars": []
+    },
+    {
+      "key": "block.htmlPreview.scriptsOn",
+      "en": "Enable scripts",
+      "vars": []
+    },
+    {
+      "key": "block.htmlPreview.source",
+      "en": "Source",
+      "vars": []
+    },
+    {
+      "key": "block.htmlPreview.title",
+      "en": "HTML preview",
+      "vars": []
+    },
+    {
+      "key": "block.htmlPreview.toggleScripts",
+      "en": "Toggle unsafe script execution",
+      "vars": []
+    },
+    {
+      "key": "block.htmlPreview.toggleSource",
+      "en": "Toggle source view",
+      "vars": []
+    },
+    {
+      "key": "block.insights.arrayTag",
+      "en": "(array)",
+      "vars": []
+    },
+    {
+      "key": "block.insights.col.bar",
+      "en": "Bar",
+      "vars": []
+    },
+    {
+      "key": "block.insights.col.count",
+      "en": "Count",
+      "vars": []
+    },
+    {
+      "key": "block.insights.col.probability",
+      "en": "Probability",
+      "vars": []
+    },
+    {
+      "key": "block.insights.col.value",
+      "en": "Value",
+      "vars": []
+    },
+    {
+      "key": "block.insights.empty",
+      "en": "Insights block is empty — paste JSONL (one object per line) or a JSON array.",
+      "vars": []
+    },
+    {
+      "key": "block.insights.estFiles.one",
+      "en": "≈ {n} file",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "block.insights.estFiles.other",
+      "en": "≈ {n} files",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "block.insights.field",
+      "en": "Field:",
+      "vars": []
+    },
+    {
+      "key": "block.insights.freqSummary",
+      "en": "Field {field} · {total} occurrences · {distinct} distinct",
+      "vars": [
+        "field",
+        "total",
+        "distinct"
+      ]
+    },
+    {
+      "key": "block.insights.groupBy",
+      "en": "Group by:",
+      "vars": []
+    },
+    {
+      "key": "block.insights.groupField",
+      "en": "Group field",
+      "vars": []
+    },
+    {
+      "key": "block.insights.header",
+      "en": "Insights · {records} records × {fields} fields",
+      "vars": [
+        "records",
+        "fields"
+      ]
+    },
+    {
+      "key": "block.insights.noWorkspace",
+      "en": "Workspace storage is unavailable in this browser — running a suggestion will open the first generated document in a new tab instead of writing files.",
+      "vars": []
+    },
+    {
+      "key": "block.insights.parseError",
+      "en": "Insights parse error: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "block.insights.pickArrayField",
+      "en": "Pick an array-valued field to see how its values cluster together.",
+      "vars": []
+    },
+    {
+      "key": "block.insights.pickField",
+      "en": "Pick a field above to chart its distribution.",
+      "vars": []
+    },
+    {
+      "key": "block.insights.probabilityField",
+      "en": "Probability field",
+      "vars": []
+    },
+    {
+      "key": "block.insights.showing",
+      "en": "Showing {shown} of {total} records.",
+      "vars": [
+        "shown",
+        "total"
+      ]
+    },
+    {
+      "key": "block.insights.tab.charts",
+      "en": "Charts",
+      "vars": []
+    },
+    {
+      "key": "block.insights.tab.conclusions",
+      "en": "Conclusions",
+      "vars": []
+    },
+    {
+      "key": "block.insights.tab.cooccur",
+      "en": "Co-occur",
+      "vars": []
+    },
+    {
+      "key": "block.insights.tab.probabilities",
+      "en": "Probabilities",
+      "vars": []
+    },
+    {
+      "key": "block.insights.tab.records",
+      "en": "Records",
+      "vars": []
+    },
+    {
+      "key": "block.insights.tab.suggestions",
+      "en": "Suggestions",
+      "vars": []
+    },
+    {
+      "key": "block.json.fetchFailed",
+      "en": "⚠︎ JSON fetch failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "block.json.parseError",
+      "en": "⚠︎ JSON table parse error: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "block.json.refetch",
+      "en": "Refetch JSON data",
+      "vars": []
+    },
+    {
+      "key": "block.liveCss.title",
+      "en": "Live CSS",
+      "vars": []
+    },
+    {
+      "key": "block.liveJs.clear",
+      "en": "Clear console",
+      "vars": []
+    },
+    {
+      "key": "block.liveJs.idle",
+      "en": "Not run yet",
+      "vars": []
+    },
+    {
+      "key": "block.liveJs.idleHint",
+      "en": "Code in a document runs only when you press Run. It runs in an isolated sandbox with no access to your files, keys or the network.",
+      "vars": []
+    },
+    {
+      "key": "block.liveJs.noOutput",
+      "en": "(no output yet)",
+      "vars": []
+    },
+    {
+      "key": "block.liveJs.resetScope",
+      "en": "Reset scope",
+      "vars": []
+    },
+    {
+      "key": "block.liveJs.resetScope.hint",
+      "en": "Discard every variable defined by this document's shared blocks",
+      "vars": []
+    },
+    {
+      "key": "block.liveJs.run",
+      "en": "Run",
+      "vars": []
+    },
+    {
+      "key": "block.liveJs.runStatus",
+      "en": "JS run: {state}",
+      "vars": [
+        "state"
+      ]
+    },
+    {
+      "key": "block.liveJs.scopeReset",
+      "en": "Scope reset",
+      "vars": []
+    },
+    {
+      "key": "block.liveJs.shared",
+      "en": "shared scope",
+      "vars": []
+    },
+    {
+      "key": "block.liveJs.sharedHint",
+      "en": "Runs in this document's shared worker: top-level variables and functions stay available to later runs and other shared blocks.",
+      "vars": []
+    },
+    {
+      "key": "block.liveJs.title",
+      "en": "Live JavaScript",
+      "vars": []
+    },
+    {
+      "key": "block.liveLua.clear",
+      "en": "Clear output",
+      "vars": []
+    },
+    {
+      "key": "block.liveLua.loadFailed",
+      "en": "Failed to load the Lua runtime.",
+      "vars": []
+    },
+    {
+      "key": "block.liveLua.prompt",
+      "en": "Click Run to execute this Lua block.",
+      "vars": []
+    },
+    {
+      "key": "block.liveLua.run",
+      "en": "Run",
+      "vars": []
+    },
+    {
+      "key": "block.liveLua.state.error",
+      "en": "Error",
+      "vars": []
+    },
+    {
+      "key": "block.liveLua.state.idle",
+      "en": "Not run",
+      "vars": []
+    },
+    {
+      "key": "block.liveLua.state.running",
+      "en": "Running…",
+      "vars": []
+    },
+    {
+      "key": "block.liveLua.state.success",
+      "en": "Completed",
+      "vars": []
+    },
+    {
+      "key": "block.liveLua.state.timeout",
+      "en": "Timed out",
+      "vars": []
+    },
+    {
+      "key": "block.liveLua.stop",
+      "en": "Stop",
+      "vars": []
+    },
+    {
+      "key": "block.liveLua.stopped",
+      "en": "Stopped.",
+      "vars": []
+    },
+    {
+      "key": "block.liveLua.timedOut",
+      "en": "Execution timed out after {ms} ms.",
+      "vars": [
+        "ms"
+      ]
+    },
+    {
+      "key": "block.liveLua.title",
+      "en": "Live Lua",
+      "vars": []
+    },
+    {
+      "key": "block.liveLua.workerUnavailable",
+      "en": "Web Workers are unavailable in this browser.",
+      "vars": []
+    },
+    {
+      "key": "block.livePy.prompt",
+      "en": "Click Run to execute this Python block.",
+      "vars": []
+    },
+    {
+      "key": "block.livePy.run",
+      "en": "Run Python",
+      "vars": []
+    },
+    {
+      "key": "block.livePy.title",
+      "en": "🐍 Live Python",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.clear",
+      "en": "Clear output",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.install.body",
+      "en": "Live R blocks run webR, R compiled to WebAssembly. Lumen doesn't include it: webR's binaries (R and libgfortran) are licensed under the GNU GPL version 3. Download it once ({size} MB, webR {version}) and it stays on this device and works offline.",
+      "vars": [
+        "size",
+        "version"
+      ]
+    },
+    {
+      "key": "block.liveR.install.cancel",
+      "en": "Cancel",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.install.download",
+      "en": "Download R ({size} MB)",
+      "vars": [
+        "size"
+      ]
+    },
+    {
+      "key": "block.liveR.install.error.download",
+      "en": "The download failed: {detail}",
+      "vars": [
+        "detail"
+      ]
+    },
+    {
+      "key": "block.liveR.install.error.mismatch",
+      "en": "A downloaded file did not match this build's checksum, so nothing was installed: {detail}",
+      "vars": [
+        "detail"
+      ]
+    },
+    {
+      "key": "block.liveR.install.error.noCache",
+      "en": "R can only be stored once Lumen's offline support is active. Reload the page, then try again.",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.install.error.noManifest",
+      "en": "This build can't download R (it has no webR manifest).",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.install.license",
+      "en": "Licence: GPL-3.0 (webR's LICENSE.md)",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.install.progress",
+      "en": "Downloading R… {percent}%",
+      "vars": [
+        "percent"
+      ]
+    },
+    {
+      "key": "block.liveR.install.source",
+      "en": "From webR's own site, webr.r-wasm.org (or the npm package webr@{version} on cdn.jsdelivr.net if that fails). Every file is checked against this build's checksums. Nothing from your notes is sent.",
+      "vars": [
+        "version"
+      ]
+    },
+    {
+      "key": "block.liveR.install.state",
+      "en": "not installed",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.install.title",
+      "en": "R is not installed on this device",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.loadFailed",
+      "en": "Failed to load the R runtime.",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.loadTimeout",
+      "en": "R took too long to load.",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.loading",
+      "en": "Loading R…",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.plot",
+      "en": "R plot",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.prompt",
+      "en": "Click Run to execute this R block. The first run downloads R (~45 MB, cached afterwards).",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.run",
+      "en": "Run",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.state.error",
+      "en": "Error",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.state.idle",
+      "en": "Not run",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.state.loading",
+      "en": "Loading…",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.state.running",
+      "en": "Running…",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.state.success",
+      "en": "Completed",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.state.timeout",
+      "en": "Timed out",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.stop",
+      "en": "Stop",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.stopped",
+      "en": "Stopped.",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.timedOut",
+      "en": "Execution timed out after {ms} ms.",
+      "vars": [
+        "ms"
+      ]
+    },
+    {
+      "key": "block.liveR.title",
+      "en": "Live R",
+      "vars": []
+    },
+    {
+      "key": "block.liveRuby.clear",
+      "en": "Clear output",
+      "vars": []
+    },
+    {
+      "key": "block.liveRuby.loadFailed",
+      "en": "Failed to load the Ruby runtime.",
+      "vars": []
+    },
+    {
+      "key": "block.liveRuby.loadTimeout",
+      "en": "Ruby took too long to load.",
+      "vars": []
+    },
+    {
+      "key": "block.liveRuby.loading",
+      "en": "Loading Ruby…",
+      "vars": []
+    },
+    {
+      "key": "block.liveRuby.prompt",
+      "en": "Click Run to execute this Ruby block. The first run downloads Ruby (~30 MB, cached afterwards).",
+      "vars": []
+    },
+    {
+      "key": "block.liveRuby.run",
+      "en": "Run",
+      "vars": []
+    },
+    {
+      "key": "block.liveRuby.state.error",
+      "en": "Error",
+      "vars": []
+    },
+    {
+      "key": "block.liveRuby.state.idle",
+      "en": "Not run",
+      "vars": []
+    },
+    {
+      "key": "block.liveRuby.state.loading",
+      "en": "Loading…",
+      "vars": []
+    },
+    {
+      "key": "block.liveRuby.state.running",
+      "en": "Running…",
+      "vars": []
+    },
+    {
+      "key": "block.liveRuby.state.success",
+      "en": "Completed",
+      "vars": []
+    },
+    {
+      "key": "block.liveRuby.state.timeout",
+      "en": "Timed out",
+      "vars": []
+    },
+    {
+      "key": "block.liveRuby.stop",
+      "en": "Stop",
+      "vars": []
+    },
+    {
+      "key": "block.liveRuby.stopped",
+      "en": "Stopped.",
+      "vars": []
+    },
+    {
+      "key": "block.liveRuby.timedOut",
+      "en": "Execution timed out after {ms} ms.",
+      "vars": [
+        "ms"
+      ]
+    },
+    {
+      "key": "block.liveRuby.title",
+      "en": "Live Ruby",
+      "vars": []
+    },
+    {
+      "key": "block.liveSql.noResult",
+      "en": "Statement executed (no result set).",
+      "vars": []
+    },
+    {
+      "key": "block.liveSql.prompt",
+      "en": "Click Run to execute this SQL block.",
+      "vars": []
+    },
+    {
+      "key": "block.liveSql.run",
+      "en": "Run SQL",
+      "vars": []
+    },
+    {
+      "key": "block.liveSql.title",
+      "en": "Live SQL",
+      "vars": []
+    },
+    {
+      "key": "block.liveSvg.empty",
+      "en": "Empty or blocked SVG source.",
+      "vars": []
+    },
+    {
+      "key": "block.loading",
+      "en": "Loading {label}…",
+      "vars": [
+        "label"
+      ]
+    },
+    {
+      "key": "block.mermaid.error",
+      "en": "⚠︎ Mermaid error:",
+      "vars": []
+    },
+    {
+      "key": "block.mermaid.placeholder",
+      "en": "Mermaid diagram (scroll to render)",
+      "vars": []
+    },
+    {
+      "key": "block.model3d.needSrc",
+      "en": "⚠︎ 3D block needs at least a `src` URL (gltf or glb).",
+      "vars": []
+    },
+    {
+      "key": "block.model3d.unsafe",
+      "en": "⚠︎ 3D block contains unsafe asset URL.",
+      "vars": []
+    },
+    {
+      "key": "block.plantuml.error",
+      "en": "⚠︎ PlantUML error (rendered via kroki.io):",
+      "vars": []
+    },
+    {
+      "key": "block.plantuml.rendering",
+      "en": "Rendering PlantUML…",
+      "vars": []
+    },
+    {
+      "key": "block.playground.console",
+      "en": "Console",
+      "vars": []
+    },
+    {
+      "key": "block.playground.errors",
+      "en": "{n} errors",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "block.playground.frameTitle",
+      "en": "Web Playground preview",
+      "vars": []
+    },
+    {
+      "key": "block.playground.preview",
+      "en": "Preview",
+      "vars": []
+    },
+    {
+      "key": "block.playground.prompt",
+      "en": "Click Run to start this project (files are separated by --- name.ext --- lines).",
+      "vars": []
+    },
+    {
+      "key": "block.playground.reset",
+      "en": "Reset",
+      "vars": []
+    },
+    {
+      "key": "block.playground.run",
+      "en": "Run",
+      "vars": []
+    },
+    {
+      "key": "block.playground.runnerBlocked",
+      "en": "The preview page didn't load. This host may block it (Netlify isn't supported for the Web Playground; use Cloudflare Pages, Vercel or the Docker image).",
+      "vars": []
+    },
+    {
+      "key": "block.playground.state.error",
+      "en": "Error",
+      "vars": []
+    },
+    {
+      "key": "block.playground.state.idle",
+      "en": "Not run",
+      "vars": []
+    },
+    {
+      "key": "block.playground.state.running",
+      "en": "Running…",
+      "vars": []
+    },
+    {
+      "key": "block.playground.state.success",
+      "en": "Running",
+      "vars": []
+    },
+    {
+      "key": "block.playground.title",
+      "en": "Web Playground",
+      "vars": []
+    },
+    {
+      "key": "block.renderError",
+      "en": "⚠︎ Render error: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "block.renderFailed",
+      "en": "⚠︎ {label} render failed: {error}",
+      "vars": [
+        "label",
+        "error"
+      ]
+    },
+    {
+      "key": "block.task.label",
+      "en": "Task",
+      "vars": []
+    },
+    {
+      "key": "chart.alternatives",
+      "en": "Chart suggestions",
+      "vars": []
+    },
+    {
+      "key": "chart.label.bar",
+      "en": "{y} by {x}",
+      "vars": [
+        "y",
+        "x"
+      ]
+    },
+    {
+      "key": "chart.label.barTop",
+      "en": "Top {n} {x} by {y}",
+      "vars": [
+        "n",
+        "x",
+        "y"
+      ]
+    },
+    {
+      "key": "chart.label.histogram",
+      "en": "Distribution of {x}",
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "chart.label.line",
+      "en": "{y} over {x}",
+      "vars": [
+        "y",
+        "x"
+      ]
+    },
+    {
+      "key": "chart.label.lineBy",
+      "en": "{y} over {x} by {by}",
+      "vars": [
+        "y",
+        "x",
+        "by"
+      ]
+    },
+    {
+      "key": "chart.label.map",
+      "en": "Map of {n} points",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "chart.label.pie",
+      "en": "{y} share by {x}",
+      "vars": [
+        "y",
+        "x"
+      ]
+    },
+    {
+      "key": "chart.label.radar",
+      "en": "{y} per {x}",
+      "vars": [
+        "y",
+        "x"
+      ]
+    },
+    {
+      "key": "chart.label.scatter",
+      "en": "{y} vs {x}",
+      "vars": [
+        "y",
+        "x"
+      ]
+    },
+    {
+      "key": "chart.label.scatterBy",
+      "en": "{y} vs {x} by {by}",
+      "vars": [
+        "y",
+        "x",
+        "by"
+      ]
+    },
+    {
+      "key": "chart.label.stackedBar",
+      "en": "{y} by {x} (stacked)",
+      "vars": [
+        "y",
+        "x"
+      ]
+    },
+    {
+      "key": "chart.label.summary",
+      "en": "Average of numeric columns",
+      "vars": []
+    },
+    {
+      "key": "chart.reason.bar",
+      "en": "{n} categories compared on {y}.",
+      "vars": [
+        "n",
+        "y"
+      ]
+    },
+    {
+      "key": "chart.reason.barGrouped",
+      "en": "{n} categories × {k} measures, side by side.",
+      "vars": [
+        "n",
+        "k"
+      ]
+    },
+    {
+      "key": "chart.reason.barTop",
+      "en": "{total} categories is too many to read — showing the top {n}.",
+      "vars": [
+        "total",
+        "n"
+      ]
+    },
+    {
+      "key": "chart.reason.histogram",
+      "en": "{n} values of {x} — {k} bins show how they are distributed.",
+      "vars": [
+        "n",
+        "x",
+        "k"
+      ]
+    },
+    {
+      "key": "chart.reason.line",
+      "en": "{x} is a time axis with {n} points — a line shows the trend.",
+      "vars": [
+        "x",
+        "n"
+      ]
+    },
+    {
+      "key": "chart.reason.lineBy",
+      "en": "{x} is a time axis with {n} points; one line per {by} ({k} series).",
+      "vars": [
+        "x",
+        "n",
+        "by",
+        "k"
+      ]
+    },
+    {
+      "key": "chart.reason.map",
+      "en": "{lat} / {lon} look like coordinates — plot them on a map.",
+      "vars": [
+        "lat",
+        "lon"
+      ]
+    },
+    {
+      "key": "chart.reason.pie",
+      "en": "Only {n} categories — small enough to compare as slices.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "chart.reason.piePercent",
+      "en": "{y} is a percentage across {n} slices.",
+      "vars": [
+        "y",
+        "n"
+      ]
+    },
+    {
+      "key": "chart.reason.pieSum",
+      "en": "{n} parts adding up to {total} — a whole split into shares.",
+      "vars": [
+        "n",
+        "total"
+      ]
+    },
+    {
+      "key": "chart.reason.radar",
+      "en": "{k} measures for {n} items — compare their profiles.",
+      "vars": [
+        "k",
+        "n"
+      ]
+    },
+    {
+      "key": "chart.reason.scatter",
+      "en": "Two numeric columns — see how {y} relates to {x}.",
+      "vars": [
+        "y",
+        "x"
+      ]
+    },
+    {
+      "key": "chart.reason.scatterCorr",
+      "en": "{x} and {y} are strongly correlated (r = {r}).",
+      "vars": [
+        "x",
+        "y",
+        "r"
+      ]
+    },
+    {
+      "key": "chart.reason.stackedBar",
+      "en": "{k} measures in the same unit — stacking shows each category’s total and its parts.",
+      "vars": [
+        "k"
+      ]
+    },
+    {
+      "key": "chart.reason.stackedBarMixed",
+      "en": "{k} measures stacked — their scales differ, so totals may mislead.",
+      "vars": [
+        "k"
+      ]
+    },
+    {
+      "key": "chart.reason.summary",
+      "en": "No category or time column — comparing column averages.",
+      "vars": []
+    },
+    {
+      "key": "comment.promptLabel",
+      "en": "Comment:",
+      "vars": []
+    },
+    {
+      "key": "comment.selectTextFirst",
+      "en": "Select some text first to anchor the comment.",
+      "vars": []
+    },
+    {
+      "key": "commentsPanel.close",
+      "en": "Close comments panel",
+      "vars": []
+    },
+    {
+      "key": "commentsPanel.delete",
+      "en": "Delete comment",
+      "vars": []
+    },
+    {
+      "key": "commentsPanel.empty",
+      "en": "No comments yet. Select text in the editor and run “Add comment” from the command palette.",
+      "vars": []
+    },
+    {
+      "key": "commentsPanel.hideResolved",
+      "en": "Hide resolved comments",
+      "vars": []
+    },
+    {
+      "key": "commentsPanel.jump",
+      "en": "Scroll to anchored text",
+      "vars": []
+    },
+    {
+      "key": "commentsPanel.reopen",
+      "en": "Re-open",
+      "vars": []
+    },
+    {
+      "key": "commentsPanel.reply",
+      "en": "Reply",
+      "vars": []
+    },
+    {
+      "key": "commentsPanel.replyPlaceholder",
+      "en": "Write a reply…",
+      "vars": []
+    },
+    {
+      "key": "commentsPanel.resolve",
+      "en": "Resolve",
+      "vars": []
+    },
+    {
+      "key": "commentsPanel.showResolved",
+      "en": "Show resolved comments",
+      "vars": []
+    },
+    {
+      "key": "commentsPanel.summary",
+      "en": "{{unresolved}} open · {{total}} total",
+      "vars": [
+        "unresolved",
+        "total"
+      ]
+    },
+    {
+      "key": "commentsPanel.title",
+      "en": "Comments",
+      "vars": []
+    },
+    {
+      "key": "commentsPanel.viewAll",
+      "en": "All",
+      "vars": []
+    },
+    {
+      "key": "commentsPanel.viewOpen",
+      "en": "Open only",
+      "vars": []
+    },
+    {
+      "key": "dnd.dropHint",
+      "en": "Drop a .md, .csv, .tsv or .json file",
+      "vars": []
+    },
+    {
+      "key": "docTabs.close",
+      "en": "Close tab",
+      "vars": []
+    },
+    {
+      "key": "docTabs.label",
+      "en": "Open documents",
+      "vars": []
+    },
+    {
+      "key": "editor.ariaLabel",
+      "en": "Markdown source editor",
+      "vars": []
+    },
+    {
+      "key": "editor.line",
+      "en": "Line {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "editor.loadingPageView",
+      "en": "Loading page view…",
+      "vars": []
+    },
+    {
+      "key": "editor.loadingWysiwyg",
+      "en": "Loading WYSIWYG editor…",
+      "vars": []
+    },
+    {
+      "key": "editor.wysiwygFailed",
+      "en": "WYSIWYG editor failed",
+      "vars": []
+    },
+    {
+      "key": "editor.wysiwygFailedHint",
+      "en": "Try switching to Source mode.",
+      "vars": []
+    },
+    {
+      "key": "findReplace.caseSensitive",
+      "en": "Case sensitive",
+      "vars": []
+    },
+    {
+      "key": "findReplace.close",
+      "en": "Close find & replace",
+      "vars": []
+    },
+    {
+      "key": "findReplace.next",
+      "en": "Next match",
+      "vars": []
+    },
+    {
+      "key": "findReplace.prev",
+      "en": "Previous match",
+      "vars": []
+    },
+    {
+      "key": "findReplace.regex",
+      "en": "Regular expression",
+      "vars": []
+    },
+    {
+      "key": "findReplace.replace",
+      "en": "Replace",
+      "vars": []
+    },
+    {
+      "key": "findReplace.replaceAll",
+      "en": "Replace All",
+      "vars": []
+    },
+    {
+      "key": "findReplace.replaceInput",
+      "en": "Replacement text",
+      "vars": []
+    },
+    {
+      "key": "findReplace.replacePlaceholder",
+      "en": "Replace with…",
+      "vars": []
+    },
+    {
+      "key": "findReplace.searchInput",
+      "en": "Search query",
+      "vars": []
+    },
+    {
+      "key": "findReplace.toggleReplace",
+      "en": "Toggle replace row",
+      "vars": []
+    },
+    {
+      "key": "focusMode.exit",
+      "en": "Exit Focus Mode (Esc)",
+      "vars": []
+    },
+    {
+      "key": "focusMode.exitShort",
+      "en": "✕ Exit Focus",
+      "vars": []
+    },
+    {
+      "key": "format.failed",
+      "en": "Formatting failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "format.needsSource",
+      "en": "Switch to Source or Split view to format a code block",
+      "vars": []
+    },
+    {
+      "key": "format.noBlock",
+      "en": "Place the cursor inside a fenced code block",
+      "vars": []
+    },
+    {
+      "key": "format.noFormatter",
+      "en": "No formatter for {lang}",
+      "vars": [
+        "lang"
+      ]
+    },
+    {
+      "key": "format.unchanged",
+      "en": "Already formatted",
+      "vars": []
+    },
+    {
+      "key": "insertText.auto",
+      "en": "Auto",
+      "vars": []
+    },
+    {
+      "key": "insertText.cancel",
+      "en": "Cancel",
+      "vars": []
+    },
+    {
+      "key": "insertText.codeLang",
+      "en": "Language",
+      "vars": []
+    },
+    {
+      "key": "insertText.confirm",
+      "en": "Insert",
+      "vars": []
+    },
+    {
+      "key": "insertText.detect",
+      "en": "Detect as",
+      "vars": []
+    },
+    {
+      "key": "insertText.detectedAs",
+      "en": "Detected as",
+      "vars": []
+    },
+    {
+      "key": "insertText.help",
+      "en": "Paste any markdown, HTML, or code. The detected type is shown below — switch manually if needed.",
+      "vars": []
+    },
+    {
+      "key": "insertText.hintCancel",
+      "en": "to cancel",
+      "vars": []
+    },
+    {
+      "key": "insertText.hintInsert",
+      "en": "to insert",
+      "vars": []
+    },
+    {
+      "key": "insertText.kind.code",
+      "en": "Code block",
+      "vars": []
+    },
+    {
+      "key": "insertText.kind.html",
+      "en": "HTML → markdown",
+      "vars": []
+    },
+    {
+      "key": "insertText.kind.markdown",
+      "en": "Markdown",
+      "vars": []
+    },
+    {
+      "key": "insertText.mode",
+      "en": "Insert as",
+      "vars": []
+    },
+    {
+      "key": "insertText.mode.append",
+      "en": "Append to document",
+      "vars": []
+    },
+    {
+      "key": "insertText.mode.atCursor",
+      "en": "At cursor position",
+      "vars": []
+    },
+    {
+      "key": "insertText.mode.replace",
+      "en": "Replace document",
+      "vars": []
+    },
+    {
+      "key": "insertText.placeholder",
+      "en": "Paste here. Try HTML like <h1>Hi</h1> or code like function() { … }",
+      "vars": []
+    },
+    {
+      "key": "insertText.preview",
+      "en": "Markdown preview",
+      "vars": []
+    },
+    {
+      "key": "insertText.previewEmpty",
+      "en": "(nothing yet — start typing)",
+      "vars": []
+    },
+    {
+      "key": "insertText.smartHelp",
+      "en": "Paste a URL, CSV, JSON, SQL, Mermaid, GeoJSON, math, code — anything. Lumen detects the type and wraps it in the right block.",
+      "vars": []
+    },
+    {
+      "key": "insertText.smartPlaceholder",
+      "en": "Paste anything: a YouTube link, CSV rows, SQL query, Mermaid diagram, GeoJSON, code, math…",
+      "vars": []
+    },
+    {
+      "key": "insertText.title",
+      "en": "Insert anything",
+      "vars": []
+    },
+    {
+      "key": "mdTable.addCol",
+      "en": "Add Column",
+      "vars": []
+    },
+    {
+      "key": "mdTable.addRow",
+      "en": "Add Row",
+      "vars": []
+    },
+    {
+      "key": "mdTable.align.center",
+      "en": "◆ center",
+      "vars": []
+    },
+    {
+      "key": "mdTable.align.left",
+      "en": "◀ left",
+      "vars": []
+    },
+    {
+      "key": "mdTable.align.right",
+      "en": "▶ right",
+      "vars": []
+    },
+    {
+      "key": "mdTable.cell",
+      "en": "Row {row} column {col}",
+      "vars": [
+        "row",
+        "col"
+      ]
+    },
+    {
+      "key": "mdTable.columnHeader",
+      "en": "Column {n} header",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "mdTable.cycleAlign",
+      "en": "Cycle alignment for column {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "mdTable.removeCol",
+      "en": "Remove Column",
+      "vars": []
+    },
+    {
+      "key": "mdTable.removeRow",
+      "en": "Remove Row",
+      "vars": []
+    },
+    {
+      "key": "mdTable.title",
+      "en": "Table Editor",
+      "vars": []
+    },
+    {
+      "key": "mode.preview",
+      "en": "Preview",
+      "vars": []
+    },
+    {
+      "key": "mode.source",
+      "en": "Source",
+      "vars": []
+    },
+    {
+      "key": "mode.split",
+      "en": "Split",
+      "vars": []
+    },
+    {
+      "key": "mode.wysiwyg",
+      "en": "WYSIWYG",
+      "vars": []
+    },
+    {
+      "key": "outline.close",
+      "en": "Close the outline",
+      "vars": []
+    },
+    {
+      "key": "outline.empty",
+      "en": "No headings yet. Start typing # to add one.",
+      "vars": []
+    },
+    {
+      "key": "outline.title",
+      "en": "Outline",
+      "vars": []
+    },
+    {
+      "key": "suggesting.byAuthor",
+      "en": "Suggested by {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "suggesting.noWysiwyg",
+      "en": "Suggesting mode tracks changes in the source editor, so WYSIWYG is unavailable while it is on — showing Split view instead.",
+      "vars": []
+    },
+    {
+      "key": "suggesting.untrackable",
+      "en": "That text contains suggestion markup ({++, ++}, ~>, …) and can't be tracked. Turn off suggesting mode to insert it.",
+      "vars": []
+    },
+    {
+      "key": "vaultCite.noSource",
+      "en": "no such source",
+      "vars": []
+    },
+    {
+      "key": "vaultCite.notVerified",
+      "en": "Quote not found in the note",
+      "vars": []
+    },
+    {
+      "key": "vaultCite.summary",
+      "en": "Citations checked against your notes: {ok} of {total} verified",
+      "vars": [
+        "ok",
+        "total"
+      ]
+    },
+    {
+      "key": "vaultCite.unsupported",
+      "en": "No verified citation — check this answer against your notes.",
+      "vars": []
+    },
+    {
+      "key": "vaultCite.verified",
+      "en": "Quote found in the note",
+      "vars": []
+    },
+    {
+      "key": "writingGoal.done",
+      "en": "🎉 Daily goal reached — {{words}} / {{goal}}",
+      "vars": [
+        "words",
+        "goal"
+      ]
+    },
+    {
+      "key": "writingGoal.progress",
+      "en": "{{words}} / {{goal}} words · {{pct}}%",
+      "vars": [
+        "words",
+        "goal",
+        "pct"
+      ]
+    },
+    {
+      "key": "writingGoal.prompt",
+      "en": "Daily writing goal in words (0 to disable):",
+      "vars": []
+    }
+  ]
+}

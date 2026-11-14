@@ -1,3 +1,5 @@
+import { t } from "../i18n";
+
 interface Props {
   source: string;
 }
@@ -250,7 +252,7 @@ export default function EmbedBlock({ source }: Props) {
     return (
       <div className="chart-block" style={{ padding: "1rem" }}>
         <div style={{ color: "hsl(0 80% 60%)", fontSize: 13 }}>
-          ⚠︎ Could not recognize the embed URL.
+          {t("block.embed.unrecognized")}
         </div>
       </div>
     );
@@ -266,7 +268,7 @@ export default function EmbedBlock({ source }: Props) {
           rel="noopener noreferrer"
           style={{ color: "hsl(var(--accent))", fontSize: 11 }}
         >
-          Open ↗
+          {t("block.embed.open")}
         </a>
       </div>
       <div

@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { renderMarkdown, renderMarkdownFast, extractFrontmatter } from "./pipeline";
-import { PreviewDocKeyContext } from "./previewDoc";
+import { subscribePluginLangs } from "../plugins/runtime/rendererRegistry";
+import { LARGE_DOC_CHARS, PreviewDocKeyContext } from "./previewDoc";
+import type { IncrementalPreview } from "./incrementalPreview";
 import { handleWikiLinkClick } from "./wikiLinks";
-import { slug as headingSlug } from "github-slugger";
+import { wikiHoverHandlers } from "./hoverTrigger";
+import { hasEmbeds } from "./remarkEmbeds";
+import { onWorkspaceChanged } from "../storage/workspaceEvents";
+import { wikiFragmentId } from "../lib/slug";
 import { scheduleIdle } from "../lib/idle";
 import { CopyButtonHandler } from "./components";
 import { Frontmatter } from "../ui/Frontmatter";
@@ -40,8 +45,10 @@ export function Preview({ markdownText, docKey = null }: Props) {
   // or a vendor chunk. Heavy blocks hydrate on their own (see
   // DeferredBlock in ./components). The full pipeline runs once the
   // browser is idle and swaps in highlighted code + math.
+  // A long document skips the synchronous pass: it renders in blocks,
+  // yielding to the browser (plan 8.4).
   const [tree, setTree] = useState<React.ReactElement | null>(() =>
-    fullPipelineWarm ? null : safeFastRender(markdownText),
+    fullPipelineWarm || markdownText.length >= LARGE_DOC_CHARS ? null : safeFastRender(markdownText),
   );
   // The document the *displayed* tree was rendered from — it lags `docKey`
   // until the async render for the new document lands.
@@ -50,26 +57,50 @@ export function Preview({ markdownText, docKey = null }: Props) {
   const [themeVersion, setThemeVersion] = useState(0);
   const seqRef = useRef(0);
   const fastTextRef = useRef<string | null>(fullPipelineWarm ? null : markdownText);
+  // `![[embeds]]`: bumped when a note or file the displayed tree embeds
+  // changes in the workspace, so the embed shows the new text.
+  const [embedVersion, setEmbedVersion] = useState(0);
+  const embedWatchRef = useRef<{ active: boolean; paths: Set<string> }>({ active: false, paths: new Set() });
+  /** Block-by-block renderer for long documents, loaded on first need. */
+  const incrementalRef = useRef<IncrementalPreview | null>(null);
 
   useEffect(() => {
     const seq = ++seqRef.current;
     const isDark = () => document.documentElement.classList.contains("dark");
     const renderedFor = docKey;
+    const stale = () => seq !== seqRef.current;
+    const render = async (): Promise<React.ReactElement | null> => {
+      if (markdownText.length < LARGE_DOC_CHARS) return renderMarkdown(markdownText, isDark);
+      const m = await import("./incrementalPreview");
+      if (!m.canRenderInBlocks(markdownText)) return renderMarkdown(markdownText, isDark);
+      const inc = (incrementalRef.current ??= new m.IncrementalPreview());
+      return inc.render(markdownText, isDark, stale);
+    };
     const run = () => {
-      renderMarkdown(markdownText, isDark)
-        .then((el) => {
-          if (seq !== seqRef.current) return;
+      // Only a note with `![[embeds]]` loads the embed code and waits for
+      // the workspace index; if that chunk fails, embeds render as links.
+      // Any other note renders through render(): in blocks when it is long.
+      const rendered = hasEmbeds(markdownText)
+        ? import("./embedContext")
+            .then((m) => m.loadEmbedContext(markdownText, renderedFor))
+            .catch(() => undefined)
+            .then(async (embeds) => ({ el: await renderMarkdown(markdownText, isDark, { embeds }), embeds }))
+        : render().then((el) => ({ el, embeds: undefined }));
+      rendered
+        .then(({ el, embeds }) => {
+          if (!el || stale()) return;
           fullPipelineWarm = true;
+          embedWatchRef.current = { active: !!embeds, paths: embeds?.used ?? new Set() };
           setTree(el);
           setTreeDocKey(renderedFor);
           setError(null);
         })
         .catch((e: Error) => {
-          if (seq !== seqRef.current) return;
+          if (stale()) return;
           setError(e.message);
         });
     };
-    if (fullPipelineWarm) {
+    if (fullPipelineWarm || markdownText.length >= LARGE_DOC_CHARS) {
       run();
       return;
     }
@@ -82,7 +113,27 @@ export function Preview({ markdownText, docKey = null }: Props) {
       setTreeDocKey(renderedFor);
     }
     return scheduleIdle(run, 1500);
-  }, [markdownText, themeVersion, docKey]);
+  }, [markdownText, themeVersion, docKey, embedVersion]);
+
+  // Live embeds: an autosave of an embedded note (or a rename / delete that
+  // may make a missing target appear) re-renders. The workspace index marks
+  // the saved file dirty on the same event, so the re-render reads its new
+  // text. Notes that embed nothing never re-render here.
+  useEffect(
+    () =>
+      onWorkspaceChanged(
+        (c) => {
+          const w = embedWatchRef.current;
+          if (!w.active) return;
+          if (c.kind === "structure" || !c.paths || c.paths.some((p) => w.paths.has(p))) setEmbedVersion((v) => v + 1);
+        },
+        { debounceMs: 250 },
+      ),
+    [],
+  );
+
+  // Re-process when a plugin starts or stops rendering a code-block language (plan 11.2).
+  useEffect(() => subscribePluginLangs(() => setThemeVersion((v) => v + 1)), []);
 
   // Re-process when theme changes so Shiki picks up the right theme tokens.
   useEffect(() => {
@@ -110,6 +161,8 @@ export function Preview({ markdownText, docKey = null }: Props) {
       // newly opened note renders) — lets callers wait for the right one.
       data-preview-doc={treeDocKey ?? ""}
       style={{ contain: "layout" }}
+      // Hover / focus on a [[link]] previews the note (4.6; loaded on first use).
+      {...wikiHoverHandlers}
       onClick={(e) => {
         // [[Wiki links]] without a matching heading here open the note.
         handleWikiLinkClick(
@@ -122,9 +175,16 @@ export function Preview({ markdownText, docKey = null }: Props) {
           (path, heading) =>
             window.dispatchEvent(
               new CustomEvent("lumen-open-file", {
-                // Same slugger rehype-slug gives the rendered headings
-                // (Unicode-aware: Hebrew / CJK headings keep their text).
-                detail: heading ? { path, heading: headingSlug(heading) } : { path },
+                // A PDF takes the fragment as written (`page=3&highlight=…`,
+                // plan 4.14). A note: the same slugger rehype-slug gives the
+                // rendered headings (Unicode-aware: Hebrew / CJK keep their
+                // text); a block reference (`#^id`) is the block's own id
+                // (remarkBlockIds).
+                detail: /\.pdf$/i.test(path)
+                  ? { path, fragment: heading ?? null }
+                  : heading
+                    ? { path, heading: wikiFragmentId(heading) }
+                    : { path },
               }),
             ),
         );
@@ -145,7 +205,7 @@ export function Preview({ markdownText, docKey = null }: Props) {
             whiteSpace: "pre-wrap",
           }}
         >
-          ⚠︎ Render error: {error}
+          {t("block.renderError", { error })}
         </div>
       )}
       <div className="prose-lumen">

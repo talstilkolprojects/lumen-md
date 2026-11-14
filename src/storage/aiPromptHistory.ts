@@ -29,7 +29,7 @@ function save(history: string[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
   } catch {
-    /* quota / private mode — memory fallback already updated */
+    /* why: quota / private mode — memory fallback already updated */
   }
 }
 
@@ -52,6 +52,6 @@ export function clearAiPromptHistory(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {
-    /* */
+    /* why: storage denied: the in-memory history is cleared, nothing was persisted */
   }
 }

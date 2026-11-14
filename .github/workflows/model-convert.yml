@@ -1,0 +1,341 @@
+name: model convert
+
+# Plan 6.0: convert the models Lumen self-hosts to ONNX (Optimum export +
+# q8 / q4f16 quantisation, through transformers.js's own conversion script),
+# prove that each one loads in transformers.js 4.3 in a browser, and keep the
+# files as workflow artifacts with a checksum manifest.
+#
+# Manual only: it downloads multi-GB checkpoints from Hugging Face. Nothing is
+# published: hosting (GitHub Releases or Hugging Face) is Tal's decision, 15.9;
+# the `publish` job below is disabled until then.
+#
+# After a run, copy the checksums into models/registry.json:
+#   npm run models:registry -- <run id>
+on:
+  workflow_dispatch:
+    inputs:
+      models:
+        description: Model ids to convert (comma-separated; empty = all in models/convert-targets.json)
+        default: ""
+      siglip:
+        description: "SigLIP: auto = use the existing ONNX mirror if it loads, else convert; convert = always convert"
+        default: auto
+        type: choice
+        options: [auto, convert]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: model-convert
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: plan
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
+    timeout-minutes: 5
+    outputs:
+      ids: ${{ steps.ids.outputs.ids }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: ids
+        env:
+          WANT: ${{ inputs.models }}
+        run: |
+          node -e '
+            const t = require("./models/convert-targets.json");
+            const want = (process.env.WANT || "").split(",").map((s) => s.trim()).filter(Boolean);
+            const ids = t.models.map((m) => m.id).filter((id) => !want.length || want.includes(id));
+            const bad = want.filter((w) => !t.models.some((m) => m.id === w));
+            if (bad.length) { console.log(`::error::unknown model id(s): ${bad.join(", ")}`); process.exit(1); }
+            require("fs").appendFileSync(process.env.GITHUB_OUTPUT, `ids=${JSON.stringify(ids)}\n`);
+            console.log(ids.join(", "));
+          '
+
+  # SigLIP: an ONNX build already exists on Hugging Face. Use it when it
+  # downloads and passes the same browser smoke test; convert only otherwise.
+  siglip-mirror:
+    name: SigLIP mirror check
+    needs: plan
+    if: contains(needs.plan.outputs.ids, 'siglip') && inputs.siglip == 'auto'
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
+    timeout-minutes: 30
+    outputs:
+      ok: ${{ steps.verdict.outputs.ok }}
+      mirror: ${{ steps.fetch.outputs.mirror }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: npm }
+      - name: Download the mirror (q8 and q4f16 only)
+        id: fetch
+        continue-on-error: true
+        run: |
+          pip install -q "huggingface_hub>=0.25"
+          python - <<'PY'
+          import json, os, sys
+          from huggingface_hub import model_info, snapshot_download
+          t = json.load(open("models/convert-targets.json"))
+          m = next(x for x in t["models"] if x["id"].startswith("siglip"))
+          out = f"out/{m['id']}"
+          for repo in m["mirrors"]:
+              try:
+                  info = model_info(repo)
+              except Exception as e:
+                  print(f"::warning title=SigLIP mirror {repo}::not reachable: {e}")
+                  continue
+              lic = getattr(info.card_data, "license", None) if info.card_data else None
+              print(f"{repo}: revision {info.sha}, card licence {lic}, {len(info.siblings or [])} files")
+              snapshot_download(repo, revision=info.sha, local_dir=out,
+                                allow_patterns=["*.json", "*.txt", "onnx/*_quantized.onnx", "onnx/*_q4f16.onnx"])
+              onnx = [f for f in os.listdir(f"{out}/onnx")] if os.path.isdir(f"{out}/onnx") else []
+              if not onnx:
+                  print(f"::warning title=SigLIP mirror {repo}::no q8/q4f16 ONNX files")
+                  continue
+              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                  f.write(f"mirror={repo}\nrevision={info.sha}\n")
+              print(f"::notice title=SigLIP mirror::{repo}@{info.sha[:8]} has {', '.join(sorted(onnx))} (card licence: {lic})")
+              sys.exit(0)
+          print("::warning title=SigLIP mirror::no mirror could be downloaded")
+          sys.exit(1)
+          PY
+      - name: Smoke-test the mirror in Chromium
+        id: smoke
+        if: steps.fetch.outcome == 'success'
+        continue-on-error: true
+        run: |
+          npm ci || npm install
+          npx playwright install --with-deps chromium
+          node scripts/models/smoke.mjs --models out --ids siglip-base-patch16-256-multilingual --out out/siglip-mirror-smoke.json
+      - name: Verdict
+        id: verdict
+        run: |
+          if [ "${{ steps.fetch.outcome }}" = success ] && [ "${{ steps.smoke.outcome }}" = success ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+            echo "::notice title=SigLIP::the existing mirror ${{ steps.fetch.outputs.mirror }} works: using it, not converting"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=SigLIP::the existing mirror is broken (download: ${{ steps.fetch.outcome }}, smoke: ${{ steps.smoke.outcome }}): converting"
+          fi
+      - name: Manifest
+        if: steps.verdict.outputs.ok == 'true'
+        run: node scripts/models/manifest.mjs --dir out/siglip-base-patch16-256-multilingual --id siglip-base-patch16-256-multilingual --via mirror --mirror "${{ steps.fetch.outputs.mirror }}" --revision "${{ steps.fetch.outputs.revision }}" --prune
+      - uses: actions/upload-artifact@v7
+        if: steps.verdict.outputs.ok == 'true'
+        with:
+          name: model-siglip-base-patch16-256-multilingual
+          path: out/siglip-base-patch16-256-multilingual/
+          retention-days: 30
+
+  # Nakdimon (plan 6.3): already ONNX in its MIT repository — mirrored
+  # byte for byte at a pinned commit, checked against models/registry.json.
+  nakdimon:
+    name: Nakdimon mirror
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
+    timeout-minutes: 10
+    env:
+      COMMIT: a06ebfd032548b132ac2da2f5aab1289de5ae5f2
+    steps:
+      - uses: actions/checkout@v7
+      - name: Download at the pinned commit and verify
+        run: |
+          mkdir -p out/nakdimon
+          curl -fsSL -o out/nakdimon/Nakdimon.onnx "https://raw.githubusercontent.com/elazarg/nakdimon/$COMMIT/nakdimon/data/Nakdimon.onnx"
+          curl -fsSL -o out/nakdimon/LICENSE "https://raw.githubusercontent.com/elazarg/nakdimon/$COMMIT/LICENSE"
+          node -e '
+            const fs = require("fs"), crypto = require("crypto");
+            const entry = require("./models/registry.json").models.find((m) => m.id === "nakdimon");
+            const want = entry.files[0];
+            const data = fs.readFileSync("out/nakdimon/Nakdimon.onnx");
+            const sum = crypto.createHash("sha256").update(data).digest("hex");
+            if (sum !== want.sha256 || data.length !== want.bytes) { console.log(`::error title=Nakdimon::got ${sum} (${data.length} B), registry says ${want.sha256} (${want.bytes} B)`); process.exit(1); }
+            if (!/Permission is hereby granted, free of charge/.test(fs.readFileSync("out/nakdimon/LICENSE", "utf8"))) { console.log("::error title=Nakdimon::LICENSE is no longer MIT"); process.exit(1); }
+            fs.writeFileSync("out/nakdimon/manifest.json", JSON.stringify({ id: "nakdimon", source: entry.source, revision: process.env.COMMIT, via: "mirror", license: entry.license, attribution: entry.attribution, files: entry.files }, null, 2) + "\n");
+            console.log(`::notice title=Nakdimon::${sum} matches models/registry.json`);
+          '
+      - uses: actions/upload-artifact@v7
+        with:
+          name: model-nakdimon
+          path: out/nakdimon/
+          retention-days: 30
+
+  convert:
+    name: convert ${{ matrix.id }}
+    needs: [plan, siglip-mirror]
+    # siglip-mirror is skipped unless SigLIP is wanted in auto mode.
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        id: ${{ fromJSON(needs.plan.outputs.ids) }}
+    steps:
+      - name: Skip SigLIP when its mirror works
+        id: gate
+        run: |
+          if [[ "${{ matrix.id }}" == siglip* && "${{ needs.siglip-mirror.outputs.ok }}" == true ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice title=${{ matrix.id }}::not converted: the existing mirror passed the smoke test"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v7
+        if: steps.gate.outputs.skip != 'true'
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.skip != 'true'
+        with: { python-version: "3.11" }
+      - uses: actions/setup-node@v7
+        if: steps.gate.outputs.skip != 'true'
+        with: { node-version: 22 }
+      - name: Source revision and licence
+        id: src
+        if: steps.gate.outputs.skip != 'true'
+        env:
+          ID: ${{ matrix.id }}
+        run: |
+          pip install -q "huggingface_hub>=0.25"
+          python - <<'PY'
+          import json, os
+          from huggingface_hub import model_info
+          t = json.load(open("models/convert-targets.json"))
+          m = next(x for x in t["models"] if x["id"] == os.environ["ID"])
+          info = model_info(m["hf"])
+          lic = str(getattr(info.card_data, "license", "") or "") if info.card_data else ""
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"hf={m['hf']}\ntask={m['task']}\nrevision={info.sha}\ncard={lic}\n")
+          ok = lic.lower() == m["cardLicense"].lower()
+          level = "notice" if ok else "warning"
+          print(f"::{level} title=licence {m['id']}::{m['hf']}@{info.sha[:8]} model card licence '{lic}', expected '{m['cardLicense']}'" + ("" if ok else " — check before publishing (15.9)"))
+          PY
+      - name: transformers.js conversion scripts
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          # The first release in the list that still ships scripts/convert.py.
+          for ref in $(node -p 'require("./models/convert-targets.json").transformersJsScripts.join(" ")') main; do
+            rm -rf tjs
+            if git clone -q --depth 1 --branch "$ref" https://github.com/huggingface/transformers.js tjs 2>/dev/null && [ -f tjs/scripts/convert.py ]; then
+              echo "::notice title=transformers.js scripts::using ref $ref"
+              break
+            fi
+          done
+          [ -f tjs/scripts/convert.py ] || { echo "::error::no transformers.js ref with scripts/convert.py"; exit 1; }
+          pip install -q --extra-index-url https://download.pytorch.org/whl/cpu -r tjs/scripts/requirements.txt
+          # Marian (OPUS-MT) tokenizers need these; harmless for the others.
+          pip install -q sentencepiece sacremoses protobuf
+          pip list 2>/dev/null | grep -iE '^(transformers|optimum|onnx|onnxruntime|torch) ' || true
+      - name: Export and quantise
+        if: steps.gate.outputs.skip != 'true'
+        working-directory: tjs
+        env:
+          HF: ${{ steps.src.outputs.hf }}
+          TASK: ${{ steps.src.outputs.task }}
+          REV: ${{ steps.src.outputs.revision }}
+        run: |
+          set +e
+          out=../raw
+          # Newer scripts take the quantisation modes; older ones quantise to every mode.
+          for extra in "--revision $REV --quantize --modes q8 q4f16" "--revision $REV --quantize" "--quantize"; do
+            echo "::group::convert $HF ($extra)"
+            python -m scripts.convert --model_id "$HF" --task "$TASK" --output_parent_dir "$out" $extra
+            rc=$?
+            echo "::endgroup::"
+            [ $rc -eq 0 ] && break
+          done
+          [ $rc -eq 0 ] || { echo "::error title=convert ${{ matrix.id }}::scripts.convert failed (exit $rc)"; exit $rc; }
+          dir="$out/$HF"
+          ls -la "$dir" "$dir/onnx" || true
+          # No q4f16 from the export: run the quantiser on its own for that mode.
+          if ! ls "$dir"/onnx/*_q4f16.onnx >/dev/null 2>&1; then
+            python -m scripts.quantize --input_folder "$dir/onnx" --output_folder "$dir/onnx" --modes q4f16 \
+              || echo "::warning title=${{ matrix.id }}::no q4f16 build (quantiser failed); q8 only"
+          fi
+          mkdir -p ../out
+          mv "$dir" "../out/${{ matrix.id }}"
+      - name: Manifest (sha256, size, licence, attribution per file)
+        if: steps.gate.outputs.skip != 'true'
+        run: node scripts/models/manifest.mjs --dir "out/${{ matrix.id }}" --id "${{ matrix.id }}" --revision "${{ steps.src.outputs.revision }}" --via converted --prune
+      - uses: actions/upload-artifact@v7
+        if: steps.gate.outputs.skip != 'true'
+        with:
+          name: model-${{ matrix.id }}
+          path: out/${{ matrix.id }}/
+          retention-days: 30
+
+  smoke:
+    name: transformers.js 4.3 in Chromium
+    needs: [plan, convert, nakdimon]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: npm }
+      - run: npm ci || npm install
+      - run: npx playwright install --with-deps chromium
+      - name: Fetch every model artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: model-*
+          path: artifacts
+      - name: Lay out models/<id>/
+        run: |
+          mkdir -p models-under-test
+          for d in artifacts/model-*; do
+            [ -d "$d" ] || continue
+            id=${d#artifacts/model-}
+            mv "$d" "models-under-test/$id"
+          done
+          ls models-under-test
+          du -sh models-under-test/* || true
+      - name: Load and run each model (q8 required, q4f16 reported)
+        env:
+          IDS: ${{ join(fromJSON(needs.plan.outputs.ids), ',') }}
+        run: node scripts/models/smoke.mjs --models models-under-test --ids "$IDS" --out smoke-results.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: smoke-results
+          path: smoke-results.json
+          if-no-files-found: ignore
+      - name: Opus-MT baseline — chrF on the mt-he-en dev split (plan 6.4)
+        # The first measurement of layer 2: the converted models exist only
+        # here until they are hosted (15.9). Numbers only, never items.
+        if: always()
+        run: |
+          node scripts/golden/evals/mt.mjs --dev --models models-under-test --layers opus --out mt-dev-scores.json | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: mt-dev-scores
+          path: mt-dev-scores.json
+          if-no-files-found: ignore
+
+      - name: Nakdimon — niqqud on the nikud dev split (plan 6.3)
+        # The classical (Ben-Yehuda) part; the modern part is local-only text.
+        if: always()
+        run: |
+          node scripts/golden/evals/nikud.mjs --dev --model models-under-test/nakdimon/Nakdimon.onnx | tee nikud-dev-scores.json | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: nikud-dev-scores
+          path: nikud-dev-scores.json
+          if-no-files-found: ignore
+
+  publish:
+    name: publish (disabled, 15.9)
+    needs: smoke
+    # TODO(15.9): Tal decides where the models are hosted: GitHub Releases if
+    # the repo is public, otherwise Hugging Face. Until then nothing leaves
+    # the workflow's artifacts. To enable: set the host here, give the job the
+    # write permission or token it needs, and point CONVERTED_MODELS_BASE in
+    # src/ai/convertedModels.ts at it.
+    if: false
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
+    steps:
+      - run: echo "TODO(15.9) choose the host, then upload the model-* artifacts with their manifest.json"

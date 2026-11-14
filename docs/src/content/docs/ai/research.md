@@ -23,7 +23,13 @@ Choose how Lumen searches with `🔎 Research: Settings…`:
 | Search | Needs | How it works |
 |---|---|---|
 | **Claude web search** (default) | AI provider set to Claude (Anthropic) | One request: Claude searches (up to 5 searches), reads and answers. The quotes are copied word for word from the pages by Anthropic. Anthropic bills the searches separately from tokens. |
-| **Brave Search** / **Tavily** | Your own API key, and the research service on this deployment | Lumen plans 2–4 searches and reads up to 6 pages. It sends the model only the parts relevant to your question, then **checks every quote against the page it came from**. A quote that can't be found is marked ⚠️ in the note. |
+| **SearXNG** / **Brave Search** / **Tavily** | The research service on this deployment (a local SearXNG needs no key; Brave and Tavily need yours) | The **researcher agent** runs on your AI model, local first, in a tool loop. It searches (`search_web`), reads the pages it chooses (`fetch_page`), and copies the passages it cites (`extract_quotes`). Then Lumen **checks every quote against the page it came from**, outside the model. A quote that can't be found is marked ⚠️ in the note. If fewer than half of the quotes are in their pages, the agent tries once more and is told to quote word for word. |
+
+Under the **local only** AI policy:
+- **With a remote research service:** the same agent answers from your **clip library** (`Library/`, `ספרייה/`) and nothing leaves the device.
+- **With a research service on this machine:** every search and every page read asks you first. Only the search query, or the page address, is sent.
+
+Every page is outside content: the agent gets it cleaned and delimited, and instructions planted in it are flagged (see Local agents → Outside content). The note is saved with `untrusted: true` in its frontmatter.
 
 Pages the research read but didn't cite are listed under "Also read".
 Every model call appears in `AI: Usage & Cost This Month`. A research
@@ -39,7 +45,7 @@ footnotes that link to web pages and checks each one:
 | Result | Meaning |
 |---|---|
 | ✅ quote found | The quoted passage is on the page. Quote marks, dashes, case and spacing don't need to match exactly. |
-| 🟡 found approximately | At least 85% of the quote's words appear close together on the page. |
+| 🟡 found approximately | At least 85% of the quote's words appear close together on the page. A quote longer than 200 words is scored on samples, so it is "approximate" unless it is on the page word for word. |
 | ❌ quote not found | The page is reachable, but the passage isn't on it. |
 | 💀 dead link | The page returned an HTTP error. |
 | ⚠️ couldn't read | The address was blocked, the page isn't HTML or text, or the request timed out. |
@@ -60,5 +66,17 @@ your deployment runs (`edge-workers/research`, set with
 - Your search key is passed through for each request and is never
   stored.
 - It only answers your app's own origins.
+- It requires a shared token (`RESEARCH_TOKEN`). You enter it under AI
+  settings → Research token; it is kept in the app's secret store and is
+  never built into the app. A token entered there is sent only to the
+  research address that was in use when you saved it. Without a token
+  configured, the service refuses every request.
 
 Claude web search doesn't need the service.
+
+## Known limitations — status
+
+| Id | Limitation | Status |
+|---|---|---|
+| A7 | Approximate quote matching is a heuristic with a compute budget | Decision: kept. The check runs on your device, so a long quote is scored on up to 5 samples of 200 words. A quote is ✅ only when it is on the page word for word; a full score on the samples alone is 🟡 "checked on samples". |
+| A8 | No real authentication without accounts | Fixed in part. The token is now required: a service without one refuses everything. In a public web app the token ships in the app, so it only stops casual reuse. To restrict who may use it, put the service behind Cloudflare Access and add a rate-limiting rule. |

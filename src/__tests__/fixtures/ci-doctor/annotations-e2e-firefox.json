@@ -1,0 +1,51 @@
+[
+  {
+    "path": ".github",
+    "start_line": 392,
+    "annotation_level": "failure",
+    "title": "",
+    "message": "Process completed with exit code 1."
+  },
+  {
+    "path": ".github",
+    "start_line": 386,
+    "annotation_level": "notice",
+    "title": "🎭 Playwright Run Summary",
+    "message": "  1 failed\n    [firefox] › e2e/screenshots-and-galleries.spec.ts:155:1 › Template Gallery — opens, lists templates, screenshot \n  1 flaky\n    [firefox] › e2e/live-exec.spec.ts:192:1 › live-ruby executes real Ruby via ruby.wasm in a sandboxed worker \n  2 skipped\n  126 passed (6.5m)"
+  },
+  {
+    "path": "e2e/live-exec.spec.ts",
+    "start_line": 218,
+    "annotation_level": "failure",
+    "title": "[firefox] › e2e/live-exec.spec.ts:192:1 › live-ruby executes real Ruby via ruby.wasm in a sandboxed worker",
+    "message": "  2) [firefox] › e2e/live-exec.spec.ts:192:1 › live-ruby executes real Ruby via ruby.wasm in a sandboxed worker \n    Error: live-ruby never printed 5091. data-state=?\n    block: ?\n    console.warning: [JavaScript Warning: \"An IndexedDB transaction that was not yet complete has been aborted due to page navigation.\" {file: \"http://localhost:5173/src/storage/history.ts\" line: 104}]\n    console.warning: [JavaScript Warning: \"An IndexedDB transaction that was not yet complete has been aborted due to page navigation.\" {file: \"http://localhost:5173/src/storage/history.ts\" line: 104}]\n    console.debug: [vite] connecting..."
+  },
+  {
+    "path": "e2e/live-exec.spec.ts",
+    "start_line": 0,
+    "annotation_level": "failure",
+    "title": "[firefox] › e2e/live-exec.spec.ts:192:1 › live-ruby executes real Ruby via ruby.wasm in a sandboxed worker",
+    "message": "  2) [firefox] › e2e/live-exec.spec.ts:192:1 › live-ruby executes real Ruby via ruby.wasm in a sandboxed worker \n    Test timeout of 240000ms exceeded."
+  },
+  {
+    "path": "e2e/screenshots-and-galleries.spec.ts",
+    "start_line": 177,
+    "annotation_level": "failure",
+    "title": "[firefox] › e2e/screenshots-and-galleries.spec.ts:155:1 › Template Gallery — opens",
+    "message": "  1) [firefox] › e2e/screenshots-and-galleries.spec.ts:155:1 › Template Gallery — opens, lists templates, screenshot \n\n    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────\n    Error: expect(locator).toBeVisible() failed\n\n    Locator: locator('[role=\"dialog\"]').filter({ hasNot: getByPlaceholder(/Type a command/i) }).first()"
+  },
+  {
+    "path": "e2e/screenshots-and-galleries.spec.ts",
+    "start_line": 177,
+    "annotation_level": "failure",
+    "title": "[firefox] › e2e/screenshots-and-galleries.spec.ts:155:1 › Template Gallery — opens",
+    "message": "  1) [firefox] › e2e/screenshots-and-galleries.spec.ts:155:1 › Template Gallery — opens, lists templates, screenshot \n    Error: expect(locator).toBeVisible() failed\n\n    Locator: locator('[role=\"dialog\"]').filter({ hasNot: getByPlaceholder(/Type a command/i) }).first()\n    Expected: visible\n    Timeout: 10000ms"
+  },
+  {
+    "path": ".github",
+    "start_line": 1,
+    "annotation_level": "notice",
+    "title": "",
+    "message": "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\""
+  }
+]

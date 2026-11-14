@@ -2,8 +2,8 @@
  * LAUNCH-READINESS B6 — "Open sample workspace".
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { readLocale } from "../../scripts/lib/i18n-files.mjs";
 
 const files = new Map<string, string>();
 vi.mock("../storage/workspace", async (orig) => {
@@ -118,7 +118,7 @@ describe("sample workspace i18n", () => {
   for (const loc of ["he", "ar", "ru", "fr", "de", "ja", "zh-CN"]) {
     it(`${loc} has real (non-English) translations`, async () => {
       const { t, applyLocale } = await import("../i18n");
-      const bundle = JSON.parse(readFileSync(join(dir, `${loc}.json`), "utf8"));
+      const bundle = readLocale(loc, dir);
       applyLocale("en");
       for (const k of KEYS) {
         expect(typeof bundle[k], `${loc}:${k}`).toBe("string");

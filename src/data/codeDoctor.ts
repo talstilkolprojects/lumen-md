@@ -659,7 +659,7 @@ export function repairJson(input: string): RepairResult {
     JSON.parse(text);
     parses = true;
   } catch {
-    /* leave parses=false; remaining[] surfaces what's left */
+    /* why: leave parses=false; remaining[] surfaces what's left */
   }
 
   return {
@@ -893,7 +893,7 @@ export function detectRawJsonRegions(markdown: string): RawJsonRegion[] {
         });
         continue;
       } catch {
-        /* fall through to JSONL check */
+        /* why: fall through to JSONL check */
       }
     }
 

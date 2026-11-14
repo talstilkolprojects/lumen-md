@@ -257,7 +257,7 @@ function tryGeojson(input: string): Detection | null {
       };
     }
   } catch {
-    /* not JSON */
+    /* why: not JSON */
   }
   return null;
 }

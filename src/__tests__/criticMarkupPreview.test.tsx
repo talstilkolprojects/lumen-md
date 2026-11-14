@@ -48,8 +48,9 @@ describe("CriticMarkup preview rendering", () => {
 
   it("works inside headings, lists and tables", () => {
     const out = html("# Title {++new++}\n\n- item {--old--}\n\n| a |\n|---|\n| {==x==} |\n");
-    expect(out).toMatch(/<h1 id="title-new">Title <ins class="critic-ins">new<\/ins><\/h1>/);
-    expect(out).toContain('<li>item <del class="critic-del">old</del></li>');
+    // Blocks carry a `dir` since T25; the CriticMarkup inside is what matters here.
+    expect(out).toMatch(/<h1 id="title-new"[^>]*>Title <ins class="critic-ins">new<\/ins><\/h1>/);
+    expect(out).toMatch(/<li[^>]*>item <del class="critic-del">old<\/del><\/li>/);
     expect(out).toContain('<mark class="critic-highlight">x</mark>');
   });
 
@@ -75,9 +76,9 @@ describe("CriticMarkup preview rendering", () => {
   });
 
   it("raw HTML inside a suggestion still goes through the normal pipeline", async () => {
-    const tree = await renderMarkdown('{++<span class="k">hi</span>++}', () => false);
+    const tree = await renderMarkdown('{++<span title="k">hi</span>++}', () => false);
     const { container } = render(<div>{tree}</div>);
-    expect(container.querySelector("ins.critic-ins span.k")?.textContent).toBe("hi");
+    expect(container.querySelector("ins.critic-ins span[title=k]")?.textContent).toBe("hi");
   });
 });
 

@@ -38,7 +38,7 @@ class CursorWidget extends WidgetType {
       position: relative;
       display: inline-block;
       width: 0;
-      border-left: 2px solid ${this.color};
+      border-inline-start: 2px solid ${this.color};
       height: 1.2em;
       vertical-align: text-bottom;
       pointer-events: none;
@@ -54,7 +54,8 @@ class CursorWidget extends WidgetType {
       line-height: 1.4em;
       color: white;
       background: ${this.color};
-      border-radius: 3px 3px 3px 0;
+      border-radius: 3px;
+      border-end-start-radius: 0;
       font-family: Inter, ui-sans-serif, system-ui;
       white-space: nowrap;
       pointer-events: none;

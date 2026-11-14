@@ -1,0 +1,4166 @@
+{
+  "version": 2,
+  "domain": "common",
+  "source": "src/i18n/locales/en/common.json",
+  "entries": [
+    {
+      "key": "a11y.sidebarResizer",
+      "en": "Resize the sidebar",
+      "vars": []
+    },
+    {
+      "key": "a11y.skipToContent",
+      "en": "Skip to content",
+      "vars": []
+    },
+    {
+      "key": "agentReview.approve",
+      "en": "Approve",
+      "vars": []
+    },
+    {
+      "key": "agentReview.approveAll",
+      "en": "Approve all ({count})",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "agentReview.badge",
+      "en": "Review {count}",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "agentReview.badge.tooltip",
+      "en": "Changes proposed by agents are waiting for your approval",
+      "vars": []
+    },
+    {
+      "key": "agentReview.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "agentReview.conflict.doc-changed",
+      "en": "Not applied: the text it changes was edited after the proposal.",
+      "vars": []
+    },
+    {
+      "key": "agentReview.conflict.failed",
+      "en": "Not applied: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "agentReview.conflict.file-changed",
+      "en": "Not written: the file changed after the agent proposed this.",
+      "vars": []
+    },
+    {
+      "key": "agentReview.conflict.file-created",
+      "en": "Not written: a file with this name was created since.",
+      "vars": []
+    },
+    {
+      "key": "agentReview.conflict.not-open",
+      "en": "Not applied: its document is no longer open.",
+      "vars": []
+    },
+    {
+      "key": "agentReview.conflict.open-unsaved",
+      "en": "Not applied: the file is open with edits the agent did not see.",
+      "vars": []
+    },
+    {
+      "key": "agentReview.conflict.overlap",
+      "en": "Not applied: it overlaps a change approved before it.",
+      "vars": []
+    },
+    {
+      "key": "agentReview.done",
+      "en": "Done",
+      "vars": []
+    },
+    {
+      "key": "agentReview.empty",
+      "en": "No changes are waiting.",
+      "vars": []
+    },
+    {
+      "key": "agentReview.gap",
+      "en": "{count} unchanged lines",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "agentReview.intro",
+      "en": "Nothing is written until you approve it. Changes to an open document go into the editor, not straight to the file.",
+      "vars": []
+    },
+    {
+      "key": "agentReview.noEol",
+      "en": "No newline at end of file",
+      "vars": []
+    },
+    {
+      "key": "agentReview.proposedBy",
+      "en": "Proposed by {agent}",
+      "vars": [
+        "agent"
+      ]
+    },
+    {
+      "key": "agentReview.reject",
+      "en": "Reject",
+      "vars": []
+    },
+    {
+      "key": "agentReview.rejectAll",
+      "en": "Reject all",
+      "vars": []
+    },
+    {
+      "key": "agentReview.run",
+      "en": "run {run}",
+      "vars": [
+        "run"
+      ]
+    },
+    {
+      "key": "agentReview.status.document",
+      "en": "Applied in the editor, not saved yet (Undo takes it back).",
+      "vars": []
+    },
+    {
+      "key": "agentReview.status.documentNoUndo",
+      "en": "Applied to the document, not saved yet. Undo can't take it back in this view.",
+      "vars": []
+    },
+    {
+      "key": "agentReview.status.file",
+      "en": "Written to the file.",
+      "vars": []
+    },
+    {
+      "key": "agentReview.status.rejected",
+      "en": "Rejected — nothing was written.",
+      "vars": []
+    },
+    {
+      "key": "agentReview.status.suggestion",
+      "en": "Added as a tracked change (suggesting mode is on).",
+      "vars": []
+    },
+    {
+      "key": "agentReview.status.tab",
+      "en": "Applied in another tab, not saved yet.",
+      "vars": []
+    },
+    {
+      "key": "agentReview.status.withdrawn",
+      "en": "Withdrawn: the run was cancelled.",
+      "vars": []
+    },
+    {
+      "key": "agentReview.target.document",
+      "en": "The open document",
+      "vars": []
+    },
+    {
+      "key": "agentReview.target.documentPath",
+      "en": "The open document · {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "agentReview.target.newFile",
+      "en": "{path} (new file)",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "agentReview.title",
+      "en": "Changes proposed by agents",
+      "vars": []
+    },
+    {
+      "key": "agentReview.toast.one",
+      "en": "{agent} proposed a change. Nothing is written until you approve it.",
+      "vars": [
+        "agent"
+      ]
+    },
+    {
+      "key": "agentReview.toast.other",
+      "en": "{agent} proposed {n} changes. Nothing is written until you approve them.",
+      "vars": [
+        "agent",
+        "n"
+      ]
+    },
+    {
+      "key": "agentReview.toast.review",
+      "en": "Review",
+      "vars": []
+    },
+    {
+      "key": "agentReview.tooBig",
+      "en": "Too many changes to show line by line.",
+      "vars": []
+    },
+    {
+      "key": "agentReview.unknownAgent",
+      "en": "an agent",
+      "vars": []
+    },
+    {
+      "key": "agents.netConsent.body",
+      "en": "The {tool} tool wants to send {sends} to {host}.",
+      "vars": [
+        "tool",
+        "sends",
+        "host"
+      ]
+    },
+    {
+      "key": "agents.netConsent.credential",
+      "en": "Your {provider} API key goes with it, so the service can search for you.",
+      "vars": [
+        "provider"
+      ]
+    },
+    {
+      "key": "agents.netConsent.exact",
+      "en": "Exactly this is sent: “{value}”. The agent wrote it and may have included text from your notes.",
+      "vars": [
+        "value"
+      ]
+    },
+    {
+      "key": "agents.netConsent.ok",
+      "en": "Send this once",
+      "vars": []
+    },
+    {
+      "key": "agents.netConsent.perCall",
+      "en": "Under the \"local only\" policy you are asked for every call.",
+      "vars": []
+    },
+    {
+      "key": "agents.netConsent.title",
+      "en": "Let the agent go online?",
+      "vars": []
+    },
+    {
+      "key": "agents.netConsent.untrusted",
+      "en": "Careful: this run has read content from outside ({sources}), which may contain planted instructions.",
+      "vars": [
+        "sources"
+      ]
+    },
+    {
+      "key": "agents.netConsent.visits",
+      "en": "The service then opens the page, so {host} sees a visit.",
+      "vars": [
+        "host"
+      ]
+    },
+    {
+      "key": "agents.netConsent.what.page-address",
+      "en": "the page address",
+      "vars": []
+    },
+    {
+      "key": "agents.netConsent.what.search-query",
+      "en": "the search query",
+      "vars": []
+    },
+    {
+      "key": "agents.netConsent.what.tool-args",
+      "en": "the tool's arguments",
+      "vars": []
+    },
+    {
+      "key": "agents.untrusted.action.network",
+      "en": "send a request to the web",
+      "vars": []
+    },
+    {
+      "key": "agents.untrusted.action.write",
+      "en": "propose a change to your notes",
+      "vars": []
+    },
+    {
+      "key": "agents.untrusted.args",
+      "en": "What it would do: “{value}”.",
+      "vars": [
+        "value"
+      ]
+    },
+    {
+      "key": "agents.untrusted.body",
+      "en": "The {tool} tool wants to {action}. This run has read content from outside ({sources}), which may contain instructions planted to trick the agent.",
+      "vars": [
+        "tool",
+        "action",
+        "sources"
+      ]
+    },
+    {
+      "key": "agents.untrusted.ok",
+      "en": "Allow once",
+      "vars": []
+    },
+    {
+      "key": "agents.untrusted.title",
+      "en": "Approve this agent action?",
+      "vars": []
+    },
+    {
+      "key": "analyst.done",
+      "en": "Answer: {answer} — checked by running the program twice",
+      "vars": [
+        "answer"
+      ]
+    },
+    {
+      "key": "analyst.failed",
+      "en": "Analysis failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "analyst.mismatch",
+      "en": "The two runs disagree, so no answer is given: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "analyst.noTable",
+      "en": "No table found in this note: add a ```csv block, a Markdown table or comma-separated lines.",
+      "vars": []
+    },
+    {
+      "key": "analyst.parse",
+      "en": "The analysis program gave no answer: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "analyst.run",
+      "en": "The analysis program failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "analyst.working",
+      "en": "Analysing the table on this device…",
+      "vars": []
+    },
+    {
+      "key": "autofill.approve",
+      "en": "Approve",
+      "vars": []
+    },
+    {
+      "key": "autofill.approveAll",
+      "en": "Approve all ({n})",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "autofill.empty",
+      "en": "No proposals waiting",
+      "vars": []
+    },
+    {
+      "key": "autofill.folder",
+      "en": "Fill properties for the notes in which folder? (empty = the whole workspace)",
+      "vars": []
+    },
+    {
+      "key": "autofill.hint",
+      "en": "Nothing is written until you approve. A note that changed since is skipped.",
+      "vars": []
+    },
+    {
+      "key": "autofill.noFields",
+      "en": "No property is used in at least two notes yet — add some, then try again",
+      "vars": []
+    },
+    {
+      "key": "autofill.progress",
+      "en": "Reading note {i} of {n}…",
+      "vars": [
+        "i",
+        "n"
+      ]
+    },
+    {
+      "key": "autofill.proposed",
+      "en": "{n} proposals are waiting for your approval",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "autofill.reject",
+      "en": "Reject",
+      "vars": []
+    },
+    {
+      "key": "autofill.stale",
+      "en": "{n} notes changed since the proposal and were not written",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "autofill.title",
+      "en": "Property proposals",
+      "vars": []
+    },
+    {
+      "key": "autofill.written",
+      "en": "Properties written to {n} notes",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "blockLink.copied",
+      "en": "Copied {link}",
+      "vars": [
+        "link"
+      ]
+    },
+    {
+      "key": "blockLink.copyFailed",
+      "en": "Couldn't copy the link; the block has its id now.",
+      "vars": []
+    },
+    {
+      "key": "blockLink.noBlock",
+      "en": "Put the cursor in a paragraph, list item, table, quote or code block first.",
+      "vars": []
+    },
+    {
+      "key": "blockLink.sourceOnly",
+      "en": "Copy link to block works in the source editor (⌘1).",
+      "vars": []
+    },
+    {
+      "key": "boot.crashBody",
+      "en": "Lumen encountered an unexpected error.",
+      "vars": []
+    },
+    {
+      "key": "boot.crashTitle",
+      "en": "Something went wrong",
+      "vars": []
+    },
+    {
+      "key": "boot.loading",
+      "en": "Loading Lumen…",
+      "vars": []
+    },
+    {
+      "key": "boot.reload",
+      "en": "Reload Lumen",
+      "vars": []
+    },
+    {
+      "key": "calendar.folder",
+      "en": "Folder",
+      "vars": []
+    },
+    {
+      "key": "calendar.hasNote",
+      "en": "has a note",
+      "vars": []
+    },
+    {
+      "key": "calendar.next",
+      "en": "Next month",
+      "vars": []
+    },
+    {
+      "key": "calendar.pattern",
+      "en": "File name pattern (YYYY, MM, DD)",
+      "vars": []
+    },
+    {
+      "key": "calendar.patternInvalid",
+      "en": "The pattern must contain YYYY, MM and DD, so that every day gets its own note.",
+      "vars": []
+    },
+    {
+      "key": "calendar.prev",
+      "en": "Previous month",
+      "vars": []
+    },
+    {
+      "key": "calendar.save",
+      "en": "Save",
+      "vars": []
+    },
+    {
+      "key": "calendar.settings",
+      "en": "Daily note settings",
+      "vars": []
+    },
+    {
+      "key": "calendar.template",
+      "en": "Template for new notes",
+      "vars": []
+    },
+    {
+      "key": "calendar.templateHint",
+      "en": "Placeholders: {{date}}, {{hebrewDate}}, {{weekday}}, {{title}}",
+      "vars": [
+        "date",
+        "hebrewDate",
+        "weekday",
+        "title"
+      ]
+    },
+    {
+      "key": "calendar.title",
+      "en": "Calendar",
+      "vars": []
+    },
+    {
+      "key": "calendar.today",
+      "en": "Today",
+      "vars": []
+    },
+    {
+      "key": "caption.attribution.florence",
+      "en": "Florence-2 © Microsoft, MIT License; ONNX conversion by onnx-community (Hugging Face).",
+      "vars": []
+    },
+    {
+      "key": "caption.attribution.smolvlm",
+      "en": "SmolVLM-256M-Instruct © Hugging Face, Apache License 2.0.",
+      "vars": []
+    },
+    {
+      "key": "caption.purpose",
+      "en": "Describe images on this device (alt text)",
+      "vars": []
+    },
+    {
+      "key": "capture.failed",
+      "en": "Couldn't add to the inbox: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "capture.hint",
+      "en": "Enter: add · Shift+Enter: new line · Esc: close",
+      "vars": []
+    },
+    {
+      "key": "capture.inboxHeading",
+      "en": "Inbox",
+      "vars": []
+    },
+    {
+      "key": "capture.noWorkspace",
+      "en": "Quick capture needs the workspace, which this browser can't provide.",
+      "vars": []
+    },
+    {
+      "key": "capture.openInbox",
+      "en": "Open inbox",
+      "vars": []
+    },
+    {
+      "key": "capture.placeholder",
+      "en": "A thought, a task, a link",
+      "vars": []
+    },
+    {
+      "key": "capture.save",
+      "en": "Add to inbox",
+      "vars": []
+    },
+    {
+      "key": "capture.saved",
+      "en": "Added to {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "capture.title",
+      "en": "Quick capture",
+      "vars": []
+    },
+    {
+      "key": "credits.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "credits.intro",
+      "en": "Models and data Lumen can download, and the attribution their licences ask for.",
+      "vars": []
+    },
+    {
+      "key": "credits.title",
+      "en": "Credits",
+      "vars": []
+    },
+    {
+      "key": "daily.failed",
+      "en": "Couldn't open the daily note: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "daily.noWorkspace",
+      "en": "Daily notes need the workspace, which this browser can't provide.",
+      "vars": []
+    },
+    {
+      "key": "db.all",
+      "en": "All",
+      "vars": []
+    },
+    {
+      "key": "db.calendar.needDate",
+      "en": "The calendar needs a dateField: in the database spec.",
+      "vars": []
+    },
+    {
+      "key": "db.calendar.noDates",
+      "en": "No notes have a date in {field}.",
+      "vars": [
+        "field"
+      ]
+    },
+    {
+      "key": "db.cell.edit",
+      "en": "Edit {field} of {note}",
+      "vars": [
+        "field",
+        "note"
+      ]
+    },
+    {
+      "key": "db.count",
+      "en": "{count} notes",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "db.empty",
+      "en": "No notes match this query.",
+      "vars": []
+    },
+    {
+      "key": "db.emptyHint",
+      "en": "Add YAML frontmatter “type: {type}” to notes under {source}.",
+      "vars": [
+        "type",
+        "source"
+      ]
+    },
+    {
+      "key": "db.filter.error",
+      "en": "Filter: {error} (character {at})",
+      "vars": [
+        "error",
+        "at"
+      ]
+    },
+    {
+      "key": "db.filter.label",
+      "en": "Filter",
+      "vars": []
+    },
+    {
+      "key": "db.filter.placeholder",
+      "en": "status = \"done\" AND rating >= 4",
+      "vars": []
+    },
+    {
+      "key": "db.formula.add",
+      "en": "Add column",
+      "vars": []
+    },
+    {
+      "key": "db.formula.ai",
+      "en": "Write with AI",
+      "vars": []
+    },
+    {
+      "key": "db.formula.aiFailed",
+      "en": "Couldn't write a formula that works. Try describing it differently.",
+      "vars": []
+    },
+    {
+      "key": "db.formula.aiHint",
+      "en": "Turn the description into a formula with the local model",
+      "vars": []
+    },
+    {
+      "key": "db.formula.aiRunning",
+      "en": "Writing…",
+      "vars": []
+    },
+    {
+      "key": "db.formula.cellError",
+      "en": "error",
+      "vars": []
+    },
+    {
+      "key": "db.formula.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "db.formula.computed",
+      "en": "Computed by a formula",
+      "vars": []
+    },
+    {
+      "key": "db.formula.error",
+      "en": "Formula: {error} (character {at})",
+      "vars": [
+        "error",
+        "at"
+      ]
+    },
+    {
+      "key": "db.formula.keepHint",
+      "en": "To keep it, add under formulas: in the spec — {line}",
+      "vars": [
+        "line"
+      ]
+    },
+    {
+      "key": "db.formula.label",
+      "en": "Formula",
+      "vars": []
+    },
+    {
+      "key": "db.formula.name",
+      "en": "Name",
+      "vars": []
+    },
+    {
+      "key": "db.formula.namePlaceholder",
+      "en": "total",
+      "vars": []
+    },
+    {
+      "key": "db.formula.nameTaken",
+      "en": "There is already a formula called {name}.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "db.formula.open",
+      "en": "Formula column",
+      "vars": []
+    },
+    {
+      "key": "db.formula.placeholder",
+      "en": "price * qty — or describe it and press AI",
+      "vars": []
+    },
+    {
+      "key": "db.formula.readOnly",
+      "en": "{name} is computed by a formula, so cards can't be moved between its columns.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "db.formula.specError",
+      "en": "Formula {name}: {error} (character {at})",
+      "vars": [
+        "name",
+        "error",
+        "at"
+      ]
+    },
+    {
+      "key": "db.group.label",
+      "en": "Group",
+      "vars": []
+    },
+    {
+      "key": "db.group.none",
+      "en": "No grouping",
+      "vars": []
+    },
+    {
+      "key": "db.kanban.cancelled",
+      "en": "Move of {note} cancelled.",
+      "vars": [
+        "note"
+      ]
+    },
+    {
+      "key": "db.kanban.dropped",
+      "en": "{note} moved to {column}.",
+      "vars": [
+        "note",
+        "column"
+      ]
+    },
+    {
+      "key": "db.kanban.instructions",
+      "en": "To move a card, press Space or Enter, choose a column with the left and right arrow keys, and press Space or Enter again to drop it. Escape cancels.",
+      "vars": []
+    },
+    {
+      "key": "db.kanban.move",
+      "en": "Move {note}",
+      "vars": [
+        "note"
+      ]
+    },
+    {
+      "key": "db.kanban.needGroup",
+      "en": "Pick a property to group by for the kanban view.",
+      "vars": []
+    },
+    {
+      "key": "db.kanban.over",
+      "en": "{note} is over {column}.",
+      "vars": [
+        "note",
+        "column"
+      ]
+    },
+    {
+      "key": "db.kanban.picked",
+      "en": "Picked up {note}.",
+      "vars": [
+        "note"
+      ]
+    },
+    {
+      "key": "db.loading",
+      "en": "loading…",
+      "vars": []
+    },
+    {
+      "key": "db.map.label",
+      "en": "Map of {count} notes",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "db.map.missing",
+      "en": "{count} notes without coordinates are not shown.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "db.map.noLocations",
+      "en": "No notes have coordinates. Add a {field} property like “32.08, 34.78”, or lat and lng.",
+      "vars": [
+        "field"
+      ]
+    },
+    {
+      "key": "db.none",
+      "en": "(none)",
+      "vars": []
+    },
+    {
+      "key": "db.readOnly",
+      "en": "This value can't be edited here",
+      "vars": []
+    },
+    {
+      "key": "db.saveFailed",
+      "en": "Couldn't save {note}: {error}",
+      "vars": [
+        "note",
+        "error"
+      ]
+    },
+    {
+      "key": "db.sort.asc",
+      "en": "Ascending",
+      "vars": []
+    },
+    {
+      "key": "db.sort.desc",
+      "en": "Descending",
+      "vars": []
+    },
+    {
+      "key": "db.sort.label",
+      "en": "Sort",
+      "vars": []
+    },
+    {
+      "key": "db.sort.none",
+      "en": "No sort",
+      "vars": []
+    },
+    {
+      "key": "db.specError",
+      "en": "Database spec error: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "db.title",
+      "en": "Title",
+      "vars": []
+    },
+    {
+      "key": "db.view.calendar",
+      "en": "Calendar",
+      "vars": []
+    },
+    {
+      "key": "db.view.cards",
+      "en": "Cards",
+      "vars": []
+    },
+    {
+      "key": "db.view.kanban",
+      "en": "Kanban",
+      "vars": []
+    },
+    {
+      "key": "db.view.list",
+      "en": "List",
+      "vars": []
+    },
+    {
+      "key": "db.view.map",
+      "en": "Map",
+      "vars": []
+    },
+    {
+      "key": "db.view.table",
+      "en": "Table",
+      "vars": []
+    },
+    {
+      "key": "db.views",
+      "en": "Views",
+      "vars": []
+    },
+    {
+      "key": "db.workspaceRoot",
+      "en": "the workspace root",
+      "vars": []
+    },
+    {
+      "key": "dialog.cancel",
+      "en": "Cancel",
+      "vars": []
+    },
+    {
+      "key": "dialog.ok",
+      "en": "OK",
+      "vars": []
+    },
+    {
+      "key": "dictation.download.body",
+      "en": "Hebrew dictation runs entirely on this device — no audio leaves it. It needs a one-time download of {size}, kept for offline use.",
+      "vars": [
+        "size"
+      ]
+    },
+    {
+      "key": "dictation.download.browser",
+      "en": "Use the browser's speech service instead (the audio goes to the browser's vendor)",
+      "vars": []
+    },
+    {
+      "key": "dictation.download.cancel",
+      "en": "Cancel",
+      "vars": []
+    },
+    {
+      "key": "dictation.download.credits",
+      "en": "Speech model: ivrit.ai Zipformer2 (CC BY 4.0). Voice detection: Silero VAD (MIT).",
+      "vars": []
+    },
+    {
+      "key": "dictation.download.start",
+      "en": "Download {size}",
+      "vars": [
+        "size"
+      ]
+    },
+    {
+      "key": "dictation.download.title",
+      "en": "Live dictation on this device",
+      "vars": []
+    },
+    {
+      "key": "dictation.downloading",
+      "en": "Downloading… {percent}%",
+      "vars": [
+        "percent"
+      ]
+    },
+    {
+      "key": "dictation.error",
+      "en": "Dictation stopped: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "dictation.listening",
+      "en": "Listening — speak, then pause",
+      "vars": []
+    },
+    {
+      "key": "dictation.loading",
+      "en": "Loading the speech model…",
+      "vars": []
+    },
+    {
+      "key": "dictation.localOnlyNoBrowser",
+      "en": "Local-only mode: the browser's speech service is not used. Download the on-device model to dictate.",
+      "vars": []
+    },
+    {
+      "key": "dictation.localRecording",
+      "en": "Recording — transcribed on this device when you stop.",
+      "vars": []
+    },
+    {
+      "key": "dictation.speaking",
+      "en": "Hearing you…",
+      "vars": []
+    },
+    {
+      "key": "dictation.stop",
+      "en": "⏹ Stop",
+      "vars": []
+    },
+    {
+      "key": "e2ee.conflict.body",
+      "en": "This note was also changed on another device. Choose what to keep; it is not synced until you decide.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.conflict.later",
+      "en": "Decide later",
+      "vars": []
+    },
+    {
+      "key": "e2ee.conflict.title",
+      "en": "Sync conflict — {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "e2ee.fresh.badCode",
+      "en": "This pairing code is not valid for this vault, or it has expired.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.code",
+      "en": "Pairing code from another device",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.confirm",
+      "en": "I checked — it is current",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.pair",
+      "en": "Pair",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.unverified",
+      "en": "Freshness not verified: this device cannot yet tell whether the sync service shows your newest notes. Pair it with a device you already use, or confirm after checking.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.fresh.verified",
+      "en": "Freshness verified",
+      "vars": []
+    },
+    {
+      "key": "e2ee.setup.create",
+      "en": "Encrypt and sync",
+      "vars": []
+    },
+    {
+      "key": "e2ee.setup.mismatch",
+      "en": "The passphrases do not match.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.setup.note",
+      "en": "Notes are encrypted on this device before upload; the sync service sees only ciphertext. A lost passphrase cannot be recovered.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.setup.passphrase",
+      "en": "Passphrase",
+      "vars": []
+    },
+    {
+      "key": "e2ee.setup.repeat",
+      "en": "Repeat the passphrase",
+      "vars": []
+    },
+    {
+      "key": "e2ee.setup.title",
+      "en": "Encrypted sync",
+      "vars": []
+    },
+    {
+      "key": "e2ee.setup.tooShort",
+      "en": "At least {n} characters.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.setup.unlock",
+      "en": "Unlock",
+      "vars": []
+    },
+    {
+      "key": "e2ee.setup.wrong",
+      "en": "Wrong passphrase.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.accessKey",
+      "en": "Access key ID",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.auth",
+      "en": "The server refused the credentials.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.back",
+      "en": "Back",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.bucket",
+      "en": "Bucket",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.choose",
+      "en": "Change provider",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.connect",
+      "en": "Connect",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.connectedTo",
+      "en": "Connected: {where}",
+      "vars": [
+        "where"
+      ]
+    },
+    {
+      "key": "e2ee.sync.connecting",
+      "en": "Checking…",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.cors",
+      "en": "Lumen could not reach {host}. The server must allow this site (CORS, and expose the ETag header); a self-hosted Lumen must also list it in VITE_CSP_CONNECT_EXTRA.",
+      "vars": [
+        "host"
+      ]
+    },
+    {
+      "key": "e2ee.sync.disconnect",
+      "en": "Disconnect",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.disconnectNote",
+      "en": "Forgets the provider on this device. Nothing at the provider is deleted.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.endpoint",
+      "en": "Endpoint",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.existingVault",
+      "en": "A vault is already there. Enter its passphrase.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.held",
+      "en": "{n} notes wait for a decision",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.sync.keepSecret",
+      "en": "Leave empty to keep the saved one",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.kind.s3",
+      "en": "S3-compatible storage (AWS, Cloudflare R2, Backblaze B2, MinIO)",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.kind.webdav",
+      "en": "WebDAV (Nextcloud, ownCloud, a NAS)",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.lock",
+      "en": "Lock",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.migrate.clashes",
+      "en": "{n} of them differ from notes here; both versions are kept.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.sync.migrate.done",
+      "en": "Imported {n} notes. The readable copies are in “{folder}” at {name}; delete that folder yourself when you are satisfied.",
+      "vars": [
+        "n",
+        "folder",
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.sync.migrate.found",
+      "en": "{n} unencrypted notes are in your {name} folder. Import them into the encrypted vault; the readable copies are moved into a backup folder at {name}, not deleted.",
+      "vars": [
+        "n",
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.sync.migrate.revert",
+      "en": "Undo: move the readable copies back",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.migrate.reverted",
+      "en": "Moved {n} files back.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "e2ee.sync.migrate.run",
+      "en": "Import and back up",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.migrate.title",
+      "en": "Readable notes from an earlier Lumen",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.newVault",
+      "en": "There is no vault there yet. Choose a passphrase to create it.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.oauthMissing",
+      "en": "Not available in this build: it needs Lumen's {name} app id, which is not configured.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.sync.pairCode",
+      "en": "Pairing code for another device",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.pairCodeNote",
+      "en": "Enter it on the other device within 15 minutes. It proves to that device which state is current.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.password",
+      "en": "Password or app password",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.pathStyle",
+      "en": "Path-style addresses (MinIO and most self-hosted servers)",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.prefix",
+      "en": "Folder inside the bucket",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.provider",
+      "en": "Where to keep the encrypted vault",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.region",
+      "en": "Region",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.result",
+      "en": "Last sync {time}: {up} up, {down} down, {deleted} deleted",
+      "vars": [
+        "time",
+        "up",
+        "down",
+        "deleted"
+      ]
+    },
+    {
+      "key": "e2ee.sync.secretKey",
+      "en": "Secret access key",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.signIn",
+      "en": "Sign in to {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.sync.syncNow",
+      "en": "Sync now",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.syncing",
+      "en": "Syncing…",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.title",
+      "en": "Sync",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.unsupported",
+      "en": "This server cannot do safe concurrent writes, so Lumen will not sync with it: {detail}",
+      "vars": [
+        "detail"
+      ]
+    },
+    {
+      "key": "e2ee.sync.url",
+      "en": "Folder address",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sync.username",
+      "en": "User name",
+      "vars": []
+    },
+    {
+      "key": "embed.cycle",
+      "en": "{target} is not embedded again: it would embed itself (circular embed).",
+      "vars": [
+        "target"
+      ]
+    },
+    {
+      "key": "embed.depth",
+      "en": "{target} is not embedded: embeds nest at most {max} levels deep.",
+      "vars": [
+        "target",
+        "max"
+      ]
+    },
+    {
+      "key": "embed.notFound",
+      "en": "Can't embed {target}: not found in the workspace.",
+      "vars": [
+        "target"
+      ]
+    },
+    {
+      "key": "embed.openPdf",
+      "en": "Open PDF",
+      "vars": []
+    },
+    {
+      "key": "embed.sectionNotFound",
+      "en": "Can't embed {section}: there is no such section in {note}.",
+      "vars": [
+        "section",
+        "note"
+      ]
+    },
+    {
+      "key": "errorBoundary.heading",
+      "en": "Rendering Error",
+      "vars": []
+    },
+    {
+      "key": "errorBoundary.renderDetail",
+      "en": "One of the embedded visualizations crashed during render. The rest of the editor is kept safe.",
+      "vars": []
+    },
+    {
+      "key": "errorBoundary.unexpected",
+      "en": "An unexpected error occurred.",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.body",
+      "en": "This note was changed by another program while you had unsaved edits. The other version is already kept as a copy, so nothing is lost. Choose what this note should contain.",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.copyName",
+      "en": "changed outside Lumen",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.failed",
+      "en": "Could not resolve the change to “{path}”; both versions are kept.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "external.conflict.keepMine",
+      "en": "Keep mine",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.keptCopy",
+      "en": "The version changed outside Lumen is kept as “{path}”.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "external.conflict.keptTyping",
+      "en": "You kept typing while the conflict was open, so your latest text is kept (unsaved, saved next). The version changed outside Lumen is in “{path}”.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "external.conflict.merge",
+      "en": "Apply merge",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.mine",
+      "en": "mine",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.notSaved",
+      "en": "“{path}” was not saved: it changed outside Lumen. Nothing was changed; resolve the change first.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "external.conflict.takeMine",
+      "en": "Keep mine",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.takeTheirs",
+      "en": "Take theirs",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.theirs",
+      "en": "theirs",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.title",
+      "en": "Changed outside Lumen — {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "external.deleted",
+      "en": "“{path}” was deleted outside Lumen. The open note is kept, unsaved.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "external.reloaded",
+      "en": "“{path}” was changed outside Lumen and reloaded.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "external.renamed",
+      "en": "“{from}” was renamed outside Lumen to “{to}”; the open note follows it.",
+      "vars": [
+        "from",
+        "to"
+      ]
+    },
+    {
+      "key": "feedback.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "feedback.copied",
+      "en": "Copied. Paste it into an issue, an e-mail or wherever you like.",
+      "vars": []
+    },
+    {
+      "key": "feedback.copy",
+      "en": "Copy text",
+      "vars": []
+    },
+    {
+      "key": "feedback.copyFailed",
+      "en": "Couldn't copy. Select the text in the preview and copy it by hand.",
+      "vars": []
+    },
+    {
+      "key": "feedback.description",
+      "en": "What happened",
+      "vars": []
+    },
+    {
+      "key": "feedback.description.placeholder",
+      "en": "What you did, what you expected, and what you saw instead",
+      "vars": []
+    },
+    {
+      "key": "feedback.doctorFailed",
+      "en": "The AI doctor could not run: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "feedback.doctorRunning",
+      "en": "Running the AI doctor…",
+      "vars": []
+    },
+    {
+      "key": "feedback.includeDoctor",
+      "en": "Include the AI doctor's report (checks of the local AI only, never note text)",
+      "vars": []
+    },
+    {
+      "key": "feedback.includeEnvironment",
+      "en": "Include app and browser details (version, platform, language, AI policy)",
+      "vars": []
+    },
+    {
+      "key": "feedback.intro",
+      "en": "Lumen has no feedback server. What you write here becomes a GitHub issue that you open yourself, or text that you copy. Nothing leaves this device until you click one of the two buttons at the bottom.",
+      "vars": []
+    },
+    {
+      "key": "feedback.kind",
+      "en": "Kind",
+      "vars": []
+    },
+    {
+      "key": "feedback.kind.bug",
+      "en": "Something is broken",
+      "vars": []
+    },
+    {
+      "key": "feedback.kind.idea",
+      "en": "An idea",
+      "vars": []
+    },
+    {
+      "key": "feedback.kind.question",
+      "en": "A question",
+      "vars": []
+    },
+    {
+      "key": "feedback.needTitle",
+      "en": "Add a title first",
+      "vars": []
+    },
+    {
+      "key": "feedback.openGithub",
+      "en": "Open on GitHub",
+      "vars": []
+    },
+    {
+      "key": "feedback.openGithub.hint",
+      "en": "Opens github.com in a new tab with the issue filled in. You need a GitHub account to submit it.",
+      "vars": []
+    },
+    {
+      "key": "feedback.opened",
+      "en": "GitHub opened in a new tab. Check the issue there and submit it.",
+      "vars": []
+    },
+    {
+      "key": "feedback.preview",
+      "en": "Exactly what will be sent",
+      "vars": []
+    },
+    {
+      "key": "feedback.screenshot",
+      "en": "Save a screenshot to attach",
+      "vars": []
+    },
+    {
+      "key": "feedback.screenshot.failed",
+      "en": "No screenshot: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "feedback.screenshot.hint",
+      "en": "Your browser asks which screen, window or tab to capture. The picture is saved on this computer, not sent: attach it to the issue yourself. It may show your notes, so look at it first.",
+      "vars": []
+    },
+    {
+      "key": "feedback.screenshot.saved",
+      "en": "Saved {name}. Attach it to the issue.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "feedback.screenshot.unsupported",
+      "en": "this browser cannot capture the screen",
+      "vars": []
+    },
+    {
+      "key": "feedback.subject",
+      "en": "Title",
+      "vars": []
+    },
+    {
+      "key": "feedback.subject.placeholder",
+      "en": "In one line",
+      "vars": []
+    },
+    {
+      "key": "feedback.title",
+      "en": "Send feedback",
+      "vars": []
+    },
+    {
+      "key": "feedback.tooLong",
+      "en": "Too long for a link: the issue opens with the title only. The text is on your clipboard, so paste it into the issue.",
+      "vars": []
+    },
+    {
+      "key": "fim.off",
+      "en": "Local autocomplete off",
+      "vars": []
+    },
+    {
+      "key": "fim.on",
+      "en": "Local autocomplete on — {model}. Tab accepts, Esc dismisses.",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "fim.onNoModel",
+      "en": "Local autocomplete is on, but no completion model is installed: run \"ollama pull qwen2.5-coder:1.5b\" (or load an in-browser model).",
+      "vars": []
+    },
+    {
+      "key": "frontmatter.by",
+      "en": "by",
+      "vars": []
+    },
+    {
+      "key": "frontmatter.label",
+      "en": "Document",
+      "vars": []
+    },
+    {
+      "key": "hover.notFound",
+      "en": "No note named “{target}” yet",
+      "vars": [
+        "target"
+      ]
+    },
+    {
+      "key": "imageSearch.copied",
+      "en": "Image link copied — paste it into the note.",
+      "vars": []
+    },
+    {
+      "key": "imageSearch.declined",
+      "en": "Image search needs the model download; nothing was searched.",
+      "vars": []
+    },
+    {
+      "key": "imageSearch.failed",
+      "en": "Image search failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "imageSearch.hint",
+      "en": "Describe an image to find it in your notes' images (on this device).",
+      "vars": []
+    },
+    {
+      "key": "imageSearch.indexing",
+      "en": "Indexing images {done} / {total}…",
+      "vars": [
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "imageSearch.noHost",
+      "en": "Image search needs its model, which is not available to download yet (its host is not set up).",
+      "vars": []
+    },
+    {
+      "key": "imageSearch.none",
+      "en": "No images in this vault.",
+      "vars": []
+    },
+    {
+      "key": "imageSearch.searching",
+      "en": "Searching images…",
+      "vars": []
+    },
+    {
+      "key": "imageSearch.tab",
+      "en": "Images",
+      "vars": []
+    },
+    {
+      "key": "imageSearch.translated",
+      "en": "Searched in English: “{query}”",
+      "vars": [
+        "query"
+      ]
+    },
+    {
+      "key": "loading.generic",
+      "en": "Loading…",
+      "vars": []
+    },
+    {
+      "key": "lora.export",
+      "en": "Export training data and script",
+      "vars": []
+    },
+    {
+      "key": "lora.exported",
+      "en": "lumen-lora.zip: {notes} notes · {train} training samples · {valid} validation · {heldOut} held-out notes for the style check",
+      "vars": [
+        "notes",
+        "train",
+        "valid",
+        "heldOut"
+      ]
+    },
+    {
+      "key": "lora.exporting",
+      "en": "Preparing…",
+      "vars": []
+    },
+    {
+      "key": "lora.folder",
+      "en": "Notes to learn from (folder)",
+      "vars": []
+    },
+    {
+      "key": "lora.folderAll",
+      "en": "All notes",
+      "vars": []
+    },
+    {
+      "key": "lora.intro",
+      "en": "Train a small LoRA adapter on your own notes, on this Mac or NVIDIA computer, and use it in Ollama. Nothing is uploaded: Lumen exports the training data and a script; you run the script.",
+      "vars": []
+    },
+    {
+      "key": "lora.next.mac",
+      "en": "Unzip lumen-lora.zip and run: bash train-mac.sh — it trains on Mistral 7B (Apache-2.0) with MLX, fuses the adapter to GGUF and adds “lumen-style” to Ollama.",
+      "vars": []
+    },
+    {
+      "key": "lora.next.nvidia",
+      "en": "Unzip lumen-lora.zip and run: bash train-nvidia.sh — it trains a LoRA with PEFT (Unsloth core, Apache-2.0), converts it with llama.cpp and adds “lumen-style” to Ollama.",
+      "vars": []
+    },
+    {
+      "key": "lora.platform",
+      "en": "This computer",
+      "vars": []
+    },
+    {
+      "key": "lora.platform.mac",
+      "en": "Mac (Apple silicon, MLX)",
+      "vars": []
+    },
+    {
+      "key": "lora.platform.nvidia",
+      "en": "NVIDIA GPU (PEFT)",
+      "vars": []
+    },
+    {
+      "key": "lora.title",
+      "en": "On this machine (recommended)",
+      "vars": []
+    },
+    {
+      "key": "lora.tooLittle",
+      "en": "Not enough writing to train on ({notes} usable notes): pick a folder with more notes of a few paragraphs.",
+      "vars": [
+        "notes"
+      ]
+    },
+    {
+      "key": "meeting.decisions",
+      "en": "Decisions",
+      "vars": []
+    },
+    {
+      "key": "meeting.empty",
+      "en": "There's no transcript in this note",
+      "vars": []
+    },
+    {
+      "key": "meeting.icsOffer",
+      "en": "Save the {n} dated tasks as a calendar file (.ics)?",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "meeting.inserted",
+      "en": "Meeting notes added — {n} tasks",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "meeting.none",
+      "en": "none",
+      "vars": []
+    },
+    {
+      "key": "meeting.questions",
+      "en": "Open questions",
+      "vars": []
+    },
+    {
+      "key": "meeting.tasks",
+      "en": "Tasks",
+      "vars": []
+    },
+    {
+      "key": "meeting.title",
+      "en": "Meeting",
+      "vars": []
+    },
+    {
+      "key": "meeting.transcript",
+      "en": "Transcript",
+      "vars": []
+    },
+    {
+      "key": "mobileBar.label",
+      "en": "Markdown shortcuts",
+      "vars": []
+    },
+    {
+      "key": "models.consent.body",
+      "en": "{purpose}\n\n{name} · {size}. It is downloaded once, checked against its published checksum and kept in this browser's storage. Nothing you write is sent anywhere.\n\nLicence: {license}. {attribution}",
+      "vars": [
+        "purpose",
+        "name",
+        "size",
+        "license",
+        "attribution"
+      ]
+    },
+    {
+      "key": "models.consent.ok",
+      "en": "Download {size}",
+      "vars": [
+        "size"
+      ]
+    },
+    {
+      "key": "models.consent.title",
+      "en": "Download a model to this device?",
+      "vars": []
+    },
+    {
+      "key": "models.purpose.imageSearch",
+      "en": "Searching images by text",
+      "vars": []
+    },
+    {
+      "key": "models.purpose.nerHe",
+      "en": "Finding names, places and organisations in Hebrew text",
+      "vars": []
+    },
+    {
+      "key": "models.purpose.nikud",
+      "en": "Hebrew niqqud (vowel points) on this device",
+      "vars": []
+    },
+    {
+      "key": "models.purpose.translateEnHe",
+      "en": "Translation from English to Hebrew",
+      "vars": []
+    },
+    {
+      "key": "models.purpose.translateHeEn",
+      "en": "Translation from Hebrew to English",
+      "vars": []
+    },
+    {
+      "key": "mt.layer.chrome.absent",
+      "en": "this browser has no built-in translator",
+      "vars": []
+    },
+    {
+      "key": "mt.layer.chrome.pair",
+      "en": "Chrome has no language pack for this pair",
+      "vars": []
+    },
+    {
+      "key": "mt.layer.declined",
+      "en": "download declined",
+      "vars": []
+    },
+    {
+      "key": "mt.layer.failed",
+      "en": "the model failed to load",
+      "vars": []
+    },
+    {
+      "key": "mt.layer.m2m100.attribution",
+      "en": "M2M100-418M © Meta AI, licensed under the MIT License; ONNX conversion by Xenova.",
+      "vars": []
+    },
+    {
+      "key": "mt.layer.m2m100.pair",
+      "en": "M2M100 does not cover this pair",
+      "vars": []
+    },
+    {
+      "key": "mt.layer.m2m100.purpose",
+      "en": "Translation between languages the Hebrew models do not cover",
+      "vars": []
+    },
+    {
+      "key": "mt.layer.name.chrome",
+      "en": "Chrome's built-in translator",
+      "vars": []
+    },
+    {
+      "key": "mt.layer.name.llm",
+      "en": "the AI model",
+      "vars": []
+    },
+    {
+      "key": "mt.layer.name.m2m100",
+      "en": "M2M100 (on this device)",
+      "vars": []
+    },
+    {
+      "key": "mt.layer.name.opus",
+      "en": "Opus-MT (on this device)",
+      "vars": []
+    },
+    {
+      "key": "mt.layer.opus.noFiles",
+      "en": "the converted model has no checksums yet (run the conversion workflow)",
+      "vars": []
+    },
+    {
+      "key": "mt.layer.opus.noHost",
+      "en": "the converted models have no host yet (plan 15.9)",
+      "vars": []
+    },
+    {
+      "key": "mt.layer.opus.pair",
+      "en": "no converted model for this pair",
+      "vars": []
+    },
+    {
+      "key": "mt.layer.sourceUnknown",
+      "en": "the document's language could not be told",
+      "vars": []
+    },
+    {
+      "key": "mt.size.approx",
+      "en": "about {size}",
+      "vars": [
+        "size"
+      ]
+    },
+    {
+      "key": "onboard.back",
+      "en": "Back",
+      "vars": []
+    },
+    {
+      "key": "onboard.failed",
+      "en": "Setup failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "onboard.finish",
+      "en": "Start writing",
+      "vars": []
+    },
+    {
+      "key": "onboard.firstNote.body",
+      "en": "# My first note\n\nStart writing here. Type [[ to link to another note.",
+      "vars": []
+    },
+    {
+      "key": "onboard.firstNote.name",
+      "en": "First note",
+      "vars": []
+    },
+    {
+      "key": "onboard.import.done",
+      "en": "Imported {notes} notes into “{folder}”.",
+      "vars": [
+        "notes",
+        "folder"
+      ]
+    },
+    {
+      "key": "onboard.import.failed",
+      "en": "Import failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "onboard.import.notion",
+      "en": "Import a Notion export (.zip)",
+      "vars": []
+    },
+    {
+      "key": "onboard.import.obsidian",
+      "en": "Import an Obsidian vault (folder)",
+      "vars": []
+    },
+    {
+      "key": "onboard.import.title",
+      "en": "Coming from another app? (optional)",
+      "vars": []
+    },
+    {
+      "key": "onboard.lang.body",
+      "en": "The interface language. Hebrew and Arabic switch the layout to right-to-left.",
+      "vars": []
+    },
+    {
+      "key": "onboard.lang.title",
+      "en": "Language",
+      "vars": []
+    },
+    {
+      "key": "onboard.next",
+      "en": "Next",
+      "vars": []
+    },
+    {
+      "key": "onboard.skip",
+      "en": "Skip setup",
+      "vars": []
+    },
+    {
+      "key": "onboard.start.empty",
+      "en": "An empty vault",
+      "vars": []
+    },
+    {
+      "key": "onboard.start.empty.desc",
+      "en": "Just your first note.",
+      "vars": []
+    },
+    {
+      "key": "onboard.start.sample",
+      "en": "A sample vault",
+      "vars": []
+    },
+    {
+      "key": "onboard.start.sample.desc",
+      "en": "A few linked notes showing links, a board, a chart and a template, in {language}.",
+      "vars": [
+        "language"
+      ]
+    },
+    {
+      "key": "onboard.start.title",
+      "en": "Start with",
+      "vars": []
+    },
+    {
+      "key": "onboard.step",
+      "en": "Step {n} of {total}",
+      "vars": [
+        "n",
+        "total"
+      ]
+    },
+    {
+      "key": "onboard.style.dark",
+      "en": "Dark",
+      "vars": []
+    },
+    {
+      "key": "onboard.style.light",
+      "en": "Light",
+      "vars": []
+    },
+    {
+      "key": "onboard.style.palette",
+      "en": "Palette",
+      "vars": []
+    },
+    {
+      "key": "onboard.style.system",
+      "en": "Match system",
+      "vars": []
+    },
+    {
+      "key": "onboard.style.theme",
+      "en": "Theme",
+      "vars": []
+    },
+    {
+      "key": "onboard.subtitle",
+      "en": "A few quick choices, then you're writing. You can change any of them later.",
+      "vars": []
+    },
+    {
+      "key": "onboard.title",
+      "en": "Welcome to Lumen",
+      "vars": []
+    },
+    {
+      "key": "onboard.tour.skip",
+      "en": "Skip tour",
+      "vars": []
+    },
+    {
+      "key": "onboard.vault.folder",
+      "en": "A folder on this computer",
+      "vars": []
+    },
+    {
+      "key": "onboard.vault.folder.chosen",
+      "en": "Folder: {folder}",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "onboard.vault.folder.denied",
+      "en": "Lumen wasn't allowed to use “{folder}”. Pick it again or keep browser storage.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "onboard.vault.folder.desc",
+      "en": "Plain .md files in a folder you pick; other apps can open them too.",
+      "vars": []
+    },
+    {
+      "key": "onboard.vault.folder.unsupported",
+      "en": "This browser can't open folders (Chrome and Edge can). Your notes stay in browser storage; you can move them later.",
+      "vars": []
+    },
+    {
+      "key": "onboard.vault.opfs",
+      "en": "In this browser",
+      "vars": []
+    },
+    {
+      "key": "onboard.vault.opfs.desc",
+      "en": "Private to this browser, works everywhere, nothing to set up.",
+      "vars": []
+    },
+    {
+      "key": "onboard.vault.title",
+      "en": "Where your notes live",
+      "vars": []
+    },
+    {
+      "key": "onboard.working",
+      "en": "Setting up…",
+      "vars": []
+    },
+    {
+      "key": "pageView.jump",
+      "en": "Jump to page",
+      "vars": []
+    },
+    {
+      "key": "pageView.next",
+      "en": "Next page",
+      "vars": []
+    },
+    {
+      "key": "pageView.of",
+      "en": "of {total}",
+      "vars": [
+        "total"
+      ]
+    },
+    {
+      "key": "pageView.page",
+      "en": "Page {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "pageView.prev",
+      "en": "Previous page",
+      "vars": []
+    },
+    {
+      "key": "pdf.ask",
+      "en": "Ask",
+      "vars": []
+    },
+    {
+      "key": "pdf.ask.cite",
+      "en": "Page {page}, line {line}",
+      "vars": [
+        "page",
+        "line"
+      ]
+    },
+    {
+      "key": "pdf.ask.dropped",
+      "en": "{n} quotes that aren't in the PDF were left out",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "pdf.ask.failed",
+      "en": "Couldn't answer: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "pdf.ask.indexing",
+      "en": "Reading page {page} of {pages}…",
+      "vars": [
+        "page",
+        "pages"
+      ]
+    },
+    {
+      "key": "pdf.ask.notFound",
+      "en": "This PDF doesn't seem to answer that.",
+      "vars": []
+    },
+    {
+      "key": "pdf.ask.ocr",
+      "en": "Reading scanned page {page} of {pages} (OCR)…",
+      "vars": [
+        "page",
+        "pages"
+      ]
+    },
+    {
+      "key": "pdf.ask.placeholder",
+      "en": "A question about this PDF…",
+      "vars": []
+    },
+    {
+      "key": "pdf.ask.submit",
+      "en": "Ask",
+      "vars": []
+    },
+    {
+      "key": "pdf.ask.thinking",
+      "en": "Looking for the answer in the PDF…",
+      "vars": []
+    },
+    {
+      "key": "pdf.ask.title",
+      "en": "Ask this PDF",
+      "vars": []
+    },
+    {
+      "key": "pdf.failed",
+      "en": "Couldn't open this PDF: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "pdf.highlight",
+      "en": "Highlight",
+      "vars": []
+    },
+    {
+      "key": "pdf.highlight.hint",
+      "en": "Select text, then press H",
+      "vars": []
+    },
+    {
+      "key": "pdf.highlights",
+      "en": "Highlights",
+      "vars": []
+    },
+    {
+      "key": "pdf.highlights.empty",
+      "en": "Select text and press Highlight.",
+      "vars": []
+    },
+    {
+      "key": "pdf.noWorkspace",
+      "en": "PDFs need the workspace, which this browser can't provide.",
+      "vars": []
+    },
+    {
+      "key": "pdf.note.placeholder",
+      "en": "Add a note…",
+      "vars": []
+    },
+    {
+      "key": "pdf.noteEmpty",
+      "en": "_No highlights yet._",
+      "vars": []
+    },
+    {
+      "key": "pdf.notePage",
+      "en": "p. {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "pdf.noteTitle",
+      "en": "Highlights — {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "pdf.notesUnreadable",
+      "en": "the highlights block in {name} can't be read. Fix or remove it to highlight again.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "pdf.ocr.run",
+      "en": "Recognise text (OCR)",
+      "vars": []
+    },
+    {
+      "key": "pdf.ocr.running",
+      "en": "Recognising text on this device…",
+      "vars": []
+    },
+    {
+      "key": "pdf.ocr.scanned",
+      "en": "This page is a scanned image.",
+      "vars": []
+    },
+    {
+      "key": "pdf.openNotes",
+      "en": "Open the notes",
+      "vars": []
+    },
+    {
+      "key": "pdf.page.label",
+      "en": "Page {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "pdf.page.of",
+      "en": "Page {n} of {total}",
+      "vars": [
+        "n",
+        "total"
+      ]
+    },
+    {
+      "key": "pdf.saveFailed",
+      "en": "Couldn't save the highlights: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "pdf.search.count",
+      "en": "{i} of {n}",
+      "vars": [
+        "i",
+        "n"
+      ]
+    },
+    {
+      "key": "pdf.search.placeholder",
+      "en": "Search in this PDF",
+      "vars": []
+    },
+    {
+      "key": "pdf.summarize",
+      "en": "Summarize",
+      "vars": []
+    },
+    {
+      "key": "pdf.summary.extractive",
+      "en": "Sentences picked from the text without a model (no local model was available).",
+      "vars": []
+    },
+    {
+      "key": "pdf.summary.local",
+      "en": "Every sentence is copied from the text and checked against it; made on this device.",
+      "vars": []
+    },
+    {
+      "key": "pdf.summary.title",
+      "en": "Summary",
+      "vars": []
+    },
+    {
+      "key": "pdf.unanchored",
+      "en": "Text not found on the page.",
+      "vars": []
+    },
+    {
+      "key": "pdf.zoomFit",
+      "en": "Fit width",
+      "vars": []
+    },
+    {
+      "key": "pdf.zoomIn",
+      "en": "Zoom in",
+      "vars": []
+    },
+    {
+      "key": "pdf.zoomOut",
+      "en": "Zoom out",
+      "vars": []
+    },
+    {
+      "key": "pii.ledger.redacted",
+      "en": "Hidden before sending: {n} in {requests} requests",
+      "vars": [
+        "n",
+        "requests"
+      ]
+    },
+    {
+      "key": "pii.preview.hidden",
+      "en": "Hidden on this device: {list}",
+      "vars": [
+        "list"
+      ]
+    },
+    {
+      "key": "pii.preview.none",
+      "en": "No personal data was found.",
+      "vars": []
+    },
+    {
+      "key": "pii.preview.send",
+      "en": "Send",
+      "vars": []
+    },
+    {
+      "key": "pii.preview.title",
+      "en": "Send to the cloud?",
+      "vars": []
+    },
+    {
+      "key": "pii.settings.hint",
+      "en": "E-mails, phone numbers, ID numbers, cards, IBANs, plates and birth dates are replaced with tokens such as ⟨EMAIL_1⟩ on this device, and put back in the answer. Names too when the Hebrew name model is downloaded.",
+      "vars": []
+    },
+    {
+      "key": "pii.settings.preview",
+      "en": "Show what will be sent before each cloud request",
+      "vars": []
+    },
+    {
+      "key": "pii.settings.redact",
+      "en": "Hide personal data before a request leaves this device",
+      "vars": []
+    },
+    {
+      "key": "pii.settings.title",
+      "en": "Personal data before the cloud",
+      "vars": []
+    },
+    {
+      "key": "pii.type.CREDIT_CARD",
+      "en": "card",
+      "vars": []
+    },
+    {
+      "key": "pii.type.DATE_OF_BIRTH",
+      "en": "birth date",
+      "vars": []
+    },
+    {
+      "key": "pii.type.EMAIL",
+      "en": "e-mail",
+      "vars": []
+    },
+    {
+      "key": "pii.type.IBAN",
+      "en": "IBAN",
+      "vars": []
+    },
+    {
+      "key": "pii.type.IL_ID",
+      "en": "ID number",
+      "vars": []
+    },
+    {
+      "key": "pii.type.LICENSE_PLATE",
+      "en": "licence plate",
+      "vars": []
+    },
+    {
+      "key": "pii.type.LOCATION",
+      "en": "place",
+      "vars": []
+    },
+    {
+      "key": "pii.type.PERSON",
+      "en": "name",
+      "vars": []
+    },
+    {
+      "key": "pii.type.PHONE",
+      "en": "phone",
+      "vars": []
+    },
+    {
+      "key": "plantuml.blocked",
+      "en": "This PlantUML diagram is drawn by kroki.io, an online service, and your AI policy keeps it on this device. Rendering it sends the diagram's text to kroki.io.",
+      "vars": []
+    },
+    {
+      "key": "plantuml.send",
+      "en": "Render this diagram with kroki.io",
+      "vars": []
+    },
+    {
+      "key": "plugins.block.failed",
+      "en": "The plugin could not render this block: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "plugins.block.loading",
+      "en": "Rendering with the plugin…",
+      "vars": []
+    },
+    {
+      "key": "plugins.panel.close",
+      "en": "Close the plugin panel",
+      "vars": []
+    },
+    {
+      "key": "props.add",
+      "en": "Add property",
+      "vars": []
+    },
+    {
+      "key": "props.addItem",
+      "en": "Add…",
+      "vars": []
+    },
+    {
+      "key": "props.addItemTo",
+      "en": "Add an item to {key}",
+      "vars": [
+        "key"
+      ]
+    },
+    {
+      "key": "props.addKey",
+      "en": "Property name",
+      "vars": []
+    },
+    {
+      "key": "props.close",
+      "en": "Close properties",
+      "vars": []
+    },
+    {
+      "key": "props.empty",
+      "en": "This note has no properties yet.",
+      "vars": []
+    },
+    {
+      "key": "props.invalid",
+      "en": "The frontmatter isn't valid YAML, so it can't be edited here. Fix it in the editor: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "props.keyExists",
+      "en": "A property named {key} already exists.",
+      "vars": [
+        "key"
+      ]
+    },
+    {
+      "key": "props.linkMissing",
+      "en": "No note named {target}",
+      "vars": [
+        "target"
+      ]
+    },
+    {
+      "key": "props.newType",
+      "en": "Type of the new property",
+      "vars": []
+    },
+    {
+      "key": "props.openLink",
+      "en": "Open {target}",
+      "vars": [
+        "target"
+      ]
+    },
+    {
+      "key": "props.readOnly",
+      "en": "Edit this value in the editor",
+      "vars": []
+    },
+    {
+      "key": "props.remove",
+      "en": "Remove {key}",
+      "vars": [
+        "key"
+      ]
+    },
+    {
+      "key": "props.removeItem",
+      "en": "Remove {item}",
+      "vars": [
+        "item"
+      ]
+    },
+    {
+      "key": "props.title",
+      "en": "Properties",
+      "vars": []
+    },
+    {
+      "key": "props.type",
+      "en": "Type of {key}",
+      "vars": [
+        "key"
+      ]
+    },
+    {
+      "key": "props.type.checkbox",
+      "en": "Checkbox",
+      "vars": []
+    },
+    {
+      "key": "props.type.date",
+      "en": "Date",
+      "vars": []
+    },
+    {
+      "key": "props.type.link",
+      "en": "Link",
+      "vars": []
+    },
+    {
+      "key": "props.type.list",
+      "en": "List",
+      "vars": []
+    },
+    {
+      "key": "props.type.number",
+      "en": "Number",
+      "vars": []
+    },
+    {
+      "key": "props.type.text",
+      "en": "Text",
+      "vars": []
+    },
+    {
+      "key": "props.value",
+      "en": "Value of {key}",
+      "vars": [
+        "key"
+      ]
+    },
+    {
+      "key": "props.writeFailed",
+      "en": "Couldn't update the property: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "publish.all",
+      "en": "All",
+      "vars": []
+    },
+    {
+      "key": "publish.badRepo",
+      "en": "Write the repository as owner/name",
+      "vars": []
+    },
+    {
+      "key": "publish.branch",
+      "en": "Branch",
+      "vars": []
+    },
+    {
+      "key": "publish.building",
+      "en": "Building {count} pages…",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "publish.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "publish.deploying",
+      "en": "Sending to GitHub: {step}",
+      "vars": [
+        "step"
+      ]
+    },
+    {
+      "key": "publish.done.github",
+      "en": "Published {count} pages to {url}. GitHub may take a minute to serve them.",
+      "vars": [
+        "count",
+        "url"
+      ]
+    },
+    {
+      "key": "publish.done.zip",
+      "en": "Saved {name} ({count} pages).",
+      "vars": [
+        "name",
+        "count"
+      ]
+    },
+    {
+      "key": "publish.failed",
+      "en": "Publish failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "publish.filter",
+      "en": "Filter",
+      "vars": []
+    },
+    {
+      "key": "publish.go",
+      "en": "Publish",
+      "vars": []
+    },
+    {
+      "key": "publish.intro",
+      "en": "The notes you pick become a website with navigation, search and right-to-left pages. Nothing is sent until you press Publish, and then only to the place you choose.",
+      "vars": []
+    },
+    {
+      "key": "publish.lang",
+      "en": "Site language",
+      "vars": []
+    },
+    {
+      "key": "publish.missing",
+      "en": "{count} file(s) the notes reference were not found and stay as links.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "publish.noToken",
+      "en": "A GitHub token is needed",
+      "vars": []
+    },
+    {
+      "key": "publish.none",
+      "en": "None",
+      "vars": []
+    },
+    {
+      "key": "publish.notes",
+      "en": "Notes ({count} of {total})",
+      "vars": [
+        "count",
+        "total"
+      ]
+    },
+    {
+      "key": "publish.open",
+      "en": "Open the site",
+      "vars": []
+    },
+    {
+      "key": "publish.repo",
+      "en": "Repository (owner/name)",
+      "vars": []
+    },
+    {
+      "key": "publish.siteTitle",
+      "en": "Site title",
+      "vars": []
+    },
+    {
+      "key": "publish.target",
+      "en": "Publish to",
+      "vars": []
+    },
+    {
+      "key": "publish.target.github",
+      "en": "GitHub Pages",
+      "vars": []
+    },
+    {
+      "key": "publish.target.zip",
+      "en": "A .zip file (for Netlify Drop, Cloudflare Pages or any web server)",
+      "vars": []
+    },
+    {
+      "key": "publish.title",
+      "en": "Publish site",
+      "vars": []
+    },
+    {
+      "key": "publish.token",
+      "en": "GitHub token (contents and pages: write)",
+      "vars": []
+    },
+    {
+      "key": "publish.token.hint",
+      "en": "Kept on this device. Empty: the git sync token is used.",
+      "vars": []
+    },
+    {
+      "key": "pwa.dismiss",
+      "en": "Dismiss",
+      "vars": []
+    },
+    {
+      "key": "pwa.offlineReady",
+      "en": "Lumen is ready to work offline.",
+      "vars": []
+    },
+    {
+      "key": "pwa.reload",
+      "en": "Reload",
+      "vars": []
+    },
+    {
+      "key": "pwa.updateAvailable",
+      "en": "A new version is available",
+      "vars": []
+    },
+    {
+      "key": "remoteImage.allowHint",
+      "en": "Load images from {host} in every note, in this browser.",
+      "vars": [
+        "host"
+      ]
+    },
+    {
+      "key": "remoteImage.allowHost",
+      "en": "Always allow {host}",
+      "vars": [
+        "host"
+      ]
+    },
+    {
+      "key": "remoteImage.blocked",
+      "en": "From {host}, not loaded",
+      "vars": [
+        "host"
+      ]
+    },
+    {
+      "key": "remoteImage.desktop",
+      "en": "From {host}. The desktop app doesn't load images from other sites.",
+      "vars": [
+        "host"
+      ]
+    },
+    {
+      "key": "remoteImage.label",
+      "en": "Image from {host}",
+      "vars": [
+        "host"
+      ]
+    },
+    {
+      "key": "remoteImage.load",
+      "en": "Load",
+      "vars": []
+    },
+    {
+      "key": "remoteImage.loadHint",
+      "en": "Load this image once. {host} will see that you opened this note.",
+      "vars": [
+        "host"
+      ]
+    },
+    {
+      "key": "remoteImage.untitled",
+      "en": "Image",
+      "vars": []
+    },
+    {
+      "key": "remoteMedia.label",
+      "en": "Video or audio from {host}",
+      "vars": [
+        "host"
+      ]
+    },
+    {
+      "key": "rerank.consent",
+      "en": "Turn on the reranking model? It downloads about {mb} MB once (bge-reranker-v2-m3) and runs on this device. On Lumen's Hebrew retrieval test the built-in ranking already puts every answer first.",
+      "vars": [
+        "mb"
+      ]
+    },
+    {
+      "key": "scroll.page",
+      "en": "page {current}/{total}",
+      "vars": [
+        "current",
+        "total"
+      ]
+    },
+    {
+      "key": "settings.empty",
+      "en": "No setting matches",
+      "vars": []
+    },
+    {
+      "key": "settings.general",
+      "en": "General",
+      "vars": []
+    },
+    {
+      "key": "settings.importFailed",
+      "en": "That file isn't a Lumen settings file.",
+      "vars": []
+    },
+    {
+      "key": "settings.importRefused",
+      "en": "Not imported, so this device keeps its privacy settings: {keys}",
+      "vars": [
+        "keys"
+      ]
+    },
+    {
+      "key": "settings.imported",
+      "en": "{n} settings imported, {skipped} skipped",
+      "vars": [
+        "n",
+        "skipped"
+      ]
+    },
+    {
+      "key": "settings.language",
+      "en": "Language",
+      "vars": []
+    },
+    {
+      "key": "settings.search",
+      "en": "Search settings",
+      "vars": []
+    },
+    {
+      "key": "settings.telemetryOptOut",
+      "en": "Send no error reports",
+      "vars": []
+    },
+    {
+      "key": "settings.title",
+      "en": "Settings",
+      "vars": []
+    },
+    {
+      "key": "status.aiActive",
+      "en": "AI Copilot Active",
+      "vars": []
+    },
+    {
+      "key": "status.chars",
+      "en": "{n} chars",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "status.chars.title",
+      "en": "Characters (without spaces)",
+      "vars": []
+    },
+    {
+      "key": "status.collab.title",
+      "en": "Collab room: {room}\nPeers: {n}",
+      "vars": [
+        "room",
+        "n"
+      ]
+    },
+    {
+      "key": "status.document",
+      "en": "Document",
+      "vars": []
+    },
+    {
+      "key": "status.grammar.off",
+      "en": "Grammar",
+      "vars": []
+    },
+    {
+      "key": "status.grammar.on",
+      "en": "Grammar",
+      "vars": []
+    },
+    {
+      "key": "status.grammar.tooltip.off",
+      "en": "Grammar check is OFF. Click to enable LanguageTool checking.",
+      "vars": []
+    },
+    {
+      "key": "status.grammar.tooltip.on",
+      "en": "Grammar check is ON. Click to disable.",
+      "vars": []
+    },
+    {
+      "key": "status.health",
+      "en": "Health {score}%",
+      "vars": [
+        "score"
+      ]
+    },
+    {
+      "key": "status.leave",
+      "en": "leave",
+      "vars": []
+    },
+    {
+      "key": "status.live",
+      "en": "● live",
+      "vars": []
+    },
+    {
+      "key": "status.privacyMode",
+      "en": "PRIVATE",
+      "vars": []
+    },
+    {
+      "key": "status.privacyMode.tooltip",
+      "en": "Privacy Mode — AI runs entirely on this device via WebGPU. No prompts leave your browser.",
+      "vars": []
+    },
+    {
+      "key": "status.reading",
+      "en": "~{n} min read",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "status.reading.title",
+      "en": "Reading time at ~220 words per minute",
+      "vars": []
+    },
+    {
+      "key": "status.roadmap",
+      "en": "Roadmap",
+      "vars": []
+    },
+    {
+      "key": "status.roadmap.tooltip",
+      "en": "View Lumen's public roadmap",
+      "vars": []
+    },
+    {
+      "key": "status.runtimeMetrics",
+      "en": "Runtime metrics",
+      "vars": []
+    },
+    {
+      "key": "status.runtimeMetrics.tooltip",
+      "en": "Open runtime metrics and transport diagnostics",
+      "vars": []
+    },
+    {
+      "key": "status.secretsPlain",
+      "en": "KEYS UNENCRYPTED",
+      "vars": []
+    },
+    {
+      "key": "status.secretsPlain.tooltip",
+      "en": "This browser has no IndexedDB or WebCrypto here, so API keys and sign-in tokens are stored unencrypted in localStorage. Use a current browser over HTTPS (or the desktop app) to encrypt them.",
+      "vars": []
+    },
+    {
+      "key": "status.suggesting.off",
+      "en": "Editing",
+      "vars": []
+    },
+    {
+      "key": "status.suggesting.on",
+      "en": "Suggesting",
+      "vars": []
+    },
+    {
+      "key": "status.suggesting.tooltip.off",
+      "en": "Editing directly. Click to turn on suggesting mode (track changes).",
+      "vars": []
+    },
+    {
+      "key": "status.suggesting.tooltip.on",
+      "en": "Suggesting mode is ON: your edits are recorded as tracked changes (CriticMarkup). Click to edit directly.",
+      "vars": []
+    },
+    {
+      "key": "status.sync.error",
+      "en": "error",
+      "vars": []
+    },
+    {
+      "key": "status.sync.offline",
+      "en": "offline",
+      "vars": []
+    },
+    {
+      "key": "status.sync.syncing",
+      "en": "syncing",
+      "vars": []
+    },
+    {
+      "key": "status.sync.title",
+      "en": "Sync: {state}",
+      "vars": [
+        "state"
+      ]
+    },
+    {
+      "key": "status.telemetry.off",
+      "en": "Telemetry",
+      "vars": []
+    },
+    {
+      "key": "status.telemetry.on",
+      "en": "Telemetry",
+      "vars": []
+    },
+    {
+      "key": "status.telemetry.tooltip.off",
+      "en": "Error telemetry is OFF. Click to enable anonymous crash reports.",
+      "vars": []
+    },
+    {
+      "key": "status.telemetry.tooltip.on",
+      "en": "Error telemetry is ON. Crash reports are sent to help improve Lumen. Click to opt out.",
+      "vars": []
+    },
+    {
+      "key": "status.words",
+      "en": "{n} words",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "status.words.title",
+      "en": "Word count",
+      "vars": []
+    },
+    {
+      "key": "storage.eviction.body",
+      "en": "Safari removes a site's data after 7 days without a visit. Export your vault, or add Lumen to the Home Screen / Dock, where storage is kept.",
+      "vars": []
+    },
+    {
+      "key": "storage.eviction.export",
+      "en": "Export vault…",
+      "vars": []
+    },
+    {
+      "key": "storage.eviction.title",
+      "en": "Safari may delete your notes",
+      "vars": []
+    },
+    {
+      "key": "summary.empty",
+      "en": "Nothing to summarise here",
+      "vars": []
+    },
+    {
+      "key": "sync.conflict.apply",
+      "en": "Apply merge",
+      "vars": []
+    },
+    {
+      "key": "sync.conflict.body",
+      "en": "Both sides changed since the last sync. Pick what to keep, or take one side wholesale.",
+      "vars": []
+    },
+    {
+      "key": "sync.conflict.both",
+      "en": "both",
+      "vars": []
+    },
+    {
+      "key": "sync.conflict.empty",
+      "en": "(empty)",
+      "vars": []
+    },
+    {
+      "key": "sync.conflict.local",
+      "en": "local",
+      "vars": []
+    },
+    {
+      "key": "sync.conflict.remote",
+      "en": "remote",
+      "vars": []
+    },
+    {
+      "key": "sync.conflict.takeLocal",
+      "en": "Take local",
+      "vars": []
+    },
+    {
+      "key": "sync.conflict.takeRemote",
+      "en": "Take remote",
+      "vars": []
+    },
+    {
+      "key": "sync.conflict.title",
+      "en": "Sync conflict — {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "tasks.changed",
+      "en": "The note changed since this list was made — nothing was written. Try again.",
+      "vars": []
+    },
+    {
+      "key": "tasks.count",
+      "en": "{n} tasks",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "tasks.error.date",
+      "en": "Not a date: {text}",
+      "vars": [
+        "text"
+      ]
+    },
+    {
+      "key": "tasks.error.query",
+      "en": "Not understood: {text}",
+      "vars": [
+        "text"
+      ]
+    },
+    {
+      "key": "tasks.error.regex",
+      "en": "Not a regular expression: {text}",
+      "vars": [
+        "text"
+      ]
+    },
+    {
+      "key": "tasks.group.done",
+      "en": "Done",
+      "vars": []
+    },
+    {
+      "key": "tasks.group.none",
+      "en": "(none)",
+      "vars": []
+    },
+    {
+      "key": "tasks.group.todo",
+      "en": "To do",
+      "vars": []
+    },
+    {
+      "key": "tasks.loading",
+      "en": "Looking through the vault…",
+      "vars": []
+    },
+    {
+      "key": "tasks.none",
+      "en": "No tasks.",
+      "vars": []
+    },
+    {
+      "key": "tasks.panel.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "tasks.panel.title",
+      "en": "Tasks",
+      "vars": []
+    },
+    {
+      "key": "tasks.panel.today",
+      "en": "Today and overdue",
+      "vars": []
+    },
+    {
+      "key": "tasks.panel.upcoming",
+      "en": "Next 7 days",
+      "vars": []
+    },
+    {
+      "key": "tasks.reminder.title",
+      "en": "Task due today",
+      "vars": []
+    },
+    {
+      "key": "tasks.reminders",
+      "en": "Reminders",
+      "vars": []
+    },
+    {
+      "key": "tasks.toggle",
+      "en": "Done: {task}",
+      "vars": [
+        "task"
+      ]
+    },
+    {
+      "key": "time.daysAgo",
+      "en": "{n}d ago",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "time.hoursAgo",
+      "en": "{n}h ago",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "time.justNow",
+      "en": "just now",
+      "vars": []
+    },
+    {
+      "key": "time.minutesAgo",
+      "en": "{n}m ago",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "toolbar.appearance",
+      "en": "Appearance",
+      "vars": []
+    },
+    {
+      "key": "toolbar.commandPalette",
+      "en": "Command palette",
+      "vars": []
+    },
+    {
+      "key": "toolbar.copy",
+      "en": "Copy",
+      "vars": []
+    },
+    {
+      "key": "toolbar.cut",
+      "en": "Cut",
+      "vars": []
+    },
+    {
+      "key": "toolbar.darkMode",
+      "en": "Dark Mode",
+      "vars": []
+    },
+    {
+      "key": "toolbar.delete",
+      "en": "Delete",
+      "vars": []
+    },
+    {
+      "key": "toolbar.editMenu",
+      "en": "Edit",
+      "vars": []
+    },
+    {
+      "key": "toolbar.exportHtml",
+      "en": "Export to HTML…",
+      "vars": []
+    },
+    {
+      "key": "toolbar.exportPdf",
+      "en": "Export to PDF",
+      "vars": []
+    },
+    {
+      "key": "toolbar.fileMenu",
+      "en": "File",
+      "vars": []
+    },
+    {
+      "key": "toolbar.files",
+      "en": "Files",
+      "vars": []
+    },
+    {
+      "key": "toolbar.focusMode",
+      "en": "Focus mode",
+      "vars": []
+    },
+    {
+      "key": "toolbar.helpMenu",
+      "en": "Help",
+      "vars": []
+    },
+    {
+      "key": "toolbar.insertMenu",
+      "en": "Insert",
+      "vars": []
+    },
+    {
+      "key": "toolbar.insertSmart",
+      "en": "Insert anything…",
+      "vars": []
+    },
+    {
+      "key": "toolbar.insertText",
+      "en": "Insert text…",
+      "vars": []
+    },
+    {
+      "key": "toolbar.lightMode",
+      "en": "Light Mode",
+      "vars": []
+    },
+    {
+      "key": "toolbar.ltr",
+      "en": "LTR ←",
+      "vars": []
+    },
+    {
+      "key": "toolbar.menu",
+      "en": "Menu",
+      "vars": []
+    },
+    {
+      "key": "toolbar.menuTooltip.edit",
+      "en": "Editing actions: undo, redo, copy, paste",
+      "vars": []
+    },
+    {
+      "key": "toolbar.menuTooltip.file",
+      "en": "Document operations: new, open, save, export",
+      "vars": []
+    },
+    {
+      "key": "toolbar.menuTooltip.help",
+      "en": "Focus mode, shortcuts, tour, command palette",
+      "vars": []
+    },
+    {
+      "key": "toolbar.menuTooltip.insert",
+      "en": "Insert charts, diagrams, media, math, references",
+      "vars": []
+    },
+    {
+      "key": "toolbar.menuTooltip.view",
+      "en": "View modes, appearance, panels",
+      "vars": []
+    },
+    {
+      "key": "toolbar.new",
+      "en": "New",
+      "vars": []
+    },
+    {
+      "key": "toolbar.open",
+      "en": "Open file",
+      "vars": []
+    },
+    {
+      "key": "toolbar.openWelcome",
+      "en": "Show Welcome.md",
+      "vars": []
+    },
+    {
+      "key": "toolbar.outline",
+      "en": "Outline",
+      "vars": []
+    },
+    {
+      "key": "toolbar.outline.hide",
+      "en": "Hide outline",
+      "vars": []
+    },
+    {
+      "key": "toolbar.outline.show",
+      "en": "Show outline",
+      "vars": []
+    },
+    {
+      "key": "toolbar.pageView.off",
+      "en": "📄 Page View: OFF",
+      "vars": []
+    },
+    {
+      "key": "toolbar.pageView.on",
+      "en": "📄 Page View: ON",
+      "vars": []
+    },
+    {
+      "key": "toolbar.panels",
+      "en": "Panels",
+      "vars": []
+    },
+    {
+      "key": "toolbar.paste",
+      "en": "Paste",
+      "vars": []
+    },
+    {
+      "key": "toolbar.print",
+      "en": "Print",
+      "vars": []
+    },
+    {
+      "key": "toolbar.redo",
+      "en": "Redo",
+      "vars": []
+    },
+    {
+      "key": "toolbar.rtl",
+      "en": "RTL →",
+      "vars": []
+    },
+    {
+      "key": "toolbar.save",
+      "en": "Save",
+      "vars": []
+    },
+    {
+      "key": "toolbar.saveAs",
+      "en": "Save as…",
+      "vars": []
+    },
+    {
+      "key": "toolbar.scrollIndependent",
+      "en": "Scroll: Independent",
+      "vars": []
+    },
+    {
+      "key": "toolbar.scrollLinked",
+      "en": "Scroll: Linked",
+      "vars": []
+    },
+    {
+      "key": "toolbar.section.clipboard",
+      "en": "Clipboard",
+      "vars": []
+    },
+    {
+      "key": "toolbar.section.diagrams",
+      "en": "Diagrams",
+      "vars": []
+    },
+    {
+      "key": "toolbar.section.documents",
+      "en": "Documents",
+      "vars": []
+    },
+    {
+      "key": "toolbar.section.export",
+      "en": "Export",
+      "vars": []
+    },
+    {
+      "key": "toolbar.section.history",
+      "en": "History",
+      "vars": []
+    },
+    {
+      "key": "toolbar.section.mathRefs",
+      "en": "Math & References",
+      "vars": []
+    },
+    {
+      "key": "toolbar.section.media",
+      "en": "Media",
+      "vars": []
+    },
+    {
+      "key": "toolbar.section.selection",
+      "en": "Selection",
+      "vars": []
+    },
+    {
+      "key": "toolbar.section.specific",
+      "en": "Or pick a specific block",
+      "vars": []
+    },
+    {
+      "key": "toolbar.section.tablesCharts",
+      "en": "Tables & Charts",
+      "vars": []
+    },
+    {
+      "key": "toolbar.section.tools",
+      "en": "Tools",
+      "vars": []
+    },
+    {
+      "key": "toolbar.section.workspace",
+      "en": "Workspace",
+      "vars": []
+    },
+    {
+      "key": "toolbar.selectAll",
+      "en": "Select all",
+      "vars": []
+    },
+    {
+      "key": "toolbar.settings",
+      "en": "Settings",
+      "vars": []
+    },
+    {
+      "key": "toolbar.shareMenu",
+      "en": "Share",
+      "vars": []
+    },
+    {
+      "key": "toolbar.shortcuts",
+      "en": "Keyboard shortcuts",
+      "vars": []
+    },
+    {
+      "key": "toolbar.splitAxis",
+      "en": "Scroll orientation",
+      "vars": []
+    },
+    {
+      "key": "toolbar.splitAxis.auto",
+      "en": "Auto (responsive)",
+      "vars": []
+    },
+    {
+      "key": "toolbar.splitAxis.horizontal",
+      "en": "Side by side ↔",
+      "vars": []
+    },
+    {
+      "key": "toolbar.splitAxis.vertical",
+      "en": "Stacked ↕",
+      "vars": []
+    },
+    {
+      "key": "toolbar.tagline",
+      "en": "Markdown, illuminated",
+      "vars": []
+    },
+    {
+      "key": "toolbar.theme",
+      "en": "Toggle theme",
+      "vars": []
+    },
+    {
+      "key": "toolbar.tour",
+      "en": "Guided tour",
+      "vars": []
+    },
+    {
+      "key": "toolbar.undo",
+      "en": "Undo",
+      "vars": []
+    },
+    {
+      "key": "toolbar.viewMode",
+      "en": "View Mode",
+      "vars": []
+    },
+    {
+      "key": "toolbar.workspace",
+      "en": "Toggle workspace",
+      "vars": []
+    },
+    {
+      "key": "tour.action.openRuntimeMetrics",
+      "en": "Open runtime metrics now",
+      "vars": []
+    },
+    {
+      "key": "tour.done",
+      "en": "✓ Done",
+      "vars": []
+    },
+    {
+      "key": "tour.next",
+      "en": "→ Next",
+      "vars": []
+    },
+    {
+      "key": "tour.step.editor.body",
+      "en": "Write Markdown with full syntax highlighting, live preview, and AI assistance.",
+      "vars": []
+    },
+    {
+      "key": "tour.step.editor.title",
+      "en": "✍️ Editor",
+      "vars": []
+    },
+    {
+      "key": "tour.step.menu.body",
+      "en": "Access File, Edit, Insert, View, and Help — each menu has clear sections, hover tooltips, and per-action descriptions.",
+      "vars": []
+    },
+    {
+      "key": "tour.step.menu.title",
+      "en": "📋 Menu Bar",
+      "vars": []
+    },
+    {
+      "key": "tour.step.statusBar.body",
+      "en": "Word count, character count, reading time — always visible.",
+      "vars": []
+    },
+    {
+      "key": "tour.step.statusBar.title",
+      "en": "📊 Status Bar",
+      "vars": []
+    },
+    {
+      "key": "tour.step.viewModes.body",
+      "en": "Switch between Source, Split, Preview, and WYSIWYG anytime (⌘1-4).",
+      "vars": []
+    },
+    {
+      "key": "tour.step.viewModes.title",
+      "en": "👁️ View Modes",
+      "vars": []
+    },
+    {
+      "key": "tour.step.workspace.body",
+      "en": "Manage files in your local workspace. Everything is stored in-browser.",
+      "vars": []
+    },
+    {
+      "key": "tour.step.workspace.title",
+      "en": "📁 Workspace",
+      "vars": []
+    },
+    {
+      "key": "update.available",
+      "en": "A new version of Lumen is available.",
+      "vars": []
+    },
+    {
+      "key": "update.available.body",
+      "en": "You have {current}. Download, verify and install {version}? Lumen restarts afterwards.",
+      "vars": [
+        "current",
+        "version"
+      ]
+    },
+    {
+      "key": "update.available.title",
+      "en": "Lumen {version} is available",
+      "vars": [
+        "version"
+      ]
+    },
+    {
+      "key": "update.dismiss",
+      "en": "Dismiss",
+      "vars": []
+    },
+    {
+      "key": "update.failed",
+      "en": "Update failed: {message}",
+      "vars": [
+        "message"
+      ]
+    },
+    {
+      "key": "update.install",
+      "en": "Install and restart",
+      "vars": []
+    },
+    {
+      "key": "update.localOnly",
+      "en": "Update check skipped: the privacy policy is “local only”, so nothing is sent.",
+      "vars": []
+    },
+    {
+      "key": "update.notConfigured",
+      "en": "This build has no update server or key yet; install new versions by hand.",
+      "vars": []
+    },
+    {
+      "key": "update.reload",
+      "en": "Reload",
+      "vars": []
+    },
+    {
+      "key": "update.upToDate",
+      "en": "Lumen {version} is the latest version.",
+      "vars": [
+        "version"
+      ]
+    },
+    {
+      "key": "vaultEnc.autoLock",
+      "en": "Lock after inactivity",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.broken",
+      "en": "{n} files don't decrypt with this vault's key and were left as they are: {paths}",
+      "vars": [
+        "n",
+        "paths"
+      ]
+    },
+    {
+      "key": "vaultEnc.cancel",
+      "en": "Cancel",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.change",
+      "en": "Change passphrase",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.changed",
+      "en": "Passphrase changed.",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.current",
+      "en": "Current passphrase",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.doneOff",
+      "en": "Encryption is off.",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.doneOn",
+      "en": "The vault is encrypted.",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.encryptNow",
+      "en": "Encrypt the vault",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.forgot",
+      "en": "Forgot the passphrase? Use the recovery key",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.headerBroken",
+      "en": "The vault's encryption header can't be read ({reason}). The recovery key opens the vault and writes a new one.",
+      "vars": [
+        "reason"
+      ]
+    },
+    {
+      "key": "vaultEnc.intro",
+      "en": "Encrypts every note and file of this vault where it is stored, and the history, agent traces and search index Lumen keeps about them. Only the passphrase or the recovery key opens it.",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.lockNow",
+      "en": "Lock now",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.lockedNote",
+      "en": "Enter the passphrase to open your notes.",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.lockedTitle",
+      "en": "The vault is locked",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.minutes",
+      "en": "{n} min",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "vaultEnc.mismatch",
+      "en": "The two passphrases differ.",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.never",
+      "en": "Never",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.newPassphrase",
+      "en": "New passphrase",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.notDone",
+      "en": "Not finished: run Check and repair.",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.passphrase",
+      "en": "Passphrase",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.progress",
+      "en": "{done} of {total} files…",
+      "vars": [
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "vaultEnc.recover",
+      "en": "Open and set the new passphrase",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.recoveryKey",
+      "en": "Recovery key",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.recoveryNote",
+      "en": "Write it down or keep it in a password manager. It opens the vault if the passphrase is forgotten, even if the vault's encryption header is lost. Lumen shows it only now.",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.recoverySaved",
+      "en": "I have saved the recovery key",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.recoveryTitle",
+      "en": "Your recovery key",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.repair",
+      "en": "Check and repair",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.repaired",
+      "en": "{encrypted} encrypted, {plain} still plain text, {broken} not decryptable, {recovered} interrupted copies finished.",
+      "vars": [
+        "encrypted",
+        "plain",
+        "broken",
+        "recovered"
+      ]
+    },
+    {
+      "key": "vaultEnc.repeat",
+      "en": "Repeat the passphrase",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.retry",
+      "en": "{n} files changed meanwhile: run Check and repair.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "vaultEnc.statusOn",
+      "en": "This vault is encrypted.",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.title",
+      "en": "Vault encryption",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.tooShort",
+      "en": "At least {n} characters.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "vaultEnc.turnOff",
+      "en": "Turn off encryption",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.turnOffNote",
+      "en": "Decrypts every file back to plain text. Agent traces and the search index are deleted; history is kept.",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.turnOn",
+      "en": "Turn on encryption",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.unlock",
+      "en": "Unlock",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.warning",
+      "en": "An encrypted vault can't be read as plain text by Obsidian, git or any other program — only by Lumen with the passphrase. File and folder names stay visible.",
+      "vars": []
+    },
+    {
+      "key": "vaultEnc.wrong",
+      "en": "Wrong passphrase or recovery key.",
+      "vars": []
+    },
+    {
+      "key": "wikiComplete.aliasOf",
+      "en": "alias of {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "wikiComplete.create",
+      "en": "Create note «{name}»",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "wikiComplete.createFailed",
+      "en": "Couldn't create the note «{name}»: {error}",
+      "vars": [
+        "name",
+        "error"
+      ]
+    },
+    {
+      "key": "wikiComplete.created",
+      "en": "Created note «{name}»",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "wikiComplete.listLabel",
+      "en": "Link suggestions",
+      "vars": []
+    }
+  ]
+}

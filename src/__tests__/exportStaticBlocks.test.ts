@@ -12,3 +12,21 @@ describe("static HTML export of Lumen blocks", () => {
     expect(html).not.toMatch(/data-lumen-block-pending|Loading /);
   });
 });
+
+describe("HTML export direction", () => {
+  it("opens a Hebrew note right-to-left with lang=he", async () => {
+    const html = await renderHtmlDocument("# כותרת\n\nפסקה בעברית עם a few English words.", { title: "פתק" });
+    expect(html).toMatch(/<html lang="he" dir="rtl"/);
+  });
+
+  it("keeps an English note left-to-right", async () => {
+    const html = await renderHtmlDocument("# Title\n\nSome text, then שלום.", { title: "Doc" });
+    expect(html).toMatch(/<html lang="en" dir="ltr"/);
+  });
+
+  it("ignores leading code when deciding, and honours an explicit dir", async () => {
+    const md = "```js\nconst x = 1;\n```\n\n# פתק\n";
+    expect(await renderHtmlDocument(md, { title: "Doc" })).toMatch(/dir="rtl"/);
+    expect(await renderHtmlDocument(md, { title: "Doc", dir: "ltr", lang: "en" })).toMatch(/<html lang="en" dir="ltr"/);
+  });
+});

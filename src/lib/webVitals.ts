@@ -1,166 +1,158 @@
 /**
- * Web Vitals reporter — in-house implementation using the PerformanceObserver
- * API directly so we don't pull in the `web-vitals` npm package (~3 KB
- * gzipped, but every byte counts for a markdown editor's main bundle).
+ * Web Vitals, measured and kept on this device (plan 12.4).
  *
- * Reports three Core Web Vitals:
- *   - **LCP** (Largest Contentful Paint) — when the largest above-the-fold
- *     element renders. Good: < 2.5s.
- *   - **CLS** (Cumulative Layout Shift) — sum of unexpected layout shifts.
- *     Good: < 0.1.
- *   - **INP** (Interaction to Next Paint) — slowest interaction during the
- *     session. Good: < 200ms. Approximated here via PerformanceEventTiming.
+ * An in-house implementation on PerformanceObserver (the `web-vitals`
+ * package isn't a dependency). Five metrics:
+ *   - **LCP** Largest Contentful Paint — good ≤ 2.5 s
+ *   - **CLS** Cumulative Layout Shift (no recent input) — good ≤ 0.1
+ *   - **INP** Interaction to Next Paint (slowest event this session) — good ≤ 200 ms
+ *   - **FCP** First Contentful Paint — good ≤ 1.8 s
+ *   - **TTFB** Time to First Byte (navigation timing) — good ≤ 800 ms
  *
- * Honors the same opt-out as `telemetry.ts`: if the user set
- * `lumen.telemetry.optOut = "1"`, no observers are installed.
+ * The values are never sent anywhere — not even when error reports are on.
+ * They live in memory and are shown in the Runtime metrics panel. A sample
+ * carries no page address (a note's path can be in it).
  *
- * The reporter is a no-op in browsers without PerformanceObserver. It
- * does NOT send anywhere by default — the consumer wires a sink via
- * `reportWebVitals(sink)`. The Sentry/telemetry layer can adopt it.
+ * Every observer uses `buffered: true`, so this module can load lazily
+ * after the first paint and still see the page-load entries.
  */
+
+export type VitalName = "LCP" | "CLS" | "INP" | "FCP" | "TTFB";
 
 export interface VitalsSample {
   /** Metric name. */
-  name: "LCP" | "CLS" | "INP";
-  /** Metric value (ms for LCP/INP, unitless score for CLS). */
+  name: VitalName;
+  /** Metric value (ms, except CLS: a unitless score). */
   value: number;
-  /** Rating against Web Vitals thresholds. */
+  /** Rating against the Web Vitals thresholds. */
   rating: "good" | "needs-improvement" | "poor";
-  /** Page URL at the time of measurement. */
-  url: string;
 }
 
-const OPT_OUT_KEY = "lumen.telemetry.optOut";
+/** [good up to, needs-improvement up to] — above is poor. */
+const THRESHOLDS: Record<VitalName, [number, number]> = {
+  LCP: [2500, 4000],
+  CLS: [0.1, 0.25],
+  INP: [200, 500],
+  FCP: [1800, 3000],
+  TTFB: [800, 1800],
+};
 
-function isOptedOut(): boolean {
-  try {
-    return localStorage.getItem(OPT_OUT_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
+export const VITAL_NAMES: readonly VitalName[] = ["LCP", "FCP", "TTFB", "INP", "CLS"];
 
-function rate(name: VitalsSample["name"], v: number): VitalsSample["rating"] {
-  if (name === "LCP") {
-    if (v <= 2500) return "good";
-    if (v <= 4000) return "needs-improvement";
-    return "poor";
-  }
-  if (name === "CLS") {
-    if (v <= 0.1) return "good";
-    if (v <= 0.25) return "needs-improvement";
-    return "poor";
-  }
-  // INP
-  if (v <= 200) return "good";
-  if (v <= 500) return "needs-improvement";
+function rate(name: VitalName, v: number): VitalsSample["rating"] {
+  const [good, ni] = THRESHOLDS[name];
+  if (v <= good) return "good";
+  if (v <= ni) return "needs-improvement";
   return "poor";
 }
 
 let installed = false;
 const observers: PerformanceObserver[] = [];
 
+function observe(type: string, cb: (list: PerformanceObserverEntryList) => void, extra: Record<string, unknown> = {}): void {
+  try {
+    const o = new PerformanceObserver(cb);
+    o.observe({ type, buffered: true, ...extra } as PerformanceObserverInit);
+    observers.push(o);
+  } catch {
+    /* why: entry type not supported by this browser */
+  }
+}
+
 /**
- * Install Web Vitals observers. Idempotent. Safe to call from main.tsx.
+ * Install the observers. Idempotent; a no-op without PerformanceObserver.
  *
- * @param sink invoked once per metric event. Caller decides where to send.
+ * @param sink invoked for every new value of a metric.
  */
 export function reportWebVitals(sink: (sample: VitalsSample) => void): void {
   if (installed) return;
   if (typeof window === "undefined") return;
   if (typeof PerformanceObserver === "undefined") return;
-  if (isOptedOut()) return;
   installed = true;
+  const emit = (name: VitalName, value: number) => sink({ name, value, rating: rate(name, value) });
 
-  const url = () => window.location.href;
+  // LCP — the latest entry is the canonical value.
+  observe("largest-contentful-paint", (list) => {
+    const entries = list.getEntries();
+    const last = entries[entries.length - 1] as (PerformanceEntry & { renderTime: number; loadTime: number }) | undefined;
+    if (!last) return;
+    emit("LCP", last.renderTime || last.loadTime || last.startTime || 0);
+  });
 
-  // LCP — the largest contentful paint entry. Multiple entries may fire
-  // as bigger elements render; the latest is the canonical value.
-  try {
-    const lcpObserver = new PerformanceObserver((list) => {
-      const entries = list.getEntries();
-      const last = entries[entries.length - 1] as
-        | PerformanceEntry & { renderTime: number; loadTime: number }
-        | undefined;
-      if (!last) return;
-      const value = last.renderTime || last.loadTime || 0;
-      sink({ name: "LCP", value, rating: rate("LCP", value), url: url() });
-    });
-    lcpObserver.observe({
-      type: "largest-contentful-paint",
-      buffered: true,
-    } as PerformanceObserverInit);
-    observers.push(lcpObserver);
-  } catch {
-    /* not supported (older browser) */
-  }
+  // CLS — layout shifts not caused by the user's own input.
+  let cls = 0;
+  observe("layout-shift", (list) => {
+    for (const entry of list.getEntries()) {
+      const e = entry as PerformanceEntry & { value: number; hadRecentInput: boolean };
+      if (!e.hadRecentInput) cls += e.value;
+    }
+    emit("CLS", cls);
+  });
 
-  // CLS — accumulate non-input-triggered layout shifts.
-  try {
-    let clsValue = 0;
-    const clsObserver = new PerformanceObserver((list) => {
+  // INP — slowest event-timing entry seen this session (running maximum).
+  let worst = 0;
+  observe(
+    "event",
+    (list) => {
       for (const entry of list.getEntries()) {
-        const e = entry as PerformanceEntry & {
-          value: number;
-          hadRecentInput: boolean;
-        };
-        if (!e.hadRecentInput) clsValue += e.value;
-      }
-      sink({
-        name: "CLS",
-        value: clsValue,
-        rating: rate("CLS", clsValue),
-        url: url(),
-      });
-    });
-    clsObserver.observe({
-      type: "layout-shift",
-      buffered: true,
-    } as PerformanceObserverInit);
-    observers.push(clsObserver);
-  } catch {
-    /* not supported */
-  }
-
-  // INP — slowest event-timing entry seen this session.
-  try {
-    let worstINP = 0;
-    const inpObserver = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) {
-        const e = entry as PerformanceEventTiming;
-        if (e.duration > worstINP) {
-          worstINP = e.duration;
-          sink({
-            name: "INP",
-            value: worstINP,
-            rating: rate("INP", worstINP),
-            url: url(),
-          });
+        if (entry.duration > worst) {
+          worst = entry.duration;
+          emit("INP", worst);
         }
       }
-    });
-    inpObserver.observe({
-      type: "event",
-      buffered: true,
-      durationThreshold: 16,
-    } as PerformanceObserverInit);
-    observers.push(inpObserver);
-  } catch {
-    /* not supported */
-  }
+    },
+    { durationThreshold: 16 },
+  );
+
+  // FCP — the first-contentful-paint paint entry.
+  observe("paint", (list) => {
+    for (const entry of list.getEntries()) if (entry.name === "first-contentful-paint") emit("FCP", entry.startTime);
+  });
+
+  // TTFB — responseStart of the navigation (after a prerender's activation).
+  observe("navigation", (list) => {
+    const nav = list.getEntries()[0] as (PerformanceEntry & { responseStart: number; activationStart?: number }) | undefined;
+    if (!nav || !(nav.responseStart > 0)) return;
+    emit("TTFB", Math.max(0, nav.responseStart - (nav.activationStart ?? 0)));
+  });
 }
 
-/**
- * Tear down all observers. Used by tests; production never needs this.
- */
+// ─── The local store shown in the Runtime metrics panel ─────────────────
+
+let latest: Partial<Record<VitalName, VitalsSample>> = {};
+const listeners = new Set<() => void>();
+
+function record(sample: VitalsSample): void {
+  latest = { ...latest, [sample.name]: sample };
+  for (const fn of [...listeners]) fn();
+}
+
+/** Start measuring into the local store (main.tsx, after the first paint). */
+export function startLocalVitals(): void {
+  reportWebVitals(record);
+}
+
+/** This session's latest value per metric. An immutable snapshot. */
+export function vitalsSnapshot(): Partial<Record<VitalName, VitalsSample>> {
+  return latest;
+}
+
+export function subscribeVitals(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
+/** Tear down all observers and the store. Used by tests. */
 export function disposeWebVitals(): void {
   for (const o of observers) {
     try {
       o.disconnect();
     } catch {
-      /* ignore */
+      /* why: an observer that is already disconnected throws in some browsers */
     }
   }
   observers.length = 0;
   installed = false;
+  latest = {};
+  listeners.clear();
 }

@@ -5,23 +5,12 @@
   max-width: 480px;
   flex-shrink: 0;
   background: hsl(var(--bg-subtle));
-  border-right: 1px solid hsl(var(--border));
+  border-inline-end: 1px solid hsl(var(--border));
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
-.sidebar-resizer {
-  width: 4px;
-  cursor: col-resize;
-  background: transparent;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 5;
-}
-.sidebar-resizer:hover,
-.sidebar-resizer.dragging {
-  background: hsl(var(--accent) / 0.4);
-}
+/* .sidebar-resizer lives in index.css (6 px, with its focus ring, plan 10.1.2). */
 .file-tree-header {
   display: flex;
   align-items: center;
@@ -49,7 +38,7 @@
   color: hsl(var(--fg-subtle));
   font-size: 13px;
   cursor: default;
-  border-left: 2px solid transparent;
+  border-inline-start: 2px solid transparent;
 }
 .file-tree-item:hover {
   background: hsl(var(--bg-muted));
@@ -61,14 +50,14 @@
 .file-tree-item.active {
   background: hsl(var(--accent) / 0.1);
   color: hsl(var(--fg));
-  border-left-color: hsl(var(--accent));
+  border-inline-start-color: hsl(var(--accent));
 }
 .file-tree-name {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-align: left;
+  text-align: start;
   background: transparent;
   border: 0;
   color: inherit;

@@ -5,6 +5,7 @@
  * both render `:::note` callouts, `:::columns`, `[[wikilinks]]`, soft line
  * breaks and heading slugs identically.
  */
+import { headingSlug } from "../lib/slug";
 import { visit } from "unist-util-visit";
 import type { Root as MdastRoot } from "mdast";
 
@@ -53,7 +54,9 @@ export function remarkWikiLinks() {
         child.value.includes("[[")
       ) {
         const replacement = splitWikiText(child.value);
-        if (replacement.length > 1) {
+        // Any link — a text that is nothing but `[[Note]]` (a line or list
+        // item of its own) splits into a single link node.
+        if (replacement.some((n) => n.type === "link")) {
           parent.children.splice(i, 1, ...replacement);
           i += replacement.length - 1;
         }
@@ -92,7 +95,8 @@ function splitWikiText(value: string): MdastTextLike[] {
     const label = (m[2] ?? target).trim();
     out.push({
       type: "link",
-      url: `#${slug(target)}`,
+      // `[[#^id]]` points at the block's own id; anything else at a heading slug.
+      url: `#${target.startsWith("#^") ? target.slice(1) : slug(target)}`,
       title: null,
       data: {
         hProperties: { className: ["wiki-link"], "data-wiki-target": target },
@@ -226,11 +230,7 @@ export function remarkStripFrontmatter() {
   };
 }
 
+/** Heading id for a wiki-link target — the same one rehype-slug gives the heading (T26). */
 export function slug(s: string): string {
-  return s
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
+  return headingSlug(s);
 }

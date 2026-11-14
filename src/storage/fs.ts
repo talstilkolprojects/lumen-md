@@ -104,7 +104,7 @@ export async function saveFile(
         await writable.close();
         return file;
       } catch {
-        /* fall through to Save As */
+        /* why: fall through to Save As */
       }
     }
   }
@@ -177,7 +177,7 @@ export function convertImported(name: string, raw: string): string {
     try {
       isArray = Array.isArray(JSON.parse(trimmed));
     } catch {
-      /* malformed json — keep as code block */
+      /* why: malformed json — keep as code block */
     }
     if (isArray) {
       return `# ${name}\n\n\`\`\`json-table title="${name}"\n${trimmed}\n\`\`\`\n`;

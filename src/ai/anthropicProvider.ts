@@ -11,6 +11,7 @@
  */
 
 import type { ChatMessage, ChatOptions } from "./llm";
+import { assertCloudAllowed } from "./policy";
 import { getProviderKey, AiError, PROVIDER_DEFAULT_MODELS, withRequestLimit } from "./llm";
 
 const API_URL = "https://api.anthropic.com/v1/messages";
@@ -112,6 +113,7 @@ export async function chatAnthropic(
   messages: ChatMessage[],
   opts: ChatOptions = {},
 ): Promise<string> {
+  assertCloudAllowed("Anthropic (Claude)");
   const res = await fetch(API_URL, {
     method: "POST",
     headers: headers(),
@@ -137,6 +139,7 @@ export async function* chatAnthropicStream(
   messages: ChatMessage[],
   opts: ChatOptions = {},
 ): AsyncGenerator<string, void, undefined> {
+  assertCloudAllowed("Anthropic (Claude)");
   const res = await fetch(API_URL, {
     method: "POST",
     headers: headers(),
@@ -178,7 +181,7 @@ export async function* chatAnthropicStream(
         const delta = json?.delta?.text;
         if (delta) yield delta;
       } catch {
-        /* skip non-JSON keep-alive lines */
+        /* why: skip non-JSON keep-alive lines */
       }
     }
   }
@@ -204,6 +207,7 @@ export async function anthropicWebResearch(
   messages: ChatMessage[],
   opts: ChatOptions & { maxSearches?: number; charge?: () => void } = {},
 ): Promise<CitedBlock[]> {
+  assertCloudAllowed("Anthropic (Claude)");
   // The web search tool needs a current model: an explicit or configured
   // Claude 3.x choice falls back to the default (Sonnet 5.5).
   const configured = getAnthropicModel(opts);

@@ -1,9 +1,9 @@
 /**
- * webVitals.ts — verify the rating logic, opt-out short-circuit, and the
- * observer wiring degrades gracefully on browsers without PerformanceObserver.
+ * webVitals.ts — the rating logic, the local-only store (plan 12.4: never
+ * sent), and graceful degradation without PerformanceObserver.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { reportWebVitals, disposeWebVitals, type VitalsSample } from "../lib/webVitals";
+import { reportWebVitals, disposeWebVitals, startLocalVitals, subscribeVitals, vitalsSnapshot, type VitalsSample } from "../lib/webVitals";
 
 describe("reportWebVitals", () => {
   let originalPO: typeof PerformanceObserver | undefined;
@@ -24,22 +24,69 @@ describe("reportWebVitals", () => {
     }
   });
 
-  it("is a no-op when the user opted out of telemetry", () => {
-    localStorage.setItem("lumen.telemetry.optOut", "1");
-    const sink = vi.fn();
-    // Even with a PerformanceObserver mock that fires immediately, opt-out wins.
-    const observed: PerformanceObserverInit[] = [];
+  it("measures on this device only: no request, no beacon — whatever the monitoring consent", () => {
+    localStorage.setItem("lumen.monitoring.consent", "1");
+    const fetchSpy = vi.fn();
+    const beacon = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    Object.defineProperty(navigator, "sendBeacon", { configurable: true, value: beacon });
+    const callbacks = new Map<string, (l: PerformanceObserverEntryList) => void>();
     class MockPO {
+      private cb: (l: PerformanceObserverEntryList) => void;
+      constructor(cb: (l: PerformanceObserverEntryList) => void) {
+        this.cb = cb;
+      }
       observe(opts: PerformanceObserverInit) {
-        observed.push(opts);
+        callbacks.set(opts.type ?? "", this.cb);
       }
       disconnect() {}
     }
     (globalThis as { PerformanceObserver?: unknown }).PerformanceObserver =
       MockPO as unknown as typeof PerformanceObserver;
-    reportWebVitals(sink);
-    expect(observed).toEqual([]);
-    expect(sink).not.toHaveBeenCalled();
+    startLocalVitals();
+    callbacks.get("largest-contentful-paint")?.({
+      getEntries: () => [{ renderTime: 1200, loadTime: 0 }],
+    } as unknown as PerformanceObserverEntryList);
+    expect(vitalsSnapshot().LCP).toEqual({ name: "LCP", value: 1200, rating: "good" });
+    // A sample carries no page address (a note's path can be in it).
+    expect(Object.keys(vitalsSnapshot().LCP ?? {}).sort()).toEqual(["name", "rating", "value"]);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(beacon).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+    Reflect.deleteProperty(navigator, "sendBeacon");
+  });
+
+  it("records FCP and TTFB, and notifies subscribers of the local store", () => {
+    const callbacks = new Map<string, (l: PerformanceObserverEntryList) => void>();
+    const observed: PerformanceObserverInit[] = [];
+    class MockPO {
+      private cb: (l: PerformanceObserverEntryList) => void;
+      constructor(cb: (l: PerformanceObserverEntryList) => void) {
+        this.cb = cb;
+      }
+      observe(opts: PerformanceObserverInit) {
+        observed.push(opts);
+        callbacks.set(opts.type ?? "", this.cb);
+      }
+      disconnect() {}
+    }
+    (globalThis as { PerformanceObserver?: unknown }).PerformanceObserver =
+      MockPO as unknown as typeof PerformanceObserver;
+    const seen = vi.fn();
+    subscribeVitals(seen);
+    startLocalVitals();
+    // Every observer is buffered: the module loads after the first paint.
+    expect(observed.map((o) => o.type).sort()).toEqual(["event", "largest-contentful-paint", "layout-shift", "navigation", "paint"]);
+    expect(observed.every((o) => o.buffered === true)).toBe(true);
+    callbacks.get("paint")?.({
+      getEntries: () => [{ name: "first-paint", startTime: 900 }, { name: "first-contentful-paint", startTime: 2000 }],
+    } as unknown as PerformanceObserverEntryList);
+    callbacks.get("navigation")?.({
+      getEntries: () => [{ responseStart: 1900, activationStart: 0 }],
+    } as unknown as PerformanceObserverEntryList);
+    expect(vitalsSnapshot().FCP).toEqual({ name: "FCP", value: 2000, rating: "needs-improvement" });
+    expect(vitalsSnapshot().TTFB).toEqual({ name: "TTFB", value: 1900, rating: "poor" });
+    expect(seen).toHaveBeenCalledTimes(2);
   });
 
   it("is a no-op in environments without PerformanceObserver", () => {

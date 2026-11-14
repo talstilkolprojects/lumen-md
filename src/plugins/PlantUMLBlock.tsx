@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { sanitizeSvgMarkup } from "../lib/markupSanitizer";
-import { fetchWithRetry } from "../lib/fetchRetry";
 import { toTrustedHTML } from "../lib/trustedTypes";
+import { t } from "../i18n";
+import { KrokiBlockedError, optInKroki, renderViaKroki } from "./plantumlPolicy";
 
 interface Props {
   source: string;
@@ -20,21 +21,9 @@ const cache = new Map<string, Cached>();
 async function renderPlantUML(source: string): Promise<string> {
   const cached = cache.get(source);
   if (cached) return cached.svg;
-  // Kroki public service: POST raw PlantUML text, receive SVG.
-  const res = await fetchWithRetry(
-    "https://kroki.io/plantuml/svg",
-    {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: source,
-    },
-    { label: "plantuml.render", maxRetries: 2, baseDelayMs: 500, maxDelayMs: 2000 },
-  );
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `Kroki returned ${res.status}`);
-  }
-  const svg = await res.text();
+  // Kroki public service (POST the PlantUML text, receive SVG) — only as the
+  // AI policy allows, or for a diagram the user chose to send (plan 6.17).
+  const svg = await renderViaKroki(source);
   cache.set(source, { source, svg });
   if (cache.size > MAX_CACHE) {
     const first = cache.keys().next().value;
@@ -48,6 +37,10 @@ export default function PlantUMLBlock({ source }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [state, setState] = useState<RenderState>("idle");
   const [durationMs, setDurationMs] = useState<number | null>(null);
+  /** The policy kept this diagram on the device (no request was made). */
+  const [blocked, setBlocked] = useState(false);
+  /** Bumped when the user chooses to send this diagram. */
+  const [sendSeq, setSendSeq] = useState(0);
   const cleanSource = useMemo(() => source.trim(), [source]);
 
   const statusText = (() => {
@@ -69,6 +62,7 @@ export default function PlantUMLBlock({ source }: Props) {
     setDurationMs(null);
     setError(null);
     setSvg(null);
+    setBlocked(false);
     const cached = cache.get(cleanSource);
     if (cached) {
       setSvg(cached.svg);
@@ -85,6 +79,11 @@ export default function PlantUMLBlock({ source }: Props) {
         }
       })
       .catch((e: Error) => {
+        if (!cancelled && e instanceof KrokiBlockedError) {
+          setBlocked(true);
+          setState("idle");
+          return;
+        }
         if (!cancelled) {
           setError(e.message);
           setState("failed");
@@ -93,13 +92,34 @@ export default function PlantUMLBlock({ source }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [source]);
+  }, [source, sendSeq]);
+
+  if (blocked) {
+    return (
+      <div className="mermaid-block" data-testid="plantuml-blocked">
+        <div style={{ padding: "1rem", fontSize: 13, color: "hsl(var(--fg-muted))", display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
+          <span>{t("plantuml.blocked")}</span>
+          <button
+            type="button"
+            className="icon-btn"
+            data-testid="plantuml-send"
+            onClick={() => {
+              optInKroki(cleanSource);
+              setSendSeq((n) => n + 1);
+            }}
+          >
+            {t("plantuml.send")}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
       <div className="mermaid-block">
         <div className="mermaid-error">
-          ⚠︎ PlantUML error (rendered via kroki.io):{"\n"}{error}
+          {t("block.plantuml.error")}{"\n"}{error}
         </div>
       </div>
     );
@@ -117,7 +137,7 @@ export default function PlantUMLBlock({ source }: Props) {
           textAlign: "center",
         }}
       >
-        Rendering PlantUML…
+        {t("block.plantuml.rendering")}
       </div>
     );
   }

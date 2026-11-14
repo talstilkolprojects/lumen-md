@@ -2,25 +2,21 @@
  * Voice → text transcription (γ.4 / F2).
  *
  * Two backends:
- *   - **Cloud** (default): POSTs the audio blob to OpenAI's
- *     `/v1/audio/transcriptions` (`whisper-1` model). Fast (≤5 s for a
- *     30 s memo), needs an API key.
- *   - **Local** (Privacy Mode): dynamic-imports
- *     `@xenova/transformers` and runs `Xenova/whisper-tiny.en` on the
- *     device. Slower (~30 s for 30 s of audio on a recent laptop) but
- *     no network — the audio never leaves the browser.
+ *   - **Local** (the default): Whisper through transformers.js in a Web
+ *     Worker (./transformersEngine.ts) — multilingual, on WebGPU when the
+ *     GPU is usable and on wasm otherwise. The audio never leaves the
+ *     browser. First use downloads the model (40 MB – 800 MB by device).
+ *   - **Cloud**: POSTs the audio blob to OpenAI's `/v1/audio/transcriptions`
+ *     (`whisper-1`). Only under the `cloud` AI policy, or under
+ *     `local-first` when the local path fails.
  *
- * The choice is driven by `useAppStore.useLocalAi`. Both paths return
- * the same `TranscribeResult` shape so the caller stays branch-free.
- *
- * The summary step is in `summarizeMemo()` — it routes through the
- * existing `chat()` so Privacy Mode also keeps the summary on-device
- * (Llama-3 via web-llm).
+ * Both paths return the same `TranscribeResult` shape so the caller stays
+ * branch-free. The summary step is in `summarizeMemo()` — it routes
+ * through `chat()`, so it follows the same policy.
  */
 
-import { useAppStore } from "../store/useStore";
-import { chat, getAiKey, AiError } from "./llm";
-import { PROMPTS } from "./prompts";
+import { getAiKey, AiError } from "./llm";
+import { assertCloudAllowed, getAiPolicy } from "./policy";
 import { log } from "../lib/logger";
 import { fetchWithRetry } from "../lib/fetchRetry";
 
@@ -29,6 +25,12 @@ export interface TranscribeOptions {
   language?: string;
   /** AbortSignal for cancelling long-running Whisper jobs. */
   signal?: AbortSignal;
+  /**
+   * Transcribe on this device only, whatever the AI policy: no cloud, no
+   * local-first fallback. Dictation's recorded fallback (plan 6.1) uses it
+   * because its UI says the audio stays on the device.
+   */
+  local?: boolean;
 }
 
 export interface TranscribeResult {
@@ -44,18 +46,23 @@ const OPENAI_TRANSCRIPTION_URL =
   "https://api.openai.com/v1/audio/transcriptions";
 
 /**
- * Run Whisper on the supplied audio blob. Routes to local or cloud
- * based on Privacy Mode.
+ * Run Whisper on the supplied audio blob. Local by default; the cloud
+ * only under the `cloud` policy, or as the `local-first` fallback.
  */
 export async function transcribe(
   blob: Blob,
   opts: TranscribeOptions = {},
 ): Promise<TranscribeResult> {
-  const useLocal = useAppStore.getState().useLocalAi;
+  const policy = getAiPolicy();
   const start = performance.now();
-  if (useLocal) {
-    const text = await transcribeLocal(blob);
-    return { text, backend: "local", ms: performance.now() - start };
+  if (policy !== "cloud" || opts.local) {
+    try {
+      const text = await transcribeLocal(blob, opts);
+      return { text, backend: "local", ms: performance.now() - start };
+    } catch (err) {
+      if (opts.local || policy === "local-only" || opts.signal?.aborted) throw err;
+      log.warn("local transcription failed; trying the cloud (local-first)", err);
+    }
   }
   const text = await transcribeCloud(blob, opts);
   return { text, backend: "cloud", ms: performance.now() - start };
@@ -65,6 +72,7 @@ async function transcribeCloud(
   blob: Blob,
   opts: TranscribeOptions,
 ): Promise<string> {
+  assertCloudAllowed("OpenAI Whisper transcription");
   const key = getAiKey(); // throws AiError("NO_KEY") if missing
   const form = new FormData();
   form.append("file", blob, "memo.webm");
@@ -96,64 +104,32 @@ async function transcribeCloud(
 }
 
 /**
- * Local fallback via `@xenova/transformers`. The library is
- * dynamic-imported so it's not in the main bundle — first invocation
- * downloads ~75 MB of the whisper-tiny model into the cache.
- *
- * Implementation note: the `pipeline()` API takes a Blob/ArrayBuffer
- * URL. We hand it the in-memory blob URL we just made.
+ * Local Whisper: decode the recording to 16 kHz mono on the main thread
+ * (workers have no AudioContext), then transcribe in the transformers.js
+ * worker. A Whisper language code is an ISO-639-1 code ("he"); callers may
+ * pass a BCP-47 tag ("he-IL"), which is reduced here.
  */
-async function transcribeLocal(blob: Blob): Promise<string> {
-  let pipelineFn: PipelineLoader;
-  try {
-    // String-built specifier so TS doesn't try to resolve the optional
-    // peer dep at compile time. The package is only installed in
-    // deployments that actually want local Whisper.
-    const specifier = "@xenova/transformers";
-    const xenova = (await import(/* @vite-ignore */ specifier)) as {
-      pipeline: PipelineLoader;
-    };
-    pipelineFn = xenova.pipeline;
-  } catch (err) {
-    log.warn("local whisper unavailable", err);
-    throw new AiError(
-      "API_ERROR",
-      "Local transcription requires `@xenova/transformers`. Install it or turn off Privacy Mode.",
-    );
-  }
-  const whisper = (await pipelineFn(
-    "automatic-speech-recognition",
-    "Xenova/whisper-tiny.en",
-  )) as (input: ArrayBuffer) => Promise<{ text: string } | { text: string }[]>;
-  const buf = await blob.arrayBuffer();
-  const out = await whisper(buf);
-  const text = Array.isArray(out) ? out[0]?.text : out.text;
-  if (typeof text !== "string") {
-    throw new AiError("PARSE_ERROR", "Local whisper returned no text");
-  }
-  return text.trim();
+async function transcribeLocal(blob: Blob, opts: TranscribeOptions): Promise<string> {
+  const { decodeAudioTo16k, transcribeAudio } = await import("./transformersEngine");
+  const samples = await decodeAudioTo16k(blob);
+  if (!samples.length) throw new AiError("PARSE_ERROR", "The recording is empty.");
+  const language = opts.language ? opts.language.split(/[-_]/)[0].toLowerCase() : undefined;
+  const out = await transcribeAudio(samples, { language, signal: opts.signal });
+  if (typeof out.text !== "string") throw new AiError("PARSE_ERROR", "Local whisper returned no text");
+  return out.text.trim();
 }
-
-type PipelineLoader = (
-  task: string,
-  model: string,
-) => Promise<unknown>;
 
 /**
  * Two-bullet summary of a transcript. Routes through `chat()` so it
  * honors Privacy Mode (local Llama via web-llm) automatically.
  */
-export async function summarizeMemo(transcript: string): Promise<string> {
+export async function summarizeMemo(transcript: string, signal?: AbortSignal): Promise<string> {
   if (!transcript.trim()) return "";
   // Pays for itself when sent (ownPrompt), not attributed to a palette
   // command that may be waiting in a dialog at the same time.
-  return chat(
-    [
-      { role: "system", content: PROMPTS.summarize },
-      { role: "user", content: transcript },
-    ],
-    { maxTokens: 120, ownPrompt: true },
-  );
+  // Plan 5.5: the `memo-summarizer` agent, through the runtime.
+  const [{ runAgentOrThrow }, { memoSummarizerAgent }] = await Promise.all([import("../agents/runtime"), import("../agents/defs")]);
+  return runAgentOrThrow(memoSummarizerAgent, { text: transcript }, { ownPrompt: true, signal });
 }
 
 /**

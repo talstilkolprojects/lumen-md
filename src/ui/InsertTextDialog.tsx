@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useFocusTrap } from "./useFocusTrap";
 import { createRoot } from "react-dom/client";
 import { t } from "../i18n";
 import { smartDetect, renderAs, ALL_KINDS, type DetectedKind } from "../data/smartDetect";
@@ -57,15 +58,13 @@ function InsertTextDialogImpl({
 
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
-  const previousFocus = useRef<Element | null>(null);
 
   useEffect(() => {
-    previousFocus.current = document.activeElement;
     setTimeout(() => taRef.current?.focus(), 0);
-    return () => {
-      (previousFocus.current as HTMLElement | null)?.focus?.();
-    };
   }, []);
+
+  // Focus stays in the dialog and returns on close; Escape cancels (plan 10.1).
+  useFocusTrap(dialogRef, { onEscape: () => onResolve(null) });
 
   // Auto-detect runs every time the input changes.
   const detection = useMemo(() => smartDetect(text), [text]);
@@ -86,10 +85,7 @@ function InsertTextDialogImpl({
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onResolve(null);
-      } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         confirm();
       }
@@ -223,6 +219,7 @@ function InsertTextDialogImpl({
               <input
                 value={codeLang || detection.codeLang || ""}
                 onChange={(e) => setCodeLang(e.target.value)}
+                // i18n-allow: an example language code, the same in every language
                 placeholder="ts"
                 aria-label={t("insertText.codeLang")}
                 style={{
@@ -314,7 +311,7 @@ export function openInsertTextDialog(): Promise<InsertTextResult | null> {
       try {
         root.unmount();
       } catch {
-        // double-unmount in StrictMode is harmless
+        // why: double-unmount in StrictMode is harmless
       }
       host.remove();
     };

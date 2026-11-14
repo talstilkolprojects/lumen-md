@@ -41,7 +41,7 @@ describe("recordAudit", () => {
     // `vi.stubEnv` can't reach this module's static read. Use the
     // explicit test hook instead.
     mod.__setAuditConfigForTesting({
-      endpoint: "https://audit.lumen.md",
+      endpoint: "https://audit.example.com",
       bearer: "secret-token",
     });
     mod.recordAudit("user-1", "doc.publish", {
@@ -51,7 +51,7 @@ describe("recordAudit", () => {
 
     await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
     const [url, init] = fetchSpy.mock.calls[0];
-    expect(url).toBe("https://audit.lumen.md/audit");
+    expect(url).toBe("https://audit.example.com/audit");
     const initWithHeaders = init as RequestInit;
     expect(initWithHeaders.method).toBe("POST");
     expect((initWithHeaders.headers as Record<string, string>).Authorization).toBe(
@@ -72,7 +72,7 @@ describe("recordAudit", () => {
     vi.stubGlobal("fetch", fetchSpy);
     const mod = await import("../lib/audit");
     const { useAuth } = await import("../auth/useAuth");
-    mod.__setAuditConfigForTesting({ endpoint: "https://audit.lumen.md", bearer: "tok" });
+    mod.__setAuditConfigForTesting({ endpoint: "https://audit.example.com", bearer: "tok" });
     const bodyOf = (i: number) => JSON.parse((fetchSpy.mock.calls[i][1] as RequestInit).body as string);
 
     // SSO org member → the organization (what the org audit log queries).
@@ -98,7 +98,7 @@ describe("recordAudit", () => {
     vi.stubGlobal("fetch", fetchSpy);
     const mod = await import("../lib/audit");
     const { useAuth } = await import("../auth/useAuth");
-    mod.__setAuditConfigForTesting({ endpoint: "https://audit.lumen.md" });
+    mod.__setAuditConfigForTesting({ endpoint: "https://audit.example.com" });
     const provider = useAuth.getState().provider;
 
     useAuth.setState({ provider: { ...provider, getAccessToken: async () => "user-jwt" } });
@@ -137,7 +137,7 @@ describe("listAudit", () => {
     vi.stubGlobal("fetch", fetchSpy);
     const mod = await import("../lib/audit");
     mod.__setAuditConfigForTesting({
-      endpoint: "https://audit.lumen.md",
+      endpoint: "https://audit.example.com",
       bearer: "tok",
     });
     const rows = await mod.listAudit({

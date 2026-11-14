@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { t } from "../i18n";
 import "./PromptDialog.css";
+import { useFocusTrap } from "./useFocusTrap";
 
 /**
  * Lightweight, themed replacement for native window.prompt / confirm / alert.
@@ -59,10 +60,8 @@ function PromptDialogImpl({
   const selectRef = useRef<HTMLSelectElement | null>(null);
   const okRef = useRef<HTMLButtonElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
-  const previousFocusRef = useRef<Element | null>(null);
 
   useEffect(() => {
-    previousFocusRef.current = document.activeElement;
     // Initial focus: input for prompt, OK for confirm/alert.
     setTimeout(() => {
       if (kind === "prompt" && choices && choices.length) {
@@ -74,34 +73,7 @@ function PromptDialogImpl({
         okRef.current?.focus();
       }
     }, 0);
-    return () => {
-      const prev = previousFocusRef.current as HTMLElement | null;
-      prev?.focus?.();
-    };
   }, [kind, choices]);
-
-  // Focus trap inside the dialog.
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Tab" && dialogRef.current) {
-        const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
-          'button, input, select, [tabindex]:not([tabindex="-1"])',
-        );
-        if (focusables.length === 0) return;
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    }
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
 
   function submit() {
     if (kind === "prompt") onResolve(value);
@@ -114,6 +86,9 @@ function PromptDialogImpl({
     else if (kind === "confirm") onResolve(false);
     else onResolve(null);
   }
+
+  // Focus stays in the dialog (Tab cycles, focus returns on close); Escape cancels.
+  useFocusTrap(dialogRef, { onEscape: cancel });
 
   return (
     <div
@@ -188,9 +163,6 @@ function PromptDialogImpl({
             type="button"
             className="prompt-btn prompt-btn-ok"
             onClick={submit}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") cancel();
-            }}
           >
             {okLabel ?? t("dialog.ok")}
           </button>
@@ -209,7 +181,7 @@ function show<T>(kind: Kind, opts: DialogOpts): Promise<T> {
       try {
         root.unmount();
       } catch {
-        /* ignore */
+        /* why: the root may already be unmounted by an earlier close */
       }
       host.remove();
     };

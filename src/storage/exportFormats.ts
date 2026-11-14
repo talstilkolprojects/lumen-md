@@ -12,6 +12,8 @@
  */
 
 import { zip } from "./zip";
+import { pageFileSlug } from "../lib/slug";
+import { firstRtlLanguage, firstStrongDirection, hasRtl, markdownBaseDirection } from "../lib/textDirection";
 
 function escapeHtml(s: string): string {
   return s
@@ -112,14 +114,51 @@ function escapeRtfInline(s: string): string {
  */
 export function markdownToLatex(md: string): string {
   const lines = md.split(/\r?\n/);
-  const out: string[] = [
-    "\\documentclass{article}",
-    "\\usepackage[utf8]{inputenc}",
-    "\\usepackage{hyperref}",
-    "\\usepackage{listings}",
-    "\\usepackage{amsmath}",
-    "\\begin{document}",
-  ];
+  // Hebrew (or Arabic) anywhere → XeLaTeX + polyglossia, the only engine
+  // that typesets RTL properly; the main language follows the document's
+  // base direction and every paragraph in the other direction is wrapped
+  // in that language's environment (T44).
+  const rtl = hasRtl(md);
+  const base = markdownBaseDirection(md);
+  // The first RTL passage decides, not the first strong character (an
+  // English-first document with Arabic later is Arabic).
+  const rtlLang = firstRtlLanguage(md) === "ar" ? "arabic" : "hebrew";
+  const out: string[] = rtl
+    ? [
+        "% Compile with xelatex (Hebrew/Arabic need fontspec + polyglossia).",
+        "\\documentclass{article}",
+        "\\usepackage{fontspec}",
+        "\\usepackage{polyglossia}",
+        base === "rtl" ? `\\setmainlanguage{${rtlLang}}` : "\\setmainlanguage{english}",
+        base === "rtl" ? "\\setotherlanguage{english}" : `\\setotherlanguage{${rtlLang}}`,
+        "\\setmainfont{Noto Serif}",
+        rtlLang === "hebrew" ? "\\newfontfamily\\hebrewfont[Script=Hebrew]{Noto Serif Hebrew}" : "\\newfontfamily\\arabicfont[Script=Arabic]{Noto Naskh Arabic}",
+        "\\usepackage{hyperref}",
+        "\\usepackage{listings}",
+        "\\usepackage{amsmath}",
+        "\\begin{document}",
+      ]
+    : [
+        "\\documentclass{article}",
+        "\\usepackage[utf8]{inputenc}",
+        "\\usepackage{hyperref}",
+        "\\usepackage{listings}",
+        "\\usepackage{amsmath}",
+        "\\begin{document}",
+      ];
+  const otherLang = base === "rtl" ? "english" : rtlLang;
+  /** Wrap a paragraph whose direction differs from the document's. */
+  const inLang = (tex: string, source: string): string => {
+    if (!rtl) return tex;
+    const d = firstStrongDirection(source);
+    return d && d !== base ? `\\begin{${otherLang}}${tex}\\end{${otherLang}}` : tex;
+  };
+  /** Same, inline (headings, list items): \\textenglish{…} / \\texthebrew{…}. */
+  const inLangInline = (tex: string, source: string): string => {
+    if (!rtl) return tex;
+    const d = firstStrongDirection(source);
+    return d && d !== base ? `\\text${otherLang}{${tex}}` : tex;
+  };
   const fenceAt = createFenceTracker();
   let inList = false;
   for (const line of lines) {
@@ -140,7 +179,7 @@ export function markdownToLatex(md: string): string {
           : h[1].length === 2
             ? "subsection"
             : "subsubsection";
-      out.push(`\\${cmd}{${escapeLatex(h[2])}}`);
+      out.push(`\\${cmd}{${inLangInline(escapeLatex(h[2]), h[2])}}`);
       continue;
     }
     if (/^[-*+]\s/.test(line)) {
@@ -148,7 +187,8 @@ export function markdownToLatex(md: string): string {
         out.push("\\begin{itemize}");
         inList = true;
       }
-      out.push(`\\item ${escapeLatexInline(line.replace(/^[-*+]\s+/, ""))}`);
+      const item = line.replace(/^[-*+]\s+/, "");
+      out.push(`\\item ${inLangInline(escapeLatexInline(item), item)}`);
       continue;
     } else if (inList && line.trim() === "") {
       out.push("\\end{itemize}");
@@ -158,11 +198,22 @@ export function markdownToLatex(md: string): string {
       out.push("");
       continue;
     }
-    out.push(escapeLatexInline(line));
+    out.push(inLang(escapeLatexInline(line), line));
   }
   if (inList) out.push("\\end{itemize}");
   out.push("\\end{document}");
   return out.join("\n");
+}
+
+/** The visible text of rendered HTML: no tags, no entity names (`&amp;` is not Latin text). */
+function visibleText(html: string): string {
+  return html.replace(/<[^>]+>/g, " ").replace(/&(?:#\d+|#x[\da-f]+|[a-z][\da-z]*);/gi, " ");
+}
+
+/** lang for a rendered page body: he / ar by script, else en. */
+function pageLang(html: string): string {
+  const text = visibleText(html);
+  return firstStrongDirection(text) === "rtl" ? firstRtlLanguage(text) ?? "en" : "en";
 }
 
 function escapeLatex(s: string): string {
@@ -398,11 +449,19 @@ export async function markdownToEpubBytes(md: string, title = "Document"): Promi
     .split(/^(?=# )/m)
     .map((s) => s.trim())
     .filter(Boolean);
+  // Language and reading direction (T44): a Hebrew book opens from the
+  // right and reads right-to-left in every reader.
+  const bookDir = markdownBaseDirection(md);
+  // An RTL book's language is its first RTL passage's: frontmatter keys
+  // and code are Latin and would otherwise decide.
+  const bookLang = (bookDir === "rtl" ? firstRtlLanguage(md) : null) ?? "en";
   const chapters = (parts.length ? parts : [md]).map((c, i) => {
     const chTitle = c.match(/^#\s+(.+)$/m)?.[1] ?? `Chapter ${i + 1}`;
+    const dir = markdownBaseDirection(c);
+    const lang = (dir === "rtl" ? firstRtlLanguage(c) : null) ?? (dir === bookDir ? bookLang : "en");
     const xhtml =
       `<?xml version="1.0" encoding="utf-8"?>\n<!DOCTYPE html>\n` +
-      `<html xmlns="http://www.w3.org/1999/xhtml"><head><title>${escapeHtml(chTitle)}</title></head>` +
+      `<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="${lang}" lang="${lang}" dir="${dir}"><head><title>${escapeHtml(chTitle)}</title></head>` +
       `<body>\n${mdToXhtml(c)}\n</body></html>`;
     return { id: `ch${i + 1}`, href: `chapter${i + 1}.xhtml`, title: chTitle, xhtml };
   });
@@ -417,16 +476,16 @@ export async function markdownToEpubBytes(md: string, title = "Document"): Promi
     `<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="bookid">` +
     `<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">` +
     `<dc:identifier id="bookid">${uid}</dc:identifier>` +
-    `<dc:title>${escapeHtml(title)}</dc:title><dc:language>en</dc:language>` +
+    `<dc:title>${escapeHtml(title)}</dc:title><dc:language>${bookLang}</dc:language>` +
     `<meta property="dcterms:modified">1970-01-01T00:00:00Z</meta></metadata>` +
     `<manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>` +
     chapters.map((c) => `<item id="${c.id}" href="${c.href}" media-type="application/xhtml+xml"/>`).join("") +
-    `</manifest><spine>` +
+    `</manifest><spine${bookDir === "rtl" ? ' page-progression-direction="rtl"' : ""}>` +
     chapters.map((c) => `<itemref idref="${c.id}"/>`).join("") +
     `</spine></package>`;
   const nav =
     `<?xml version="1.0" encoding="utf-8"?>\n` +
-    `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>Contents</title></head>` +
+    `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${bookLang}" lang="${bookLang}" dir="${bookDir}"><head><title>Contents</title></head>` +
     `<body><nav epub:type="toc"><ol>` +
     chapters.map((c) => `<li><a href="${c.href}">${escapeHtml(c.title)}</a></li>`).join("") +
     `</ol></nav></body></html>`;
@@ -447,7 +506,7 @@ const SITE_CSS = [
   ":root{--accent:#7c5cff}",
   "*{box-sizing:border-box}body{margin:0;font:16px/1.6 -apple-system,Segoe UI,Roboto,sans-serif;color:#222}",
   ".layout{display:flex;min-height:100vh}",
-  "aside{width:240px;background:#f6f6fb;border-right:1px solid #e5e5ef;padding:24px 16px}",
+  "aside{width:240px;background:#f6f6fb;border-inline-end:1px solid #e5e5ef;padding:24px 16px}",
   "aside ul{list-style:none;margin:0;padding:0}aside li{margin:4px 0}",
   "aside a{color:#444;text-decoration:none;display:block;padding:6px 10px;border-radius:6px}",
   "aside a.active,aside a:hover{background:var(--accent);color:#fff}",
@@ -457,15 +516,6 @@ const SITE_CSS = [
   "pre{background:#1e1e2e;color:#e8e8f0;padding:16px;border-radius:8px;overflow:auto}pre code{background:none}",
   "a{color:var(--accent)}",
 ].join("\n");
-
-function slugify(s: string, fallback: string): string {
-  return (
-    s
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "") || fallback
-  );
-}
 
 /**
  * Build a self-contained static documentation site as a zip: one HTML page per
@@ -480,7 +530,7 @@ export async function markdownToStaticSiteBytes(md: string, siteTitle = "Site"):
   const seen = new Set<string>();
   const pages = (parts.length ? parts : [md]).map((c, i) => {
     const title = c.match(/^#\s+(.+)$/m)?.[1] ?? `Page ${i + 1}`;
-    let slug = slugify(title, `page-${i + 1}`);
+    let slug = pageFileSlug(title, `page-${i + 1}`);
     while (seen.has(slug)) slug = `${slug}-${i}`;
     seen.add(slug);
     return { title, file: `${slug}.html`, body: mdToXhtml(c) };
@@ -491,12 +541,12 @@ export async function markdownToStaticSiteBytes(md: string, siteTitle = "Site"):
     pages
       .map(
         (p) =>
-          `<li><a href="${p.file}"${p.file === active ? ' class="active"' : ""}>${escapeHtml(p.title)}</a></li>`,
+          `<li><a href="${encodeURIComponent(p.file)}"${p.file === active ? ' class="active" aria-current="page"' : ""}>${escapeHtml(p.title)}</a></li>`,
       )
       .join("") +
     `</ul></nav>`;
   const pageHtml = (p: { title: string; file: string; body: string }) =>
-    `<!doctype html><html lang="en"><head><meta charset="utf-8" />` +
+    `<!doctype html><html lang="${pageLang(p.body)}" dir="${firstStrongDirection(visibleText(p.body)) ?? "ltr"}"><head><meta charset="utf-8" />` +
     `<meta name="viewport" content="width=device-width, initial-scale=1" />` +
     `<title>${escapeHtml(p.title)} — ${escapeHtml(siteTitle)}</title>` +
     `<link rel="stylesheet" href="style.css" /></head><body>` +
@@ -506,7 +556,7 @@ export async function markdownToStaticSiteBytes(md: string, siteTitle = "Site"):
   const rss =
     `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel>` +
     `<title>${escapeHtml(siteTitle)}</title><description>${escapeHtml(siteTitle)}</description>` +
-    pages.map((p) => `<item><title>${escapeHtml(p.title)}</title><link>${p.file}</link></item>`).join("") +
+    pages.map((p) => `<item><title>${escapeHtml(p.title)}</title><link>${encodeURIComponent(p.file)}</link></item>`).join("") +
     `</channel></rss>`;
 
   return zip([

@@ -1,0 +1,5 @@
+{
+  "storage.eviction.title": "Safari may delete your notes",
+  "storage.eviction.body": "Safari removes a site's data after 7 days without a visit. Export your vault, or add Lumen to the Home Screen / Dock, where storage is kept.",
+  "storage.eviction.export": "Export vault…"
+}

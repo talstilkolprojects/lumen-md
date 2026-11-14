@@ -5,6 +5,7 @@ import {
   defaultValueCtx,
   editorViewCtx,
   prosePluginsCtx,
+  remarkStringifyOptionsCtx,
 } from "@milkdown/core";
 import { commonmark } from "@milkdown/preset-commonmark";
 import { gfm } from "@milkdown/preset-gfm";
@@ -17,12 +18,14 @@ import { tooltipFactory, TooltipProvider } from "@milkdown/plugin-tooltip";
 import { setBlockType, toggleMark, wrapIn } from "@milkdown/prose/commands";
 import type { EditorView } from "@milkdown/prose/view";
 import { Plugin } from "@milkdown/prose/state";
+import { wysiwygBidiPlugin } from "./wysiwygBidi";
+import { remoteImagePlugin } from "./remoteImageView";
+import { listSpreadFix } from "./milkdownListSpread";
 import { wrapInList } from "prosemirror-schema-list";
 import { dragHandlePlugin } from "./dragHandles";
 import { buildIndentKeymap } from "./keymapExtra";
 import "katex/dist/katex.css";
-import { chat, chatStream, AiError } from "../ai/llm";
-import { PROMPTS } from "../ai/prompts";
+import { AiError } from "../ai/llm";
 import { showAiToast } from "../ui/AiToast";
 import { openAiPrompt } from "../ui/AiInlinePrompt";
 import { log } from "../lib/logger";
@@ -34,8 +37,11 @@ import {
   unregisterWysiwygView,
   wysiwygSuggestPlugins,
 } from "./wysiwygSuggest";
+import { keepWikiLinks, protectEscapedWikiLinks } from "./wysiwygWikiLinks";
+import { wysiwygWikiComplete } from "./wysiwygWikiComplete";
 import { registerPendingEdits, useAppStore } from "../store/useStore";
 import { useAuth } from "../auth/useAuth";
+import { t } from "../i18n";
 
 // Suggesting mode (track changes) works in WYSIWYG too: CriticMarkup ↔
 // marks, edits tracked while the store's suggestingMode is on.
@@ -50,6 +56,8 @@ configureWysiwygSuggest({
 interface Props {
   value: string;
   onChange: (next: string) => void;
+  /** The browser / OS spellchecker (plan 9.2 layer 1), as in the source editor. */
+  spellCheck?: boolean;
 }
 
 const slash = slashFactory("wysiwyg-slash");
@@ -285,21 +293,20 @@ function buildSlashItems(): SlashItem[] {
         const insertPos = state.selection.from;
         v.dispatch(state.tr.insertText(placeholder, insertPos));
 
+        const { aiOperation, isAbort } = await import("../ai/aiAbort");
+        const op = aiOperation(); // Esc / "AI: Cancel" stops the ghostwriter mid-stream
         try {
           let accumulated = "";
-          const stream = chatStream(
-            [
-              { role: "system", content: PROMPTS.ghostwriter },
-              { role: "user", content: promptStr },
-            ],
-            { ownPrompt: true },
-          );
+          const { streamAgent } = await import("../agents/runtime");
+          const { writerAgent } = await import("../agents/defs");
+          const stream = streamAgent(writerAgent, { text: promptStr }, { ownPrompt: true, signal: op.signal });
           // Remove placeholder before streaming
           const removeTr = v.state.tr;
           removeTr.delete(insertPos, insertPos + placeholder.length);
           v.dispatch(removeTr);
 
           for await (const chunk of stream) {
+            if (op.signal.aborted) break; // why: nothing more goes into the note after a cancel
             accumulated += chunk;
             // Replace accumulated text at insert position
             const tr = v.state.tr;
@@ -308,9 +315,16 @@ function buildSlashItems(): SlashItem[] {
             v.dispatch(tr);
           }
         } catch (e) {
-          log.error("WYSIWYG AI stream failed", e);
-          // If placeholder is still there, replace it
           const docText = v.state.doc.textBetween(insertPos, Math.min(insertPos + placeholder.length, v.state.doc.content.size));
+          if (isAbort(e)) {
+            // Cancelled before the first chunk: take the placeholder out and stop quietly.
+            if (docText === placeholder) v.dispatch(v.state.tr.delete(insertPos, insertPos + placeholder.length));
+            return;
+          }
+          log.error("WYSIWYG AI stream failed", e);
+          // 5.6.4: an agent failure opens the suggestions panel (the placeholder is still replaced below).
+          void import("../agents/suggestions").then((m) => m.reportAgentFailure(e, "wysiwyg.aiWrite"));
+          // If placeholder is still there, replace it
           if (docText === placeholder) {
             const errTr = v.state.tr;
             errTr.delete(insertPos, insertPos + placeholder.length);
@@ -319,10 +333,12 @@ function buildSlashItems(): SlashItem[] {
           }
           showAiToast(
             e instanceof AiError && e.code === "NO_KEY"
-              ? "Please configure your AI Key (⌘K → AI Settings)"
-              : "AI Ghostwriter failed — check console for details",
+              ? t("toast.pleaseConfigureYourAiKey")
+              : t("ai.ghostwriter.failed", { error: (e as Error)?.message ?? t("ai.error.unknown") }),
             "error",
           );
+        } finally {
+          op.end();
         }
       },
     },
@@ -439,10 +455,14 @@ function buildSlashMenu(getView: () => EditorView | null): SlashMenuRoot {
         }
         row.dataset.selected = "true";
       });
-      row.addEventListener("mousedown", (e) => {
+      // pointerdown (plan 10.2.1): a tap picks the item like a click. Its
+      // preventDefault also suppresses the compatibility mousedown, so the
+      // editor keeps focus; mousedown is still cancelled for older engines.
+      row.addEventListener("pointerdown", (e) => {
         e.preventDefault();
         commit(item);
       });
+      row.addEventListener("mousedown", (e) => e.preventDefault());
       el.appendChild(row);
     }
   }
@@ -538,19 +558,21 @@ function buildTooltip(getView: () => EditorView | null): HTMLDivElement {
         const instructions = await openAiPrompt("How should the AI rewrite this? (e.g. 'Make it professional', 'Translate to Spanish')");
         if (!instructions) return;
         
+        const { aiOperation, isAbort } = await import("../ai/aiAbort");
+        const op = aiOperation();
         try {
-          const rewritten = await chat(
-            [
-              { role: "system", content: PROMPTS.rewrite },
-              { role: "user", content: `Instruction: ${instructions}\n\nText: ${selectedText}` },
-            ],
-            { ownPrompt: true },
-          );
+          // Plan 5.5: the `rewriter` agent (with the style profile), through the runtime.
+          const [{ runAgentOrThrow }, { rewriterAgent }] = await Promise.all([import("../agents/runtime"), import("../agents/defs")]);
+          const rewritten = await runAgentOrThrow(rewriterAgent, { text: selectedText, extra: { instruction: instructions } }, { ownPrompt: true, signal: op.signal, selection: selectedText });
           dispatch(state.tr.replaceWith(from, to, state.schema.text(rewritten)));
         } catch (e) {
+          if (isAbort(e)) return;
           log.error("WYSIWYG AI rewrite failed", e);
+          if (await import("../agents/suggestions").then((m) => m.reportAgentFailure(e, "wysiwyg.aiRewrite"))) return;
           // A spent quota already showed its own toast.
-          if (!(e instanceof Error && e.name === "AiQuotaExceededError")) showAiToast("AI Rewrite failed", "error");
+          if (!(e instanceof Error && e.name === "AiQuotaExceededError")) showAiToast(t("toast.aiRewriteFailed"), "error");
+        } finally {
+          op.end();
         }
       },
     },
@@ -561,13 +583,14 @@ function buildTooltip(getView: () => EditorView | null): HTMLDivElement {
     b.type = "button";
     b.title = btn.title;
     b.textContent = btn.label;
-    b.addEventListener("mousedown", (e) => {
+    b.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       const view = getView();
       if (!view) return;
       btn.run(view);
       view.focus();
     });
+    b.addEventListener("mousedown", (e) => e.preventDefault());
     el.appendChild(b);
   }
   return el;
@@ -594,8 +617,10 @@ export function splitFrontmatter(md: string): { fm: string; body: string } {
   return { fm: m[0], body: md.slice(m[0].length) };
 }
 
-export default function WysiwygEditor({ value, onChange }: Props) {
+export default function WysiwygEditor({ value, onChange, spellCheck = true }: Props) {
   const hostRef = useRef<HTMLDivElement | null>(null);
+  const spellCheckRef = useRef(spellCheck);
+  spellCheckRef.current = spellCheck;
   const editorRef = useRef<MilkdownEditor | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
@@ -609,6 +634,11 @@ export default function WysiwygEditor({ value, onChange }: Props) {
   const tooltipElRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
   const getView = () => viewRef.current;
+  // Re-read the spellcheck attribute when the setting changes (attributes are evaluated on each view update).
+  useEffect(() => {
+    const view = viewRef.current;
+    if (view) view.dispatch(view.state.tr.setMeta("addToHistory", false));
+  }, [spellCheck]);
 
   // ── Lifecycle sequencing ─────────────────────────────────────────
   // Milkdown's `create()` and `destroy()` are both async, and
@@ -680,7 +710,7 @@ export default function WysiwygEditor({ value, onChange }: Props) {
     try {
       await ed.destroy(true);
     } catch {
-      /* ignore */
+      /* why: the editor may already be torn down by an earlier unmount */
     }
   };
 
@@ -712,7 +742,10 @@ export default function WysiwygEditor({ value, onChange }: Props) {
       const editor = await MilkdownEditor.make()
         .config((ctx) => {
           ctx.set(rootCtx, host);
-          ctx.set(defaultValueCtx, encodeCriticForWysiwyg(body));
+          // An escaped `\[\[x]]` stays escaped (not a wiki link) on the way out.
+          ctx.set(defaultValueCtx, encodeCriticForWysiwyg(protectEscapedWikiLinks(body)));
+          // `[[Note]]` is written back as is, not as `\[\[Note]]`.
+          ctx.update(remarkStringifyOptionsCtx, keepWikiLinks);
           ctx.get(listenerCtx).markdownUpdated((_, md) => {
             // The listener plugin debounces emissions by 200ms and
             // nothing cancels that timer on destroy, so a torn-down (or
@@ -731,7 +764,16 @@ export default function WysiwygEditor({ value, onChange }: Props) {
           // visibility of the handle for the hovered row.
           ctx.update(prosePluginsCtx, (plugins) => [
             ...plugins,
+            // 4.5 — `[[` completes notes, `#` headings, `^` blocks. First, so
+            // Enter / Tab in its menu pick a link (not split or indent).
+            wysiwygWikiComplete(),
             dragHandlePlugin,
+            // T25 — every block reads in the direction of its own text.
+            wysiwygBidiPlugin(),
+            // Plan 2.2 — images from other sites wait for the user.
+            remoteImagePlugin(),
+            // 9.2 layer 1 — the browser / OS spellchecker, Hebrew included, no dictionary in the bundle.
+            new Plugin({ props: { attributes: () => ({ spellcheck: spellCheckRef.current ? "true" : "false" }) } }),
             new Plugin({
               appendTransaction: (trs) => {
                 if (trs.some((t) => t.docChanged || t.storedMarksSet)) pendingSinceRef.current = Date.now();
@@ -878,6 +920,8 @@ export default function WysiwygEditor({ value, onChange }: Props) {
         .use(wysiwygSuggestPlugins)
         .use(commonmark)
         .use(gfm)
+        // After both presets: their list schemas, without the spread check that broke every list.
+        .use(listSpreadFix)
         .use(history)
         .use(listener)
         .use(clipboard)
@@ -892,7 +936,7 @@ export default function WysiwygEditor({ value, onChange }: Props) {
         try {
           await editor.destroy(true);
         } catch {
-          /* ignore */
+          /* why: the editor may already be torn down by an earlier unmount */
         }
         return;
       }

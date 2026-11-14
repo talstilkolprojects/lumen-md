@@ -57,23 +57,9 @@
     </p>
     <button id="clip-page">Save full page</button>
     <button id="clip-selection" class="secondary">Save selection only</button>
+    <button id="highlight" class="secondary">Highlighter on/off</button>
     <a class="options" href="options.html" target="_blank">Settings</a>
 
-    <script>
-      async function run(payload) {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (!tab?.id) return;
-        await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          files: ["contentScript.js"],
-        });
-        await chrome.tabs.sendMessage(tab.id, { type: "lumen-clip-page", ...payload });
-        window.close();
-      }
-      document.getElementById("clip-page").addEventListener("click", () => run({}));
-      document
-        .getElementById("clip-selection")
-        .addEventListener("click", () => run({ selectionOnly: true }));
-    </script>
+    <script src="popup.js"></script>
   </body>
 </html>

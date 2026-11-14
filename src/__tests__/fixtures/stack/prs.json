@@ -1,0 +1,10 @@
+[
+  { "number": 3, "title": "c", "draft": false, "html_url": "https://github.com/o/r/pull/3", "head": { "ref": "c", "sha": "cccccccc1", "repo": { "full_name": "o/r" } }, "base": { "ref": "b", "repo": { "full_name": "o/r" } } },
+  { "number": 1, "title": "a", "draft": false, "html_url": "https://github.com/o/r/pull/1", "head": { "ref": "a", "sha": "aaaaaaaa1", "repo": { "full_name": "o/r" } }, "base": { "ref": "main", "repo": { "full_name": "o/r" } } },
+  { "number": 2, "title": "b", "draft": true, "html_url": "https://github.com/o/r/pull/2", "head": { "ref": "b", "sha": "bbbbbbbb1", "repo": { "full_name": "o/r" } }, "base": { "ref": "a", "repo": { "full_name": "o/r" } } },
+  { "number": 4, "title": "d", "draft": false, "html_url": "https://github.com/o/r/pull/4", "head": { "ref": "d", "sha": "dddddddd1", "repo": { "full_name": "o/r" } }, "base": { "ref": "b", "repo": { "full_name": "o/r" } }, "stack": { "id": 9, "number": 7, "size": 4, "position": 4, "base": { "ref": "main", "sha": "0" } } },
+  { "number": 5, "title": "e", "draft": false, "html_url": "https://github.com/o/r/pull/5", "head": { "ref": "e", "sha": "eeeeeeee1", "repo": { "full_name": "o/r" } }, "base": { "ref": "main", "repo": { "full_name": "o/r" } } },
+  { "number": 6, "title": "fork", "draft": false, "html_url": "https://github.com/o/r/pull/6", "head": { "ref": "x", "sha": "ffffffff1", "repo": { "full_name": "someone/r" } }, "base": { "ref": "main", "repo": { "full_name": "o/r" } } },
+  { "number": 7, "title": "on fork branch name", "draft": false, "html_url": "https://github.com/o/r/pull/7", "head": { "ref": "y", "sha": "99999999", "repo": { "full_name": "o/r" } }, "base": { "ref": "x", "repo": { "full_name": "o/r" } } },
+  { "number": 8, "title": "orphan", "draft": false, "html_url": "https://github.com/o/r/pull/8", "head": { "ref": "z", "sha": "88888888", "repo": { "full_name": "o/r" } }, "base": { "ref": "merged-away", "repo": { "full_name": "o/r" } } }
+]

@@ -9,6 +9,7 @@
 import { useMemo } from "react";
 import { sanitizeSvgMarkup } from "../lib/markupSanitizer";
 import { toTrustedHTML } from "../lib/trustedTypes";
+import { t } from "../i18n";
 
 interface Props {
   source: string;
@@ -48,7 +49,7 @@ export default function LiveSvgBlock({ source, meta }: Props) {
           <span>{status}</span>
         </div>
         <div style={{ padding: "1rem", color: "hsl(var(--fg-muted))" }}>
-          Empty or blocked SVG source.
+          {t("block.liveSvg.empty")}
         </div>
       </div>
     );

@@ -66,7 +66,7 @@ function initWorker() {
       if (success) {
         lastBuildTime = Date.now();
         currentDocCount = docCount;
-        set(IDB_KEY, { builtAt: lastBuildTime, docCount }).catch(() => {});
+        set(IDB_KEY, { builtAt: lastBuildTime, docCount }).catch(() => { /* why: the build time is a hint for the status line; the index itself is in memory */ });
       } else {
         log.error("BM25 build failed in worker", error);
       }
@@ -118,7 +118,7 @@ export async function buildRagIndex(): Promise<void> {
             docs.push({ path: e.path, content });
           }
         } catch {
-          /* skip */
+          /* why: an unreadable note is left out of the index; the rest still build */
         }
       }),
   );

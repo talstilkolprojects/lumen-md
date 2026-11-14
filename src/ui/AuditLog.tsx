@@ -12,7 +12,8 @@
  * still enforces the bearer-token + org-id constraints server-side.
  */
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useFocusTrap } from "./useFocusTrap";
 import { Download, RefreshCcw, X, Filter, Loader2 } from "lucide-react";
 import { listAudit, type AuditRow } from "../lib/audit";
 import { showAiToast } from "./AiToast";
@@ -125,6 +126,10 @@ export function AuditLog({ open, onClose, orgId }: Props) {
     showAiToast(t("audit.exportDone", { count: String(visible.length) }), "success");
   }, [visible, orgId]);
 
+  // Focus stays in the dialog while it is open and returns on close; Escape closes it (plan 10.1).
+  const trapRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(trapRef, { active: open, onEscape: onClose });
+
   if (!open) return null;
 
   if (!entitled) {
@@ -132,6 +137,7 @@ export function AuditLog({ open, onClose, orgId }: Props) {
       <div
         className="cmd-palette-backdrop"
         onClick={onClose}
+        ref={trapRef}
         role="dialog"
         aria-modal="true"
         aria-label={t("audit.title")}
@@ -152,6 +158,7 @@ export function AuditLog({ open, onClose, orgId }: Props) {
     <div
       className="cmd-palette-backdrop"
       onClick={onClose}
+      ref={trapRef}
       role="dialog"
       aria-modal="true"
       aria-label={t("audit.title")}

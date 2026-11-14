@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { buildBM25Index, bm25Search } from "../ai/neuralSearch";
+import { buildBM25Index, bm25Search, tokenize } from "../ai/neuralSearch";
 
 describe("BM25+ Search", () => {
   const docs = [
@@ -53,3 +53,22 @@ describe("BM25+ Search", () => {
     expect(results.length).toBeLessThanOrEqual(2);
   });
 });
+
+describe("tokenize with niqqud", () => {
+  it("keeps pointed Hebrew words whole", () => {
+    expect(tokenize("שָׁלוֹם עוֹלָם")).toEqual(["שלום", "עולם"]);
+    expect(tokenize("בְּרֵאשִׁית בָּרָא")).toEqual(tokenize("בראשית ברא"));
+  });
+  it("still splits on a maqaf and keeps Latin accents", () => {
+    expect(tokenize("בֵּית־סֵפֶר")).toEqual(["בית", "ספר"]);
+    expect(tokenize("Café crème")).toEqual(["café", "crème"]);
+  });
+  it("finds a plain query in a pointed note", () => {
+    const idx = buildBM25Index([
+      { path: "a.md", content: "שָׁלוֹם עוֹלָם וּמַה שְּׁלוֹמְךָ" },
+      { path: "b.md", content: "רשימת קניות לשבוע הבא" },
+    ]);
+    expect(bm25Search("שלום", idx)[0]?.path).toBe("a.md");
+  });
+});
+

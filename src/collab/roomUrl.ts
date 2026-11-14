@@ -18,9 +18,10 @@ export function readRoomFromHash(): string | null {
  * was there (the documented `#room=…&password=…` join link). Dropping it
  * would lose the room password on refresh — the session would then attach
  * the plaintext document to the providers instead of the encrypted
- * transport. `null` clears both (the session ended).
+ * transport. `null` clears both (the session ended). A new room passes its
+ * fresh `password` (T49) so the link in the address bar is the share link.
  */
-export function setRoomInHash(name: string | null): void {
+export function setRoomInHash(name: string | null, password?: string | null): void {
   if (typeof location === "undefined") return;
   if (!name) {
     if (/^#(room|password)=/.test(location.hash) || /[#&]room=/.test(location.hash)) {
@@ -28,6 +29,16 @@ export function setRoomInHash(name: string | null): void {
     }
     return;
   }
-  const pw = location.hash.match(/[#&]password=([^&]+)/)?.[1];
+  const pw = password ? encodeURIComponent(password) : location.hash.match(/[#&]password=([^&]+)/)?.[1];
   history.replaceState(null, "", `#room=${name}${pw ? `&password=${pw}` : ""}`);
+}
+
+/**
+ * The invite link for a room: `#room=<name>` plus the room's own password
+ * when it has one — without it the invitee would open an unencrypted
+ * provider that can never join the encrypted room.
+ */
+export function roomShareLink(name: string, password?: string | null): string {
+  const base = typeof location !== "undefined" ? `${location.origin}${location.pathname}` : "";
+  return `${base}#room=${name}${password ? `&password=${encodeURIComponent(password)}` : ""}`;
 }

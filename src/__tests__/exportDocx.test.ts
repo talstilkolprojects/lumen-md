@@ -141,7 +141,10 @@ describe("real .docx output — complete OOXML package", () => {
     const doc = (await buildDoc(md)).text("word/document.xml")!;
     expect(doc).toContain("<w:tbl>");
     expect(doc).toContain('<w:jc w:val="center"/>');
-    expect(doc).toContain('<w:jc w:val="right"/>');
+    // `--:` in an English table: the trailing edge (ISO 29500 `end`; Word reads `right` the same way).
+    expect(doc).toContain('<w:jc w:val="end"/>');
+    expect(doc).not.toContain('<w:jc w:val="right"/>');
+    expect(doc).not.toContain("<w:bidiVisual/>");
   });
 
   it("renders fenced code as a shaded monospace block and escapes XML", async () => {

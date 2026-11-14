@@ -106,6 +106,17 @@ export function resolveImport(spec: string, from: string, names: readonly string
   return candidates.find((c) => names.includes(c)) ?? null;
 }
 
+/**
+ * The error for a circular import (A4, a documented decision): the runner
+ * links every file as its own blob: module, and a blob's URL exists only
+ * once its code is final, so two files can't import each other. `stack`
+ * is the chain of files being linked, `name` the one imported again.
+ */
+export function circularImportMessage(stack: readonly string[], name: string): string {
+  const loop = [...stack.slice(Math.max(0, stack.indexOf(name))), name];
+  return `Circular import: ${loop.join(" → ")}. Playground files are linked one by one, so they can't import each other in a loop; move the shared code into a separate file that both import.`;
+}
+
 /** Bare specifiers the runner provides. */
 /**
  * Module specifiers of a module's real imports and re-exports — static
@@ -284,7 +295,7 @@ export function formatValue(value: unknown, max = 10_000): string {
       try {
         v = (v as { toJSON: () => unknown }).toJSON();
       } catch {
-        /* keep the object */
+        /* why: a throwing toJSON: show the object itself */
       }
     }
     if (typeof v === "function") return write(str(`[Function ${String((v as { name?: string }).name || "anonymous").slice(0, max)}]`));

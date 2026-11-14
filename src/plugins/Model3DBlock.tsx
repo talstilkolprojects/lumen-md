@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import YAML from "yaml";
 import { sanitizeUrl } from "../lib/urlSanitizer";
 import { log } from "../lib/logger";
+import { t } from "../i18n";
 
 interface Props {
   source: string;
@@ -48,7 +49,7 @@ function parseSpec(source: string): ModelSpec | null {
   try {
     return JSON.parse(trimmed) as ModelSpec;
   } catch {
-    /* fall through */
+    /* why: not JSON: try YAML next */
   }
   try {
     return YAML.parse(trimmed) as ModelSpec;
@@ -115,7 +116,7 @@ export default function Model3DBlock({ source, meta }: Props) {
     return (
       <div className="chart-block" style={{ padding: "1rem" }}>
         <div style={{ color: "hsl(0 80% 60%)", fontSize: 13 }}>
-          ⚠︎ 3D block needs at least a `src` URL (gltf or glb).
+          {t("block.model3d.needSrc")}
         </div>
       </div>
     );
@@ -125,7 +126,7 @@ export default function Model3DBlock({ source, meta }: Props) {
     return (
       <div className="chart-block">
         <div style={{ padding: "1rem", color: "hsl(0 80% 60%)", fontSize: 13 }}>
-          ⚠︎ 3D block contains unsafe asset URL.
+          {t("block.model3d.unsafe")}
         </div>
       </div>
     );

@@ -19,10 +19,3 @@ describe("openInsertTextDialog", () => {
   });
 });
 
-describe("InsertTextResult type", () => {
-  it("InsertTextResult has markdown and mode fields", async () => {
-    const { openInsertTextDialog: _ } = await import("../ui/InsertTextDialog");
-    // Type test — just verifying the module shape
-    expect(true).toBe(true);
-  });
-});

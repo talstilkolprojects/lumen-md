@@ -61,6 +61,21 @@ describe("PluginGallery", () => {
       <PluginGallery open={true} onClose={vi.fn()} />,
     );
     // Should have some text about plugins
-    expect(container.textContent).toContain("Plugin Gallery");
+    expect(container.textContent).toContain("pluginGallery.title");
+  });
+});
+
+describe("PluginGallery — hooks are stable across open/closed", () => {
+  it("can be mounted closed and opened later (App mounts it with open=false)", async () => {
+    const { PluginGallery } = await import("../ui/PluginGallery");
+    const { rerender, container } = render(<PluginGallery open={false} onClose={vi.fn()} />);
+    expect(container.firstChild).toBeNull();
+    // Before the fix this threw "Rendered more hooks than during the
+    // previous render": a useMemo lived below the `if (!open) return null`.
+    expect(() => rerender(<PluginGallery open={true} onClose={vi.fn()} />)).not.toThrow();
+    expect(container.querySelector("[role='dialog']")).not.toBeNull();
+    expect(container.querySelectorAll("[data-testid='plugin-card']").length).toBeGreaterThan(0);
+    expect(() => rerender(<PluginGallery open={false} onClose={vi.fn()} />)).not.toThrow();
+    expect(container.firstChild).toBeNull();
   });
 });

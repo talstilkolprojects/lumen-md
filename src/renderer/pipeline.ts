@@ -1,3 +1,5 @@
+import { pluginForLang } from "../plugins/runtime/rendererRegistry";
+import { headingSlugger } from "../lib/slug";
 import { unified } from "unified";
 import type { Processor } from "unified";
 import type { ReactElement } from "react";
@@ -11,6 +13,8 @@ import remarkRehype from "remark-rehype";
 // ./katexPlugin only for docs that contain `$` — it is no longer a static
 // dependency of the main chunk (A7 lever 1/3).
 import rehypeSlug from "rehype-slug";
+import { rehypeDirAuto } from "./rehypeDirAuto";
+import { rehypeSanitizeRaw } from "./rehypeSanitizeRaw";
 // rehype-raw is dynamically imported in getProcessorWithRaw() — it
 // pulls in parse5 (~275 KB raw / ~40 KB gzipped) and most docs don't
 // need it. Splitting it out of the main bundle is M12-followup-2.
@@ -29,8 +33,10 @@ import {
   remarkAdmonitions,
   remarkColumns,
   remarkStripFrontmatter,
-  slug,
 } from "./remarkLumen";
+import { EMBEDS_DATA_KEY, remarkEmbeds } from "./remarkEmbeds";
+import { remarkBlockIds } from "./remarkBlockIds";
+import type { EmbedContext } from "./embeds";
 
 const SPECIAL_LANGS = new Set([
   "mermaid",
@@ -60,6 +66,8 @@ const SPECIAL_LANGS = new Set([
   "html-preview",
   "bibtex",
   "bib",
+  // obsidian-tasks queries over the vault (plan 4.13).
+  "tasks",
   "database",
   // Single-language live previews — render the snippet inside a tiny
   // sandboxed iframe so users can experiment with HTML/CSS/JS/GLSL/SVG
@@ -111,7 +119,16 @@ function remarkLumenBlocks() {
   return (tree: MdastRoot) => {
     visit(tree, "code", (node: Code) => {
       const lang = (node.lang ?? "").toLowerCase();
-      if (!SPECIAL_LANGS.has(lang)) return;
+      if (!SPECIAL_LANGS.has(lang)) {
+        // A language a plugin renders (plan 11.2): one tag, the plugin is found by language.
+        if (pluginForLang(lang)) {
+          const d = (node.data ?? (node.data = {})) as Record<string, unknown>;
+          d.hName = "lumen-pluginblock";
+          d.hProperties = { lang, meta: node.meta ?? "" };
+          d.hChildren = [{ type: "text", value: node.value ?? "" }];
+        }
+        return;
+      }
       // Aliases.
       let tag: string;
       if (lang === "json-table") tag = "lumen-jsontable";
@@ -153,7 +170,8 @@ function remarkLumenBlocks() {
 type LumenProcessor = Processor<MdastRoot, MdastRoot, HastRoot, HastRoot, ReactElement>;
 type RehypeKatex = typeof import("./katexPlugin").default;
 
-function buildBase() {
+/** Parse + the Lumen dialect transforms that run before embeds are expanded. */
+function buildDialect() {
   return unified()
     .use(remarkParse)
     .use(remarkFrontmatter, ["yaml"])
@@ -163,7 +181,26 @@ function buildBase() {
     .use(remarkMath)
     .use(remarkDirective)
     .use(remarkAdmonitions)
-    .use(remarkColumns)
+    .use(remarkColumns);
+}
+
+let embedParser: ReturnType<typeof buildDialect> | null = null;
+
+/**
+ * An embedded note's mdast (`![[note]]`, see ./embeds): the same parser
+ * and dialect transforms as the host, CriticMarkup prepared the same way;
+ * the host's remaining passes then run over the spliced-in nodes.
+ */
+function parseEmbeddedNote(markdown: string): MdastRoot {
+  embedParser ??= buildDialect();
+  return embedParser.runSync(embedParser.parse(prepareCriticMarkup(markdown))) as MdastRoot;
+}
+
+function buildBase() {
+  return buildDialect()
+    .use(remarkEmbeds, { parse: parseEmbeddedNote })
+    // After embeds: an embedded block's own marker is gone by then, the rest get ids.
+    .use(remarkBlockIds)
     .use(remarkWikiLinks)
     .use(remarkLumenBlocks)
     .use(remarkRehype, { allowDangerousHtml: true });
@@ -200,6 +237,19 @@ async function getFullProcessor(
   const key = `${opts.raw ? 1 : 0}${opts.math ? 1 : 0}`;
   const cached = fullProcessors.get(key);
   if (cached) return cached;
+  const proc = await buildFullProcessor(isDark, opts);
+  fullProcessors.set(key, proc);
+  return proc;
+}
+
+/** A rehype transformer that gives the headings of one block their ids (./incrementalPreview.ts). */
+export type BlockSlugPlugin = () => (tree: HastRoot) => void;
+
+async function buildFullProcessor(
+  isDark: () => boolean,
+  opts: { raw: boolean; math: boolean },
+  blockSlugs?: BlockSlugPlugin,
+): Promise<LumenProcessor> {
   // rehype-raw pulls in parse5 (~40 KB gz); only docs with inline HTML
   // pay for it (M12-followup-2).
   const [rehypeRaw, rehypeKatex] = await Promise.all([
@@ -207,14 +257,33 @@ async function getFullProcessor(
     opts.math ? loadKatex() : null,
   ]);
   let p = buildBase();
-  if (rehypeRaw) p = p.use(rehypeRaw);
+  // Inline HTML goes through the allowlist sanitizer right after parsing (T48).
+  if (rehypeRaw) p = p.use(rehypeRaw).use(rehypeSanitizeRaw);
   // CriticMarkup (suggesting mode) → <ins>/<del>/<mark>; before rehypeSlug
   // so heading ids are computed from the rendered text.
-  p = p.use(rehypeCriticMarkup).use(rehypeSlug);
+  p = p.use(rehypeCriticMarkup);
+  p = blockSlugs ? p.use(blockSlugs) : p.use(rehypeSlug);
+  p = p.use(rehypeDirAuto);
   if (rehypeKatex) p = p.use(rehypeKatex);
-  const proc = toReact(p.use(rehypeShiki, { isDark }));
-  fullProcessors.set(key, proc);
-  return proc;
+  return toReact(p.use(rehypeShiki, { isDark }));
+}
+
+/**
+ * The full pipeline for rendering a long document block by block
+ * (./incrementalPreview.ts): one processor per document, whose heading
+ * ids come from `blockSlugs` in place of rehype-slug.
+ */
+export function buildBlockProcessor(
+  isDark: () => boolean,
+  opts: { raw: boolean; math: boolean },
+  blockSlugs: BlockSlugPlugin,
+): Promise<LumenProcessor> {
+  return buildFullProcessor(isDark, opts, blockSlugs);
+}
+
+/** Which lazy parts (rehype-raw, KaTeX) the full pipeline needs for `source`. */
+export function pipelineOptions(source: string): { raw: boolean; math: boolean } {
+  return { raw: hasRawHtml(source), math: hasMath(source) };
 }
 
 /**
@@ -233,15 +302,39 @@ function hasMath(source: string): boolean {
   return source.includes("$");
 }
 
+export interface RenderOptions {
+  /**
+   * Workspace notes and files for `![[embeds]]` (./embeds, built by
+   * ./embedContext). Without it an embed renders as a plain wiki link to its
+   * target.
+   */
+  embeds?: EmbedContext;
+}
+
+/** The vfile input: the prepared source, plus the embed context for remarkEmbeds. */
+function input(markdownText: string, opts: RenderOptions) {
+  const data: Record<string, unknown> = {};
+  if (opts.embeds) data[EMBEDS_DATA_KEY] = opts.embeds;
+  return { value: prepareCriticMarkup(markdownText), data };
+}
+
 export async function renderMarkdown(
   markdownText: string,
   isDark: () => boolean,
+  opts: RenderOptions = {},
 ): Promise<ReactElement> {
+  // An embedded note's inline HTML / math needs the same passes the host
+  // would get for it: the sanitizer runs over embedded HTML exactly as over
+  // the host's own.
+  const sources = opts.embeds
+    ? [markdownText, ...(await import("./embeds")).embeddedTexts(markdownText, opts.embeds)]
+    : [markdownText];
+  const each = sources.map(pipelineOptions);
   const proc = await getFullProcessor(isDark, {
-    raw: hasRawHtml(markdownText),
-    math: hasMath(markdownText),
+    raw: each.some((o) => o.raw),
+    math: each.some((o) => o.math),
   });
-  const file = await proc.process(prepareCriticMarkup(markdownText));
+  const file = await proc.process(input(markdownText, opts));
   return file.result as ReactElement;
 }
 
@@ -256,11 +349,11 @@ export async function renderMarkdown(
  * scrolls near the viewport and the browser is idle — so this pass never
  * triggers a vendor import.
  */
-export function renderMarkdownFast(markdownText: string): ReactElement {
+export function renderMarkdownFast(markdownText: string, opts: RenderOptions = {}): ReactElement {
   if (!fastProcessor) {
-    fastProcessor = toReact(buildBase().use(rehypeCriticMarkup).use(rehypeSlug));
+    fastProcessor = toReact(buildBase().use(rehypeCriticMarkup).use(rehypeSlug).use(rehypeDirAuto));
   }
-  return fastProcessor.processSync(prepareCriticMarkup(markdownText)).result as ReactElement;
+  return fastProcessor.processSync(input(markdownText, opts)).result as ReactElement;
 }
 
 /** Extract YAML frontmatter (parsed) from a markdown source, or null. */
@@ -293,10 +386,13 @@ export function extractToc(
     .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/m, "")
     .replace(/^\+\+\+\r?\n[\s\S]*?\r?\n\+\+\+\r?\n?/m, "");
   const tree = unified().use(remarkParse).parse(stripped) as MdastRoot;
+  // One slugger for the whole document, like rehype-slug: a repeated
+  // heading gets `-1`, `-2`… and Hebrew keeps its letters (T26).
+  const slugger = headingSlugger();
   visit(tree, "heading", (node) => {
     const text = mdToString(node);
     if (!text.trim()) return;
-    const id = slug(text);
+    const id = slugger.slug(text);
     out.push({ depth: node.depth, text, id });
   });
   return out;

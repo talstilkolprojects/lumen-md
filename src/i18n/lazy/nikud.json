@@ -1,0 +1,8 @@
+{
+  "toast.nikud.working": "Adding niqqud on this device…",
+  "toast.nikud.nothing": "No Hebrew text to change.",
+  "toast.nikud.noHost": "The niqqud model is not available to download yet (its host is not set up).",
+  "toast.nikud.declined": "Niqqud needs the model download; nothing was changed.",
+  "toast.nikud.failed": "Niqqud failed: {error}",
+  "models.purpose.nikud": "Hebrew niqqud (vowel points) on this device"
+}

@@ -22,7 +22,7 @@ permissions:
 jobs:
   web:
     name: Web bundle
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -78,6 +78,33 @@ jobs:
             libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
             patchelf libsoup-3.0-dev javascriptcoregtk-4.1-dev
       - run: npm ci || npm install
+      # Windows code signing (plan 11.5.2): optional. With WINDOWS_CERTIFICATE
+      # (base64 .pfx) and its password, the certificate is imported and its
+      # thumbprint handed to tauri; without them the installer is unsigned and
+      # the step says so (plan 15.7).
+      - name: Windows signing certificate (optional)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          if (-not $env:WINDOWS_CERTIFICATE) { Write-Output "::warning::WINDOWS_CERTIFICATE not set — the Windows installer is NOT signed (plan 15.7)"; exit 0 }
+          $pfx = Join-Path $env:RUNNER_TEMP "cert.pfx"
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE))
+          $pw = ConvertTo-SecureString $env:WINDOWS_CERTIFICATE_PASSWORD -AsPlainText -Force
+          $cert = Import-PfxCertificate -FilePath $pfx -CertStoreLocation Cert:\CurrentUser\My -Password $pw
+          Remove-Item $pfx
+          node scripts/tauri-signing.mjs windows-thumbprint $cert.Thumbprint
+      - name: Signing status
+        shell: bash
+        env:
+          HAS_APPLE: ${{ secrets.APPLE_SIGNING_IDENTITY != '' }}
+          HAS_UPDATER: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY != '' }}
+        run: |
+          [ "$HAS_UPDATER" = "true" ] || echo "::warning::TAURI_SIGNING_PRIVATE_KEY not set — no signed update artifacts, auto-update stays off (plan 15.7)"
+          if [ "${{ runner.os }}" = "macOS" ] && [ "$HAS_APPLE" != "true" ]; then echo "::warning::Apple signing secrets not set — the macOS build is ad-hoc signed and not notarised (plan 15.7)"; fi
+          node scripts/tauri-signing.mjs updater-config
       - name: Build Tauri bundle
         run: npm run tauri:build -- --target ${{ matrix.arch }}
         env:
@@ -87,7 +114,39 @@ jobs:
           APPLE_PASSWORD:          ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID:           ${{ secrets.APPLE_TEAM_ID }}
           APPLE_SIGNING_IDENTITY:  ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_CERTIFICATE:       ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # Updater (plan 11.5.1): the minisign key signs the update artifacts;
+          # the public key and the endpoint are compiled in. All optional.
+          TAURI_SIGNING_PRIVATE_KEY:          ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          LUMEN_UPDATER_PUBKEY:   ${{ vars.LUMEN_UPDATER_PUBKEY }}
+          LUMEN_UPDATER_ENDPOINT: ${{ vars.LUMEN_UPDATER_ENDPOINT || format('https://github.com/{0}/releases/latest/download/latest.json', github.repository) }}
+      - name: No source maps in the bundle (plan 11.5)
+        shell: bash
+        run: node scripts/check-sourcemaps.mjs dist
       - uses: softprops/action-gh-release@v3
         with:
-          files: ${{ matrix.artifact }}
+          files: |
+            ${{ matrix.artifact }}
+            src-tauri/target/*/release/bundle/**/*.sig
+            src-tauri/target/*/release/bundle/**/*.tar.gz
           fail_on_unmatched_files: false
+
+  updater-manifest:
+    name: latest.json (updater)
+    needs: tauri
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version: 22 }
+      - name: Build latest.json from the release's .sig files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          mkdir -p sigs && gh release download "$TAG" --pattern '*.sig' --dir sigs || true
+          if [ -z "$(ls sigs 2>/dev/null)" ]; then echo "::warning::no .sig files (TAURI_SIGNING_PRIVATE_KEY not set) — no latest.json, auto-update stays off"; exit 0; fi
+          node scripts/tauri-signing.mjs latest-json --tag "$TAG" --repo "${{ github.repository }}" --sigs sigs --out latest.json
+          gh release upload "$TAG" latest.json --clobber

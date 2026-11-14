@@ -1,0 +1,14 @@
+{
+  "block.liveR.install.title": "R is not installed on this device",
+  "block.liveR.install.body": "Live R blocks run webR, R compiled to WebAssembly. Lumen doesn't include it: webR's binaries (R and libgfortran) are licensed under the GNU GPL version 3. Download it once ({size} MB, webR {version}) and it stays on this device and works offline.",
+  "block.liveR.install.source": "From webR's own site, webr.r-wasm.org (or the npm package webr@{version} on cdn.jsdelivr.net if that fails). Every file is checked against this build's checksums. Nothing from your notes is sent.",
+  "block.liveR.install.license": "Licence: GPL-3.0 (webR's LICENSE.md)",
+  "block.liveR.install.download": "Download R ({size} MB)",
+  "block.liveR.install.progress": "Downloading R… {percent}%",
+  "block.liveR.install.cancel": "Cancel",
+  "block.liveR.install.state": "not installed",
+  "block.liveR.install.error.download": "The download failed: {detail}",
+  "block.liveR.install.error.mismatch": "A downloaded file did not match this build's checksum, so nothing was installed: {detail}",
+  "block.liveR.install.error.noCache": "R can only be stored once Lumen's offline support is active. Reload the page, then try again.",
+  "block.liveR.install.error.noManifest": "This build can't download R (it has no webR manifest)."
+}

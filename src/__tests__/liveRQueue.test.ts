@@ -4,7 +4,8 @@ const log: string[] = [];
 let initHangs = false;
 let initGate: Promise<void> | null = null;
 let created = 0;
-vi.mock("webr", () => {
+// webR is not bundled (plan W1.34): rRuntime loads it through webrModule.
+vi.mock("../plugins/r/webrModule", () => {
   class Shelter {
     async captureR(code: string) {
       log.push(`start ${code}`);
@@ -30,7 +31,7 @@ vi.mock("webr", () => {
     }
     close() {}
   }
-  return { WebR, ChannelType: { PostMessage: 1 } };
+  return { loadWebRModule: async () => ({ WebR, ChannelType: { PostMessage: 1 } }) };
 });
 
 describe("runR", () => {
@@ -94,7 +95,7 @@ describe("runR", () => {
       },
     });
     const second = rt.runR("fast", undefined, { onStart: () => events.push("start fast") });
-    await first.catch(() => {});
+    await first.catch(() => { /* why: the first run is cancelled on purpose; only the queue order is under test */ });
     await new Promise((r) => setTimeout(r, 5));
     // Still booting: the queued run has not started (its timer isn't armed).
     expect(events).toEqual(["start slow"]);

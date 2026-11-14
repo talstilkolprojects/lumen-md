@@ -35,4 +35,4 @@ primary_region = "iad"
 # Regional distribution — CDG covers Europe, IAD covers Americas.
 # Add NRT for Asia-Pacific when traffic warrants it.
 # [env]
-#   VITE_SIGNAL_URL = "wss://signal.lumen.md"
+#   VITE_SIGNAL_URL = "wss://lumen-signal.fly.dev"

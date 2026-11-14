@@ -25,10 +25,10 @@ export function UpdateBanner() {
         });
         setUpdateSW(() => fn);
         // Drop runtime caches left by earlier versions (best effort).
-        void import("../lib/runtimeCaches").then((m) => m.deleteStaleRuntimeCaches()).catch(() => {});
+        void import("../lib/runtimeCaches").then((m) => m.deleteStaleRuntimeCaches()).catch(() => { /* why: stale caches only take space; the next start tries again */ });
       })
       .catch(() => {
-        // SW not available (dev / unsupported browser) — no banner.
+        // why: SW not available (dev / unsupported browser) — no banner.
       });
     return () => {
       cancelled = true;

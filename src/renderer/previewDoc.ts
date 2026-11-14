@@ -1,6 +1,14 @@
 import { createContext } from "react";
 
 /**
+ * From this length on (plan 8.4) the preview renders block by block
+ * (./incrementalPreview.ts), the outline re-parses only changed blocks
+ * (./incrementalToc.ts) and the status bar counts words once typing
+ * pauses. Shorter documents keep the one-pass paths, which are fast there.
+ */
+export const LARGE_DOC_CHARS = 50_000;
+
+/**
  * Identity of the document whose markdown the surrounding preview tree was
  * rendered from. The preview renders asynchronously, so while switching tabs
  * it briefly still shows the previous document's tree; blocks that keep
@@ -17,12 +25,14 @@ let nextHandleId = 0;
  * Stable per-document key for per-document runtime state. Workspace files
  * are identified by their workspace path; files opened from disk by their
  * FileSystemFileHandle (two `readme.md` from different folders share a
- * name but not a handle); anything else by name.
+ * name but not a handle); anything else by name plus its load id, so two
+ * loads of same-named handle-less files never share state.
  */
 export function docIdentity(doc: {
   workspaceName?: string | null;
   name?: string | null;
   handle?: object | null;
+  loadId?: number;
 }): string | null {
   if (doc.workspaceName) return `ws:${doc.workspaceName}`;
   if (doc.handle) {
@@ -33,5 +43,6 @@ export function docIdentity(doc: {
     }
     return `${id}:${doc.name ?? ""}`;
   }
-  return doc.name ? `name:${doc.name}` : null;
+  if (!doc.name) return null;
+  return doc.loadId === undefined ? `name:${doc.name}` : `name:${doc.name}#${doc.loadId}`;
 }

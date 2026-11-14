@@ -15,6 +15,7 @@
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import type { ViewUpdate } from "@codemirror/view";
 import type { Extension } from "@codemirror/state";
+import { scrollBehavior } from "../lib/motion";
 
 const PADDING = "40vh";
 
@@ -37,7 +38,7 @@ export function typewriterModeExtension(): Extension {
             scroller.scrollTop +
             (coords.top - scroller.getBoundingClientRect().top) -
             scroller.clientHeight / 2;
-          scroller.scrollTo({ top: target, behavior: "smooth" });
+          scroller.scrollTo({ top: target, behavior: scrollBehavior() });
         }
       },
     ),

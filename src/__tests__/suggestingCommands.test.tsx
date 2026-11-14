@@ -72,11 +72,11 @@ describe("buildSuggestingCommands", () => {
     expect(showAiToast).toHaveBeenCalled();
   });
 
-  it("cursor commands act on a mounted view", () => {
+  it("cursor commands act on a mounted view", async () => {
     const view = new EditorView({
       state: EditorState.create({ doc: "a{++b++}c", selection: { anchor: 4 }, extensions: suggestingExtension() }),
     });
-    byId(buildSuggestingCommands(deps({ getView: () => view })), "edit.suggesting.reject").action();
+    await byId(buildSuggestingCommands(deps({ getView: () => view })), "edit.suggesting.reject").action();
     expect(view.state.doc.toString()).toBe("ac");
     view.destroy();
   });

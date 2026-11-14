@@ -1,7 +1,8 @@
 /**
  * Render test for the StatusBar's Telemetry toggle pill. Verifies that:
  *   - The telemetry pill always renders (it's not gated on any feature).
- *   - Clicking it toggles the opt-out state via localStorage.
+ *   - It starts OFF (plan 12.4: monitoring is opt-in) and clicking it
+ *     records the user's consent.
  *   - The aria-pressed attribute reflects the current state.
  */
 
@@ -10,19 +11,32 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { StatusBar } from "../ui/StatusBar";
 
 // Mock the telemetry module so we don't touch real localStorage
-vi.mock("../lib/telemetry", () => {
-  let optOut = false;
-  return {
-    getTelemetryOptOut: () => optOut,
-    setTelemetryOptOut: (v: boolean) => { optOut = v; },
-    initTelemetry: vi.fn(),
-    reportError: vi.fn(),
-  };
-});
+const consent = vi.hoisted(() => ({ on: false, set: [] as boolean[] }));
+vi.mock("../lib/telemetry", () => ({
+  getMonitoringConsent: () => consent.on,
+  setMonitoringConsent: (v: boolean) => {
+    consent.on = v;
+    consent.set.push(v);
+  },
+  initTelemetry: vi.fn(),
+  monitoringEndpoint: () => null,
+}));
 
 describe("StatusBar — Telemetry toggle pill", () => {
   beforeEach(() => {
-    vi.resetModules;
+    consent.on = false;
+    consent.set.length = 0;
+  });
+
+  it("is off by default and turns consent on when clicked", () => {
+    render(
+      <StatusBar text="hello world" dirty={false} filename="x.md" />,
+    );
+    const pill = screen.getByTestId("status-telemetry");
+    expect(pill.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(pill);
+    expect(pill.getAttribute("aria-pressed")).toBe("true");
+    expect(consent.set).toEqual([true]);
   });
 
   it("renders the telemetry pill", () => {

@@ -1,0 +1,20 @@
+/** Importing this module registers every agent definition. */
+export { taggerAgent, normalizeTags, type TaggerInput, type TaggerOutput } from "./tagger";
+export { linkerAgent, filterLinks, type LinkerInput, type LinkerOutput, type LinkSuggestion } from "./linker";
+export { outlinerAgent, normalizeHeadings, type OutlinerInput, type OutlinerOutput, type OutlineHeading } from "./outliner";
+export { taskerAgent, checkTaskList, type TaskerInput } from "./tasker";
+export { committerAgent, cleanSubject, commitMessage, CONVENTIONAL, type CommitterInput } from "./committer";
+export { diagrammerAgent, type DiagrammerInput } from "./diagrammer";
+export { charterAgent, type CharterInput, type EChartsOption } from "./charter";
+export { translatorAgent, chunkMarkdown, checkTranslation, checkTranslationLanguage, expectedScript, fencedBlocks, urlsOf, CHUNK_CHARS, type TranslatorInput } from "./translator";
+export { writerAgent, templaterAgent, type WriterInput, type TemplaterInput } from "./writer";
+export { builderSpecAgent, builderFileAgent, checkGeneratedFile, type ProductSpecOut } from "./builder";
+export { proofreaderAgent, locateIssues, PROOF_MAX_CHARS, type ProofreaderInput, type ProofIssue } from "./proofreader";
+export { stylistAgent, type StylistInput, type StyleProfileOut } from "./stylist";
+export { formulatorAgent, cleanFormula, formulaFields, type FormulatorInput } from "./formulator";
+export { researcherAgent, checkCited, checkVerified, citedNumbers, RESEARCHER_SCHEMA, type ResearcherInput, type ResearcherOutput, type ResearchMode, type ResearchSource, type ResearchQuote } from "./researcher";
+export { completerAgent, rewriterAgent, answererAgent, memoSummarizerAgent, builderArchAgent, builderTestAgent, builderDocsAgent, batchAgent, cleanCompletion, checkBullets, type CompleterInput, type RewriterInput, type AnswererInput, type MemoInput, type BuilderStageInput, type BatchStepInput } from "./inline";
+export { pdfAnswererAgent, citationVerified, type PdfAnswererInput } from "./pdfAnswerer";
+export { summarizerAgent, SUMMARY_MAX_CHARS, SUMMARY_MIN_GROUNDED, type SummarizerInput } from "./summarizer";
+export { autofillerAgent, type AutofillerInput, type AutofillerOutput } from "./autofiller";
+export { meetingWriterAgent, MEETING_MAX_CHARS, type MeetingWriterInput, type MeetingWriterOutput } from "./meetingWriter";

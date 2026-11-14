@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useFocusTrap } from "./useFocusTrap";
 import {
   Search,
   FileText,
@@ -55,6 +56,7 @@ export function CommandPalette({ open, onClose, commands }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
+  /** What had focus before the palette opened: it gets focus back on close (see the focus trap below). */
   const previousFocusRef = useRef<Element | null>(null);
 
   // Items the toolbar menus already expose. The palette de-duplicates those
@@ -148,50 +150,49 @@ export function CommandPalette({ open, onClose, commands }: Props) {
     return false;
   }
 
-  useEffect(() => {
+  // A fresh palette on every open, reset while rendering the open itself.
+  // The palette stays mounted while closed, so this used to happen in the
+  // effect below: the first frame of a reopened palette still showed the
+  // last query, and when the effect ran late, its reset landed after
+  // the user's (or a test's) first keystrokes and wiped them (plan 0.5:
+  // the "Escape during palette typing" and "a version is kept" e2e flakes).
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (open) {
-      previousFocusRef.current = document.activeElement;
       setQuery("");
       setActive(0);
       setTab("main");
-      // focus next tick so React renders the input first
-      setTimeout(() => inputRef.current?.focus(), 0);
+    }
+  }
+
+  // Focus the input in the same frame the palette appears, before paint:
+  // the input is already in the DOM here (it renders with `open`). A
+  // deferred focus (setTimeout 0) left a window in which keys typed right
+  // after the palette became visible still went to the editor — Chromium
+  // runs input events before pending timers — so a busy machine opened the
+  // palette with an empty query and the typed command was never found.
+  useLayoutEffect(() => {
+    if (open) {
+      previousFocusRef.current = document.activeElement;
+      inputRef.current?.focus();
     } else {
+      // Clear on close too: the reset above runs only after the reopened
+      // palette's first paint, which would show the last query for a frame
+      // (and a test reading the input then sees it — the Escape e2e flake).
+      setQuery("");
+      setActive(0);
       // Restore focus to whatever opened the palette.
       const prev = previousFocusRef.current as HTMLElement | null;
       prev?.focus?.();
     }
   }, [open]);
 
-  // Focus trap + global Escape while open. Listening at document level lets
-  // Escape close the palette even when focus drifted out of the input (e.g.
-  // after a child sub-menu expansion).
-  useEffect(() => {
-    if (!open) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-        return;
-      }
-      if (e.key !== "Tab" || !dialogRef.current) return;
-      const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
-        'button, input, [tabindex]:not([tabindex="-1"])',
-      );
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  // Focus trap while open. Escape at document level closes it even when
+  // focus drifted out of the input (e.g. after a child sub-menu expansion).
+  // The layout effect above already moved focus to the input when the trap
+  // starts, so the palette restores focus itself (to what opened it).
+  useFocusTrap(dialogRef, { active: open, onEscape: onClose, restoreFocus: false });
 
   // Flatten commands with children for searching
   const flatAll = useMemo(() => {
@@ -364,6 +365,8 @@ export function CommandPalette({ open, onClose, commands }: Props) {
           ref={listRef}
           id="cmd-listbox"
           role="listbox"
+          // Reachable by Tab so it can be scrolled by keyboard (axe: scrollable-region-focusable).
+          tabIndex={0}
           aria-label={t("palette.placeholder")}
         >
           {filtered.length === 0 && (
@@ -385,7 +388,7 @@ export function CommandPalette({ open, onClose, commands }: Props) {
                         fontWeight: 700,
                         textTransform: "uppercase",
                         letterSpacing: "0.08em",
-                        color: "hsl(var(--accent) / 0.7)",
+                        color: "hsl(var(--fg-muted))",
                         borderTop: i > 0 ? "1px solid hsl(var(--border) / 0.4)" : "none",
                         marginTop: i > 0 ? 4 : 0,
                         userSelect: "none",
@@ -423,7 +426,7 @@ export function CommandPalette({ open, onClose, commands }: Props) {
                       <span className="cmd-palette-shortcut">{cmd.shortcut}</span>
                     )}
                     {cmd.children && (
-                      <span style={{ fontSize: 10, opacity: 0.5, marginLeft: 4 }}>
+                      <span style={{ fontSize: 10, opacity: 0.5, marginInlineStart: 4 }}>
                         {expanded.has(cmd.id) ? "▼" : "▶"}
                       </span>
                     )}

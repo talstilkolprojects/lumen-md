@@ -13,6 +13,7 @@ import { Hash, X } from "lucide-react";
 import { buildTagsIndex, type TagsIndex } from "../views/tagsIndex";
 import { t } from "../i18n";
 import { useAppStore } from "../store/useStore";
+import { onWorkspaceChanged } from "../storage/workspaceEvents";
 
 interface Props {
   open: boolean;
@@ -60,9 +61,7 @@ export function TagsPanel({ open, onClose }: Props) {
   useEffect(() => {
     if (!open) return;
     void refresh();
-    const onChange = () => void refresh();
-    window.addEventListener("lumen-workspace-changed", onChange);
-    return () => window.removeEventListener("lumen-workspace-changed", onChange);
+    return onWorkspaceChanged(() => void refresh(), { debounceMs: 500 });
   }, [open, refresh]);
 
   if (!open) return null;

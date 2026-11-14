@@ -1,0 +1,70 @@
+# Plan 7.2 — every agent once against a real tiny model, plus the real
+# LanguageTool and SearXNG services. Nightly (0.11) and by hand on a PR that
+# touches the agents. Not part of the per-PR `check` job.
+name: real model
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Ollama model (qwen3:0.6b for every agent; qwen3:1.7b for multi-step scenarios)"
+        default: "qwen3:0.6b"
+
+permissions:
+  contents: read
+
+jobs:
+  real-model:
+    name: real tiny model (${{ inputs.model || 'qwen3:0.6b' }})
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
+    timeout-minutes: 30
+    services:
+      languagetool:
+        image: erikvl87/languagetool:latest
+        ports: ["8010:8010"]
+        env:
+          Java_Xms: 512m
+          Java_Xmx: 1g
+      searxng:
+        image: searxng/searxng:latest
+        ports: ["8888:8080"]
+    env:
+      MODEL: ${{ inputs.model || 'qwen3:0.6b' }}
+      LUMEN_REAL_MODEL_REQUIRED: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci || npm install
+      - name: SearXNG with JSON output and no limiter (docker/searxng/settings.yml)
+        run: |
+          docker cp docker/searxng/settings.yml "$(docker ps -qf ancestor=searxng/searxng:latest)":/etc/searxng/settings.yml
+          docker restart "$(docker ps -qf ancestor=searxng/searxng:latest)"
+      - name: Install Ollama
+        run: curl -fsSL https://ollama.com/install.sh | sh
+      # The model is cached by name; the digest the run used is printed below.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.ollama/models
+          key: ollama-${{ env.MODEL }}-v1
+      - name: Every agent against the real model (structure, not wording)
+        run: |
+          npm run -s ci:real-model -- --model "$MODEL"
+          ollama show "$MODEL" --modelfile | head -n 3 || true
+      - name: LanguageTool and SearXNG for real
+        env:
+          LUMEN_REAL_LANGUAGETOOL_URL: http://127.0.0.1:8010/v2/check
+          LUMEN_REAL_SEARXNG_URL: http://127.0.0.1:8888
+        run: |
+          for i in $(seq 1 60); do curl -sf "http://127.0.0.1:8010/v2/languages" >/dev/null && break; sleep 2; done
+          npx vitest run --config vitest.eval.config.ts --reporter dot src/agents/eval/services.eval.ts
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: real-model
+          path: eval/results/
+          if-no-files-found: ignore

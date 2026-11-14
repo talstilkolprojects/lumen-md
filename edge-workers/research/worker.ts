@@ -3,7 +3,9 @@
  * can't do itself because of CORS (Plan D: D6, D7).
  *
  *   GET  /extract?url=<https://…>  → { url, finalUrl, status, title, text, truncated, fetchedAt }
- *   POST /search { provider: "brave" | "tavily", query, key, count? }
+ *   POST /search { provider: "brave" | "tavily" | "searxng", query, key?, count? }
+ *        searxng needs no key: the worker queries its SEARXNG_URL (a
+ *        self-hosted SearXNG with the JSON format enabled).
  *                                   → { results: [{ title, url, snippet }] }
  *   GET  /healthz                   → "ok"
  *
@@ -11,10 +13,12 @@
  *  - Only origins in ALLOWED_ORIGINS may call it (CORS + an Origin check;
  *    a request without an Origin is refused). That keeps other sites'
  *    pages from using it, but a non-browser client can send any Origin, so
- *    it is not authentication. With RESEARCH_TOKEN set, every request must
- *    also carry it in X-Lumen-Research-Token; the app sends it when built
- *    with VITE_RESEARCH_TOKEN. In a public web app that value ships in the
- *    bundle, so it only stops casual reuse; see README.md.
+ *    it is not authentication. Every request must also carry the
+ *    RESEARCH_TOKEN secret in X-Lumen-Research-Token (A8): a worker deployed
+ *    without one refuses everything but /healthz with 503, so it is never an
+ *    open endpoint by accident. The app sends the token the user entered in
+ *    AI settings (kept in its secret store, never in the build, and sent only
+ *    to the endpoint it was saved for); see README.md.
  *  - Public http(s) URLs only, re-checked on every redirect (max 5); no
  *    cookies or credentials are forwarded; 10 s timeout; at most 2 MB read;
  *    HTML / plain text only; returned text capped at 200K characters.
@@ -29,8 +33,13 @@ import { charsetOf, htmlToText, isFetchableUrl } from "./extract";
 export interface Env {
   /** Comma-separated app origins, e.g. "https://lumen-md.app,http://localhost:5173". */
   ALLOWED_ORIGINS: string;
-  /** Optional shared token (a Worker secret) required in X-Lumen-Research-Token. */
+  /**
+   * Shared token (a Worker secret) every request must send in
+   * X-Lumen-Research-Token. Required: without it the worker serves nothing.
+   */
   RESEARCH_TOKEN?: string;
+  /** Optional self-hosted SearXNG (e.g. http://localhost:8888) for keyless search. */
+  SEARXNG_URL?: string;
 }
 
 export const TOKEN_HEADER = "X-Lumen-Research-Token";
@@ -151,7 +160,15 @@ interface SearchResult {
   snippet: string;
 }
 
-async function search(provider: string, query: string, key: string, count: number): Promise<SearchResult[]> {
+async function search(provider: string, query: string, key: string, count: number, env?: Env): Promise<SearchResult[]> {
+  if (provider === "searxng") {
+    const base = env?.SEARXNG_URL?.replace(/\/+$/, "");
+    if (!base) throw new Error("searxng is not configured on this research service (SEARXNG_URL)");
+    const res = await fetch(`${base}/search?q=${encodeURIComponent(query)}&format=json`, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(TIMEOUT_MS) });
+    if (!res.ok) throw new Error(`searxng ${res.status}`);
+    const data = (await res.json()) as { results?: Array<{ title?: string; url?: string; content?: string }> };
+    return (data.results ?? []).slice(0, count).map((r) => ({ title: r.title ?? "", url: r.url ?? "", snippet: r.content ?? "" }));
+  }
   if (provider === "brave") {
     const u = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${count}`;
     const res = await fetch(u, { headers: { Accept: "application/json", "X-Subscription-Token": key }, signal: AbortSignal.timeout(TIMEOUT_MS) });
@@ -181,7 +198,10 @@ export default {
     if (!headers) return new Response("Forbidden origin", { status: 403 });
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
     // Checked after the preflight: browsers never send custom headers on OPTIONS.
-    if (env.RESEARCH_TOKEN && !sameToken(req.headers.get(TOKEN_HEADER) ?? "", env.RESEARCH_TOKEN)) {
+    // No secret configured: fail closed rather than serve anyone (A8).
+    const secret = env.RESEARCH_TOKEN?.trim();
+    if (!secret) return json({ error: "token-not-configured" }, headers, 503);
+    if (!sameToken(req.headers.get(TOKEN_HEADER) ?? "", secret)) {
       return json({ error: "unauthorized" }, headers, 401);
     }
     const ip = req.headers.get("CF-Connecting-IP") ?? "unknown";
@@ -203,9 +223,10 @@ export default {
         const body = (await req.json().catch(() => ({}))) as { provider?: string; query?: string; key?: string; count?: number };
         const query = String(body.query ?? "").slice(0, 400).trim();
         const key = String(body.key ?? "");
-        if (!query || !key) return json({ error: "query and key are required" }, headers, 400);
+        const provider = String(body.provider ?? "");
+        if (!query || (!key && provider !== "searxng")) return json({ error: "query and key are required" }, headers, 400);
         const count = Math.max(1, Math.min(10, Number(body.count) || 5));
-        const results = await search(String(body.provider ?? ""), query, key, count);
+        const results = await search(provider, query, key, count, env);
         return json({ results: results.filter((r) => isFetchableUrl(r.url)) }, headers);
       }
       return json({ error: "not found" }, headers, 404);

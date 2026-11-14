@@ -1,0 +1,4 @@
+# scripts/golden/hf_build.py (golden sets, plan 7.1): exact versions, installed only in the golden-sets workflow
+# or by the owner for `hf_build.py fetch-local`. Never a dependency of the app.
+huggingface_hub==1.33.0
+pyarrow==25.0.1

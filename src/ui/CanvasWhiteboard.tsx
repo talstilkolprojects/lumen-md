@@ -120,7 +120,7 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
   }
 
   async function newCanvas() {
-    const name = await uiPrompt({ message: "Name for the new canvas:", placeholder: "ideas" });
+    const name = await uiPrompt({ message: t("canvas.new.prompt"), placeholder: t("canvas.new.placeholder") });
     if (!name?.trim()) return;
     await flushCanvas(canvasName);
     setCanvasName(name.trim());
@@ -284,7 +284,7 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
             cursor: "pointer", fontSize: 12,
           }}
         >
-          ← Back to Editor
+          {t("canvas.back")}
         </button>
         <select
           value={canvasName}
@@ -301,7 +301,7 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
           }}
         >
           {!savedList.includes(canvasName) && (
-            <option value={canvasName}>{canvasName} (unsaved)</option>
+            <option value={canvasName}>{t("canvas.unsaved", { name: canvasName })}</option>
           )}
           {savedList.map((n) => (
             <option key={n} value={n}>
@@ -320,9 +320,9 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
             cursor: "pointer",
             fontSize: 12,
           }}
-          title="Create a new canvas"
+          title={t("canvas.new.title")}
         >
-          + New
+          + {t("canvas.new")}
         </button>
         <div style={{ flex: 1 }} />
         <span style={{ fontSize: 12, color: "#8888a8" }}>{t("canvas.autoSaved")}</span>
@@ -348,10 +348,10 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
             fontWeight: 600,
           }}
         >
-          + Add Note
+          {t("canvas.addNote")}
         </button>
         <span style={{ fontSize: 11, color: "#8888a8" }}>
-          Zoom: {Math.round(zoom * 100)}%
+          {t("canvas.zoom", { pct: Math.round(zoom * 100) })}
         </span>
       </div>
 
@@ -461,7 +461,7 @@ export function CanvasWhiteboard({ open, onClose }: Props) {
                     fontSize: 12, fontWeight: 600,
                   }}
                 >
-                  Done
+                  {t("canvas.done")}
                 </button>
                 <button
                   onClick={() => {

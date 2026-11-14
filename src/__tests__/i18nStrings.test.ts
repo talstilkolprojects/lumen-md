@@ -17,6 +17,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { readLocale } from "../../scripts/lib/i18n-files.mjs";
+import { lazyEnglish } from "./helpers/i18nLazy";
 
 const SRC = resolve(__dirname, "..");
 
@@ -47,28 +49,8 @@ function extractKeys(text: string): string[] {
 }
 
 function loadBundle(): { en: Record<string, string>; he: Record<string, string> } {
-  const idx = readFileSync(join(SRC, "i18n", "index.ts"), "utf8");
-  // Both bundles are object literals named `en` and `he` — extract the
-  // keys with a forgiving regex (we don't run the file).
-  const enBlock = /const en:\s*Strings\s*=\s*\{([\s\S]+?)^\};/m.exec(idx);
-  if (!enBlock) {
-    throw new Error("Could not isolate the `en` block in i18n/index.ts");
-  }
-  // Hebrew lives in a lazy JSON chunk (A7 lever 4).
-  const heJson = JSON.parse(
-    readFileSync(join(SRC, "i18n", "locales", "he.json"), "utf8"),
-  ) as Record<string, string>;
-  function parseKeys(body: string): Record<string, string> {
-    const out: Record<string, string> = {};
-    const re = /^\s*"([\w.\-]+)"\s*:/gm;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(body)) !== null) out[m[1]] = "";
-    return out;
-  }
-  return {
-    en: parseKeys(enBlock[1]),
-    he: Object.fromEntries(Object.keys(heJson).map((k) => [k, ""])),
-  };
+  // The strings live in src/i18n/locales/<lang>/<domain>.json (plan 0.3).
+  return { en: { ...readLocale("en"), ...lazyEnglish() }, he: readLocale("he") };
 }
 
 describe("i18n bundle integrity", () => {

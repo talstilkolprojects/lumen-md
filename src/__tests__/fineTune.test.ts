@@ -191,3 +191,11 @@ describe("store: useFineTunedModel guard", () => {
     expect(useAppStore.getState().useFineTunedModel).toBe(false);
   });
 });
+
+describe("fineTuneJobActive (review: #194)", () => {
+  it("every unfinished status is active, validating_files included", async () => {
+    const { fineTuneJobActive } = await import("../ai/fineTune");
+    for (const st of ["validating_files", "queued", "running", "paused_new_status"]) expect(fineTuneJobActive(st)).toBe(true);
+    for (const st of ["succeeded", "failed", "cancelled", "", null, undefined]) expect(fineTuneJobActive(st)).toBe(false);
+  });
+});

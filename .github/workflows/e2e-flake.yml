@@ -1,0 +1,117 @@
+name: e2e flake hunt
+
+# Nightly (plan 0.5): CI runs e2e with retries off, so a flaky test fails a
+# PR. This finds them first — the whole suite 5 times per browser with
+# `npm run e2e:flake` (scripts/e2e-flake.mjs), which reports every test that
+# failed in any run. The job is red when anything failed; the summary and
+# the per-run reports are in the artifact. The plan's bar: 3 nights in a
+# row with 0 flakes.
+on:
+  schedule:
+    # 02:17 UTC: after the day's merges, off the top of the hour.
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+    inputs:
+      times:
+        description: Runs per browser
+        default: "5"
+  # Plan 0.11: a PR that changes the hunt or its report proves them with one
+  # run per browser (schedule only fires on the default branch).
+  pull_request:
+    paths:
+      - .github/workflows/e2e-flake.yml
+      - scripts/e2e-flake.mjs
+      - scripts/nightly/flake-report.mjs
+      - scripts/nightly/lib.mjs
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-flake-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  flake:
+    name: e2e flake hunt (${{ matrix.browser }})
+    # Pinned, not ubuntu-latest: the label moves to Ubuntu 26 from
+    # 19.10.2026 (actions/runner-images#14748). Move deliberately.
+    runs-on: ubuntu-24.04
+    # 5 full suites at ~10 min each, plus install and the dev server.
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: 22, cache: npm }
+      - run: npm ci || npm install
+      - name: Install Playwright browser (${{ matrix.browser }})
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Software GL for headless WebGL (firefox)
+        # Same as ci.yml: Firefox needs Mesa's llvmpipe under Xvfb for WebGL.
+        if: matrix.browser == 'firefox'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 libegl1 libgles2 mesa-utils
+      - name: Run the suite ${{ inputs.times || (github.event_name == 'pull_request' && '1' || '5') }}× (${{ matrix.browser }})
+        env:
+          CI: "1"
+          TIMES: ${{ inputs.times || (github.event_name == 'pull_request' && '1' || '5') }}
+          LIBGL_ALWAYS_SOFTWARE: ${{ matrix.browser == 'firefox' && '1' || '' }}
+          GALLIUM_DRIVER: ${{ matrix.browser == 'firefox' && 'llvmpipe' || '' }}
+          PW_FIREFOX_HEADED: ${{ matrix.browser == 'firefox' && '1' || '' }}
+        run: |
+          if [ "${{ matrix.browser }}" = firefox ]; then
+            xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" \
+              npm run e2e:flake -- --times "$TIMES" --project firefox
+          else
+            npm run e2e:flake -- --times "$TIMES" --project ${{ matrix.browser }}
+          fi
+      - name: Summary
+        if: always()
+        run: |
+          f=flake-results/summary.json
+          [ -f "$f" ] || { echo "no summary (the hunt did not finish)" >> "$GITHUB_STEP_SUMMARY"; exit 0; }
+          node -e '
+            const s = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+            const rows = Object.entries(s.tests).filter(([, t]) => t.fail > 0);
+            const out = [`### ${s.project}: ${Object.keys(s.tests).length} tests × ${s.times} runs — ${s.flaky.length} flaky, ${s.broken.length} always failing`, ""];
+            if (rows.length) {
+              out.push("| test | failed | runs |", "|---|---|---|");
+              for (const [k, t] of rows) out.push(`| ${k.replace(/\|/g, "\\|")} | ${t.fail}/${t.pass + t.fail} | ${t.runs.join(", ")} |`);
+            }
+            console.log(out.join("\n"));
+          ' "$f" >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: flake-results-${{ matrix.browser }}
+          path: flake-results/
+          retention-days: 14
+
+  # Plan 0.11: one report over the three browsers, as an artifact
+  # (reports-e2e-flake: flake-report.json / .md) and the job summary.
+  report:
+    name: flake report
+    needs: flake
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          pattern: flake-results-*
+          path: artifacts
+      - run: node scripts/nightly/flake-report.mjs artifacts
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: reports-e2e-flake
+          path: reports/
+          retention-days: 90

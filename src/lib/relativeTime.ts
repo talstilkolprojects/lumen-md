@@ -1,4 +1,4 @@
-import { t } from "../i18n";
+import { t, getLocale } from "../i18n";
 
 /**
  * Format a timestamp as a localized "X minutes ago" / "Y days ago"
@@ -15,5 +15,5 @@ export function relativeTime(ts: number): string {
   if (hours < 24) return t("time.hoursAgo", { n: hours });
   const days = Math.round(hours / 24);
   if (days < 30) return t("time.daysAgo", { n: days });
-  return new Date(ts).toLocaleDateString();
+  return new Date(ts).toLocaleDateString(getLocale());
 }

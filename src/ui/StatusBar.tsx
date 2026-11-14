@@ -1,11 +1,14 @@
+import { countWords } from "../text/hebrew";
+import { useSettledText } from "../hooks/useSettledText";
 import React, { useMemo, useState, useCallback, useSyncExternalStore } from "react";
 import { Sparkles, ShieldCheck, SpellCheck, FileDiff, Activity, BarChart3, CloudCog, CloudOff, AlertCircle } from "lucide-react";
 import type { CollabPeer } from "../collab/yjs";
-import { t } from "../i18n";
+import { t, getLocale } from "../i18n";
 import { useAppStore } from "../store/useStore";
-import { getTelemetryOptOut, setTelemetryOptOut } from "../lib/telemetry";
+import { getMonitoringConsent, setMonitoringConsent } from "../lib/telemetry";
 import type { ConfigHealthReport } from "../lib/configHealth";
 import { subscribeSyncStatus } from "../sync/syncStatus";
+import { secretStoreMode, subscribeSecretStoreMode } from "../lib/secretStore";
 import { parseSuggestions, mayContainCriticMarkup } from "../editor/suggesting";
 
 /** Number of CriticMarkup suggestions (cheap no-op for plain docs). */
@@ -29,6 +32,9 @@ interface Props {
   collab?: CollabInfo | null;
   configHealth?: ConfigHealthReport;
   onOpenRuntimeMetrics?: () => void;
+  /** Changes agents proposed that wait for review (plan 5.11); the badge shows while > 0. */
+  agentReviewPending?: number;
+  onOpenAgentReview?: () => void;
 }
 
 export const StatusBar = React.memo(function StatusBar({
@@ -38,56 +44,63 @@ export const StatusBar = React.memo(function StatusBar({
   collab,
   configHealth,
   onOpenRuntimeMetrics,
+  agentReviewPending = 0,
+  onOpenAgentReview,
 }: Props) {
-  const stats = useMemo(() => computeStats(text), [text]);
+  // A long document is counted once typing pauses (plan 8.4).
+  const settledText = useSettledText(text);
+  const stats = useMemo(() => computeStats(settledText), [settledText]);
   const syncState = useSyncExternalStore(
     subscribeSyncStatus,
     () => "idle" as const,
     () => "idle" as const,
   );
+  // No silent plain mode (plan 2.5): unencrypted secrets are always visible here.
+  const secretsMode = useSyncExternalStore(subscribeSecretStoreMode, secretStoreMode, secretStoreMode);
   const aiKey = useAppStore((s) => s.aiKey);
   const useLocalAi = useAppStore((s) => s.useLocalAi);
   const grammarCheck = useAppStore((s) => s.grammarCheck);
   const toggleGrammarCheck = useAppStore((s) => s.toggleGrammarCheck);
   const suggestingMode = useAppStore((s) => s.suggestingMode);
   const toggleSuggestingMode = useAppStore((s) => s.toggleSuggestingMode);
-  const suggestionCount = useMemo(() => countCriticMarkup(text), [text]);
-  const [telemetryOff, setTelemetryOff] = useState(getTelemetryOptOut);
+  const suggestionCount = useMemo(() => countCriticMarkup(settledText), [settledText]);
+  // Error reports are off until the user turns them on (plan 12.4).
+  const [telemetryOff, setTelemetryOff] = useState(() => !getMonitoringConsent());
   const toggleTelemetry = useCallback(() => {
-    const next = !telemetryOff;
-    setTelemetryOptOut(next);
-    setTelemetryOff(next);
+    const nextOff = !telemetryOff;
+    setMonitoringConsent(!nextOff);
+    setTelemetryOff(nextOff);
   }, [telemetryOff]);
   const healthIssues = configHealth
     ? [
-        ...configHealth.blocked.map((item) => ({ ...item, emoji: "⚠", color: "hsl(12 90% 58%)" })),
-        ...configHealth.partial.map((item) => ({ ...item, emoji: "◌", color: "hsl(35 90% 60%)" })),
+        ...configHealth.blocked.map((item) => ({ ...item, emoji: "⚠", color: "hsl(var(--danger))" })),
+        ...configHealth.partial.map((item) => ({ ...item, emoji: "◌", color: "hsl(var(--warn))" })),
       ].slice(0, 2)
     : [];
   const healthColor = !configHealth
     ? "hsl(var(--fg-muted))"
     : configHealth.score >= 85
-      ? "hsl(145 60% 45%)"
+      ? "hsl(var(--ok))"
       : configHealth.score >= 65
-        ? "hsl(35 90% 55%)"
-        : "hsl(12 90% 58%)";
+        ? "hsl(var(--warn))"
+        : "hsl(var(--danger))";
   return (
     <footer className="status-bar">
-      <span className="sb-item" title="Document">
+      <span className="sb-item" title={t("status.document")}>
         {dirty ? "●" : "○"} {filename}
       </span>
       {syncState !== "idle" && (
-        <span className="sb-item" title={`Sync: ${syncState}`} style={{ gap: 4 }}>
+        <span className="sb-item" title={t("status.sync.title", { state: t(`status.sync.${syncState}`) })} style={{ gap: 4 }}>
           {syncState === "syncing" && <CloudCog size={10} className="spin" />}
-          {syncState === "error" && <AlertCircle size={10} style={{ color: "hsl(12 90% 58%)" }} />}
+          {syncState === "error" && <AlertCircle size={10} style={{ color: "hsl(var(--danger))" }} />}
           {syncState === "offline" && <CloudOff size={10} style={{ color: "hsl(var(--fg-muted))" }} />}
-          <span style={{ fontSize: 10, textTransform: "capitalize" }}>{syncState}</span>
+          <span style={{ fontSize: 10, textTransform: "capitalize" }}>{t(`status.sync.${syncState}`)}</span>
         </span>
       )}
       {collab && (
         <span
           className="sb-item"
-          title={`Collab room: ${collab.roomName}\n${collab.peers.length} peer(s)`}
+          title={t("status.collab.title", { room: collab.roomName, n: collab.peers.length })}
           style={{ gap: 6 }}
         >
           <span className="sb-accent" style={{ fontWeight: 600 }}>{t("status.live")}</span>
@@ -109,15 +122,15 @@ export const StatusBar = React.memo(function StatusBar({
               />
             ))}
             {collab.peers.length > 5 && (
-              <span style={{ marginLeft: 4 }}>+{collab.peers.length - 5}</span>
+              <span style={{ marginInlineStart: 4 }}>+{collab.peers.length - 5}</span>
             )}
           </span>
           <button
             type="button"
             onClick={collab.onLeave}
-            title="Leave collaboration"
+            title={t("cmd.collab.leave")}
             style={{
-              marginLeft: 4,
+              marginInlineStart: 4,
               padding: "0 6px",
               fontSize: 10,
               border: "1px solid hsl(var(--border))",
@@ -143,12 +156,12 @@ export const StatusBar = React.memo(function StatusBar({
             gap: 4,
           }}
         >
-          <span>{`Health ${configHealth.score}%`}</span>
+          <span>{t("status.health", { score: configHealth.score })}</span>
           {healthIssues.length > 0 && (
             <span style={{ color: "hsl(var(--fg-muted))", fontWeight: 400 }}>
               ·
               {healthIssues.map((item) => (
-                <span key={item.key} title={item.details} style={{ marginLeft: 6, color: item.color }}>
+                <span key={item.key} title={item.details} style={{ marginInlineStart: 6, color: item.color }}>
                   {item.emoji} {item.label}
                 </span>
               ))}
@@ -156,15 +169,21 @@ export const StatusBar = React.memo(function StatusBar({
           )}
         </span>
       ) : null}
-      <span className="sb-item" title="Word count">
-        {t("status.words", { n: stats.words.toLocaleString() })}
+      <span className="sb-item" title={t("status.words.title")}>
+        {t("status.words", { n: stats.words.toLocaleString(getLocale()) })}
       </span>
-      <span className="sb-item" title="Characters (without spaces)">
-        {t("status.chars", { n: stats.chars.toLocaleString() })}
+      <span className="sb-item" title={t("status.chars.title")}>
+        {t("status.chars", { n: stats.chars.toLocaleString(getLocale()) })}
       </span>
-      <span className="sb-item" title="Reading time at ~220 wpm">
+      <span className="sb-item" title={t("status.reading.title")}>
         {t("status.reading", { n: stats.readingMin })}
       </span>
+      {agentReviewPending > 0 && (
+        <button type="button" className="sb-item sb-review" onClick={onOpenAgentReview} title={t("agentReview.badge.tooltip")} data-testid="status-agent-review">
+          <Sparkles size={10} />
+          {t("agentReview.badge", { count: agentReviewPending })}
+        </button>
+      )}
       <button
         type="button"
         className="sb-item"
@@ -183,7 +202,7 @@ export const StatusBar = React.memo(function StatusBar({
           cursor: "pointer",
           padding: 0,
           font: "inherit",
-          color: suggestingMode ? "hsl(145 60% 45%)" : "hsl(var(--fg-muted))",
+          color: suggestingMode ? "hsl(var(--ok))" : "hsl(var(--fg-muted))",
         }}
       >
         <FileDiff size={10} />
@@ -236,7 +255,7 @@ export const StatusBar = React.memo(function StatusBar({
           cursor: "pointer",
           padding: 0,
           font: "inherit",
-          color: telemetryOff ? "hsl(var(--fg-muted))" : "hsl(140 60% 55%)",
+          color: telemetryOff ? "hsl(var(--fg-muted))" : "hsl(var(--ok))",
         }}
       >
         <Activity size={10} />
@@ -265,6 +284,19 @@ export const StatusBar = React.memo(function StatusBar({
           <span style={{ fontSize: 10, fontWeight: 600 }}>{t("status.runtimeMetrics")}</span>
         </button>
       )}
+      {secretsMode === "plain" && (
+        <span
+          className="sb-item"
+          role="status"
+          title={t("status.secretsPlain.tooltip")}
+          aria-label={t("status.secretsPlain.tooltip")}
+          style={{ gap: 4, paddingInline: 4 }}
+          data-testid="status-secrets-plain"
+        >
+          <AlertCircle size={10} style={{ color: "hsl(12 90% 58%)" }} aria-hidden="true" />
+          <span style={{ color: "hsl(12 90% 58%)", fontSize: 10, fontWeight: 600 }}>{t("status.secretsPlain")}</span>
+        </span>
+      )}
       {useLocalAi && (
         <span
           className="sb-item"
@@ -274,15 +306,15 @@ export const StatusBar = React.memo(function StatusBar({
         >
           <ShieldCheck
             size={10}
-            style={{ color: "hsl(140 60% 55%)" }}
+            style={{ color: "hsl(var(--ok))" }}
           />
-          <span style={{ color: "hsl(140 60% 55%)", fontSize: 10, fontWeight: 600 }}>
+          <span style={{ color: "hsl(var(--ok))", fontSize: 10, fontWeight: 600 }}>
             {t("status.privacyMode")}
           </span>
         </span>
       )}
       {aiKey && !useLocalAi && (
-        <span className="sb-item" title="AI Copilot Active" style={{ gap: 4 }}>
+        <span className="sb-item" title={t("status.aiActive")} style={{ gap: 4 }}>
           <Sparkles size={10} style={{ color: "hsl(var(--accent))", animation: "pulse 2s ease-in-out infinite" }} />
           <span style={{ color: "hsl(var(--accent))", fontSize: 10 }}>AI</span>
         </span>
@@ -314,9 +346,9 @@ function computeStats(text: string): Stats {
     .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "")
     .replace(/```[\s\S]*?```/g, "");
 
-  // Words: groups of word chars, including unicode letters.
-  const wordMatches = stripped.match(/[\p{L}\p{N}'’-]+/gu);
-  const words = wordMatches?.length ?? 0;
+  // Words: letters of any script *with their combining marks* (a pointed
+  // Hebrew word used to count as several), gershayim inside (צה״ל) — T26.
+  const words = countWords(stripped);
 
   // Characters (excluding whitespace).
   const chars = stripped.replace(/\s+/g, "").length;

@@ -100,3 +100,49 @@ test("the runner can't reach the app's storage", async ({ page }) => {
   await block.getByRole("tab", { name: /Console/ }).click();
   await expect(block.getByRole("log")).toContainText("storage blocked: SecurityError origin null", { timeout: 30_000 });
 });
+
+test("the runner runs under its own CSP with no script blocked (WebKit: by nonce)", async ({ page }) => {
+  // In every frame, the sandboxed runner included: record CSP violations.
+  await page.addInitScript(() => {
+    document.addEventListener("securitypolicyviolation", (e) => {
+      const w = window as unknown as { __cspv?: string[] };
+      (w.__cspv ??= []).push(`${e.effectiveDirective} ${e.blockedURI}`);
+    });
+  });
+  await page.reload();
+  await expect(page.locator(".cm-content").first()).toContainText("Welcome to", { timeout: 15_000 });
+  await setDoc(
+    page,
+    [
+      "```playground react",
+      "--- main.jsx ---",
+      'import { createRoot } from "react-dom/client";',
+      'createRoot(document.getElementById("root")).render(<p id="r">react ok</p>);',
+      "```",
+      "",
+      "```playground vue",
+      "--- main.js ---",
+      'import { createApp } from "vue";',
+      'createApp({ template: `<p id="v">vue ok</p>` }).mount("#app");',
+      "```",
+      "",
+    ].join("\n"),
+  );
+  const [react, vue] = [page.locator('[data-testid="playground"]').nth(0), page.locator('[data-testid="playground"]').nth(1)];
+  await react.getByRole("button", { name: "Run" }).click();
+  await expect(react.frameLocator("iframe").locator("#r")).toHaveText("react ok", { timeout: 30_000 });
+  await vue.getByRole("button", { name: "Run" }).click();
+  await expect(vue.frameLocator("iframe").locator("#v")).toHaveText("vue ok", { timeout: 30_000 });
+
+  const runners = page.frames().filter((f) => f.url().includes("playground-runner.html"));
+  expect(runners.length).toBeGreaterThan(0);
+  for (const frame of runners) {
+    // The policy is enforced here (the meta copy in dev, plus the header in production) ...
+    const csp = await frame.evaluate(() => document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute("content") ?? "");
+    expect(csp).toContain("'nonce-lumen-livejs-runner'");
+    // ... and no script (entry, chunks, vendor React, Vue, blob: modules) was blocked by it.
+    // Other directives are not asserted: the dev server's HMR socket is outside connect-src.
+    const blocked = await frame.evaluate(() => (window as unknown as { __cspv?: string[] }).__cspv ?? []);
+    expect(blocked.filter((v) => v.startsWith("script-src"))).toEqual([]);
+  }
+});

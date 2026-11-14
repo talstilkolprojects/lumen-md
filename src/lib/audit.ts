@@ -62,12 +62,7 @@ export function __setAuditConfigForTesting(cfg: AuditConfig | null): void {
 function readConfig(): AuditConfig {
   if (testOverride) return testOverride;
   try {
-    const env = (
-      import.meta as ImportMeta & {
-        env?: { VITE_AUDIT_ENDPOINT?: string };
-      }
-    ).env;
-    return { endpoint: env?.VITE_AUDIT_ENDPOINT ?? "" };
+    return { endpoint: (import.meta.env.VITE_AUDIT_ENDPOINT as string | undefined) ?? "" };
   } catch {
     return { endpoint: "" };
   }

@@ -1,0 +1,215 @@
+/* First-run setup (plan 14.1). Logical properties only: the dialog mirrors under dir="rtl". */
+.lumen-firstrun-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: hsl(0 0% 0% / 0.55);
+}
+
+.lumen-firstrun {
+  inline-size: min(560px, 100%);
+  max-block-size: calc(100dvh - 32px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-block: 22px 16px;
+  padding-inline: 24px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 14px;
+  background: hsl(var(--bg));
+  color: hsl(var(--fg));
+  box-shadow: 0 18px 60px hsl(0 0% 0% / 0.45);
+  text-align: start;
+}
+
+.lumen-firstrun-head h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.lumen-firstrun-head p {
+  margin-block: 4px 0;
+  color: hsl(var(--fg-muted));
+  font-size: 13px;
+}
+
+.lumen-firstrun-dots {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  margin-block-start: 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.lumen-firstrun-dots li {
+  flex: 1;
+  block-size: 4px;
+  border-radius: 2px;
+  background: hsl(var(--border));
+}
+
+.lumen-firstrun-dots li[data-on="true"] {
+  background: hsl(var(--accent));
+}
+
+.lumen-firstrun fieldset {
+  margin: 0;
+  margin-block-end: 12px;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.lumen-firstrun legend {
+  margin-block-end: 8px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.lumen-firstrun-hint {
+  margin-block: 0 10px;
+  color: hsl(var(--fg-muted));
+  font-size: 12.5px;
+}
+
+.lumen-firstrun-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+}
+
+.lumen-firstrun-grid.three {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.lumen-firstrun-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding-block: 10px;
+  padding-inline: 12px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.lumen-firstrun-choice.wide {
+  margin-block-end: 8px;
+}
+
+.lumen-firstrun-choice[data-checked="true"] {
+  border-color: hsl(var(--accent));
+  background: hsl(var(--accent) / 0.1);
+}
+
+.lumen-firstrun-choice[data-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.lumen-firstrun-choice input {
+  margin: 0;
+  margin-block-start: 2px;
+  accent-color: hsl(var(--accent));
+}
+
+.lumen-firstrun-choice:focus-within {
+  outline: 2px solid hsl(var(--accent));
+  outline-offset: 1px;
+}
+
+.lumen-firstrun-choice span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+}
+
+.lumen-firstrun-choice small {
+  color: hsl(var(--fg-muted));
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.lumen-firstrun-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lumen-firstrun-status {
+  min-block-size: 1.2em;
+  margin: 0;
+  color: hsl(var(--fg-muted));
+  font-size: 12.5px;
+}
+
+.lumen-firstrun-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lumen-firstrun-spacer {
+  flex: 1;
+}
+
+.lumen-firstrun-btn {
+  padding-block: 7px;
+  padding-inline: 14px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  background: transparent;
+  color: hsl(var(--fg));
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.lumen-firstrun-btn.primary {
+  border-color: hsl(var(--accent));
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-fg, 0 0% 100%));
+  font-weight: 600;
+}
+
+.lumen-firstrun-btn:disabled,
+.lumen-firstrun-link:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.lumen-firstrun-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: hsl(var(--fg-muted));
+  font: inherit;
+  font-size: 12.5px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.lumen-firstrun-btn:focus-visible,
+.lumen-firstrun-link:focus-visible {
+  outline: 2px solid hsl(var(--accent));
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .lumen-firstrun {
+    padding-inline: 16px;
+  }
+
+  .lumen-firstrun-grid.three {
+    grid-template-columns: 1fr;
+  }
+}

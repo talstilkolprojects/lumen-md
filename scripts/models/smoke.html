@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Model smoke test</title>
+    <!--
+      transformers.js 4.3 exactly as the app runs it (src/ai/transformers.worker.ts):
+      the package's web build, onnxruntime-web's WebGPU bundle, same-origin wasm
+      (the asyncify build), local models only. Served by scripts/models/smoke.mjs.
+    -->
+    <script type="importmap">
+      {
+        "imports": {
+          "@huggingface/transformers": "/npm/@huggingface/transformers/dist/transformers.web.js",
+          "onnxruntime-web/webgpu": "/npm/onnxruntime-web/dist/ort.webgpu.bundle.min.mjs",
+          "onnxruntime-common": "/npm/onnxruntime-common/dist/esm/index.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <script type="module">
+      import { env, pipeline, RawImage } from "@huggingface/transformers";
+
+      env.allowRemoteModels = false;
+      env.allowLocalModels = true;
+      env.localModelPath = "/models/";
+      env.useBrowserCache = false;
+      env.backends.onnx.wasm.wasmPaths = {
+        mjs: "/npm/onnxruntime-web/dist/ort-wasm-simd-threaded.asyncify.mjs",
+        wasm: "/npm/onnxruntime-web/dist/ort-wasm-simd-threaded.asyncify.wasm",
+      };
+
+      function solid(color, size = 64) {
+        const rgb = { red: [220, 20, 30], blue: [20, 40, 220], green: [20, 200, 40] }[color];
+        const data = new Uint8ClampedArray(size * size * 3);
+        for (let i = 0; i < data.length; i += 3) data.set(rgb, i);
+        return new RawImage(data, size, size, 3);
+      }
+
+      /** One model, one dtype, one inference → { ok, output, ms, error }. */
+      window.runSmoke = async (target, dtype) => {
+        const started = performance.now();
+        let pipe;
+        try {
+          pipe = await pipeline(target.pipeline, target.id, { dtype, device: "wasm" });
+          const s = target.smoke;
+          let output;
+          let ok;
+          if (target.pipeline === "translation") {
+            const out = await pipe(s.text, { max_new_tokens: 64 });
+            output = out[0]?.translation_text ?? "";
+            ok = s.expect === "hebrew" ? /[֐-׿]{2}/.test(output) : /[A-Za-z]{3}/.test(output);
+          } else if (target.pipeline === "token-classification") {
+            const out = await pipe(s.text);
+            output = out.map((e) => `${e.word}:${e.entity}`).join(" ");
+            ok = out.length > 0;
+          } else if (target.pipeline === "zero-shot-image-classification") {
+            const out = await pipe(solid(s.image), s.labels);
+            output = out.map((r) => `${r.label}=${r.score.toFixed(3)}`).join(" ");
+            ok = out[0]?.label === s.expect;
+          } else {
+            throw new Error(`no smoke test for pipeline ${target.pipeline}`);
+          }
+          return { ok, output, ms: Math.round(performance.now() - started) };
+        } catch (e) {
+          return { ok: false, error: String(e?.message ?? e).slice(0, 500), ms: Math.round(performance.now() - started) };
+        } finally {
+          await pipe?.dispose?.();
+        }
+      };
+      window.smokeReady = true;
+    </script>
+  </body>
+</html>

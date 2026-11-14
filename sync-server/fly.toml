@@ -2,8 +2,8 @@
 # Provision with:  fly launch --copy-config --no-deploy --name lumen-signal
 # Then:            fly deploy
 #
-# DNS:  CNAME signal.lumen.md → lumen-signal.fly.dev (proxy off, plain WebSocket)
-# Cert: fly certs add signal.lumen.md  (after the CNAME resolves)
+# URL:  wss://lumen-signal.fly.dev (a custom domain: CNAME it to
+#       lumen-signal.fly.dev, then `fly certs add <host>`)
 
 app = "lumen-signal"
 primary_region = "sjc"

@@ -1,140 +1,134 @@
 /**
- * Error telemetry — built on `@sentry/react` SDK.
+ * Error monitoring (plan 12.4) — off by default.
  *
- * Wire-up:
- * 1. Set `VITE_SENTRY_DSN` (e.g. `https://abcdef@o123.ingest.sentry.io/4567`).
- * 2. Call `initTelemetry()` once at startup (in `main.tsx`).
- * 3. The user can opt out by setting `localStorage["lumen.telemetry.optOut"] = "1"`.
- *    Settings UI surfaces a toggle that flips this key.
+ * Nothing is loaded and nothing is sent unless BOTH hold:
+ *   1. the user turned error reports on (`lumen.monitoring.consent = "1"`,
+ *      the Telemetry pill in the status bar), and
+ *   2. the build names an error tracker: `VITE_SENTRY_DSN` (Sentry, or a
+ *      self-hosted GlitchTip, which speaks the same protocol).
  *
- * If the DSN is missing or the user opted out, the sink is a no-op and the
- * SDK is never initialised — saving the network + bundle weight that the
- * SDK's auto-instrumentation would otherwise add.
+ * A DSN is public by design (it ships in every Sentry-enabled page and only
+ * lets a client *submit* events), so a build-time variable is the right
+ * place for it — it is not a secret.
+ *
+ * Only then is `./sentryMonitor` (and with it `@sentry/browser`) imported.
+ * Its transport sends through the privacy ledger under the "monitoring"
+ * category, and its `beforeSend` strips note content, titles and paths.
+ * This file stays small: it is on the startup path.
  */
-
-// Type-only import — the SDK itself is loaded lazily inside initTelemetry()
-// so Sentry never sits in the eager boot path (it was bundled into
-// vendor-react and cost first-paint time for every user, even opted-out ones).
-import type { ErrorEvent as SentryErrorEvent } from "@sentry/react";
 import { setErrorSink } from "./logger";
 
-const OPT_OUT_KEY = "lumen.telemetry.optOut";
+const CONSENT_KEY = "lumen.monitoring.consent";
+/** The old opt-out flag (monitoring used to be on when a DSN was set). Cleared on any change. */
+const LEGACY_OPT_OUT_KEY = "lumen.telemetry.optOut";
 
-function isOptedOut(): boolean {
+/** Has the user turned error reports on? False by default and when storage is unavailable. */
+export function getMonitoringConsent(): boolean {
   try {
-    return localStorage.getItem(OPT_OUT_KEY) === "1";
+    return localStorage.getItem(CONSENT_KEY) === "1";
   } catch {
     return false;
   }
 }
 
-/** Public toggle — used by the Settings UI. */
-export function setTelemetryOptOut(value: boolean): void {
+/** The Telemetry pill. Turning it on starts monitoring right away (still only with a DSN). */
+export function setMonitoringConsent(on: boolean): void {
   try {
-    if (value) localStorage.setItem(OPT_OUT_KEY, "1");
-    else localStorage.removeItem(OPT_OUT_KEY);
+    if (on) localStorage.setItem(CONSENT_KEY, "1");
+    else localStorage.removeItem(CONSENT_KEY);
+    localStorage.removeItem(LEGACY_OPT_OUT_KEY);
   } catch {
-    // private mode — silently ignore; telemetry will fall back to disabled
+    // why: private mode — consent can't be stored, so monitoring stays off
   }
+  if (on) void initTelemetry();
+  else setErrorSink(null);
 }
 
-export function getTelemetryOptOut(): boolean {
-  return isOptedOut();
+let dsnOverride: string | null = null;
+
+/**
+ * Vite inlines `import.meta.env.VITE_*` at transform time, so `vi.stubEnv`
+ * can't reach this module. Tests set the DSN here instead (null resets).
+ */
+export function __setMonitoringDsnForTesting(dsn: string | null): void {
+  dsnOverride = dsn;
 }
 
 function readEnvDsn(): string | undefined {
+  if (dsnOverride !== null) return dsnOverride;
   try {
-    const env = (
-      import.meta as ImportMeta & { env?: { VITE_SENTRY_DSN?: string } }
-    ).env;
-    return env?.VITE_SENTRY_DSN;
+    return import.meta.env.VITE_SENTRY_DSN as string | undefined;
   } catch {
     return undefined;
   }
 }
 
 /**
- * Strip user-content fields from outgoing events. Lumen documents are
- * private to the user — we never want a stack trace + breadcrumb chain
- * to leak the doc body, vault contents, or auth tokens.
- *
- * Approach: redact any `extra` / `contexts` / `breadcrumbs.message` field
- * whose key looks like user content (`note.*`, `doc.*`, `aiKey`, `vault`).
+ * The configured DSN, or null when it is missing or not a usable
+ * `https://<key>@host/<project>` address (http only for localhost).
  */
-function scrubPii(event: SentryErrorEvent): SentryErrorEvent | null {
-  const REDACT = /^(note\.|doc\.|aiKey|vault|workspace\.|password)/i;
-
-  const redactObj = (obj: Record<string, unknown> | undefined): void => {
-    if (!obj) return;
-    for (const k of Object.keys(obj)) {
-      if (REDACT.test(k)) obj[k] = "[redacted]";
-    }
-  };
-  redactObj(event.extra as Record<string, unknown> | undefined);
-  redactObj(event.contexts as unknown as Record<string, unknown> | undefined);
-  if (event.breadcrumbs) {
-    for (const bc of event.breadcrumbs) {
-      if (bc.data) redactObj(bc.data);
-    }
+export function monitoringDsn(): string | null {
+  const raw = readEnvDsn()?.trim();
+  if (!raw) return null;
+  try {
+    const u = new URL(raw);
+    const local = u.hostname === "localhost" || u.hostname === "127.0.0.1";
+    if (u.protocol !== "https:" && !(u.protocol === "http:" && local)) return null;
+    if (!u.username || !/\/\d+\/?$/.test(u.pathname)) return null;
+    return raw;
+  } catch {
+    return null;
   }
-  return event;
 }
 
-let initialized = false;
+/** Origin of the error tracker (for the ledger's rules), or null without a DSN. */
+export function monitoringOrigin(): string | null {
+  const dsn = monitoringDsn();
+  return dsn ? new URL(dsn).origin : null;
+}
 
 /**
- * Wire telemetry into the logger error sink. Safe to call multiple times.
- * Initialises the Sentry SDK only when a DSN is set and the user hasn't
- * opted out — otherwise the SDK isn't loaded at all.
+ * Where the tracker takes reports — `<origin>[/<prefix>]/api/<project>/` —
+ * or null without a DSN. The ledger matches this, not the whole origin: a
+ * self-hosted GlitchTip may share the app's own origin.
  */
-export function initTelemetry(): void {
-  if (initialized) return;
-  initialized = true;
-
-  const dsn = readEnvDsn();
-  if (!dsn) return; // no DSN = no telemetry, that's fine
-  if (isOptedOut()) return;
-
-  // Lazy-load the SDK off the boot path; telemetry wiring tolerates the
-  // few-ms gap (errors before init simply aren't reported, same as before
-  // init() returned).
-  void import("@sentry/react")
-    .then((Sentry) => {
-      Sentry.init({
-        dsn,
-        integrations: [Sentry.browserTracingIntegration()],
-        tracesSampleRate: 0.1,
-        release: "lumen@0.1.0",
-        beforeSend(event) {
-          // PII scrub before any event leaves the browser.
-          return scrubPii(event as SentryErrorEvent);
-        },
-      });
-
-      setErrorSink((...args: unknown[]) => {
-        if (isOptedOut()) return;
-        const errArg = args.find((a) => a instanceof Error) as Error | undefined;
-        const messageArgs = args.filter((a) => a !== errArg).map(formatArg).join(" ");
-        if (errArg) {
-          Sentry.captureException(errArg, { extra: { message: messageArgs } });
-        } else if (messageArgs) {
-          Sentry.captureMessage(messageArgs, "error");
-        }
-      });
-    })
-    .catch(() => {
-      /* SDK failed to load (offline/blocked) — telemetry stays off */
-    });
+export function monitoringEndpoint(): string | null {
+  const dsn = monitoringDsn();
+  if (!dsn) return null;
+  const u = new URL(dsn);
+  const m = /^(.*)\/(\d+)\/?$/.exec(u.pathname);
+  return m ? `${u.origin}${m[1]}/api/${m[2]}/` : null;
 }
 
-/** Pretty-print non-Error args for `extra.message`. */
-function formatArg(a: unknown): string {
-  if (a == null) return String(a);
-  if (typeof a === "string") return a;
-  if (a instanceof Error) return a.message;
+/** What `initTelemetry` loads; replaceable in tests. */
+export type MonitorLoader = () => Promise<{ startSentry: (dsn: string) => Promise<void> }>;
+
+const defaultLoader: MonitorLoader = () => import("./sentryMonitor");
+
+let monitor: Awaited<ReturnType<MonitorLoader>> | null = null;
+
+/**
+ * Start monitoring if the user consented and the build has a DSN.
+ * Safe to call many times (startup, and again when the user turns it back
+ * on: `startSentry` initialises the SDK once and re-attaches the error sink).
+ * Resolves to whether the monitor is running.
+ */
+export async function initTelemetry(load: MonitorLoader = defaultLoader): Promise<boolean> {
+  if (!getMonitoringConsent()) return false;
+  const dsn = monitoringDsn();
+  if (!dsn) return false;
   try {
-    return JSON.stringify(a);
+    monitor ??= await load();
+    await monitor.startSentry(dsn);
+    return true;
   } catch {
-    return String(a);
+    // SDK failed to load (offline / blocked) — monitoring stays off
+    return false;
   }
+}
+
+/** Test hook. */
+export function __resetTelemetry(): void {
+  monitor = null;
+  setErrorSink(null);
 }

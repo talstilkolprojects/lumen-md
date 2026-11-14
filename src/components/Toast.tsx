@@ -11,13 +11,13 @@ const ICONS: Record<ToastKind, typeof Info> = {
 };
 
 const KIND_CLASSES: Record<ToastKind, string> = {
-  info: "border-l-sky-400 bg-sky-50 text-sky-950 dark:bg-sky-950/40 dark:text-sky-100 dark:border-l-sky-500",
+  info: "border-s-sky-400 bg-sky-50 text-sky-950 dark:bg-sky-950/40 dark:text-sky-100 dark:border-s-sky-500",
   success:
-    "border-l-emerald-400 bg-emerald-50 text-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-100 dark:border-l-emerald-500",
+    "border-s-emerald-400 bg-emerald-50 text-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-100 dark:border-s-emerald-500",
   warning:
-    "border-l-amber-400 bg-amber-50 text-amber-950 dark:bg-amber-950/40 dark:text-amber-100 dark:border-l-amber-500",
+    "border-s-amber-400 bg-amber-50 text-amber-950 dark:bg-amber-950/40 dark:text-amber-100 dark:border-s-amber-500",
   error:
-    "border-l-rose-500 bg-rose-50 text-rose-950 dark:bg-rose-950/40 dark:text-rose-100 dark:border-l-rose-500",
+    "border-s-rose-500 bg-rose-50 text-rose-950 dark:bg-rose-950/40 dark:text-rose-100 dark:border-s-rose-500",
 };
 
 function ToastCard({ toast }: { toast: ToastType }) {
@@ -37,7 +37,7 @@ function ToastCard({ toast }: { toast: ToastType }) {
       role={isAlert ? "alert" : "status"}
       aria-live={isAlert ? "assertive" : "polite"}
       className={
-        "pointer-events-auto flex w-80 max-w-[calc(100vw-2rem)] items-start gap-3 rounded-md border-l-4 p-3 shadow-md ring-1 ring-black/5 dark:ring-white/10 " +
+        "pointer-events-auto flex w-80 max-w-[calc(100vw-2rem)] items-start gap-3 rounded-md border-s-4 p-3 shadow-md ring-1 ring-black/5 dark:ring-white/10 " +
         KIND_CLASSES[toast.kind]
       }
     >
@@ -88,7 +88,7 @@ export function ToastContainer() {
   return (
     <div
       aria-label={t("toast.region")}
-      className="pointer-events-none fixed bottom-4 right-4 z-1000 flex flex-col gap-2 [direction:ltr]"
+      className="pointer-events-none fixed bottom-4 end-4 z-1000 flex flex-col gap-2 [direction:ltr]"
     >
       {toasts.map((item) => (
         <ToastCard key={item.id} toast={item} />

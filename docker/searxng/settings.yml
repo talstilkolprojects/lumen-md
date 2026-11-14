@@ -1,0 +1,13 @@
+# Minimal SearXNG settings for Lumen's local research service.
+use_default_settings: true
+server:
+  # Change this for any instance reachable from other machines.
+  secret_key: "lumen-local-only-change-me"
+  limiter: false
+  image_proxy: false
+search:
+  safe_search: 0
+  # The research service reads results as JSON.
+  formats:
+    - html
+    - json

@@ -20,15 +20,13 @@ test.describe("Template Gallery", () => {
     const palette = page.locator('[role="dialog"]', { hasNot: page.locator("not-real") })
       .filter({ has: page.getByPlaceholder(PALETTE_LABEL) });
     await palette.waitFor({ timeout: 3000 });
-    await page.keyboard.type("template");
-    await page.waitForTimeout(300);
-    const templateCmd = palette.getByText(/template/i).first();
-    if (await templateCmd.isVisible()) {
-      await page.keyboard.press("Enter");
-      // Once the action fires, the PALETTE itself closes (gallery may
-      // still be a separate dialog — that's fine).
-      await expect(palette).not.toBeVisible({ timeout: 3000 });
-    }
+    await palette.locator("input").first().fill("template gallery");
+    await expect(palette.locator('[role="option"][aria-selected="true"]')).toContainText(/template/i, { timeout: 5000 });
+    await page.keyboard.press("Enter");
+    // Once the action fires, the PALETTE itself closes and the gallery
+    // (its own dialog) opens.
+    await expect(palette).not.toBeVisible({ timeout: 3000 });
+    await expect(page.locator('[role="dialog"]').first()).toBeVisible({ timeout: 5000 });
   });
 
   test("gallery has at least 5 templates", async ({ page }) => {
@@ -36,18 +34,14 @@ test.describe("Template Gallery", () => {
     const palette = page.locator('[role="dialog"]')
       .filter({ has: page.getByPlaceholder(PALETTE_LABEL) });
     await palette.waitFor({ timeout: 3000 });
-    await page.keyboard.type("template gallery");
-    await page.waitForTimeout(300);
-    const templateCmd = palette.getByText(/template/i).first();
-    if (await templateCmd.isVisible()) {
-      await page.keyboard.press("Enter");
-      await page.waitForTimeout(1000);
-      const cards = page.locator('[data-testid="template-card"], .template-card');
-      const count = await cards.count();
-      // Either gallery rendered cards, or the palette closed (action
-      // wired correctly — gallery surface may not be implemented yet).
-      const paletteClosed = !(await palette.isVisible());
-      expect(count >= 5 || paletteClosed).toBe(true);
-    }
+    await palette.locator("input").first().fill("template gallery");
+    await expect(palette.locator('[role="option"][aria-selected="true"]')).toContainText(/template/i, { timeout: 5000 });
+    await page.keyboard.press("Enter");
+    await expect(palette).not.toBeVisible({ timeout: 3000 });
+    // The static registry (public/templates/registry.json) has ten
+    // templates; the gallery lists them once the fetch resolves.
+    const cards = page.getByTestId("template-card");
+    await expect(cards.first()).toBeVisible({ timeout: 10_000 });
+    expect(await cards.count()).toBeGreaterThanOrEqual(5);
   });
 });

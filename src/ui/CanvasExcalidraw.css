@@ -1,0 +1,144 @@
+/* The canvas dialog (plan 4.19). Logical properties: it mirrors under dir="rtl". */
+.lumen-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background: hsl(var(--bg));
+}
+
+.lumen-canvas-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-block: 8px;
+  padding-inline: 12px;
+  border-block-end: 1px solid hsl(var(--border));
+  background: hsl(var(--bg-subtle));
+}
+
+.lumen-canvas-pick {
+  padding-block: 3px;
+  padding-inline: 6px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+  background: hsl(var(--bg));
+  color: hsl(var(--fg));
+  font-size: 12px;
+}
+
+.lumen-canvas-btn {
+  padding-block: 3px;
+  padding-inline: 9px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+  background: transparent;
+  color: hsl(var(--fg));
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.lumen-canvas-btn.accent {
+  border-color: hsl(var(--accent));
+  color: hsl(var(--accent));
+}
+
+.lumen-canvas-note {
+  color: hsl(var(--fg-muted));
+  font-size: 11px;
+}
+
+.lumen-canvas-legacy {
+  position: relative;
+  color: hsl(var(--fg-muted));
+  font-size: 11px;
+}
+
+.lumen-canvas-legacy summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.lumen-canvas-legacy-menu {
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-start: 0;
+  z-index: 200;
+  min-inline-size: 220px;
+  margin-block-start: 4px;
+  padding: 8px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  background: hsl(var(--bg));
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.3);
+}
+
+.lumen-canvas-legacy-menu button {
+  display: block;
+  inline-size: 100%;
+  margin-block: 2px;
+  padding-block: 4px;
+  padding-inline: 8px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: hsl(var(--fg));
+  font: inherit;
+  font-size: 12px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.lumen-canvas-body {
+  position: relative;
+  flex: 1;
+  min-block-size: 0;
+}
+
+/* Excalidraw's hand-drawn fonts carry no Hebrew glyphs. Assistant (SIL OFL,
+   shipped with Excalidraw and served from this origin) supplies the Hebrew
+   block for every canvas font family; mixed Hebrew/Latin text keeps both.
+   Loaded only when Hebrew characters are drawn. */
+@font-face {
+  font-family: "Excalifont";
+  src: url("/excalidraw/fonts/Assistant/Assistant-Regular.woff2") format("woff2");
+  unicode-range: U+0590-05FF, U+FB1D-FB4F;
+}
+
+@font-face {
+  font-family: "Virgil";
+  src: url("/excalidraw/fonts/Assistant/Assistant-Regular.woff2") format("woff2");
+  unicode-range: U+0590-05FF, U+FB1D-FB4F;
+}
+
+@font-face {
+  font-family: "Nunito";
+  src: url("/excalidraw/fonts/Assistant/Assistant-Regular.woff2") format("woff2");
+  unicode-range: U+0590-05FF, U+FB1D-FB4F;
+}
+
+@font-face {
+  font-family: "Comic Shanns";
+  src: url("/excalidraw/fonts/Assistant/Assistant-Regular.woff2") format("woff2");
+  unicode-range: U+0590-05FF, U+FB1D-FB4F;
+}
+
+@font-face {
+  font-family: "Liberation Sans";
+  src: url("/excalidraw/fonts/Assistant/Assistant-Regular.woff2") format("woff2");
+  unicode-range: U+0590-05FF, U+FB1D-FB4F;
+}
+
+@font-face {
+  font-family: "Cascadia";
+  src: url("/excalidraw/fonts/Assistant/Assistant-Regular.woff2") format("woff2");
+  unicode-range: U+0590-05FF, U+FB1D-FB4F;
+}
+
+@font-face {
+  font-family: "Lilita One";
+  src: url("/excalidraw/fonts/Assistant/Assistant-Bold.woff2") format("woff2");
+  unicode-range: U+0590-05FF, U+FB1D-FB4F;
+}

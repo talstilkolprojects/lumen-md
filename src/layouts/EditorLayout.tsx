@@ -6,6 +6,7 @@
  *  - deterministic ratio-based sync-scroll
  *  - editor and preview section refs
  */
+import { headingSlugger } from "../lib/slug";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { clampLineNumber } from "../editor/lineClamp";
 import type { EditorHandle } from "../editor/Editor";
@@ -23,6 +24,7 @@ import { WritingGoalBanner } from "../ui/WritingGoalBanner";
 import { useAppStore } from "../store/useStore";
 import type { ViewMode, SplitAxis } from "../store/useStore";
 import type { CollabSession } from "../collab/yjs";
+import { t } from "../i18n";
 
 const WysiwygEditor = lazy(() => import("../editor/WysiwygEditor"));
 const PageView = lazy(() => import("../ui/PageView").then(m => ({ default: m.PageView })));
@@ -152,13 +154,6 @@ export function EditorLayout({
       // list of headings shared between the two panes and slide the inactive
       // pane so its corresponding heading sits at the same viewport offset
       // as the active pane's heading.
-      const slugify = (s: string): string =>
-        s
-          .toLowerCase()
-          .trim()
-          .replace(/[^\w\s-]/g, "")
-          .replace(/\s+/g, "-")
-          .replace(/-+/g, "-");
 
       interface Anchor {
         line: number; // 1-based line in the markdown source
@@ -173,6 +168,9 @@ export function EditorLayout({
         const text = view ? view.state.doc.toString() : "";
         const lines = text.split("\n");
         const result: Anchor[] = [];
+        // Same slugger as rehype-slug (Unicode, repeats numbered), so
+        // Hebrew headings get the ids the preview actually has (T26).
+        const slugger = headingSlugger();
         let inFence = false;
         for (let i = 0; i < lines.length; i++) {
           const ln = lines[i];
@@ -180,7 +178,7 @@ export function EditorLayout({
           if (inFence) continue;
           const m = /^(#{1,6})\s+(.+?)\s*#*\s*$/.exec(ln);
           if (m) {
-            const slug = slugify(m[2]);
+            const slug = slugger.slug(m[2]);
             const headingEl =
               previewEl.querySelector<HTMLElement>(`#${CSS.escape(slug)}`) ??
               previewEl.querySelector<HTMLElement>(`[id="${slug}"]`);
@@ -343,7 +341,7 @@ export function EditorLayout({
             mode === "split"
               ? isVerticalSplit
                 ? "w-full h-1/2 min-h-0 border-b border-border bg-bg flex flex-col"
-                : "w-1/2 min-w-0 h-full min-h-0 border-r border-border bg-bg flex flex-col"
+                : "w-1/2 min-w-0 h-full min-h-0 border-e border-border bg-bg flex flex-col"
               : "w-full min-w-0 h-full min-h-0 bg-bg flex flex-col"
           }
         >
@@ -362,6 +360,7 @@ export function EditorLayout({
               grammarCheck={grammarCheck}
               typewriterMode={typewriterMode}
               suggesting={suggestingMode}
+              collab={collab}
             />
           </Suspense>
         </section>
@@ -378,7 +377,7 @@ export function EditorLayout({
           }
         >
           {pageView ? (
-            <Suspense fallback={<div style={{padding:'2rem',color:'hsl(var(--fg-muted))'}}>Loading page view…</div>}>
+            <Suspense fallback={<div style={{padding:'2rem',color:'hsl(var(--fg-muted))'}}>{t("editor.loadingPageView")}</div>}>
               <PageView markdownText={deferredContent} docKey={deferredDocKey} />
             </Suspense>
           ) : (
@@ -397,17 +396,17 @@ export function EditorLayout({
                   fontSize: 13,
                 }}
               >
-                Loading WYSIWYG editor…
+                {t("editor.loadingWysiwyg")}
               </div>
             }
           >
             <ErrorBoundary fallback={
               <div style={{ padding: "2rem", color: "hsl(0 80% 60%)" }}>
-                <strong>WYSIWYG editor failed</strong>
-                <p style={{ fontSize: 12, opacity: 0.8 }}>Try switching to Source mode.</p>
+                <strong>{t("editor.wysiwygFailed")}</strong>
+                <p style={{ fontSize: 12, opacity: 0.8 }}>{t("editor.wysiwygFailedHint")}</p>
               </div>
             }>
-              <WysiwygEditor value={docContent} onChange={setContent} />
+              <WysiwygEditor value={docContent} onChange={setContent} spellCheck={spellCheck} />
             </ErrorBoundary>
           </Suspense>
         </section>

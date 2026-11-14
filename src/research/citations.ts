@@ -139,6 +139,26 @@ const words = (s: string) => normaliseForMatch(s).match(/[\p{L}\p{N}]+/gu) ?? []
  * match, else the best share of the quote's words found in order within a
  * window of the page (tolerates small edits, ellipses, punctuation).
  */
+/**
+ * Is the quote really in the page, word for word? Contiguous containment
+ * after normalisation (case, punctuation, Markdown marks and line breaks
+ * don't matter); `...` / `…` may stand for omitted text, but each part has to
+ * appear verbatim and in order. Unlike `quoteCoverage`, a dropped word fails:
+ * "Alice approved" is not in "Alice never approved".
+ */
+export function quoteContained(quote: string, page: string): boolean {
+  const parts = quote.split(/\.\.\.|…/).map(words).filter((w) => w.length);
+  if (!parts.length) return false;
+  const hay = ` ${words(page).join(" ")} `;
+  let from = 0;
+  for (const part of parts) {
+    const at = hay.indexOf(` ${part.join(" ")} `, from);
+    if (at < 0) return false;
+    from = at + part.join(" ").length + 1;
+  }
+  return true;
+}
+
 export function quoteCoverage(quote: string, page: string): number {
   const q = normaliseForMatch(quote).replace(/\.\.\.|…/g, " ");
   const p = normaliseForMatch(page);
@@ -149,7 +169,7 @@ export function quoteCoverage(quote: string, page: string): number {
   // Bounded work: a long quote is matched as up to 5 segments of 200 words
   // spread over its whole length (head and tail always included), so a
   // fabricated tail lowers the score and a one-word difference doesn't.
-  const SEG = 200;
+  const SEG = SAMPLE_WORDS;
   const segs: Array<{ words: string[]; offset: number }> = [];
   if (all.length <= SEG) segs.push({ words: all, offset: 0 });
   else {
@@ -232,6 +252,8 @@ function matchSegment(qw: string[], pw: string[]): { matched: number; at: number
 }
 
 export const APPROXIMATE_AT = 0.85;
+/** Quotes longer than this many words are scored on up to 5 samples of this size (A7). */
+export const SAMPLE_WORDS = 200;
 
 /** Check every citation; `fetchPage` is the research client's extractPage (injected for tests). */
 export async function verifyCitations(
@@ -256,11 +278,14 @@ export async function verifyCitations(
       else if (!c.quote) check = { ...c, status: "reachable" };
       else {
         const cov = quoteCoverage(c.quote, p.text);
+        // "Supported" means word for word (A7): a long quote is scored on
+        // samples, so a full score there is only an approximate match.
+        const sampled = words(c.quote).length > SAMPLE_WORDS;
         check =
-          cov === 1
+          cov === 1 && quoteContained(c.quote, p.text)
             ? { ...c, status: "supported" }
             : cov >= APPROXIMATE_AT
-              ? { ...c, status: "approximate", detail: `${Math.round(cov * 100)}% of the words` }
+              ? { ...c, status: "approximate", detail: sampled ? `${Math.round(cov * 100)}% of the sampled words (long quote, checked on samples)` : `${Math.round(cov * 100)}% of the words` }
               : p.truncated
                 ? // Only the start of a long page was read: the passage may be further down.
                   { ...c, status: "not-in-excerpt", detail: `best match ${Math.round(cov * 100)}% in the part read` }
@@ -315,7 +340,7 @@ export function formatCitationReport(docName: string, checks: readonly CitationC
     try {
       host = new URL(c.url).hostname;
     } catch {
-      /* malformed: show it as written */
+      /* why: malformed: show it as written */
     }
     const src = `[${esc(c.title || host)}](${c.url})`;
     lines.push(`| ${ICON[c.status]} | \`[^${esc(c.id)}]\` | ${c.line} | ${src} | ${LABEL[c.status]}${c.detail ? ` (${esc(c.detail)})` : ""} |`);

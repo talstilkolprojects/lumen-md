@@ -9,8 +9,8 @@
  * console warnings rather than failures.
  */
 
-import { describe, it, expect } from "vitest";
-import { render, waitFor } from "@testing-library/react";
+import { beforeAll, describe, it, expect } from "vitest";
+import { act, render, waitFor } from "@testing-library/react";
 import axe from "axe-core";
 import { Toolbar } from "../ui/Toolbar";
 import { AuthDialog } from "../components/AuthDialog";
@@ -102,11 +102,34 @@ function expectNoBlockers(violations: axe.Result[]) {
   expect(blockers).toEqual([]);
 }
 
+// axe's first run in a worker builds its virtual tree and colour-contrast
+// caches (~0.9 s on an 18-node Toolbar; later runs ~0.1–0.2 s). Pay that once
+// here, not inside the first test, where it used to run into waitFor's 1 s
+// ceiling under machine load and fail as "Timed out in waitFor".
+beforeAll(async () => {
+  const warm = document.createElement("div");
+  warm.innerHTML = '<button type="button">warm</button>';
+  document.body.appendChild(warm);
+  try {
+    await axe.run(warm, { runOnly: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"], resultTypes: ["violations"] });
+  } finally {
+    warm.remove();
+  }
+}, 30_000);
+
+/**
+ * Flush pending effects and microtasks, then run axe once and assert.
+ * There is no waitFor around axe: a retry loop has a 1 s ceiling per
+ * attempt (a slow axe.run under load failed with "Timed out in waitFor")
+ * and could pass by retrying until a violation happened to be gone.
+ * Every surface here renders its final DOM by this flush; a test whose
+ * content arrives later (SearchDialog's debounced search) waits for that
+ * content explicitly before calling this.
+ */
 async function expectNoBlockersEventually(container: HTMLElement) {
-  await waitFor(async () => {
-    const violations = await runAxe(container);
-    expectNoBlockers(violations);
-  });
+  await act(async () => {});
+  const violations = await runAxe(container);
+  expectNoBlockers(violations);
 }
 
 describe("axe a11y smoke", () => {
@@ -160,6 +183,9 @@ describe("axe a11y smoke", () => {
     const { container } = render(
       <SearchDialog open onClose={() => {}} onOpenFile={() => {}} />,
     );
+    // The first (debounced, 150 ms) search settles into the empty state;
+    // wait for that DOM, then check the settled dialog.
+    await waitFor(() => expect(container.querySelector(".cmd-palette-empty")).not.toBeNull(), { timeout: 5_000 });
     await expectNoBlockersEventually(container);
   });
 

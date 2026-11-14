@@ -1,0 +1,413 @@
+<h1 id="welcome-to-lumen-" dir="auto">Welcome to <strong>Lumen</strong> ✨</h1>
+<p dir="auto">A markdown editor that turns <em>text and data</em> into beautiful, living documents.<br/>
+Switch between <strong>Source</strong>, <strong>Split</strong>, <strong>Preview</strong>, and <strong>WYSIWYG</strong> modes from<br/>
+the toolbar above (or press <code>⌘1</code>, <code>⌘2</code>, <code>⌘3</code>, <code>⌘4</code>). Press <code>⌘K</code> for the<br/>
+<strong>command palette</strong> to insert charts, diagrams, maps, math blocks, and more.<br/>
+Press <code>⇧⌘F</code> to fuzzy-search every file in the workspace.</p>
+<p dir="auto">Drop or paste an image directly into the editor — it&#x27;ll be saved to the<br/>
+in-browser <strong>workspace</strong> (OPFS) and inserted as a markdown link. Toggle the<br/>
+workspace sidebar from the command palette to see a tree of all your files,<br/>
+and run a real-time <strong>collab session</strong> to co-edit with anyone over WebRTC.</p>
+<blockquote dir="ltr">
+<p dir="auto">Drop a <code>.md</code>, <code>.csv</code>, <code>.tsv</code>, or <code>.json</code> file anywhere on this window to open it.</p>
+</blockquote>
+<hr/>
+<h2 id="1-rich-text-the-way-it-should-look" dir="auto">1. Rich text, the way it should look</h2>
+<p dir="auto">The preview uses a careful serif typeface with optical sizing, while<br/>
+<strong>bold</strong>, <em>italic</em>, <del>strike</del>, <a href="https://example.com">links</a>, and <code>inline code</code><br/>
+all retain a clean, deliberate rhythm.</p>
+<h3 id="lists--task-tracking" dir="auto">Lists &amp; task tracking</h3>
+<ul dir="ltr">
+<li dir="ltr">A bullet list</li>
+<li dir="ltr">Nested bullets work too
+<ul dir="ltr">
+<li dir="ltr">Just like this</li>
+<li dir="ltr">And this</li>
+</ul>
+</li>
+<li dir="ltr">Ordered lists, footnotes<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup>, abbreviations, and emoji 🚀 all render natively.</li>
+</ul>
+<h4 id="checklist" dir="auto">Checklist</h4>
+<ul class="contains-task-list" dir="ltr">
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task" checked=""/> Beautiful typography</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task" checked=""/> GitHub-flavored Markdown</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task" checked=""/> Code highlighting with Shiki</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task" checked=""/> LaTeX math, Mermaid, ECharts, maps</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Your masterpiece</li>
+</ul>
+<hr/>
+<h2 id="2-code-with-vs-code-grade-highlighting" dir="auto">2. Code, with VS Code-grade highlighting</h2>
+<p dir="auto">Code blocks are highlighted with <strong>Shiki</strong> (the same engine VS Code uses).</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">typescript</span><button class="icon-btn" data-copy="import { unified } from &quot;unified&quot;;
+import remarkParse from &quot;remark-parse&quot;;
+import remarkGfm from &quot;remark-gfm&quot;;
+
+export async function render(markdown: string): Promise&lt;string&gt; {
+  const file = await unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .process(markdown);
+  return String(file);
+}
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">import</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> { unified } </span><span style="color:#CF222E;--shiki-dark:#FF7B72">from</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> &quot;unified&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">;</span></span>
+<span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">import</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> remarkParse </span><span style="color:#CF222E;--shiki-dark:#FF7B72">from</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> &quot;remark-parse&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">;</span></span>
+<span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">import</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> remarkGfm </span><span style="color:#CF222E;--shiki-dark:#FF7B72">from</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> &quot;remark-gfm&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">export</span><span style="color:#CF222E;--shiki-dark:#FF7B72"> async</span><span style="color:#CF222E;--shiki-dark:#FF7B72"> function</span><span style="color:#8250DF;--shiki-dark:#D2A8FF"> render</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">(</span><span style="color:#953800;--shiki-dark:#FFA657">markdown</span><span style="color:#CF222E;--shiki-dark:#FF7B72">:</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> string</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">)</span><span style="color:#CF222E;--shiki-dark:#FF7B72">:</span><span style="color:#953800;--shiki-dark:#FFA657"> Promise</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">&lt;</span><span style="color:#0550AE;--shiki-dark:#79C0FF">string</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">&gt; {</span></span>
+<span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">  const</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> file</span><span style="color:#CF222E;--shiki-dark:#FF7B72"> =</span><span style="color:#CF222E;--shiki-dark:#FF7B72"> await</span><span style="color:#8250DF;--shiki-dark:#D2A8FF"> unified</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">()</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">    .</span><span style="color:#8250DF;--shiki-dark:#D2A8FF">use</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">(remarkParse)</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">    .</span><span style="color:#8250DF;--shiki-dark:#D2A8FF">use</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">(remarkGfm)</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">    .</span><span style="color:#8250DF;--shiki-dark:#D2A8FF">process</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">(markdown);</span></span>
+<span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">  return</span><span style="color:#8250DF;--shiki-dark:#D2A8FF"> String</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">(file);</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">}</span></span>
+<span class="line"></span></code></pre></div>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">python</span><button class="icon-btn" data-copy="import polars as pl
+
+df = (
+    pl.read_csv(&quot;sales.csv&quot;)
+      .group_by(&quot;region&quot;)
+      .agg(pl.col(&quot;revenue&quot;).sum().alias(&quot;total&quot;))
+      .sort(&quot;total&quot;, descending=True)
+)
+print(df)
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">import</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> polars </span><span style="color:#CF222E;--shiki-dark:#FF7B72">as</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> pl</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">df </span><span style="color:#CF222E;--shiki-dark:#FF7B72">=</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> (</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">    pl.read_csv(</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;sales.csv&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">)</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">      .group_by(</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;region&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">)</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">      .agg(pl.col(</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;revenue&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">).sum().alias(</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;total&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">))</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">      .sort(</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;total&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">, </span><span style="color:#953800;--shiki-dark:#FFA657">descending</span><span style="color:#CF222E;--shiki-dark:#FF7B72">=</span><span style="color:#0550AE;--shiki-dark:#79C0FF">True</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">)</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">)</span></span>
+<span class="line"><span style="color:#0550AE;--shiki-dark:#79C0FF">print</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">(df)</span></span>
+<span class="line"></span></code></pre></div>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">rust</span><button class="icon-btn" data-copy="fn main() {
+    let primes: Vec&lt;u32&gt; = (2..50)
+        .filter(|n| (2..*n).all(|i| n % i != 0))
+        .collect();
+    println!(&quot;{:?}&quot;, primes);
+}
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">fn</span><span style="color:#8250DF;--shiki-dark:#D2A8FF"> main</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">() {</span></span>
+<span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">    let</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> primes</span><span style="color:#CF222E;--shiki-dark:#FF7B72">:</span><span style="color:#953800;--shiki-dark:#FFA657"> Vec</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">&lt;</span><span style="color:#953800;--shiki-dark:#FFA657">u32</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">&gt; </span><span style="color:#CF222E;--shiki-dark:#FF7B72">=</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> (</span><span style="color:#0550AE;--shiki-dark:#79C0FF">2</span><span style="color:#CF222E;--shiki-dark:#FF7B72">..</span><span style="color:#0550AE;--shiki-dark:#79C0FF">50</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">)</span></span>
+<span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">        .</span><span style="color:#8250DF;--shiki-dark:#D2A8FF">filter</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">(</span><span style="color:#CF222E;--shiki-dark:#FF7B72">|</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">n</span><span style="color:#CF222E;--shiki-dark:#FF7B72">|</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> (</span><span style="color:#0550AE;--shiki-dark:#79C0FF">2</span><span style="color:#CF222E;--shiki-dark:#FF7B72">..*</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">n)</span><span style="color:#CF222E;--shiki-dark:#FF7B72">.</span><span style="color:#8250DF;--shiki-dark:#D2A8FF">all</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">(</span><span style="color:#CF222E;--shiki-dark:#FF7B72">|</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">i</span><span style="color:#CF222E;--shiki-dark:#FF7B72">|</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> n </span><span style="color:#CF222E;--shiki-dark:#FF7B72">%</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> i </span><span style="color:#CF222E;--shiki-dark:#FF7B72">!=</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> 0</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">))</span></span>
+<span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">        .</span><span style="color:#8250DF;--shiki-dark:#D2A8FF">collect</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">();</span></span>
+<span class="line"><span style="color:#8250DF;--shiki-dark:#D2A8FF">    println!</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">(</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;{:?}&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">, primes);</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">}</span></span>
+<span class="line"></span></code></pre></div>
+<hr/>
+<h2 id="3-math-chemistry-and-physics" dir="auto">3. Math, chemistry, and physics</h2>
+<p dir="auto">Inline math: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">E = mc^2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6833em"></span><span class="mord mathnormal" style="margin-right:0.0576em">E</span><span class="mspace" style="margin-right:0.2778em"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.8141em"></span><span class="mord mathnormal">m</span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em"><span style="top:-3.063em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span>, the golden ratio <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>φ</mi><mo>=</mo><mstyle scriptlevel="0" displaystyle="false"><mfrac><mrow><mn>1</mn><mo>+</mo><msqrt><mn>5</mn></msqrt></mrow><mn>2</mn></mfrac></mstyle></mrow><annotation encoding="application/x-tex">\varphi = \tfrac{1+\sqrt{5}}{2}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.625em;vertical-align:-0.1944em"></span><span class="mord mathnormal">φ</span><span class="mspace" style="margin-right:0.2778em"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em"></span></span><span class="katex-base"><span class="katex-strut" style="height:1.383em;vertical-align:-0.345em"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.038em"><span style="top:-2.655em"><span class="pstrut" style="height:3em"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span><span style="top:-3.23em"><span class="pstrut" style="height:3em"></span><span class="frac-line" style="border-bottom-width:0.04em"></span></span><span style="top:-3.399em"><span class="pstrut" style="height:3em"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span><span class="mbin mtight">+</span><span class="mord sqrt mtight"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9128em"><span class="svg-align" style="top:-3em"><span class="pstrut" style="height:3em"></span><span class="mord mtight" style="padding-left:0.833em"><span class="mord mtight">5</span></span></span><span style="top:-2.8728em"><span class="pstrut" style="height:3em"></span><span class="hide-tail mtight" style="min-width:0.853em;height:1.08em"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"></path></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1272em"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span>,<br/>
+and Euler: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>e</mi><mrow><mi>i</mi><mi>π</mi></mrow></msup><mo>+</mo><mn>1</mn><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">e^{i\pi} + 1 = 0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.908em;vertical-align:-0.0833em"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8247em"><span style="top:-3.063em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.0359em">iπ</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6444em"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6444em"></span><span class="mord">0</span></span></span></span>.</p>
+<p dir="auto">Display math:</p>
+<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi mathvariant="normal">∇</mi><mo>⋅</mo><mi mathvariant="bold">E</mi><mo>=</mo><mfrac><mi>ρ</mi><msub><mi>ε</mi><mn>0</mn></msub></mfrac><mo separator="true">,</mo><mspace width="2em"></mspace><mi mathvariant="normal">∇</mi><mo>×</mo><mi mathvariant="bold">B</mi><mo>=</mo><msub><mi>μ</mi><mn>0</mn></msub><mi mathvariant="bold">J</mi><mo>+</mo><msub><mi>μ</mi><mn>0</mn></msub><msub><mi>ε</mi><mn>0</mn></msub><mfrac><mrow><mi mathvariant="normal">∂</mi><mi mathvariant="bold">E</mi></mrow><mrow><mi mathvariant="normal">∂</mi><mi>t</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">\nabla \cdot \mathbf{E} = \frac{\rho}{\varepsilon_0}, \qquad
+\nabla \times \mathbf{B} = \mu_0 \mathbf{J} + \mu_0\varepsilon_0 \frac{\partial \mathbf{E}}{\partial t}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6833em"></span><span class="mord">∇</span><span class="mspace" style="margin-right:0.2222em"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6861em"></span><span class="mord mathbf">E</span><span class="mspace" style="margin-right:0.2778em"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em"></span></span><span class="katex-base"><span class="katex-strut" style="height:1.9436em;vertical-align:-0.836em"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.1076em"><span style="top:-2.314em"><span class="pstrut" style="height:3em"></span><span class="mord"><span class="mord"><span class="mord mathnormal">ε</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em"><span></span></span></span></span></span></span></span></span><span style="top:-3.23em"><span class="pstrut" style="height:3em"></span><span class="frac-line" style="border-bottom-width:0.04em"></span></span><span style="top:-3.677em"><span class="pstrut" style="height:3em"></span><span class="mord"><span class="mord mathnormal">ρ</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.836em"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:2em"></span><span class="mspace" style="margin-right:0.1667em"></span><span class="mord">∇</span><span class="mspace" style="margin-right:0.2222em"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222em"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6861em"></span><span class="mord mathbf">B</span><span class="mspace" style="margin-right:0.2778em"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.8805em;vertical-align:-0.1944em"></span><span class="mord"><span class="mord mathnormal">μ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em"><span></span></span></span></span></span></span><span class="mord mathbf">J</span><span class="mspace" style="margin-right:0.2222em"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em"></span></span><span class="katex-base"><span class="katex-strut" style="height:2.0574em;vertical-align:-0.686em"></span><span class="mord"><span class="mord mathnormal">μ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathnormal">ε</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em"><span></span></span></span></span></span></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714em"><span style="top:-2.314em"><span class="pstrut" style="height:3em"></span><span class="mord"><span class="mord" style="margin-right:0.0556em">∂</span><span class="mord mathnormal">t</span></span></span><span style="top:-3.23em"><span class="pstrut" style="height:3em"></span><span class="frac-line" style="border-bottom-width:0.04em"></span></span><span style="top:-3.677em"><span class="pstrut" style="height:3em"></span><span class="mord"><span class="mord" style="margin-right:0.0556em">∂</span><span class="mord mathbf">E</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span>
+<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mover accent="true"><mi>H</mi><mo>^</mo></mover><mtext> </mtext><mi>ψ</mi><mo>=</mo><mi>i</mi><mi mathvariant="normal">ℏ</mi><mfrac><mrow><mi mathvariant="normal">∂</mi><mi>ψ</mi></mrow><mrow><mi mathvariant="normal">∂</mi><mi>t</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">\hat{H}\,\psi = i\hbar \frac{\partial \psi}{\partial t}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.1412em;vertical-align:-0.1944em"></span><span class="mord katex-accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.9468em"><span style="top:-3em"><span class="pstrut" style="height:3em"></span><span class="mord mathnormal" style="margin-right:0.0813em">H</span></span><span style="top:-3.2523em"><span class="pstrut" style="height:3em"></span><span class="accent-body" style="left:-0.1944em"><span class="mord">^</span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.1667em"></span><span class="mord mathnormal" style="margin-right:0.0359em">ψ</span><span class="mspace" style="margin-right:0.2778em"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em"></span></span><span class="katex-base"><span class="katex-strut" style="height:2.0574em;vertical-align:-0.686em"></span><span class="mord mathnormal">i</span><span class="mord">ℏ</span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714em"><span style="top:-2.314em"><span class="pstrut" style="height:3em"></span><span class="mord"><span class="mord" style="margin-right:0.0556em">∂</span><span class="mord mathnormal">t</span></span></span><span style="top:-3.23em"><span class="pstrut" style="height:3em"></span><span class="frac-line" style="border-bottom-width:0.04em"></span></span><span style="top:-3.677em"><span class="pstrut" style="height:3em"></span><span class="mord"><span class="mord" style="margin-right:0.0556em">∂</span><span class="mord mathnormal" style="margin-right:0.0359em">ψ</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span>
+<p dir="auto">Chemistry via \ce{}:</p>
+<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mrow><mi mathvariant="normal">C</mi><mi mathvariant="normal">O</mi></mrow><msub><mpadded width="0px"><mphantom><mi>X</mi></mphantom></mpadded><mpadded height="0px"><mn>2</mn></mpadded></msub><mrow></mrow><mo>+</mo><mrow></mrow><mn>6</mn><mtext> </mtext><mi mathvariant="normal">H</mi><msub><mpadded width="0px"><mphantom><mi>X</mi></mphantom></mpadded><mpadded height="0px"><mn>2</mn></mpadded></msub><mi mathvariant="normal">O</mi><mover><mo stretchy="true" minsize="3.0em">→</mo><mpadded width="+0.6em" lspace="0.3em"><mtext>light</mtext></mpadded></mover><mi mathvariant="normal">C</mi><msub><mpadded width="0px"><mphantom><mi>X</mi></mphantom></mpadded><mpadded height="0px"><mn>6</mn></mpadded></msub><mi mathvariant="normal">H</mi><msub><mpadded width="0px"><mphantom><mi>X</mi></mphantom></mpadded><mpadded height="0px"><mn>12</mn></mpadded></msub><mi mathvariant="normal">O</mi><msub><mpadded width="0px"><mphantom><mi>X</mi></mphantom></mpadded><mpadded height="0px"><mn>6</mn></mpadded></msub><mrow></mrow><mo>+</mo><mrow></mrow><mn>6</mn><mtext> </mtext><mi mathvariant="normal">O</mi><msub><mpadded width="0px"><mphantom><mi>X</mi></mphantom></mpadded><mpadded height="0px"><mn>2</mn></mpadded></msub></mrow><annotation encoding="application/x-tex">\ce{CO2 + 6H2O -&gt;[\text{light}] C6H12O6 + 6O2}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.2581em;vertical-align:-0.15em"></span><span class="mord"><span class="mord"><span class="mord mathrm">CO</span></span><span class="mord"><span class="mord"><span class="mord rlap"><span class="katex-inner"><span class="mord" style="color:transparent"><span class="mord mathnormal" style="margin-right:0.0785em;color:transparent">X</span></span></span><span class="katex-fix"></span></span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:-0.15em"><span style="top:-2.55em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0em"><span style="top:-2.7em"><span class="pstrut" style="height:2.7em"></span><span><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em"><span></span></span></span></span></span></span><span class="mord"></span><span class="mspace" style="margin-right:0.2222em"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em"></span><span class="mord"></span><span class="mord">6</span><span class="mspace" style="margin-right:0.1667em"></span><span class="mord mathrm">H</span><span class="mord"><span class="mord"><span class="mord rlap"><span class="katex-inner"><span class="mord" style="color:transparent"><span class="mord mathnormal" style="margin-right:0.0785em;color:transparent">X</span></span></span><span class="katex-fix"></span></span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:-0.15em"><span style="top:-2.55em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0em"><span style="top:-2.7em"><span class="pstrut" style="height:2.7em"></span><span><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em"><span></span></span></span></span></span></span><span class="mord mathrm">O</span><span class="mspace" style="margin-right:0.2778em"></span><span class="mrel x-arrow"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.1081em"><span style="top:-3.322em"><span class="pstrut" style="height:2.7em"></span><span class="katex-sizing reset-size6 size3 mtight x-arrow-pad"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">light</span></span></span></span></span><span class="svg-align" style="top:-2.689em"><span class="pstrut" style="height:2.7em"></span><span class="hide-tail" style="height:0.522em;min-width:1.469em"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="0.522em" viewBox="0 0 400000 522" preserveAspectRatio="xMaxYMin slice"><path d="M0 241v40h399891c-47.3 35.3-84 78-110 128
+-16.7 32-27.7 63.7-33 95 0 1.3-.2 2.7-.5 4-.3 1.3-.5 2.3-.5 3 0 7.3 6.7 11 20
+ 11 8 0 13.2-.8 15.5-2.5 2.3-1.7 4.2-5.5 5.5-11.5 2-13.3 5.7-27 11-41 14.7-44.7
+ 39-84.5 73-119.5s73.7-60.2 119-75.5c6-2 9-5.7 9-11s-3-9-9-11c-45.3-15.3-85
+-40.5-119-75.5s-58.3-74.8-73-119.5c-4.7-14-8.3-27.3-11-40-1.3-6.7-3.2-10.8-5.5
+-12.5-2.3-1.7-7.5-2.5-15.5-2.5-14 0-21 3.7-21 11 0 2 2 10.3 6 25 20.7 83.3 67
+ 151.7 139 205zm0 0v40h399900v-40z"></path></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.011em"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em"></span><span class="mord mathrm">C</span><span class="mord"><span class="mord"><span class="mord rlap"><span class="katex-inner"><span class="mord" style="color:transparent"><span class="mord mathnormal" style="margin-right:0.0785em;color:transparent">X</span></span></span><span class="katex-fix"></span></span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:-0.15em"><span style="top:-2.55em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0em"><span style="top:-2.7em"><span class="pstrut" style="height:2.7em"></span><span><span class="mord mtight"><span class="mord mtight">6</span></span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em"><span></span></span></span></span></span></span><span class="mord mathrm">H</span><span class="mord"><span class="mord"><span class="mord rlap"><span class="katex-inner"><span class="mord" style="color:transparent"><span class="mord mathnormal" style="margin-right:0.0785em;color:transparent">X</span></span></span><span class="katex-fix"></span></span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:-0.15em"><span style="top:-2.55em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0em"><span style="top:-2.7em"><span class="pstrut" style="height:2.7em"></span><span><span class="mord mtight"><span class="mord mtight">12</span></span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em"><span></span></span></span></span></span></span><span class="mord mathrm">O</span><span class="mord"><span class="mord"><span class="mord rlap"><span class="katex-inner"><span class="mord" style="color:transparent"><span class="mord mathnormal" style="margin-right:0.0785em;color:transparent">X</span></span></span><span class="katex-fix"></span></span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:-0.15em"><span style="top:-2.55em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0em"><span style="top:-2.7em"><span class="pstrut" style="height:2.7em"></span><span><span class="mord mtight"><span class="mord mtight">6</span></span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em"><span></span></span></span></span></span></span><span class="mord"></span><span class="mspace" style="margin-right:0.2222em"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em"></span><span class="mord"></span><span class="mord">6</span><span class="mspace" style="margin-right:0.1667em"></span><span class="mord mathrm">O</span><span class="mord"><span class="mord"><span class="mord rlap"><span class="katex-inner"><span class="mord" style="color:transparent"><span class="mord mathnormal" style="margin-right:0.0785em;color:transparent">X</span></span></span><span class="katex-fix"></span></span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:-0.15em"><span style="top:-2.55em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0em"><span style="top:-2.7em"><span class="pstrut" style="height:2.7em"></span><span><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em"><span></span></span></span></span></span></span></span></span></span></span></span>
+<hr/>
+<h2 id="4-diagrams-with-mermaid" dir="auto">4. Diagrams with Mermaid</h2>
+<pre dir="ltr"><code class="lumen-static-block language-mermaid" data-lumen-block="diagram">flowchart LR
+  A[📝 Markdown] --&gt;|parse| B(remark)
+  B --&gt; C{Block type?}
+  C --&gt;|code| D[Shiki]
+  C --&gt;|math| E[KaTeX]
+  C --&gt;|chart| F[ECharts]
+  C --&gt;|csv / json| G[DataTable&lt;br/&gt;+ Auto chart]
+  C --&gt;|mermaid| H[Mermaid]
+  C --&gt;|map| I[Leaflet]
+  D &amp; E &amp; F &amp; G &amp; H &amp; I --&gt; J((✨ Beautiful preview))
+  style J fill:#7c5cff,stroke:#fff,color:#fff</code></pre>
+<pre dir="ltr"><code class="lumen-static-block language-mermaid" data-lumen-block="diagram">sequenceDiagram
+  autonumber
+  participant U as You
+  participant E as Editor
+  participant P as Preview
+  U-&gt;&gt;E: types markdown
+  E-&gt;&gt;P: stream changes
+  P-&gt;&gt;P: parse + render
+  P--&gt;&gt;U: live update ✨</code></pre>
+<hr/>
+<h2 id="5-data--tables-and-charts-automatically" dir="auto">5. Data → tables and charts, automatically</h2>
+<p dir="auto">Drop in raw CSV — Lumen parses it, infers column types, builds a sortable table,<br/>
+and <strong>suggests the right chart automatically</strong>. Click between <em>Table</em> and <em>Chart</em>,<br/>
+then cycle through suggested visualizations.</p>
+<pre dir="ltr"><code class="lumen-static-block language-csv" data-lumen-block="data">quarter,region,revenue,deals
+2024 Q1,Americas,4200,82
+2024 Q1,EMEA,3100,61
+2024 Q1,APAC,2700,49
+2024 Q2,Americas,4800,90
+2024 Q2,EMEA,3500,68
+2024 Q2,APAC,3200,57
+2024 Q3,Americas,5100,97
+2024 Q3,EMEA,4000,75
+2024 Q3,APAC,3700,66
+2024 Q4,Americas,5800,108
+2024 Q4,EMEA,4400,82
+2024 Q4,APAC,4100,72</code></pre>
+<p dir="auto">JSON arrays-of-objects work the same way:</p>
+<pre dir="ltr"><code class="lumen-static-block language-json-table" data-lumen-block="data">[
+  { &quot;lang&quot;: &quot;TypeScript&quot;, &quot;year&quot;: 2012, &quot;stars&quot;: 102000, &quot;paradigm&quot;: &quot;multi&quot; },
+  { &quot;lang&quot;: &quot;Rust&quot;,       &quot;year&quot;: 2010, &quot;stars&quot;: 98000,  &quot;paradigm&quot;: &quot;systems&quot; },
+  { &quot;lang&quot;: &quot;Go&quot;,         &quot;year&quot;: 2009, &quot;stars&quot;: 124000, &quot;paradigm&quot;: &quot;systems&quot; },
+  { &quot;lang&quot;: &quot;Python&quot;,     &quot;year&quot;: 1991, &quot;stars&quot;: 230000, &quot;paradigm&quot;: &quot;multi&quot; },
+  { &quot;lang&quot;: &quot;Elixir&quot;,     &quot;year&quot;: 2011, &quot;stars&quot;: 24000,  &quot;paradigm&quot;: &quot;functional&quot; },
+  { &quot;lang&quot;: &quot;Zig&quot;,        &quot;year&quot;: 2016, &quot;stars&quot;: 36000,  &quot;paradigm&quot;: &quot;systems&quot; },
+  { &quot;lang&quot;: &quot;Gleam&quot;,      &quot;year&quot;: 2016, &quot;stars&quot;: 18000,  &quot;paradigm&quot;: &quot;functional&quot; },
+  { &quot;lang&quot;: &quot;Kotlin&quot;,     &quot;year&quot;: 2011, &quot;stars&quot;: 49000,  &quot;paradigm&quot;: &quot;multi&quot; }
+]</code></pre>
+<p dir="auto">You can also write an explicit <code>chart</code> block (YAML or JSON ECharts spec):</p>
+<pre dir="ltr"><code class="lumen-static-block language-chart" data-lumen-block="chart">title:
+  text: Page-load budget vs measured
+  textStyle: { color: &#x27;#9aa3b2&#x27; }
+xAxis:
+  type: category
+  data: [Home, Docs, Pricing, Blog, Dashboard]
+  axisLabel: { color: &#x27;#9aa3b2&#x27; }
+yAxis:
+  type: value
+  axisLabel: { color: &#x27;#9aa3b2&#x27; }
+legend:
+  textStyle: { color: &#x27;#9aa3b2&#x27; }
+  top: 24
+series:
+  - name: Budget
+    type: bar
+    barMaxWidth: 28
+    itemStyle: { borderRadius: [4,4,0,0], color: &#x27;#475569&#x27; }
+    data: [2.0, 2.5, 2.0, 2.5, 3.0]
+  - name: Measured
+    type: bar
+    barMaxWidth: 28
+    itemStyle: { borderRadius: [4,4,0,0], color: &#x27;#7c5cff&#x27; }
+    data: [1.4, 2.1, 1.8, 2.7, 3.4]
+tooltip:
+  trigger: axis</code></pre>
+<p dir="auto">GitHub-flavored tables are still here when you want them:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table dir="ltr"><thead><tr><th dir="auto">Feature</th><th dir="auto" style="text-align:center">Lumen</th><th dir="auto" style="text-align:center">Typora</th><th dir="auto" style="text-align:center">Obsidian</th><th dir="auto" style="text-align:center">StackEdit</th></tr></thead><tbody><tr><td dir="auto">Mermaid</td><td dir="auto" style="text-align:center">✅</td><td dir="auto" style="text-align:center">❌</td><td dir="auto" style="text-align:center">✅</td><td dir="auto" style="text-align:center">✅</td></tr><tr><td dir="auto">KaTeX + mhchem</td><td dir="auto" style="text-align:center">✅</td><td dir="auto" style="text-align:center">✅</td><td dir="auto" style="text-align:center">✅</td><td dir="auto" style="text-align:center">✅</td></tr><tr><td dir="auto">ECharts</td><td dir="auto" style="text-align:center">✅</td><td dir="auto" style="text-align:center">❌</td><td dir="auto" style="text-align:center">🔌</td><td dir="auto" style="text-align:center">❌</td></tr><tr><td dir="auto">Auto CSV → chart</td><td dir="auto" style="text-align:center">✅</td><td dir="auto" style="text-align:center">❌</td><td dir="auto" style="text-align:center">🔌</td><td dir="auto" style="text-align:center">❌</td></tr><tr><td dir="auto">Maps</td><td dir="auto" style="text-align:center">✅</td><td dir="auto" style="text-align:center">❌</td><td dir="auto" style="text-align:center">🔌</td><td dir="auto" style="text-align:center">❌</td></tr><tr><td dir="auto">Local-first</td><td dir="auto" style="text-align:center">✅</td><td dir="auto" style="text-align:center">✅</td><td dir="auto" style="text-align:center">✅</td><td dir="auto" style="text-align:center">⚠️</td></tr></tbody></table>
+<hr/>
+<h2 id="6-maps-leaflet" dir="auto">6. Maps (Leaflet)</h2>
+<pre dir="ltr"><code class="lumen-static-block language-map" data-lumen-block="map">center: [37.77, -25.0]
+zoom: 2
+markers:
+  - { lat: 37.7749, lng: -122.4194, label: &quot;San Francisco&quot; }
+  - { lat: 51.5074, lng: -0.1278,   label: &quot;London&quot; }
+  - { lat: 35.6762, lng: 139.6503,  label: &quot;Tokyo&quot; }
+  - { lat: -33.8688, lng: 151.2093, label: &quot;Sydney&quot; }
+  - { lat: 40.7128, lng: -74.0060,  label: &quot;New York&quot; }</code></pre>
+<hr/>
+<h2 id="7-callouts" dir="auto">7. Callouts</h2>
+<div class="admonition note"><div class="admonition-title">Heads up</div><p dir="auto">Markdown directives (<code>:::note</code>, <code>:::tip</code>, <code>:::info</code>, <code>:::warning</code>, <code>:::danger</code>)<br/>
+turn into themed callouts.</p></div>
+<div class="admonition tip"><div class="admonition-title">Pro tip</div><p dir="auto">Drag any <code>.csv</code> or <code>.json</code> file onto the window — Lumen drops it into a fresh<br/>
+document with the data block already in place.</p></div>
+<div class="admonition warning"><div class="admonition-title">Heavy block</div><p dir="auto">Mermaid, Leaflet, and ECharts are loaded <em>on demand</em> — your initial bundle<br/>
+stays small.</p></div>
+<div class="admonition danger"><div class="admonition-title">Unsaved changes</div><p dir="auto">The little dot next to the filename means you have unsaved changes.<br/>
+<code>⌘S</code> saves; <code>⇧⌘S</code> saves as.</p></div>
+<hr/>
+<h2 id="8-plantuml-graphviz-music--3d--all-first-class" dir="auto">8. PlantUML, Graphviz, music &amp; 3D — all first-class</h2>
+<p dir="auto">A Graphviz <code>dot</code> block (rendered locally via WASM):</p>
+<pre dir="ltr"><code class="lumen-static-block language-dot" data-lumen-block="diagram">digraph G {
+  rankdir=LR;
+  bgcolor=&quot;transparent&quot;;
+  node [shape=box, style=rounded, color=&quot;#7c5cff&quot;, fontname=&quot;Inter&quot;];
+  edge [color=&quot;#9aa3b2&quot;];
+  Editor -&gt; Pipeline -&gt; Renderer;
+  Pipeline -&gt; &quot;Block plugins&quot; -&gt; Renderer;
+}</code></pre>
+<p dir="auto">Music notation via ABC:</p>
+<pre dir="ltr"><code class="lumen-static-block language-abc" data-lumen-block="music">X:1
+T:Lumen Theme
+M:4/4
+L:1/8
+K:G
+|:GABc dedB | dedB dedB | c2ec B2dB | A2EA B2EA |
+GABc dedB | dedB dedB | c2ec B2dB |1 A2BG AGEG :|2 A2BG AGEG ||</code></pre>
+<p dir="auto">A YouTube embed via the <code>embed</code> fence (also supports Vimeo, CodePen, Figma,<br/>
+Loom, Spotify, CodeSandbox, and any URL):</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://www.youtube.com/watch?v=dQw4w9WgXcQ</code></pre>
+<p dir="auto">A <strong>live HTML/CSS/JS preview</strong> — paste any snippet and Lumen renders it inside<br/>
+a sandboxed iframe. Toggle to <em>Source</em> to inspect the markup, or <em>Fullscreen</em><br/>
+to make it the entire viewport:</p>
+<pre dir="ltr"><code class="lumen-static-block language-htmlpreview" data-lumen-block="html preview">&lt;style&gt;
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center;
+         font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; }
+  .card { padding: 1.75rem 2.5rem; border-radius: 16px;
+          background: linear-gradient(135deg, #7c5cff, #22d3ee);
+          box-shadow: 0 20px 50px -12px rgba(124,92,255,0.5); text-align: center; }
+  h1 { margin: 0 0 0.5rem; font-size: 2rem; letter-spacing: -0.02em; }
+  p  { margin: 0; opacity: 0.9; }
+  button { margin-top: 1rem; padding: 0.4rem 1rem; border-radius: 999px;
+           border: 0; background: rgba(255,255,255,0.2); color: inherit;
+           cursor: pointer; backdrop-filter: blur(6px); }
+&lt;/style&gt;
+&lt;div class=&quot;card&quot;&gt;
+  &lt;h1 id=&quot;t&quot;&gt;Hello, Lumen ✨&lt;/h1&gt;
+  &lt;p&gt;Live HTML / CSS / JS, sandboxed and code-split.&lt;/p&gt;
+  &lt;button onclick=&quot;document.getElementById(&#x27;t&#x27;).textContent = &#x27;🚀 Lift-off!&#x27;;&quot;&gt;
+    Click me
+  &lt;/button&gt;
+&lt;/div&gt;</code></pre>
+<hr/>
+<h2 id="9-wiki-links" dir="auto">9. Wiki-links</h2>
+<p dir="auto">Drop <code>[[wiki-links]]</code> anywhere. They slugify the target and jump to the<br/>
+matching heading — e.g. <a href="#1-rich-text-the-way-it-should-look" class="wiki-link" data-wiki-target="1. Rich text, the way it should look">jump to section 1</a>.<br/>
+With the workspace enabled (<code>⌘K → Toggle workspace</code>), they&#x27;ll cross files too.</p>
+<hr/>
+<h2 id="10-blockquote-and-a-finishing-flourish" dir="auto">10. Blockquote and a finishing flourish</h2>
+<blockquote dir="ltr">
+<p dir="auto"><em>&quot;The best way to predict the future is to invent it.&quot;</em> — Alan Kay</p>
+</blockquote>
+<hr/>
+<h2 id="11-tabular-conversions" dir="auto">11. Tabular conversions</h2>
+<p dir="auto">Lumen turns SQL, Pandas, JSON and JS-object literals into the same sortable<br/>
+DataTable + chart-suggestion UI. The fence language picks the parser; use<br/>
+<code>data</code> to auto-detect.</p>
+<p dir="auto">A SQL dump:</p>
+<pre dir="ltr"><code class="lumen-static-block language-sql" data-lumen-block="data">CREATE TABLE sales (date TEXT, region TEXT, revenue REAL);
+INSERT INTO sales (date, region, revenue) VALUES
+  (&#x27;2026-01-01&#x27;, &#x27;North&#x27;, 1240.50),
+  (&#x27;2026-01-02&#x27;, &#x27;South&#x27;,  980.00),
+  (&#x27;2026-01-03&#x27;, &#x27;East&#x27;,  1670.25),
+  (&#x27;2026-01-04&#x27;, &#x27;West&#x27;,  1120.75);</code></pre>
+<p dir="auto">The textual repr of a Pandas DataFrame:</p>
+<pre dir="ltr"><code class="lumen-static-block language-pandas" data-lumen-block="data">    date        region   revenue
+0   2026-01-01  North     1240.5
+1   2026-01-02  South      980.0
+2   2026-01-03  East      1670.25
+3   2026-01-04  West      1120.75</code></pre>
+<p dir="auto">A JS / JSON5-style object array (unquoted keys, single quotes, comments<br/>
+all welcome):</p>
+<pre dir="ltr"><code class="lumen-static-block language-object" data-lumen-block="data">[
+  // Q1 launch metrics
+  { product: &#x27;Lumen Pro&#x27;, signups: 1240, revenue: 18600 },
+  { product: &#x27;Lumen Team&#x27;, signups:  480, revenue: 14400 },
+  { product: &#x27;Enterprise&#x27;, signups:   38, revenue:  9500 },
+]</code></pre>
+<hr/>
+<h2 id="12-social-networks" dir="auto">12. Social networks</h2>
+<p dir="auto">Drop a public URL inside an <code>embed</code> fence and Lumen renders the platform&#x27;s<br/>
+own embed widget. Below: an iconic post from each supported platform —<br/>
+the URLs are real, you can copy them anywhere.</p>
+<p dir="auto"><strong>Video &amp; audio</strong></p>
+<p dir="auto">🎵 <strong>YouTube</strong> — Rick Astley, <em>&quot;Never Gonna Give You Up&quot;</em> (1.6 B views, the rickroll)</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://www.youtube.com/watch?v=dQw4w9WgXcQ</code></pre>
+<p dir="auto">🎬 <strong>Vimeo</strong> — <em>&quot;Move&quot;</em>, Rick Mereki&#x27;s iconic 44-day, 11-country travel film</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://vimeo.com/22439234</code></pre>
+<p dir="auto">🎙️ <strong>Loom</strong> — Loom&#x27;s own product walkthrough</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://www.loom.com/share/c43a642f815f4378b6f80a889bb73d8d</code></pre>
+<p dir="auto">🎶 <strong>Spotify</strong> — Queen, <em>&quot;Bohemian Rhapsody&quot;</em> (one of the most-streamed 20th-century songs)</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://open.spotify.com/track/3z8h0TU7ReDPLIbEnYhWZb</code></pre>
+<p dir="auto">🎧 <strong>SoundCloud</strong> — Forss, <em>&quot;Flickermood&quot;</em> (10 M plays)</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://soundcloud.com/forss/flickermood</code></pre>
+<p dir="auto"><strong>Code &amp; design</strong></p>
+<p dir="auto">🖌️ <strong>CodePen</strong> — Hakim El Hattab&#x27;s interactive shader demo</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://codepen.io/hakimel/pen/BKyJpM</code></pre>
+<p dir="auto">🧪 <strong>CodeSandbox</strong> — fresh React quickstart sandbox</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://codesandbox.io/s/new</code></pre>
+<p dir="auto">🎨 <strong>Figma Community</strong> — official iOS 18 UI Kit</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://www.figma.com/community/file/1394965242715869180</code></pre>
+<p dir="auto">🐙 <strong>GitHub Gist</strong> — the Octocat sample gist (rendered with syntax highlighting)</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://gist.github.com/octocat/6cad326836d38bd3a7ae</code></pre>
+<p dir="auto"><strong>Maps</strong></p>
+<p dir="auto">🗼 <strong>Google Maps</strong> — the Eiffel Tower, Paris</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://www.google.com/maps/place/Eiffel+Tower</code></pre>
+<p dir="auto">📍 <strong>OpenStreetMap</strong> — Times Square, NYC (privacy-friendly alternative)</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://www.openstreetmap.org/#map=18/40.7580/-73.9855</code></pre>
+<p dir="auto"><strong>Conversations</strong></p>
+<p dir="auto">🐦 <strong>X / Twitter</strong> — Elon Musk, <em>&quot;the bird is freed&quot;</em> (Oct 28 2022, the Twitter takeover)</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://twitter.com/elonmusk/status/1585841080431321088</code></pre>
+<p dir="auto">🐣 <strong>X / Twitter</strong> — Jack Dorsey&#x27;s first tweet ever, <em>&quot;just setting up my twttr&quot;</em> (Mar 21 2006)</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://twitter.com/jack/status/20</code></pre>
+<p dir="auto">📘 <strong>Facebook</strong> — NASA milestone post</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://www.facebook.com/NASA/posts/10168891891030772</code></pre>
+<p dir="auto">📷 <strong>Instagram</strong> — <code>@world_record_egg</code> (the egg that broke Instagram&#x27;s like record)</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://www.instagram.com/p/BsOGulcndj-/</code></pre>
+<p dir="auto">🎵 <strong>TikTok</strong> — Bella Poarch, <em>&quot;M to the B&quot;</em> (most-liked TikTok ever, 65 M+ likes)</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://www.tiktok.com/@bellapoarch/video/6862153058223197445</code></pre>
+<p dir="auto">👽 <strong>Reddit</strong> — Bill Gates&#x27; famous IAmA, <em>&quot;I am Bill Gates, co-chair of the Bill &amp; Melinda Gates Foundation&quot;</em></p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://www.reddit.com/r/IAmA/comments/6byns4/i_am_bill_gates_cochair_of_the_bill_melinda_gates/</code></pre>
+<p dir="auto">💼 <strong>LinkedIn</strong> — Reid Hoffman on the future of work</p>
+<pre dir="ltr"><code class="lumen-static-block language-embed" data-lumen-block="embed">https://www.linkedin.com/posts/reidhoffman_the-future-of-work-activity-7050231856721895424-Cf2T</code></pre>
+<blockquote dir="ltr">
+<p dir="auto"><strong>Tip</strong> — paste any of these URLs on a blank line in the source pane and<br/>
+Lumen offers a one-click &quot;wrap as embed&quot; pill. Try it.</p>
+</blockquote>
+<p dir="auto">Happy writing. ✦</p>
+<section data-footnotes="" class="footnotes"><h2 class="sr-only" id="footnote-label" dir="auto">Footnotes</h2>
+<ol dir="ltr">
+<li id="user-content-fn-1" dir="ltr">
+<p dir="auto">Yes — footnotes are first-class. <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to reference 1" class="data-footnote-backref">↩</a></p>
+</li>
+</ol>
+</section>

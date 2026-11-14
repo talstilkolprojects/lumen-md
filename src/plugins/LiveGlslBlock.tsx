@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { t } from "../i18n";
 
 const VERT = `
 attribute vec2 a_pos;
@@ -142,7 +143,7 @@ export default function LiveGlslBlock({ source, meta }: Props) {
     return (
       <div className="chart-block" style={{ padding: 12 }}>
         <div style={{ color: "hsl(0 80% 60%)", fontFamily: "ui-monospace, monospace", fontSize: 12, whiteSpace: "pre-wrap" }}>
-          ⚠︎ GLSL error:{"\n"}{error}
+          {t("block.glsl.error")}{"\n"}{error}
         </div>
       </div>
     );
@@ -150,7 +151,7 @@ export default function LiveGlslBlock({ source, meta }: Props) {
   return (
     <div className="chart-block">
       <div className="chart-block-header">
-        <span>GLSL fragment</span>
+        <span>{t("block.glsl.title")}</span>
       </div>
       <canvas
         ref={canvasRef}

@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { readRoomFromHash, setRoomInHash } from "../collab/roomUrl";
+import { readRoomFromHash, roomShareLink, setRoomInHash } from "../collab/roomUrl";
 
 afterEach(() => history.replaceState(null, "", "/"));
 
@@ -17,5 +17,12 @@ describe("setRoomInHash", () => {
     history.replaceState(null, "", "/#room=red-fox-1&password=x");
     setRoomInHash(null);
     expect(location.hash).toBe("");
+  });
+});
+
+describe("roomShareLink", () => {
+  it("carries the room password so invitees join the encrypted room", () => {
+    expect(roomShareLink("blue-otter-42", "a&b")).toBe(`${location.origin}${location.pathname}#room=blue-otter-42&password=a%26b`);
+    expect(roomShareLink("red-fox-1", null)).toBe(`${location.origin}${location.pathname}#room=red-fox-1`);
   });
 });

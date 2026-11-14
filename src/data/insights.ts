@@ -106,7 +106,7 @@ export function parseJsonRecords(text: string): InsightsRecord[] {
       if (Array.isArray(parsed)) return parsed.filter(isObj);
       if (isObj(parsed)) return [parsed];
     } catch {
-      /* fall through to JSONL */
+      /* why: fall through to JSONL */
     }
   }
 

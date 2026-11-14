@@ -1,0 +1,21 @@
+{
+  "mt.layer.name.chrome": "Chrome's built-in translator",
+  "mt.layer.name.opus": "Opus-MT (on this device)",
+  "mt.layer.name.m2m100": "M2M100 (on this device)",
+  "mt.layer.name.llm": "the AI model",
+  "mt.layer.chrome.absent": "this browser has no built-in translator",
+  "mt.layer.chrome.pair": "Chrome has no language pack for this pair",
+  "mt.layer.opus.pair": "no converted model for this pair",
+  "mt.layer.opus.noHost": "the converted models have no host yet (plan 15.9)",
+  "mt.layer.opus.noFiles": "the converted model has no checksums yet (run the conversion workflow)",
+  "mt.layer.m2m100.pair": "M2M100 does not cover this pair",
+  "mt.layer.m2m100.purpose": "Translation between languages the Hebrew models do not cover",
+  "mt.layer.m2m100.attribution": "M2M100-418M © Meta AI, licensed under the MIT License; ONNX conversion by Xenova.",
+  "mt.layer.failed": "the model failed to load",
+  "mt.layer.declined": "download declined",
+  "mt.layer.sourceUnknown": "the document's language could not be told",
+  "mt.size.approx": "about {size}",
+  "toast.translatedWith": "Translated with {layer}",
+  "toast.translatedWithUnmeasured": "Translated with {layer} — its quality on this pair is not measured yet",
+  "toast.localMtUnavailable": "Local translation was not available ({why}); the AI model translated instead."
+}

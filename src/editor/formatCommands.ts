@@ -9,8 +9,6 @@
  */
 
 import type { EditorView } from "@codemirror/view";
-import { keymap } from "@codemirror/view";
-import type { Extension } from "@codemirror/state";
 import { t } from "../i18n";
 import { showAiToast } from "../ui/AiToast";
 import { log } from "../lib/logger";
@@ -102,24 +100,6 @@ export async function formatDocumentText(doc: string): Promise<string | null> {
     reportError(err);
     return null;
   }
-}
-
-/**
- * Editor keymap: Shift-Alt-F formats the document (VS Code's binding).
- * When the cursor is inside a fenced block that has a formatter, the
- * document formatter already covers it via embedded-language formatting.
- */
-export function formatKeymap(): Extension {
-  return keymap.of([
-    {
-      key: "Shift-Alt-f",
-      preventDefault: true,
-      run(view) {
-        void formatDocumentInView(view);
-        return true;
-      },
-    },
-  ]);
 }
 
 /* ─── Command palette entries ───────────────────────────────────── */

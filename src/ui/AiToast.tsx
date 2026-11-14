@@ -15,11 +15,19 @@ interface Toast {
   type: ToastType;
   /** Optional "Learn more" docs link (PRODUCT_IMPROVEMENT 2.4). */
   learnMoreUrl?: string;
+  action?: AiToastAction;
+}
+
+export interface AiToastAction {
+  label: string;
+  onClick: () => void;
 }
 
 export interface AiToastOptions {
   /** Absolute docs URL rendered as a "Learn more" link — see `lib/docsLinks`. */
   learnMoreUrl?: string;
+  /** A button in the toast (e.g. "Review"); clicking it also dismisses the toast. */
+  action?: AiToastAction;
 }
 
 let nextId = 0;
@@ -27,7 +35,7 @@ const listeners = new Set<(toast: Toast) => void>();
 
 /** Show a toast notification from anywhere — no hooks needed. */
 export function showAiToast(message: string, type: ToastType = "info", opts: AiToastOptions = {}) {
-  const toast: Toast = { id: nextId++, message, type, learnMoreUrl: opts.learnMoreUrl };
+  const toast: Toast = { id: nextId++, message, type, learnMoreUrl: opts.learnMoreUrl, action: opts.action };
   listeners.forEach((fn) => fn(toast));
 }
 
@@ -49,10 +57,10 @@ export function AiToastContainer() {
   useEffect(() => {
     const add = (t: Toast) => {
       setToasts((prev) => [...prev.slice(-4), t]);
-      // Toasts with a docs CTA stay longer so the link is actually clickable.
+      // Toasts with a docs CTA or an action stay longer so they are actually clickable.
       setTimeout(() => {
         setToasts((prev) => prev.filter((x) => x.id !== t.id));
-      }, t.learnMoreUrl ? 9000 : 4000);
+      }, t.learnMoreUrl || t.action ? 9000 : 4000);
     };
     listeners.add(add);
     return () => { listeners.delete(add); };
@@ -65,7 +73,7 @@ export function AiToastContainer() {
       style={{
         position: "fixed",
         bottom: 40,
-        right: 16,
+        insetInlineEnd: 16,
         zIndex: 99999,
         display: "flex",
         flexDirection: "column",
@@ -112,6 +120,20 @@ export function AiToastContainer() {
                 </>
               )}
             </span>
+            {t.action && (
+              <button
+                type="button"
+                className="toast-action"
+                data-testid="toast-action"
+                onClick={() => {
+                  setToasts((prev) => prev.filter((x) => x.id !== t.id));
+                  t.action!.onClick();
+                }}
+                style={{ color: COLORS[t.type] }}
+              >
+                {t.action.label}
+              </button>
+            )}
             <button
               onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
               aria-label={i18n("toast.dismiss")}

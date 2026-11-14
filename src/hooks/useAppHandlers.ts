@@ -193,7 +193,7 @@ export function useAppHandlers(editorRef: React.RefObject<EditorHandle | null>) 
           window.dispatchEvent(new Event("lumen-workspace-changed"));
         })
         .catch(() => {
-          /* swallow; will retry on next change */
+          /* why: swallow; will retry on next change */
         });
     }, 600);
     return () => clearTimeout(timer);

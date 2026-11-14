@@ -1,6 +1,7 @@
 /**
  * Component tests for CommandPalette.
  */
+import { useLayoutEffect } from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { CommandPalette } from "../ui/CommandPalette";
@@ -50,6 +51,31 @@ describe("CommandPalette", () => {
       <CommandPalette open={false} onClose={vi.fn()} commands={makeCommands()} />,
     );
     expect(container.innerHTML).toBe("");
+  });
+
+  it("a reopened palette starts empty, from its first paint (Escape e2e flake)", () => {
+    const onClose = vi.fn();
+    const { rerender } = render(<CommandPalette open={true} onClose={onClose} commands={makeCommands()} />);
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Page View" } });
+    rerender(<CommandPalette open={false} onClose={onClose} commands={makeCommands()} />);
+    // Cleared when it closed, not only after the next open's effect. The probe reads the
+    // committed DOM in a layout effect: after the reopening commit, before passive effects
+    // (where the open-time reset runs), so without the close-time reset it sees "Page View".
+    let firstPaint: string | null = null;
+    const Probe = () => {
+      useLayoutEffect(() => {
+        firstPaint ??= (document.querySelector('[role="dialog"] input') as HTMLInputElement | null)?.value ?? null;
+      });
+      return null;
+    };
+    rerender(
+      <>
+        <CommandPalette open={true} onClose={onClose} commands={makeCommands()} />
+        <Probe />
+      </>,
+    );
+    expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("");
+    expect(firstPaint).toBe("");
   });
 
   it("renders commands when open", () => {
@@ -126,5 +152,34 @@ describe("CommandPalette", () => {
       expect(screen.getByText("↵")).toBeTruthy();
       expect(screen.getByText("Esc")).toBeTruthy();
     });
+  });
+
+  it("a reopened palette is empty from its first frame (plan 0.5)", () => {
+    // Reads the input after every commit, before passive effects run: the
+    // frame a user (or Playwright) can see and type into.
+    const frames: string[] = [];
+    function Probe() {
+      useLayoutEffect(() => {
+        const input = document.querySelector<HTMLInputElement>(".cmd-palette-search input");
+        if (input) frames.push(input.value);
+      });
+      return null;
+    }
+    const ui = (open: boolean) => (
+      <>
+        <CommandPalette open={open} onClose={vi.fn()} commands={makeCommands()} />
+        <Probe />
+      </>
+    );
+    const { rerender } = render(ui(true));
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "chart" } });
+    rerender(ui(false));
+    frames.length = 0;
+    rerender(ui(true));
+    expect(frames[0]).toBe("");
+    // What is typed straight after opening stays typed.
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "open" } });
+    expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("open");
+    expect(screen.getByText("Open file")).toBeTruthy();
   });
 });

@@ -1,12 +1,18 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { extractToc } from "../renderer/pipeline";
+import { LARGE_DOC_CHARS } from "../renderer/previewDoc";
+import type { IncrementalToc, TocEntry } from "../renderer/incrementalToc";
 import { t } from "../i18n";
+import { scrollBehavior } from "../lib/motion";
+import { useAppStore } from "../store/useStore";
 
 interface Props {
   markdownText: string;
+  /** Phone width (plan 10.2.4): a bottom sheet over the editor, closed by its button or by picking a heading. */
+  sheet?: boolean;
 }
 
-export const Outline = React.memo(function Outline({ markdownText }: Props) {
+export const Outline = React.memo(function Outline({ markdownText, sheet = false }: Props) {
   // Debounce expensive TOC extraction.
   const [debounced, setDebounced] = useState(markdownText);
   useEffect(() => {
@@ -14,7 +20,25 @@ export const Outline = React.memo(function Outline({ markdownText }: Props) {
     return () => clearTimeout(h);
   }, [markdownText]);
 
-  const toc = useMemo(() => extractToc(debounced), [debounced]);
+  // A long document re-parses only the blocks that changed (plan 8.4);
+  // the result is the same as extractToc's.
+  const large = debounced.length >= LARGE_DOC_CHARS;
+  const smallToc = useMemo(() => (large ? null : extractToc(debounced)), [debounced, large]);
+  const incrementalRef = useRef<IncrementalToc | null>(null);
+  const [largeToc, setLargeToc] = useState<TocEntry[]>([]);
+  useEffect(() => {
+    if (!large) return;
+    let cancelled = false;
+    void import("../renderer/incrementalToc").then((m) => {
+      if (cancelled) return;
+      const inc = (incrementalRef.current ??= new m.IncrementalToc());
+      setLargeToc(inc.update(debounced));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [debounced, large]);
+  const toc = smallToc ?? largeToc;
 
   // Scroll-spy: track which heading is currently in view within the preview pane.
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -65,14 +89,26 @@ export const Outline = React.memo(function Outline({ markdownText }: Props) {
 
   return (
     <aside
-      className="
-        outline-aside h-full overflow-y-auto py-3 px-1 bg-bg-subtle border-l border-border
+      className={
+        sheet
+          ? "outline-aside outline-sheet"
+          : `
+        outline-aside h-full overflow-y-auto py-3 px-1 bg-bg-subtle border-s border-border
         w-[260px] shrink-0
         max-md:hidden md:block
-      "
+      `
+      }
+      aria-label={sheet ? t("outline.title") : undefined}
+      data-testid={sheet ? "outline-sheet" : undefined}
     >
-      <div className="px-2 mb-2 text-[11px] uppercase tracking-wider text-fg-muted font-semibold">
-        {t("outline.title")}
+      {sheet && <div className="outline-sheet-grip" aria-hidden="true" />}
+      <div className="px-2 mb-2 text-[11px] uppercase tracking-wider text-fg-muted font-semibold outline-sheet-head">
+        <span>{t("outline.title")}</span>
+        {sheet && (
+          <button type="button" className="icon-btn outline-sheet-close" onClick={() => useAppStore.getState().toggleOutline()} aria-label={t("outline.close")}>
+            ✕
+          </button>
+        )}
       </div>
       {toc.length === 0 ? (
         <div className="px-2 text-[12px] text-fg-muted">
@@ -86,10 +122,15 @@ export const Outline = React.memo(function Outline({ markdownText }: Props) {
               href={`#${h.id}`}
               className={`outline-link h${h.depth}${activeId === h.id ? " active" : ""}`}
               aria-current={activeId === h.id ? "location" : undefined}
+              // A Hebrew heading in an English UI (and the reverse) keeps
+              // its own direction (T45).
+              dir="auto"
               onClick={(e) => {
                 e.preventDefault();
                 const el = document.getElementById(h.id);
-                if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                if (el) el.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
+                // The sheet covers the text: picking a heading closes it.
+                if (sheet) useAppStore.getState().toggleOutline();
               }}
             >
               {h.text}

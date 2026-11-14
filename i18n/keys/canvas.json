@@ -1,0 +1,246 @@
+{
+  "version": 2,
+  "domain": "canvas",
+  "source": "src/i18n/locales/en/canvas.json",
+  "entries": [
+    {
+      "key": "canvas.addNote",
+      "en": "+ Add Note",
+      "vars": []
+    },
+    {
+      "key": "canvas.autoSaved",
+      "en": "Canvas · auto-saved",
+      "vars": []
+    },
+    {
+      "key": "canvas.back",
+      "en": "← Back to Editor",
+      "vars": []
+    },
+    {
+      "key": "canvas.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "canvas.dialogLabel",
+      "en": "Whiteboard",
+      "vars": []
+    },
+    {
+      "key": "canvas.done",
+      "en": "Done",
+      "vars": []
+    },
+    {
+      "key": "canvas.jsonCanvas.export",
+      "en": "Export .canvas",
+      "vars": []
+    },
+    {
+      "key": "canvas.jsonCanvas.exported",
+      "en": "Saved {name}.canvas: {nodes} nodes, {edges} edges",
+      "vars": [
+        "name",
+        "nodes",
+        "edges"
+      ]
+    },
+    {
+      "key": "canvas.jsonCanvas.failed",
+      "en": "Couldn't import the JSON Canvas: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "canvas.jsonCanvas.import",
+      "en": "Import .canvas",
+      "vars": []
+    },
+    {
+      "key": "canvas.jsonCanvas.imported",
+      "en": "Imported {name} ({count} items)",
+      "vars": [
+        "name",
+        "count"
+      ]
+    },
+    {
+      "key": "canvas.jsonCanvas.skipped",
+      "en": "{count} element(s) have no JSON Canvas form and were left out (images, free-hand drawing, unconnected arrows)",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "canvas.legacy.convert",
+      "en": "Convert {name} → tldraw",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "canvas.legacy.convertFailed",
+      "en": "Convert failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "canvas.legacy.converted",
+      "en": "✅ Converted {name} ({count} shapes)",
+      "vars": [
+        "name",
+        "count"
+      ]
+    },
+    {
+      "key": "canvas.legacy.converting",
+      "en": "Converting {name}…",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "canvas.legacy.found",
+      "en": "{count} legacy canvas(es) found",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "canvas.migrate.done",
+      "en": "Canvases converted: {converted}, skipped: {skipped}, failed: {failed}, warnings: {warnings}",
+      "vars": [
+        "converted",
+        "skipped",
+        "failed",
+        "warnings"
+      ]
+    },
+    {
+      "key": "canvas.migrate.none",
+      "en": "No tldraw canvases to convert",
+      "vars": []
+    },
+    {
+      "key": "canvas.new",
+      "en": "New",
+      "vars": []
+    },
+    {
+      "key": "canvas.new.placeholder",
+      "en": "ideas",
+      "vars": []
+    },
+    {
+      "key": "canvas.new.prompt",
+      "en": "Canvas name:",
+      "vars": []
+    },
+    {
+      "key": "canvas.new.replaceBody",
+      "en": "A canvas named “{name}” already exists. Starting a new one with this name replaces its drawing with a blank page.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "canvas.new.replaceOk",
+      "en": "Replace with blank",
+      "vars": []
+    },
+    {
+      "key": "canvas.new.replaceTitle",
+      "en": "Replace this canvas?",
+      "vars": []
+    },
+    {
+      "key": "canvas.new.title",
+      "en": "Create a new canvas",
+      "vars": []
+    },
+    {
+      "key": "canvas.openFailed",
+      "en": "Couldn't open the canvas “{name}”: {error}",
+      "vars": [
+        "name",
+        "error"
+      ]
+    },
+    {
+      "key": "canvas.picker",
+      "en": "Pick canvas",
+      "vars": []
+    },
+    {
+      "key": "canvas.saveFailed",
+      "en": "Couldn't save the canvas “{name}”: {error}",
+      "vars": [
+        "name",
+        "error"
+      ]
+    },
+    {
+      "key": "canvas.switch",
+      "en": "Switch canvas",
+      "vars": []
+    },
+    {
+      "key": "canvas.title",
+      "en": "Canvas",
+      "vars": []
+    },
+    {
+      "key": "canvas.unreadable",
+      "en": "Couldn’t read the canvas “{name}”. It stays read-only so its saved drawing isn’t overwritten.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "canvas.unsaved",
+      "en": "{name} (unsaved)",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "canvas.zoom",
+      "en": "Zoom: {pct}%",
+      "vars": [
+        "pct"
+      ]
+    },
+    {
+      "key": "graphView.empty",
+      "en": "No workspace files found. Open the workspace panel and add files to see the knowledge graph.",
+      "vars": []
+    },
+    {
+      "key": "graphView.renderFailed",
+      "en": "Graph Render Failed",
+      "vars": []
+    },
+    {
+      "key": "graphView.renderFailedDetail",
+      "en": "The workspace data resulted in an invalid node structure that crashed the renderer.",
+      "vars": []
+    },
+    {
+      "key": "graphView.stats",
+      "en": "{nodes} nodes · {edges} connections",
+      "vars": [
+        "nodes",
+        "edges"
+      ]
+    },
+    {
+      "key": "graphView.title",
+      "en": "Knowledge Graph",
+      "vars": []
+    }
+  ]
+}

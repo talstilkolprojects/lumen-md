@@ -1,0 +1,12 @@
+{
+  "imageSearch.tab": "Images",
+  "imageSearch.hint": "Describe an image to find it in your notes' images (on this device).",
+  "imageSearch.searching": "Searching images…",
+  "imageSearch.indexing": "Indexing images {done} / {total}…",
+  "imageSearch.noHost": "Image search needs its model, which is not available to download yet (its host is not set up).",
+  "imageSearch.declined": "Image search needs the model download; nothing was searched.",
+  "imageSearch.failed": "Image search failed: {error}",
+  "imageSearch.none": "No images in this vault.",
+  "imageSearch.translated": "Searched in English: “{query}”",
+  "imageSearch.copied": "Image link copied — paste it into the note."
+}

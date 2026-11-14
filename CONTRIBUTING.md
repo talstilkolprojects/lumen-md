@@ -55,7 +55,7 @@ src/
 - **Local-first.** All data stays in the browser (OPFS) by default. Cloud features are opt-in.
 - **No `any`.** TypeScript strict mode is enforced. Use `unknown` + narrowing.
 - **No hardcoded English.** Every user-facing string uses `t("key")` from `src/i18n/index.ts`.
-- **Lazy everything.** Heavy libraries (Mermaid, ECharts, tldraw, Graphviz) are `lazy()` imports.
+- **Lazy everything.** Heavy libraries (Mermaid, ECharts, Excalidraw, Graphviz) are `lazy()` imports.
 - **Plugin sandbox.** Third-party plugins run in a sandboxed `<iframe>` with restricted CSP.
 
 ## Branches
@@ -95,6 +95,23 @@ Scopes are area names: `editor`, `renderer`, `collab`, `storage`, `ui`, `ai`, `i
 - Run unit tests: `npm run test` (single-shot) or `npm run test:watch`.
 - Run E2E: `npx playwright test` (requires a running dev server).
 
+### Local visual preview (every surface, LTR/RTL, dark/light)
+
+No Vercel preview needed: build, then screenshot every main surface
+(split, source, preview, WYSIWYG, palette, shortcuts, plugins, templates,
+AI settings, AI doctor) in English and Hebrew, dark and light:
+
+```bash
+npm run build
+npm run preview:visual                     # → visual-results/<run>/index.html
+npm run preview:visual -- --baseline visual-results/<older-run>   # pixel diff, exit 1 on change
+npm run preview:visual -- --only palette,wysiwyg --url http://localhost:5173
+```
+
+Each shot is also checked for horizontal overflow and for `<html dir>`
+matching the locale. Take a baseline before a visual change and compare
+after it; `--threshold` (default 0.5 %) sets how much may differ.
+
 ### Visual (pixel-diff) baselines
 
 `e2e/visual-smoke.spec.ts` pins the Mermaid diagram with
@@ -114,6 +131,31 @@ per-platform (`…-chromium-linux.png`).
   and commit the updated PNG together with the change. Generate Linux
   baselines on Linux (or in CI) — macOS font rendering differs.
 
+### Visual regression suite (10 surfaces × he / en × light / dark)
+
+`visual/` holds a Playwright suite that compares ten surfaces (split,
+source, preview, WYSIWYG, palette, shortcuts, plugins, templates, theme
+settings, AI settings) in English (LTR) and Hebrew (RTL), light and dark —
+40 shots — with baselines in `visual/__baselines__/<platform>/`. It runs
+on the production build (`vite preview`) with a fixed note, clock, fonts,
+viewport (1280×800 at 1×) and with animations and the caret off.
+
+```bash
+npx playwright install chromium        # once
+npm run test:visual:update             # first run on this machine: writes the baselines
+git add visual/__baselines__           # after looking at every PNG
+npm run test:visual                    # compare; a missing baseline fails
+```
+
+- An **intentional** change: run `npm run test:visual:update`, review the
+  changed PNGs, commit them with the change.
+- A failure leaves the expected / actual / diff images in
+  `visual-results/` (HTML report: `visual-results/report/index.html`).
+- `visual/selftest.visual.ts` proves the gate works: a 3 px shift of the
+  toolbar must fail the comparison.
+- Baselines are per platform: compare on the kind of machine that wrote
+  them. `.github/workflows/visual.yml` can run it on Linux, by hand only.
+
 ### Guidelines
 
 - Add a test for any non-trivial change.
@@ -126,7 +168,7 @@ per-platform (`…-chromium-linux.png`).
 
 - **Current:** 131 test files, 1074 passing tests, 97% line coverage.
 - The CI gate requires `npm run typecheck && npm run test` to pass on every push.
-- The i18n drift gate (`i18nDrift.test.ts`) ensures every key in the `en` bundle exists in all 8 locale files.
+- The i18n drift gate (`i18nDrift.test.ts`) ensures every key in the `en` bundle exists in all 8 locales.
 
 ## Internationalization (i18n)
 
@@ -134,10 +176,16 @@ per-platform (`…-chromium-linux.png`).
 
 ### Adding a new string
 
-1. Add the English key to the `en` object in `src/i18n/index.ts`.
-2. Add the Hebrew translation to the `he` object in the same file.
-3. Add the key (with English fallback) to all 6 lazy locale files in `src/i18n/locales/*.json`.
-4. Run `npm run test` — the `i18nDrift.test.ts` gate will fail if any locale is missing the key.
+Strings live in one JSON file per language and domain: `src/i18n/locales/<lang>/<domain>.json`
+(a key's domain is its first segment; see [`src/i18n/locales/README.md`](src/i18n/locales/README.md)).
+
+1. Add the English key to `src/i18n/locales/en/<domain>.json` and the Hebrew to `src/i18n/locales/he/<domain>.json`.
+2. Run `npm run i18n:fix` (sorts the files, refreshes `i18n/keys/`) and `node scripts/generate-all-locales.mjs` for the other 6 locales.
+3. Run `npm run i18n:check` and `npm run test` — the `i18nDrift.test.ts` gate will fail if any locale is missing the key.
+
+`npm run i18n:hardcoded` (part of `i18n:check`, and a CI step) scans `src/` and fails on English left in JSX text,
+user-visible props (`aria-label`, `title`, `placeholder`, `alt`, `label`…) or toast / dialog messages. A sentence
+with markup inside it uses `tRich()` from `src/i18n/rich.tsx`; a real exception gets `// i18n-allow: <reason>`.
 
 ### RTL support
 
@@ -170,6 +218,7 @@ The GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push:
 1. **`npm run typecheck`** — Zero TypeScript errors required.
 2. **`npm run test`** — All unit tests must pass (including the i18n drift gate).
 3. **`npm run build`** — Production bundle must build without errors.
+4. **`npm run lint`** — ESLint (typescript-eslint, react-hooks, jsx-a11y). Violations that predate it are recorded in `eslint-suppressions.json`; a new one fails. Notable rules: `react-hooks/rules-of-hooks`, `@typescript-eslint/no-floating-promises` (mark fire-and-forget calls with `void`), and `lumen/empty-catch-why` (an empty `catch`, or an empty `.catch(() => {})` handler, needs a `// why: …` comment — or log the error instead). That rule has no baseline at all; `src/__tests__/codeHealth.test.ts` checks it under `npm test` too. When you fix a recorded violation, run `npm run lint:prune` and commit the smaller baseline. Never add to the baseline with `--suppress-all`.
 
 ## Security
 

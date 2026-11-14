@@ -1,24 +1,40 @@
 import { useEffect, useRef, useState } from "react";
 import { sanitizeSvgMarkup } from "../lib/markupSanitizer";
 import { safeSetHtml } from "../lib/trustedTypes";
+import { t } from "../i18n";
 
-interface GraphvizInstance {
-  layout(dot: string, format: string, engine: string): string;
+// Layout runs in ./graphviz.worker (F4): the only code that needs eval
+// lives there, under its own CSP; the page itself allows none.
+let worker: Worker | null = null;
+let seq = 0;
+const pending = new Map<number, { resolve: (svg: string) => void; reject: (e: Error) => void }>();
+
+function getWorker(): Worker {
+  if (worker) return worker;
+  const w = new Worker(new URL("./graphviz.worker.ts", import.meta.url), { type: "module" });
+  w.onmessage = (e: MessageEvent<{ id: number; svg?: string; error?: string }>) => {
+    const p = pending.get(e.data.id);
+    if (!p) return;
+    pending.delete(e.data.id);
+    if (e.data.error !== undefined) p.reject(new Error(e.data.error));
+    else p.resolve(e.data.svg ?? "");
+  };
+  w.onerror = (e) => {
+    e.preventDefault();
+    for (const p of pending.values()) p.reject(new Error(e.message || "Graphviz worker failed"));
+    pending.clear();
+    worker = null;
+  };
+  worker = w;
+  return w;
 }
 
-let graphvizPromise: Promise<GraphvizInstance> | null = null;
-
-async function getGraphviz() {
-  if (!graphvizPromise) {
-    graphvizPromise = (async () => {
-      // Import the focused subpath so we don't pull in DuckDB / Expat / zstd.
-      const mod = (await import("@hpcc-js/wasm/graphviz")) as {
-        Graphviz: { load: () => Promise<GraphvizInstance> };
-      };
-      return await mod.Graphviz.load();
-    })();
-  }
-  return graphvizPromise;
+function layout(dot: string, engine: string): Promise<string> {
+  const id = ++seq;
+  return new Promise((resolve, reject) => {
+    pending.set(id, { resolve, reject });
+    getWorker().postMessage({ id, dot, engine });
+  });
 }
 
 interface Props {
@@ -87,8 +103,7 @@ export default function GraphvizBlock({ source, meta }: Props) {
       }
       try {
         const started = performance.now();
-        const gv = await getGraphviz();
-        const svg = gv.layout(source, "svg", engine);
+        const svg = await layout(source, engine);
         if (cancelled || !contentRef.current) return;
         const cleanSvg = sanitizeSvgMarkup(svg);
         safeSetHtml(contentRef.current, cleanSvg, "svg");
@@ -112,20 +127,20 @@ export default function GraphvizBlock({ source, meta }: Props) {
   if (error) {
     return (
       <div className="mermaid-block">
-        <div className="mermaid-error">⚠︎ Graphviz error:{"\n"}{error}</div>
+        <div className="mermaid-error">{t("block.graphviz.error")}{"\n"}{error}</div>
       </div>
     );
   }
   const statusText =
     state === "rendering"
-      ? "Rendering…"
+      ? t("block.diagram.rendering")
       : state === "ready"
         ? durationMs == null
-          ? "Rendered (cache)"
-          : `Rendered in ${durationMs} ms`
+          ? t("block.diagram.renderedCache")
+          : t("block.diagram.renderedIn", { ms: durationMs })
         : inView
-          ? "Queued"
-          : "Scroll to render";
+          ? t("block.diagram.queued")
+          : t("block.diagram.scrollToRender");
   return (
     <div className="mermaid-block" ref={containerRef}>
       <div
@@ -152,7 +167,7 @@ export default function GraphvizBlock({ source, meta }: Props) {
             textAlign: "center",
           }}
         >
-          Graphviz diagram (scroll to render)
+          {t("block.graphviz.placeholder")}
         </div>
       )}
     </div>

@@ -1,0 +1,43 @@
+name: visual regression
+
+# Plan 10.3. The suite is local-first: `npm run test:visual` (see
+# CONTRIBUTING.md). This job only runs when started by hand, so nothing
+# depends on GitHub Actions. Baselines are per platform
+# (visual/__baselines__/<platform>/); Linux ones come from a Linux machine.
+
+on:
+  workflow_dispatch:
+    inputs:
+      update:
+        description: "Write the baselines instead of comparing (upload them as an artifact)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  visual:
+    name: visual regression (chromium)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: npm }
+      - run: npm ci || npm install
+      - run: npx playwright install --with-deps chromium
+      - name: Compare with the baselines
+        if: ${{ !inputs.update }}
+        run: npm run test:visual
+      - name: Write the baselines
+        if: ${{ inputs.update }}
+        run: npm run test:visual:update
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: visual-results
+          path: |
+            visual-results/
+            visual/__baselines__/
+          if-no-files-found: ignore

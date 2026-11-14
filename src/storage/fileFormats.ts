@@ -748,6 +748,45 @@ export async function epubToMarkdown(file: File): Promise<string> {
     : "> ⚠️ EPUB: no readable chapters found.";
 }
 
+/** Most scanned pages one PDF import reads with OCR. */
+const PDF_OCR_MAX_PAGES = 30;
+
+/**
+ * Join a PDF's per-page text (one entry per page, "" for a page without a
+ * text layer). Blank pages are read with `ocrPage` (1-based page number)
+ * when given — each blank page, not only when the whole PDF is blank.
+ * @internal exported for tests.
+ */
+export async function mergePdfPageTexts(texts: string[], ocrPage: ((n: number) => Promise<string>) | null): Promise<string> {
+  const pages = [...texts];
+  let ocred = 0;
+  let tried = 0;
+  let skipped = 0;
+  if (ocrPage) {
+    for (let i = 0; i < pages.length; i++) {
+      if (pages[i]) continue;
+      if (tried >= PDF_OCR_MAX_PAGES) {
+        skipped++;
+        continue;
+      }
+      tried++;
+      const text = (await ocrPage(i + 1).catch(() => "")).trim();
+      if (text) {
+        pages[i] = text;
+        ocred++;
+      }
+    }
+  }
+  const found = pages.filter(Boolean);
+  if (!found.length) return "> ⚠️ This PDF has no extractable text (likely a scanned image), and on-device OCR found none either.";
+  if (!ocred) return found.join("\n\n---\n\n");
+  const head = texts.some(Boolean)
+    ? "> ℹ️ Some pages are scanned — their text was recognised on this device (OCR); check it against the original."
+    : "> ℹ️ Scanned PDF — text recognised on this device (OCR); check it against the original.";
+  const note = skipped ? `\n\n> ℹ️ OCR read the first ${PDF_OCR_MAX_PAGES} of ${tried + skipped} scanned pages.` : "";
+  return `${head}\n\n${found.join("\n\n---\n\n")}${note}`;
+}
+
 /* ─── PDF → Markdown (lazy-loads pdfjs-dist) ──────────────────────── */
 
 /**
@@ -764,6 +803,8 @@ export async function pdfToMarkdown(file: File): Promise<string> {
         numPages: number;
         getPage: (n: number) => Promise<{
           getTextContent: () => Promise<{ items: Array<{ str?: string }> }>;
+          getViewport: (o: { scale: number }) => { width: number; height: number };
+          render: (o: { canvasContext: CanvasRenderingContext2D; viewport: { width: number; height: number } }) => { promise: Promise<void> };
         }>;
       }>;
     };
@@ -785,27 +826,43 @@ export async function pdfToMarkdown(file: File): Promise<string> {
         const url = (await import("pdfjs-dist/legacy/build/pdf.worker.min.mjs?url")).default;
         if (typeof url === "string" && url) workerSrc = url;
       } catch {
-        /* keep the bare specifier */
+        /* why: keep the bare specifier, which Node and the tests resolve */
       }
     }
     pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
     const data = new Uint8Array(await file.arrayBuffer());
     const pdf = await pdfjs.getDocument({ data, isEvalSupported: false }).promise;
-    const pages: string[] = [];
+    const texts: string[] = [];
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      const text = content.items
-        .map((it) => it.str ?? "")
-        .join(" ")
-        .replace(/[ \t]{2,}/g, " ")
-        .trim();
-      if (text) pages.push(text);
+      texts.push(
+        content.items
+          .map((it) => it.str ?? "")
+          .join(" ")
+          .replace(/[ \t]{2,}/g, " ")
+          .trim(),
+      );
     }
-    if (pages.length === 0) {
-      return "> ⚠️ This PDF has no extractable text (likely a scanned image). OCR is not built in yet.";
+    // Scanned pages (no text layer): render each and read it with on-device
+    // OCR (Hebrew + English, T31) — also in a mixed PDF whose cover or page
+    // numbers do have text. Browser only — tests have no canvas.
+    let ocrPage: ((n: number) => Promise<string>) | null = null;
+    if (!isNode && typeof document !== "undefined" && texts.some((t) => !t)) {
+      const { ocrImage } = await import("../ai/ocr");
+      ocrPage = async (n) => {
+        const page = await pdf.getPage(n);
+        const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return "";
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        return (await ocrImage(canvas).catch(() => ({ text: "" }))).text;
+      };
     }
-    return pages.join("\n\n---\n\n");
+    return await mergePdfPageTexts(texts, ocrPage);
   } catch (err) {
     return "> ⚠️ Couldn't read this PDF: " + (err as Error).message;
   }

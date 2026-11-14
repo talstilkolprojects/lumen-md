@@ -45,7 +45,7 @@ export async function printDocument(
       const rules = [...sheet.cssRules].map((r) => r.cssText).join("\n");
       styles.push(rules);
     } catch {
-      // Cross-origin sheets — skip
+      // why: Cross-origin sheets — skip
     }
   }
 

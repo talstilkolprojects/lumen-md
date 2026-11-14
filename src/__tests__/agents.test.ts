@@ -1,5 +1,5 @@
 /**
- * Tests for the pure helpers in `src/ai/agents.ts`. The AI calls themselves
+ * Tests for the pure helpers in `src/agents/commands.ts`. The AI calls themselves
  * (suggestTags / suggestLinks) hit OpenAI and require live network — those
  * are integration territory. The frontmatter merge + link-application
  * helpers are pure markdown manipulation worth pinning down.
@@ -10,7 +10,7 @@ import {
   mergeTagsIntoFrontmatter,
   applyLinkSuggestion,
   type LinkSuggestion,
-} from "../ai/agents";
+} from "../agents/commands";
 
 describe("mergeTagsIntoFrontmatter", () => {
   it("creates fresh frontmatter when none exists", () => {

@@ -7,6 +7,13 @@ Lumen plugins are tiny ESM modules that register custom blocks, commands,
 and sidebar panels. The host loads them via dynamic `import(url)` so
 there's no build pipeline to learn — write a function, ship a JS file.
 
+:::caution[Being rewritten]
+Plugins move to an isolated runtime with a permission prompt per capability
+(plan 11.2); this page is replaced when that lands. `create-lumen-plugin`
+isn't on npm yet: run it from `packages/create-lumen-plugin` in the
+repository.
+:::
+
 ## 30-second start
 
 ```bash
@@ -60,7 +67,7 @@ returned, plus tear down any timers / DOM you created.
    left external (Lumen ships its own).
 2. Push the dist to npm or any CDN (jsDelivr / unpkg).
 3. PR against
-   [`public/plugins/registry.json`](https://github.com/your-org/lumen) to
+   [`public/plugins/registry.json`](https://github.com/talstilkol/lumen-md/blob/main/public/plugins/registry.json) to
    list your plugin. Required fields: `id`, `name`, `description`,
    `version`, `icon`, `url`.
 

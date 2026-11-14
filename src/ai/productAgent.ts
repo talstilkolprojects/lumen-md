@@ -9,11 +9,8 @@
  * Works with any configured LLM provider (OpenAI, Ollama, WebGPU).
  */
 
-import { chat, type ChatMessage } from "./llm";
-import {
-  writeWorkspaceFile,
-  isOPFSAvailable,
-} from "../storage/workspace";
+import type { ChatMessage } from "./llm";
+import { isOPFSAvailable } from "../storage/workspace";
 import { log } from "../lib/logger";
 
 /* ─── Types ───────────────────────────────────────────────────────── */
@@ -58,23 +55,6 @@ export interface AgentProgress {
 export type AgentProgressCallback = (progress: AgentProgress) => void;
 
 /* ─── System Prompts ──────────────────────────────────────────────── */
-
-const PRODUCT_SPEC_PROMPT = `You are a senior product architect. Given a product idea, create a detailed specification.
-
-Output a JSON object with this exact structure:
-{
-  "name": "project-name-kebab-case",
-  "description": "One paragraph description",
-  "features": ["feature 1", "feature 2", ...],
-  "techStack": ["tech1", "tech2", ...],
-  "fileStructure": ["src/index.html", "src/style.css", "src/app.js", ...]
-}
-
-Rules:
-- Use vanilla HTML/CSS/JS unless the user specifies a framework
-- Keep it achievable in a single workspace
-- File structure should be flat and practical
-- Output ONLY valid JSON, nothing else`;
 
 const ARCHITECTURE_PROMPT = `You are a senior software architect. Given a product spec, design the architecture.
 
@@ -161,9 +141,12 @@ export class ProductAgent {
   /**
    * Main entry point — takes an idea and produces a full product.
    */
-  async run(idea: string): Promise<{ success: boolean; files: Map<string, string>; error?: string }> {
-    this.abortController = new AbortController();
-    const signal = this.abortController.signal;
+  async run(idea: string, outer?: AbortSignal): Promise<{ success: boolean; files: Map<string, string>; error?: string }> {
+    const ctrl = (this.abortController = new AbortController());
+    const signal = ctrl.signal;
+    // The caller's cancellation (Esc / "AI: Cancel", T55) stops the run too.
+    if (outer?.aborted) ctrl.abort(outer.reason);
+    else outer?.addEventListener("abort", () => ctrl.abort(outer.reason), { once: true });
     this.generatedFiles.clear();
 
     try {
@@ -207,10 +190,14 @@ export class ProductAgent {
       this.emit("deploying", "Creating deployment configuration...");
       await this.generateDeployConfig(signal);
 
+      // All or nothing (plan 5.3.2): only a finished product reaches the workspace.
+      await this.writeAll(signal);
       this.emit("complete", `Product "${this.spec.name}" created with ${this.generatedFiles.size} files!`);
       return { success: true, files: this.generatedFiles };
 
     } catch (e) {
+      // Cancelled by the caller: an AbortError, not a failed product.
+      if (outer?.aborted) throw new DOMException("Cancelled by the user", "AbortError");
       const msg = e instanceof Error ? e.message : "Unknown error";
       this.emit("error", msg);
       return { success: false, files: this.generatedFiles, error: msg };
@@ -248,42 +235,21 @@ export class ProductAgent {
   /* ─── Internal Generation Steps ─────────────────────────────────── */
 
   private async generateSpec(idea: string, signal: AbortSignal): Promise<ProductSpec> {
-    const response = await chat(
-      [
-        { role: "system", content: PRODUCT_SPEC_PROMPT },
-        { role: "user", content: `Product idea: ${idea}` },
-      ],
-      { signal, temperature: 0.7 },
-    );
+    // The `builder-spec` agent: schema-checked JSON, safe relative paths,
+    // retried with the validator's reason by the runtime.
+    const { runAgentOrThrow } = await import("../agents/runtime");
+    const { builderSpecAgent } = await import("../agents/defs");
+    return runAgentOrThrow(builderSpecAgent, { text: idea }, { signal });
+  }
 
-    const cleaned = response
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/```\s*$/, "")
-      .trim();
-
-    try {
-      return JSON.parse(cleaned) as ProductSpec;
-    } catch {
-      log.error("productAgent", "Failed to parse spec, retrying...");
-      const retry = await chat(
-        [
-          { role: "system", content: PRODUCT_SPEC_PROMPT },
-          { role: "user", content: `Product idea: ${idea}\n\nIMPORTANT: Output ONLY valid JSON. No markdown fences.` },
-        ],
-        { signal, temperature: 0.3 },
-      );
-      return JSON.parse(retry.trim()) as ProductSpec;
-    }
+  /** A text stage of the build through its agent (plan 5.5): the runtime, local first, traced. */
+  private async stage(agent: "builderArchAgent" | "builderTestAgent" | "builderDocsAgent", system: string, text: string, signal: AbortSignal): Promise<string> {
+    const [{ runAgentOrThrow }, defs] = await Promise.all([import("../agents/runtime"), import("../agents/defs")]);
+    return runAgentOrThrow(defs[agent], { text, extra: { system } }, { signal });
   }
 
   private async generateArchitecture(signal: AbortSignal): Promise<string> {
-    return chat(
-      [
-        { role: "system", content: ARCHITECTURE_PROMPT },
-        { role: "user", content: `Product spec:\n${JSON.stringify(this.spec, null, 2)}` },
-      ],
-      { signal, temperature: 0.5 },
-    );
+    return this.stage("builderArchAgent", ARCHITECTURE_PROMPT, `Product spec:\n${JSON.stringify(this.spec, null, 2)}`, signal);
   }
 
   private async generateFile(filePath: string, signal: AbortSignal): Promise<string> {
@@ -308,33 +274,24 @@ export class ProductAgent {
       },
     ];
 
-    return chat(messages, { signal, temperature: 0.4, maxTokens: 4000 });
+    // The `builder-file` agent checks the file by type (JSON parses,
+    // package.json has a name, HTML is a document, nothing empty).
+    const { runAgentOrThrow } = await import("../agents/runtime");
+    const { builderFileAgent } = await import("../agents/defs");
+    return runAgentOrThrow(builderFileAgent, { text: messages[1].content, extra: { path: filePath } }, { signal });
   }
 
   private async generateTest(filePath: string, sourceCode: string, signal: AbortSignal): Promise<string> {
-    return chat(
-      [
-        { role: "system", content: TEST_GEN_PROMPT },
-        {
-          role: "user",
-          content: `File: ${filePath}\n\nSource code:\n\`\`\`\n${sourceCode.slice(0, 3000)}\n\`\`\``,
-        },
-      ],
-      { signal, temperature: 0.3 },
-    );
+    return this.stage("builderTestAgent", TEST_GEN_PROMPT, `File: ${filePath}\n\nSource code:\n\`\`\`\n${sourceCode.slice(0, 3000)}\n\`\`\``, signal);
   }
 
   private async generateDocs(signal: AbortSignal): Promise<string> {
     const fileList = [...this.generatedFiles.keys()].join("\n");
-    return chat(
-      [
-        { role: "system", content: DOCS_PROMPT },
-        {
-          role: "user",
-          content: `Product: ${this.spec!.name}\nDescription: ${this.spec!.description}\nFeatures:\n${this.spec!.features.map((f) => `- ${f}`).join("\n")}\n\nFiles:\n${fileList}`,
-        },
-      ],
-      { signal, temperature: 0.5 },
+    return this.stage(
+      "builderDocsAgent",
+      DOCS_PROMPT,
+      `Product: ${this.spec!.name}\nDescription: ${this.spec!.description}\nFeatures:\n${this.spec!.features.map((f) => `- ${f}`).join("\n")}\n\nFiles:\n${fileList}`,
+      signal,
     );
   }
 
@@ -387,16 +344,43 @@ export class ProductAgent {
     return related.join("\n");
   }
 
+  /** Keep a generated file; nothing reaches the workspace before the whole product is done (`writeAll`). */
   private async saveFile(path: string, content: string): Promise<void> {
     this.generatedFiles.set(path, content);
-    if (isOPFSAvailable()) {
-      try {
-        await writeWorkspaceFile(this.projectDir + path, content);
-      } catch (e) {
-        log.warn("productAgent", `Could not save to workspace: ${path}`, e);
+  }
+
+  /**
+   * Write every generated file at once, after the whole product is done:
+   * a builder that fails midway leaves 0 files (5.3.2). If a write fails,
+   * the files already written are put back as they were (removed, or their
+   * earlier text restored), so a product is in the workspace whole or not at
+   * all.
+   *
+   * Written, not staged: proposals need the review screen to be approved
+   * (plan 5.11, #223), which this branch does not have yet. Once both are
+   * on the same branch, this becomes write_file through the runtime.
+   */
+  private async writeAll(signal: AbortSignal): Promise<void> {
+    if (!isOPFSAvailable()) return;
+    const ws = await import("../storage/workspace");
+    const done: Array<{ path: string; before: string | null }> = [];
+    try {
+      for (const [path, content] of this.generatedFiles) {
+        if (signal.aborted) throw new DOMException("Cancelled by the user", "AbortError");
+        const full = this.projectDir + path;
+        const before = (await ws.workspaceHasFile(full)) ? await ws.readWorkspaceFile(full) : null;
+        await ws.writeWorkspaceFile(full, content);
+        done.push({ path: full, before });
       }
+    } catch (e) {
+      for (const w of done.reverse()) {
+        await (w.before === null ? ws.deleteWorkspaceFile(w.path) : ws.writeWorkspaceFile(w.path, w.before)).catch((err) => log.warn("productAgent", `Could not undo ${w.path}`, err));
+      }
+      log.warn("productAgent", "Could not write the product's files; none were kept", e);
+      throw e;
     }
   }
+
 }
 
 /* ─── Convenience Functions ───────────────────────────────────────── */
@@ -407,10 +391,11 @@ export class ProductAgent {
 export async function createProduct(
   idea: string,
   onProgress?: AgentProgressCallback,
+  signal?: AbortSignal,
 ): Promise<{ success: boolean; files: Map<string, string>; error?: string }> {
   const agent = new ProductAgent();
   if (onProgress) agent.setProgressCallback(onProgress);
-  return agent.run(idea);
+  return agent.run(idea, signal);
 }
 
 /**

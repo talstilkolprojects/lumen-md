@@ -10,7 +10,7 @@
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Instead, please email **security@lumen.md** with:
+Instead, report it privately through GitHub: **[Report a vulnerability](https://github.com/talstilkol/lumen-md/security/advisories/new)** (Security → Advisories), with:
 
 1. A description of the vulnerability
 2. Steps to reproduce
@@ -53,10 +53,11 @@ Third-party plugins run in a sandboxed `<iframe>` with:
 
 ### Telemetry
 
-- Sentry error telemetry is **opt-in** (requires `VITE_SENTRY_DSN`)
-- Users can opt out at any time via `⌘K → Privacy → Disable telemetry`
-- A `beforeSend` hook scrubs all user-content fields (note bodies, vault contents, auth tokens) before any event leaves the browser
-- When the DSN is absent or the user opts out, the Sentry SDK is never loaded
+- Error reports are **off by default**. They are sent only when the user turns them on (the Telemetry pill in the status bar) **and** the build sets `VITE_SENTRY_DSN`. Without both, the Sentry SDK is never loaded and no request is made.
+- A Sentry DSN is **public by design, not a secret**: it only lets a client submit events. A build-time `VITE_*` variable is the intended place for it.
+- `beforeSend` rebuilds each event from an allowlist: the error's class name, plus stack frames reduced to script file names. The message is never sent, because it may embed user text without quotes. The request URL, user, breadcrumbs, tags, extra and contexts are dropped. There is no session replay, no tracing and no session tracking.
+- Reports go through the privacy ledger under the "monitoring" category, and the local-only policy refuses them. The DSN's host reaches the CSP only through the build-time endpoint mechanism (`src/build/cspEndpoints.ts`); no tracker host or wildcard is hard-coded.
+- Web vitals are measured locally and never sent.
 
 ### Authentication
 

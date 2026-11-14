@@ -38,7 +38,7 @@ export function setAiCacheEnabled(on: boolean): void {
     if (on) localStorage.removeItem("lumen.ai.cache");
     else localStorage.setItem("lumen.ai.cache", "off");
   } catch {
-    /* */
+    /* why: storage denied: the setting lasts for this session only */
   }
 }
 
@@ -65,6 +65,9 @@ export async function getCached(key: string, now = Date.now()): Promise<Entry | 
 
 export async function putCached(key: string, text: string, model: string, now = Date.now()): Promise<void> {
   try {
+    // An encrypted vault (plan 11.4): answers about its notes are not cached in the clear.
+    const { storesMustSeal } = await import("../storage/vault/restStore");
+    if (await storesMustSeal()) return;
     await set(key, { text, model, at: now } satisfies Entry, db());
     const all = await entries<string, Entry>(db());
     if (all.length > MAX_ENTRIES) {
@@ -72,7 +75,7 @@ export async function putCached(key: string, text: string, model: string, now = 
       for (const [k] of oldest) await del(k, db());
     }
   } catch {
-    /* best-effort */
+    /* why: best-effort */
   }
 }
 

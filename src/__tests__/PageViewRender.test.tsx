@@ -34,8 +34,8 @@ describe("PageView", () => {
   it("shows 'Previous page' and 'Next page' labels", async () => {
     const { PageView } = await import("../ui/PageView");
     const { container } = render(<PageView markdownText="# Hello" />);
-    const prevBtn = container.querySelector("[aria-label='Previous page']");
-    const nextBtn = container.querySelector("[aria-label='Next page']");
+    const prevBtn = container.querySelector("[aria-label='pageView.prev']");
+    const nextBtn = container.querySelector("[aria-label='pageView.next']");
     expect(prevBtn).not.toBeNull();
     expect(nextBtn).not.toBeNull();
   });
@@ -43,14 +43,14 @@ describe("PageView", () => {
   it("previous button is disabled on first page", async () => {
     const { PageView } = await import("../ui/PageView");
     const { container } = render(<PageView markdownText="# Hello" />);
-    const prevBtn = container.querySelector("[aria-label='Previous page']") as HTMLButtonElement;
+    const prevBtn = container.querySelector("[aria-label='pageView.prev']") as HTMLButtonElement;
     expect(prevBtn.disabled).toBe(true);
   });
 
   it("renders page select dropdown", async () => {
     const { PageView } = await import("../ui/PageView");
     const { container } = render(<PageView markdownText="# Hello" />);
-    const select = container.querySelector("select[aria-label='Jump to page']");
+    const select = container.querySelector("select[aria-label='pageView.jump']");
     expect(select).not.toBeNull();
   });
 

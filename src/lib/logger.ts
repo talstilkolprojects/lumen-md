@@ -42,7 +42,7 @@ export const log = {
       try {
         errorSink(...args);
       } catch {
-        // ignore — sink failures must never crash the app
+        // why: sink failures must never crash the app; the console already has the error
       }
     }
   },

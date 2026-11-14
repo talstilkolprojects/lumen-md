@@ -1,8 +1,10 @@
 /**
  * Build-time CSP extension for deployment-specific endpoints.
  *
- * The checked-in policies (index.html <meta>, public/_headers,
- * docker/nginx.conf) list every *public* host the app talks to. The
+ * The checked-in policies (rendered from security/policy.json into
+ * index.html <meta>, public/_headers, deploy/vercel.base.json, the nginx configs and
+ * tauri.conf.json by scripts/headers.mjs) list every *public* host the
+ * app talks to. The
  * workers a deployment runs itself — SSO, billing/entitlements, publish,
  * audit, marketplace, a self-hosted LanguageTool, Supabase — live on
  * origins only known at build time (`VITE_*` env vars, often
@@ -25,7 +27,22 @@ export const ENDPOINT_ENV_VARS = [
   "VITE_MARKETPLACE_URL",
   "VITE_LANGUAGETOOL_URL",
   "VITE_SUPABASE_URL",
+  // Safe git (plan 3.3): the CORS proxy git requests go through.
+  "VITE_GIT_CORS_PROXY",
+  // The error tracker (Sentry / GlitchTip, plan 12.4). Its origin is the
+  // DSN's host; the key in the DSN's user part is dropped by URL.origin.
+  // No DSN, no ingest host in the policy — never a wildcard.
+  "VITE_SENTRY_DSN",
 ] as const;
+
+/**
+ * `VITE_*` variables whose value is a WebSocket URL (or a comma-separated
+ * list of them) the app opens: collaboration signaling (y-webrtc) and the
+ * persistent collab server (y-websocket), see src/collab/yjs.ts. The
+ * policies carry no bare `ws:` / `wss:` (plan 2.2), so a deployment's own
+ * collab servers are added here like the HTTP endpoints above.
+ */
+export const WEBSOCKET_ENV_VARS = ["VITE_WEBRTC_SIGNALING_URL", "VITE_YJS_WEBSOCKET_URL"] as const;
 
 /**
  * Extra connect-src origins a deployment wants to allow (comma/space
@@ -35,7 +52,7 @@ export const ENDPOINT_ENV_VARS = [
  */
 export const EXTRA_CONNECT_ENV_VAR = "VITE_CSP_CONNECT_EXTRA";
 
-/** Placeholder marker in docker/nginx.conf, replaced in the image build. */
+/** Placeholder marker in deploy/nginx.conf (+ the runtime include), replaced in the image build. */
 export const NGINX_PLACEHOLDER = "__CSP_CONNECT_EXTRA__";
 
 /** File written next to the build output listing the extra origins (one line). */
@@ -45,29 +62,48 @@ export const EXTRA_ORIGINS_FILE = ".csp-connect-extra";
  * Origins (scheme://host[:port]) of the configured endpoints, deduplicated
  * and sorted. Empty, placeholder (`example.com`, `your-…`, `…placeholder…`)
  * and non-HTTP(S) values are ignored.
+ *
+ * An IPv6 literal host (`ws://[::1]:4444`) is skipped and reported through
+ * `onSkip`: CSP source lists cannot name one (browsers ignore it as an
+ * invalid source), so adding it would allow nothing. Use a hostname.
  */
-export function endpointOrigins(env: Record<string, string | undefined>): string[] {
+export function endpointOrigins(
+  env: Record<string, string | undefined>,
+  onSkip?: (value: string, reason: string) => void,
+): string[] {
   const out = new Set<string>();
-  for (const key of ENDPOINT_ENV_VARS) {
-    const raw = env[key]?.trim();
-    if (!raw) continue;
+  const addOrigin = (url: URL, raw: string) => {
+    if (url.hostname.startsWith("[")) {
+      onSkip?.(raw, "a CSP source list can't name an IPv6 address (browsers ignore it); use a hostname");
+      return;
+    }
+    out.add(url.origin);
+  };
+  const add = (raw: string, schemes: readonly string[]) => {
     let url: URL;
     try {
       url = new URL(raw);
     } catch {
-      continue;
+      return;
     }
-    if (url.protocol !== "https:" && url.protocol !== "http:") continue;
-    if (/(^|\.)example\.(com|org|net)$/i.test(url.hostname) || /placeholder|your-/i.test(raw)) continue;
-    out.add(url.origin);
+    if (!schemes.includes(url.protocol)) return;
+    if (/(^|\.)example\.(com|org|net)$/i.test(url.hostname) || /placeholder|your-/i.test(raw)) return;
+    addOrigin(url, raw);
+  };
+  for (const key of ENDPOINT_ENV_VARS) {
+    const raw = env[key]?.trim();
+    if (raw) add(raw, ["https:", "http:"]);
+  }
+  for (const key of WEBSOCKET_ENV_VARS) {
+    for (const raw of (env[key] ?? "").split(",")) if (raw.trim()) add(raw.trim(), ["wss:", "ws:"]);
   }
   for (const raw of (env[EXTRA_CONNECT_ENV_VAR] ?? "").split(/[\s,]+/)) {
     if (!raw) continue;
     try {
       const u = new URL(raw);
-      if (["https:", "http:", "wss:", "ws:"].includes(u.protocol)) out.add(u.origin);
+      if (["https:", "http:", "wss:", "ws:"].includes(u.protocol)) addOrigin(u, raw);
     } catch {
-      /* not an origin — ignore */
+      /* why: not an origin — ignore */
     }
   }
   return [...out].sort();
@@ -83,6 +119,9 @@ export function addConnectSrc(csp: string, origins: readonly string[]): string {
     found = true;
     const trailing = m[3].match(/\s*$/)?.[0] ?? "";
     const values = m[3].trim().split(/\s+/).filter(Boolean);
+    // A deliberately network-less policy (the live-js runner) stays so:
+    // any added source would make the browser ignore 'none'.
+    if (values.includes("'none'")) return part;
     for (const o of origins) if (!values.includes(o)) values.push(o);
     return `${m[1]}connect-src${m[2]}${values.join(" ")}${trailing}`;
   });
@@ -107,28 +146,53 @@ export function extendHeadersFileCsp(text: string, origins: readonly string[]): 
 
 interface MinimalPlugin {
   name: string;
-  configResolved(config: { env: Record<string, string | undefined>; build: { outDir: string }; root: string }): void;
+  configResolved(config: {
+    env: Record<string, string | undefined>;
+    build: { outDir: string };
+    root: string;
+    command?: "build" | "serve";
+    server?: { port?: number; hmr?: boolean | { port?: number; clientPort?: number } };
+    logger?: { warn(msg: string): void };
+  }): void;
   transformIndexHtml(html: string): string;
   closeBundle(): Promise<void>;
 }
 
 /**
+ * The dev server's own WebSocket (Vite HMR), for the page it serves only.
+ * CSP3 lets 'self' match ws: on the page's host, but the policies no longer
+ * carry a bare ws: (plan 2.2), so the dev page names the HMR port
+ * explicitly (any host: `vite --host` is opened by LAN address too). Never
+ * part of a build.
+ */
+export function devServerOrigins(server: { port?: number; hmr?: boolean | { port?: number; clientPort?: number } } = {}): string[] {
+  const hmr = typeof server.hmr === "object" ? server.hmr : undefined;
+  if (server.hmr === false) return [];
+  const port = hmr?.clientPort ?? hmr?.port ?? server.port ?? 5173;
+  return [`ws://*:${port}`, `wss://*:${port}`];
+}
+
+/**
  * Vite plugin: adds the configured endpoint origins to the <meta> CSP and to
  * `dist/_headers`, and writes them to `dist/.csp-connect-extra` for the
- * nginx image (docker/Dockerfile.web substitutes NGINX_PLACEHOLDER).
+ * nginx image (the Dockerfile substitutes NGINX_PLACEHOLDER).
  */
 export function cspEndpointsPlugin(): MinimalPlugin {
   let origins: string[] = [];
+  let pageOrigins: string[] = [];
   let outDir = "dist";
   return {
     name: "lumen-csp-endpoints",
     configResolved(config) {
-      origins = endpointOrigins({ ...process.env, ...config.env });
+      origins = endpointOrigins({ ...process.env, ...config.env }, (value, reason) =>
+        config.logger?.warn(`[lumen-csp-endpoints] not added to connect-src: ${value} (${reason})`),
+      );
+      pageOrigins = config.command === "serve" ? [...origins, ...devServerOrigins(config.server)] : origins;
       const path = config.build.outDir;
       outDir = path.startsWith("/") ? path : `${config.root}/${path}`;
     },
     transformIndexHtml(html) {
-      return extendIndexHtmlCsp(html, origins);
+      return extendIndexHtmlCsp(html, pageOrigins);
     },
     async closeBundle() {
       const fs = await import("node:fs/promises");
@@ -137,12 +201,12 @@ export function cspEndpointsPlugin(): MinimalPlugin {
         const text = await fs.readFile(headers, "utf8");
         await fs.writeFile(headers, extendHeadersFileCsp(text, origins));
       } catch {
-        /* no _headers in this build (e.g. tests) */
+        /* why: no _headers in this build (e.g. tests) */
       }
       try {
         await fs.writeFile(`${outDir}/${EXTRA_ORIGINS_FILE}`, origins.join(" ") + "\n");
       } catch {
-        /* outDir missing — nothing was built */
+        /* why: outDir missing — nothing was built */
       }
     },
   };

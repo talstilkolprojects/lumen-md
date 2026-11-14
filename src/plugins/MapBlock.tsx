@@ -125,7 +125,7 @@ export default function MapBlock({ source, lang }: Props) {
         try {
           mapInstance.fitBounds(layer.getBounds(), { padding: [16, 16] });
         } catch {
-          /* empty geojson */
+          /* why: empty GeoJSON has no bounds: keep the default view */
         }
       }
     })();

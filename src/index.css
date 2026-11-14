@@ -12,10 +12,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
+  /* Heebo and Frank Ruhl Libre carry the Hebrew glyphs the Latin faces lack. */
   --font-sans:
-    Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    Inter, Heebo, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   --font-serif:
-    Source Serif 4, Iowan Old Style, Apple Garamond, Baskerville, ui-serif,
+    Source Serif 4, Frank Ruhl Libre, Iowan Old Style, Apple Garamond, Baskerville, ui-serif,
     serif;
   --font-mono:
     JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -74,11 +75,17 @@
     --bg-inset: 220 14% 92%;
     --fg: 222 24% 11%;
     --fg-subtle: 220 9% 32%;
-    --fg-muted: 220 8% 46%;
+    /* WCAG AA (plan 10.1.3): ≥ 4.5:1 on bg, bg-muted and bg-inset. */
+    --fg-muted: 220 8% 42%;
     --border: 220 13% 88%;
     --border-strong: 220 13% 78%;
-    --accent: 252 92% 66%;
+    /* ≥ 4.5:1 as text on the backgrounds and on its own 10% tint; white text on it ≥ 4.5:1. */
+    --accent: 252 92% 58%;
     --accent-fg: 0 0% 100%;
+    /* Status colours as text (plan 10.1.3): ≥ 4.5:1 on bg, bg-subtle, bg-muted. */
+    --ok: 145 60% 30%;
+    --warn: 35 90% 32%;
+    --danger: 12 90% 42%;
 
     /* z-index layer strategy */
     --z-dropdown: 100;
@@ -98,8 +105,12 @@
     --fg-muted: 220 8% 58%;
     --border: 224 14% 18%;
     --border-strong: 224 14% 26%;
-    --accent: 252 92% 70%;
+    /* ≥ 4.5:1 as text on the dark backgrounds and on its own 10% tint. */
+    --accent: 252 92% 73%;
     --accent-fg: 224 24% 7%;
+    --ok: 145 60% 45%;
+    --warn: 35 90% 55%;
+    --danger: 12 90% 60%;
   }
 
   html,
@@ -234,7 +245,9 @@
     padding: 0 0.5rem;
   }
   .cm-editor .cm-cursor {
+    /* hygiene-allow: CodeMirror draws its caret with border-left in both directions (its base theme); a logical border would land on the wrong side in RTL */
     border-left-color: hsl(var(--accent));
+    /* hygiene-allow: see above — same CodeMirror caret border */
     border-left-width: 2px;
   }
   .cm-editor .cm-selectionBackground,
@@ -282,8 +295,13 @@
     color: hsl(var(--accent));
     text-decoration: underline;
   }
+  /* Inline code and strings: ≥ 4.5:1 on the light editor, unchanged on dark (plan 10.1.3). */
   .cm-editor .tok-monospace,
   .cm-editor .tok-string {
+    color: hsl(170 60% 30%);
+  }
+  .dark .cm-editor .tok-monospace,
+  .dark .cm-editor .tok-string {
     color: hsl(170 60% 55%);
   }
   .cm-editor .tok-quote {
@@ -353,16 +371,19 @@
   .prose-lumen blockquote {
     margin: 1.25rem 0;
     padding: 0.25rem 1.25rem;
-    border-left: 3px solid hsl(var(--accent));
+    border-inline-start: 3px solid hsl(var(--accent));
     color: hsl(var(--fg-subtle));
     font-style: italic;
     background: hsl(var(--bg-subtle));
-    border-radius: 0 0.5rem 0.5rem 0;
+    /* square on the side of the accent border, rounded on the other — mirrors in RTL */
+    border-radius: 0;
+    border-start-end-radius: 0.5rem;
+    border-end-end-radius: 0.5rem;
   }
   .prose-lumen ul,
   .prose-lumen ol {
     margin: 0.9rem 0;
-    padding-left: 1.5rem;
+    padding-inline-start: 1.5rem;
   }
   .prose-lumen ul {
     list-style: disc;
@@ -379,8 +400,8 @@
   }
   .prose-lumen li.task-list-item {
     list-style: none;
-    margin-left: -1.25rem;
-    padding-left: 0;
+    margin-inline-start: -1.25rem;
+    padding-inline-start: 0;
     display: flex;
     align-items: flex-start;
     gap: 0.5rem;
@@ -398,6 +419,57 @@
     max-width: 100%;
     border-radius: 0.5rem;
     border: 1px solid hsl(var(--border));
+  }
+  /* An image from another site, not loaded yet (plan 2.2). Inline: images
+     sit inside paragraphs. */
+  .lumen-remote-image {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px dashed hsl(var(--border-strong));
+    border-radius: 0.5rem;
+    background: hsl(var(--bg-subtle));
+    color: hsl(var(--fg-muted));
+    font-size: 0.875rem;
+    line-height: 1.4;
+    vertical-align: middle;
+  }
+  .lumen-remote-image-text {
+    display: inline-flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .lumen-remote-image-alt {
+    color: hsl(var(--fg));
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+  .lumen-remote-image-host {
+    overflow-wrap: anywhere;
+  }
+  .lumen-remote-image button {
+    padding: 0.2rem 0.6rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.375rem;
+    background: hsl(var(--bg));
+    color: hsl(var(--fg));
+    font: inherit;
+    cursor: pointer;
+  }
+  .lumen-remote-image button:hover {
+    background: hsl(var(--bg-muted));
+  }
+  .lumen-remote-image button:focus-visible {
+    outline: 2px solid hsl(var(--accent));
+    outline-offset: 2px;
+  }
+  @media print {
+    .lumen-remote-image button {
+      display: none;
+    }
   }
 
   /* Inline code */
@@ -481,7 +553,7 @@
   .prose-lumen th,
   .prose-lumen td {
     padding: 0.55rem 0.85rem;
-    text-align: left;
+    text-align: start;
     border-bottom: 1px solid hsl(var(--border));
   }
   .prose-lumen th {
@@ -504,16 +576,16 @@
     color: hsl(var(--fg-subtle));
   }
   .prose-lumen .footnotes ol {
-    padding-left: 1.5rem;
+    padding-inline-start: 1.5rem;
   }
 
   /* Admonitions */
   .admonition {
     margin: 1.25rem 0;
     padding: 1rem 1.25rem;
-    border-left: 4px solid var(--admon-accent, hsl(var(--accent)));
+    border-inline-start: 4px solid var(--admon-accent, hsl(var(--accent)));
     background: var(--admon-bg, hsl(var(--bg-subtle)));
-    border-radius: 0 0.5rem 0.5rem 0;
+    border-start-start-radius: 0; border-end-start-radius: 0; border-start-end-radius: 0.5rem; border-end-end-radius: 0.5rem;
     font-family: var(--font-sans);
     font-size: 15px;
     color: hsl(var(--fg));
@@ -663,7 +735,7 @@
   }
   .data-table th {
     padding: 0.5rem 0.85rem;
-    text-align: left;
+    text-align: start;
     font-weight: 600;
     border-bottom: 1px solid hsl(var(--border));
     cursor: pointer;
@@ -671,7 +743,7 @@
     white-space: nowrap;
   }
   .data-table th .col-type {
-    margin-left: 0.4rem;
+    margin-inline-start: 0.4rem;
     font-size: 10px;
     color: hsl(var(--fg-muted));
     text-transform: uppercase;
@@ -689,7 +761,7 @@
   }
   .data-table td.num,
   .data-table th.num {
-    text-align: right;
+    text-align: end;
     font-variant-numeric: tabular-nums;
     font-family: var(--font-mono);
   }
@@ -701,13 +773,16 @@
   }
 
   /* Toolbar / app chrome */
+  /* Safe areas (plan 10.2.3): viewport-fit=cover lets the app use the whole
+     screen on notched phones; the bars keep their content out of the notch,
+     the rounded corners and the home indicator. env() is 0 elsewhere. */
   .titlebar {
-    height: 44px;
+    height: calc(44px + env(safe-area-inset-top, 0px));
     border-bottom: 1px solid hsl(var(--border));
     background: hsl(var(--bg-subtle));
     display: flex;
     align-items: center;
-    padding: 0 0.75rem;
+    padding: env(safe-area-inset-top, 0px) max(0.75rem, env(safe-area-inset-right, 0px)) 0 max(0.75rem, env(safe-area-inset-left, 0px));
     gap: 0.5rem;
     flex-shrink: 0;
   }
@@ -771,7 +846,7 @@
     font-size: 13px;
     border-radius: 0.3rem;
     text-decoration: none;
-    border-left: 2px solid transparent;
+    border-inline-start: 2px solid transparent;
     line-height: 1.4;
   }
   .outline-link:hover {
@@ -781,32 +856,32 @@
   .outline-link.active {
     background: hsl(var(--accent) / 0.12);
     color: hsl(var(--accent));
-    border-left-color: hsl(var(--accent));
+    border-inline-start-color: hsl(var(--accent));
   }
   .outline-link.h1 {
-    padding-left: 0.6rem;
+    padding-inline-start: 0.6rem;
     font-weight: 600;
     color: hsl(var(--fg));
   }
   .outline-link.h2 {
-    padding-left: 1.4rem;
+    padding-inline-start: 1.4rem;
   }
   .outline-link.h3 {
-    padding-left: 2.2rem;
+    padding-inline-start: 2.2rem;
     font-size: 12.5px;
   }
   .outline-link.h4 {
-    padding-left: 3rem;
+    padding-inline-start: 3rem;
     font-size: 12px;
     color: hsl(var(--fg-muted));
   }
   .outline-link.h5 {
-    padding-left: 3.6rem;
+    padding-inline-start: 3.6rem;
     font-size: 12px;
     color: hsl(var(--fg-muted));
   }
   .outline-link.h6 {
-    padding-left: 4.2rem;
+    padding-inline-start: 4.2rem;
     font-size: 12px;
     color: hsl(var(--fg-muted));
   }
@@ -833,11 +908,11 @@
 
   /* ─── Status bar ─── */
   .status-bar {
-    height: 26px;
+    height: calc(26px + env(safe-area-inset-bottom, 0px));
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 0 12px;
+    padding: 0 max(12px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(12px, env(safe-area-inset-left, 0px));
     background: hsl(var(--bg-subtle));
     border-top: 1px solid hsl(var(--border));
     font-size: 11.5px;
@@ -856,6 +931,27 @@
   }
   .status-bar .sb-accent {
     color: hsl(var(--accent));
+  }
+  /* Changes agents proposed, waiting for review (plan 5.11). */
+  .status-bar .sb-review {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font: inherit;
+    font-size: 10px;
+    font-weight: 600;
+    color: hsl(38 92% 50%);
+  }
+  .toast-action {
+    background: transparent;
+    border: 1px solid;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
   }
 
   /* ─── File tree ─── */
@@ -936,6 +1032,7 @@
 
   /* ─── Milkdown slash menu + selection tooltip ─── */
   .milkdown-slash-menu,
+  .lumen-wiki-menu,
   .milkdown-tooltip {
     position: absolute;
     z-index: var(--z-dropdown);
@@ -945,17 +1042,24 @@
     border-radius: 8px;
     box-shadow: 0 12px 40px -10px hsl(0 0% 0% / 0.35);
   }
-  .milkdown-slash-menu[data-show="true"] {
+  .milkdown-slash-menu[data-show="true"],
+  .lumen-wiki-menu[data-show="true"] {
     display: block;
   }
   .milkdown-tooltip[data-show="true"] {
     display: flex;
   }
-  .milkdown-slash-menu {
+  .milkdown-slash-menu,
+  .lumen-wiki-menu {
     padding: 4px;
     min-width: 180px;
     max-height: 320px;
     overflow-y: auto;
+  }
+  /* `[[` link completion (WYSIWYG): placed at the caret, over the page. */
+  .lumen-wiki-menu {
+    position: fixed;
+    max-width: min(420px, calc(100vw - 16px));
   }
   .milkdown-slash-item {
     display: flex;
@@ -1108,12 +1212,55 @@
     color: hsl(var(--fg));
   }
 
+  /* ─── Vault folder (plan 4.2): reconnect / move progress / resume ─── */
+  .vault-folder-banner {
+    position: fixed;
+    inset-block-start: 12px;
+    inset-inline: 0;
+    margin-inline: auto;
+    inline-size: max-content;
+    max-inline-size: calc(100vw - 24px);
+    z-index: var(--z-modal);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding-block: 10px;
+    padding-inline: 14px;
+    background: hsl(var(--bg));
+    color: hsl(var(--fg));
+    border: 1px solid hsl(var(--border-strong));
+    border-radius: 12px;
+    box-shadow: 0 8px 24px hsl(0 0% 0% / 0.18);
+    font-size: 13px;
+  }
+  .vault-folder-btn {
+    border: none;
+    background: hsl(var(--accent));
+    color: white;
+    padding-block: 5px;
+    padding-inline: 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .vault-folder-btn.secondary {
+    background: transparent;
+    color: hsl(var(--fg));
+    border: 1px solid hsl(var(--border-strong));
+  }
+  .vault-folder-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
   /* ─── Backlinks panel ─── */
   .backlinks-panel {
     width: 240px;
     flex-shrink: 0;
     background: hsl(var(--bg-subtle));
-    border-left: 1px solid hsl(var(--border));
+    border-inline-start: 1px solid hsl(var(--border));
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -1130,7 +1277,7 @@
     flex-direction: column;
     gap: 2px;
     width: 100%;
-    text-align: left;
+    text-align: start;
     padding: 6px 10px;
     margin: 2px 0;
     background: transparent;
@@ -1179,6 +1326,111 @@
   }
   .prose-lumen .wiki-link:hover {
     background: hsl(var(--accent) / 0.15);
+  }
+
+  /* ─── Embeds: ![[note]], ![[note#heading]], ![[image.png]], ![[file.pdf]] ───
+     Logical properties only: the bar sits on the start side of the embed's
+     own direction, so a Hebrew note embedded in an English one keeps its
+     bar on the right. */
+  .prose-lumen .lumen-embed {
+    margin-block: 1rem;
+    padding-block: 0.5rem 0.625rem;
+    padding-inline: 1rem 0.75rem;
+    border-inline-start: 3px solid hsl(var(--accent) / 0.45);
+    border-start-end-radius: 0.5rem;
+    border-end-end-radius: 0.5rem;
+    background: hsl(var(--bg-subtle));
+  }
+  .prose-lumen .lumen-embed .lumen-embed {
+    background: transparent;
+  }
+  .prose-lumen .lumen-embed-title {
+    margin-block-end: 0.25rem;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: hsl(var(--fg-muted));
+  }
+  .prose-lumen .lumen-embed-title .wiki-link {
+    padding: 0;
+    background: none;
+    border: 0;
+    color: inherit;
+    font-weight: 500;
+  }
+  .prose-lumen .lumen-embed-title .wiki-link::before,
+  .prose-lumen .lumen-embed-title .wiki-link::after {
+    content: none;
+  }
+  .prose-lumen .lumen-embed-title .wiki-link:hover {
+    color: hsl(var(--accent));
+    background: none;
+  }
+  .prose-lumen .lumen-embed-body > :first-child {
+    margin-block-start: 0;
+  }
+  .prose-lumen .lumen-embed-body > :last-child {
+    margin-block-end: 0;
+  }
+  .prose-lumen .lumen-embed-notice {
+    display: block;
+    margin-block: 0.75rem;
+    padding-block: 0.5rem;
+    padding-inline: 0.75rem;
+    border: 1px dashed hsl(var(--border-strong));
+    border-radius: 0.375rem;
+    background: hsl(var(--bg-subtle));
+    color: hsl(var(--fg-muted));
+    font-family: var(--font-sans);
+    font-size: 13px;
+  }
+  .prose-lumen span.lumen-embed-notice {
+    display: inline-block;
+    margin-block: 0;
+    padding-block: 0.125rem;
+    padding-inline: 0.5rem;
+  }
+  .prose-lumen .lumen-embed-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-inline-size: 100%;
+    padding-block: 0.375rem;
+    padding-inline: 0.625rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    background: hsl(var(--bg-subtle));
+    font-family: var(--font-sans);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+  .prose-lumen .lumen-embed-file-badge {
+    padding-block: 0.0625rem;
+    padding-inline: 0.375rem;
+    border-radius: 0.25rem;
+    background: hsl(0 70% 50% / 0.12);
+    color: hsl(0 65% 50%);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .prose-lumen .lumen-embed-file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .prose-lumen .lumen-embed-file-open {
+    padding-block: 0.125rem;
+    padding-inline: 0.5rem;
+    border: 1px solid hsl(var(--border-strong));
+    border-radius: 0.375rem;
+    background: hsl(var(--bg));
+    color: hsl(var(--fg));
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .prose-lumen .lumen-embed-file-open:hover {
+    border-color: hsl(var(--accent));
+    color: hsl(var(--accent));
   }
 
 @tailwind utilities;
@@ -1300,13 +1552,65 @@
 
 /* ─── Accessibility ─── */
 
+/* ─── Outline as a bottom sheet on phones (plan 10.2.4) ─── */
+.outline-sheet {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: var(--z-modal);
+  max-block-size: 60vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-block: 6px calc(12px + env(safe-area-inset-bottom, 0px));
+  padding-inline: max(8px, env(safe-area-inset-left, 0px)) max(8px, env(safe-area-inset-right, 0px));
+  border-block-start: 1px solid hsl(var(--border));
+  border-start-start-radius: 16px;
+  border-start-end-radius: 16px;
+  background: hsl(var(--bg-subtle));
+  box-shadow: 0 -8px 30px hsl(0 0% 0% / 0.25);
+}
+.outline-sheet-grip {
+  inline-size: 40px;
+  block-size: 4px;
+  margin-block: 2px 8px;
+  margin-inline: auto;
+  border-radius: 2px;
+  background: hsl(var(--border-strong));
+}
+.outline-sheet .outline-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.outline-sheet .outline-link {
+  display: block;
+  min-block-size: 44px;
+  padding-block: 10px;
+}
+
 /* ─── Touch Targets (Mobile) ─── */
 @media (pointer: coarse) {
+  /* The block drag handle: a 44 px target that still sits beside the block. */
+  .lumen-drag-handle {
+    inset-inline-start: -44px !important;
+    top: -10px !important;
+    opacity: 0.6 !important;
+  }
   .icon-btn,
   .seg-btn,
   button,
   [role="option"],
   [role="menuitem"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* Links in the app's bars (the status bar's Roadmap) are touch targets too. */
+  .titlebar a[href],
+  .status-bar a[href],
+  [role="toolbar"] a[href] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-height: 44px;
     min-width: 44px;
   }
@@ -1330,6 +1634,27 @@
   }
 }
 
+/* ─── Sidebar resizer (plan 10.1.2) ───
+   The rules lived in src/ui/FileTree.css, which nothing imports, so the
+   handle was 0 px wide: unusable by mouse or keyboard. */
+.sidebar-resizer {
+  width: 6px;
+  cursor: col-resize;
+  background: transparent;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 5;
+}
+.sidebar-resizer:hover,
+.sidebar-resizer.dragging,
+.sidebar-resizer:focus-visible {
+  background: hsl(var(--accent) / 0.4);
+}
+.sidebar-resizer:focus-visible {
+  outline: 2px solid hsl(var(--accent));
+  outline-offset: -1px;
+}
+
 /* ─── RTL niceties ─── */
 [dir="rtl"] .titlebar > .flex.items-center.gap-2.pr-2 {
   padding-inline-end: 0.5rem;
@@ -1339,45 +1664,9 @@
 [dir="rtl"] .icon-btn {
   /* keep margins symmetric — flex gap handles it */
 }
-[dir="rtl"] .file-tree {
-  border-inline-end: 1px solid hsl(var(--border));
-  border-inline-start: 0;
-  border-right: 0;
-}
-[dir="rtl"] .backlinks-panel {
-  border-inline-start: 1px solid hsl(var(--border));
-  border-inline-end: 0;
-  border-left: 0;
-}
-[dir="rtl"] .file-tree-item.active {
-  border-inline-start-color: hsl(var(--accent));
-  border-inline-end-color: transparent;
-  border-left-color: transparent;
-}
-[dir="rtl"] .outline-link.h1 {
-  padding-inline-start: 0.6rem;
-  padding-left: 0;
-}
-[dir="rtl"] .outline-link.h2 {
-  padding-inline-start: 1.4rem;
-  padding-left: 0;
-}
-[dir="rtl"] .outline-link.h3 {
-  padding-inline-start: 2.2rem;
-  padding-left: 0;
-}
-[dir="rtl"] .outline-link.h4 {
-  padding-inline-start: 3rem;
-  padding-left: 0;
-}
-[dir="rtl"] .outline-link.h5 {
-  padding-inline-start: 3.6rem;
-  padding-left: 0;
-}
-[dir="rtl"] .outline-link.h6 {
-  padding-inline-start: 4.2rem;
-  padding-left: 0;
-}
+/* The file tree, backlinks and outline use logical properties
+   (border-inline-*, padding-inline-start), so they mirror in RTL on their
+   own: no [dir="rtl"] overrides needed (plan 9.9). */
 /* Code, math, and editor stay LTR even in RTL UIs */
 .cm-editor,
 .prose-lumen pre,
@@ -1415,7 +1704,7 @@
 @media (max-width: 760px) {
   /* Toolbar squeezes: hide the tagline + filename strip, keep icons */
   .titlebar {
-    padding-inline: 6px;
+    padding-inline: max(6px, env(safe-area-inset-left, 0px)) max(6px, env(safe-area-inset-right, 0px));
     gap: 4px;
   }
   .titlebar > .flex.items-center.gap-2.pr-2 > .flex.flex-col.leading-none {
@@ -1441,7 +1730,7 @@
   /* Status bar: stay visible but smaller */
   .status-bar {
     font-size: 10.5px;
-    padding: 0 8px;
+    padding-inline: max(8px, env(safe-area-inset-left, 0px)) max(8px, env(safe-area-inset-right, 0px));
     gap: 8px;
   }
 
@@ -1483,7 +1772,7 @@
     width: 100% !important;
     min-height: 0;
     flex: 1 1 0;
-    border-right: 0 !important;
+    border-inline-end: 0 !important;
     border-bottom: 1px solid hsl(var(--border));
   }
   main > section:last-of-type {
@@ -1620,4 +1909,35 @@
     margin: 16mm 14mm;
     /* size: A4; — leave default so the user's printer dialog picks. */
   }
+}
+
+/* Hover preview of a [[link]] (4.6): a floating, scrollable card. */
+.lumen-hover-card {
+  position: fixed;
+  z-index: var(--z-dropdown, 50);
+  inline-size: min(420px, calc(100vw - 16px));
+  max-block-size: 320px;
+  overflow: auto;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  background: hsl(var(--bg));
+  color: hsl(var(--fg));
+  border: 1px solid hsl(var(--border-strong, var(--border)));
+  border-radius: 8px;
+  box-shadow: 0 12px 40px -10px hsl(0 0% 0% / 0.35);
+}
+.lumen-hover-card[data-show="false"] {
+  display: none;
+}
+.lumen-hover-card > * > :first-child {
+  margin-block-start: 0;
+}
+/* Inside the source editor's tooltip, CodeMirror places it. */
+.lumen-hover-card.lumen-hover-card-cm {
+  position: static;
+}
+.lumen-hover-card-empty {
+  color: hsl(var(--fg-muted));
+  font-size: 12px;
 }

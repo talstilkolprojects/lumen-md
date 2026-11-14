@@ -31,7 +31,7 @@ describe("Plugin System", () => {
 
   beforeEach(() => {
     // Unregister if already registered from a previous test
-    try { unregisterPlugin("test-plugin"); } catch { /* ok */ }
+    try { unregisterPlugin("test-plugin"); } catch { /* why: the plugin is not registered on the first run */ }
   });
 
   it("registers a plugin", async () => {

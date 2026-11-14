@@ -9,9 +9,9 @@ import { useAppStore } from "../store/useStore";
 import { uiPrompt, uiAlert } from "../ui/PromptDialog";
 import { t } from "../i18n";
 import { log } from "../lib/logger";
-import { gitStatusSummary } from "../sync/git";
 import { showAiToast } from "../ui/AiToast";
 import { generateOutline, applyOutline } from "./outline";
+import { aiOperation, isAbort } from "./aiAbort";
 
 /**
  * Build the AI Settings command for the palette.
@@ -50,10 +50,11 @@ export function buildAiSettingsCommand(): Command {
  */
 export async function generateAiCommitMessage(
   repoFolder: string,
+  signal?: AbortSignal,
 ): Promise<string> {
   try {
-    const { chat } = await import("./llm");
-    const { PROMPTS } = await import("./prompts");
+    // Loaded on use: keeps the git modules out of the startup bundle.
+    const { gitStatusSummary } = await import("../sync/git");
     const summary = await gitStatusSummary(repoFolder);
     const changes = summary.entries
       .filter((e) => e.state !== "unmodified")
@@ -62,18 +63,17 @@ export async function generateAiCommitMessage(
 
     if (!changes) return "";
 
-    // Pays for itself when sent (ownPrompt), never billed to a palette
-    // command that may be waiting in a dialog at the same time.
-    return await chat(
-      [
-        { role: "system", content: PROMPTS.commitMessage },
-        { role: "user", content: `Changes:\n${changes}` },
-      ],
-      { maxTokens: 30, ownPrompt: true, tier: "light" },
-    );
+    // The `committer` agent on a light local model. Pays for itself when
+    // sent (ownPrompt), never billed to a palette command that may be
+    // waiting in a dialog at the same time.
+    const { runAgentOrThrow } = await import("../agents/runtime");
+    const { committerAgent } = await import("../agents/defs");
+    // The runtime fetches the diff itself (git_diff) for the subject and body.
+    return await runAgentOrThrow(committerAgent, { text: changes, extra: { repo: repoFolder || undefined } }, { ownPrompt: true, signal });
   } catch (e) {
+    if (signal?.aborted || isAbort(e)) return ""; // cancelled: no suggestion, no toast
     log.warn("AI commit generation skipped", e);
-    showAiToast("AI commit suggestion unavailable", "info");
+    showAiToast(t("toast.aiCommitSuggestionUnavailable"), "info");
     return "";
   }
 }
@@ -92,21 +92,28 @@ export function buildAiOutlineCommand(getContent: () => string, setContent: (s: 
       try {
         const content = getContent();
         if (content.trim().length < 100) {
-          showAiToast("Document too short for outline generation", "info");
+          showAiToast(t("toast.documentTooShortForOutline"), "info");
           return;
         }
-        showAiToast("Generating outline…", "info");
-        const headings = await generateOutline(content);
+        showAiToast(t("toast.generatingOutline"), "info");
+        const op = aiOperation(); // T55: Esc / "AI: Cancel" stop it
+        let headings;
+        try {
+          headings = await generateOutline(content, op.signal);
+        } finally {
+          op.end();
+        }
         if (headings.length === 0) {
-          showAiToast("No outline generated", "info");
+          showAiToast(t("toast.noOutlineGenerated"), "info");
           return;
         }
         const newContent = applyOutline(content, headings);
         setContent(newContent);
-        showAiToast(`Inserted ${headings.length} headings`, "success");
+        showAiToast(t("toast.insertedHeadings", { count: headings.length }), "success");
       } catch (e) {
+        if (isAbort(e)) return;
         log.warn("AI outline generation failed", e);
-        showAiToast("Outline generation failed", "error");
+        showAiToast(t("toast.outlineGenerationFailed"), "error");
       }
     },
   };

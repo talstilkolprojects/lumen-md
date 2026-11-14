@@ -1,0 +1,118 @@
+# Live dictation (plan 6.1): WER / CER per source and live latency of the
+# streaming engine the browser runs — sherpa-onnx WebAssembly with the
+# ivrit.ai Zipformer2 streaming model (int8) — on the asr-he clips.
+#
+# The model (72 MB) and the audio are downloaded here, never committed. The
+# dev clips are built with the public seed into the runner's checkout (not
+# pushed); with GOLDEN_SEED the held-out test clips are built into
+# $RUNNER_TEMP. Only numbers are published (job summary, asr-scores.json).
+name: ASR
+
+on:
+  pull_request:
+    paths:
+      - "scripts/golden/evals/asr-he.mjs"
+      - "scripts/asr/**"
+      - "src/__tests__/asr-he-eval.test.ts"
+      - "src/ai/dictation/**"
+      - ".github/workflows/asr.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: asr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wer:
+    name: WER and latency (sherpa-onnx WASM, Zipformer2 int8)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: sherpa-onnx (WASM build for Node; Apache-2.0) — eval only, not an app dependency
+        run: npm i --no-save --ignore-scripts sherpa-onnx@1.13.8
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r scripts/golden/requirements.txt
+      - run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+      - name: Paths
+        run: |
+          echo "GOLDEN_CACHE=$RUNNER_TEMP/golden-cache" >> "$GITHUB_ENV"
+          echo "LUMEN_ASR_MODEL_DIR=$RUNNER_TEMP/asr-model" >> "$GITHUB_ENV"
+      - uses: actions/cache@v5
+        with:
+          path: ${{ runner.temp }}/golden-cache
+          key: golden-sources-${{ hashFiles('scripts/golden/**') }}
+          restore-keys: golden-sources-
+      - uses: actions/cache@v5
+        with:
+          path: ${{ runner.temp }}/asr-model
+          key: asr-zipformer2-66m-streaming-he-int8-v1
+      - name: Model
+        run: bash scripts/asr/fetch-model.sh "$LUMEN_ASR_MODEL_DIR"
+      - name: Model revisions and the ivrit.ai ONNX exports (names, licences, sizes)
+        # Information only (pins and sizes in src/ai/dictation/models.ts, models/registry.json).
+        continue-on-error: true
+        run: |
+          curl -fsS "https://huggingface.co/api/models/ivrit-ai/zipformer2-66m-streaming-he" | jq -r '"zipformer2 sha=\(.sha) license=\(.cardData.license // "?")"' | sed 's/^/::notice title=asr hf::/'
+          curl -fsS "https://huggingface.co/api/models?author=ivrit-ai&limit=200" | jq -r '[.[] | select(.id|test("onnx|turbo|ggml|ct2|zipformer";"i")) | .id] | join(" ")' | sed 's/^/::notice title=asr hf ivrit-ai::/'
+          for r in ivrit-ai/whisper-large-v3-turbo-onnx ivrit-ai/whisper-large-v3-turbo; do
+            curl -fsS "https://huggingface.co/api/models/$r?blobs=true" | jq -r '"\(.id) sha=\(.sha) license=\(.cardData.license // .tags // "?" | tostring) " + ([.siblings[] | select(.rfilename|test("encoder_model(_q4f16|_q4|_fp16)?\\.onnx|decoder_model_merged_q4f16|config.json|LICENSE";"i"))| "\(.rfilename)=\((.size // 0)/1e6|floor)MB"] | join(" "))' | sed 's/^/::notice title=asr hf turbo::/' || true
+          done
+          curl -fsSL "https://huggingface.co/ivrit-ai/whisper-large-v3-turbo-onnx/raw/main/README.md" | head -c 600 | tr '\n' ' ' | sed 's/^/::notice title=asr hf turbo-onnx readme::/' || true
+          curl -fsS "https://huggingface.co/api/models/onnx-community/whisper-base?blobs=true" | jq -r '"whisper-base sha=\(.sha) license=\(.cardData.license // "?") " + ([.siblings[] | select(.rfilename|test("onnx/(encoder|decoder)_model(_merged)?(_q4|_quantized|_fp16)?\\.onnx"))| "\(.rfilename)=\((.size // 0)/1e6|floor)MB"] | join(" "))' | sed 's/^/::notice title=asr hf whisper-base::/'
+          curl -fsS "https://huggingface.co/api/models/ivrit-ai/zipformer2-66m-streaming-he/revision/ee769a2a13b887f91572eec349458bfb0fe79e7a?blobs=true" | jq -r '[.siblings[] | select(.rfilename|test("sherpa-onnx/"))| "\(.rfilename)=\(.size):\(.lfs.sha256 // "-")"] | join(" ")' | sed 's/^/::notice title=asr hf zipformer files::/' 
+
+      - name: Dev clips (public seed; not pushed)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python -I scripts/golden/hf_build.py build --job fleurs --split dev
+          if [ -n "$HF_TOKEN" ]; then
+            python -I scripts/golden/hf_build.py build --job common-voice --split dev || echo "::warning::Common Voice dev not built (HF_TOKEN without the dataset's terms accepted?)"
+          else
+            echo "::warning::HF_TOKEN is not available to this run: Common Voice is skipped"
+          fi
+
+      - name: Test clips (GOLDEN_SEED; into $RUNNER_TEMP)
+        env:
+          GOLDEN_SEED: ${{ secrets.GOLDEN_SEED }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$GOLDEN_SEED" ]; then echo "::warning::GOLDEN_SEED is not available to this run: dev clips only"; exit 0; fi
+          # The test build pins its source to the committed dev file; the dev
+          # parts are not committed yet (7.1 task=dev), so point the runner's
+          # manifest at the dev files built in the step above — same job, same revision.
+          node -e '
+            const fs = require("fs"), p = "eval/golden/asr-he/manifest.json", m = JSON.parse(fs.readFileSync(p, "utf8"));
+            for (const part of m.parts) if (fs.existsSync(`eval/golden/asr-he/dev/${part.id}.json`) && !part.devFiles?.length) part.devFiles = [`dev/${part.id}.json`];
+            fs.writeFileSync(p, JSON.stringify(m, null, 2));'
+          python -I scripts/golden/hf_build.py build --job fleurs --split test --out "$RUNNER_TEMP/golden" > /dev/null
+          if [ -f eval/golden/asr-he/dev/common-voice.json ]; then
+            python -I scripts/golden/hf_build.py build --job common-voice --split test --out "$RUNNER_TEMP/golden" > /dev/null || echo "::warning::Common Voice test not built"
+          fi
+
+      - name: Wider FLEURS sample (validation split, disjoint from the set's test pool)
+        run: python -I scripts/asr/fleurs_spike.py --out "$RUNNER_TEMP/asr-spike" --n 30
+
+      - name: Score — sherpa-onnx WASM (reference)
+        env:
+          LUMEN_ASR_ENGINE: sherpa
+        run: node scripts/asr/eval.mjs --split dev=eval/golden/asr-he/dev --split test="$RUNNER_TEMP/golden/asr-he/test" --split fleurs-validation="$RUNNER_TEMP/asr-spike" --out asr-scores-sherpa.json
+      - name: Score — Lumen engine on onnxruntime-web WASM (what the browser runs)
+        env:
+          LUMEN_ASR_ENGINE: lumen
+        run: node scripts/asr/eval.mjs --split dev=eval/golden/asr-he/dev --split test="$RUNNER_TEMP/golden/asr-he/test" --split fleurs-validation="$RUNNER_TEMP/asr-spike" --out asr-scores.json --show fleurs-validation
+      - uses: actions/upload-artifact@v7
+        with:
+          name: asr-scores
+          path: asr-scores*.json

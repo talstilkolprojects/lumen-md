@@ -18,8 +18,10 @@
 import { Decoration, EditorView, ViewPlugin } from "@codemirror/view";
 import type { DecorationSet, ViewUpdate } from "@codemirror/view";
 import type { Extension, Range } from "@codemirror/state";
-import { checkGrammar, type GrammarMatch } from "../ai/grammar";
+import { checkGrammar, grammarLanguage, type GrammarMatch } from "../ai/grammar";
 import { log } from "../lib/logger";
+/** Mirrors hebrewSpellService.DICTIONARY_CHANGED_EVENT (that module loads lazily). */
+const DICTIONARY_CHANGED_EVENT = "lumen-hebrew-dictionary-changed";
 
 let DEBOUNCE_MS = 1500;
 /** Override the debounce for tests / self-hosted high-throughput backends. */
@@ -33,6 +35,8 @@ const CATEGORY_COLOR: Record<string, string> = {
   STYLE: "hsl(220 14% 60%)",
   PUNCTUATION: "hsl(280 65% 65%)",
   TYPOGRAPHY: "hsl(220 14% 60%)",
+  // A suggestion from the bundled word list (plan 9.2), not a certain error.
+  HINT: "hsl(200 70% 60%)",
 };
 
 function colorFor(m: GrammarMatch): string {
@@ -69,7 +73,7 @@ function decorationsFor(
 export interface GrammarOptions {
   /** Pushed when matches change so a status pill / panel can update. */
   onMatches?: (matches: GrammarMatch[]) => void;
-  /** Override the language tag passed to LanguageTool. Default `en-US`. */
+  /** Override the language tag passed to LanguageTool. Default: detected locally (plan 6.5), else `en-US`. */
   language?: string;
 }
 
@@ -85,12 +89,22 @@ export function grammarExtension(opts: GrammarOptions = {}): Extension {
       decorations: DecorationSet = Decoration.none;
       private timer: number | null = null;
       private inFlight = false;
+      /** A run was asked for while one was in flight: run again when it ends. */
+      private rerun = false;
       private lastChecked = "";
+      private readonly onDictionaryChange: () => void;
 
       constructor(view: EditorView) {
         // Run once on mount so initial content gets checked even if the
         // user never types.
         this.schedule(view, /* immediate */ false);
+        // The Hebrew dictionary was installed or removed: the unchanged
+        // document needs a fresh check (new or stale spelling marks).
+        this.onDictionaryChange = () => {
+          this.lastChecked = "";
+          this.schedule(view, false);
+        };
+        window.addEventListener(DICTIONARY_CHANGED_EVENT, this.onDictionaryChange);
       }
 
       update(u: ViewUpdate) {
@@ -106,13 +120,21 @@ export function grammarExtension(opts: GrammarOptions = {}): Extension {
       }
 
       async run(view: EditorView): Promise<void> {
-        if (this.inFlight) return;
+        if (this.inFlight) {
+          // The in-flight check may be painting results made before this
+          // request's reason (a list or dictionary that just arrived, an
+          // edit): run once more when it ends.
+          this.rerun = true;
+          return;
+        }
         const text = view.state.doc.toString();
         if (text === this.lastChecked) return;
         this.lastChecked = text;
         this.inFlight = true;
         try {
-          const matches = await checkGrammar(text, opts.language ?? "en-US");
+          // Hebrew paragraphs: local rules + dictionary; the rest: LanguageTool (T28).
+          const { checkByLanguage } = await import("../ai/hebrewSpellService");
+          const matches = await checkByLanguage(text, async (latin) => checkGrammar(latin, opts.language ?? (await grammarLanguage(latin))));
           // Doc may have shifted while the request was in flight — clamp
           // by current length when we paint.
           const len = view.state.doc.length;
@@ -127,11 +149,16 @@ export function grammarExtension(opts: GrammarOptions = {}): Extension {
           opts.onMatches?.([]);
         } finally {
           this.inFlight = false;
+          if (this.rerun) {
+            this.rerun = false;
+            this.schedule(view, false);
+          }
         }
       }
 
       destroy(): void {
         if (this.timer != null) window.clearTimeout(this.timer);
+        window.removeEventListener(DICTIONARY_CHANGED_EVENT, this.onDictionaryChange);
       }
     },
     { decorations: (v) => v.decorations },

@@ -61,10 +61,11 @@ export function SearchReplace({ open, onClose, content, onChange }: Props) {
 
   return (
     <div
+      data-testid="find-replace"
       style={{
         position: "absolute",
         top: 48,
-        right: 16,
+        insetInlineEnd: 16,
         zIndex: 9998,
         background: "hsl(var(--bg))",
         border: "1px solid hsl(var(--border-strong))",

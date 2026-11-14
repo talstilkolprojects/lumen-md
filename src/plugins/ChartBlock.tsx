@@ -21,7 +21,7 @@ function parseSpec(source: string): {
     const o = JSON.parse(trimmed);
     if (o && typeof o === "object") return { option: o };
   } catch {
-    /* fall through to YAML */
+    /* why: fall through to YAML */
   }
   try {
     const o = YAML.parse(trimmed);
@@ -46,7 +46,7 @@ export default function ChartBlock({ source, meta }: Props) {
     return (
       <div className="chart-block" style={{ padding: "1rem" }}>
         <div style={{ color: "hsl(0 80% 60%)", fontSize: 13 }}>
-          ⚠︎ Chart fetch failed: {fetchError}
+          {t("block.chart.fetchFailed", { error: fetchError })}
         </div>
       </div>
     );
@@ -55,7 +55,7 @@ export default function ChartBlock({ source, meta }: Props) {
     return (
       <div className="chart-block" style={{ padding: "1rem" }}>
         <div style={{ color: "hsl(0 80% 60%)", fontSize: 13 }}>
-          ⚠︎ Chart error: {error ?? "unknown"}
+          {t("block.chart.error", { error: error ?? t("block.common.unknown") })}
         </div>
       </div>
     );
@@ -63,12 +63,12 @@ export default function ChartBlock({ source, meta }: Props) {
   return (
     <div className="chart-block">
       <div className="chart-block-header">
-        <span>{t("plugin.chart")}{remote && url ? " · live" : ""}</span>
+        <span>{t("plugin.chart")}{remote && url ? ` ${t("block.common.live")}` : ""}</span>
         {url && (
           <button
             type="button"
             onClick={refetch}
-            title={`Refetch ${url}`}
+            title={t("block.common.refetchUrl", { url })}
             style={{
               marginInlineStart: "auto",
               border: "none",

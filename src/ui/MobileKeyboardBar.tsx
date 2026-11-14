@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { t } from "../i18n";
 
 const SHORTCUTS: { label: string; insert: string; cursorOffset?: number; ariaLabel: string }[] = [
   { label: "#", insert: "# ", ariaLabel: "Insert heading" },
@@ -65,7 +66,7 @@ export function MobileKeyboardBar() {
   return (
     <div
       role="toolbar"
-      aria-label="Markdown shortcuts"
+      aria-label={t("mobileBar.label")}
       style={{
         position: "fixed",
         insetInlineStart: 0,

@@ -1,0 +1,1827 @@
+{
+  "version": 2,
+  "domain": "ai",
+  "source": "src/i18n/locales/en/ai.json",
+  "entries": [
+    {
+      "key": "agent.grammar.found.one",
+      "en": "Found {n} issue:\n\n{list}",
+      "vars": [
+        "n",
+        "list"
+      ]
+    },
+    {
+      "key": "agent.grammar.found.other",
+      "en": "Found {n} issues:\n\n{list}",
+      "vars": [
+        "n",
+        "list"
+      ]
+    },
+    {
+      "key": "agent.links.needWorkspace",
+      "en": "Open the file from your workspace first — the link agent reads neighboring notes.",
+      "vars": []
+    },
+    {
+      "key": "agent.links.no",
+      "en": "no",
+      "vars": []
+    },
+    {
+      "key": "agent.links.prompt",
+      "en": "Found {n} link suggestions:\n\n{summary}\n\nApply all? (Type '{no}' to skip)",
+      "vars": [
+        "n",
+        "summary",
+        "no"
+      ]
+    },
+    {
+      "key": "agent.links.yes",
+      "en": "yes",
+      "vars": []
+    },
+    {
+      "key": "agent.notGood.button",
+      "en": "Not good — try again",
+      "vars": []
+    },
+    {
+      "key": "agent.notGood.prompt",
+      "en": "Answer from {agent}.",
+      "vars": [
+        "agent"
+      ]
+    },
+    {
+      "key": "agent.panel.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "agent.panel.do",
+      "en": "Do it",
+      "vars": []
+    },
+    {
+      "key": "agent.panel.none",
+      "en": "No specific suggestion. Try a shorter input or a larger model.",
+      "vars": []
+    },
+    {
+      "key": "agent.panel.summary",
+      "en": "{agent} · {attempts} attempt(s) · {executor} / {model}",
+      "vars": [
+        "agent",
+        "attempts",
+        "executor",
+        "model"
+      ]
+    },
+    {
+      "key": "agent.panel.title",
+      "en": "The AI couldn't answer — here is what may help",
+      "vars": []
+    },
+    {
+      "key": "agent.panel.trace",
+      "en": "Recent agent runs",
+      "vars": []
+    },
+    {
+      "key": "agent.product.prompt",
+      "en": "Describe the product you want to create:\n(e.g. 'A todo app with drag-and-drop, dark mode and local storage')",
+      "vars": []
+    },
+    {
+      "key": "agent.suggest.allowCloud",
+      "en": "Allow the cloud as a fallback",
+      "vars": []
+    },
+    {
+      "key": "agent.suggest.allowCloud.detail",
+      "en": "Switches the AI policy to \"local first\": your cloud key is used only when no local model can answer.",
+      "vars": []
+    },
+    {
+      "key": "agent.suggest.configureKey",
+      "en": "Add your {provider} key",
+      "vars": [
+        "provider"
+      ]
+    },
+    {
+      "key": "agent.suggest.largerModel",
+      "en": "Try again with a larger model ({tier})",
+      "vars": [
+        "tier"
+      ]
+    },
+    {
+      "key": "agent.suggest.ollamaOrigins",
+      "en": "Allow this app in Ollama (OLLAMA_ORIGINS)",
+      "vars": []
+    },
+    {
+      "key": "agent.suggest.ollamaOrigins.detail",
+      "en": "Ollama refused the request: start it with OLLAMA_ORIGINS set to this app's address.",
+      "vars": []
+    },
+    {
+      "key": "agent.suggest.ollamaStillDown",
+      "en": "Ollama still does not answer at {url}. Start it and try again.",
+      "vars": [
+        "url"
+      ]
+    },
+    {
+      "key": "agent.suggest.ollamaUp",
+      "en": "Ollama answers at {url}. Running the command again.",
+      "vars": [
+        "url"
+      ]
+    },
+    {
+      "key": "agent.suggest.ollamaWaiting",
+      "en": "Waiting for Ollama at {url}: run `ollama serve`, then pull a model ({seconds}s left)…",
+      "vars": [
+        "url",
+        "seconds"
+      ]
+    },
+    {
+      "key": "agent.suggest.pullModel",
+      "en": "Download the model {model}",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "agent.suggest.retry",
+      "en": "Try again",
+      "vars": []
+    },
+    {
+      "key": "agent.suggest.splitDocument",
+      "en": "Split the document and run each part",
+      "vars": []
+    },
+    {
+      "key": "agent.suggest.splitDocument.detail",
+      "en": "Runs the command on parts of about {size} characters and merges the answers.",
+      "vars": [
+        "size"
+      ]
+    },
+    {
+      "key": "agent.suggest.splitInput",
+      "en": "Select a smaller part and run it again",
+      "vars": []
+    },
+    {
+      "key": "agent.suggest.splitInput.detail",
+      "en": "Long documents overflow small local models; a selection is easier to answer.",
+      "vars": []
+    },
+    {
+      "key": "agent.suggest.splitInput.done",
+      "en": "Select the part you want, then run the command again.",
+      "vars": []
+    },
+    {
+      "key": "agent.suggest.startOllama",
+      "en": "Start Ollama on this computer",
+      "vars": []
+    },
+    {
+      "key": "agent.suggest.startOllama.detail",
+      "en": "Install it from ollama.com, run it, then pull a model such as qwen2.5:7b.",
+      "vars": []
+    },
+    {
+      "key": "agent.suggest.switchExecutor",
+      "en": "Try again with {executor}",
+      "vars": [
+        "executor"
+      ]
+    },
+    {
+      "key": "agent.suggest.useOllama",
+      "en": "Use Ollama instead",
+      "vars": []
+    },
+    {
+      "key": "agent.suggest.useOllama.detail",
+      "en": "This browser has no usable WebGPU; a local Ollama server works in any browser.",
+      "vars": []
+    },
+    {
+      "key": "agent.suggest.webgpuBrowser",
+      "en": "Use a browser with WebGPU",
+      "vars": []
+    },
+    {
+      "key": "agent.suggest.webgpuBrowser.detail",
+      "en": "Chrome or Edge 113+, Safari 26 or Firefox 141+ run models in the browser.",
+      "vars": []
+    },
+    {
+      "key": "agent.tags.prompt",
+      "en": "Suggested tags:\n  {tags}\n\nPress OK to merge them into the frontmatter, or edit the list (comma-separated):",
+      "vars": [
+        "tags"
+      ]
+    },
+    {
+      "key": "agent.translate.prompt",
+      "en": "Translate the document into which language?\n(e.g. Spanish, עברית, 日本語, Français)",
+      "vars": []
+    },
+    {
+      "key": "ai.alert.keySaved",
+      "en": "AI key saved.",
+      "vars": []
+    },
+    {
+      "key": "ai.cache.clear",
+      "en": "Clear cached answers",
+      "vars": []
+    },
+    {
+      "key": "ai.cache.cleared",
+      "en": "Cleared {count} cached answers",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "ai.cache.off",
+      "en": "Off — always ask the model",
+      "vars": []
+    },
+    {
+      "key": "ai.cache.on",
+      "en": "On — identical requests are answered locally",
+      "vars": []
+    },
+    {
+      "key": "ai.cache.title",
+      "en": "AI answer cache",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.action.downloadHebrewDictionary",
+      "en": "Download (5.7 MB)",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.action.openSettings",
+      "en": "Open AI settings",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.action.persist",
+      "en": "Keep my data",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.action.pullModel",
+      "en": "Download now",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.action.retry",
+      "en": "Retry",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.action.setPolicyLocalFirst",
+      "en": "Switch to local-first",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.action.useLocalServices",
+      "en": "Use the local services",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.caption",
+      "en": "Image descriptions on this device",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.configuredModel",
+      "en": "The configured model is installed",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.cspLocal",
+      "en": "This build may reach the local services (CSP: ports 8010 and 8787)",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.embed",
+      "en": "An embedding model for semantic search",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.engines",
+      "en": "On-device engines",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.executor",
+      "en": "An executor the agents can use right now",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.golden",
+      "en": "Golden case",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.grammar",
+      "en": "Grammar service (LanguageTool)",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.modelHost",
+      "en": "Host for Lumen's converted models (Opus-MT, Nakdimon)",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.models",
+      "en": "A chat model is installed (qwen2.5:7b recommended)",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.nikud",
+      "en": "Hebrew niqqud on this device",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.ollama",
+      "en": "Ollama server reachable from this page",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.ollamaVersion",
+      "en": "Ollama version (0.5+ for structured output)",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.policy",
+      "en": "AI policy and preferred executor",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.research",
+      "en": "Research service (web search and page extraction)",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.spellEn",
+      "en": "English spelling on this device",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.spellHe",
+      "en": "Hebrew spelling dictionary",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.storage",
+      "en": "Vault storage: quota and durability",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.sw",
+      "en": "Service worker (works offline)",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.tools",
+      "en": "The model supports tool calling (tasks, commits)",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.translate",
+      "en": "Local translation (Chrome, Opus-MT, M2M100)",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.wasm",
+      "en": "WebAssembly for in-browser embeddings and speech",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.check.webgpu",
+      "en": "WebGPU for the in-browser model",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.copied",
+      "en": "Copied",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.copy",
+      "en": "Copy command",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.copyReport",
+      "en": "Copy report",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.csp",
+      "en": "This build's CSP does not allow that Ollama address; rebuild with it allowed:",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.docker",
+      "en": "Run the local services:",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.install",
+      "en": "Install Ollama and start it:",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.modelChecksums",
+      "en": "The host is set but the registry has no files for these models; run the conversion workflow and copy its checksums:",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.modelHost",
+      "en": "No host is set for the converted models yet (plan 15.9); until then these engines stay off and the AI model is used instead.",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.origins",
+      "en": "Ollama refuses this site (403). Allow it with OLLAMA_ORIGINS and restart Ollama:",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.persist",
+      "en": "Ask the browser to keep the vault (it may evict it otherwise):",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.pull",
+      "en": "Download the model:",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.pullHebrew",
+      "en": "Your notes are in Hebrew; this model handles Hebrew well:",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.reload",
+      "en": "The dictionary did not load; reload the page and check again:",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.remote",
+      "en": "Under \"local only\" the Ollama server must be on this machine or network. Change the address or the policy:",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.research",
+      "en": "No research service configured; set one in the AI settings:",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.settings",
+      "en": "Choose a working executor in the AI settings:",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.spellHe",
+      "en": "Download the Hebrew dictionary (Hspell, 5.7 MB, AGPL-3.0) to this device:",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.translate",
+      "en": "No local layer for English↔Hebrew yet: M2M100 (MIT, about 630 MB) downloads on first use with your consent, or use Chrome with its translator.",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.update",
+      "en": "Update Ollama to 0.5 or newer:",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.fix.webgpu",
+      "en": "Use Ollama instead, or a browser with WebGPU (Chrome, Edge, Safari 18+):",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.golden",
+      "en": "Golden cases (real model)",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.goldenRunning",
+      "en": "Running the agents…",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.intro",
+      "en": "Every check below says what it found and exactly how to fix it. Nothing leaves this computer.",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.pulling",
+      "en": "Pulling {model}: {status}",
+      "vars": [
+        "model",
+        "status"
+      ]
+    },
+    {
+      "key": "ai.doctor.report",
+      "en": "Report a problem…",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.rerun",
+      "en": "Check again",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.runGolden",
+      "en": "Run one golden case per agent",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.running",
+      "en": "Checking…",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.status.fail",
+      "en": "Failed",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.status.ok",
+      "en": "OK",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.status.skip",
+      "en": "Skipped",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.status.warn",
+      "en": "Warning",
+      "vars": []
+    },
+    {
+      "key": "ai.doctor.summary",
+      "en": "{ok} ok · {warn} warnings · {fail} failed",
+      "vars": [
+        "ok",
+        "warn",
+        "fail"
+      ]
+    },
+    {
+      "key": "ai.doctor.title",
+      "en": "AI doctor",
+      "vars": []
+    },
+    {
+      "key": "ai.error.unknown",
+      "en": "unknown error",
+      "vars": []
+    },
+    {
+      "key": "ai.fab.searchLabel",
+      "en": "Search AI commands",
+      "vars": []
+    },
+    {
+      "key": "ai.fab.searchPlaceholder",
+      "en": "Search AI commands…",
+      "vars": []
+    },
+    {
+      "key": "ai.ghostwriter.failed",
+      "en": "AI Ghostwriter failed: {error} (⌘K → AI: Recent Agent Runs)",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "ai.inline.submit",
+      "en": "Submit",
+      "vars": []
+    },
+    {
+      "key": "ai.localModels.auto",
+      "en": "Automatic — pick by hardware and task",
+      "vars": []
+    },
+    {
+      "key": "ai.localModels.autoSet",
+      "en": "Automatic model selection. Current pick: {model}",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "ai.localModels.cached",
+      "en": "downloaded",
+      "vars": []
+    },
+    {
+      "key": "ai.localModels.downloadNow",
+      "en": "Download {model} now? It is cached in the browser for later prompts.",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "ai.localModels.failed",
+      "en": "Model download failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "ai.localModels.licenceBody",
+      "en": "{{model}} is published under the {{licence}}, not an open-source licence. Read its terms before you use it, especially for work. Lumen will not choose it for you.",
+      "vars": [
+        "model",
+        "licence"
+      ]
+    },
+    {
+      "key": "ai.localModels.licenceOk",
+      "en": "Use it",
+      "vars": []
+    },
+    {
+      "key": "ai.localModels.licenceTitle",
+      "en": "Model under its own licence",
+      "vars": []
+    },
+    {
+      "key": "ai.localModels.message",
+      "en": "About {budget} GB of GPU memory is usable on this device ({f16} weights).",
+      "vars": [
+        "budget",
+        "f16"
+      ]
+    },
+    {
+      "key": "ai.localModels.noWebgpu",
+      "en": "WebGPU is not available in this browser.",
+      "vars": []
+    },
+    {
+      "key": "ai.localModels.ready",
+      "en": "{model} is ready.",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "ai.localModels.recommended",
+      "en": "recommended",
+      "vars": []
+    },
+    {
+      "key": "ai.localModels.selected",
+      "en": "selected",
+      "vars": []
+    },
+    {
+      "key": "ai.localModels.set",
+      "en": "Local model: {model}",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "ai.localModels.title",
+      "en": "Local models (WebGPU)",
+      "vars": []
+    },
+    {
+      "key": "ai.localModels.tooBig",
+      "en": "may not fit",
+      "vars": []
+    },
+    {
+      "key": "ai.mode.balanced",
+      "en": "Balanced — small model for small tasks, ~5K tokens of context (default)",
+      "vars": []
+    },
+    {
+      "key": "ai.mode.economy",
+      "en": "Economy — small model for everything, ~2K tokens of context",
+      "vars": []
+    },
+    {
+      "key": "ai.mode.quality",
+      "en": "Quality — your chosen model for everything, ~12K tokens of context",
+      "vars": []
+    },
+    {
+      "key": "ai.mode.title",
+      "en": "AI cost mode",
+      "vars": []
+    },
+    {
+      "key": "ai.ollama.noModels",
+      "en": "No models found.\n\nPull a model with: ollama pull llama3.1",
+      "vars": []
+    },
+    {
+      "key": "ai.ollama.notRunning",
+      "en": "Ollama is not running.\n\nStart it with: ollama serve\nThen try again.",
+      "vars": []
+    },
+    {
+      "key": "ai.ollama.pickModel",
+      "en": "Available Ollama models:\n\n{models}\n\nType the model name to use:",
+      "vars": [
+        "models"
+      ]
+    },
+    {
+      "key": "ai.policy.cloud",
+      "en": "Cloud — use the selected cloud provider",
+      "vars": []
+    },
+    {
+      "key": "ai.policy.localFirst",
+      "en": "Local first — cloud only when no local model can answer",
+      "vars": []
+    },
+    {
+      "key": "ai.policy.localOnly",
+      "en": "Local only — nothing leaves this device",
+      "vars": []
+    },
+    {
+      "key": "ai.policy.title",
+      "en": "AI policy",
+      "vars": []
+    },
+    {
+      "key": "ai.prompt.historyHint",
+      "en": "↑↓ history",
+      "vars": []
+    },
+    {
+      "key": "ai.prompt.key",
+      "en": "Enter your OpenAI API key (sk-…):",
+      "vars": []
+    },
+    {
+      "key": "ai.prompt.placeholder",
+      "en": "Type here…",
+      "vars": []
+    },
+    {
+      "key": "ai.prompt.submit",
+      "en": "Go",
+      "vars": []
+    },
+    {
+      "key": "ai.provider.choose",
+      "en": "Choose your AI provider:",
+      "vars": []
+    },
+    {
+      "key": "ai.provider.enterKey",
+      "en": "Enter your {provider} API key:",
+      "vars": [
+        "provider"
+      ]
+    },
+    {
+      "key": "ai.provider.invalid",
+      "en": "Invalid provider. Choose: {list}",
+      "vars": [
+        "list"
+      ]
+    },
+    {
+      "key": "ai.settings.available",
+      "en": "Available",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.browser",
+      "en": "In the browser",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.browser.model",
+      "en": "Model",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.browser.recommended",
+      "en": "Recommended for this device",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.browser.tooBig",
+      "en": "too large",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.checking",
+      "en": "Checking…",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.endpoints",
+      "en": "Local services",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.endpoints.hint",
+      "en": "Start both with: docker compose -f docker/local-ai.yml up -d. Empty = the default.",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.executor",
+      "en": "Who runs the agents",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.executor.auto",
+      "en": "Automatic (Ollama → in the browser → chat provider)",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.executor.chat",
+      "en": "Chat provider (follows the policy)",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.executor.ollama",
+      "en": "Ollama on this computer",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.executor.webllm",
+      "en": "Model in the browser (WebGPU)",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.grammar",
+      "en": "Grammar",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.hw.none",
+      "en": "No WebGPU in this browser ({reason}). Use Ollama or a WebGPU browser.",
+      "vars": [
+        "reason"
+      ]
+    },
+    {
+      "key": "ai.settings.hw.ok",
+      "en": "WebGPU ready · budget about {budget} MB · {f16} · {cores} cores · {memory} GB RAM (estimate)",
+      "vars": [
+        "budget",
+        "f16",
+        "cores",
+        "memory"
+      ]
+    },
+    {
+      "key": "ai.settings.hw.wasm",
+      "en": "Speech and search run on WASM.",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.ollama.installed",
+      "en": "Installed: {models}",
+      "vars": [
+        "models"
+      ]
+    },
+    {
+      "key": "ai.settings.ollama.model",
+      "en": "Model",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.ollama.none",
+      "en": "Ollama runs but has no models. Recommended: ollama pull qwen2.5:7b",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.ollama.pull",
+      "en": "Download",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.ollama.pullFailed",
+      "en": "Download failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "ai.settings.ollama.pulled",
+      "en": "{model} is installed",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "ai.settings.ollama.pulling",
+      "en": "Downloading {model}: {status}",
+      "vars": [
+        "model",
+        "status"
+      ]
+    },
+    {
+      "key": "ai.settings.ollama.unreachable",
+      "en": "Ollama is not reachable. Install it and allow this site: OLLAMA_ORIGINS=https://lumen-md.vercel.app",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.ollama.url",
+      "en": "Address",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.recheck",
+      "en": "Check again",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.research",
+      "en": "Research",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.researchToken",
+      "en": "Research token (RESEARCH_TOKEN)",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.researchToken.placeholder",
+      "en": "Shared token, if the research service asks for one",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.save",
+      "en": "Save",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.saved",
+      "en": "Saved",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.storage",
+      "en": "Model storage",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.storage.clearWasm",
+      "en": "Clear speech and search models",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.storage.clearWebllm",
+      "en": "Clear in-browser models",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.storage.usage",
+      "en": "{usage} of {quota} used on this device",
+      "vars": [
+        "usage",
+        "quota"
+      ]
+    },
+    {
+      "key": "ai.settings.style",
+      "en": "My writing style",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.style.none",
+      "en": "No style profile yet. Build one from your notes — it stays on this device.",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.style.use",
+      "en": "Write in my style",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.title",
+      "en": "AI settings",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.trace",
+      "en": "Recent agent runs",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.trace.clear",
+      "en": "Clear",
+      "vars": []
+    },
+    {
+      "key": "ai.settings.unavailable",
+      "en": "Not available ({reason})",
+      "vars": [
+        "reason"
+      ]
+    },
+    {
+      "key": "ai.style.build",
+      "en": "Build from my notes…",
+      "vars": []
+    },
+    {
+      "key": "ai.style.building",
+      "en": "Reading your notes and describing your style…",
+      "vars": []
+    },
+    {
+      "key": "ai.style.built",
+      "en": "Style profile ready: {rules} rules from {notes} notes. The AI now writes in your style.",
+      "vars": [
+        "rules",
+        "notes"
+      ]
+    },
+    {
+      "key": "ai.style.clear",
+      "en": "Delete the profile",
+      "vars": []
+    },
+    {
+      "key": "ai.style.cleared",
+      "en": "Style profile deleted.",
+      "vars": []
+    },
+    {
+      "key": "ai.style.current",
+      "en": "Profile from {notes} notes — {tone}",
+      "vars": [
+        "notes",
+        "tone"
+      ]
+    },
+    {
+      "key": "ai.style.folder",
+      "en": "Folder to learn from (empty = the whole workspace):",
+      "vars": []
+    },
+    {
+      "key": "ai.style.modelfile",
+      "en": "Export an Ollama Modelfile",
+      "vars": []
+    },
+    {
+      "key": "ai.style.modelfileSaved",
+      "en": "Saved {path} — run: ollama create my-style -f {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "ai.style.none",
+      "en": "No style profile yet. Build one from your notes (stays on this device).",
+      "vars": []
+    },
+    {
+      "key": "ai.style.off",
+      "en": "Stop using my style",
+      "vars": []
+    },
+    {
+      "key": "ai.style.on",
+      "en": "Use my style when the AI writes",
+      "vars": []
+    },
+    {
+      "key": "ai.style.show",
+      "en": "Show the profile",
+      "vars": []
+    },
+    {
+      "key": "ai.style.title",
+      "en": "Writing style",
+      "vars": []
+    },
+    {
+      "key": "ai.toast.capacity.body",
+      "en": "Wait for the current prompts to finish before sending more.",
+      "vars": []
+    },
+    {
+      "key": "ai.toast.capacity.title",
+      "en": "AI requests at capacity",
+      "vars": []
+    },
+    {
+      "key": "ai.toast.localLoading.body",
+      "en": "{pct}% — {status}",
+      "vars": [
+        "pct",
+        "status"
+      ]
+    },
+    {
+      "key": "ai.toast.localLoading.preparing",
+      "en": "preparing model",
+      "vars": []
+    },
+    {
+      "key": "ai.toast.localLoading.title",
+      "en": "Local AI loading",
+      "vars": []
+    },
+    {
+      "key": "ai.toast.localUnavailable.body",
+      "en": "WebGPU isn't supported here — falling back to your OpenAI key.",
+      "vars": []
+    },
+    {
+      "key": "ai.toast.localUnavailable.title",
+      "en": "Local AI unavailable",
+      "vars": []
+    },
+    {
+      "key": "ai.toast.ollamaUnavailable.body",
+      "en": "Cannot reach Ollama at {url}. Is it running? Falling back to OpenAI.",
+      "vars": [
+        "url"
+      ]
+    },
+    {
+      "key": "ai.toast.ollamaUnavailable.title",
+      "en": "Ollama unavailable",
+      "vars": []
+    },
+    {
+      "key": "ai.toast.rateLimit.body",
+      "en": "Wait {seconds}s before sending another prompt.",
+      "vars": [
+        "seconds"
+      ]
+    },
+    {
+      "key": "ai.toast.rateLimit.title",
+      "en": "AI rate limit reached",
+      "vars": []
+    },
+    {
+      "key": "ai.trace.empty",
+      "en": "No agent runs yet.",
+      "vars": []
+    },
+    {
+      "key": "ai.trace.title",
+      "en": "Agent runs",
+      "vars": []
+    },
+    {
+      "key": "ai.usage.title",
+      "en": "AI usage",
+      "vars": []
+    },
+    {
+      "key": "batch.applied",
+      "en": "Applied {count} batch results",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "batch.apply",
+      "en": "Batch \"{op}\" finished: {changes} notes to update, {created} new files{failed}.\n\nApply now? Notes open in a tab are skipped.",
+      "vars": [
+        "op",
+        "changes",
+        "created",
+        "failed"
+      ]
+    },
+    {
+      "key": "batch.confirm",
+      "en": "Send {count} notes to {provider} ({model}) as one batch?\n\nEstimated cost: {cost} (batch price). Results arrive within 24 hours; run \"AI: Check Batch Jobs\" to apply them. Counts as {count} AI prompts.",
+      "vars": [
+        "count",
+        "provider",
+        "model",
+        "cost"
+      ]
+    },
+    {
+      "key": "batch.confirmLocal",
+      "en": "Process {count} notes on this device with {model}? It runs in the background, one note at a time; use \"AI: Check Batch Jobs\" to apply the results.",
+      "vars": [
+        "count",
+        "model"
+      ]
+    },
+    {
+      "key": "batch.folder",
+      "en": "Folder to process (empty = whole workspace):",
+      "vars": []
+    },
+    {
+      "key": "batch.lang",
+      "en": "Translate into which language?",
+      "vars": []
+    },
+    {
+      "key": "batch.noNotes",
+      "en": "No notes found in that folder of the workspace",
+      "vars": []
+    },
+    {
+      "key": "batch.none",
+      "en": "No batch jobs waiting",
+      "vars": []
+    },
+    {
+      "key": "batch.op",
+      "en": "What should the batch do?",
+      "vars": []
+    },
+    {
+      "key": "batch.op.summary",
+      "en": "Summarise each note (front matter summary)",
+      "vars": []
+    },
+    {
+      "key": "batch.op.tags",
+      "en": "Tag each note (front matter tags)",
+      "vars": []
+    },
+    {
+      "key": "batch.op.translate",
+      "en": "Translate each note (new file next to it)",
+      "vars": []
+    },
+    {
+      "key": "batch.panel.apply",
+      "en": "Apply results",
+      "vars": []
+    },
+    {
+      "key": "batch.panel.blocked",
+      "en": "Waiting for a local model — Resume tries again",
+      "vars": []
+    },
+    {
+      "key": "batch.panel.cancel",
+      "en": "Cancel job",
+      "vars": []
+    },
+    {
+      "key": "batch.panel.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "batch.panel.cloud",
+      "en": "Running at {provider}; results arrive within 24 hours",
+      "vars": [
+        "provider"
+      ]
+    },
+    {
+      "key": "batch.panel.confirmCancel",
+      "en": "Cancel this batch job? None of its results will be applied.",
+      "vars": []
+    },
+    {
+      "key": "batch.panel.eta",
+      "en": "About {time} left",
+      "vars": [
+        "time"
+      ]
+    },
+    {
+      "key": "batch.panel.finished",
+      "en": "Finished — apply the results to your notes",
+      "vars": []
+    },
+    {
+      "key": "batch.panel.pause",
+      "en": "Pause",
+      "vars": []
+    },
+    {
+      "key": "batch.panel.paused",
+      "en": "Paused",
+      "vars": []
+    },
+    {
+      "key": "batch.panel.progress",
+      "en": "{done} of {total} done · {failed} failed",
+      "vars": [
+        "done",
+        "total",
+        "failed"
+      ]
+    },
+    {
+      "key": "batch.panel.rejected",
+      "en": "Rejected answers ({n})",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "batch.panel.resume",
+      "en": "Resume",
+      "vars": []
+    },
+    {
+      "key": "batch.panel.title",
+      "en": "Batch jobs",
+      "vars": []
+    },
+    {
+      "key": "batch.processing",
+      "en": "{count} batch jobs still processing",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "batch.provider",
+      "en": "Batch jobs need the OpenAI or Anthropic provider",
+      "vars": []
+    },
+    {
+      "key": "batch.quota",
+      "en": "Not enough AI prompts left this month for {count} notes",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "batch.saveFailed",
+      "en": "Couldn't save the batch job state for {id} (storage full or blocked). Free some space, then run \"AI: Check Batch Jobs\" again — already-applied results won't be duplicated.",
+      "vars": [
+        "id"
+      ]
+    },
+    {
+      "key": "batch.state.cancelled",
+      "en": "was cancelled",
+      "vars": []
+    },
+    {
+      "key": "batch.state.expired",
+      "en": "expired",
+      "vars": []
+    },
+    {
+      "key": "batch.state.failed",
+      "en": "failed",
+      "vars": []
+    },
+    {
+      "key": "batch.submitted",
+      "en": "Batch submitted: {count} notes",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "batch.terminal",
+      "en": "Batch \"{op}\" ({id}) {state} — no results were applied",
+      "vars": [
+        "op",
+        "id",
+        "state"
+      ]
+    },
+    {
+      "key": "dictate.audioSuspended",
+      "en": "the browser kept the microphone audio paused — start dictation again",
+      "vars": []
+    },
+    {
+      "key": "dictate.newNoteName",
+      "en": "Dictation",
+      "vars": []
+    },
+    {
+      "key": "dictate.webSpeech.body",
+      "en": "Dictation on this device couldn't start. Your browser's speech service works, but it sends the audio to its provider (Google in Chrome). The privacy ledger records each use.",
+      "vars": []
+    },
+    {
+      "key": "dictate.webSpeech.ok",
+      "en": "Use the browser service",
+      "vars": []
+    },
+    {
+      "key": "dictate.webSpeech.title",
+      "en": "Use the browser's speech service?",
+      "vars": []
+    },
+    {
+      "key": "doctor.checking",
+      "en": "Checking {count} notes…",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "doctor.confirmFix",
+      "en": "Fix {links} links in {files} notes?\n\n{list}\n\nNotes open in a tab are skipped.",
+      "vars": [
+        "links",
+        "files",
+        "list"
+      ]
+    },
+    {
+      "key": "doctor.done",
+      "en": "{count} findings",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "doctor.fixed",
+      "en": "Fixed {links} links in {files} notes",
+      "vars": [
+        "links",
+        "files"
+      ]
+    },
+    {
+      "key": "doctor.noFixes",
+      "en": "No broken links with a single clear suggestion",
+      "vars": []
+    },
+    {
+      "key": "doctor.noWorkspace",
+      "en": "Open a workspace folder first",
+      "vars": []
+    },
+    {
+      "key": "doctor.readFailed",
+      "en": "Couldn't read {path}: Vault Doctor stopped so it won't report or fix links against an incomplete workspace",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "fineTune.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "fineTune.cloudRoute",
+      "en": "Or in the cloud (OpenAI)",
+      "vars": []
+    },
+    {
+      "key": "fineTune.confirm",
+      "en": "Upload your last 90 days of writing to OpenAI to train a personal model? Training usually finishes in under an hour.",
+      "vars": []
+    },
+    {
+      "key": "fineTune.forget",
+      "en": "Forget local model id",
+      "vars": []
+    },
+    {
+      "key": "fineTune.forgetConfirm",
+      "en": "Forget the locally-stored fine-tune model id? You'll need to delete the model from your OpenAI dashboard separately for full removal.",
+      "vars": []
+    },
+    {
+      "key": "fineTune.intro",
+      "en": "Fine-tune a personal copy of GPT-4o-mini on the last 90 days of your writing. The model learns your tone + vocabulary so completions feel like you wrote them.",
+      "vars": []
+    },
+    {
+      "key": "fineTune.modelReady",
+      "en": "Personal model ready",
+      "vars": []
+    },
+    {
+      "key": "fineTune.needKey",
+      "en": "Configure your AI Key first (⌘K → AI Settings).",
+      "vars": []
+    },
+    {
+      "key": "fineTune.notTrained",
+      "en": "No personal model yet. Click \"Train\" below to upload your last 90 days of writing.",
+      "vars": []
+    },
+    {
+      "key": "fineTune.privacy",
+      "en": "Note: training uploads ~5 MB of your writing to OpenAI. The resulting model is only accessible from your account. Click \"Forget\" to drop the id from this device — to fully remove the trained model, delete it in your OpenAI dashboard too.",
+      "vars": []
+    },
+    {
+      "key": "fineTune.retrain",
+      "en": "Re-train",
+      "vars": []
+    },
+    {
+      "key": "fineTune.statsLine",
+      "en": "{chunks} chunks · ≈ {tokens} tokens",
+      "vars": [
+        "chunks",
+        "tokens"
+      ]
+    },
+    {
+      "key": "fineTune.status",
+      "en": "Status",
+      "vars": []
+    },
+    {
+      "key": "fineTune.title",
+      "en": "Train AI on my style",
+      "vars": []
+    },
+    {
+      "key": "fineTune.toast.error",
+      "en": "Fine-tune failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "fineTune.toast.failed",
+      "en": "Fine-tune {status}. See OpenAI dashboard.",
+      "vars": [
+        "status"
+      ]
+    },
+    {
+      "key": "fineTune.toast.forgot",
+      "en": "Local fine-tune id removed.",
+      "vars": []
+    },
+    {
+      "key": "fineTune.toast.queued",
+      "en": "Fine-tune started — {chunks} chunks (~{tokens} tokens) uploaded.",
+      "vars": [
+        "chunks",
+        "tokens"
+      ]
+    },
+    {
+      "key": "fineTune.toast.succeeded",
+      "en": "✅ Fine-tune ready: {model}",
+      "vars": [
+        "model"
+      ]
+    },
+    {
+      "key": "fineTune.train",
+      "en": "Train",
+      "vars": []
+    },
+    {
+      "key": "fineTune.training",
+      "en": "Training… ({status})",
+      "vars": [
+        "status"
+      ]
+    },
+    {
+      "key": "fineTune.useToggle",
+      "en": "Route AI requests through my voice",
+      "vars": []
+    },
+    {
+      "key": "fineTune.useToggleHint",
+      "en": "Off by default. Toggle on to make every AI completion use your fine-tuned model.",
+      "vars": []
+    },
+    {
+      "key": "research.checking",
+      "en": "Checking citations {done}/{total}…",
+      "vars": [
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "research.consent.body",
+      "en": "Your question (only the question — not your notes) is sent to the search service you chose. Pages it finds are read by that service. Under the \"local only\" policy research uses your library instead.",
+      "vars": []
+    },
+    {
+      "key": "research.consent.ok",
+      "en": "Allow (once for all)",
+      "vars": []
+    },
+    {
+      "key": "research.consent.title",
+      "en": "Research on the web?",
+      "vars": []
+    },
+    {
+      "key": "research.done",
+      "en": "Research done: {sources} sources",
+      "vars": [
+        "sources"
+      ]
+    },
+    {
+      "key": "research.endpoint",
+      "en": "Research service URL (run it locally with docker/local-ai.yml — see the docs):",
+      "vars": []
+    },
+    {
+      "key": "research.endpointInvalid",
+      "en": "That address can't be used here — not an http(s) URL, or not allowed by this deployment's content security policy: {url}",
+      "vars": [
+        "url"
+      ]
+    },
+    {
+      "key": "research.failed",
+      "en": "Research failed: {message}",
+      "vars": [
+        "message"
+      ]
+    },
+    {
+      "key": "research.key",
+      "en": "API key for {provider}:",
+      "vars": [
+        "provider"
+      ]
+    },
+    {
+      "key": "research.noCitations",
+      "en": "No footnotes with web links in this note",
+      "vars": []
+    },
+    {
+      "key": "research.noService",
+      "en": "Citation checks and Brave / Tavily search need the research service (VITE_RESEARCH_ENDPOINT) on this deployment",
+      "vars": []
+    },
+    {
+      "key": "research.provider.brave",
+      "en": "Brave Search (your API key)",
+      "vars": []
+    },
+    {
+      "key": "research.provider.claude",
+      "en": "Claude web search (Anthropic provider; searches billed by Anthropic)",
+      "vars": []
+    },
+    {
+      "key": "research.provider.searxng",
+      "en": "SearXNG on this machine (no key; local research service)",
+      "vars": []
+    },
+    {
+      "key": "research.provider.tavily",
+      "en": "Tavily (your API key)",
+      "vars": []
+    },
+    {
+      "key": "research.question",
+      "en": "What should I research?",
+      "vars": []
+    },
+    {
+      "key": "research.unverified",
+      "en": "{count} quotes could not be verified — marked ⚠️ in the note",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "spell.en.unknown",
+      "en": "“{word}”: unknown word (English dictionary on this device)",
+      "vars": [
+        "word"
+      ]
+    },
+    {
+      "key": "spell.he.downloadConfirm",
+      "en": "Download the Hebrew dictionary (Hspell word list, 5.7 MB, AGPL-3.0) from GitHub to this device? Your text is never sent anywhere; spelling is checked here.",
+      "vars": []
+    },
+    {
+      "key": "spell.he.failed",
+      "en": "Could not download the dictionary: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "spell.he.installed",
+      "en": "Hebrew dictionary installed ({n} words). Turn on the grammar check to see it.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "spell.he.removeConfirm",
+      "en": "Remove the Hebrew dictionary from this device?",
+      "vars": []
+    },
+    {
+      "key": "spell.he.removed",
+      "en": "Hebrew dictionary removed.",
+      "vars": []
+    },
+    {
+      "key": "suggest.needsSource",
+      "en": "Switch to Source or Split view to work with suggestions at the cursor",
+      "vars": []
+    },
+    {
+      "key": "suggest.none",
+      "en": "This document has no suggestions",
+      "vars": []
+    },
+    {
+      "key": "suggest.noneAtCursor",
+      "en": "No suggestion at the cursor",
+      "vars": []
+    },
+    {
+      "key": "tts.networkVoice.body",
+      "en": "This device has no voice for this note. Your browser offers voices that synthesize on the provider's servers, so the note's text would be sent there. The privacy ledger records each use.",
+      "vars": []
+    },
+    {
+      "key": "tts.networkVoice.ok",
+      "en": "Use network voices",
+      "vars": []
+    },
+    {
+      "key": "tts.networkVoice.title",
+      "en": "Use a network voice?",
+      "vars": []
+    },
+    {
+      "key": "voice.languagePrompt",
+      "en": "Select language for voice recognition:",
+      "vars": []
+    },
+    {
+      "key": "voice.memo.recording",
+      "en": "Recording memo…",
+      "vars": []
+    },
+    {
+      "key": "voice.memo.stop",
+      "en": "⏹ Stop & insert",
+      "vars": []
+    },
+    {
+      "key": "voice.recording",
+      "en": "Recording... ({lang})",
+      "vars": [
+        "lang"
+      ]
+    },
+    {
+      "key": "voice.stop",
+      "en": "⏹ Stop",
+      "vars": []
+    }
+  ]
+}

@@ -202,7 +202,7 @@ export function AiInlinePromptOverlay() {
         >
           <span>
             <kbd style={{ background: "hsl(var(--bg-muted))", border: "1px solid hsl(var(--border))", borderRadius: 3, padding: "1px 4px", fontSize: 10, fontFamily: "monospace" }}>↵</kbd>{" "}
-            Submit
+            {t("ai.inline.submit")}
           </span>
           <span>
             <kbd style={{ background: "hsl(var(--bg-muted))", border: "1px solid hsl(var(--border))", borderRadius: 3, padding: "1px 4px", fontSize: 10, fontFamily: "monospace" }}>Esc</kbd>{" "}

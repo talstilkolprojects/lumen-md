@@ -1,0 +1,10 @@
+{
+  "cmd.ai.analyse.ask": "What do you want to know about the table in this note?",
+  "analyst.working": "Analysing the table on this device…",
+  "analyst.done": "Answer: {answer} — checked by running the program twice",
+  "analyst.noTable": "No table found in this note: add a ```csv block, a Markdown table or comma-separated lines.",
+  "analyst.run": "The analysis program failed: {error}",
+  "analyst.parse": "The analysis program gave no answer: {error}",
+  "analyst.mismatch": "The two runs disagree, so no answer is given: {error}",
+  "analyst.failed": "Analysis failed: {error}"
+}

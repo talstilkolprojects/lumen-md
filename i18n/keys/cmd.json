@@ -1,0 +1,1967 @@
+{
+  "version": 2,
+  "domain": "cmd",
+  "source": "src/i18n/locales/en/cmd.json",
+  "entries": [
+    {
+      "key": "cmd.ai.actionItems",
+      "en": "AI: Extract Action Items",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.actionItems.hint",
+      "en": "Pull a task list out of meeting notes",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.agentSettings",
+      "en": "AI: Settings (local agents)",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.agentSettings.hint",
+      "en": "Policy, executor, models, endpoints and recent runs in one place",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.analyse",
+      "en": "AI: Analyse the table",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.analyse.ask",
+      "en": "What do you want to know about the table in this note?",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.analyse.hint",
+      "en": "Answer a question about this note's table with Python on this device",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.autofill",
+      "en": "AI: Fill Properties for Notes…",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.autofill.hint",
+      "en": "Proposes missing properties for the notes of a folder; nothing is written until you approve",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.batch",
+      "en": "AI: Batch over a Folder (half price)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.batch.hint",
+      "en": "Tag, summarise or translate many notes through the provider's batch API — results within 24 h",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.batchCheck",
+      "en": "AI: Check Batch Jobs",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.batchCheck.hint",
+      "en": "Fetch finished batch results and apply them to your notes",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.batchJobs",
+      "en": "AI: Batch Jobs — Progress, Pause, Resume",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.batchJobs.hint",
+      "en": "Live progress of batch jobs, with pause, resume and cancel",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.cache",
+      "en": "AI: Answer Cache…",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.cache.hint",
+      "en": "Reuse identical answers (tags, translation, diagrams) instead of paying again",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.cancel",
+      "en": "AI: Cancel",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.cancel.hint",
+      "en": "Stops every running AI request (Esc does the same)",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.chart",
+      "en": "AI: Chart from Data",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.chart.hint",
+      "en": "Turn CSV or table data into an ECharts chart",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.diagram",
+      "en": "AI: Diagram from Text",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.diagram.hint",
+      "en": "Generate a Mermaid diagram from the document",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.doctor",
+      "en": "AI: Doctor (diagnose local AI)",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.doctor.hint",
+      "en": "Checks Ollama, CORS, models, WebGPU, storage and services — each with its fix",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.fim",
+      "en": "AI: Local Autocomplete (FIM) — On/Off",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.fim.hint",
+      "en": "Complete as you type with a coding model on this device; Tab accepts, Esc dismisses",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.local.hint",
+      "en": "Run prompts on-device — private, offline",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.local.off",
+      "en": "Switch to cloud AI (OpenAI)",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.local.on",
+      "en": "Switch to local AI (WebGPU)",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.localModels",
+      "en": "AI: Local Models (WebGPU)",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.localModels.hint",
+      "en": "Choose and download the in-browser model for this GPU",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.marks.export",
+      "en": "Export Markdown with AI marks",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.marks.hint",
+      "en": "Text the AI wrote looks lighter until you edit it",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.marks.toggle",
+      "en": "AI text marks: show / hide",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.meetingNotes",
+      "en": "AI: Meeting Notes from a Transcript",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.meetingNotes.hint",
+      "en": "Turn the transcript in this note (or the selection) into decisions, tasks and open questions",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.mode",
+      "en": "AI: Cost Mode (Economy / Balanced / Quality)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.mode.hint",
+      "en": "Route small tasks to cheaper models and send only the relevant parts of your notes",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.ollama",
+      "en": "AI: Ollama Models",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.ollama.hint",
+      "en": "Switch to a local Ollama model",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.outline",
+      "en": "AI: Generate Outline",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.outline.hint",
+      "en": "Add AI-suggested headings",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.policy",
+      "en": "AI: Local or Cloud Policy",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.policy.hint",
+      "en": "Where AI requests may go: this device only, local first, or the cloud",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.privacy.hint",
+      "en": "When ON, every AI prompt runs locally via @mlc-ai/web-llm. No data leaves your browser.",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.privacy.off",
+      "en": "Privacy Mode: turn off (use cloud AI)",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.privacy.on",
+      "en": "Privacy Mode: run AI on this device (WebGPU)",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.privacyLedger",
+      "en": "Privacy ledger…",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.privacyLedger.hint",
+      "en": "Every AI network request: where, how much, why",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.productAgent",
+      "en": "AI: Create Product",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.productAgent.hint",
+      "en": "Generate a complete project from a description",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.provider",
+      "en": "AI: Switch Provider",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.provider.hint",
+      "en": "Switch AI provider: OpenAI, Claude, Gemini, Mistral, Ollama, or local WebGPU",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.rerankModel",
+      "en": "AI: Rerank search with the local model",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.rerankModel.hint",
+      "en": "On: bge-reranker-v2-m3 on this device (one-time ~570 MB download). Off: fast word matching.",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.reviewChanges",
+      "en": "AI: Review changes proposed by agents",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.reviewChanges.hint",
+      "en": "Each change an agent proposed, as a diff, to approve or reject",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.settings",
+      "en": "AI Settings…",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.settings.hint",
+      "en": "Configure your OpenAI API key + per-doc options",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.styleProfile",
+      "en": "AI: My Writing Style (local)",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.styleProfile.hint",
+      "en": "Learn your style from your notes on this device and use it when the AI writes — instead of fine-tuning",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.summarize",
+      "en": "AI: Summarize This Note (on this device)",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.summarize.hint",
+      "en": "A short summary whose every sentence is copied from the note and checked against it",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.trace",
+      "en": "AI: Recent Agent Runs",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.trace.hint",
+      "en": "Executor, model, tools, retries and failures of the last runs on this device",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.translate",
+      "en": "AI: Translate Document",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.translate.hint",
+      "en": "Translate the whole document, preserving formatting",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.usage",
+      "en": "AI: Usage & Cost This Month",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.usage.hint",
+      "en": "Requests, tokens and estimated cost per provider on this device",
+      "vars": []
+    },
+    {
+      "key": "cmd.app.checkUpdates",
+      "en": "Check for updates…",
+      "vars": []
+    },
+    {
+      "key": "cmd.app.checkUpdates.hint",
+      "en": "Desktop app: asks the release server for a newer, signed version",
+      "vars": []
+    },
+    {
+      "key": "cmd.audit.open",
+      "en": "Audit log…",
+      "vars": []
+    },
+    {
+      "key": "cmd.audit.open.hint",
+      "en": "Inspect every recorded mutation; export CSV for compliance",
+      "vars": []
+    },
+    {
+      "key": "cmd.billing.manage",
+      "en": "Billing: Manage subscription",
+      "vars": []
+    },
+    {
+      "key": "cmd.billing.managePersonal",
+      "en": "Billing: Manage personal subscription",
+      "vars": []
+    },
+    {
+      "key": "cmd.billing.upgradePro",
+      "en": "Billing: Upgrade to Pro",
+      "vars": []
+    },
+    {
+      "key": "cmd.billing.upgradeTeam",
+      "en": "Billing: Upgrade to Team",
+      "vars": []
+    },
+    {
+      "key": "cmd.canvas.migrate",
+      "en": "🎨 Canvas: convert tldraw canvases to Excalidraw",
+      "vars": []
+    },
+    {
+      "key": "cmd.canvas.migrate.hint",
+      "en": "the .tldr files stay as backups",
+      "vars": []
+    },
+    {
+      "key": "cmd.clip.clipboard",
+      "en": "Clip from clipboard",
+      "vars": []
+    },
+    {
+      "key": "cmd.clip.clipboard.hint",
+      "en": "Copy part of a page in the browser, then save it to the library",
+      "vars": []
+    },
+    {
+      "key": "cmd.clip.url",
+      "en": "Clip a web page…",
+      "vars": []
+    },
+    {
+      "key": "cmd.clip.url.hint",
+      "en": "Saves the readable part of a page into your library, with source and date",
+      "vars": []
+    },
+    {
+      "key": "cmd.cmdPalette",
+      "en": "Command palette",
+      "vars": []
+    },
+    {
+      "key": "cmd.collab.addComment",
+      "en": "💬 Add comment on selection",
+      "vars": []
+    },
+    {
+      "key": "cmd.collab.addComment.hint",
+      "en": "Anchor a thread to the highlighted text",
+      "vars": []
+    },
+    {
+      "key": "cmd.collab.copy",
+      "en": "Copy collab share link",
+      "vars": []
+    },
+    {
+      "key": "cmd.collab.join",
+      "en": "Join collaboration room…",
+      "vars": []
+    },
+    {
+      "key": "cmd.collab.join.hint",
+      "en": "paste a room name",
+      "vars": []
+    },
+    {
+      "key": "cmd.collab.leave",
+      "en": "Leave collaboration",
+      "vars": []
+    },
+    {
+      "key": "cmd.collab.start",
+      "en": "Start collaboration…",
+      "vars": []
+    },
+    {
+      "key": "cmd.collab.start.hint",
+      "en": "share a live editing room (P2P over WebRTC)",
+      "vars": []
+    },
+    {
+      "key": "cmd.collab.viewComments",
+      "en": "💬 View comments panel",
+      "vars": []
+    },
+    {
+      "key": "cmd.copyBlockLink",
+      "en": "Copy link to block",
+      "vars": []
+    },
+    {
+      "key": "cmd.copyBlockLink.hint",
+      "en": "Gives the block at the cursor a ^id and copies [[Note#^id]]",
+      "vars": []
+    },
+    {
+      "key": "cmd.edit.formatCodeBlock",
+      "en": "Format code block at cursor",
+      "vars": []
+    },
+    {
+      "key": "cmd.edit.formatCodeBlock.hint",
+      "en": "Prettier: format the fenced block under the cursor",
+      "vars": []
+    },
+    {
+      "key": "cmd.edit.formatDocument",
+      "en": "Format document",
+      "vars": []
+    },
+    {
+      "key": "cmd.edit.formatDocument.hint",
+      "en": "Prettier: tidy Markdown, frontmatter and fenced code",
+      "vars": []
+    },
+    {
+      "key": "cmd.feedback",
+      "en": "Help: Send feedback",
+      "vars": []
+    },
+    {
+      "key": "cmd.feedback.hint",
+      "en": "A GitHub issue or text to copy — nothing is sent without your click",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportAdoc",
+      "en": "Export to AsciiDoc",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportAdoc.hint",
+      "en": "Asciidoctor-compatible source",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportDocx",
+      "en": "Export to Word (.doc)",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportDocx.hint",
+      "en": "Download as Word document",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportEpub",
+      "en": "Export to EPUB",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportEpub.hint",
+      "en": "Package the document as an e-book (chapters split on H1)",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportHtml",
+      "en": "Export to HTML…",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportHtml.hint",
+      "en": "self-contained .html",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportIpynb",
+      "en": "Export to Jupyter (.ipynb)",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportIpynb.hint",
+      "en": "Notebook: fenced code blocks become cells",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportLatex",
+      "en": "Export to LaTeX (.tex)",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportLatex.hint",
+      "en": "Article-class LaTeX with hyperref + listings",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportOpml",
+      "en": "Export to OPML",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportOpml.hint",
+      "en": "Outline interchange format (RSS readers, mind-maps)",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportOrg",
+      "en": "Export to Org-mode",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportOrg.hint",
+      "en": "Emacs Org-mode source",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportPdf",
+      "en": "Export to PDF / Print",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportPdf.hint",
+      "en": "colorful, exactly as shown",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportPptx",
+      "en": "Export to PowerPoint (.pptx)",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportPptx.hint",
+      "en": "One slide per H1/H2 heading (or --- separators)",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportReveal",
+      "en": "Export to Slides (Reveal.js)",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportReveal.hint",
+      "en": "Turn --- separated sections into a presentation",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportRst",
+      "en": "Export to reStructuredText",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportRst.hint",
+      "en": "Sphinx / Read-the-Docs friendly",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportRtf",
+      "en": "Export to RTF",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportRtf.hint",
+      "en": "Rich Text Format — opens in Pages, Word, TextEdit",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportSite",
+      "en": "Export to Static Site",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportSite.hint",
+      "en": "Multi-page HTML site with sidebar nav + RSS (pages split on H1)",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.new",
+      "en": "New document",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.open",
+      "en": "Open file…",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.openRecent",
+      "en": "Open: {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "cmd.file.openSampleWorkspace",
+      "en": "Open sample workspace",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.openSampleWorkspace.hint",
+      "en": "linked demo notes: wiki-links, tags, database, chart, diagram",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.print",
+      "en": "Print / Save as PDF…",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.print.hint",
+      "en": "browser print dialog",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.publishSite",
+      "en": "Publish site…",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.publishSite.hint",
+      "en": "Your notes as a website: GitHub Pages or a .zip",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.removeRecent",
+      "en": "Remove from recents: {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "cmd.file.save",
+      "en": "Save",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.saveAs",
+      "en": "Save as…",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.saveToWorkspace",
+      "en": "Save to workspace",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.saveToWorkspace.hint",
+      "en": "store this doc in OPFS",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.trash",
+      "en": "Trash…",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.trash.hint",
+      "en": "Restore deleted notes (kept 30 days)",
+      "vars": []
+    },
+    {
+      "key": "cmd.fineTune.open",
+      "en": "AI fine-tune settings…",
+      "vars": []
+    },
+    {
+      "key": "cmd.fineTune.open.hint",
+      "en": "Train a personal model on your writing style (Pro)",
+      "vars": []
+    },
+    {
+      "key": "cmd.focusMode",
+      "en": "Focus mode",
+      "vars": []
+    },
+    {
+      "key": "cmd.git.clone",
+      "en": "Git: clone repository…",
+      "vars": []
+    },
+    {
+      "key": "cmd.git.clone.hint",
+      "en": "imports text files into the workspace",
+      "vars": []
+    },
+    {
+      "key": "cmd.git.commit",
+      "en": "Git: commit & push current repo…",
+      "vars": []
+    },
+    {
+      "key": "cmd.git.commit.hint",
+      "en": "uses the saved token + identity",
+      "vars": []
+    },
+    {
+      "key": "cmd.git.corsProxy",
+      "en": "Git: set CORS proxy…",
+      "vars": []
+    },
+    {
+      "key": "cmd.git.corsProxy.hint",
+      "en": "needed to clone from GitHub in a browser",
+      "vars": []
+    },
+    {
+      "key": "cmd.git.identity",
+      "en": "Git: set commit identity…",
+      "vars": []
+    },
+    {
+      "key": "cmd.git.pull",
+      "en": "Git: pull current repo",
+      "vars": []
+    },
+    {
+      "key": "cmd.git.pull.hint",
+      "en": "fetches and merges remote changes",
+      "vars": []
+    },
+    {
+      "key": "cmd.git.status",
+      "en": "Git: status (current repo)",
+      "vars": []
+    },
+    {
+      "key": "cmd.git.token",
+      "en": "Git: set access token…",
+      "vars": []
+    },
+    {
+      "key": "cmd.git.token.hint",
+      "en": "stored locally (IndexedDB)",
+      "vars": []
+    },
+    {
+      "key": "cmd.git.watch",
+      "en": "Git: toggle watch-mode auto-pull",
+      "vars": []
+    },
+    {
+      "key": "cmd.git.watch.hint",
+      "en": "Polls the remote every 5 min and pulls on change",
+      "vars": []
+    },
+    {
+      "key": "cmd.help.credits",
+      "en": "Credits & model licences",
+      "vars": []
+    },
+    {
+      "key": "cmd.help.setup",
+      "en": "Set up Lumen…",
+      "vars": []
+    },
+    {
+      "key": "cmd.help.setup.hint",
+      "en": "Language, vault location, look and a sample vault: the first-run setup again",
+      "vars": []
+    },
+    {
+      "key": "cmd.image.altText",
+      "en": "Images: alt text from OCR / local vision",
+      "vars": []
+    },
+    {
+      "key": "cmd.image.altText.hint",
+      "en": "Reads text in this note's images on this device (Hebrew + English); describes the rest with a local Ollama vision model",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.abc",
+      "en": "Insert music notation (ABC)",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.bibtex",
+      "en": "Insert BibTeX bibliography",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.bibtex.hint",
+      "en": "renders as a numbered references list",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.callout",
+      "en": "Insert callout",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.callout.hint",
+      "en": ":::note / :::tip / …",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.chart",
+      "en": "Insert chart",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.chart.hint",
+      "en": "ECharts spec",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.csv",
+      "en": "Insert CSV data",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.csv.hint",
+      "en": "auto-table + chart",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.embed",
+      "en": "Insert embed",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.embed.hint",
+      "en": "YouTube · Vimeo · Figma · CodePen…",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.graphviz",
+      "en": "Insert Graphviz / DOT",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.htmlpreview",
+      "en": "Insert live HTML preview",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.htmlpreview.hint",
+      "en": "sandboxed HTML/CSS/JS in an iframe",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.json",
+      "en": "Insert JSON table",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.map",
+      "en": "Insert map",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.math",
+      "en": "Insert math block",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.mermaid",
+      "en": "Insert diagram (Mermaid)",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.model",
+      "en": "Insert 3D model",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.model.hint",
+      "en": ".glb / .gltf",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.plantuml",
+      "en": "Insert PlantUML",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.plantuml.hint",
+      "en": "rendered via kroki.io",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.table",
+      "en": "Insert Table (Editor)",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.table.hint",
+      "en": "visual table builder",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.wikilink",
+      "en": "Insert wiki-link",
+      "vars": []
+    },
+    {
+      "key": "cmd.new",
+      "en": "New document",
+      "vars": []
+    },
+    {
+      "key": "cmd.nikud.add",
+      "en": "Hebrew: add niqqud",
+      "vars": []
+    },
+    {
+      "key": "cmd.nikud.add.hint",
+      "en": "Point the selection (or the whole note) on this device",
+      "vars": []
+    },
+    {
+      "key": "cmd.nikud.partial",
+      "en": "Hebrew: add partial niqqud",
+      "vars": []
+    },
+    {
+      "key": "cmd.nikud.partial.hint",
+      "en": "Point only the words that could be read more than one way",
+      "vars": []
+    },
+    {
+      "key": "cmd.nikud.remove",
+      "en": "Hebrew: remove niqqud",
+      "vars": []
+    },
+    {
+      "key": "cmd.nikud.remove.hint",
+      "en": "Strip the vowel points from the selection (or the whole note)",
+      "vars": []
+    },
+    {
+      "key": "cmd.note.read",
+      "en": "Read aloud",
+      "vars": []
+    },
+    {
+      "key": "cmd.note.read.hint",
+      "en": "Reads this note with your system's voices (Hebrew included); run again to stop",
+      "vars": []
+    },
+    {
+      "key": "cmd.note.today",
+      "en": "Today's note",
+      "vars": []
+    },
+    {
+      "key": "cmd.note.today.hint",
+      "en": "Open or create the daily note for today (journal/YYYY-MM-DD.md)",
+      "vars": []
+    },
+    {
+      "key": "cmd.open",
+      "en": "Open file…",
+      "vars": []
+    },
+    {
+      "key": "cmd.pdf.open",
+      "en": "Open a PDF for reading…",
+      "vars": []
+    },
+    {
+      "key": "cmd.pdf.open.hint",
+      "en": "Highlights go to a .pdf.md note",
+      "vars": []
+    },
+    {
+      "key": "cmd.preview",
+      "en": "Preview only",
+      "vars": []
+    },
+    {
+      "key": "cmd.research.ask",
+      "en": "🔎 Research: Ask a Question…",
+      "vars": []
+    },
+    {
+      "key": "cmd.research.ask.hint",
+      "en": "Searches the web, reads sources and writes a note with a quoted footnote for every claim",
+      "vars": []
+    },
+    {
+      "key": "cmd.research.settings",
+      "en": "🔎 Research: Settings…",
+      "vars": []
+    },
+    {
+      "key": "cmd.research.settings.hint",
+      "en": "Claude web search, or Brave / Tavily with your own key",
+      "vars": []
+    },
+    {
+      "key": "cmd.research.verify",
+      "en": "🔎 Research: Verify Citations in This Note",
+      "vars": []
+    },
+    {
+      "key": "cmd.research.verify.hint",
+      "en": "Checks every footnote link is alive and its quote really appears on the page",
+      "vars": []
+    },
+    {
+      "key": "cmd.save",
+      "en": "Save",
+      "vars": []
+    },
+    {
+      "key": "cmd.saveAs",
+      "en": "Save as…",
+      "vars": []
+    },
+    {
+      "key": "cmd.search",
+      "en": "Search workspace…",
+      "vars": []
+    },
+    {
+      "key": "cmd.security.decrypt",
+      "en": "🔓 Decrypt Document",
+      "vars": []
+    },
+    {
+      "key": "cmd.security.decrypt.hint",
+      "en": "Enter password to decrypt",
+      "vars": []
+    },
+    {
+      "key": "cmd.security.encrypt",
+      "en": "🔒 Encrypt Document",
+      "vars": []
+    },
+    {
+      "key": "cmd.security.encrypt.hint",
+      "en": "AES-256-GCM",
+      "vars": []
+    },
+    {
+      "key": "cmd.settings.organization",
+      "en": "Organization settings…",
+      "vars": []
+    },
+    {
+      "key": "cmd.settings.organization.hint",
+      "en": "Name, allowed email domains, SSO status, members and audit log",
+      "vars": []
+    },
+    {
+      "key": "cmd.settings.theme",
+      "en": "Theme settings…",
+      "vars": []
+    },
+    {
+      "key": "cmd.settings.theme.hint",
+      "en": "Accent color, editor font, size, line height, content width and presets",
+      "vars": []
+    },
+    {
+      "key": "cmd.settings.trustedKeys",
+      "en": "Trusted plugin signing keys…",
+      "vars": []
+    },
+    {
+      "key": "cmd.settings.trustedKeys.hint",
+      "en": "List, add or remove the Ed25519 keys plugins must be signed with",
+      "vars": []
+    },
+    {
+      "key": "cmd.shortcuts",
+      "en": "Keyboard shortcuts",
+      "vars": []
+    },
+    {
+      "key": "cmd.source",
+      "en": "Source only",
+      "vars": []
+    },
+    {
+      "key": "cmd.spell.hebrewDictionary",
+      "en": "Hebrew spelling: dictionary (download / remove)",
+      "vars": []
+    },
+    {
+      "key": "cmd.spell.hebrewDictionary.hint",
+      "en": "Offline Hebrew spell check (Hspell, 5.7 MB, AGPL)",
+      "vars": []
+    },
+    {
+      "key": "cmd.split",
+      "en": "Split editor + preview",
+      "vars": []
+    },
+    {
+      "key": "cmd.suggest.accept",
+      "en": "Accept suggestion at cursor",
+      "vars": []
+    },
+    {
+      "key": "cmd.suggest.accept.hint",
+      "en": "Apply the tracked change under the cursor",
+      "vars": []
+    },
+    {
+      "key": "cmd.suggest.acceptAll",
+      "en": "Accept all suggestions",
+      "vars": []
+    },
+    {
+      "key": "cmd.suggest.next",
+      "en": "Next suggestion",
+      "vars": []
+    },
+    {
+      "key": "cmd.suggest.prev",
+      "en": "Previous suggestion",
+      "vars": []
+    },
+    {
+      "key": "cmd.suggest.reject",
+      "en": "Reject suggestion at cursor",
+      "vars": []
+    },
+    {
+      "key": "cmd.suggest.reject.hint",
+      "en": "Discard the tracked change under the cursor",
+      "vars": []
+    },
+    {
+      "key": "cmd.suggest.rejectAll",
+      "en": "Reject all suggestions",
+      "vars": []
+    },
+    {
+      "key": "cmd.suggest.toggle.hint",
+      "en": "Record edits in the source editor as CriticMarkup suggestions",
+      "vars": []
+    },
+    {
+      "key": "cmd.suggest.toggle.off",
+      "en": "Turn off suggesting mode",
+      "vars": []
+    },
+    {
+      "key": "cmd.suggest.toggle.on",
+      "en": "Turn on suggesting mode (track changes)",
+      "vars": []
+    },
+    {
+      "key": "cmd.sync.open",
+      "en": "Encrypted sync…",
+      "vars": []
+    },
+    {
+      "key": "cmd.tasks.open",
+      "en": "Tasks: Today and upcoming",
+      "vars": []
+    },
+    {
+      "key": "cmd.tasks.open.hint",
+      "en": "Overdue, today and the next 7 days, from every note",
+      "vars": []
+    },
+    {
+      "key": "cmd.templates.open",
+      "en": "Browse template gallery",
+      "vars": []
+    },
+    {
+      "key": "cmd.templates.open.hint",
+      "en": "Browse + install community templates",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.autoTag",
+      "en": "🏷️ Auto-tag this note",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.autoTag.hint",
+      "en": "AI proposes tags from your existing vocabulary",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.grammar",
+      "en": "Check grammar (LanguageTool)",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.grammar.hint",
+      "en": "Free public LanguageTool service",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.suggestLinks",
+      "en": "🔗 Suggest wiki-links",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.suggestLinks.hint",
+      "en": "AI scans your workspace for relevant cross-links",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.vaultDoctor",
+      "en": "🩺 Vault Doctor: Check Workspace",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.vaultDoctor.hint",
+      "en": "Broken links, orphans, near-duplicates, missing alt text — no AI, nothing leaves your device",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.vaultDoctorFix",
+      "en": "🩺 Vault Doctor: Apply Suggested Link Fixes",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.vaultDoctorFix.hint",
+      "en": "Rewrite broken [[links]] that have exactly one close match",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.voice",
+      "en": "🎙 Voice to Markdown",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.voice.hint",
+      "en": "Speech recognition → text",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.voiceMemo",
+      "en": "🎙 Voice memo (transcribe + summarize)",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.voiceMemo.hint",
+      "en": "Record, transcribe with Whisper (on this device under a local AI policy), summarize, and insert a memo block",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.writingGoal.hint",
+      "en": "A subtle progress banner above the editor",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.writingGoal.set",
+      "en": "✍️ Writing goal: {{words}} words/day",
+      "vars": [
+        "words"
+      ]
+    },
+    {
+      "key": "cmd.tools.writingGoal.unset",
+      "en": "✍️ Set a daily writing goal",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.digest",
+      "en": "Digest: what changed",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.digest.hint",
+      "en": "A note with every note changed since the last digest, and their open tasks",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.encryptAtRest",
+      "en": "🔐 Vault encryption…",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.encryptAtRest.hint",
+      "en": "Encrypt the whole vault at rest; lock, recovery key",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.export",
+      "en": "Export the whole vault…",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.export.hint",
+      "en": "Every note and attachment, with folders, as a .zip or into a folder",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.import",
+      "en": "Import notes (zip / folder: Obsidian, Notion, Lumen)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.import.hint",
+      "en": "Into a new folder — nothing existing is overwritten",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.openFolder",
+      "en": "Open a folder as the vault…",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.openFolder.hint",
+      "en": "Work in an existing folder (for example an Obsidian vault) without copying. Notes in browser storage stay where they are.",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.toBrowser",
+      "en": "Move the vault back to browser storage",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.toBrowser.hint",
+      "en": "Copies every note from the folder into the browser's private storage, checks it, then works there. The folder is not changed.",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.toFolder",
+      "en": "Move the vault to a folder…",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.toFolder.hint",
+      "en": "Copies every note to a folder on this computer, checks each file byte for byte, then works there. Nothing is deleted.",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.autoSave.hint",
+      "en": "every {interval}s",
+      "vars": [
+        "interval"
+      ]
+    },
+    {
+      "key": "cmd.view.autoSave.off",
+      "en": "Disable Auto-Save",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.autoSave.on",
+      "en": "Enable Auto-Save",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.backlinks",
+      "en": "Toggle backlinks",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.backlinks.hint",
+      "en": "files linking here via [[wiki]]",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.calendar",
+      "en": "Show / hide the calendar",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.calendar.hint",
+      "en": "Month calendar of daily notes under the file tree",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.canvas",
+      "en": "🎨 Canvas / Whiteboard",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.canvas.hint",
+      "en": "Infinite canvas for visual notes",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.findReplace",
+      "en": "Find & Replace",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.grammarCheck.hint",
+      "en": "Underlines grammar / style / typo issues. Set VITE_LANGUAGETOOL_URL to self-host.",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.grammarCheck.off",
+      "en": "Disable grammar check",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.grammarCheck.on",
+      "en": "Enable grammar check (LanguageTool)",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.graphView",
+      "en": "Knowledge Graph",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.graphView.hint",
+      "en": "visual map of file connections",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.language",
+      "en": "Language: {label}",
+      "vars": [
+        "label"
+      ]
+    },
+    {
+      "key": "cmd.view.language.ltr",
+      "en": "left-to-right",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.language.rtl",
+      "en": "right-to-left",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.outline",
+      "en": "Toggle outline",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.pageView",
+      "en": "📄 Page View (A4)",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.pageView.off",
+      "en": "Currently OFF",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.pageView.on",
+      "en": "Currently ON",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.plugins",
+      "en": "🔌 Plugin Gallery",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.plugins.hint",
+      "en": "Browse & install plugins",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.preview",
+      "en": "Preview only",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.properties",
+      "en": "Properties: edit this note's frontmatter",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.properties.hint",
+      "en": "Text, number, date, list, checkbox and link fields; only the edited value changes",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.rtl.off",
+      "en": "Text Direction: LTR (Left to Right)",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.rtl.on",
+      "en": "Text Direction: RTL (Right to Left)",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.runtimeMetrics",
+      "en": "Runtime metrics",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.runtimeMetrics.hint",
+      "en": "Inspect retries, timeouts, and latency by transport category",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.search",
+      "en": "Search workspace…",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.smartSearch",
+      "en": "Smart search (semantic + keyword)",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.smartSearch.hint",
+      "en": "Hybrid retrieval over your notes",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.source",
+      "en": "Source view",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.spellCheck.hint",
+      "en": "Browser-native red squiggle underlines",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.spellCheck.off",
+      "en": "Disable spell-check",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.spellCheck.on",
+      "en": "Enable spell-check",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.split",
+      "en": "Split view",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.tags",
+      "en": "View tags",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.tags.hint",
+      "en": "Browse the workspace by frontmatter tag",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.theme.toDark",
+      "en": "Switch to dark theme",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.theme.toLight",
+      "en": "Switch to light theme",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.tsChecks.hint",
+      "en": "Type errors and completions in ```ts blocks (downloads the TypeScript compiler, ~1.3 MB)",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.tsChecks.off",
+      "en": "Disable TypeScript checks in code blocks",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.tsChecks.on",
+      "en": "Enable TypeScript checks in code blocks",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.typewriter.hint",
+      "en": "Keep the active line vertically centred",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.typewriter.off",
+      "en": "Disable typewriter mode",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.typewriter.on",
+      "en": "Enable typewriter mode",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.versionHistory",
+      "en": "Version History",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.versionHistory.hint",
+      "en": "restore previous versions",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.vim.off",
+      "en": "Disable Vim mode",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.vim.on",
+      "en": "Enable Vim mode",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.workspace",
+      "en": "Toggle workspace",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.workspace.hint",
+      "en": "in-browser file storage (OPFS)",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.wysiwyg",
+      "en": "WYSIWYG",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.wysiwyg.hint",
+      "en": "rich-text editing",
+      "vars": []
+    },
+    {
+      "key": "cmd.voice.meeting",
+      "en": "🎙 Meeting notes (record on this device)",
+      "vars": []
+    },
+    {
+      "key": "cmd.voice.meeting.hint",
+      "en": "Record a meeting, transcribe it on this device, and insert its decisions, tasks with owner and date, and open questions",
+      "vars": []
+    },
+    {
+      "key": "desc.commandPalette",
+      "en": "Search and run any command",
+      "vars": []
+    },
+    {
+      "key": "desc.copy",
+      "en": "Copy selection to clipboard",
+      "vars": []
+    },
+    {
+      "key": "desc.cut",
+      "en": "Cut selection to clipboard",
+      "vars": []
+    },
+    {
+      "key": "desc.darkMode",
+      "en": "Switch to dark theme",
+      "vars": []
+    },
+    {
+      "key": "desc.delete",
+      "en": "Delete the current selection",
+      "vars": []
+    },
+    {
+      "key": "desc.exportHtml",
+      "en": "Bundle preview as a standalone .html file",
+      "vars": []
+    },
+    {
+      "key": "desc.exportPdf",
+      "en": "Render document to a PDF file",
+      "vars": []
+    },
+    {
+      "key": "desc.focusMode",
+      "en": "Hide all chrome and write distraction-free",
+      "vars": []
+    },
+    {
+      "key": "desc.insertSmart",
+      "en": "Paste a URL, CSV, JSON, SQL, Mermaid… auto-detected",
+      "vars": []
+    },
+    {
+      "key": "desc.insertText",
+      "en": "Paste markdown, HTML, or code and convert to preview",
+      "vars": []
+    },
+    {
+      "key": "desc.lightMode",
+      "en": "Switch to light theme",
+      "vars": []
+    },
+    {
+      "key": "desc.new",
+      "en": "Start a blank markdown document",
+      "vars": []
+    },
+    {
+      "key": "desc.open",
+      "en": "Open a markdown file from disk",
+      "vars": []
+    },
+    {
+      "key": "desc.openWelcome",
+      "en": "Open the bundled tour with every feature demoed",
+      "vars": []
+    },
+    {
+      "key": "desc.outline",
+      "en": "Show or hide the table-of-contents panel",
+      "vars": []
+    },
+    {
+      "key": "desc.pageView",
+      "en": "Show document as a printed page",
+      "vars": []
+    },
+    {
+      "key": "desc.paste",
+      "en": "Paste from clipboard (auto-converts HTML to markdown)",
+      "vars": []
+    },
+    {
+      "key": "desc.print",
+      "en": "Open browser print dialog",
+      "vars": []
+    },
+    {
+      "key": "desc.redo",
+      "en": "Re-apply a reverted action",
+      "vars": []
+    },
+    {
+      "key": "desc.save",
+      "en": "Save the current document",
+      "vars": []
+    },
+    {
+      "key": "desc.saveAs",
+      "en": "Save under a new file name",
+      "vars": []
+    },
+    {
+      "key": "desc.selectAll",
+      "en": "Select all text in the editor",
+      "vars": []
+    },
+    {
+      "key": "desc.shortcuts",
+      "en": "Browse all keyboard shortcuts",
+      "vars": []
+    },
+    {
+      "key": "desc.splitAxis.auto",
+      "en": "Follow viewport — vertical on phones, horizontal on desktops",
+      "vars": []
+    },
+    {
+      "key": "desc.splitAxis.horizontal",
+      "en": "Editor on the left, preview on the right",
+      "vars": []
+    },
+    {
+      "key": "desc.splitAxis.vertical",
+      "en": "Editor on top, preview below",
+      "vars": []
+    },
+    {
+      "key": "desc.syncScroll",
+      "en": "Keep editor and preview scroll positions linked",
+      "vars": []
+    },
+    {
+      "key": "desc.toggleRtl",
+      "en": "Flip layout direction (right-to-left ↔ left-to-right)",
+      "vars": []
+    },
+    {
+      "key": "desc.tour",
+      "en": "Replay the welcome tour",
+      "vars": []
+    },
+    {
+      "key": "desc.undo",
+      "en": "Revert the last action",
+      "vars": []
+    },
+    {
+      "key": "desc.viewPreview",
+      "en": "Rendered output only",
+      "vars": []
+    },
+    {
+      "key": "desc.viewSource",
+      "en": "Raw markdown editor",
+      "vars": []
+    },
+    {
+      "key": "desc.viewSplit",
+      "en": "Editor on the left, preview on the right",
+      "vars": []
+    },
+    {
+      "key": "desc.viewWysiwyg",
+      "en": "Rich-text editor with live formatting",
+      "vars": []
+    },
+    {
+      "key": "desc.workspace",
+      "en": "Toggle the file tree sidebar",
+      "vars": []
+    },
+    {
+      "key": "group.ai",
+      "en": "AI Prompts",
+      "vars": []
+    },
+    {
+      "key": "group.collab",
+      "en": "Collab",
+      "vars": []
+    },
+    {
+      "key": "group.edit",
+      "en": "Edit",
+      "vars": []
+    },
+    {
+      "key": "group.file",
+      "en": "File",
+      "vars": []
+    },
+    {
+      "key": "group.git",
+      "en": "Git",
+      "vars": []
+    },
+    {
+      "key": "group.insert",
+      "en": "Insert",
+      "vars": []
+    },
+    {
+      "key": "group.plugins",
+      "en": "Plugins",
+      "vars": []
+    },
+    {
+      "key": "group.recent",
+      "en": "Recent",
+      "vars": []
+    },
+    {
+      "key": "group.security",
+      "en": "Security",
+      "vars": []
+    },
+    {
+      "key": "group.templates",
+      "en": "Templates",
+      "vars": []
+    },
+    {
+      "key": "group.tools",
+      "en": "Tools",
+      "vars": []
+    },
+    {
+      "key": "group.view",
+      "en": "View",
+      "vars": []
+    },
+    {
+      "key": "palette.close",
+      "en": "close",
+      "vars": []
+    },
+    {
+      "key": "palette.navigate",
+      "en": "navigate",
+      "vars": []
+    },
+    {
+      "key": "palette.noMatch",
+      "en": "No matching commands",
+      "vars": []
+    },
+    {
+      "key": "palette.placeholder",
+      "en": "Type a command, or search…",
+      "vars": []
+    },
+    {
+      "key": "palette.select",
+      "en": "select",
+      "vars": []
+    }
+  ]
+}

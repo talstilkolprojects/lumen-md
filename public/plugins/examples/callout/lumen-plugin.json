@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "lumen.example.callout",
+  "name": "Callout cards",
+  "version": "1.0.0",
+  "description": "Renders ```callout code blocks as cards: the first line is the title, `- [ ]` lines become a checklist, [[links]] open notes.",
+  "author": "Lumen",
+  "license": "MIT",
+  "main": "main.js",
+  "capabilities": [
+    { "id": "renderer", "reason": "Renders the `callout` code-block language" },
+    { "id": "storage", "reason": "Remembers which checklist items you ticked" }
+  ]
+}

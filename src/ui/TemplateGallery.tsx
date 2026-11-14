@@ -10,7 +10,8 @@
  * surfaces have a consistent affordance.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { useFocusTrap } from "./useFocusTrap";
 import { Download, Search, Star, Tag, X, Loader2, Check } from "lucide-react";
 import {
   fetchMarketplaceItems,
@@ -104,12 +105,17 @@ export function TemplateGallery({ open, onClose }: Props) {
     }
   }
 
+  // Focus stays in the dialog while it is open and returns on close; Escape closes it (plan 10.1).
+  const trapRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(trapRef, { active: open, onEscape: onClose });
+
   if (!open) return null;
 
   return (
     <div
       className="cmd-palette-backdrop"
       onClick={onClose}
+      ref={trapRef}
       role="dialog"
       aria-modal="true"
       aria-label={t("templates.title")}
@@ -291,7 +297,7 @@ export function TemplateGallery({ open, onClose }: Props) {
           {!loading && !error && filtered.length > 0 && (
             <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
               {filtered.map((tpl) => (
-                <li key={tpl.id}>
+                <li key={tpl.id} data-testid="template-card">
                   <TemplateRow
                     template={tpl}
                     installing={installing.has(tpl.id)}

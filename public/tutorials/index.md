@@ -5,7 +5,7 @@
 Cover the absolute basics: creating a new note, typing markdown, switching between Source / Split / Preview mode, and saving to disk.
 
 **Script outline:**
-1. Open lumen.md in browser (0:00)
+1. Open Lumen in the browser (0:00)
 2. Click "New Document" (0:10)
 3. Type `# Hello World` — see live preview (0:30)
 4. Press ⌘E to toggle Split mode (0:45)

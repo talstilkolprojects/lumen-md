@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, type CSSProperties } from "react";
 import { t } from "../i18n";
+import { arrowStep, inlineDirectionOf } from "../lib/logicalKeys";
 
 interface TourStep {
   target: string; // CSS selector
@@ -93,11 +94,13 @@ export function OnboardingTour({ open, onClose, actions }: Props) {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
-      if (e.key === "ArrowRight" || e.key === "Enter") {
+      // The "next" arrow points the way the interface reads (← in Hebrew).
+      const dirStep = arrowStep(e.key, inlineDirectionOf(null));
+      if (dirStep === 1 || e.key === "Enter") {
         if (step < STEPS.length - 1) setStep(step + 1);
         else onClose();
       }
-      if (e.key === "ArrowLeft" && step > 0) setStep(step - 1);
+      if (dirStep === -1 && step > 0) setStep(step - 1);
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -249,8 +252,19 @@ export function OnboardingTour({ open, onClose, actions }: Props) {
             marginTop: 14,
           }}
         >
-          <span style={{ fontSize: 11, color: "hsl(var(--fg-muted))" }}>
-            {step + 1} / {STEPS.length}
+          <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 11, color: "hsl(var(--fg-muted))" }}>
+              {step + 1} / {STEPS.length}
+            </span>
+            {step < STEPS.length - 1 && (
+              <button
+                type="button"
+                onClick={onClose}
+                style={{ padding: 0, border: 0, background: "none", color: "hsl(var(--fg-muted))", fontSize: 11, textDecoration: "underline", cursor: "pointer", fontFamily: "inherit" }}
+              >
+                {t("onboard.tour.skip")}
+              </button>
+            )}
           </span>
         <div style={{ display: "flex", gap: 8 }}>
           {step > 0 && (

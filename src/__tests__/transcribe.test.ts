@@ -1,20 +1,50 @@
 /**
  * Tests for the voice-memo transcription module (γ.4 / F2).
  *
- * The local backend (`@xenova/transformers`) is dynamic-imported and
- * fails fast in jsdom (no WebGPU + the package isn't installed).
- * The cloud backend hits OpenAI's `/v1/audio/transcriptions`. We mock
- * `fetch` and `useAppStore` to drive both paths deterministically.
+ * The local backend (transformers.js in a worker) is mocked through
+ * `../ai/transformersEngine`. The cloud backend hits OpenAI's
+ * `/v1/audio/transcriptions`; it is used under the `cloud` policy or as
+ * the `local-first` fallback. We mock `fetch` and `useAppStore` to drive
+ * both paths deterministically.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useAppStore } from "../store/useStore";
 import { transcribe, summarizeMemo, formatVoiceMemo } from "../ai/transcribe";
 
+const decode = vi.fn(async (_b: Blob) => new Float32Array(16_000));
+const local = vi.fn(async (_s: Float32Array, _o: unknown) => ({ text: " local text ", language: "he" }));
+vi.mock("../ai/transformersEngine", () => ({
+  decodeAudioTo16k: (b: Blob) => decode(b),
+  transcribeAudio: (s: Float32Array, o: unknown) => local(s, o),
+}));
+
 beforeEach(() => {
   vi.unstubAllGlobals();
-  // Reset Privacy Mode + AI key between tests.
+  decode.mockClear();
+  local.mockClear();
+  // Reset Privacy Mode + AI key between tests; cloud tests pin the cloud policy.
   useAppStore.setState({ useLocalAi: false, aiKey: "sk-test" });
+  localStorage.setItem("lumen.ai.policy", "cloud");
+});
+
+describe("transcribe — forced local (dictation's recorded fallback, plan 6.1)", () => {
+  it("never reaches the cloud under the cloud policy", async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    const result = await transcribe(new Blob(["x"], { type: "audio/webm" }), { language: "en", local: true });
+    expect(result).toMatchObject({ text: "local text", backend: "local" });
+    expect(local).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+  it("fails instead of falling back to the cloud under local-first", async () => {
+    localStorage.setItem("lumen.ai.policy", "local-first");
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    local.mockRejectedValueOnce(new Error("no wasm"));
+    await expect(transcribe(new Blob(["x"]), { local: true })).rejects.toThrow(/no wasm/);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
 });
 
 describe("transcribe — cloud backend", () => {
@@ -67,13 +97,33 @@ describe("transcribe — cloud backend", () => {
   });
 });
 
-describe("transcribe — local backend (Privacy Mode)", () => {
-  it("falls through to AiError when @xenova/transformers isn't installed", async () => {
-    useAppStore.setState({ useLocalAi: true });
-    // The dynamic import will fail in test env (package not installed).
-    await expect(transcribe(new Blob(["x"]))).rejects.toThrow(
-      /Local transcription requires/,
-    );
+describe("transcribe — local backend (transformers.js)", () => {
+  it("is the default: decodes to 16 kHz and transcribes in the worker, reducing the language tag", async () => {
+    localStorage.setItem("lumen.ai.policy", "local-only");
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    const result = await transcribe(new Blob(["x"], { type: "audio/webm" }), { language: "he-IL" });
+    expect(result).toMatchObject({ text: "local text", backend: "local" });
+    expect(decode).toHaveBeenCalledTimes(1);
+    expect(local.mock.calls[0][1]).toMatchObject({ language: "he" });
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("under local-only a local failure is final; under local-first the cloud takes over", async () => {
+    local.mockRejectedValueOnce(new Error("no gpu"));
+    localStorage.setItem("lumen.ai.policy", "local-only");
+    await expect(transcribe(new Blob(["x"]))).rejects.toThrow("no gpu");
+    local.mockRejectedValueOnce(new Error("no gpu"));
+    localStorage.setItem("lumen.ai.policy", "local-first");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ text: "cloud text" }), { status: 200 })));
+    expect(await transcribe(new Blob(["x"]))).toMatchObject({ text: "cloud text", backend: "cloud" });
+  });
+
+  it("rejects an empty recording before loading any model", async () => {
+    localStorage.setItem("lumen.ai.policy", "local-only");
+    decode.mockResolvedValueOnce(new Float32Array(0));
+    await expect(transcribe(new Blob([]))).rejects.toThrow(/empty/);
+    expect(local).not.toHaveBeenCalled();
   });
 });
 

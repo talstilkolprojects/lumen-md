@@ -1,12 +1,18 @@
 /**
  * Shared webR (R compiled to WebAssembly) instance for ```live-r blocks.
- * Booted on the first Run and reused by every R block on the page; the
- * runtime is self-hosted under /webr/ (scripts/copy-webr.mjs), so it needs
- * no CDN and works offline. webR runs R in its own worker; the PostMessage
- * channel is used because the app is not cross-origin isolated
- * (no SharedArrayBuffer).
+ * Booted on the first Run and reused by every R block on the page. webR is
+ * served same-origin under /webr/: the user's own download (webrInstall.ts,
+ * plan W1.34: webR is GPL-3.0 and Lumen's build ships none of it) from the
+ * service worker's runtime cache, or a deployment's own copy
+ * (`npm run webr:local`). Either way it works offline once there. webR
+ * runs R in its own worker; the PostMessage channel is used because the app
+ * is not cross-origin isolated (no SharedArrayBuffer).
  */
 import type { WebR as WebRType } from "webr";
+import { loadWebRModule } from "./webrModule";
+import { webrBaseUrl } from "./webrPaths";
+
+export { webrBaseUrl };
 
 export interface ROutputLine {
   kind: "out" | "err" | "warn" | "msg";
@@ -23,16 +29,17 @@ let instance: Promise<WebRType> | null = null;
 /** Download + boot budget for the runtime (~45 MB on a slow connection). */
 export const BOOT_TIMEOUT_MS = 180_000;
 
-/** Where the runtime is served (respects a non-root Vite base path). */
-export function webrBaseUrl(base: string = import.meta.env?.BASE_URL ?? "/"): string {
-  return `${base.replace(/\/?$/, "/")}webr/`;
+/** Is webR on this device (downloaded) or served by this deployment? */
+export async function webrAvailable(): Promise<boolean> {
+  const { webrAvailable: available } = await import("./webrInstall");
+  return available();
 }
 
 /** Boot (once) and return the shared webR instance. */
 export function getWebR(): Promise<WebRType> {
   if (!instance) {
     instance = (async () => {
-      const { WebR, ChannelType } = await import("webr");
+      const { WebR, ChannelType } = await loadWebRModule();
       const webR = new WebR({
         baseUrl: webrBaseUrl(),
         channelType: ChannelType.PostMessage,
@@ -46,7 +53,7 @@ export function getWebR(): Promise<WebRType> {
           try {
             webR.close();
           } catch {
-            /* not started */
+            /* why: not started */
           }
           reject(new Error("webR boot timed out"));
         }, BOOT_TIMEOUT_MS);
@@ -74,7 +81,7 @@ export async function resetWebR(): Promise<void> {
   try {
     (await cur)?.close();
   } catch {
-    /* already gone */
+    /* why: already gone */
   }
 }
 
@@ -116,7 +123,7 @@ const closeBitmap = (b: ImageBitmap | null | undefined) => {
   try {
     b?.close?.();
   } catch {
-    /* already closed */
+    /* why: already closed */
   }
 };
 
@@ -189,7 +196,7 @@ export function runR(
     hooks.onStart?.();
     return runROnce(webR, code, plot);
   });
-  chain = run.catch(() => {});
+  chain = run.catch(() => { /* why: the caller gets run's own rejection; this copy only keeps the queue going */ });
   return run;
 }
 

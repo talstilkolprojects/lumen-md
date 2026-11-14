@@ -1,0 +1,49 @@
+name: Keychain
+
+# The OS keychain store for API keys and tokens (T36, plan 2.5) is only
+# compiled on macOS and Windows, so its tests run there. The crate is
+# src-tauri/keychain on its own: this job builds keyring and the tests, not
+# Tauri, and stays cheap.
+on:
+  push:
+    branches: [main]
+    paths: ['src-tauri/keychain/**', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock', '.github/workflows/keychain.yml']
+  pull_request:
+    paths: ['src-tauri/keychain/**', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock', '.github/workflows/keychain.yml']
+
+concurrency:
+  group: keychain-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  keychain:
+    name: keychain tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # Pinned images, not -latest: a runner upgrade must not change what passes.
+        os: [macos-14, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: keychain
+      - name: cargo test (lumen-keychain only)
+        shell: bash
+        # One test thread: the tests share the user's keychain / credential store.
+        # The result line goes out as an annotation (readable from the API), and
+        # the job fails if fewer than the 7 tests ran (3 chunking + 4 real keychain): a cfg slip must
+        # not turn this into a green run of nothing.
+        run: |
+          set -o pipefail
+          cargo test --manifest-path src-tauri/Cargo.toml -p lumen-keychain --locked -- --test-threads=1 2>&1 | tee test.log
+          passed=$(grep -m1 -oE 'test result: ok\. [0-9]+ passed' test.log | grep -oE '[0-9]+' | head -1)
+          echo "::notice title=keychain tests (${{ matrix.os }})::$(grep -m1 'test result' test.log); $(grep -cE '^test tests::.* ok$' test.log) keychain tests ok"
+          [ "${passed:-0}" -ge 7 ] || { echo "::error::only ${passed:-0} keychain tests ran (expected 7)"; exit 1; }

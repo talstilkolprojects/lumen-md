@@ -3,10 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Same policy as the deploy headers (rendered from security/policy.json
+         by `npm run headers:write`), also where no header is sent: Vite dev,
+         Tauri, Capacitor. The nonce is for WebKit, which does not match
+         'self' in this sandboxed (opaque-origin) frame. It is fixed and
+         public on purpose, the build's one nonce (vite.config.ts
+         html.cspNonce): nothing can inject markup into this page, and the
+         user's project runs as blob: modules, which the policy allows anyway. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'nonce-lumen-livejs-runner' blob: 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * data: blob:; font-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'" />
     <title>Lumen Playground runner</title>
     <meta name="robots" content="noindex" />
   </head>
   <body>
-    <script type="module" src="/src/playground/runner.ts"></script>
+    <script type="module" nonce="lumen-livejs-runner" src="/src/playground/runner.ts"></script>
   </body>
 </html>

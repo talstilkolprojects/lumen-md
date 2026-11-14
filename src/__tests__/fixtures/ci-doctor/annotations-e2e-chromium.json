@@ -1,0 +1,51 @@
+[
+  {
+    "path": ".github",
+    "start_line": 364,
+    "annotation_level": "failure",
+    "title": "",
+    "message": "Process completed with exit code 1."
+  },
+  {
+    "path": ".github",
+    "start_line": 358,
+    "annotation_level": "notice",
+    "title": "🎭 Playwright Run Summary",
+    "message": "  1 failed\n    [chromium] › e2e/data-safety.spec.ts:202:1 › the whole vault exports as a zip ──────────────────\n  1 flaky\n    [chromium] › e2e/live-exec.spec.ts:192:1 › live-ruby executes real Ruby via ruby.wasm in a sandboxed worker \n  1 skipped\n  127 passed (7.4m)"
+  },
+  {
+    "path": "e2e/live-exec.spec.ts",
+    "start_line": 218,
+    "annotation_level": "failure",
+    "title": "[chromium] › e2e/live-exec.spec.ts:192:1 › live-ruby executes real Ruby via ruby.wasm in a sandboxed worker",
+    "message": "  2) [chromium] › e2e/live-exec.spec.ts:192:1 › live-ruby executes real Ruby via ruby.wasm in a sandboxed worker \n    Error: live-ruby never printed 5091. data-state=?\n    block: ?\n    console.info: [lumen] [web-vitals] {name: CLS, value: 0.003091480599509345, rating: good, url: http://localhost:5173/}\n    console.info: [lumen] [web-vitals] {name: CLS, value: 0.003091480599509345, rating: good, url: http://localhost:5173/}\n    console.debug: [vite] connecting..."
+  },
+  {
+    "path": "e2e/live-exec.spec.ts",
+    "start_line": 0,
+    "annotation_level": "failure",
+    "title": "[chromium] › e2e/live-exec.spec.ts:192:1 › live-ruby executes real Ruby via ruby.wasm in a sandboxed worker",
+    "message": "  2) [chromium] › e2e/live-exec.spec.ts:192:1 › live-ruby executes real Ruby via ruby.wasm in a sandboxed worker \n    Test timeout of 240000ms exceeded."
+  },
+  {
+    "path": "e2e/data-safety.spec.ts",
+    "start_line": 213,
+    "annotation_level": "failure",
+    "title": "[chromium] › e2e/data-safety.spec.ts:202:1 › the whole vault exports as a zip",
+    "message": "  1) [chromium] › e2e/data-safety.spec.ts:202:1 › the whole vault exports as a zip ─────────────────\n\n    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────\n    TimeoutError: page.waitForEvent: Timeout 15000ms exceeded while waiting for event \"download\"\n    =========================== logs ===========================\n    waiting for event \"download\""
+  },
+  {
+    "path": "e2e/data-safety.spec.ts",
+    "start_line": 213,
+    "annotation_level": "failure",
+    "title": "[chromium] › e2e/data-safety.spec.ts:202:1 › the whole vault exports as a zip",
+    "message": "  1) [chromium] › e2e/data-safety.spec.ts:202:1 › the whole vault exports as a zip ─────────────────\n    TimeoutError: page.waitForEvent: Timeout 15000ms exceeded while waiting for event \"download\"\n    =========================== logs ===========================\n    waiting for event \"download\"\n    ============================================================\n"
+  },
+  {
+    "path": ".github",
+    "start_line": 1,
+    "annotation_level": "notice",
+    "title": "",
+    "message": "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\""
+  }
+]

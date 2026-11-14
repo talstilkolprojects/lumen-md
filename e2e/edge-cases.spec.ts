@@ -27,8 +27,6 @@ test("malformed code fence (unclosed ```) doesn't crash the preview", async ({
   // Unclosed fence — extends to EOF. The CM6 highlighter handles it
   // gracefully; the question is whether the preview pipeline survives.
   await editor.fill("# Hello\n\n```\nlet x = 1;\nlet y = 2;\n");
-  // Wait for any rendering to settle.
-  await page.waitForTimeout(800);
   // Preview should still show the H1 — unclosed fence shouldn't take
   // the whole pipeline down.
   await expect(
@@ -43,7 +41,6 @@ test("unmatched [[wiki link bracket doesn't crash the renderer", async ({
   const editor = page.locator(".cm-content").first();
   await editor.click();
   await editor.fill("# Notes\n\nThis [[link is broken without closing brackets.");
-  await page.waitForTimeout(500);
   await expect(
     page.locator(".markdown-preview h1, [data-preview-root] h1").first(),
   ).toBeVisible({ timeout: 5000 });
@@ -58,7 +55,8 @@ test("a 10 000-character doc renders without freezing", async ({ page }) => {
     `Paragraph ${i + 1}. Lorem ipsum dolor sit amet, consectetur adipiscing elit.`,
   )].join("\n");
   await editor.fill(big);
-  await page.waitForTimeout(1500);
+  // The preview catches up with the last paragraph, then the heading is checked.
+  await expect(page.locator(".prose-lumen p").last()).toContainText("Paragraph 200.", { timeout: 15_000 });
   // Preview heading should still be there.
   await expect(
     page.locator(".markdown-preview h1, [data-preview-root] h1").first(),
@@ -78,18 +76,18 @@ test("a 10 000-character doc renders without freezing", async ({ page }) => {
 test("malformed JSON inside ```json renders without crashing", async ({
   page,
 }) => {
+  // Listen before typing: an error during the render would otherwise be missed.
+  const pageErrors: string[] = [];
+  page.on("pageerror", (e) => pageErrors.push(e.message));
   await page.keyboard.press("Meta+2");
   const editor = page.locator(".cm-content").first();
   await editor.click();
   await editor.fill(
     "```json\n{ not valid json, missing quotes around: key }\n```\n",
   );
-  await page.waitForTimeout(500);
-  // The pipeline should still mount; JSON-table is a separate block.
-  // We just need no page error.
-  const pageErrors: string[] = [];
-  page.on("pageerror", (e) => pageErrors.push(e.message));
-  await page.waitForTimeout(500);
+  // A plain ```json fence is a highlighted code block, not a json-table:
+  // it renders as code and the page stays error-free.
+  await expect(page.locator(".prose-lumen .code-block, .prose-lumen pre").first()).toContainText("not valid json", { timeout: 10_000 });
   expect(pageErrors).toEqual([]);
 });
 
@@ -104,15 +102,17 @@ test("rapid mode flips (Meta+1234) don't leave the editor in a broken state", as
   // After all that thrashing, settling on split mode should still
   // render both panes.
   await page.keyboard.press("Meta+2");
-  await page.waitForTimeout(500);
   await expect(page.locator(".cm-content").first()).toBeVisible();
+  await expect(page.locator(".prose-lumen").first()).toBeVisible();
 });
 
 test("Escape closes any open menu / dialog reliably", async ({ page }) => {
   // Open file menu, then Escape.
   await page.locator("header button:has-text('File')").click();
+  const menu = page.locator('[role="menu"]').first();
+  await expect(menu).toBeVisible({ timeout: 3000 });
   await page.keyboard.press("Escape");
-  await page.waitForTimeout(150);
+  await expect(menu).toBeHidden({ timeout: 3000 });
   // Open palette, then Escape.
   await page.keyboard.press("Meta+K");
   const palette = page.locator('[role="dialog"][aria-modal="true"]');
@@ -121,9 +121,10 @@ test("Escape closes any open menu / dialog reliably", async ({ page }) => {
   await expect(palette).not.toBeVisible({ timeout: 2000 });
   // Open shortcuts dialog, then Escape.
   await page.keyboard.press("Meta+/");
-  await page.waitForTimeout(200);
+  const shortcuts = page.locator('[role="dialog"][aria-label="Keyboard shortcuts"]');
+  await expect(shortcuts).toBeVisible({ timeout: 3000 });
   await page.keyboard.press("Escape");
-  await page.waitForTimeout(200);
+  await expect(shortcuts).toBeHidden({ timeout: 3000 });
   // App should be in normal state.
   await expect(page.locator(".cm-content").first()).toBeVisible();
 });
@@ -144,11 +145,7 @@ test("typing then Cmd+Z undoes the last keystrokes", async ({ page }) => {
   // undo silently no-ops. Use Control+Z everywhere except darwin.
   await editor.click();
   const undoCombo = process.platform === "darwin" ? "Meta+Z" : "Control+Z";
-  for (let i = 0; i < 10; i += 1) {
-    await page.keyboard.press(undoCombo);
-    await page.waitForTimeout(30);
-  }
+  for (let i = 0; i < 10; i += 1) await page.keyboard.press(undoCombo);
   // After undo, the " — added" suffix should be gone.
-  const text = (await editor.textContent()) ?? "";
-  expect(text).not.toContain(" — added");
+  await expect(editor).not.toContainText(" — added", { timeout: 5000 });
 });

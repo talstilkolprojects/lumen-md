@@ -1,0 +1,18 @@
+{
+  "ai.doctor.check.cspLocal": "This build may reach the local services (CSP: ports 8010 and 8787)",
+  "ai.doctor.check.engines": "On-device engines",
+  "ai.doctor.check.modelHost": "Host for Lumen's converted models (Opus-MT, Nakdimon)",
+  "ai.doctor.check.translate": "Local translation (Chrome, Opus-MT, M2M100)",
+  "ai.doctor.check.spellEn": "English spelling on this device",
+  "ai.doctor.check.spellHe": "Hebrew spelling dictionary",
+  "ai.doctor.check.nikud": "Hebrew niqqud on this device",
+  "ai.doctor.check.caption": "Image descriptions on this device",
+  "ai.doctor.fix.modelHost": "No host is set for the converted models yet (plan 15.9); until then these engines stay off and the AI model is used instead.",
+  "ai.doctor.fix.modelChecksums": "The host is set but the registry has no files for these models; run the conversion workflow and copy its checksums:",
+  "ai.doctor.fix.translate": "No local layer for English↔Hebrew yet: M2M100 (MIT, about 630 MB) downloads on first use with your consent, or use Chrome with its translator.",
+  "ai.doctor.fix.reload": "The dictionary did not load; reload the page and check again:",
+  "ai.doctor.fix.spellHe": "Download the Hebrew dictionary (Hspell, 5.7 MB, AGPL-3.0) to this device:",
+  "ai.doctor.action.downloadHebrewDictionary": "Download (5.7 MB)",
+  "ai.doctor.action.useLocalServices": "Use the local services",
+  "ai.doctor.report": "Report a problem…"
+}

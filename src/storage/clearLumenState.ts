@@ -36,7 +36,7 @@ export function clearAllLumenLocalStorage(options?: {
     }
     if (keepTourDone) localStorage.setItem("lumen-tour-done", "1");
   } catch {
-    /* localStorage may be unavailable — silent no-op. */
+    /* why: localStorage may be unavailable — silent no-op. */
   }
   return cleared;
 }

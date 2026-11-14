@@ -1,17 +1,11 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Smart-paste — pasting HTML into the source editor converts it to
- * markdown via the `htmlToMarkdown` helper before insertion.
- *
- * This test used to import `/src/storage/fileFormats.ts` directly via
- * page.evaluate, which works against the Vite dev server (it serves
- * source files at literal paths) but FAILS against the production
- * build (everything is bundled — the source URL 404s). Caught in
- * round-16 when the full e2e suite ran against `vite preview`.
- *
- * Now expose the helper on window.__lumen at startup so the test can
- * call it via the public surface — works in both dev and prod.
+ * Smart Insert (⌘⇧V): pasted HTML becomes markdown before it lands in
+ * the note. Two layers: the converter on the public test surface
+ * (`window.__lumen.htmlToMarkdown`, set at startup — works against the
+ * dev server and the production bundle alike, so there is no skip), and
+ * the user path through the dialog into the editor.
  */
 
 test.beforeEach(async ({ page }) => {
@@ -20,51 +14,39 @@ test.beforeEach(async ({ page }) => {
     localStorage.removeItem("lumen-md");
   });
   await page.goto("/");
-  await page
-    .locator("header")
-    .first()
-    .waitFor({ state: "visible", timeout: 5000 });
+  await expect(page.locator(".cm-content").first()).toContainText("Welcome to", { timeout: 15_000 });
 });
 
 test("htmlToMarkdown utility round-trips bold + heading", async ({ page }) => {
-  // The conversion logic lives in `src/storage/fileFormats.ts`. The
-  // pipeline already imports `htmlToMarkdown` in `App.tsx`, which
-  // means the function is in the main bundle. We expose it on
-  // window.__lumen for testability (gated by NODE_ENV — see App.tsx).
-  //
-  // Falls back to a dynamic source import for the dev server, which
-  // is how the test originally worked before bundled-only builds were
-  // tested.
-  const md = await page.evaluate(async () => {
-    interface LumenTestApi {
-      htmlToMarkdown?: (html: string) => string;
-    }
-    const w = window as unknown as Window & { __lumen?: LumenTestApi };
-    if (w.__lumen?.htmlToMarkdown) {
-      return w.__lumen.htmlToMarkdown(
-        "<h1>Hello</h1><p><strong>bold</strong> text</p>",
-      );
-    }
-    // Dev-server fallback — works against `vite` but not `vite preview`.
-    try {
-      const mod = (await import(
-        // @ts-expect-error vite resolves at runtime; prod-build URL 404s
-        "/src/storage/fileFormats.ts"
-      )) as { htmlToMarkdown: (html: string) => string };
-      return mod.htmlToMarkdown(
-        "<h1>Hello</h1><p><strong>bold</strong> text</p>",
-      );
-    } catch {
-      return null;
-    }
+  await page.waitForFunction(() => typeof (window as unknown as { __lumen?: { htmlToMarkdown?: unknown } }).__lumen?.htmlToMarkdown === "function", null, { timeout: 10_000 });
+  const md = await page.evaluate(() => {
+    const w = window as unknown as Window & { __lumen: { htmlToMarkdown: (html: string) => string } };
+    return w.__lumen.htmlToMarkdown("<h1>Hello</h1><p><strong>bold</strong> text</p>");
   });
-
-  if (md === null) {
-    // Prod build doesn't expose the dev-only path. Skip rather than
-    // fail — the dev server run already proves the helper works.
-    test.skip(true, "htmlToMarkdown not exposed in this build");
-    return;
-  }
   expect(md).toMatch(/^# Hello/);
   expect(md).toMatch(/\*\*bold\*\*/);
+});
+
+test("Smart Insert turns pasted HTML into markdown in the note", async ({ page }) => {
+  await page.keyboard.press("Meta+1"); // source
+  const source = page.locator(".cm-content").first();
+  await source.click();
+  await source.press("ControlOrMeta+a");
+  await source.fill("# Notes\n\n");
+
+  await page.keyboard.press("Meta+Shift+V");
+  const dialog = page.locator('[role="dialog"][aria-labelledby="insert-text-title"]');
+  await expect(dialog).toBeVisible({ timeout: 8000 });
+  const box = dialog.locator("textarea").first();
+  await box.fill("<h2>From the web</h2><p>Some <em>pasted</em> text with a <a href=\"https://example.com\">link</a>.</p><ul><li>one</li><li>two</li></ul>");
+  // The detector names the conversion before anything is inserted.
+  await expect(dialog).toContainText(/HTML → Markdown/i);
+  await page.keyboard.press("ControlOrMeta+Enter");
+  await expect(dialog).toBeHidden({ timeout: 5000 });
+
+  await expect(source).toContainText("## From the web");
+  await expect(source).toContainText("*pasted*");
+  await expect(source).toContainText("[link](https://example.com)");
+  await expect(source).toContainText("- one");
+  await expect(source).not.toContainText("<h2>");
 });

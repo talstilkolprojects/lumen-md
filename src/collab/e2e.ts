@@ -130,7 +130,7 @@ export function wireE2E(
   let chain: Promise<void> = Promise.resolve();
   const enqueue = (job: () => Promise<void>) => {
     chain = chain.then(job, job).catch(() => {
-      /* individual jobs report their own errors */
+      /* why: individual jobs report their own errors */
     });
   };
 

@@ -9,6 +9,7 @@ import { mkdirSync, copyFileSync, existsSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { stripSourceMapComments } from "./lib/stripSourceMaps.mjs";
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
@@ -38,4 +39,6 @@ for (const f of FILES) {
   bytes += statSync(src).size;
   copied++;
 }
+// Plan 11.5: no sourceMappingURL comments in what ships (the .map files are not copied).
+stripSourceMapComments(outDir);
 console.log(`copy-pyodide: ${copied} files → public/pyodide/ (${(bytes / 1e6).toFixed(1)} MB)`);

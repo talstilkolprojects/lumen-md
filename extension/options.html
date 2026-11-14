@@ -67,20 +67,15 @@
     <label for="url">Lumen URL</label>
     <input id="url" type="text" placeholder="http://localhost:5173" />
 
+    <label for="target">Send clips to</label>
+    <select id="target">
+      <option value="web">Lumen in the browser (the URL above)</option>
+      <option value="desktop">The Lumen desktop app (lumen://)</option>
+    </select>
+
     <button class="save" id="save">Save</button>
     <span class="ok" id="ok">Saved ✓</span>
 
-    <script>
-      const input = document.getElementById("url");
-      const ok = document.getElementById("ok");
-      chrome.storage.local.get({ lumenUrl: "http://localhost:5173" }).then(({ lumenUrl }) => {
-        input.value = lumenUrl;
-      });
-      document.getElementById("save").addEventListener("click", async () => {
-        await chrome.storage.local.set({ lumenUrl: input.value.trim() });
-        ok.classList.add("show");
-        setTimeout(() => ok.classList.remove("show"), 1200);
-      });
-    </script>
+    <script src="options.js"></script>
   </body>
 </html>

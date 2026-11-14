@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { checkGrammar, clearGrammarCache } from "../ai/grammar";
+import { checkGrammar, clearGrammarCache, __grammarCacheSize } from "../ai/grammar";
 
 describe("checkGrammar (offline paths)", () => {
   beforeEach(() => {
@@ -22,8 +22,8 @@ describe("checkGrammar (offline paths)", () => {
     expect(await checkGrammar("This is short.")).toEqual([]);
   });
 
-  it("clearGrammarCache resets the cache to empty without errors", () => {
+  it("clearGrammarCache resets the cache to empty", () => {
     clearGrammarCache();
-    expect(true).toBe(true);
+    expect(__grammarCacheSize()).toBe(0);
   });
 });

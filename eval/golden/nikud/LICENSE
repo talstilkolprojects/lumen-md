@@ -1,0 +1,24 @@
+Licences of eval/golden/nikud
+
+This folder holds data under the licences below. SOURCES.md names the licence, source and attribution of each part, and every data file repeats its part's licence in its `license` field. Local-only parts are never stored here; their licence is listed for completeness.
+
+========================================================================
+LicenseRef-PublicDomain — part(s): benyehuda
+========================================================================
+
+benyehuda: Project Ben-Yehuda volunteers, https://benyehuda.org. Changes: items were sampled and reformatted as JSON for this set.
+
+Public domain
+
+These texts are in the public domain. Project Ben-Yehuda (https://benyehuda.org) states in its dump's README: "All these works are in the public domain, so you are free to make any use of them, and do not need to ask for permission." Credit, as Project Ben-Yehuda asks: "Project Ben-Yehuda volunteers", https://benyehuda.org.
+
+========================================================================
+NOASSERTION — part(s): nakdimon (local-only)
+========================================================================
+
+nakdimon: Nakdimon, https://github.com/elazarg/nakdimon. Changes: items were sampled and reformatted as JSON for this set.
+
+No licence (local-only part)
+
+This part is never committed or distributed. Only ids and sha256 values are in selection/; `python -I scripts/golden/hf_build.py fetch-local` downloads the text for a local evaluation run into local/, which git ignores, and CI builds the test items.
+

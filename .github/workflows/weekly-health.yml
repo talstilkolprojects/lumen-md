@@ -1,0 +1,111 @@
+name: Weekly health
+
+# Weekly (plan 0.11): npm audit over every lockfile, cargo audit, npm
+# outdated and the licence check when the branch has one
+# (scripts/nightly/weekly-health.mjs), and mutation testing with Stryker on
+# two small core modules (stryker/stryker.config.json). Report only: the
+# gates live in the PR workflows. Reports: the reports-weekly-* artifacts and
+# the job summaries. Nothing is committed.
+on:
+  schedule:
+    - cron: "29 4 * * 1" # Mondays 04:29 UTC
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/weekly-health.yml
+      - scripts/nightly/weekly-health.mjs
+      - scripts/nightly/lib.mjs
+      - stryker/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-health-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependencies:
+    name: audits, outdated, licences
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CARGO_AUDIT_VERSION: 0.22.2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: 22, cache: npm }
+      # npm outdated compares against what is installed.
+      - run: npm ci
+      - uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
+        id: cargo-audit
+        with:
+          path: ~/.cargo-audit-bin
+          key: cargo-audit-${{ env.CARGO_AUDIT_VERSION }}-${{ runner.os }}
+      - name: Install cargo-audit
+        if: steps.cargo-audit.outputs.cache-hit != 'true'
+        run: cargo install cargo-audit --version "$CARGO_AUDIT_VERSION" --locked --root ~/.cargo-audit-bin
+      - name: Dependency health report
+        run: |
+          export PATH="$HOME/.cargo-audit-bin/bin:$PATH"
+          node scripts/nightly/weekly-health.mjs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: reports-weekly-health
+          path: reports/
+          retention-days: 90
+
+  mutation:
+    name: mutation testing (Stryker)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      STRYKER_VERSION: 9.6.1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      # Exact versions, not in package.json: only this job needs them. In a
+      # prefix of their own (npm install into this tree fails in arborist,
+      # "Cannot read properties of null (reading 'edgesOut')"); vitest and
+      # typescript are the project's own, linked in.
+      - name: Install Stryker
+        run: |
+          d="$RUNNER_TEMP/stryker"
+          mkdir -p "$d" && cd "$d"
+          npm init -y > /dev/null
+          npm install --legacy-peer-deps --ignore-scripts --no-audit --no-fund \
+            "@stryker-mutator/core@$STRYKER_VERSION" "@stryker-mutator/vitest-runner@$STRYKER_VERSION"
+          ln -sfn "$GITHUB_WORKSPACE/node_modules/vitest" node_modules/vitest
+          ln -sfn "$GITHUB_WORKSPACE/node_modules/typescript" node_modules/typescript
+      - name: Stryker
+        run: node "$RUNNER_TEMP/stryker/node_modules/@stryker-mutator/core/bin/stryker.js" run stryker/stryker.config.json
+      - name: Mutation score
+        if: always()
+        run: |
+          f=reports/mutation/mutation.json
+          [ -f "$f" ] || { echo "## Mutation testing: no report (Stryker did not finish)" >> "$GITHUB_STEP_SUMMARY"; exit 0; }
+          node -e '
+            const r = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+            const rows = [];
+            let k = 0, t = 0;
+            for (const [file, f] of Object.entries(r.files)) {
+              const c = (s) => f.mutants.filter((m) => s.includes(m.status)).length;
+              const killed = c(["Killed", "Timeout"]), valid = killed + c(["Survived", "NoCoverage"]);
+              k += killed; t += valid;
+              rows.push(`| ${file} | ${valid ? ((100 * killed) / valid).toFixed(1) : "–"}% | ${killed}/${valid} | ${c(["Survived"])} | ${c(["NoCoverage"])} |`);
+            }
+            console.log([`## Mutation testing: ${t ? ((100 * k) / t).toFixed(1) : "–"}% of ${t} mutants killed`, "", "| module | score | killed | survived | no coverage |", "|---|---|---|---|---|", ...rows].join("\n"));
+          ' "$f" | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: reports-weekly-mutation
+          path: reports/
+          retention-days: 90

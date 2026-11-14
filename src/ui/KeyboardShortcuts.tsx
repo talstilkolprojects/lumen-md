@@ -1,36 +1,15 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
+import { useFocusTrap } from "./useFocusTrap";
 import { t } from "../i18n";
+import { detectIsMac } from "../lib/detectIsMac";
+
+export { detectIsMac };
 
 interface Props {
   open: boolean;
   onClose: () => void;
 }
 
-/**
- * Detect whether the user is on macOS. We previously used
- * `navigator.platform` which is deprecated and unreliable — in
- * Playwright's chromium on macOS, navigator.platform is "MacIntel"
- * but in some embedded contexts (Tauri webview, electron) it returns
- * "Linux x86_64". Round-12 screenshot revealed the dialog showed
- * `Ctrl+S` etc. on macOS because of this. Prefer userAgentData
- * (modern Chromium+) and fall back to userAgent substring match.
- */
-export function detectIsMac(): boolean {
-  if (typeof navigator === "undefined") return false;
-  // Modern API — Chromium 90+, Edge, Opera.
-  const ua = (navigator as Navigator & {
-    userAgentData?: { platform?: string };
-  }).userAgentData;
-  if (ua?.platform) return /mac/i.test(ua.platform);
-  // Fallback: userAgent string ("Macintosh" is the canonical token).
-  if (navigator.userAgent) {
-    if (/Macintosh|Mac OS X|Mac_PowerPC/i.test(navigator.userAgent)) return true;
-  }
-  // Last resort: deprecated `platform`. Some build pipelines (sandboxed
-  // iframes, headless without ua) still expose it.
-  if (navigator.platform && /mac/i.test(navigator.platform)) return true;
-  return false;
-}
 
 function buildSections(mod: string) {
   return [
@@ -41,6 +20,7 @@ function buildSections(mod: string) {
         { keys: `${mod}+Shift+S`, label: () => t("cmd.saveAs") },
         { keys: `${mod}+O`, label: () => t("cmd.open") },
         { keys: `${mod}+N`, label: () => t("cmd.new") },
+        { keys: mod === "⌘" ? "⌥⌘N" : "Ctrl+Alt+N", label: () => t("capture.title") },
       ],
     },
     {
@@ -48,6 +28,7 @@ function buildSections(mod: string) {
       items: [
         { keys: `${mod}+Z`, label: () => "Undo" },
         { keys: `${mod}+Shift+Z`, label: () => "Redo" },
+        { keys: `${mod}+Z`, label: () => t("trash.undoShortcut") },
         { keys: `${mod}+X`, label: () => "Cut" },
         { keys: `${mod}+C`, label: () => "Copy" },
         { keys: `${mod}+V`, label: () => "Paste" },
@@ -63,14 +44,14 @@ function buildSections(mod: string) {
         { keys: `${mod}+2`, label: () => t("cmd.split") },
         { keys: `${mod}+3`, label: () => t("cmd.preview") },
         { keys: `${mod}+4`, label: () => "WYSIWYG" },
-        { keys: `${mod}+Shift+F`, label: () => t("cmd.focusMode") ?? "Focus Mode" },
+        { keys: `${mod}+Shift+F`, label: () => t("cmd.focusMode") },
       ],
     },
     {
       title: () => "Navigation",
       items: [
         { keys: `${mod}+K`, label: () => t("cmd.cmdPalette") },
-        { keys: `${mod}+/`, label: () => t("cmd.shortcuts") ?? "Keyboard Shortcuts" },
+        { keys: `${mod}+/`, label: () => t("cmd.shortcuts") },
         { keys: "Esc", label: () => t("palette.close") },
       ],
     },
@@ -87,17 +68,9 @@ export function KeyboardShortcuts({ open, onClose }: Props) {
     [],
   );
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  // Focus stays in the dialog while it is open and returns on close; Escape closes it (plan 10.1).
+  const trapRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(trapRef, { active: open, onEscape: onClose });
 
   if (!open) return null;
 
@@ -105,9 +78,10 @@ export function KeyboardShortcuts({ open, onClose }: Props) {
     <div
       className="cmd-palette-backdrop"
       onClick={onClose}
+      ref={trapRef}
       role="dialog"
       aria-modal="true"
-      aria-label="Keyboard Shortcuts"
+      aria-label={t("toolbar.shortcuts")}
     >
       <div
         ref={dialogRef}
@@ -134,7 +108,7 @@ export function KeyboardShortcuts({ open, onClose }: Props) {
             alignItems: "center",
           }}
         >
-          ⌨️ {t("cmd.shortcuts") ?? "Keyboard Shortcuts"}
+          ⌨️ {t("cmd.shortcuts")}
           <button
             onClick={onClose}
             style={{

@@ -1,4 +1,8 @@
 /**
+ * LEGACY — superseded by collab-server.mjs (Hocuspocus + SQLite, plan 3.6).
+ * The app no longer speaks this server's y-websocket protocol; it is kept
+ * only so an existing LevelDB store can still be read out.
+ *
  * Lumen persistent collab server (P2-03).
  *
  * Drop-in y-websocket signalling + storage backend. Each room becomes a Y.Doc
@@ -25,6 +29,14 @@
  *   mounted volume in production (docker-compose uses /data/yjs).
  *   LevelDB is the ONLY storage backend — there is no Postgres archive;
  *   DATABASE_URL is not read by this server.
+ *
+ * ── Access token (T49) ─────────────────────────────────────────────────────
+ *   COLLAB_TOKEN=<long random string> makes the server accept only clients
+ *   that connect with ?token=<the same string> (Lumen sends it from
+ *   Collab settings → "Server access token"). Without it, anyone who knows
+ *   a room name can read the room's (encrypted) updates and add their own.
+ *   Room names are 128-bit random and new rooms are end-to-end encrypted,
+ *   so the token is a second gate, not the only one.
  *
  * ── Health ────────────────────────────────────────────────────────────────
  *   GET /healthz and GET /health → 200 {"ok":true}
@@ -92,8 +104,16 @@ const server = http.createServer((req, res) => {
   res.end("Lumen persistent collab server\n");
 });
 
+const { tokenOk: checkToken } = require("./token");
+const COLLAB_TOKEN = process.env.COLLAB_TOKEN || "";
+const tokenOk = (url) => checkToken(url, COLLAB_TOKEN);
+
 const wss = new WebSocket.Server({ server });
 wss.on("connection", (conn, req) => {
+  if (!tokenOk(req.url || "/")) {
+    conn.close(4401, "unauthorized");
+    return;
+  }
   // The room name comes from the URL path: ws://host/room-name
   setupWSConnection(conn, req, {
     docName: req.url.slice(1).split("?")[0] || "default",
@@ -103,6 +123,7 @@ wss.on("connection", (conn, req) => {
 
 server.listen(PORT, () => {
   console.log(`Lumen persistent collab listening on :${PORT}`);
+  if (!COLLAB_TOKEN) console.warn("COLLAB_TOKEN is not set — any client that knows a room name can connect.");
   console.log(`Storage at ${STORAGE_DIR}`);
 });
 

@@ -1,0 +1,102 @@
+<h1 id="lumen-privacy-policy" dir="auto">Lumen Privacy Policy</h1>
+<p dir="auto"><strong>Last updated:</strong> 2026-05-22</p>
+<p dir="auto">Lumen is a local-first markdown editor. <strong>By default, no data leaves your device.</strong> This document describes what data Lumen handles, where it lives, and the few cases where data crosses the network.</p>
+<h2 id="tldr" dir="auto">TL;DR</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table dir="ltr"><thead><tr><th dir="auto">Data</th><th dir="auto">Where it lives</th><th dir="auto">Leaves your device?</th></tr></thead><tbody><tr><td dir="auto">Your documents</td><td dir="auto">OPFS (origin-private file system in your browser)</td><td dir="auto"><strong>No</strong></td></tr><tr><td dir="auto">Editor preferences (theme, locale, view mode, etc.)</td><td dir="auto"><code>localStorage[&quot;lumen-md&quot;]</code></td><td dir="auto"><strong>No</strong></td></tr><tr><td dir="auto">Search history</td><td dir="auto"><code>localStorage[&quot;lumen-search-history&quot;]</code></td><td dir="auto"><strong>No</strong></td></tr><tr><td dir="auto">Onboarding state</td><td dir="auto"><code>localStorage[&quot;lumen-tour-done&quot;]</code></td><td dir="auto"><strong>No</strong></td></tr><tr><td dir="auto">OAuth tokens (Google Drive, Dropbox)</td><td dir="auto"><code>localStorage[&quot;lumen.gdrive.token&quot;]</code>, <code>localStorage[&quot;lumen.dropbox.token&quot;]</code></td><td dir="auto">Only when <strong>you</strong> opt-in to cloud sync</td></tr><tr><td dir="auto">AI API key</td><td dir="auto">In-memory only (never persisted)</td><td dir="auto">Sent to the AI provider you configured (e.g. OpenAI) on each request</td></tr><tr><td dir="auto">Error reports</td><td dir="auto">Off by default.</td><td dir="auto">Only if <strong>you</strong> turn them on (status bar) <strong>and</strong> your operator configured <code>VITE_SENTRY_DSN</code>; note text, titles and paths are removed, and each report is listed in the privacy ledger</td></tr><tr><td dir="auto">Web vitals (page-speed metrics)</td><td dir="auto">In memory on your device</td><td dir="auto"><strong>No</strong>, never</td></tr><tr><td dir="auto">Collab session state</td><td dir="auto">Peer-to-peer over WebRTC</td><td dir="auto">Only between you and your collab peers</td></tr></tbody></table>
+<h2 id="local-storage-breakdown" dir="auto">Local storage breakdown</h2>
+<p dir="auto">Lumen uses two browser storage layers:</p>
+<ol dir="ltr">
+<li dir="ltr"><strong>OPFS</strong> for documents and assets. This is sandboxed per-origin and is the modern replacement for IndexedDB blobs. The contents of your workspace stay on your device unless you explicitly export, publish, or sync them.</li>
+<li dir="ltr"><strong>localStorage</strong> for small key/value preferences. The complete list of keys is namespaced under <code>lumen-*</code> and <code>lumen.*</code>. You can wipe all of it via the in-app &quot;Reset workspace state&quot; affordance (which calls <code>clearAllLumenLocalStorage()</code>).</li>
+</ol>
+<h2 id="cloud-sync-opt-in" dir="auto">Cloud sync (opt-in)</h2>
+<p dir="auto">If you configure Google Drive or Dropbox sync from Settings, Lumen will:</p>
+<ul dir="ltr">
+<li dir="ltr">Initiate an OAuth flow with the chosen provider.</li>
+<li dir="ltr">Store the returned access/refresh tokens in <code>localStorage</code>.</li>
+<li dir="ltr">Push and pull your workspace documents to/from the provider&#x27;s API.</li>
+</ul>
+<p dir="auto">Lumen does NOT proxy these requests through any Lumen-operated server. The browser talks directly to Google or Dropbox.</p>
+<p dir="auto">If you revoke the tokens (provider dashboard or in-app sign-out), sync stops immediately and the tokens are removed from <code>localStorage</code>.</p>
+<h2 id="ai-features-opt-in" dir="auto">AI features (opt-in)</h2>
+<p dir="auto">If you configure an AI provider (OpenAI by default) and enter an API key:</p>
+<ul dir="ltr">
+<li dir="ltr">The key is held in memory for the duration of your session only (never persisted to localStorage or any other storage).</li>
+<li dir="ltr">AI requests go directly from your browser to the provider&#x27;s API. Lumen does not proxy.</li>
+<li dir="ltr">Local-only AI is available via WebLLM (<code>@mlc-ai/web-llm</code>). When enabled, no AI requests leave your device.</li>
+</ul>
+<h2 id="collab-opt-in" dir="auto">Collab (opt-in)</h2>
+<p dir="auto">When you join a collab room:</p>
+<ul dir="ltr">
+<li dir="ltr">A Yjs document is shared peer-to-peer over WebRTC.</li>
+<li dir="ltr">The default signaling server is the public <code>wss://signaling.yjs.dev</code>. You can configure your own via Settings.</li>
+<li dir="ltr">Document changes are encrypted in transit (DTLS via WebRTC). Lumen does not log or persist them.</li>
+</ul>
+<h2 id="telemetry" dir="auto">Telemetry</h2>
+<p dir="auto">Off by default. Error reports are sent only when <strong>you</strong> turn them on with the Telemetry pill in the status bar <strong>and</strong> the build sets <code>VITE_SENTRY_DSN</code> (Sentry or a self-hosted GlitchTip). Without both, the Sentry SDK is never loaded. A report carries only the error&#x27;s class name and where in the code it happened. The error message, note text, titles, file paths, the page address, breadcrumbs and user data are never sent. There is no session replay. Every report is listed in the privacy ledger, and the local-only policy blocks them. Web vitals are measured on your device and never sent. Details: <code>docs/src/content/docs/security/monitoring.md</code>.</p>
+<h2 id="gdpr--ccpa-rights" dir="auto">GDPR / CCPA rights</h2>
+<p dir="auto">Because all your data lives on your device, your rights are exercised directly:</p>
+<ul dir="ltr">
+<li dir="ltr"><strong>Right to access</strong>: open the app — your data is there.</li>
+<li dir="ltr"><strong>Right to delete</strong>: clear browser storage for the Lumen origin OR use the in-app &quot;Reset workspace state&quot; affordance OR delete individual documents.</li>
+<li dir="ltr"><strong>Right to export</strong>: use File → Export to download your workspace as Markdown / HTML / DOCX / PDF.</li>
+<li dir="ltr"><strong>Right to rectification</strong>: edit your documents directly.</li>
+</ul>
+<p dir="auto">If you use a hosted version and it serves a third-party signaling/sync, contact the operator (see the hosted instance&#x27;s footer) for rights-related questions.</p>
+<h2 id="contact" dir="auto">Contact</h2>
+<p dir="auto">Open an issue at <a href="https://github.com/talstilkol/lumen-md/issues">https://github.com/talstilkol/lumen-md/issues</a> or email the maintainer listed in <code>package.json</code>.</p>

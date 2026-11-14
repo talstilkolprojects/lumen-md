@@ -15,9 +15,12 @@ test("no CSP / Trusted Types violations on first run", async ({ page }) => {
     });
   });
   await page.goto("/");
-  await page.waitForTimeout(8000);
+  // The welcome note renders fully (lazy chunks, fonts, charts), then the
+  // page is scrolled so every block mounts, then the network goes quiet.
+  await expect(page.locator(".prose-lumen h1").first()).toBeVisible({ timeout: 15_000 });
+  await page.waitForLoadState("networkidle", { timeout: 30_000 });
   await page.mouse.wheel(0, 20000);
-  await page.waitForTimeout(4000);
+  await page.waitForLoadState("networkidle", { timeout: 30_000 });
   const v = await page.evaluate(() => (window as unknown as { __v?: string[] }).__v ?? []);
   expect(v).toEqual([]);
 });

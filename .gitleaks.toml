@@ -1,0 +1,16 @@
+# gitleaks configuration (plan 2.8). The default rules, plus two narrow
+# allowlists for patterns that are not secrets. A known fake key in a test
+# fixture is allowed one finding at a time, by fingerprint, in .gitleaksignore.
+title = "Lumen gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Storage key names (IndexedDB / localStorage keys such as DICT_KEY = \"lumen.dict.he.v1\"), not credentials"
+regexTarget = "line"
+regexes = ['''^\s*(export\s+)?const\s+[A-Z_]*_KEY\s*=\s*"lumen[.\-][a-z0-9.\-]{1,40}";''']
+
+[[allowlists]]
+description = "A vendored node_modules copy committed by mistake in e6147533 and since removed; never built or shipped"
+paths = ['''^node_modules_bad/''']

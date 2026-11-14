@@ -155,7 +155,7 @@ export function parseObjectLiteral(text: string): DataSet {
   try {
     return parseJSONTable(trimmed);
   } catch {
-    /* fall through to relaxed parser */
+    /* why: fall through to relaxed parser */
   }
   const rewritten = relaxedJsonToJson(trimmed);
   return parseJSONTable(rewritten);

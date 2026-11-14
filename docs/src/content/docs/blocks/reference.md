@@ -1,6 +1,6 @@
 ---
 title: Dynamic blocks reference
-description: All 20+ fenced code-block languages that Lumen renders as live, interactive previews.
+description: The fenced code-block languages that Lumen renders as live, interactive previews.
 ---
 
 Lumen's killer feature is **dynamic blocks**: write a fenced code block in markdown, and the preview renders it as a chart, diagram, table, map, or live sandbox. Every block degrades gracefully — if rendering fails, you still see the source.
@@ -24,7 +24,7 @@ Lumen's killer feature is **dynamic blocks**: write a fenced code block in markd
 | ` ```svg ` / ` ```live-svg ` | Sanitized inline SVG preview | Same hardening as HTML |
 | ` ```live-js ` | JS sandbox (Worker isolate) with console output | Stdout/stderr/error states; timeout-protected; `shared` = one REPL scope per document (see below) |
 | ` ```live-lua ` / ` ```lua-live ` | Lua 5.4 (wasmoon WASM) in a Web Worker, with `print`/`io.write` output and return values | Loads on Run; self-hosted wasm (no CDN); `timeout=` ms (default 5000) |
-| ` ```live-r ` / ` ```r-live ` | R (webR, WebAssembly): printed output, messages, warnings, errors and base-graphics plots | Loads on first Run (~45 MB, self-hosted, cached); `timeout=` ms (default 30000); base R + bundled recommended packages, no CRAN installs |
+| ` ```live-r ` / ` ```r-live ` | R (webR, WebAssembly): printed output, messages, warnings, errors and base-graphics plots | webR is GPL-3.0, so Lumen doesn't ship it: the first Run on a device offers the download (~45 MB from webr.r-wasm.org, licence shown first, every file checked against the build's checksums), then it stays on the device and works offline; `timeout=` ms (default 30000); base R + bundled recommended packages, no CRAN installs |
 | ` ```live-ruby ` / ` ```ruby-live ` | Ruby 3.4 (ruby.wasm) in a sandboxed Web Worker: `puts`/`warn` output, the last value (`=> …`), errors with `block:<line>` | Loads on first Run (~30 MB, self-hosted, cached); `timeout=` ms (default 10000; a runaway loop is killed); full stdlib (`require "json"`, `set`, …), no gems; fresh VM per run; no network, storage or JS bridge |
 | ` ```playground [react\|vue] ` / ` ```web-playground ` | A small multi-file web project run live: files separated by `--- name.ext ---` lines (HTML, CSS, JS, JSX, TS, JSON); Preview, a tab per file, and a Console | Runs in a sandboxed iframe on its own origin (no access to your documents); JSX / TypeScript via Sucrase; `react` / `react-dom` (18) and `vue` (3, with the template compiler) are provided offline — other packages aren't; entry is `main.*`; `height=` px |
 | ` ```live-css ` | Sandboxed iframe HTML+CSS preview | `srcdoc` + sandbox flags |
@@ -91,7 +91,7 @@ Each dynamic block is wrapped in an `ErrorBoundary` so a single broken block doe
 
 ## Lazy loading
 
-Every block is `React.lazy`-imported. The block's vendor (Mermaid 718 KB, ECharts 343 KB, Tldraw 400 KB gzipped) only loads when the user actually opens a doc that uses it. The main bundle stays at ~221 KB gzipped regardless of how many block types Lumen supports.
+Every block is `React.lazy`-imported. A block's library (Mermaid, ECharts, Leaflet, …) loads only when a note that uses it is opened, so adding block types never grows the startup bundle. That bundle has a size budget, checked on every pull request (`scripts/bundle-budget.mjs`).
 
 ## Authoring a new block
 

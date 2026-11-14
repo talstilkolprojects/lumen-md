@@ -49,7 +49,7 @@ export function clearSearchHistory(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {
-    /* */
+    /* why: storage denied: the in-memory history is cleared below */
   }
   memoryFallback = [];
 }

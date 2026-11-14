@@ -1,6 +1,6 @@
 /**
  * CollabSettings – small dialog to set/clear the custom signaling server URL
- * (`lumen.collab.signaling`) and the optional persistent y-websocket server
+ * (`lumen.collab.signaling`) and the optional persistent Hocuspocus server
  * (`lumen.collab.ws`, read by src/collab/yjs.ts).
  *
  * The persistent server is a Pro capability (`Capabilities.persistentCollab`).
@@ -14,13 +14,21 @@ import { useState } from "react";
 import { t } from "../i18n";
 import { useCapability, useEntitlementResolved } from "../billing/gates";
 import { UpgradeNotice } from "./UpgradeNotice";
+import { getSecret, setSecret } from "../lib/secretStore";
+import { connectAllowedByCsp } from "../lib/cspConnect";
 
 interface Props {
   onClose: () => void;
+  /** Rendered as a tab of the settings screen: no backdrop; Save stays open. */
+  embedded?: boolean;
 }
 
 const SIGNALING_KEY = "lumen.collab.signaling";
 const PERSISTENT_KEY = "lumen.collab.ws";
+// Kept here (not imported from collab/yjs) so opening the settings doesn't
+// load the yjs stack.
+const PUBLIC_SIGNALING_KEY = "lumen.collab.publicSignaling";
+const WS_TOKEN_KEY = "lumen.collab.wsToken";
 
 function readKey(key: string): string {
   try {
@@ -35,28 +43,58 @@ function writeKey(key: string, value: string): void {
     if (value) localStorage.setItem(key, value);
     else localStorage.removeItem(key);
   } catch {
-    /* storage denied */
+    /* why: storage denied */
   }
 }
 
-export function CollabSettings({ onClose }: Props) {
+/**
+ * The servers in `value` (comma-separated) this deployment's CSP would block.
+ * The policy names its WebSocket hosts (plan 2.2), so a server entered here
+ * that the build did not list is skipped by src/collab/yjs.ts.
+ */
+function blockedByCsp(value: string): string[] {
+  return value
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s && !connectAllowedByCsp(s));
+}
+
+function CspWarning({ value }: { value: string }) {
+  const blocked = blockedByCsp(value);
+  if (!blocked.length) return null;
+  return (
+    <p role="status" style={{ margin: "6px 0 0", fontSize: 12, lineHeight: 1.5, color: "hsl(var(--fg))" }}>
+      {t("collab.settings.cspBlocked", { url: blocked.join(", ") })}
+    </p>
+  );
+}
+
+export function CollabSettings({ onClose, embedded = false }: Props) {
   const persistentAllowed = useCapability("persistentCollab");
   // While the plan is loading (or its check failed) "not allowed" is only a
   // placeholder: keep the saved persistent URL rather than erase it.
   const planKnown = useEntitlementResolved();
   const [url, setUrl] = useState(() => readKey(SIGNALING_KEY));
   const [wsUrl, setWsUrl] = useState(() => readKey(PERSISTENT_KEY));
+  const [wsToken, setWsToken] = useState(() => getSecret(WS_TOKEN_KEY) ?? "");
+  const [publicSignaling, setPublicSignaling] = useState(() => readKey(PUBLIC_SIGNALING_KEY) === "1");
+  const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
     writeKey(SIGNALING_KEY, url.trim());
-    if (persistentAllowed) writeKey(PERSISTENT_KEY, wsUrl.trim());
+    writeKey(PUBLIC_SIGNALING_KEY, publicSignaling ? "1" : "");
+    if (persistentAllowed) {
+      writeKey(PERSISTENT_KEY, wsUrl.trim());
+      setSecret(WS_TOKEN_KEY, wsToken.trim() || null);
+    }
     else if (planKnown) writeKey(PERSISTENT_KEY, ""); // an established downgrade
-    onClose();
+    if (embedded) setSaved(true);
+    else onClose();
   };
 
   return (
     <div
-      style={{
+      style={embedded ? undefined : {
         position: "fixed",
         inset: 0,
         // CSS var → React rejects it as a number, so cast through unknown.
@@ -68,11 +106,11 @@ export function CollabSettings({ onClose }: Props) {
         backdropFilter: "blur(4px)",
       }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (!embedded && e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        style={{
+        style={embedded ? undefined : {
           background: "hsl(var(--bg))",
           border: "1px solid hsl(var(--border))",
           borderRadius: 12,
@@ -89,7 +127,7 @@ export function CollabSettings({ onClose }: Props) {
             color: "hsl(var(--fg))",
           }}
         >
-          Collaboration Settings
+          {t("collab.settings.title")}
         </h3>
         <p
           style={{
@@ -99,8 +137,7 @@ export function CollabSettings({ onClose }: Props) {
             lineHeight: 1.5,
           }}
         >
-          Set a custom WebRTC signaling server URL. Leave empty to use the
-          default (localhost:4444).
+          {t("collab.settings.signalingHint")}
         </p>
         <input
           type="url"
@@ -125,6 +162,14 @@ export function CollabSettings({ onClose }: Props) {
           }}
           autoFocus
         />
+        <CspWarning value={url} />
+        <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 12, fontSize: 12, color: "hsl(var(--fg))" }}>
+          <input type="checkbox" checked={publicSignaling} onChange={(e) => setPublicSignaling(e.target.checked)} />
+          <span>
+            {t("collab.settings.publicSignaling")}
+            <span style={{ display: "block", color: "hsl(var(--fg-muted))", marginTop: 2 }}>{t("collab.settings.publicSignaling.hint")}</span>
+          </span>
+        </label>
         <label
           htmlFor="collab-persistent-url"
           style={{
@@ -166,6 +211,28 @@ export function CollabSettings({ onClose }: Props) {
             if (e.key === "Escape") onClose();
           }}
         />
+        {persistentAllowed && <CspWarning value={wsUrl} />}
+        {persistentAllowed && (
+          <input
+            type="password"
+            aria-label={t("collab.persistent.token")}
+            value={wsToken}
+            onChange={(e) => setWsToken(e.target.value)}
+            placeholder={t("collab.persistent.token")}
+            autoComplete="off"
+            style={{
+              width: "100%",
+              marginTop: 8,
+              padding: "8px 12px",
+              fontSize: 13,
+              border: "1px solid hsl(var(--border))",
+              borderRadius: 8,
+              background: "hsl(var(--bg-subtle))",
+              color: "hsl(var(--fg))",
+              boxSizing: "border-box",
+            }}
+          />
+        )}
         {!persistentAllowed && (
           <div style={{ marginTop: 8 }}>
             <UpgradeNotice compact plan="pro" message={t("billing.upgrade.persistentCollab")} />
@@ -179,6 +246,7 @@ export function CollabSettings({ onClose }: Props) {
             marginTop: 16,
           }}
         >
+          {saved && <span style={{ alignSelf: "center", fontSize: 12, color: "hsl(var(--fg-muted))" }}>{t("ai.settings.saved")}</span>}
           <button
             onClick={onClose}
             className="icon-btn"
@@ -188,7 +256,7 @@ export function CollabSettings({ onClose }: Props) {
               fontSize: 12,
             }}
           >
-            Cancel
+            {t("collab.settings.cancel")}
           </button>
           <button
             onClick={handleSave}
@@ -203,7 +271,7 @@ export function CollabSettings({ onClose }: Props) {
               fontWeight: 600,
             }}
           >
-            Save
+            {t("collab.settings.save")}
           </button>
         </div>
       </div>

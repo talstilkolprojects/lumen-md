@@ -10,7 +10,7 @@ Lumen is distributed under the MIT License. See [LICENSE](LICENSE) for the full 
 
 ## 2. Hosted instance usage
 
-If you use a hosted instance (e.g. lumen.md):
+If you use a hosted instance (e.g. lumen-md.vercel.app):
 
 - **Eligibility**: You must be at least 13 years old, or the minimum age of digital consent in your jurisdiction.
 - **No account required by default**. The editor functions entirely client-side. Authentication is opt-in (for sync only).

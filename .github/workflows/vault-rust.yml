@@ -1,0 +1,62 @@
+name: Vault (Rust)
+
+# The desktop vault (plan 4.3): src-tauri/vault is plain std Rust — the only
+# file-system access the desktop WebView has — so its tests run on all three
+# desktop OSes (case-insensitive disks on macOS and Windows, `\` paths on
+# Windows) without the WebView libraries. The Tauri app that wires it in is
+# compiled (cargo check) on Linux. Runs on every PR that touches the desktop
+# shell, whatever its base (stacked PRs included).
+on:
+  push:
+    branches: [main]
+    paths: ['src-tauri/**', '.github/workflows/vault-rust.yml']
+  pull_request:
+    paths: ['src-tauri/**', '.github/workflows/vault-rust.yml']
+
+concurrency:
+  group: vault-rust-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vault-tests:
+    name: vault crate tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri/vault
+      - name: cargo test
+        run: cargo test --manifest-path src-tauri/vault/Cargo.toml --locked
+      - name: cargo clippy
+        run: cargo clippy --manifest-path src-tauri/vault/Cargo.toml --locked -- -D warnings
+
+  tauri-check:
+    name: tauri app (cargo check, Linux)
+    runs-on: ubuntu-24.04 # pinned: ubuntu-latest becomes Ubuntu 26 from 19.10.2026 (actions/runner-images#14748)
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: System libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
+            patchelf libsoup-3.0-dev javascriptcoregtk-4.1-dev
+      - name: cargo check
+        # The frontend dist isn't built here: tauri only needs the folder.
+        run: |
+          mkdir -p dist
+          cargo check --manifest-path src-tauri/Cargo.toml --locked
