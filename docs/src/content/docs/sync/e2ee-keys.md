@@ -115,7 +115,9 @@ what it uploads. The banner says so.
 - **No pairing code during a key change.** While this device is changing
   keys, in any of its tabs, it doesn't make a pairing code or answer: the
   code would be for the keys being replaced. Make it once the change has
-  finished.
+  finished. If another tab is only syncing, Lumen says the device is busy:
+  try again in a moment. A key change waits at most a few seconds for such
+  a tab, then says the same and changes nothing.
 - **A new passphrase keeps Argon2id.** A passphrase change keeps the way the
   passphrase is protected, as the vault's signed header says; it never moves
   an Argon2id vault to PBKDF2.

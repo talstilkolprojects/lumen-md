@@ -24,7 +24,7 @@ import {
   verifyDropped,
   type KeyAccess,
 } from "./keyring";
-import { withDeviceLock, type LockScope } from "./deviceLock";
+import { LOCK_TIMEOUT, withDeviceLock, withDeviceLockWithin, type LockScope } from "./deviceLock";
 import {
   blobName,
   checkFreshness,
@@ -42,8 +42,9 @@ import { PreconditionFailedError, type StoredObject } from "./provider";
 import type { DeviceState, RevokedHere } from "./state";
 import {
   BlobMissingError,
-  REVOCATION_AT_RISK_MS,
+  DeviceBusyError,
   readmitted,
+  REVOCATION_AT_RISK_MS,
   sameAnchor,
   successor,
   type E2eeSyncOptions,
@@ -51,26 +52,30 @@ import {
   type RekeyResult,
 } from "./engineTypes";
 
+/** @internal One of the engine's parts: use `E2eeSync`, never extend these (review 34). */
 export abstract class E2eeSyncCore {
+  /** @internal */
   protected readonly o: Required<Omit<E2eeSyncOptions, "resolver" | "access">> & { resolver: ConflictResolver; access: KeyAccess | null };
 
+  /** @internal */
   protected running: Promise<unknown> = Promise.resolve();
 
-  /** Key changes (`rekeyNow`) running now: no pairing code meanwhile (G3). */
+  /** Key changes (`rekeyNow`) running now: no pairing code meanwhile (G3). @internal */
   protected keyChanges = 0;
 
-  /** This engine holds the device lock (`deviceLock`, H3) for the call running now. */
+  /** This engine holds the device lock (`deviceLock`, H3) for the call running now. @internal */
   protected lockHeld = false;
 
+  /** @internal */
   protected state: DeviceState | null = null;
 
-  /** Digest of the manifest `readManifest` returned last (the parent of the next commit). */
+  /** Digest of the manifest `readManifest` returned last (the parent of the next commit). @internal */
   protected remoteDigest = "";
 
-  /** The keyring (digest) whose pending passphrase change this device already looked at (resumeEpoch). */
+  /** The keyring (digest) whose pending passphrase change this device already looked at (resumeEpoch). @internal */
   protected resumed = "";
 
-  /** Opaque names already computed (HMAC is cheap, but not free over thousands of rounds). */
+  /** Opaque names already computed (HMAC is cheap, but not free over thousands of rounds). @internal */
   protected readonly names = new Map<string, string>();
 
   /**
@@ -78,6 +83,7 @@ export abstract class E2eeSyncCore {
    * keys in this round's refresh (fifth review 12.11, F3): the keys hold the
    * secret of the keyring it verified, so a manifest of their epoch more than
    * HISTORY_LENGTH commits ahead is no reason to demote it.
+   * @internal
    */
   protected anchorVerified = false;
 
@@ -102,6 +108,7 @@ export abstract class E2eeSyncCore {
    * change held back or contested at one epoch is void once the epoch has
    * moved: that key change committed (or another did), so the next one is
    * waited on, and counted, from scratch. True when something was dropped.
+   * @internal
    */
   protected dropStaleEpochRecords(s: DeviceState, epoch: number): boolean {
     let dirty = false;
@@ -116,7 +123,7 @@ export abstract class E2eeSyncCore {
     return dirty;
   }
 
-  /** Adopt keys this device wrote or verified itself, and remember their keyring as verified. */
+  /** Adopt keys this device wrote or verified itself, and remember their keyring as verified. @internal */
   protected async adopt(keys: VaultKeys): Promise<void> {
     const s = await this.loadState();
     this.o.keys = keys;
@@ -131,6 +138,7 @@ export abstract class E2eeSyncCore {
   /**
    * G5: the sealed revoked list only grows, so remember every device a
    * keyring this device adopted listed. Returns true when that added one.
+   * @internal
    */
   protected rememberSealedRevoked(s: DeviceState, keys: VaultKeys): boolean {
     const ring = keys.ring;
@@ -146,6 +154,7 @@ export abstract class E2eeSyncCore {
    * Step 0: bring the keys up to the keyring, and finish what a cut-off
    * passphrase change left. `enforce`: check the keyring against the devices
    * this device revoked (F2) — off inside a re-key, which revokes them itself.
+   * @internal
    */
   protected async refresh(enforce = true): Promise<void> {
     this.anchorVerified = false;
@@ -205,12 +214,13 @@ export abstract class E2eeSyncCore {
     await this.resumeEpoch();
   }
 
-  /** Secret 0 of the vault (the master at epoch 0), from which the revoked-here list's key comes. */
+  /** Secret 0 of the vault (the master at epoch 0), from which the revoked-here list's key comes. @internal */
   protected secret0(): Uint8Array | undefined {
     const k = this.o.keys;
     return k.epoch === 0 ? k.secret : k.olderSecrets.get(0);
   }
 
+  /** @internal */
   protected revokedHereData(s: DeviceState, devices: RevokedHere["devices"]) {
     return utf8(JSON.stringify(["lumen-e2ee-revoked-here/1", this.o.keys.vaultId, s.deviceId, devices]));
   }
@@ -221,6 +231,7 @@ export abstract class E2eeSyncCore {
    * vault's) is set aside rather than stopping every round (seventh review
    * 12.11, G5): the sealed revoked lists this device saw (`sealedRevoked`)
    * still hold, and the next round says so (`revokedListReset`).
+   * @internal
    */
   protected async revokedHere(): Promise<RevokedHere["devices"]> {
     const s = await this.loadState();
@@ -243,7 +254,7 @@ export abstract class E2eeSyncCore {
     return r.devices;
   }
 
-  /** Every device this device knows was revoked: its own revocations (F2) and the sealed lists it adopted (G5). */
+  /** Every device this device knows was revoked: its own revocations (F2) and the sealed lists it adopted (G5). @internal */
   protected async knownRevoked(): Promise<Array<{ device: string; recipient?: string }>> {
     const s = await this.loadState();
     const out: Array<{ device: string; recipient?: string }> = [...(s.sealedRevoked ?? [])];
@@ -251,7 +262,7 @@ export abstract class E2eeSyncCore {
     return out;
   }
 
-  /** Known revoked devices the current keyring lets back in, by id or key, or no longer lists as revoked (F2, G5). */
+  /** Known revoked devices the current keyring lets back in, by id or key, or no longer lists as revoked (F2, G5). @internal */
   protected async readmittedNow(enrolled: Record<string, string>): Promise<string[]> {
     const list = await this.knownRevoked();
     const ring = this.o.keys.ring;
@@ -259,7 +270,7 @@ export abstract class E2eeSyncCore {
     return [...new Set([...readmitted(list, enrolled), ...gone])];
   }
 
-  /** Remember revocations this device made (F2). */
+  /** Remember revocations this device made (F2). @internal */
   protected async rememberRevoked(add: RevokedHere["devices"]): Promise<void> {
     if (!add.length) return;
     const s = await this.loadState();
@@ -277,6 +288,7 @@ export abstract class E2eeSyncCore {
    * can't be enrolled again). Revoke it again on top (`KeyringForkError` with
    * `revocationReapplied`), or, when this device can't, stop with the
    * revocation at risk.
+   * @internal
    */
   protected async enforceRevocations(): Promise<void> {
     const enrolled = this.o.keys.ring?.enrolled;
@@ -290,7 +302,7 @@ export abstract class E2eeSyncCore {
     throw new KeyringForkError("a keyring that lets a device this device revoked back in", [], null, back);
   }
 
-  /** A fork that this device couldn't repair, naming the devices it revoked lately (F2): their revocation may be undone. */
+  /** A fork that this device couldn't repair, naming the devices it revoked lately (F2): their revocation may be undone. @internal */
   protected async withRevocationsAtRisk(e: KeyringForkError): Promise<KeyringForkError> {
     if (e.revocationReapplied.length || e.revocationAtRisk.length) return e;
     const now = this.o.now();
@@ -309,6 +321,7 @@ export abstract class E2eeSyncCore {
    * Finish a passphrase change that was cut off (idempotent): write the new
    * header the keyring carries, then rewrite the keyring without it (RR-6),
    * so the old passphrase's way back to the epoch before is gone.
+   * @internal
    */
   protected async resumeEpoch(): Promise<void> {
     const k = this.o.keys;
@@ -333,7 +346,7 @@ export abstract class E2eeSyncCore {
     this.resumed = ring.digest;
   }
 
-  /** The header of a passphrase change is written: the keyring drops it, and the previous keyring with it. */
+  /** The header of a passphrase change is written: the keyring drops it, and the previous keyring with it. @internal */
   protected async finishPassphraseChange(): Promise<boolean> {
     try {
       const next = await rewriteKeyring(this.o.provider, this.o.keys, this.o.access, (c, f) => {
@@ -352,7 +365,7 @@ export abstract class E2eeSyncCore {
     }
   }
 
-  /** This device's lock (H3), named by the vault and the state store, never by a cached device id (K6-3). */
+  /** This device's lock (H3), named by the vault and the state store, never by a cached device id (K6-3). @internal */
   protected lockScope(): LockScope {
     return { vaultId: this.o.keys.vaultId, store: this.o.store };
   }
@@ -362,10 +375,11 @@ export abstract class E2eeSyncCore {
    * for another tab's key change or pairing to finish. Re-entrant within this
    * engine. `reload`: first read the device state again from the store; only
    * at the start of a public call, before anything holds the cached state.
+   * @internal
    */
-  protected async underDeviceLock<T>(reload: boolean, fn: () => Promise<T>): Promise<T> {
+  protected async underDeviceLock<T>(reload: boolean, fn: () => Promise<T>, waitMs?: number): Promise<T> {
     if (this.lockHeld) return fn();
-    return withDeviceLock(this.lockScope(), async () => {
+    const run = async () => {
       this.lockHeld = true;
       try {
         if (reload) await this.reloadState();
@@ -373,9 +387,16 @@ export abstract class E2eeSyncCore {
       } finally {
         this.lockHeld = false;
       }
-    });
+    };
+    if (waitMs === undefined) return withDeviceLock(this.lockScope(), run);
+    // K34-1 (review 34): a key change doesn't wait for ever on a round that
+    // hangs in another tab; it says the device is busy instead.
+    const out = await withDeviceLockWithin(this.lockScope(), waitMs, run);
+    if (out === LOCK_TIMEOUT) throw new DeviceBusyError();
+    return out;
   }
 
+  /** @internal */
   protected async loadState(): Promise<DeviceState> {
     if (this.state) return this.state;
     const loaded = await this.o.store.load();
@@ -389,6 +410,7 @@ export abstract class E2eeSyncCore {
    * Read the device state again from the store (H3): another tab of this
    * device may have saved it since. Only at the start of a call, under the
    * device lock, before anything holds the cached state.
+   * @internal
    */
   protected async reloadState(): Promise<DeviceState> {
     const loaded = await this.o.store.load();
@@ -407,17 +429,19 @@ export abstract class E2eeSyncCore {
     return s;
   }
 
+  /** @internal */
   protected async save(): Promise<void> {
     if (this.state) await this.o.store.save(this.state);
   }
 
-  /** Serialise calls: one round (or pairing) at a time per device. */
+  /** Serialise calls: one round (or pairing) at a time per device. @internal */
   protected exclusive<T>(fn: () => Promise<T>): Promise<T> {
     const next = this.running.then(fn, fn);
     this.running = next.catch(() => undefined);
     return next;
   }
 
+  /** @internal */
   protected async setBase(path: string, entry: ManifestEntry, data: Uint8Array | null): Promise<void> {
     const s = await this.loadState();
     await this.o.store.setBase(path, entry.deleted ? null : data);
@@ -425,6 +449,7 @@ export abstract class E2eeSyncCore {
     await this.save();
   }
 
+  /** @internal */
   protected async blob(path: string, rev: string): Promise<string> {
     const k = `${path}\u0000${rev}`;
     let n = this.names.get(k);
@@ -436,6 +461,7 @@ export abstract class E2eeSyncCore {
     return n;
   }
 
+  /** @internal */
   protected async manifestObject(): Promise<string> {
     const key = `\u0000manifest\u0000${this.o.keys.ring?.manifest ?? "manifest"}`;
     let n = this.names.get(key);
@@ -450,12 +476,14 @@ export abstract class E2eeSyncCore {
    * The stored ancestor of `path`, only if it is the version `entry` names:
    * bytes and metadata are saved in two steps, and an interruption between
    * them must not hand the merge a wrong ancestor.
+   * @internal
    */
   protected async baseBytes(path: string, entry: ManifestEntry): Promise<Uint8Array | null> {
     const data = await this.o.store.getBase(path);
     return data && (await sha256Hex(data)) === entry.hash ? data : null;
   }
 
+  /** @internal */
   protected async fetchBlob(path: string, e: ManifestEntry): Promise<Uint8Array> {
     const name = await this.blob(path, e.rev);
     const obj = await this.o.provider.get(name);
@@ -470,6 +498,7 @@ export abstract class E2eeSyncCore {
    * re-create it from the frozen manifest the keyring carries, exactly that
    * one — only the epoch's members could have written a valid manifest, so
    * anything that doesn't open is replaced. Never behind this device's anchor.
+   * @internal
    */
   protected async recoverManifest(name: string, junk: StoredObject | null): Promise<{ obj: StoredObject; manifest: Manifest; digest: string } | null> {
     const k = this.o.keys;
@@ -496,6 +525,7 @@ export abstract class E2eeSyncCore {
     return got ? { obj: now, ...got } : null;
   }
 
+  /** @internal */
   protected async readManifest(): Promise<{ manifest: Manifest; etag: string | null }> {
     const s = await this.loadState();
     const name = await this.manifestObject();
@@ -553,6 +583,7 @@ export abstract class E2eeSyncCore {
    * every name the current manifest does not reference is garbage — whether
    * this device's write landed or another device replaced it since — and goes
    * to `pending`. Names still referenced are live: the write did not land.
+   * @internal
    */
   protected async reconcileCommit(current: Manifest): Promise<void> {
     const s = await this.loadState();
@@ -572,6 +603,7 @@ export abstract class E2eeSyncCore {
    * Blobs replaced by a commit over a called-off freeze (RR-4) wait one round:
    * released to `pending` once a later round, after its keyring check, finds
    * the manifest doesn't reference them.
+   * @internal
    */
   protected async releaseHold(current: Manifest): Promise<void> {
     const s = await this.loadState();
@@ -584,9 +616,9 @@ export abstract class E2eeSyncCore {
     await this.save();
   }
 
-  /** A key change (engineKeys.ts). */
+  /** A key change (engineKeys.ts). @internal */
   protected abstract rekeyNow(opts: RekeyRequest): Promise<RekeyResult>;
 
-  /** N2, F2: revoke again on top of a sibling's keyring (engineKeys.ts). */
+  /** N2, F2: revoke again on top of a sibling's keyring (engineKeys.ts). @internal */
   protected abstract reapplyRevocation(fork: KeyringForkError): Promise<void>;
 }

@@ -85,5 +85,6 @@
   "e2ee.rekey.busy": "Another device is changing the vault's keys right now. Sync, and try again once it has finished (10 minutes at most).",
   "e2ee.pair.rekeying": "This device is changing the vault's keys right now. Make the pairing code once the change has finished.",
   "e2ee.revokedHere.reset": "This device's own list of the devices it removed couldn't be verified, so it was set aside. It now checks against the vault's sealed list of removed devices. Check the device list on a device you trust.",
-  "e2ee.rekey.contested": "Removing {devices} didn't go through, again: each time, the vault's device list was rewritten at the same moment by something that still has the vault's keys and the storage login, most likely the device you're removing. Change the storage password or token first, so that device can't write any more, then remove it again."
+  "e2ee.rekey.contested": "Removing {devices} didn't go through, again: each time, the vault's device list was rewritten at the same moment by something that still has the vault's keys and the storage login, most likely the device you're removing. Change the storage password or token first, so that device can't write any more, then remove it again.",
+  "e2ee.busy": "This device is syncing in another tab right now, so nothing was changed. Try again in a moment; if it keeps happening, reload or close the other tabs of Lumen."
 }
