@@ -306,6 +306,18 @@ describe("axe a11y smoke", () => {
     }
   });
 
+  it("CalendarPanel renders no blockers: grid > row > cell (W6.30)", async () => {
+    const { CalendarPanel } = await import("../ui/CalendarPanel");
+    const { container } = render(<CalendarPanel />);
+    await expectNoBlockersEventually(container);
+    const grid = container.querySelector('[role="grid"]');
+    expect(grid).not.toBeNull();
+    // Every child of the grid is a row; every cell sits in one.
+    expect([...(grid as Element).children].every((c) => c.getAttribute("role") === "row")).toBe(true);
+    expect(container.querySelectorAll('[role="row"] > [role="gridcell"]').length).toBeGreaterThanOrEqual(28);
+    expect(container.querySelectorAll('[role="gridcell"] > button[data-date]').length).toBeGreaterThanOrEqual(28);
+  });
+
   it("AiFab (closed) renders no blockers", async () => {
     const { AiFab } = await import("../ui/AiFab");
     const { container } = render(<AiFab commands={[]} />);

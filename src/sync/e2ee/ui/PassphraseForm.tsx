@@ -75,7 +75,7 @@ export function PassphraseForm({ mode, onSubmit }: Props) {
       <button
         type="submit"
         disabled={busy || pass.length === 0}
-        style={{ padding: "6px 14px", border: "none", borderRadius: 6, background: "hsl(var(--accent))", color: "white", cursor: "pointer", justifySelf: "start" }}
+        style={{ padding: "6px 14px", border: "none", borderRadius: 6, background: "hsl(var(--accent))", color: "hsl(var(--accent-fg))", cursor: "pointer", justifySelf: "start" }}
       >
         {t(mode === "create" ? "e2ee.setup.create" : "e2ee.setup.unlock")}
       </button>

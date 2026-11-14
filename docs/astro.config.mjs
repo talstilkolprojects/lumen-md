@@ -91,6 +91,7 @@ export default defineConfig({
             { label: "Legal citations (Israel)", slug: "editor/legal-citations", translations: { he: "אזכורים משפטיים (ישראל)" } },
             { label: "Arabic (beta)", translations: { he: "ערבית (בטא)" }, slug: "editor/arabic" },
             { label: "Screen readers, automated", translations: { he: "קוראי מסך, אוטומטית" }, slug: "editor/screen-reader-automation" },
+            { label: "Testing with screen reader users", translations: { he: "בדיקה עם משתמשי קוראי מסך" }, slug: "editor/screen-reader-testers" },
           ],
         },
         {

@@ -135,6 +135,8 @@ export function MarkdownTableEditor({ initialMarkdown, onUpdate, onClose }: Prop
                     style={{
                       display: "block",
                       width: "100%",
+                      // 24 px tall: the WCAG 2.2 minimum target (2.5.8).
+                      minHeight: 24,
                       padding: "2px 0",
                       border: "none",
                       background: "transparent",
@@ -186,7 +188,7 @@ export function MarkdownTableEditor({ initialMarkdown, onUpdate, onClose }: Prop
             borderRadius: 6,
             border: "none",
             background: "hsl(var(--accent))",
-            color: "white",
+            color: "hsl(var(--accent-fg))",
             cursor: "pointer",
             fontWeight: 600,
           }}>

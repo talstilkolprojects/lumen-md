@@ -9,7 +9,7 @@ import { canonical, check, loadOrCreateKey, seal } from "../../scripts/nightly/r
 // @ts-expect-error — plain .mjs module without type declarations
 import { ciLocalMetric, cleanNight, flakeStreak, planStatus, scheduledKinds } from "../../scripts/nightly/status.mjs";
 // @ts-expect-error — plain .mjs script without type declarations
-import { collectFlake, fetchMetricInputs, kindsDue, perfAnnotations, reportName, stepsFor } from "../../scripts/nightly/run.mjs";
+import { collectFlake, collectSr, fetchMetricInputs, kindsDue, perfAnnotations, reportName, srReady, stepsFor } from "../../scripts/nightly/run.mjs";
 
 type Report = Record<string, unknown> & { receipt?: Record<string, string> };
 const keys = () => {
@@ -128,6 +128,27 @@ describe("the nightly runner", () => {
     expect(kindsDue(new Date("2026-11-14T02:00:00Z"))).toEqual(["flake", "perf", "triage"]);
     expect(kindsDue(new Date("2026-11-15T02:00:00Z"))).toEqual(["flake", "perf", "triage", "weekly"]);
     expect(kindsDue(new Date("2026-11-14T02:00:00Z"), ["weekly", "triage"])).toEqual(["triage", "weekly"]);
+  });
+
+  it("W6.30: adds the VoiceOver journey on a Mac with Guidepup installed, and only there", () => {
+    const sat = new Date("2026-11-14T02:00:00Z");
+    expect(kindsDue(sat, null, { platform: "darwin", sr: true })).toEqual(["flake", "perf", "triage", "sr"]);
+    expect(kindsDue(sat, null, { platform: "darwin", sr: false })).toEqual(["flake", "perf", "triage"]);
+    expect(kindsDue(sat, null, { platform: "linux", sr: true })).toEqual(["flake", "perf", "triage"]);
+    expect(kindsDue(sat, ["sr"])).toEqual(["sr"]);
+    expect(stepsFor("sr", () => false).map((s: { cmd: string[] }) => s.cmd.join(" "))).toEqual(["npx --no-install @guidepup/setup --ci", "npm run test:sr -- --project=voiceover"]);
+    const have = new Set(["/r/node_modules/@guidepup/guidepup/package.json", "/r/node_modules/@guidepup/playwright/package.json"]);
+    expect(srReady("/r", (p: string) => have.has(p))).toBe(false);
+    have.add("/r/node_modules/@guidepup/setup/package.json");
+    expect(srReady("/r", (p: string) => have.has(p))).toBe(true);
+  });
+
+  it("W6.30: reads each journey's attachment out of the screen-reader run's JSON report", () => {
+    const body = (j: unknown) => Buffer.from(JSON.stringify(j)).toString("base64");
+    const journey = { setup: "VoiceOver / macOS", row: "| row |", results: [{ id: 1, missing: [] }, { id: 2, missing: ["דילוג לתוכן הראשי"] }] };
+    const report = { suites: [{ suites: [{ specs: [{ tests: [{ results: [{ attachments: [{ name: "x.png", contentType: "image/png", body: "AA==" }, { name: "VoiceOver / macOS.json", contentType: "application/json", body: body(journey) }] }] }] }] }] }] };
+    expect(collectSr(report)).toEqual([{ setup: "VoiceOver / macOS", passed: 1, of: 2, blockers: ["2: דילוג לתוכן הראשי"], row: "| row |" }]);
+    expect(collectSr({})).toEqual([]);
   });
 
   it("names a report by day and kind, numbering a second run that day", () => {

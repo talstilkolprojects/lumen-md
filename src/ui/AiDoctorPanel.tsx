@@ -35,8 +35,9 @@ const row: React.CSSProperties = { display: "flex", gap: 8, alignItems: "center"
 const pre: React.CSSProperties = { margin: 0, padding: "6px 8px", fontSize: 11, borderRadius: 6, background: "hsl(var(--bg))", border: "1px solid hsl(var(--border))", whiteSpace: "pre-wrap", direction: "ltr", textAlign: "start", userSelect: "all" };
 
 const COLOR: Record<DoctorStatus, string> = {
-  ok: "hsl(var(--success))",
-  warn: "hsl(var(--warning))",
+  // The text tokens (>= 4.5:1 on the panel backgrounds); --success/--warning are not.
+  ok: "hsl(var(--ok))",
+  warn: "hsl(var(--warn))",
   fail: "hsl(var(--danger))",
   skip: "hsl(var(--fg-muted))",
 };

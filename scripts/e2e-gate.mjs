@@ -12,8 +12,10 @@
  * 2023 has 2.34) and libraries AL2023 does not package (libwpe,
  * wpebackend-fdo). Safari coverage is owed to a Mac (plan W4.22).
  *
- * What runs: LUMEN_E2E_SPECS (space-separated, default e2e/smoke.spec.ts,
- * 9 tests in about 40 s). The whole chromium project does not fit: on the
+ * What runs: LUMEN_E2E_SPECS (space-separated). The default is the smoke
+ * spec (9 tests in about 40 s) and, since W6.30, the Hebrew accessibility
+ * pair: axe on the key Hebrew flows, light and dark (a11y-hebrew-gate), and
+ * the Hebrew aria snapshots (aria-hebrew, W4.21). The whole chromium project does not fit: on the
  * build machine (2 CPUs, 2 workers) it took 29.7 min for 327 tests
  * (verify/e2e-probe run 4: 291 passed, 32 failed, 4 skipped), and vitest
  * already takes about 12 of the 45 minutes. A spec joins the default list
@@ -38,7 +40,8 @@ const PORT = 4173;
 const BASE = `http://127.0.0.1:${PORT}`;
 export const E2E_MINUTES = Number(process.env.LUMEN_E2E_MINUTES ?? 8);
 const list = (v, fallback) => (v ?? fallback).split(/\s+/).filter(Boolean);
-export const E2E_SPECS = list(process.env.LUMEN_E2E_SPECS, "e2e/smoke.spec.ts");
+export const DEFAULT_E2E_SPECS = "e2e/smoke.spec.ts e2e/a11y-hebrew-gate.spec.ts e2e/aria-hebrew.spec.ts";
+export const E2E_SPECS = list(process.env.LUMEN_E2E_SPECS, DEFAULT_E2E_SPECS);
 /** Firefox runs too (LUMEN_E2E_FIREFOX_SPECS, default the smoke spec; empty turns it off). */
 export const FIREFOX_SPECS = list(process.env.LUMEN_E2E_FIREFOX_SPECS, "e2e/smoke.spec.ts");
 /** What the gate runs, in order: each project with its specs. */

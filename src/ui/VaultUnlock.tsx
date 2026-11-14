@@ -26,7 +26,7 @@ const field: React.CSSProperties = {
   color: "inherit",
   font: "inherit",
 };
-const button: React.CSSProperties = { padding: "8px 16px", border: "none", borderRadius: 6, background: "hsl(var(--accent))", color: "white", cursor: "pointer", justifySelf: "start" };
+const button: React.CSSProperties = { padding: "8px 16px", border: "none", borderRadius: 6, background: "hsl(var(--accent))", color: "hsl(var(--accent-fg))", cursor: "pointer", justifySelf: "start" };
 const link: React.CSSProperties = { background: "none", border: 0, padding: 0, color: "hsl(var(--accent))", cursor: "pointer", font: "inherit", fontSize: 13, justifySelf: "start" };
 
 /** A vault-lock failure in words (never the error's own text: explainError). */

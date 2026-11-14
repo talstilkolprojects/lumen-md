@@ -44,6 +44,16 @@ level AA**, which includes everything WCAG 2.0 AA asks for.
 
 - axe-core (WCAG 2.0/2.1 A and AA) on six surfaces, in Hebrew and English,
   in light and dark mode (`e2e/a11y.spec.ts`).
+- In every preview build, axe-core (WCAG 2.0, 2.1 and 2.2 A and AA, target
+  size included) on the key Hebrew flows: the main screen in source and
+  preview, the calendar and ten dialogs, light and dark
+  (`e2e/a11y-hebrew-gate.spec.ts`), and the Hebrew accessibility tree
+  (`e2e/aria-hebrew.spec.ts`). A serious or critical violation fails the
+  build.
+- The same axe rules on 52 of the app's panels and dialogs rendered on
+  their own, in Hebrew (light and dark) and English.
+- The Hebrew journey under VoiceOver, scripted with Guidepup, on the nightly
+  Mac ([screen readers, automated](/editor/screen-reader-automation/)).
 - Reflow at 320 px and 640 px wide on ten surfaces, plus a forced-colours
   focus check (`e2e/reflow.spec.ts`).
 - Spoken announcements (`e2e/sr-announce.spec.ts`).
@@ -63,6 +73,12 @@ one that is only partly met. In short:
   pictures. Their source text in the note is the accessible version.
 - Content you write yourself, such as images without alt text, is yours to
   make accessible. The alt-text helper can suggest descriptions.
+
+## Accessibility coordinator
+
+Lumen is an open-source project. Its maintainer is its accessibility
+coordinator: write through the form below, or open the issue in Hebrew.
+Each report gets a reply with what will be done and when.
 
 ## Report a barrier
 

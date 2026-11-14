@@ -11,6 +11,8 @@
  *   perf     build + bundle budget, the @nightly perf project, Lighthouse (when installed)
  *   triage   review triage over the open PRs, the 0.14 count over the first 20 PRs, and live:meta (W6.2)
  *   weekly   dependency health (audit, outdated, licences) and mutation scores — Sundays
+ *   sr       the Hebrew screen-reader journey under VoiceOver (Guidepup, W6.30) — on a
+ *            Mac with @guidepup/* installed, every night; `--only sr` runs it alone
  *
  *   npm run nightly                          # what is due today: flake, perf, triage (+ weekly on Sunday)
  *   npm run nightly -- --only triage,weekly  # these kinds only
@@ -38,10 +40,25 @@ export const PUBLIC_KEY = join(NIGHTLY_DIR, "PUBLIC_KEY.pem");
 export const METRIC_SINCE = "2026-11-12";
 const REPO = "talstilkol/lumen-md";
 
-/** The kinds due on a date: every night flake, perf and triage; weekly on Sundays (UTC). */
-export function kindsDue(date, only = null) {
-  if (only?.length) return KINDS.filter((k) => only.includes(k));
-  return KINDS.filter((k) => k !== "weekly" || date.getUTCDay() === 0);
+/**
+ * The screen-reader kind (W6.30). Not one of status.mjs's KINDS: 0.11 counts
+ * the four scheduled kinds, and this one needs a Mac with VoiceOver.
+ */
+export const SR_KIND = "sr";
+
+/** Guidepup is installed (owner: `npm install -D @guidepup/guidepup @guidepup/playwright @guidepup/setup`). */
+export function srReady(dir = root, exists = existsSync) {
+  return ["@guidepup/guidepup", "@guidepup/playwright", "@guidepup/setup"].every((p) => exists(join(dir, "node_modules", p, "package.json")));
+}
+
+/**
+ * The kinds due on a date: every night flake, perf and triage; weekly on
+ * Sundays (UTC); sr every night on a Mac where Guidepup is installed.
+ */
+export function kindsDue(date, only = null, host = { platform: "", sr: false }) {
+  const all = [...KINDS, SR_KIND];
+  if (only?.length) return all.filter((k) => only.includes(k));
+  return all.filter((k) => (k === "weekly" ? date.getUTCDay() === 0 : k === SR_KIND ? host.platform === "darwin" && host.sr : true));
 }
 
 /** reports/nightly/<YYYY-MM-DD>-<kind>.json, or -2, -3… when that name is taken. */
@@ -78,6 +95,14 @@ export function stepsFor(kind, has) {
         { id: "weekly-health", cmd: ["node", "scripts/nightly/weekly-health.mjs"], timeoutMin: 30 },
         ...(has("test:mutation") ? [{ id: "mutation", cmd: ["npm", "run", "test:mutation"], timeoutMin: 240 }] : []),
       ];
+    case SR_KIND:
+      // VoiceOver needs a logged-in macOS session; setup --ci makes it scriptable
+      // without prompts (it also writes the TCC grant; with SIP on, grant the
+      // terminal Accessibility and Automation once by hand: docs dev/nightly).
+      return [
+        { id: "sr-setup", cmd: ["npx", "--no-install", "@guidepup/setup", "--ci"], timeoutMin: 10 },
+        { id: "sr-voiceover", cmd: ["npm", "run", "test:sr", "--", "--project=voiceover"], timeoutMin: 30 },
+      ];
     default:
       throw new Error(`unknown kind ${kind}`);
   }
@@ -93,6 +118,35 @@ export function collectFlake(dir) {
       return { browser, times: s.times, tests: Object.keys(s.tests ?? {}).length, flaky: s.flaky ?? [], broken: s.broken ?? [] };
     }),
   };
+}
+
+/**
+ * What the screen-reader run said, from sr-results/results.json (Playwright's
+ * JSON report): each journey attaches `<setup>.json` = { setup, row, results }
+ * (sr/runJourney.ts). Per setup: tasks passed of all, the blockers, the
+ * protocol row for docs editor/screen-reader-protocol.
+ */
+export function collectSr(report) {
+  const out = [];
+  const walk = (suite) => {
+    for (const spec of suite.specs ?? [])
+      for (const t of spec.tests ?? [])
+        for (const r of t.results ?? [])
+          for (const a of r.attachments ?? []) {
+            if (a.contentType !== "application/json" || !a.body) continue;
+            try {
+              const j = JSON.parse(Buffer.from(a.body, "base64").toString("utf8"));
+              if (!Array.isArray(j.results)) continue;
+              const blockers = j.results.filter((x) => x.missing?.length).map((x) => `${x.id}: ${x.missing.join(", ")}`);
+              out.push({ setup: j.setup, passed: j.results.length - blockers.length, of: j.results.length, blockers, row: j.row });
+            } catch {
+              /* not a journey attachment */
+            }
+          }
+    for (const s of suite.suites ?? []) walk(s);
+  };
+  for (const s of report?.suites ?? []) walk(s);
+  return out;
 }
 
 /** The perf annotations ("name: value unit") of a Playwright JSON report. */
@@ -187,7 +241,7 @@ function main() {
   }
   const now = new Date();
   const only = opt("only")?.split(",").filter(Boolean) ?? null;
-  const kinds = argv.includes("--status") ? [] : kindsDue(now, only);
+  const kinds = argv.includes("--status") ? [] : kindsDue(now, only, { platform: process.platform, sr: srReady() });
   const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
   const has = (s) => Boolean(pkg.scripts?.[s]);
   if (argv.includes("--dry-run")) {
@@ -224,6 +278,14 @@ function main() {
         report.perf = { annotations: perfAnnotations(JSON.parse(json ?? "")) };
       } catch {
         report.perf = { annotations: [], error: "no Playwright JSON report" };
+      }
+    }
+    if (kind === SR_KIND) {
+      const f = join(root, "sr-results", "results.json");
+      try {
+        report.sr = { journeys: collectSr(JSON.parse(readFileSync(f, "utf8"))) };
+      } catch {
+        report.sr = { journeys: [], error: "no sr-results/results.json" };
       }
     }
     if (kind === "triage") {

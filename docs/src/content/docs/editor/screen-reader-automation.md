@@ -34,7 +34,7 @@ and the audio. It does not run in CI containers or in the cloud sandbox.
 ### On a Mac (VoiceOver)
 
 ```sh
-npm install -D @guidepup/guidepup @guidepup/playwright   # once
+npm install -D @guidepup/guidepup @guidepup/playwright @guidepup/setup   # once
 npx @guidepup/setup                                       # once: lets VoiceOver be scripted
 npm run test:sr -- --project=voiceover
 ```
@@ -51,6 +51,22 @@ npm run test:sr -- --project=nvda-firefox
 ```
 
 Set NVDA's voice to a Hebrew one (eSpeak NG Hebrew or Microsoft Asaf).
+
+### Every night on the Mac
+
+Once the three `@guidepup/*` packages are installed, `npm run nightly` on
+the Mac (plan W4.36, [the nightly runs](/contributing/nightly/)) adds the
+**sr** kind: `npx @guidepup/setup --ci`, then the VoiceOver journey. The
+sealed report `reports/nightly/<date>-sr.json` holds, per setup, the tasks
+passed, each blocker and the protocol row. `npm run nightly -- --only sr`
+runs it alone.
+
+The nightly needs the Mac logged in (VoiceOver speaks only in a user
+session) with the screen unlocked. If System Integrity Protection is on,
+`@guidepup/setup` can't write the permission itself: once, in System
+Settings → Privacy & Security, give the terminal that runs the nightly
+**Accessibility** and **Automation → VoiceOver**, and in VoiceOver Utility
+turn on **Allow VoiceOver to be controlled with AppleScript**.
 
 ### Results
 

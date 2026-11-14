@@ -39,7 +39,7 @@ const field: React.CSSProperties = {
 };
 const muted: React.CSSProperties = { fontSize: 12, color: "hsl(var(--fg-muted))" };
 const errorStyle: React.CSSProperties = { fontSize: 12, color: "hsl(var(--danger))" };
-const primary: React.CSSProperties = { padding: "6px 14px", border: "none", borderRadius: 6, background: "hsl(var(--accent))", color: "white", cursor: "pointer", justifySelf: "start" };
+const primary: React.CSSProperties = { padding: "6px 14px", border: "none", borderRadius: 6, background: "hsl(var(--accent))", color: "hsl(var(--accent-fg))", cursor: "pointer", justifySelf: "start" };
 
 /** A human message for a failed connection (never the error's own text: explainError). */
 export function describeConnectError(e: unknown, settings: ProviderSettings): string {

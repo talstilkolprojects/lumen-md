@@ -23,6 +23,7 @@ npm run nightly -- --dry-run     # print the plan, run nothing
 | `perf` | כל לילה | build, תקציב החבילה, פרויקט הביצועים `@nightly`, ו-Lighthouse כשהוא מותקן |
 | `triage` | כל לילה | מיון הביקורות של ה-PR-ים הפתוחים, הספירה של 0.14 על 20 ה-PR-ים הראשונים מאז 12.11.2026, ו-`live:meta --self-test` (למטה) |
 | `weekly` | בימי ראשון (UTC) | בריאות התלויות (audit, outdated, רישיונות), וציוני mutation כש-`test:mutation` קיים |
+| `sr` | כל לילה, ב-Mac שבו `@guidepup/*` מותקנים | ‏`npx @guidepup/setup --ci`, ואז המסע העברי עם VoiceOver ([קוראי מסך, אוטומטית](/he/editor/screen-reader-automation/)). לא נספר ב-0.11. |
 
 `--only flake,perf` בוחר סוגים. המתזמן מעביר `--scheduled`, שמסמן את הדוחות
 כמתוזמנים. משימה 0.11 סופרת רק אותם.

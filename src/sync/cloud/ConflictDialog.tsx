@@ -279,7 +279,7 @@ const btnPrimary: React.CSSProperties = {
   border: "none",
   borderRadius: 6,
   background: "hsl(var(--accent))",
-  color: "white",
+  color: "hsl(var(--accent-fg))",
   cursor: "pointer",
 };
 

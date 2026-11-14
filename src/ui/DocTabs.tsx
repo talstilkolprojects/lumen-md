@@ -254,8 +254,9 @@ export const DocTabs = React.memo(function DocTabs({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                width: 22,
-                height: 22,
+                // 24 px: the WCAG 2.2 minimum target (2.5.8).
+                width: 24,
+                height: 24,
                 margin: "auto 6px auto 0",
                 borderRadius: 4,
                 border: "none",

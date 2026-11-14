@@ -3,7 +3,7 @@
  * production build only builds; the deploy config calls the script.
  */
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 // @ts-expect-error — plain .mjs script without type declarations
 import { GATES, GATE_EXTRA, PREVIEW_GATES, PRODUCTION_GATES, gatesFor, vitestSummary } from "../../scripts/vercel-build.mjs";
@@ -70,7 +70,9 @@ describe("scripts/vercel-build.mjs", () => {
     expect(boxMinutes({ LUMEN_BUILD_STARTED: String(t0) }, t0 + 40 * min)).toBe(0);
     expect(GATES.e2e).toEqual(["run", "-s", "e2e:gate"]);
     // The whole chromium project took 29.7 min on the build machine; the gate runs the specs that fit.
-    expect(E2E_SPECS).toEqual(["e2e/smoke.spec.ts"]);
+    // W6.30: axe and the aria snapshots on the Hebrew flows join the smoke spec.
+    expect(E2E_SPECS).toEqual(["e2e/smoke.spec.ts", "e2e/a11y-hebrew-gate.spec.ts", "e2e/aria-hebrew.spec.ts"]);
+    for (const f of E2E_SPECS) expect(existsSync(resolve(ROOT, f)), f).toBe(true);
     // Firefox runs the smoke spec too; WebKit cannot run on the build image (glibc 2.34).
     expect(FIREFOX_SPECS).toEqual(["e2e/smoke.spec.ts"]);
     expect(e2eRuns().map((r: { project: string }) => r.project)).toEqual(["chromium", "firefox"]);

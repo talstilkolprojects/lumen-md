@@ -33,7 +33,7 @@ function StorageStatus() {
         ? t("versionHistory.storage.persisted")
         : t("versionHistory.storage.notPersisted");
   return (
-    <div data-testid="storage-status" data-persisted={String(state.persisted)} style={{ marginBlockStart: 6, fontSize: 11, lineHeight: 1.4, color: state.persisted === false || (percent ?? 0) >= 80 ? "hsl(var(--warning))" : "hsl(var(--fg-muted))" }}>
+    <div data-testid="storage-status" data-persisted={String(state.persisted)} style={{ marginBlockStart: 6, fontSize: 11, lineHeight: 1.4, color: state.persisted === false || (percent ?? 0) >= 80 ? "hsl(var(--warn))" : "hsl(var(--fg-muted))" }}>
       <div>{text}</div>
       {percent !== null && <div>{t("versionHistory.storage.usage", { used: formatBytes(state.usage ?? 0), quota: formatBytes(state.quota ?? 0), percent: String(percent) })}</div>}
       {state.persisted === false && (
@@ -185,7 +185,7 @@ export function VersionHistory({ fileName, currentContent, onRestore, onClose }:
                 border: "none",
                 borderRadius: 6,
                 background: "hsl(var(--accent))",
-                color: "white",
+                color: "hsl(var(--accent-fg))",
                 cursor: "pointer",
                 fontWeight: 600,
               }}>

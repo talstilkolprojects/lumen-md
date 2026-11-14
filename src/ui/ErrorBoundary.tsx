@@ -33,9 +33,11 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
       return (
-        <div style={{ padding: "20px", color: "hsl(var(--destructive, 0 84% 60%))", border: "1px dashed currentcolor", borderRadius: "8px", margin: "16px", fontSize: "14px", background: "hsl(var(--destructive)/0.1)" }}>
+        // --destructive is not a token here (its fallback red was 3.8:1 on white); the
+        // text is the page's own colour and the red is the frame (WCAG 1.4.3, W6.30).
+        <div style={{ padding: "20px", color: "hsl(var(--fg))", border: "1px dashed hsl(var(--danger))", borderInlineStart: "4px solid hsl(var(--danger))", borderRadius: "8px", margin: "16px", fontSize: "14px", background: "hsl(var(--danger) / 0.06)" }}>
           <strong>{t("errorBoundary.heading")}</strong>
-          <p style={{ marginTop: "8px", opacity: 0.8, fontSize: "12px", fontFamily: "monospace" }}>
+          <p style={{ marginTop: "8px", fontSize: "12px", fontFamily: "monospace" }}>
             {this.state.error?.message ?? t("errorBoundary.unexpected")}
           </p>
           <ErrorActions compact />

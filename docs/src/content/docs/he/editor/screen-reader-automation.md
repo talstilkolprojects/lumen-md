@@ -34,7 +34,7 @@ Guidepup צריך מחשב שולחני אמיתי: הוא משתלט על קו�
 ### ב-Mac ‏(VoiceOver)
 
 ```sh
-npm install -D @guidepup/guidepup @guidepup/playwright   # פעם אחת
+npm install -D @guidepup/guidepup @guidepup/playwright @guidepup/setup   # פעם אחת
 npx @guidepup/setup                                       # פעם אחת: מאפשר להפעיל את VoiceOver מסקריפט
 npm run test:sr -- --project=voiceover
 ```
@@ -51,6 +51,21 @@ npm run test:sr -- --project=nvda-firefox
 ```
 
 בוחרים ב-NVDA קול עברי (eSpeak NG בעברית או Microsoft Asaf).
+
+### כל לילה ב-Mac
+
+אחרי שמתקינים את שלוש חבילות `@guidepup/*`, ‏`npm run nightly` ב-Mac (תוכנית
+W4.36, [ההרצות הליליות](/he/contributing/nightly/)) מוסיף את הסוג **sr**:
+‏`npx @guidepup/setup --ci`, ואז המסע עם VoiceOver. הדוח החתום
+‏`reports/nightly/<date>-sr.json` שומר לכל הגדרה את המשימות שעברו, כל חסם
+ואת שורת הפרוטוקול. ‏`npm run nightly -- --only sr` מריץ רק אותו.
+
+ההרצה הלילית צריכה Mac מחובר למשתמש (VoiceOver מדבר רק בתוך סשן של
+משתמש) עם מסך לא נעול. אם הגנת שלמות המערכת (SIP) פעילה, ‏`@guidepup/setup`
+לא יכול לכתוב את ההרשאה בעצמו: פעם אחת, בהגדרות המערכת ← פרטיות ואבטחה,
+נותנים למסוף שמריץ את הלילה הרשאת **נגישות** והרשאת **אוטומציה ← VoiceOver**,
+וב-VoiceOver Utility מפעילים את **Allow VoiceOver to be controlled with
+AppleScript**.
 
 ### תוצאות
 
