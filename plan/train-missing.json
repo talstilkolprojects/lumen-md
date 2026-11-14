@@ -1,0 +1,878 @@
+{
+ "about": "W10.F7: a decision for every open PR whose head is not in the train (npm run train:missing). in = a task or train brings it; rejected = it will not go in, and why; replaced = what carries it instead. A decision is about one head: a PR that moves needs a new one.",
+ "train": "verify/train-4",
+ "trainHead": "fcf760fde8e409096db31657461af8b1c7b8cd14",
+ "decided": "2026-11-14",
+ "decisions": [
+  {
+   "pr": 109,
+   "head": "f424e7c2c012b313f78c9a8fc8655a7ccd2d5504",
+   "decision": "rejected",
+   "reason": "carries the taken domain (the owner's rule); scripts/train never merges it (NEVER = {109})."
+  },
+  {
+   "pr": 151,
+   "head": "2c52581e59a851c6b896cbf56d01d08df2f78c24",
+   "decision": "rejected",
+   "reason": "bumps a GitHub Actions workflow; the repo runs no GitHub Actions (owner's rule), so it changes nothing that runs."
+  },
+  {
+   "pr": 152,
+   "head": "a9449f1d95d5bd83cf151f6e419aca1e679b453d",
+   "decision": "rejected",
+   "reason": "bumps a GitHub Actions workflow; the repo runs no GitHub Actions (owner's rule), so it changes nothing that runs."
+  },
+  {
+   "pr": 153,
+   "head": "e43741c71c473bc3fd136c15514f60ec1f457b37",
+   "decision": "rejected",
+   "reason": "an @types/node major for mcp-server, which decision 2.73 (#499) tells dependabot to ignore."
+  },
+  {
+   "pr": 154,
+   "head": "c34346208d5d80bc37868bf0540000fa16e45eab",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 160,
+   "head": "58797fa3303e9394409c9da531368e443754a824",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 161,
+   "head": "7a5c4df8b57dbabb5298926fad9a904c240cc07b",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 162,
+   "head": "5b8963441b40667d9d7e5232d9b8b7e15a7875ab",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 164,
+   "head": "23bf8f36fcd502d2b9574b01a2429ce2eb4e56b1",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 165,
+   "head": "ea798791e76e230448c1583094d56ea9695f35cb",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 166,
+   "head": "f99cde0f28261d24b8b6f2e04b8b5bf3db08ff9e",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 167,
+   "head": "e54c5bcd010ad2d879181f44db792d389750e7ef",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 168,
+   "head": "a2b1e9b5031412c110672b00c3d97fd575d2ef79",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 204,
+   "head": "42c847468cd8184202c24d6b8de8f3afe93646a3",
+   "decision": "in",
+   "via": "W10.F9 (#646)",
+   "reason": "#646 merges #204's head (ci-doctor --around/--window, 42c8474)."
+  },
+  {
+   "pr": 235,
+   "head": "2483bdca05a45e279a1da77c80d6250b7b714203",
+   "decision": "in",
+   "via": "W10.F4 (#635)",
+   "reason": "#235's last commit (2.9, 2.79, 2.80 move-safety fixes) is ported onto train-4's split vault code in #635."
+  },
+  {
+   "pr": 258,
+   "head": "aeb77482d4f3b4eccee38d55768ddf4c47632afe",
+   "decision": "in",
+   "via": "train 6 (new head of an already merged PR; no W10 task names it yet)",
+   "reason": "its earlier head is in the train; the new commit is a fix not carried yet: a folder that can't be listed is not a mass delete (2.83, 2.84)."
+  },
+  {
+   "pr": 261,
+   "head": "ba8c89c30141f477b77576feca4f77ec22811f8e",
+   "decision": "in",
+   "via": "train 6 (new head of an already merged PR; no W10 task names it yet)",
+   "reason": "its earlier head is in the train; the new commit is a fix not carried yet: setup waits while a slow start-up is still restoring the vault (2.85, 2.86)."
+  },
+  {
+   "pr": 264,
+   "head": "58f5da66049f9c475af003549c3eb8507b678ebf",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 265,
+   "head": "12b772c5ce51c2cc9314c73e389ed51d170d1dc7",
+   "decision": "in",
+   "via": "W10.F6 (#637)",
+   "reason": "#637 merges #265's head (chore/dod 12b772c5ce); chore/dod keeps moving, each later head goes in the same way."
+  },
+  {
+   "pr": 267,
+   "head": "d40c48b9f9e9b3ce3e4914d3af97550bae848fe0",
+   "decision": "in",
+   "via": "train 6 (new head of an already merged PR; no W10 task names it yet)",
+   "reason": "its earlier head is in the train; the new commit is a fix not carried yet: coordinate object aliases parsed independently (decision 2.12)."
+  },
+  {
+   "pr": 272,
+   "head": "fa8cd877e52c901f4b8160dedd1e03d0ca436ab5",
+   "decision": "in",
+   "via": "W10.F8",
+   "reason": "the PDF reader review fixes 2.17-2.26 (fa8cd877)."
+  },
+  {
+   "pr": 275,
+   "head": "e1ecaeaaee9696787c86919dfa8b21325b345c1b",
+   "decision": "in",
+   "via": "train 6 (new head of an already merged PR; no W10 task names it yet)",
+   "reason": "its earlier head is in the train; the new commit is a fix not carried yet: compare-and-swap writeIf/removeIf in every vault backend; e2ee fixes 2.29-2.31."
+  },
+  {
+   "pr": 277,
+   "head": "eae63aba62f60887aabf1fdc4f5827edda733158",
+   "decision": "in",
+   "via": "train 6 (new head of an already merged PR; no W10 task names it yet)",
+   "reason": "its earlier head is in the train; the new commit is a fix not carried yet: refuse an Ollama address the CSP blocks (decision 2.38)."
+  },
+  {
+   "pr": 291,
+   "head": "9262efa53614f47827487764139740f6a81779ea",
+   "decision": "replaced",
+   "by": "#544 (W10.F15)",
+   "reason": "the same 4 feat/sync-crypto commits, all in #544's head; the rest is in train-4."
+  },
+  {
+   "pr": 294,
+   "head": "7fbd23f59cceafb18a19321786557dfbfa47f79e",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 296,
+   "head": "b34d83617e936aacaf533136b9cdb947a939b227",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 306,
+   "head": "4a807c4b7f5259d422054529fbd7a11be5aeb9fd",
+   "decision": "in",
+   "via": "train 6 (new head of an already merged PR; no W10 task names it yet)",
+   "reason": "its earlier head is in the train; the new commit is a fix not carried yet: bounded /regex/ search by note size and time (decision 2.39)."
+  },
+  {
+   "pr": 316,
+   "head": "6a0c27b1586f7e7c653b8ce4a08dbbd9ddece30f",
+   "decision": "in",
+   "via": "train 6 (new head of an already merged PR; no W10 task names it yet)",
+   "reason": "its earlier head is in the train; the new commit is a fix not carried yet: the Web Clipper page describes the receiver that exists (decision 2.92)."
+  },
+  {
+   "pr": 317,
+   "head": "54bfd1154f27a0bf01ea591129b6eb0964025ac9",
+   "decision": "replaced",
+   "by": "train-4",
+   "reason": "merging it into train-4 changes nothing (git merge-tree gives train-4's own tree): the version is already there."
+  },
+  {
+   "pr": 318,
+   "head": "88e5c6e5792170f96c798172efacf14e4a5e2477",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 319,
+   "head": "126d130f0b99ca34f71a8e322da5d9d02cacaf37",
+   "decision": "replaced",
+   "by": "train-4",
+   "reason": "merging it into train-4 changes nothing (git merge-tree gives train-4's own tree): the version is already there."
+  },
+  {
+   "pr": 320,
+   "head": "458ba8a45f0b20129fbf720d3db58081f89df4ae",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 323,
+   "head": "3808db68943a13088d21aa66b226a4d7ade1a10b",
+   "decision": "replaced",
+   "by": "train-4",
+   "reason": "merging it into train-4 changes nothing (git merge-tree gives train-4's own tree): the version is already there."
+  },
+  {
+   "pr": 324,
+   "head": "533d9c7a76ed60ebe219897f60640d19f02a2e5c",
+   "decision": "replaced",
+   "by": "train-4",
+   "reason": "merging it into train-4 changes nothing (git merge-tree gives train-4's own tree): the version is already there."
+  },
+  {
+   "pr": 325,
+   "head": "43050c0baece87ba1feaccfec174d404ec1f1b49",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 326,
+   "head": "b935bbbea6d4da49fdfc2a936f4d9f144639a086",
+   "decision": "replaced",
+   "by": "#612 (ws 8.22.2)",
+   "reason": "a newer dependabot PR bumps the same package further."
+  },
+  {
+   "pr": 327,
+   "head": "b3ba2f697636c4fb96745c543ee9e3a3040d250e",
+   "decision": "replaced",
+   "by": "#534 (astro 7.4.12)",
+   "reason": "a newer dependabot PR bumps the same package further."
+  },
+  {
+   "pr": 328,
+   "head": "9667c3fadd6ed40e193a77ac41d84c42da0ff2be",
+   "decision": "replaced",
+   "by": "#614 (starlight 0.42.10)",
+   "reason": "a newer dependabot PR bumps the same package further."
+  },
+  {
+   "pr": 329,
+   "head": "74b7cad09132b8bd14bd6b124e83d69632c21015",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 340,
+   "head": "29270ef009df04c14c525567b815ef20e8cd770f",
+   "decision": "replaced",
+   "by": "#500, #569/#605 and W10.E28-E30",
+   "reason": "12.1 from 9.11 with 47 conflicts today: the max-lines gate is #500, the splits came through #569/#605, the rest is W10.E28-E30; its empty-catch lint rule is already in train-4."
+  },
+  {
+   "pr": 356,
+   "head": "ecb426ad9554e56b6264b09a91a7bc18a0dec533",
+   "decision": "replaced",
+   "by": "train-4",
+   "reason": "every commit is patch-equivalent to one in train-4 (git cherry: 0 unique)."
+  },
+  {
+   "pr": 399,
+   "head": "44d1f9f6d7abeab074929363c20deed91eaa1dc9",
+   "decision": "replaced",
+   "by": "#544 (W10.F15)",
+   "reason": "its 4 commits not in train-4 (44d1f9f6d7, fa0fafd23d, a26f9af574, 6e739abfcd: feat/sync-crypto) are all in #544's head; the rest is in train-4."
+  },
+  {
+   "pr": 422,
+   "head": "9dad38fda356f9807750d0027b0f11e9736420c0",
+   "decision": "in",
+   "via": "W10.F26",
+   "reason": "desktop windows, tray capture, Cargo.lock (W3.9)."
+  },
+  {
+   "pr": 431,
+   "head": "3268d71dab0ef0e611e497606faec91ad345228d",
+   "decision": "replaced",
+   "by": "verify/train-2..4 and #626",
+   "reason": "the old train-1 integration PR; trains 2-4 replaced it, and #626 brings train 1's last 11 commits."
+  },
+  {
+   "pr": 448,
+   "head": "f3861f8884be9c28238afddfcd88ffcc2f249e87",
+   "decision": "in",
+   "via": "train 6 (new head of an already merged PR; no W10 task names it yet)",
+   "reason": "its earlier head is in the train; the new commit is a fix not carried yet: four share-link fixes (RR4-448, review 2) after the merged head."
+  },
+  {
+   "pr": 451,
+   "head": "aae88fe95a7003f4bca5ade9f4470f8f0788dae2",
+   "decision": "in",
+   "via": "train 6 (new head of an already merged PR; no W10 task names it yet)",
+   "reason": "its earlier head is in the train; the new commit is a fix not carried yet: four airplane-mode fixes after the merged head (RR6-451, review 8)."
+  },
+  {
+   "pr": 455,
+   "head": "d124512a276a4a0280521bca29283fd9e17db54f",
+   "decision": "in",
+   "via": "W10.F13",
+   "reason": "the weekly vitest mutation run (d124512a27)."
+  },
+  {
+   "pr": 456,
+   "head": "adb8ec2117b9b947edc57334d2edcb280eeca69f",
+   "decision": "in",
+   "via": "train 6 (new head of an already merged PR; no W10 task names it yet)",
+   "reason": "its earlier head is in the train; the new commit is a fix not carried yet: the share-server DPIA states #469's three actions as done (decision 2.46)."
+  },
+  {
+   "pr": 469,
+   "head": "18620faf2785cf77a471896714af7d8465641d4b",
+   "decision": "in",
+   "via": "train 6 (new head of an already merged PR; no W10 task names it yet)",
+   "reason": "its earlier head is in the train; the new commit is a fix not carried yet: the vault relay's four routes in the public Worker (decision 5.16)."
+  },
+  {
+   "pr": 472,
+   "head": "7d29b4a9b50f598ad84fe237dca82ad8fb95d5ab",
+   "decision": "replaced",
+   "by": "#544 (W10.F15)",
+   "reason": "the same 4 feat/sync-crypto commits, all in #544's head; the rest is in train-4."
+  },
+  {
+   "pr": 481,
+   "head": "0b0ad06c4a7a9c00d881b2e74f934b7020204048",
+   "decision": "in",
+   "via": "train 6 (new head of an already merged PR; no W10 task names it yet)",
+   "reason": "its earlier head is in the train; the new commit is a fix not carried yet: the CODEOWNERS additions after 'Merge #481 head 870c6c311f'."
+  },
+  {
+   "pr": 499,
+   "head": "1329854b6ebd6db390f7babfc9692f0daa1832e6",
+   "decision": "in",
+   "via": "train 6 (new head of an already merged PR; no W10 task names it yet)",
+   "reason": "its earlier head is in the train; the new commit is a fix not carried yet: decision 2.73 (dependabot ignores @types/node majors for mcp-server), after 'Merge #499 head 8ba89395c4'."
+  },
+  {
+   "pr": 500,
+   "head": "dc4b14ffe7e3c4d250b50ea21ecc2ae030dc65e3",
+   "decision": "in",
+   "via": "W10.F14 (local verify/train-5)",
+   "reason": "the max-lines gate and App split, in the local train-5 (c92553af4b) that becomes train 6's base."
+  },
+  {
+   "pr": 511,
+   "head": "57bc573db3ae9e0c0af3f5d24a0ddfc01f735f35",
+   "decision": "in",
+   "via": "W10.F27",
+   "reason": "verification levels from signed receipts, on chore/dod (W6.7)."
+  },
+  {
+   "pr": 513,
+   "head": "5b35ab7af85ecc0d2af04a2ffdb34c233aa40b91",
+   "decision": "in",
+   "via": "W10.F27",
+   "reason": "the works-for-the-user board (W6.44), after #511 on chore/dod."
+  },
+  {
+   "pr": 528,
+   "head": "febce98998cdbc5a0381ada63d36fbc038661e62",
+   "decision": "in",
+   "via": "W10.F14 (local verify/train-5)",
+   "reason": "the content frame on its own site, in the local train-5."
+  },
+  {
+   "pr": 531,
+   "head": "24244c74fbe20d1b0f164fce3107bedeed06826e",
+   "decision": "in",
+   "via": "W10.F14 (local verify/train-5)",
+   "reason": "share server and relay on Workers, in the local train-5."
+  },
+  {
+   "pr": 532,
+   "head": "0023af8b01ec3513b26ca3ca64b273fef09d264e",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 533,
+   "head": "7580ebd99c9ba6023359fd7ae8e349a2860eebab",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 534,
+   "head": "b759f9ee40d64e2178d73668e4afc6a719768764",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 539,
+   "head": "70e16bd03d32497dbf1eb4142a942b901096a8f1",
+   "decision": "replaced",
+   "by": "#620 (W10.F17)",
+   "reason": "#620 carries #539 onto verify/train-4."
+  },
+  {
+   "pr": 541,
+   "head": "b3f378f4d35fcfdd890b73d9f49a5660dd58a413",
+   "decision": "in",
+   "via": "W10.F18",
+   "reason": "the unmoderated usability round; rebased on train 6 there."
+  },
+  {
+   "pr": 544,
+   "head": "29c95591113f8aa619500e6556428664030bebdf",
+   "decision": "in",
+   "via": "W10.F15",
+   "reason": "SAS pairing (security); carries feat/sync-crypto's review 16/34 fixes."
+  },
+  {
+   "pr": 545,
+   "head": "f6acf9ba34458acafbc78103cc0f563e682a020c",
+   "decision": "in",
+   "via": "W10.F15",
+   "reason": "the SAS comparison UI (security)."
+  },
+  {
+   "pr": 546,
+   "head": "5576cb001d6f5c9256bb14a0ae7ab637cbde365d",
+   "decision": "in",
+   "via": "W10.F11",
+   "reason": "the e2e skip reduction 39 -> 15 under the W4.12 gate."
+  },
+  {
+   "pr": 550,
+   "head": "19a727d8156256e9fa2364a4fd0c95f625688403",
+   "decision": "in",
+   "via": "train 6 (no W10 task names it yet)",
+   "reason": "finished work not in any train: SLSA provenance and Sigstore bundles (W7.22)."
+  },
+  {
+   "pr": 553,
+   "head": "d5518751abaf2479098813f96f5f06ab09236704",
+   "decision": "in",
+   "via": "W10.F15",
+   "reason": "one embed-provider list in security/policy.json."
+  },
+  {
+   "pr": 555,
+   "head": "c1e6b47a8a4b8f15bf7e9705b2c906466b2f5278",
+   "decision": "replaced",
+   "by": "train-4",
+   "reason": "every commit is patch-equivalent to one in train-4 (git cherry: 0 unique)."
+  },
+  {
+   "pr": 556,
+   "head": "a6d395f63a284dafdff323ee1e31c6c8fa195794",
+   "decision": "in",
+   "via": "train 6 (no W10 task names it yet)",
+   "reason": "finished work not in any train: review receipts only from collaborators, signed (W6.11: train-4's gate accepts a receipt from anyone)."
+  },
+  {
+   "pr": 557,
+   "head": "7e3ad362a568732edfec4341f2893d8a0d3bb231",
+   "decision": "in",
+   "via": "W10.F19",
+   "reason": "the release provenance gate (W7.22)."
+  },
+  {
+   "pr": 559,
+   "head": "49b3682e4fed698e435bbdcd120f068322fb9af0",
+   "decision": "in",
+   "via": "W10.F23",
+   "reason": "editor: image size reset, attachments with their note, copy as HTML (W7.3)."
+  },
+  {
+   "pr": 562,
+   "head": "8dbdceead36cdf351eacc6cc2595c7c3e09ec8fd",
+   "decision": "in",
+   "via": "train 6 (no W10 task names it yet)",
+   "reason": "finished work not in any train: blind suites for the e2ee header, manifest, worker ledger; pr:check refuses hand-edited snapshots (W6.15)."
+  },
+  {
+   "pr": 565,
+   "head": "1305f8bbef9b03c6dcdbbecf6be5f4d88b48b957",
+   "decision": "replaced",
+   "by": "train-4",
+   "reason": "every commit is patch-equivalent to one in train-4 (git cherry: 0 unique)."
+  },
+  {
+   "pr": 566,
+   "head": "3fd62bff61b6b58a3cd0a49c88bc36ec30d9bab8",
+   "decision": "in",
+   "via": "W10.F5 (#626)",
+   "reason": "#626 merges #566's head (gateEnv keeps the e2e collab socket out of vitest) on top of train 1's commits."
+  },
+  {
+   "pr": 567,
+   "head": "2329e5a2bef089f302fc3045127267d7779b98a3",
+   "decision": "in",
+   "via": "train 6 (no W10 task names it yet)",
+   "reason": "finished work not in any train: fuzzing .base, .excalidraw, PDF annotations, plugin manifests; two .base bugs fixed."
+  },
+  {
+   "pr": 568,
+   "head": "95492d5f9299f0ea0e6079b4fc3e1c8c842e880c",
+   "decision": "rejected",
+   "reason": "a release-branch PR (release-beta1 rebuilt from train 3): it lands on chore/release-beta1, not on a train; its provenance-gate commit is #557 (W10.F19)."
+  },
+  {
+   "pr": 569,
+   "head": "e5692a5fa6f6c62e383c15b6fc8821a419c20699",
+   "decision": "replaced",
+   "by": "#605 (W10.F12)",
+   "reason": "#569's head is an ancestor of #605's head."
+  },
+  {
+   "pr": 570,
+   "head": "2af386bcaab94f68896a815431b1ef228db59989",
+   "decision": "in",
+   "via": "train 6 (no W10 task names it yet)",
+   "reason": "finished work not in any train: i18n:drift counts the lazy English (Buildkite pipeline)."
+  },
+  {
+   "pr": 571,
+   "head": "3429b8e78347d1b69ab74d3fe2d03cf8cc06d0ea",
+   "decision": "in",
+   "via": "W10.F23",
+   "reason": "bulk property edit, undone in one step (W7.4)."
+  },
+  {
+   "pr": 575,
+   "head": "2331e1035820bd84707f2b97eb2cf4ceca0ef743",
+   "decision": "in",
+   "via": "train 6 (new head of an already merged PR; no W10 task names it yet)",
+   "reason": "its earlier head is in the train; the new commit is a fix not carried yet: the commit after the fold-in (#575's own manifest gate and Workers Builds config)."
+  },
+  {
+   "pr": 576,
+   "head": "1b44f978962b8b79f18db4b24c58742d5db76008",
+   "decision": "in",
+   "via": "W10.F22",
+   "reason": "Yiddish and Ladino (W7.9)."
+  },
+  {
+   "pr": 580,
+   "head": "04de1d274bc3dcdc887ae2819eda2968cf990006",
+   "decision": "in",
+   "via": "train 6 (no W10 task names it yet)",
+   "reason": "finished work not in any train: pr-check's test repo carries the budget script's source-map helper (0.19)."
+  },
+  {
+   "pr": 586,
+   "head": "60a0d0484b74f54b76502e31fa0930ed54462783",
+   "decision": "in",
+   "via": "W10.F16",
+   "reason": "one structured-output path (W7.14)."
+  },
+  {
+   "pr": 590,
+   "head": "6d02d1f6254344b277734f2442b55f4378b27e33",
+   "decision": "in",
+   "via": "W10.F16",
+   "reason": "speculative decoding, pinned off for evals."
+  },
+  {
+   "pr": 594,
+   "head": "36b68563478e1e84ac4ab0bbd444705471d7090e",
+   "decision": "in",
+   "via": "W10.F24",
+   "reason": "the Israeli academic calendar (W7.8)."
+  },
+  {
+   "pr": 595,
+   "head": "79d32daeb3f94bd9a46e6d57bede4ad00273fc3b",
+   "decision": "in",
+   "via": "W10.F24",
+   "reason": "highlights scanned from a printed page (W7.2)."
+  },
+  {
+   "pr": 596,
+   "head": "4535c57746883adda28056f0812a261b662ee32f",
+   "decision": "in",
+   "via": "train 6 (no W10 task names it yet)",
+   "reason": "finished work not in any train: publish to the AT Protocol and the fediverse (W7.19)."
+  },
+  {
+   "pr": 598,
+   "head": "4417807a536715ac755ac61ee2c63d91e8f65308",
+   "decision": "in",
+   "via": "W10.F25",
+   "reason": "20 Notion database scenarios and their fixes (W8.2)."
+  },
+  {
+   "pr": 600,
+   "head": "9f40a35458b214195990eea77e8bb80f7d38f517",
+   "decision": "in",
+   "via": "W10.F25",
+   "reason": "tesseract.js CER on the 20 scanned pages (W8.4)."
+  },
+  {
+   "pr": 602,
+   "head": "aa3f9a2b7143dda849ee75c265da625590137191",
+   "decision": "in",
+   "via": "W10.F16",
+   "reason": "the Hebrew embeddings / reranker competition harness (W7.13, W9.7)."
+  },
+  {
+   "pr": 603,
+   "head": "584172b6f867945d99ce827b03e97cd204232e26",
+   "decision": "in",
+   "via": "W10.F24",
+   "reason": "Hebrew handwriting measurement design (W7.11)."
+  },
+  {
+   "pr": 605,
+   "head": "2041505607537a146ecb3571abb381f368d96ff7",
+   "decision": "in",
+   "via": "W10.F12",
+   "reason": "startup 218 KB: command bodies load on use (part already in train-4 as 'Merge #605 head 2041505607')."
+  },
+  {
+   "pr": 608,
+   "head": "97ad0f42c8d34ef407227999bcdc3db772346160",
+   "decision": "in",
+   "via": "W10.F10",
+   "reason": "e2e/plugins.spec.ts, after W10.B1/B2."
+  },
+  {
+   "pr": 611,
+   "head": "87624fb27e5ac5bda0c0baf37046f042ab22be8e",
+   "decision": "in",
+   "via": "W10.F26",
+   "reason": "TTS: Hebrew numbers, tts:voice (W2.6)."
+  },
+  {
+   "pr": 612,
+   "head": "8b27b2db480f6c5a55d81d7133f7cebcc48ce1ef",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 613,
+   "head": "f1c69343301c8356ba96c68a9cfd4ce6efba861b",
+   "decision": "replaced",
+   "by": "#534 (astro 7.4.12)",
+   "reason": "a newer dependabot PR bumps the same package further."
+  },
+  {
+   "pr": 614,
+   "head": "6896be3970c9a51bada56c60298b215d8045d38c",
+   "decision": "rejected",
+   "reason": "dependency bumps are not merged one PR at a time into a train: they go in as one update with a fresh lockfile and the full test run (W6.14, lockfile drift gate W8.9), which needs npm install, so it is owed to the Mac run."
+  },
+  {
+   "pr": 615,
+   "head": "a43a7141c2f151f351bc871ef263d037b682afbb",
+   "decision": "in",
+   "via": "W10.F26",
+   "reason": "the WCAG 2.2 ACR from axe-core (W3.8)."
+  },
+  {
+   "pr": 617,
+   "head": "330817b7ed24cf55cb8de6bbd5db90590dcd52e1",
+   "decision": "in",
+   "via": "W10.F20",
+   "reason": "npm run owner:checklist, on chore/dod then the train."
+  },
+  {
+   "pr": 618,
+   "head": "243a3f9f02a0c07d83879fe018b3a413290d4337",
+   "decision": "in",
+   "via": "W10.F27",
+   "reason": "plan fixes on chore/dod (9.8 P0, W9.2 after W9.4, no taken domain in the plan)."
+  },
+  {
+   "pr": 619,
+   "head": "f885336f8b982ccc20c34913877d0ed606c1fd6d",
+   "decision": "in",
+   "via": "W10.F21",
+   "reason": "every low and info finding of reviews 6-34."
+  },
+  {
+   "pr": 620,
+   "head": "1f0564cab107502c1fde0314f5e384019dbca6a1",
+   "decision": "in",
+   "via": "W10.F17",
+   "reason": "#539's lockfile drift and lane state, carried onto verify/train-4."
+  },
+  {
+   "pr": 621,
+   "head": "9031e57099091344bb98cc8f3ea595baeeb2d65f",
+   "decision": "in",
+   "via": "train 6 (wave 10 PR, W1.36 step 1)",
+   "reason": "a wave-10 PR on verify/train-4, made for train 6 to merge."
+  },
+  {
+   "pr": 622,
+   "head": "6d09bb12d716609ba31cda4ff5cd5d7b97278aca",
+   "decision": "in",
+   "via": "train 6 (wave 10 PR, 13.1)",
+   "reason": "a wave-10 PR on verify/train-4, made for train 6 to merge."
+  },
+  {
+   "pr": 623,
+   "head": "d363921deadbb059953bbaae798cd0bbe603ff24",
+   "decision": "in",
+   "via": "train 6 (wave 10 PR, decision 2.41)",
+   "reason": "a wave-10 PR on verify/train-4, made for train 6 to merge."
+  },
+  {
+   "pr": 624,
+   "head": "a26175b20dc8a563b273bcf2476d164e66fe36f8",
+   "decision": "in",
+   "via": "train 6 (wave 10 PR, W6.22)",
+   "reason": "a wave-10 PR on verify/train-4, made for train 6 to merge."
+  },
+  {
+   "pr": 625,
+   "head": "8f1fd377fadf75540416f23e4a8ccaa6e54d511f",
+   "decision": "in",
+   "via": "train 6 (wave 10 PR, W8.10)",
+   "reason": "a wave-10 PR on verify/train-4, made for train 6 to merge."
+  },
+  {
+   "pr": 626,
+   "head": "55cf1e8d732cf0dbc3e267f98a5c163aec382f14",
+   "decision": "in",
+   "via": "W10.F1 (#626)",
+   "reason": "train 1's 11 dropped commits, the 38-minute calculation and #566, for train 6."
+  },
+  {
+   "pr": 627,
+   "head": "702e2c64ebcd79ad70fc8cd95ba1709d52bd8a70",
+   "decision": "in",
+   "via": "train 6 (wave 10 PR, W10.C12)",
+   "reason": "a wave-10 PR on verify/train-4, made for train 6 to merge."
+  },
+  {
+   "pr": 628,
+   "head": "3a425190757301456f57de77fe29d6fc3742aae5",
+   "decision": "in",
+   "via": "train 6 (wave 10 PR, W10.C30)",
+   "reason": "a wave-10 PR on verify/train-4, made for train 6 to merge."
+  },
+  {
+   "pr": 629,
+   "head": "69c12d780655cf4e0e288f5e23d462bf1066bb24",
+   "decision": "in",
+   "via": "train 6 (wave 10 PR, W10.C29)",
+   "reason": "a wave-10 PR on verify/train-4, made for train 6 to merge."
+  },
+  {
+   "pr": 630,
+   "head": "f9204ed7abc6bd9b8a5f906d6901b790a17b09f9",
+   "decision": "in",
+   "via": "train 6 (wave-10 PR: W10.D15)",
+   "reason": "a wave-10 PR made for train 6 to merge."
+  },
+  {
+   "pr": 631,
+   "head": "8b3f8dfc100a0800cdbe9c1940f1ca68f359539f",
+   "decision": "in",
+   "via": "train 6 (wave-10 PR: W10.B1, W10.B2)",
+   "reason": "a wave-10 PR made for train 6 to merge."
+  },
+  {
+   "pr": 632,
+   "head": "3f681db6b5dfb39437f308852e57383b2fe0d071",
+   "decision": "in",
+   "via": "train 6 (wave-10 PR: wave 10)",
+   "reason": "a wave-10 PR made for train 6 to merge."
+  },
+  {
+   "pr": 633,
+   "head": "19801f2cd5b0da4371ed5e334359b2fa12e6c317",
+   "decision": "in",
+   "via": "train 6 (wave-10 PR: W10.B17)",
+   "reason": "a wave-10 PR made for train 6 to merge."
+  },
+  {
+   "pr": 634,
+   "head": "46290b8ca06fabfec9f1dbac5bf867c6ac9e7179",
+   "decision": "in",
+   "via": "train 6 (wave-10 PR: W10.C8)",
+   "reason": "a wave-10 PR made for train 6 to merge (stacked on w10/w10.c-live-seam-gate)."
+  },
+  {
+   "pr": 635,
+   "head": "62c7c19190edf460d678ce5243a164cd7b3b5652",
+   "decision": "in",
+   "via": "W10.F4",
+   "reason": "the #235 port, for train 6."
+  },
+  {
+   "pr": 636,
+   "head": "da6ccb2ec810ecf351a3f2b075aea5e6dad4f623",
+   "decision": "in",
+   "via": "train 6 (wave-10 PR: W10.D9)",
+   "reason": "a wave-10 PR made for train 6 to merge."
+  },
+  {
+   "pr": 637,
+   "head": "3a867a4965abddb3b87b4ce31f48d4b8673ec5b5",
+   "decision": "in",
+   "via": "W10.F6",
+   "reason": "#265's head (chore/dod) for train 6."
+  },
+  {
+   "pr": 638,
+   "head": "04f689c3123e77e2111b885b697f246487b0c992",
+   "decision": "in",
+   "via": "train 6 (wave-10 PR: W10.B4)",
+   "reason": "a wave-10 PR made for train 6 to merge."
+  },
+  {
+   "pr": 639,
+   "head": "15a24f7692fe3c26950e18d0d54fe9f7dadb9cb0",
+   "decision": "in",
+   "via": "train 6 (wave-10 PR: W10.C9)",
+   "reason": "a wave-10 PR made for train 6 to merge (stacked on w10/w10.c8-live-voice-transcriber)."
+  },
+  {
+   "pr": 640,
+   "head": "c3f055218e6badbeecec9e28eba534b4740ffdea",
+   "decision": "replaced",
+   "by": "verify/train-5 (W10.F14)",
+   "reason": "the train-5 lane's work-in-progress PR, marked do-not-merge: train 5 is pushed as verify/train-5 and becomes train 6's base, so the PR itself never merges."
+  },
+  {
+   "pr": 641,
+   "head": "45f2635a5c7c48986cffa24c925a597905b76463",
+   "decision": "in",
+   "via": "train 6 (wave-10 PR: W10.B15)",
+   "reason": "a wave-10 PR made for train 6 to merge."
+  },
+  {
+   "pr": 642,
+   "head": "a9b074261f8f7c3d20e884cd7f5984a0eb2c5071",
+   "decision": "in",
+   "via": "train 6 (wave-10 PR: W10.D5)",
+   "reason": "a wave-10 PR made for train 6 to merge."
+  },
+  {
+   "pr": 643,
+   "head": "8d674ee03c9db94b6bf52ee043cb6cf9e790c17b",
+   "decision": "in",
+   "via": "train 6 (wave-10 PR: W10.G11)",
+   "reason": "a wave-10 PR made for train 6 to merge."
+  },
+  {
+   "pr": 644,
+   "head": "b7d247d78cec56ee5c6c9e23f3e75d3ab9e16240",
+   "decision": "in",
+   "via": "train 6 (wave-10 PR: W10.C17)",
+   "reason": "a wave-10 PR made for train 6 to merge."
+  },
+  {
+   "pr": 645,
+   "head": "a8021397840b61ba827a7ea72cec5a9a6c330e11",
+   "decision": "in",
+   "via": "train 6 (wave-10 PR: W10.C18)",
+   "reason": "a wave-10 PR made for train 6 to merge."
+  },
+  {
+   "pr": 646,
+   "head": "6d263755fd3e3692dc2bc157f721dddc6f5f698b",
+   "decision": "in",
+   "via": "W10.F9",
+   "reason": "#204's head (ci-doctor --around/--window) for train 6."
+  }
+ ]
+}
