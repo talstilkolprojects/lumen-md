@@ -6789,6 +6789,67 @@
       "vars": []
     },
     {
+      "key": "publish.atproto.bridgy",
+      "en": "The site address the publication names. To reach Mastodon and the fediverse too, see the guide: Bridgy Fed bridges Standard.site posts, with no server of yours.",
+      "vars": []
+    },
+    {
+      "key": "publish.atproto.enable",
+      "en": "Also publish to my AT Protocol account (Bluesky, Leaflet) as Standard.site documents",
+      "vars": []
+    },
+    {
+      "key": "publish.atproto.handle",
+      "en": "Handle",
+      "vars": []
+    },
+    {
+      "key": "publish.atproto.password",
+      "en": "App Password",
+      "vars": []
+    },
+    {
+      "key": "publish.atproto.password.hint",
+      "en": "An App Password, not your main password (Bluesky: Settings → Privacy and security → App passwords). It is kept in this device's secret store, never in the vault or the logs.",
+      "vars": []
+    },
+    {
+      "key": "publish.atproto.publishing",
+      "en": "Publishing {count} notes to the AT Protocol…",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "publish.atproto.remove",
+      "en": "Remove the picked notes from the AT Protocol",
+      "vars": []
+    },
+    {
+      "key": "publish.atproto.removed",
+      "en": "{count} notes removed from the AT Protocol",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "publish.atproto.removing",
+      "en": "Removing {count} notes from the AT Protocol…",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "publish.atproto.siteUrl",
+      "en": "Site address (https://…)",
+      "vars": []
+    },
+    {
+      "key": "publish.atproto.title",
+      "en": "AT Protocol (Standard.site)",
+      "vars": []
+    },
+    {
       "key": "publish.badRepo",
       "en": "Write the repository as owner/name",
       "vars": []
