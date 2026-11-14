@@ -37,6 +37,7 @@ npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-c
 - **רישיונות.** לכל חבילת production שנוספה או השתנתה ב־lockfile יש רישיון
   מותר (לא copyleft, לא לא־מסחרי, ולא חסר).
 - **דומיין.** אף שורה שנוספה לא מזכירה את הדומיין של הפרויקט.
+- **תמונות מצב (snapshots).** אסור לערוך snapshot ביד (`__snapshots__/`, `*.snap`, ו־`-snapshots/` של Playwright). הקומיט שמשנה snapshot לא משנה שום דבר אחר, ויש בו שורת trailer `Snapshot-Regenerated: npx vitest run <file> -u on <host>` (או `--update-snapshots`) עם שם המארח השני שבו הוא נוצר מחדש (תוכנית W6.15).
 
 הפקודה גם מזהירה:
 - כשקוד השתנה ואף בדיקה לא השתנתה;

@@ -39,6 +39,7 @@ with 1 when a check fails. Warnings do not fail it.
   lockfile has an allowed licence (no copyleft, no non-commercial, not
   missing).
 - **Domain.** No added line names the project's domain.
+- **Snapshots.** A snapshot (`__snapshots__/`, `*.snap`, Playwright's `-snapshots/`) is never edited by hand. The commit that changes one changes nothing else and carries a trailer `Snapshot-Regenerated: npx vitest run <file> -u on <host>` (or `--update-snapshots`), naming the second host it was regenerated on (plan W6.15).
 
 It also warns:
 - when source changed and no test did;

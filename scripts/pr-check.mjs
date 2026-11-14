@@ -15,6 +15,7 @@
  *   - Production packages added or changed, with their licence.
  *   - Source changed with no test changed (a warning).
  *   - Added lines that name the project's domain (the owner's rule).
+ *   - Snapshots only regenerated, never hand-edited (plan W6.15).
  *   - Written by an AI agent → the PR wants the `ai-written` label.
  *
  *   npm run pr:check -- --base origin/main --body pr-body.md
@@ -27,7 +28,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSy
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { addedLinesFromDiff, AI_LABEL, bodyProblems, domainMentions, licenceChanges, skipCiViolations, unregisteredNetworkCalls, untestedChanges, writtenByAi } from "./lib/prGate.mjs";
+import { addedLinesFromDiff, AI_LABEL, bodyProblems, domainMentions, snapshotEdits, licenceChanges, skipCiViolations, unregisteredNetworkCalls, untestedChanges, writtenByAi } from "./lib/prGate.mjs";
 import { bundleDiffMarkdown } from "./bundle-diff.mjs";
 
 export function parseArgs(argv) {
@@ -105,6 +106,17 @@ export function runChecks(opts) {
     const v = unregisteredNetworkCalls(added, readFileSync(ledgerFile, "utf8"));
     add("Network calls in the privacy ledger", v.length ? "fail" : "ok", v.length ? v.map((x) => `- \`${x.file}:${x.line}\` ${x.why}: \`${x.text.slice(0, 120)}\``) : ["No new network call outside the ledger."]);
   } else add("Network calls in the privacy ledger", "skipped", ["src/ai/privacyLedger.ts is not on this branch."]);
+
+  // Snapshots (plan W6.15): regenerated with -u on the second host, in a commit of their own.
+  const commits = git(cwd, "log", "--no-merges", "--format=%x1e%H%x1f%B%x1f", "--name-only", range)
+    .split("\x1e")
+    .filter((c) => c.trim())
+    .map((c) => {
+      const [sha, message, files = ""] = c.split("\x1f");
+      return { sha: sha.trim(), message, files: files.split("\n").map((f) => f.trim()).filter(Boolean) };
+    });
+  const snap = snapshotEdits(commits);
+  add("Snapshots regenerated, not hand-edited", snap.length ? "fail" : "ok", snap.length ? snap.map((x) => `- \`${x.sha}\` ${x.why}`) : ["No snapshot changed by hand."]);
 
   const dom = domainMentions(added);
   add("The project's domain", dom.length ? "fail" : "ok", dom.length ? dom.map((x) => `- \`${x.file}:${x.line}\``) : ["Not named in any added line."]);
