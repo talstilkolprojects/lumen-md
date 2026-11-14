@@ -138,7 +138,9 @@
     "factory:run": "node scripts/factory/run.mjs",
     "factory:selftest": "bash scripts/factory/selftest.sh",
     "promote:check": "node scripts/promote/check.mjs",
-    "safari:run": "node scripts/safari/run.mjs"
+    "safari:run": "node scripts/safari/run.mjs",
+    "train:build": "node scripts/train/build.mjs",
+    "train:status": "node scripts/train/status.mjs"
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "0.4.2",
