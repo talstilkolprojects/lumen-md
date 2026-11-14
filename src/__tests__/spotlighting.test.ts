@@ -10,7 +10,7 @@
  *    and neither can anything that edits the definition during the run.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import type { AgentDefinition, Executor, ExecutorRequest, ExecutorResponse, NetworkConsentRequest, UntrustedConsentRequest } from "../agents/types";
+import type { AgentDefinition, Executor, ExecutorRequest, ExecutorResponse } from "../agents/types";
 
 const storeState: Record<string, unknown> = { aiKey: null, useLocalAi: false, useFineTunedModel: false, fineTunedModelId: null };
 vi.mock("../store/useStore", () => ({ useAppStore: { getState: () => storeState } }));
@@ -39,7 +39,7 @@ import { registerExecutor, resetExecutors } from "../agents/executors";
 import { clearTrace } from "../agents/trace";
 import { pickTools } from "../agents/tools";
 import { clearStagedChanges, listStagedChanges } from "../agents/staging";
-import { __resetLedger, ledgerEntries } from "../ai/privacyLedger";
+import { __resetLedger } from "../ai/privacyLedger";
 import { setAiPolicy } from "../ai/policy";
 import { datamark, unmarkData, unmarkValue, DATAMARK, guardUntrusted, markUntrustedNote, UNTRUSTED_NOTICE } from "../agents/untrusted";
 import { runSkill } from "../agents/skills/run";

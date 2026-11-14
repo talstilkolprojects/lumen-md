@@ -110,7 +110,7 @@ async function runPdfCase(i: number, policy: "local-first" | "local-only", appro
     consentNetwork: (r) => (netAsks.push(r), !!r.untrusted?.length && approve(netAsks.length + asks.length)),
     consentUntrusted: (r) => (asks.push(r), approve(netAsks.length + asks.length)),
   });
-  const out = net.mock.calls.filter(([u]) => /evil\.example|exfil/.test(decodeURIComponent(String(u)))).length;
+  const out = net.mock.calls.filter(([u]: unknown[]) => /evil\.example|exfil/.test(decodeURIComponent(String(u)))).length;
   return { run, asks, netAsks, out, all: [...asks.map((a) => a.sources), ...netAsks.map((a) => a.untrusted ?? [])] };
 }
 
