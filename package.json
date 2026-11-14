@@ -144,7 +144,8 @@
     "train:build": "node scripts/train/build.mjs",
     "train:status": "node scripts/train/status.mjs",
     "hosts:parity": "node scripts/host-parity.mjs",
-    "hosting:gate": "node scripts/hosting-gate.mjs"
+    "hosting:gate": "node scripts/hosting-gate.mjs",
+    "perf:responsiveness": "node scripts/perf/responsiveness.mjs"
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "0.4.2",

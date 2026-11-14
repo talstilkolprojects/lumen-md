@@ -63,6 +63,8 @@ export function stepsFor(kind, has) {
         { id: "build", cmd: ["npm", "run", "build"], timeoutMin: 20 },
         { id: "budget", cmd: ["npm", "run", "budget"], timeoutMin: 5 },
         { id: "perf-e2e", cmd: ["npx", "playwright", "test", "--project=perf", "--reporter=json"], timeoutMin: 30, json: "perf" },
+        // Plan W6.45: INP and keypress → paint in both editors on 10,000 notes, gated per environment (+10 %), sealed receipt.
+        ...(has("perf:responsiveness") ? [{ id: "perf-responsiveness", cmd: ["npm", "run", "perf:responsiveness", "--", "--seal"], timeoutMin: 45 }] : []),
         ...(has("lighthouse") ? [{ id: "lighthouse", cmd: ["npm", "run", "lighthouse"], timeoutMin: 20 }] : []),
       ];
     case "triage":

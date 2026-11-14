@@ -83,6 +83,33 @@ npm run perf:inp:gate -- --record   # also appends the run to reports/perf/inp-t
 יותר; ההרצה הראשונה הופכת לבסיס (`npm run perf:inp:gate -- --update` מחליף
 אותו בכוונה).
 
+## תגובתיות במכשירים אמיתיים
+
+‏`npm run perf:responsiveness` מודד את שני העורכים (מקור ו-WYSIWYG) בכספת של
+10,000 פתקים, מול בניית הייצור (תוכנית W6.45):
+
+| סביבה | איפה | תקציב INP ‏p75 |
+|---|---|---|
+| `desktop-chromium` | ‏Chrome בשולחן עבודה, המעבד כמו שהוא | פחות מ-100ms |
+| `mid-phone-emulated` | הדמיית Pixel 7, מעבד איטי פי 4 | פחות מ-200ms |
+| `real-device-*` | ‏Pixel ו-iPhone אמיתיים ב-BrowserStack ‏(`perf:responsiveness -- browserstack`) | פחות מ-200ms |
+
+‏p95 של הקשה עד ציור צריך להישאר מתחת ל-16ms בפתק של 50 KB ומתחת ל-33ms
+בפתק של 2 MB, בכל הסביבות. ב-Safari אין Event Timing API, ולכן ב-iPhone נמדד
+רק הזמן מהקשה עד ציור. ה-INP מופיע שם כ"לא נמדד", אף פעם לא כ-0.
+
+לוח הפתקים הקשורים פתוח לאורך כל המדידה, כי הוא מדרג מחדש אחרי כל הפסקה
+בהקלדה. בנייה בלי הלוח עדיין רצה, אבל הריצה שלה מסומנת `relatedPanel: false`,
+היא לא נותנת ציון ללוח התחומים, ולעולם לא משווים אותה ל-baseline שנמדד עם
+הלוח. כדי ליצור baseline חדש מריצים `node scripts/perf/responsiveness.mjs gate --update`.
+
+לכל סביבה יש baseline משלה ב-`reports/perf/baselines/<env>.json`. הריצה
+הראשונה כותבת אותו, ואותו מוסיפים לקומיט. ריצה מאוחרת יותר נכשלת כשמספר
+כלשהו איטי ב-10% או יותר מה-baseline. הריצה כותבת גם קבלה חתומה מסוג
+`lumen-metric` אל `reports/metrics/`, ולוח התחומים נותן לפיה ציון
+(`perf.inp-p75-ms`, ‏`perf.inp-p75-mid-phone-ms`, ‏`perf.key2paint-p95-*`).
+ריצת הביצועים הלילית ומפעל האימות מריצים אותה כל לילה.
+
 ## למפתחים
 
 - `src/storage/vaultIndexCore.ts` — האינדקס (טהור, רץ ב-worker או בדף);
