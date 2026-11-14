@@ -1576,6 +1576,16 @@ export function useCommands({
         },
       },
       {
+        id: "view.properties",
+        label: t("cmd.view.properties"),
+        hint: t("cmd.view.properties.hint"),
+        icon: cmdIcons.Sparkles,
+        group: t("group.tools"),
+        action: () => {
+          window.dispatchEvent(new CustomEvent("lumen-open-properties"));
+        },
+      },
+      {
         id: "file.trash",
         label: t("cmd.file.trash"),
         hint: t("cmd.file.trash.hint"),

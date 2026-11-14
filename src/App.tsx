@@ -21,6 +21,8 @@ const ThemeSettings = lazy(() => import("./ui/ThemeSettings").then(m => ({ defau
 const AiSettingsPanel = lazy(() => import("./ui/AiSettingsPanel").then(m => ({ default: m.AiSettingsPanel })));
 const PrivacyLedgerPanel = lazy(() => import("./ui/PrivacyLedgerPanel").then(m => ({ default: m.PrivacyLedgerPanel })));
 const TrashPanel = lazy(() => import("./ui/TrashPanel").then(m => ({ default: m.TrashPanel })));
+// Properties editor (plan 4.9) — lazy: the yaml-editing code is not in the startup bundle.
+const PropertiesPanel = lazy(() => import("./ui/PropertiesPanel").then(m => ({ default: m.PropertiesPanel })));
 const AiDoctorPanel = lazy(() => import("./ui/AiDoctorPanel").then(m => ({ default: m.AiDoctorPanel })));
 const FineTuneSettings = lazy(() => import("./ui/FineTuneSettings").then(m => ({ default: m.FineTuneSettings })));
 const VersionHistory = lazy(() => import("./ui/VersionHistory").then(m => ({ default: m.VersionHistory })));
@@ -40,6 +42,7 @@ const SearchDialog = lazy(() =>
   import("./ui/SearchDialog").then((m) => ({ default: m.SearchDialog })),
 );
 import { AiToastContainer, showAiToast } from "./ui/AiToast";
+import { minimalChange, propertiesTransaction, trackedPropertiesText } from "./editor/propertiesEdit";
 import { AiSuggestionsPanel } from "./ui/AiSuggestionsPanel";
 import { MobileKeyboardBar } from "./ui/MobileKeyboardBar";
 import { TagsPanel } from "./ui/TagsPanel";
@@ -60,7 +63,7 @@ import { useAuth } from "./auth/useAuth";
 import { docIdentity } from "./renderer/previewDoc";
 import { auditScope } from "./ui/auditScope";
 import { useEntitlement, watchAuthForEntitlements } from "./billing/useEntitlement";
-import { useAppStore, applyTheme } from "./store/useStore";
+import { useAppStore, applyTheme, flushPendingEdits } from "./store/useStore";
 import { applyLocale, t } from "./i18n";
 import { localLlmAvailable } from "./ai/localLlm";
 import { assessConfigHealth } from "./lib/configHealth";
@@ -143,6 +146,7 @@ export default function App() {
   const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
   const [aiDoctorOpen, setAiDoctorOpen] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
+  const [propertiesOpen, setPropertiesOpen] = useState(false);
   // The search dialog loads on first open and then stays mounted, so an
   // Ask Workspace conversation survives closing it (perf: not at startup).
   const [searchMounted, setSearchMounted] = useState(false);
@@ -723,6 +727,33 @@ export default function App() {
     return () => window.removeEventListener("lumen-open-privacy-ledger", onOpen);
   }, []);
   useEffect(() => {
+    const onOpen = () => setPropertiesOpen((v) => !v);
+    window.addEventListener("lumen-open-properties", onOpen);
+    return () => window.removeEventListener("lumen-open-properties", onOpen);
+  }, []);
+  // Properties panel edits: applied to the source editor's live text as one
+  // minimal change (cursor, undo history and collab stay intact); without a
+  // mounted source editor, to the store's text. In suggesting mode either way
+  // the edit is recorded as a tracked change, not applied directly.
+  const applyPropertiesEdit = useCallback((edit: (text: string) => string) => {
+    const view = editorRef.current?.getView();
+    if (view) {
+      const cur = view.state.doc.toString();
+      const change = minimalChange(cur, edit(cur));
+      if (change) view.dispatch(propertiesTransaction(change));
+      return;
+    }
+    flushPendingEdits();
+    const cur = useAppStore.getState().doc.content;
+    const change = minimalChange(cur, edit(cur));
+    if (!change) return;
+    if (!useAppStore.getState().suggestingMode) return setContent(cur.slice(0, change.from) + change.insert + cur.slice(change.to));
+    const user = useAuth.getState().user;
+    const next = trackedPropertiesText(cur, change, user?.name?.trim() || user?.email?.split("@")[0] || null);
+    if (next === null) return showAiToast(t("suggesting.untrackable"), "info");
+    if (next !== cur) setContent(next);
+  }, [setContent]);
+  useEffect(() => {
     const onOpen = () => setTrashOpen(true);
     window.addEventListener("lumen-open-trash", onOpen);
     // Trash older than 30 days is deleted for good, once per start.
@@ -1067,6 +1098,7 @@ export default function App() {
           {aiDoctorOpen && <AiDoctorPanel open={aiDoctorOpen} onClose={() => setAiDoctorOpen(false)} />}
           {privacyOpen && <PrivacyLedgerPanel open={privacyOpen} onClose={() => setPrivacyOpen(false)} />}
           {trashOpen && <TrashPanel open={trashOpen} onClose={() => setTrashOpen(false)} />}
+          {propertiesOpen && <PropertiesPanel open={propertiesOpen} onClose={() => setPropertiesOpen(false)} text={doc.content} applyEdit={applyPropertiesEdit} />}
           {themeSettingsOpen && <ThemeSettings open={themeSettingsOpen} onClose={() => setThemeSettingsOpen(false)} />}
         </ErrorBoundary>
       </Suspense>

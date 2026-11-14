@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-10-18T03:18:44.238Z",
+  "generated_at": "2026-10-18T08:37:10.560Z",
   "source": "src/i18n/index.ts (en bundle)",
-  "count": 1411,
+  "count": 1437,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -1707,6 +1707,156 @@
       "key": "cmd.file.trash.hint",
       "en": "Restore deleted notes (kept 30 days)",
       "vars": []
+    },
+    {
+      "key": "cmd.view.properties",
+      "en": "Properties: edit this note's frontmatter",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.properties.hint",
+      "en": "Text, number, date, list, checkbox and link fields; only the edited value changes",
+      "vars": []
+    },
+    {
+      "key": "props.title",
+      "en": "Properties",
+      "vars": []
+    },
+    {
+      "key": "props.close",
+      "en": "Close properties",
+      "vars": []
+    },
+    {
+      "key": "props.empty",
+      "en": "This note has no properties yet.",
+      "vars": []
+    },
+    {
+      "key": "props.invalid",
+      "en": "The frontmatter isn't valid YAML, so it can't be edited here. Fix it in the editor: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "props.add",
+      "en": "Add property",
+      "vars": []
+    },
+    {
+      "key": "props.addKey",
+      "en": "Property name",
+      "vars": []
+    },
+    {
+      "key": "props.newType",
+      "en": "Type of the new property",
+      "vars": []
+    },
+    {
+      "key": "props.keyExists",
+      "en": "A property named {key} already exists.",
+      "vars": [
+        "key"
+      ]
+    },
+    {
+      "key": "props.remove",
+      "en": "Remove {key}",
+      "vars": [
+        "key"
+      ]
+    },
+    {
+      "key": "props.type",
+      "en": "Type of {key}",
+      "vars": [
+        "key"
+      ]
+    },
+    {
+      "key": "props.type.text",
+      "en": "Text",
+      "vars": []
+    },
+    {
+      "key": "props.type.number",
+      "en": "Number",
+      "vars": []
+    },
+    {
+      "key": "props.type.date",
+      "en": "Date",
+      "vars": []
+    },
+    {
+      "key": "props.type.list",
+      "en": "List",
+      "vars": []
+    },
+    {
+      "key": "props.type.checkbox",
+      "en": "Checkbox",
+      "vars": []
+    },
+    {
+      "key": "props.type.link",
+      "en": "Link",
+      "vars": []
+    },
+    {
+      "key": "props.value",
+      "en": "Value of {key}",
+      "vars": [
+        "key"
+      ]
+    },
+    {
+      "key": "props.addItem",
+      "en": "Add…",
+      "vars": []
+    },
+    {
+      "key": "props.addItemTo",
+      "en": "Add an item to {key}",
+      "vars": [
+        "key"
+      ]
+    },
+    {
+      "key": "props.removeItem",
+      "en": "Remove {item}",
+      "vars": [
+        "item"
+      ]
+    },
+    {
+      "key": "props.openLink",
+      "en": "Open {target}",
+      "vars": [
+        "target"
+      ]
+    },
+    {
+      "key": "props.linkMissing",
+      "en": "No note named {target}",
+      "vars": [
+        "target"
+      ]
+    },
+    {
+      "key": "props.readOnly",
+      "en": "Edit this value in the editor",
+      "vars": []
+    },
+    {
+      "key": "props.writeFailed",
+      "en": "Couldn't update the property: {error}",
+      "vars": [
+        "error"
+      ]
     },
     {
       "key": "cmd.ai.cancel",
