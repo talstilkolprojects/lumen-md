@@ -16,6 +16,7 @@ import { adoptPeerLink, LanNoVaultError, LanNotConnectedError, serveOnLan, thisH
 import { announcePairing, discoveryAvailable, DiscoveryError, findDevices, joinFound, pairingCode, type FoundDevice } from "../lan/discovery";
 import type { LanPeerInfo } from "../lan/rpc";
 import { explainError } from "../../../lib/userError";
+import { EmptyState } from "../../../ui/EmptyState";
 
 const field: React.CSSProperties = { width: "100%", padding: "6px 8px", border: "1px solid hsl(var(--border))", borderRadius: 6, background: "transparent", color: "inherit", font: "inherit", fontSize: 12 };
 const muted: React.CSSProperties = { fontSize: 12, color: "hsl(var(--fg-muted))" };
@@ -203,9 +204,7 @@ export function LanJoin({ onLinked }: { onLinked: () => Promise<void> }) {
             </div>
           )}
           {found && !finding && found.length === 0 && (
-            <div role="status" style={muted}>
-              {t("e2ee.lan.found.none")}
-            </div>
+            <EmptyState message={t("e2ee.lan.found.none")} action={{ label: t("e2ee.lan.find"), onClick: () => void find() }} testId="lan-found-none" style={{ padding: 0 }} />
           )}
           {found && found.length > 0 && (
             <ul style={{ margin: 0, paddingInlineStart: 18, display: "grid", gap: 4 }} data-testid="lan-found">
