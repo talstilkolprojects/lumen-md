@@ -140,3 +140,16 @@ reader shows them in place.
 - Encrypted (password-protected) PDFs don't open.
 - The PDF must be in the vault, which needs a browser with the Origin
   Private File System.
+
+## How these are checked
+
+- **OCR in the browser.** The text layer of a scanned page comes from
+  tesseract.js in your browser. `scripts/ocr/scanned-he/browser-cer.mjs` reads
+  the 20 scanned Hebrew test pages in Chromium the same way the reader does,
+  with the same models, and compares the character error rate with the
+  Tesseract command-line measurement (`measure.mjs`). The browser may be at
+  most one point worse.
+- **Sending to Zotero.** `scripts/zotero/write-test.mjs` sends three
+  highlights to a test Zotero library with the reader's own sender, reads
+  them back and compares every field. It then sends again and checks that no
+  duplicate was created.
