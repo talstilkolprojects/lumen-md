@@ -793,6 +793,8 @@
   "importWizard.warn.encryptedPart": "חלק מוצפן הושמט",
   "importWizard.warn.missingAttachment": "קובץ מצורף שהוא מפנה אליו לא נמצא בייצוא",
   "importWizard.warn.noDates": "בייצוא אין תאריכי יצירה או עריכה",
+  "importWizard.warn.notionComputed": "עמודת נוסחה או rollup של Notion: הערכים הגיעו, הנוסחה לא (הוסיפו אותה כעמודת נוסחה בקובץ ה-base)",
+  "importWizard.warn.notionUnparsed": "ערך של Notion שלא מתאים לסוג העמודה שלו נשמר כטקסט",
   "israeliTime.dayOff": "נופל ב{reason}",
   "israeliTime.dueToday": "להיום",
   "israeliTime.left.one": "ימי עבודה שנותרו: {n}",

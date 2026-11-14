@@ -23,7 +23,9 @@ export type SkipReason =
 export type WarningReason =
   | "missingAttachment" // the note points at an attachment the export does not have
   | "encryptedPart" // part of the note was encrypted and is left out
-  | "noDates"; // the export carries no creation / modification dates
+  | "noDates" // the export carries no creation / modification dates
+  | "notionComputed" // a Notion formula or rollup column: its values came across, not the formula (plan W8.2)
+  | "notionUnparsed"; // a Notion value that did not fit its column's type; kept as text (plan W8.2)
 
 export interface ImportIssue<R extends string> {
   path: string;
