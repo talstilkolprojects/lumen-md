@@ -1,7 +1,10 @@
 /**
- * Scores a Hebrew grammar checker (plan W5.3) on the probe
+ * Scores a Hebrew grammar checker (plan W5.3) on the rule-coverage probe
  * (eval/probes/hebrew-grammar.json) and on real text:
- *   recall          error sentences where a finding of the expected rule is reported
+ *   ruleCoverage    probe sentences where a finding of the expected rule is
+ *                   reported. Not recall: the probe is generated from the
+ *                   rules' own patterns (plan W10.B8); recall is
+ *                   scripts/grammar/eval.mjs on a human-labelled set
  *   fpCorrected     corrected sentences with any finding (the same sentences, fixed)
  *   fpRealText      sentences of real Hebrew prose (HeQ dev) with any finding
  *   msPerParagraph  the checker's time per paragraph (p95)
@@ -35,7 +38,7 @@ export function scoreGrammar(check, probe, realParagraphs = []) {
   const n = probe.items.length || 1;
   return {
     items: probe.items.length,
-    recall: Math.round((hit / n) * 1000) / 1000,
+    ruleCoverage: Math.round((hit / n) * 1000) / 1000,
     missed,
     fpCorrected: Math.round((fpCorr / n) * 1000) / 1000,
     fpCorrectedIds: fpCorrIds,
