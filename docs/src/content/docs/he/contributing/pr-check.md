@@ -43,6 +43,15 @@ npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-c
   ה־commit האחרון. עם `--pr <n>` התווית והזמן שלה נקראים מ־GitHub (‏`gh api`)
   והבדיקה נכשלת בלעדיהם; בלי `--pr` היא רק מזהירה. טל מריץ אותה עם `--pr`
   לפני כל מיזוג. ראו [מתחזק שני](/he/contributing/second-maintainer/).
+- **לכל קובץ רגיש יש בעלים (משימה W8.6).** אילו קבצים רגישים מחושב מהקוד,
+  ולא נשמר ביד (`scripts/lib/sensitivePaths.mjs`): קוד שנשלח למשתמשים
+  שהנתיב או הטקסט שלו מראים הצפנה, דלת ייצוא או פרסום, sanitizer, ‏sandbox
+  של מסגרת, CSP או כותרות אבטחה, קריאת רשת, השחרה, ‏criticMarkup, או צינור
+  ה־Markdown ל־HTML והמקומות שמכניסים HTML גולמי. כל קובץ כזה שהשתנה צריך
+  שורה ב־`.github/CODEOWNERS`, או רשומה ב־`security/codeowners-exceptions.json`
+  עם סיבה ותאריך תפוגה (לכל היותר 90 יום קדימה). חריגה שפג תוקפה או שאין לה
+  תאריך מכשילה. כש־PR משנה את CODEOWNERS או את החריגות, נבדק כל העץ. הדוח
+  מדפיס את השורות להוספה ל־CODEOWNERS.
 
 הפקודה גם מזהירה:
 - כשקוד השתנה ואף בדיקה לא השתנתה;
@@ -60,3 +69,15 @@ npm run pr:check -- --base origin/main --body pr-body.md --build-base --out pr-c
 | ‏`--pr <n>` | מספר ה־pull request: קריאת התוויות, אירועי התוויות והסקירות (כלל הסקירה האנושית) |
 | ‏`--repo <owner/name>` | הריפו, כשה־remote ‏`origin` לא מציין אותו |
 | ‏`--out <file>` | כתיבת הדוח לקובץ |
+
+## כל העץ
+
+‏`npm run codeowners:check` מריץ את בדיקת הבעלים על כל קובץ בריפו ויוצא
+עם 1 כשיש פער. ‏`-- --list` מדפיס גם כל קובץ רגיש, הכללים שהוא תאם ושורת
+ה־CODEOWNERS שמכסה אותו. כך נראית חריגה:
+
+```json
+[
+  { "path": "src/storage/exportOdt.ts", "reason": "The second maintainer takes it over in W9.1.", "expires": "2027-01-31" }
+]
+```

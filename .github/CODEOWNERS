@@ -96,6 +96,111 @@
 /src-tauri/tauri.conf.json               @talstilkol
 /src-tauri/src/updates.rs                @talstilkol
 
+# ── Found from the code by the coverage gate (plan W8.6) ──
+# `npm run codeowners:check` (scripts/lib/sensitivePaths.mjs) lists every shipped file
+# whose path or text shows crypto, an export door, a sanitizer, a frame sandbox, CSP,
+# a network call, redaction, criticMarkup or the HTML pipeline; each needs a line here
+# or a dated exception in security/codeowners-exceptions.json. `npm run pr:check` fails
+# on a changed file that has neither. Lines for files that are on verify/train-2 but
+# not yet on this branch are here too, so the train stays covered when this merges.
+#   Cryptography (keys, ciphers, signatures)
+/src/ui/VaultEncryptionDialog.tsx        @talstilkol
+#   Export and publish doors (must call prepareForExport)
+/ios/exportOptions.plist                 @talstilkol
+/src/canvas/exportFix.ts                 @talstilkol
+/src/cli/publish.ts                      @talstilkol
+/src/commands/domains/export.ts          @talstilkol
+/src/data/insightsExport.ts              @talstilkol
+/src/publish/                            @talstilkol
+/src/storage/exportAll.ts                @talstilkol
+/src/storage/exportDocx.ts               @talstilkol
+/src/storage/exportFormats.ts            @talstilkol
+/src/storage/exportHtml.ts               @talstilkol
+/src/storage/exportPptx.ts               @talstilkol
+/src/ui/PrintExport.tsx                  @talstilkol
+/src/ui/PublishSiteDialog.tsx            @talstilkol
+/src/ui/canvasExport.ts                  @talstilkol
+#   Sanitising untrusted content
+/src/epub/epub.ts                        @talstilkol
+/src/lib/trustedTypes.ts                 @talstilkol
+/src/lib/trustedTypesInit.ts             @talstilkol
+/src/plugins/liveJsWorkerSource.ts       @talstilkol
+/src/plugins/r/                          @talstilkol
+/src/theme/cssSanitizer.ts               @talstilkol
+#   Frame sandboxes
+/public/content-frame.js                 @talstilkol
+/src/agents/python/sandbox.ts            @talstilkol
+/src/lib/contentFrame.ts                 @talstilkol
+/src/plugins/EmbedBlock.tsx              @talstilkol
+/src/plugins/HtmlPreviewBlock.tsx        @talstilkol
+/src/plugins/LiveCssBlock.tsx            @talstilkol
+/src/plugins/PlaygroundBlock.tsx         @talstilkol
+/src/plugins/liveJsSandbox.ts            @talstilkol
+/src/plugins/runtime/                    @talstilkol
+/src/plugins/sandbox.ts                  @talstilkol
+/src/renderer/components.tsx             @talstilkol
+#   CSP and security headers
+/index.html                              @talstilkol
+/livejs-runner.html                      @talstilkol
+/packages/vscode-lumen/src/render.ts     @talstilkol
+/playground-runner.html                  @talstilkol
+/src/ai/ollamaProvider.ts                @talstilkol
+/src/storage/templateMarketplace.ts      @talstilkol
+/src/ui/RuntimeMetricsPanel.tsx          @talstilkol
+#   Network calls (what may leave the device)
+/extension/background.js                 @talstilkol
+/public/beta.js                          @talstilkol
+/src/agents/doctor.ts                    @talstilkol
+/src/agents/executors/ollama.ts          @talstilkol
+/src/ai/anthropicProvider.ts             @talstilkol
+/src/ai/dictation/modelStore.ts          @talstilkol
+/src/ai/embeddingProvider.ts             @talstilkol
+/src/ai/englishDictionary.ts             @talstilkol
+/src/ai/fim.ts                           @talstilkol
+/src/ai/fineTune.ts                      @talstilkol
+/src/ai/geminiProvider.ts                @talstilkol
+/src/ai/grammar.ts                       @talstilkol
+/src/ai/hebrewSpell.worker.ts            @talstilkol
+/src/ai/llm.ts                           @talstilkol
+/src/ai/mistralProvider.ts               @talstilkol
+/src/ai/nikudService.ts                  @talstilkol
+/src/ai/transcribe.ts                    @talstilkol
+/src/ai/transformers.worker.ts           @talstilkol
+/src/ai/vision.ts                        @talstilkol
+/src/ai/webllm.worker.ts                 @talstilkol
+/src/auth/workosProvider.ts              @talstilkol
+/src/bench/types.ts                      @talstilkol
+/src/billing/checkout.ts                 @talstilkol
+/src/billing/useEntitlement.ts           @talstilkol
+/src/collab/sharing.ts                   @talstilkol
+/src/lib/audit.ts                        @talstilkol
+/src/lib/fetchRetry.ts                   @talstilkol
+/src/meetings/meetingTranscribe.ts       @talstilkol
+/src/plugins/PlantUMLBlock.tsx           @talstilkol
+/src/plugins/ruby/                       @talstilkol
+/src/plugins/useFetchSource.ts           @talstilkol
+/src/research/client.ts                  @talstilkol
+/src/research/clipper.ts                 @talstilkol
+/src/slides/present.tsx                  @talstilkol
+/src/sync/cloud/                         @talstilkol
+/src/ui/PluginGallery.tsx                @talstilkol
+#   Redaction and PII
+/src/ai/pii.ts                           @talstilkol
+/src/ai/piiNer.ts                        @talstilkol
+/src/ai/piiRedactor.ts                   @talstilkol
+/src/ui/AiSettingsPanel.tsx              @talstilkol
+/src/ui/PrivacyLedgerPanel.tsx           @talstilkol
+#   criticMarkup (hidden edits in the preview)
+/src/renderer/criticMarkup.ts            @talstilkol
+#   Markdown-to-HTML pipeline and raw-HTML sinks
+/src/epub/EpubReader.tsx                 @talstilkol
+/src/playground/runner.ts                @talstilkol
+/src/plugins/LiveSvgBlock.tsx            @talstilkol
+/src/renderer/pipeline.ts                @talstilkol
+/vite.config.ts                          @talstilkol
+
 # ── This rule itself ──
 /.github/CODEOWNERS                      @talstilkol
 /scripts/lib/humanReview.mjs             @talstilkol
+/scripts/lib/sensitivePaths.mjs          @talstilkol
+/scripts/codeowners-coverage.mjs         @talstilkol
