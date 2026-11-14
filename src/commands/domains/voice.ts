@@ -36,14 +36,40 @@ export function buildReadAloudCommands(): Command[] {
           if (yes) tts.allowNetworkVoices();
           if (!tts.isCurrentRun(run)) return;
         }
+        // why: the reading-aids speed (plan W5.6); a small lazy module, loaded with the reading
+        const { loadAids } = await import("../../reading/readingAids");
         const ok = await tts
           .speak(content, {
             run,
+            rate: loadAids().rate,
             uiLang: getLocale(),
             onSentence: (s) => window.dispatchEvent(new CustomEvent("lumen-speech-range", { detail: { from: s.from, to: s.to } })),
+            onWord: (w) => window.dispatchEvent(new CustomEvent("lumen-speech-word", { detail: w })),
           })
           .finally(() => window.dispatchEvent(new CustomEvent("lumen-speech-range", { detail: null })));
         if (!ok) showAiToast(t(/[\u0590-\u05FF]/.test(content) ? "toast.tts.noHebrewVoice" : "toast.tts.noLocalVoice"), "info");
+      },
+    },
+    {
+      id: "reading.aids",
+      label: t("cmd.reading.aids"),
+      hint: t("cmd.reading.aids.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: async () => {
+        const { openReadingAids } = await import("../../ui/ReadingAids");
+        openReadingAids();
+      },
+    },
+    {
+      id: "nikud.display",
+      label: t("cmd.nikud.display"),
+      hint: t("cmd.nikud.display.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: async () => {
+        const { toggleDisplayNikud } = await import("../../ui/ReadingAids");
+        await toggleDisplayNikud();
       },
     },
   ];

@@ -592,6 +592,20 @@
       "icon": "Sparkles"
     },
     {
+      "id": "reading.aids",
+      "label": "Reading aids…",
+      "group": "Tools",
+      "hint": "Niqqud for reading, a dyslexia-friendly layout and read-aloud with the word highlighted",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "nikud.display",
+      "label": "Show niqqud (display only)",
+      "group": "Tools",
+      "hint": "Vowel points on the preview for reading; the note itself is not changed. Run again to hide",
+      "icon": "Sparkles"
+    },
+    {
       "id": "vault.digest",
       "label": "Digest: what changed",
       "group": "Tools",
@@ -1868,6 +1882,20 @@
       "icon": "Sparkles"
     },
     {
+      "id": "reading.aids",
+      "label": "Reading aids…",
+      "group": "Tools",
+      "hint": "Niqqud for reading, a dyslexia-friendly layout and read-aloud with the word highlighted",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "nikud.display",
+      "label": "Show niqqud (display only)",
+      "group": "Tools",
+      "hint": "Vowel points on the preview for reading; the note itself is not changed. Run again to hide",
+      "icon": "Sparkles"
+    },
+    {
       "id": "vault.digest",
       "label": "Digest: what changed",
       "group": "Tools",
@@ -2714,6 +2742,8 @@
     "tasks.open",
     "ai.cancel",
     "note.read",
+    "reading.aids",
+    "nikud.display",
     "vault.digest",
     "image.altText",
     "ai.rerankModel",

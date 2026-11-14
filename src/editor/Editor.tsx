@@ -48,7 +48,7 @@ import { markdownLintExtension } from "./lintExtension";
 // commentDecorations imports yjs (comment anchors are Y.Map relative
 // positions) — loaded on demand in the collab effect, like ySync below.
 import { searchHighlightExtension } from "./searchHighlight";
-import { showSpokenRange, speechHighlightExtension } from "./speechHighlight";
+import { showSpokenRange, showSpokenWord, speechHighlightExtension } from "./speechHighlight";
 import { inlineSuggestion } from "./inlineSuggestion";
 import { aiAuthored, aiAuthorshipExtension } from "./aiAuthorship";
 import { formatKeymap } from "./formatKeymap";
@@ -777,8 +777,18 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
       if (!view) return;
       showSpokenRange(view, (e as CustomEvent<{ from: number; to: number } | null>).detail ?? null);
     }
+    // `lumen-speech-word` {from, to} | null: the word inside it (plan W5.6).
+    function onWord(e: Event) {
+      const view = viewRef.current;
+      if (!view) return;
+      showSpokenWord(view, (e as CustomEvent<{ from: number; to: number } | null>).detail ?? null);
+    }
     window.addEventListener("lumen-speech-range", onSelect);
-    return () => window.removeEventListener("lumen-speech-range", onSelect);
+    window.addEventListener("lumen-speech-word", onWord);
+    return () => {
+      window.removeEventListener("lumen-speech-range", onSelect);
+      window.removeEventListener("lumen-speech-word", onWord);
+    };
   }, []);
 
   return (

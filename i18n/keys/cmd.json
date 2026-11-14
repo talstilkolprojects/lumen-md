@@ -988,6 +988,16 @@
       "vars": []
     },
     {
+      "key": "cmd.nikud.display",
+      "en": "Show niqqud (display only)",
+      "vars": []
+    },
+    {
+      "key": "cmd.nikud.display.hint",
+      "en": "Vowel points on the preview for reading; the note itself is not changed. Run again to hide",
+      "vars": []
+    },
+    {
       "key": "cmd.nikud.partial",
       "en": "Hebrew: add partial niqqud",
       "vars": []
@@ -1045,6 +1055,16 @@
     {
       "key": "cmd.preview",
       "en": "Preview only",
+      "vars": []
+    },
+    {
+      "key": "cmd.reading.aids",
+      "en": "Reading aids…",
+      "vars": []
+    },
+    {
+      "key": "cmd.reading.aids.hint",
+      "en": "Niqqud for reading, a dyslexia-friendly layout and read-aloud with the word highlighted",
       "vars": []
     },
     {

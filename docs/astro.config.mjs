@@ -39,6 +39,7 @@ export default defineConfig({
             { label: "Source / Split / Preview / WYSIWYG", slug: "editor/modes" },
             { label: "Smart Insert", slug: "editor/smart-insert" },
             { label: "Accessibility", slug: "editor/accessibility", translations: { he: "נגישות" } },
+            { label: "Reading aids", slug: "editor/reading-aids", translations: { he: "עזרי קריאה" } },
             { label: "Touch and phones", slug: "editor/touch", translations: { he: "מגע וטלפונים" } },
             { label: "Hebrew and right-to-left", slug: "editor/hebrew", translations: { he: "עברית ומימין לשמאל" } },
             { label: "Settings", translations: { he: "הגדרות" }, slug: "editor/settings" },

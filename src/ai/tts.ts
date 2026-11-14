@@ -9,6 +9,7 @@
 import { hebrewRatio } from "../text/hebrew";
 import { thirdPartyServicesAllowed } from "./policy";
 import { addSpeechVoiceBytes, recordSpeechVoice } from "./privacyLedger";
+import { mapSpokenWords, wordAtChar } from "../reading/wordSync";
 
 /** Opt-in for voices that synthesize on a server (Chrome's "Google …" voices send the text out). */
 export const NETWORK_VOICES_KEY = "lumen.tts.networkVoices";
@@ -221,8 +222,14 @@ export function isCurrentRun(run: number): boolean {
  * when done or stopped. Returns false when a needed voice is missing — under
  * local-only (or without the opt-in) only voices that run on this device count.
  * A network voice, when allowed, is recorded in the privacy ledger.
+ * `onWord` (plan W5.6) gets the note range of each word as the voice reaches
+ * it, from the engine's `boundary` events; engines that send none (some
+ * voices on Linux) leave the sentence highlight alone.
  */
-export async function speak(markdown: string, opts: { uiLang: string; rate?: number; onSentence?: (s: Sentence) => void; run?: number }): Promise<boolean> {
+export async function speak(
+  markdown: string,
+  opts: { uiLang: string; rate?: number; onSentence?: (s: Sentence) => void; onWord?: (range: { from: number; to: number }) => void; run?: number },
+): Promise<boolean> {
   if (!ttsAvailable()) return false;
   // A run claimed with beginSpeaking() and stopped meanwhile speaks nothing.
   if (opts.run !== undefined && !isCurrentRun(opts.run)) return true;
@@ -272,6 +279,17 @@ export async function speak(markdown: string, opts: { uiLang: string; rate?: num
         }
       }
       u.rate = opts.rate ?? 1;
+      const onWord = opts.onWord;
+      if (onWord) {
+        const words = mapSpokenWords(s.text, markdown.slice(s.from, s.to), s.from);
+        u.onboundary = (e: SpeechSynthesisEvent) => {
+          // why: "sentence" boundaries carry an index too; only words move the highlight
+          if (e.name && e.name !== "word") return;
+          if (!isCurrentRun(run)) return;
+          const w = wordAtChar(words, e.charIndex);
+          if (w) onWord({ from: w.from, to: w.to });
+        };
+      }
       opts.onSentence?.(s);
       await new Promise<void>((resolve) => {
         u.onend = () => resolve();

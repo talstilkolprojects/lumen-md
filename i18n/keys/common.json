@@ -2941,6 +2941,133 @@
       "vars": []
     },
     {
+      "key": "readingAids.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "readingAids.dyslexia.legend",
+      "en": "Dyslexia-friendly layout",
+      "vars": []
+    },
+    {
+      "key": "readingAids.dyslexia.on",
+      "en": "Use the dyslexia-friendly layout",
+      "vars": []
+    },
+    {
+      "key": "readingAids.font",
+      "en": "Font",
+      "vars": []
+    },
+    {
+      "key": "readingAids.font.app",
+      "en": "The app's font",
+      "vars": []
+    },
+    {
+      "key": "readingAids.font.notoSansHebrew",
+      "en": "Noto Sans Hebrew (plain, clear letters)",
+      "vars": []
+    },
+    {
+      "key": "readingAids.font.openDyslexic",
+      "en": "OpenDyslexic for Latin text, Noto Sans Hebrew for Hebrew",
+      "vars": []
+    },
+    {
+      "key": "readingAids.letterSpacing",
+      "en": "Letter spacing",
+      "vars": []
+    },
+    {
+      "key": "readingAids.lineFocus",
+      "en": "Highlight the line or paragraph I'm reading",
+      "vars": []
+    },
+    {
+      "key": "readingAids.lineHeight",
+      "en": "Line spacing",
+      "vars": []
+    },
+    {
+      "key": "readingAids.nikud.failed",
+      "en": "Could not show niqqud: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "readingAids.nikud.legend",
+      "en": "Niqqud",
+      "vars": []
+    },
+    {
+      "key": "readingAids.nikud.note",
+      "en": "For reading only: the note and the file stay exactly as written. Niqqud is added on this device by the Nakdimon model, which asks before it downloads.",
+      "vars": []
+    },
+    {
+      "key": "readingAids.nikud.show",
+      "en": "Show niqqud in the preview",
+      "vars": []
+    },
+    {
+      "key": "readingAids.rate",
+      "en": "Speed",
+      "vars": []
+    },
+    {
+      "key": "readingAids.read.legend",
+      "en": "Read aloud",
+      "vars": []
+    },
+    {
+      "key": "readingAids.read.note",
+      "en": "\"Read aloud\" in the palette reads the note with this device's voices and highlights each word as it is spoken (when the voice reports words).",
+      "vars": []
+    },
+    {
+      "key": "readingAids.tint",
+      "en": "Page colour",
+      "vars": []
+    },
+    {
+      "key": "readingAids.tint.blue",
+      "en": "Pale blue",
+      "vars": []
+    },
+    {
+      "key": "readingAids.tint.cream",
+      "en": "Cream",
+      "vars": []
+    },
+    {
+      "key": "readingAids.tint.gray",
+      "en": "Light grey",
+      "vars": []
+    },
+    {
+      "key": "readingAids.tint.green",
+      "en": "Pale green",
+      "vars": []
+    },
+    {
+      "key": "readingAids.tint.none",
+      "en": "The theme's own",
+      "vars": []
+    },
+    {
+      "key": "readingAids.title",
+      "en": "Reading aids",
+      "vars": []
+    },
+    {
+      "key": "readingAids.wordSpacing",
+      "en": "Word spacing",
+      "vars": []
+    },
+    {
       "key": "remoteImage.allowHint",
       "en": "Load images from {host} in every note, in this browser.",
       "vars": [

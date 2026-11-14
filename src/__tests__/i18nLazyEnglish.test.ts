@@ -43,6 +43,8 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "vaultEncryption.json": { module: "storage/vault/encrypted/strings.ts", users: ["ui/VaultEncryptionDialog.tsx", "ui/VaultUnlock.tsx"], prefixes: ["vaultEnc."] },
   // The webR download offer (plan W1.34), in the lazily rendered live-R block.
   "webr.json": { module: "plugins/r/webrStrings.ts", users: ["plugins/LiveRBlock.tsx"], prefixes: ["block.liveR.install."] },
+  // Reading aids (plan W5.6), a dialog opened with a dynamic import.
+  "readingAids.json": { module: "reading/readingAidsStrings.ts", users: ["ui/ReadingAids.tsx"], prefixes: ["readingAids."] },
 };
 
 function sources(dir: string): string[] {

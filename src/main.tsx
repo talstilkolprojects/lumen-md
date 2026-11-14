@@ -46,6 +46,12 @@ try {
 } catch {
   /* why: storage blocked: no reminders */
 }
+// Reading aids (plan W5.6), only when the person turned the dyslexia-friendly layout on.
+try {
+  if (localStorage.getItem("lumen-reading-aids")?.includes('"dyslexia":true')) void import("./reading/readingAids").then((m) => m.applyStoredAids());
+} catch {
+  /* why: storage blocked: no stored aids */
+}
 // The vault lives in OPFS/IndexedDB; without this the browser may evict it.
 // Safari grants persistence to installed apps only and deletes the rest after
 // seven days without a visit: remind once a week to export or install (13.3.3).
