@@ -99,7 +99,7 @@ npx -p @lumen-md/mcp-server lumen mcp enable claude-code --vault "$HOME/Document
 
   ```bash
   lumen mcp review              # כל ההצעות כ-diff
-  lumen mcp approve <id>        # או --all
+  lumen mcp approve <id>        # או --client <id>: כל diff, ואז להקליד yes (צריך טרמינל)
   lumen mcp reject <id>         # או --all
   ```
 
@@ -154,8 +154,8 @@ rows: [{ path, cells }], total, errors }`, ‏200 שורות בכל פעם (`off
 ```bash
 lumen bases query Tasks.base --view Open          # מופרד בטאבים; ‏--json ל-JSON
 lumen bases update --edits edits.json --dry-run   # מה ישתנה; שום דבר לא נכתב
-lumen bases update --edits edits.json             # נכנס לתור: lumen mcp review / approve --all
-lumen bases update --edits edits.json --approve   # אתה מאשר מיד
+lumen bases update --edits edits.json             # נכנס לתור של מסך האישור
+lumen bases update --edits edits.json --approve   # כל diff בטרמינל; מקלידים yes כדי לכתוב
 ```
 
 Bases דורשים את חבילת המנוע: בנה את השרת אחרי `npm ci` בשורש המאגר, ואז

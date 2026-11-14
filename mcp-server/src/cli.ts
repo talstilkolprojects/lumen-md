@@ -43,9 +43,14 @@ export interface CliIO {
   /** Opens a file in the system's default app (tests pass a fake). */
   openFile?: (abs: string) => void;
   /**
-   * A person at a terminal (stdin and stdout are a TTY) and a way to ask
-   * them. Approving writes needs both: an agent that runs `lumen` through
-   * a shell gets no TTY, so it cannot approve anything (review 21, B1).
+   * A terminal (stdin and stdout are a TTY) and a way to ask. Approving
+   * needs both, shows each diff and waits for a typed "yes" (review 21, B1).
+   * What this enforces: no approval from a pipe or a plain subprocess, no
+   * approval without the diff on screen, and one client's or one change at
+   * a time. What it does not: an agent with a shell can give itself a
+   * terminal (`script`, `expect`) and type "yes" (review 24). Tool output
+   * never names an approval command, so a well-behaved agent is not told
+   * to; the review screen in Lumen remains the approval to rely on.
    */
   tty?: boolean;
   ask?: (question: string) => Promise<string>;
@@ -59,7 +64,7 @@ async function confirmChange(io: CliIO, header: string, before: string | null, a
   return (await io.ask('Type "yes" to write this change: ')).trim().toLowerCase() === "yes";
 }
 
-const NO_TTY = "Approving needs you at a terminal (a TTY) to read each diff and type yes. Nothing was written. You can also approve in Lumen's review screen.";
+const NO_TTY = "Approving needs a terminal (a TTY): each diff is shown and you type yes. Nothing was written. You can also approve in Lumen's review screen.";
 
 export const VAULT_COMMANDS = ["search", "open", "new", "append", "daily", "bases", "mcp"] as const;
 

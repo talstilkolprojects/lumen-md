@@ -102,7 +102,7 @@ the client nothing is written yet. You decide:
 
   ```bash
   lumen mcp review              # every proposal as a diff
-  lumen mcp approve <id>        # or --all
+  lumen mcp approve <id>        # or --client <id>: each diff, then type yes (needs a terminal)
   lumen mcp reject <id>         # or --all
   ```
 
@@ -163,8 +163,8 @@ From a terminal:
 ```bash
 lumen bases query Tasks.base --view Open          # tab-separated; --json for JSON
 lumen bases update --edits edits.json --dry-run   # what would change; nothing written
-lumen bases update --edits edits.json             # queued: lumen mcp review / approve --all
-lumen bases update --edits edits.json --approve   # you approve it at once
+lumen bases update --edits edits.json             # queued for the review screen
+lumen bases update --edits edits.json --approve   # each diff at the terminal; type yes to write
 ```
 
 Bases need the engine bundle: build the server with `npm ci` in the

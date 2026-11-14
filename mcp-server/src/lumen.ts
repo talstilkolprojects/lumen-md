@@ -3,7 +3,8 @@
 import { createInterface } from "node:readline/promises";
 import { runVaultCli } from "./cli.js";
 
-// Approving needs a person at a terminal: both ends a TTY (review 21, B1).
+// Approving needs a terminal (both ends a TTY), each diff on screen and a typed yes (review 21, B1).
+// A terminal is not proof of a person: an agent can open a pty (review 24). See CliIO.tty.
 const tty = !!process.stdin.isTTY && !!process.stdout.isTTY;
 const ask = async (q: string) => {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
