@@ -22,7 +22,7 @@ npm run nightly -- --dry-run     # print the plan, run nothing
 | `flake` | כל לילה | `npm run e2e:flake -- --all --times 5` (chromium, firefox, webkit, חמש ריצות לכל אחד, בלי retries) |
 | `perf` | כל לילה | build, תקציב החבילה, פרויקט הביצועים `@nightly`, ו-Lighthouse כשהוא מותקן |
 | `triage` | כל לילה | מיון הביקורות של ה-PR-ים הפתוחים, הספירה של 0.14 על 20 ה-PR-ים הראשונים מאז 12.11.2026, ו-`live:meta --self-test` (למטה) |
-| `weekly` | בימי ראשון (UTC) | בריאות התלויות (audit, outdated, רישיונות), וציוני mutation כש-`test:mutation` קיים |
+| `weekly` | בימי ראשון (UTC) | בריאות התלויות (audit, outdated, רישיונות), וציוני mutation: בענף שיש בו `scripts/mutation/check.mjs`, המודולים הקריטיים ב-vitest אמיתי (`run.mjs --critical --receipt --min 80`, ואחריו `mutation:check`), ואחרת `test:mutation` |
 | `sr` | כל לילה, ב-Mac שבו `@guidepup/*` מותקנים | ‏`npx @guidepup/setup --ci`, ואז המסע העברי עם VoiceOver ([קוראי מסך, אוטומטית](/he/editor/screen-reader-automation/)). לא נספר ב-0.11. |
 
 `--only flake,perf` בוחר סוגים. המתזמן מעביר `--scheduled`, שמסמן את הדוחות
@@ -61,6 +61,11 @@ npm run nightly -- --verify reports/nightly/2026-11-13-flake.json
   מ-`ci:local`, אז כל כישלון כזה הוא כישלון ש-`ci:local` היה תופס, חוץ
   מ-`docs:sync`, ש-`ci:local` לא מריץ. ענפי האינטגרציה `verify/*` לא
   נספרים.
+- **W6.16**: כמה שבועות רצופים הייתה ריצה שבועית מתוזמנת שבה כל מודול קריטי
+  קיבל לפחות 80 ב-vitest אמיתי (לא ב-shim הלא מקוון), ובדיקת הקבלה עברה (צריך
+  4). הדוח השבועי כולל לכל מודול את הציון ואת ה-sha256 של המקור ושל הבדיקות,
+  כך שהדוח החתום הוא הקבלה. אחרי הריצה הקובץ `scripts/mutation/receipt.json`
+  חוזר לגרסה שבקומיט, כדי שאפשר יהיה למשוך לעותק בלי תקלות.
 
 `--commit` שומר את `reports/nightly/` בקומיט עם הודעה שכוללת `[skip ci]`. הוא
 אף פעם לא דוחף. קומיט שמשנה רק את `reports/` לא מתחיל build ב-Vercel
