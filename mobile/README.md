@@ -22,18 +22,9 @@ Nothing else: the vault is the Documents folder itself (`Directory.Documents`).
 1. Same plugin for the fallback (the app's own folder, `Directory.External`):
    `npm install @capacitor/filesystem --package-lock-only && npm ci`, then
    `npx cap sync android`.
-2. Once `android/` exists on the branch (plan 13.3, #302), copy
-   `mobile/android/LumenVaultFolderPlugin.java` to
-   `android/app/src/main/java/com/lumen/editor/` and register it in
-   `MainActivity.java` before `super.onCreate`:
-
-   ```java
-   @Override
-   public void onCreate(Bundle savedInstanceState) {
-       registerPlugin(LumenVaultFolderPlugin.class);
-       super.onCreate(savedInstanceState);
-   }
-   ```
+2. The plugin is in the app already (W10.C14):
+   `android/app/src/main/java/com/lumen/editor/LumenVaultFolderPlugin.java`,
+   registered in `MainActivity.java` before `super.onCreate`.
 
    It uses only framework APIs (`DocumentsContract`), no new Gradle
    dependency. `pickFolder` opens `ACTION_OPEN_DOCUMENT_TREE` and keeps the
