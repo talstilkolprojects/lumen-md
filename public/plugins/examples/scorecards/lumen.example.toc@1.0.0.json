@@ -1,0 +1,35 @@
+{
+  "kind": "lumen-plugin-scorecard",
+  "v": 1,
+  "reviewer": "lumen-review/1",
+  "id": "lumen.example.toc",
+  "version": "1.0.0",
+  "reviewedAt": "2026-11-14T22:23:45.871Z",
+  "passed": true,
+  "score": 90,
+  "grade": "A",
+  "sha256": "5530d82a93715204ba7b2f2440e5363ca4f92c2c62f1a82d02121197f1fd8db7",
+  "source": {
+    "repository": null,
+    "inRepo": true
+  },
+  "permissions": {
+    "declared": [
+      "commands",
+      "document:read",
+      "document:write",
+      "settings"
+    ],
+    "added": [],
+    "removed": []
+  },
+  "audit": "none",
+  "findings": [
+    {
+      "rule": "unsigned",
+      "severity": "warning",
+      "detail": "no signature"
+    }
+  ],
+  "durationMs": 22
+}

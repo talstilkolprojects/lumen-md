@@ -1,0 +1,18 @@
+{
+  "$comment": "Plan W11.S12: the security findings that are open or accepted, published on /security and /he/security (scripts/security-page.mjs writes both pages from this file; --check fails when a page is out of date). Like Obsidian's published audit reports, open findings are listed with the reasoning, not hidden. A finding is closed by setting status to \"fixed\" with the PR that fixed it; it then leaves the page. Never delete an open finding to make the page look better.",
+  "audit": {
+    "external": false,
+    "task": "W11.O6",
+    "en": "Lumen has not had an external security audit. One is to be commissioned (plan W11.O6) for the sync protocol and the keyring. Until a report is published in full, nothing may call Lumen's cryptography audited, and encrypted sync (E2EE) is to be off by default with the label \"experimental — not externally audited\" (plan W11.S1, tracked on its own; launch gate M0 checks it).",
+    "he": "‏Lumen עוד לא עבר ביקורת אבטחה חיצונית. ביקורת לפרוטוקול הסנכרון ול-keyring תוזמן (משימה W11.O6). עד שיפורסם דוח מלא, שום מקום לא יתאר את הקריפטוגרפיה של Lumen כמבוקרת, וסנכרון מוצפן (E2EE) אמור להיות כבוי כברירת מחדל עם התווית ״ניסיוני — לא עבר ביקורת אבטחה חיצונית״ (משימה W11.S1, במעקב נפרד; שער ההשקה M0 בודק אותה)."
+  },
+  "findings": [
+    { "id": "LUM-2026-001", "status": "open", "severity": "medium", "area": "sync", "opened": "2026-11-15", "source": "/security/threat-model/", "en": "Encrypted sync (E2EE) has had no external audit.", "he": "לסנכרון המוצפן (E2EE) לא הייתה ביקורת חיצונית." },
+    { "id": "LUM-2026-002", "status": "open", "severity": "low", "area": "collaboration", "opened": "2026-11-15", "source": "/security/threat-model/", "en": "Collaboration edits are attributed locally, not signed.", "he": "עריכות בשיתוף מיוחסות מקומית, בלי חתימה." },
+    { "id": "LUM-2026-003", "status": "open", "severity": "medium", "area": "agents", "opened": "2026-11-15", "source": "/security/threat-model/", "en": "An agent granted `write` writes without asking again for each file.", "he": "סוכן שקיבל הרשאת `write` כותב בלי לשאול שוב על כל קובץ." },
+    { "id": "LUM-2026-004", "status": "open", "severity": "medium", "area": "vault", "opened": "2026-11-15", "source": "/security/threat-model/", "en": "A copied browser profile can use the stored secret key without a password until whole-vault encryption (11.4) ships.", "he": "פרופיל דפדפן מועתק יכול להשתמש במפתח הסודי השמור בלי סיסמה, עד שתיכנס הצפנת הכספת כולה (11.4)." },
+    { "id": "LUM-2026-005", "status": "open", "severity": "low", "area": "clipper", "opened": "2026-11-15", "source": "/security/threat-model/", "en": "The web clipper's `<all_urls>` host permission is broader than its click-only behaviour needs.", "he": "הרשאת `<all_urls>` של תוסף הגזירה רחבה ממה שההתנהגות שלו, רק בלחיצה, צריכה." },
+    { "id": "LUM-2026-006", "status": "open", "severity": "low", "area": "fuzzing", "opened": "2026-11-15", "source": "/security/supply-chain/", "en": "The fuzzer does not cover `.base`, `.excalidraw`, PDF annotations or plugin manifests yet.", "he": "ה-fuzzer עוד לא מכסה קובצי `.base`, ‏`.excalidraw`, הערות PDF ומניפסטים של תוספים." },
+    { "id": "LUM-2026-007", "status": "open", "severity": "low", "area": "plugins", "opened": "2026-11-15", "source": "/security/", "en": "The plugin review does not run `npm audit` on a version's lockfile offline; such a version is marked \"audit owed\" until it runs.", "he": "סקירת התוספים לא מריצה `npm audit` על קובץ הנעילה של גרסה בלי רשת; גרסה כזו מסומנת ״ביקורת תלויות חסרה״ עד שהיא רצה." }
+  ]
+}

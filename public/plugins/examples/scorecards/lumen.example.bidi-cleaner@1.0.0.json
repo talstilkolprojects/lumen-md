@@ -1,0 +1,35 @@
+{
+  "kind": "lumen-plugin-scorecard",
+  "v": 1,
+  "reviewer": "lumen-review/1",
+  "id": "lumen.example.bidi-cleaner",
+  "version": "1.0.0",
+  "reviewedAt": "2026-11-14T22:23:45.944Z",
+  "passed": true,
+  "score": 90,
+  "grade": "A",
+  "sha256": "4086260fcea7540f08bcb46136f7352162260b00156d0041b3d21b1928f18f3a",
+  "source": {
+    "repository": null,
+    "inRepo": true
+  },
+  "permissions": {
+    "declared": [
+      "commands",
+      "document:read",
+      "document:write",
+      "notifications"
+    ],
+    "added": [],
+    "removed": []
+  },
+  "audit": "none",
+  "findings": [
+    {
+      "rule": "unsigned",
+      "severity": "warning",
+      "detail": "no signature"
+    }
+  ],
+  "durationMs": 22
+}
