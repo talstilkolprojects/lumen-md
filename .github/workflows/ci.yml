@@ -14,7 +14,7 @@ concurrency:
 jobs:
   check:
     name: typecheck • test • build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     # Read-only: this job runs the PR's code. The comment is posted by
     # bundle-comment below, which runs none of it.
@@ -43,6 +43,11 @@ jobs:
       # MASTER_PLAN.md and plan/board.html must be what it generates.
       - name: Plan matches plan/plan.json
         run: npm run plan:check
+
+      # Plan 0.7: every task marked ✅ re-runs the commands that proved it
+      # (its `dod` in plan/plan.json), so a regression un-✅s it here.
+      - name: Definition of done for every ✅ task
+        run: npm run dod -- --done
 
       - name: Test
         run: npm run test
@@ -115,7 +120,7 @@ jobs:
 
   local-ai:
     name: local agents (fake Ollama)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: check
     timeout-minutes: 15
     steps:
@@ -174,7 +179,7 @@ jobs:
     # no PR code, so it alone holds a write token. Fork PRs get a read-only
     # token: the table stays in the check job's summary.
     if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       pull-requests: write
@@ -200,7 +205,7 @@ jobs:
 
   lighthouse:
     name: Lighthouse CI
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     needs: check
     # Lighthouse runs are slow + flaky on cold runners. Only required on
@@ -227,7 +232,7 @@ jobs:
     # minutes — past the timeout. Now each is ~10 min wall-clock, and
     # one failing browser doesn't cancel the others.
     name: e2e (${{ matrix.browser }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # Each browser independently: install + dev server cold-start +
     # tests. The dev server is slow on the Linux runner (~3 min to come
     # up vs. the prod static server's < 1s), so 20 min wasn't quite
@@ -272,7 +277,7 @@ jobs:
 
   e2e-prod:
     name: e2e against production build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     needs: check
     # Vite dev mode and `vite preview` chunk modules differently;
@@ -316,7 +321,7 @@ jobs:
 
   signal-health:
     name: signaling server health
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
     # Only on main pushes — the signaling server must be deployed first.
     if: github.event_name == 'push'

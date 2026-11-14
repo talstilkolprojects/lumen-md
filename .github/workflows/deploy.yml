@@ -15,7 +15,7 @@ concurrency:
 jobs:
   fly:
     name: Deploy to Fly.io
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     # Only deploy if Fly.io is configured
     if: vars.FLY_APP_NAME != ''

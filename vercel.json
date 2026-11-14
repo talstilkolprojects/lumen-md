@@ -3,6 +3,7 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "ignoreCommand": "exit 0",
   "rewrites": [
     {
       "source": "/((?!assets/|sw\\.js|workbox-|manifest|favicon|.*\\.[a-z0-9]+$).*)",

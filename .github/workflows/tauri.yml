@@ -19,7 +19,7 @@ concurrency:
 jobs:
   tauri-check:
     name: tauri (cargo check, Linux)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Pushes to main that touch the desktop shell; PRs that carry the
     # `tauri` label (including the moment it is added) or come from a

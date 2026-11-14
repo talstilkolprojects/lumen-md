@@ -9,7 +9,8 @@
  *   plan/board.html  the board as an HTML page (an Artifact fragment)
  *
  *   npm run plan             regenerate both
- *   npm run plan:check       exit 1 when either differs from plan.json (CI)
+ *   npm run plan:check       exit 1 when either differs from plan.json (CI),
+ *                            or a ✅ task has no `dod` (plan 0.7, scripts/dod.mjs)
  *   npm run plan -- --hours  also print actual hours per task branch (git)
  *
  * The scheduler started as a port of the earlier Python generator (plan5.py
@@ -25,6 +26,8 @@ import { execFileSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { checkDod } from "../dod.mjs";
+
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 export const PLAN_FILE = "plan/plan.json";
 export const DOC_FILE = "MASTER_PLAN.md";
@@ -35,8 +38,18 @@ export const BOARD_END = "## נספח 0 ·";
 // ───────────────────────────── time ─────────────────────────────
 
 const MIN = 60_000;
-/** "2026-10-18T08:00" → ms, read as UTC (a naive local time). */
-export const parseTime = (s) => Date.parse(`${s}:00Z`);
+/** The only time format plan.json accepts: a naive local (Israel) wall-clock time, minute precision. */
+export const TIME_FORMAT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+/**
+ * "2026-10-18T08:00" → ms, read as UTC (a naive local time). Anything else
+ * (a zone offset, seconds, a date alone) throws: a NaN start used to send the
+ * owner-window walk in buildModel into an endless loop.
+ */
+export function parseTime(s, field = "time") {
+  const t = typeof s === "string" && TIME_FORMAT.test(s) ? Date.parse(`${s}:00Z`) : NaN;
+  if (!Number.isFinite(t)) throw new Error(`plan: ${field} ${JSON.stringify(s)} is not YYYY-MM-DDTHH:MM (local Israel time, no zone or seconds)`);
+  return t;
+}
 const DAYS = "א׳ ב׳ ג׳ ד׳ ה׳ ו׳ שבת".split(" ");
 const pad = (n) => String(n).padStart(2, "0");
 const hhmm = (t) => {
@@ -53,6 +66,74 @@ export const dur = (m) => (m >= 60 ? `${Math.floor(m / 60)} ש׳ ${pad(m % 60)} 
 const sameDay = (a, b) => new Date(a).toISOString().slice(0, 10) === new Date(b).toISOString().slice(0, 10);
 /** start + (t - start) × factor, rounded to the microsecond as Python's timedelta does. */
 const stretch = (start, t, factor) => start + Math.round((t - start) * 1000 * factor) / 1000;
+/** Tasks per verification level, levels in VERIFIED_LEVELS order, plus those with a status but no level. */
+function verifiedCounts(ts) {
+  const c = Object.fromEntries(VERIFIED_LEVELS.map((k) => [k, 0]));
+  let none = 0;
+  for (const t of ts) {
+    if (t.verified) c[t.verified]++;
+    else if (t.status) none++;
+  }
+  return { ...c, none };
+}
+
+// ───────────────────────────── verification level ─────────────────────────────
+
+/**
+ * Plan W4.24 — how far a task's result was checked, as data next to the
+ * free-text status: `verified` (one of these, weakest first) and `pr` (the
+ * task's PR number). scripts/plan/migrate-verified.mjs fills both from the
+ * status text.
+ */
+export const VERIFIED_LEVELS = Object.freeze(["built", "node", "browser", "real", "owner"]);
+export const VERIFIED_LABEL = Object.freeze({
+  built: "נבנה בלבד",
+  node: "Node",
+  browser: "דפדפן",
+  real: "אמיתי (מוזג)",
+  owner: "מחכה לטל",
+});
+/** Keys that, when present, come right after `status`, in this order. */
+export const AFTER_STATUS = Object.freeze(["verified", "pr"]);
+
+/** The task with `verified` / `pr` set (or dropped when undefined), placed right after `status`. */
+export function withVerified(task, verified, pr) {
+  const out = {};
+  for (const [k, v] of Object.entries(task)) {
+    if (AFTER_STATUS.includes(k)) continue;
+    out[k] = v;
+    if (k === "status") {
+      if (verified !== undefined) out.verified = verified;
+      if (pr !== undefined) out.pr = pr;
+    }
+  }
+  return out;
+}
+
+/**
+ * The rules for `verified` and `pr` (plan:check). Returns a list of problems.
+ * - `verified` is one of VERIFIED_LEVELS and `pr` a positive integer
+ * - both need a `status` (they describe it) and sit right after it, `verified`
+ *   first: the canonical order keeps a status change and its level one diff hunk
+ */
+export function checkVerified(plan) {
+  const problems = [];
+  for (const p of plan.phases) for (const t of p.tasks) {
+    if (t.verified !== undefined && !VERIFIED_LEVELS.includes(t.verified)) problems.push(`${t.id}: verified ${JSON.stringify(t.verified)} is not one of ${VERIFIED_LEVELS.join(", ")}`);
+    if (t.pr !== undefined && !(Number.isInteger(t.pr) && t.pr > 0)) problems.push(`${t.id}: pr ${JSON.stringify(t.pr)} is not a PR number`);
+    const keys = Object.keys(t);
+    const present = AFTER_STATUS.filter((k) => k in t);
+    if (!present.length) continue;
+    const at = keys.indexOf("status");
+    if (at < 0) {
+      problems.push(`${t.id}: ${present.join(" and ")} without a status`);
+      continue;
+    }
+    const got = keys.slice(at + 1, at + 1 + present.length);
+    if (got.join() !== present.join()) problems.push(`${t.id}: ${present.join(", ")} must come right after "status" (found ${["status", ...got].join(", ")})`);
+  }
+  return problems;
+}
 
 // ───────────────────────────── model ─────────────────────────────
 
@@ -65,7 +146,7 @@ export function buildModel(plan) {
   const cfg = plan.schedule;
   // Remaining work starts at the update, never in the past (the plan's own
   // start stays in plan.json as its history).
-  const START = Math.max(parseTime(plan.start), parseTime(plan.updated));
+  const START = Math.max(parseTime(plan.start, "start"), parseTime(plan.updated, "updated"));
   const lanes = plan.lanes;
   const agent = [];
   const phases = plan.phases.map((p, pi) => ({
@@ -76,7 +157,7 @@ export function buildModel(plan) {
         id: x.id, t: x.title, br: x.branch, lane: x.lane,
         m: done ? 0 : x.minutes, m_est: x.minutes, done,
         dep: [...(x.dep ?? [])], depRule: x.depRule, g: [...(x.groups ?? [])], p: x.priority,
-        status: x.status, new: !!x.new, tal: x.owner ?? "", old: x.was ?? "", w: x.source ?? "",
+        status: x.status, verified: x.verified, pr: x.pr, new: !!x.new, tal: x.owner ?? "", old: x.was ?? "", w: x.source ?? "",
         steps: x.steps, ok: x.acceptance, phase: pi,
       };
       agent.push(t);
@@ -162,6 +243,8 @@ export function buildModel(plan) {
   };
   const DAY = 24 * 60 * MIN;
   const ownerFit = (st, m) => {
+    // A NaN or infinite start never fits a window: refuse it instead of walking day by day forever.
+    if (!Number.isFinite(st) || !Number.isFinite(m) || m < 0) throw new Error(`plan: cannot place ${m} owner minutes at ${st}`);
     let cur = st;
     if (cur >= at(cur, W1)) cur = at(cur + DAY, W0);
     else if (cur < at(cur, W0)) cur = at(cur, W0);
@@ -239,7 +322,8 @@ export function buildModel(plan) {
     );
   return {
     plan, START, END, P0_END, BUFFER, lanes, phases, agent, owner, all, BYID, OPENS, TAL_P0, span,
-    UPDATED: parseTime(plan.updated),
+    UPDATED: parseTime(plan.updated, "updated"),
+    VERIFIED: verifiedCounts(agent),
     P0_BUF: stretch(START, P0_END, 1 + BUFFER),
     END_BUF: stretch(START, END, 1 + BUFFER),
     EFFORT: agent.reduce((n, t) => n + t.m, 0),
@@ -263,6 +347,11 @@ const codeHtml = (s) => E(s).replace(/`([^`]+)`/g, "<code>$1</code>");
 const sum = (ts) => ts.reduce((n, t) => n + t.m, 0);
 /** A Markdown table cell: a literal pipe (even inside `code`) must be escaped, or it starts a new column. */
 const cell = (s) => String(s).replace(/\|/g, "\\|");
+const PR_URL = "https://github.com/talstilkol/lumen-md/pull/";
+/** "דפדפן · [#251](…)" — the verification cell of a task row. */
+const verifiedTxt = (t) => [t.verified ? VERIFIED_LABEL[t.verified] : "", t.pr ? `[#${t.pr}](${PR_URL}${t.pr})` : ""].filter(Boolean).join(" · ") || "—";
+const verifiedSummary = (M) =>
+  [...VERIFIED_LEVELS.map((k) => `${VERIFIED_LABEL[k]} ${M.VERIFIED[k]}`), ...(M.VERIFIED.none ? [`בלי רמה ${M.VERIFIED.none}`] : [])].join(" · ");
 const laneTasks = (M, k) => M.agent.filter((t) => t.lane === k).sort((a, b) => a.start - b.start);
 
 // ───────────────────────────── Markdown ─────────────────────────────
@@ -283,6 +372,7 @@ export function renderBoard(M) {
   for (const r of plan.done) o.push(`| ${[r.part, r.prs, r.start, r.end].map(cell).join(" | ")} |`);
   o.push("");
   o.push(`### התוכנית קדימה — ${M.agent.length} משימות ב-15 שלבים; ${DONE_N} בוצעו (ממתינות למיזוג), נותרו ${Math.floor(M.EFFORT / 60)} ש׳ עבודה (${NEW_V5} חדשות ב-v5, ${NEW} חדשות מאז תוכנית האב המקורית)\n`);
+  o.push(`**רמת אימות (\`verified\`):** ${verifiedSummary(M)}\n`);
   o.push(`**${fmt(M.START)} → ${fmt(M.END)}** בתזמון רציף של 4 מסלולים · **עם מרווח ${B}%: ${fmt(M.END_BUF)}**\n`);
   o.push("#### אבני דרך\n");
   o.push(`| # | אבן דרך | בתזמון | עם מרווח ${B}% |\n|---|---|---|---|`);
@@ -293,6 +383,7 @@ export function renderBoard(M) {
   o.push("2. **קבוצות קונפליקט** — משימות שנוגעות באותם קבצים חמים (העורך, הרנדרר, ה-CSP, האחסון, החיפוש, ההגדרות, CI) לא רצות באותו זמן גם כשהן במסלולים שונים. התזמון אוכף את זה.");
   o.push("3. **הגדרת סיום (DoD)** — ✅ רק כש: הקוד והבדיקות בפנים; כל קריטריון ״קבלה״ נמדד אוטומטית ועבר (0.7); CI ירוק; כל ממצא review נסגר; לפיצ'ר חדש יש עמוד תיעוד; התוכנית, ה-HTML ומסמך הפרויקט עודכנו.");
   o.push("4. **סטטוסים** — ✅ נמדד · ✅* אמיתי אבל נבדק רק מול mocks (אין GPU / Ollama אצלי) · ⏳ חלקי · ⬜ לא התחיל. ✅* הופך ל-✅ רק אחרי בדיקת המודל האמיתי שנקבעה **לאותה משימה**: הפעולה של טל שרשומה בעמודה ״תלוי בטל״ שלה (15.3, 15.13–15.17), או המודל הזעיר ב-CI (7.2) רק כשלמשימה אין פעולה כזו. בדיקת schema ב-CI לבדה לא מספיקה.");
+  o.push("   - **רמת אימות** — שדה `verified` לכל משימה עם סטטוס: נבנה בלבד (`built`) · Node (`node`, בדיקות ב-Node נקי או ב-shim) · דפדפן (`browser`, Chromium offline או e2e) · אמיתי (`real`, בנייה אמיתית + כל הבדיקות + e2e על הקוד הממוזג) · מחכה לטל (`owner`). `pr` = מספר ה-PR. `scripts/plan/migrate-verified.mjs` ממלא אותם מהסטטוס.");
   o.push("5. **מודלים** — רק מודלים מנספח 19 עם רישיון מסחרי מאומת. כל משימת מודל מתחילה ב-spike: נטען בדפדפן? גודל? איכות על הסט המוחזק? נכשל → החלופה הרשומה, או סגירה עם הסבר.");
   o.push("6. **סטי זהב מוחזקים** — נבנים על ידי סוכן שלא מממש, ומוקפאים לפני המימוש (7.1). מי שכותב קוד לא רואה את התשובות.");
   o.push(`7. **זמנים** — הערכות הפיצ'רים = 0.45 × אמצע הטווח של מפתח אנושי במחקר הפערים. זה שמרני ביחס לקצב שנמדד הלילה (4 מסלולים תיקנו 91 ממצאים עם בדיקות, כ-40 דקות כל אחד), כי פיצ'ר חדש דורש יותר תכנון ושילוב מתיקון. 0.6 מודד שעות אמת ומכייל מחדש אחרי שלב 0. שעות לכל משימה = תזמון רציף; אבני הדרך גם עם מרווח ${B}%.`);
@@ -319,10 +410,10 @@ export function renderBoard(M) {
   M.phases.forEach((p, i) => {
     o.push(`#### ${i}. ${p.title}\n`);
     o.push(`**יעד:** ${p.goal}` + (p.why ? `  \n**למה:** ${p.why}` : "") + "\n");
-    o.push("| # | משימה | עדיפות | מסלול | הערכה | תלוי ב- | התחלה | סיום | מצב |\n|---|---|---|---|---|---|---|---|---|");
+    o.push("| # | משימה | עדיפות | מסלול | הערכה | תלוי ב- | התחלה | סיום | מצב | אימות |\n|---|---|---|---|---|---|---|---|---|---|");
     for (const t of p.tasks) {
       const tag = t.new ? " 🆕" : "";
-      o.push(`| ${t.id} | ${cell(t.t)}${tag} | ${priTxt(t)} | ${t.lane} | ${est(t)} | ${cell(depsTxt(M, t) || "—")} | ${t.done ? "—" : fmt(t.start)} | ${t.done ? "—" : fmt(t.end)} | ${cell(t.status ?? "⬜")} |`);
+      o.push(`| ${t.id} | ${cell(t.t)}${tag} | ${priTxt(t)} | ${t.lane} | ${est(t)} | ${cell(depsTxt(M, t) || "—")} | ${t.done ? "—" : fmt(t.start)} | ${t.done ? "—" : fmt(t.end)} | ${cell(t.status ?? "⬜")} | ${cell(verifiedTxt(t))} |`);
     }
     o.push("");
     for (const t of p.tasks) {
@@ -396,6 +487,9 @@ ol.steps b{color:var(--muted);font-weight:600}
 .p-p0{background:var(--fg);color:var(--bg)}
 .p-p1{background:var(--accent-bg);color:var(--accent)}
 .p-p2{background:var(--soft);color:var(--muted);border:1px solid var(--line)}
+.p-v{background:var(--soft);color:var(--fg);border:1px solid var(--line)}
+.p-v-owner{background:var(--tal-bg);color:var(--tal);border:0}
+.p-v-real{background:var(--accent-bg);color:var(--accent);border:0}
 .tbl{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
 th,td{text-align:start;padding:8px 14px;border-bottom:1px solid var(--line);vertical-align:top}
@@ -420,6 +514,7 @@ export function renderHtml(M) {
 <div class="stat"><b>${fmt(M.P0_END)}</b><span>גרסה ראשונה לשחרור (כל ה-P0) · עם מרווח: ${fmt(M.P0_BUF)}</span></div>
 <div class="stat"><b>${fmt(M.END)}</b><span>הכול גמור · עם מרווח: ${fmt(M.END_BUF)}</span></div>
 <div class="stat"><b>${M.owner.length} פעולות · ${dur(sum(M.owner))}</b><span>מחכות לך (שלב 15) · ${M.TAL_P0.length} מהן לפני השחרור</span></div>
+<div class="stat"><b>${M.VERIFIED.real} אמיתי · ${M.VERIFIED.browser} דפדפן</b><span>רמת אימות: ${E(verifiedSummary(M))}</span></div>
 </div>`);
   H.push(`<section class="card"><header><h2>אבני דרך</h2></header><div class="tbl"><table class="ms"><thead><tr><th>#</th><th>אבן דרך</th><th>בתזמון</th><th>עם מרווח ${B}%</th></tr></thead><tbody>`);
   M.milestones.forEach((m, k) => H.push(`<tr><td>${k + 1}</td><td>${E(m.title)}</td><td>${fmt(m.at)}</td><td>${fmt(M.stretch(m.at))}</td></tr>`));
@@ -450,6 +545,7 @@ export function renderHtml(M) {
     for (const t of p.tasks) {
       let pills = "";
       if (t.status) pills += `<span class="pill p-now">${E(t.status)}</span>`;
+      if (t.verified) pills += `<span class="pill p-v p-v-${t.verified}">אימות: ${E(VERIFIED_LABEL[t.verified])}${t.pr ? ` · <a href="${PR_URL}${t.pr}">#${t.pr}</a>` : ""}</span>`;
       if (t.new) pills += '<span class="pill p-new">חדש</span>';
       pills += `<span class="pill p-${t.eff.toLowerCase()}">${E(priTxt(t))}</span>`;
       if (t.tal) pills += `<span class="pill p-tal">מחכה לך: ${E(t.tal)}</span>`;
@@ -522,6 +618,11 @@ export function actualHours(M, { root = ROOT, base = "origin/main", remote = "or
 
 export function run({ root = ROOT, check = false } = {}) {
   const plan = JSON.parse(readFileSync(join(root, PLAN_FILE), "utf8"));
+  // Plan 0.7: no ✅ without the commands that prove it.
+  const dodProblems = checkDod(plan);
+  if (dodProblems.length) throw new Error(`plan: definition of done —\n  ${dodProblems.join("\n  ")}`);
+  const verifiedProblems = checkVerified(plan);
+  if (verifiedProblems.length) throw new Error(`plan: verified / pr (W4.24) —\n  ${verifiedProblems.join("\n  ")}`);
   const M = buildModel(plan);
   const docPath = join(root, DOC_FILE);
   const htmlPath = join(root, HTML_FILE);
@@ -542,7 +643,8 @@ function main(argv) {
   const check = argv.includes("--check");
   const { M, stale } = run({ check });
   const P0 = M.agent.filter((t) => t.eff === "P0").length;
-  const summary = `${M.agent.length} tasks, ${M.owner.length} owner items, ${Math.floor(M.EFFORT / 60)} h left; release (P0, ${P0} tasks) ${fmt(M.P0_END)}, end ${fmt(M.END)}`;
+  const levels = [...VERIFIED_LEVELS.map((k) => `${k} ${M.VERIFIED[k]}`), ...(M.VERIFIED.none ? [`unset ${M.VERIFIED.none}`] : [])].join(", ");
+  const summary = `${M.agent.length} tasks, ${M.owner.length} owner items, ${Math.floor(M.EFFORT / 60)} h left; release (P0, ${P0} tasks) ${fmt(M.P0_END)}, end ${fmt(M.END)}; verified: ${levels}`;
   if (argv.includes("--hours")) {
     const base = argv[argv.indexOf("--hours") + 1]?.startsWith("--") === false ? argv[argv.indexOf("--hours") + 1] : "origin/main";
     for (const h of actualHours(M, { base })) console.log(`${h.id.padEnd(6)} ${h.branch.padEnd(32)} ${String(h.commits).padStart(3)} commits  ${h.hours.toFixed(2).padStart(6)} h actual  ${h.estimate.toFixed(2).padStart(6)} h estimated`);

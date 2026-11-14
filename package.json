@@ -15,6 +15,7 @@
     "hygiene": "node scripts/check-code-hygiene.mjs",
     "plan": "node scripts/plan/build.mjs",
     "plan:check": "node scripts/plan/build.mjs --check",
+    "dod": "node scripts/dod.mjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
