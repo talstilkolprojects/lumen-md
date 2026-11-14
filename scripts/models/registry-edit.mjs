@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 
 export const REGISTRY = join(resolve(dirname(fileURLToPath(import.meta.url)), "..", ".."), "models", "registry.json");
 
-/** One entry as the registry writes it: indented 4, arrays of strings on one line, `files` one object per line. */
+/** One entry as the registry writes it: indented 4, arrays of strings on one line, `files` one object per line, object values one key per line. */
 export function formatEntry(entry) {
   const lines = ["    {"];
   const keys = Object.keys(entry);
@@ -20,6 +20,9 @@ export function formatEntry(entry) {
       text = `[\n${v.map((f) => `        ${JSON.stringify(f)}`).join(",\n")}\n      ]`;
     } else if (Array.isArray(v) && v.every((x) => typeof x === "string")) {
       text = `[${v.map((x) => JSON.stringify(x)).join(", ")}]`;
+    } else if (v && typeof v === "object" && !Array.isArray(v)) {
+      // An object value (e.g. `hosting`, W4.14) as the file writes it: one key per line, indented under its key.
+      text = JSON.stringify(v, null, 2).replace(/\n/g, "\n      ");
     } else {
       text = JSON.stringify(v);
     }
