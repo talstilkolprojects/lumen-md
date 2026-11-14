@@ -47,6 +47,12 @@ export interface TreeMark {
   end: number;
   close: boolean;
   inert?: boolean;
+  /**
+   * The opening tag the preview reads, inside another mark's tag, that this
+   * mark stands for (W8.8-F1, -F2): the passes open it there, as a tag, not
+   * where the mark starts.
+   */
+  at?: number;
 }
 
 const isSpace = (c: string) => c === " " || c === "\t" || c === "\n" || c === "\f" || c === "\r";
@@ -249,16 +255,31 @@ export function treeInertCloses(text: string, marks: TreeMark[]): void {
   const byIndex = new Map<number, TreeMark>();
   for (const m of marks) byIndex.set(m.index, m);
   const tokensOf = raws.map((r) => rawTokens(r.v));
+  const added: TreeMark[] = [];
   // A tag the preview reads that no mark starts at: it sits inside another mark's tag.
   raws.forEach((r, x) => {
     for (const tk of tokensOf[x].tokens) {
       if (tk.kind !== "tag" || tk.name !== "redact" || tk.close) continue;
       const s = r.at[tk.start];
       if (byIndex.has(s)) continue;
-      const host = [...marks].reverse().find((m) => m.index < s);
-      if (host && s < host.end && host.close) host.close = false;
+      const host = [...marks].reverse().find((m) => m.index < s && m.at === undefined);
+      if (!host || s >= host.end) continue;
+      if (host.close && host.at === undefined) {
+        // The mark is a close to the export: make it this opening one.
+        host.close = false;
+        host.at = s;
+      } else {
+        // The mark already opens (or stands for another tag): the preview opens once more here (W8.8-F1). The
+        // export removes from the host on, so the extra open only keeps the passage open longer.
+        added.push({ index: s, end: host.end, close: false, at: s });
+      }
     }
   });
+  if (added.length) {
+    marks.push(...added);
+    marks.sort((a, b) => a.index - b.index);
+    for (const m of added) byIndex.set(m.index, m);
+  }
 
   // The preview's order: the note without its footnote definitions, then the footnotes section after the
   // last block (review 8, RR8-473-2), the definitions in the order they are first referenced, as
@@ -309,7 +330,12 @@ export function treeInertCloses(text: string, marks: TreeMark[]): void {
   const asText = (to: number) => {
     for (; k < seg.length && seg[k].index < to; k++) {
       const m = seg[k];
-      if (!m.close) open(true);
+      if (m.at !== undefined && m.at >= to) {
+        // It opens at its tag, further on (W8.8-F2): not here as text, and not twice.
+        continue;
+      }
+      if (m.at !== undefined) open();
+      else if (!m.close) open(true);
       else if (depth > 0) {
         if (stack[innermost()] === "redact~") close(m);
         else m.inert = true;
