@@ -101,6 +101,8 @@
   "cmd.edit.formatDocument.hint": "Prettier: привести в порядок Markdown, frontmatter и блоки кода",
   "cmd.feedback": "Справка: отправить отзыв",
   "cmd.feedback.hint": "Issue на GitHub или текст для копирования — без вашего щелчка ничего не отправляется",
+  "cmd.file.exportAcademic": "Экспорт для сдачи в университет (Word)…",
+  "cmd.file.exportAcademic.hint": "Титульный лист, оглавление, номера страниц и оформление вуза",
   "cmd.file.exportAdoc": "Экспорт to AsciiDoc",
   "cmd.file.exportAdoc.hint": "Исходник, совместимый с Asciidoctor",
   "cmd.file.exportDocx": "Экспорт to Word (.doc)",

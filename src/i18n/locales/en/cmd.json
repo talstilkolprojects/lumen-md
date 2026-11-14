@@ -100,6 +100,8 @@
   "cmd.edit.formatDocument.hint": "Prettier: tidy Markdown, frontmatter and fenced code",
   "cmd.feedback": "Help: Send feedback",
   "cmd.feedback.hint": "A GitHub issue or text to copy — nothing is sent without your click",
+  "cmd.file.exportAcademic": "Export for academic submission (Word)…",
+  "cmd.file.exportAcademic.hint": "Title page, table of contents, page numbers and the institution's formatting",
   "cmd.file.exportAdoc": "Export to AsciiDoc",
   "cmd.file.exportAdoc.hint": "Asciidoctor-compatible source",
   "cmd.file.exportDocx": "Export to Word (.doc)",

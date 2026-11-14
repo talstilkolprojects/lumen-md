@@ -101,6 +101,8 @@
   "cmd.edit.formatDocument.hint": "Prettier: Markdown, Frontmatter und Codeblöcke aufräumen",
   "cmd.feedback": "Hilfe: Feedback senden",
   "cmd.feedback.hint": "Ein GitHub-Issue oder Text zum Kopieren — nichts wird ohne deinen Klick gesendet",
+  "cmd.file.exportAcademic": "Für die Abgabe an der Hochschule exportieren (Word)…",
+  "cmd.file.exportAcademic.hint": "Titelblatt, Inhaltsverzeichnis, Seitenzahlen und die Formatierung der Hochschule",
   "cmd.file.exportAdoc": "Exportieren to AsciiDoc",
   "cmd.file.exportAdoc.hint": "Asciidoctor-kompatible Quelle",
   "cmd.file.exportDocx": "Exportieren to Word (.doc)",

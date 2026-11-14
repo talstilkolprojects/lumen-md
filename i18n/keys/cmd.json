@@ -514,6 +514,16 @@
       "vars": []
     },
     {
+      "key": "cmd.file.exportAcademic",
+      "en": "Export for academic submission (Word)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.exportAcademic.hint",
+      "en": "Title page, table of contents, page numbers and the institution's formatting",
+      "vars": []
+    },
+    {
       "key": "cmd.file.exportAdoc",
       "en": "Export to AsciiDoc",
       "vars": []

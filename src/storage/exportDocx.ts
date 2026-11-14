@@ -15,10 +15,20 @@
  * out from the right (`w:bidiVisual`). Headings/Hyperlink/Code/Quote all carry defined styles so they
  * render identically in Word, LibreOffice, Pages and Google Docs.
  *
- * Not handled: embedded images (noted, not embedded) and footnotes.
+ * Footnotes (`[^id]` with a `[^id]: text` definition) are real Word
+ * footnotes (word/footnotes.xml), each note's paragraph in its own direction.
+ *
+ * With an academic template (plan W5.16, ./academicTemplates) the package
+ * also gets a title page, a table-of-contents field, page numbers in the
+ * footer (the front matter optionally in Hebrew letters or Roman numerals,
+ * the body from 1), the institution's margins, fonts and spacing, chapters
+ * on a new page and a hanging-indent bibliography.
+ *
+ * Not handled: embedded images (noted, not embedded).
  */
 import { firstStrongDirection, markdownBaseDirection, type BaseDirection } from "../lib/textDirection";
 import { zip } from "./zip";
+import { BIBLIOGRAPHY_HEADING, COVER_LABELS, cmToTwips, lineTwips, splitCover, type AcademicTemplate, type CoverFields, type PageNumberFormat } from "./academicTemplates";
 
 const DOCX_MIME =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -45,6 +55,22 @@ interface Run {
   code?: boolean;
   strike?: boolean;
   href?: string;
+  /** A footnote reference `[^key]`: resolved against the note's definitions. */
+  noteKey?: string;
+}
+
+/** Options for an academic submission (plan W5.16). */
+export interface AcademicDocxOptions {
+  template: AcademicTemplate;
+  cover: CoverFields;
+  /** Front-matter (table of contents) numbering; defaults to the template's. */
+  frontNumbering?: PageNumberFormat;
+  /** Add the table of contents (default true). */
+  toc?: boolean;
+}
+
+export interface DocxOptions {
+  academic?: AcademicDocxOptions;
 }
 
 /** Mutable state accumulated while rendering the body, consumed by the parts. */
@@ -57,15 +83,27 @@ interface DocxCtx {
   orderedNumIds: number[];
   nextRelId: number;
   nextOrderedNumId: number;
+  /** `[^key]: text` definitions, removed from the body. */
+  footnoteDefs: Map<string, string>;
+  /** Footnotes in reference order: key → Word id (1, 2, …) and the rendered note. */
+  footnotes: { key: string; id: number; xml: string }[];
+  /** Inside the bibliography: entries get the hanging-indent style (academic only). */
+  inBibliography: number | null;
+  academic?: AcademicDocxOptions;
 }
 
-function newCtx(baseDir: BaseDirection = "ltr"): DocxCtx {
+function newCtx(baseDir: BaseDirection = "ltr", academic?: AcademicDocxOptions): DocxCtx {
   return {
     baseDir,
+    footnoteDefs: new Map(),
+    footnotes: [],
+    inBibliography: null,
+    academic,
     hyperlinks: [],
     orderedNumIds: [],
-    // rId1 = styles, rId2 = numbering (fixed below); hyperlinks start at rId3.
-    nextRelId: 3,
+    // rId1 = styles, rId2 = numbering (fixed below), rId3 = the page-number
+    // footer of an academic document; hyperlinks start after them.
+    nextRelId: academic ? 4 : 3,
     nextOrderedNumId: FIRST_ORDERED_NUM_ID,
   };
 }
@@ -79,17 +117,18 @@ function newCtx(baseDir: BaseDirection = "ltr"): DocxCtx {
 function parseInline(text: string): Run[] {
   const runs: Run[] = [];
   const re =
-    /\[([^\]]+)\]\(([^)]+)\)|\*\*\*([^*]+?)\*\*\*|\*\*([^*]+?)\*\*|\*([^*]+?)\*|~~([^~]+?)~~|`([^`]+)`/g;
+    /\[\^([^\]\s]+)\]|\[([^\]]+)\]\(([^)]+)\)|\*\*\*([^*]+?)\*\*\*|\*\*([^*]+?)\*\*|\*([^*]+?)\*|~~([^~]+?)~~|`([^`]+)`/g;
   let last = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
     if (m.index > last) runs.push({ text: text.slice(last, m.index) });
-    if (m[1] !== undefined) runs.push({ text: m[1], href: m[2] });
-    else if (m[3] !== undefined) runs.push({ text: m[3], bold: true, italic: true });
-    else if (m[4] !== undefined) runs.push({ text: m[4], bold: true });
-    else if (m[5] !== undefined) runs.push({ text: m[5], italic: true });
-    else if (m[6] !== undefined) runs.push({ text: m[6], strike: true });
-    else if (m[7] !== undefined) runs.push({ text: m[7], code: true });
+    if (m[1] !== undefined) runs.push({ text: m[0], noteKey: m[1] });
+    else if (m[2] !== undefined) runs.push({ text: m[2], href: m[3] });
+    else if (m[4] !== undefined) runs.push({ text: m[4], bold: true, italic: true });
+    else if (m[5] !== undefined) runs.push({ text: m[5], bold: true });
+    else if (m[6] !== undefined) runs.push({ text: m[6], italic: true });
+    else if (m[7] !== undefined) runs.push({ text: m[7], strike: true });
+    else if (m[8] !== undefined) runs.push({ text: m[8], code: true });
     last = re.lastIndex;
   }
   if (last < text.length) runs.push({ text: text.slice(last) });
@@ -101,18 +140,26 @@ const RTL_RUN = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
 
 /** A paragraph whose first strong character is RTL gets <w:bidi/> (T44). */
 function bidiOf(runs: Run[]): string {
-  return firstStrongDirection(runs.map((r) => r.text).join("")) === "rtl" ? "<w:bidi/>" : "";
+  return firstStrongDirection(visibleText(runs)) === "rtl" ? "<w:bidi/>" : "";
+}
+
+/** The text a reader sees: a footnote mark is not text. */
+function visibleText(runs: Run[]): string {
+  return runs.map((r) => (r.noteKey ? "" : r.text)).join("");
 }
 
 function rPrXml(r: Run, hyperlink = false): string {
   const parts: string[] = [];
   if (hyperlink) parts.push('<w:rStyle w:val="Hyperlink"/>');
   if (r.code) parts.push('<w:rStyle w:val="Code"/>');
-  if (r.bold) parts.push("<w:b/>");
-  if (r.italic) parts.push("<w:i/>");
+  // Word draws Hebrew and Arabic with the complex-script properties, so an
+  // RTL run needs <w:bCs/> / <w:iCs/> as well (CT_RPr order: b, bCs, i, iCs).
+  const rtl = RTL_RUN.test(r.text);
+  if (r.bold) parts.push(rtl ? "<w:b/><w:bCs/>" : "<w:b/>");
+  if (r.italic) parts.push(rtl ? "<w:i/><w:iCs/>" : "<w:i/>");
   if (r.strike) parts.push("<w:strike/>");
   // CT_RPr order: <w:rtl/> after the formatting toggles.
-  if (RTL_RUN.test(r.text)) parts.push("<w:rtl/>");
+  if (rtl) parts.push("<w:rtl/>");
   return parts.length ? `<w:rPr>${parts.join("")}</w:rPr>` : "";
 }
 
@@ -120,8 +167,32 @@ function bareRunXml(r: Run): string {
   return `<w:r>${rPrXml(r)}<w:t xml:space="preserve">${esc(r.text)}</w:t></w:r>`;
 }
 
+/** The Word id of footnote `key`, rendering the note on its first reference. */
+function footnoteId(key: string, ctx: DocxCtx): number | null {
+  const found = ctx.footnotes.find((f) => f.key === key);
+  if (found) return found.id;
+  const text = ctx.footnoteDefs.get(key);
+  if (text === undefined) return null;
+  const id = ctx.footnotes.length + 1;
+  const entry = { key, id, xml: "" };
+  ctx.footnotes.push(entry); // before rendering: a note citing itself must not loop
+  // A link inside a note is written out as its text and address: the
+  // footnotes part has no relationships of its own.
+  const runs = parseInline(text)
+    .filter((r) => r.noteKey === undefined)
+    .map((r) => (r.href ? { text: `${r.text} (${r.href})` } : r));
+  const mark = '<w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteRef/></w:r><w:r><w:t xml:space="preserve"> </w:t></w:r>';
+  entry.xml = `<w:footnote w:id="${id}"><w:p><w:pPr><w:pStyle w:val="FootnoteText"/>${bidiOf(runs)}</w:pPr>${mark}${runsXml(runs, ctx)}</w:p></w:footnote>`;
+  return id;
+}
+
 /** A run becomes a <w:hyperlink> wrapper when it carries an href. */
 function runXml(r: Run, ctx: DocxCtx): string {
+  if (r.noteKey !== undefined) {
+    const id = footnoteId(r.noteKey, ctx);
+    if (id === null) return bareRunXml({ text: r.text });
+    return `<w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteReference w:id="${id}"/></w:r>`;
+  }
   if (r.href) {
     const id = `rId${ctx.nextRelId++}`;
     ctx.hyperlinks.push({ id, target: r.href });
@@ -146,7 +217,20 @@ function paraXml(runs: Run[], ctx: DocxCtx, pPrInner = ""): string {
 }
 
 function headingXml(level: number, runs: Run[], ctx: DocxCtx): string {
+  if (ctx.academic) {
+    // The bibliography opens at its heading and runs to the next heading of the same or a higher level.
+    if (ctx.inBibliography !== null && level <= ctx.inBibliography) ctx.inBibliography = null;
+    if (BIBLIOGRAPHY_HEADING.test(visibleText(runs).trim())) {
+      ctx.inBibliography = level;
+      return paraXml(runs, ctx, `<w:pStyle w:val="Heading${level}"/><w:pageBreakBefore/>`);
+    }
+  }
   return paraXml(runs, ctx, `<w:pStyle w:val="Heading${level}"/>`);
+}
+
+/** A body paragraph: a bibliography entry inside the bibliography. */
+function bodyParaXml(runs: Run[], ctx: DocxCtx): string {
+  return paraXml(runs, ctx, ctx.inBibliography !== null ? '<w:pStyle w:val="Bibliography"/>' : "");
 }
 
 /** A list item: a paragraph bound to a numbering instance + indent level. */
@@ -305,13 +389,37 @@ function listBlockXml(items: { ordered: boolean; level: number; text: string }[]
       } else {
         numId = BULLET_NUM_ID;
       }
+      // A bibliography is an alphabetical list without bullets or numbers.
+      if (ctx.inBibliography !== null) return bodyParaXml(parseInline(it.text), ctx);
       return listItemXml(parseInline(it.text), numId, it.level, ctx);
     })
     .join("");
 }
 
+/**
+ * Take the `[^key]: text` footnote definitions out of the lines (outside
+ * fenced code), with their indented continuation lines.
+ */
+function extractFootnotes(lines: string[], ctx: DocxCtx): string[] {
+  const kept: string[] = [];
+  let inFence = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^\s*```/.test(line)) inFence = !inFence;
+    const def = inFence ? null : line.match(/^\[\^([^\]\s]+)\]:\s?(.*)$/);
+    if (!def) {
+      kept.push(line);
+      continue;
+    }
+    let text = def[2];
+    while (i + 1 < lines.length && /^( {2,}|\t)\S/.test(lines[i + 1])) text += " " + lines[++i].trim();
+    if (!ctx.footnoteDefs.has(def[1])) ctx.footnoteDefs.set(def[1], text);
+  }
+  return kept;
+}
+
 function markdownToBody(md: string, ctx: DocxCtx): string {
-  const lines = md.replace(/\r\n/g, "\n").split("\n");
+  const lines = extractFootnotes(md.replace(/\r\n/g, "\n").split("\n"), ctx);
   const out: string[] = [];
   let i = 0;
 
@@ -393,34 +501,81 @@ function markdownToBody(md: string, ctx: DocxCtx): string {
       continue;
     }
 
-    out.push(paraXml(parseInline(line), ctx));
+    out.push(bodyParaXml(parseInline(line), ctx));
     i++;
   }
 
   return out.join("");
 }
 
-function buildStyles(): string {
+function buildStyles(academic?: AcademicTemplate): string {
   const headingSizes = [32, 28, 26, 24, 23, 22]; // half-points, H1..H6
   const headings = headingSizes
-    .map(
-      (sz, idx) =>
+    .map((base, idx) => {
+      // An academic document scales the headings from its body size (12 pt → 16, 14, 13 …).
+      const sz = academic ? Math.round((base * academic.sizePt) / 11) : base;
+      // A chapter (H1) starts on a new page where the guideline asks (CT_PPr: keepNext, pageBreakBefore).
+      const pageBreak = academic?.chapterOnNewPage && idx === 0 ? "<w:pageBreakBefore/>" : "";
+      // Complex-script bold and size so a Hebrew heading is bold and sized too.
+      const rPr = academic ? `<w:b/><w:bCs/><w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/>` : `<w:b/><w:sz w:val="${sz}"/>`;
+      // An academic heading keeps its spacing single and does not justify.
+      const spacing = academic ? `<w:spacing w:before="240" w:after="120" w:line="240" w:lineRule="auto"/><w:ind w:firstLine="0"/><w:jc w:val="start"/>` : `<w:spacing w:before="240" w:after="60"/>`;
+      return (
         `<w:style w:type="paragraph" w:styleId="Heading${idx + 1}">` +
         `<w:name w:val="heading ${idx + 1}"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/>` +
-        `<w:pPr><w:keepNext/><w:spacing w:before="240" w:after="60"/><w:outlineLvl w:val="${idx}"/></w:pPr>` +
-        `<w:rPr><w:b/><w:sz w:val="${sz}"/></w:rPr></w:style>`,
-    )
+        `<w:pPr><w:keepNext/>${pageBreak}${spacing}<w:outlineLvl w:val="${idx}"/></w:pPr>` +
+        `<w:rPr>${rPr}</w:rPr></w:style>`
+      );
+    })
     .join("");
+
+  const sz = academic ? academic.sizePt * 2 : 22;
+  const defaults = academic
+    ? `<w:rFonts w:ascii="${esc(academic.latinFont)}" w:hAnsi="${esc(academic.latinFont)}" w:cs="${esc(academic.hebrewFont)}"/>` +
+      `<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/><w:lang w:val="en-US" w:bidi="he-IL"/>`
+    : `<w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:sz w:val="22"/>`;
+  // CT_PPr order: spacing, ind, jc.
+  const normalPPr = academic
+    ? `<w:spacing w:after="0" w:line="${lineTwips(academic.lineSpacing)}" w:lineRule="auto"/>` +
+      (academic.firstLineIndentCm ? `<w:ind w:firstLine="${cmToTwips(academic.firstLineIndentCm)}"/>` : "") +
+      (academic.justify ? `<w:jc w:val="both"/>` : "")
+    : `<w:spacing w:after="120"/>`;
+  const fnSz = academic ? academic.footnoteSizePt * 2 : 20;
+  const academicStyles = academic
+    ? `<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/>` +
+      `<w:pPr><w:spacing w:before="2400" w:after="480" w:line="240" w:lineRule="auto"/><w:ind w:firstLine="0"/><w:jc w:val="center"/></w:pPr>` +
+      `<w:rPr><w:b/><w:bCs/><w:sz w:val="${sz + 16}"/><w:szCs w:val="${sz + 16}"/></w:rPr></w:style>` +
+      `<w:style w:type="paragraph" w:styleId="CoverLine"><w:name w:val="Cover Line"/><w:basedOn w:val="Normal"/>` +
+      `<w:pPr><w:spacing w:after="120" w:line="240" w:lineRule="auto"/><w:ind w:firstLine="0"/><w:jc w:val="center"/></w:pPr></w:style>` +
+      `<w:style w:type="paragraph" w:styleId="TOCHeading"><w:name w:val="TOC Heading"/><w:basedOn w:val="Heading1"/><w:next w:val="Normal"/>` +
+      `<w:pPr><w:pageBreakBefore w:val="0"/><w:outlineLvl w:val="9"/></w:pPr></w:style>` +
+      [1, 2, 3]
+        .map(
+          (l) =>
+            `<w:style w:type="paragraph" w:styleId="TOC${l}"><w:name w:val="toc ${l}"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/>` +
+            `<w:pPr><w:spacing w:after="60" w:line="240" w:lineRule="auto"/><w:ind w:start="${(l - 1) * 360}" w:firstLine="0"/><w:jc w:val="start"/></w:pPr></w:style>`,
+        )
+        .join("") +
+      // A bibliography entry: single spacing inside, a blank line between, a hanging indent (BIU).
+      `<w:style w:type="paragraph" w:styleId="Bibliography"><w:name w:val="Bibliography"/><w:basedOn w:val="Normal"/>` +
+      `<w:pPr><w:spacing w:after="240" w:line="240" w:lineRule="auto"/><w:ind w:start="720" w:hanging="720"/><w:jc w:val="start"/></w:pPr></w:style>`
+    : "";
 
   return (
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
     `<w:styles xmlns:w="${W}">` +
     `<w:docDefaults><w:rPrDefault><w:rPr>` +
-    `<w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:sz w:val="22"/>` +
+    defaults +
     `</w:rPr></w:rPrDefault></w:docDefaults>` +
     `<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/>` +
-    `<w:pPr><w:spacing w:after="120"/></w:pPr></w:style>` +
+    `<w:pPr>${normalPPr}</w:pPr></w:style>` +
     headings +
+    academicStyles +
+    // Footnotes: single spacing, smaller, the mark superscript.
+    `<w:style w:type="paragraph" w:styleId="FootnoteText"><w:name w:val="footnote text"/><w:basedOn w:val="Normal"/>` +
+    `<w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:ind w:firstLine="0"/></w:pPr><w:rPr><w:sz w:val="${fnSz}"/><w:szCs w:val="${fnSz}"/></w:rPr></w:style>` +
+    `<w:style w:type="character" w:styleId="FootnoteReference"><w:name w:val="footnote reference"/>` +
+    `<w:rPr><w:vertAlign w:val="superscript"/></w:rPr></w:style>` +
     `<w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/>` +
     `<w:basedOn w:val="Normal"/><w:pPr><w:contextualSpacing/></w:pPr></w:style>` +
     `<w:style w:type="paragraph" w:styleId="Quote"><w:name w:val="Quote"/><w:basedOn w:val="Normal"/>` +
@@ -473,7 +628,13 @@ function buildNumbering(orderedNumIds: number[]): string {
   );
 }
 
-function buildDocumentRels(hyperlinks: { id: string; target: string }[]): string {
+interface ExtraRel {
+  id: string;
+  type: string;
+  target: string;
+}
+
+function buildDocumentRels(hyperlinks: { id: string; target: string }[], extra: ExtraRel[]): string {
   const links = hyperlinks
     .map(
       (h) =>
@@ -485,22 +646,182 @@ function buildDocumentRels(hyperlinks: { id: string; target: string }[]): string
     `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
     `<Relationship Id="rId1" Type="${R}/styles" Target="styles.xml"/>` +
     `<Relationship Id="rId2" Type="${R}/numbering" Target="numbering.xml"/>` +
+    extra.map((e) => `<Relationship Id="${e.id}" Type="${R}/${e.type}" Target="${e.target}"/>`).join("") +
     links +
     `</Relationships>`
   );
 }
 
-function buildDocxParts(content: string): { name: string; data: string }[] {
-  const ctx = newCtx(markdownBaseDirection(content));
-  const body = markdownToBody(content, ctx);
+/** word/footnotes.xml: the two separators Word expects, then the notes. */
+function buildFootnotes(notes: { xml: string }[]): string {
+  const sep = (type: string, id: number, el: string) =>
+    `<w:footnote w:type="${type}" w:id="${id}"><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:${el}/></w:r></w:p></w:footnote>`;
+  return (
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+    `<w:footnotes xmlns:w="${W}" xmlns:r="${R}">` +
+    sep("separator", -1, "separator") +
+    sep("continuationSeparator", 0, "continuationSeparator") +
+    notes.map((n) => n.xml).join("") +
+    `</w:footnotes>`
+  );
+}
+
+/** word/settings.xml: update fields on open (the table of contents), the footnote separators (CT_Settings order). */
+function buildSettings(updateFields: boolean, footnotes: boolean): string {
+  return (
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+    `<w:settings xmlns:w="${W}">` +
+    (updateFields ? `<w:updateFields w:val="true"/>` : "") +
+    (footnotes ? `<w:footnotePr><w:footnote w:id="-1"/><w:footnote w:id="0"/></w:footnotePr>` : "") +
+    `</w:settings>`
+  );
+}
+
+/** A footer with the page number, centred (each section's pgNumType sets the format). */
+function buildPageFooter(): string {
+  return (
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+    `<w:ftr xmlns:w="${W}" xmlns:r="${R}"><w:p><w:pPr><w:jc w:val="center"/></w:pPr>` +
+    `<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r>` +
+    `<w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>1</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>` +
+    `</w:p></w:ftr>`
+  );
+}
+
+const FOOTER_REL = "rId3";
+
+/** A section's properties (CT_SectPr order: footerReference, pgSz, pgMar, pgNumType, bidi). */
+function sectPrXml(t: AcademicTemplate | null, rtl: boolean, numbering: PageNumberFormat, restart: boolean): string {
+  const m = t?.marginsCm;
+  const mar = m
+    ? `<w:pgMar w:top="${cmToTwips(m.top)}" w:right="${cmToTwips(m.right)}" w:bottom="${cmToTwips(m.bottom)}" w:left="${cmToTwips(m.left)}" w:header="708" w:footer="708" w:gutter="0"/>`
+    : `<w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/>`;
+  const footer = numbering !== "none" ? `<w:footerReference w:type="default" r:id="${FOOTER_REL}"/>` : "";
+  const pgNum = numbering !== "none" ? `<w:pgNumType w:fmt="${numbering}"${restart ? ' w:start="1"' : ""}/>` : "";
+  return `<w:sectPr>${footer}<w:pgSz w:w="11906" w:h="16838"/>${mar}${pgNum}${rtl ? "<w:bidi/>" : ""}</w:sectPr>`;
+}
+
+/** An empty paragraph that ends a section: the section's properties ride on it. */
+function sectionBreak(sectPr: string): string {
+  return `<w:p><w:pPr>${sectPr}</w:pPr></w:p>`;
+}
+
+/** A centred line of the title page; an empty value is left out. */
+function coverLine(text: string | undefined, style = "CoverLine", bold = false): string {
+  if (!text) return "";
+  const runs = parseInline(text).map((r) => (bold ? { ...r, bold: true } : r));
+  const bidi = bidiOf(runs);
+  return `<w:p><w:pPr><w:pStyle w:val="${style}"/>${bidi}</w:pPr>${runs.map(bareRunXml).join("")}</w:p>`;
+}
+
+/** The title page (institution, title, course, lecturer, student, date), from the cover fields. */
+function coverXml(a: AcademicDocxOptions, lang: "he" | "en"): string {
+  const c = a.cover;
+  const L = COVER_LABELS[lang];
+  const course = c.course ? `${L.course}: ${c.course}${c.courseNumber ? ` (${c.courseNumber})` : ""}` : undefined;
+  return (
+    coverLine(a.template.institution[lang], "CoverLine", true) +
+    coverLine(c.faculty) +
+    coverLine(c.department) +
+    coverLine(c.title, "Title") +
+    coverLine(c.subtitle) +
+    coverLine(course) +
+    coverLine(c.lecturer ? `${L.lecturer}: ${c.lecturer}` : undefined) +
+    // A gap, then the student's details at the foot of the page.
+    `<w:p><w:pPr><w:pStyle w:val="CoverLine"/><w:spacing w:before="2400"/></w:pPr></w:p>` +
+    coverLine(c.author ? `${L.author}: ${c.author}` : undefined) +
+    coverLine(c.studentId ? `${L.studentId}: ${c.studentId}` : undefined) +
+    coverLine(c.date ? `${L.date}: ${c.date}` : undefined)
+  );
+}
+
+/** Headings of the body, levels 1–3, for the table of contents' first view. */
+function tocEntries(body: string): { level: number; text: string }[] {
+  const out: { level: number; text: string }[] = [];
+  let fence = false;
+  for (const line of body.split(/\r?\n/)) {
+    if (/^\s*```/.test(line)) fence = !fence;
+    const h = fence ? null : line.match(/^(#{1,3})\s+(.*)$/);
+    if (h) out.push({ level: h[1].length, text: visibleText(parseInline(h[2])) });
+  }
+  return out;
+}
+
+/**
+ * The table of contents: Word's TOC field (headings 1–3, links), its first
+ * view already filled with the headings so it reads right before the field
+ * is updated; settings.xml asks Word to update it (page numbers) on open.
+ */
+function tocXml(body: string, lang: "he" | "en"): string {
+  const L = COVER_LABELS[lang];
+  const bidi = lang === "he" ? "<w:bidi/>" : "";
+  const rtl = lang === "he" ? "<w:rPr><w:rtl/></w:rPr>" : "";
+  const entries = tocEntries(body);
+  const lines = entries.map((e, i) => {
+    const first = i === 0 ? `<w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h \\z \\u </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>` : "";
+    const last = i === entries.length - 1 ? `<w:r><w:fldChar w:fldCharType="end"/></w:r>` : "";
+    const entryBidi = firstStrongDirection(e.text) === "rtl" ? "<w:bidi/>" : "";
+    return `<w:p><w:pPr><w:pStyle w:val="TOC${e.level}"/>${entryBidi}</w:pPr>${first}${bareRunXml({ text: e.text })}${last}</w:p>`;
+  });
+  const field = lines.length
+    ? lines.join("")
+    : `<w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h \\z \\u </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>`;
+  return (
+    `<w:p><w:pPr><w:pStyle w:val="TOCHeading"/>${bidi}</w:pPr><w:r>${rtl}<w:t xml:space="preserve">${esc(L.toc)}</w:t></w:r></w:p>` +
+    field +
+    `<w:p><w:pPr><w:pStyle w:val="FootnoteText"/>${bidi}</w:pPr><w:r>${rtl}<w:t xml:space="preserve">${esc(L.tocHint)}</w:t></w:r></w:p>`
+  );
+}
+
+function buildDocxParts(content: string, opts: DocxOptions = {}): { name: string; data: string }[] {
+  const academic = opts.academic;
+  const md = academic ? splitCover(content).body : content;
+  const baseDir = markdownBaseDirection(content);
+  const ctx = newCtx(baseDir, academic);
+  const body = markdownToBody(md, ctx);
+  const rtl = baseDir === "rtl";
+  const lang: "he" | "en" = rtl ? "he" : "en";
+
+  let bodyXml: string;
+  if (academic) {
+    const front = academic.frontNumbering ?? academic.template.frontNumbering;
+    const withToc = academic.toc !== false;
+    bodyXml =
+      coverXml(academic, lang) +
+      sectionBreak(sectPrXml(academic.template, rtl, "none", false)) +
+      (withToc ? tocXml(md, lang) + sectionBreak(sectPrXml(academic.template, rtl, front, true)) : "") +
+      body +
+      sectPrXml(academic.template, rtl, "decimal", true);
+  } else {
+    bodyXml = body + sectPrXml(null, false, "none", false);
+  }
 
   const documentXml =
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
     `<w:document xmlns:w="${W}" xmlns:r="${R}"><w:body>` +
-    body +
-    `<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>` +
-    `<w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>` +
+    bodyXml +
     `</w:body></w:document>`;
+
+  const hasNotes = ctx.footnotes.length > 0;
+  const extra: ExtraRel[] = [];
+  const parts: { name: string; data: string }[] = [];
+  const overrides: string[] = [];
+  const WML = "application/vnd.openxmlformats-officedocument.wordprocessingml";
+  if (academic) {
+    extra.push({ id: FOOTER_REL, type: "footer", target: "footer1.xml" });
+    parts.push({ name: "word/footer1.xml", data: buildPageFooter() });
+    overrides.push(`<Override PartName="/word/footer1.xml" ContentType="${WML}.footer+xml"/>`);
+  }
+  if (hasNotes) {
+    extra.push({ id: "rIdFootnotes", type: "footnotes", target: "footnotes.xml" });
+    parts.push({ name: "word/footnotes.xml", data: buildFootnotes(ctx.footnotes) });
+    overrides.push(`<Override PartName="/word/footnotes.xml" ContentType="${WML}.footnotes+xml"/>`);
+  }
+  if (academic || hasNotes) {
+    extra.push({ id: "rIdSettings", type: "settings", target: "settings.xml" });
+    parts.push({ name: "word/settings.xml", data: buildSettings(!!academic && academic.toc !== false, hasNotes) });
+    overrides.push(`<Override PartName="/word/settings.xml" ContentType="${WML}.settings+xml"/>`);
+  }
 
   const contentTypes =
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
@@ -510,6 +831,7 @@ function buildDocxParts(content: string): { name: string; data: string }[] {
     `<Override PartName="/word/document.xml" ContentType="${DOCX_MIME}.main+xml"/>` +
     `<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>` +
     `<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>` +
+    overrides.join("") +
     `</Types>`;
 
   const rels =
@@ -522,27 +844,33 @@ function buildDocxParts(content: string): { name: string; data: string }[] {
     { name: "[Content_Types].xml", data: contentTypes },
     { name: "_rels/.rels", data: rels },
     { name: "word/document.xml", data: documentXml },
-    { name: "word/_rels/document.xml.rels", data: buildDocumentRels(ctx.hyperlinks) },
-    { name: "word/styles.xml", data: buildStyles() },
+    { name: "word/_rels/document.xml.rels", data: buildDocumentRels(ctx.hyperlinks, extra) },
+    { name: "word/styles.xml", data: buildStyles(academic?.template) },
     { name: "word/numbering.xml", data: buildNumbering(ctx.orderedNumIds) },
+    ...parts,
   ];
 }
 
+/** The parts of the package as text, for golden tests. */
+export function docxPartsForTest(content: string, opts: DocxOptions = {}): Record<string, string> {
+  return Object.fromEntries(buildDocxParts(content, opts).map((p) => [p.name, p.data]));
+}
+
 /** Build a real .docx as raw bytes. Exported for testing. */
-export async function markdownToDocxBytes(content: string): Promise<Uint8Array> {
-  return zip(buildDocxParts(content));
+export async function markdownToDocxBytes(content: string, opts: DocxOptions = {}): Promise<Uint8Array> {
+  return zip(buildDocxParts(content, opts));
 }
 
 /** Build a real .docx as a Blob. */
-export async function markdownToDocxBlob(content: string): Promise<Blob> {
-  const bytes = await markdownToDocxBytes(content);
+export async function markdownToDocxBlob(content: string, opts: DocxOptions = {}): Promise<Blob> {
+  const bytes = await markdownToDocxBytes(content, opts);
   return new Blob([bytes as BlobPart], { type: DOCX_MIME });
 }
 
 /** Export markdown content as a downloadable .docx file. */
-export async function exportToDocx(content: string, fileName: string): Promise<void> {
+export async function exportToDocx(content: string, fileName: string, opts: DocxOptions = {}): Promise<void> {
   const baseName = fileName.replace(/\.[^.]+$/, "");
-  const blob = await markdownToDocxBlob(content);
+  const blob = await markdownToDocxBlob(content, opts);
 
   if ("showSaveFilePicker" in window) {
     try {

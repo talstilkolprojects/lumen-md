@@ -53,6 +53,13 @@
       "icon": "Download"
     },
     {
+      "id": "file.exportAcademic",
+      "label": "Export for academic submission (Word)…",
+      "group": "File",
+      "hint": "Title page, table of contents, page numbers and the institution's formatting",
+      "icon": "Download"
+    },
+    {
       "id": "file.exportRtf",
       "label": "Export to RTF",
       "group": "File",
@@ -1319,6 +1326,13 @@
       "label": "Export to Word (.doc)",
       "group": "File",
       "hint": "Download as Word document",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportAcademic",
+      "label": "Export for academic submission (Word)…",
+      "group": "File",
+      "hint": "Title page, table of contents, page numbers and the institution's formatting",
       "icon": "Download"
     },
     {
@@ -2638,6 +2652,7 @@
     "file.exportHtml",
     "file.publishSite",
     "file.exportDocx",
+    "file.exportAcademic",
     "file.exportRtf",
     "file.exportMarkdownAiMarks",
     "file.exportLatex",

@@ -14,6 +14,140 @@
       "vars": []
     },
     {
+      "key": "academic.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "academic.cover",
+      "en": "Title page",
+      "vars": []
+    },
+    {
+      "key": "academic.done",
+      "en": "Exported {name}. Open it in Word and press F9 on the table of contents to fill in the page numbers.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "academic.export",
+      "en": "Export .docx",
+      "vars": []
+    },
+    {
+      "key": "academic.failed",
+      "en": "The export did not finish: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "academic.field.author",
+      "en": "Your name",
+      "vars": []
+    },
+    {
+      "key": "academic.field.course",
+      "en": "Course",
+      "vars": []
+    },
+    {
+      "key": "academic.field.courseNumber",
+      "en": "Course number",
+      "vars": []
+    },
+    {
+      "key": "academic.field.date",
+      "en": "Submission date",
+      "vars": []
+    },
+    {
+      "key": "academic.field.department",
+      "en": "Department",
+      "vars": []
+    },
+    {
+      "key": "academic.field.faculty",
+      "en": "Faculty",
+      "vars": []
+    },
+    {
+      "key": "academic.field.lecturer",
+      "en": "Lecturer",
+      "vars": []
+    },
+    {
+      "key": "academic.field.studentId",
+      "en": "ID number",
+      "vars": []
+    },
+    {
+      "key": "academic.field.subtitle",
+      "en": "Kind of work",
+      "vars": []
+    },
+    {
+      "key": "academic.field.title",
+      "en": "Title",
+      "vars": []
+    },
+    {
+      "key": "academic.front",
+      "en": "Page numbers on the table of contents",
+      "vars": []
+    },
+    {
+      "key": "academic.front.hebrew1",
+      "en": "Hebrew letters (א, ב, ג)",
+      "vars": []
+    },
+    {
+      "key": "academic.front.lowerRoman",
+      "en": "Roman numerals (i, ii, iii)",
+      "vars": []
+    },
+    {
+      "key": "academic.front.none",
+      "en": "No numbers",
+      "vars": []
+    },
+    {
+      "key": "academic.institution",
+      "en": "Institution",
+      "vars": []
+    },
+    {
+      "key": "academic.intro",
+      "en": "A Word file formatted to the institution's written guideline: margins, font, spacing, title page, table of contents and page numbers. Departments can have their own rules, so check yours before you submit.",
+      "vars": []
+    },
+    {
+      "key": "academic.source",
+      "en": "The guideline",
+      "vars": []
+    },
+    {
+      "key": "academic.summary",
+      "en": "{font} {size} pt, {spacing} lines, margins right / left / top / bottom {margins} cm",
+      "vars": [
+        "font",
+        "size",
+        "spacing",
+        "margins"
+      ]
+    },
+    {
+      "key": "academic.title",
+      "en": "Export for academic submission",
+      "vars": []
+    },
+    {
+      "key": "academic.toc",
+      "en": "Table of contents",
+      "vars": []
+    },
+    {
       "key": "agentReview.approve",
       "en": "Approve",
       "vars": []
