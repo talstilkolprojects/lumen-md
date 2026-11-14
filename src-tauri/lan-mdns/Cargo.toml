@@ -1,0 +1,15 @@
+[package]
+name = "lumen-lan-mdns"
+version = "0.1.0"
+edition = "2021"
+description = "Finding the other device on the local network (plan W2.19): an mDNS / DNS-SD responder and browser for _lumen-lan._tcp, and the rendezvous that swaps the LAN link's pairing codes."
+license = "MIT"
+publish = false
+
+# Plain std, no dependencies: `cargo test --manifest-path src-tauri/lan-mdns/Cargo.toml`
+# runs on any OS, offline, without the WebView libraries.
+[dependencies]
+
+[[bin]]
+name = "lan-mdns-demo"
+path = "src/bin/demo.rs"

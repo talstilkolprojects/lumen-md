@@ -105,7 +105,7 @@ const peerSide =
 export function adoptPeerLink(link: LanLink): RemoteLanProvider {
   peer?.link.close();
   offChanged?.();
-  const remote = remoteLanProvider(link.channel, { address: link.remoteAddress ?? null });
+  const remote = remoteLanProvider(link.channel, { address: link.remoteAddress ?? null, fingerprints: link.fingerprints });
   peer = { link, remote, auth: null };
   for (const op of peerSideServices.keys()) remote.serve(op, peerSide(op));
   offChanged = remote.onChanged(() => {

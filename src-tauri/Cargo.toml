@@ -36,6 +36,10 @@ tauri-plugin-deep-link = "2"
 # decisions are in this std-only crate (tested offline); src/shell.rs is the glue.
 lumen-desktop = { path = "desktop" }
 
+# Finding the other device on the local network (plan W2.19): mDNS and the
+# pairing-code rendezvous, std only.
+lumen-lan-mdns = { path = "lan-mdns" }
+
 [target.'cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))'.dependencies]
 # One instance: a second launch forwards its files and links (Windows, Linux).
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }

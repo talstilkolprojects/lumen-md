@@ -2119,6 +2119,7 @@ version = "0.1.0"
 dependencies = [
  "lumen-desktop",
  "lumen-keychain",
+ "lumen-lan-mdns",
  "lumen-vault",
  "serde",
  "serde_json",
@@ -2140,6 +2141,10 @@ version = "0.1.0"
 dependencies = [
  "keyring",
 ]
+
+[[package]]
+name = "lumen-lan-mdns"
+version = "0.1.0"
 
 [[package]]
 name = "lumen-vault"

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Merged into the macOS bundle's Info.plist by Tauri. Plan W2.19: finding
+     the other device on the local network (mDNS) needs the local network
+     permission and the Bonjour service it browses for. -->
+<plist version="1.0">
+<dict>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>Lumen finds your other devices on this network and syncs with them directly, with no server.</string>
+  <key>NSBonjourServices</key>
+  <array>
+    <string>_lumen-lan._tcp</string>
+  </array>
+</dict>
+</plist>

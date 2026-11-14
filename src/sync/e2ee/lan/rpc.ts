@@ -45,6 +45,15 @@
  * so only a device that knows the passphrase can write, list or delete, and
  * the peer knows it reached the vault's own host. The role label keeps one
  * side's proof from being reflected as the other's.
+ *
+ * Both proofs are also bound to the channel (review 28, L1): the data each
+ * side signs ends with the two DTLS fingerprints of the connection it is
+ * actually on, host's first, `|fp=<host>,<peer>`. Once the pairing codes
+ * travel over the network (mDNS, ./discovery.ts), a device in the middle
+ * holds two different DTLS connections, so the fingerprints the host sees
+ * and the ones the peer sees differ, and the proof fails even though each
+ * half was relayed intact. `comparisonCode` turns the same pair into the
+ * 8-digit code both screens show before the first sync.
  */
 
 import { fromB64u, randomBytes, toB64u, utf8 } from "../bytes";
@@ -102,7 +111,36 @@ export const LAN_PROTOCOL = 1;
 export const REQUEST_TIMEOUT_MS = 15_000;
 const MAX_NAME = 256;
 
-const proofData = (role: "host" | "peer", theirs: string, mine: string) => utf8(`lumen-lan:${LAN_PROTOCOL}|${role}|${theirs}|${mine}`);
+/** The DTLS fingerprints of a link: this device's and the other one's (./link.ts). Null where a channel has none (in-memory tests). */
+export interface LinkFingerprints {
+  local: string;
+  remote: string;
+}
+
+/** The channel as both sides name it: the host's fingerprint, then the peer's ("-" without fingerprints). */
+export function channelBinding(role: "host" | "peer", fp: LinkFingerprints | null | undefined): string {
+  if (!fp) return "-";
+  return role === "host" ? `${fp.local},${fp.remote}` : `${fp.remote},${fp.local}`;
+}
+
+/** What one side signs: its role, both nonces, and the channel it is on. */
+export const proofData = (role: "host" | "peer", theirs: string, mine: string, binding: string) => utf8(`lumen-lan:${LAN_PROTOCOL}|${role}|${theirs}|${mine}|fp=${binding}`);
+
+/**
+ * The code both screens show (review 28, L1): 8 digits from the channel's
+ * two fingerprints, the same pair the proof is bound to. It exists before
+ * the vault is unlocked here (the joining device has no key yet), so the
+ * user compares it before the first sync. Eight digits: a device in the
+ * middle would have to make two connections agree on it by generating
+ * certificates within the pairing's timeout, about 10^8 tries.
+ */
+export async function comparisonCode(binding: string): Promise<string | null> {
+  if (binding === "-") return null;
+  const d = new Uint8Array(await crypto.subtle.digest("SHA-256", utf8(`lumen-lan:${LAN_PROTOCOL}|compare|${binding}`)));
+  const n = (((d[0] << 24) | (d[1] << 16) | (d[2] << 8) | d[3]) >>> 0) % 100_000_000;
+  const s = String(n).padStart(8, "0");
+  return `${s.slice(0, 4)} ${s.slice(4)}`;
+}
 
 export class LanAuthError extends Error {
   constructor(message = "The other device is not part of this vault") {
@@ -137,6 +175,8 @@ export interface LanPeerInfo {
   address: string | null;
   authed: boolean;
   connectedAt: number;
+  /** The comparison code of this peer's channel (review 28, L1), once computed; null without fingerprints. */
+  code?: string | null;
 }
 
 export interface LanHostOptions {
@@ -180,7 +220,7 @@ export interface LanHost {
   /** The bucket for this device's own sync engine: its writes tell the peers. */
   readonly provider: SyncProvider;
   /** Serve one peer over `channel`. Returns the detach function. */
-  attach(channel: LanChannel, info?: { address?: string | null }): () => void;
+  attach(channel: LanChannel, info?: { address?: string | null; fingerprints?: LinkFingerprints | null }): () => void;
   peers(): LanPeerInfo[];
   /** Called after a peer wrote (this device should sync). */
   onPeerWrite(fn: () => void): () => void;
@@ -198,6 +238,8 @@ interface Conn {
   /** Host → peer service requests waiting for their answer, by `rq`. */
   asked: Map<number, Waiting>;
   nextRq: number;
+  /** The channel this peer is on, as both proofs name it. */
+  binding: string;
 }
 
 type Waiting = { resolve: (m: Message) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> };
@@ -255,7 +297,7 @@ export function lanHost(opts: LanHostOptions): LanHost {
         tag = new Uint8Array();
       }
       const theirNonce = typeof header.nonce === "string" ? header.nonce : "";
-      if (theirNonce.length < 16 || !(await verifyHmac(keys.pairing, tag, proofData("peer", c.nonce, theirNonce)))) {
+      if (theirNonce.length < 16 || !(await verifyHmac(keys.pairing, tag, proofData("peer", c.nonce, theirNonce, c.binding)))) {
         reply({ error: "auth" });
         // After the answer has left: the peer learns why before the link drops.
         setTimeout(() => c.channel.close(), 100);
@@ -264,7 +306,7 @@ export function lanHost(opts: LanHostOptions): LanHost {
       c.authed = true;
       c.info.authed = true;
       peersChanged();
-      return reply({ tag: toB64u(await hmac(keys.pairing, proofData("host", theirNonce, c.nonce))) });
+      return reply({ tag: toB64u(await hmac(keys.pairing, proofData("host", theirNonce, c.nonce, c.binding))) });
     }
     if (op === "get") {
       if (!isName(header.name)) return reply({ error: "bad-request" });
@@ -329,8 +371,12 @@ export function lanHost(opts: LanHostOptions): LanHost {
     },
     attach(channel, info = {}) {
       const m = messenger(channel);
-      const c: Conn = { send: m.send, channel, nonce: toB64u(randomBytes(16)), authed: false, info: { address: info.address ?? null, authed: false, connectedAt: Date.now() }, asked: new Map(), nextRq: 1 };
+      const c: Conn = { send: m.send, channel, nonce: toB64u(randomBytes(16)), authed: false, info: { address: info.address ?? null, authed: false, connectedAt: Date.now() }, asked: new Map(), nextRq: 1, binding: channelBinding("host", info.fingerprints) };
       conns.add(c);
+      void comparisonCode(c.binding).then((code) => {
+        c.info.code = code;
+        if (conns.has(c)) peersChanged();
+      });
       // One request at a time per peer, in order (a sync round is sequential anyway).
       let chain: Promise<void> = Promise.resolve();
       const off = m.onMessage((msg) => {
@@ -428,7 +474,8 @@ export interface RemoteLanProvider extends SyncProvider {
   close(): void;
 }
 
-export function remoteLanProvider(channel: LanChannel, opts: { timeoutMs?: number; address?: string | null } = {}): RemoteLanProvider {
+export function remoteLanProvider(channel: LanChannel, opts: { timeoutMs?: number; address?: string | null; fingerprints?: LinkFingerprints | null } = {}): RemoteLanProvider {
+  const binding = channelBinding("peer", opts.fingerprints);
   const m = messenger(channel);
   const timeoutMs = opts.timeoutMs ?? REQUEST_TIMEOUT_MS;
   let nextId = 1;
@@ -530,7 +577,7 @@ export function remoteLanProvider(channel: LanChannel, opts: { timeoutMs?: numbe
       const challenge = await call({ op: "challenge" });
       const hostNonce = String(challenge.header.nonce ?? "");
       const nonce = toB64u(randomBytes(16));
-      const tag = await hmac(keys.pairing, proofData("peer", hostNonce, nonce));
+      const tag = await hmac(keys.pairing, proofData("peer", hostNonce, nonce, binding));
       const r = await call({ op: "auth", nonce, tag: toB64u(tag) });
       let hostTag: Uint8Array;
       try {
@@ -538,7 +585,7 @@ export function remoteLanProvider(channel: LanChannel, opts: { timeoutMs?: numbe
       } catch {
         hostTag = new Uint8Array();
       }
-      if (!(await verifyHmac(keys.pairing, hostTag, proofData("host", nonce, hostNonce)))) {
+      if (!(await verifyHmac(keys.pairing, hostTag, proofData("host", nonce, hostNonce, binding)))) {
         channel.close();
         throw new LanAuthError("The hosting device is not part of this vault");
       }

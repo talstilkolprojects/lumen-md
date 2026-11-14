@@ -237,5 +237,19 @@
   "e2ee.rekey.busy": "Another device is changing the vault's keys right now. Sync, and try again once it has finished (10 minutes at most).",
   "e2ee.pair.rekeying": "This device is changing the vault's keys right now. Make the pairing code once the change has finished.",
   "e2ee.revokedHere.reset": "This device's own list of the devices it removed couldn't be verified, so it was set aside. It now checks against the vault's sealed list of removed devices. Check the device list on a device you trust.",
-  "e2ee.rekey.contested": "Removing {devices} didn't go through, again: each time, the vault's device list was rewritten at the same moment by something that still has the vault's keys and the storage login, most likely the device you're removing. Change the storage password or token first, so that device can't write any more, then remove it again."
+  "e2ee.rekey.contested": "Removing {devices} didn't go through, again: each time, the vault's device list was rewritten at the same moment by something that still has the vault's keys and the storage login, most likely the device you're removing. Change the storage password or token first, so that device can't write any more, then remove it again.",
+  "e2ee.lan.visibleAs": "Also visible on this network as {name}: on the other device, choose Find devices on this network and pick it.",
+  "e2ee.lan.find": "Find devices on this network",
+  "e2ee.lan.finding": "Looking on this network…",
+  "e2ee.lan.found.none": "No device found. On the hosting device, start Pair a device and keep the dialog open, or use the code below.",
+  "e2ee.lan.found.pick": "Pair with {name}",
+  "e2ee.lan.discovery.used": "That device already paired with another one. Start a new pairing there.",
+  "e2ee.lan.discovery.failed": "Couldn't reach that device. Use the code below instead.",
+  "e2ee.lan.peer.code": "code",
+  "e2ee.lan.compare.title": "Comparison code",
+  "e2ee.lan.compare.ask": "Check that the other device shows this same code next to this device before you continue:",
+  "e2ee.lan.compare.same": "Same code — continue",
+  "e2ee.lan.compare.differ": "Different — cancel",
+  "e2ee.lan.compare.mismatch": "The codes differed, so the link was closed. Pair again; if it happens again, another device on this network may be in between.",
+  "e2ee.lan.found.duplicate": "Two devices announce {name}. Pick one only if, after pairing, both screens show the same code."
 }
