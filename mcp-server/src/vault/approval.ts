@@ -21,6 +21,7 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypt
 import { lumenDir } from "./config.js";
 import { readLedger } from "./ledger.js";
 import { getPending } from "./pending.js";
+import { readBatch } from "./bases.js";
 
 /** How long a `requestState` is honoured. A later retry proposes again. */
 export const STATE_TTL_MS = 60 * 60 * 1000;
@@ -42,7 +43,8 @@ export type ApprovalOutcome =
   | { status: "approved"; path?: string }
   | { status: "rejected"; path?: string }
   | { status: "conflict"; path?: string; reason?: string }
-  | { status: "unknown" };
+  | { status: "unknown" }
+  | { status: "batch"; written: string[]; rejected: string[]; conflicts: string[]; unknown: number };
 
 export class StateError extends Error {}
 
@@ -128,8 +130,29 @@ export async function verifyState(vault: string, raw: unknown, expect: { client:
   return s;
 }
 
-/** Where a proposal stands: still queued, or what the user decided (from the ledger). */
+/** The state's `pid` for a batch of proposals (one Bases update, W8.1). */
+export const BATCH_PREFIX = "batch:";
+
+/**
+ * Where a proposal stands: still queued, or what the user decided (from
+ * the ledger). A batch is pending while any of its proposals is; then it
+ * reports every note's outcome.
+ */
 export async function approvalOutcome(vault: string, pid: string): Promise<ApprovalOutcome> {
+  if (pid.startsWith(BATCH_PREFIX)) {
+    const batch = await readBatch(vault, pid.slice(BATCH_PREFIX.length));
+    if (!batch) return { status: "unknown" };
+    const out = { status: "batch" as const, written: [] as string[], rejected: [] as string[], conflicts: [] as string[], unknown: 0 };
+    for (const id of batch.ids) {
+      const o = await approvalOutcome(vault, id);
+      if (o.status === "pending") return o;
+      if (o.status === "approved") out.written.push(o.path ?? id);
+      else if (o.status === "rejected") out.rejected.push(o.path ?? id);
+      else if (o.status === "conflict") out.conflicts.push(o.path ?? id);
+      else out.unknown++;
+    }
+    return out;
+  }
   if (await getPending(vault, pid)) return { status: "pending" };
   const entries = await readLedger(vault, Number.MAX_SAFE_INTEGER);
   for (let i = entries.length - 1; i >= 0; i--) {

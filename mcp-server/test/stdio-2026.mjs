@@ -61,7 +61,7 @@ try {
   const d = await s.send("server/discover", {});
   check(d.result?.supportedVersions?.[0] === "2026-07-28" && d.result.resultType === "complete", "server/discover");
   const l = await s.send("tools/list", {});
-  check(l.result?.tools?.length === 9 && l.result.cacheScope === "private" && typeof l.result.ttlMs === "number", "tools/list: 9 tools, ttlMs, cacheScope private");
+  check(l.result?.tools?.length === 11 && l.result.cacheScope === "private" && typeof l.result.ttlMs === "number", "tools/list: 11 tools, ttlMs, cacheScope private");
   const r = await s.send("tools/call", { name: "read_note", arguments: { path: "hello.md" } });
   check(r.result?.content?.[0]?.text.includes("שלום"), "read_note over stdio (Hebrew intact)");
   const call = { name: "create_note", arguments: { path: "from-agent.md", content: "# From an agent\n" } };
@@ -84,7 +84,7 @@ try {
   const init = await legacy.send("initialize", { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "old", version: "1" } }, false);
   check(init.result?.protocolVersion === "2025-11-25", "legacy initialize on a second process");
   const ll = await legacy.send("tools/list", {}, false);
-  check(ll.result?.tools?.length === 9 && ll.result.resultType === undefined, "legacy tools/list");
+  check(ll.result?.tools?.length === 11 && ll.result.resultType === undefined, "legacy tools/list");
   legacy.child.stdin.end();
 } finally {
   rmSync(vault, { recursive: true, force: true });

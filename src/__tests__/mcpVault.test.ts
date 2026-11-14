@@ -142,7 +142,7 @@ describe("writes from a client wait for approval", () => {
 
   it("every tool has a scope", () => {
     for (const t of TOOLS) expect(["search", "read", "propose"]).toContain(t.scope);
-    expect(TOOLS.filter((t) => t.scope === "propose").map((t) => t.name).sort()).toEqual(["append_note", "create_note", "update_frontmatter", "write_note"]);
+    expect(TOOLS.filter((t) => t.scope === "propose").map((t) => t.name).sort()).toEqual(["append_note", "bases_update", "create_note", "update_frontmatter", "write_note"]);
   });
 });
 

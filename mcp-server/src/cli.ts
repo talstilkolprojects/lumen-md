@@ -7,6 +7,9 @@
  *   lumen append <path> <text…>        add text to the end of a note
  *   lumen daily [text…] [--folder d]   today's note (journal/YYYY-MM-DD.md);
  *                                      with text, adds "- HH:MM text"
+ *   lumen bases query <f.base> [--view v] [--json]   a view's rows (W8.1)
+ *   lumen bases update --edits e.json [--dry-run] [--approve]
+ *                                      property edits into the approval queue
  *   lumen mcp status                   which MCP clients may do what
  *   lumen mcp enable <client> [--scopes search,read,propose]
  *   lumen mcp disable <client>
@@ -29,6 +32,7 @@ import { appendLedger, readLedger } from "./vault/ledger.js";
 import { approvePending, lineDiff, listPending, readNote, rejectPending } from "./vault/pending.js";
 import { absPath, notePath } from "./vault/paths.js";
 import { VaultIndex } from "./vault/search.js";
+import { planBasesUpdate, proposeBatch, queryVaultBase, relForCli } from "./vault/bases.js";
 
 export interface CliIO {
   out: (line: string) => void;
@@ -40,7 +44,7 @@ export interface CliIO {
   openFile?: (abs: string) => void;
 }
 
-export const VAULT_COMMANDS = ["search", "open", "new", "append", "daily", "mcp"] as const;
+export const VAULT_COMMANDS = ["search", "open", "new", "append", "daily", "bases", "mcp"] as const;
 
 export const USAGE = [
   "usage: lumen search <words…> [--limit n] [--json]",
@@ -48,12 +52,14 @@ export const USAGE = [
   "       lumen new <path> [text…]",
   "       lumen append <path> <text…>",
   "       lumen daily [text…] [--folder journal]",
+  "       lumen bases query <file.base> [--view name] [--offset n] [--limit n] [--json]",
+  "       lumen bases update --edits <edits.json> [--dry-run] [--approve]",
   "       lumen mcp status | enable <client> [--scopes search,read,propose] | disable <client>",
   "       lumen mcp review | approve <id>|--all | reject <id>|--all | log [--limit n] | serve [--client id]",
   "       (vault: --vault <dir>, $LUMEN_VAULT, or the current folder)",
 ].join("\n");
 
-const BOOLEAN_FLAGS = new Set(["json", "print", "all"]);
+const BOOLEAN_FLAGS = new Set(["json", "print", "all", "dry-run", "approve"]);
 
 export function parseArgs(args: string[]): { flags: Record<string, string>; positional: string[] } {
   const flags: Record<string, string> = {};
@@ -188,11 +194,87 @@ async function runCommand(argv: string[], io: CliIO): Promise<number> {
       io.out(rel);
       return 0;
     }
+    case "bases":
+      return runBases(vault, rest, flags, io);
     case "mcp":
       return runMcp(vault, rest, flags, io);
   }
   io.err(USAGE);
   return 1;
+}
+
+/**
+ * `lumen bases` (plan W8.1): the app's Bases engine from a terminal.
+ * `query` prints a view's rows (tab-separated, or JSON). `update` takes the
+ * same edits as `lumen.bases.update` / the `bases_update` MCP tool and
+ * queues them in the approval queue — `--dry-run` only shows what would
+ * change, `--approve` approves the batch right away (you are the user).
+ */
+async function runBases(vault: string, rest: string[], flags: Record<string, string>, io: CliIO): Promise<number> {
+  const [sub, arg] = rest;
+  if (sub === "query" && arg) {
+    const r = await queryVaultBase(vault, relForCli(vault, arg), flags.view, { offset: flags.offset, limit: flags.limit });
+    if (flags.json) io.out(JSON.stringify(r));
+    else {
+      io.out(["path", ...r.columns.map((c) => c.label)].join("\t"));
+      for (const row of r.rows) io.out([row.path, ...r.columns.map((c) => cellText(row.cells[c.id]))].join("\t"));
+    }
+    for (const e of r.errors) io.err(`warning: ${e}`);
+    io.err(`${r.rows.length} of ${r.total} row(s), view "${r.view}"`);
+    return 0;
+  }
+  if (sub === "update" && flags.edits) {
+    const raw = flags.edits === "-" ? await readStdin() : await fs.readFile(path.resolve(io.cwd, flags.edits), "utf8");
+    let edits: unknown;
+    try {
+      edits = JSON.parse(raw);
+    } catch {
+      io.err("error: --edits must be a JSON list of { path, set }");
+      return 1;
+    }
+    const plan = await planBasesUpdate(vault, edits);
+    const s = plan.summary;
+    io.out(`${plan.changes.length} note(s) would change (${s.properties.join(", ") || "no properties"}); ${s.unchanged} row(s) already have these values.`);
+    for (const c of plan.changes.slice(0, 20)) {
+      io.out(`── ${c.path}`);
+      for (const l of lineDiff(c.before, c.after, 12)) io.out(l);
+    }
+    if (plan.changes.length > 20) io.out(`… and ${plan.changes.length - 20} more`);
+    if (flags["dry-run"] || !plan.changes.length) {
+      if (flags["dry-run"]) io.out("Dry run: nothing written, nothing queued.");
+      return 0;
+    }
+    const batch = await proposeBatch(vault, "cli", "bases_update", plan.changes);
+    if (!flags.approve) {
+      io.out(`Queued as batch ${batch.id}: review with \`lumen mcp review\`, then \`lumen mcp approve --all\` (or in Lumen's review screen).`);
+      return 0;
+    }
+    let failed = 0;
+    for (const id of batch.ids) {
+      const r = await approvePending(vault, id, "cli");
+      if (r.status !== "applied") {
+        failed++;
+        io.err(r.status === "missing" ? `no proposal ${id}` : `not written: ${r.reason} (${r.pending.path})`);
+      }
+    }
+    io.out(`wrote ${batch.ids.length - failed} note(s)`);
+    return failed ? 1 : 0;
+  }
+  io.err(USAGE);
+  return 1;
+}
+
+function cellText(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  if (Array.isArray(v)) return v.map(cellText).join(", ");
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v).replace(/[\t\n]+/g, " ");
+}
+
+async function readStdin(): Promise<string> {
+  const chunks: Buffer[] = [];
+  for await (const c of process.stdin) chunks.push(c as Buffer);
+  return Buffer.concat(chunks).toString("utf8");
 }
 
 async function runMcp(vault: string, rest: string[], flags: Record<string, string>, io: CliIO): Promise<number> {

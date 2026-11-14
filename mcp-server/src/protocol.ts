@@ -27,7 +27,7 @@
  * exactly what stdio carries.
  */
 import { normalizeClientId } from "./vault/config.js";
-import { approvalOutcome, argsDigest, signState, StateError, verifyState } from "./vault/approval.js";
+import { approvalOutcome, argsDigest, BATCH_PREFIX, signState, StateError, verifyState } from "./vault/approval.js";
 import { VaultIndex } from "./vault/search.js";
 import { callTool, listToolsFor, toolDef, type ToolResult } from "./vault/tools.js";
 
@@ -256,14 +256,22 @@ export class McpEndpoint {
             content: [{ type: "text", text: `Not written: ${out.reason ?? "the note changed"} (id ${pid}). Read the note again and propose the change again.` }],
             isError: true,
           });
+        case "batch": {
+          const lines = [`The user decided on this update: ${out.written.length} note(s) written, ${out.rejected.length} rejected, ${out.conflicts.length} not written because the note changed.`];
+          if (out.written.length) lines.push(`Written: ${out.written.join(", ")}`);
+          if (out.rejected.length) lines.push(`Rejected: ${out.rejected.join(", ")}`);
+          if (out.conflicts.length) lines.push(`Changed since (propose again): ${out.conflicts.join(", ")}`);
+          return complete({ content: [{ type: "text", text: lines.join("\n") }], ...(out.written.length ? {} : { isError: true }) });
+        }
         default:
           return complete({ content: [{ type: "text", text: `Lumen has no record of proposal ${pid}. Nothing was written.` }], isError: true });
       }
     }
 
     const res = await callTool({ vault: this.vault, client: e.client, index: this.index }, name, args);
-    if (!res.proposalId || !def) return complete(res);
-    const state = await signState(this.vault, { pid: res.proposalId, client: e.client, tool: def.name, digest: argsDigest(args) }, this.now());
+    const pending = res.batchId ? BATCH_PREFIX + res.batchId : res.proposalId;
+    if (!pending || !def) return complete(res);
+    const state = await signState(this.vault, { pid: pending, client: e.client, tool: def.name, digest: argsDigest(args) }, this.now());
     return this.inputRequired(id, e, state, def.name);
   }
 

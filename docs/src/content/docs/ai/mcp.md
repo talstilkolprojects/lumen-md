@@ -45,8 +45,8 @@ npx -p @lumen-md/mcp-server lumen mcp status
 | Scope | Tools |
 |---|---|
 | `search` | `search_notes` — BM25 over Hebrew and English (prefix letters ו ה ב ל מ ש כ and niqqud are handled) |
-| `read` | `read_note`, `list_notes`, `list_tags`, `get_backlinks` |
-| `propose` | `create_note`, `append_note`, `write_note`, `update_frontmatter` — proposals only |
+| `read` | `read_note`, `list_notes`, `list_tags`, `get_backlinks`, `bases_query` |
+| `propose` | `create_note`, `append_note`, `write_note`, `update_frontmatter`, `bases_update` — proposals only |
 
 `lumen mcp enable <client>` without `--scopes` grants `search,read`. Add
 `propose` only for a client you want suggestions from. `lumen mcp disable
@@ -142,6 +142,33 @@ generation connect.
 3. Ask it to *create a note*: the client says it is waiting for approval,
    and the proposal is in Lumen's review screen. Approve it; the note
    appears, and `lumen mcp log` shows `proposed` then `approved`.
+
+## Bases
+
+`bases_query` returns the rows of a `.base` view as JSON: `{ view, columns,
+rows: [{ path, cells }], total, errors }`, 200 rows at a time (`offset`,
+`limit` up to 10,000). The rows come from Lumen's own Bases engine, bundled
+into the server at build time, so they are exactly the rows the app shows.
+
+`bases_update` takes the same edits as the plugin API
+(`[{ "path": "Tasks/a.md", "set": { "status": "done" } }]`, up to 5,000
+rows). Each note that would change becomes a proposal in the approval queue,
+all under one batch; nothing is written until you approve them. Over MCP
+2026-07-28 the client waits (`input_required`) until you have decided on
+every note of the batch, then learns how many were written, rejected or not
+written because the note changed.
+
+From a terminal:
+
+```bash
+lumen bases query Tasks.base --view Open          # tab-separated; --json for JSON
+lumen bases update --edits edits.json --dry-run   # what would change; nothing written
+lumen bases update --edits edits.json             # queued: lumen mcp review / approve --all
+lumen bases update --edits edits.json --approve   # you approve it at once
+```
+
+Bases need the engine bundle: build the server with `npm ci` in the
+repository root first, then `npm run build` in `mcp-server/`.
 
 ## The ledger
 
