@@ -166,14 +166,25 @@ const dmy = (iso: string) => {
  * data.gov.il: the site, the dataset (and publisher), its update date, the
  * retrieval date and the link.
  */
+/**
+ * Remote text as plain Markdown text on one line (review 25, RR25-3): no line breaks, and every
+ * character Markdown or HTML gives a meaning (headings, links, emphasis, `<!--`, tags) backslash-escaped.
+ */
+export function mdText(s: string): string {
+  return s
+    .replace(/[\r\n\u2028\u2029\t]+/g, " ")
+    .replace(/[\\`*_[\]()#<>!|~{}&+=-]/g, "\\$&")
+    .trim();
+}
+
 export function attribution(b: DatasetBlock): string {
   const url = dataUrl(b);
   if (b.source === "cbs") {
-    return `הלשכה המרכזית לסטטיסטיקה (הלמ"ס), ${b.title}, (${dmy(b.retrieved)}), ניתן לצפייה באתר: ${url} מועתק ומופץ כמות שהוא – as is – על פי רישיון שימוש של הלמ"ס בכתובת אתר האינטרנט ${CBS_TERMS}.`;
+    return `הלשכה המרכזית לסטטיסטיקה (הלמ"ס), ${mdText(b.title)}, (${dmy(b.retrieved)}), ניתן לצפייה באתר: ${url} מועתק ומופץ כמות שהוא – as is – על פי רישיון שימוש של הלמ"ס בכתובת אתר האינטרנט ${CBS_TERMS}.`;
   }
-  const org = b.organization ? ` (${b.organization})` : "";
+  const org = b.organization ? ` (${mdText(b.organization)})` : "";
   const upd = b.updated ? `, עודכן ${dmy(b.updated)}` : "";
-  return `מקור: data.gov.il – אתר המידע הממשלתי, מאגר "${b.title}"${org}${upd}, נשלף ${dmy(b.retrieved)}, ${url}`;
+  return `מקור: data.gov.il – אתר המידע הממשלתי, מאגר "${mdText(b.title)}"${org}${upd}, נשלף ${dmy(b.retrieved)}, ${url}`;
 }
 
 /** What goes into the note: the block and, under it, the attribution line. */
