@@ -1251,6 +1251,7 @@
   "vault.folder.moving": "Déplacement du coffre… {done} sur {total} fichiers",
   "vault.folder.moved": "Le coffre est maintenant dans le dossier « {folder} » : {n} fichiers copiés et vérifiés. Vos notes du stockage du navigateur n'ont pas été supprimées.",
   "vault.folder.movedBack": "Le coffre est de retour dans le stockage du navigateur : {n} fichiers copiés et vérifiés. Le dossier « {folder} » n'a pas été modifié.",
+  "vault.folder.lateCopies": "{n} note(s) ont été enregistrées à l'ancien emplacement pendant la fin du déplacement. Leur texte plus récent est maintenant dans le coffre, en copie de conflit à côté de la note si nécessaire (première : « {path} »).",
   "vault.folder.opened": "Lumen travaille maintenant dans le dossier « {folder} ». Les notes du stockage du navigateur restent où elles sont.",
   "vault.folder.conflict": "Non déplacé : {n} fichiers de « {folder} » existent déjà avec un autre contenu (par exemple {path}). Rien n'a été modifié.",
   "vault.folder.failed": "Le déplacement du coffre s'est arrêté : {error}. Rien n'a été supprimé, vous pouvez reprendre.",

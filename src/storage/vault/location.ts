@@ -19,6 +19,7 @@
 
 import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
 import { log } from "../../lib/logger";
+import { setHistoryVault } from "../history";
 import { notifyWorkspaceChanged } from "../workspaceEvents";
 import { getVaultBackend, setVaultBackend } from "./index";
 import { createDirectoryHandleBackend } from "./handleBackend";
@@ -53,6 +54,7 @@ interface KV {
 const LOCATION_KEY = "lumen-vault-location";
 const MOVE_KEY = "lumen-vault-move";
 const LAST_MOVE_KEY = "lumen-vault-last-move";
+const IDS_KEY = "lumen-vault-ids";
 
 /** The last completed move: what it copied (path → SHA-256) from where to where. */
 interface LastMove {
@@ -66,6 +68,59 @@ let kv: KV = { get: (k) => idbGet(k), set: (k, v) => idbSet(k, v), del: (k) => i
 /** @internal tests: a key-value store that keeps fake handles as they are. */
 export function __setLocationStore(store: KV): void {
   kv = store;
+}
+
+// ── Identity ─────────────────────────────────────────────────────────────
+
+/**
+ * A vault's identity (2.80): what its version history (and other state kept
+ * by path) is filed under, so two vaults that both have `notes/a.md` never
+ * see each other's. A location keeps its identity; a move hands the source's
+ * identity to the target, so the history follows the notes. The first vault
+ * ever seen gets "", which owns the history written before identities.
+ */
+interface VaultIdentity {
+  loc: StoredLocation;
+  id: string;
+}
+
+let activeId: string | null = null;
+
+function newVaultId(): string {
+  const c = globalThis.crypto as Crypto | undefined;
+  if (c && typeof c.randomUUID === "function") return c.randomUUID();
+  return Array.from(c ? c.getRandomValues(new Uint8Array(16)) : [], (b) => b.toString(16).padStart(2, "0")).join("") || `${Date.now()}-${Math.random()}`;
+}
+
+/** The identity of `loc`, given one the first time it is seen. */
+async function identityOf(loc: StoredLocation): Promise<string> {
+  const ids = await kv.get<VaultIdentity[]>(IDS_KEY);
+  for (const e of ids ?? []) if (await sameLocation(e.loc, loc)) return e.id;
+  const id = ids === undefined ? "" : newVaultId();
+  await kv.set(IDS_KEY, [...(ids ?? []), { loc, id }]);
+  return id;
+}
+
+/** From now on `loc` is the vault `id` (the target of a move). */
+async function adoptIdentity(loc: StoredLocation, id: string): Promise<void> {
+  const kept: VaultIdentity[] = [];
+  for (const e of (await kv.get<VaultIdentity[]>(IDS_KEY)) ?? []) if (!(await sameLocation(e.loc, loc))) kept.push(e);
+  await kv.set(IDS_KEY, [...kept, { loc, id }]);
+}
+
+/** `identityOf`, or null (no history at all) when it cannot be read. */
+async function identityOrNull(loc: StoredLocation): Promise<string | null> {
+  try {
+    return await identityOf(loc);
+  } catch (err) {
+    log.warn("the vault identity could not be read; version history is off until it can", err);
+    return null;
+  }
+}
+
+function enterIdentity(id: string | null): void {
+  activeId = id;
+  setHistoryVault(id);
 }
 
 // ── Status ───────────────────────────────────────────────────────────────
@@ -186,8 +241,9 @@ export function setOnVaultReplaced(fn: () => void): void {
   onVaultReplaced = fn;
 }
 
-function activate(loc: StoredLocation, backend: VaultBackend): void {
+function activate(loc: StoredLocation, backend: VaultBackend, id: string | null): void {
   disconnected = null;
+  enterIdentity(id);
   setVaultBackend(loc.kind === "opfs" ? null : backend);
   status = loc.kind === "opfs" ? { location: "opfs" } : { location: "folder", name: loc.name };
   notifyWorkspaceChanged({ kind: "structure" });
@@ -207,23 +263,27 @@ export async function restoreVaultLocation(): Promise<VaultStatus> {
     pending = (await kv.get<MoveRecord>(MOVE_KEY)) ?? null;
     const loc = await kv.get<StoredLocation>(LOCATION_KEY);
     if (!loc || loc.kind === "opfs") {
+      const id = await identityOrNull({ kind: "opfs" });
       // Replaces the closed start-up vault (if any) with OPFS.
-      if (getVaultBackend().id !== "opfs") activate({ kind: "opfs" }, createOpfsBackend());
+      if (getVaultBackend().id !== "opfs") activate({ kind: "opfs" }, createOpfsBackend(), id);
+      else enterIdentity(id);
       return status;
     }
+    const id = await identityOrNull(loc);
     if (await ensureFolderPermission(loc.handle, false)) {
-      activate(loc, createFolderBackend(loc.handle));
+      activate(loc, createFolderBackend(loc.handle), id);
       return status;
     }
     let granted = false;
     const backend = createFolderBackend(loc.handle, () => granted);
     disconnected = { handle: loc.handle, name: loc.name, backend, connect: () => (granted = true) };
+    enterIdentity(id);
     setVaultBackend(backend);
     status = { location: "folder-disconnected", name: loc.name };
     changed();
   } catch (err) {
     log.warn("restoring the vault location failed; using browser storage", err);
-    if (getVaultBackend().id === "restoring") activate({ kind: "opfs" }, createOpfsBackend());
+    if (getVaultBackend().id === "restoring") activate({ kind: "opfs" }, createOpfsBackend(), await identityOrNull({ kind: "opfs" }));
   } finally {
     changed();
   }
@@ -253,6 +313,7 @@ export async function restoreVaultLocationWithin(ms: number): Promise<VaultStatu
       );
     }
     status = { location: "restoring" };
+    enterIdentity(null); // no vault is open: no history either
     changed();
   }
   return status;
@@ -275,8 +336,9 @@ export async function reconnectVaultFolder(): Promise<boolean> {
 export async function switchToBrowserStorage(): Promise<void> {
   await kv.set(LOCATION_KEY, { kind: "opfs" } satisfies StoredLocation);
   await cancelPendingMove(); // its source is no longer the vault
+  const id = await identityOrNull({ kind: "opfs" });
   onVaultReplaced();
-  activate({ kind: "opfs" }, createOpfsBackend());
+  activate({ kind: "opfs" }, createOpfsBackend(), id);
 }
 
 /** Work in `handle` from now on, without copying anything (e.g. an existing Obsidian vault). */
@@ -285,8 +347,9 @@ export async function openFolderAsVault(handle: FileSystemDirectoryHandle): Prom
   const loc: StoredLocation = { kind: "folder", handle, name: handle.name };
   await kv.set(LOCATION_KEY, loc);
   await cancelPendingMove(); // its source is no longer the vault
+  const id = await identityOrNull(loc);
   onVaultReplaced();
-  activate(loc, createFolderBackend(handle));
+  activate(loc, createFolderBackend(handle), id);
   return true;
 }
 
@@ -318,15 +381,43 @@ export interface MoveReport {
    * deleted since, put in the trash (restorable) instead of reappearing.
    */
   trashed: number;
+  /**
+   * Notes saved in the source between the final check and the switch (an
+   * autosave in that moment): their newer text, written to the new vault
+   * after the switch — next to the note as “name (conflict copy).md” when the
+   * note is there, at its own path when it is new. Empty almost always.
+   */
+  conflictCopies: string[];
 }
 
-/** Every file path of `b`, dot entries (the trash) included. */
-async function allFiles(b: VaultBackend, dir = "", out: string[] = []): Promise<string[]> {
+/** Every file and every folder path of `b`, dot entries (the trash) included. */
+async function allEntries(b: VaultBackend, dir = "", out: { files: string[]; dirs: string[] } = { files: [], dirs: [] }): Promise<{ files: string[]; dirs: string[] }> {
   for (const e of await b.list(dir)) {
-    if (e.kind === "directory") await allFiles(b, e.path, out);
-    else out.push(e.path);
+    if (e.kind === "directory") {
+      out.dirs.push(e.path);
+      await allEntries(b, e.path, out);
+    } else out.files.push(e.path);
   }
   return out;
+}
+
+/** "a/b/c.md" → ["a", "a/b"]. */
+function parentsOf(path: string): string[] {
+  const parts = path.split("/");
+  return parts.slice(1).map((_, i) => parts.slice(0, i + 1).join("/"));
+}
+
+/** A free path next to `path` for a conflict copy: “a (conflict copy).md”, then “a (conflict copy 2).md”, … */
+async function conflictCopyPath(b: VaultBackend, path: string): Promise<string> {
+  const slash = path.lastIndexOf("/");
+  const dir = path.slice(0, slash + 1);
+  const base = path.slice(slash + 1);
+  const dot = base.lastIndexOf(".");
+  const [stem, ext] = dot > 0 ? [base.slice(0, dot), base.slice(dot)] : [base, ""];
+  for (let n = 1; ; n++) {
+    const candidate = `${dir}${stem} (conflict copy${n > 1 ? ` ${n}` : ""})${ext}`;
+    if (!(await b.stat(candidate))) return candidate;
+  }
 }
 
 async function bytes(b: VaultBackend, path: string): Promise<Uint8Array> {
@@ -369,6 +460,8 @@ export async function moveVault(
   const source = getVaultBackend();
   if (!source.available()) throw new Error("The current vault is not available.");
   if (await sameLocation(fromLoc, to)) throw new Error("The vault is already there.");
+  // The vault keeps its identity where it goes: its history follows it.
+  const fromId = activeId ?? (await identityOrNull(fromLoc));
   const target = backendFor(to);
   // A resume continues the same move: same target *and* same source.
   const resuming = pending && (await sameLocation(pending.to, to)) && (await sameLocation(pending.from, fromLoc)) ? pending : null;
@@ -385,7 +478,9 @@ export async function moveVault(
   };
 
   try {
-    const files = (await allFiles(source)).sort();
+    const listed = await allEntries(source);
+    const files = listed.files.sort();
+    const dirs = listed.dirs.sort();
     report(0, files.length);
 
     // 1. Nothing is written while any target file differs and is not ours.
@@ -393,7 +488,21 @@ export async function moveVault(
     //    the copy runs (another app editing the folder), the move stops.
     const conflicts: string[] = [];
     const before = new Map<string, string | null>();
+    // A file at the target where the source has a folder — the folder
+    // itself, or a parent of any source path — would stop the copy halfway:
+    // it is a conflict now, before anything is written (2.79).
+    const folders = [...new Set([...dirs, ...files.flatMap(parentsOf)])].sort();
+    const blocked = new Set<string>();
+    for (const dir of folders) {
+      if (parentsOf(dir).some((p) => blocked.has(p))) continue;
+      const st = await target.stat(dir);
+      if (st && st.kind !== "directory") {
+        blocked.add(dir);
+        conflicts.push(dir);
+      }
+    }
     for (const path of files) {
+      if (parentsOf(path).some((p) => blocked.has(p))) continue;
       const there = await targetBytes(target, path).catch((e) => {
         if (e instanceof VaultMoveConflictError) return "conflict" as const;
         throw e;
@@ -412,7 +521,11 @@ export async function moveVault(
     await kv.set(MOVE_KEY, record);
     pending = record;
 
-    // 2. Copy each file and read it back.
+    // 2. Copy each file and read it back. Folders with nothing in them are
+    //    created too: they are part of the vault (2.79).
+    const parents = new Set(files.flatMap(parentsOf).concat(dirs.flatMap(parentsOf)));
+    const emptyDirs = dirs.filter((d) => !parents.has(d));
+    for (const dir of emptyDirs) await target.mkdir(dir);
     let total = 0;
     let unchanged = 0;
     const copied: Record<string, string> = {};
@@ -435,9 +548,14 @@ export async function moveVault(
 
     // 3. The whole set once more — and no file added to the source meanwhile
     //    (a note saved during the move) — then switch.
-    const now = (await allFiles(source)).sort();
-    if (now.length !== files.length || now.some((p, i) => p !== files[i])) {
+    const nowListed = await allEntries(source);
+    const now = nowListed.files.sort();
+    const nowDirs = nowListed.dirs.sort();
+    if (now.length !== files.length || now.some((p, i) => p !== files[i]) || nowDirs.length !== dirs.length || nowDirs.some((p, i) => p !== dirs[i])) {
       throw new Error("Files were added or removed while the vault was moving; resume to copy them too.");
+    }
+    for (const dir of dirs) {
+      if ((await target.stat(dir))?.kind !== "directory") throw new Error(`The folder “${dir}” went missing during the move; resume to copy it again.`);
     }
     for (const path of files) {
       const there = await targetBytes(target, path);
@@ -446,9 +564,17 @@ export async function moveVault(
     await kv.set(LOCATION_KEY, to);
     await kv.set(LAST_MOVE_KEY, { from: fromLoc, to, copied } satisfies LastMove);
     await kv.del(MOVE_KEY);
+    if (fromId !== null) await adoptIdentity(to, fromId).catch((err: unknown) => log.warn("the vault identity could not be saved", err));
     pending = null;
     progress = null;
-    activate(to, target);
+    activate(to, target, fromId);
+
+    // 4. After the switch (2.9): a save that reached the source between the
+    //    final check and the switch is not lost. Each source file is hashed
+    //    again; one that changed since it was checked has its newer text
+    //    written to the new vault as a conflict copy, and the report says so.
+    //    No write freeze in the save path (W1.32 kept that out).
+    const conflictCopies = await saveLateWrites(source, target, copied);
 
     // Copies this vault left here earlier and that were deleted since (they
     // are not in the source any more) would come back to life: they go to
@@ -465,12 +591,41 @@ export async function moveVault(
       trashed = (await moveToTrash(stale, Object.fromEntries(stale.map((p) => [p, "file" as const])))).length;
       notifyWorkspaceChanged({ kind: "structure" });
     }
-    return { files: files.length, bytes: total, unchanged, trashed };
+    return { files: files.length, bytes: total, unchanged, trashed, conflictCopies };
   } catch (e) {
     progress = null;
     changed();
     throw e;
   }
+}
+
+/**
+ * The post-switch check of a move: source files written after the final
+ * check (their hash is not the one verified at the target) go to `target`
+ * — a conflict copy next to the note, or the note's own path when the target
+ * has nothing there. Never throws: the switch has already happened.
+ */
+async function saveLateWrites(source: VaultBackend, target: VaultBackend, checked: Record<string, string>): Promise<string[]> {
+  const out: string[] = [];
+  try {
+    for (const path of (await allEntries(source)).files.sort()) {
+      try {
+        const data = await bytes(source, path);
+        if (checked[path] === (await sha256(data))) continue;
+        const there = await targetBytes(target, path).catch(() => "blocked" as const);
+        if (there !== "blocked" && there && same(there, data)) continue;
+        const dest = there === null ? path : await conflictCopyPath(target, path);
+        await target.write(dest, data);
+        out.push(dest);
+      } catch (err) {
+        log.warn(`the post-switch check could not save “${path}”; it is still in the previous vault`, err);
+      }
+    }
+  } catch (err) {
+    log.warn("the post-switch check could not list the previous vault", err);
+  }
+  if (out.length) notifyWorkspaceChanged({ kind: "structure", paths: out });
+  return out;
 }
 
 /** Drop the record of an interrupted move. The files it copied stay where they are. */
@@ -490,6 +645,8 @@ async function sameLocation(a: StoredLocation, b: StoredLocation): Promise<boole
 /** @internal tests */
 export function __resetVaultLocation(): void {
   onVaultReplaced = () => {};
+  activeId = null;
+  setHistoryVault("");
   status = { location: "opfs" };
   pending = null;
   progress = null;

@@ -394,6 +394,7 @@ const en: Strings = {
   "vault.folder.moving": "Moving the vault… {done} of {total} files",
   "vault.folder.moved": "The vault is now in the folder “{folder}”: {n} files copied and checked. Your notes in browser storage were not deleted.",
   "vault.folder.movedBack": "The vault is back in browser storage: {n} files copied and checked. The folder “{folder}” was not changed.",
+  "vault.folder.lateCopies": "{n} note(s) were saved in the previous location while the move was finishing. Their newer text is in the vault now, as a conflict copy next to the note where needed (first: “{path}”).",
   "vault.folder.opened": "Lumen now works in the folder “{folder}”. Notes in browser storage stay where they are.",
   "vault.folder.conflict": "Not moved: {n} files in “{folder}” already exist with different content (for example {path}). Nothing was changed.",
   "vault.folder.failed": "Moving the vault stopped: {error}. Nothing was deleted, and you can resume.",

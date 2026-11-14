@@ -83,6 +83,7 @@ export function VaultFolderBanner() {
             try {
               const r = await moveVault(pending.to);
               showAiToast(t(pending.to.kind === "folder" ? "vault.folder.moved" : "vault.folder.movedBack", { folder: pending.to.kind === "folder" ? to : pending.from.kind === "folder" ? pending.from.name : "", n: String(r.files) }), "info");
+              if (r.conflictCopies.length) showAiToast(t("vault.folder.lateCopies", { n: String(r.conflictCopies.length), path: r.conflictCopies[0] }), "info");
             } catch (e) {
               if (e instanceof VaultMoveConflictError) showAiToast(t("vault.folder.conflict", { n: String(e.paths.length), folder: to, path: e.paths[0] }), "error");
               else showAiToast(t("vault.folder.failed", { error: (e as Error).message }), "error");

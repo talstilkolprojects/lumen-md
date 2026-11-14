@@ -1251,6 +1251,7 @@
   "vault.folder.moving": "Tresor wird verschoben… {done} von {total} Dateien",
   "vault.folder.moved": "Der Tresor liegt jetzt im Ordner „{folder}“: {n} Dateien kopiert und geprüft. Deine Notizen im Browserspeicher wurden nicht gelöscht.",
   "vault.folder.movedBack": "Der Tresor ist wieder im Browserspeicher: {n} Dateien kopiert und geprüft. Der Ordner „{folder}“ wurde nicht verändert.",
+  "vault.folder.lateCopies": "{n} Notiz(en) wurden am bisherigen Ort gespeichert, während der Umzug abgeschlossen wurde. Ihr neuerer Text ist jetzt im Tresor, wo nötig als Konfliktkopie neben der Notiz (erste: „{path}“).",
   "vault.folder.opened": "Lumen arbeitet jetzt im Ordner „{folder}“. Notizen im Browserspeicher bleiben, wo sie sind.",
   "vault.folder.conflict": "Nicht verschoben: {n} Dateien in „{folder}“ existieren bereits mit anderem Inhalt (zum Beispiel {path}). Nichts wurde geändert.",
   "vault.folder.failed": "Das Verschieben des Tresors wurde angehalten: {error}. Nichts wurde gelöscht, du kannst fortsetzen.",

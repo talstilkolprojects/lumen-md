@@ -11,17 +11,17 @@
 
 import { useAppStore } from "../store/useStore";
 import { log } from "../lib/logger";
-import { historyKey, recordSnapshot } from "../storage/history";
+import { getHistoryVault, historyKey, recordSnapshot } from "../storage/history";
 
 const AUTO_BACKUP_INTERVAL_MS = 30_000;
 const IDLE_CALLBACK_TIMEOUT_MS = 2_000;
 export const VAULT_SNAPSHOT_EVERY_MS = 10 * 60_000;
 
 let timer: ReturnType<typeof setTimeout> | undefined;
-let snapshotQueue: Array<{ name: string; content: string; ts: number }> = [];
+let snapshotQueue: Array<{ name: string; content: string; ts: number; vault: string | null }> = [];
 let isWriting = false;
 /** The edit the 30 s timer is still waiting on, so a closing tab can save it. */
-let pending: { name: string; content: string } | null = null;
+let pending: { name: string; content: string; vault: string | null } | null = null;
 
 /**
  * Start the auto-backup listener.  Call once at application startup.
@@ -81,11 +81,14 @@ export function flushNow(): Promise<void> {
 
 function scheduleSnapshot(name: string, content: string): void {
   if (timer) clearTimeout(timer);
-  pending = { name, content };
+  // The vault the edit was made in: a switch before the timer fires must
+  // not file it under the next vault's history (2.80).
+  const vault = getHistoryVault();
+  pending = { name, content, vault };
   timer = setTimeout(() => {
     timer = undefined;
     pending = null;
-    snapshotQueue.push({ name, content, ts: Date.now() });
+    snapshotQueue.push({ name, content, ts: Date.now(), vault });
     // Use requestIdleCallback when available to avoid blocking the main thread.
     if ("requestIdleCallback" in window) {
       window.requestIdleCallback(
@@ -108,7 +111,7 @@ async function flushQueue(): Promise<void> {
       const snapshot = snapshotQueue.shift();
       if (!snapshot) continue;
       try {
-        await recordSnapshot(snapshot.name, snapshot.content, "auto-backup", snapshot.ts);
+        await recordSnapshot(snapshot.name, snapshot.content, "auto-backup", snapshot.ts, snapshot.vault);
       } catch (err) {
         log.error("[auto-backup] write failed:", (err as Error).message);
       }
@@ -118,7 +121,7 @@ async function flushQueue(): Promise<void> {
   }
 }
 
-/** Last modified time already snapshotted, per vault path. */
+/** Last modified time already snapshotted, per vault identity and path. */
 const vaultSeen = new Map<string, number>();
 
 /**
@@ -129,14 +132,17 @@ const vaultSeen = new Map<string, number>();
 export async function snapshotVault(): Promise<number> {
   const ws = await import("../storage/workspace");
   if (!ws.isOPFSAvailable()) return 0;
+  const vault = getHistoryVault();
+  if (vault === null) return 0;
   let written = 0;
   const list = await ws.listWorkspace({ includeAssets: false });
   for (const e of list) {
-    if (ws.isAssetName(e.path) || vaultSeen.get(e.path) === e.modified) continue;
+    const seen = `${vault}|${e.path}`;
+    if (ws.isAssetName(e.path) || vaultSeen.get(seen) === e.modified) continue;
     try {
       const content = await ws.readWorkspaceFile(e.path);
-      if (await recordSnapshot(e.path, content, "vault")) written++;
-      vaultSeen.set(e.path, e.modified);
+      if (await recordSnapshot(e.path, content, "vault", Date.now(), vault)) written++;
+      vaultSeen.set(seen, e.modified);
     } catch (err) {
       log.warn("[auto-backup] vault snapshot skipped", e.path, (err as Error).message);
     }
