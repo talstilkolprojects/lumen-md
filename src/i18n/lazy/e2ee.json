@@ -95,5 +95,19 @@
   "e2ee.lan.error.no-lan-address": "No local-network address on one of the devices. Are both on the same network?",
   "e2ee.lan.error.not-lan": "The other end isn't on the local network, so the link was closed.",
   "e2ee.lan.error.timeout": "The other device didn't connect in time. Make a new code and try again.",
-  "e2ee.lan.error.closed": "The link closed."
+  "e2ee.lan.error.closed": "The link closed.",
+  "e2ee.lan.visibleAs": "Also visible on this network as {name}: on the other device, choose Find devices on this network and pick it.",
+  "e2ee.lan.find": "Find devices on this network",
+  "e2ee.lan.finding": "Looking on this network…",
+  "e2ee.lan.found.none": "No device found. On the hosting device, start Pair a device and keep the dialog open, or use the code below.",
+  "e2ee.lan.found.pick": "Pair with {name}",
+  "e2ee.lan.discovery.used": "That device already paired with another one. Start a new pairing there.",
+  "e2ee.lan.discovery.failed": "Couldn't reach that device. Use the code below instead.",
+  "e2ee.lan.peer.code": "code",
+  "e2ee.lan.compare.title": "Comparison code",
+  "e2ee.lan.compare.ask": "Check that the other device shows this same code next to this device before you continue:",
+  "e2ee.lan.compare.same": "Same code — continue",
+  "e2ee.lan.compare.differ": "Different — cancel",
+  "e2ee.lan.compare.mismatch": "The codes differed, so the link was closed. Pair again; if it happens again, another device on this network may be in between.",
+  "e2ee.lan.found.duplicate": "Two devices announce {name}. Pick one only if, after pairing, both screens show the same code."
 }

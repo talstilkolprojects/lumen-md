@@ -19,6 +19,7 @@
 import { fromB64u, toB64u } from "../bytes";
 import { isLanHost, lanOnlySdp } from "./address";
 import type { LanChannel } from "./channel";
+import type { LinkFingerprints } from "./rpc";
 
 export const CODE_PREFIX = "lumen-lan:1:";
 export const GATHER_TIMEOUT_MS = 3000;
@@ -84,6 +85,8 @@ export interface LanLink {
   channel: LanChannel;
   /** The other device's address (as the browser reports the selected pair), or null when it hides it. */
   remoteAddress: string | null;
+  /** The DTLS fingerprints of this connection (this device's, the other's): the passphrase proof is bound to them (review 28, L1). */
+  fingerprints: LinkFingerprints | null;
   /** Bytes sent and received so far. */
   bytes(): { out: number; in: number };
   close(): void;
@@ -145,6 +148,12 @@ function dataChannel(pc: RTCPeerConnection, dc: RTCDataChannel, counters: { out:
     },
     close: shut,
   };
+}
+
+/** An SDP's DTLS fingerprint ("sha-256 ab:cd:…", lowercased), or null. */
+export function sdpFingerprint(sdp: string | null | undefined): string | null {
+  const m = /^a=fingerprint:(\S+) ([0-9A-Fa-f:]+)\s*$/m.exec(sdp ?? "");
+  return m ? `${m[1].toLowerCase()} ${m[2].toLowerCase()}` : null;
 }
 
 /* ─── Connecting ───────────────────────────────────────────────────────── */
@@ -224,7 +233,9 @@ function opened(pc: RTCPeerConnection, dc: RTCDataChannel, timeoutMs: number): P
       try {
         const remoteAddress = await checkSelectedPair(pc);
         const channel = dataChannel(pc, dc, counters);
-        resolve({ channel, remoteAddress, bytes: () => ({ ...counters }), close: () => channel.close() });
+        const local = sdpFingerprint(pc.localDescription?.sdp);
+        const remote = sdpFingerprint(pc.remoteDescription?.sdp);
+        resolve({ channel, remoteAddress, fingerprints: local && remote ? { local, remote } : null, bytes: () => ({ ...counters }), close: () => channel.close() });
       } catch (e) {
         pc.close();
         reject(e);

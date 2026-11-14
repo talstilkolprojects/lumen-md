@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-11-10T01:44:44.817Z",
+  "generated_at": "2026-11-14T16:47:15.512Z",
   "source": "src/i18n/index.ts (en bundle) + src/i18n/lazy/*.json",
-  "count": 1567,
+  "count": 1581,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -8438,6 +8438,82 @@
       "key": "e2ee.lan.error.closed",
       "en": "The link closed.",
       "vars": []
+    },
+    {
+      "key": "e2ee.lan.visibleAs",
+      "en": "Also visible on this network as {name}: on the other device, choose Find devices on this network and pick it.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.lan.find",
+      "en": "Find devices on this network",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.finding",
+      "en": "Looking on this network…",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.found.none",
+      "en": "No device found. On the hosting device, start Pair a device and keep the dialog open, or use the code below.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.found.pick",
+      "en": "Pair with {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "e2ee.lan.discovery.used",
+      "en": "That device already paired with another one. Start a new pairing there.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.discovery.failed",
+      "en": "Couldn't reach that device. Use the code below instead.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.peer.code",
+      "en": "code",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.compare.title",
+      "en": "Comparison code",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.compare.ask",
+      "en": "Check that the other device shows this same code next to this device before you continue:",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.compare.same",
+      "en": "Same code — continue",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.compare.differ",
+      "en": "Different — cancel",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.compare.mismatch",
+      "en": "The codes differed, so the link was closed. Pair again; if it happens again, another device on this network may be in between.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.lan.found.duplicate",
+      "en": "Two devices announce {name}. Pick one only if, after pairing, both screens show the same code.",
+      "vars": [
+        "name"
+      ]
     }
   ]
 }

@@ -101,6 +101,8 @@ fn build_menu(app: &tauri::AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::
 // granted this session or the saved vault; no command grants a folder from a
 // path string. No `fs:` permission is granted to the WebView.
 
+mod lan_discovery;
+
 mod desktop_vault {
     use lumen_vault::{Entry, Stat, Vault};
     use std::collections::HashMap;
@@ -366,6 +368,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(desktop_vault::VaultState::default())
+        .manage(lan_discovery::DiscoveryState::default())
         .invoke_handler(tauri::generate_handler![
             secret_available,
             secret_get,
@@ -383,6 +386,12 @@ pub fn run() {
             desktop_vault::vault_rename,
             desktop_vault::vault_remove,
             desktop_vault::vault_backup,
+            lan_discovery::lan_discovery_host,
+            lan_discovery::lan_discovery_answer,
+            lan_discovery::lan_discovery_stop,
+            lan_discovery::lan_discovery_browse,
+            lan_discovery::lan_discovery_fetch_offer,
+            lan_discovery::lan_discovery_send_answer,
         ])
         .setup(|app| {
             // The folder chosen on an earlier run (plan 4.3).

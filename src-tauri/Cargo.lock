@@ -1754,6 +1754,7 @@ name = "lumen"
 version = "0.1.0"
 dependencies = [
  "keyring",
+ "lumen-lan-mdns",
  "lumen-vault",
  "serde",
  "serde_json",
@@ -1761,6 +1762,10 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-dialog",
 ]
+
+[[package]]
+name = "lumen-lan-mdns"
+version = "0.1.0"
 
 [[package]]
 name = "lumen-vault"
