@@ -13,7 +13,7 @@ import { log } from "../../lib/logger";
 import type { ImportReport, ImportSource } from "./model";
 import { bookNotePath, mergeBookNote } from "./notes";
 
-const ACCEPT: Record<Exclude<ImportSource, "zotero">, string> = {
+const ACCEPT: Record<Exclude<ImportSource, "zotero" | "scan">, string> = {
   kindle: ".txt,text/plain",
   kobo: ".sqlite,.db,application/x-sqlite3,application/vnd.sqlite3",
   readwise: ".csv,text/csv",
@@ -79,7 +79,7 @@ export async function importHighlights(): Promise<void> {
       { value: "readwise", label: t("hlimport.readwise") },
       { value: "zotero", label: t("hlimport.zotero") },
     ],
-  })) as ImportSource | null;
+  })) as Exclude<ImportSource, "scan"> | null;
   if (!source) return;
   const file = source === "zotero" ? null : await pickFile(ACCEPT[source]);
   if (source !== "zotero" && !file) return;

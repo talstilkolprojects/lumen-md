@@ -3,7 +3,8 @@
  * (Kindle, Kobo, Readwise, Zotero) before it is written into the vault.
  */
 
-export type ImportSource = "kindle" | "kobo" | "readwise" | "zotero";
+/** `scan`: highlights photographed on a printed page (plan W7.2). */
+export type ImportSource = "kindle" | "kobo" | "readwise" | "zotero" | "scan";
 export const IMPORT_SOURCES: readonly ImportSource[] = ["kindle", "kobo", "readwise", "zotero"];
 
 export interface ImportedHighlight {
