@@ -13,7 +13,6 @@ import { join } from "node:path";
  * - the owner names a version ("לפני הגשה"); the participant sees it in the
  *   shared list and compares it with the current text word by word.
  */
-test.skip(({ browserName }) => browserName !== "chromium", "server-backed flow, chromium only");
 
 const ACCESS_KEY = "e2e-collab-access-key";
 const SECRET = "e2e-collab-token-secret-0123456789abcdef";

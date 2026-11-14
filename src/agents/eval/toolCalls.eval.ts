@@ -27,6 +27,7 @@ const url = process.env.LUMEN_EVAL_OLLAMA_URL || "http://localhost:11434";
 const models = (process.env.LUMEN_EVAL_MODELS || "qwen2.5:7b,gemma3:12b").split(",").map((s) => s.trim()).filter(Boolean);
 const outDir = process.env.LUMEN_EVAL_OUT || "eval/results";
 
+// skip-reason: an opt-in eval against a real local model (LUMEN_EVAL_TOOLCALLS=1), not a unit test | task: W4.31 | until: 2027-05-12
 describe.skipIf(!process.env.LUMEN_EVAL_TOOLCALLS)(`tool-call eval — ${models.join(", ")} @ ${url}`, () => {
   it("runs the 200 probes on every model and writes the report", async () => {
     // privacy-ledger: the local Ollama the eval was pointed at (loopback by default)

@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 import { readFileSync } from "node:fs";
 import { GOLDEN_CANVASES, goldenFile } from "./fixtures/hebrewCanvases";
 
@@ -70,14 +71,14 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(".cm-content").first()).toBeVisible({ timeout: 15_000 });
 });
 
-test("a canvas with 50 note cards opens in under 1.5 s", async ({ page }) => {
+test("a canvas with 50 note cards opens in under 1.5 s", async ({ page, browserName }) => {
   const files: Record<string, string> = {};
   const elements = Array.from({ length: 50 }, (_, i) => {
     files[`Notes/n${i}.md`] = `# פתק ${i}\n\nתוכן בעברית ו-English, שורה ${i}.`;
     return { id: `c${i}`, type: "embeddable", x: (i % 10) * 360, y: Math.floor(i / 10) * 260, width: 320, height: 220, link: `lumen-note:Notes/n${i}.md`, strokeWidth: 1, roughness: 0, angle: 0, strokeColor: "#1e1e1e", backgroundColor: "transparent", fillStyle: "solid", strokeStyle: "solid", opacity: 100, groupIds: [], frameId: null, roundness: { type: 3 }, seed: i + 1, version: 1, versionNonce: i + 1, isDeleted: false, boundElements: null, updated: 1, locked: false };
   });
   files["canvases/fifty.excalidraw"] = JSON.stringify({ type: "excalidraw", version: 2, source: "e2e", elements, appState: { viewBackgroundColor: "#ffffff", gridSize: null }, files: {} });
-  test.skip(!(await put(page, files)), "this engine refuses OPFS writes here");
+  vaultOrSkip(await put(page, files), browserName);
   const t0 = await openCanvas(page, "fifty");
   const cards = page.getByTestId("note-card");
   await expect(cards.first()).toHaveAttribute("data-loaded", "true", { timeout: 5_000 });
@@ -88,13 +89,13 @@ test("a canvas with 50 note cards opens in under 1.5 s", async ({ page }) => {
   await expect(cards.first()).toContainText("פתק 0");
 });
 
-test("a card edits its note in place and opens it in a tab", async ({ page }) => {
+test("a card edits its note in place and opens it in a tab", async ({ page, browserName }) => {
   const el = { id: "c1", type: "embeddable", x: 100, y: 100, width: 320, height: 220, link: "lumen-note:Notes/תוכנית.md", strokeWidth: 1, roughness: 0, angle: 0, strokeColor: "#1e1e1e", backgroundColor: "transparent", fillStyle: "solid", strokeStyle: "solid", opacity: 100, groupIds: [], frameId: null, roundness: { type: 3 }, seed: 1, version: 1, versionNonce: 1, isDeleted: false, boundElements: null, updated: 1, locked: false };
   const ok = await put(page, {
     "Notes/תוכנית.md": "---\ntags: [x]\n---\n# תוכנית\n\nשורה ראשונה",
     "canvases/one.excalidraw": JSON.stringify({ type: "excalidraw", version: 2, source: "e2e", elements: [el], appState: { viewBackgroundColor: "#ffffff", gridSize: null, scrollX: 0, scrollY: 0 }, files: {} }),
   });
-  test.skip(!ok, "this engine refuses OPFS writes here");
+  vaultOrSkip(ok, browserName);
   await openCanvas(page, "one");
   const card = page.getByTestId("note-card");
   await expect(card).toHaveAttribute("data-loaded", "true");
@@ -117,9 +118,9 @@ test("a card edits its note in place and opens it in a tab", async ({ page }) =>
 });
 
 for (const golden of GOLDEN_CANVASES) {
-  test(`golden canvas ${golden.name}: SVG lines inside the drawing; PNG and SVG match the baseline`, async ({ page }) => {
+  test(`golden canvas ${golden.name}: SVG lines inside the drawing; PNG and SVG match the baseline`, async ({ page, browserName }) => {
     const ok = await put(page, { [`canvases/${golden.name}.excalidraw`]: goldenFile(golden), ...(golden.notes ?? {}) });
-    test.skip(!ok, "this engine refuses OPFS writes here");
+    vaultOrSkip(ok, browserName);
     await openCanvas(page, golden.name);
     const canvas = page.getByTestId("canvas");
 

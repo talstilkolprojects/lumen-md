@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * Plan W2.16 — citations: from the shortcut to a citation in < 3
@@ -38,8 +39,8 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(".cm-content").first()).toContainText("Welcome to", { timeout: 15_000 });
 });
 
-test("shortcut + Enter inserts [@key]; the preview formats it with the references", async ({ page }) => {
-  test.skip(!(await putFile(page, "refs.bib", BIB)), "this engine refuses OPFS writes here");
+test("shortcut + Enter inserts [@key]; the preview formats it with the references", async ({ page, browserName }) => {
+  vaultOrSkip(await putFile(page, "refs.bib", BIB), browserName);
   const editor = page.locator(".cm-content").first();
   await editor.click();
   await page.keyboard.press("ControlOrMeta+A");
