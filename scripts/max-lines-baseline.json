@@ -3,24 +3,11 @@
   "max": 800,
   "files": {
     "src/agents/runtime.ts": 922,
-    "src/ai/batch.ts": 870,
-    "src/ai/llm.ts": 878,
     "src/canvas/tldrawToExcalidraw.ts": 1462,
-    "src/data/codeDoctor.ts": 991,
-    "src/data/suggest.ts": 838,
     "src/editor/Editor.tsx": 1004,
     "src/editor/WysiwygEditor.tsx": 1053,
-    "src/editor/wysiwygSuggest.ts": 1008,
-    "src/lsp/tsBlocks.ts": 1102,
-    "src/pdf/PdfReader.tsx": 1000,
     "src/search/dataview.ts": 833,
-    "src/storage/fileFormats.ts": 1338,
-    "src/storage/sampleVaults.ts": 942,
-    "src/storage/vault/location.ts": 862,
     "src/sync/e2ee/engine.ts": 1064,
-    "src/ui/FileTree.tsx": 932,
-    "src/ui/SearchDialog.tsx": 853,
-    "src/views/bases/evaluate.ts": 919,
-    "src/views/DatabaseBlock.tsx": 1068
+    "src/ui/SearchDialog.tsx": 853
   }
 }
