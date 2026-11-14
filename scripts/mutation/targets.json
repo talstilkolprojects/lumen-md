@@ -51,6 +51,17 @@
       },
       {
         "file": "src/__tests__/e2eeKeyringAnchor.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeKeyringEdges.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeSeventhReview.test.ts",
+        "filter": "G2"
+      },
+      {
+        "file": "src/__tests__/e2eeFifthReview.test.ts",
+        "filter": "F4"
       }
     ],
     "src/sync/e2ee/keyringErrors.ts": [
@@ -69,6 +80,17 @@
       },
       {
         "file": "src/__tests__/e2eeKeyringAnchor.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeKeyringEdges.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeSeventhReview.test.ts",
+        "filter": "G2"
+      },
+      {
+        "file": "src/__tests__/e2eeFifthReview.test.ts",
+        "filter": "F4"
       }
     ],
     "src/sync/e2ee/conflict.ts": [
