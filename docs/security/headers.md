@@ -229,7 +229,7 @@ copy for the dev server and Capacitor.
 - **Why embeds keep `allow-same-origin`.** A nested frame inherits its parent's sandbox
   flags, and the providers' players need their own origin (storage, cookies, and YouTube a
   referrer, else "Error 153"). So the content frame runs at the app's origin for embeds.
-  Its only script is `public/content-frame.js`: it builds elements from the request in the
+  Its only script is inline in `public/content-frame.html`: it builds elements from the request in the
   `#fragment` with `createElement` and properties, never HTML, and its policy has
   `connect-src 'none'` and no `'unsafe-inline'` script.
 - **Gists.** A Gist embed is a script that `document.write()`s the gist and its
@@ -240,13 +240,18 @@ copy for the dev server and Capacitor.
   part of the service worker's cache key (the page is precached like the runner pages).
   The frame reports the size its content wants with `postMessage`; the app matches the
   message to the frame by its window (`src/lib/contentFrame.ts`).
-- **WebKit** does not match `'self'` in an opaque-origin frame, so the page's script
-  carries the build's public nonce, as the runner pages do.
+- **A hash, not a nonce (plan W10.D1).** WebKit does not match `'self'` in an
+  opaque-origin frame, so the page's script used to carry the build's fixed nonce, which
+  is written in the open source and protects nothing. The script is now inline and
+  `script-src` lists its `sha256-…` and `https://gist.github.com` only: nothing but that
+  exact script runs, in every engine, on the app's hosts and on the frame site alike.
+  Changing the script means a new hash in `policy.json`; `contentFrame.test.ts`
+  computes it from the page and fails until it matches.
 
 ### Its own site (plan W6.40, review E52)
 
 Embeds kept `allow-same-origin`, so the content frame ran with the app's origin: any
-future sink in `public/content-frame.js` would have been full XSS on the app. Now:
+future sink in the content frame's script would have been full XSS on the app. Now:
 
 - **The frame has its own site**: `VITE_CONTENT_FRAME_URL`, officially
   `https://lumen-md-frame.pages.dev/` (Cloudflare Pages by Direct Upload,

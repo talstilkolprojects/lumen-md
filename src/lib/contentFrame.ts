@@ -113,7 +113,7 @@ export function contentFrameSrc(req: ContentFrameRequest, site: ContentFrameSite
   return `${site.page}#${encodeURIComponent(JSON.stringify({ ...req, parent: location.origin }))}`;
 }
 
-/** An https: URL, as the content frame's page accepts it (public/content-frame.js `httpsUrl`). */
+/** An https: URL, as the content frame's page accepts it (public/content-frame.html's script, `httpsUrl`). */
 const isHttps = (v: unknown): v is string => {
   if (typeof v !== "string") return false;
   try {

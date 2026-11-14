@@ -214,7 +214,8 @@ describe("drift is caught", () => {
     const dir = copy(file.replace(/\W/g, "_"));
     const path = join(dir, file);
     const original = readFileSync(path, "utf8");
-    const changed = original.replace("script-src 'self'", "script-src 'self' https://cdn.evil.example");
+    // The first script-src gains a host (the content frame's has no 'self' to anchor on, W10.D1).
+    const changed = original.replace(/script-src (?=')/, "script-src https://cdn.evil.example ");
     expect(changed).not.toBe(original);
     writeFileSync(path, changed);
 
