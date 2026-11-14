@@ -249,6 +249,7 @@ export default defineConfig({
             { label: "Secrets and encryption", slug: "security/vault" },
             { label: "Monitoring and web vitals", slug: "security/monitoring", translations: { he: "ניטור ומדדי ביצועים" } },
             { label: "Vault encryption at rest", slug: "security/vault-encryption", translations: { he: "הצפנת הכספת במנוחה" } },
+            { label: "Build provenance and Sigstore signatures", slug: "security/provenance", translations: { he: "מקור הבנייה וחתימות Sigstore" } },
             { label: "Secret scan of the build", slug: "security/secret-scan", translations: { he: "סריקת סודות בבנייה" } },
             { label: "Usage on this device", slug: "security/usage-metrics", translations: { he: "שימוש במכשיר הזה" } },
             { label: "Data-safety drill", slug: "security/data-safety-drill", translations: { he: "תרגיל בטיחות נתונים" } },
