@@ -177,7 +177,10 @@ describe("wiring (W4.22)", () => {
   it("Codemagic runs the same scripts, only when started by hand, on the free macOS M2 machines", () => {
     const y = readFileSync(join(ROOT, "codemagic.yaml"), "utf8");
     expect(y).not.toMatch(/^\s*triggering:/m);
-    expect(y.match(/instance_type: mac_mini_m2/g)).toHaveLength(2);
+    // Every workflow (W4.22's two, and those W6.24 added) runs on the free M2 machine, and no other.
+    const workflows = [...y.matchAll(/^  ([a-z][\w-]*):\s*$/gm)].map((m) => m[1]);
+    expect(workflows).toEqual(expect.arrayContaining(["ios-testflight", "android-aab"]));
+    expect((y.match(/^ *instance_type:.*$/gm) ?? []).map((l) => l.trim())).toEqual(workflows.map(() => "instance_type: mac_mini_m2"));
     expect(y).toContain("script: npm run mobile:ios");
     expect(y).toContain("script: npm run mobile:android");
     // The script takes the key's text from the group (ASC_KEY) as well as a path.
