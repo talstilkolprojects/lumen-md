@@ -3481,7 +3481,7 @@ W6.48.3. פתקים חיים בקנבס נשמרים בפורמט JSON Canvas
 | W7.20 | CalDAV ו-ICS: סנכרון דו-כיווני של משימות הכספת ומנוי ליומנים בפתק היומי | P2 | S | 9 ש׳ 00 דק׳ | 4.13, 4.12, 2.5 | ה׳ 26.11 12:05 | ה׳ 26.11 21:05 | ⬜ |
 | W7.21 | CI אמיתי בלי Actions: Buildkite Free מתזמר, הסוכנים על המארח השני ועל ה-Mac, ו-commit status לכל PR | P1 | D | 8 ש׳ 00 דק׳ | W4.36, W4.2 | ג׳ 1.12 12:05 | ג׳ 1.12 20:05 | ⏳ #549 ‏d0c55b66f6 — Buildkite Free: pipeline נוצר מ-ci.yml בלי שער חסר (ci:pipeline), 4 רסיסי vitest, WebKit על ה-Mac, סטטוסים דרך אפליקציית GitHub; buildkite מדלג על [skip ci] ולכן trigger.mjs יוצר בניות דרך ה-API; selftest 41/41. חסר: חשבון Buildkite וסוכנים (בעלים, ~20 דק׳); שער i18n של הבסיס אדום |
 | W7.22 | שרשרת אספקה בלי Actions: SLSA provenance עם Witness, וחתימת Sigstore בלי מפתח מה-Mac | P1 | S | 7 ש׳ 00 דק׳ | W1.27, W4.5 | ה׳ 26.11 21:05 | ו׳ 27.11 04:05 | ⏳ #550 ‏19a727d815 — DSSE + in-toto + SLSA v1 provenance, cosign keyless, verify.mjs (sigstore מתוך npm), מיפוי SLSA L2; selftest 21/21 לא מקוון. חסר: Witness ו-Sigstore אמיתיים, מפתח מדיניות על ה-Mac, חיבור ל-release-run (#492) |
-| W7.23 | בנייה משתחזרת מאומתת בשתי תשתיות: Cloudflare Workers Builds בונה שוב ומשווה hash ל-Vercel | P2 | D | 4 ש׳ 00 דק׳ | W1.27, W4.27 | ג׳ 1.12 20:05 | ד׳ 2.12 00:05 | ⬜ |
+| W7.23 | בנייה משתחזרת מאומתת בשתי תשתיות: Cloudflare Workers Builds בונה שוב ומשווה hash ל-Vercel | P2 | D | 4 ש׳ 00 דק׳ | W1.27, W4.27 | ג׳ 1.12 20:05 | ד׳ 2.12 00:05 | ⏳ #561 ‏208a976eed — repro:manifest/compare/two-paths, Worker של Cloudflare שמגיש רק manifest, סקריפט השוואה מול Vercel עם ledger; reproTwoInfra 7/7; שתי בניות בנתיבים שונים זהות 10/10 (בנייה מדומה — vite לא מותקן). חסר: npm run build פעמיים במארח השני, הקמת ה-Worker ו-10 commits זהים ברצף (בעלים) |
 | W7.24 | דיאלוג מקורות פתוחים אחד: ספריא, כנסת, בן-יהודה ו-data.gov.il, עם תג רישיון לכל תוצאה | P2 | U | 5 ש׳ 00 דק׳ | W5.1, 4.5 | שבת 5.12 19:05 | א׳ 6.12 00:05 | ⬜ |
 | W7.25 | רגרסיה חזותית בדפדפנים אמיתיים: Percy מתוכנית הקוד הפתוח של BrowserStack | P2 | D | 4 ש׳ 00 דק׳ | 10.3, W4.7 | ד׳ 2.12 00:05 | ד׳ 2.12 04:05 | ⬜ |
 
@@ -3701,7 +3701,7 @@ W7.22.5. npm: trusted publishing ו-provenance אוטומטי עובדים רק 
 
 **קבלה:** beta.1 (W4.5) מתפרסם עם attestation לכל קובץ, ו-`witness verify` עובר במכונה נקייה בלי רשת · שינוי של בייט אחד בתוצר: האימות נכשל עם קוד יציאה ≠ 0 · מסמך מיפוי לדרישות SLSA Build L2, סעיף אחר סעיף, עם ראיה לכל דרישה
 
-**W7.23 · בנייה משתחזרת מאומתת בשתי תשתיות: Cloudflare Workers Builds בונה שוב ומשווה hash ל-Vercel** — `undefined` · תשתית וביצועים · 4 ש׳ 00 דק׳ · מקור: https://developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing/
+**W7.23 · בנייה משתחזרת מאומתת בשתי תשתיות: Cloudflare Workers Builds בונה שוב ומשווה hash ל-Vercel** — `feat/repro-two-infra` · תשתית וביצועים · 4 ש׳ 00 דק׳ · מקור: https://developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing/
 
 W7.23.1. Workers Builds בחינם: ‏3,000 דקות בחודש, בנייה אחת במקביל, עד 20 דקות, ‏2 vCPU, ‏8 GB. זה מספיק לבנייה בלבד, לא לבדיקות
 W7.23.2. בכל קומיט ל-main: Cloudflare בונה את dist מאותו lockfile, ומשווה sha256 לכל קובץ מול בניית Vercel
