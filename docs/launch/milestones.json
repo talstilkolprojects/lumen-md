@@ -1,0 +1,47 @@
+{
+  "$comment": "Launch gates as code (plan W11.L1, research/R6.md §5). Each criterion maps to one plan acceptance and needs a receipt in docs/launch/receipts/<milestone>/<criterion>.json; see that folder's README. `npm run launch:gate -- M0` prints PASS/FAIL. M1–M4 and the 1.0 GA checklist come in W11.L2. Never loosen a criterion here: change it only to make it stricter.",
+  "milestones": [
+    {
+      "id": "M0",
+      "title": { "en": "Honest beta.1", "he": "בטא כנה: beta.1" },
+      "target": "2026-12-07",
+      "criteria": [
+        {
+          "id": "no-simulated-plugin-install",
+          "en": "0 fake trust UI: installing a remote plugin without a signed package adds nothing and shows no success.",
+          "he": "‏0 ממשק אמון מזויף: התקנת תוסף מרוחק בלי חבילה חתומה לא מוסיפה כלום ולא מציגה הצלחה.",
+          "source": { "task": "W10.B1", "acceptance": "תוסף מרוחק לא מותקן בלי חבילה וחתימה; 0 קוד ״simulate״ בנתיב ההתקנה" },
+          "receipt": { "kind": "test", "tests": ["src/__tests__/pluginGallery.test.tsx"] }
+        },
+        {
+          "id": "no-unearned-verified-badge",
+          "en": "0 fake trust UI: no \"Verified\" badge without a valid signature against the pinned key.",
+          "he": "‏0 ממשק אמון מזויף: אין תג ״מאומת״ בלי חתימה תקפה מול המפתח המוצמד.",
+          "source": { "task": "W10.B2", "acceptance": "0 תגי ״מאומת״ בלי חתימה תקפה" },
+          "receipt": { "kind": "test", "tests": ["src/__tests__/pluginGallery.test.tsx"] }
+        },
+        {
+          "id": "e2ee-off-and-labelled",
+          "en": "E2EE is off by default in every channel and labelled \"experimental, not externally audited\" in Hebrew and English; nothing calls the crypto audited.",
+          "he": "‏E2EE כבוי כברירת מחדל בכל ערוץ ומסומן ״ניסיוני — לא עבר ביקורת אבטחה חיצונית״ בעברית ובאנגלית; שום מקום לא מתאר את הקריפטו כמבוקר.",
+          "source": { "task": "W11.S1", "acceptance": "הגדרות ברירת המחדל: e2ee=false בכל ערוץ; התווית מוצגת במסך ההפעלה בשתי השפות; git grep לא מוצא תיאור של הקריפטו כמבוקר" },
+          "receipt": { "kind": "test", "tests": ["src/__tests__/e2eeUnaudited.test.ts"] }
+        },
+        {
+          "id": "ttfv-e2e-three-browsers",
+          "en": "The TTFV e2e is green on a production build without network in Chromium, Firefox and WebKit: TTFV-1 ≤ 2 s p75 and the first note ≤ 4 s.",
+          "he": "בדיקת ה-e2e של TTFV ירוקה על build ייצור בלי רשת ב-Chromium, ב-Firefox וב-WebKit: ‏TTFV-1 ≤ 2 ש׳ p75 ופתק ראשון ≤ 4 ש׳.",
+          "source": { "task": "W11.P5", "acceptance": "TTFV-1 ≤ 2 ש׳ p75 ופתק ראשון ≤ 4 ש׳ ב-3 דפדפנים (ב-W11.M7)" },
+          "receipt": { "kind": "run", "runs": ["ttfv-chromium", "ttfv-firefox", "ttfv-webkit"] }
+        },
+        {
+          "id": "beta1-signed-and-updates",
+          "en": "0.2.0-beta.1 is signed, its signature verifies, it installs on the Mac and auto-updates to the next beta.",
+          "he": "‏0.2.0-beta.1 חתום, החתימה מאומתת, הוא מותקן על ה-Mac ומתעדכן אוטומטית לבטא הבאה.",
+          "source": { "task": "W10.O5", "acceptance": "עדכון אוטומטי עבד" },
+          "receipt": { "kind": "owner", "facts": ["version", "releaseVerify", "installedOn", "autoUpdatedTo"] }
+        }
+      ]
+    }
+  ]
+}
