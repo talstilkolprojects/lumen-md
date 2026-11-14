@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 import { fileURLToPath } from "node:url";
 
 /**
@@ -42,7 +43,7 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(".cm-content").first()).toBeVisible({ timeout: 15_000 });
 });
 
-test("Kindle, Readwise and Kobo files: one note per book; importing again adds nothing; all offline", async ({ page, baseURL }) => {
+test("Kindle, Readwise and Kobo files: one note per book; importing again adds nothing; all offline", async ({ page, baseURL, browserName }) => {
   const origin = new URL(baseURL ?? page.url()).origin;
   const off: string[] = [];
   page.on("request", (r) => {
@@ -52,7 +53,7 @@ test("Kindle, Readwise and Kobo files: one note per book; importing again adds n
   await importFrom(page, "kindle", "My Clippings.txt");
   await expect(page.getByText(/Highlights imported: 7 new, 0 updated, 0 already there, in 4 notes/)).toBeVisible({ timeout: 15_000 });
   const first = await notes(page);
-  test.skip(first === null, "this engine refuses OPFS, so there is no vault");
+  vaultOrSkip(first !== null, browserName);
   expect(first).toContain("קיצור תולדות האנושות — יובל נח הררי.md");
 
   await importFrom(page, "readwise", "readwise.csv");

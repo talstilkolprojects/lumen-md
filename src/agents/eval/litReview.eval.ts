@@ -32,6 +32,7 @@ const model = process.env.LUMEN_EVAL_MODEL || "qwen2.5:7b";
 const files = (process.env.LUMEN_EVAL_LIT_FILES || "eval/probes/lit-review.json").split(",").map((s: string) => s.trim()).filter(Boolean);
 const outDir = process.env.LUMEN_EVAL_OUT || "eval/results";
 
+// skip-reason: an opt-in eval against a real local model (LUMEN_EVAL_LIT=1), not a unit test | task: W5.12 | until: 2027-05-12
 describe.skipIf(!process.env.LUMEN_EVAL_LIT)(`literature review eval — ${model} @ ${url}`, () => {
   it("extracts every field of every paper and writes the report", async () => {
     // privacy-ledger: local-ai — the eval's own Ollama on this machine (LUMEN_EVAL_OLLAMA_URL), not app code.
