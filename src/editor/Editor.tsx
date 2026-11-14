@@ -28,6 +28,7 @@ import {
   HighlightStyle,
   bracketMatching,
   indentOnInput,
+  bidiIsolates,
 } from "@codemirror/language";
 import {
   closeBrackets,
@@ -38,6 +39,7 @@ import { bidiExtension } from "./bidi";
 import { hebrewTypographyExtension } from "./hebrewTypographyExtension";
 import { bidiMarksExtension } from "./bidiMarks";
 import { mathBidiExtension } from "./mathBidi";
+import { inlineIsolatesPlugin } from "./bidiIsolates";
 import { languages } from "@codemirror/language-data";
 import { tags as t } from "@lezer/highlight";
 import type { Extension } from "@codemirror/state";
@@ -330,6 +332,11 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
       bidiMarksExtension(),
       // W5.14 — inline formulas as LTR isolates, Ctrl/⌘+M, Hebrew layout inside math.
       mathBidiExtension(),
+      // W11.H2 — inline code, URLs, link targets, footnotes (LTR), wiki links and tags (auto) as bidi
+      // isolates CodeMirror knows (bidiIsolatedRanges), so Home/End and the arrows follow what is drawn;
+      // bidiIsolates() adds the syntax nodes the language marks with the `isolate` prop.
+      inlineIsolatesPlugin,
+      bidiIsolates(),
       // Accessible name for the contenteditable (role=textbox) surface —
       // without it, screen readers announce an unnamed input (axe:
       // aria-input-field-name).
