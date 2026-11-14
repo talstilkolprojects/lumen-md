@@ -1,8 +1,9 @@
 /**
  * Plan W5.3 — the local Hebrew grammar and style checker: each rule, the
- * levels, the merge with spelling, the model seam, and the probe of 200
- * marked errors (recall, false positives on the corrected sentences and on
- * real prose, latency, no network).
+ * levels, the merge with spelling, the model seam, and the rule-coverage
+ * probe of 200 generated errors (rule coverage — not recall, the probe
+ * follows the rules' own patterns, plan W10.B8 — false positives on the
+ * corrected sentences and on real prose, latency, no network).
  * @vitest-environment node
  */
 import { describe, it, expect } from "vitest";
@@ -90,8 +91,14 @@ describe("rules", () => {
   });
 });
 
-describe("probe: 200 sentences with a marked error", () => {
-  it("recall ≥ 70%, false positives ≤ 5% (corrected sentences and real prose), ≤ 300 ms a paragraph, no network", () => {
+describe("rule-coverage probe: 200 generated sentences with a marked error", () => {
+  it("is labelled as rule coverage from synthetic templates, not a recall set (W10.B8)", () => {
+    expect(probe.kind).toBe("rule-coverage");
+    expect(probe.origin).toBe("synthetic");
+    expect(probe.about).toMatch(/NOT a recall set/);
+  });
+
+  it("rule coverage ≥ 70%, false positives ≤ 5% (corrected sentences and real prose), ≤ 300 ms a paragraph, no network", () => {
     const calls: string[] = [];
     const saved = globalThis.fetch;
     globalThis.fetch = (async (u: string) => (calls.push(String(u)), new Response(""))) as typeof fetch;
@@ -102,7 +109,8 @@ describe("probe: 200 sentences with a marked error", () => {
       globalThis.fetch = saved;
     }
     expect(r.items).toBe(200);
-    expect(r.recall).toBeGreaterThanOrEqual(0.7);
+    expect(r.ruleCoverage).toBeGreaterThanOrEqual(0.7);
+    expect(r).not.toHaveProperty("recall");
     expect(r.fpCorrected).toBeLessThanOrEqual(0.05);
     expect(r.realSentences).toBeGreaterThan(1000);
     expect(r.fpRealText).toBeLessThanOrEqual(0.05);
