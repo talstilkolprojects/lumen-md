@@ -88,6 +88,32 @@ describe("local batch queue", () => {
     resetExecutors();
   });
 
+  it("Esc / AI: Cancel stops the note in flight; the job resumes from it on the next check (T55)", async () => {
+    const { cancelAllAi } = await import("../ai/aiAbort");
+    let calls = 0;
+    batch.__setLocalBatchDeps({
+      answer: (_s, user, _m, signal) =>
+        new Promise<string>((resolve, reject) => {
+          calls++;
+          if (calls > 1) return resolve(`done ${user.slice(0, 4)}`);
+          signal?.addEventListener("abort", () => reject(new DOMException("Cancelled", "AbortError")));
+        }),
+      read: async () => "xray text",
+    });
+    const job = await batch.submitBatch("summary", [{ path: "x.md", text: "xray text" }]);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(cancelAllAi()).toBeGreaterThan(0);
+    await batch.__localBatchRun(job.id);
+    const paused = await batch.fetchBatchResults(job);
+    expect(paused.state).toBe("processing");
+    expect(paused.failed).toBe(0);
+    await batch.__localBatchRun(job.id);
+    const res = await batch.fetchBatchResults(job);
+    expect(res.state).toBe("ended");
+    expect(res.answers.get("n0")).toBe("done xray");
+    await batch.clearLocalBatch(job.id);
+  });
+
   it("a job with no local model pauses (not failed) and says what to do on the next check", async () => {
     batch.__setLocalBatchDeps({
       answer: async () => {

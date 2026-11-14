@@ -1,0 +1,2427 @@
+{
+  "minimal": [
+    {
+      "id": "file.new",
+      "label": "New document",
+      "group": "File",
+      "shortcut": "⌘N",
+      "icon": "FileText",
+      "action": "option:handleNew"
+    },
+    {
+      "id": "file.open",
+      "label": "Open file…",
+      "group": "File",
+      "shortcut": "⌘O",
+      "icon": "FolderOpen",
+      "action": "option:handleOpen"
+    },
+    {
+      "id": "file.save",
+      "label": "Save",
+      "group": "File",
+      "shortcut": "⌘S",
+      "icon": "Save"
+    },
+    {
+      "id": "file.saveAs",
+      "label": "Save as…",
+      "group": "File",
+      "shortcut": "⇧⌘S",
+      "icon": "Save"
+    },
+    {
+      "id": "file.exportHtml",
+      "label": "Export to HTML…",
+      "group": "File",
+      "hint": "self-contained .html",
+      "icon": "Download",
+      "action": "option:handleExportHtml"
+    },
+    {
+      "id": "file.exportDocx",
+      "label": "Export to Word (.doc)",
+      "group": "File",
+      "hint": "Download as Word document",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportRtf",
+      "label": "Export to RTF",
+      "group": "File",
+      "hint": "Rich Text Format — opens in Pages, Word, TextEdit",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportLatex",
+      "label": "Export to LaTeX (.tex)",
+      "group": "File",
+      "hint": "Article-class LaTeX with hyperref + listings",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportRst",
+      "label": "Export to reStructuredText",
+      "group": "File",
+      "hint": "Sphinx / Read-the-Docs friendly",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportAdoc",
+      "label": "Export to AsciiDoc",
+      "group": "File",
+      "hint": "Asciidoctor-compatible source",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportOrg",
+      "label": "Export to Org-mode",
+      "group": "File",
+      "hint": "Emacs Org-mode source",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportOpml",
+      "label": "Export to OPML",
+      "group": "File",
+      "hint": "Outline interchange format (RSS readers, mind-maps)",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportReveal",
+      "label": "Export to Slides (Reveal.js)",
+      "group": "File",
+      "hint": "Turn --- separated sections into a presentation",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportEpub",
+      "label": "Export to EPUB",
+      "group": "File",
+      "hint": "Package the document as an e-book (chapters split on H1)",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportIpynb",
+      "label": "Export to Jupyter (.ipynb)",
+      "group": "File",
+      "hint": "Notebook: fenced code blocks become cells",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportSite",
+      "label": "Export to Static Site",
+      "group": "File",
+      "hint": "Multi-page HTML site with sidebar nav + RSS (pages split on H1)",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportPptx",
+      "label": "Export to PowerPoint (.pptx)",
+      "group": "File",
+      "hint": "One slide per H1/H2 heading (or --- separators)",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportPdf",
+      "label": "Export to PDF / Print",
+      "group": "File",
+      "hint": "colorful, exactly as shown",
+      "icon": "Download"
+    },
+    {
+      "id": "file.print",
+      "label": "Print / Save as PDF…",
+      "group": "File",
+      "hint": "browser print dialog",
+      "shortcut": "⌘P",
+      "icon": "Printer"
+    },
+    {
+      "id": "view.source",
+      "label": "Source view",
+      "group": "View",
+      "shortcut": "⌘1",
+      "icon": "Pencil"
+    },
+    {
+      "id": "view.split",
+      "label": "Split view",
+      "group": "View",
+      "shortcut": "⌘2",
+      "icon": "Columns2"
+    },
+    {
+      "id": "view.preview",
+      "label": "Preview only",
+      "group": "View",
+      "shortcut": "⌘3",
+      "icon": "Eye"
+    },
+    {
+      "id": "view.wysiwyg",
+      "label": "WYSIWYG",
+      "group": "View",
+      "hint": "rich-text editing",
+      "shortcut": "⌘4",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "view.outline",
+      "label": "Toggle outline",
+      "group": "View",
+      "icon": "PanelRightOpen",
+      "action": "store:toggleOutline"
+    },
+    {
+      "id": "view.pageView",
+      "label": "📄 Page View (A4)",
+      "group": "View",
+      "hint": "Currently OFF",
+      "icon": "FileText"
+    },
+    {
+      "id": "view.workspace",
+      "label": "Toggle workspace",
+      "group": "View",
+      "hint": "in-browser file storage (OPFS)",
+      "icon": "FolderOpen",
+      "action": "store:toggleWorkspace"
+    },
+    {
+      "id": "note.today",
+      "label": "Today's note",
+      "group": "File",
+      "hint": "Open or create the daily note for today (journal/YYYY-MM-DD.md)",
+      "shortcut": "⌥⌘D",
+      "icon": "FileText"
+    },
+    {
+      "id": "view.calendar",
+      "label": "Show / hide the calendar",
+      "group": "View",
+      "hint": "Month calendar of daily notes under the file tree",
+      "icon": "FileText"
+    },
+    {
+      "id": "view.backlinks",
+      "label": "Toggle backlinks",
+      "group": "View",
+      "hint": "files linking here via [[wiki]]",
+      "icon": "Link",
+      "action": "store:toggleBacklinks"
+    },
+    {
+      "id": "view.search",
+      "label": "Search workspace…",
+      "group": "View",
+      "shortcut": "⇧⌘F",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "view.smartSearch",
+      "label": "Smart search (semantic + keyword)",
+      "group": "View",
+      "hint": "Hybrid retrieval over your notes",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "view.vim",
+      "label": "Enable Vim mode",
+      "group": "View",
+      "icon": "Pencil",
+      "action": "store:toggleVim"
+    },
+    {
+      "id": "view.spellCheck",
+      "label": "Disable spell-check",
+      "group": "View",
+      "hint": "Browser-native red squiggle underlines",
+      "icon": "Pencil",
+      "action": "store:toggleSpellCheck"
+    },
+    {
+      "id": "view.typewriter",
+      "label": "Enable typewriter mode",
+      "group": "View",
+      "hint": "Keep the active line vertically centred",
+      "icon": "Pencil",
+      "action": "store:toggleTypewriter"
+    },
+    {
+      "id": "view.tsChecks",
+      "label": "Enable TypeScript checks in code blocks",
+      "group": "View",
+      "hint": "Type errors and completions in ```ts blocks (downloads the TypeScript compiler, ~1.3 MB)",
+      "icon": "Pencil",
+      "action": "store:toggleTsChecks"
+    },
+    {
+      "id": "view.grammarCheck",
+      "label": "Enable grammar check (LanguageTool)",
+      "group": "View",
+      "hint": "Underlines grammar / style / typo issues. Set VITE_LANGUAGETOOL_URL to self-host.",
+      "icon": "Pencil",
+      "action": "store:toggleGrammarCheck"
+    },
+    {
+      "id": "tools.writingGoal",
+      "label": "✍️ Set a daily writing goal",
+      "group": "Tools",
+      "hint": "A subtle progress banner above the editor",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.localToggle",
+      "label": "Privacy Mode: turn off (use cloud AI)",
+      "group": "AI Prompts",
+      "hint": "When ON, every AI prompt runs locally via @mlc-ai/web-llm. No data leaves your browser.",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "tools.vaultDoctor",
+      "label": "🩺 Vault Doctor: Check Workspace",
+      "group": "Tools",
+      "hint": "Broken links, orphans, near-duplicates, missing alt text — no AI, nothing leaves your device",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "tools.vaultDoctorFix",
+      "label": "🩺 Vault Doctor: Apply Suggested Link Fixes",
+      "group": "Tools",
+      "hint": "Rewrite broken [[links]] that have exactly one close match",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "tools.autoTag",
+      "label": "🏷️ Auto-tag this note",
+      "group": "Tools",
+      "hint": "AI proposes tags from your existing vocabulary",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "tools.suggestLinks",
+      "label": "🔗 Suggest wiki-links",
+      "group": "Tools",
+      "hint": "AI scans your workspace for relevant cross-links",
+      "icon": "Link"
+    },
+    {
+      "id": "ai.productAgent",
+      "label": "AI: Create Product",
+      "group": "Tools",
+      "hint": "Generate a complete project from a description",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.diagram",
+      "label": "AI: Diagram from Text",
+      "group": "Tools",
+      "hint": "Generate a Mermaid diagram from the document",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.actionItems",
+      "label": "AI: Extract Action Items",
+      "group": "Tools",
+      "hint": "Pull a task list out of meeting notes",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.translate",
+      "label": "AI: Translate Document",
+      "group": "Tools",
+      "hint": "Translate the whole document, preserving formatting",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.chart",
+      "label": "AI: Chart from Data",
+      "group": "Tools",
+      "hint": "Turn CSV or table data into an ECharts chart",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.ollamaModels",
+      "label": "AI: Ollama Models",
+      "group": "Tools",
+      "hint": "Switch to a local Ollama model",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.usage",
+      "label": "AI: Usage & Cost This Month",
+      "group": "Tools",
+      "hint": "Requests, tokens and estimated cost per provider on this device",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "research.ask",
+      "label": "🔎 Research: Ask a Question…",
+      "group": "AI Prompts",
+      "hint": "Searches the web, reads sources and writes a note with a quoted footnote for every claim",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "clip.url",
+      "label": "Clip a web page…",
+      "group": "Tools",
+      "hint": "Saves the readable part of a page into your library, with source and date",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "clip.clipboard",
+      "label": "Clip from clipboard",
+      "group": "Tools",
+      "hint": "Copy part of a page in the browser, then save it to the library",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "research.verify",
+      "label": "🔎 Research: Verify Citations in This Note",
+      "group": "AI Prompts",
+      "hint": "Checks every footnote link is alive and its quote really appears on the page",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "research.settings",
+      "label": "🔎 Research: Settings…",
+      "group": "AI Prompts",
+      "hint": "Claude web search, or Brave / Tavily with your own key",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.batch",
+      "label": "AI: Batch over a Folder (half price)…",
+      "group": "Tools",
+      "hint": "Tag, summarise or translate many notes through the provider's batch API — results within 24 h",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.batchCheck",
+      "label": "AI: Check Batch Jobs",
+      "group": "Tools",
+      "hint": "Fetch finished batch results and apply them to your notes",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.mode",
+      "label": "AI: Cost Mode (Economy / Balanced / Quality)…",
+      "group": "Tools",
+      "hint": "Route small tasks to cheaper models and send only the relevant parts of your notes",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.localModels",
+      "label": "AI: Local Models (WebGPU)",
+      "group": "Tools",
+      "hint": "Choose and download the in-browser model for this GPU",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.styleProfile",
+      "label": "AI: My Writing Style (local)",
+      "group": "AI Prompts",
+      "hint": "Learn your style from your notes on this device and use it when the AI writes — instead of fine-tuning",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.agentSettings",
+      "label": "AI: Settings (local agents)",
+      "group": "Tools",
+      "hint": "Policy, executor, models, endpoints and recent runs in one place",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "spell.hebrewDictionary",
+      "label": "Hebrew spelling: dictionary (download / remove)",
+      "group": "Tools",
+      "hint": "Offline Hebrew spell check (Hspell, 5.7 MB, AGPL)",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "vault.export",
+      "label": "Export the whole vault…",
+      "group": "File",
+      "hint": "Every note and attachment, with folders, as a .zip or into a folder",
+      "icon": "Save"
+    },
+    {
+      "id": "vault.import",
+      "label": "Import notes (zip / folder: Obsidian, Notion, Lumen)…",
+      "group": "File",
+      "hint": "Into a new folder — nothing existing is overwritten",
+      "icon": "Save"
+    },
+    {
+      "id": "vault.toFolder",
+      "label": "Move the vault to a folder…",
+      "group": "File",
+      "hint": "Copies every note to a folder on this computer, checks each file byte for byte, then works there. Nothing is deleted.",
+      "icon": "FolderOpen"
+    },
+    {
+      "id": "vault.openFolder",
+      "label": "Open a folder as the vault…",
+      "group": "File",
+      "hint": "Work in an existing folder (for example an Obsidian vault) without copying. Notes in browser storage stay where they are.",
+      "icon": "FolderOpen"
+    },
+    {
+      "id": "vault.toBrowser",
+      "label": "Move the vault back to browser storage",
+      "group": "File",
+      "hint": "Copies every note from the folder into the browser's private storage, checks it, then works there. The folder is not changed.",
+      "icon": "Save"
+    },
+    {
+      "id": "file.trash",
+      "label": "Trash…",
+      "group": "Tools",
+      "hint": "Restore deleted notes (kept 30 days)",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.cancel",
+      "label": "AI: Cancel",
+      "group": "AI Prompts",
+      "hint": "Stops every running AI request (Esc does the same)",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "note.read",
+      "label": "Read aloud",
+      "group": "Tools",
+      "hint": "Reads this note with your system's voices (Hebrew included); run again to stop",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "vault.digest",
+      "label": "Digest: what changed",
+      "group": "Tools",
+      "hint": "A note with every note changed since the last digest, and their open tasks",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "image.altText",
+      "label": "Images: alt text from OCR / local vision",
+      "group": "AI Prompts",
+      "hint": "Reads text in this note's images on this device (Hebrew + English); describes the rest with a local Ollama vision model",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.rerankModel",
+      "label": "AI: Rerank search with the local model",
+      "group": "AI Prompts",
+      "hint": "On: bge-reranker-v2-m3 on this device (one-time ~570 MB download). Off: fast word matching.",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.privacyLedger",
+      "label": "Privacy ledger…",
+      "group": "AI Prompts",
+      "hint": "Every AI network request: where, how much, why",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.doctor",
+      "label": "AI: Doctor (diagnose local AI)",
+      "group": "Tools",
+      "hint": "Checks Ollama, CORS, models, WebGPU, storage and services — each with its fix",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.policy",
+      "label": "AI: Local or Cloud Policy",
+      "group": "Tools",
+      "hint": "Where AI requests may go: this device only, local first, or the cloud",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.trace",
+      "label": "AI: Recent Agent Runs",
+      "group": "Tools",
+      "hint": "Executor, model, tools, retries and failures of the last runs on this device",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.cache",
+      "label": "AI: Answer Cache…",
+      "group": "Tools",
+      "hint": "Reuse identical answers (tags, translation, diagrams) instead of paying again",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.switchProvider",
+      "label": "AI: Switch Provider",
+      "group": "Tools",
+      "hint": "Switch AI provider: OpenAI, Claude, Gemini, Mistral, Ollama, or local WebGPU",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "tools.checkGrammar",
+      "label": "Check grammar (LanguageTool)",
+      "group": "Tools",
+      "hint": "Free public LanguageTool service",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "view.rtl",
+      "label": "Text Direction: RTL (Right to Left)",
+      "group": "View",
+      "hint": "→ RTL",
+      "icon": "Pencil",
+      "action": "store:toggleRtl"
+    },
+    {
+      "id": "lang.en",
+      "label": "Language: English",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.he",
+      "label": "Language: עברית",
+      "group": "View",
+      "hint": "right-to-left",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.ar",
+      "label": "Language: العربية",
+      "group": "View",
+      "hint": "right-to-left",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.ru",
+      "label": "Language: Русский",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.fr",
+      "label": "Language: Français",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.de",
+      "label": "Language: Deutsch",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.ja",
+      "label": "Language: 日本語",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.zh-CN",
+      "label": "Language: 简体中文",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "view.findReplace",
+      "label": "Find & Replace",
+      "group": "View",
+      "shortcut": "⌘H",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "view.graphView",
+      "label": "Knowledge Graph",
+      "group": "View",
+      "hint": "visual map of file connections",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "view.versionHistory",
+      "label": "Version History",
+      "group": "View",
+      "hint": "restore previous versions",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "insert.table",
+      "label": "Insert Table (Editor)",
+      "group": "Insert",
+      "hint": "visual table builder",
+      "icon": "Pencil"
+    },
+    {
+      "id": "view.autoSave",
+      "label": "Disable Auto-Save",
+      "group": "View",
+      "hint": "every 30s",
+      "icon": "Pencil",
+      "action": "store:toggleAutoSave"
+    },
+    {
+      "id": "view.canvas",
+      "label": "🎨 Canvas / Whiteboard",
+      "group": "View",
+      "hint": "Infinite canvas for visual notes",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "view.plugins",
+      "label": "🔌 Plugin Gallery",
+      "group": "View",
+      "hint": "Browse & install plugins",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "template.meeting-notes",
+      "label": "Templates: Meeting Notes",
+      "group": "Templates",
+      "hint": "Business",
+      "icon": "FileText"
+    },
+    {
+      "id": "template.blog-post",
+      "label": "Templates: Blog Post",
+      "group": "Templates",
+      "hint": "Writing",
+      "icon": "FileText"
+    },
+    {
+      "id": "template.thesis",
+      "label": "Templates: Academic Paper",
+      "group": "Templates",
+      "hint": "Academic",
+      "icon": "FileText"
+    },
+    {
+      "id": "template.project-readme",
+      "label": "Templates: Project README",
+      "group": "Templates",
+      "hint": "Development",
+      "icon": "FileText"
+    },
+    {
+      "id": "template.weekly-review",
+      "label": "Templates: Weekly Review",
+      "group": "Templates",
+      "hint": "Productivity",
+      "icon": "FileText"
+    },
+    {
+      "id": "template.changelog",
+      "label": "Templates: Changelog",
+      "group": "Templates",
+      "hint": "Development",
+      "icon": "FileText"
+    },
+    {
+      "id": "template.lesson-plan",
+      "label": "Templates: Lesson Plan",
+      "group": "Templates",
+      "hint": "Education",
+      "icon": "FileText"
+    },
+    {
+      "id": "voice.memo",
+      "label": "🎙 Voice memo (transcribe + summarize)",
+      "group": "Tools",
+      "hint": "Record, transcribe with Whisper (on this device under a local AI policy), summarize, and insert a memo block",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "voice.dictate",
+      "label": "🎙 Voice to Markdown",
+      "group": "Tools",
+      "hint": "Speech recognition → text",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "vault.encrypt",
+      "label": "🔒 Encrypt Document",
+      "group": "Security",
+      "hint": "AES-256-GCM",
+      "icon": "Save"
+    },
+    {
+      "id": "vault.decrypt",
+      "label": "🔓 Decrypt Document",
+      "group": "Security",
+      "hint": "Enter password to decrypt",
+      "icon": "Save"
+    },
+    {
+      "id": "ai.prompt.en.summarize",
+      "label": "📝 Summarize in English",
+      "group": "AI Prompts",
+      "hint": "writing",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.prompt.en.improve",
+      "label": "✨ Improve Writing",
+      "group": "AI Prompts",
+      "hint": "editing",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.prompt.en.simplify",
+      "label": "🎓 Simplify / ELI5",
+      "group": "AI Prompts",
+      "hint": "analysis",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.prompt.en.code_review",
+      "label": "🔍 Code Review",
+      "group": "AI Prompts",
+      "hint": "code",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.prompt.en.blog_post",
+      "label": "📰 Blog Post Draft",
+      "group": "AI Prompts",
+      "hint": "writing",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.prompt.en.translate_to_he",
+      "label": "🌐 English → Hebrew",
+      "group": "AI Prompts",
+      "hint": "translation",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "edit.formatDocument",
+      "label": "Format document",
+      "group": "Edit",
+      "hint": "Prettier: tidy Markdown, frontmatter and fenced code",
+      "shortcut": "Shift+Alt+F",
+      "icon": "Pencil"
+    },
+    {
+      "id": "edit.formatCodeBlock",
+      "label": "Format code block at cursor",
+      "group": "Edit",
+      "hint": "Prettier: format the fenced block under the cursor",
+      "icon": "Pencil"
+    },
+    {
+      "id": "edit.suggesting.toggle",
+      "label": "Turn on suggesting mode (track changes)",
+      "group": "Edit",
+      "hint": "Record edits in the source editor as CriticMarkup suggestions",
+      "icon": "Pencil",
+      "action": "store:toggleSuggestingMode"
+    },
+    {
+      "id": "edit.suggesting.accept",
+      "label": "Accept suggestion at cursor",
+      "group": "Edit",
+      "hint": "Apply the tracked change under the cursor",
+      "icon": "Pencil"
+    },
+    {
+      "id": "edit.suggesting.reject",
+      "label": "Reject suggestion at cursor",
+      "group": "Edit",
+      "hint": "Discard the tracked change under the cursor",
+      "icon": "Pencil"
+    },
+    {
+      "id": "edit.suggesting.acceptAll",
+      "label": "Accept all suggestions",
+      "group": "Edit",
+      "icon": "Pencil"
+    },
+    {
+      "id": "edit.suggesting.rejectAll",
+      "label": "Reject all suggestions",
+      "group": "Edit",
+      "icon": "Pencil"
+    },
+    {
+      "id": "edit.suggesting.next",
+      "label": "Next suggestion",
+      "group": "Edit",
+      "icon": "Pencil"
+    },
+    {
+      "id": "edit.suggesting.prev",
+      "label": "Previous suggestion",
+      "group": "Edit",
+      "icon": "Pencil"
+    },
+    {
+      "id": "ai.settings",
+      "label": "AI Settings…",
+      "group": "AI Prompts",
+      "hint": "Configure your OpenAI API key + per-doc options",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.outline",
+      "label": "AI: Generate Outline",
+      "group": "AI Prompts",
+      "hint": "Add AI-suggested headings",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "git.clone",
+      "label": "Git: clone repository…",
+      "group": "Git",
+      "hint": "imports text files into the workspace",
+      "icon": "Download"
+    },
+    {
+      "id": "git.commit",
+      "label": "Git: commit & push current repo…",
+      "group": "Git",
+      "hint": "uses the saved token + identity",
+      "icon": "Save"
+    },
+    {
+      "id": "git.pull",
+      "label": "Git: pull current repo",
+      "group": "Git",
+      "hint": "fetches and merges remote changes",
+      "icon": "Download"
+    },
+    {
+      "id": "git.status",
+      "label": "Git: status (current repo)",
+      "group": "Git",
+      "icon": "Link"
+    },
+    {
+      "id": "git.watch",
+      "label": "Git: toggle watch-mode auto-pull",
+      "group": "Git",
+      "hint": "Polls the remote every 5 min and pulls on change",
+      "icon": "Download"
+    },
+    {
+      "id": "git.token",
+      "label": "Git: set access token…",
+      "group": "Git",
+      "hint": "stored locally (IndexedDB)",
+      "icon": "Link"
+    },
+    {
+      "id": "git.identity",
+      "label": "Git: set commit identity…",
+      "group": "Git",
+      "icon": "Link"
+    },
+    {
+      "id": "collab.start",
+      "label": "Start collaboration…",
+      "group": "Collab",
+      "hint": "share a live editing room (P2P over WebRTC)",
+      "icon": "Link"
+    },
+    {
+      "id": "collab.join",
+      "label": "Join collaboration room…",
+      "group": "Collab",
+      "hint": "paste a room name",
+      "icon": "Link"
+    },
+    {
+      "id": "file.openSampleWorkspace",
+      "label": "Open sample workspace",
+      "group": "File",
+      "hint": "linked demo notes: wiki-links, tags, database, chart, diagram",
+      "icon": "FolderOpen"
+    },
+    {
+      "id": "help.setup",
+      "label": "Set up Lumen…",
+      "group": "File",
+      "hint": "Language, vault location, look and a sample vault: the first-run setup again",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "file.saveToWorkspace",
+      "label": "Save to workspace",
+      "group": "File",
+      "hint": "store this doc in OPFS",
+      "icon": "Save",
+      "action": "option:handleSaveToWorkspace"
+    },
+    {
+      "id": "theme.toggle",
+      "label": "Switch to light theme",
+      "group": "View",
+      "icon": "Sun"
+    },
+    {
+      "id": "insert.chart",
+      "label": "Insert chart",
+      "group": "Insert",
+      "hint": "ECharts spec",
+      "icon": "BarChart3"
+    },
+    {
+      "id": "insert.csv",
+      "label": "Insert CSV data",
+      "group": "Insert",
+      "hint": "auto-table + chart",
+      "icon": "Table"
+    },
+    {
+      "id": "insert.json",
+      "label": "Insert JSON table",
+      "group": "Insert",
+      "hint": "auto-table + chart",
+      "icon": "Table"
+    },
+    {
+      "id": "insert.mermaid",
+      "label": "Insert diagram (Mermaid)",
+      "group": "Insert",
+      "icon": "Network"
+    },
+    {
+      "id": "insert.map",
+      "label": "Insert map",
+      "group": "Insert",
+      "icon": "Map"
+    },
+    {
+      "id": "insert.math",
+      "label": "Insert math block",
+      "group": "Insert",
+      "icon": "Calculator"
+    },
+    {
+      "id": "insert.callout",
+      "label": "Insert callout",
+      "group": "Insert",
+      "hint": ":::note / :::tip / …",
+      "icon": "Quote"
+    },
+    {
+      "id": "insert.graphviz",
+      "label": "Insert Graphviz / DOT",
+      "group": "Insert",
+      "icon": "Workflow"
+    },
+    {
+      "id": "insert.plantuml",
+      "label": "Insert PlantUML",
+      "group": "Insert",
+      "hint": "rendered via kroki.io",
+      "icon": "Workflow"
+    },
+    {
+      "id": "insert.abc",
+      "label": "Insert music notation (ABC)",
+      "group": "Insert",
+      "icon": "Music2"
+    },
+    {
+      "id": "insert.model",
+      "label": "Insert 3D model",
+      "group": "Insert",
+      "hint": ".glb / .gltf",
+      "icon": "Box"
+    },
+    {
+      "id": "insert.embed",
+      "label": "Insert embed",
+      "group": "Insert",
+      "hint": "YouTube · Vimeo · Figma · CodePen…",
+      "icon": "Youtube"
+    },
+    {
+      "id": "insert.htmlpreview",
+      "label": "Insert live HTML preview",
+      "group": "Insert",
+      "hint": "sandboxed HTML/CSS/JS in an iframe",
+      "icon": "Box"
+    },
+    {
+      "id": "insert.bibtex",
+      "label": "Insert BibTeX bibliography",
+      "group": "Insert",
+      "hint": "renders as a numbered references list",
+      "icon": "Quote"
+    },
+    {
+      "id": "insert.wikilink",
+      "label": "Insert wiki-link",
+      "group": "Insert",
+      "hint": "[[Page|label]]",
+      "icon": "Link"
+    }
+  ],
+  "full": [
+    {
+      "id": "recent.r1",
+      "label": "Open: first.md",
+      "group": "Recent",
+      "hint": "<relative time>",
+      "icon": "FolderOpen"
+    },
+    {
+      "id": "recent.remove.r1",
+      "label": "Remove from recents: first.md",
+      "group": "Recent",
+      "icon": "FolderOpen"
+    },
+    {
+      "id": "recent.r2",
+      "label": "Open: second.md",
+      "group": "Recent",
+      "hint": "<relative time>",
+      "icon": "FolderOpen"
+    },
+    {
+      "id": "recent.remove.r2",
+      "label": "Remove from recents: second.md",
+      "group": "Recent",
+      "icon": "FolderOpen"
+    },
+    {
+      "id": "file.new",
+      "label": "New document",
+      "group": "File",
+      "shortcut": "⌘N",
+      "icon": "FileText",
+      "action": "option:handleNew"
+    },
+    {
+      "id": "file.open",
+      "label": "Open file…",
+      "group": "File",
+      "shortcut": "⌘O",
+      "icon": "FolderOpen",
+      "action": "option:handleOpen"
+    },
+    {
+      "id": "file.save",
+      "label": "Save",
+      "group": "File",
+      "shortcut": "⌘S",
+      "icon": "Save"
+    },
+    {
+      "id": "file.saveAs",
+      "label": "Save as…",
+      "group": "File",
+      "shortcut": "⇧⌘S",
+      "icon": "Save"
+    },
+    {
+      "id": "file.exportHtml",
+      "label": "Export to HTML…",
+      "group": "File",
+      "hint": "self-contained .html",
+      "icon": "Download",
+      "action": "option:handleExportHtml"
+    },
+    {
+      "id": "file.exportDocx",
+      "label": "Export to Word (.doc)",
+      "group": "File",
+      "hint": "Download as Word document",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportRtf",
+      "label": "Export to RTF",
+      "group": "File",
+      "hint": "Rich Text Format — opens in Pages, Word, TextEdit",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportLatex",
+      "label": "Export to LaTeX (.tex)",
+      "group": "File",
+      "hint": "Article-class LaTeX with hyperref + listings",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportRst",
+      "label": "Export to reStructuredText",
+      "group": "File",
+      "hint": "Sphinx / Read-the-Docs friendly",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportAdoc",
+      "label": "Export to AsciiDoc",
+      "group": "File",
+      "hint": "Asciidoctor-compatible source",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportOrg",
+      "label": "Export to Org-mode",
+      "group": "File",
+      "hint": "Emacs Org-mode source",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportOpml",
+      "label": "Export to OPML",
+      "group": "File",
+      "hint": "Outline interchange format (RSS readers, mind-maps)",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportReveal",
+      "label": "Export to Slides (Reveal.js)",
+      "group": "File",
+      "hint": "Turn --- separated sections into a presentation",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportEpub",
+      "label": "Export to EPUB",
+      "group": "File",
+      "hint": "Package the document as an e-book (chapters split on H1)",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportIpynb",
+      "label": "Export to Jupyter (.ipynb)",
+      "group": "File",
+      "hint": "Notebook: fenced code blocks become cells",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportSite",
+      "label": "Export to Static Site",
+      "group": "File",
+      "hint": "Multi-page HTML site with sidebar nav + RSS (pages split on H1)",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportPptx",
+      "label": "Export to PowerPoint (.pptx)",
+      "group": "File",
+      "hint": "One slide per H1/H2 heading (or --- separators)",
+      "icon": "Download"
+    },
+    {
+      "id": "file.exportPdf",
+      "label": "Export to PDF / Print",
+      "group": "File",
+      "hint": "colorful, exactly as shown",
+      "icon": "Download"
+    },
+    {
+      "id": "file.print",
+      "label": "Print / Save as PDF…",
+      "group": "File",
+      "hint": "browser print dialog",
+      "shortcut": "⌘P",
+      "icon": "Printer"
+    },
+    {
+      "id": "view.source",
+      "label": "Source view",
+      "group": "View",
+      "shortcut": "⌘1",
+      "icon": "Pencil"
+    },
+    {
+      "id": "view.split",
+      "label": "Split view",
+      "group": "View",
+      "shortcut": "⌘2",
+      "icon": "Columns2"
+    },
+    {
+      "id": "view.preview",
+      "label": "Preview only",
+      "group": "View",
+      "shortcut": "⌘3",
+      "icon": "Eye"
+    },
+    {
+      "id": "view.wysiwyg",
+      "label": "WYSIWYG",
+      "group": "View",
+      "hint": "rich-text editing",
+      "shortcut": "⌘4",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "view.outline",
+      "label": "Toggle outline",
+      "group": "View",
+      "icon": "PanelRightOpen",
+      "action": "store:toggleOutline"
+    },
+    {
+      "id": "view.pageView",
+      "label": "📄 Page View (A4)",
+      "group": "View",
+      "hint": "Currently ON",
+      "icon": "FileText"
+    },
+    {
+      "id": "view.workspace",
+      "label": "Toggle workspace",
+      "group": "View",
+      "hint": "in-browser file storage (OPFS)",
+      "icon": "FolderOpen",
+      "action": "store:toggleWorkspace"
+    },
+    {
+      "id": "note.today",
+      "label": "Today's note",
+      "group": "File",
+      "hint": "Open or create the daily note for today (journal/YYYY-MM-DD.md)",
+      "shortcut": "⌥⌘D",
+      "icon": "FileText"
+    },
+    {
+      "id": "view.calendar",
+      "label": "Show / hide the calendar",
+      "group": "View",
+      "hint": "Month calendar of daily notes under the file tree",
+      "icon": "FileText"
+    },
+    {
+      "id": "view.backlinks",
+      "label": "Toggle backlinks",
+      "group": "View",
+      "hint": "files linking here via [[wiki]]",
+      "icon": "Link",
+      "action": "store:toggleBacklinks"
+    },
+    {
+      "id": "view.search",
+      "label": "Search workspace…",
+      "group": "View",
+      "shortcut": "⇧⌘F",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "view.smartSearch",
+      "label": "Smart search (semantic + keyword)",
+      "group": "View",
+      "hint": "Hybrid retrieval over your notes",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "view.runtimeMetrics",
+      "label": "Runtime metrics",
+      "group": "View",
+      "hint": "Inspect retries, timeouts, and latency by transport category",
+      "icon": "BarChart3"
+    },
+    {
+      "id": "view.vim",
+      "label": "Disable Vim mode",
+      "group": "View",
+      "icon": "Pencil",
+      "action": "store:toggleVim"
+    },
+    {
+      "id": "view.spellCheck",
+      "label": "Enable spell-check",
+      "group": "View",
+      "hint": "Browser-native red squiggle underlines",
+      "icon": "Pencil",
+      "action": "store:toggleSpellCheck"
+    },
+    {
+      "id": "view.typewriter",
+      "label": "Disable typewriter mode",
+      "group": "View",
+      "hint": "Keep the active line vertically centred",
+      "icon": "Pencil",
+      "action": "store:toggleTypewriter"
+    },
+    {
+      "id": "view.tsChecks",
+      "label": "Disable TypeScript checks in code blocks",
+      "group": "View",
+      "hint": "Type errors and completions in ```ts blocks (downloads the TypeScript compiler, ~1.3 MB)",
+      "icon": "Pencil",
+      "action": "store:toggleTsChecks"
+    },
+    {
+      "id": "view.grammarCheck",
+      "label": "Disable grammar check",
+      "group": "View",
+      "hint": "Underlines grammar / style / typo issues. Set VITE_LANGUAGETOOL_URL to self-host.",
+      "icon": "Pencil",
+      "action": "store:toggleGrammarCheck"
+    },
+    {
+      "id": "tools.writingGoal",
+      "label": "✍️ Writing goal: 750 words/day",
+      "group": "Tools",
+      "hint": "A subtle progress banner above the editor",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.localToggle",
+      "label": "Privacy Mode: run AI on this device (WebGPU)",
+      "group": "AI Prompts",
+      "hint": "When ON, every AI prompt runs locally via @mlc-ai/web-llm. No data leaves your browser.",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "tools.vaultDoctor",
+      "label": "🩺 Vault Doctor: Check Workspace",
+      "group": "Tools",
+      "hint": "Broken links, orphans, near-duplicates, missing alt text — no AI, nothing leaves your device",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "tools.vaultDoctorFix",
+      "label": "🩺 Vault Doctor: Apply Suggested Link Fixes",
+      "group": "Tools",
+      "hint": "Rewrite broken [[links]] that have exactly one close match",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "tools.autoTag",
+      "label": "🏷️ Auto-tag this note",
+      "group": "Tools",
+      "hint": "AI proposes tags from your existing vocabulary",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "tools.suggestLinks",
+      "label": "🔗 Suggest wiki-links",
+      "group": "Tools",
+      "hint": "AI scans your workspace for relevant cross-links",
+      "icon": "Link"
+    },
+    {
+      "id": "ai.productAgent",
+      "label": "AI: Create Product",
+      "group": "Tools",
+      "hint": "Generate a complete project from a description",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.diagram",
+      "label": "AI: Diagram from Text",
+      "group": "Tools",
+      "hint": "Generate a Mermaid diagram from the document",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.actionItems",
+      "label": "AI: Extract Action Items",
+      "group": "Tools",
+      "hint": "Pull a task list out of meeting notes",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.translate",
+      "label": "AI: Translate Document",
+      "group": "Tools",
+      "hint": "Translate the whole document, preserving formatting",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.chart",
+      "label": "AI: Chart from Data",
+      "group": "Tools",
+      "hint": "Turn CSV or table data into an ECharts chart",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.ollamaModels",
+      "label": "AI: Ollama Models",
+      "group": "Tools",
+      "hint": "Switch to a local Ollama model",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.usage",
+      "label": "AI: Usage & Cost This Month",
+      "group": "Tools",
+      "hint": "Requests, tokens and estimated cost per provider on this device",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "research.ask",
+      "label": "🔎 Research: Ask a Question…",
+      "group": "AI Prompts",
+      "hint": "Searches the web, reads sources and writes a note with a quoted footnote for every claim",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "clip.url",
+      "label": "Clip a web page…",
+      "group": "Tools",
+      "hint": "Saves the readable part of a page into your library, with source and date",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "clip.clipboard",
+      "label": "Clip from clipboard",
+      "group": "Tools",
+      "hint": "Copy part of a page in the browser, then save it to the library",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "research.verify",
+      "label": "🔎 Research: Verify Citations in This Note",
+      "group": "AI Prompts",
+      "hint": "Checks every footnote link is alive and its quote really appears on the page",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "research.settings",
+      "label": "🔎 Research: Settings…",
+      "group": "AI Prompts",
+      "hint": "Claude web search, or Brave / Tavily with your own key",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.batch",
+      "label": "AI: Batch over a Folder (half price)…",
+      "group": "Tools",
+      "hint": "Tag, summarise or translate many notes through the provider's batch API — results within 24 h",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.batchCheck",
+      "label": "AI: Check Batch Jobs",
+      "group": "Tools",
+      "hint": "Fetch finished batch results and apply them to your notes",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.mode",
+      "label": "AI: Cost Mode (Economy / Balanced / Quality)…",
+      "group": "Tools",
+      "hint": "Route small tasks to cheaper models and send only the relevant parts of your notes",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.localModels",
+      "label": "AI: Local Models (WebGPU)",
+      "group": "Tools",
+      "hint": "Choose and download the in-browser model for this GPU",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.styleProfile",
+      "label": "AI: My Writing Style (local)",
+      "group": "AI Prompts",
+      "hint": "Learn your style from your notes on this device and use it when the AI writes — instead of fine-tuning",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.agentSettings",
+      "label": "AI: Settings (local agents)",
+      "group": "Tools",
+      "hint": "Policy, executor, models, endpoints and recent runs in one place",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "spell.hebrewDictionary",
+      "label": "Hebrew spelling: dictionary (download / remove)",
+      "group": "Tools",
+      "hint": "Offline Hebrew spell check (Hspell, 5.7 MB, AGPL)",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "vault.export",
+      "label": "Export the whole vault…",
+      "group": "File",
+      "hint": "Every note and attachment, with folders, as a .zip or into a folder",
+      "icon": "Save"
+    },
+    {
+      "id": "vault.import",
+      "label": "Import notes (zip / folder: Obsidian, Notion, Lumen)…",
+      "group": "File",
+      "hint": "Into a new folder — nothing existing is overwritten",
+      "icon": "Save"
+    },
+    {
+      "id": "vault.toFolder",
+      "label": "Move the vault to a folder…",
+      "group": "File",
+      "hint": "Copies every note to a folder on this computer, checks each file byte for byte, then works there. Nothing is deleted.",
+      "icon": "FolderOpen"
+    },
+    {
+      "id": "vault.openFolder",
+      "label": "Open a folder as the vault…",
+      "group": "File",
+      "hint": "Work in an existing folder (for example an Obsidian vault) without copying. Notes in browser storage stay where they are.",
+      "icon": "FolderOpen"
+    },
+    {
+      "id": "vault.toBrowser",
+      "label": "Move the vault back to browser storage",
+      "group": "File",
+      "hint": "Copies every note from the folder into the browser's private storage, checks it, then works there. The folder is not changed.",
+      "icon": "Save"
+    },
+    {
+      "id": "file.trash",
+      "label": "Trash…",
+      "group": "Tools",
+      "hint": "Restore deleted notes (kept 30 days)",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.cancel",
+      "label": "AI: Cancel",
+      "group": "AI Prompts",
+      "hint": "Stops every running AI request (Esc does the same)",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "note.read",
+      "label": "Read aloud",
+      "group": "Tools",
+      "hint": "Reads this note with your system's voices (Hebrew included); run again to stop",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "vault.digest",
+      "label": "Digest: what changed",
+      "group": "Tools",
+      "hint": "A note with every note changed since the last digest, and their open tasks",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "image.altText",
+      "label": "Images: alt text from OCR / local vision",
+      "group": "AI Prompts",
+      "hint": "Reads text in this note's images on this device (Hebrew + English); describes the rest with a local Ollama vision model",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.rerankModel",
+      "label": "AI: Rerank search with the local model",
+      "group": "AI Prompts",
+      "hint": "On: bge-reranker-v2-m3 on this device (one-time ~570 MB download). Off: fast word matching.",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.privacyLedger",
+      "label": "Privacy ledger…",
+      "group": "AI Prompts",
+      "hint": "Every AI network request: where, how much, why",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.doctor",
+      "label": "AI: Doctor (diagnose local AI)",
+      "group": "Tools",
+      "hint": "Checks Ollama, CORS, models, WebGPU, storage and services — each with its fix",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.policy",
+      "label": "AI: Local or Cloud Policy",
+      "group": "Tools",
+      "hint": "Where AI requests may go: this device only, local first, or the cloud",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.trace",
+      "label": "AI: Recent Agent Runs",
+      "group": "Tools",
+      "hint": "Executor, model, tools, retries and failures of the last runs on this device",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.cache",
+      "label": "AI: Answer Cache…",
+      "group": "Tools",
+      "hint": "Reuse identical answers (tags, translation, diagrams) instead of paying again",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.switchProvider",
+      "label": "AI: Switch Provider",
+      "group": "Tools",
+      "hint": "Switch AI provider: OpenAI, Claude, Gemini, Mistral, Ollama, or local WebGPU",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "tools.checkGrammar",
+      "label": "Check grammar (LanguageTool)",
+      "group": "Tools",
+      "hint": "Free public LanguageTool service",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "view.rtl",
+      "label": "Text Direction: LTR (Left to Right)",
+      "group": "View",
+      "hint": "← LTR",
+      "icon": "Pencil",
+      "action": "store:toggleRtl"
+    },
+    {
+      "id": "lang.en",
+      "label": "Language: English",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.he",
+      "label": "Language: עברית",
+      "group": "View",
+      "hint": "right-to-left",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.ar",
+      "label": "Language: العربية",
+      "group": "View",
+      "hint": "right-to-left",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.ru",
+      "label": "Language: Русский",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.fr",
+      "label": "Language: Français",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.de",
+      "label": "Language: Deutsch",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.ja",
+      "label": "Language: 日本語",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "lang.zh-CN",
+      "label": "Language: 简体中文",
+      "group": "View",
+      "hint": "left-to-right",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "view.findReplace",
+      "label": "Find & Replace",
+      "group": "View",
+      "shortcut": "⌘H",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "view.graphView",
+      "label": "Knowledge Graph",
+      "group": "View",
+      "hint": "visual map of file connections",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "view.versionHistory",
+      "label": "Version History",
+      "group": "View",
+      "hint": "restore previous versions",
+      "icon": "PanelRightOpen"
+    },
+    {
+      "id": "insert.table",
+      "label": "Insert Table (Editor)",
+      "group": "Insert",
+      "hint": "visual table builder",
+      "icon": "Pencil"
+    },
+    {
+      "id": "view.autoSave",
+      "label": "Enable Auto-Save",
+      "group": "View",
+      "hint": "off",
+      "icon": "Pencil",
+      "action": "store:toggleAutoSave"
+    },
+    {
+      "id": "view.canvas",
+      "label": "🎨 Canvas / Whiteboard",
+      "group": "View",
+      "hint": "Infinite canvas for visual notes",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "view.plugins",
+      "label": "🔌 Plugin Gallery",
+      "group": "View",
+      "hint": "Browse & install plugins",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "templates.open",
+      "label": "Browse template gallery",
+      "group": "View",
+      "hint": "Browse + install community templates",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "audit.open",
+      "label": "Audit log…",
+      "group": "Security",
+      "hint": "Inspect every recorded mutation; export CSV for compliance",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "settings.organization",
+      "label": "Organization settings…",
+      "group": "Security",
+      "hint": "Name, allowed email domains, SSO status, members and audit log",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "settings.trustedKeys",
+      "label": "Trusted plugin signing keys…",
+      "group": "Security",
+      "hint": "List, add or remove the Ed25519 keys plugins must be signed with",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "settings.theme",
+      "label": "Theme settings…",
+      "group": "View",
+      "hint": "Accent color, editor font, size, line height, content width and presets",
+      "icon": "Sun"
+    },
+    {
+      "id": "ai.fineTune",
+      "label": "AI fine-tune settings…",
+      "group": "AI Prompts",
+      "hint": "Train a personal model on your writing style (Pro)",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "view.tags",
+      "label": "View tags",
+      "group": "View",
+      "hint": "Browse the workspace by frontmatter tag",
+      "icon": "Link"
+    },
+    {
+      "id": "collab.viewComments",
+      "label": "💬 View comments panel",
+      "group": "Collab",
+      "icon": "Link"
+    },
+    {
+      "id": "collab.addComment",
+      "label": "💬 Add comment on selection",
+      "group": "Collab",
+      "hint": "Anchor a thread to the highlighted text",
+      "icon": "Link",
+      "action": "option:onAddComment"
+    },
+    {
+      "id": "template.meeting-notes",
+      "label": "Templates: Meeting Notes",
+      "group": "Templates",
+      "hint": "Business",
+      "icon": "FileText"
+    },
+    {
+      "id": "template.blog-post",
+      "label": "Templates: Blog Post",
+      "group": "Templates",
+      "hint": "Writing",
+      "icon": "FileText"
+    },
+    {
+      "id": "template.thesis",
+      "label": "Templates: Academic Paper",
+      "group": "Templates",
+      "hint": "Academic",
+      "icon": "FileText"
+    },
+    {
+      "id": "template.project-readme",
+      "label": "Templates: Project README",
+      "group": "Templates",
+      "hint": "Development",
+      "icon": "FileText"
+    },
+    {
+      "id": "template.weekly-review",
+      "label": "Templates: Weekly Review",
+      "group": "Templates",
+      "hint": "Productivity",
+      "icon": "FileText"
+    },
+    {
+      "id": "template.changelog",
+      "label": "Templates: Changelog",
+      "group": "Templates",
+      "hint": "Development",
+      "icon": "FileText"
+    },
+    {
+      "id": "template.lesson-plan",
+      "label": "Templates: Lesson Plan",
+      "group": "Templates",
+      "hint": "Education",
+      "icon": "FileText"
+    },
+    {
+      "id": "template.installed.weekly",
+      "label": "Templates: Weekly review",
+      "group": "Templates",
+      "hint": "Installed",
+      "icon": "FileText"
+    },
+    {
+      "id": "voice.memo",
+      "label": "🎙 Voice memo (transcribe + summarize)",
+      "group": "Tools",
+      "hint": "Record, transcribe with Whisper (on this device under a local AI policy), summarize, and insert a memo block",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "voice.dictate",
+      "label": "🎙 Voice to Markdown",
+      "group": "Tools",
+      "hint": "Speech recognition → text",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "plugin.demo.run",
+      "label": "Demo plugin: run",
+      "group": "Plugins",
+      "hint": "demo",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "vault.encrypt",
+      "label": "🔒 Encrypt Document",
+      "group": "Security",
+      "hint": "AES-256-GCM",
+      "icon": "Save"
+    },
+    {
+      "id": "vault.decrypt",
+      "label": "🔓 Decrypt Document",
+      "group": "Security",
+      "hint": "Enter password to decrypt",
+      "icon": "Save"
+    },
+    {
+      "id": "ai.prompt.en.summarize",
+      "label": "📝 Summarize in English",
+      "group": "AI Prompts",
+      "hint": "writing",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.prompt.en.improve",
+      "label": "✨ Improve Writing",
+      "group": "AI Prompts",
+      "hint": "editing",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.prompt.en.simplify",
+      "label": "🎓 Simplify / ELI5",
+      "group": "AI Prompts",
+      "hint": "analysis",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.prompt.en.code_review",
+      "label": "🔍 Code Review",
+      "group": "AI Prompts",
+      "hint": "code",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.prompt.en.blog_post",
+      "label": "📰 Blog Post Draft",
+      "group": "AI Prompts",
+      "hint": "writing",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.prompt.en.translate_to_he",
+      "label": "🌐 English → Hebrew",
+      "group": "AI Prompts",
+      "hint": "translation",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "edit.formatDocument",
+      "label": "Format document",
+      "group": "Edit",
+      "hint": "Prettier: tidy Markdown, frontmatter and fenced code",
+      "shortcut": "Shift+Alt+F",
+      "icon": "Pencil"
+    },
+    {
+      "id": "edit.formatCodeBlock",
+      "label": "Format code block at cursor",
+      "group": "Edit",
+      "hint": "Prettier: format the fenced block under the cursor",
+      "icon": "Pencil"
+    },
+    {
+      "id": "edit.suggesting.toggle",
+      "label": "Turn off suggesting mode",
+      "group": "Edit",
+      "hint": "Record edits in the source editor as CriticMarkup suggestions",
+      "icon": "Pencil",
+      "action": "store:toggleSuggestingMode"
+    },
+    {
+      "id": "edit.suggesting.accept",
+      "label": "Accept suggestion at cursor",
+      "group": "Edit",
+      "hint": "Apply the tracked change under the cursor",
+      "icon": "Pencil"
+    },
+    {
+      "id": "edit.suggesting.reject",
+      "label": "Reject suggestion at cursor",
+      "group": "Edit",
+      "hint": "Discard the tracked change under the cursor",
+      "icon": "Pencil"
+    },
+    {
+      "id": "edit.suggesting.acceptAll",
+      "label": "Accept all suggestions",
+      "group": "Edit",
+      "icon": "Pencil"
+    },
+    {
+      "id": "edit.suggesting.rejectAll",
+      "label": "Reject all suggestions",
+      "group": "Edit",
+      "icon": "Pencil"
+    },
+    {
+      "id": "edit.suggesting.next",
+      "label": "Next suggestion",
+      "group": "Edit",
+      "icon": "Pencil"
+    },
+    {
+      "id": "edit.suggesting.prev",
+      "label": "Previous suggestion",
+      "group": "Edit",
+      "icon": "Pencil"
+    },
+    {
+      "id": "billing.upgradePro",
+      "label": "Billing: Upgrade to Pro",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "billing.upgradeTeam",
+      "label": "Billing: Upgrade to Team",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "billing.manage",
+      "label": "Billing: Manage subscription",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "billing.managePersonal",
+      "label": "Billing: Manage personal subscription",
+      "group": "Tools",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.settings",
+      "label": "AI Settings…",
+      "group": "AI Prompts",
+      "hint": "Configure your OpenAI API key + per-doc options",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "ai.outline",
+      "label": "AI: Generate Outline",
+      "group": "AI Prompts",
+      "hint": "Add AI-suggested headings",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "git.clone",
+      "label": "Git: clone repository…",
+      "group": "Git",
+      "hint": "imports text files into the workspace",
+      "icon": "Download"
+    },
+    {
+      "id": "git.commit",
+      "label": "Git: commit & push current repo…",
+      "group": "Git",
+      "hint": "uses the saved token + identity",
+      "icon": "Save"
+    },
+    {
+      "id": "git.pull",
+      "label": "Git: pull current repo",
+      "group": "Git",
+      "hint": "fetches and merges remote changes",
+      "icon": "Download"
+    },
+    {
+      "id": "git.status",
+      "label": "Git: status (current repo)",
+      "group": "Git",
+      "icon": "Link"
+    },
+    {
+      "id": "git.watch",
+      "label": "Git: toggle watch-mode auto-pull",
+      "group": "Git",
+      "hint": "Polls the remote every 5 min and pulls on change",
+      "icon": "Download"
+    },
+    {
+      "id": "git.token",
+      "label": "Git: set access token…",
+      "group": "Git",
+      "hint": "stored locally (IndexedDB)",
+      "icon": "Link"
+    },
+    {
+      "id": "git.identity",
+      "label": "Git: set commit identity…",
+      "group": "Git",
+      "icon": "Link"
+    },
+    {
+      "id": "collab.copy",
+      "label": "Copy collab share link",
+      "group": "Collab",
+      "hint": "room-1",
+      "icon": "Link"
+    },
+    {
+      "id": "collab.leave",
+      "label": "Leave collaboration",
+      "group": "Collab",
+      "hint": "room-1",
+      "icon": "Link",
+      "action": "option:handleStopCollab"
+    },
+    {
+      "id": "file.openSampleWorkspace",
+      "label": "Open sample workspace",
+      "group": "File",
+      "hint": "linked demo notes: wiki-links, tags, database, chart, diagram",
+      "icon": "FolderOpen"
+    },
+    {
+      "id": "help.setup",
+      "label": "Set up Lumen…",
+      "group": "File",
+      "hint": "Language, vault location, look and a sample vault: the first-run setup again",
+      "icon": "Sparkles"
+    },
+    {
+      "id": "file.saveToWorkspace",
+      "label": "Save to workspace",
+      "group": "File",
+      "hint": "store this doc in OPFS",
+      "icon": "Save",
+      "action": "option:handleSaveToWorkspace"
+    },
+    {
+      "id": "theme.toggle",
+      "label": "Switch to dark theme",
+      "group": "View",
+      "icon": "Moon"
+    },
+    {
+      "id": "insert.chart",
+      "label": "Insert chart",
+      "group": "Insert",
+      "hint": "ECharts spec",
+      "icon": "BarChart3"
+    },
+    {
+      "id": "insert.csv",
+      "label": "Insert CSV data",
+      "group": "Insert",
+      "hint": "auto-table + chart",
+      "icon": "Table"
+    },
+    {
+      "id": "insert.json",
+      "label": "Insert JSON table",
+      "group": "Insert",
+      "hint": "auto-table + chart",
+      "icon": "Table"
+    },
+    {
+      "id": "insert.mermaid",
+      "label": "Insert diagram (Mermaid)",
+      "group": "Insert",
+      "icon": "Network"
+    },
+    {
+      "id": "insert.map",
+      "label": "Insert map",
+      "group": "Insert",
+      "icon": "Map"
+    },
+    {
+      "id": "insert.math",
+      "label": "Insert math block",
+      "group": "Insert",
+      "icon": "Calculator"
+    },
+    {
+      "id": "insert.callout",
+      "label": "Insert callout",
+      "group": "Insert",
+      "hint": ":::note / :::tip / …",
+      "icon": "Quote"
+    },
+    {
+      "id": "insert.graphviz",
+      "label": "Insert Graphviz / DOT",
+      "group": "Insert",
+      "icon": "Workflow"
+    },
+    {
+      "id": "insert.plantuml",
+      "label": "Insert PlantUML",
+      "group": "Insert",
+      "hint": "rendered via kroki.io",
+      "icon": "Workflow"
+    },
+    {
+      "id": "insert.abc",
+      "label": "Insert music notation (ABC)",
+      "group": "Insert",
+      "icon": "Music2"
+    },
+    {
+      "id": "insert.model",
+      "label": "Insert 3D model",
+      "group": "Insert",
+      "hint": ".glb / .gltf",
+      "icon": "Box"
+    },
+    {
+      "id": "insert.embed",
+      "label": "Insert embed",
+      "group": "Insert",
+      "hint": "YouTube · Vimeo · Figma · CodePen…",
+      "icon": "Youtube"
+    },
+    {
+      "id": "insert.htmlpreview",
+      "label": "Insert live HTML preview",
+      "group": "Insert",
+      "hint": "sandboxed HTML/CSS/JS in an iframe",
+      "icon": "Box"
+    },
+    {
+      "id": "insert.bibtex",
+      "label": "Insert BibTeX bibliography",
+      "group": "Insert",
+      "hint": "renders as a numbered references list",
+      "icon": "Quote"
+    },
+    {
+      "id": "insert.wikilink",
+      "label": "Insert wiki-link",
+      "group": "Insert",
+      "hint": "[[Page|label]]",
+      "icon": "Link"
+    }
+  ],
+  "autoSaveOn": [
+    {
+      "id": "view.autoSave",
+      "label": "Disable Auto-Save",
+      "group": "View",
+      "hint": "every 5s",
+      "icon": "Pencil",
+      "action": "store:toggleAutoSave"
+    }
+  ],
+  "hebrewIds": [
+    "file.new",
+    "file.open",
+    "file.save",
+    "file.saveAs",
+    "file.exportHtml",
+    "file.exportDocx",
+    "file.exportRtf",
+    "file.exportLatex",
+    "file.exportRst",
+    "file.exportAdoc",
+    "file.exportOrg",
+    "file.exportOpml",
+    "file.exportReveal",
+    "file.exportEpub",
+    "file.exportIpynb",
+    "file.exportSite",
+    "file.exportPptx",
+    "file.exportPdf",
+    "file.print",
+    "view.source",
+    "view.split",
+    "view.preview",
+    "view.wysiwyg",
+    "view.outline",
+    "view.pageView",
+    "view.workspace",
+    "note.today",
+    "view.calendar",
+    "view.backlinks",
+    "view.search",
+    "view.smartSearch",
+    "view.vim",
+    "view.spellCheck",
+    "view.typewriter",
+    "view.tsChecks",
+    "view.grammarCheck",
+    "tools.writingGoal",
+    "ai.localToggle",
+    "tools.vaultDoctor",
+    "tools.vaultDoctorFix",
+    "tools.autoTag",
+    "tools.suggestLinks",
+    "ai.productAgent",
+    "ai.diagram",
+    "ai.actionItems",
+    "ai.translate",
+    "ai.chart",
+    "ai.ollamaModels",
+    "ai.usage",
+    "research.ask",
+    "clip.url",
+    "clip.clipboard",
+    "research.verify",
+    "research.settings",
+    "ai.batch",
+    "ai.batchCheck",
+    "ai.mode",
+    "ai.localModels",
+    "ai.styleProfile",
+    "ai.agentSettings",
+    "spell.hebrewDictionary",
+    "vault.export",
+    "vault.import",
+    "vault.toFolder",
+    "vault.openFolder",
+    "vault.toBrowser",
+    "file.trash",
+    "ai.cancel",
+    "note.read",
+    "vault.digest",
+    "image.altText",
+    "ai.rerankModel",
+    "ai.privacyLedger",
+    "ai.doctor",
+    "ai.policy",
+    "ai.trace",
+    "ai.cache",
+    "ai.switchProvider",
+    "tools.checkGrammar",
+    "view.rtl",
+    "lang.en",
+    "lang.he",
+    "lang.ar",
+    "lang.ru",
+    "lang.fr",
+    "lang.de",
+    "lang.ja",
+    "lang.zh-CN",
+    "view.findReplace",
+    "view.graphView",
+    "view.versionHistory",
+    "insert.table",
+    "view.autoSave",
+    "view.canvas",
+    "view.plugins",
+    "template.meeting-notes",
+    "template.blog-post",
+    "template.thesis",
+    "template.project-readme",
+    "template.weekly-review",
+    "template.changelog",
+    "template.lesson-plan",
+    "voice.memo",
+    "voice.dictate",
+    "vault.encrypt",
+    "vault.decrypt",
+    "ai.prompt.he.summarize",
+    "ai.prompt.he.improve",
+    "ai.prompt.he.translate_to_en",
+    "ai.prompt.he.formal",
+    "ai.prompt.he.explain",
+    "edit.formatDocument",
+    "edit.formatCodeBlock",
+    "edit.suggesting.toggle",
+    "edit.suggesting.accept",
+    "edit.suggesting.reject",
+    "edit.suggesting.acceptAll",
+    "edit.suggesting.rejectAll",
+    "edit.suggesting.next",
+    "edit.suggesting.prev",
+    "ai.settings",
+    "ai.outline",
+    "git.clone",
+    "git.commit",
+    "git.pull",
+    "git.status",
+    "git.watch",
+    "git.token",
+    "git.identity",
+    "collab.start",
+    "collab.join",
+    "file.openSampleWorkspace",
+    "help.setup",
+    "file.saveToWorkspace",
+    "theme.toggle",
+    "insert.chart",
+    "insert.csv",
+    "insert.json",
+    "insert.mermaid",
+    "insert.map",
+    "insert.math",
+    "insert.callout",
+    "insert.graphviz",
+    "insert.plantuml",
+    "insert.abc",
+    "insert.model",
+    "insert.embed",
+    "insert.htmlpreview",
+    "insert.bibtex",
+    "insert.wikilink"
+  ]
+}

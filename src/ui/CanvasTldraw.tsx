@@ -1,7 +1,8 @@
 /**
  * Tldraw-backed canvas — replaces the hand-rolled `CanvasWhiteboard.tsx`
- * (γ.2). Each canvas persists to OPFS at `canvases/<name>.tldr` (the
- * tldraw store snapshot serialised as JSON).
+ * (γ.2). Each canvas persists in the vault at `canvases/<name>.tldr` (the
+ * tldraw store snapshot serialised as JSON), through the vault layer like
+ * every other file.
  *
  * Why tldraw vs custom HTML5 canvas:
  *   - Production-grade infinite canvas with pan / zoom / select / draw
@@ -24,7 +25,7 @@ import "tldraw/tldraw.css";
 import { useCallback, useEffect, useState } from "react";
 import { uiPrompt } from "./PromptDialog";
 import { showAiToast } from "./AiToast";
-import { isOPFSAvailable } from "../storage/workspace";
+import { isOPFSAvailable, listWorkspaceDir, readWorkspaceFile, writeWorkspaceFile } from "../storage/workspace";
 import { t } from "../i18n";
 import { log } from "../lib/logger";
 
@@ -40,12 +41,7 @@ const DEFAULT_CANVAS_NAME = "untitled";
 async function loadCanvasFile(name: string): Promise<unknown | null> {
   if (!isOPFSAvailable()) return null;
   try {
-    const root = await navigator.storage.getDirectory();
-    const dir = await root.getDirectoryHandle(CANVAS_DIR, { create: true });
-    const file = await dir.getFileHandle(`${name}.tldr`);
-    const blob = await file.getFile();
-    const text = await blob.text();
-    return JSON.parse(text);
+    return JSON.parse(await readWorkspaceFile(`${CANVAS_DIR}/${name}.tldr`));
   } catch {
     return null;
   }
@@ -53,31 +49,24 @@ async function loadCanvasFile(name: string): Promise<unknown | null> {
 
 async function saveCanvasFile(name: string, snapshot: unknown): Promise<void> {
   if (!isOPFSAvailable()) return;
-  const root = await navigator.storage.getDirectory();
-  const dir = await root.getDirectoryHandle(CANVAS_DIR, { create: true });
-  const file = await dir.getFileHandle(`${name}.tldr`, { create: true });
-  const writable = await file.createWritable();
+  await writeWorkspaceFile(`${CANVAS_DIR}/${name}.tldr`, JSON.stringify(snapshot));
+}
+
+/** Basenames (without `ext`) of the files in `canvases/` ending in `ext`; [] when there is no such folder. */
+async function listCanvasFiles(ext: string): Promise<string[]> {
+  if (!isOPFSAvailable()) return [];
   try {
-    await writable.write(JSON.stringify(snapshot));
-  } finally {
-    await writable.close();
+    return (await listWorkspaceDir(CANVAS_DIR))
+      .filter((e) => e.kind === "file" && e.name.endsWith(ext))
+      .map((e) => e.name.slice(0, -ext.length))
+      .sort();
+  } catch {
+    return [];
   }
 }
 
 async function listCanvases(): Promise<string[]> {
-  if (!isOPFSAvailable()) return [];
-  try {
-    const root = await navigator.storage.getDirectory();
-    const dir = await root.getDirectoryHandle(CANVAS_DIR, { create: true });
-    const out: string[] = [];
-    // FileSystemDirectoryHandle is async-iterable in Chrome / Safari 17+.
-    for await (const [entryName] of (dir as unknown as AsyncIterable<[string]>)) {
-      if (entryName.endsWith(".tldr")) out.push(entryName.replace(/\.tldr$/, ""));
-    }
-    return out.sort();
-  } catch {
-    return [];
-  }
+  return listCanvasFiles(".tldr");
 }
 
 /**
@@ -85,20 +74,7 @@ async function listCanvases(): Promise<string[]> {
  * users can convert old work without losing layout + connections.
  */
 async function listLegacyCanvases(): Promise<string[]> {
-  if (!isOPFSAvailable()) return [];
-  try {
-    const root = await navigator.storage.getDirectory();
-    const dir = await root.getDirectoryHandle(CANVAS_DIR, { create: true });
-    const out: string[] = [];
-    for await (const [entryName] of (dir as unknown as AsyncIterable<[string]>)) {
-      if (entryName.endsWith(".canvas.json")) {
-        out.push(entryName.replace(/\.canvas\.json$/, ""));
-      }
-    }
-    return out.sort();
-  } catch {
-    return [];
-  }
+  return listCanvasFiles(".canvas.json");
 }
 
 /**
@@ -113,10 +89,7 @@ async function convertLegacyCanvas(
   name: string,
 ): Promise<{ converted: boolean; nodeCount: number }> {
   if (!isOPFSAvailable()) return { converted: false, nodeCount: 0 };
-  const root = await navigator.storage.getDirectory();
-  const dir = await root.getDirectoryHandle(CANVAS_DIR, { create: true });
-  const legacyHandle = await dir.getFileHandle(`${name}.canvas.json`);
-  const text = await (await legacyHandle.getFile()).text();
+  const text = await readWorkspaceFile(`${CANVAS_DIR}/${name}.canvas.json`);
   const data = JSON.parse(text) as {
     nodes?: Array<{
       id: string;
@@ -164,13 +137,7 @@ async function convertLegacyCanvas(
     nodeCount++;
   }
   const snapshot = { store: records, schema: { schemaVersion: 2 } };
-  const tldr = await dir.getFileHandle(`${name}.tldr`, { create: true });
-  const writable = await tldr.createWritable();
-  try {
-    await writable.write(JSON.stringify(snapshot));
-  } finally {
-    await writable.close();
-  }
+  await writeWorkspaceFile(`${CANVAS_DIR}/${name}.tldr`, JSON.stringify(snapshot));
   return { converted: true, nodeCount };
 }
 

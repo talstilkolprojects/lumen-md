@@ -287,17 +287,20 @@ function buildSlashItems(): SlashItem[] {
         const insertPos = state.selection.from;
         v.dispatch(state.tr.insertText(placeholder, insertPos));
 
+        const { aiOperation, isAbort } = await import("../ai/aiAbort");
+        const op = aiOperation(); // Esc / "AI: Cancel" stops the ghostwriter mid-stream
         try {
           let accumulated = "";
           const { streamAgent } = await import("../agents/runtime");
           const { writerAgent } = await import("../agents/defs");
-          const stream = streamAgent(writerAgent, { text: promptStr }, { ownPrompt: true });
+          const stream = streamAgent(writerAgent, { text: promptStr }, { ownPrompt: true, signal: op.signal });
           // Remove placeholder before streaming
           const removeTr = v.state.tr;
           removeTr.delete(insertPos, insertPos + placeholder.length);
           v.dispatch(removeTr);
 
           for await (const chunk of stream) {
+            if (op.signal.aborted) break; // why: nothing more goes into the note after a cancel
             accumulated += chunk;
             // Replace accumulated text at insert position
             const tr = v.state.tr;
@@ -306,9 +309,14 @@ function buildSlashItems(): SlashItem[] {
             v.dispatch(tr);
           }
         } catch (e) {
+          const docText = v.state.doc.textBetween(insertPos, Math.min(insertPos + placeholder.length, v.state.doc.content.size));
+          if (isAbort(e)) {
+            // Cancelled before the first chunk: take the placeholder out and stop quietly.
+            if (docText === placeholder) v.dispatch(v.state.tr.delete(insertPos, insertPos + placeholder.length));
+            return;
+          }
           log.error("WYSIWYG AI stream failed", e);
           // If placeholder is still there, replace it
-          const docText = v.state.doc.textBetween(insertPos, Math.min(insertPos + placeholder.length, v.state.doc.content.size));
           if (docText === placeholder) {
             const errTr = v.state.tr;
             errTr.delete(insertPos, insertPos + placeholder.length);
@@ -321,6 +329,8 @@ function buildSlashItems(): SlashItem[] {
               : `AI Ghostwriter failed: ${(e as Error)?.message ?? "unknown error"} (⌘K → AI: Recent Agent Runs)`,
             "error",
           );
+        } finally {
+          op.end();
         }
       },
     },

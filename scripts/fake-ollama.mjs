@@ -93,7 +93,8 @@ const server = http.createServer((req, res) => {
     res.setHeader("content-type", "application/json");
     const url = req.url.split("?")[0];
     if (url === "/api/tags") return res.end(JSON.stringify({ models: MODELS }));
-    if (url === "/api/version") return res.end(JSON.stringify({ version: "0.12.0" }));
+    // `lumen_fake` lets the eval label its report as a wiring run, never as a model score.
+    if (url === "/api/version") return res.end(JSON.stringify({ version: "0.12.0", lumen_fake: true }));
     if (url === "/api/show") return res.end(JSON.stringify({ capabilities: ["completion", "tools"] }));
     if (url === "/api/embed") {
       const j = JSON.parse(body || "{}");

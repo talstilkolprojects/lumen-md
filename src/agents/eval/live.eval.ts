@@ -33,6 +33,12 @@ describe(`agent eval — ${model} @ ${url}`, () => {
     const names = (((await (tags as Response).json()) as { models?: Array<{ name: string }> }).models ?? []).map((m) => m.name);
     expect(names.includes(model) || names.includes(`${model}:latest`) ? "ok" : `model ${model} is not pulled (have: ${names.join(", ") || "none"}) — run: ollama pull ${model}`).toBe("ok");
 
+    // The fake server (scripts/fake-ollama.mjs) only proves the wiring; label the report so
+    // it can never be read, or compared, as a model score.
+    const ver = (await fetch(`${url}/api/version`).then((r) => r.json()).catch(() => ({}))) as { lumen_fake?: boolean };
+    const kind = ver.lumen_fake ? "wiring" : "model";
+    const label = ver.lumen_fake ? "fake-ollama" : model;
+
     localStorage.setItem("lumen.ollama.baseUrl", url);
     localStorage.setItem("lumen.ollama.model", model);
     localStorage.setItem("lumen.ai.policy", "local-only");
@@ -51,10 +57,10 @@ describe(`agent eval — ${model} @ ${url}`, () => {
     }
 
     const date = new Date().toISOString().slice(0, 10);
-    const slug = model.replace(/[^\w.-]+/g, "_");
+    const slug = label.replace(/[^\w.-]+/g, "_");
     mkdirSync(outDir, { recursive: true });
-    writeFileSync(join(outDir, `agents-${date}-${slug}.md`), formatEvalReport(results, { model, url, date }));
-    writeFileSync(join(outDir, `agents-${date}-${slug}.json`), JSON.stringify({ model, url, date, results }, null, 2));
+    writeFileSync(join(outDir, `agents-${date}-${slug}.md`), formatEvalReport(results, { model: label, url, date }));
+    writeFileSync(join(outDir, `agents-${date}-${slug}.json`), JSON.stringify({ model: label, kind, url, date, results }, null, 2));
     // hygiene-allow: tells the person running the eval where the report is
     console.log(`\nReport: ${join(outDir, `agents-${date}-${slug}.md`)}`);
   }, 60 * 60 * 1000);

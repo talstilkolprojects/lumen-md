@@ -9,6 +9,7 @@
  * confirms).
  */
 import { getActiveProvider, getProviderKey, effectiveModel, AiError, type AiProvider } from "./llm";
+import { aiOperation, isAbort } from "./aiAbort";
 import { assertCloudAllowed, getAiPolicy } from "./policy";
 import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
 import { PROMPTS } from "./prompts";
@@ -543,7 +544,7 @@ export async function localBatchRoute(): Promise<{ executor: "ollama" | "webllm"
 }
 
 /** Injected in tests; defaults to a native local executor, quota already paid at submit. */
-let localAnswer: (system: string, user: string, maxTokens: number) => Promise<string> = async (system, user, maxTokens) => {
+let localAnswer: (system: string, user: string, maxTokens: number, signal?: AbortSignal) => Promise<string> = async (system, user, maxTokens, signal) => {
   const route = await localBatchRoute();
   if (!route) throw new NoLocalModelError();
   const { getExecutor } = await import("../agents/executors");
@@ -558,6 +559,7 @@ let localAnswer: (system: string, user: string, maxTokens: number) => Promise<st
     tier: "small",
     maxTokens,
     temperature: 0.2,
+    signal,
   });
   return res.content;
 };
@@ -577,10 +579,16 @@ export function __setLocalBatchDeps(deps: { answer?: typeof localAnswer; read?: 
 function runLocal(job: BatchJob, texts?: ReadonlyMap<string, string>): Promise<void> {
   const existing = running.get(job.id);
   if (existing) return existing;
+  // Esc / "AI: Cancel" (T55) stops the note in flight; the job pauses and resumes on the next check.
+  const op = aiOperation();
   const p = (async () => {
     const state = await loadLocal(job.id);
     state.blocked = false;
     for (const item of job.items) {
+      if (op.signal.aborted) {
+        await saveLocal(job.id, state); // not finished: the next check resumes it
+        return;
+      }
       if (item.customId in state.answers || state.failed.includes(item.customId)) continue;
       const text = texts?.get(item.path) ?? (await readNote(item.path));
       if (text === null) {
@@ -588,10 +596,15 @@ function runLocal(job: BatchJob, texts?: ReadonlyMap<string, string>): Promise<v
       } else {
         const r = requestFor(job.op, text, job.lang);
         try {
-          const answer = await localAnswer(r.system, r.user, r.maxTokens);
+          const answer = await localAnswer(r.system, r.user, r.maxTokens, op.signal);
           if (answer.trim()) state.answers[item.customId] = answer;
           else state.failed.push(item.customId);
         } catch (e) {
+          if (op.signal.aborted || isAbort(e)) {
+            // Cancelled by the user: this note is not failed — the next check resumes the job from it.
+            await saveLocal(job.id, state);
+            return;
+          }
           if (e instanceof NoLocalModelError) {
             // Pause, don't fail the remaining notes: the next check resumes.
             state.blocked = true;
@@ -605,7 +618,10 @@ function runLocal(job: BatchJob, texts?: ReadonlyMap<string, string>): Promise<v
     }
     state.finished = true;
     await saveLocal(job.id, state);
-  })().finally(() => running.delete(job.id));
+  })().finally(() => {
+    op.end();
+    running.delete(job.id);
+  });
   running.set(job.id, p);
   return p;
 }

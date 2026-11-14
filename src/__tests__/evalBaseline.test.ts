@@ -38,6 +38,25 @@ describe("eval baseline compare", () => {
     expect(run([now, "--baseline", base]).status).toBe(0);
   });
 
+  it("refuses to compare a fake-server (wiring) run with a real-model baseline, and the reverse", () => {
+    writeFileSync(base, JSON.stringify({ ...results({ a: true }), model: "fake-ollama", kind: "wiring" }));
+    writeFileSync(now, JSON.stringify({ ...results({ a: true }), model: "qwen2.5:7b", kind: "model" }));
+    const r = run([now, "--baseline", base]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain("refusing to compare");
+    writeFileSync(base, JSON.stringify(results({ a: true })));
+    writeFileSync(now, JSON.stringify({ ...results({ a: true }), model: "fake-ollama" }));
+    expect(run([now, "--baseline", base]).status).toBe(2);
+  });
+
+  it("the committed baselines say they are wiring runs of the fake server", () => {
+    for (const f of ["agents-fake.json", "prompts-fake.json"]) {
+      const b = JSON.parse(readFileSync(join(__dirname, "../../eval/baseline", f), "utf8"));
+      expect(b.model).toBe("fake-ollama");
+      expect(b.kind).toBe("wiring");
+    }
+  });
+
   it("no regressions → exit 0", () => {
     writeFileSync(now, JSON.stringify(results({ a: true, b: false })));
     writeFileSync(base, JSON.stringify(results({ a: true, b: false })));

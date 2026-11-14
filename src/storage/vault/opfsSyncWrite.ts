@@ -3,7 +3,8 @@
  * on the main thread (Safari before 26, Playwright WebKit). There the only
  * way to write an OPFS file is a sync access handle, which exists only inside
  * a dedicated worker — so this module keeps one small blob: worker and sends
- * it (path, bytes) pairs to write.
+ * it (path, bytes) pairs to write. Part of the OPFS vault backend (./opfs.ts),
+ * which calls it when a file handle has no `createWritable`.
  */
 
 const WORKER_SOURCE = `
@@ -52,11 +53,6 @@ function getWorker(): Worker {
   };
   worker = w;
   return w;
-}
-
-/** Does this file handle need the worker fallback to be written? */
-export function needsSyncWriteFallback(handle: FileSystemFileHandle): boolean {
-  return typeof (handle as { createWritable?: unknown }).createWritable !== "function";
 }
 
 /** Write `data` to the OPFS file at `parts` (relative to the OPFS root). */

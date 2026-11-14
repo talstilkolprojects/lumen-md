@@ -94,7 +94,7 @@ export default defineConfig({
         {
           label: "Security",
           items: [
-            { label: "Vault + recovery phrase", slug: "security/vault" },
+            { label: "Secrets and encryption", slug: "security/vault" },
           ],
         },
         {

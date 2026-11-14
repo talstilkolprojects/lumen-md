@@ -1,36 +1,14 @@
 import { useEffect, useMemo, useRef } from "react";
 import { t } from "../i18n";
+import { detectIsMac } from "../lib/detectIsMac";
+
+export { detectIsMac };
 
 interface Props {
   open: boolean;
   onClose: () => void;
 }
 
-/**
- * Detect whether the user is on macOS. We previously used
- * `navigator.platform` which is deprecated and unreliable — in
- * Playwright's chromium on macOS, navigator.platform is "MacIntel"
- * but in some embedded contexts (Tauri webview, electron) it returns
- * "Linux x86_64". Round-12 screenshot revealed the dialog showed
- * `Ctrl+S` etc. on macOS because of this. Prefer userAgentData
- * (modern Chromium+) and fall back to userAgent substring match.
- */
-export function detectIsMac(): boolean {
-  if (typeof navigator === "undefined") return false;
-  // Modern API — Chromium 90+, Edge, Opera.
-  const ua = (navigator as Navigator & {
-    userAgentData?: { platform?: string };
-  }).userAgentData;
-  if (ua?.platform) return /mac/i.test(ua.platform);
-  // Fallback: userAgent string ("Macintosh" is the canonical token).
-  if (navigator.userAgent) {
-    if (/Macintosh|Mac OS X|Mac_PowerPC/i.test(navigator.userAgent)) return true;
-  }
-  // Last resort: deprecated `platform`. Some build pipelines (sandboxed
-  // iframes, headless without ua) still expose it.
-  if (navigator.platform && /mac/i.test(navigator.platform)) return true;
-  return false;
-}
 
 function buildSections(mod: string) {
   return [

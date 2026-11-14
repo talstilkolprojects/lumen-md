@@ -101,4 +101,33 @@ describe("privacy ledger", () => {
     await f("https://api.openai.com/v1/x");
     expect(ledgerEntries().map(leftDevice)).toEqual([false, false, true]);
   });
+
+  it("tracks tldraw's licence beacon (it carries the page address) and blocks it under local-only (plan 1.9)", async () => {
+    const beacon = "https://cdn.tldraw.com/4.5.10/watermarks/watermark-track.svg?license_type=unlicensed&url=https%3A%2F%2Flumen.example%2F";
+    expect(classify(beacon)).toMatchObject({ host: "cdn.tldraw.com", category: "third-party" });
+    const inner = vi.fn(async () => new Response("<svg/>", { status: 200 }));
+    const f = withLedger(inner as unknown as typeof fetch);
+    setAiPolicy("local-only");
+    await expect(f(beacon)).rejects.toBeInstanceOf(PrivacyBlockedError);
+    expect(inner).not.toHaveBeenCalled();
+    setAiPolicy("local-first");
+    await f(beacon);
+    expect(inner).toHaveBeenCalledTimes(1);
+    expect(ledgerEntries().map((e) => [e.category, e.decision])).toEqual([["third-party", "blocked"], ["third-party", "allowed"]]);
+    // the beacon left the device with the page address: the header total counts it
+    expect(ledgerSummary().cloudRequests).toBe(1);
+  });
+
+  it("lets tldraw's fonts and icons load under local-only — only the beacon path is blocked", async () => {
+    const font = "https://cdn.tldraw.com/4.5.10/fonts/IBMPlexSans-Medium.woff2";
+    expect(classify(font)).toMatchObject({ host: "cdn.tldraw.com", category: "static-asset" });
+    const inner = vi.fn(async () => new Response("x", { status: 200 }));
+    const f = withLedger(inner as unknown as typeof fetch);
+    setAiPolicy("local-only");
+    await f(font);
+    expect(inner).toHaveBeenCalledTimes(1);
+    expect(ledgerEntries().map((e) => [e.category, e.decision])).toEqual([["static-asset", "allowed"]]);
+    expect(ledgerSummary()).toMatchObject({ cloudRequests: 0, downloads: 1 });
+    setAiPolicy("local-first");
+  });
 });

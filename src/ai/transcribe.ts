@@ -118,7 +118,7 @@ async function transcribeLocal(blob: Blob, opts: TranscribeOptions): Promise<str
  * Two-bullet summary of a transcript. Routes through `chat()` so it
  * honors Privacy Mode (local Llama via web-llm) automatically.
  */
-export async function summarizeMemo(transcript: string): Promise<string> {
+export async function summarizeMemo(transcript: string, signal?: AbortSignal): Promise<string> {
   if (!transcript.trim()) return "";
   // Pays for itself when sent (ownPrompt), not attributed to a palette
   // command that may be waiting in a dialog at the same time.
@@ -127,7 +127,7 @@ export async function summarizeMemo(transcript: string): Promise<string> {
       { role: "system", content: PROMPTS.summarize },
       { role: "user", content: transcript },
     ],
-    { maxTokens: 120, ownPrompt: true },
+    { maxTokens: 120, ownPrompt: true, signal },
   );
 }
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 // @ts-expect-error — plain .mjs script without type declarations
-import { findViolations } from "../../scripts/check-code-hygiene.mjs";
+import { checkFiles, DIRECT_FS_ALLOWLIST, findViolations, productionFiles } from "../../scripts/check-code-hygiene.mjs";
 
 type Violation = { line: number; rule: string; text: string };
 const check = (src: string, name = "x.ts"): Violation[] => findViolations(name, src);
@@ -33,5 +33,61 @@ describe("scripts/check-code-hygiene", () => {
 
   it("parses TSX", () => {
     expect(check(`const el = <div>{(x as any).y}</div>;`, "c.tsx")).toHaveLength(1);
+  });
+
+  describe("direct file-system access (plan 4.1: one vault layer)", () => {
+    const fs = (src: string) => check(src).filter((v) => v.rule === "direct-fs");
+
+    it("flags OPFS / File System Access handle calls", () => {
+      const v = fs(
+        [
+          "const root = await navigator.storage.getDirectory();",
+          "const r2 = await window.navigator.storage?.getDirectory();",
+          "const d = await root.getDirectoryHandle('notes', { create: true });",
+          "const f = await d.getFileHandle('a.md');",
+          "const w = await f.createWritable();",
+          "const s = await f.createSyncAccessHandle();",
+          "await d.removeEntry('a.md');",
+          "const w2 = await f['createWritable']();",
+        ].join("\n"),
+      );
+      expect(v.map((x) => x.line)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    });
+
+    it("flags the calls inside a worker's source string, too", () => {
+      expect(fs("const W = `self.onmessage = async () => { const d = await navigator.storage.getDirectory(); }`;")).toHaveLength(1);
+      expect(fs(`const W = "var f = await dir.getFileHandle(n, { create: true });";`)).toHaveLength(1);
+      expect(fs("const W = `a ${x} b.createWritable() c`;")).toHaveLength(1);
+    });
+
+    it("ignores feature checks, comments, other getDirectory methods and plain mentions", () => {
+      const v = fs(
+        [
+          "const ok = typeof h.createWritable === 'function' && 'createWritable' in h;",
+          "const has = !!navigator.storage?.getDirectory;",
+          "// await navigator.storage.getDirectory()",
+          "const z = zip.getDirectory();",
+          "const label = 'getFileHandle is a method';",
+        ].join("\n"),
+      );
+      expect(v).toEqual([]);
+    });
+
+    it("a hygiene-allow comment does not exempt it: only the allowlist does", () => {
+      expect(fs("// hygiene-allow: just this once\nawait navigator.storage.getDirectory();")).toHaveLength(1);
+    });
+
+    it("every allowlist entry says why", () => {
+      for (const [file, reason] of Object.entries(DIRECT_FS_ALLOWLIST as Record<string, string>)) {
+        expect(file).toMatch(/^src\//);
+        expect(reason.length).toBeGreaterThan(20);
+      }
+    });
+
+    it("the real source tree: no direct access outside the vault layer and the allowlist, no stale entries", () => {
+      const { violations, stale } = checkFiles(productionFiles(), { onlyDirectFs: true });
+      expect(violations).toEqual([]);
+      expect(stale).toEqual([]);
+    });
   });
 });

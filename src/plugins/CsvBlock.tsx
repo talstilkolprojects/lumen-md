@@ -122,16 +122,24 @@ export default function CsvBlock({ source, lang, meta }: Props) {
               setView("ai-chart");
               if (aiOption || aiLoading) return;
               setAiLoading(true);
+              const { aiOperation, isAbort } = await import("../ai/aiAbort");
+              const op = aiOperation(); // Esc / "AI: Cancel" stops chart generation
               try {
                 // The same charter agent as "AI: Chart": schema-checked, retried by the improvement agent.
                 const { runAgentOrThrow } = await import("../agents/runtime");
                 const { charterAgent } = await import("../agents/defs");
-                setAiOption(await runAgentOrThrow(charterAgent, { text: source }, { document: source, ownPrompt: true }));
+                const option = await runAgentOrThrow(charterAgent, { text: source }, { document: source, ownPrompt: true, signal: op.signal });
+                if (!op.signal.aborted) setAiOption(option);
               } catch (e) {
+                setAiOption(null);
+                if (isAbort(e)) {
+                  setView("table"); // why: cancelled — leave the empty AI tab
+                  return;
+                }
                 log.error("AI chart generation failed", e);
                 showAiToast(t("toast.aiChartGenerationFailed"), "error");
-                setAiOption(null);
               } finally {
+                op.end();
                 setAiLoading(false);
               }
             }}

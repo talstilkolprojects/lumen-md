@@ -21,6 +21,9 @@ const kind = basename(file).split("-")[0]; // agents | prompts
 const slug = String(run.model).replace(/[^\w.-]+/g, "_");
 const bi = flags.indexOf("--baseline");
 const baselinePath = bi >= 0 ? flags[bi + 1] : join("eval", "baseline", `${kind}-${slug}.json`);
+// A run against scripts/fake-ollama.mjs proves the wiring only ("kind": "wiring"). Never let
+// it stand in for, or be compared with, a real model's score.
+const kindOf = (r) => r.kind ?? (r.model === "fake-ollama" ? "wiring" : "model");
 const pass = (r) => r.status === "ok" && (r.checks ?? []).every((c) => c.ok);
 const passed = new Map(run.results.filter((r) => r.status !== "skipped").map((r) => [r.id, pass(r)]));
 const score = [...passed.values()].filter(Boolean).length;
@@ -28,7 +31,7 @@ console.log(`${kind} · ${run.model}: ${score}/${passed.size} passed`);
 
 if (flags.includes("--save")) {
   mkdirSync(join("eval", "baseline"), { recursive: true });
-  const slim = { model: run.model, date: run.date, results: run.results.map((r) => ({ id: r.id, status: r.status, checks: (r.checks ?? []).map((c) => ({ ok: c.ok })) })) };
+  const slim = { model: run.model, kind: kindOf(run), date: run.date, results: run.results.map((r) => ({ id: r.id, status: r.status, checks: (r.checks ?? []).map((c) => ({ ok: c.ok })) })) };
   writeFileSync(baselinePath, JSON.stringify(slim, null, 2) + "\n");
   console.log(`baseline saved: ${baselinePath}`);
   process.exit(0);
@@ -38,6 +41,10 @@ if (!existsSync(baselinePath)) {
   process.exit(0);
 }
 const base = JSON.parse(readFileSync(baselinePath, "utf8"));
+if (kindOf(base) !== kindOf(run)) {
+  console.error(`refusing to compare a ${kindOf(run)} run (${run.model}) with a ${kindOf(base)} baseline (${base.model}): fake-server results prove the wiring, not model quality`);
+  process.exit(2);
+}
 const before = new Map(base.results.filter((r) => r.status !== "skipped").map((r) => [r.id, pass(r)]));
 const regressions = [...passed].filter(([id, ok]) => before.get(id) === true && !ok).map(([id]) => id);
 const inRun = new Set(run.results.map((r) => r.id));

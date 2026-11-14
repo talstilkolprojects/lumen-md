@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-10-18T12:22:55.812Z",
+  "generated_at": "2026-10-19T08:04:02.431Z",
   "source": "src/i18n/index.ts (en bundle)",
-  "count": 1432,
+  "count": 1511,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -1551,6 +1551,154 @@
       ]
     },
     {
+      "key": "cmd.vault.toFolder",
+      "en": "Move the vault to a folder…",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.toFolder.hint",
+      "en": "Copies every note to a folder on this computer, checks each file byte for byte, then works there. Nothing is deleted.",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.openFolder",
+      "en": "Open a folder as the vault…",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.openFolder.hint",
+      "en": "Work in an existing folder (for example an Obsidian vault) without copying. Notes in browser storage stay where they are.",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.toBrowser",
+      "en": "Move the vault back to browser storage",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.toBrowser.hint",
+      "en": "Copies every note from the folder into the browser's private storage, checks it, then works there. The folder is not changed.",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.unsupported",
+      "en": "This browser can't open a folder on your computer, so your notes stay in the browser's private storage (OPFS). To keep the vault in a folder, use Chrome or Edge, or the desktop app.",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.permissionDenied",
+      "en": "Lumen didn't get permission to edit the folder “{folder}”.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.folder.moving",
+      "en": "Moving the vault… {done} of {total} files",
+      "vars": [
+        "done",
+        "total"
+      ]
+    },
+    {
+      "key": "vault.folder.moved",
+      "en": "The vault is now in the folder “{folder}”: {n} files copied and checked. Your notes in browser storage were not deleted.",
+      "vars": [
+        "folder",
+        "n"
+      ]
+    },
+    {
+      "key": "vault.folder.movedBack",
+      "en": "The vault is back in browser storage: {n} files copied and checked. The folder “{folder}” was not changed.",
+      "vars": [
+        "n",
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.folder.opened",
+      "en": "Lumen now works in the folder “{folder}”. Notes in browser storage stay where they are.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.folder.conflict",
+      "en": "Not moved: {n} files in “{folder}” already exist with different content (for example {path}). Nothing was changed.",
+      "vars": [
+        "n",
+        "folder",
+        "path"
+      ]
+    },
+    {
+      "key": "vault.folder.failed",
+      "en": "Moving the vault stopped: {error}. Nothing was deleted, and you can resume.",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "vault.folder.alreadyBrowser",
+      "en": "The vault is already in browser storage.",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.reconnectBody",
+      "en": "Your vault is the folder “{folder}”. Lumen needs your permission to open it again.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.folder.reconnect",
+      "en": "Reconnect folder",
+      "vars": []
+    },
+    {
+      "key": "vault.boot.failed",
+      "en": "Your notes can't be opened yet: part of Lumen didn't load (are you offline?).",
+      "vars": []
+    },
+    {
+      "key": "vault.boot.retry",
+      "en": "Try again",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.useBrowser",
+      "en": "Use browser storage",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.interrupted",
+      "en": "Moving the vault to “{folder}” was interrupted. Nothing was deleted.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "vault.folder.resume",
+      "en": "Resume move",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.cancelMove",
+      "en": "Cancel move",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.browserStorage",
+      "en": "browser storage",
+      "vars": []
+    },
+    {
+      "key": "vault.folder.restoring",
+      "en": "Opening the vault…",
+      "vars": []
+    },
+    {
       "key": "vault.import.what",
       "en": "Import from…",
       "vars": []
@@ -1922,6 +2070,26 @@
       "vars": []
     },
     {
+      "key": "toast.tts.noLocalVoice",
+      "en": "No voice on this device for part of the text — install one in the system's speech settings (network voices are off under local-only)",
+      "vars": []
+    },
+    {
+      "key": "tts.networkVoice.title",
+      "en": "Use a network voice?",
+      "vars": []
+    },
+    {
+      "key": "tts.networkVoice.body",
+      "en": "This device has no voice for this note. Your browser offers voices that synthesize on the provider's servers, so the note's text would be sent there. The privacy ledger records each use.",
+      "vars": []
+    },
+    {
+      "key": "tts.networkVoice.ok",
+      "en": "Use network voices",
+      "vars": []
+    },
+    {
       "key": "cmd.vault.digest",
       "en": "Digest: what changed",
       "vars": []
@@ -2198,8 +2366,18 @@
       "vars": []
     },
     {
+      "key": "privacy.cat.static-asset",
+      "en": "Static files (fonts, icons) — no text sent",
+      "vars": []
+    },
+    {
       "key": "privacy.cat.research",
       "en": "Research service — your query is sent",
+      "vars": []
+    },
+    {
+      "key": "privacy.cat.third-party",
+      "en": "Third-party service — the page address is sent",
       "vars": []
     },
     {
@@ -2557,6 +2735,55 @@
     {
       "key": "toast.speechRecognitionNotSupportedIn",
       "en": "Speech recognition not supported in this browser",
+      "vars": []
+    },
+    {
+      "key": "toast.dictate.onDevice",
+      "en": "Dictating on this device — text appears every few seconds (the first time downloads the speech model)",
+      "vars": []
+    },
+    {
+      "key": "dictate.newNoteName",
+      "en": "Dictation",
+      "vars": []
+    },
+    {
+      "key": "toast.dictate.noteClosed",
+      "en": "The note you were dictating into was closed, so the rest went to a new note: {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "toast.dictate.localFailed",
+      "en": "On-device dictation stopped: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "toast.dictate.localOnlyBlocked",
+      "en": "On-device dictation isn't available here, and the browser's speech service is blocked under local-only (it sends audio out)",
+      "vars": []
+    },
+    {
+      "key": "toast.dictate.webSpeechActive",
+      "en": "Dictating through the browser's speech service — the audio is sent to its provider",
+      "vars": []
+    },
+    {
+      "key": "dictate.webSpeech.title",
+      "en": "Use the browser's speech service?",
+      "vars": []
+    },
+    {
+      "key": "dictate.webSpeech.body",
+      "en": "Dictation on this device couldn't start. Your browser's speech service works, but it sends the audio to its provider (Google in Chrome). The privacy ledger records each use.",
+      "vars": []
+    },
+    {
+      "key": "dictate.webSpeech.ok",
+      "en": "Use the browser service",
       "vars": []
     },
     {
@@ -6355,6 +6582,217 @@
     {
       "key": "tour.action.openRuntimeMetrics",
       "en": "Open runtime metrics now",
+      "vars": []
+    },
+    {
+      "key": "onboard.title",
+      "en": "Welcome to Lumen",
+      "vars": []
+    },
+    {
+      "key": "onboard.subtitle",
+      "en": "A few quick choices, then you're writing. You can change any of them later.",
+      "vars": []
+    },
+    {
+      "key": "onboard.step",
+      "en": "Step {n} of {total}",
+      "vars": [
+        "n",
+        "total"
+      ]
+    },
+    {
+      "key": "onboard.skip",
+      "en": "Skip setup",
+      "vars": []
+    },
+    {
+      "key": "onboard.back",
+      "en": "Back",
+      "vars": []
+    },
+    {
+      "key": "onboard.next",
+      "en": "Next",
+      "vars": []
+    },
+    {
+      "key": "onboard.finish",
+      "en": "Start writing",
+      "vars": []
+    },
+    {
+      "key": "onboard.working",
+      "en": "Setting up…",
+      "vars": []
+    },
+    {
+      "key": "onboard.failed",
+      "en": "Setup failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "onboard.lang.title",
+      "en": "Language",
+      "vars": []
+    },
+    {
+      "key": "onboard.lang.body",
+      "en": "The interface language. Hebrew and Arabic switch the layout to right-to-left.",
+      "vars": []
+    },
+    {
+      "key": "onboard.vault.title",
+      "en": "Where your notes live",
+      "vars": []
+    },
+    {
+      "key": "onboard.vault.opfs",
+      "en": "In this browser",
+      "vars": []
+    },
+    {
+      "key": "onboard.vault.opfs.desc",
+      "en": "Private to this browser, works everywhere, nothing to set up.",
+      "vars": []
+    },
+    {
+      "key": "onboard.vault.folder",
+      "en": "A folder on this computer",
+      "vars": []
+    },
+    {
+      "key": "onboard.vault.folder.desc",
+      "en": "Plain .md files in a folder you pick; other apps can open them too.",
+      "vars": []
+    },
+    {
+      "key": "onboard.vault.folder.unsupported",
+      "en": "This browser can't open folders (Chrome and Edge can). Your notes stay in browser storage; you can move them later.",
+      "vars": []
+    },
+    {
+      "key": "onboard.vault.folder.chosen",
+      "en": "Folder: {folder}",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "onboard.vault.folder.denied",
+      "en": "Lumen wasn't allowed to use “{folder}”. Pick it again or keep browser storage.",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
+      "key": "onboard.style.theme",
+      "en": "Theme",
+      "vars": []
+    },
+    {
+      "key": "onboard.style.light",
+      "en": "Light",
+      "vars": []
+    },
+    {
+      "key": "onboard.style.dark",
+      "en": "Dark",
+      "vars": []
+    },
+    {
+      "key": "onboard.style.system",
+      "en": "Match system",
+      "vars": []
+    },
+    {
+      "key": "onboard.style.palette",
+      "en": "Palette",
+      "vars": []
+    },
+    {
+      "key": "onboard.start.title",
+      "en": "Start with",
+      "vars": []
+    },
+    {
+      "key": "onboard.start.sample",
+      "en": "A sample vault",
+      "vars": []
+    },
+    {
+      "key": "onboard.start.sample.desc",
+      "en": "A few linked notes showing links, a board, a chart and a template, in {language}.",
+      "vars": [
+        "language"
+      ]
+    },
+    {
+      "key": "onboard.start.empty",
+      "en": "An empty vault",
+      "vars": []
+    },
+    {
+      "key": "onboard.start.empty.desc",
+      "en": "Just your first note.",
+      "vars": []
+    },
+    {
+      "key": "onboard.import.title",
+      "en": "Coming from another app? (optional)",
+      "vars": []
+    },
+    {
+      "key": "onboard.import.obsidian",
+      "en": "Import an Obsidian vault (folder)",
+      "vars": []
+    },
+    {
+      "key": "onboard.import.notion",
+      "en": "Import a Notion export (.zip)",
+      "vars": []
+    },
+    {
+      "key": "onboard.import.done",
+      "en": "Imported {notes} notes into “{folder}”.",
+      "vars": [
+        "notes",
+        "folder"
+      ]
+    },
+    {
+      "key": "onboard.import.failed",
+      "en": "Import failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "onboard.firstNote.name",
+      "en": "First note",
+      "vars": []
+    },
+    {
+      "key": "onboard.firstNote.body",
+      "en": "# My first note\\n\\nStart writing here. Type [[ to link to another note.",
+      "vars": []
+    },
+    {
+      "key": "onboard.tour.skip",
+      "en": "Skip tour",
+      "vars": []
+    },
+    {
+      "key": "cmd.help.setup",
+      "en": "Set up Lumen…",
+      "vars": []
+    },
+    {
+      "key": "cmd.help.setup.hint",
+      "en": "Language, vault location, look and a sample vault: the first-run setup again",
       "vars": []
     },
     {

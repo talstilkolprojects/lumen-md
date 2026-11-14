@@ -37,9 +37,12 @@ describe(`prompt eval — ${model} @ ${url}`, () => {
       console.log(`${r.status === "ok" && r.checks.every((k) => k.ok) ? "pass" : "FAIL"}  ${c.id}  ${r.checks.filter((k) => !k.ok).map((k) => k.name).join(", ")}`);
     }
     const date = new Date().toISOString().slice(0, 10);
-    const slug = model.replace(/[^\w.-]+/g, "_");
+    const ver = (await fetch(`${url}/api/version`).then((r) => r.json()).catch(() => ({}))) as { lumen_fake?: boolean };
+    const kind = wiring || ver.lumen_fake ? "wiring" : "model";
+    const label = ver.lumen_fake ? "fake-ollama" : model;
+    const slug = label.replace(/[^\w.-]+/g, "_");
     mkdirSync(outDir, { recursive: true });
-    writeFileSync(join(outDir, `prompts-${date}-${slug}.json`), JSON.stringify({ model, url, date, wiring, results }, null, 2));
+    writeFileSync(join(outDir, `prompts-${date}-${slug}.json`), JSON.stringify({ model: label, kind, url, date, wiring, results }, null, 2));
     expect(results.every((r) => r.status === "ok")).toBe(true);
   }, 60 * 60 * 1000);
 });

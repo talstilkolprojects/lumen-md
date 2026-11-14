@@ -1,5 +1,7 @@
 {
-  "model": "qwen2.5:7b",
+  "model": "fake-ollama",
+  "kind": "wiring",
+  "note": "Recorded against scripts/fake-ollama.mjs in CI. It proves the wiring (prompts, parsing, schemas, tool calls) — not model quality. Real-model results come only from `npm run eval:agents` on a machine with Ollama (plan 7.9).",
   "date": "2026-10-18",
   "results": [
     {

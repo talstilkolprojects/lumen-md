@@ -5,6 +5,8 @@ import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { UpdateBanner } from "./ui/UpdateBanner";
+import { setVaultBackend, createDirectoryHandleBackend } from "./storage/vault";
+import { openVaultAtBoot } from "./storage/vault/boot";
 import { ErrorBoundary } from "./ui/ErrorBoundary";
 import { showAiToast } from "./ui/AiToast";
 import { ToastContainer } from "./components/Toast";
@@ -79,7 +81,27 @@ initShareExtension();
 // Secrets (API keys, tokens) are decrypted into memory before the first
 // render so synchronous reads see them (T36); never blocks boot for long.
 const secretsReady = Promise.race([initSecretStore(), new Promise((r) => setTimeout(r, 1500))]);
-void Promise.all([initLocale(), secretsReady])
+// Where the vault lives (OPFS or a real folder, plan 4.2) is restored before
+// the first render, so nothing reads the wrong store; bounded like secrets.
+// Until it is known, the vault is closed (an unavailable backend), never the
+// default store by accident; the location module loads on demand.
+const VaultFolderBanner = React.lazy(() => import("./ui/VaultFolderBanner").then((m) => ({ default: m.VaultFolderBanner })));
+const closedVault = createDirectoryHandleBackend({ id: "restoring", available: () => false, root: async () => Promise.reject(new Error("The vault is still opening.")) });
+setVaultBackend(closedVault);
+// If the location chunk can't load (offline after an update), openVaultAtBoot
+// retries it when the browser is back online and shows a "Try again" bar.
+const vaultReady = Promise.race([
+  openVaultAtBoot({
+    load: () =>
+      import("./storage/vault/location").then(async (m) => {
+        const { detachWorkspaceDocs } = await import("./store/vaultDocs");
+        m.setOnVaultReplaced(detachWorkspaceDocs);
+        return m.restoreVaultLocationWithin(3000);
+      }),
+  }),
+  new Promise((r) => setTimeout(r, 4000)),
+]);
+void Promise.all([initLocale(), secretsReady, vaultReady])
   .then(([applied]) => {
     // initLocale falls back to English when the saved locale's chunk can't
     // load; the store was already rehydrated with the saved locale, and
@@ -125,6 +147,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       </Suspense>
     </ErrorBoundary>
     <UpdateBanner />
+    <Suspense fallback={null}>
+      <VaultFolderBanner />
+    </Suspense>
     <ToastContainer />
   </React.StrictMode>,
 );

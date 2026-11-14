@@ -1109,6 +1109,49 @@
     color: hsl(var(--fg));
   }
 
+  /* ─── Vault folder (plan 4.2): reconnect / move progress / resume ─── */
+  .vault-folder-banner {
+    position: fixed;
+    inset-block-start: 12px;
+    inset-inline: 0;
+    margin-inline: auto;
+    inline-size: max-content;
+    max-inline-size: calc(100vw - 24px);
+    z-index: var(--z-modal);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding-block: 10px;
+    padding-inline: 14px;
+    background: hsl(var(--bg));
+    color: hsl(var(--fg));
+    border: 1px solid hsl(var(--border-strong));
+    border-radius: 12px;
+    box-shadow: 0 8px 24px hsl(0 0% 0% / 0.18);
+    font-size: 13px;
+  }
+  .vault-folder-btn {
+    border: none;
+    background: hsl(var(--accent));
+    color: white;
+    padding-block: 5px;
+    padding-inline: 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .vault-folder-btn.secondary {
+    background: transparent;
+    color: hsl(var(--fg));
+    border: 1px solid hsl(var(--border-strong));
+  }
+  .vault-folder-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
   /* ─── Backlinks panel ─── */
   .backlinks-panel {
     width: 240px;

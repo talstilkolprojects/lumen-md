@@ -249,8 +249,19 @@ export function OnboardingTour({ open, onClose, actions }: Props) {
             marginTop: 14,
           }}
         >
-          <span style={{ fontSize: 11, color: "hsl(var(--fg-muted))" }}>
-            {step + 1} / {STEPS.length}
+          <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 11, color: "hsl(var(--fg-muted))" }}>
+              {step + 1} / {STEPS.length}
+            </span>
+            {step < STEPS.length - 1 && (
+              <button
+                type="button"
+                onClick={onClose}
+                style={{ padding: 0, border: 0, background: "none", color: "hsl(var(--fg-muted))", fontSize: 11, textDecoration: "underline", cursor: "pointer", fontFamily: "inherit" }}
+              >
+                {t("onboard.tour.skip")}
+              </button>
+            )}
           </span>
         <div style={{ display: "flex", gap: 8 }}>
           {step > 0 && (
