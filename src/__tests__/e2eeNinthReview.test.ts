@@ -249,3 +249,66 @@ describe("H4: the left-out message", () => {
     expect(text).toMatch(/or this device was removed/);
   });
 });
+
+describe("review 16 follow-ups (K6-1, K6-2, K6-3)", () => {
+  async function vault() {
+    const p = memoryProvider();
+    const a = await newVault(p);
+    a.files.set("a.md", "hello");
+    await a.sync.sync();
+    const phone = await generateIdentity();
+    await a.sync.rekey({ enroll: { phone: phone.recipient } });
+    await a.sync.sync();
+    return { p, a };
+  }
+
+  it("K6-1: a stale tab's round keeps the other tab's revocation record and anchor", async () => {
+    const { p, a } = await vault();
+    const tab1 = new E2eeSync({ provider: p, keys: a.sync.keys(), local: a.files, store: a.store });
+    const tab2 = new E2eeSync({ provider: p, keys: a.sync.keys(), local: a.files, store: a.store });
+    await tab2.sync(); // tab 2 cached the state before tab 1's key change
+    await tab1.rekey({ revoke: ["phone"] });
+    const after1 = JSON.parse(JSON.stringify(a.store.state));
+    await tab2.sync();
+    const after2 = a.store.state!;
+    expect(after2.revokedHere?.devices.map((d) => d.device)).toEqual(["phone"]);
+    expect(after2.rekeyed).toEqual(after1.rekeyed);
+    expect(after2.anchor!.counter).toBeGreaterThanOrEqual(after1.anchor.counter);
+    expect(tab2.keys().epoch).toBe(2);
+  });
+
+  it("K6-3: two tabs that started on an empty store (two device ids) still share the lock", async () => {
+    const { p, a } = await vault();
+    const slow = hooked(p);
+    const store = memoryStateStore();
+    const files = memoryFiles();
+    const tab1 = new E2eeSync({ provider: slow.p, keys: a.sync.keys(), local: files, store });
+    const tab2 = new E2eeSync({ provider: p, keys: a.sync.keys(), local: files, store });
+    await Promise.all([tab1.freshness(), tab2.freshness()]); // each makes its own device id
+    await tab1.sync();
+    await tab1.confirmFreshness();
+    await tab2.sync();
+    await tab2.confirmFreshness();
+    const s = slow.stallNext();
+    const rk = tab1.rekey({ revoke: ["phone"] });
+    await s.reached;
+    await expect(tab2.pairingCode()).rejects.toBeInstanceOf(PairingDuringKeyChangeError);
+    s.release();
+    expect((await rk).epoch).toBe(2);
+  });
+
+  it("K6-2: refusals the storage makes up, with nothing rewritten, are not 'contested'", async () => {
+    const { p, a } = await vault();
+    let refuse = true;
+    const lying = { ...p, id: "lying", objects: p.objects, get: (n: string) => p.get(n), delete: (n: string) => p.delete(n), list: () => p.list(),
+      put: (n: string, d: Uint8Array, c?: PutCondition) => (refuse && n === KEYRING_NAME ? Promise.reject(new PreconditionFailedError(n)) : p.put(n, d, c)) };
+    const tab = new E2eeSync({ provider: lying, keys: a.sync.keys(), local: a.files, store: a.store });
+    for (let i = 0; i < 3; i++) {
+      const e = await tab.rekey({ revoke: ["phone"] }).then(() => null, (x: unknown) => x);
+      expect(e).toBeInstanceOf(PreconditionFailedError);
+      expect(e).not.toBeInstanceOf(RevocationContestedError);
+    }
+    refuse = false;
+    expect((await tab.rekey({ revoke: ["phone"] })).epoch).toBe(2);
+  });
+});

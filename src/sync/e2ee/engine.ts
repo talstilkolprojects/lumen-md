@@ -83,7 +83,9 @@ export { createVault, unlockVault, unlockWithDevice } from "./vaultOpen";
 
 export class E2eeSync extends E2eeSyncPairing {
   sync(): Promise<SyncResult> {
-    return this.exclusive(() => this.round());
+    // K6-1 (review 16): under the device lock, from the state as stored, so a
+    // tab with an older cached state doesn't save it over another tab's.
+    return this.exclusive(() => this.underDeviceLock(true, () => this.round()));
   }
 
   private async round(): Promise<SyncResult> {

@@ -130,7 +130,8 @@ export abstract class E2eeSyncPairing extends E2eeSyncKeys {
    * existing device (`answerPairing`), and that device's answer here (`pair`).
    */
   pairingRequest(): Promise<string> {
-    return this.exclusive(async () => {
+    // K6-1 (review 16): under the device lock, on the state as stored.
+    return this.exclusive(() => this.underDeviceLock(true, async () => {
       await this.refresh();
       const s = await this.loadState();
       const { priv, pub } = await sasKeyPair();
@@ -140,7 +141,7 @@ export abstract class E2eeSyncPairing extends E2eeSyncKeys {
       s.pairRequest = request;
       await this.save();
       return code;
-    });
+    }));
   }
 
   /**
@@ -226,7 +227,8 @@ export abstract class E2eeSyncPairing extends E2eeSyncKeys {
    * is verified and already holds a newer state than the code.
    */
   pair(code: string): Promise<void> {
-    return this.exclusive(async () => {
+    // K6-1 (review 16): under the device lock, on the state as stored.
+    return this.exclusive(() => this.underDeviceLock(true, async () => {
       const s = await this.loadState();
       // F6: the keys must reproduce the anchor this device verified before
       // anything is sealed with them (a state from before N1 has no check:
@@ -252,7 +254,7 @@ export abstract class E2eeSyncPairing extends E2eeSyncKeys {
         this.joining = { flow: "one-way", offer: got, priv, pub, until: Math.min(now + PAIRING_TTL_MS, got.sas.expires) };
       }
       await this.o.provider.put(await this.pairName(got.sas.session, "reveal-joiner"), utf8(await createPairingReveal(this.o.keys, got.sas.session, "joiner", this.joining.pub)));
-    });
+    }));
   }
 
   /**
@@ -485,11 +487,11 @@ export abstract class E2eeSyncPairing extends E2eeSyncKeys {
 
   /** The user confirmed by hand (e.g. compared with another device) that the vault is current. */
   confirmFreshness(): Promise<void> {
-    return this.exclusive(async () => {
+    return this.exclusive(() => this.underDeviceLock(true, async () => {
       const s = await this.loadState();
       if (!s.anchor) throw new Error("Nothing to confirm yet: sync once first");
       if (s.freshness === "unverified") s.freshness = "confirmed";
       await this.save();
-    });
+    }));
   }
 }
