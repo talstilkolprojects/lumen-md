@@ -31,7 +31,8 @@ export interface NoteStorage {
   list(dir: string): Promise<string[]>;
 }
 
-const yaml = (s: string) => JSON.stringify(s);
+/** JSON-quoted, with U+2028/U+2029 escaped too (JSON.stringify leaves them raw, and they end a line for /m regexes; review 25, RR25-2). */
+const yaml = (s: string) => JSON.stringify(s).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 /** A remote name on one line (review 20, RR20-3): a line break in a record must not start a new line of the note. */
 const oneLine = (s: string) => s.replace(/[\r\n\u2028\u2029]+/g, " ").trim();
 const fileName = (s: string) =>
@@ -106,11 +107,18 @@ export interface SavedLaw {
 export function parseLawNote(path: string, md: string): SavedLaw | null {
   const m = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(md);
   if (!m || !/^source: knesset$/m.test(m[1]) || !/^kind: law$/m.test(m[1])) return null;
-  const field = (k: string) => new RegExp(`^${k}: (.*)$`, "m").exec(m[1])?.[1];
+  // Fields by "\n" lines only: a /m regex also breaks at U+2028/U+2029 (RR25-2).
+  const lines = m[1].split("\n");
+  const field = (k: string) => lines.find((l) => l.startsWith(`${k}: `))?.slice(k.length + 2);
   const id = Number(field("id"));
   const rawName = field("name");
   if (!Number.isFinite(id) || !rawName) return null;
-  const name = rawName.startsWith('"') ? (JSON.parse(rawName) as string) : rawName;
+  let name: string;
+  try {
+    name = rawName.startsWith('"') ? (JSON.parse(rawName) as string) : rawName;
+  } catch {
+    return null; // a note that doesn't parse is skipped, never fatal for the other saved laws
+  }
   const body = m[2];
   const at = body.indexOf("\n## נוסח");
   const text = at < 0 ? "" : body.slice(at + "\n## נוסח".length).replace(/^\s*\n/, "").split(/\n## /)[0].trim();
@@ -127,7 +135,12 @@ export async function savedLaws(storage: NoteStorage): Promise<SavedLaw[]> {
   for (const p of await storage.list(LAWS_DIR)) {
     if (!p.endsWith(".md")) continue;
     const md = await storage.read(p);
-    const s = md ? parseLawNote(p, md) : null;
+    let s: SavedLaw | null = null;
+    try {
+      s = md ? parseLawNote(p, md) : null;
+    } catch {
+      s = null; // one broken note must not hide every saved law (RR25-2)
+    }
     if (s) out.push(s);
   }
   return out;
