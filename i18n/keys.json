@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-11-12T21:28:11.501Z",
+  "generated_at": "2026-11-14T13:15:34.003Z",
   "source": "src/i18n/index.ts (en bundle) + src/i18n/lazy/*.json",
-  "count": 1506,
+  "count": 1507,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -8076,7 +8076,7 @@
     },
     {
       "key": "e2ee.dropped",
-      "en": "A device that couldn't verify the vault's device list changed the keys, and this device wasn't carried over. It wasn't removed, and nothing on it was changed: pair it again from a device you trust, or unlock it with the passphrase.",
+      "en": "This device wasn't carried over to the vault's new keys: either a device that couldn't verify the vault's device list changed them, or this device was removed. Nothing on it was changed. To use it with the vault again, unlock it with the passphrase, or pair it from a device you trust (as a new device, if it was removed).",
       "vars": []
     },
     {
@@ -8105,6 +8105,13 @@
       "key": "e2ee.revokedHere.reset",
       "en": "This device's own list of the devices it removed couldn't be verified, so it was set aside. It now checks against the vault's sealed list of removed devices. Check the device list on a device you trust.",
       "vars": []
+    },
+    {
+      "key": "e2ee.rekey.contested",
+      "en": "Removing {devices} didn't go through, again: each time, the vault's device list was rewritten at the same moment by something that still has the vault's keys and the storage login, most likely the device you're removing. Change the storage password or token first, so that device can't write any more, then remove it again.",
+      "vars": [
+        "devices"
+      ]
     }
   ]
 }
