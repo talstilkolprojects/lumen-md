@@ -91,7 +91,21 @@ const vaultReady = Promise.race([
   import("./storage/vault/location").then(async (m) => {
     const { detachWorkspaceDocs } = await import("./store/vaultDocs");
     m.setOnVaultReplaced(detachWorkspaceDocs);
-    return m.restoreVaultLocationWithin(3000);
+    const status = await m.restoreVaultLocationWithin(3000);
+    // Changes made outside Lumen reach the open tabs (plan 4.4) — started
+    // once the vault is known, and the open notes are checked against the
+    // disk again whenever another vault opens (reconnect, late restore, move).
+    void import("./store/externalChanges").then((x) => {
+      x.startExternalChanges();
+      let last = m.getVaultStatus().location;
+      m.onVaultStatusChange(() => {
+        const now = m.getVaultStatus().location;
+        if (now === last) return;
+        last = now;
+        void x.reconcileOpenNotes();
+      });
+    });
+    return status;
   }),
   new Promise((r) => setTimeout(r, 4000)),
 ]).catch((err) => log.warn("vault location unavailable", err));

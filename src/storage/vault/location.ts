@@ -25,6 +25,7 @@ import { createDirectoryHandleBackend } from "./handleBackend";
 import { createOpfsBackend } from "./opfs";
 import type { VaultBackend } from "./types";
 import { createTauriBackend, isDesktopApp, loadTauriInvoke, type TauriInvoke } from "./tauri";
+import { observeDirectoryHandle, watchExternalChanges } from "./watcher";
 
 // ── Persistence ──────────────────────────────────────────────────────────
 
@@ -219,10 +220,41 @@ export function setOnVaultReplaced(fn: () => void): void {
   onVaultReplaced = fn;
 }
 
+let stopWatching: (() => void) | null = null;
+
+/**
+ * Watch a folder vault for changes made outside Lumen (plan 4.4). OPFS is
+ * private to this origin: nothing else writes it, so it is not watched.
+ */
+function watch(loc: StoredLocation, backend: VaultBackend): void {
+  stopWatching?.();
+  stopWatching = null;
+  if (loc.kind === "folder") {
+    const handle = loc.handle;
+    const hasObserver = typeof (globalThis as { FileSystemObserver?: unknown }).FileSystemObserver === "function";
+    stopWatching = watchExternalChanges(backend, {
+      observe: (poke) => observeDirectoryHandle(handle, poke),
+      // The observer reports changes at once; polling is the backstop.
+      intervalMs: hasObserver ? 5000 : 1000,
+    });
+  } else if (loc.kind === "desktop" && desktopInvoke) {
+    const inv = desktopInvoke;
+    const root = loc.root;
+    stopWatching = watchExternalChanges(backend, {
+      snapshot: async () => {
+        const list = await inv<{ path: string; size: number; mtime: number }[]>("vault_snapshot", { root });
+        return new Map(list.map((e) => [e.path, { size: e.size, mtime: e.mtime }]));
+      },
+      intervalMs: 1000,
+    });
+  }
+}
+
 function activate(loc: StoredLocation, backend: VaultBackend): void {
   disconnected = null;
   if (loc.kind !== "opfs") desktopFirstRun = false;
   setVaultBackend(loc.kind === "opfs" ? null : backend);
+  watch(loc, backend);
   status = loc.kind === "opfs" ? { location: "opfs" } : { location: "folder", name: loc.name };
   notifyWorkspaceChanged({ kind: "structure" });
   changed();
@@ -282,13 +314,15 @@ export async function restoreVaultLocation(): Promise<VaultStatus> {
     let granted = false;
     const handle = loc.handle;
     const name = loc.name;
-    setVaultBackend(createFolderBackend(handle, () => granted));
+    const folderBackend = createFolderBackend(handle, () => granted);
+    setVaultBackend(folderBackend);
     disconnected = {
       name,
       connect: async () => {
         if (!(await ensureFolderPermission(handle, true))) return false;
         granted = true;
         disconnected = null;
+        watch(loc, folderBackend);
         status = { location: "folder", name };
         notifyWorkspaceChanged({ kind: "structure" });
         changed();
@@ -627,6 +661,8 @@ async function sameLocation(a: StoredLocation, b: StoredLocation): Promise<boole
 
 /** @internal tests */
 export function __resetVaultLocation(): void {
+  stopWatching?.();
+  stopWatching = null;
   onVaultReplaced = () => {};
   status = { location: "opfs" };
   pending = null;

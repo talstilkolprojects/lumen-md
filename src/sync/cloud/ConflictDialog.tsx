@@ -23,15 +23,42 @@ export type ConflictChoice =
   | { kind: "remote" }
   | null;
 
+/**
+ * Wording of the dialog. Cloud sync uses the defaults; a change made outside
+ * Lumen (plan 4.4) passes its own, translated labels.
+ */
+export interface ConflictLabels {
+  title: string;
+  description: string;
+  local: string;
+  remote: string;
+  takeLocal: string;
+  takeRemote: string;
+  merge: string;
+  cancel: string;
+}
+
 interface Props {
   path: string;
   base: string;
   local: string;
   remote: string;
+  labels?: Partial<ConflictLabels>;
   onResolve: (choice: ConflictChoice) => void;
 }
 
-function ConflictDialogImpl({ path, base, local, remote, onResolve }: Props) {
+function ConflictDialogImpl({ path, base, local, remote, labels, onResolve }: Props) {
+  const L: ConflictLabels = {
+    title: `Sync conflict — ${path}`,
+    description: "Both sides changed since the last sync. Pick what to keep, or take one side wholesale.",
+    local: "local",
+    remote: "remote",
+    takeLocal: "Take local",
+    takeRemote: "Take remote",
+    merge: "Apply merge",
+    cancel: "Cancel",
+    ...labels,
+  };
   const hunks = useMemo<DiffHunk[]>(
     () => threeWayDiff(base, local, remote),
     [base, local, remote],
@@ -86,11 +113,10 @@ function ConflictDialogImpl({ path, base, local, remote, onResolve }: Props) {
           }}
         >
           <div id="conflict-title" style={{ fontWeight: 700, fontSize: 15 }}>
-            Sync conflict — {path}
+            {L.title}
           </div>
           <div style={{ fontSize: 12, color: "hsl(var(--fg-muted))", marginTop: 2 }}>
-            Both sides changed since the last sync. Pick what to keep, or
-            take one side wholesale.
+            {L.description}
           </div>
         </header>
 
@@ -148,10 +174,10 @@ function ConflictDialogImpl({ path, base, local, remote, onResolve }: Props) {
                 {h.op === "conflict" && (
                   <div style={{ gridColumn: "1 / span 2", padding: "4px 12px", fontSize: 11, color: "hsl(var(--fg-muted))", display: "flex", gap: 12 }}>
                     <label>
-                      <input type="radio" checked={picks[conflictPickIdx] === "local"} onChange={() => setPick(conflictPickIdx, "local")} /> local
+                      <input type="radio" checked={picks[conflictPickIdx] === "local"} onChange={() => setPick(conflictPickIdx, "local")} /> {L.local}
                     </label>
                     <label>
-                      <input type="radio" checked={picks[conflictPickIdx] === "remote"} onChange={() => setPick(conflictPickIdx, "remote")} /> remote
+                      <input type="radio" checked={picks[conflictPickIdx] === "remote"} onChange={() => setPick(conflictPickIdx, "remote")} /> {L.remote}
                     </label>
                     <label>
                       <input type="radio" checked={picks[conflictPickIdx] === "both"} onChange={() => setPick(conflictPickIdx, "both")} /> both
@@ -172,9 +198,9 @@ function ConflictDialogImpl({ path, base, local, remote, onResolve }: Props) {
             borderTop: "1px solid hsl(var(--border))",
           }}
         >
-          <button onClick={() => onResolve(null)} style={btnSecondary}>Cancel</button>
-          <button onClick={() => onResolve({ kind: "local" })} style={btnSecondary}>Take local</button>
-          <button onClick={() => onResolve({ kind: "remote" })} style={btnSecondary}>Take remote</button>
+          <button onClick={() => onResolve(null)} style={btnSecondary}>{L.cancel}</button>
+          <button onClick={() => onResolve({ kind: "local" })} style={btnSecondary}>{L.takeLocal}</button>
+          <button onClick={() => onResolve({ kind: "remote" })} style={btnSecondary}>{L.takeRemote}</button>
           <button
             onClick={() =>
               onResolve({
@@ -184,7 +210,7 @@ function ConflictDialogImpl({ path, base, local, remote, onResolve }: Props) {
             }
             style={btnPrimary}
           >
-            Apply merge
+            {L.merge}
           </button>
         </footer>
       </div>
@@ -252,6 +278,7 @@ export function openConflictDialog(opts: {
   base: string;
   local: string;
   remote: string;
+  labels?: Partial<ConflictLabels>;
 }): Promise<ConflictChoice> {
   return new Promise((resolve) => {
     const host = document.createElement("div");

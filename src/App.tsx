@@ -496,8 +496,12 @@ export default function App() {
     const content = doc.content;
     let retry: ReturnType<typeof setTimeout> | undefined;
     const write = (attempt: number) => {
-      writeWorkspaceFile(name, content)
-        .then(() => {
+      // Compare-and-swap (plan 4.4): a file changed outside Lumen since it
+      // was opened becomes a conflict instead of being overwritten.
+      import("./store/externalChanges")
+        .then((m) => m.saveOpenNote(name, content))
+        .then((saved) => {
+          if (!saved) return;
           markSaved();
           // Only this file's text changed: listeners skip the full rescan (C3).
           notifyWorkspaceChanged({ kind: "content", paths: [name] });
@@ -622,9 +626,10 @@ export default function App() {
       void recordSnapshot(historyKey(d), d.content, "close").catch(() => false);
       if (!d.dirty || !d.workspaceName) return;
       const name = d.workspaceName;
-      writeWorkspaceFile(name, d.content)
-        .then(() => {
-          if (useAppStore.getState().doc.workspaceName === name) markSaved();
+      import("./store/externalChanges")
+        .then((m) => m.saveOpenNote(name, d.content))
+        .then((saved) => {
+          if (saved && useAppStore.getState().doc.workspaceName === name) markSaved();
         })
         .catch(() => {
           /* best effort; the debounced autosave retries on the next edit */

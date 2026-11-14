@@ -4,8 +4,8 @@
  */
 
 import { flushPendingEdits, tabIdOf, useAppStore } from "./useStore";
-import { writeWorkspaceFile } from "../storage/workspace";
 import { notifyWorkspaceChanged } from "../storage/workspaceEvents";
+import { t } from "../i18n";
 import { movedPath } from "../storage/fileOps";
 
 /**
@@ -18,7 +18,22 @@ export async function flushActiveWorkspaceDoc(): Promise<void> {
   const d = useAppStore.getState().doc;
   if (!d.dirty || !d.workspaceName) return;
   const { workspaceName: name, content } = d;
-  await writeWorkspaceFile(name, content);
+  // Compare-and-swap (plan 4.4): never over a change made outside Lumen.
+  const { saveOpenNote, whenResolved } = await import("./externalChanges");
+  if (!(await saveOpenNote(name, content))) {
+    // A change made outside Lumen is being resolved: wait for the answer, then
+    // save what the note holds now. Callers (trash, move, export) must not go
+    // on as if the note were saved.
+    await whenResolved(name);
+    flushPendingEdits();
+    const d2 = useAppStore.getState().doc;
+    if (d2.workspaceName !== name || !d2.dirty) return; // resolved: on disk
+    if (!(await saveOpenNote(name, d2.content))) throw new Error(t("external.conflict.notSaved", { path: name }));
+    const after = useAppStore.getState().doc;
+    if (after.workspaceName === name && after.content === d2.content) useAppStore.getState().markSaved();
+    notifyWorkspaceChanged({ kind: "content", paths: [name] });
+    return;
+  }
   const now = useAppStore.getState().doc;
   if (now.workspaceName === name && now.content === content) useAppStore.getState().markSaved();
   notifyWorkspaceChanged({ kind: "content", paths: [name] });

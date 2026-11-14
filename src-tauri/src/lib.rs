@@ -268,6 +268,12 @@ mod desktop_vault {
         with(&state, &root, |v| v.write(&path, data))
     }
 
+    /// Every file with size and mtime, for change polling (plan 4.4).
+    #[tauri::command]
+    pub fn vault_snapshot(state: State<VaultState>, root: String) -> Result<Vec<lumen_vault::SnapEntry>, String> {
+        with(&state, &root, |v| v.snapshot())
+    }
+
     #[tauri::command]
     pub fn vault_mkdir(state: State<VaultState>, root: String, path: String) -> Result<(), String> {
         with(&state, &root, |v| v.mkdir(&path))
@@ -372,6 +378,7 @@ pub fn run() {
             desktop_vault::vault_stat,
             desktop_vault::vault_read,
             desktop_vault::vault_write,
+            desktop_vault::vault_snapshot,
             desktop_vault::vault_mkdir,
             desktop_vault::vault_rename,
             desktop_vault::vault_remove,

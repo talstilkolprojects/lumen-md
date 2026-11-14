@@ -80,6 +80,17 @@ export function fakeTauriVault(active: string | null = null): FakeTauriVault {
           case "vault_write":
             if (!ArrayBuffer.isView(args)) throw "EINVAL: vault_write expects raw bytes";
             return await vault(h("x-vault-root")).write(h("x-vault-path"), args as Uint8Array);
+          case "vault_snapshot": {
+            const out: { path: string; size: number; mtime: number }[] = [];
+            const walk = async (dir: string) => {
+              for (const e of await vault(a.root).list(dir)) {
+                if (e.kind === "directory") await walk(e.path);
+                else out.push({ path: e.path, size: e.size ?? 0, mtime: e.mtime ?? 0 });
+              }
+            };
+            await walk("");
+            return out;
+          }
           case "vault_mkdir":
             return await vault(a.root).mkdir(a.path);
           case "vault_rename":

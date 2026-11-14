@@ -123,3 +123,26 @@ test("without showDirectoryPicker the vault stays in browser storage, and says s
   await run(page, "vault.toFolder");
   await expect(page.getByText(/can't open a folder on your computer, so your notes stay in the browser's private storage/)).toBeVisible({ timeout: 10_000 });
 });
+
+/** Plan 4.4: an edit made in another editor shows up in the open note within 2 s. */
+test("an edit made outside Lumen appears in the open note within 2 s", async ({ page }) => {
+  await saveNote(page, "# before");
+  await expect(page.locator("aside.file-tree .file-tree-name", { hasText: "Welcome.md" })).toBeVisible({ timeout: 10_000 });
+  await run(page, "vault.toFolder");
+  await expect(page.getByText(/The vault is now in the folder “picked-folder”/)).toBeVisible({ timeout: 15_000 });
+  // Let the watcher take its first snapshot.
+  await page.waitForTimeout(1500);
+
+  // "Another editor" writes the file in the folder, not through Lumen.
+  const t0 = Date.now();
+  await page.evaluate(async (picked) => {
+    const realRoot = await (Object.getPrototypeOf(navigator.storage) as { getDirectory: () => Promise<FileSystemDirectoryHandle> }).getDirectory.call(navigator.storage);
+    const dir = await realRoot.getDirectoryHandle(picked);
+    const w = await (await dir.getFileHandle("Welcome.md")).createWritable();
+    await w.write("# after — edited in another editor");
+    await w.close();
+  }, PICKED);
+  await expect(page.locator(".cm-content").first()).toContainText("edited in another editor", { timeout: 2000 });
+  expect(Date.now() - t0).toBeLessThan(2500);
+  await expect(page.getByText(/was changed outside Lumen and reloaded/)).toBeVisible();
+});

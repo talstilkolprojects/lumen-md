@@ -250,3 +250,42 @@ fn a_planted_temp_symlink_is_never_followed() {
     assert_eq!(fs::read(&outside).unwrap(), b"keep me");
     let _ = fs::remove_file(&outside);
 }
+
+/// Plan 4.4: an edit made by another program shows up in the next snapshot
+/// (the desktop app polls it about once a second, so within 2 s).
+#[test]
+fn snapshot_sees_external_edits_renames_and_deletes() {
+    let (t, v) = vault();
+    v.write("notes/a.md", b"one").unwrap();
+    v.write("b.md", b"b").unwrap();
+    let before = v.snapshot().unwrap();
+    assert_eq!(
+        before.iter().map(|e| e.path.as_str()).collect::<Vec<_>>(),
+        vec!["b.md", "notes/a.md"]
+    );
+
+    // Another program (Obsidian, an editor) writes, renames and deletes.
+    std::thread::sleep(std::time::Duration::from_millis(15));
+    fs::write(t.0.join("notes/a.md"), b"one, edited elsewhere").unwrap();
+    fs::rename(t.0.join("b.md"), t.0.join("c.md")).unwrap();
+    fs::write(t.0.join("פתק חדש.md"), "שלום".as_bytes()).unwrap();
+    let after = v.snapshot().unwrap();
+    let a_before = before.iter().find(|e| e.path == "notes/a.md").unwrap();
+    let a_after = after.iter().find(|e| e.path == "notes/a.md").unwrap();
+    assert!(a_after.size != a_before.size || a_after.mtime != a_before.mtime);
+    assert!(after.iter().any(|e| e.path == "c.md"));
+    assert!(!after.iter().any(|e| e.path == "b.md"));
+    assert!(after.iter().any(|e| e.path == "פתק חדש.md"));
+    // Renamed files keep size and mtime: the app pairs them as a rename.
+    let b = before.iter().find(|e| e.path == "b.md").unwrap();
+    let c = after.iter().find(|e| e.path == "c.md").unwrap();
+    assert_eq!((b.size, b.mtime), (c.size, c.mtime));
+}
+
+#[test]
+fn snapshot_skips_temporary_files() {
+    let (t, v) = vault();
+    v.write("a.md", b"a").unwrap();
+    fs::write(t.0.join(".lumen-tmp-1-1"), b"half").unwrap();
+    assert_eq!(v.snapshot().unwrap().len(), 1);
+}

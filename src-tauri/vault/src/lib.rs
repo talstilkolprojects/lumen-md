@@ -419,6 +419,59 @@ impl Vault {
         }
         .map_err(|e| VaultError::io(path, e))
     }
+
+    /// Every file of the vault with its size and mtime (ms), in one call: the
+    /// desktop app polls this to notice changes made by other programs
+    /// (plan 4.4). Folder symlinks are not followed (as in `list`), and the
+    /// temporary files of in-flight atomic writes are left out.
+    pub fn snapshot(&self) -> Result<Vec<SnapEntry>> {
+        let mut out = Vec::new();
+        self.snapshot_into(&self.root.clone(), "", &mut out)?;
+        out.sort_by(|a, b| a.path.cmp(&b.path));
+        Ok(out)
+    }
+
+    fn snapshot_into(&self, dir: &Path, prefix: &str, out: &mut Vec<SnapEntry>) -> Result<()> {
+        let items = match fs::read_dir(dir) {
+            Ok(it) => it,
+            // A folder deleted while we walk it: nothing in it any more.
+            Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(()),
+            Err(e) => return Err(VaultError::io(prefix, e)),
+        };
+        for item in items.flatten() {
+            let Ok(name) = item.file_name().into_string() else {
+                continue;
+            };
+            if name.starts_with(".lumen-tmp-") {
+                continue;
+            }
+            let path = if prefix.is_empty() {
+                name.clone()
+            } else {
+                format!("{prefix}/{name}")
+            };
+            let is_link = item.file_type().map(|t| t.is_symlink()).unwrap_or(false);
+            match fs::metadata(item.path()) {
+                Ok(m) if m.is_dir() && is_link => {}
+                Ok(m) if m.is_dir() => self.snapshot_into(&item.path(), &path, out)?,
+                Ok(m) => out.push(SnapEntry {
+                    path,
+                    size: m.len(),
+                    mtime: mtime_ms(&m),
+                }),
+                Err(_) => {}
+            }
+        }
+        Ok(())
+    }
+}
+
+/// One file in a `snapshot`.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct SnapEntry {
+    pub path: String,
+    pub size: u64,
+    pub mtime: u64,
 }
 
 #[cfg(test)]

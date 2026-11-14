@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-10-18T11:34:48.566Z",
+  "generated_at": "2026-10-19T07:33:42.684Z",
   "source": "src/i18n/index.ts (en bundle)",
-  "count": 1453,
+  "count": 1469,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -1706,6 +1706,103 @@
     {
       "key": "vault.desktop.backedUp",
       "en": "A backup of the app's notes was saved to {path}.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "external.conflict.title",
+      "en": "Changed outside Lumen — {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "external.conflict.body",
+      "en": "This note was changed by another program while you had unsaved edits. The other version is already kept as a copy, so nothing is lost. Choose what this note should contain.",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.mine",
+      "en": "mine",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.theirs",
+      "en": "theirs",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.takeMine",
+      "en": "Keep mine",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.takeTheirs",
+      "en": "Take theirs",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.merge",
+      "en": "Apply merge",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.keepMine",
+      "en": "Keep mine",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.copyName",
+      "en": "changed outside Lumen",
+      "vars": []
+    },
+    {
+      "key": "external.conflict.keptCopy",
+      "en": "The version changed outside Lumen is kept as “{path}”.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "external.conflict.failed",
+      "en": "Could not resolve the change to “{path}”; both versions are kept.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "external.reloaded",
+      "en": "“{path}” was changed outside Lumen and reloaded.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "external.renamed",
+      "en": "“{from}” was renamed outside Lumen to “{to}”; the open note follows it.",
+      "vars": [
+        "from",
+        "to"
+      ]
+    },
+    {
+      "key": "external.deleted",
+      "en": "“{path}” was deleted outside Lumen. The open note is kept, unsaved.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "external.conflict.keptTyping",
+      "en": "You kept typing while the conflict was open, so your latest text is kept (unsaved, saved next). The version changed outside Lumen is in “{path}”.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "external.conflict.notSaved",
+      "en": "“{path}” was not saved: it changed outside Lumen. Nothing was changed; resolve the change first.",
       "vars": [
         "path"
       ]
