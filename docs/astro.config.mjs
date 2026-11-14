@@ -210,6 +210,7 @@ export default defineConfig({
             { label: "Keys, rotation and revocation", slug: "sync/e2ee-keys", translations: { he: "מפתחות, החלפה וביטול" } },
             { label: "Read-mode publishing", slug: "sync/publish", translations: { he: "פרסום לקריאה" } },
             { label: "Publish to your own site", slug: "sync/own-site", translations: { he: "פרסום לאתר משלך" } },
+            { label: "Publish to Bluesky and the fediverse", slug: "sync/standard-site", translations: { he: "פרסום ל-Bluesky ולפדיברס" } },
             { label: "Automatic merging", slug: "sync/merge" },
             { label: "Sync status, selective sync, time left", slug: "sync/status", translations: { he: "מצב הסנכרון וסנכרון סלקטיבי" } },
             { label: "Sync on the local network", slug: "sync/lan", translations: { he: "סנכרון ברשת המקומית" } },
