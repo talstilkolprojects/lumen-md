@@ -22,7 +22,7 @@ export function checkFlags(registry, { keys = null, he = null } = {}) {
     if (typeof f?.id !== "string" || !ID.test(f.id)) out.push(`${where}: id must look like area.name`);
     if (seen.has(f.id)) out.push(`${where}: listed twice`);
     seen.add(f.id);
-    if (f.stage !== "beta" && f.stage !== "stable") out.push(`${where}: stage must be "beta" or "stable"`);
+    if (f.stage !== "experimental" && f.stage !== "beta" && f.stage !== "stable") out.push(`${where}: stage must be "experimental", "beta" or "stable"`);
     const beta = f.since?.beta;
     const stable = f.since?.stable;
     const valid = (v) => {
@@ -37,7 +37,7 @@ export function checkFlags(registry, { keys = null, he = null } = {}) {
     if (f.stage === "stable") {
       if (!stable || !valid(stable) || /-/.test(stable)) out.push(`${where}: a stable flag needs since.stable, the release that turned it on`);
       else if (beta && valid(beta) && compareVersions(beta, stable) >= 0) out.push(`${where}: reached stable (${stable}) without an earlier beta (${beta})`);
-    } else if (stable) out.push(`${where}: a beta flag has no since.stable yet`);
+    } else if (stable) out.push(`${where}: a ${f.stage} flag has no since.stable yet`);
     for (const k of [`flag.${f.id}.name`, `flag.${f.id}.desc`]) {
       if (keys && !keys.has(k)) out.push(`${where}: no English string ${k}`);
       if (he && !he[k]) out.push(`${where}: no Hebrew string ${k}`);

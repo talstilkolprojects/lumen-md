@@ -14,6 +14,8 @@ import { compareVersions, isBeta, nextBetaVersion, nextVersion, parseCommits } f
 // @ts-expect-error — plain .mjs helpers without types
 import { betaFlags, checkFlags } from "../../scripts/lib/flags.mjs";
 import { readLocale } from "../../scripts/lib/i18n-files.mjs";
+// @ts-expect-error — plain .mjs module without type declarations
+import { lazyEnglishEntries } from "../../scripts/lib/i18n-lazy.mjs";
 import { buildChannel, defaultFor, FLAGS, flagState, isEnabled, readOverrides, resetFlags, setFlag, type FlagDef } from "../flags/flags";
 import { setAiPolicy } from "../ai/policy";
 import { checkForUpdate, launchUpdateCheck, LAUNCH_CHECK_EVERY_MS, setUpdateChannel, shouldCheckOnLaunch, updateChannel } from "../desktop/updates";
@@ -75,7 +77,8 @@ describe("versions: betas come before their release", () => {
 
 describe("the flag registry: nothing reaches stable without a beta", () => {
   const registry = JSON.parse(readFileSync(join(root, "src/flags/flags.json"), "utf8"));
-  const keys = new Set(Object.keys(readLocale("en")));
+  // English lives in locales/en/ and in the lazy domain files (flag names are in src/i18n/lazy/featureFlagsPanel.json).
+  const keys = new Set([...Object.keys(readLocale("en")), ...lazyEnglishEntries(root).map(([k]: [string, string]) => k)]);
   const he = readLocale("he");
 
   it("the shipped registry passes, with strings in English and Hebrew", () => {
@@ -117,6 +120,17 @@ describe("flags in the app", () => {
     expect(defaultFor(stable, "stable")).toBe(true);
     for (const f of FLAGS) if (f.stage === "beta") expect(isEnabled(f.id, { channel: "stable", overrides: {} }), f.id).toBe(false);
     for (const f of FLAGS) if (f.stage === "beta") expect(isEnabled(f.id, { channel: "beta", overrides: {} }), f.id).toBe(true);
+  });
+
+  it("an experimental feature is off in every channel, beta included, until the user turns it on (W6.43)", () => {
+    const exp: FlagDef = { id: "x.exp", stage: "experimental", since: { beta: "0.2.0-beta.1" } };
+    expect(defaultFor(exp, "beta")).toBe(false);
+    expect(defaultFor(exp, "stable")).toBe(false);
+    // Encrypted sync ships experimental until crypto review 6's H1 is fixed.
+    expect(FLAGS.find((f) => f.id === "sync.e2ee")?.stage).toBe("experimental");
+    for (const channel of ["beta", "stable"] as const) expect(isEnabled("sync.e2ee", { channel, overrides: {} })).toBe(false);
+    expect(isEnabled("sync.e2ee", { channel: "beta", overrides: { "sync.e2ee": true } })).toBe(true);
+    expect(checkFlags({ flags: [exp] })).toEqual([]);
   });
 
   it("the user's choice wins, is local, and can go back to the default; unknown flags are off", () => {
@@ -196,7 +210,7 @@ describe("docs", () => {
     expect(sidebar).toContain('slug: "getting-started/beta"');
     const en = readFileSync(join(root, "docs/src/content/docs/getting-started/beta.md"), "utf8");
     const heDoc = readFileSync(join(root, "docs/src/content/docs/he/getting-started/beta.md"), "utf8");
-    const enStrings = readLocale("en");
+    const enStrings: Record<string, string> = { ...readLocale("en"), ...Object.fromEntries(lazyEnglishEntries(root)) };
     const he = readLocale("he");
     for (const f of FLAGS.filter((x) => x.stage === "beta")) {
       const name = enStrings[`flag.${f.id}.name`];

@@ -12,6 +12,7 @@ import { relativeTime } from "../../lib/relativeTime";
 import { openTemplateDoc } from "../openDoc";
 import type { CommandContext } from "./context";
 import { explainError } from "../../lib/userError";
+import { isEnabled } from "../../flags/flags";
 
 /** Recently opened files (the last 8): reopen one, or drop it from the list. */
 export function buildRecentCommands({ recents, setRecents, handleReopenRecent }: CommandContext): Command[] {
@@ -124,6 +125,17 @@ export function buildTrashCommands(): Command[] {
   ];
 }
 
+/**
+ * Encrypted sync is experimental in 0.2.0-beta.1 (W6.43): off by default in every channel
+ * until crypto review 6's H1 is fixed. With the flag off, its commands open Settings → Feature
+ * flags, where the flag's description says why, instead of the panel.
+ */
+export const E2EE_FLAG = "sync.e2ee";
+const ifE2ee = (open: () => void) => () => {
+  if (isEnabled(E2EE_FLAG)) open();
+  else window.dispatchEvent(new CustomEvent("lumen-open-feature-flags", { detail: { focus: E2EE_FLAG } }));
+};
+
 /** Encrypted sync (plan 3.5): the panel and its providers load on demand. */
 export function buildSyncCommands(): Command[] {
   return [
@@ -132,7 +144,7 @@ export function buildSyncCommands(): Command[] {
       label: t("cmd.sync.open"),
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
-      action: () => void import("../../sync/e2ee/ui/launch").then((m) => m.openSync()),
+      action: ifE2ee(() => void import("../../sync/e2ee/ui/launch").then((m) => m.openSync())),
     },
     {
       // Plan W4.19: the guided setup for people who don't know what WebDAV is.
@@ -140,7 +152,7 @@ export function buildSyncCommands(): Command[] {
       label: t("cmd.sync.setup"),
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
-      action: () => void import("../../sync/e2ee/ui/launch").then((m) => m.openSyncSetup()),
+      action: ifE2ee(() => void import("../../sync/e2ee/ui/launch").then((m) => m.openSyncSetup())),
     },
     {
       // Plan W5.21: a teacher shares a template, students hand in sealed work; loaded on use.
@@ -148,7 +160,7 @@ export function buildSyncCommands(): Command[] {
       label: t("cmd.classroom.open"),
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
-      action: () => void import("../../sync/e2ee/classroom/launch").then((m) => m.openClassroom()),
+      action: ifE2ee(() => void import("../../sync/e2ee/classroom/launch").then((m) => m.openClassroom())),
     },
   ];
 }

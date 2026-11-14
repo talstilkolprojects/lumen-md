@@ -4469,6 +4469,16 @@
       "vars": []
     },
     {
+      "key": "flag.sync.e2ee.desc",
+      "en": "Sync your notes between devices through a storage service that sees only encrypted data. Experimental and off by default until an open item of its security review is fixed. Back up your notes folder before you try it.",
+      "vars": []
+    },
+    {
+      "key": "flag.sync.e2ee.name",
+      "en": "Encrypted sync (experimental)",
+      "vars": []
+    },
+    {
       "key": "flag.update.checkOnLaunch.desc",
       "en": "Desktop app: look for a new version once a day when Lumen starts, so beta fixes arrive quickly. Never in local-only mode; every check is in the privacy log.",
       "vars": []
@@ -4533,6 +4543,11 @@
     {
       "key": "flags.stage.beta",
       "en": "Beta",
+      "vars": []
+    },
+    {
+      "key": "flags.stage.experimental",
+      "en": "Experimental",
       "vars": []
     },
     {

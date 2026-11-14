@@ -5,6 +5,9 @@
  * web deployment and beta desktop builds, stable otherwise. A flag in stage
  * "beta" is on in beta builds and off in stable ones, until a later release
  * promotes it (src/flags/flags.json, checked by `npm run flags:check`).
+ * A flag in stage "experimental" is off in every channel, beta included: only
+ * the user's own choice turns it on (W6.43: encrypted sync until crypto review
+ * H1 is fixed).
  *
  * Everything is local: no remote config, no request, no identifier. A user
  * can turn any flag on or off for themselves (Settings → Feature flags);
@@ -14,7 +17,8 @@
 import registry from "./flags.json";
 
 export type Channel = "stable" | "beta";
-export type FlagStage = "beta" | "stable";
+/** "experimental": off in every channel until the user turns it on (Settings → Feature flags). */
+export type FlagStage = "experimental" | "beta" | "stable";
 
 export interface FlagDef {
   id: string;
@@ -34,7 +38,7 @@ export function buildChannel(env: { VITE_LUMEN_CHANNEL?: string } | undefined = 
 }
 
 /** On or off by default in a channel. */
-export const defaultFor = (flag: FlagDef, channel: Channel): boolean => flag.stage === "stable" || channel === "beta";
+export const defaultFor = (flag: FlagDef, channel: Channel): boolean => flag.stage === "stable" || (flag.stage === "beta" && channel === "beta");
 
 type Overrides = Record<string, boolean>;
 
