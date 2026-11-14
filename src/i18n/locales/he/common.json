@@ -1878,6 +1878,7 @@
   "settings.imported": "יובאו {n} הגדרות, {skipped} דולגו",
   "settings.keepImageMetadata": "לשמור את המיקום, הזמן ופרטי המצלמה של תמונות (בהוספה ובייצוא)",
   "settings.language": "שפה",
+  "settings.privacy": "פרטיות",
   "settings.search": "חיפוש בהגדרות",
   "settings.telemetryOptOut": "לא לשלוח דוחות שגיאה",
   "settings.title": "הגדרות",

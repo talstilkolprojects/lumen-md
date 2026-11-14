@@ -13,6 +13,7 @@ import { SettingsScreen } from "../ui/SettingsScreen";
 import { useAppStore } from "../store/useStore";
 import { downloadText } from "../storage/exportFormats";
 import { showAiToast } from "../ui/AiToast";
+import { __resetRemoteImagesForTests, allowRemoteImageHosts, allowedRemoteImageHosts, remoteImageAllowed } from "../lib/remoteImages";
 
 function file(text: string): File {
   const f = new File([text], "lumen-settings.json", { type: "application/json" });
@@ -38,6 +39,7 @@ describe("SettingsScreen", () => {
       "Theme",
       "AI settings",
       "Collaboration settings",
+      "Privacy",
       "Train AI on my style",
       "Trusted signing keys",
       "Organization",
@@ -89,6 +91,29 @@ describe("SettingsScreen", () => {
     // Only the screen's own close button: the embedded dialog drops its one.
     expect(screen.getAllByRole("button", { name: "Close" })).toHaveLength(1);
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
+  });
+
+  it("the Privacy tab lists the allowed image hosts, and revoking one blocks it again (decision 2.41)", async () => {
+    __resetRemoteImagesForTests();
+    allowRemoteImageHosts(["cdn.example.com", "img.example.org"]);
+    render(<SettingsScreen tab="privacy" onClose={() => {}} />);
+    expect(screen.getByRole("tab", { name: "Privacy" }).getAttribute("aria-selected")).toBe("true");
+    const panel = screen.getByTestId("settings-tab-privacy");
+    await waitFor(() => expect(panel.querySelector('[data-testid="image-hosts"]')).toBeTruthy());
+    expect(panel.querySelector('[data-testid="image-hosts-section"]')?.textContent).toContain("Allowed image hosts");
+    expect([...panel.querySelectorAll('[data-testid="image-hosts"] li span')].map((x) => x.textContent)).toEqual(["cdn.example.com", "img.example.org"]);
+    fireEvent.click(screen.getByRole("button", { name: "Stop always allowing cdn.example.com" }));
+    expect(remoteImageAllowed("https://cdn.example.com/a.png")).toBe(false);
+    expect(allowedRemoteImageHosts()).toEqual(["img.example.org"]);
+    await waitFor(() => expect(panel.textContent).not.toContain("cdn.example.com"));
+    // No close button of its own: the settings screen closes it.
+    expect(panel.querySelector('[aria-label="Close"]')).toBeNull();
+  });
+
+  it("a search for the Privacy tab finds it", async () => {
+    render(<SettingsScreen onClose={() => {}} />);
+    fireEvent.change(screen.getByTestId("settings-search"), { target: { value: "privacy" } });
+    await waitFor(() => expect(screen.getByRole("tab", { name: "Privacy" }).getAttribute("aria-selected")).toBe("true"));
   });
 
   it("Escape closes", () => {

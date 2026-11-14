@@ -23,13 +23,15 @@
  * Pure data: no imports, so the test and the export code load it alone.
  */
 
-export type SettingsTab = "general" | "appearance" | "ai" | "sync" | "fineTune" | "security" | "org";
+export type SettingsTab = "general" | "appearance" | "ai" | "sync" | "privacy" | "fineTune" | "security" | "org";
 
 export const SETTINGS_TABS: ReadonlyArray<{ id: SettingsTab; label: string }> = [
   { id: "general", label: "settings.general" },
   { id: "appearance", label: "themeSettings.title" },
   { id: "ai", label: "ai.settings.title" },
   { id: "sync", label: "collab.settings.title" },
+  // Allowed image hosts (W1.30), revocable here as well as from the palette (decision 2.41).
+  { id: "privacy", label: "settings.privacy" },
   { id: "fineTune", label: "fineTune.title" },
   { id: "security", label: "trustedKeys.title" },
   { id: "org", label: "org.title" },

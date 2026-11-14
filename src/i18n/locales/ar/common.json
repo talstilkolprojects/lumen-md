@@ -1878,6 +1878,7 @@
   "settings.imported": "تم استيراد {n} من الإعدادات، وتخطي {skipped}",
   "settings.keepImageMetadata": "الاحتفاظ بموقع الصور ووقتها وبيانات الكاميرا (عند الإضافة والتصدير)",
   "settings.language": "اللغة",
+  "settings.privacy": "الخصوصية",
   "settings.search": "ابحث في الإعدادات",
   "settings.telemetryOptOut": "لا ترسل تقارير الأخطاء",
   "settings.title": "الإعدادات",

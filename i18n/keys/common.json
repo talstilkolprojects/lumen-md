@@ -10456,6 +10456,11 @@
       "vars": []
     },
     {
+      "key": "settings.privacy",
+      "en": "Privacy",
+      "vars": []
+    },
+    {
       "key": "settings.search",
       "en": "Search settings",
       "vars": []

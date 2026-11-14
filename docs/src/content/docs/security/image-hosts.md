@@ -10,8 +10,8 @@ doesn't load it until you say so: the preview shows a placeholder with
 
 ## The list, and revoking
 
-Command palette → **Privacy: allowed image hosts…** lists every site you
-chose **Always allow** for.
+**Settings → Privacy** lists every site you chose **Always allow** for. The
+command palette's **Privacy: allowed image hosts…** opens the same list.
 
 - **Revoke** next to a site: its images wait for you again, at once — the
   preview shows the placeholder and nothing more is requested from that

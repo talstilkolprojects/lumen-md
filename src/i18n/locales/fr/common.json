@@ -1878,6 +1878,7 @@
   "settings.imported": "{n} paramètres importés, {skipped} ignorés",
   "settings.keepImageMetadata": "Conserver le lieu, l’heure et les données de l’appareil des photos (à l’ajout et à l’export)",
   "settings.language": "Langue",
+  "settings.privacy": "Confidentialité",
   "settings.search": "Rechercher dans les paramètres",
   "settings.telemetryOptOut": "Ne pas envoyer de rapports d’erreur",
   "settings.title": "Paramètres",

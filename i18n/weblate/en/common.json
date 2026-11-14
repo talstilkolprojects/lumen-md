@@ -1878,6 +1878,7 @@
   "settings.imported": "{n} settings imported, {skipped} skipped",
   "settings.keepImageMetadata": "Keep photos' location, time and camera details (when adding photos and when exporting)",
   "settings.language": "Language",
+  "settings.privacy": "Privacy",
   "settings.search": "Search settings",
   "settings.telemetryOptOut": "Send no error reports",
   "settings.title": "Settings",

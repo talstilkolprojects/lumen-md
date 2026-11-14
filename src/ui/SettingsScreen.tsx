@@ -7,6 +7,8 @@
  * - The other tabs are the existing dialogs (theme, AI with the model
  *   manager, sync and collaboration, training, trusted keys, organization),
  *   rendered in place with `embedded`.
+ * - Privacy: the allowed image hosts list (W1.30), each revocable, the same
+ *   list the palette's "Privacy: allowed image hosts…" dialog shows (2.41).
  * - Search matches the labels and keys of every setting, including the
  *   ones inside a tab's dialog, and narrows the tabs to the matching ones.
  *
@@ -33,6 +35,7 @@ const AiSettingsPanel = lazy(() => import("./AiSettingsPanel").then((m) => ({ de
 const CollabSettings = lazy(() => import("./CollabSettings").then((m) => ({ default: m.CollabSettings })));
 const FineTuneSettings = lazy(() => import("./FineTuneSettings").then((m) => ({ default: m.FineTuneSettings })));
 const TrustedKeysSettings = lazy(() => import("./TrustedKeysSettings").then((m) => ({ default: m.TrustedKeysSettings })));
+const ImageHostsSection = lazy(() => import("./ImageHostsPanel").then((m) => ({ default: m.ImageHostsSection })));
 const OrgSettings = lazy(() => import("./OrgSettings").then((m) => ({ default: m.OrgSettings })));
 
 /** A settings file is a few KB; anything far larger isn't one. */
@@ -251,6 +254,8 @@ export function SettingsScreen({ tab: initialTab = "general", onClose, onOpenAud
         return <AiSettingsPanel open embedded onClose={onClose} />;
       case "sync":
         return <CollabSettings embedded onClose={onClose} />;
+      case "privacy":
+        return <ImageHostsSection />;
       case "fineTune":
         return <FineTuneSettings open embedded onClose={onClose} />;
       case "security":
