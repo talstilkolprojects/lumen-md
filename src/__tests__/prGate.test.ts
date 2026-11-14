@@ -18,6 +18,9 @@ import {
   unregisteredNetworkCalls,
   untestedChanges,
   writtenByAi,
+  isSnapshotFile,
+  SNAPSHOT_TRAILER,
+  snapshotEdits,
   // @ts-expect-error -- plain .mjs script, no types
 } from "../../scripts/lib/prGate.mjs";
 
@@ -118,5 +121,40 @@ describe("the other rules", () => {
     const dom = ["lumen", "md"].join(".");
     const added = addedLinesFromDiff(diffOf("docs/x.md", [`See https://${dom}/docs`, "the file README.md", `src/lumen.mdx`]));
     expect(domainMentions(added).map((m: { line: number }) => m.line)).toEqual([2]);
+  });
+});
+
+describe("snapshots are regenerated, never hand-edited (plan W6.15)", () => {
+  const snap = "src/__tests__/__snapshots__/commandIds.test.ts.snap";
+  const regen = (how: string) => `test: regenerate the command ids snapshot [skip ci]\n\n${SNAPSHOT_TRAILER}: ${how}`;
+
+  it("knows snapshot files from vitest and Playwright", () => {
+    expect(isSnapshotFile(snap)).toBe(true);
+    expect(isSnapshotFile("src/__tests__/__snapshots__/render/doc-deploy.html")).toBe(true);
+    expect(isSnapshotFile("e2e/visual-smoke.spec.ts-snapshots/home-chromium.png")).toBe(true);
+    expect(isSnapshotFile("src/__tests__/commandIds.test.ts")).toBe(false);
+  });
+
+  it("fails a snapshot changed with no trailer — the hand edits of #465, #468, #471, #475, #487, #488", () => {
+    const r = snapshotEdits([{ sha: "abcdef1234", message: "feat: a new command [skip ci]", files: ["src/commands.ts", snap] }]);
+    expect(r).toHaveLength(1);
+    expect(r[0].why).toContain(SNAPSHOT_TRAILER);
+  });
+
+  it("passes a regeneration on its own commit that names the -u command and the host", () => {
+    expect(snapshotEdits([{ sha: "1", message: regen("npx vitest run src/__tests__/commandIds.test.ts -u on mac-mini"), files: [snap] }])).toEqual([]);
+    expect(snapshotEdits([{ sha: "2", message: regen("npx playwright test visual-smoke --update-snapshots on vercel-sandbox"), files: ["e2e/visual-smoke.spec.ts-snapshots/a.png"] }])).toEqual([]);
+  });
+
+  it("fails a trailer without the update command or the host, and a regeneration mixed with code", () => {
+    expect(snapshotEdits([{ sha: "3", message: regen("edited by hand"), files: [snap] }])).toHaveLength(1);
+    expect(snapshotEdits([{ sha: "4", message: regen("npx vitest -u"), files: [snap] }])).toHaveLength(1);
+    const mixed = snapshotEdits([{ sha: "5", message: regen("npx vitest -u on mac-mini"), files: [snap, "src/commands.ts"] }]);
+    expect(mixed).toHaveLength(1);
+    expect(mixed[0].why).toContain("commit of its own");
+  });
+
+  it("ignores commits that touch no snapshot", () => {
+    expect(snapshotEdits([{ sha: "6", message: "fix: x", files: ["src/a.ts"] }])).toEqual([]);
   });
 });

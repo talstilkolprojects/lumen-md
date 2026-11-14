@@ -145,6 +145,47 @@ export function skipCiViolations(subjects) {
   return subjects.filter((s) => !/\[skip ci\]/.test(s));
 }
 
+// ── Snapshots (plan W6.15) ────────────────────────────────────────────────
+
+/** A vitest / Playwright snapshot file. */
+export function isSnapshotFile(path) {
+  return /(^|\/)__snapshots__\//.test(path) || /\.snap$/.test(path) || /-snapshots\//.test(path);
+}
+
+/** The trailer a snapshot regeneration carries: how it was made, and where. */
+export const SNAPSHOT_TRAILER = "Snapshot-Regenerated";
+
+/**
+ * Snapshots are never edited by hand (plan W6.15): a test whose expected
+ * output its author typed checks what the author thought. A commit that
+ * changes a snapshot must say how it was regenerated, with a trailer
+ *
+ *   Snapshot-Regenerated: npx vitest run <file> -u on <host>
+ *
+ * naming a host other than the one the change was written on, and must
+ * change nothing but snapshots (so the regeneration is its own reviewable
+ * commit). `commits`: [{ sha, message, files }], merges excluded.
+ */
+export function snapshotEdits(commits) {
+  const out = [];
+  for (const c of commits) {
+    const snaps = c.files.filter(isSnapshotFile);
+    if (!snaps.length) continue;
+    const trailer = new RegExp(`^${SNAPSHOT_TRAILER}:\\s*(.*\\S)\\s*$`, "m").exec(c.message);
+    const sha = c.sha.slice(0, 9);
+    if (!trailer) {
+      out.push({ sha, why: `changes ${snaps.join(", ")} with no \`${SNAPSHOT_TRAILER}:\` trailer (regenerate with -u on the second host; never edit by hand)` });
+      continue;
+    }
+    if (!/\s-u\b|--update\b|--update-snapshots\b/.test(trailer[1]) || !/\bon\s+\S+/.test(trailer[1])) {
+      out.push({ sha, why: `\`${SNAPSHOT_TRAILER}: ${trailer[1]}\` must name the update command (-u / --update-snapshots) and the host ("on <host>")` });
+    }
+    const other = c.files.filter((f) => !isSnapshotFile(f));
+    if (other.length) out.push({ sha, why: `regenerates snapshots and also changes ${other.slice(0, 5).join(", ")}${other.length > 5 ? " …" : ""}: put the regeneration in a commit of its own` });
+  }
+  return out;
+}
+
 // ── The PR body ───────────────────────────────────────────────────────────
 
 /** The sections every PR body has (the lane convention, CONTRIBUTING.md "Pull Requests"). */
