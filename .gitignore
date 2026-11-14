@@ -73,3 +73,6 @@ flake-results/
 visual-results/
 # On-device OCR (scripts/copy-tesseract.mjs)
 public/tesseract/
+
+# Reports written by the scheduled scripts (plan 0.11 / 14.3) — artifacts, never committed
+reports/

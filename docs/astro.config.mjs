@@ -103,6 +103,13 @@ export default defineConfig({
             { label: "Docker compose bundle", slug: "self-hosting/docker" },
           ],
         },
+        {
+          label: "Project",
+          translations: { he: "הפרויקט" },
+          items: [
+            { label: "Issue triage", slug: "project/issue-triage", translations: { he: "מיון issues" } },
+          ],
+        },
       ],
     }),
   ],
