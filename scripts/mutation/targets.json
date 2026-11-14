@@ -154,6 +154,9 @@
       },
       {
         "file": "src/__tests__/privacyLedgerRules.test.ts"
+      },
+      {
+        "file": "src/__tests__/privacyLedgerSources.test.ts"
       }
     ],
     "src/text/hebrew.ts": [
