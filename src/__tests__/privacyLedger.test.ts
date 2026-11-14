@@ -1,6 +1,6 @@
 /** T37 — the privacy ledger records AI requests and enforces local-only. */
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { __resetLedger, classify, installPrivacyLedger, ledgerFetch, leftDevice, ledgerEntries, ledgerSummary, PrivacyBlockedError, recordBlockedRequest, recordBrowserResource, subscribeLedger, withLedger } from "../ai/privacyLedger";
+import { __resetLedger, classify, installPrivacyLedger, ledgerFetch, leftDevice, ledgerEntries, ledgerSummary, PrivacyBlockedError, recordBlockedRequest, recordBrowserResource, subscribeLedger, withLedger, wrapLedgerTransport } from "../ai/privacyLedger";
 import { setAiPolicy } from "../ai/policy";
 
 function fakeFetch() {
@@ -179,6 +179,32 @@ describe("privacy ledger", () => {
         ["blocked", false, "Research service"],
         ["allowed", true, "Agent tool search_web (user consent)"],
       ]);
+    } finally {
+      window.fetch = original;
+      __resetLedger();
+    }
+  });
+
+  it("a consented fetch made before the ledger or airplane mode was installed still sends through the current transport (review 25, RR25-1)", async () => {
+    const original = window.fetch;
+    const inner = fakeFetch();
+    window.fetch = inner as unknown as typeof fetch;
+    const force = { category: "research" as const, reason: "Open sources" };
+    // Made before anything is installed, and made after the ledger but before airplane mode's guard.
+    const early = ledgerFetch({ force, consent: true });
+    try {
+      installPrivacyLedger();
+      const beforeGuard = ledgerFetch({ force, consent: true });
+      const guarded: string[] = [];
+      wrapLedgerTransport((next) => (input, init) => {
+        guarded.push(String(input));
+        return next(input, init);
+      });
+      await early("https://open.example.org/a");
+      await beforeGuard("https://open.example.org/b");
+      expect(guarded).toEqual(["https://open.example.org/a", "https://open.example.org/b"]);
+      expect(inner).toHaveBeenCalledTimes(2);
+      expect(ledgerEntries().map((e) => e.reason)).toEqual(["Open sources", "Open sources"]);
     } finally {
       window.fetch = original;
       __resetLedger();
