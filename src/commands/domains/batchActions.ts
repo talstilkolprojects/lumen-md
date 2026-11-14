@@ -6,6 +6,7 @@ import { uiAlert, uiConfirm, uiPrompt, uiSelect } from "../../ui/PromptDialog";
 import { showAiToast } from "../../ui/AiToast";
 import { aiOperation, isAbort } from "../../ai/aiAbort";
 import { explainError } from "../../lib/userError";
+import "./commandBodiesStrings";
 
 /** Submit a batch job over a folder of notes; check jobs and apply their results. */
 export function buildBatchCommands(): Command[] {

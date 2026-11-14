@@ -5,6 +5,7 @@ import { showAiToast } from "../../ui/AiToast";
 import { isAbort } from "../../ai/aiAbort";
 import { cancellable, type CommandContext } from "./context";
 import { explainError } from "../../lib/userError";
+import "./commandBodiesStrings";
 
 type Ctx = Pick<CommandContext, "setContent" | "liveDoc">;
 
