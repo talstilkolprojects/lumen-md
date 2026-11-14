@@ -3,11 +3,9 @@ import { isBetaLocale } from "../../i18n/review";
 import { cmdIcons, type Command } from "../../ui/CommandPalette";
 import { useAppStore } from "../../store/useStore";
 import { t, SUPPORTED_LOCALES } from "../../i18n";
-import { showAiToast } from "../../ui/AiToast";
 import type { CommandContext } from "./context";
 import { EXCALIDRAW_CANVAS_ENABLED } from "../../canvas/engine";
 import { log } from "../../lib/logger";
-import { explainError } from "../../lib/userError";
 
 /** Editor modes, side panels and the editor's on/off settings. */
 export function buildViewCommands({ setSearchOpen, setRuntimeMetricsOpen, vimEnabled, spellCheck, typewriterMode, pageView, toggleWorkspace, toggleBacklinks, toggleVim, toggleSpellCheck, toggleTypewriter, tsChecks, toggleTsChecks, grammarCheck, toggleGrammarCheck, setMode, toggleOutline }: CommandContext): Command[] {
@@ -169,17 +167,7 @@ export function buildViewCommands({ setSearchOpen, setRuntimeMetricsOpen, vimEna
       icon: cmdIcons.FileText,
       group: t("group.file"),
       // Plan W5.12: a matrix of every PDF in the vault, each value with a quote verified on its page.
-      action: async () => {
-        const { buildLiteratureReview, REVIEW_FOLDER } = await import("../../research/litReview");
-        showAiToast(t("litReview.started"), "info");
-        try {
-          const { papers } = await buildLiteratureReview({ onProgress: (p) => p.current && showAiToast(t("litReview.progress", { done: p.done + 1, total: p.total, title: p.current }), "info") });
-          const values = papers.reduce((n, p) => n + p.fields.filter((f) => f.value).length, 0);
-          showAiToast(t("litReview.done", { papers: papers.length, values, folder: REVIEW_FOLDER }), "success");
-        } catch (e) {
-          showAiToast(t("litReview.failed", { error: explainError(e) }), "error");
-        }
-      },
+      action: () => import("./viewActions").then((m) => m.researchLitReview()),
     },
     {
       id: "note.morning",
@@ -188,26 +176,7 @@ export function buildViewCommands({ setSearchOpen, setRuntimeMetricsOpen, vimEna
       icon: cmdIcons.FileText,
       group: t("group.file"),
       // Plan W5.19: turn "Your morning" on (off by default) and write it into today's note now.
-      action: async () => {
-        const store = useAppStore.getState();
-        const settings = { ...store.dailyNotes, morning: true };
-        if (!store.dailyNotes.morning) store.setDailyNotes({ morning: true });
-        const [{ dayOf, dailyPath, ensureDailyNote }, m] = await Promise.all([import("../../daily/dailyNote"), import("../../daily/morning")]);
-        const day = dayOf(new Date());
-        const path = dailyPath(day, settings);
-        try {
-          const t0 = performance.now();
-          if (store.doc.workspaceName === path) store.setContent(await m.applyToText(store.doc.content, day, settings, store.locale));
-          else {
-            await ensureDailyNote(day, settings, store.locale);
-            await m.refreshMorningFile(day, settings, store.locale);
-            window.dispatchEvent(new CustomEvent("lumen-open-today"));
-          }
-          showAiToast(t("morning.done", { ms: Math.round(performance.now() - t0) }), "success");
-        } catch (e) {
-          showAiToast(t("morning.failed", { error: explainError(e) }), "error");
-        }
-      },
+      action: () => import("./viewActions").then((m) => m.noteMorning()),
     },
     {
       id: "note.morningOff",

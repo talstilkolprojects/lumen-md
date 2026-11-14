@@ -182,29 +182,7 @@ export function buildTemplateCommands({ installedTemplates }: CommandContext): C
       hint: t("cmd.template.importFromFile.hint"),
       icon: cmdIcons.FileText,
       group: t("group.templates"),
-      action: async () => {
-        if (!isOPFSAvailable()) {
-          await uiAlert({ message: t("doc.alert.workspaceUnavailable") });
-          return;
-        }
-        const [{ pickMarkdownFile }, { importTemplateFile }] = await Promise.all([
-          import("../installedTemplates"),
-          import("../../storage/templateMarketplace"),
-          import("../../storage/templateStrings"),
-        ]);
-        const file = await pickMarkdownFile();
-        if (!file) return;
-        if (!/\.(md|markdown)$/i.test(file.name)) {
-          showAiToast(t("templates.importNotMarkdown"), "error");
-          return;
-        }
-        try {
-          const tpl = await importTemplateFile(file.name, await file.text());
-          showAiToast(t("templates.imported", { name: tpl.name }), "success");
-        } catch (e) {
-          showAiToast(t("templates.importFailed", { error: explainError(e) }), "error");
-        }
-      },
+      action: () => import("./fileActions").then((m) => m.templateImportFromFile()),
     },
   ];
 }
@@ -218,34 +196,7 @@ export function buildWorkspaceFileCommands({ handleSaveToWorkspace, toggleWorksp
       hint: t("cmd.file.openSampleWorkspace.hint"),
       icon: cmdIcons.FolderOpen,
       group: t("group.file"),
-      action: async () => {
-        if (!isOPFSAvailable()) {
-          await uiAlert({ message: t("doc.alert.workspaceUnavailable") });
-          return;
-        }
-        try {
-          const { createSampleWorkspace } = await import("../../storage/sampleWorkspace");
-          const result = await createSampleWorkspace();
-          window.dispatchEvent(new Event("lumen-workspace-changed"));
-          if (!useAppStore.getState().showWorkspace) toggleWorkspace();
-          const content = await readWorkspaceFile(result.entry);
-          useAppStore.getState().openTab({
-            name: result.entry,
-            content,
-            workspaceName: result.entry,
-          });
-          showAiToast(
-            result.created.length > 0
-              ? t("sample.toast.created", { count: result.created.length, folder: result.root })
-              : t("sample.toast.exists", { folder: result.root }),
-            "info",
-          );
-        } catch (e) {
-          await uiAlert({
-            message: t("sample.alert.failed", { error: explainError(e) }),
-          });
-        }
-      },
+      action: () => import("./fileActions").then((m) => m.fileOpenSampleWorkspace({ toggleWorkspace })),
     },
     {
       id: "help.setup",

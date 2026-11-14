@@ -2,6 +2,7 @@
 import type { EditorView } from "@codemirror/view";
 import { t } from "../../i18n";
 import { showAiToast } from "../../ui/AiToast";
+import "./commandBodiesStrings";
 
 /** Open the legal-citation dialog for the case number at the cursor (or empty, saying why). */
 export async function legalCiteFromCase(view: EditorView): Promise<void> {
