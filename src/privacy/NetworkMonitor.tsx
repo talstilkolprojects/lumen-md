@@ -12,7 +12,7 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 import { createRoot } from "react-dom/client";
 import { Plane, X } from "lucide-react";
 import { t, getLocale } from "../i18n";
-import { airplaneModeOn, airplaneSince, disableAirplaneMode, egressAttempts, enableAirplaneMode, subscribeEgress, type EgressAttempt } from "./airplane";
+import { airplaneModeOn, airplaneSince, disableAirplaneMode, egressAttempts, egressTally, enableAirplaneMode, subscribeEgress, type EgressAttempt } from "./airplane";
 import { buildCertificate, reachedNetwork, sealCertificate } from "./airplaneCertificate";
 import { HelpButton } from "../ui/HelpButton";
 
@@ -81,7 +81,7 @@ export function NetworkMonitor({ onClose }: { onClose: () => void }) {
   const certificate = async () => {
     if (since === null) return;
     const to = Date.now();
-    const sealed = await sealCertificate(buildCertificate(list, since, to));
+    const sealed = await sealCertificate(buildCertificate(list, since, to, undefined, egressTally()));
     download(JSON.stringify({ certificate: sealed.text, sha256: sealed.sha256 }, null, 2) + "\n", `lumen-airplane-${new Date(since).toISOString().replace(/[:.]/g, "-")}.json`);
   };
 

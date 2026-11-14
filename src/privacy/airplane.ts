@@ -66,6 +66,7 @@
  * from Resource Timing, so a non-zero transfer shows up.
  */
 
+import { isPopup, reachedNetwork, type EgressTally } from "./airplaneCertificate";
 import { __setAirplaneFlag, addAirplaneCsp, AIRPLANE_KEY, AIRPLANE_TAB, airplaneSinceStored, blankFrames, onSwitchedElsewhere, rootsOf, shadowRoots } from "./airplaneBoot";
 import { AIRPLANE_CHANNEL, type AirplaneMessage } from "../ai/workerLedger";
 
@@ -100,8 +101,14 @@ export class AirplaneBlockedError extends Error {
   }
 }
 
+/** The list keeps every attempt that reached the network, and this many others (the newest). */
 const MAX = 500;
 let attempts: EgressAttempt[] = [];
+/** Listed attempts that did not reach the network (the ones the list may drop). */
+let unpinned = 0;
+const freshTally = (from: number): EgressTally => ({ from, attempts: 0, blocked: 0, local: 0, cacheOnly: 0, inFlight: 0, left: 0, popups: 0 });
+/** Every attempt counted, by decision, since the switch (or the page's start): kept apart from the bounded list (review 14). */
+let tally: EgressTally = freshTally(Date.now());
 let nextId = 1;
 const listeners = new Set<() => void>();
 let on = false;
@@ -119,6 +126,11 @@ export function airplaneSince(): number | null {
 
 export function egressAttempts(): readonly EgressAttempt[] {
   return attempts;
+}
+
+/** The running count behind the certificate's summary (`buildCertificate(…, egressTally())`). */
+export function egressTally(): Readonly<EgressTally> {
+  return { ...tally };
 }
 
 export function subscribeEgress(fn: () => void): () => void {
@@ -157,7 +169,23 @@ export function egressTarget(url: string, base: string = typeof location !== "un
 
 export function record(a: Omit<EgressAttempt, "id" | "ts"> & { ts?: number }): EgressAttempt {
   const entry: EgressAttempt = { ...a, id: nextId++, ts: a.ts ?? Date.now() };
-  attempts = [...attempts, entry].slice(-MAX);
+  tally.attempts++;
+  if (entry.decision === "blocked") tally.blocked++;
+  else if (entry.decision === "local") tally.local++;
+  else if (entry.decision === "cache-only") tally.cacheOnly++;
+  else if (entry.decision === "in-flight") tally.inFlight++;
+  const leak = reachedNetwork(entry);
+  if (leak) tally.left++;
+  if (leak && isPopup(entry)) tally.popups++;
+  // A real leak is never dropped from the list (review 14): only the oldest of the others go, past MAX.
+  const next = [...attempts, entry];
+  if (!leak) unpinned++;
+  if (unpinned > MAX) {
+    const i = next.findIndex((a) => !reachedNetwork(a));
+    if (i >= 0) next.splice(i, 1);
+    unpinned--;
+  }
+  attempts = next;
   for (const fn of [...listeners]) fn();
   return entry;
 }
@@ -230,6 +258,7 @@ export function enableAirplaneMode(): void {
   on = true;
   const at = Date.now();
   since = at;
+  tally = freshTally(at);
   try {
     localStorage.setItem(AIRPLANE_KEY, JSON.stringify({ since }));
   } catch {
@@ -674,6 +703,8 @@ export function installAirplaneMode(win: W = window as W): void {
   installed = true;
   since = airplaneSinceStored();
   on = since !== null;
+  // Woken with the switch on: everything this page counts is since the switch (nothing earlier is in memory).
+  if (since !== null) tally = freshTally(since);
   if (on && win.document) addAirplaneCsp(win.document);
 
   // What a frame could start outside itself, and frames in shadow roots (review 6).
@@ -846,6 +877,8 @@ export function installAirplaneMode(win: W = window as W): void {
 export function __resetAirplane(): void {
   __setAirplaneFlag(false);
   attempts = [];
+  unpinned = 0;
+  tally = freshTally(Date.now());
   nextId = 1;
   listeners.clear();
   on = false;
