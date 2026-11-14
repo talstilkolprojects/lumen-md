@@ -8,16 +8,59 @@
 
 ## Reporting a vulnerability
 
-**Do not open a public GitHub issue for security vulnerabilities.**
+**Do not open a public GitHub issue, discussion or pull request for a vulnerability.**
 
-Instead, report it privately through GitHub: **[Report a vulnerability](https://github.com/talstilkol/lumen-md/security/advisories/new)** (Security → Advisories), with:
+Report it privately through GitHub: **[Report a vulnerability](https://github.com/talstilkol/lumen-md/security/advisories/new)** (Security → Advisories → Report a vulnerability). Only the maintainers see it. Include:
 
-1. A description of the vulnerability
-2. Steps to reproduce
-3. Impact assessment (what data or functionality is affected)
-4. Your suggested fix, if any
+1. What is affected (file, feature, version or commit)
+2. Steps to reproduce, or a proof of concept
+3. The impact: what an attacker gets (notes read, notes changed, keys, code run, data sent off the device)
+4. A suggested fix, if you have one
 
-We will acknowledge receipt within **48 hours** and provide a timeline for a fix within **5 business days**.
+If you cannot use GitHub, open a public issue titled **"Security contact request"** with no details; a maintainer replies with a private channel.
+
+### What happens next
+
+| When | What the maintainers do |
+|---|---|
+| ≤ 48 hours | Acknowledge the report in the advisory. |
+| ≤ 5 business days | Confirm or reject it, give it a severity (CVSS 3.1: critical, high, medium, low) and a fix date. |
+| Critical / high: ≤ 14 days · medium: ≤ 30 days · low: next release | Fix it in the advisory's **temporary private fork**, so the fix is not public before the release. The fix touches a sensitive path, so it gets a human review (`human-reviewed` label, see `.github/CODEOWNERS`) like any other change there. |
+| Release day | Publish the release, then the advisory; request a CVE through the advisory when the severity is medium or higher. The reporter is credited unless they ask not to be. |
+| 90 days after the report | The latest date for disclosure, fixed or not, unless the reporter and the maintainers agree on another date. If a vulnerability is exploited in the wild, it is disclosed as soon as users can protect themselves. |
+
+If the first maintainer does not answer within 48 hours, the second maintainer (docs: *contributing/second-maintainer*) takes the report. Both receive every advisory.
+
+### In scope
+
+- The web app (lumen-md.vercel.app and self-hosted builds), the desktop app (Tauri), the Android and iOS apps
+- End-to-end encrypted sync and collaboration, the encrypted vault, the secrets store, plugin signing
+- Anything that sends note content, keys or personal data off the device without the user's consent (the privacy ledger)
+- CSP and header bypasses; the plugin sandbox; path traversal out of the vault folder
+
+### Out of scope
+
+- Attacks that need a device the attacker already controls (malware, an unlocked computer)
+- Reports from automated scanners without a working attack
+- Missing hardening headers on hosts Lumen does not run
+- Third-party services the user connects (their own model provider, sync provider), except how Lumen uses them
+
+We do not pursue legal action against good-faith research that follows this policy, avoids harm to users' data, and gives us the time above.
+
+### בעברית
+
+מדווחים על חולשת אבטחה **רק בערוץ פרטי**: [Report a vulnerability](https://github.com/talstilkol/lumen-md/security/advisories/new) ב-GitHub (Security → Advisories). לא פותחים issue ציבורי. נאשר קבלה תוך 48 שעות, ניתן חומרה ותאריך תיקון תוך 5 ימי עבודה, נתקן ב-fork פרטי זמני ונפרסם את הגרסה ואז את ה-advisory (עם CVE מחומרה בינונית ומעלה, ועם קרדיט למדווח). המועד האחרון לפרסום הוא 90 יום מהדיווח. אם המתחזק הראשון לא עונה תוך 48 שעות, המתחזק השני מטפל.
+
+## Maintainers and keys
+
+Every key that can sign a Lumen release, plugin or reviewed commit is listed here with its fingerprint. A key that is not in this table is not ours. Changing this table is a sensitive change, so the other maintainer reviews it (`.github/CODEOWNERS`).
+
+| Maintainer | GitHub | Commit signing key (SSH, SHA256 fingerprint) | Plugin signing key (Ed25519, SHA-256 of the SPKI) | Since |
+|---|---|---|---|---|
+| Tal (owner) | @talstilkol | *to add* | *to add* | — |
+| Second maintainer | *open: see docs, contributing/second-maintainer* | — | — | — |
+
+The desktop updater trusts one minisign public key (`src-tauri/tauri.conf.json`). It is held by the owner and kept in the maintainers' emergency vault (docs: *contributing/second-maintainer*, sections 6 and 7).
 
 ## Security architecture
 
