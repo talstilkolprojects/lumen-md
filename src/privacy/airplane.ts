@@ -68,6 +68,7 @@
 
 import { __setAirplaneFlag, addAirplaneCsp, AIRPLANE_KEY, AIRPLANE_TAB, airplaneSinceStored, blankFrames, onSwitchedElsewhere, rootsOf, shadowRoots } from "./airplaneBoot";
 import { AIRPLANE_CHANNEL, type AirplaneMessage } from "../ai/workerLedger";
+import { EMBED_ORIGINS } from "../lib/embedProviders";
 
 export type EgressKind = "fetch" | "xhr" | "websocket" | "eventsource" | "beacon" | "webrtc" | "worker" | "resource" | "csp" | "frame";
 /** "in-flight": a request still waiting for its answer when the switch went on (counted, then aborted). */
@@ -354,35 +355,13 @@ export function trackOpen(w: Window | null | undefined): void {
 }
 
 /**
- * The sites whose embeds keep `allow-same-origin`: the https origins of
- * public/_headers' frame-src, which are the providers of
- * src/plugins/EmbedBlock.tsx and the embed codes they hand out (review 8,
- * RR8-451-2: one list; a test keeps them equal). A frame from any other site
+ * The sites whose embeds keep `allow-same-origin`: security/policy.json's
+ * embedProviders, the one list frame-src and src/plugins/EmbedBlock.tsx read
+ * too (plan W8.7; review 8, RR8-451-2). A frame from any other site
  * loses it, so it has no storage and no service worker of its own (review 6,
  * RR6-451-2).
  */
-export const EMBED_ORIGINS: ReadonlySet<string> = new Set([
-  "https://codepen.io",
-  "https://codesandbox.io",
-  "https://gist.github.com",
-  "https://maps.google.com",
-  "https://open.spotify.com",
-  "https://platform.twitter.com",
-  "https://player.vimeo.com",
-  "https://w.soundcloud.com",
-  "https://www.facebook.com",
-  "https://www.figma.com",
-  "https://www.google.com",
-  "https://www.instagram.com",
-  "https://www.linkedin.com",
-  "https://www.loom.com",
-  "https://www.openstreetmap.org",
-  "https://www.reddit.com",
-  "https://www.redditmedia.com",
-  "https://www.tiktok.com",
-  "https://www.youtube.com",
-  "https://www.youtube-nocookie.com",
-]);
+export { EMBED_ORIGINS };
 
 const NO_POPUPS = new Set(["allow-popups", "allow-popups-to-escape-sandbox"]);
 

@@ -93,6 +93,10 @@ to it as well. So the effective policy is always the intersection of the two.
   - The embed block frames `data:text/html` (gist) and only the listed embed origins
     (`src/plugins/EmbedBlock.tsx`). Nothing frames `blob:`, so the explicit list replaces
     the blanket `https:`.
+    Plan W8.7: that list is `embedProviders` in security/policy.json, and frame-src
+    says `@embedProviders`. `src/lib/embedProviders.ts` gives the same list to the
+    block and the airplane switch, and `npm run headers` refuses an https site named
+    in frame-src itself.
 - **D2 · docker's app headers never reached the page.** They sat at server level, but
   `location /` has its own `add_header Cache-Control`. A location with any `add_header`
   inherits none from the server. Checked with nginx 1.24: `/` and every SPA route were

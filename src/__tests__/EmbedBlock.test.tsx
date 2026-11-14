@@ -36,7 +36,7 @@ describe("EmbedBlock", () => {
     ["https://www.reddit.com/r/typescript/comments/abc12/title", "Reddit", "https://www.redditmedia.com/r/typescript/comments/abc12/?embed=true&theme=dark"],
     ["https://www.linkedin.com/embed/feed/update/urn:li:share:123", "LinkedIn", "https://www.linkedin.com/embed/feed/update/urn:li:share:123"],
     ["https://www.linkedin.com/posts/dana_some-slug-activity-7123456789-abcd", "LinkedIn", "https://www.linkedin.com/embed/feed/update/urn:li:activity:7123456789"],
-    ["https://example.com/page", "Embed", "https://example.com/page"],
+    ["https://www.youtube.com/embed/dQw4w9WgXcQ", "YouTube", "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"],
   ])("%s → %s player", (url, title, src) => {
     const el = frame(url);
     expect(el.getAttribute("src")).toBe(src);
@@ -89,6 +89,13 @@ describe("EmbedBlock", () => {
     const { container } = render(<EmbedBlock source={"not a url"} />);
     expect(container.querySelector("iframe")).toBeNull();
     expect(container.textContent).toContain("Could not recognize the embed URL.");
+  });
+
+  it("does not frame a site outside the embed providers (security/policy.json, W8.7); the link stays", () => {
+    const { container } = render(<EmbedBlock source={"https://example.com/page"} />);
+    expect(container.querySelector("iframe")).toBeNull();
+    expect(container.textContent).toContain("Could not recognize the embed URL.");
+    expect(container.querySelector("a")?.getAttribute("href")).toBe("https://example.com/page");
   });
 
   it("an empty block is not a link either", () => {

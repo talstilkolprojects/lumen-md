@@ -61,6 +61,16 @@ runs for `/playground-runner.html` and `/livejs-runner.html` only, drops the
 frame denial and sets the runner's policy. Its policy strings are rendered
 from `security/policy.json`: `npm run headers` fails when they drift.
 
+## Embed providers
+
+The sites an `embed` block may frame are one list, `embedProviders` in
+`security/policy.json`. Every host's `frame-src` is rendered from it
+(`@embedProviders` in the policy), the embed block frames only those sites
+(any other link shows "Could not recognize the embed URL" and keeps the link),
+and airplane mode reads the same list. To allow another provider, add its
+origin there and run `npm run headers:write`. `npm run headers` fails when a
+`frame-src` names an https site itself instead of through the list.
+
 ## Live R (webR)
 
 webR's binaries (R, libgfortran) are GPL-3.0, so no Lumen build or image
