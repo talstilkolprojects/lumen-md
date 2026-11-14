@@ -1631,7 +1631,7 @@ export function useCommands({
         action: async () => {
           const { listWorkspace, readWorkspaceFile, writeWorkspaceFile, isOPFSAvailable } = await import("../storage/workspace");
           if (!isOPFSAvailable()) return;
-          const { writeDigest } = await import("../agents/defs/digester");
+          const { digestFolder, writeDigest } = await import("../agents/defs/digester");
           const KEY = "lumen.digest.last";
           const now = Date.now();
           let since = now - 24 * 3600_000;
@@ -1641,7 +1641,15 @@ export function useCommands({
             /* default: last 24 h */
           }
           const lang = getLocale();
-          const folder = lang === "he" ? "סיכומים" : "Digests";
+          const FOLDER_KEY = "lumen.digest.folder";
+          let storedFolder: string | null = null;
+          try {
+            storedFolder = localStorage.getItem(FOLDER_KEY);
+          } catch {
+            /* the UI language's default */
+          }
+          // Fixed once chosen: a language switch keeps writing to the same folder (and the same day's note).
+          const folder = digestFolder(storedFolder, lang);
           const fmtDate = (ms: number) => new Date(ms).toLocaleString(getLocale(), { dateStyle: "medium", timeStyle: "short" });
           const res = await writeDigest(
             { list: () => listWorkspace({ includeAssets: false }), read: readWorkspaceFile, write: writeWorkspaceFile },
@@ -1655,6 +1663,7 @@ export function useCommands({
           const { path, body } = res;
           try {
             localStorage.setItem(KEY, String(now));
+            localStorage.setItem(FOLDER_KEY, folder);
           } catch {
             /* next digest covers 24 h again */
           }
