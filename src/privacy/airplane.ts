@@ -43,8 +43,11 @@
  * What a frame could start outside itself (review 6, RR6-451-2):
  *   windows   the app's own window.open (and that of every same-origin
  *             frame) is tracked, and those windows are closed at the switch.
- *             A frame never gets allow-popups (`guardFrames`), so an embed
- *             can't open one this page can't reach.
+ *             While the switch is on, no frame gets allow-popups
+ *             (`guardFrames`, however the frame is made). Before it, a frame
+ *             may (an embed's "Watch on YouTube" link): at the switch, each
+ *             frame that could have opened a window this page can't reach is
+ *             counted as a possible POPUP (review 8, RR8-451-1, -2).
  *   service workers   a frame from another site keeps allow-same-origin
  *             only for the known embed providers (EMBED_ORIGINS), so another
  *             site's page can't register one. At the switch, every service
@@ -63,7 +66,7 @@
  * from Resource Timing, so a non-zero transfer shows up.
  */
 
-import { __setAirplaneFlag, addAirplaneCsp, AIRPLANE_KEY, AIRPLANE_TAB, airplaneSinceStored, blankFrames, onSwitchedElsewhere, shadowRoots } from "./airplaneBoot";
+import { __setAirplaneFlag, addAirplaneCsp, AIRPLANE_KEY, AIRPLANE_TAB, airplaneSinceStored, blankFrames, onSwitchedElsewhere, rootsOf, shadowRoots } from "./airplaneBoot";
 import { AIRPLANE_CHANNEL, type AirplaneMessage } from "../ai/workerLedger";
 
 export type EgressKind = "fetch" | "xhr" | "websocket" | "eventsource" | "beacon" | "webrtc" | "worker" | "resource" | "csp" | "frame";
@@ -275,6 +278,10 @@ export function enableAirplaneMode(): void {
  * after the switch inherits the <meta>.
  */
 export function stopFrames(doc: Pick<Document, "querySelectorAll">, at: number = Date.now()): number {
+  // Before they are emptied: frames that could have opened a window out of this page's reach (RR8-451-1, -2).
+  for (const src of popupFrames(doc)) {
+    record({ kind: "frame", target: src.startsWith("about:") ? src : egressTarget(src), method: "POPUP", decision: "in-flight", origin: "frame (allow-popups)", ts: at });
+  }
   const stopped = blankFrames(doc);
   for (const f of stopped) {
     record({ kind: "frame", target: f.src.startsWith("about:") ? f.src : egressTarget(f.src), method: "FRAME", decision: "in-flight", origin: f.title || "frame", ts: at });
@@ -296,6 +303,39 @@ export function stopFrames(doc: Pick<Document, "querySelectorAll">, at: number =
 /** Windows opened through a tracked window.open, with the URL asked for. */
 const popups = new Map<Window, string>();
 
+/**
+ * Frames that may have opened a window this page can't close (review 8,
+ * RR8-451-1, -2): a frame whose sandbox allows popups, or that has none,
+ * unless its window is one whose window.open is tracked (`trackOpen`); and
+ * the same in same-origin frames' documents.
+ */
+function popupFrames(doc: Pick<Document, "querySelectorAll">, depth = 0): string[] {
+  const out: string[] = [];
+  for (const root of rootsOf(doc)) {
+    let frames: HTMLIFrameElement[] = [];
+    try {
+      frames = Array.from(root.querySelectorAll("iframe"));
+    } catch {
+      /* why: a fake document */
+    }
+    for (const f of frames) {
+      let inner: Document | null = null;
+      let tracked = false;
+      try {
+        inner = f.contentDocument;
+        tracked = Boolean((f.contentWindow as (Window & { __lumenOpen?: boolean }) | null)?.__lumenOpen);
+      } catch {
+        /* why: another origin's page: its window.open is out of reach */
+      }
+      const sb = f.getAttribute("sandbox");
+      const may = sb === null || sb.split(/[\t\n\f\r ]+/).some((t) => t.toLowerCase() === "allow-popups");
+      if (may && !tracked) out.push(f.getAttribute("srcdoc") !== null ? "about:srcdoc" : f.getAttribute("src") || "about:blank");
+      if (inner && depth < 8) out.push(...popupFrames(inner, depth + 1));
+    }
+  }
+  return out;
+}
+
 /** Wrap one window's `open` so the window it returns can be closed at the switch (RR6-451-2). */
 export function trackOpen(w: Window | null | undefined): void {
   const target = w as (Window & { __lumenOpen?: boolean }) | null | undefined;
@@ -314,13 +354,18 @@ export function trackOpen(w: Window | null | undefined): void {
 }
 
 /**
- * The sites whose embeds keep `allow-same-origin` (the providers of
- * src/plugins/EmbedBlock.tsx). A frame from any other site loses it, so it
- * has no storage and no service worker of its own (review 6, RR6-451-2).
+ * The sites whose embeds keep `allow-same-origin`: the https origins of
+ * public/_headers' frame-src, which are the providers of
+ * src/plugins/EmbedBlock.tsx and the embed codes they hand out (review 8,
+ * RR8-451-2: one list; a test keeps them equal). A frame from any other site
+ * loses it, so it has no storage and no service worker of its own (review 6,
+ * RR6-451-2).
  */
 export const EMBED_ORIGINS: ReadonlySet<string> = new Set([
   "https://codepen.io",
   "https://codesandbox.io",
+  "https://gist.github.com",
+  "https://maps.google.com",
   "https://open.spotify.com",
   "https://platform.twitter.com",
   "https://player.vimeo.com",
@@ -332,15 +377,21 @@ export const EMBED_ORIGINS: ReadonlySet<string> = new Set([
   "https://www.linkedin.com",
   "https://www.loom.com",
   "https://www.openstreetmap.org",
+  "https://www.reddit.com",
   "https://www.redditmedia.com",
   "https://www.tiktok.com",
+  "https://www.youtube.com",
   "https://www.youtube-nocookie.com",
 ]);
 
 const NO_POPUPS = new Set(["allow-popups", "allow-popups-to-escape-sandbox"]);
 
-/** A frame's sandbox as `guardFrames` leaves it: no popups; same-origin powers only for the app and the known embeds. */
-export function guardedSandbox(sandbox: string, src: string | null, base: string): string {
+/**
+ * A frame's sandbox as `guardFrames` leaves it: no popups while the switch is
+ * on (`stripPopups`, review 8, RR8-451-2: before it, an embed's links still
+ * open their page); same-origin powers only for the app and the known embeds.
+ */
+export function guardedSandbox(sandbox: string, src: string | null, base: string, stripPopups: boolean = on): string {
   let foreign = false;
   if (src) {
     try {
@@ -352,15 +403,20 @@ export function guardedSandbox(sandbox: string, src: string | null, base: string
   }
   return sandbox
     .split(/[\t\n\f\r ]+/)
-    .filter((t) => t && !NO_POPUPS.has(t.toLowerCase()) && !(foreign && t.toLowerCase() === "allow-same-origin"))
+    .filter((t) => t && !(stripPopups && NO_POPUPS.has(t.toLowerCase())) && !(foreign && t.toLowerCase() === "allow-same-origin"))
     .join(" ");
 }
 
 /**
  * Every sandboxed iframe this page makes through the DOM (React included)
  * gets `guardedSandbox`, decided before it loads: when its sandbox or its
- * src is set. A frame with no sandbox attribute is left as it is (the app
- * sandboxes every frame it loads from another site).
+ * src is set, through setAttribute, setAttributeNS or the properties. Frames
+ * the HTML parser makes (innerHTML, document.write) or whose sandbox comes
+ * through an Attr are decided by a MutationObserver before their first page
+ * can run (the same microtask checkpoint), and loaded again when that changes
+ * their sandbox; the same holds in shadow roots and in same-origin frames'
+ * documents (review 8, RR8-451-1). A frame with no sandbox attribute is left
+ * as it is (the app sandboxes every frame it loads from another site).
  */
 export function guardFrames(win: W): void {
   const proto = win.HTMLIFrameElement?.prototype as (HTMLIFrameElement & { __lumenGuard?: boolean }) | undefined;
@@ -382,6 +438,13 @@ export function guardFrames(win: W): void {
       native.call(this, name, value);
     }
   };
+  const nativeNS = win.Element.prototype.setAttributeNS;
+  proto.setAttributeNS = function (this: HTMLIFrameElement, ns: string | null, name: string, value: string) {
+    const n = String(name).toLowerCase();
+    if (!ns && (n === "sandbox" || n === "src")) this.setAttribute(n, value);
+    else nativeNS.call(this, ns, name, value);
+  };
+  observeFrames(win, win.document, native);
   const srcDesc = Object.getOwnPropertyDescriptor(proto, "src");
   if (srcDesc?.set) {
     Object.defineProperty(proto, "src", {
@@ -433,6 +496,65 @@ export function guardFrames(win: W): void {
 }
 const owners = new WeakMap<DOMTokenList, HTMLIFrameElement>();
 
+/** The nodes `observeFrames` already watches (a document or a shadow root). */
+const observed = new WeakSet<Node>();
+let observeShadow: ((root: ShadowRoot) => void) | null = null;
+
+/**
+ * Decide frames that no setter saw (RR8-451-1): each iframe added to `root`
+ * (or whose sandbox, src or srcdoc changes) gets `guardedSandbox`; one whose
+ * sandbox that changes is loaded again, so its page runs with the new flags.
+ * A same-origin frame's own window is guarded too, as soon as it is seen.
+ */
+function observeFrames(win: W, root: Node | null | undefined, native: (this: Element, name: string, value: string) => void): void {
+  const MO = win.MutationObserver;
+  if (!root || !MO || observed.has(root)) return;
+  observed.add(root);
+  const base = () => win.location?.href ?? "http://localhost/";
+  const decide = (f: HTMLIFrameElement) => {
+    const sb = f.getAttribute("sandbox");
+    if (sb !== null) {
+      const next = guardedSandbox(sb, f.getAttribute("src"), base());
+      if (next !== sb) {
+        native.call(f, "sandbox", next);
+        // The page it started (if any) has the old flags: start it again with the new ones.
+        const doc = f.getAttribute("srcdoc");
+        if (doc !== null) native.call(f, "srcdoc", doc);
+        else native.call(f, "src", f.getAttribute("src") ?? "about:blank");
+      }
+    }
+    try {
+      const w = f.contentWindow as W | null;
+      if (w && w.document && w.HTMLIFrameElement) {
+        guardFrames(w);
+        trackOpen(w);
+      }
+    } catch {
+      /* why: another origin's page: its frames are its own (and inherit this one's sandbox) */
+    }
+  };
+  // Every insertion in the app passes here (the editor's too): only a cheap look for frames.
+  const scan = (n: Node) => {
+    if (n.nodeType !== 1) return;
+    const el = n as Element;
+    if (el.tagName === "IFRAME") decide(el as HTMLIFrameElement);
+    else if (el.childElementCount) for (const f of Array.from(el.getElementsByTagName("iframe"))) decide(f);
+  };
+  try {
+    new MO((list) => {
+      for (const m of list) {
+        if (m.type === "attributes") {
+          if ((m.target as Element).tagName === "IFRAME") decide(m.target as HTMLIFrameElement);
+        } else for (const n of Array.from(m.addedNodes)) scan(n);
+      }
+    }).observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["sandbox", "src", "srcdoc"] });
+  } catch {
+    return; // why: not a node it can watch (a fake document)
+  }
+  for (const n of Array.from((root as ParentNode).children ?? [])) scan(n);
+  observeShadow ??= (sr) => observeFrames(win, sr, native);
+}
+
 /** Wrap `attachShadow`, so `blankFrames` finds frames in shadow roots, closed ones too (RR6-451-3). */
 export function trackShadowRoots(win: W): void {
   const proto = win.Element?.prototype as (Element & { __lumenShadow?: boolean }) | undefined;
@@ -441,6 +563,7 @@ export function trackShadowRoots(win: W): void {
   proto.attachShadow = function (this: Element, init: ShadowRootInit): ShadowRoot {
     const root = inner.call(this, init);
     shadowRoots.add(new WeakRef(root));
+    observeShadow?.(root);
     return root;
   };
   Object.defineProperty(proto, "__lumenShadow", { value: true });
@@ -509,7 +632,15 @@ export function installAirplaneMode(win: W = window as W): void {
       "load",
       (e: Event) => {
         const t = e.target as HTMLIFrameElement | null;
-        if (t && t.tagName === "IFRAME") trackOpen(t.contentWindow);
+        if (t && t.tagName === "IFRAME") {
+          trackOpen(t.contentWindow);
+          try {
+            const w = t.contentWindow as W | null;
+            if (w?.HTMLIFrameElement) guardFrames(w); // why: a same-origin page's own frames (RR8-451-1)
+          } catch {
+            /* why: another origin's page */
+          }
+        }
       },
       true,
     );

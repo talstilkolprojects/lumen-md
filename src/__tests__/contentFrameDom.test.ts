@@ -67,7 +67,7 @@ describe("src/lib/contentFrame.ts", () => {
     for (const k of ["img", "video", "audio", "gist"] as const) expect(contentFrameSandbox(k).split(" "), k).not.toContain("allow-same-origin");
     expect(contentFrameSandbox("img")).toBe("allow-scripts");
     expect(contentFrameSandbox("gist")).toBe("allow-scripts");
-    expect(contentFrameSandbox("embed")).toBe("allow-scripts allow-same-origin allow-presentation allow-forms");
+    expect(contentFrameSandbox("embed")).toBe("allow-scripts allow-same-origin allow-popups allow-presentation allow-forms");
   });
 
   it("createContentFrame: attributes and a size from the frame's report", () => {

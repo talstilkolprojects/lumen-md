@@ -54,10 +54,13 @@ the signed privacy report.
 
 ## Limits
 
-- A site embedded in a note can't open a window, and only the known embed providers
-  (YouTube, Vimeo and the others of the embed block) keep a storage of their own. A
-  service worker one of them registered before you turned the mode on is outside the
-  page and may keep running.
+- While the mode is on, a site embedded in a note can't open a window. Before you turn
+  it on, an embed's own links work ("Watch on YouTube" opens YouTube). A window an
+  embed opened before then is outside the page: it isn't closed, and the certificate
+  counts it as having reached the network. Only the known embed providers (YouTube,
+  Vimeo, Google Maps, GitHub Gist, Reddit and the others of the embed block) keep a
+  storage of their own. A service worker one of them registered before you turned the
+  mode on is outside the page and may keep running.
 
 - Lumen's own script files that the offline cache doesn't hold load from Lumen's server,
   like any page resource; they are not `fetch` requests. The monitor sees them through

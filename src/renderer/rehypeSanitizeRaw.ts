@@ -26,7 +26,7 @@ import { remoteImageHost, srcSetUrls } from "../lib/remoteImages";
 const DROP_ELEMENTS = new Set([
   "script", "style", "noscript", "template", "object", "embed", "applet",
   "form", "button", "select", "textarea", "option",
-  "meta", "base", "link", "frame", "frameset", "portal", "param",
+  "meta", "base", "link", "frame", "frameset", "portal", "fencedframe", "param",
 ]);
 
 const DROP_PROPS = new Set(["srcDoc", "formAction", "formMethod", "formTarget", "ping", "httpEquiv", "is"]);
@@ -147,7 +147,7 @@ function cleanElement(el: Element) {
   dropRemoteLoads(el, props);
   if (el.tagName === "iframe") {
     if (typeof props.src !== "string") return false;
-    props.sandbox = ["allow-scripts", "allow-presentation", "allow-same-origin"];
+    props.sandbox = ["allow-scripts", "allow-popups", "allow-presentation", "allow-same-origin"];
     props.referrerPolicy = "no-referrer";
     props.loading = "lazy";
   }

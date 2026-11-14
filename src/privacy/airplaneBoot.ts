@@ -124,7 +124,7 @@ export const shadowRoots = new Set<WeakRef<ShadowRoot>>();
 type Root = Pick<Document, "querySelectorAll">;
 
 /** The document and every shadow root in it: the tracked ones, and open ones found on the way. */
-function rootsOf(doc: Root): Root[] {
+export function rootsOf(doc: Root): Root[] {
   const out: Root[] = [doc];
   const seen = new Set<unknown>([doc]);
   for (const ref of [...shadowRoots]) {

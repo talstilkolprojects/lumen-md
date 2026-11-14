@@ -133,7 +133,7 @@
     // The flags the embed block always gave the provider's frame. A frame
     // never gets more than this page has, and the app frames this page with
     // the same set for embeds.
-    frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation allow-forms");
+    frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-presentation allow-forms");
     frame.src = esrc;
     body.className = "lumen-cf-fill";
     body.appendChild(frame);
