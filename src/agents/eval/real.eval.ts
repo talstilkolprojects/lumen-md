@@ -14,6 +14,7 @@
  *   LUMEN_REAL_OLLAMA_URL  default http://127.0.0.1:11434
  *   LUMEN_EVAL_OUT         report directory, default eval/results
  *   LUMEN_REAL_MAX_TOKENS  default 64
+ *   LUMEN_REAL_MODEL_DIGEST_SEEN  the model's digest, set by the script (7.2.3)
  */
 
 import { describe, it, expect, vi } from "vitest";
@@ -35,6 +36,7 @@ const model = process.env.LUMEN_REAL_MODEL || "";
 const url = process.env.LUMEN_REAL_OLLAMA_URL || "http://127.0.0.1:11434";
 const outDir = process.env.LUMEN_EVAL_OUT || "eval/results";
 const maxTokens = Number(process.env.LUMEN_REAL_MAX_TOKENS || 64);
+const digest = process.env.LUMEN_REAL_MODEL_DIGEST_SEEN || "";
 
 interface RealResult {
   id: string;
@@ -45,13 +47,13 @@ interface RealResult {
   ms: number;
 }
 
-export function formatRealReport(results: RealResult[], meta: { model: string; url: string; date: string; ms: number; maxTokens: number }): string {
+export function formatRealReport(results: RealResult[], meta: { model: string; url: string; date: string; ms: number; maxTokens: number; digest?: string }): string {
   const agents = [...new Set(results.map((r) => r.agent))];
   const agentOk = agents.filter((a) => results.filter((r) => r.agent === a).every((r) => r.ok));
   return [
     `# Real tiny model — ${meta.model}`,
     "",
-    `${meta.date} · ${meta.url} · temperature 0 · seed 42 · ≤ ${meta.maxTokens} tokens a turn · ${(meta.ms / 1000).toFixed(1)} s in all`,
+    `${meta.date} · ${meta.url}${meta.digest ? ` · digest ${meta.digest}` : ""} · temperature 0 · seed 42 · ≤ ${meta.maxTokens} tokens a turn · ${(meta.ms / 1000).toFixed(1)} s in all`,
     "",
     `**${agentOk.length}/${agents.length} agents** returned output of the right shape (${results.filter((r) => r.ok).length}/${results.length} cases).`,
     "",
@@ -101,8 +103,8 @@ describe.skipIf(!model)(`real tiny model — ${model} @ ${url}`, () => {
     const date = new Date().toISOString().slice(0, 10);
     const slug = model.replace(/[^\w.-]+/g, "_");
     mkdirSync(outDir, { recursive: true });
-    writeFileSync(join(outDir, `real-${date}-${slug}.md`), formatRealReport(results, { model, url, date, ms, maxTokens }));
-    writeFileSync(join(outDir, `real-${date}-${slug}.json`), JSON.stringify({ model, url, date, ms, maxTokens, results }, null, 2));
+    writeFileSync(join(outDir, `real-${date}-${slug}.md`), formatRealReport(results, { model, url, date, ms, maxTokens, digest }));
+    writeFileSync(join(outDir, `real-${date}-${slug}.json`), JSON.stringify({ model, url, date, ms, maxTokens, digest, results }, null, 2));
 
     const agents = new Set(EVAL_CASES.map((c) => c.agent));
     expect(agents.size, "every agent has a case").toBeGreaterThanOrEqual(14);
