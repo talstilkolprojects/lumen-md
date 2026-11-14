@@ -1,0 +1,21 @@
+{
+  "institution": { "id": "example", "he": "מוסד לדוגמה", "en": "Example institution" },
+  "year": 5787,
+  "label": "תשפ״ז",
+  "source": { "url": "https://example.com/calendar-5787.pdf", "title": "A synthetic calendar for tests", "retrieved": "2026-11-14" },
+  "verified": true,
+  "semesters": [
+    { "id": "a", "start": "2026-10-18", "end": "2027-01-21" },
+    { "id": "b", "start": "2027-03-07", "end": "2027-06-24" }
+  ],
+  "exams": [
+    { "semester": "a", "moed": "a", "start": "2027-01-24", "end": "2027-02-12" },
+    { "semester": "a", "moed": "b", "start": "2027-02-14", "end": "2027-03-05" },
+    { "semester": "b", "moed": "a", "start": "2027-06-27", "end": "2027-07-16" }
+  ],
+  "breaks": [
+    { "name": "חופשת חנוכה", "start": "2026-12-06", "end": "2026-12-07" },
+    { "name": "חופשת פסח", "start": "2027-04-18", "end": "2027-04-30" }
+  ],
+  "makeupDays": ["2027-01-15"]
+}

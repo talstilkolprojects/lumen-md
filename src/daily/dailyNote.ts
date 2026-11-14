@@ -143,7 +143,7 @@ export const isIsrael = (settings: Pick<DailySettings, "israel">, locale: string
  * " · " between them, or nothing) and {{parasha}} (this week's portion: the
  * Shabbat on or after the day, or the holiday read instead).
  */
-export function renderTemplate(template: string, day: Day, locale: string, opts: { israel?: boolean } = {}): string {
+export function renderTemplate(template: string, day: Day, locale: string, opts: { israel?: boolean; academic?: string } = {}): string {
   const date = noonUtc(day);
   const israel = opts.israel ?? defaultIsrael(locale);
   const lang = nameLang(locale);
@@ -154,8 +154,10 @@ export function renderTemplate(template: string, day: Day, locale: string, opts:
     title: () => new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" }).format(date),
     holiday: () => holidaysOn(day, { israel }).map((h) => holidayLabel(h, lang)).join(" · "),
     parasha: () => readingName(weeklyReading(day, { israel }), lang),
+    // The academic calendar's line (plan W7.8): "שבוע 6 בסמסטר א׳ · 23 יום למועד א׳", or nothing.
+    academic: () => opts.academic ?? "",
   };
-  return template.replace(/\{\{\s*(date|hebrewDate|weekday|title|holiday|parasha)\s*\}\}/g, (_, k: string) => vars[k]());
+  return template.replace(/\{\{\s*(date|hebrewDate|weekday|title|holiday|parasha|academic)\s*\}\}/g, (_, k: string) => vars[k]());
 }
 
 // ── Open or create ──────────────────────────────────────────────────────
@@ -174,7 +176,8 @@ export function ensureDailyNote(day: Day, settings: DailySettings, locale: strin
   const job = (async () => {
     const ws = await import("../storage/workspace");
     if (!(await ws.workspaceHasEntry(path))) {
-      await ws.writeWorkspaceFile(path, renderTemplate(settings.template, day, locale, { israel: isIsrael(settings, locale) }));
+      const academic = /\{\{\s*academic\s*\}\}/.test(settings.template) ? await import("../academic/app").then((m) => m.dailyLineFor(day, locale)) : "";
+      await ws.writeWorkspaceFile(path, renderTemplate(settings.template, day, locale, { israel: isIsrael(settings, locale), academic }));
       const { notifyWorkspaceChanged } = await import("../storage/workspaceEvents");
       notifyWorkspaceChanged({ kind: "structure", paths: [path] });
     }

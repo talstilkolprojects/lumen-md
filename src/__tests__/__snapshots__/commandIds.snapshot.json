@@ -1776,6 +1776,20 @@
       "group": "Insert",
       "hint": "Every note that cites the verse under the cursor",
       "icon": "Link"
+    },
+    {
+      "id": "academic.choose",
+      "label": "Academic calendar: choose an institution…",
+      "group": "Tools",
+      "hint": "Semesters, Moed A and B and breaks in the daily note ({{academic}}) and for deadlines",
+      "icon": "FileText"
+    },
+    {
+      "id": "academic.ics",
+      "label": "Export the academic calendar (ICS)",
+      "group": "Tools",
+      "hint": "The chosen institution's year as a calendar file for Google Calendar or Apple Calendar",
+      "icon": "Download"
     }
   ],
   "full": [
@@ -3704,6 +3718,20 @@
       "group": "Insert",
       "hint": "Every note that cites the verse under the cursor",
       "icon": "Link"
+    },
+    {
+      "id": "academic.choose",
+      "label": "Academic calendar: choose an institution…",
+      "group": "Tools",
+      "hint": "Semesters, Moed A and B and breaks in the daily note ({{academic}}) and for deadlines",
+      "icon": "FileText"
+    },
+    {
+      "id": "academic.ics",
+      "label": "Export the academic calendar (ICS)",
+      "group": "Tools",
+      "hint": "The chosen institution's year as a calendar file for Google Calendar or Apple Calendar",
+      "icon": "Download"
     }
   ],
   "autoSaveOn": [
@@ -3971,6 +3999,8 @@
     "help.a11yReport",
     "sources.insertSefaria",
     "sources.saveOffline",
-    "sources.notesOnVerse"
+    "sources.notesOnVerse",
+    "academic.choose",
+    "academic.ics"
   ]
 }

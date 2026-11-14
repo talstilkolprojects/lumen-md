@@ -1,6 +1,13 @@
 {
   "a11y.sidebarResizer": "サイドバーの幅を変更",
   "a11y.skipToContent": "コンテンツへスキップ",
+  "academic.chosen": "学年暦：{name}",
+  "academic.chosenUnverified": "{name} を選びましたが、日付は未検証のため表示しません。",
+  "academic.exported": "{file} を保存",
+  "academic.noChoice": "先に機関を選んでください。",
+  "academic.none": "なし",
+  "academic.pick": "どの機関・年度？",
+  "academic.unverified": "未検証",
   "agentReview.approve": "承認",
   "agentReview.approveAll": "すべて承認（{count}）",
   "agentReview.badge": "確認 {count}",

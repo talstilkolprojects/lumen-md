@@ -1,6 +1,13 @@
 {
   "a11y.sidebarResizer": "Seitenleiste in der Breite ändern",
   "a11y.skipToContent": "Zum Inhalt springen",
+  "academic.chosen": "Kalender: {name}",
+  "academic.chosenUnverified": "{name} ist gewählt, aber die Daten sind noch nicht geprüft.",
+  "academic.exported": "Gespeichert: {file}",
+  "academic.noChoice": "Wählen Sie zuerst eine Hochschule.",
+  "academic.none": "Keine",
+  "academic.pick": "Welche Hochschule und welches Jahr?",
+  "academic.unverified": "noch nicht geprüft",
   "agentReview.approve": "Annehmen",
   "agentReview.approveAll": "Alle annehmen ({count})",
   "agentReview.badge": "{count} prüfen",

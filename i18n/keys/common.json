@@ -14,6 +14,47 @@
       "vars": []
     },
     {
+      "key": "academic.chosen",
+      "en": "Academic calendar: {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "academic.chosenUnverified",
+      "en": "{name} is chosen, but its dates are not checked yet, so Lumen shows nothing from it.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "academic.exported",
+      "en": "Saved {file}",
+      "vars": [
+        "file"
+      ]
+    },
+    {
+      "key": "academic.noChoice",
+      "en": "Choose an institution first.",
+      "vars": []
+    },
+    {
+      "key": "academic.none",
+      "en": "None (stop showing it)",
+      "vars": []
+    },
+    {
+      "key": "academic.pick",
+      "en": "Which institution and year?",
+      "vars": []
+    },
+    {
+      "key": "academic.unverified",
+      "en": "not yet checked against the official document",
+      "vars": []
+    },
+    {
       "key": "agentReview.approve",
       "en": "Approve",
       "vars": []

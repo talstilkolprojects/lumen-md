@@ -1,6 +1,13 @@
 {
   "a11y.sidebarResizer": "Изменить ширину боковой панели",
   "a11y.skipToContent": "Перейти к содержимому",
+  "academic.chosen": "Календарь: {name}",
+  "academic.chosenUnverified": "Выбран {name}, но даты ещё не проверены.",
+  "academic.exported": "Сохранено: {file}",
+  "academic.noChoice": "Сначала выберите вуз.",
+  "academic.none": "Нет",
+  "academic.pick": "Какой вуз и год?",
+  "academic.unverified": "ещё не проверено",
   "agentReview.approve": "Принять",
   "agentReview.approveAll": "Принять все ({count})",
   "agentReview.badge": "Проверить: {count}",

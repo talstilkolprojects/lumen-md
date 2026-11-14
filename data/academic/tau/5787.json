@@ -1,0 +1,19 @@
+{
+  "institution": {
+    "id": "tau",
+    "he": "אוניברסיטת תל אביב",
+    "en": "Tel Aviv University"
+  },
+  "year": 5787,
+  "label": "תשפ״ז",
+  "source": {
+    "url": "https://tau.ac.il/sites/default/files/media_server/General/sp%202025/1-TAU_Calendar_26-27.pdf",
+    "title": "TAU Calendar 2026-27",
+    "retrieved": null
+  },
+  "verified": false,
+  "semesters": [],
+  "exams": [],
+  "breaks": [],
+  "makeupDays": []
+}
