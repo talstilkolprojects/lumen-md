@@ -31,11 +31,12 @@ const vaultStorage: SourceStorage = {
  * the user declined.
  */
 export async function lookup(ref: SourceRef, confirm: () => Promise<boolean>): Promise<LookupResult | null> {
-  let asked: boolean | null = null;
+  // The question, not its answer, is kept: requests made before the answer share it (review 25, RR25-1; as RR20-2).
+  let asked: Promise<boolean> | null = null;
   const consentedFetch = ledgerFetch({ force: { category: "cloud-text", reason: LEDGER_REASON }, consent: true });
   const gated: typeof fetch = async (input, init) => {
-    asked ??= await confirm();
-    if (!asked) throw new DeclinedError();
+    asked ??= confirm();
+    if (!(await asked)) throw new DeclinedError();
     return consentedFetch(input, init);
   };
   try {

@@ -292,3 +292,22 @@ describe("every other door out (review 12.11)", () => {
     expect(cleanInlineImages(md).withheld).toBe(1);
   });
 });
+
+describe("mark offsets are in the note's own text (review 26, RR26-473-1)", () => {
+  it("an opening tag a mark stands for (`at`) is mapped back with the mark, after CriticMarkup shifts the text", () => {
+    // W8.8-F1 and -F2: each has a mark that stands for an opening tag the preview reads inside it.
+    const f1 = "<REDACT\r a='>A<redact\t id=1>B<redact\n title='a>b'>C</REDACT>  D";
+    const f2 = '<Redact > --->A</redact <redact   data-x="</redact>">B<!--</redact-->C<b></redact></b>D</redact/> E';
+    for (const shape of [f1, f2]) {
+      // A suggestion and a comment before the shape: the preview swaps each delimiter for one character.
+      const md = `{++added++} {>>a note<<} ${shape}`;
+      const marks = redactMarks(md);
+      const standing = marks.filter((m) => m.at !== undefined);
+      expect(standing.length, JSON.stringify(shape)).toBeGreaterThan(0);
+      for (const m of marks) {
+        expect(md.slice(m.index, m.index + 8).toLowerCase(), JSON.stringify(m)).toMatch(/^<\/?redact/);
+        if (m.at !== undefined) expect(md.slice(m.at, m.at + 7).toLowerCase(), JSON.stringify(m)).toBe("<redact");
+      }
+    }
+  });
+});
