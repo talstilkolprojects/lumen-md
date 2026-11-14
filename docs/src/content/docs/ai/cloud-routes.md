@@ -40,6 +40,7 @@ route loses its gate.
 | Read aloud | `network-voices` | the system's on-device voices | server-side browser voices ("Google …") | *cloud* only |
 | PlantUML diagrams | `plantuml-kroki` | — (no local renderer yet) | kroki.io draws the diagram from its text | *cloud*; otherwise only for a diagram you choose to send ("Render this diagram with kroki.io") |
 | Jewish sources | `sefaria-texts` | the copy you saved for offline (Sources/Sefaria) | Sefaria's texts API: the reference only, such as "Genesis 1:1" | under any policy, each time you confirm a lookup; a saved source needs no request |
+| Publishing to Bluesky (Standard.site) | `atproto-publish` | nothing is published (Export Markdown and the static site stay local) | your own AT Protocol account (PDS): the open note as a public record, redacted first; plc.directory to find your PDS | under any policy, only when you run Publish, Update or Unpublish on one note and confirm that the record is public and permanent |
 
 Model downloads (Hugging Face, the OCR and dictionary files) carry no
 content of yours; they are listed in the privacy ledger and happen only

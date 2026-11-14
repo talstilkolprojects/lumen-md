@@ -5,12 +5,17 @@
  * Bluesky shows rich previews of such links; Leaflet and other readers show
  * the document; Bridgy Fed bridges it to the fediverse for users who opt in.
  *
- * - Login: the user's handle and an App Password. The password lives only in
- *   the secret store (2.5); the session tokens only in memory.
+ * - Login: the user's handle and an App Password, typed for one sign-in and
+ *   never stored. Only the refresh token is kept, in the secret store (2.5);
+ *   the access token lives in memory.
  * - Every request is a user action (Publish, Update, Unpublish) and goes
  *   through the privacy ledger (`atprotoFetch`).
  * - The Markdown export stays the source: the record's `content` is the
- *   note's Markdown (`at.markpub.markdown`), redacted as every export is.
+ *   note's Markdown (`at.markpub.markdown`), and it is redacted HERE, inside
+ *   `documentRecord`, so no caller can hand a raw note to a public, permanent
+ *   record (review 20, RR20-587-1): `<redact>` passages, HTML comments and
+ *   `%%…%%` comments are removed fail-closed, and #473's export door runs too
+ *   when the build has it.
  * - Standard.site has no language or direction field: Hebrew text carries its
  *   own direction (the Unicode bidi algorithm), and the site page sets
  *   `lang`/`dir` on <html>. We don't invent a field.
@@ -19,7 +24,8 @@
 export const PUBLICATION_NSID = "site.standard.publication";
 export const DOCUMENT_NSID = "site.standard.document";
 export const MARKDOWN_TYPE = "at.markpub.markdown";
-export const APP_PASSWORD_SECRET = "lumen.atproto.appPassword";
+/** The only credential kept: the session's refresh token (the App Password is never stored). */
+export const REFRESH_SECRET = "lumen.atproto.refreshJwt";
 export const WELL_KNOWN_PATH = ".well-known/site.standard.publication";
 
 export interface Publication {
@@ -58,9 +64,60 @@ export function noteTitle(md: string, path: string): string {
   return (t ?? path.split("/").pop()!.replace(/\.md$/i, "")).trim();
 }
 
+export const REDACTED = "█████";
+
+/**
+ * What a public record may never carry, removed fail-closed (the rules of
+ * #473's export door): a `<redact>` passage (any case, attributes allowed,
+ * nested passages counted; one never closed runs to the end of the note, and a
+ * mark inside code counts too) becomes `█████`; an HTML comment is dropped (to
+ * the end when never closed); `%%…%%` comments are dropped in pairs (a lone
+ * `%%` stays: it is common in text).
+ */
+export function privateRemoved(md: string): string {
+  const OPEN = /<redact\b[^>]*>/gi;
+  const ANY = /<(\/?)redact\b[^>]*>/gi;
+  let out = "";
+  let at = 0;
+  for (;;) {
+    OPEN.lastIndex = at;
+    const o = OPEN.exec(md);
+    if (!o) break;
+    out += md.slice(at, o.index) + REDACTED;
+    let depth = 1;
+    ANY.lastIndex = o.index + o[0].length;
+    let end = md.length;
+    for (let m = ANY.exec(md); m; m = ANY.exec(md)) {
+      depth += m[1] ? -1 : 1;
+      if (depth === 0) {
+        end = m.index + m[0].length;
+        break;
+      }
+    }
+    at = end;
+  }
+  out += md.slice(at);
+  // A stray closing mark with no opening one: drop the mark, keep the text (nothing was hidden).
+  out = out.replace(/<\/redact\b[^>]*>/gi, "");
+  out = out.replace(/<!--[\s\S]*?(?:-->|$)/g, "");
+  out = out.replace(/%%[\s\S]*?%%/g, "");
+  return out;
+}
+
+type ExportDoor = { exportReadyText: (markdown: string, inlinePhotos?: boolean) => Promise<string> };
+// #473's door, when this build has it (the share link's seam, src/share/shareReady.ts).
+const doors = import.meta.glob<ExportDoor>("../storage/exportReady*.ts");
+
+/** The text a public record is built from: #473's export door when present, then `privateRemoved` either way. */
+export async function publishReadyText(markdown: string): Promise<string> {
+  const load = doors["../storage/exportReady.ts"];
+  const text = load ? await (await load()).exportReadyText(markdown, false) : markdown;
+  return privateRemoved(text);
+}
+
 /** Readable text: Markdown syntax off, for search and previews. */
 export function plainTextOf(md: string): string {
-  return md
+  return privateRemoved(md)
     .replace(FRONTMATTER, "")
     .replace(/```[\s\S]*?```/g, " ")
     .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
@@ -73,7 +130,8 @@ export function plainTextOf(md: string): string {
 }
 
 /** A summary: frontmatter `description`, else the first ~300 characters, cut at a word. */
-export function summaryOf(md: string): string {
+export function summaryOf(raw: string): string {
+  const md = privateRemoved(raw);
   const fm = FRONTMATTER.exec(md)?.[1] ?? "";
   const d = /^description:\s*["']?(.+?)["']?\s*$/m.exec(fm)?.[1];
   if (d) return d.trim();
@@ -91,7 +149,8 @@ export function tagsOf(md: string): string[] {
 }
 
 export function documentRecord(opts: { site: string; path: string; markdown: string; publishedAt: Date; updatedAt?: Date }): StandardDocument {
-  const md = opts.markdown;
+  // Never trust the caller: whatever it passed, the record is built from the redacted text.
+  const md = privateRemoved(opts.markdown);
   const tags = tagsOf(md);
   return {
     $type: DOCUMENT_NSID,
@@ -151,6 +210,8 @@ export interface AtSession {
   did: string;
   handle: string;
   accessJwt: string;
+  /** Kept in the secret store so the next Publish needs no password. */
+  refreshJwt?: string;
   /** The user's PDS (from the DID document), where records are written. */
   pds: string;
 }
@@ -183,7 +244,13 @@ async function xrpc<T>(f: typeof fetch, base: string, nsid: string, init: { meth
 /** The PDS endpoint in a DID document (`#atproto_pds`). */
 export function pdsOf(didDoc: { service?: Array<{ id: string; type: string; serviceEndpoint: string }> }): string | null {
   const s = didDoc.service?.find((x) => x.id.endsWith("#atproto_pds") || x.type === "AtprotoPersonalDataServer");
-  return s?.serviceEndpoint ?? null;
+  if (!s) return null;
+  // Review 20 (RR20-587-2): the access token goes there, so only https.
+  try {
+    return new URL(s.serviceEndpoint).protocol === "https:" ? s.serviceEndpoint.replace(/\/$/, "") : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -191,16 +258,29 @@ export function pdsOf(didDoc: { service?: Array<{ id: string; type: string; serv
  * Bluesky-hosted accounts, or the user's own PDS), then the DID document
  * (plc.directory for did:plc) for the PDS records go to.
  */
+type SessionReply = { did: string; handle: string; accessJwt: string; refreshJwt?: string; didDoc?: { service?: Array<{ id: string; type: string; serviceEndpoint: string }> } };
+
 export async function login(f: typeof fetch, opts: { identifier: string; appPassword: string; service?: string; plc?: string }): Promise<AtSession> {
   const service = opts.service ?? "https://bsky.social";
-  const s = await xrpc<{ did: string; handle: string; accessJwt: string; didDoc?: { service?: Array<{ id: string; type: string; serviceEndpoint: string }> } }>(f, service, "com.atproto.server.createSession", { body: { identifier: opts.identifier, password: opts.appPassword } });
+  const s = await xrpc<SessionReply>(f, service, "com.atproto.server.createSession", { body: { identifier: opts.identifier, password: opts.appPassword } });
+  return sessionFrom(f, s, service, opts.plc);
+}
+
+/** A new session from the stored refresh token (no password): com.atproto.server.refreshSession. */
+export async function resume(f: typeof fetch, opts: { refreshJwt: string; service?: string; plc?: string }): Promise<AtSession> {
+  const service = opts.service ?? "https://bsky.social";
+  const s = await xrpc<SessionReply>(f, service, "com.atproto.server.refreshSession", { method: "POST", jwt: opts.refreshJwt });
+  return sessionFrom(f, s, service, opts.plc);
+}
+
+async function sessionFrom(f: typeof fetch, s: SessionReply, service: string, plc?: string): Promise<AtSession> {
   let pds = s.didDoc ? pdsOf(s.didDoc) : null;
   if (!pds && s.did.startsWith("did:plc:")) {
     // privacy-ledger: the caller passes atprotoFetch(); plc.directory resolves the user's DID.
-    const res = await f(`${opts.plc ?? "https://plc.directory"}/${s.did}`);
+    const res = await f(`${plc ?? "https://plc.directory"}/${s.did}`);
     if (res.ok) pds = pdsOf((await res.json()) as Parameters<typeof pdsOf>[0]);
   }
-  return { did: s.did, handle: s.handle, accessJwt: s.accessJwt, pds: pds ?? service };
+  return { did: s.did, handle: s.handle, accessJwt: s.accessJwt, ...(s.refreshJwt ? { refreshJwt: s.refreshJwt } : {}), pds: pds ?? service };
 }
 
 export async function putRecord(f: typeof fetch, s: AtSession, collection: string, rkey: string, record: object): Promise<{ uri: string; cid: string }> {
@@ -218,20 +298,38 @@ export interface PublishResult {
   url: string;
 }
 
-/** Publish (or update: the same note keeps its record) one note. `markdown` is the export door's text (redacted). */
+/** Publish (or update: the same note keeps its record) one note. The note is redacted here, whatever the caller passes. */
 export async function publishNote(f: typeof fetch, s: AtSession, opts: { site: { url: string; name: string; description?: string }; path: string; markdown: string; now: Date; publishedAt?: Date }): Promise<PublishResult> {
   const pub = publicationRecord(opts.site);
   const pubRkey = rkeyFor(pub.url);
   const publication = (await putRecord(f, s, PUBLICATION_NSID, pubRkey, pub)).uri;
-  const doc = documentRecord({ site: publication, path: opts.path, markdown: opts.markdown, publishedAt: opts.publishedAt ?? opts.now, ...(opts.publishedAt ? { updatedAt: opts.now } : {}) });
+  const doc = documentRecord({ site: publication, path: opts.path, markdown: await publishReadyText(opts.markdown), publishedAt: opts.publishedAt ?? opts.now, ...(opts.publishedAt ? { updatedAt: opts.now } : {}) });
   const document = (await putRecord(f, s, DOCUMENT_NSID, rkeyFor(opts.path), doc)).uri;
   return { publication, document, url: `${pub.url}${doc.path}.html` };
 }
 
 export const unpublishNote = (f: typeof fetch, s: AtSession, path: string): Promise<void> => deleteRecord(f, s, DOCUMENT_NSID, rkeyFor(path));
 
-/** The app's fetch for this: recorded in the privacy ledger, allowed because the user pressed Publish. */
-export async function atprotoFetch(): Promise<typeof fetch> {
+export class DeclinedError extends Error {
+  constructor() {
+    super("The user did not confirm publishing");
+    this.name = "DeclinedError";
+  }
+}
+
+export const ATPROTO_REASON = "Publish to the AT Protocol (Standard.site), your PDS";
+
+/**
+ * The app's fetch for this: nothing is sent before the user confirms (asked
+ * once per action), then every request is recorded in the privacy ledger.
+ */
+export async function atprotoFetch(confirm: () => Promise<boolean>): Promise<typeof fetch> {
   const { ledgerFetch } = await import("../ai/privacyLedger");
-  return ledgerFetch({ force: { category: "third-party", reason: "Publish to the AT Protocol (Standard.site), your PDS" }, consent: true });
+  const send = ledgerFetch({ force: { category: "third-party", reason: ATPROTO_REASON }, consent: true });
+  let asked: Promise<boolean> | null = null;
+  return (async (input: RequestInfo | URL, init?: RequestInit) => {
+    asked ??= confirm();
+    if (!(await asked)) throw new DeclinedError();
+    return send(input, init);
+  }) as typeof fetch;
 }

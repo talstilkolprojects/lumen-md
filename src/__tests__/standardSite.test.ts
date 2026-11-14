@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { APP_PASSWORD_SECRET, AtprotoError, DOCUMENT_NSID, MARKDOWN_TYPE, PUBLICATION_NSID, WELL_KNOWN_PATH, documentRecord, linkTags, login, noteTitle, pdsOf, publicationRecord, publishNote, rkeyFor, summaryOf, tagsOf, unpublishNote, wellKnownFile } from "../publish/standardSite";
+import { REFRESH_SECRET, AtprotoError, DeclinedError, atprotoFetch, privateRemoved, publishReadyText, resume, ATPROTO_REASON, DOCUMENT_NSID, MARKDOWN_TYPE, PUBLICATION_NSID, WELL_KNOWN_PATH, documentRecord, linkTags, login, noteTitle, pdsOf, publicationRecord, publishNote, rkeyFor, summaryOf, tagsOf, unpublishNote, wellKnownFile } from "../publish/standardSite";
 import { buildSite } from "../publish/site";
 import { isSecretName } from "../lib/secretStore";
 import { classify } from "../ai/privacyLedger";
@@ -30,7 +30,11 @@ function fakePds(opts: { didDoc?: boolean } = {}) {
     if (url.hostname === "plc.directory") return json(200, { id: DID, service });
     if (url.pathname === "/xrpc/com.atproto.server.createSession") {
       if (body.password !== PASSWORD) return json(401, { error: "AuthenticationRequired", message: "Invalid identifier or password" });
-      return json(200, { did: DID, handle: "dana.bsky.social", accessJwt: "jwt-1", refreshJwt: "r", ...(opts.didDoc ? { didDoc: { id: DID, service } } : {}) });
+      return json(200, { did: DID, handle: "dana.bsky.social", accessJwt: "jwt-1", refreshJwt: "refresh-1", ...(opts.didDoc ? { didDoc: { id: DID, service } } : {}) });
+    }
+    if (url.pathname === "/xrpc/com.atproto.server.refreshSession") {
+      if (h.get("authorization") !== "Bearer refresh-1") return json(400, { error: "ExpiredToken" });
+      return json(200, { did: DID, handle: "dana.bsky.social", accessJwt: "jwt-1", refreshJwt: "refresh-2", ...(opts.didDoc ? { didDoc: { id: DID, service } } : {}) });
     }
     if (h.get("authorization") !== "Bearer jwt-1") return json(401, { error: "AuthenticationRequired" });
     if (url.hostname !== "morel.us-east.host.bsky.network") return json(400, { error: "WrongPds" });
@@ -78,12 +82,20 @@ describe("Standard.site publishing (W7.19)", () => {
     for (const didDoc of [true, false]) {
       const { f, log } = fakePds({ didDoc });
       const s = await login(f, { identifier: "dana.bsky.social", appPassword: PASSWORD });
-      expect(s).toEqual({ did: DID, handle: "dana.bsky.social", accessJwt: "jwt-1", pds: "https://morel.us-east.host.bsky.network" });
+      expect(s).toEqual({ did: DID, handle: "dana.bsky.social", accessJwt: "jwt-1", refreshJwt: "refresh-1", pds: "https://morel.us-east.host.bsky.network" });
       expect(log.some((l) => l.url.startsWith("https://plc.directory/"))).toBe(!didDoc);
     }
     const { f } = fakePds();
     await expect(login(f, { identifier: "dana.bsky.social", appPassword: "wrong" })).rejects.toBeInstanceOf(AtprotoError);
     expect(pdsOf({})).toBeNull();
+    // Review 20 (RR20-587-2): an access token never goes to a plain-http PDS.
+    expect(pdsOf({ service: [{ id: "#atproto_pds", type: "AtprotoPersonalDataServer", serviceEndpoint: "http://pds.example" }] })).toBeNull();
+    expect(pdsOf({ service: [{ id: "#atproto_pds", type: "AtprotoPersonalDataServer", serviceEndpoint: "https://pds.example/" }] })).toBe("https://pds.example");
+    // The next action resumes with the refresh token: no password.
+    const r = fakePds({ didDoc: true });
+    const s2 = await resume(r.f, { refreshJwt: "refresh-1" });
+    expect([s2.accessJwt, s2.refreshJwt, s2.pds]).toEqual(["jwt-1", "refresh-2", "https://morel.us-east.host.bsky.network"]);
+    expect(r.log.every((l) => !l.body.includes(PASSWORD))).toBe(true);
   });
 
   it("publish writes the publication and the document; publishing again updates the same record; unpublish deletes it", async () => {
@@ -122,9 +134,72 @@ describe("Standard.site publishing (W7.19)", () => {
   });
 
   it("the App Password is a secret-store name; every host is in the ledger and in every CSP", () => {
-    expect(isSecretName(APP_PASSWORD_SECRET)).toBe(true);
+    expect(isSecretName(REFRESH_SECRET)).toBe(true);
+    expect(isSecretName("lumen.atproto.appPassword")).toBe(false);
     for (const h of ["https://bsky.social/xrpc/x", "https://morel.us-east.host.bsky.network/xrpc/x", "https://plc.directory/did:plc:x"]) expect(classify(h)?.category, h).toBe("third-party");
     const headers = readFileSync(join(ROOT, "public/_headers"), "utf8");
     for (const h of ["https://bsky.social", "https://*.host.bsky.network", "https://plc.directory"]) expect(headers).toContain(h);
+  });
+
+  // Review 20, A1 and A2 (rr20/t596/redact-record.mjs), ported to this API: nothing marked private reaches a public record.
+  it("A1: the document record holds no marked passage or hidden comment, whatever the caller passes", async () => {
+    const note = ["---", "title: Interview", "---", "", "Met the source on Sunday.", "", "<redact>", "Source: Z1Z, deputy CFO, 054-0000000", "</redact>", "", "Public part Z2Z.", "", "<!-- private: Z3Z -->", "%% Z4Z %%", "", "Private notes below:", "<redact>", "Z5Z everything after stays private"].join("\n");
+    const rec = documentRecord({ site: "at://did:plc:x/site.standard.publication/1", path: "Interview.md", markdown: note, publishedAt: new Date("2026-11-14T00:00:00Z") });
+    const text = JSON.stringify(rec);
+    expect(["Z1Z", "Z3Z", "Z4Z", "Z5Z"].filter((t) => text.includes(t))).toEqual([]);
+    expect(text).toContain("Z2Z");
+    expect(rec.content?.text).toContain("█████");
+    // And through publishNote, the path the app uses (the PDS receives only redacted text).
+    const { f, log } = fakePds({ didDoc: true });
+    const s = await login(f, { identifier: "dana.bsky.social", appPassword: PASSWORD });
+    await publishNote(f, s, { site: { url: "https://dana.example", name: "D" }, path: "Interview.md", markdown: note, now: new Date() });
+    const sent = log.filter((l) => l.url.endsWith("/xrpc/com.atproto.repo.putRecord")).map((l) => l.body).join("");
+    expect(["Z1Z", "Z3Z", "Z4Z", "Z5Z"].filter((t) => sent.includes(t))).toEqual([]);
+    expect(sent).toContain("Z2Z");
+  });
+
+  it("A2: the description (summary) holds no marked passage", () => {
+    const d = summaryOf("<redact>\nZ6Z secret first paragraph\n</redact>\n\nPublic.");
+    expect(d).not.toContain("Z6Z");
+    expect(d).toContain("Public.");
+  });
+
+  it("the private-text rules fail closed: case, attributes, nesting, unclosed, code, lone %%", async () => {
+    expect(privateRemoved("a <REDACT class=x>Z1Z <redact>Z2Z</redact> Z3Z</Redact > b")).toBe("a █████ b");
+    expect(privateRemoved("a <redact>Z1Z\n\nmore")).toBe("a █████");
+    expect(privateRemoved("`<redact>` Z1Z")).toBe("`█████");
+    expect(privateRemoved("50% off, 20% more")).toBe("50% off, 20% more");
+    expect(privateRemoved("x <!-- Z1Z")).toBe("x ");
+    expect(privateRemoved("stray </redact> kept")).toBe("stray  kept");
+    expect(await publishReadyText("p <redact>Z1Z</redact> q %%Z2Z%%")).toBe("p █████ q ");
+  });
+
+  it("nothing is sent before the user confirms; one answer per action, even for parallel requests", async () => {
+    let asks = 0;
+    let answer!: (v: boolean) => void;
+    const confirm = () => {
+      asks++;
+      return new Promise<boolean>((r) => (answer = r));
+    };
+    const sent: string[] = [];
+    const prev = globalThis.fetch;
+    globalThis.fetch = (async (u: string) => {
+      sent.push(String(u));
+      return new Response("{}");
+    }) as typeof fetch;
+    try {
+      const f = await atprotoFetch(confirm);
+      const a = f("https://bsky.social/xrpc/a");
+      const b = f("https://bsky.social/xrpc/b");
+      await Promise.resolve();
+      expect(sent).toEqual([]);
+      answer(false);
+      await expect(a).rejects.toBeInstanceOf(DeclinedError);
+      await expect(b).rejects.toBeInstanceOf(DeclinedError);
+      expect([asks, sent.length]).toEqual([1, 0]);
+    } finally {
+      globalThis.fetch = prev;
+    }
+    expect(ATPROTO_REASON).toMatch(/AT Protocol/);
   });
 });
