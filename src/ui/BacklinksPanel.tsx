@@ -7,6 +7,8 @@ import { log } from "../lib/logger";
 
 // Unlinked mentions (4.6): its scan and Link action load with the section.
 const UnlinkedMentions = lazy(() => import("./UnlinkedMentions"));
+// Search, sort and a fold per note (W7.3): with the list's own chunk.
+const BacklinksList = lazy(() => import("./BacklinksList"));
 import { EmptyState } from "./EmptyState";
 import { HelpButton } from "./HelpButton";
 
@@ -87,21 +89,22 @@ export function BacklinksPanel({ filePath, onOpen }: Props) {
         />
       )}
       {hits && hits.length > 0 && (
-        <ul className="backlinks-list" role="list" aria-label={t("backlinks.title")}>
-          {hits.map((h, i) => (
-            <li key={i} role="listitem">
-              <button
-                type="button"
-                className="backlink-item"
-                onClick={() => onOpen(h.fromPath)}
-                title={h.fromPath}
-              >
-                <span className="backlink-from">{h.fromName}</span>
-                <span className="backlink-snippet">{h.snippet}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <Suspense
+          fallback={
+            <ul className="backlinks-list" role="list" aria-label={t("backlinks.title")}>
+              {hits.map((h, i) => (
+                <li key={i} role="listitem">
+                  <button type="button" className="backlink-item" onClick={() => onOpen(h.fromPath)} title={h.fromPath}>
+                    <span className="backlink-from">{h.fromName}</span>
+                    <span className="backlink-snippet">{h.snippet}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          }
+        >
+          <BacklinksList hits={hits} onOpen={onOpen} />
+        </Suspense>
       )}
       {filePath && (
         <Suspense fallback={null}>

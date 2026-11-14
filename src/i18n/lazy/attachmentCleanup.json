@@ -1,0 +1,12 @@
+{
+  "attachCleanup.ask.always": "Yes, and don't ask again",
+  "attachCleanup.ask.keep": "No, keep them",
+  "attachCleanup.ask.message": "{n} attachments are linked only from what you are deleting:\n{list}\nMove them to the trash too? Ctrl+Z brings everything back.",
+  "attachCleanup.ask.never": "No, and don't ask again",
+  "attachCleanup.ask.title": "Delete the attachments too?",
+  "attachCleanup.ask.trash": "Yes, move them to the trash too",
+  "attachCleanup.setting": "When a deleted note leaves attachments no other note links to",
+  "attachCleanup.setting.always": "Move them to the trash too",
+  "attachCleanup.setting.ask": "Ask each time",
+  "attachCleanup.setting.never": "Keep them"
+}

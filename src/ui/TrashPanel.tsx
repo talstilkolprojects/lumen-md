@@ -13,6 +13,8 @@ import { EmptyState } from "./EmptyState";
 import { uiConfirm } from "./PromptDialog";
 import { HelpButton } from "./HelpButton";
 import "./trashPanelStrings";
+import "../storage/attachmentCleanupStrings";
+import { attachmentPolicy, setAttachmentPolicy, type AttachmentPolicy } from "../storage/attachmentPolicy";
 
 interface Props {
   open: boolean;
@@ -24,6 +26,7 @@ const btn: React.CSSProperties = { padding: "4px 10px", fontSize: 12, borderRadi
 export function TrashPanel({ open, onClose }: Props) {
   const [items, setItems] = useState<TrashItem[] | null>(null);
   const reload = useCallback(async () => setItems(await listTrash()), []);
+  const [policy, setPolicy] = useState<AttachmentPolicy>(attachmentPolicy);
 
   useEffect(() => {
     if (open) void reload();
@@ -96,6 +99,23 @@ export function TrashPanel({ open, onClose }: Props) {
             </div>
           ))}
         </div>
+        <footer style={{ padding: "8px 16px", borderTop: "1px solid hsl(var(--border))", display: "flex", gap: 8, alignItems: "center", fontSize: 12 }}>
+          <label htmlFor="trash-attachment-policy" style={{ flex: 1 }}>{t("attachCleanup.setting")}</label>
+          <select
+            id="trash-attachment-policy"
+            data-testid="attachment-policy"
+            value={policy}
+            onChange={(e) => {
+              const next = e.target.value as AttachmentPolicy;
+              setAttachmentPolicy(next);
+              setPolicy(next);
+            }}
+          >
+            <option value="ask">{t("attachCleanup.setting.ask")}</option>
+            <option value="always">{t("attachCleanup.setting.always")}</option>
+            <option value="never">{t("attachCleanup.setting.never")}</option>
+          </select>
+        </footer>
       </div>
     </div>
   );

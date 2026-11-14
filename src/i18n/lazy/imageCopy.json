@@ -1,0 +1,7 @@
+{
+  "imageCopy.copied": "Image copied",
+  "imageCopy.copy": "Copy image",
+  "imageCopy.failed": "Could not copy the image: {error}",
+  "imageCopy.menu": "Image",
+  "imageCopy.notFound": "“{name}” is not in this vault"
+}

@@ -101,6 +101,21 @@ interface Props {
 // The month calendar of daily notes (plan 4.12): its own chunk, loaded when shown.
 const CalendarPanel = lazy(() => import("./CalendarPanel"));
 
+/**
+ * The attachments that go to the trash with `paths` (plan W7.3): asked for
+ * or not as the setting says, in a chunk loaded on the first delete. If that
+ * fails, the delete goes on with the notes alone.
+ */
+async function withOrphanAttachments(paths: string[]): Promise<string[]> {
+  try {
+    const { attachmentsToTrash } = await import("../storage/attachmentCleanup");
+    return await attachmentsToTrash(paths);
+  } catch {
+    // why: the cleanup is an extra; a failure must never stop the delete itself
+    return [];
+  }
+}
+
 export function FileTree({
   activePath,
   onOpenFile,
@@ -190,7 +205,10 @@ export function FileTree({
     // No confirmation: it goes to the trash, and the toast offers Undo.
     try {
       // Unsaved edits of every open note inside go with it (and come back on Undo / Ctrl+Z).
-      const { items, settled } = await trashWithOpenEdits(paths, Object.fromEntries(paths.map((p) => [p, kindOf(p)])));
+      // Attachments only these notes link to go in the same delete, when the setting says so (W7.3).
+      const extra = (await withOrphanAttachments(paths)).filter((p) => !paths.includes(p));
+      const all = [...paths, ...extra];
+      const { items, settled } = await trashWithOpenEdits(all, Object.fromEntries(all.map((p) => [p, kindOf(p)])));
       // Not settled: the open note was kept, detached, as an unsaved note with its newest text.
       if (settled && activePath && paths.some((p) => activePath === p || activePath.startsWith(p + "/"))) onActiveDeleted();
       announceTrash(items);
@@ -427,7 +445,10 @@ export function FileTree({
     try {
       // Unsaved edits of every open note inside go with it, inactive tabs
       // included, and edits typed while it moves (they come back on Undo / Ctrl+Z).
-      const { items, settled } = await trashWithOpenEdits([node.path], { [node.path]: node.kind === "directory" ? "directory" : "file" });
+      const extra = await withOrphanAttachments([node.path]);
+      const kinds: Record<string, "file" | "directory"> = { [node.path]: node.kind === "directory" ? "directory" : "file" };
+      for (const p of extra) kinds[p] = "file";
+      const { items, settled } = await trashWithOpenEdits([node.path, ...extra], kinds);
       announceTrash(items);
       // Not settled: the open note was kept, detached, as an unsaved note with its newest text.
       if (

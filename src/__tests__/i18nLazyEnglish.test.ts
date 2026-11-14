@@ -160,6 +160,10 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "relatedPanel.json": { module: "ui/relatedPanelStrings.ts", users: ["ui/RelatedPanel.tsx"], prefixes: ["related."] },
   "tasksBlock.json": { module: "plugins/tasksBlockStrings.ts", users: ["plugins/TasksBlock.tsx"], prefixes: ["tasks.count", "tasks.error.date", "tasks.error.query", "tasks.error.regex", "tasks.group.done", "tasks.group.none", "tasks.group.todo"] },
   "tts.json": { module: "ai/ttsStrings.ts", users: ["ai/tts.ts"], prefixes: ["tts.", "toast.tts."] },
+  // Editor gaps against Obsidian 1.12 and Heptabase (plan W7.3): each with the lazily loaded module that shows it.
+  "attachmentCleanup.json": { module: "storage/attachmentCleanupStrings.ts", users: ["storage/attachmentCleanup.ts", "ui/TrashPanel.tsx"], prefixes: ["attachCleanup."] },
+  "imageCopy.json": { module: "editor/imageCopyStrings.ts", users: ["editor/imageCopy.ts"], prefixes: ["imageCopy."] },
+  "backlinksList.json": { module: "ui/backlinksListStrings.ts", users: ["ui/BacklinksList.tsx"], prefixes: ["backlinksList."] },
 };
 
 function sources(dir: string): string[] {

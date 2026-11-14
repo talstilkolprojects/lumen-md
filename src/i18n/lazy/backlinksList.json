@@ -1,0 +1,10 @@
+{
+  "backlinksList.collapseAll": "Collapse all",
+  "backlinksList.count": "{n} links",
+  "backlinksList.expandAll": "Expand all",
+  "backlinksList.noMatch": "No backlink matches “{q}”.",
+  "backlinksList.search": "Search backlinks",
+  "backlinksList.sort": "Sort",
+  "backlinksList.sort.modified": "Modified (newest first)",
+  "backlinksList.sort.name": "Name"
+}

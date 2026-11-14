@@ -229,7 +229,7 @@
   "plugins.block.loading": "Rendering with the plugin…",
   "plugins.panel.close": "Close the plugin panel",
   "preview.footnote.label": "Footnote {n}",
-  "preview.imageResize.hint": "Drag the edge to resize. The width is saved in the note.",
+  "preview.imageResize.hint": "Drag the edge to resize; double-click it to reset. The width is saved in the note.",
   "print.toc": "Contents",
   "print.untitled": "Untitled",
   "pwa.dismiss": "Dismiss",
