@@ -49,7 +49,7 @@ export async function loadEmbedContext(markdownText: string, docKey: string | nu
   };
   try {
     const { ensureIndex, indexedFiles, indexedNotes } = await import("../storage/workspaceIndex");
-    await ensureIndex();
+    await ensureIndex(false, { checked: true });
     files = indexedFiles().map((f) => ({ path: f.path, modified: f.modified }));
     const tried = new Set<string>();
     for (let level = 0; level <= MAX_EMBED_DEPTH; level++) {

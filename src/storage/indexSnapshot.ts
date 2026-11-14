@@ -29,6 +29,33 @@ export interface SnapshotFile {
   name: string;
   modified: number;
   content: string;
+  /** UTF-8 bytes of `content` (review 14.11 S3): checked with the mtime. Absent in a record written before it. */
+  size?: number;
+}
+
+/**
+ * UTF-8 length of `s` in bytes, without encoding it: what the vault lists as
+ * the note's size (review 14.11 S3). A lone surrogate counts 3, as
+ * TextEncoder writes U+FFFD for it.
+ */
+export function utf8Length(s: string): number {
+  let n = 0;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c < 0x80) n += 1;
+    else if (c < 0x800) n += 2;
+    else if (c >= 0xd800 && c <= 0xdbff && i + 1 < s.length && (s.charCodeAt(i + 1) & 0xfc00) === 0xdc00) {
+      n += 4;
+      i++;
+    } else n += 3;
+  }
+  return n;
+}
+
+/** Whether a note the snapshot (or the index) recorded is the one the vault lists: same mtime, and same size when both are known. */
+export function sameNote(known: { modified: number; size?: number }, listed: { modified: number; size?: number }): boolean {
+  if (!listed.modified || known.modified !== listed.modified) return false;
+  return known.size === undefined || listed.size === undefined || known.size === listed.size;
 }
 
 interface Stored {
@@ -40,6 +67,8 @@ interface Stored {
   names: string[];
   modified: number[];
   contents: string[];
+  /** UTF-8 sizes (S3); optional so a record written before them still opens. */
+  sizes?: number[];
 }
 
 let store: ReturnType<typeof createStore> | null = null;
@@ -47,12 +76,13 @@ const db = () => (store ??= createStore("lumen-vault-index", "snapshot"));
 const KEY = "notes";
 
 export function encodeSnapshot(vault: string, files: Iterable<SnapshotFile>): Stored {
-  const s: Stored = { v: SNAPSHOT_VERSION, vault, paths: [], names: [], modified: [], contents: [] };
+  const s: Stored = { v: SNAPSHOT_VERSION, vault, paths: [], names: [], modified: [], contents: [], sizes: [] };
   for (const f of files) {
     s.paths.push(f.path);
     s.names.push(f.name);
     s.modified.push(f.modified);
     s.contents.push(f.content);
+    s.sizes!.push(utf8Length(f.content));
   }
   return s;
 }
@@ -63,12 +93,15 @@ export function decodeSnapshot(raw: unknown, vault: string): Map<string, Snapsho
   if (!s || s.v !== SNAPSHOT_VERSION || s.vault !== vault) return null;
   const n = s.paths?.length;
   if (!Array.isArray(s.paths) || ![s.names, s.modified, s.contents].every((c) => Array.isArray(c) && c.length === n)) return null;
+  if (s.sizes !== undefined && !(Array.isArray(s.sizes) && s.sizes.length === n && s.sizes.every((x) => typeof x === "number"))) return null;
   const out = new Map<string, SnapshotFile>();
   for (let i = 0; i < n; i++) {
     const path = s.paths[i];
     const content = s.contents[i];
     if (typeof path !== "string" || typeof content !== "string" || typeof s.modified[i] !== "number") return null;
-    out.set(path, { path, name: String(s.names[i]), modified: s.modified[i], content });
+    const f: SnapshotFile = { path, name: String(s.names[i]), modified: s.modified[i], content };
+    if (s.sizes) f.size = s.sizes[i];
+    out.set(path, f);
   }
   return out;
 }
@@ -82,6 +115,8 @@ export interface SnapshotEntry extends NoteSummary {
   path: string;
   name: string;
   modified: number;
+  /** UTF-8 bytes of the note's text (S3). */
+  size: number;
 }
 
 interface Manifest {
@@ -90,6 +125,7 @@ interface Manifest {
   paths: string[];
   names: string[];
   modified: number[];
+  sizes: number[];
   summaries: NoteSummary[];
 }
 
@@ -105,12 +141,13 @@ const strings = (a: unknown): a is string[] => Array.isArray(a) && a.every((x) =
 
 /** The two parts of a sealed snapshot, encoded (W6.36). */
 export function encodeSnapshotParts(vault: string, files: Iterable<SnapshotFile>): { manifest: Uint8Array; body: Uint8Array } {
-  const m: Manifest = { v: SNAPSHOT_VERSION, vault, paths: [], names: [], modified: [], summaries: [] };
+  const m: Manifest = { v: SNAPSHOT_VERSION, vault, paths: [], names: [], modified: [], sizes: [], summaries: [] };
   const b: Body = { v: SNAPSHOT_VERSION, vault, contents: [] };
   for (const f of files) {
     m.paths.push(f.path);
     m.names.push(f.name);
     m.modified.push(f.modified);
+    m.sizes.push(utf8Length(f.content));
     m.summaries.push(summarize(f.content));
     b.contents.push(f.content);
   }
@@ -139,13 +176,14 @@ function decodeManifest(raw: unknown, vault: string): SnapshotEntry[] | null {
   const m = raw as Manifest | null;
   if (!m || m.v !== SNAPSHOT_VERSION || m.vault !== vault || !strings(m.paths)) return null;
   const n = m.paths.length;
-  if (!strings(m.names) || m.names.length !== n || !Array.isArray(m.modified) || m.modified.length !== n || !Array.isArray(m.summaries) || m.summaries.length !== n) return null;
+  if (!strings(m.names) || m.names.length !== n || !Array.isArray(m.modified) || m.modified.length !== n || !Array.isArray(m.summaries) || m.summaries.length !== n || !Array.isArray(m.sizes) || m.sizes.length !== n) return null;
   const out: SnapshotEntry[] = [];
   for (let i = 0; i < n; i++) {
     const modified = m.modified[i];
     const summary = m.summaries[i];
-    if (typeof modified !== "number" || !isSummary(summary)) return null;
-    out.push({ ...summary, path: m.paths[i], name: m.names[i], modified });
+    const size = m.sizes[i];
+    if (typeof modified !== "number" || typeof size !== "number" || !isSummary(summary)) return null;
+    out.push({ ...summary, path: m.paths[i], name: m.names[i], modified, size });
   }
   return out;
 }
@@ -190,7 +228,7 @@ export async function readSnapshotRecord(raw: unknown, vault: string, keys?: Sna
   const contents = entries && (await readSnapshotBody(raw, vault, keys, entries.length));
   if (!entries || !contents) return { snap: null, refused: true };
   const snap = new Map<string, SnapshotFile>();
-  entries.forEach((e, i) => snap.set(e.path, { path: e.path, name: e.name, modified: e.modified, content: contents[i] }));
+  entries.forEach((e, i) => snap.set(e.path, { path: e.path, name: e.name, modified: e.modified, size: e.size, content: contents[i] }));
   return { snap, refused: false };
 }
 

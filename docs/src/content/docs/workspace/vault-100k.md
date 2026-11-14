@@ -31,8 +31,10 @@ slow down. Lumen is measured against a synthetic vault of 100,000 notes:
   modification time. The next time the app opens, the index opens from there
   right away, and Lumen checks the vault's files behind it: a note changed,
   added or deleted while the app was closed is read again or dropped, like
-  any other change. Search, backlinks and the other queries wait for that
-  check, so their first answer is already up to date. If the saved index is
+  any other change; a note counts as unchanged only when both its
+  modification time and its size match. Search, backlinks, the tags panel,
+  the graph, link completion and the other views wait for that check, so
+  what they first show is already up to date. If the saved index is
   missing or out of date, Lumen just builds it in full. In an [encrypted vault](/security/vault-encryption/)
   the saved index is encrypted and signed inside the worker, and a copy that
   was changed is refused, so an encrypted vault no longer reads and decrypts

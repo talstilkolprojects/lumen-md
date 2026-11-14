@@ -18,6 +18,8 @@ export interface RestoredNote extends NoteSummary {
   path: string;
   name: string;
   modified: number;
+  /** UTF-8 bytes of the note's text, as the snapshot recorded it (review 14.11 S3). */
+  size?: number;
 }
 
 /** What the related-notes panel asks the index (plan W2.2). */
@@ -44,7 +46,7 @@ export type IndexRequestBody =
   // W6.36: `keys` (an encrypted vault) seals / opens the snapshot in the worker.
   | { op: "snapshotSave"; vault: string; keys?: SnapshotKeys }
   | { op: "snapshotBody" }
-  | { op: "snapshotRestore"; vault: string; listing: { path: string; name: string; modified: number }[] | null; keys?: SnapshotKeys };
+  | { op: "snapshotRestore"; vault: string; listing: { path: string; name: string; modified: number; size?: number }[] | null; keys?: SnapshotKeys };
 
 export type IndexRequest = IndexRequestBody & { id: number };
 
@@ -76,7 +78,7 @@ export interface IndexEngine {
    * (the snapshot is its own manifest); the caller then checks them
    * against the vault.
    */
-  restoreSnapshot(vault: string, listing: { path: string; name: string; modified: number }[] | null, keys?: SnapshotKeys): Promise<RestoredNote[]>;
+  restoreSnapshot(vault: string, listing: { path: string; name: string; modified: number; size?: number }[] | null, keys?: SnapshotKeys): Promise<RestoredNote[]>;
   /**
    * W6.36: after a restore without a listing, whether the snapshot's body
    * (the texts) was refused after its manifest was taken; answered once the

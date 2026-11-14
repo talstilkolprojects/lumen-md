@@ -8,8 +8,9 @@
  *  (e2) the text queries wait for the check of a trusted snapshot;
  *  (f) T2: a failed check fails closed: nothing answers from the unchecked (rolled-back) snapshot;
  *  (h) the v2 format refuses v1 records, mixed seals, short bodies, other workspaces and downgrades.
- * Not here, follow-ups: T7 (deleted notes in indexedFiles() before the check), S3 (same mtime, new content),
- * T5 (lock forgets only the current vault's keys: 11.4, lane K).
+ *  (e) T7: before the check, indexedFiles() shows nothing a note deleted while closed had;
+ *  (g) S3: the same mtime with another size is read again.
+ * Not here: T5 (lock forgets only the current vault's keys: 11.4, lane K).
  */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createMemoryBackend, getVaultBackend, setVaultBackend, setVaultEncryptionState, type VaultBackend } from "../storage/vault";
@@ -23,10 +24,12 @@ import {
   __saveSnapshotNow,
   ensureIndex,
   findBacklinks,
+  indexChecked,
   indexedFiles,
   indexedNoteText,
   queryVaultTasks,
   searchWorkspace,
+  snapshotCounters,
 } from "../storage/workspaceIndex";
 import { notifyWorkspaceChanged } from "../storage/workspaceEvents";
 import { VaultIndex, localEngine } from "../storage/vaultIndexLocal";
@@ -204,6 +207,48 @@ describe("W6.36 review 14.11: trusting the manifest", () => {
     }
   });
 
+  it("(e) T7: a note deleted while closed (or by a rolled-back record) shows no title, tags or links in indexedFiles() before the check", async () => {
+    const E = await encryptedVault("vault-T", async (b) => {
+      await b.write("t/keep.md", "keep");
+      await b.write("t/Merger with Acme.md", "---\ntags: [acquisition]\n---\n#confidential [[Board minutes]]");
+    });
+    __resetWorkspaceIndex(engine);
+    await ensureIndex();
+    await __saveSnapshotNow();
+    const { deleteWorkspaceFile } = await import("../storage/workspace");
+    await deleteWorkspaceFile("t/Merger with Acme.md"); // deleted (here, or on another device) while this app is closed
+    const h = holdList(E);
+    try {
+      __resetWorkspaceIndex(engine, { keepSnapshot: true });
+      await ensureIndex();
+      const before = indexedFiles().find((f) => f.path === "t/Merger with Acme.md");
+      console.log("  before the check, indexedFiles has the deleted note:", !!before, before ? JSON.stringify({ name: before.name, tags: before.noteTags, links: before.wikiTargets }) : "");
+      h.release();
+      await indexChecked();
+      const after = indexedFiles().some((f) => f.path === "t/Merger with Acme.md");
+      console.log("  after the check:", after);
+      expect(after).toBe(false);
+      expect(before).toBeUndefined();
+    } finally {
+      h.restore();
+    }
+  });
+
+  it("(g) S3: content changed with the same mtime is read again (the size differs)", async () => {
+    const E = await encryptedVault("vault-G", notes("g", "GWORD"), { now: () => 1_000_000 });
+    __resetWorkspaceIndex(engine);
+    await ensureIndex();
+    await __saveSnapshotNow();
+    const { writeWorkspaceFile } = await import("../storage/workspace");
+    await writeWorkspaceFile("g/n3.md", "rewritten, same mtime");
+    const st = await E.stat("g/n3.md");
+    __resetWorkspaceIndex(engine, { keepSnapshot: true });
+    await ensureIndex();
+    await indexChecked();
+    const t = await indexedNoteText("g/n3.md");
+    console.log("  mtime", st?.mtime, "| counters", JSON.stringify(snapshotCounters), "| n3 from index:", JSON.stringify(t));
+    expect(t).toBe("rewritten, same mtime");
+  });
   it("(f) T2 the check fails (listing error): no query answers from the unchecked, rolled-back snapshot", async () => {
     const E = await encryptedVault("vault-F", notes("f", "OLDWORD"));
     __resetWorkspaceIndex(engine);
