@@ -137,6 +137,12 @@ export function trashUndoDepth(): number {
   return undoStack.length;
 }
 
+/** When the delete Ctrl+Z would undo next happened (ms), or 0. */
+export function lastTrashUndoAt(): number {
+  const top = undoStack[undoStack.length - 1];
+  return top ? Math.max(0, ...top.map((i) => i.trashedAt)) : 0;
+}
+
 /** Test hook. */
 export function __resetTrashUndo(): void {
   undoStack.length = 0;

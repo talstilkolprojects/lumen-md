@@ -35,6 +35,8 @@
   "db.kanban.picked": "Picked up {note}.",
   "db.readOnly": "This value can't be edited here",
   "db.saveFailed": "Couldn't save {note}: {error}",
+  "db.select.all": "Select all {n} notes the filter shows",
+  "db.select.row": "Select {note}",
   "db.sort.asc": "Ascending",
   "db.sort.desc": "Descending",
   "db.sort.label": "Sort",

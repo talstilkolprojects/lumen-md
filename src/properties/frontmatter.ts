@@ -72,7 +72,22 @@ function findBlock(text: string): Block | null | "unterminated" {
 
 type ParsedYaml = { block: Block; body: string; doc: Document.Parsed; pairs: Pair[] };
 
+/**
+ * The last text parsed and its result. Reading a note's properties and then
+ * writing one (a bulk edit, W7.4) parses the same text twice in a row, and
+ * a YAML parse is about a millisecond. The result is only read, never
+ * changed, so sharing it is safe.
+ */
+let lastParse: { text: string; result: ParsedYaml | null | { error: string } } | null = null;
+
 function parse(text: string): ParsedYaml | null | { error: string } {
+  if (lastParse?.text === text) return lastParse.result;
+  const result = parseUncached(text);
+  lastParse = { text, result };
+  return result;
+}
+
+function parseUncached(text: string): ParsedYaml | null | { error: string } {
   const block = findBlock(text);
   if (!block) return null;
   if (block === "unterminated") return { error: "the frontmatter has no closing ---" };
