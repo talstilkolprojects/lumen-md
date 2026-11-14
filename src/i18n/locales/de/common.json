@@ -152,6 +152,7 @@
   "base.saveSort": "Diese Sortierung in {file} speichern",
   "base.saved": "In {file} gespeichert",
   "base.timeline.empty": "Kein Eintrag hat ein Datum in {property}",
+  "benyehuda.cancel": "Abbrechen",
   "benyehuda.confirm": "Aus dem gemeinfreien Archiv auf GitHub laden? Aus Ihren Notizen wird nichts gesendet.",
   "benyehuda.copied": "Zitat kopiert",
   "benyehuda.downloadFirst": "Der Text fehlt. Laden Sie zuerst die Werke von {author}.",

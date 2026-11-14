@@ -16,7 +16,7 @@ export default function DatasetBlock({ source }: { source: string }) {
     let live = true;
     if (!block) return;
     void import("../sources/datagov/app")
-      .then((m) => m.readSnapshot(block.snapshot))
+      .then((m) => m.readSnapshot(block))
       .then((text) => live && setCsv(text))
       .catch(() => live && setCsv(null));
     return () => {

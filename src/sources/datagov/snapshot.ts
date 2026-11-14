@@ -40,6 +40,8 @@ export interface DatasetBlock {
   updated?: string | null;
   /** data.gov.il: the dataset's page slug. */
   dataset?: string | null;
+  /** SHA-256 of the snapshot file, hex: the block shows only the file it wrote (review 20, RR20-4). */
+  sha256?: string | null;
 }
 
 export const CBS_TERMS = "https://www.cbs.gov.il/he/Pages/%D7%A8%D7%99%D7%A9%D7%99%D7%95%D7%9F-%D7%A9%D7%99%D7%9E%D7%95%D7%A9.aspx";
@@ -92,19 +94,22 @@ export function parseCsv(text: string): { header: string[]; rows: string[][] } {
 
 // ── The block ───────────────────────────────────────────────────────────
 
-const q = (v: string) => JSON.stringify(v);
+/** JSON-quoted, with backticks escaped too, so no value can look like a fence. */
+const q = (v: string) => JSON.stringify(v).replace(/`/g, "\\u0060");
 
 export function renderBlock(b: DatasetBlock): string {
+  // Every value is JSON-quoted (review 20, RR20-3): a remote field with a line break or a fence stays one value.
   const lines = [
     "```dataset",
     `source: ${b.source}`,
-    `id: ${b.id}`,
+    `id: ${q(b.id)}`,
     `title: ${q(b.title)}`,
-    ...(b.dataset ? [`dataset: ${b.dataset}`] : []),
+    ...(b.dataset ? [`dataset: ${q(b.dataset)}`] : []),
     ...(b.organization ? [`organization: ${q(b.organization)}`] : []),
-    ...(b.updated ? [`updated: ${b.updated}`] : []),
-    `snapshot: ${b.snapshot}`,
-    `retrieved: ${b.retrieved}`,
+    ...(b.updated ? [`updated: ${q(b.updated)}`] : []),
+    `snapshot: ${q(b.snapshot)}`,
+    `retrieved: ${q(b.retrieved)}`,
+    ...(b.sha256 ? [`sha256: ${b.sha256}`] : []),
     `view: ${b.view}`,
     "```",
   ];
@@ -115,9 +120,18 @@ export function parseBlock(body: string): DatasetBlock | null {
   const f: Record<string, string> = {};
   for (const line of body.split("\n")) {
     const m = /^(\w+):\s*(.*)$/.exec(line.trim());
-    if (m) f[m[1]] = m[2].startsWith('"') ? (JSON.parse(m[2]) as string) : m[2];
+    if (!m) continue;
+    try {
+      f[m[1]] = m[2].startsWith('"') ? (JSON.parse(m[2]) as string) : m[2];
+    } catch {
+      return null;
+    }
   }
   if ((f.source !== "datagov" && f.source !== "cbs") || !f.id || !f.snapshot) return null;
+  // Only a file this block could have written (review 20, RR20-4): Data/<source>/<its id>/<date>.csv.
+  // A block in a shared note can't point the reader's preview at another file of their vault.
+  const date = /^Data\/(datagov|cbs)\/([\w.-]+)\/(\d{4}-\d\d-\d\d)\.csv$/.exec(f.snapshot);
+  if (!date || date[1] !== f.source || f.snapshot !== snapshotPath(f.source, f.id, date[3])) return null;
   return {
     source: f.source,
     id: f.id,
@@ -128,6 +142,7 @@ export function parseBlock(body: string): DatasetBlock | null {
     organization: f.organization ?? null,
     updated: f.updated ?? null,
     dataset: f.dataset ?? null,
+    sha256: /^[0-9a-f]{64}$/.test(f.sha256 ?? "") ? f.sha256 : null,
   };
 }
 
@@ -164,6 +179,19 @@ export function attribution(b: DatasetBlock): string {
 /** What goes into the note: the block and, under it, the attribution line. */
 export function insertion(b: DatasetBlock): string {
   return `${renderBlock(b)}\n\n${attribution(b)}\n`;
+}
+
+/** SHA-256 of a text, hex. */
+export async function sha256Hex(text: string): Promise<string> {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return [...new Uint8Array(d)].map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+
+/** The snapshot's text when it is the file the block recorded (path rule and hash); null otherwise. */
+export async function verifiedSnapshot(b: DatasetBlock, read: (path: string) => Promise<string | null>): Promise<string | null> {
+  if (!b.sha256) return null;
+  const text = await read(b.snapshot);
+  return text !== null && (await sha256Hex(text)) === b.sha256 ? text : null;
 }
 
 // ── Refresh: what changed ───────────────────────────────────────────────

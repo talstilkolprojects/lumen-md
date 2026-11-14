@@ -11,8 +11,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { CATALOGUE_URL, Library, parseCatalogue, parseWorkNote, plain, publicDomainOnly, quoteBlock, renderWorkNote, textUrl, workNotePath, workUrl } from "../sources/benyehuda/library";
-import { downloadAuthors, loadLibrary, type LibraryStore } from "../sources/benyehuda/core";
+import { CATALOGUE_URL, DUMP_COMMIT, Library, parseCatalogue, parseWorkNote, plain, publicDomainOnly, quoteBlock, renderWorkNote, textUrl, workNotePath, workUrl } from "../sources/benyehuda/library";
+import { boundedText, catalogue, downloadAuthors, loadLibrary, type LibraryStore } from "../sources/benyehuda/core";
+import { sha256Hex } from "../sources/datagov/snapshot";
 
 const FIX = join(__dirname, "fixtures", "benyehuda");
 const CSV = readFileSync(join(FIX, "pseudocatalogue.csv"), "utf8");
@@ -62,7 +63,7 @@ describe("the catalogue", () => {
     expect(CATALOGUE.length).toBeGreaterThan(600);
     const w = CATALOGUE.find((x) => x.id === 4387)!;
     expect([w.path, plain(w.title), w.authors, w.genre]).toEqual(["/p89/m4387", "הברכה", "חיים נחמן ביאליק", "poetry"]);
-    expect(textUrl(w)).toBe("https://raw.githubusercontent.com/projectbenyehuda/public_domain_dump/master/txt/p89/m4387.txt");
+    expect(textUrl(w)).toBe(`https://raw.githubusercontent.com/projectbenyehuda/public_domain_dump/${DUMP_COMMIT}/txt/p89/m4387.txt`);
     expect(workUrl(w)).toBe("https://benyehuda.org/read/4387");
   });
 });
@@ -100,11 +101,50 @@ describe("public domain only", () => {
   });
 });
 
+describe("the download's integrity (RR20-5) and escaping (RR20-3)", () => {
+  it("the dump is pinned to a commit, and a catalogue that is not the pinned one is refused", async () => {
+    expect(DUMP_COMMIT).toMatch(/^[0-9a-f]{40}$/);
+    expect(CATALOGUE_URL).toContain(`/${DUMP_COMMIT}/`);
+    const store = memory();
+    await expect(catalogue({ store, fetch: dump() as unknown as typeof fetch })).rejects.toThrow(/pinned/);
+    expect(store.files.size).toBe(0);
+    // A saved catalogue edited in the vault no longer counts.
+    store.files.set("Sources/BenYehuda/pseudocatalogue.csv", CSV);
+    expect(await catalogue({ store, expectSha256: "0".repeat(64) })).toEqual([]);
+  });
+
+  it("refuses an answer over the size limit, and stops on cancel", async () => {
+    const big = vi.fn(async () => new Response("x".repeat(2000)));
+    await expect(boundedText("https://example.com/x", big as unknown as typeof fetch, 1000)).rejects.toThrow(/too large/);
+    const store = memory();
+    const stop = new AbortController();
+    let n = 0;
+    const slow = vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input) === CATALOGUE_URL) return new Response(CSV);
+      if (++n === 3) stop.abort();
+      return new Response("טקסט");
+    });
+    await expect(downloadAuthors(["חיים נחמן ביאליק"], { fetch: slow as unknown as typeof fetch, store, expectSha256: await sha256Hex(CSV), signal: stop.signal })).rejects.toThrow(/cancelled/);
+    expect(store.files.size).toBeLessThan(10);
+  });
+
+  it("a catalogue field with a line break adds no frontmatter key; the credit is in the body", () => {
+    const [w] = parseCatalogue('ID,path,title,authors,translators,genre\n1,/p1/m1,"T\n# x","A","","poetry\nrights: all-rights-reserved"\n');
+    const md = renderWorkNote(w, "text", "2026-11-14");
+    const fm = /^---\n([\s\S]*?)\n---/.exec(md)![1];
+    expect(fm).not.toMatch(/^rights: all-rights-reserved$/m);
+    expect(md).not.toMatch(/^# x$/m);
+    expect(md).toContain("מקור: פרויקט בן־יהודה · A, ״[T # x](https://benyehuda.org/read/1)״ · רשות הציבור");
+    expect(parseWorkNote(md)!.text).toBe("text");
+  });
+});
+
 describe("download once, then offline", () => {
   it("downloads the catalogue and one author's works; then search and reading make 0 requests", async () => {
     const store = memory();
     const f = dump();
-    const r = await downloadAuthors(["רחל בלובשטיין"], { fetch: f as unknown as typeof fetch, store, retrieved: "2026-11-14" });
+    const sha = await sha256Hex(CSV);
+    const r = await downloadAuthors(["רחל בלובשטיין"], { fetch: f as unknown as typeof fetch, store, retrieved: "2026-11-14", expectSha256: sha });
     const rachel = CATALOGUE.filter((w) => w.authors === "רחל בלובשטיין");
     expect(r.works).toBe(rachel.length);
     expect(f).toHaveBeenCalledTimes(1 + rachel.length);
@@ -115,7 +155,7 @@ describe("download once, then offline", () => {
     });
     vi.stubGlobal("fetch", offline);
     try {
-      const lib = await loadLibrary(store);
+      const lib = await loadLibrary(store, sha);
       expect(lib.search("רחל כנרת", 3).some((h) => plain(h.work.title) === "כנרת" && h.downloaded)).toBe(true);
       const note = store.files.get(workNotePath(rachel.find((w) => plain(w.title) === "כנרת")!))!;
       expect(parseWorkNote(note)!.text.length).toBeGreaterThan(0);

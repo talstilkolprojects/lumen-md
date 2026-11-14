@@ -9,6 +9,8 @@ import { isSourceEnabled, withGate } from "../open/gate";
 import { searchDatasets, type DatasetHit } from "./api";
 import { importResource, importSeries, refreshBlock, type FileStore, type Imported, type Refreshed } from "./core";
 
+import { verifiedSnapshot, type DatasetBlock } from "./snapshot";
+
 export { diffSummary } from "./snapshot";
 
 export const LEDGER_REASON = "Government data (data.gov.il, CBS): the search words or dataset id only";
@@ -50,5 +52,5 @@ export async function refresh(blockBody: string, confirm: () => Promise<boolean>
   return r;
 }
 
-/** The snapshot the block shows: read from the vault, never fetched. */
-export const readSnapshot = (path: string) => vault.read(path);
+/** The snapshot the block shows: read from the vault, never fetched, and only the file the block wrote (its hash). */
+export const readSnapshot = (block: DatasetBlock) => verifiedSnapshot(block, (p) => vault.read(p));

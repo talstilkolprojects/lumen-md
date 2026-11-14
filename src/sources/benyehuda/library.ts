@@ -25,7 +25,17 @@
 import { Bm25Index } from "../../search/bm25";
 import { parseCsv } from "../datagov/snapshot";
 
-export const DUMP = "https://raw.githubusercontent.com/projectbenyehuda/public_domain_dump/master/";
+/**
+ * The dump at a fixed commit (review 20, RR20-5): files at a commit can't change, and the catalogue
+ * is checked against its SHA-256, so the "public domain only" list is the project's, not whatever a
+ * synced vault or a moved branch holds. VERSION 2026-03. Moving to a newer dump means updating both.
+ */
+export const DUMP_COMMIT = "5e4277fead7b565f32cc4b352abd3565023a77d8";
+export const CATALOGUE_SHA256 = "f8ffb60fd9b770371a3060fedd746dce73a637aa2e2da1fb22b7165a05ea1e40";
+/** Size limits: the catalogue is ~5 MB, the largest works a few MB. */
+export const MAX_CATALOGUE_BYTES = 16 * 1024 * 1024;
+export const MAX_WORK_BYTES = 8 * 1024 * 1024;
+export const DUMP = `https://raw.githubusercontent.com/projectbenyehuda/public_domain_dump/${DUMP_COMMIT}/`;
 export const CATALOGUE_URL = `${DUMP}pseudocatalogue.csv`;
 export const LIBRARY_DIR = "Sources/BenYehuda";
 export const CATALOGUE_PATH = `${LIBRARY_DIR}/pseudocatalogue.csv`;
@@ -72,6 +82,7 @@ export const workNotePath = (w: Work) => `${LIBRARY_DIR}/${fileSafe(w.authors.sp
 
 /** A downloaded work as a note: frontmatter with source, link, date and rights, then the text. */
 export function renderWorkNote(w: Work, text: string, retrieved: string): string {
+  // Every catalogue field is JSON-quoted, and the heading kept on one line (review 20, RR20-3).
   const q = (s: string) => JSON.stringify(s);
   return [
     "---",
@@ -81,19 +92,29 @@ export function renderWorkNote(w: Work, text: string, retrieved: string): string
     `title: ${q(w.title)}`,
     `author: ${q(w.authors)}`,
     ...(w.translators ? [`translator: ${q(w.translators)}`] : []),
-    ...(w.genre ? [`genre: ${w.genre}`] : []),
+    ...(w.genre ? [`genre: ${q(w.genre)}`] : []),
     `url: ${workUrl(w)}`,
     `retrieved: ${retrieved}`,
     "rights: public-domain",
     `credit: ${q(CREDIT)}`,
     "---",
     "",
-    `# ${w.title}`,
+    `# ${oneLine(w.title)}`,
+    "",
+    creditLine(w),
     "",
     text.replace(/\r\n?/g, "\n").replace(/\n{3,}/g, "\n\n").trim(),
     "",
   ].join("\n");
 }
+
+const oneLine = (s: string) => s.replace(/[\r\n\u2028\u2029]+/g, " ").trim();
+
+/** Author, work, rights and credit as a line of the body, so an export keeps them (review 20, RR20-6). */
+export function creditLine(w: Work): string {
+  return `${CREDIT_LINE_PREFIX}${oneLine(w.authors)}, ״[${oneLine(plain(w.title))}](${workUrl(w)})״ · רשות הציבור · ${CREDIT_HE}`;
+}
+const CREDIT_LINE_PREFIX = "מקור: פרויקט בן־יהודה · ";
 
 /** A saved work's id and text (the body after the title), or null for another note. */
 export function parseWorkNote(md: string): { id: number; text: string } | null {
@@ -101,7 +122,10 @@ export function parseWorkNote(md: string): { id: number; text: string } | null {
   if (!m || !/^source: benyehuda$/m.test(m[1])) return null;
   const id = Number(/^id: (\d+)$/m.exec(m[1])?.[1]);
   if (!Number.isInteger(id)) return null;
-  return { id, text: m[2].replace(/^\s*# .*\n/, "").trim() };
+  const body = m[2].replace(/^\s*# .*\n/, "").replace(/^\s*\n?/, "");
+  const lines = body.split("\n");
+  if (lines[0]?.startsWith(CREDIT_LINE_PREFIX)) lines.shift();
+  return { id, text: lines.join("\n").trim() };
 }
 
 /**

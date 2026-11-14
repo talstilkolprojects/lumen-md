@@ -152,6 +152,7 @@
   "base.saveSort": "この並び順を {file} に保存",
   "base.saved": "{file} に保存しました",
   "base.timeline.empty": "{property} に日付のある項目がありません",
+  "benyehuda.cancel": "キャンセル",
   "benyehuda.confirm": "GitHub のパブリックドメイン・アーカイブから取得しますか？ ノートは送りません。",
   "benyehuda.copied": "引用をコピーしました",
   "benyehuda.downloadFirst": "本文がありません。先に {author} の作品を取得してください。",
