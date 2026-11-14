@@ -1,0 +1,15 @@
+{
+  "successful": {
+    "0": {
+      "key": "ANNO2345",
+      "version": 1190,
+      "library": { "type": "user", "id": 475425, "name": "lumen-test" },
+      "data": { "key": "ANNO2345", "version": 1190, "parentItem": "PDFX2345", "itemType": "annotation", "annotationType": "highlight" }
+    }
+  },
+  "success": { "0": "ANNO2345" },
+  "unchanged": {},
+  "failed": {
+    "1": { "key": "", "code": 400, "message": "'annotationText' can only be set for highlight and underline annotations" }
+  }
+}

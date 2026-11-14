@@ -1,0 +1,185 @@
+{
+  "count": 20,
+  "items": [
+    {
+      "id": "scan-01",
+      "font": "FreeSerif",
+      "skew": -0.8,
+      "blur": 0.6,
+      "noise": 0.012,
+      "dpi": 200,
+      "chars": 211
+    },
+    {
+      "id": "scan-02",
+      "font": "FreeSans",
+      "skew": 1.2,
+      "blur": 0.8,
+      "noise": 0.02,
+      "dpi": 150,
+      "chars": 198
+    },
+    {
+      "id": "scan-03",
+      "font": "Liberation Serif",
+      "skew": 0,
+      "blur": 0.3,
+      "noise": 0.004,
+      "dpi": 300,
+      "chars": 225
+    },
+    {
+      "id": "scan-04",
+      "font": "DejaVu Sans",
+      "skew": 0.4,
+      "blur": 0.4,
+      "noise": 0.008,
+      "dpi": 200,
+      "chars": 198
+    },
+    {
+      "id": "scan-05",
+      "font": "FreeSerif",
+      "skew": -0.8,
+      "blur": 0.6,
+      "noise": 0.012,
+      "dpi": 200,
+      "chars": 191
+    },
+    {
+      "id": "scan-06",
+      "font": "FreeSans",
+      "skew": 1.2,
+      "blur": 0.8,
+      "noise": 0.02,
+      "dpi": 150,
+      "chars": 185
+    },
+    {
+      "id": "scan-07",
+      "font": "Liberation Serif",
+      "skew": 0,
+      "blur": 0.3,
+      "noise": 0.004,
+      "dpi": 300,
+      "chars": 181
+    },
+    {
+      "id": "scan-08",
+      "font": "DejaVu Sans",
+      "skew": 0.4,
+      "blur": 0.4,
+      "noise": 0.008,
+      "dpi": 200,
+      "chars": 202
+    },
+    {
+      "id": "scan-09",
+      "font": "FreeSerif",
+      "skew": -0.8,
+      "blur": 0.6,
+      "noise": 0.012,
+      "dpi": 200,
+      "chars": 203
+    },
+    {
+      "id": "scan-10",
+      "font": "FreeSans",
+      "skew": 1.2,
+      "blur": 0.8,
+      "noise": 0.02,
+      "dpi": 150,
+      "chars": 184
+    },
+    {
+      "id": "scan-11",
+      "font": "Liberation Serif",
+      "skew": 0,
+      "blur": 0.3,
+      "noise": 0.004,
+      "dpi": 300,
+      "chars": 225
+    },
+    {
+      "id": "scan-12",
+      "font": "DejaVu Sans",
+      "skew": 0.4,
+      "blur": 0.4,
+      "noise": 0.008,
+      "dpi": 200,
+      "chars": 180
+    },
+    {
+      "id": "scan-13",
+      "font": "FreeSerif",
+      "skew": -0.8,
+      "blur": 0.6,
+      "noise": 0.012,
+      "dpi": 200,
+      "chars": 193
+    },
+    {
+      "id": "scan-14",
+      "font": "FreeSans",
+      "skew": 1.2,
+      "blur": 0.8,
+      "noise": 0.02,
+      "dpi": 150,
+      "chars": 191
+    },
+    {
+      "id": "scan-15",
+      "font": "Liberation Serif",
+      "skew": 0,
+      "blur": 0.3,
+      "noise": 0.004,
+      "dpi": 300,
+      "chars": 226
+    },
+    {
+      "id": "scan-16",
+      "font": "DejaVu Sans",
+      "skew": 0.4,
+      "blur": 0.4,
+      "noise": 0.008,
+      "dpi": 200,
+      "chars": 197
+    },
+    {
+      "id": "scan-17",
+      "font": "FreeSerif",
+      "skew": -0.8,
+      "blur": 0.6,
+      "noise": 0.012,
+      "dpi": 200,
+      "chars": 234
+    },
+    {
+      "id": "scan-18",
+      "font": "FreeSans",
+      "skew": 1.2,
+      "blur": 0.8,
+      "noise": 0.02,
+      "dpi": 150,
+      "chars": 199
+    },
+    {
+      "id": "scan-19",
+      "font": "Liberation Serif",
+      "skew": 0,
+      "blur": 0.3,
+      "noise": 0.004,
+      "dpi": 300,
+      "chars": 205
+    },
+    {
+      "id": "scan-20",
+      "font": "DejaVu Sans",
+      "skew": 0.4,
+      "blur": 0.4,
+      "noise": 0.008,
+      "dpi": 200,
+      "chars": 230
+    }
+  ]
+}

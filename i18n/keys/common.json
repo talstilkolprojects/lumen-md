@@ -2130,7 +2130,7 @@
     },
     {
       "key": "cite.web.keyBody",
-      "en": "Lumen reads your Zotero library from api.zotero.org with a key you create at zotero.org → Settings → Security → Applications (read-only library access is enough). The key stays in this device's secret store and is sent only to api.zotero.org; every request shows in the privacy ledger. Nothing is written to Zotero.",
+      "en": "Lumen reads your Zotero library from api.zotero.org with a key you create at zotero.org → Settings → Security → Applications (read-only library access is enough). The key stays in this device's secret store and is sent only to api.zotero.org; every request shows in the privacy ledger. Lumen writes to Zotero only when you send PDF highlights and confirm (that needs a key with write access).",
       "vars": []
     },
     {
@@ -7658,6 +7658,31 @@
       ]
     },
     {
+      "key": "pdf.ocr.all",
+      "en": "Recognise scanned pages",
+      "vars": []
+    },
+    {
+      "key": "pdf.ocr.allDone",
+      "en": "Text recognised on {n} scanned pages.",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "pdf.ocr.allRunning",
+      "en": "Recognising page {n} of {total}…",
+      "vars": [
+        "n",
+        "total"
+      ]
+    },
+    {
+      "key": "pdf.ocr.none",
+      "en": "This PDF has no scanned pages left to recognise.",
+      "vars": []
+    },
+    {
       "key": "pdf.ocr.run",
       "en": "Recognise text (OCR)",
       "vars": []
@@ -7691,6 +7716,11 @@
         "n",
         "total"
       ]
+    },
+    {
+      "key": "pdf.reading",
+      "en": "Reading mode",
+      "vars": []
     },
     {
       "key": "pdf.saveFailed",
@@ -7751,6 +7781,68 @@
       "key": "pdf.zoomOut",
       "en": "Zoom out",
       "vars": []
+    },
+    {
+      "key": "pdf.zotero.confirm",
+      "en": "Send {n} highlights to Zotero? They are saved on zotero.org as annotations on “{title}”, with the key kept in this device's secret store. This is the only thing Lumen writes to Zotero.",
+      "vars": [
+        "n",
+        "title"
+      ]
+    },
+    {
+      "key": "pdf.zotero.failed",
+      "en": "Couldn't send to Zotero: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "pdf.zotero.noAttachment",
+      "en": "This PDF isn't a PDF attachment in your synced Zotero library. Add “zotero-attachment: KEY” to the front matter of {note}.",
+      "vars": [
+        "note"
+      ]
+    },
+    {
+      "key": "pdf.zotero.noLibrary",
+      "en": "Sync your Zotero library from zotero.org first (Citations: sync the Zotero library from zotero.org).",
+      "vars": []
+    },
+    {
+      "key": "pdf.zotero.noWrite",
+      "en": "Your Zotero key can't write. On zotero.org → Settings → Security → Applications, edit the key and allow write access.",
+      "vars": []
+    },
+    {
+      "key": "pdf.zotero.nothing",
+      "en": "Every highlight is already in Zotero.",
+      "vars": []
+    },
+    {
+      "key": "pdf.zotero.ok",
+      "en": "Send",
+      "vars": []
+    },
+    {
+      "key": "pdf.zotero.partial",
+      "en": "{n} highlights sent to Zotero; it refused {failed}.",
+      "vars": [
+        "n",
+        "failed"
+      ]
+    },
+    {
+      "key": "pdf.zotero.send",
+      "en": "Send to Zotero",
+      "vars": []
+    },
+    {
+      "key": "pdf.zotero.sent",
+      "en": "{n} highlights sent to Zotero.",
+      "vars": [
+        "n"
+      ]
     },
     {
       "key": "pdfPaste.changed",

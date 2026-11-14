@@ -458,8 +458,22 @@ export function anchorAnnotation(a: PdfAnnotation, pageText: string): Anchor | n
 
 /* ─── Search ──────────────────────────────────────────────────────── */
 
-/** Every match of `query` in `text` (case / spacing / niqqud-insensitive), as original offsets. */
-export function findAll(text: string, query: string): { start: number; end: number }[] {
+/** Hebrew final letters folded to their plain forms: OCR confuses the two (ך read as ר, a final read mid-word). */
+const FINALS: Record<string, string> = { "ך": "כ", "ם": "מ", "ן": "נ", "ף": "פ", "ץ": "צ" };
+const foldFinals = (s: string) => s.replace(/[ךםןףץ]/g, (c) => FINALS[c]);
+
+/**
+ * Every match of `query` in `text` (case / spacing / niqqud-insensitive), as
+ * original offsets.
+ *
+ * `loose` (W6.47, for text that OCR read off a scanned page): when nothing
+ * matches exactly, Hebrew final letters are folded and a query of at least
+ * 8 characters matches with up to about 15% of its characters edited, the
+ * same bound as a highlight's fuzzy re-anchoring; one match per place, in
+ * text order. A shorter query only matches exactly: one edit in a few
+ * characters matches almost anything.
+ */
+export function findAll(text: string, query: string, opts: { loose?: boolean } = {}): { start: number; end: number }[] {
   const q = normalizeQuote(query);
   if (!q) return [];
   const norm = normalizeWithMap(text);
@@ -467,6 +481,29 @@ export function findAll(text: string, query: string): { start: number; end: numb
   for (let i = norm.text.indexOf(q); i !== -1; i = norm.text.indexOf(q, i + q.length)) {
     out.push({ start: norm.map[i], end: norm.map[i + q.length - 1] + 1 });
   }
+  if (out.length || !opts.loose || q.length < FUZZY_MIN || q.length > FUZZY_MAX) return out;
+  // Folding is one character for one, so `norm.map` still holds.
+  const t = foldFinals(norm.text);
+  const fq = foldFinals(q);
+  const maxErr = Math.max(1, Math.round(fq.length * 0.15));
+  let run: { end: number; dist: number }[] = [];
+  const flush = () => {
+    if (!run.length) return;
+    const best = run.reduce((a, b) => (b.dist < a.dist ? b : a));
+    let start = approxStart(t, fq, best.end, maxErr);
+    let end = best.end;
+    while (start < end && t[start] === " ") start++;
+    while (end > start && t[end - 1] === " ") end--;
+    const prev = out.at(-1);
+    // Overlapping places are one match.
+    if (end > start && (!prev || norm.map[start] >= prev.end)) out.push({ start: norm.map[start], end: norm.map[end - 1] + 1 });
+    run = [];
+  };
+  for (const e of approxEnds(t, fq, maxErr)) {
+    if (run.length && e.end !== run[run.length - 1].end + 1) flush();
+    run.push(e);
+  }
+  flush();
   return out;
 }
 

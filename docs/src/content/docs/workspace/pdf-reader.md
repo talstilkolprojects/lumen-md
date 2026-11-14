@@ -77,11 +77,61 @@ while the reader is open, and Esc closes the reader.
 ## Scanned pages
 
 A page that is only an image has no text to select. The reader says so and
-offers **Recognise text (OCR)**: the page's text is recognised on your
-device (Hebrew and English, the same OCR as image import) and shown under
-the page, where you can search it and highlight it. The recognised text is
-not saved with the PDF, so run OCR again to see those highlights after
-reopening.
+offers **Recognise text (OCR)**; **Recognise scanned pages** in the toolbar
+does every such page of the PDF, one after another. The text is recognised
+on your device (Hebrew and English, the same OCR as image import) and laid
+over the page image as an invisible text layer, line by line where the
+words are: you select it, search it and highlight it on the page itself,
+like a page that has text.
+
+What OCR found is kept on this device for the next time you open the same
+PDF (even under another name), so the highlights you made on a scanned page
+are back without running OCR again. In an [encrypted vault](/security/vault-encryption/)
+it is encrypted like the rest of what Lumen keeps in the browser, and
+nothing is written while the vault is locked.
+
+Measured on 20 scanned Hebrew pages (printed to PDF, rasterised with
+poppler, skewed, blurred and speckled like a desk scan; made by
+`scripts/ocr/scanned-he/make.mjs`), the OCR got 12.2% of the characters
+wrong, and a highlight of a phrase landed on it on all 20 pages. Search on a
+scanned page is forgiving: when nothing matches exactly, it also finds a
+phrase of 8 or more characters that OCR read with a letter or two wrong
+(about 15% of the characters), and it treats Hebrew final letters like their
+plain forms. Check recognised text against the image before quoting it.
+
+## Reading mode
+
+**Reading mode** in the toolbar shows the pages alone, fitted to the width,
+without the highlights panel; the pages scroll one after another. Press it
+again to come back.
+
+Wherever you stop, Lumen remembers the place: the page and how far down it
+you were, not pixels, so a phone and a desktop at different zooms open the
+same line. It is kept in the vault (`.lumen/reading-positions.json`), so it
+travels with the vault's sync; when two devices read before syncing, each
+PDF keeps the place saved last. A link to a page or a highlight still opens
+there.
+
+## Send highlights to Zotero
+
+When the PDF is an attachment in your Zotero library (synced from
+zotero.org, see [Citations](/editor/citations/)), **Send to Zotero** in the
+highlights panel adds your highlights to it as Zotero annotations: the
+quoted text, your note, the page and where on the page, so Zotero's PDF
+reader shows them in place.
+
+- Nothing is sent before you confirm a dialog that names the item and how
+  many highlights go. It is the only thing Lumen writes to Zotero.
+- It uses the same API key as the library sync, from this device's secret
+  store. The key needs **write access** (zotero.org → Settings → Security →
+  Applications); a read-only key is refused before anything is sent.
+- Each highlight is sent once (Lumen remembers which went, in
+  `.lumen/zotero-annotations.json`); edits made afterwards stay in Lumen.
+- The requests go only to api.zotero.org and appear in the privacy ledger; a
+  local-only privacy policy blocks them.
+- The PDF is matched to its Zotero attachment by file name. If that is not
+  unique, add `zotero-attachment: KEY` (the attachment's 8-character key) to
+  the front matter of the highlights note.
 
 ## Limits
 

@@ -22,5 +22,20 @@
   "pdf.notesUnreadable": "the highlights block in {name} can't be read. Fix or remove it to highlight again.",
   "pdf.ocr.scanned": "This page is a scanned image.",
   "pdf.ocr.run": "Recognise text (OCR)",
-  "pdf.ocr.running": "Recognising text on this device…"
+  "pdf.ocr.running": "Recognising text on this device…",
+  "pdf.ocr.all": "Recognise scanned pages",
+  "pdf.ocr.allRunning": "Recognising page {n} of {total}…",
+  "pdf.ocr.allDone": "Text recognised on {n} scanned pages.",
+  "pdf.ocr.none": "This PDF has no scanned pages left to recognise.",
+  "pdf.reading": "Reading mode",
+  "pdf.zotero.send": "Send to Zotero",
+  "pdf.zotero.confirm": "Send {n} highlights to Zotero? They are saved on zotero.org as annotations on “{title}”, with the key kept in this device's secret store. This is the only thing Lumen writes to Zotero.",
+  "pdf.zotero.ok": "Send",
+  "pdf.zotero.sent": "{n} highlights sent to Zotero.",
+  "pdf.zotero.partial": "{n} highlights sent to Zotero; it refused {failed}.",
+  "pdf.zotero.nothing": "Every highlight is already in Zotero.",
+  "pdf.zotero.noLibrary": "Sync your Zotero library from zotero.org first (Citations: sync the Zotero library from zotero.org).",
+  "pdf.zotero.noAttachment": "This PDF isn't a PDF attachment in your synced Zotero library. Add “zotero-attachment: KEY” to the front matter of {note}.",
+  "pdf.zotero.noWrite": "Your Zotero key can't write. On zotero.org → Settings → Security → Applications, edit the key and allow write access.",
+  "pdf.zotero.failed": "Couldn't send to Zotero: {error}"
 }
