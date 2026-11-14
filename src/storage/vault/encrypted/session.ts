@@ -377,7 +377,9 @@ async function finishDisable(s: Session, scan: ScanReport): Promise<boolean> {
   unlockedSessions.delete(s);
   if (current === s) current = null;
   setRestSealer(null);
-  stopAutoLock();
+  // Review 16, T5-1: another vault opened in this run may still hold keys;
+  // its auto-lock keeps running.
+  if (!unlockedSessions.size) stopAutoLock();
   refreshVaultEncryption();
   setVaultEncryptionState("none");
   return true;
