@@ -838,6 +838,16 @@
       "vars": []
     },
     {
+      "key": "cmd.i18n.suggest",
+      "en": "Suggest a better translation",
+      "vars": []
+    },
+    {
+      "key": "cmd.i18n.suggest.hint",
+      "en": "Opens a GitHub issue filled in with the string, its English and your wording; no account in Lumen",
+      "vars": []
+    },
+    {
       "key": "cmd.image.altText",
       "en": "Images: alt text from OCR / local vision",
       "vars": []

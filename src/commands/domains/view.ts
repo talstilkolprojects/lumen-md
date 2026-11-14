@@ -1,4 +1,5 @@
 /** View commands: editor modes, panels, editor settings, language and theme. */
+import { isBetaLocale } from "../../i18n/review";
 import { cmdIcons, type Command } from "../../ui/CommandPalette";
 import { useAppStore } from "../../store/useStore";
 import { t, SUPPORTED_LOCALES } from "../../i18n";
@@ -200,7 +201,8 @@ export function buildLanguageCommands({ rtl, toggleRtl, setLocale }: CommandCont
     },
     ...SUPPORTED_LOCALES.map((l) => ({
       id: `lang.${l.code}`,
-      label: t("cmd.view.language", { label: l.label }),
+      // Plan W4.18: a language no native speaker has reviewed says so.
+      label: t("cmd.view.language", { label: isBetaLocale(l.code) ? t("locale.betaLabel", { label: l.label }) : l.label }),
       hint:
         l.dir === "rtl"
           ? t("cmd.view.language.rtl")
@@ -209,6 +211,17 @@ export function buildLanguageCommands({ rtl, toggleRtl, setLocale }: CommandCont
       group: t("group.view"),
       action: () => setLocale(l.code),
     })),
+    {
+      id: "i18n.suggest",
+      label: t("cmd.i18n.suggest"),
+      hint: t("cmd.i18n.suggest.hint"),
+      icon: cmdIcons.PanelRightOpen,
+      group: t("group.view"),
+      action: async () => {
+        const { openTranslationSuggest } = await import("../../ui/TranslationSuggest");
+        openTranslationSuggest();
+      },
+    },
   ];
 }
 

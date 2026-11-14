@@ -21,6 +21,7 @@ import { exportSettings, importSettings, parseSettingsFile, type SettingsTarget 
 import { downloadText } from "../storage/exportFormats";
 import { showAiToast } from "./AiToast";
 import { SUPPORTED_LOCALES, t, type Locale } from "../i18n";
+import { isBetaLocale } from "../i18n/review";
 import { useFocusTrap } from "./useFocusTrap";
 
 const ThemeSettings = lazy(() => import("./ThemeSettings").then((m) => ({ default: m.ThemeSettings })));
@@ -184,17 +185,35 @@ export function SettingsScreen({ tab: initialTab = "general", onClose, onOpenAud
       );
     }
     if (entry.type === "choice") {
-      return (
+      // Languages a native speaker has not reviewed yet are marked beta (plan W4.18).
+      const optionLabel = (o: { value: string; label?: string }) => {
+        if (o.label) return t(o.label);
+        const name = SUPPORTED_LOCALES.find((l) => l.code === o.value)?.label ?? o.value;
+        return entry.id === "locale" && isBetaLocale(o.value) ? t("locale.betaLabel", { label: name }) : name;
+      };
+      const select = (
         <label key={entry.id} htmlFor={id} style={row}>
           <span style={{ flex: 1 }}>{label}</span>
           <select id={id} value={String(value)} data-setting={entry.id} onChange={(e) => setEntry(entry, e.target.value)} style={input}>
             {(entry.options ?? []).map((o) => (
               <option key={o.value} value={o.value}>
-                {o.label ? t(o.label) : (SUPPORTED_LOCALES.find((l) => l.code === o.value)?.label ?? o.value)}
+                {optionLabel(o)}
               </option>
             ))}
           </select>
         </label>
+      );
+      if (entry.id !== "locale" || !isBetaLocale(String(value))) return select;
+      return (
+        <div key={entry.id}>
+          {select}
+          <p data-testid="locale-beta-note" style={{ margin: "2px 0 8px", fontSize: 12, color: "hsl(var(--fg-muted))" }}>
+            {t("locale.betaNote")}{" "}
+            <button type="button" data-testid="locale-suggest" onClick={() => void import("./TranslationSuggest").then((m) => m.openTranslationSuggest())} style={{ border: "none", background: "none", padding: 0, color: "hsl(var(--accent))", cursor: "pointer", textDecoration: "underline", font: "inherit" }}>
+              {t("cmd.i18n.suggest")}
+            </button>
+          </p>
+        </div>
       );
     }
     return (

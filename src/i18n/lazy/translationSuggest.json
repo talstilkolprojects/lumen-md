@@ -1,0 +1,17 @@
+{
+  "i18nSuggest.title": "Suggest a better translation: {language}",
+  "i18nSuggest.introBeta": "This language was translated by machine. Find a string that reads wrong and write it the way a native speaker would.",
+  "i18nSuggest.intro": "Find the string and write a better wording.",
+  "i18nSuggest.find": "Words you saw on screen",
+  "i18nSuggest.matches": "Matching strings",
+  "i18nSuggest.none": "No string contains these words.",
+  "i18nSuggest.loading": "Loading the strings…",
+  "i18nSuggest.yours": "Your translation (keep every {placeholder})",
+  "i18nSuggest.why": "Why (optional)",
+  "i18nSuggest.privacy": "Nothing is sent from Lumen. \"Open on GitHub\" opens the issue form in a new tab; you post it with your own GitHub account.",
+  "i18nSuggest.copy": "Copy the text",
+  "i18nSuggest.copied": "Copied",
+  "i18nSuggest.open": "Open on GitHub",
+  "i18nSuggest.tooLong": "The text is too long for a link: the issue opens with its title only. Copy the text and paste it there.",
+  "i18nSuggest.close": "Close"
+}

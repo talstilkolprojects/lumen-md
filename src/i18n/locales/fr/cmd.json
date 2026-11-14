@@ -165,6 +165,8 @@
   "cmd.help.credits": "Crédits et licences des modèles",
   "cmd.help.setup": "Configurer Lumen…",
   "cmd.help.setup.hint": "Langue, emplacement du coffre, apparence et coffre d'exemple : la configuration initiale à nouveau",
+  "cmd.i18n.suggest": "Proposer une meilleure traduction",
+  "cmd.i18n.suggest.hint": "Ouvre une issue GitHub avec la chaîne, l’anglais et votre formulation ; sans compte Lumen",
   "cmd.image.altText": "Images : texte alternatif par OCR / vision locale",
   "cmd.image.altText.hint": "Lit le texte des images de cette note sur l’appareil (hébreu + anglais) ; décrit le reste avec un modèle de vision Ollama local",
   "cmd.insert.abc": "Insertion music notation (ABC)",

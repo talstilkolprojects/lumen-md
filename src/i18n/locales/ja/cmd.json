@@ -165,6 +165,8 @@
   "cmd.help.credits": "クレジットとモデルのライセンス",
   "cmd.help.setup": "Lumen をセットアップ…",
   "cmd.help.setup.hint": "言語、保管場所、見た目、サンプルの保管庫: 初回セットアップをもう一度",
+  "cmd.i18n.suggest": "より良い翻訳を提案",
+  "cmd.i18n.suggest.hint": "文字列・英語原文・あなたの訳を記入した GitHub の issue を開きます（Lumen のアカウント不要）",
   "cmd.image.altText": "画像: OCR / ローカル画像認識で代替テキスト",
   "cmd.image.altText.hint": "このノートの画像内の文字を端末上で読み取り（ヘブライ語・英語）、それ以外はローカルの Ollama 画像モデルで説明します",
   "cmd.insert.abc": "挿入 music notation (ABC)",

@@ -165,6 +165,8 @@
   "cmd.help.credits": "Danksagungen & Modelllizenzen",
   "cmd.help.setup": "Lumen einrichten…",
   "cmd.help.setup.hint": "Sprache, Speicherort, Aussehen und Beispiel-Tresor: die Ersteinrichtung noch einmal",
+  "cmd.i18n.suggest": "Bessere Übersetzung vorschlagen",
+  "cmd.i18n.suggest.hint": "Öffnet ein GitHub-Issue mit dem Text, dem englischen Original und Ihrer Formulierung; ohne Lumen-Konto",
   "cmd.image.altText": "Bilder: Alternativtext per OCR / lokaler Bildanalyse",
   "cmd.image.altText.hint": "Liest Text in den Bildern dieser Notiz auf dem Gerät (Hebräisch + Englisch); beschreibt den Rest mit einem lokalen Ollama-Bildmodell",
   "cmd.insert.abc": "Einfügen music notation (ABC)",

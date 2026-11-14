@@ -1738,6 +1738,85 @@
       ]
     },
     {
+      "key": "i18nSuggest.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "i18nSuggest.copied",
+      "en": "Copied",
+      "vars": []
+    },
+    {
+      "key": "i18nSuggest.copy",
+      "en": "Copy the text",
+      "vars": []
+    },
+    {
+      "key": "i18nSuggest.find",
+      "en": "Words you saw on screen",
+      "vars": []
+    },
+    {
+      "key": "i18nSuggest.intro",
+      "en": "Find the string and write a better wording.",
+      "vars": []
+    },
+    {
+      "key": "i18nSuggest.introBeta",
+      "en": "This language was translated by machine. Find a string that reads wrong and write it the way a native speaker would.",
+      "vars": []
+    },
+    {
+      "key": "i18nSuggest.loading",
+      "en": "Loading the strings…",
+      "vars": []
+    },
+    {
+      "key": "i18nSuggest.matches",
+      "en": "Matching strings",
+      "vars": []
+    },
+    {
+      "key": "i18nSuggest.none",
+      "en": "No string contains these words.",
+      "vars": []
+    },
+    {
+      "key": "i18nSuggest.open",
+      "en": "Open on GitHub",
+      "vars": []
+    },
+    {
+      "key": "i18nSuggest.privacy",
+      "en": "Nothing is sent from Lumen. \"Open on GitHub\" opens the issue form in a new tab; you post it with your own GitHub account.",
+      "vars": []
+    },
+    {
+      "key": "i18nSuggest.title",
+      "en": "Suggest a better translation: {language}",
+      "vars": [
+        "language"
+      ]
+    },
+    {
+      "key": "i18nSuggest.tooLong",
+      "en": "The text is too long for a link: the issue opens with its title only. Copy the text and paste it there.",
+      "vars": []
+    },
+    {
+      "key": "i18nSuggest.why",
+      "en": "Why (optional)",
+      "vars": []
+    },
+    {
+      "key": "i18nSuggest.yours",
+      "en": "Your translation (keep every {placeholder})",
+      "vars": [
+        "placeholder"
+      ]
+    },
+    {
       "key": "imageSearch.copied",
       "en": "Image link copied — paste it into the note.",
       "vars": []
@@ -1797,6 +1876,18 @@
     {
       "key": "loading.generic",
       "en": "Loading…",
+      "vars": []
+    },
+    {
+      "key": "locale.betaLabel",
+      "en": "{label} (beta)",
+      "vars": [
+        "label"
+      ]
+    },
+    {
+      "key": "locale.betaNote",
+      "en": "This translation was made by machine and is waiting for a native speaker's review.",
       "vars": []
     },
     {
