@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { opfsWritable, vaultOrSkip } from "./_opfs";
 
 /**
  * Plan W2.2: related notes and suggested links while writing. Notes are put
@@ -24,14 +25,14 @@ async function seed(page: Page) {
   }, NOTES);
 }
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, browserName }) => {
   await page.addInitScript(() => {
     localStorage.setItem("lumen-tour-done", "1");
     localStorage.removeItem("lumen-md");
   });
   await page.goto("/");
   await expect(page.locator(".cm-content").first()).toContainText("Welcome to", { timeout: 15_000 });
-  test.skip(!(await page.evaluate(() => typeof navigator.storage?.getDirectory === "function")), "no OPFS in this browser build");
+  vaultOrSkip(await opfsWritable(page), browserName);
   await seed(page);
 });
 

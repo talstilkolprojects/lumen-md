@@ -132,6 +132,7 @@ test("50 golden lines: formulas stay one LTR unit in the source editor", async (
 });
 
 test("the printed PDF keeps each formula whole", async ({ page, browserName }) => {
+  // skip-reason: Playwright's page.pdf() exists only in Chromium | task: W5.14 | until: 2027-05-12
   test.skip(browserName !== "chromium", "page.pdf() is Chromium only");
   await loadNote(page);
   await page.keyboard.press("Meta+3");

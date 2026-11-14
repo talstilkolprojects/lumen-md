@@ -60,6 +60,7 @@ test("the editor's undo works with the Hebrew layout", async ({ page, browserNam
   // CodeMirror's non-Latin fallback reads keyCode; in Playwright's WebKit a synthetic
   // event's overridden keyCode does not reach it (seen in the sandbox run). Not a
   // claim about real Safari, which is left to the owner's manual check.
+  // skip-reason: Playwright WebKit does not pass a synthetic keyCode to CodeMirror; real Safari is the owner's manual check | task: W2.8 | until: 2027-05-12
   test.skip(browserName === "webkit", "synthetic keyCode is not seen by CodeMirror in Playwright WebKit");
   const editor = page.locator(".cm-content").first();
   await editor.click();

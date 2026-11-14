@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 
 /**
  * Plan W2.12 — embedded queries and saved searches, in the browser:
@@ -50,7 +51,7 @@ async function setNote(page: Page, text: string): Promise<void> {
   }, text);
 }
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, browserName }) => {
   await page.addInitScript(() => {
     localStorage.setItem("lumen-tour-done", "1");
     localStorage.removeItem("lumen-md");
@@ -58,7 +59,7 @@ test.beforeEach(async ({ page }) => {
   });
   await page.goto("/");
   await expect(page.locator(".cm-content").first()).toBeVisible({ timeout: 20_000 });
-  test.skip(!(await canSeed(page)), "no writable OPFS in this browser's test context");
+  vaultOrSkip(await canSeed(page), browserName);
   await page.evaluate(async () => {
     const root = await navigator.storage.getDirectory();
     for await (const name of (root as unknown as { keys(): AsyncIterable<string> }).keys()) await root.removeEntry(name, { recursive: true });

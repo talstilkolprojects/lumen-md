@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { vaultOrSkip } from "./_opfs";
 import { readFileSync } from "node:fs";
 import { makeEpub } from "../src/__tests__/helpers/epubFixture";
 import { createPdfAnnotation, upsertAnnotationsNote } from "../src/pdf/annotations";
@@ -46,7 +47,7 @@ async function put(page: Page, name: string, data: Uint8Array | string): Promise
   );
 }
 
-test("the export note's 20 links each open their highlight's page or chapter", async ({ page }) => {
+test("the export note's 20 links each open their highlight's page or chapter", async ({ page, browserName }) => {
   test.setTimeout(180_000);
   const text = "Some words on this page that the highlight quotes.";
   const pdf = Array.from({ length: 12 }, (_, i) => createPdfAnnotation({ id: uuid(100 + i), source: "bilingual.pdf", page: (i % 3) + 1, text, start: 0, end: 10, now: NOW }));
@@ -56,7 +57,7 @@ test("the export note's 20 links each open their highlight's page or chapter", a
     (await put(page, "bilingual.pdf.md", upsertAnnotationsNote(null, "bilingual.pdf", pdf, { title: "Highlights — bilingual.pdf", page: (n) => `p. ${n}`, empty: "_none_" }))) &&
     (await put(page, "book.epub", await makeEpub({ hebrew: true }))) &&
     (await put(page, "book.epub.md", upsertEpubNote(null, "book.epub", epub, { title: "Highlights — book", chapter: (n) => `ch. ${n}`, empty: "_none_" })));
-  test.skip(!ok, "this engine refuses OPFS writes here, so there is no vault");
+  vaultOrSkip(ok, browserName);
 
   await page.keyboard.press(process.platform === "darwin" ? "Meta+k" : "Control+k");
   await page.keyboard.type("All highlights");
