@@ -143,6 +143,30 @@ generation connect.
    and the proposal is in Lumen's review screen. Approve it; the note
    appears, and `lumen mcp log` shows `proposed` then `approved`.
 
+## Lumen as a client: outside servers for the local agents
+
+The other way round: Lumen's own agents can use tools of other MCP servers,
+for example the Knesset's bills and votes, data.gov.il, your Zotero library or
+your files. Nothing is connected until you add a server and turn it on.
+
+- **Servers:** local ones (a command on this computer, desktop app only, or a
+  `127.0.0.1` address) and remote ones (Streamable HTTP). Lumen speaks MCP
+  2026-07-28 and falls back to the older handshake for older servers.
+- **Permission per server and per tool:** *read* (runs without asking, only
+  for tools the server marks read-only), *ask* (you approve each call, the
+  default) or *block* (never offered to the model).
+- **Airplane mode and local-only AI:** every remote server is blocked, and no
+  connection is made. Each remote call is in the privacy ledger.
+- **Injection guard:** what a server returns is outside content. It is cleaned
+  and marked before the model sees it, and any change or network call the
+  agent then tries needs your approval.
+- **Sign-in (OAuth):** Lumen identifies itself with a client metadata document
+  (`https://lumen-md.vercel.app/oauth/client-metadata.json`), uses PKCE, checks
+  that the sign-in answer comes from the server it asked (`iss`), and keeps
+  each server's credentials tied to the server that issued them.
+- **Suggested servers** (off until you turn them on): Knesset (Knessy, MIT),
+  data.gov.il, Zotero, your files.
+
 ## The ledger
 
 Every call — allowed, refused, proposed, approved, rejected — is a line in
