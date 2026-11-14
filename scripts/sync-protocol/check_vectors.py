@@ -11,7 +11,8 @@ when 100% of the vectors decode identically.
 """
 import base64, hashlib, hmac, json, os, struct, sys
 
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.argon2 import Argon2id
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
@@ -240,12 +241,13 @@ def main():
     # Spec §6 (fifth review, F1): "<prefix><epoch>:" + b64u(HMAC(pairing_N, "lumen-pair/<kind>/<v>\0" ‖ body) ‖ body),
     # the body says its kind and has exactly that kind's fields.
     fields = {
-        "code": {"kind", "vaultId", "counter", "digest", "epoch", "ringRev", "ringDigest", "issuedAt", "nonce"},
-        "request": {"kind", "vaultId", "epoch", "ringRev", "ringDigest", "counter", "digest", "requestedAt", "nonce"},
-        "answer": {"kind", "vaultId", "request", "nonce", "counter", "digest", "epoch", "ringRev", "ringDigest", "answeredAt"},
+        "code": {"kind", "vaultId", "counter", "digest", "epoch", "ringRev", "ringDigest", "issuedAt", "nonce", "commit"},
+        "request": {"kind", "vaultId", "epoch", "ringRev", "ringDigest", "counter", "digest", "requestedAt", "nonce", "commit"},
+        "answer": {"kind", "vaultId", "request", "nonce", "counter", "digest", "epoch", "ringRev", "ringDigest", "answeredAt", "pub"},
     }
-    versions = {"code": 3, "request": 2, "answer": 2}
-    prefixes = {"code": "lumen-pair:3:", "request": "lumen-pair-request:2:", "answer": "lumen-pair-answer:2:"}
+    # Spec §6a (plan W8.5): code 4, request 3 and answer 3 carry the comparison's commitment or key.
+    versions = {"code": 4, "request": 3, "answer": 3}
+    prefixes = {"code": "lumen-pair:4:", "request": "lumen-pair-request:3:", "answer": "lumen-pair-answer:3:"}
 
     def read_pairing(text, kind, epoch, key):
         """The body of a pairing message of `kind`, or None when its MAC (with that kind's label) or shape is wrong."""
@@ -273,20 +275,48 @@ def main():
         vid, epoch, key, ring = vault_keys(pv["vault"])
         body = read_pairing(pv["code"], "code", epoch, key) or {}
         want = pv["body"]
-        check(f"pairing code at epoch {epoch}: HMAC with the code label under that epoch's key, body and keyring anchor as stated", body.get("vaultId") == vid and body.get("counter") == want["counter"] and body.get("digest") == want["digest"] and ring_ok(body, epoch, ring, want))
+        check(f"pairing code at epoch {epoch}: HMAC with the code label under that epoch's key, body, keyring anchor and the issuer's commitment as stated", body.get("vaultId") == vid and body.get("counter") == want["counter"] and body.get("digest") == want["digest"] and ring_ok(body, epoch, ring, want) and body.get("commit") == want["sas"]["commit"] and body.get("nonce") == want["sas"]["nonce"] and hashlib.sha256(pv["code"].strip().encode()).hexdigest() == want["sas"]["session"])
 
     for pv in v.get("pairingTwoWay", []):
         vid, epoch, key, ring = vault_keys(pv["vault"])
         req = read_pairing(pv["request"], "request", epoch, key) or {}
         rw = pv["requestBody"]
-        check(f"pairing request at epoch {epoch}: request label, nonce, manifest and keyring as stated", req.get("vaultId") == vid and req.get("nonce") == rw["nonce"] and req.get("counter") == (rw["manifest"] or {}).get("counter") and req.get("requestedAt") == rw["issuedAt"] and ring_ok(req, epoch, ring, rw))
+        check(f"pairing request at epoch {epoch}: request label, nonce, manifest and keyring as stated", req.get("vaultId") == vid and req.get("nonce") == rw["nonce"] and req.get("counter") == (rw["manifest"] or {}).get("counter") and req.get("requestedAt") == rw["issuedAt"] and ring_ok(req, epoch, ring, rw) and req.get("commit") == rw["commit"])
         ans = read_pairing(pv["answer"], "answer", epoch, key) or {}
         want = pv["answerBody"]
         sha = hashlib.sha256(pv["request"].strip().encode()).hexdigest()
-        check(f"pairing answer at epoch {epoch}: answer label, names the request's SHA-256 and nonce, anchors as stated", sha == rw["hash"] and ans.get("request") == sha and ans.get("nonce") == rw["nonce"] and ans.get("counter") == want["counter"] and ans.get("digest") == want["digest"] and ring_ok(ans, epoch, ring, want))
+        check(f"pairing answer at epoch {epoch}: answer label, names the request's SHA-256 and nonce, anchors as stated", sha == rw["hash"] and ans.get("request") == sha and ans.get("nonce") == rw["nonce"] and ans.get("counter") == want["counter"] and ans.get("digest") == want["digest"] and ring_ok(ans, epoch, ring, want) and ans.get("pub") == want["sas"]["pub"] and hashlib.sha256(pv["answer"].strip().encode()).hexdigest() == want["sas"]["answer"])
         # Reflection (F1): the request's bytes under the answer's or the code's prefix don't verify.
         tail = pv["request"][len(f"{prefixes['request']}{epoch}:"):]
         check(f"pairing request at epoch {epoch} relabelled as an answer or a code is refused", read_pairing(f"{prefixes['answer']}{epoch}:{tail}", "answer", epoch, key) is None and read_pairing(f"{prefixes['code']}{epoch}:{tail}", "code", epoch, key) is None)
+
+    # Spec §6a (plan W8.5): the comparison. Both sides' X25519, the transcript,
+    # HKDF with the "lumen-pair-sas/1/…" labels, six bits per symbol, the
+    # commitments and both confirmations.
+    for sv in v.get("sas", []):
+        ki = X25519PrivateKey.from_private_bytes(bytes.fromhex(sv["issuerKey"]))
+        kj = X25519PrivateKey.from_private_bytes(bytes.fromhex(sv["joinerKey"]))
+        raw = lambda k: k.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+        pub_i, pub_j = raw(ki), raw(kj)
+        t = json.loads(sv["transcript"])
+        shared = ki.exchange(X25519PublicKey.from_public_bytes(pub_j))
+        same = shared == kj.exchange(X25519PublicKey.from_public_bytes(pub_i))
+        th = hashlib.sha256(sv["transcript"].encode()).digest()
+        hk = lambda info, n: HKDF(algorithm=hashes.SHA256(), length=n, salt=th, info=("lumen-pair-sas/1/" + info).encode()).derive(shared)
+        n = int.from_bytes(hk("sas", 4), "big")
+        symbols = [(n >> (26 - 6 * i)) & 63 for i in range(5)]
+        commit = lambda pub: hashlib.sha256(b"lumen-pair-sas/1/commit\0" + pub).hexdigest()
+        tag = lambda role: b64u(hmac256(hk("confirm/" + role, 32), b"lumen-pair-sas/1/confirm\0" + th))
+        commits = (sv.get("commitI") in (None, commit(pub_i))) and (sv.get("commitJ") in (None, commit(pub_j)))
+        layout = t[0] == "lumen-pair-sas/1" and t[1] == sv["flow"] and t[11] == b64u(pub_i) and t[12] == b64u(pub_j) and len(t) == 13
+        check(f"comparison ({sv['flow']}, vault {sv['vault']}): transcript layout, commitments, the five symbols {symbols} and both confirmations", same and layout and commits and symbols == sv["symbols"] and tag("issuer") == sv["confirmIssuer"] and tag("joiner") == sv["confirmJoiner"])
+    # The pairing vectors and the comparison vectors describe the same sessions.
+    for pv, tw in zip(v["pairing"], v.get("pairingTwoWay", [])):
+        for sv in v.get("sas", []):
+            if sv["vault"] == pv["vault"]:
+                t = json.loads(sv["transcript"])
+                want = pv["body"]["sas"] if sv["flow"] == "one-way" else tw["answerBody"]["sas"]
+                check(f"comparison ({sv['flow']}, vault {sv['vault']}) is the session of the pairing vector", t[8] == want["session"] and t[9] == want["answer"] and t[10] == want["nonce"])
 
     print(f"\n{ok}/{total} vectors decoded identically")
     sys.exit(0 if ok == total else 1)

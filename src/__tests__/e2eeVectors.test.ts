@@ -16,6 +16,7 @@ import { ageDecrypt } from "../sync/e2ee/age";
 import { argon2id } from "../sync/e2ee/primitives/argon2";
 import { readPairingAnswer, readPairingCode, readPairingRequest } from "../sync/e2ee/pairing";
 import { manifestName, openManifest } from "../sync/e2ee/manifest";
+import { confirmTag, deriveSas, sasCommit, sasKeyPair, type SasTranscript } from "../sync/e2ee/sas";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 interface Vault {
@@ -104,9 +105,31 @@ describe("the sync protocol's test vectors", () => {
       expect(await readPairingRequest(keys, pv.request)).toEqual(pv.requestBody);
       expect(await readPairingAnswer(keys, pv.answer, pv.requestBody, pv.now + 1000)).toEqual(pv.answerBody);
       // F1: the kind is inside the MAC — a request under another kind's prefix doesn't verify.
-      const body = pv.request.slice(pv.request.indexOf(":", "lumen-pair-request:2:".length));
-      await expect(readPairingAnswer(keys, `lumen-pair-answer:2:${pv.requestBody.ring.epoch}${body}`, pv.requestBody, pv.now + 1000)).rejects.toThrow(/not from this vault/);
-      await expect(readPairingCode(keys, `lumen-pair:3:${pv.requestBody.ring.epoch}${body}`, pv.now)).rejects.toThrow(/not from this vault/);
+      const body = pv.request.slice(pv.request.indexOf(":", "lumen-pair-request:3:".length));
+      await expect(readPairingAnswer(keys, `lumen-pair-answer:3:${pv.requestBody.ring.epoch}${body}`, pv.requestBody, pv.now + 1000)).rejects.toThrow(/not from this vault/);
+      await expect(readPairingCode(keys, `lumen-pair:4:${pv.requestBody.ring.epoch}${body}`, pv.now)).rejects.toThrow(/not from this vault/);
     }
   }, 60_000);
+
+  it("the pairing comparison (plan W8.5): both sides derive the stated symbols and confirmations from the transcript", async () => {
+    const sas = (V as unknown as { sas: Array<{ flow: string; issuerKey: string; joinerKey: string; transcript: string; commitI?: string; commitJ?: string; symbols: number[]; confirmIssuer: string; confirmJoiner: string }> }).sas;
+    expect(sas).toHaveLength(4);
+    for (const sv of sas) {
+      const i = await sasKeyPair(Buffer.from(sv.issuerKey, "hex"));
+      const j = await sasKeyPair(Buffer.from(sv.joinerKey, "hex"));
+      const a = JSON.parse(sv.transcript) as [string, "one-way" | "two-way", string, number, number, string, number, string, string, string, string, string, string];
+      const t: SasTranscript = { flow: a[1], vaultId: a[2], epoch: a[3], ringRev: a[4], ringDigest: a[5], counter: a[6], digest: a[7], session: a[8], answer: a[9], nonce: a[10], pubI: i.pub, pubJ: j.pub };
+      const si = await deriveSas(i.priv, j.pub, t);
+      const sj = await deriveSas(j.priv, i.pub, t);
+      expect(si.symbols).toEqual(sv.symbols);
+      expect(sj.symbols).toEqual(sv.symbols);
+      expect(Buffer.from(await confirmTag(si, "issuer")).toString("base64url")).toBe(sv.confirmIssuer);
+      expect(Buffer.from(await confirmTag(sj, "joiner")).toString("base64url")).toBe(sv.confirmJoiner);
+      if (sv.commitI) expect(await sasCommit(i.pub)).toBe(sv.commitI);
+      if (sv.commitJ) expect(await sasCommit(j.pub)).toBe(sv.commitJ);
+      // Another transcript (one field changed) gives other symbols or other confirmations.
+      const other = await deriveSas(i.priv, j.pub, { ...t, counter: t.counter + 1 });
+      expect(Buffer.from(await confirmTag(other, "issuer")).toString("base64url")).not.toBe(sv.confirmIssuer);
+    }
+  });
 });

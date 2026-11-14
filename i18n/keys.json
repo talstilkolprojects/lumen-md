@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-11-12T21:33:34.587Z",
+  "generated_at": "2026-11-14T13:23:24.421Z",
   "source": "src/i18n/index.ts (en bundle) + src/i18n/lazy/*.json",
-  "count": 1556,
+  "count": 1628,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -8382,6 +8382,366 @@
     {
       "key": "e2ee.revokedHere.reset",
       "en": "This device's own list of the devices it removed couldn't be verified, so it was set aside. It now checks against the vault's sealed list of removed devices. Check the device list on a device you trust.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.title",
+      "en": "Compare the symbols",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.prompt",
+      "en": "Do these five symbols, in this order, match the ones on the other device?",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.match",
+      "en": "They match",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.mismatch",
+      "en": "They don't match",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.waitingKey",
+      "en": "Waiting for the other device… Keep both devices open.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.waitingConfirm",
+      "en": "Confirmed on this device. Now choose “They match” on the other one.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.done",
+      "en": "Paired: the symbols were confirmed on both devices.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.aborted",
+      "en": "Pairing stopped, and nothing was paired. Start again, and pair only with the device in front of you.",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w0",
+      "en": "Dog",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w1",
+      "en": "Cat",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w2",
+      "en": "Lion",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w3",
+      "en": "Horse",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w4",
+      "en": "Unicorn",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w5",
+      "en": "Pig",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w6",
+      "en": "Elephant",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w7",
+      "en": "Owl",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w8",
+      "en": "Whale",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w9",
+      "en": "Rooster",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w10",
+      "en": "Penguin",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w11",
+      "en": "Turtle",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w12",
+      "en": "Fish",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w13",
+      "en": "Octopus",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w14",
+      "en": "Butterfly",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w15",
+      "en": "Sunflower",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w16",
+      "en": "Tree",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w17",
+      "en": "Cactus",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w18",
+      "en": "Cheese",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w19",
+      "en": "Globe",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w20",
+      "en": "Moon",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w21",
+      "en": "Cloud",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w22",
+      "en": "Flame",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w23",
+      "en": "Crab",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w24",
+      "en": "Avocado",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w25",
+      "en": "Strawberry",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w26",
+      "en": "Pineapple",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w27",
+      "en": "Pizza",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w28",
+      "en": "Cake",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w29",
+      "en": "Bee",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w30",
+      "en": "Frog",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w31",
+      "en": "Robot",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w32",
+      "en": "Crown",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w33",
+      "en": "Glasses",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w34",
+      "en": "Compass",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w35",
+      "en": "Balloon",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w36",
+      "en": "Thumbs up",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w37",
+      "en": "Umbrella",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w38",
+      "en": "Watermelon",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w39",
+      "en": "Hedgehog",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w40",
+      "en": "Gift",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w41",
+      "en": "Flashlight",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w42",
+      "en": "Book",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w43",
+      "en": "Chair",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w44",
+      "en": "Paperclip",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w45",
+      "en": "Envelope",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w46",
+      "en": "Shield",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w47",
+      "en": "Key",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w48",
+      "en": "Hammer",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w49",
+      "en": "Telescope",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w50",
+      "en": "Carrot",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w51",
+      "en": "Train",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w52",
+      "en": "Bicycle",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w53",
+      "en": "Sailboat",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w54",
+      "en": "Rocket",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w55",
+      "en": "Medal",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w56",
+      "en": "Puzzle",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w57",
+      "en": "Guitar",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w58",
+      "en": "Trumpet",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w59",
+      "en": "Bell",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w60",
+      "en": "Truck",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w61",
+      "en": "Headphones",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w62",
+      "en": "Kite",
+      "vars": []
+    },
+    {
+      "key": "e2ee.sas.w63",
+      "en": "Rainbow",
       "vars": []
     }
   ]

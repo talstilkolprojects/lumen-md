@@ -1,7 +1,7 @@
 {
  "format": "lumen-sync-protocol-vectors/1",
  "spec": "docs/sync-protocol.md",
- "made": "2026-11-12T19:02:16.791Z",
+ "made": "2026-11-14T13:12:20.762Z",
  "note": "Made by scripts/sync-protocol/make-vectors.mts; checked by src/__tests__/e2eeVectors.test.ts and, independently, scripts/sync-protocol/check_vectors.py.",
  "vaults": [
   {
@@ -153,7 +153,7 @@
  "pairing": [
   {
    "vault": 0,
-   "code": "lumen-pair:3:0:2zNwNK1kgaSGfwkh7cmL5g99vmz6tW6MoEp5rL33UHZ7ImtpbmQiOiJjb2RlIiwidmF1bHRJZCI6ImRhT3l0alVsakRIb2FEd3UydGdpQ1EiLCJjb3VudGVyIjoyLCJkaWdlc3QiOiJkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkIiwiZXBvY2giOjAsInJpbmdSZXYiOjAsInJpbmdEaWdlc3QiOiIiLCJpc3N1ZWRBdCI6MTgwMDAwMDAwMDAwMCwibm9uY2UiOiItNHg5Zy1mWDZlSU9ycEdIIn0",
+   "code": "lumen-pair:4:0:x5goUkIIUnqBmyJC2jfCR5TX3apjaErjqI_MOm0zU7R7ImtpbmQiOiJjb2RlIiwidmF1bHRJZCI6ImRhT3l0alVsakRIb2FEd3UydGdpQ1EiLCJjb3VudGVyIjoyLCJkaWdlc3QiOiJkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkIiwiZXBvY2giOjAsInJpbmdSZXYiOjAsInJpbmdEaWdlc3QiOiIiLCJpc3N1ZWRBdCI6MTgwMDAwMDAwMDAwMCwibm9uY2UiOiJ1cmJOMnZJY2JOQzRmX1dkIiwiY29tbWl0IjoiNDYxZGViMjRiM2JjY2JkNTY1N2NhMWMzM2IwNzQ0MjAwNzUxYWExMTM4ZGZmYzIxZWVhZWUwMWZjMmEyNzdkOCJ9",
    "body": {
     "counter": 2,
     "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
@@ -161,12 +161,18 @@
      "epoch": 0,
      "rev": 0,
      "digest": ""
+    },
+    "sas": {
+     "session": "f96e2188031e43adf656072a6cef82dc421ed44967d1e2115e1650fc740fee55",
+     "answer": "",
+     "nonce": "urbN2vIcbNC4f_Wd",
+     "commit": "461deb24b3bccbd5657ca1c33b0744200751aa1138dffc21eeaee01fc2a277d8"
     }
    }
   },
   {
    "vault": 1,
-   "code": "lumen-pair:3:2:UuHP9dxoKDCCb7-a311n_4xfHxqt3nOkGAunAw1Itx97ImtpbmQiOiJjb2RlIiwidmF1bHRJZCI6InN0YkJuZWxEMDBSTGFBUktoZ2dLLUEiLCJjb3VudGVyIjoyLCJkaWdlc3QiOiJkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkIiwiZXBvY2giOjIsInJpbmdSZXYiOjEsInJpbmdEaWdlc3QiOiI3MGI3NDliYmY5NTc1N2U1Y2JmYTViMGZkYzM4NTEzYTkyMzBlNzg5YTUxZGQ5YmRhYmU4NjczMzY3YmE3MGMxIiwiaXNzdWVkQXQiOjE4MDAwMDAwMDAwMDAsIm5vbmNlIjoibHkwQmk5UGxJUEZsWGFudyJ9",
+   "code": "lumen-pair:4:2:ypIGAJJOeKRB3RATzjIblIkTUbP1PKoFCzhO0xDkSjh7ImtpbmQiOiJjb2RlIiwidmF1bHRJZCI6InN0YkJuZWxEMDBSTGFBUktoZ2dLLUEiLCJjb3VudGVyIjoyLCJkaWdlc3QiOiJkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkIiwiZXBvY2giOjIsInJpbmdSZXYiOjEsInJpbmdEaWdlc3QiOiI3MGI3NDliYmY5NTc1N2U1Y2JmYTViMGZkYzM4NTEzYTkyMzBlNzg5YTUxZGQ5YmRhYmU4NjczMzY3YmE3MGMxIiwiaXNzdWVkQXQiOjE4MDAwMDAwMDAwMDAsIm5vbmNlIjoiTTQ5dG55ZFVyeHNBeDVHYiIsImNvbW1pdCI6ImUzYWE4ODNkMmRiZDFkZWI2OWY0NGRjYmVlMWZiMDQ4ODE0MTdmOThjZWQyMmYwYzRkMmI1NjY1YWNhZDRlMTgifQ",
    "body": {
     "counter": 2,
     "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
@@ -174,6 +180,12 @@
      "epoch": 2,
      "rev": 1,
      "digest": "70b749bbf95757e5cbfa5b0fdc38513a9230e789a51dd9bdabe8673367ba70c1"
+    },
+    "sas": {
+     "session": "f6b50a100cc7105dcdeb2be45ff27f23f19f6217554822acb20445eefb54cc74",
+     "answer": "",
+     "nonce": "M49tnydUrxsAx5Gb",
+     "commit": "e3aa883d2dbd1deb69f44dcbee1fb04881417f98ced22f0c4d2b5665acad4e18"
     }
    }
   }
@@ -182,9 +194,9 @@
   {
    "vault": 0,
    "now": 1800000000000,
-   "request": "lumen-pair-request:2:0:Xl0SHWsG3SVmclS5f1_VCOKy2qCk0aT8l-g3OA2up-57ImtpbmQiOiJyZXF1ZXN0IiwidmF1bHRJZCI6ImRhT3l0alVsakRIb2FEd3UydGdpQ1EiLCJlcG9jaCI6MCwicmluZ1JldiI6MCwicmluZ0RpZ2VzdCI6IiIsImNvdW50ZXIiOjIsImRpZ2VzdCI6ImVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWUiLCJyZXF1ZXN0ZWRBdCI6MTgwMDAwMDAwMDAwMCwibm9uY2UiOiJWdlg5QjdHV2Z1d1ZpaE9lZV9Vb25BIn0",
+   "request": "lumen-pair-request:3:0:oJXbKDCqpMb7NHzfM92yQRVg83Ofj_51DlK_k5CVmCh7ImtpbmQiOiJyZXF1ZXN0IiwidmF1bHRJZCI6ImRhT3l0alVsakRIb2FEd3UydGdpQ1EiLCJlcG9jaCI6MCwicmluZ1JldiI6MCwicmluZ0RpZ2VzdCI6IiIsImNvdW50ZXIiOjIsImRpZ2VzdCI6ImVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWUiLCJyZXF1ZXN0ZWRBdCI6MTgwMDAwMDAwMDAwMCwibm9uY2UiOiJDd01HY1pjTkh6VFVZVDdaTnE3WWVBIiwiY29tbWl0IjoiYWYwM2E3MTRjNTgwMjg4NmYwMDc0ZTY4NmRiYWU1MGYyMzgxNjhlMDgzYzBlMWNmNTNhYjk4ZTY5YWM5MzYyYiJ9",
    "requestBody": {
-    "nonce": "VvX9B7GWfuwVihOee_UonA",
+    "nonce": "CwMGcZcNHzTUYT7ZNq7YeA",
     "ring": {
      "epoch": 0,
      "rev": 0,
@@ -195,9 +207,10 @@
      "digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
     },
     "issuedAt": 1800000000000,
-    "hash": "8cc15bfd0bc8793dc96efbf0fd87b98022188b805027dcd3ed2abbb0a50cae60"
+    "hash": "b1068fb9e9fd02f6507b15e70be009313dc8bc12e9686fa06c3b131ac73f3c4b",
+    "commit": "af03a714c5802886f0074e686dbae50f238168e083c0e1cf53ab98e69ac9362b"
    },
-   "answer": "lumen-pair-answer:2:0:bZaqpaMILl_uN7BAUwo-fi5-qFX628kiQcW38zRY5mx7ImtpbmQiOiJhbnN3ZXIiLCJ2YXVsdElkIjoiZGFPeXRqVWxqREhvYUR3dTJ0Z2lDUSIsInJlcXVlc3QiOiI4Y2MxNWJmZDBiYzg3OTNkYzk2ZWZiZjBmZDg3Yjk4MDIyMTg4YjgwNTAyN2RjZDNlZDJhYmJiMGE1MGNhZTYwIiwibm9uY2UiOiJWdlg5QjdHV2Z1d1ZpaE9lZV9Vb25BIiwiY291bnRlciI6MywiZGlnZXN0IjoiZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZiIsImVwb2NoIjowLCJyaW5nUmV2IjowLCJyaW5nRGlnZXN0IjoiIiwiYW5zd2VyZWRBdCI6MTgwMDAwMDAwMTAwMH0",
+   "answer": "lumen-pair-answer:3:0:0mLnVy26X4U3qOsFmaWKHeT2oWThdT9ln9hj9qkZ9XJ7ImtpbmQiOiJhbnN3ZXIiLCJ2YXVsdElkIjoiZGFPeXRqVWxqREhvYUR3dTJ0Z2lDUSIsInJlcXVlc3QiOiJiMTA2OGZiOWU5ZmQwMmY2NTA3YjE1ZTcwYmUwMDkzMTNkYzhiYzEyZTk2ODZmYTA2YzNiMTMxYWM3M2YzYzRiIiwibm9uY2UiOiJDd01HY1pjTkh6VFVZVDdaTnE3WWVBIiwiY291bnRlciI6MywiZGlnZXN0IjoiZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZiIsImVwb2NoIjowLCJyaW5nUmV2IjowLCJyaW5nRGlnZXN0IjoiIiwiYW5zd2VyZWRBdCI6MTgwMDAwMDAwMTAwMCwicHViIjoiZTA2UW03NV9fa1RFWmFJZ0EzMWdqdU5ZbDlNZS1YTHdmM1NKTExEM1B4TSJ9",
    "answerBody": {
     "counter": 3,
     "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -205,15 +218,21 @@
      "epoch": 0,
      "rev": 0,
      "digest": ""
+    },
+    "sas": {
+     "session": "b1068fb9e9fd02f6507b15e70be009313dc8bc12e9686fa06c3b131ac73f3c4b",
+     "answer": "60965a1547ad1a11cc025ea4730a8401ff936cfb115d65c9b17dc2944a8eb51a",
+     "nonce": "CwMGcZcNHzTUYT7ZNq7YeA",
+     "pub": "e06Qm75__kTEZaIgA31gjuNYl9Me-XLwf3SJLLD3PxM"
     }
    }
   },
   {
    "vault": 1,
    "now": 1800000000000,
-   "request": "lumen-pair-request:2:2:DQdG19mJT7fyNM9KdpTuaVVLFsqlQUWbpBIFIhP8qUB7ImtpbmQiOiJyZXF1ZXN0IiwidmF1bHRJZCI6InN0YkJuZWxEMDBSTGFBUktoZ2dLLUEiLCJlcG9jaCI6MiwicmluZ1JldiI6MSwicmluZ0RpZ2VzdCI6IjcwYjc0OWJiZjk1NzU3ZTVjYmZhNWIwZmRjMzg1MTNhOTIzMGU3ODlhNTFkZDliZGFiZTg2NzMzNjdiYTcwYzEiLCJjb3VudGVyIjoyLCJkaWdlc3QiOiJlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlIiwicmVxdWVzdGVkQXQiOjE4MDAwMDAwMDAwMDAsIm5vbmNlIjoiSEdnQklLSHFfbUNrSE50TDlPbWdnQSJ9",
+   "request": "lumen-pair-request:3:2:MTHS-jV_5pUoa4274xMCCbv8y-JDadqhfVJBTzjQ_9t7ImtpbmQiOiJyZXF1ZXN0IiwidmF1bHRJZCI6InN0YkJuZWxEMDBSTGFBUktoZ2dLLUEiLCJlcG9jaCI6MiwicmluZ1JldiI6MSwicmluZ0RpZ2VzdCI6IjcwYjc0OWJiZjk1NzU3ZTVjYmZhNWIwZmRjMzg1MTNhOTIzMGU3ODlhNTFkZDliZGFiZTg2NzMzNjdiYTcwYzEiLCJjb3VudGVyIjoyLCJkaWdlc3QiOiJlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlIiwicmVxdWVzdGVkQXQiOjE4MDAwMDAwMDAwMDAsIm5vbmNlIjoiZzAwQUhabGhvb09WQnFtVktyUm9PQSIsImNvbW1pdCI6IjMyYzQ5YWU3NGRjYmMxOWM0ZTJkZDYyMTcwMmZjYjhkYTQwMDE1ZjkyNzQyMTJmNDkyMDM4MjM2ZGU2OWFhNmYifQ",
    "requestBody": {
-    "nonce": "HGgBIKHq_mCkHNtL9OmggA",
+    "nonce": "g00AHZlhooOVBqmVKrRoOA",
     "ring": {
      "epoch": 2,
      "rev": 1,
@@ -224,9 +243,10 @@
      "digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
     },
     "issuedAt": 1800000000000,
-    "hash": "8015effd7b1ad76939be8fc9f38905ab4e53df343157833ca12fce0b30f8ae23"
+    "hash": "0f569bd49755bff430acdecf98459f9fa0df8dbf0fc90e4fd79145757b174460",
+    "commit": "32c49ae74dcbc19c4e2dd621702fcb8da40015f9274212f492038236de69aa6f"
    },
-   "answer": "lumen-pair-answer:2:2:KueWC8uPNpbUaGBrO0FZe2-Fa7EOvsdGO-bFtDgdp717ImtpbmQiOiJhbnN3ZXIiLCJ2YXVsdElkIjoic3RiQm5lbEQwMFJMYUFSS2hnZ0stQSIsInJlcXVlc3QiOiI4MDE1ZWZmZDdiMWFkNzY5MzliZThmYzlmMzg5MDVhYjRlNTNkZjM0MzE1NzgzM2NhMTJmY2UwYjMwZjhhZTIzIiwibm9uY2UiOiJIR2dCSUtIcV9tQ2tITnRMOU9tZ2dBIiwiY291bnRlciI6MywiZGlnZXN0IjoiZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZiIsImVwb2NoIjoyLCJyaW5nUmV2IjoxLCJyaW5nRGlnZXN0IjoiNzBiNzQ5YmJmOTU3NTdlNWNiZmE1YjBmZGMzODUxM2E5MjMwZTc4OWE1MWRkOWJkYWJlODY3MzM2N2JhNzBjMSIsImFuc3dlcmVkQXQiOjE4MDAwMDAwMDEwMDB9",
+   "answer": "lumen-pair-answer:3:2:ny3CgPVFiVUk-UkmSs-FDw0sqFmNAP_nTVhhbbUezUN7ImtpbmQiOiJhbnN3ZXIiLCJ2YXVsdElkIjoic3RiQm5lbEQwMFJMYUFSS2hnZ0stQSIsInJlcXVlc3QiOiIwZjU2OWJkNDk3NTViZmY0MzBhY2RlY2Y5ODQ1OWY5ZmEwZGY4ZGJmMGZjOTBlNGZkNzkxNDU3NTdiMTc0NDYwIiwibm9uY2UiOiJnMDBBSFpsaG9vT1ZCcW1WS3JSb09BIiwiY291bnRlciI6MywiZGlnZXN0IjoiZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZiIsImVwb2NoIjoyLCJyaW5nUmV2IjoxLCJyaW5nRGlnZXN0IjoiNzBiNzQ5YmJmOTU3NTdlNWNiZmE1YjBmZGMzODUxM2E5MjMwZTc4OWE1MWRkOWJkYWJlODY3MzM2N2JhNzBjMSIsImFuc3dlcmVkQXQiOjE4MDAwMDAwMDEwMDAsInB1YiI6IkJTcFFkenJJMlJkejh0eVdZdUV2RGVfcEZlUVZ1S0hJNGdwYVBXcXl1RU0ifQ",
    "answerBody": {
     "counter": 3,
     "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -234,8 +254,84 @@
      "epoch": 2,
      "rev": 1,
      "digest": "70b749bbf95757e5cbfa5b0fdc38513a9230e789a51dd9bdabe8673367ba70c1"
+    },
+    "sas": {
+     "session": "0f569bd49755bff430acdecf98459f9fa0df8dbf0fc90e4fd79145757b174460",
+     "answer": "4a1c1b8a593a51795858c93dd742c8c778e972c8eaec0ff782940781cb16297e",
+     "nonce": "g00AHZlhooOVBqmVKrRoOA",
+     "pub": "BSpQdzrI2Rdz8tyWYuEvDe_pFeQVuKHI4gpaPWqyuEM"
     }
    }
+  }
+ ],
+ "sas": [
+  {
+   "vault": 0,
+   "flow": "one-way",
+   "issuerKey": "1111111111111111111111111111111111111111111111111111111111111111",
+   "joinerKey": "2222222222222222222222222222222222222222222222222222222222222222",
+   "transcript": "[\"lumen-pair-sas/1\",\"one-way\",\"daOytjUljDHoaDwu2tgiCQ\",0,0,\"\",2,\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"f96e2188031e43adf656072a6cef82dc421ed44967d1e2115e1650fc740fee55\",\"\",\"urbN2vIcbNC4f_Wd\",\"e06Qm75__kTEZaIgA31gjuNYl9Me-XLwf3SJLLD3PxM\",\"D6poTtKIZ7l_Smot7l34zpdOdrcBjj8iocTPJnhXDyA\"]",
+   "commitI": "461deb24b3bccbd5657ca1c33b0744200751aa1138dffc21eeaee01fc2a277d8",
+   "symbols": [
+    33,
+    46,
+    0,
+    57,
+    10
+   ],
+   "confirmIssuer": "gdbW7IVue7NbTVLTw1n30KXGJj6C2_IGjIzPpwSFrGQ",
+   "confirmJoiner": "Ip3gofLB6uUkCmDazlxXZ8gMw9J2OfeOqcMR66c5L94"
+  },
+  {
+   "vault": 0,
+   "flow": "two-way",
+   "issuerKey": "1111111111111111111111111111111111111111111111111111111111111111",
+   "joinerKey": "2222222222222222222222222222222222222222222222222222222222222222",
+   "transcript": "[\"lumen-pair-sas/1\",\"two-way\",\"daOytjUljDHoaDwu2tgiCQ\",0,0,\"\",3,\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"b1068fb9e9fd02f6507b15e70be009313dc8bc12e9686fa06c3b131ac73f3c4b\",\"60965a1547ad1a11cc025ea4730a8401ff936cfb115d65c9b17dc2944a8eb51a\",\"CwMGcZcNHzTUYT7ZNq7YeA\",\"e06Qm75__kTEZaIgA31gjuNYl9Me-XLwf3SJLLD3PxM\",\"D6poTtKIZ7l_Smot7l34zpdOdrcBjj8iocTPJnhXDyA\"]",
+   "commitJ": "af03a714c5802886f0074e686dbae50f238168e083c0e1cf53ab98e69ac9362b",
+   "symbols": [
+    36,
+    16,
+    61,
+    9,
+    47
+   ],
+   "confirmIssuer": "SfYFt5L7t1zlwUHG4OS45ZKJ8SF277RKmhpgDPsX5z4",
+   "confirmJoiner": "e-G0aENmbQzPCLwtU2w3Egf3Cd5kBrXOpjrPXxod_Ds"
+  },
+  {
+   "vault": 1,
+   "flow": "one-way",
+   "issuerKey": "1212121212121212121212121212121212121212121212121212121212121212",
+   "joinerKey": "2323232323232323232323232323232323232323232323232323232323232323",
+   "transcript": "[\"lumen-pair-sas/1\",\"one-way\",\"stbBnelD00RLaARKhggK-A\",2,1,\"70b749bbf95757e5cbfa5b0fdc38513a9230e789a51dd9bdabe8673367ba70c1\",2,\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"f6b50a100cc7105dcdeb2be45ff27f23f19f6217554822acb20445eefb54cc74\",\"\",\"M49tnydUrxsAx5Gb\",\"BSpQdzrI2Rdz8tyWYuEvDe_pFeQVuKHI4gpaPWqyuEM\",\"mkUDqYqxD-jTVMnELL0MnXlE9S59FNjqWXdefcnjv0s\"]",
+   "commitI": "e3aa883d2dbd1deb69f44dcbee1fb04881417f98ced22f0c4d2b5665acad4e18",
+   "symbols": [
+    15,
+    3,
+    56,
+    4,
+    15
+   ],
+   "confirmIssuer": "kMcJ58Td03v2oPzmUidtlPTowB7YsgajrgHmrsxYpIo",
+   "confirmJoiner": "iS2M2Hiw5qmpDEWoY4ySD6W_eOBEpkCJmR7mR1egVak"
+  },
+  {
+   "vault": 1,
+   "flow": "two-way",
+   "issuerKey": "1212121212121212121212121212121212121212121212121212121212121212",
+   "joinerKey": "2323232323232323232323232323232323232323232323232323232323232323",
+   "transcript": "[\"lumen-pair-sas/1\",\"two-way\",\"stbBnelD00RLaARKhggK-A\",2,1,\"70b749bbf95757e5cbfa5b0fdc38513a9230e789a51dd9bdabe8673367ba70c1\",3,\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"0f569bd49755bff430acdecf98459f9fa0df8dbf0fc90e4fd79145757b174460\",\"4a1c1b8a593a51795858c93dd742c8c778e972c8eaec0ff782940781cb16297e\",\"g00AHZlhooOVBqmVKrRoOA\",\"BSpQdzrI2Rdz8tyWYuEvDe_pFeQVuKHI4gpaPWqyuEM\",\"mkUDqYqxD-jTVMnELL0MnXlE9S59FNjqWXdefcnjv0s\"]",
+   "commitJ": "32c49ae74dcbc19c4e2dd621702fcb8da40015f9274212f492038236de69aa6f",
+   "symbols": [
+    31,
+    47,
+    37,
+    5,
+    38
+   ],
+   "confirmIssuer": "A4TKabuag4Ua8caAh8W99h_P4eX3EFUmbyqfFHMkGc8",
+   "confirmJoiner": "Ug9XyOx54hD-COGxpM1lZz3IDxhhCms_NCDR8Qem5CY"
   }
  ]
 }
