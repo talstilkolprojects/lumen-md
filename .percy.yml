@@ -1,0 +1,17 @@
+# Percy (plan W7.25): BrowserStack's open-source plan. The token lives in the
+# agent's secret store (PERCY_TOKEN), never in the repo. Browsers (Chrome,
+# Firefox, Safari, Edge) are chosen in the Percy project's settings.
+version: 2
+snapshot:
+  widths: [1280]
+  min-height: 800
+  # The same stabilising CSS as the local baselines (visual/stable.css).
+  percy-css: |
+    *, *::before, *::after { transition: none !important; animation: none !important; caret-color: transparent !important; scrollbar-width: none !important; }
+    *::-webkit-scrollbar { display: none !important; }
+    .pwa-update-banner { visibility: hidden !important; }
+discovery:
+  allowed-hostnames:
+    - localhost
+  network-idle-timeout: 250
+  disable-cache: false
