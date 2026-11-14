@@ -135,6 +135,40 @@ export function checkVerified(plan) {
   return problems;
 }
 
+// ───────────────────────────── levels from receipts (W6.7) ─────────────────────────────
+
+/**
+ * plan/verified-receipts.json, written by scripts/plan/receipts.mjs from
+ * signed receipts: per task the level the receipts prove (`computed`). The
+ * plan's own `verified` stays the coordinator's record; these checks hold
+ * it to the receipts.
+ */
+export const RECEIPTS_FILE = "plan/verified-receipts.json";
+/** A status is a short line; the details belong in the PR (W6.7). */
+export const STATUS_MAX = 200;
+
+/** `verified: "real"` needs a receipt that proves real for that task. */
+export function checkRealReceipts(plan, receipts) {
+  const problems = [];
+  for (const p of plan.phases)
+    for (const t of p.tasks) {
+      if (t.verified !== "real") continue;
+      const r = receipts?.tasks?.[t.id];
+      if (!r) problems.push(`${t.id}: verified "real" but ${RECEIPTS_FILE} has no entry for it (run scripts/plan/receipts.mjs)`);
+      else if (r.computed !== "real") problems.push(`${t.id}: verified "real" but its receipts prove ${r.computed ?? "nothing"}`);
+    }
+  return problems;
+}
+
+/** Tasks whose status is longer than STATUS_MAX characters. */
+export function longStatuses(plan, max = STATUS_MAX) {
+  return plan.phases.flatMap((p) => p.tasks.filter((t) => typeof t.status === "string" && [...t.status].length > max).map((t) => t.id));
+}
+
+/** "built 3 · node 1 · …" over the computed levels, labelled as the board labels them. */
+const receiptSummary = (counts) =>
+  [...["built", "node", "browser", "real"].map((k) => `${VERIFIED_LABEL[k]} ${counts?.[k] ?? 0}`), `בלי קבלה ${counts?.none ?? 0}`].join(" · ");
+
 // ───────────────────────────── model ─────────────────────────────
 
 /**
@@ -373,6 +407,7 @@ export function renderBoard(M) {
   o.push("");
   o.push(`### התוכנית קדימה — ${M.agent.length} משימות ב-15 שלבים; ${DONE_N} בוצעו (ממתינות למיזוג), נותרו ${Math.floor(M.EFFORT / 60)} ש׳ עבודה (${NEW_V5} חדשות ב-v5, ${NEW} חדשות מאז תוכנית האב המקורית)\n`);
   o.push(`**רמת אימות (\`verified\`):** ${verifiedSummary(M)}\n`);
+  if (M.RECEIPTS) o.push(`**רמת אימות מקבלות חתומות (\`${RECEIPTS_FILE}\`, ${M.RECEIPTS.generatedAt.slice(0, 16)}):** ${receiptSummary(M.RECEIPTS.counts?.computed)}\n`);
   o.push(`**${fmt(M.START)} → ${fmt(M.END)}** בתזמון רציף של 4 מסלולים · **עם מרווח ${B}%: ${fmt(M.END_BUF)}**\n`);
   o.push("#### אבני דרך\n");
   o.push(`| # | אבן דרך | בתזמון | עם מרווח ${B}% |\n|---|---|---|---|`);
@@ -409,6 +444,8 @@ export function renderBoard(M) {
   o.push("");
   M.phases.forEach((p, i) => {
     o.push(`#### ${i}. ${p.title}\n`);
+    const rp = M.RECEIPTS?.byPhase?.[i];
+    if (rp) o.push(`**מקבלות:** ${receiptSummary(rp.computed)}\n`);
     o.push(`**יעד:** ${p.goal}` + (p.why ? `  \n**למה:** ${p.why}` : "") + "\n");
     o.push("| # | משימה | עדיפות | מסלול | הערכה | תלוי ב- | התחלה | סיום | מצב | אימות |\n|---|---|---|---|---|---|---|---|---|---|");
     for (const t of p.tasks) {
@@ -514,7 +551,7 @@ export function renderHtml(M) {
 <div class="stat"><b>${fmt(M.P0_END)}</b><span>גרסה ראשונה לשחרור (כל ה-P0) · עם מרווח: ${fmt(M.P0_BUF)}</span></div>
 <div class="stat"><b>${fmt(M.END)}</b><span>הכול גמור · עם מרווח: ${fmt(M.END_BUF)}</span></div>
 <div class="stat"><b>${M.owner.length} פעולות · ${dur(sum(M.owner))}</b><span>מחכות לך (שלב 15) · ${M.TAL_P0.length} מהן לפני השחרור</span></div>
-<div class="stat"><b>${M.VERIFIED.real} אמיתי · ${M.VERIFIED.browser} דפדפן</b><span>רמת אימות: ${E(verifiedSummary(M))}</span></div>
+<div class="stat"><b>${M.VERIFIED.real} אמיתי · ${M.VERIFIED.browser} דפדפן</b><span>רמת אימות: ${E(verifiedSummary(M))}</span></div>${M.RECEIPTS ? `\n<div class="stat"><b>${M.RECEIPTS.counts?.computed?.real ?? 0} אמיתי מקבלות</b><span>${E(receiptSummary(M.RECEIPTS.counts?.computed))}</span></div>` : ""}
 </div>`);
   H.push(`<section class="card"><header><h2>אבני דרך</h2></header><div class="tbl"><table class="ms"><thead><tr><th>#</th><th>אבן דרך</th><th>בתזמון</th><th>עם מרווח ${B}%</th></tr></thead><tbody>`);
   M.milestones.forEach((m, k) => H.push(`<tr><td>${k + 1}</td><td>${E(m.title)}</td><td>${fmt(m.at)}</td><td>${fmt(M.stretch(m.at))}</td></tr>`));
@@ -616,14 +653,22 @@ export function actualHours(M, { root = ROOT, base = "origin/main", remote = "or
 
 // ───────────────────────────── CLI ─────────────────────────────
 
-export function run({ root = ROOT, check = false } = {}) {
+export function run({ root = ROOT, check = false, strictStatus = false } = {}) {
   const plan = JSON.parse(readFileSync(join(root, PLAN_FILE), "utf8"));
   // Plan 0.7: no ✅ without the commands that prove it.
   const dodProblems = checkDod(plan);
   if (dodProblems.length) throw new Error(`plan: definition of done —\n  ${dodProblems.join("\n  ")}`);
   const verifiedProblems = checkVerified(plan);
   if (verifiedProblems.length) throw new Error(`plan: verified / pr (W4.24) —\n  ${verifiedProblems.join("\n  ")}`);
+  const receiptsPath = join(root, RECEIPTS_FILE);
+  const receipts = existsSync(receiptsPath) ? JSON.parse(readFileSync(receiptsPath, "utf8")) : null;
+  const realProblems = checkRealReceipts(plan, receipts);
+  if (realProblems.length) throw new Error(`plan: "real" without a receipt (W6.7) —\n  ${realProblems.join("\n  ")}`);
+  const long = longStatuses(plan);
+  if (strictStatus && long.length) throw new Error(`plan: ${long.length} status(es) longer than ${STATUS_MAX} characters (W6.7): ${long.join(", ")}`);
   const M = buildModel(plan);
+  M.RECEIPTS = receipts;
+  M.LONG_STATUSES = long;
   const docPath = join(root, DOC_FILE);
   const htmlPath = join(root, HTML_FILE);
   const doc = readFileSync(docPath, "utf8");
@@ -641,7 +686,8 @@ export function run({ root = ROOT, check = false } = {}) {
 
 function main(argv) {
   const check = argv.includes("--check");
-  const { M, stale } = run({ check });
+  const { M, stale } = run({ check, strictStatus: argv.includes("--strict-status") });
+  if (M.LONG_STATUSES.length) console.warn(`plan: ${M.LONG_STATUSES.length} status(es) longer than ${STATUS_MAX} characters (W6.7; --strict-status fails on them): ${M.LONG_STATUSES.slice(0, 12).join(", ")}${M.LONG_STATUSES.length > 12 ? " …" : ""}`);
   const P0 = M.agent.filter((t) => t.eff === "P0").length;
   const levels = [...VERIFIED_LEVELS.map((k) => `${k} ${M.VERIFIED[k]}`), ...(M.VERIFIED.none ? [`unset ${M.VERIFIED.none}`] : [])].join(", ");
   const summary = `${M.agent.length} tasks, ${M.owner.length} owner items, ${Math.floor(M.EFFORT / 60)} h left; release (P0, ${P0} tasks) ${fmt(M.P0_END)}, end ${fmt(M.END)}; verified: ${levels}`;
