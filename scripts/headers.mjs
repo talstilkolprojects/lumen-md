@@ -99,6 +99,50 @@ export function renderCsp(policy, route, host) {
     .join("; ");
 }
 
+/**
+ * The CSP of `route` as the header lines a `_headers` file carries for
+ * `host`. Usually one value. A `hosts.<host>.split` rule sends it as two
+ * policies instead (the host joins two lines of one rule with a comma): the
+ * first with the split directive widened to `superset`, the second with
+ * only that directive. A browser enforces both, so their intersection is
+ * exactly renderCsp(), and each line stays under the host's line limit.
+ */
+export function renderCspParts(policy, route, host) {
+  const map = directivesFor(policy, route, host);
+  const render = (m) => [...m].map(([name, values]) => (values.length ? `${name} ${values.join(" ")}` : name)).join("; ");
+  const rule = (policy.hosts?.[host]?.split ?? []).find((r) => ruleApplies(r, route) && map.has(r.directive));
+  if (!rule) return [render(map)];
+  const own = map.get(rule.directive);
+  const wide = new Map([...map].map(([k, v]) => [k, k === rule.directive ? [...rule.superset] : v]));
+  return [render(wide), render(new Map([[rule.directive, own]]))];
+}
+
+/**
+ * One policy from the comma-joined policies of a CSP header, for the split
+ * form renderCspParts() writes: a directive whose source list is the split
+ * rule's superset in one policy takes its list from the other. Anything else
+ * (two real lists for one directive) is kept as the first policy's list and
+ * reported in `conflicts`.
+ */
+export function combineCspParts(values, superset = ["'self'", "blob:", "data:", "https:", "http:", "wss:", "ws:"]) {
+  const isSuperset = (list) => list.length === superset.length && superset.every((s) => list.includes(s));
+  const out = new Map();
+  const conflicts = [];
+  for (const value of values.flatMap((v) => String(v).split(","))) {
+    for (const [name, list] of parseCsp(value)) {
+      const prev = out.get(name);
+      if (!prev || isSuperset(prev)) out.set(name, list);
+      else if (!isSuperset(list) && prev.join(" ") !== list.join(" ")) conflicts.push(name);
+    }
+  }
+  return { policy: out, conflicts };
+}
+
+/** The sample paths of `route` on `host`: the route's own plus the host's extra ones. */
+export function samplesFor(policy, route, host) {
+  return [...(policy.routes[route]?.samples ?? []), ...(policy.hosts?.[host]?.samples?.[route] ?? [])];
+}
+
 /** `_headers` line body. */
 export const renderHeaderLine = (policy, route, host = "cloudflare") => `${CSP}: ${renderCsp(policy, route, host)}`;
 /** `<meta http-equiv>` content (no frame-ancestors, see hosts.meta). */
@@ -213,6 +257,34 @@ export function scanHeadersFile(text) {
     });
   }
   return blocks;
+}
+
+/**
+ * Lines of one rule that set the same header: Cloudflare and Netlify send one
+ * header with the values joined by ", " (workers-sdk parseHeaders.ts). They
+ * become one item whose slot keeps each line in `parts`.
+ */
+function joinRepeated(items) {
+  const out = [];
+  const byName = new Map();
+  for (const item of items) {
+    if (item.type !== "set") {
+      out.push(item);
+      continue;
+    }
+    const lower = item.slot.name.toLowerCase();
+    const prev = byName.get(lower);
+    if (!prev) {
+      const joined = { type: "set", slot: { ...item.slot, parts: [item.slot] } };
+      byName.set(lower, joined);
+      out.push(joined);
+      continue;
+    }
+    prev.slot.parts.push(item.slot);
+    prev.slot.value = prev.slot.parts.map((p) => p.value).join(", ");
+  }
+  for (const item of out) if (item.type === "set" && item.slot.parts.length === 1) delete item.slot.parts;
+  return out;
 }
 
 /** Cloudflare path pattern (`*` splat, `:name` placeholder) → RegExp. */
@@ -465,7 +537,14 @@ export function run({ root = ROOT, write = false, policy = loadPolicy(root) } = 
       let rules; // [{ key, items: [{type, name, slot?}] , test(path) }]
       let json;
       if (src.format === "headers-file") {
-        rules = scanHeadersFile(text).map((b) => ({ key: b.path, items: b.items, test: (p) => cfPattern(b.path).test(p) }));
+        rules = scanHeadersFile(text).map((b) => ({ key: b.path, items: joinRepeated(b.items), test: (p) => cfPattern(b.path).test(p) }));
+        const limit = policy.hosts?.[src.host]?.lineLimit;
+        if (limit) {
+          text.split("\n").forEach((line, i) => {
+            if (line.length > limit)
+              problems.push(`${file}:${i + 1}: ${line.length} characters, over ${src.host}'s limit of ${limit} a line (the host skips the line)`);
+          });
+        }
       } else {
         json = locateJson(text);
         rules = (json.value.headers ?? []).map((entry, i) => ({
@@ -495,7 +574,7 @@ export function run({ root = ROOT, write = false, policy = loadPolicy(root) } = 
       };
       const routesOfSlot = new Map(); // slot → Set(route)
       for (const [route, def] of Object.entries(policy.routes)) {
-        for (const sample of def.samples ?? []) {
+        for (const sample of samplesFor(policy, route, src.host)) {
           const eff = effective(sample);
           const csp = eff.get(CSP.toLowerCase());
           if (!csp) {
@@ -536,6 +615,19 @@ export function run({ root = ROOT, write = false, policy = loadPolicy(root) } = 
             continue;
           }
           const [route] = hit.routes.keys();
+          if (src.format === "headers-file") {
+            const parts = renderCspParts(policy, route, src.host);
+            const have = slot.parts ?? [slot];
+            if (have.length !== parts.length) {
+              problems.push(
+                `${where(slot)} ${CSP} (route ${route}): ${have.length} line(s) in the file, ${parts.length} in the policy` +
+                  (parts.length > 1 ? ` (hosts.${src.host}.split: one line per policy) — split it by hand once` : " — join them by hand once"),
+              );
+              continue;
+            }
+            have.forEach((part, i) => expect(part, parts[i], route));
+            continue;
+          }
           const expected = renderCsp(policy, route, src.host);
           expect(slot, src.format === "vercel" ? JSON.stringify(expected).slice(1, -1) : expected, route);
         }

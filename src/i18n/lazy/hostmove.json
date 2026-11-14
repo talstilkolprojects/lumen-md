@@ -1,0 +1,9 @@
+{
+  "pwa.move.title": "Lumen has moved to {host}.",
+  "pwa.move.body": "Your notes are kept in this browser, for this address only. Download them here, then open the new address and import the file there.",
+  "pwa.move.download": "Download my notes (.zip)",
+  "pwa.move.downloaded": "Downloaded {count} files.",
+  "pwa.move.failed": "The download failed: {error}",
+  "pwa.move.open": "Open {host}",
+  "pwa.move.later": "Later"
+}

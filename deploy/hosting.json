@@ -1,0 +1,19 @@
+{
+  "about": "Where Lumen's production runs, and on what plan (plan W6.9, docs self-hosting/cut-over). `npm run hosting:gate` (also the first step of scripts/vercel-build.mjs and scripts/pages-deploy.sh) fails a build that takes money on a host whose plan forbids commercial use. Update this file in the same commit as the host change.",
+  "production": "vercel",
+  "hosts": {
+    "vercel": {
+      "origin": "https://lumen-md.vercel.app",
+      "plan": "hobby",
+      "commercial": false,
+      "why": "Vercel Hobby is for personal, non-commercial use only (vercel.com/docs/limits/fair-use-guidelines). Set plan to \"pro\" and commercial to true only after the upgrade."
+    },
+    "cloudflare-pages": {
+      "origin": "https://lumen-md.pages.dev",
+      "plan": "free",
+      "commercial": true,
+      "why": "Cloudflare Pages Free has no non-commercial clause (developers.cloudflare.com/pages/platform/limits; Cloudflare's self-serve terms)."
+    }
+  },
+  "commercialEnv": ["VITE_BILLING_ENDPOINT", "VITE_ENTITLEMENT_ENDPOINT", "VITE_PRICE_ID_PRO", "VITE_PRICE_ID_TEAM", "LUMEN_COMMERCIAL"]
+}

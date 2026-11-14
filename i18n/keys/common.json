@@ -8447,6 +8447,49 @@
       "vars": []
     },
     {
+      "key": "pwa.move.body",
+      "en": "Your notes are kept in this browser, for this address only. Download them here, then open the new address and import the file there.",
+      "vars": []
+    },
+    {
+      "key": "pwa.move.download",
+      "en": "Download my notes (.zip)",
+      "vars": []
+    },
+    {
+      "key": "pwa.move.downloaded",
+      "en": "Downloaded {count} files.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "pwa.move.failed",
+      "en": "The download failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "pwa.move.later",
+      "en": "Later",
+      "vars": []
+    },
+    {
+      "key": "pwa.move.open",
+      "en": "Open {host}",
+      "vars": [
+        "host"
+      ]
+    },
+    {
+      "key": "pwa.move.title",
+      "en": "Lumen has moved to {host}.",
+      "vars": [
+        "host"
+      ]
+    },
+    {
       "key": "pwa.offlineReady",
       "en": "Lumen is ready to work offline.",
       "vars": []

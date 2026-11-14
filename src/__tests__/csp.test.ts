@@ -21,6 +21,8 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { TRUSTED_TYPES_POLICY_NAMES } from "../lib/trustedTypes";
+// @ts-expect-error — plain .mjs script without type declarations
+import { combineCspParts } from "../../scripts/headers.mjs";
 
 const ROOT = resolve(__dirname, "..", "..");
 const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
@@ -46,10 +48,20 @@ function cspFromIndexHtml(): Policy {
   return parsePolicy(m[1]);
 }
 
+/**
+ * The app policy of the /* rule. Cloudflare skips lines over 2,000
+ * characters, so it is two lines the host joins into two policies (the first
+ * with connect-src widened to schemes, security/policy.json
+ * hosts.cloudflare.split): the policy a browser enforces is their
+ * intersection, which is the second line's connect-src.
+ */
 function cspFromHeadersFile(): Policy {
-  const m = read("public/_headers").match(/^\s*Content-Security-Policy:\s*(.+)$/m);
-  if (!m) throw new Error("public/_headers: CSP header not found");
-  return parsePolicy(m[1]);
+  const block = read("public/_headers").split(/^\/\*$/m)[1]?.split(/^\S/m)[0] ?? "";
+  const lines = [...block.matchAll(/^\s+Content-Security-Policy:\s*(.+)$/gm)].map((m) => m[1]);
+  if (!lines.length) throw new Error("public/_headers: CSP header not found");
+  const { policy, conflicts } = combineCspParts(lines) as { policy: Policy; conflicts: string[] };
+  if (conflicts.length) throw new Error(`public/_headers: two lists for ${conflicts.join(", ")}`);
+  return policy;
 }
 
 

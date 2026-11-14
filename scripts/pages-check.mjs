@@ -7,6 +7,8 @@
  *   node scripts/pages-check.mjs --dist <dir>     another build folder
  *   node scripts/pages-check.mjs --drop-oversize  remove files over 25 MiB from dist/
  *                                                 and list them in dist/pages-dropped.json
+ *   node scripts/pages-check.mjs --prepare        --drop-oversize, and write the 404.html
+ *                                                 pages of NOT_FOUND_DIRS (pages:deploy)
  *
  * A dropped file is a runtime the Cloudflare copy then lacks: its block says the
  * runtime is not installed, like the Docker image's `slim` variant. Everything
@@ -15,7 +17,8 @@
 import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { pagesProblems, runtimeOf } from "./lib/pagesLimits.mjs";
+import { mkdirSync } from "node:fs";
+import { NOT_FOUND_DIRS, NOT_FOUND_PAGE, pagesProblems, runtimeOf } from "./lib/pagesLimits.mjs";
 
 export function listFiles(dir) {
   const out = [];
@@ -39,7 +42,15 @@ function main() {
     console.error("pages:check: dist/ is not built (npm run build first)");
     process.exit(2);
   }
-  const drop = process.argv.includes("--drop-oversize");
+  const prepare = process.argv.includes("--prepare");
+  const drop = prepare || process.argv.includes("--drop-oversize");
+  if (prepare) {
+    for (const dir of NOT_FOUND_DIRS) {
+      mkdirSync(join(dist, dir), { recursive: true });
+      writeFileSync(join(dist, dir, "404.html"), NOT_FOUND_PAGE);
+      console.log(`pages:check: wrote ${dir}/404.html (a missing file there answers 404, as on Vercel)`);
+    }
+  }
   const read = (f) => (existsSync(join(dist, f)) ? readFileSync(join(dist, f), "utf8") : "");
   const files = listFiles(dist);
   const r = pagesProblems(files, read("_headers"), read("_redirects"));

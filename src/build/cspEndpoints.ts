@@ -127,7 +127,11 @@ export function addConnectSrc(csp: string, origins: readonly string[]): string {
     // A deliberately network-less policy (the live-js runner) stays so:
     // any added source would make the browser ignore 'none'.
     if (values.includes("'none'")) return part;
-    for (const o of origins) if (!values.includes(o)) values.push(o);
+    // An origin a scheme source already allows adds nothing: the widened first
+    // line of Cloudflare's split app policy (security/policy.json
+    // hosts.cloudflare.split) stays exactly the superset, and short.
+    const covered = (o: string) => /^[a-z]+:\/\//.test(o) && values.includes(o.slice(0, o.indexOf("//")));
+    for (const o of origins) if (!values.includes(o) && !covered(o)) values.push(o);
     return `${m[1]}connect-src${m[2]}${values.join(" ")}${trailing}`;
   });
   return found ? parts.join(";") : csp;
@@ -141,12 +145,23 @@ export function extendIndexHtmlCsp(html: string, origins: readonly string[]): st
   );
 }
 
-/** Rewrite every `Content-Security-Policy:` line of a Cloudflare/Netlify `_headers` file. */
+/**
+ * Rewrite the app policy's `Content-Security-Policy:` lines of a
+ * Cloudflare/Netlify `_headers` file: those of the catch-all `/*` rule. The
+ * other rules (runner pages, OCR and eval workers) keep their own network,
+ * as on Vercel and nginx, where only the app policy has the placeholder
+ * (security/policy.json; scripts/host-parity.mjs compares the hosts).
+ */
 export function extendHeadersFileCsp(text: string, origins: readonly string[]): string {
-  return text.replace(
-    /^(\s*Content-Security-Policy:\s*)(.+)$/gm,
-    (_m, a: string, csp: string) => a + addConnectSrc(csp, origins),
-  );
+  let rule = "";
+  return text
+    .split("\n")
+    .map((line) => {
+      if (/^\S/.test(line) && !line.startsWith("#")) rule = line.trim();
+      const m = rule === "/*" ? line.match(/^(\s+Content-Security-Policy:\s*)(.+)$/) : null;
+      return m ? m[1] + addConnectSrc(m[2], origins) : line;
+    })
+    .join("\n");
 }
 
 interface MinimalPlugin {

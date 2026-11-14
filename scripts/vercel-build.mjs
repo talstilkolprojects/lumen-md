@@ -111,6 +111,12 @@ function main() {
   const where = process.env.VERCEL_ENV ? `VERCEL_ENV=${process.env.VERCEL_ENV}` : "local";
   console.log(`vercel-build (${where}): ${gates.join(" → ")}`);
   if (argv.includes("--dry-run")) return;
+  // Plan W6.9: no build that takes payments on a plan without commercial use (deploy/hosting.json).
+  const hosting = spawnSync(process.execPath, ["scripts/hosting-gate.mjs"], { stdio: "inherit", env: process.env });
+  if (hosting.status !== 0) {
+    console.error("\n✗ vercel-build: the hosting gate failed (docs self-hosting/cut-over).");
+    process.exit(1);
+  }
   const npm = process.platform === "win32" ? "npm.cmd" : "npm";
   const done = [];
   // After build, every gate runs even if an earlier one failed, so one
