@@ -103,3 +103,70 @@ export function restackCommands({ branch, oldBase, train, remote = "origin", pr 
   commands.push(`# then open a PR ${q(target)} → ${train} with ${title}, and "Supersedes #${pr ?? "<old PR>"}" in its body`);
   return { blocked: false, target, notes, commands };
 }
+
+// ───────────── the stack limit (plan W6.22 acceptance) ─────────────
+
+/** The deepest a stack may be: a PR on main or a train is depth 1, a PR on that PR is 2 (plan W6.22: "maximum stack depth: 1"). */
+export const MAX_STACK_DEPTH = 1;
+/** The day the rule started (#506, 12.11.2026): PRs opened from then on are the "new PRs" of the acceptance. */
+export const RULE_SINCE = "2026-11-12";
+
+/** A base that counts as "on main or verify/*" in the acceptance: main, or any integration train. */
+export const onTrunkOrTrain = (base) => TRUNKS.includes(base) || TRAIN_RE.test(base);
+
+/**
+ * The stack depth of each open PR → Map(number → { depth, chain, root }).
+ * prs: [{ number, head, base }]. A PR on main or a train has depth 1. A PR
+ * whose base is another open PR's head is one deeper than that PR. A base
+ * that is neither (a branch with no open PR, such as chore/dod) is an
+ * unknown parent: one level of its own, so the PR has depth 2. `chain` is
+ * the PR numbers from the bottom of the stack up to this one; `root` is
+ * the base the bottom one sits on. A loop of bases ends where it repeats.
+ */
+export function stackDepths(prs) {
+  const byHead = new Map();
+  for (const p of prs) if (!byHead.has(p.head)) byHead.set(p.head, p);
+  const memo = new Map();
+  const visit = (p, seen) => {
+    if (memo.has(p.number)) return memo.get(p.number);
+    let r;
+    const parent = byHead.get(p.base);
+    if (onTrunkOrTrain(p.base)) r = { depth: 1, chain: [p.number], root: p.base };
+    else if (!parent || parent.number === p.number || seen.has(parent.number)) r = { depth: 2, chain: [p.number], root: p.base };
+    else {
+      const up = visit(parent, new Set([...seen, p.number]));
+      r = { depth: up.depth + 1, chain: [...up.chain, p.number], root: up.root };
+    }
+    memo.set(p.number, r);
+    return r;
+  };
+  for (const p of prs) visit(p, new Set());
+  return memo;
+}
+
+/**
+ * The W6.22 acceptance over the open PRs.
+ * prs: [{ number, head, base, created_at, title? }]; since: ISO date (RULE_SINCE).
+ * → { open, recent, recentOnTrain, maxDepth, legacyMaxDepth, offTrain: [...], tooDeep: [...], ok }
+ * Only PRs opened since the rule are judged ("new PRs"); the older ones
+ * are counted (legacyMaxDepth) so the weekly restack can be measured.
+ */
+export function stackReport(prs, { since = RULE_SINCE, maxDepth = MAX_STACK_DEPTH } = {}) {
+  const depths = stackDepths(prs);
+  const isNew = (p) => !since || String(p.created_at ?? "") >= since;
+  const recent = prs.filter(isNew);
+  const row = (p) => ({ number: p.number, head: p.head, base: p.base, ...depths.get(p.number) });
+  const offTrain = recent.filter((p) => !onTrunkOrTrain(p.base)).map(row);
+  const tooDeep = recent.map(row).filter((r) => r.depth > maxDepth);
+  const maxOf = (xs) => xs.reduce((m, p) => Math.max(m, depths.get(p.number).depth), 0);
+  return {
+    open: prs.length,
+    recent: recent.length,
+    recentOnTrain: recent.length - offTrain.length,
+    maxDepth: maxOf(recent),
+    legacyMaxDepth: maxOf(prs.filter((p) => !isNew(p))),
+    offTrain,
+    tooDeep,
+    ok: offTrain.length === 0 && tooDeep.length === 0,
+  };
+}

@@ -65,3 +65,26 @@ still open moves onto the new train.
 
 A shallow clone can't find merge bases: deepen it first
 (`git fetch --deepen=500 origin <branch>`).
+
+## Measuring the rule: scripts/stack-limit.mjs
+
+pr:check judges one PR. `npm run stack:limit` measures the rule over
+every open PR, against the plan's targets:
+
+- **New PRs on `main` or a train: 100%.** "New" means opened since the
+  rule started (12 November 2026; `--since` picks another day). Any
+  `verify/train-N` counts here, not only the current one.
+- **Stack depth at most 1.** A PR on `main` or a train has depth 1. A PR
+  on another PR is one deeper than that PR. A PR on a branch that has no
+  PR of its own (such as `chore/dod`) has depth 2. Each PR over the limit
+  is listed with its stack, bottom first, and the `restack.mjs --pr`
+  command that moves it.
+- **`--drift`** also holds each new PR to pr:check's drift rules against
+  the current train: behind it warns, and a merge base older than 7 days
+  or a criss-cross fails. The PR's head must be fetched (`--fetch`).
+
+Older PRs are counted but not judged: the report prints their deepest
+stack, so the weekly `restack.mjs --all` can be seen to bring it down.
+The script only reads (git, GitHub REST). It exits 1 when a new PR breaks
+the rule. On 14 November 2026: 450 open PRs, 185 of them new, 108 of
+those (58%) on `main` or a train, and the deepest new stack 59.
