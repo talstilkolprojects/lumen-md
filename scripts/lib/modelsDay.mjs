@@ -134,7 +134,9 @@ export const STEPS = [
   },
   {
     id: "asr-web",
-    title: "Dictation WER in the browser — Whisper (ivrit.ai) on WebGPU / WASM",
+    // The WER is the model's (the app's ONNX files and dtypes on onnxruntime-node, CPU), so it runs in the
+    // cloud too (plan W6.19); the WebGPU latency is bench-models'. Ozen v1 is not measured while it is off.
+    title: "Dictation WER in the browser — ivrit.ai turbo (ONNX q4f16, the app's files) on FLEURS-he validation",
     plan: ["W4.13", "1.3", "W5.13", "15.3"],
     requires: { script: "eval:asr-web" },
     providedBy: "plan W4.13 feat/hebrew-dictation-web",
@@ -146,10 +148,34 @@ export const STEPS = [
       const fleurs = join(c.cache, "fleurs-validation");
       return [
         { cmd: "python3", args: ["-I", "scripts/asr/fleurs_spike.py", "--out", fleurs, "--n", "30"], skipIf: () => existsSync(join(fleurs, "fleurs.json")) },
-        npm("eval:asr-web", ["--fleurs", fleurs, "--out", join(c.dir, "asr-web.json")]),
+        npm("eval:asr-web", ["--fleurs", fleurs, "--models", "turbo", "--out", join(c.dir, "asr-web.json")]),
       ];
     },
     parse: (dir) => asrMetrics(join(dir, "asr-web.json"), "fleurs-validation"),
+  },
+  {
+    id: "asr-whisper-cpp",
+    title: "Desktop dictation WER — whisper.cpp with ivrit.ai turbo (ggml) on FLEURS-he validation",
+    plan: ["W1.17", "W6.19"],
+    requires: { file: "scripts/whisper-desktop.mjs" },
+    providedBy: "#383 (W1.17, desktop Whisper)",
+    models: [],
+    needs: ["python3", "ffmpeg", "network"],
+    // 30 clips (~5 min of audio) at whisper.cpp's speed on a GPU or Apple silicon, plus the model load.
+    minutes: 5,
+    // Optional (--with asr-whisper-cpp): the default day stays within its 3 hours with W5.20's
+    // voice-commands step beside it. models:cloud asks for it, since the kernel builds whisper.cpp.
+    optional: true,
+    blockedUnless: { option: "whisperGgml", reason: "needs --whisper-ggml <ivrit.ai turbo ggml .bin> and whisper-cli (--whisper-cli); the cloud kernel builds whisper.cpp and fetches the file (plan W6.19)" },
+    target: { metric: "wer", max: 0.1, text: "WER ≤ 10 % on FLEURS-he validation on the desktop (plan W6.19)" },
+    commands: (c) => {
+      const fleurs = join(c.cache, "fleurs-validation");
+      return [
+        { cmd: "python3", args: ["-I", "scripts/asr/fleurs_spike.py", "--out", fleurs, "--n", "30"], skipIf: () => existsSync(join(fleurs, "fleurs.json")) },
+        { cmd: "node", args: ["scripts/whisper-desktop.mjs", "wer", "--split", `fleurs-validation=${fleurs}`, "--model", c.whisperGgml, "--cli", c.whisperCli ?? "whisper-cli", "--out", join(c.dir, "whisper-cpp.json")] },
+      ];
+    },
+    parse: (dir) => asrMetrics(join(dir, "whisper-cpp.json"), "fleurs-validation"),
   },
   {
     id: "tool-calls",
@@ -244,6 +270,32 @@ export const STEPS = [
     parse: (dir) => ({ files: listFiles(dir).length }),
   },
   {
+    id: "heldout",
+    title: "Held-out sets (W6.17) — QA, OCR, dictation, grammar, cross-lingual, tool calls; scored by the evaluator, aggregates only",
+    plan: ["W6.17", "7.9", "W4.31", "W5.3"],
+    requires: { script: "heldout" },
+    models: ["qwen2.5:7b", "gemma3:12b"],
+    needs: ["python3", "ffmpeg", "chromium", "network"],
+    minutes: 40,
+    // Opt-in by key: models-day.mjs adds it whenever the evaluator key is present.
+    optional: true,
+    blockedUnless: { option: "heldoutKey", reason: "needs the evaluator key (LUMEN_HELDOUT_KEY or --heldout-key-file), which only Tal or the nightly host holds (plan W6.17)" },
+    commands: (c) => {
+      const model = join(c.cache, "zipformer2-66m-streaming-he");
+      const store = c.heldoutStore ?? null;
+      return [
+        // Without the dictation model only asr-he is unavailable; the other five sets still run.
+        { cmd: "bash", args: ["scripts/asr/fetch-model.sh", model], allowFail: true },
+        // A run copy (LUMEN_HELDOUT_EXPORT, plan W6.18) scores only: nothing to build.
+        { ...npm("heldout", ["build"]), skipIf: () => !!process.env.LUMEN_HELDOUT_EXPORT || (!!store && HELDOUT_SETS.every((id) => existsSync(join(store, `${id}.lho`)))) },
+        npm("heldout", ["scan", "--require-key", "--out", join(c.dir, "scan.json")]),
+        // Plan W6.19: asr-he through every dictation path — phone (Zipformer), browser (turbo ONNX), desktop (whisper.cpp).
+        npm("heldout", ["run", "--models", "qwen2.5:7b,gemma3:12b", "--url", c.url, "--out", c.dir, "--asr-model", model, "--asr-engines", "zipformer,whisper-web,whisper-cpp", ...(c.whisperGgml ? ["--whisper-ggml", c.whisperGgml, "--whisper-cli", c.whisperCli ?? "whisper-cli"] : [])]),
+      ];
+    },
+    parse: (dir) => heldoutMetrics(dir),
+  },
+  {
     id: "dictalm3",
     title: "DictaLM 3.0 1.7B against qwen3:4b, then the default decision",
     plan: ["W2.4"],
@@ -282,7 +334,7 @@ export const COVERAGE = [
   ["7.6", "rerank", "dev split only"],
   ["7.8", "bench-models", "refuses SwiftShader; needs a real GPU"],
   ["7.9", "agents-qwen", "processing this report is 7.9"],
-  ["W1.17", null, "desktop whisper.cpp: needs whisper-cli and a pinned ggml file — `npm run whisper:desktop -- wer` from #383, a separate desktop check"],
+  ["W1.17", "asr-whisper-cpp", "desktop whisper.cpp with the ivrit.ai turbo ggml; the cloud kernel builds whisper-cli and records the file it measured (plan W6.19)"],
   ["W2.1", null, "owed: the owner's rating of 50 suggestions; the 1,000-note run is not scripted yet"],
   ["W2.4", "dictalm3", "optional: blocked while the variant's owner checks are open"],
   ["W2.5", null, "DictaBERT-char-menaked needs the owner's ONNX export first (scripts/models/export-menaked.py)"],
@@ -296,6 +348,8 @@ export const COVERAGE = [
   ["W5.13", "asr-web", "Whisper on WebGPU; the 90-minute lecture timing is a hand check"],
   ["W5.28", "crosslingual", "e5 nDCG never measured"],
   ["W5.20", "voice-commands", "the grammar's 200/200 is on its development set; the held-out score is the owner's recordings"],
+  ["W6.17", "heldout", "a held-out number beside every dev number: sets the authors never see, scored by the evaluator; the scan must find 0 items in the repo"],
+  ["W6.19", "heldout", "held-out WER per dictation path: phone (Zipformer), browser (turbo ONNX), desktop (whisper.cpp); FLEURS in asr-zipformer, asr-web, asr-whisper-cpp"],
 ].map(([task, step, note]) => ({ task, step, note }));
 
 // ── helpers that build commands ───────────────────────────────────────────
@@ -509,7 +563,7 @@ export function asrMetrics(file, split) {
   const dev = j.splits?.dev ?? null;
   // Normal form v2 (numbers as digits, plan W4.13) is the headline where the eval reports it; v1 stays next to it.
   const v2 = s?.["wer.v2"];
-  return { engine: j.engine, wer: v2 ?? s?.wer ?? null, werV1: s?.wer ?? null, cer: s?.cer ?? null, p95Ms: s?.["latency.p95Ms"] ?? s?.p95Ms ?? null, devWer: dev?.["wer.v2"] ?? dev?.wer ?? null, modelLoadMs: j.modelLoadMs ?? null };
+  return { engine: j.engine, wer: v2 ?? s?.wer ?? null, werV1: s?.wer ?? null, cer: s?.cer ?? null, ...(typeof v2 === "number" ? { werV2: v2 } : {}), p95Ms: s?.["latency.p95Ms"] ?? s?.p95Ms ?? null, ...(typeof s?.rtf === "number" ? { rtf: s.rtf } : {}), devWer: dev?.["wer.v2"] ?? dev?.wer ?? null, modelLoadMs: j.modelLoadMs ?? null };
 }
 
 export function toolCallMetrics(dir) {
@@ -518,6 +572,40 @@ export function toolCallMetrics(dir) {
   const models = j.models ?? {};
   const shares = Object.values(models).map((m) => m.share ?? 0);
   return { share: shares.length ? Math.min(...shares) : 0, models };
+}
+
+/** The ids of the held-out sets (scripts/heldout/sets.mjs), for the build's skip check. */
+export const HELDOUT_SETS = ["qa-he", "ocr-he", "asr-he", "grammar-he", "xling", "toolcall-he"];
+
+/**
+ * The evaluator's aggregates (heldout-*.json) and the scan verdict
+ * (scan.json). `share` is the lowest valid-call share of the tool-call set,
+ * the one number with a plan target (W4.31: ≥ 95 %).
+ */
+export function heldoutMetrics(dir) {
+  const j = newest(dir, /^heldout-.*\.json$/);
+  const scan = readJson(join(dir, "scan.json"));
+  if (!j && !scan) return null;
+  const sets = {};
+  for (const [id, r] of Object.entries(j?.sets ?? {})) {
+    if (r.status) {
+      sets[id] = { status: r.status };
+      continue;
+    }
+    const per = {};
+    for (const [m, v] of Object.entries(r.models ?? {})) per[m] = v.status ? v.status : (v.share ?? null);
+    const engines = r.engines ? Object.fromEntries(Object.entries(r.engines).map(([e, v]) => [e, v.status ?? { wer: v.wer, cer: v.cer, ...(v.werV2 !== undefined ? { werV2: v.werV2 } : {}), target: v.target, met: v.met }])) : null;
+    sets[id] = { version: r.version, locked: r.locked, n: r.n, ...(Object.keys(per).length ? { models: per } : {}), ...(r.engine ? { engine: r.engine.status ?? { wer: r.engine.wer, cer: r.engine.cer } } : {}), ...(engines ? { engines } : {}) };
+  }
+  const tc = Object.values(j?.sets?.["toolcall-he"]?.models ?? {}).map((v) => v.valid).filter((x) => typeof x === "number");
+  return {
+    heldout: true,
+    kind: j?.kind ?? null,
+    scan: scan ? { verdict: scan.verdict, findings: (scan.canaryHits?.length ?? 0) + (scan.items?.length ?? 0) + (scan.keyLeaks?.length ?? 0), ngram: scan.ngram } : null,
+    sets,
+    ...(tc.length ? { share: Math.min(...tc) } : {}),
+    log: j?.log ? { seq: j.log.seq, requester: j.log.requester, at: j.log.at, hash: j.log.hash } : null,
+  };
 }
 
 export function benchMetrics(file) {
@@ -604,6 +692,7 @@ const pct = (x) => (x === null || x === undefined ? "—" : `${(x * 100).toFixed
 function headline(s) {
   const m = s.metrics;
   if (!m) return s.reason ?? (s.exit ? `exit ${s.exit} — see ${s.id}/log.txt` : "");
+  if (m.heldout) return `${Object.keys(m.sets).length} sets (${Object.values(m.sets).filter((x) => x.locked).length} sealed), scan ${m.scan?.verdict ?? "—"}${m.share !== undefined ? `, tool calls ${pct(m.share)} valid` : ""}`;
   if (m.byAgent) return `${m.passed}/${m.total} cases (${pct(m.share)}), ${m.agents} agents`;
   if (m.p50Ms !== undefined && m.requests !== undefined) return `p50 ${m.p50Ms} ms, p95 ${m.p95Ms} ms (${m.requests} requests)`;
   if (m.wer !== undefined) return `WER ${pct(m.wer)}${m.werV1 !== undefined && m.werV1 !== m.wer ? ` (v1 ${pct(m.werV1)})` : ""}${m.devWer !== null && m.devWer !== undefined ? `, dev ${pct(m.devWer)}` : ""}`;
