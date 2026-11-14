@@ -174,7 +174,7 @@ describe("H2: a revocation contested by same-epoch keyring rewrites", () => {
           await rewriteKeyring(p, k, access, (c, f) => ({ contents: c, file: f }));
           await thief.sync().catch(() => undefined);
         } catch {
-          /* raced */
+          /* why: the phone raced another write; it tries again on the next one */
         }
       }
     });
