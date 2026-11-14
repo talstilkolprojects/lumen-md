@@ -245,3 +245,16 @@
 #    redacted text (privateRemoved / publishReadyText) and send nothing before the user confirms.
 /src/publish/standardSite.ts             @talstilkol
 /src/publish/standardSiteActions.ts      @talstilkol
+# ── Train 4 (V4 sweep): files merged there that the W8.6 coverage gate classifies as
+#    sensitive (crypto, csp, network, export, redaction) and that had no owner.
+/mcp-server/src/vault/approval.ts        @talstilkol
+/src/ai/arabicSpell.ts                   @talstilkol
+/src/ai/arabicSpellService.ts            @talstilkol
+/src/ai/modelHosting.ts                  @talstilkol
+/src/ai/screenshotNote.ts                @talstilkol
+/src/book/app.ts                         @talstilkol
+/src/citations/run.ts                    @talstilkol
+/src/commands/domains/exportActions.ts   @talstilkol
+/src/commands/domains/journalistActions.ts @talstilkol
+/src/pdf/zoteroSend.ts                   @talstilkol
+/src/ui/AcademicExportDialog.tsx         @talstilkol
