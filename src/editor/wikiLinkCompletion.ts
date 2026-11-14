@@ -42,9 +42,10 @@ export async function wikiLinkCompletions(ctx: CompletionContext): Promise<Compl
   const line = ctx.state.doc.lineAt(ctx.pos);
   const q = parseWikiQuery(line.text.slice(0, ctx.pos - line.from));
   if (!q || inCode(ctx)) return null;
-  const catalog = await linkCatalog();
+  const current = currentNote(ctx.state.doc.toString());
+  const catalog = await linkCatalog(q, current);
   if (ctx.aborted) return null;
-  const items = wikiSuggestions(q, catalog, currentNote(ctx.state.doc.toString()), { create: canCreateNotes() });
+  const items = wikiSuggestions(q, catalog, current, { create: canCreateNotes() });
   if (!items.length) return null;
   return {
     from: line.from + q.from,

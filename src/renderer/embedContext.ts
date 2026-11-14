@@ -9,7 +9,7 @@
  */
 
 import { t } from "../i18n";
-import { createEmbedContext, embeddedTexts, hasEmbeds, type EmbedContext, type EmbedNoticeKind } from "./embeds";
+import { createEmbedContext, embeddedTexts, hasEmbeds, MAX_EMBED_DEPTH, missingEmbedded, type EmbedContext, type EmbedNoticeKind } from "./embeds";
 import "./embedContextStrings";
 
 /** The workspace path a preview doc key (./previewDoc) names, or null. */
@@ -37,17 +37,30 @@ export function embedNotice(kind: EmbedNoticeKind, vars: Record<string, string |
  */
 export async function loadEmbedContext(markdownText: string, docKey: string | null): Promise<EmbedContext | undefined> {
   if (!hasEmbeds(markdownText)) return undefined;
-  let files: { path: string; content: string; modified?: number }[] = [];
+  const hostPath = hostPathOf(docKey);
+  // Every indexed path (targets resolve against all of them), with text only
+  // for the notes this render embeds (W6.36): the index is asked for those,
+  // then for what they embed, one round per level — not for every note.
+  let files: { path: string; content?: string; modified?: number }[] = [];
+  const texts = new Map<string, string>();
+  const make = (extra: typeof files = []) => {
+    const all = files.map((f) => (texts.has(f.path) ? { ...f, content: texts.get(f.path) } : f));
+    return createEmbedContext({ hostPath, hostText: markdownText, files: extra.length ? [...all, ...extra] : all, notice: embedNotice });
+  };
   try {
-    const { ensureIndex, indexedNotes } = await import("../storage/workspaceIndex");
-    await ensureIndex();
-    // W2.22: the notes' text, read from the index for this render.
-    files = await indexedNotes();
+    const { ensureIndex, indexedFiles, indexedNotes } = await import("../storage/workspaceIndex");
+    await ensureIndex(false, { checked: true });
+    files = indexedFiles().map((f) => ({ path: f.path, modified: f.modified }));
+    const tried = new Set<string>();
+    for (let level = 0; level <= MAX_EMBED_DEPTH; level++) {
+      const want = missingEmbedded(markdownText, make()).filter((p) => !tried.has(p));
+      if (!want.length) break;
+      for (const p of want) tried.add(p);
+      for (const n of await indexedNotes(want)) texts.set(n.path, n.content);
+    }
   } catch {
     /* why: no workspace */
   }
-  const make = (extra: typeof files = []) =>
-    createEmbedContext({ hostPath: hostPathOf(docKey), hostText: markdownText, files: extra.length ? [...files, ...extra] : files, notice: embedNotice });
   const ctx = make();
   // Pasted images (`lumen-asset-*`, at the vault root) are left out of the
   // index: look up the ones these notes embed, so a missing one is reported.

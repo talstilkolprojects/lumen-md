@@ -14,6 +14,7 @@
  */
 
 import { getVaultBackend, vaultEncryptionReady } from "./index";
+import type { SnapshotKeys } from "../snapshotSeal";
 
 export interface SealedValue {
   lumenSealed: 1;
@@ -24,6 +25,8 @@ export interface SealedValue {
 export interface RestSealer {
   seal(label: string, value: unknown): Promise<SealedValue>;
   open(label: string, sealed: SealedValue): Promise<unknown>;
+  /** W6.36: the index snapshot's subkeys (never the data key), for the index worker. */
+  snapshotKeys?: SnapshotKeys;
 }
 
 let sealer: RestSealer | null = null;
@@ -35,6 +38,11 @@ export function setRestSealer(next: RestSealer | null): void {
 
 export function isSealedValue(v: unknown): v is SealedValue {
   return !!v && typeof v === "object" && (v as { lumenSealed?: unknown }).lumenSealed === 1 && typeof (v as { data?: unknown }).data === "string";
+}
+
+/** The index snapshot's subkeys while the vault is unlocked; null when it is locked or plain. */
+export function restSnapshotKeys(): SnapshotKeys | null {
+  return sealer?.snapshotKeys ?? null;
 }
 
 /** True when values must not be stored in the clear right now (the vault is encrypted). */

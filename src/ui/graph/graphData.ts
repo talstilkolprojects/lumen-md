@@ -20,7 +20,7 @@ function signature(files: ReturnType<typeof indexedFiles>): string {
 
 /** The current vault graph (built at most once per index state). */
 export async function loadVaultGraph(): Promise<GraphData> {
-  await ensureIndex();
+  await ensureIndex(false, { checked: true });
   const files = indexedFiles();
   const key = signature(files);
   if (cached?.key === key) return cached.graph;

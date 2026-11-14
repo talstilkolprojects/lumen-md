@@ -91,7 +91,7 @@ async function noteFor(target: string): Promise<{ path: string; content: string;
   const { note, heading } = splitWikiTarget(target);
   if (!note) return null;
   // A note saved since the last look is refreshed first (cheap when nothing changed).
-  await ensureIndex().catch(() => undefined);
+  await ensureIndex(false, { checked: true }).catch(() => undefined);
   const files = indexedFiles();
   const path = resolveWikiTarget(note, files.map((f) => f.path));
   const file = path ? files.find((f) => f.path === path) : undefined;
