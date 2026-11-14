@@ -1,0 +1,36 @@
+{
+  "kind": "lumen-plugin-scorecard",
+  "v": 1,
+  "reviewer": "lumen-review/1",
+  "id": "lumen.natural-dates",
+  "version": "1.0.0",
+  "reviewedAt": "2026-11-14T22:23:46.112Z",
+  "passed": true,
+  "score": 90,
+  "grade": "A",
+  "sha256": "81f1b25d0396bb18d6c031f88f2d50190d1713d6ccc06aa417453f178b9ec411",
+  "source": {
+    "repository": null,
+    "inRepo": true
+  },
+  "permissions": {
+    "declared": [
+      "commands",
+      "document:read",
+      "document:write",
+      "notifications",
+      "settings"
+    ],
+    "added": [],
+    "removed": []
+  },
+  "audit": "none",
+  "findings": [
+    {
+      "rule": "unsigned",
+      "severity": "warning",
+      "detail": "no signature"
+    }
+  ],
+  "durationMs": 32
+}

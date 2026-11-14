@@ -1,0 +1,38 @@
+{
+  "kind": "lumen-plugin-scorecard",
+  "v": 1,
+  "reviewer": "lumen-review/1",
+  "id": "lumen.note-refactor",
+  "version": "1.0.0",
+  "reviewedAt": "2026-11-14T22:23:46.151Z",
+  "passed": true,
+  "score": 90,
+  "grade": "A",
+  "sha256": "1584f5fdffe749c0b5d900b0bdf03deaa5f0e1b996d4d8fa6aeb1f6e885413ea",
+  "source": {
+    "repository": null,
+    "inRepo": true
+  },
+  "permissions": {
+    "declared": [
+      "commands",
+      "document:read",
+      "document:write",
+      "notifications",
+      "settings",
+      "vault:read",
+      "vault:write"
+    ],
+    "added": [],
+    "removed": []
+  },
+  "audit": "none",
+  "findings": [
+    {
+      "rule": "unsigned",
+      "severity": "warning",
+      "detail": "no signature"
+    }
+  ],
+  "durationMs": 38
+}

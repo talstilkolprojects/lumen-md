@@ -134,6 +134,8 @@
     "pr:check": "node scripts/pr-check.mjs",
     "pr:triage": "node scripts/pr-triage.mjs",
     "launch:check": "node scripts/launch-check.mjs",
+    "plugins:review": "node scripts/review-plugins.mjs",
+    "security:page": "node scripts/security-page.mjs",
     "beta:funnel": "node scripts/beta-funnel.mjs",
     "store:check": "node scripts/store.mjs check",
     "eval:crosslingual": "LUMEN_EVAL_XL=1 vitest run --config vitest.eval.config.ts src/agents/eval/crosslingual.eval.ts",

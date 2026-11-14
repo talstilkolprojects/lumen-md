@@ -1,0 +1,36 @@
+{
+  "kind": "lumen-plugin-scorecard",
+  "v": 1,
+  "reviewer": "lumen-review/1",
+  "id": "lumen.linter",
+  "version": "1.0.0",
+  "reviewedAt": "2026-11-14T22:23:46.080Z",
+  "passed": true,
+  "score": 90,
+  "grade": "A",
+  "sha256": "45d507f34f48fa7a73cbcaa02e9c0f2c4847b9d74f07970be20493289ea61619",
+  "source": {
+    "repository": null,
+    "inRepo": true
+  },
+  "permissions": {
+    "declared": [
+      "commands",
+      "document:read",
+      "document:write",
+      "notifications",
+      "settings"
+    ],
+    "added": [],
+    "removed": []
+  },
+  "audit": "none",
+  "findings": [
+    {
+      "rule": "unsigned",
+      "severity": "warning",
+      "detail": "no signature"
+    }
+  ],
+  "durationMs": 22
+}

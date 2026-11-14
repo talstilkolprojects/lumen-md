@@ -1,0 +1,35 @@
+{
+  "kind": "lumen-plugin-scorecard",
+  "v": 1,
+  "reviewer": "lumen-review/1",
+  "id": "lumen.calendar",
+  "version": "1.0.0",
+  "reviewedAt": "2026-11-14T22:23:46.000Z",
+  "passed": true,
+  "score": 90,
+  "grade": "A",
+  "sha256": "bf3fe19e3d5de5f95202ac9b087c92bd72426db0b001e72774e4160f3570cd5f",
+  "source": {
+    "repository": null,
+    "inRepo": true
+  },
+  "permissions": {
+    "declared": [
+      "commands",
+      "panel",
+      "settings",
+      "vault:read"
+    ],
+    "added": [],
+    "removed": []
+  },
+  "audit": "none",
+  "findings": [
+    {
+      "rule": "unsigned",
+      "severity": "warning",
+      "detail": "no signature"
+    }
+  ],
+  "durationMs": 37
+}

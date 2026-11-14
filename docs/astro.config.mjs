@@ -263,6 +263,7 @@ export default defineConfig({
         {
           label: "Security",
           items: [
+            { label: "Security status, findings and plugin scorecards", slug: "security", translations: { he: "מצב האבטחה, ממצאים וכרטיסי ניקוד" } },
             { label: "Secrets and encryption", slug: "security/vault" },
             { label: "Monitoring and web vitals", slug: "security/monitoring", translations: { he: "ניטור ומדדי ביצועים" } },
             { label: "Vault encryption at rest", slug: "security/vault-encryption", translations: { he: "הצפנת הכספת במנוחה" } },

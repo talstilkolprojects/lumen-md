@@ -1,0 +1,37 @@
+{
+  "kind": "lumen-plugin-scorecard",
+  "v": 1,
+  "reviewer": "lumen-review/1",
+  "id": "lumen.kanban",
+  "version": "1.0.0",
+  "reviewedAt": "2026-11-14T22:23:46.057Z",
+  "passed": true,
+  "score": 90,
+  "grade": "A",
+  "sha256": "24a8c57eb9059e58a5dabd831d0b27f820a4d6c8342f20d55f0425f841835739",
+  "source": {
+    "repository": null,
+    "inRepo": true
+  },
+  "permissions": {
+    "declared": [
+      "clipboard:write",
+      "commands",
+      "document:read",
+      "document:write",
+      "notifications",
+      "renderer"
+    ],
+    "added": [],
+    "removed": []
+  },
+  "audit": "none",
+  "findings": [
+    {
+      "rule": "unsigned",
+      "severity": "warning",
+      "detail": "no signature"
+    }
+  ],
+  "durationMs": 5
+}
