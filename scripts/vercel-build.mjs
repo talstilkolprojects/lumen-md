@@ -9,7 +9,7 @@
  * a train with a failing test gets a red status. Production (main) builds as before:
  * the app and its bundle budget, nothing else.
  *
- *   VERCEL_ENV=preview      build, budget, vitest, e2e, i18n:check,
+ *   VERCEL_ENV=preview      lockfile, build, budget, vitest, e2e, i18n:check,
  *                           hygiene, docs:sync, the licence gate
  *   VERCEL_ENV=production   build, budget
  *   (not on Vercel)         the preview set, so `node scripts/vercel-build.mjs`
@@ -40,6 +40,8 @@ import { E2E_COLLAB_WS, GATE_BUDGET_MIN, VITEST_NIGHTLY_ONLY } from "./test-tier
 
 /** Every gate: its name and the npm script that runs it. */
 export const GATES = {
+  // W8.9: what the gates test is what package-lock.json names (scripts/lockfile-drift.mjs).
+  lockfile: ["run", "-s", "lockfile:drift"],
   build: ["run", "build"],
   budget: ["run", "budget"],
   vitest: ["run", "test"],
@@ -149,7 +151,7 @@ export const PRODUCTION_GATES = ["build", "budget"];
  * without the 13 minutes of vitest; never a branch's real gate.
  */
 export const E2E_ONLY_GATES = ["build", "e2e"];
-export const PREVIEW_GATES = ["build", "budget", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "licenses"];
+export const PREVIEW_GATES = ["lockfile", "build", "budget", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "licenses"];
 
 /** Which gates a build runs: production only for VERCEL_ENV=production (or --production). */
 export function gatesFor(env = process.env, argv = []) {
