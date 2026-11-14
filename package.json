@@ -146,7 +146,8 @@
     "train:status": "node scripts/train/status.mjs",
     "hosts:parity": "node scripts/host-parity.mjs",
     "hosting:gate": "node scripts/hosting-gate.mjs",
-    "perf:responsiveness": "node scripts/perf/responsiveness.mjs"
+    "perf:responsiveness": "node scripts/perf/responsiveness.mjs",
+    "obsidian:compare": "node --experimental-transform-types --import ./scripts/lib/ts-register.mjs scripts/obsidian-compare.mjs"
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "0.4.2",

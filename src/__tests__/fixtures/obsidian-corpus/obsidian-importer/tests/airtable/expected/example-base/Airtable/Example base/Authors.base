@@ -1,0 +1,17 @@
+filters: file.folder == "Airtable/Example base/Authors"
+properties:
+  file.name:
+    displayName: Name
+  Books written:
+    displayName: Books written
+  Rating:
+    displayName: Rating
+  Books:
+    displayName: Books
+views:
+  - type: table
+    name: All authors
+    order:
+      - file.name
+      - Books written
+      - Books

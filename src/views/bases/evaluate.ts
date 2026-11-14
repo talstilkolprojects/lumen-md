@@ -104,9 +104,17 @@ const METHOD_NAMES: ReadonlySet<string> = new Set(
 );
 const UNSUPPORTED_NAMES: ReadonlySet<string> = new Set([...BASES_UNSUPPORTED].map((n) => n.slice(n.indexOf(".") + 1)).filter((n) => n !== "html"));
 
+/**
+ * The longest Bases expression parsed. Database formulas (plan 4.11) stop at
+ * 2,000 characters, but real `.base` files go past it: the TaskNotes plugin
+ * writes a 2,384-character `timeTrackedFormatted` (W6.34 corpus). The step
+ * budget per evaluation is unchanged, so a long expression costs no more to run.
+ */
+export const BASES_MAX_LENGTH = 8000;
+
 /** Parse a Bases expression with the Bases function table. */
 export function parseBases(src: string, limits?: Partial<FormulaLimits>): BasesParse {
-  return parseBasesExpr(src, { limits, globals: GLOBAL_SET, methods: METHOD_NAMES, unsupported: UNSUPPORTED_NAMES });
+  return parseBasesExpr(src, { limits: { maxLength: BASES_MAX_LENGTH, ...limits }, globals: GLOBAL_SET, methods: METHOD_NAMES, unsupported: UNSUPPORTED_NAMES });
 }
 
 /* ─── Helpers ────────────────────────────────────────────────────────── */

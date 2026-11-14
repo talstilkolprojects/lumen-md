@@ -1,0 +1,38 @@
+filters:
+  and:
+    - type == "project"
+properties:
+  note.date_due:
+    displayName: Due
+views:
+  - type: table
+    name: All Projects
+  - type: kanban
+    name: Sub projects
+    filters:
+      and:
+        - up.contains(link(this.file))
+        - file.path != this.file.path
+    groupBy:
+      property: status
+      direction: ASC
+    groupOrder:
+      - backlog
+      - active
+      - waiting
+      - done
+      - dropped
+    order:
+      - file.name
+      - summary
+      - date_due
+      - status
+    sort:
+      - property: date_due
+        direction: DESC
+    columnSize:
+      file.name: 189
+      note.status: 97
+      note.summary: 629
+    columnWidth: 340
+    imageAspectRatio: 0.7

@@ -1575,6 +1575,685 @@
           "sha256": "f064c4457efddb2b625f75de90fedb9fb318634ce20702595a505a68cca3beb8"
         }
       ]
+    },
+    {
+      "id": "munin-template-vault",
+      "repo": "https://github.com/Pontare25/Munin-Template-Vault",
+      "commit": "2866f694fa17ed3054a76eefaf92d5716a612be6",
+      "licence": "MIT",
+      "licenceFile": "LICENSE",
+      "files": [
+        {
+          "path": ".github/PUBLISHING.md",
+          "sha256": "c0b6f5654b76773073692a24087c064af9f0bb5e0a41557e7976e6d925c05b69"
+        },
+        {
+          "path": ".github/pull_request_template.md",
+          "sha256": "346dfd90302419e9abf93ffcb2db118409229a516176c732f2608c108568ec81"
+        },
+        {
+          "path": "AGENTS.md",
+          "sha256": "10bfc4dadc624087bc53dd4f1fec95ffdd98a5d05dec085ae0e424da1751673d"
+        },
+        {
+          "path": "AI-OS/Me.md",
+          "sha256": "aa5703c7ff563478a04f089f11f2e4281ee03fe0b2ba07597c766474cc7574a9"
+        },
+        {
+          "path": "AI-OS/README.md",
+          "sha256": "9a4e64f6c7120b0d5cd254484098e1db85952813cbba74f28fc2ba879e9ca2b9"
+        },
+        {
+          "path": "AI-OS/SOPs/daily-review.md",
+          "sha256": "c733df6fb1ca03d860b8c84638330000f8dc2ed68797c3b1a3fd7a0c17841a0a"
+        },
+        {
+          "path": "AI-OS/SOPs/ingest.md",
+          "sha256": "15fe6caa72c2dfcabe7d43a91fc1efaed9d4f4f72583c7d73a86a571368f55d8"
+        },
+        {
+          "path": "AI-OS/SOPs/lint.md",
+          "sha256": "f344d2f8fa4cd0736c812a45639e903e78963a5cbcde6aa58ceb5723385e000c"
+        },
+        {
+          "path": "AI-OS/SOPs/new-note.md",
+          "sha256": "39434abe901921f3db5f5abb3d87d047b928e2b5f9e92f3a0762c3ed528c4af8"
+        },
+        {
+          "path": "AI-OS/SOPs/query.md",
+          "sha256": "dc5c817fa382fe8bca2a73ec6747c43f3453306d82ce37ffb31f2e6dfdfbebc3"
+        },
+        {
+          "path": "AI-OS/Schemas/note-schema.md",
+          "sha256": "a4658bdcf3939b3dee5962d2ab317fcbe5c45470df257250663a7d82b2c55e59"
+        },
+        {
+          "path": "AI-OS/Skills/README.md",
+          "sha256": "b65d33a95df800cdf703c5e9633c05e0f891d623ed6b112c408b7bc6bf80497f"
+        },
+        {
+          "path": "AI-OS/Vault-Map.md",
+          "sha256": "afe2e0c8f5b52441084f81f68d0b1d2d46353d4e9e01b3bd72b8d9716faaac85"
+        },
+        {
+          "path": "AI-OS/log.md",
+          "sha256": "c69763c62168180bd0ab82670a539974ccde871d93090059c12f463b4f5c307c"
+        },
+        {
+          "path": "AI-OS/routing.md",
+          "sha256": "db14f33dc5484bd05cf443908a2f65c01a17970d4d1df390590dfe77a3454545"
+        },
+        {
+          "path": "Atlas/Entities/index.md",
+          "sha256": "32d00ebbc1d4ca363a8908b03bdb8150682d5fef25d9e1cf92a4d3fc273ff0bd"
+        },
+        {
+          "path": "Atlas/Frameworks/index.md",
+          "sha256": "b693b033eb566619afa3d7930dab577e721dfbb5af56d303ab2b037ef76151b8"
+        },
+        {
+          "path": "Atlas/MOCs/index.md",
+          "sha256": "f79eec8beaaf21eb987db9296d48fcda05ed37172eec7aba494917326ed73c98"
+        },
+        {
+          "path": "Atlas/Notes/index.md",
+          "sha256": "015341bc83181b69197de75c991d4188e9b72a592511e1fded7546be17eba472"
+        },
+        {
+          "path": "Atlas/Topics/Topics.base",
+          "sha256": "0f4d83facf393769cce9b9903a3aefbeecf68073d688205b17049588228bb2e5"
+        },
+        {
+          "path": "Atlas/Topics/index.md",
+          "sha256": "647512ad217c54a715b3d49a6c5f62802d33d3882d5b4707b8450e4ff7dd875d"
+        },
+        {
+          "path": "Atlas/index.md",
+          "sha256": "78fbd969a5e049af0bb868c51dcef0272bb63ed0ae6a46351ed2199c9ef25c05"
+        },
+        {
+          "path": "Atlas/log.md",
+          "sha256": "b9601c59d7cf516fcce6de7b5629ec67d68ab7a4954148a9db50a267d55b5827"
+        },
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "affecfbf3f67983bf1fc1bfc21468ade8998d3c986069f4e97070c4eddc35e40"
+        },
+        {
+          "path": "CLAUDE.md",
+          "sha256": "d4c2a0b134472ae6019c523f682e4f81f53a8cd34f3b61eae2d795b6eae548c2"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "sha256": "07877a324cf2ef1c41ff9df1bda6d19dda2f8e3ec26eb46b398f69b8f9a83a05"
+        },
+        {
+          "path": "Calendar/README.md",
+          "sha256": "23fc26954bb144e4e08dbcd3314d553dde881ed01f8010965cfec2af758b6a3b"
+        },
+        {
+          "path": "Dashboards/AoR Review.md",
+          "sha256": "b4e7c0a11584a3a8638aa7f2ecad995c756cfdef2e661f2eb8f1b81718d06817"
+        },
+        {
+          "path": "Dashboards/Inbox.md",
+          "sha256": "dde99d7075eb81016731a4ca06caebbf7b92c5d9414f2268e043df18d4fc60a6"
+        },
+        {
+          "path": "Dashboards/README.md",
+          "sha256": "53d7054c5907c4946ba0d305c83169ffda70b59249fd1d5ecae362ac8bb88fd3"
+        },
+        {
+          "path": "Dashboards/Tasks.md",
+          "sha256": "c9e4503c5c3ee060ba08ba185e1b7efe589141a7676dc5075f5c8999f2354695"
+        },
+        {
+          "path": "Efforts/Areas/Personal.md",
+          "sha256": "4babed628ee92cba36f08766845759dd7e862ddee5b41a68e0d9b6935f7bb70d"
+        },
+        {
+          "path": "Efforts/Areas/Work.md",
+          "sha256": "fff5e8e5b3d06808a9193e6ef90ea30b4f9021f9ee48d3b48960f963b6e0836f"
+        },
+        {
+          "path": "Efforts/Efforts.base",
+          "sha256": "affa8058fff2cde69906cab8f7f55be1bbd27fb3f3f241922e78d54fbdee46da"
+        },
+        {
+          "path": "Efforts/README.md",
+          "sha256": "60d387be633b1d8d8907de168bae6ebf4dbf2057d2941f9dad96255f42ea284b"
+        },
+        {
+          "path": "Efforts/TaskNotes/Views/agenda-default.base",
+          "sha256": "d4f7650eed8c89b88e7a5ed446c9c1201a8ca76c8d2a714a0a9b71ac16a7e530"
+        },
+        {
+          "path": "Efforts/TaskNotes/Views/calendar-default.base",
+          "sha256": "e063bed01a5a049e5c89d5104f7c64e84e1a48a789459b09b59aa4da513aed5d"
+        },
+        {
+          "path": "Efforts/TaskNotes/Views/kanban-default.base",
+          "sha256": "67af052286a9ccf68600d81c7ae21dca16097c4ae9ee8a3bfdf8cf62dbd72d8c"
+        },
+        {
+          "path": "Efforts/TaskNotes/Views/mini-calendar-default.base",
+          "sha256": "e316c1381d1df76d848089e706aeb68f2cc3d6ddab32637ba1d33fafa4b35e06"
+        },
+        {
+          "path": "Efforts/TaskNotes/Views/pomodoro-stats.base",
+          "sha256": "9a68af864031d9ac756086a709ab864b6a22fe508076afad37f6f3c29b961195"
+        },
+        {
+          "path": "Efforts/TaskNotes/Views/relationships.base",
+          "sha256": "526127833470a09ed50412e3a47c6f1719ea96f4ad2babcb1d7833ebfe621a36"
+        },
+        {
+          "path": "Efforts/TaskNotes/Views/tasks-default.base",
+          "sha256": "7ea9c23c6dfd97775f6616059036e5948866b65e94666c24590f0e1e8e7367a8"
+        },
+        {
+          "path": "Fleeting/README.md",
+          "sha256": "b4c3dd68e65220a5711bcf38ccd5a18dd1bd8a34cdf3c6143cdb5dfc6d426d8c"
+        },
+        {
+          "path": "README.md",
+          "sha256": "232953bbf70ab4b8fcea7fd447d666b3a89679611640c9b02c5af79ae44bec6f"
+        },
+        {
+          "path": "Raw/Inbox/README.md",
+          "sha256": "a05d63ccadec7e98fa5da4e2717afd0ebe086855bdb049f8b842c99566e02488"
+        },
+        {
+          "path": "Raw/README.md",
+          "sha256": "a08959a3bde073b2897689b007b405a955018a12c4da49008b425ac7fc969e2b"
+        },
+        {
+          "path": "START-HERE.md",
+          "sha256": "250cf34a30c4dc1438e9b61456be02337e00f1e568077c96bc3303910ef34c55"
+        },
+        {
+          "path": "Start Here/Guide to writing daily notes.md",
+          "sha256": "947615ebf40711f0af2362b02094f1a30e980c3964bd31adebefac120ad08ad6"
+        },
+        {
+          "path": "Start Here/Hotkeys.md",
+          "sha256": "a9bbfa93904d6708b5b5a29dcaf4f9a6b2525973dbcc042b22fed31268483577"
+        },
+        {
+          "path": "Start Here/Recommended Obsidian Tutorials.md",
+          "sha256": "03ce8086ff71f6a14a2f79f273d2f9a6a78754cf92c751eb3dd06362a4523b2d"
+        },
+        {
+          "path": "Start Here/github-and-backup.md",
+          "sha256": "cc39c48912dc5a0f83d75511eccd9505bfb2b0a79009b977de7f88beeb507fb5"
+        },
+        {
+          "path": "Start Here/linking-notes-and-maps.md",
+          "sha256": "ee48c6629eefac387ab9266cff0e76ff4b5298a23858bd2b1365b60218cc8a85"
+        },
+        {
+          "path": "Start Here/obsidian-basics.md",
+          "sha256": "757640b5618e73643d34888f763229ab817235d7ecf5ec97e4c7f47d36fe8bac"
+        },
+        {
+          "path": "Start Here/skills-setup.md",
+          "sha256": "cbf948ed5b6fb9c734e385d5197a2d462d6dda08c13c7249ee35ba0abf317eb1"
+        },
+        {
+          "path": "Start Here/tasks-and-logs.md",
+          "sha256": "bcf2eceff4fe77893db384a48e2eb20ecb3567788c2ef82cdfd08899b712e41a"
+        },
+        {
+          "path": "Start Here/working-with-ai.md",
+          "sha256": "f8b4d5dae5cf90b698da7ab4f33b423d6420c2ad0231a9ee44685e5864bb54c4"
+        },
+        {
+          "path": "Start Here/working-with-projects.md",
+          "sha256": "5b4cb79d30f83d30f894bf87d6e9063d0fc5f73ed5a009c9049c71bd4033441d"
+        },
+        {
+          "path": "System/Bases/AoR Review.base",
+          "sha256": "c9f66d119caba4eb9b4f4c5e5b824a86dfedcc5d6ee4d0fbd744bd6762d6f5f7"
+        },
+        {
+          "path": "System/Bases/Calendar.base",
+          "sha256": "2e74d86a0c8c1ad476566fd247dbddcd787d521cf4d397e088762e2c41698ae6"
+        },
+        {
+          "path": "System/Bases/Fleeting.base",
+          "sha256": "f8594313a51aeff18e63b926e9f3662a8e72d3fce6f52a1c0db64e9f88008f0d"
+        },
+        {
+          "path": "System/Bases/Inbox.base",
+          "sha256": "6ed39bbe92f63470b8695ad251bc80cd7801d41677f7316537aedd30cd41820b"
+        },
+        {
+          "path": "System/Bases/Journals.base",
+          "sha256": "0df591ccd4ed06a18858fa10745837dc0b6609fa9f183322682e594fc8f879dd"
+        },
+        {
+          "path": "System/Bases/Meetings.base",
+          "sha256": "83adc2b4384aae7b40b34f7bebadaa7ca9392dd7a72ddf35e6c4eb2f5aba84d8"
+        },
+        {
+          "path": "System/Bases/Notes.base",
+          "sha256": "f87df749dc46e0465f51d05b8ff8bc9dd3763fe7725f497166bb66c5bb1d6bda"
+        },
+        {
+          "path": "System/Bases/People.base",
+          "sha256": "6138b0df8885d5ef30160829aa57ed6d88a361d571002c8cc8c27648d86576bd"
+        },
+        {
+          "path": "System/Bases/Projects.base",
+          "sha256": "8a70c9d5244c4a597238fd0731af7a13799ddc78ce959e8c604d64a1b172b59f"
+        },
+        {
+          "path": "System/Bases/Sessions.base",
+          "sha256": "358b736a0f2d65ad58a180112a10cacb52540cf55827132d5e0d2de9fda07a7d"
+        },
+        {
+          "path": "System/Bases/Tasks.base",
+          "sha256": "5e75d6db1a921ddbc6b97911c2bc745e489637983f615d310ebc86a409924692"
+        },
+        {
+          "path": "System/OKF/README.md",
+          "sha256": "ecea879f3bf5467f0398dfdf3ed5ea10df749a5385d5dfae07684c254304a7bd"
+        },
+        {
+          "path": "System/OKF/okf-conformance.md",
+          "sha256": "a3a59314c375d3cb19fe658581c9826dda1c9c0b23d7d7546dbcfdb663186ad9"
+        },
+        {
+          "path": "System/README.md",
+          "sha256": "0a9ee32bb1a7478c1ad7f1eb25f73059af418dea813cefbd912822f6968b8259"
+        },
+        {
+          "path": "System/Templates/Journal-templates/daily-template.md",
+          "sha256": "be2bb87db5a449636223ad77658641cbb54c22519825397f13c5f812924f43b7"
+        },
+        {
+          "path": "System/Templates/Journal-templates/monthly-template.md",
+          "sha256": "2e20a921a2d0b38b2c3627bf85a1e4a1d38157cced0464442bc54d143b6395a9"
+        },
+        {
+          "path": "System/Templates/Journal-templates/quarterly-template.md",
+          "sha256": "998b09e8cb3f0357593c874ed0f07a98cf400063a381e03acaf3747d388234f8"
+        },
+        {
+          "path": "System/Templates/Journal-templates/weekly-template.md",
+          "sha256": "d63f61decf9c48ce58cba59107c2b76b45b67bddd6f2f64625a91815d2c054f3"
+        },
+        {
+          "path": "System/Templates/Journal-templates/yearly-template.md",
+          "sha256": "b137c7fe82287a78ffe0be72e1f439237ddeafad35575ee24fba29f9bbcd4828"
+        },
+        {
+          "path": "System/Templates/Templater/Atlas-templates/atomic-note-template.md",
+          "sha256": "b6140186a3e81c58f42f304f400a88796fad9ddcbc74af1efd64bf3851cead4a"
+        },
+        {
+          "path": "System/Templates/Templater/Atlas-templates/moc-template.md",
+          "sha256": "fbea0af424c9994d828764f75a3a0475d3d028be90adf92fa973cbc9baa99ae3"
+        },
+        {
+          "path": "System/Templates/Templater/Atlas-templates/person-template.md",
+          "sha256": "c34f277838dbde4717012d28d9a8e981a740e28606c0e3a3bb566244ec18c49e"
+        },
+        {
+          "path": "System/Templates/Templater/Atlas-templates/topic-template.md",
+          "sha256": "2e58c81bd647f2f9518e5888568b991e4424c9c322b6bb9cd746e4f9ac2d5a89"
+        },
+        {
+          "path": "System/Templates/Templater/Calendar-templates/meeting-template.md",
+          "sha256": "14c46c6734b6a18446d631ab9e36f365d12ce6008d6ebe6e1236353427bd8505"
+        },
+        {
+          "path": "System/Templates/Templater/Calendar-templates/work-session-template.md",
+          "sha256": "6f9bbe8482cbcc7bf0d1a8d274f80f9e4b81714640a5acc8a61b0ef82a8513f2"
+        },
+        {
+          "path": "System/Templates/Templater/Commands/log-bullet.md",
+          "sha256": "5555306d237ef485c308e44259376e7a21f8e44082e35e77a30ebc6215f10a90"
+        },
+        {
+          "path": "System/Templates/Templater/Commands/log-decision.md",
+          "sha256": "384d8a5341faba37d2e37052a9d213880b38f42ad403f3e704c76082be1a6b09"
+        },
+        {
+          "path": "System/Templates/Templater/Commands/log-risk.md",
+          "sha256": "5c7d18667cded4d7cfdbc4ca4d340db7cd46a69aee3d1e993a736a20822e443d"
+        },
+        {
+          "path": "System/Templates/Templater/Commands/new-task.md",
+          "sha256": "3396098485616e5d92cbc7d7bf7ab9ab0a768768e13724725d25fafe6627ba3a"
+        },
+        {
+          "path": "System/Templates/Templater/Commands/promote-note.md",
+          "sha256": "c97127db6f79bc430fb49dc9d3f7ad15911f0391ec8208019e660f331bd11ecd"
+        },
+        {
+          "path": "System/Templates/Templater/Effort-templates/area-template.md",
+          "sha256": "32052a1891ff3b415cd84c306bbed180fa0786c6f8ce149acb23e281a37a5f7c"
+        },
+        {
+          "path": "System/Templates/Templater/Effort-templates/project-template.md",
+          "sha256": "806520a67e0e52a8e3a0ffda508d0697ff4152b6c36c9cba8033e6c0e1b5cbaa"
+        },
+        {
+          "path": "System/Templates/Templater/Effort-templates/task-note-template.md",
+          "sha256": "7309ff6f8ecd524c89765e41baec91bcd445babd0d81e7392c27b5b20eb8ef0c"
+        },
+        {
+          "path": "System/Templates/Templater/Sub-templates/Dataview queries/Advanced log template.md",
+          "sha256": "a3eab56834a68bf9d0c8f7d93f8cadde248422924e9d1018b55f8a6aa212da5c"
+        },
+        {
+          "path": "System/Templates/Templater/fleeting-template.md",
+          "sha256": "ecff8b60f2a62d079713e8cc8b3f7afc709f42e6a55e0efdee280d629bdb3778"
+        },
+        {
+          "path": "System/Templates/Templater/source-capture-template.md",
+          "sha256": "1f52e0a67dcfc8c1a3a1458d6fd4cb318cb6d8957921247de0fc1d2ec8c00c87"
+        }
+      ]
+    },
+    {
+      "id": "noat",
+      "repo": "https://github.com/BipinJungRai/NOAT",
+      "commit": "26d835804df64d47fdbd0b024946c59980d1ffce",
+      "licence": "MIT",
+      "licenceFile": "LICENSE",
+      "files": [
+        {
+          "path": "00 Meta/AI/About me.md",
+          "sha256": "fbda6bf6de6a78cfaa243a3e90e2ba30fc4d42b0800fa204e8bc763a597a4613"
+        },
+        {
+          "path": "00 Meta/Bases/Books.base",
+          "sha256": "0927ae30710e08628e2fc89a6515a9098f9c0b15f1ed30283df92428fa71fd4d"
+        },
+        {
+          "path": "00 Meta/Bases/Concepts.base",
+          "sha256": "52db02fc4d5658be7e409fe9e04ce8c2cd0136730216e7c90ee1ca11fa61b8c4"
+        },
+        {
+          "path": "00 Meta/Bases/Job Hunt.base",
+          "sha256": "13263501923b93e41e08ee37f5965d502716ed43ad583d1c189184acd9047162"
+        },
+        {
+          "path": "00 Meta/Bases/Literature.base",
+          "sha256": "68a6a448bf98ae4e28c53a7541f479e042fd65dcb3db7d645d0777738a7d621d"
+        },
+        {
+          "path": "00 Meta/Bases/Module Notes.base",
+          "sha256": "35923e75bd89bf820f4b04cce6c0c547d45bed42f063624c46d81990dee068fc"
+        },
+        {
+          "path": "00 Meta/Bases/Uni Overview.base",
+          "sha256": "986e14b10a58cb81cff158d375a0673c5ff8914d1cd5c78148c4c2058ed0ef01"
+        },
+        {
+          "path": "01 UNI/01 Modules/MG406 Research Design for Studies in Digital Innovation/Deadlines/MG406_Research_Proposal.md",
+          "sha256": "bd648cb2846bdc559a830e66ba5931486a723f6ca2f1c548496a5dfcc4f2bb0c"
+        },
+        {
+          "path": "01 UNI/01 Modules/MG406 Research Design for Studies in Digital Innovation/MG406.md",
+          "sha256": "8b20467d274e236a23e7037dffd2efbe8bbdfe97daed7f61333111aae27e48b6"
+        },
+        {
+          "path": "01 UNI/01 Modules/MG472 Management and Socioeconomics of Digital Innovation/Deadlines/EXAMPLE - MG472 Seminar presentation.md",
+          "sha256": "844a34943181dbf4551542e2bcd987438c5663c205a51c5e065a5ec3d781bea7"
+        },
+        {
+          "path": "01 UNI/01 Modules/MG472 Management and Socioeconomics of Digital Innovation/Deadlines/MG472 Exam.md",
+          "sha256": "e85b97b64a888ec692b843c5823b94836233acbd4affe65d0359260555b5d68e"
+        },
+        {
+          "path": "01 UNI/01 Modules/MG472 Management and Socioeconomics of Digital Innovation/EXAMPLE - MG472 W01 Lecture - Network effects.md",
+          "sha256": "6cb2f1a3673c9c7315f0c23bb7e5ae8298b334010617a69fbfea4606def59e02"
+        },
+        {
+          "path": "01 UNI/01 Modules/MG472 Management and Socioeconomics of Digital Innovation/EXAMPLE - MG472 W01 Seminar - Why do platforms win.md",
+          "sha256": "35609b650af3056cf288ed970ae46b8e3909fc7274f37fd74d4dd010cd89bbba"
+        },
+        {
+          "path": "01 UNI/01 Modules/MG472 Management and Socioeconomics of Digital Innovation/MG472.md",
+          "sha256": "a590deac63680b353e6c40af1192f96fc85c369e9ea2455bef5c92847374d915"
+        },
+        {
+          "path": "01 UNI/01 Modules/MG481 Innovating Organisational Information Technology/Deadlines/MG481 Exam.md",
+          "sha256": "521502fd1dd8bb81e00e55f9af368e6c480a649de4109d15b64eeaec300e8567"
+        },
+        {
+          "path": "01 UNI/01 Modules/MG481 Innovating Organisational Information Technology/Deadlines/MG481 Group Sprint Project.md",
+          "sha256": "1f28fc2a9837bedeba30065c897167bd45dc5e6e987718d7f1bb65ce8dcffed0"
+        },
+        {
+          "path": "01 UNI/01 Modules/MG481 Innovating Organisational Information Technology/MG481.md",
+          "sha256": "656d312548e956eb4d7b653d46fae7e68725906cb60391303ffb855b987215fe"
+        },
+        {
+          "path": "01 UNI/01 Modules/MG487 Innovation and Information Systems/Deadlines/MG487 Essay.md",
+          "sha256": "9a9e158c66649f9b8dc62b66f06bba62394545860737c18a9899c070b86126d1"
+        },
+        {
+          "path": "01 UNI/01 Modules/MG487 Innovation and Information Systems/Deadlines/MG487 Exam.md",
+          "sha256": "e7534f79bfafc2ae9b22fabd0fbf9f0adf342d58b629d0a45e94df4304a97206"
+        },
+        {
+          "path": "01 UNI/01 Modules/MG487 Innovation and Information Systems/MG487.md",
+          "sha256": "5f0be6f9bffbda489564b701d1e10bce68ba93a1dbffec1eaec4ab5abe01cde3"
+        },
+        {
+          "path": "01 UNI/01 Modules/MG496 Study Skills and Contemporary Topics in Information Systems and Digital Innovations/MG496.md",
+          "sha256": "37bd3fd2abeec6d405de8eee1c6aeae37fce7bb30135f5f354723eeafac237fc"
+        },
+        {
+          "path": "01 UNI/02 Concepts/EXAMPLE - Network effect.md",
+          "sha256": "de5968228398e52b0aacb34d5958b332560cb82bf1b4c2f5fe29ac38f5e491a7"
+        },
+        {
+          "path": "01 UNI/02 Concepts/📊 Concepts Dashboard.md",
+          "sha256": "1b4392743b644371aeae8060145b0960ef6f2e56482426fe7d0dacce10320ad4"
+        },
+        {
+          "path": "01 UNI/03 Literature/EXAMPLE - Shapiro & Varian (1999) Information Rules.md",
+          "sha256": "b4f7cd39feffecb129646ffe367e62831373a34d7d5b0530f9f8f0acb358cce9"
+        },
+        {
+          "path": "01 UNI/03 Literature/📊 Literature Dashboard.md",
+          "sha256": "5e5ec5014e6a6a976085a9c3c11d5f2e9249d39afdb0f17e891525a0113214ca"
+        },
+        {
+          "path": "01 UNI/My electives.md",
+          "sha256": "47dea265b1d603d371fe82eef0fed22fbeb8439e6a2ea585ab63c7bc7b318216"
+        },
+        {
+          "path": "AGENTS.md",
+          "sha256": "8f548210d81fd27cfb83fa8d5e6e79d8aee1645cf9c172563598cf84cb0ab2c1"
+        },
+        {
+          "path": "Books/EXAMPLE - Thinking, Fast and Slow.md",
+          "sha256": "876deb2ee5c1c815447c1277d81a66d77f5dd595073926648c777b7044863392"
+        },
+        {
+          "path": "Books/📊 Books Dashboard.md",
+          "sha256": "0ab1b9a828b0070c9fc1121c8c9e0e4b044200f393929d9163df21ff117fb6a3"
+        },
+        {
+          "path": "CLAUDE.md",
+          "sha256": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49"
+        },
+        {
+          "path": "GEMINI.md",
+          "sha256": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49"
+        },
+        {
+          "path": "Job Hunt/EXAMPLE - Consultant for any MBB.md",
+          "sha256": "9902cd4d581f4277f191f40fc9232748c76302489545e4a857c5b03a23546af0"
+        },
+        {
+          "path": "Job Hunt/EXAMPLE Company - Graduate Analyst.md",
+          "sha256": "3a272789fd1ccb4426ee2703bbf174a27c5d423f10ba70965461c56f7ac3e8d6"
+        },
+        {
+          "path": "Job Hunt/📊 Job Hunt Dashboard.md",
+          "sha256": "9bf72b1ec97f21cbe1ff9649abcfc31ceca971751e191825fcdbe4151bc7b5b3"
+        },
+        {
+          "path": "Manual/00 Start here.md",
+          "sha256": "12523086c0a4efab01c0b183d64c1a62b59973c33e0d9de82378de08718ef87e"
+        },
+        {
+          "path": "Manual/01 Why use this system.md",
+          "sha256": "dfd8002f64a94c1f9ef9d35cfbcc23c0378af7cd7fc6a41e4b767dc3830c63a7"
+        },
+        {
+          "path": "Manual/02 Install and set up.md",
+          "sha256": "9753b2d6eaa6cef9e9d0711abed1eda7acb5abaac20399b88c5f5c041d7e3f16"
+        },
+        {
+          "path": "Manual/03 Obsidian basics.md",
+          "sha256": "8bd998162574fad60337c2e3d15d60a3484a78412c5090632b07880df8501407"
+        },
+        {
+          "path": "Manual/04 Working with files.md",
+          "sha256": "304e9e3ff865ebc024a2995f8ea7cbe86e702316455afda4b01ae85527c9cb5f"
+        },
+        {
+          "path": "Manual/05 Your first 10 minutes.md",
+          "sha256": "5b4a9415c4ca0edc90f8268080d994f9997df2de2db1c25eecbfb86209b059f5"
+        },
+        {
+          "path": "Manual/06 How the folders work together.md",
+          "sha256": "e06c75d2b9750378a63b1854ab7528150cf0e2214a959216ef702a1f694b89bd"
+        },
+        {
+          "path": "Manual/07 Linking notes and the graph view.md",
+          "sha256": "8e5d6b035e820b7396a86e9228768b1403924637432b332edda1ad0eba99d3b9"
+        },
+        {
+          "path": "Manual/08 Taking notes.md",
+          "sha256": "b1a6114d135147b9cb41c83906a296ba450a70a465ade79c726b9b6faf0137ff"
+        },
+        {
+          "path": "Manual/09 Ratings and boards.md",
+          "sha256": "1519925fa863fef3e43de0c98468a593fd0c2a5c0e2e64276bf27f9e8990eeae"
+        },
+        {
+          "path": "Manual/10 Deadlines.md",
+          "sha256": "0f51fd4757f5c3cfe93fa817513016650bda5c1b353cce368ad620ca024ac3fd"
+        },
+        {
+          "path": "Manual/11 To-dos.md",
+          "sha256": "bbbc12cb250acceb3a563a0c33d55bd0d7d153957861bd9a5eb14d35c2cebd2b"
+        },
+        {
+          "path": "Manual/12 Adding a new module.md",
+          "sha256": "13136bf07a5baee2cc8d2aec5beb36797455e11a93ad0dbb5970049b507fe662"
+        },
+        {
+          "path": "Manual/13 What is a base file.md",
+          "sha256": "0d5093b5283d7331350eb5eb9ccc9975c5ddb7a44e7ff1f0c7345b7886a63c88"
+        },
+        {
+          "path": "Manual/14 Plugins included.md",
+          "sha256": "dcb819d236aedf2a9d541ddc866693d0666ab18a7097ab24c050b0573fd3ceaa"
+        },
+        {
+          "path": "Manual/15 Updating and what not to edit.md",
+          "sha256": "b4439dd32b32a5f940285286a3ee4ec885e7ef51756bcd393418240b17c2d0c5"
+        },
+        {
+          "path": "Manual/16 Troubleshooting.md",
+          "sha256": "8895f4d9b940510aabd712f5c6851598eed7d589b07f70bb5367a23e5312ead3"
+        },
+        {
+          "path": "README.md",
+          "sha256": "b3134e27576bc9318f8c864427731e4e66e3df40dfd9db0401c17baa94d482d4"
+        },
+        {
+          "path": "🏠 Main Dashboard.md",
+          "sha256": "563857170b8fb8940d8770e84dd0a69962ed865e37f491158fd39bb23c6be034"
+        },
+        {
+          "path": "📚 Modules.md",
+          "sha256": "ffaf2c657a63213c1c955d447a22a550eeb31414301697ed75efb2b9e802e83a"
+        }
+      ]
+    },
+    {
+      "id": "obsidian-importer",
+      "repo": "https://github.com/obsidianmd/obsidian-importer",
+      "commit": "fa9444a188459f227b07ec121ad03d26bd6b301a",
+      "licence": "MIT",
+      "licenceFile": "LICENSE",
+      "files": [
+        {
+          "path": "tests/airtable/expected/example-base-single-table/Airtable/Example base/Books.base",
+          "sha256": "d165271fa8ef4a1ad0087f94ee8e279476f8cef89aa3d51590c8ce9f76729902"
+        },
+        {
+          "path": "tests/airtable/expected/example-base-single-table/Airtable/Example base/Books/Notes on quoting - naming.md",
+          "sha256": "f9e8e20b9bdbdf90e82a1b2d3e9bb74347cb87a8cbc99b78277ccaf13492f20e"
+        },
+        {
+          "path": "tests/airtable/expected/example-base-single-table/Airtable/Example base/Books/The Long Way 1.md",
+          "sha256": "25d4cdbf757fe2b6d888235e9076af22bf2c13dbf5d5ff069c8f0caaec914f72"
+        },
+        {
+          "path": "tests/airtable/expected/example-base-single-table/Airtable/Example base/Books/The Long Way.md",
+          "sha256": "5cb853039ac201a4f2cf527e7aefd525ab6e74bc201267c8b5f7681db078199e"
+        },
+        {
+          "path": "tests/airtable/expected/example-base/Airtable/Example base/Authors.base",
+          "sha256": "50b6ff8d5818feb11ea98aec747e3404a0cf92656dc0765b75e7db0e8089f0f1"
+        },
+        {
+          "path": "tests/airtable/expected/example-base/Airtable/Example base/Authors/Ada Lovelace.md",
+          "sha256": "65b9852440c11715bfb285a2b74e40e0324a37dc6a1cbc1b66d2a8e6dc95d168"
+        },
+        {
+          "path": "tests/airtable/expected/example-base/Airtable/Example base/Authors/Grace Hopper.md",
+          "sha256": "7ccbce35ac2fb0299851281e820812b5f38a669546236147494d3879f5a57075"
+        },
+        {
+          "path": "tests/airtable/expected/example-base/Airtable/Example base/Books.base",
+          "sha256": "e49d102db1d784c5beeb14fa680752e350ef911fbe05365783f79ad1ff12e0bb"
+        },
+        {
+          "path": "tests/airtable/expected/example-base/Airtable/Example base/Books/Notes on quoting - naming.md",
+          "sha256": "f9e8e20b9bdbdf90e82a1b2d3e9bb74347cb87a8cbc99b78277ccaf13492f20e"
+        },
+        {
+          "path": "tests/airtable/expected/example-base/Airtable/Example base/Books/The Long Way 1.md",
+          "sha256": "c076c1e1d2b4c4ebaecf95f31ebd43cfc928cad8202b82fb5927eb552be910c1"
+        },
+        {
+          "path": "tests/airtable/expected/example-base/Airtable/Example base/Books/The Long Way.md",
+          "sha256": "fd3ca6c860511e385fbcd3737d1505865e21eb8e0c79def57c1b8a4ceda1596f"
+        },
+        {
+          "path": "tests/notion-api/expected/board-views.base",
+          "sha256": "f947dc600c3b580402f05c717f9437e7d137f5a72a8e928f3f94fd9c02524bfd"
+        },
+        {
+          "path": "tests/notion-api/expected/example-database.md",
+          "sha256": "b25bf3fa5ccf050881699ec3cacc36232318ee769c4f1b50a23fb773773ffbb7"
+        },
+        {
+          "path": "tests/notion-api/expected/example-page.md",
+          "sha256": "2be824e73ae111c23e9229428f33531bee6ee64eb5092252fd871ce9e7ff8a7e"
+        },
+        {
+          "path": "tests/notion-api/expected/meeting-notes-page.md",
+          "sha256": "1887abdb3a5402a71bd2286ffeb4f3ebee012c246227b283bf97664a0bd48bfc"
+        },
+        {
+          "path": "tests/notion-api/expected/toggle-headings-page.md",
+          "sha256": "1e79d49f72741ac6f20aa85c88417bcd21713b49e3c25142ccaa885977c1e4ab"
+        }
+      ]
     }
   ]
 }

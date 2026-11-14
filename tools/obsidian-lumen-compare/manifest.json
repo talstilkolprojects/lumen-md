@@ -1,0 +1,9 @@
+{
+  "id": "lumen-compare",
+  "name": "Lumen compare",
+  "version": "0.1.0",
+  "minAppVersion": "1.10.0",
+  "description": "Saves the rows every Lumen probe view shows, so Lumen's Bases can be compared with Obsidian's (Lumen plan W6.34). Writes only inside _lumen-compare/.",
+  "author": "Lumen",
+  "isDesktopOnly": true
+}
