@@ -81,3 +81,92 @@ export function renderBranches(rows) {
   const body = rows.map((r) => `| ${r.branch} | ${r.worktree} | ${r.base} | ${r.pushed ?? "—"} | ${r.pr != null ? `#${r.pr}` : "—"} |`);
   return [head, rule, ...body].join("\n");
 }
+
+// ───────────── checking the file itself (W8.10 steps 2 and 3) ─────────────
+
+/** How old STATE.md may get, in minutes: the lane writes it at least every hour. */
+export const MAX_STATE_AGE_MIN = 60;
+/** Pushes per branch: one, plus at most one fix push (the lanes' brief). */
+export const MAX_PUSHES_PER_BRANCH = 2;
+
+const sectionLines = (md, name) => {
+  const lines = String(md).split("\n");
+  const start = lines.findIndex((l) => new RegExp(`^##\\s+${name}\\b`, "i").test(l));
+  if (start < 0) return null;
+  const end = lines.findIndex((l, i) => i > start && /^##\s/.test(l));
+  return lines.slice(start + 1, end < 0 ? undefined : end);
+};
+
+/** The time on the "Updated:" line, as ms since the epoch, or null. Accepts 2026-11-14T22:55Z and 2026-11-14 22:55 UTC. */
+export function parseUpdated(md) {
+  const m = /^Updated:\s*(\d{4}-\d{2}-\d{2})[T ](\d{1,2}:\d{2}(?::\d{2})?)\s*(?:Z|UTC)?/im.exec(String(md));
+  if (!m) return null;
+  const t = Date.parse(`${m[1]}T${m[2].padStart(5, "0")}Z`);
+  return Number.isNaN(t) ? null : t;
+}
+
+/**
+ * The "## Pushes" log → [{ branch, sha, line }]: one per bullet line that
+ * names a branch (one of `branches`, or else a token with a slash) and a
+ * sha. Lines that are prose, or a "fix" note without a sha, are skipped.
+ */
+export function parsePushes(md, branches = []) {
+  const lines = sectionLines(md, "Pushes") ?? [];
+  const out = [];
+  for (const line of lines) {
+    if (!/^\s*[-*]\s/.test(line)) continue;
+    const words = line.replace(/`/g, "").split(/[\s,;()]+/);
+    const branch = branches.find((b) => words.includes(b)) ?? words.find((w) => /^[\w.-]+\/[\w./-]+$/.test(w) && !/^https?:/.test(w) && !/^\d/.test(w));
+    const sha = words.find((w) => SHA.test(w) && /[a-f]/.test(w) && /\d/.test(w));
+    if (branch && sha) out.push({ branch, sha, line: line.trim() });
+  }
+  return out;
+}
+
+/**
+ * The problems of a STATE.md → [{ level: "fail" | "warn", line }].
+ *   fail: no "Updated:" line, or older than maxAgeMin; the same sha pushed
+ *         twice on one branch (a resumed lane pushed again what was pushed).
+ *   warn: more pushes on a branch than one plus a fix; a Branches row whose
+ *         pushed head the Pushes log does not have; a base that is neither
+ *         main nor a train (W6.22, `isTrainOrTrunk`); a train's own row
+ *         (verify/*) is not a PR, so its base is not judged.
+ */
+export function checkState(md, { now = Date.now(), maxAgeMin = MAX_STATE_AGE_MIN, isTrainOrTrunk = (b) => b === "main" || /^verify\/train(?:-\d+)?$/.test(b) } = {}) {
+  const out = [];
+  const updated = parseUpdated(md);
+  if (updated == null) out.push({ level: "fail", line: 'no "Updated: <UTC time>" line: write one (docs/dev/lane-state.md)' });
+  else {
+    const age = Math.floor((now - updated) / 60000);
+    if (age > maxAgeMin) out.push({ level: "fail", line: `written ${age} min ago (the lane writes it at least every ${maxAgeMin} min): update it` });
+  }
+  const rows = parseBranches(md);
+  const pushes = parsePushes(md, rows.map((r) => r.branch));
+  const seen = new Map();
+  const perBranch = new Map();
+  for (const p of pushes) {
+    const key = `${p.branch}@${p.sha.slice(0, 7)}`;
+    if (seen.has(key)) out.push({ level: "fail", line: `${p.branch}: ${p.sha} was pushed twice ("${seen.get(key)}" and "${p.line}")` });
+    else seen.set(key, p.line);
+    perBranch.set(p.branch, (perBranch.get(p.branch) ?? 0) + 1);
+  }
+  for (const [b, n] of perBranch) if (n > MAX_PUSHES_PER_BRANCH) out.push({ level: "warn", line: `${b}: ${n} pushes (one, plus at most one fix push)` });
+  for (const r of rows) {
+    if (r.pushed && !pushes.some((p) => p.branch === r.branch && same(p.sha, r.pushed))) out.push({ level: "warn", line: `${r.branch}: pushed ${r.pushed} is not in the Pushes log: add the line` });
+    if (r.base && !isTrainOrTrunk(r.branch) && !/^verify\//.test(r.branch) && !isTrainOrTrunk(r.base)) out.push({ level: "warn", line: `${r.branch}: base ${r.base} is neither main nor a train (W6.22: every PR on the train head)` });
+  }
+  return out;
+}
+
+/** The one resume instruction for a lane (W8.10 step 3): what a session that takes the lane over is told. */
+export function resumePrompt({ lane, state, repo = "talstilkol/lumen-md" }) {
+  return [
+    `You are lane ${lane} of ${repo.split("/")[1]}, resuming after a stop.`,
+    `1. Read the lane's brief, then ${state} in full.`,
+    `2. Run \`node scripts/lane-state.mjs resume ${state}\` and do what each line says: nothing = push nothing; open-pr = open the PR, no push; push = pre-push check, then ONE push; record = write origin's head into STATE.md, no push; look = fetch and merge (never force) or recreate the worktree.`,
+    `3. Run \`node scripts/lane-state.mjs check ${state}\`: fix what it fails on before any other work.`,
+    `4. Respect "Waiting on": a running build is not started again; a rate limit holds until its time.`,
+    `5. Continue at "Next". Tasks marked verified are not run again unless their branch head changed.`,
+    `6. Write ${state} after every push (first thing), after every kept commit, every hour, and before you stop.`,
+  ].join("\n");
+}

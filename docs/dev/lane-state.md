@@ -90,3 +90,28 @@ its five columns in that order.
 
 `node scripts/lane-state.mjs table <STATE.md>` prints the Branches table with
 origin's current heads, ready to paste back.
+
+One worktree may hold several of the lane's branches (for example when the
+disk is short): `resume` judges each branch by its own head
+(`refs/heads/<branch>` in that worktree), not by what is checked out.
+
+## Checking the file
+
+`node scripts/lane-state.mjs check <STATE.md>` checks the file itself:
+
+| level | finding |
+| --- | --- |
+| fail | no `Updated:` line, or written more than 60 minutes ago (the lane writes it every hour) |
+| fail | the same sha pushed twice on one branch: a resumed lane pushed again what was already pushed |
+| warn | more than two pushes on a branch (one, plus at most one fix push) |
+| warn | a Branches row whose `pushed` head is not in the Pushes log |
+| warn | a base that is neither `main` nor a `verify/train-N` (W6.22); a train's own row is not judged |
+
+It exits 1 on a fail. Run it right after `resume`, and before you stop.
+
+## The resume instruction
+
+`node scripts/lane-state.mjs prompt <STATE.md> --lane <X>` prints the one
+instruction a session that takes lane X over is given: read the brief and
+the file, run `resume` and do what it says, run `check`, respect "Waiting
+on", continue at "Next", and keep the file written.
