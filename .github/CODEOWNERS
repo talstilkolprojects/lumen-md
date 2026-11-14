@@ -11,6 +11,7 @@
 /src/collab/encryption.ts                @talstilkol
 /src/storage/encryption.ts               @talstilkol
 /src/storage/vault/encrypted/            @talstilkol
+/src/storage/snapshotSeal.ts             @talstilkol
 /src/lib/cryptoRandom.ts                 @talstilkol
 /src/lib/cryptoStorage.ts                @talstilkol
 /src/lib/secretStore.ts                  @talstilkol
