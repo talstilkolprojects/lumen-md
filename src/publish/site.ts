@@ -18,6 +18,7 @@
 
 import type { HtmlDocumentOptions } from "../storage/exportHtml";
 import { escapeHtml } from "../lib/escapeHtml";
+import { documentLink, wellKnownPublication } from "./atproto/standardLinks";
 import { MD_RE, PUBLISH_CSS, encodePath, pageTitle, rewriteMarkdownLinks, rewriteWikiLinks } from "./siteLinks";
 
 export interface SiteNote {
@@ -48,6 +49,12 @@ export interface SiteOptions {
   readAsset?: (path: string) => Promise<Uint8Array | null>;
   /** Navigation and search words, in `lang`. */
   words?: Partial<SiteWords>;
+  /**
+   * Standard.site (plan W7.19): the publication's at:// URI, served at
+   * `/.well-known/site.standard.publication`, and each published note's
+   * document URI (by vault path), linked from its page.
+   */
+  standardSite?: { publication: string; documents?: Readonly<Record<string, string>> };
 }
 
 export interface SiteWords {
@@ -303,6 +310,8 @@ export async function buildSite(notes: readonly SiteNote[], opts: SiteOptions): 
     html = rewriteMarkdownLinks(html, p.output);
     html = rewriteWikiLinks(html, p.output, pages);
     html = unlinkMissingPages(html, p.output, outputs);
+    const doc = opts.standardSite?.documents?.[p.source];
+    if (doc) html = html.replace("</head>", `${documentLink(doc)}\n</head>`);
     if (opts.readAsset) {
       const dir = p.source.split("/").slice(0, -1).join("/");
       // Only the note's own body: the site's stylesheet and script are not vault files.
@@ -333,6 +342,7 @@ export async function buildSite(notes: readonly SiteNote[], opts: SiteOptions): 
   files.push({ path: "search-index.json", data: JSON.stringify(index) });
   // GitHub Pages: serve files as they are (no Jekyll, which hides _folders).
   files.push({ path: ".nojekyll", data: "" });
+  if (opts.standardSite?.publication) files.push({ path: ".well-known/site.standard.publication", data: wellKnownPublication(opts.standardSite.publication) });
   for (const [path, data] of assets) if (!files.some((f) => f.path === path)) files.push({ path, data });
 
   return { files, pages: navPages, missing: [...missing].sort() };

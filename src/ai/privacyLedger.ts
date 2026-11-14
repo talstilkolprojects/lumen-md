@@ -99,6 +99,8 @@ const RULES: Rule[] = [
   { test: (h) => h === "webr.r-wasm.org", category: "model-download", reason: "webR (R runtime) download" },
   { test: (h, p) => h === "cdn.jsdelivr.net" && p.startsWith("/npm/webr@"), category: "model-download", reason: "webR (R runtime) download" },
   { test: (h) => h === "cdn.jsdelivr.net", category: "third-party", reason: "jsDelivr CDN (only the webR download is expected)" },
+  // AT Protocol publishing (plan W7.19): only when the person publishes a note to their own account.
+  { test: (h) => h === "bsky.social" || h === "plc.directory" || h.endsWith(".bsky.network"), category: "cloud-text", reason: "AT Protocol publishing (Standard.site): your account and its PDS" },
 ];
 
 const MAX_ENTRIES = 500;

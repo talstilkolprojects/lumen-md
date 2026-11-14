@@ -29,6 +29,11 @@ interface Settings {
   branch: string;
   /** Last picked notes (paths); null = all. */
   picked: string[] | null;
+  /** Also publish to the AT Protocol as Standard.site documents (plan W7.19). */
+  atproto?: boolean;
+  atHandle?: string;
+  /** The site's public address, which the publication record names. */
+  siteUrl?: string;
 }
 
 function loadSettings(): Settings {
@@ -67,12 +72,24 @@ function download(data: Uint8Array, name: string): void {
   window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
+/** Write the notes' new frontmatter (`atproto-document:`) through the note editor path, so an open note gets it too. */
+async function saveFrontmatter(changed: ReadonlyArray<{ path: string; content: string }>): Promise<void> {
+  const { editNote } = await import("../views/databaseEdit");
+  const { parseProperties, removeProperty, setProperty } = await import("../properties/frontmatter");
+  for (const n of changed) {
+    const uri = parseProperties(n.content).properties.find((p) => p.key === "atproto-document")?.value;
+    await editNote(n.path, (text) => (typeof uri === "string" ? setProperty(text, "atproto-document", uri) : removeProperty(text, "atproto-document")));
+  }
+}
+
 export function PublishSiteDialog({ onClose }: { onClose: () => void }) {
   const [notes, setNotes] = useState<SiteNote[] | null>(null);
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState("");
   const [token, setToken] = useState("");
+  /** The App Password, typed this time only; the secret store keeps it after a successful sign-in. */
+  const [appPassword, setAppPassword] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [result, setResult] = useState<{ text: string; url?: string; error?: boolean } | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -130,6 +147,23 @@ export function PublishSiteDialog({ onClose }: { onClose: () => void }) {
     saveSettings({ ...settings, picked: picked.size === notes.length ? null : [...picked] });
     setResult(null);
     try {
+      // Standard.site (W7.19): the records first, so the pages can link to them.
+      const atp = await import("../publish/atproto/publish");
+      let standardSite: { publication: string; documents: Record<string, string> } | undefined;
+      if (settings.atproto && settings.atHandle?.trim() && settings.siteUrl?.trim()) {
+        setBusy(t("publish.atproto.publishing", { count: chosen.length }));
+        const r = await atp.publishNotes(chosen, { handle: settings.atHandle, password: appPassword.trim() || null, siteUrl: settings.siteUrl, siteName: settings.title });
+        setAppPassword("");
+        await saveFrontmatter(r.notes);
+        for (const n of r.notes) {
+          const at = chosen.findIndex((c) => c.path === n.path);
+          if (at >= 0) chosen[at] = { path: n.path, content: n.content };
+        }
+        standardSite = { publication: r.publication, documents: Object.fromEntries(r.notes.map((n) => [n.path, n.uri])) };
+      } else {
+        const pub = atp.publicationUri();
+        if (pub) standardSite = { publication: pub, documents: atp.documentsOf(chosen) };
+      }
       setBusy(t("publish.building", { count: chosen.length }));
       const [{ buildSite, wordsFor }, { renderHtmlDocument }, { readWorkspaceBlob }] = await Promise.all([
         import("../publish/site"),
@@ -138,6 +172,7 @@ export function PublishSiteDialog({ onClose }: { onClose: () => void }) {
       ]);
       const site = await buildSite(chosen, {
         title: settings.title.trim() || "Notes",
+        standardSite,
         lang: settings.lang,
         words: wordsFor(settings.lang),
         render: renderHtmlDocument,
@@ -166,6 +201,24 @@ export function PublishSiteDialog({ onClose }: { onClose: () => void }) {
         onProgress: (p) => setBusy(t("publish.deploying", { step: p.step === "blobs" ? `${p.done}/${p.total}` : p.step })),
       });
       setResult({ text: t("publish.done.github", { count: site.pages.length, url: res.url }) + missing, url: res.url });
+    } catch (e) {
+      setResult({ text: t("publish.failed", { error: explainError(e) }), error: true });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  /** Delete the picked notes' Standard.site records (the notes stay; only `atproto-document:` goes). */
+  const unpublish = async () => {
+    if (!notes || busy || !settings.atHandle?.trim()) return;
+    const chosen = notes.filter((n) => picked.has(n.path));
+    setResult(null);
+    setBusy(t("publish.atproto.removing", { count: chosen.length }));
+    try {
+      const { unpublishNotes } = await import("../publish/atproto/publish");
+      const done = await unpublishNotes(chosen, { handle: settings.atHandle, password: appPassword.trim() || null });
+      await saveFrontmatter(done);
+      setResult({ text: t("publish.atproto.removed", { count: done.length }) });
     } catch (e) {
       setResult({ text: t("publish.failed", { error: explainError(e) }), error: true });
     } finally {
@@ -259,6 +312,37 @@ export function PublishSiteDialog({ onClose }: { onClose: () => void }) {
                   <span style={muted}>{t("publish.token.hint")}</span>
                 </label>
               </div>
+            )}
+          </fieldset>
+
+          <fieldset style={{ border: "1px solid hsl(var(--border))", borderRadius: 8, padding: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+            <legend style={{ fontSize: 13 }}>{t("publish.atproto.title")}</legend>
+            <label style={{ display: "flex", gap: 8 }}>
+              <input type="checkbox" checked={!!settings.atproto} onChange={(e) => update({ atproto: e.target.checked })} data-testid="publish-atproto" />
+              <span>{t("publish.atproto.enable")}</span>
+            </label>
+            {settings.atproto && (
+              <>
+                <label style={col}>
+                  <span>{t("publish.atproto.handle")}</span>
+                  <input dir="ltr" style={field} value={settings.atHandle ?? ""} onChange={(e) => update({ atHandle: e.target.value })} placeholder="name.bsky.social" data-testid="publish-atproto-handle" />
+                </label>
+                <label style={col}>
+                  <span>{t("publish.atproto.password")}</span>
+                  <input dir="ltr" type="password" autoComplete="off" style={field} value={appPassword} onChange={(e) => setAppPassword(e.target.value)} data-testid="publish-atproto-password" />
+                  <span style={muted}>{t("publish.atproto.password.hint")}</span>
+                </label>
+                <label style={col}>
+                  <span>{t("publish.atproto.siteUrl")}</span>
+                  <input dir="ltr" style={field} value={settings.siteUrl ?? ""} onChange={(e) => update({ siteUrl: e.target.value })} placeholder="https://name.github.io/notes" data-testid="publish-atproto-site" />
+                  <span style={muted}>{t("publish.atproto.bridgy")}</span>
+                </label>
+                <div>
+                  <button type="button" style={ghost} onClick={() => void unpublish()} disabled={!picked.size || !!busy} data-testid="publish-atproto-remove">
+                    {t("publish.atproto.remove")}
+                  </button>
+                </div>
+              </>
             )}
           </fieldset>
 
