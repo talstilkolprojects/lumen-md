@@ -1973,7 +1973,7 @@
       "1.9"
      ],
      "priority": "P0",
-     "status": "⏳ #276 + חלק 2 #283 (ממיר tldraw → Excalidraw בלי תלויות, 20 קנבסים בלי אובדן צורה, קבצי .excalidraw עם גיבוי .tldr, הגירה מאחורי דגל; CI ירוק על cc0b65ad; חסר: @excalidraw/excalidraw ב-lockfile, החלפת הרכיב, הסרת tldraw)",
+     "status": "⏳ הקוד הושלם ב-verify/train-2: ‏@excalidraw/excalidraw 0.18.1 ב-lockfile, tldraw הוסר מכל מקום, budget בודק שאין tldraw; tldrawToExcalidraw 184/184. חסר: e2e canvas-excalidraw ו-vitest אמיתי",
      "new": true,
      "source": "מחקר הקוד הפתוח: tldraw דורש מפתח בייצור",
      "steps": [
@@ -5077,7 +5077,7 @@
      ],
      "why": "החלטה 10.11 על פריט בעלים",
      "branch": "verify/train",
-     "status": "⏳ על verify/train (25eff7bf1, 1ae4f9ae3; לא נדחף עד איפוס מכסת Vercel) — webR יצא מהבנייה: הורדה ביוזמת המשתמש מ-webr.r-wasm.org (גיבוי jsDelivr) עם בדיקת גודל ו-SHA-256 מול manifest, הצעה שמציגה GPL-3.0 ולא מורידה כלום לפני לחיצה; חריגת webR בשער הרישיונות הוסרה; עוברים ב-node: hygiene, i18n, docs, licences"
+     "status": "⏳ הקוד הושלם ב-verify/train-2 (25eff7bf1, 1ae4f9ae30): webR רק devDependency, בלי חריגת רישיון; webrInstall 19/20 (כשל ה-shim). חסר: vitest אמיתי"
     },
     {
      "id": "W1.35",
@@ -5129,7 +5129,7 @@
      ],
      "why": "החלטה 11.11: כלל נפרד של 740 KB לליבה (נמדד 718.6) כדי לא לחסום את הרכבת; זו חוב שצריך לסגור",
      "source": "החלטה 11.11",
-     "status": "⏳ אבחון: כל chunk של vendor-excalidraw הוא מודול יחיד מה-dist הבנוי של Excalidraw (EIO257PC 1795.9 KB) — אין מה לפצל ברמת מודול; כלל 740 KB צומצם ל-EIO257PC בלבד"
+     "status": "⏳ חסום: חבילת Excalidraw לא זמינה לא מקוון; דורש npm ci + vite build (Mac/Sandbox)"
     }
    ]
   },
@@ -6306,7 +6306,8 @@
       "perf:gate desktop: FCP ≤ 1000ms ו-LCP ≤ 2500ms בחציון של 5 טעינות; mobile: LCP ≤ 3500ms",
       "INP p75 < 100ms (W1.22) לא נפגע"
      ],
-     "why": "startup עומד על 402/460 KB מול יעד 250; Lighthouse עדיין אדום על FCP. כל גל הוסיף כמעט עד התקרה."
+     "why": "startup עומד על 402/460 KB מול יעד 250; Lighthouse עדיין אדום על FCP. כל גל הוסיף כמעט עד התקרה.",
+     "status": "⏳ נמדד: first-party startup ‏223,080 B gz ברכבת 3; הגדולים: cmd.json ו-common.json באנגלית, App, Toolbar. חסר: הקיצוצים (460→380→300→250) ו-Lighthouse — דורש vite build"
     },
     {
      "id": "W4.10",
@@ -6354,7 +6355,8 @@
       "codeHealth.test: 0 todo",
       "vitest ו-e2e ללא שינוי בתוצאות"
      ],
-     "why": "12.1 רשם App.tsx 1157→789 ב-#340, אבל ברכבת App.tsx הוא 1,377 שורות והבדיקה היא todo. קבצים ענקיים הם מוקד הקונפליקטים ברכבות המיזוג."
+     "why": "12.1 רשם App.tsx 1157→789 ב-#340, אבל ברכבת App.tsx הוא 1,377 שורות והבדיקה היא todo. קבצים ענקיים הם מוקד הקונפליקטים ברכבות המיזוג.",
+     "status": "⏳ #569 ‏e5692a5fa6 (על verify/train-3 + #500) — 13 קבצים פוצלו (העברה מילולית, ייצוא חוזר), baseline ‏20→7 קבצים, 19,939→7,191 שורות; tsc 0 חדשים, shim זהה. חסר: 7 קבצים נעוצים במבחנים, startup +586B מעל תקרת הרכבת (בתיקון), vitest מלא"
     },
     {
      "id": "W4.12",
