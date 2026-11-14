@@ -24,6 +24,13 @@ const ROOT = join(__dirname, "..");
 const registry = JSON.parse(readFileSync(join(ROOT, "models", "registry.json"), "utf8")) as { models: HostedModel[] };
 const REAL = process.env.MODEL_MIRROR_URL?.replace(/\/+$/, "") ?? "";
 
+/** The scenario imports src/ai/modelHosting.ts from the dev server; a production build serves no src/. */
+async function devServerOrSkip(page: import("@playwright/test").Page): Promise<void> {
+  const dev = await page.evaluate(() => !!document.querySelector('script[src*="/@vite/client"]'));
+  // skip-reason: the scenario imports src/ai/modelHosting.ts, which only the dev server serves; the production-build run has no src/ | task: W6.33 | until: 2027-05-12
+  test.skip(!dev, "imports src/ai/modelHosting.ts from the dev server");
+}
+
 test("0 models only on Hugging Face without a message (en, he)", () => {
   const en = JSON.parse(readFileSync(join(ROOT, "src", "i18n", "lazy", "modelSources.json"), "utf8")) as Record<string, string>;
   const he = JSON.parse(readFileSync(join(ROOT, "src", "i18n", "locales", "he", "common.json"), "utf8")) as Record<string, string>;
@@ -52,8 +59,7 @@ test("with huggingface.co blocked, every default model loads from the mirror", a
   await page.addInitScript(() => localStorage.setItem("lumen-tour-done", "1"));
   await page.goto("/");
   await expect(page.locator(".cm-content").first()).toBeVisible({ timeout: 15_000 });
-  const dev = await page.evaluate(() => !!document.querySelector('script[src*="/@vite/client"]'));
-  test.skip(!dev, "imports src/ai/modelHosting.ts from the dev server");
+  await devServerOrSkip(page);
 
   const models = REAL ? registry.models.filter((m) => isDefaultCandidate(m) && m.files?.length && m.hosting?.via !== "converted") : synthetic.models;
   if (REAL && process.env.MODEL_MIRROR_REQUIRE_ALL === "1") expect(registry.models.filter((m) => isDefaultCandidate(m) && m.files?.length).length).toBe(24);
@@ -80,8 +86,7 @@ test("a mirror that serves other bytes is refused with a clear error", async ({ 
   await page.addInitScript(() => localStorage.setItem("lumen-tour-done", "1"));
   await page.goto("/");
   await expect(page.locator(".cm-content").first()).toBeVisible({ timeout: 15_000 });
-  const dev = await page.evaluate(() => !!document.querySelector('script[src*="/@vite/client"]'));
-  test.skip(!dev, "imports src/ai/modelHosting.ts from the dev server");
+  await devServerOrSkip(page);
   const [r] = await page.evaluate(mirrorScenario, { modulePath: "/src/ai/modelHosting.ts", mirror: `${origin}${MIRROR_PATH}`, models: [one] });
   expect(r.error).toMatch(/no source gave the expected file .*mirror: sha256/);
 });

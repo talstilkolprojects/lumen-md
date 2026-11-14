@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { chromiumOnly } from "./_engines";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -132,8 +133,7 @@ test("50 golden lines: formulas stay one LTR unit in the source editor", async (
 });
 
 test("the printed PDF keeps each formula whole", async ({ page, browserName }) => {
-  // skip-reason: Playwright's page.pdf() exists only in Chromium | task: W5.14 | until: 2027-05-12
-  test.skip(browserName !== "chromium", "page.pdf() is Chromium only");
+  chromiumOnly(browserName, "page.pdf()");
   await loadNote(page);
   await page.keyboard.press("Meta+3");
   await expect(page.locator(".katex").first()).toBeVisible({ timeout: 15_000 });
