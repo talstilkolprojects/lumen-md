@@ -7,7 +7,8 @@
  *   GET    /v1/vault/o/<name>      → bytes + ETag
  *   PUT    /v1/vault/o/<name>      If-Match / If-None-Match: *
  *   DELETE /v1/vault/o/<name>
- *   GET    /healthz                {"ok":true,"service":"lumen-vault-relay"}
+ *   GET    /healthz                {"ok":true,"service":"lumen-vault-relay"} (also / and /health;
+ *                                   exact paths, so never an object's name)
  *
  * It is the same relay as the Node server: every request goes to
  * createVaultRelay() from sync-server/vault-relay.js, unchanged in what it
@@ -17,7 +18,8 @@
  *   - the objects (`m|` metadata, `d|` chunks of CHUNK bytes; a SQLite
  *     Durable Object stores a value of up to 2 MB),
  *   - each space's charged bytes and last use (`s|`), and the total (`T`),
- *   - the day's per-address counts (`c|`) and the day's HMAC key (`k|`): a
+ *   - the day's per-address counts (`c|`, dayCounters below: a journal and a
+ *     snapshot, a bounded number of rows) and the day's HMAC key (`k|`): a
  *     Durable Object is evicted when idle, and a count kept only in memory
  *     would start again (the per-address daily limits would not hold).
  *     They are HMACs under the day's key, never addresses, and the previous
@@ -41,6 +43,9 @@ export const CHUNK = 512 * 1024;
 const DAY = 86_400_000;
 const BATCH = 128; // keys per storage.get / put / delete call
 
+/** The health routes: the root, /health and /healthz, and nothing below /v1/vault/o/. */
+export const HEALTH = new Set(["", "/health", "/healthz"]);
+
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store" } });
 
@@ -48,7 +53,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, "");
-    if (path === "" || /\/health(z)?$/.test(path)) return json({ ok: true, status: "ok", service: "lumen-vault-relay", persistence: "durable-objects" });
+    // Exact paths only, outside /v1/vault/o/: an object named `health` is an object (review t5, L3).
+    if (HEALTH.has(path)) return json({ ok: true, status: "ok", service: "lumen-vault-relay", persistence: "durable-objects" });
     if (!url.pathname.startsWith("/v1/vault/o/")) return json({ error: "not found" }, 404);
     // The address the relay counts: Cloudflare's, never one the client sent.
     const headers = new Headers(request.headers);
@@ -163,34 +169,167 @@ export function durableStore(storage) {
 }
 
 /**
- * A count-min sketch like vault-relay.js's, whose cells are kept in storage
- * under the day: `c|<name>|<day>|<row>|<cell>`. Loaded once when the object
- * starts (`cells`: what storage held), so get() and add() stay synchronous.
+ * The day's per-address counts (count-min sketches like vault-relay.js's),
+ * kept in memory and persisted in a bounded number of rows (review t5, M2):
+ *   - `c|<day>|j|<seq>`: a journal row, written once at the end of a request
+ *     whose counts changed: the cells that changed, with their new value. A
+ *     request whose reservations were all given back (a refused PUT) leaves
+ *     every cell as it was persisted and writes nothing.
+ *   - `c|<day>|s|<i>` + `c|<day>|m`: a snapshot of every non-zero cell, which
+ *     replaces the journal once it holds JOURNAL_MAX rows per snapshot row (or
+ *     JOURNAL_MAX when there is no snapshot yet), in one atomic put; the meta
+ *     row says up to which journal row the snapshot holds.
+ * So a start reads at most (JOURNAL_MAX + 1) × the snapshot's rows + 1 rows,
+ * however many addresses the day saw (a sketch has a fixed number of cells),
+ * and a counted request costs one row written, plus its share of a snapshot.
+ * Values are Float64Array quadruples [sketch, row, cell, value].
  */
-export function storedSketch(storage, name, width, loaded, depth = 4) {
-  const rows = Array.from({ length: depth }, () => new Map());
-  let day = loaded.day;
-  for (const [row, cell, value] of loaded.cells) rows[row]?.set(cell, value);
+export const JOURNAL_MAX = 32;
+/** Cells per stored row: 4 × 8 bytes each, 1 MiB a row (the limit is 2 MB). */
+export const CELLS_PER_ROW = 32_768;
+const SKETCHES = ["spaces", "spaces48", "written"];
+
+export async function dayCounters(storage, today) {
+  const sketches = new Map(); // name → { rows: Map<cell, value>[] }
+  const persisted = new Map(); // "<i>|<row>|<cell>" → value as storage holds it
+  const dirty = new Set();
+  let day = today;
+  let seq = 0;
+  let upTo = -1;
+  let snapRows = 0;
+  let journal = 0;
+  const idx = (name) => {
+    const i = SKETCHES.indexOf(name);
+    if (i < 0) throw new Error(`unknown sketch ${name}`);
+    return i;
+  };
+  const rowsOf = (i) => {
+    const name = SKETCHES[i];
+    if (!sketches.has(name)) sketches.set(name, Array.from({ length: 4 }, () => new Map()));
+    return sketches.get(name);
+  };
+  const apply = (quads) => {
+    const q = quads instanceof Float64Array ? quads : new Float64Array(quads);
+    for (let o = 0; o + 3 < q.length; o += 4) {
+      const [i, row, cell, v] = [q[o], q[o + 1], q[o + 2], q[o + 3]];
+      if (!SKETCHES[i] || row < 0 || row > 3) continue;
+      if (v === 0) rowsOf(i)[row].delete(cell);
+      else rowsOf(i)[row].set(cell, v);
+      persisted.set(`${i}|${row}|${cell}`, v);
+    }
+  };
+  const pack = (quads) => {
+    const out = [];
+    for (let o = 0; o < quads.length; o += CELLS_PER_ROW * 4) out.push(Float64Array.from(quads.slice(o, o + CELLS_PER_ROW * 4)));
+    return out;
+  };
+  const dayKeys = async (d, filter = () => true) => {
+    const keys = [];
+    for await (const [k] of listKeys(storage, "c|")) if (filter(k, k.split("|")[1] === String(d))) keys.push(k);
+    return keys;
+  };
+
+  // Load today's rows: the snapshot, then the journal rows after it. Other days' rows go.
+  const meta = await storage.get(`c|${today}|m`);
+  const stale = [];
+  const later = [];
+  if (meta) {
+    upTo = meta.upTo;
+    snapRows = meta.rows;
+    const keys = Array.from({ length: meta.rows }, (_, i) => `c|${today}|s|${i}`);
+    for (let i = 0; i < keys.length; i += BATCH) {
+      const got = await storage.get(keys.slice(i, i + BATCH));
+      for (const k of keys.slice(i, i + BATCH)) if (got.get(k)) apply(got.get(k));
+    }
+  }
+  for await (const [k, v] of listKeys(storage, "c|")) {
+    const [, d, kind, n] = k.split("|");
+    if (d !== String(today)) stale.push(k);
+    else if (kind === "j") {
+      if (Number(n) <= upTo) stale.push(k);
+      else later.push([Number(n), v]);
+    } else if (kind === "s" && Number(n) >= snapRows) stale.push(k);
+  }
+  later.sort((a, b) => a[0] - b[0]);
+  for (const [n, v] of later) apply(v);
+  seq = Math.max(upTo, ...later.map(([n]) => n), -1) + 1;
+  journal = later.length;
+  if (stale.length) void deleteKeys(storage, stale);
+
+  const compact = () => {
+    const quads = [];
+    SKETCHES.forEach((name, i) => sketches.get(name)?.forEach((r, row) => r.forEach((v, cell) => quads.push(i, row, cell, v))));
+    const rows = pack(quads);
+    const entries = { [`c|${day}|m`]: { upTo: seq - 1, rows: rows.length } };
+    rows.forEach((r, i) => (entries[`c|${day}|s|${i}`] = r));
+    const doneUpTo = seq - 1;
+    upTo = doneUpTo;
+    snapRows = rows.length;
+    journal = 0;
+    void (async () => {
+      // One put of at most 128 keys is atomic: the snapshot and its meta row together.
+      const keys = Object.keys(entries);
+      if (keys.length <= 128) await storage.put(entries);
+      else for (let i = 0; i < keys.length; i += BATCH) await storage.put(Object.fromEntries(keys.slice(i, i + BATCH).map((k) => [k, entries[k]])));
+      // The journal rows the snapshot holds, and the rows of a larger snapshot before it.
+      const gone = await dayKeys(day, (k, isDay) => {
+        if (!isDay) return false;
+        const [, , kind, n] = k.split("|");
+        return (kind === "j" && Number(n) <= doneUpTo) || (kind === "s" && Number(n) >= snapRows);
+      });
+      await deleteKeys(storage, gone);
+    })();
+  };
+
   return {
-    get: (cells) => Math.min(...cells.map((c, d) => rows[d].get(c) ?? 0)),
-    add: (cells, n) =>
-      cells.forEach((c, d) => {
-        const v = (rows[d].get(c) ?? 0) + n;
-        rows[d].set(c, v);
-        // Not awaited: the Durable Object's output gate holds the answer until the write is durable.
-        void storage.put(`c|${name}|${day}|${d}|${c}`, v);
-      }),
-    reset: (today) => {
-      if (today === day) return; // the object restarted within the day: keep its counts
-      day = today;
-      rows.forEach((r) => r.clear());
-      void (async () => {
-        const stale = [];
-        for await (const [k] of listKeys(storage, `c|${name}|`)) if (k.split("|")[2] !== String(today)) stale.push(k);
-        await deleteKeys(storage, stale);
-      })();
+    /** A sketch with vault-relay.js's interface, counting in memory. */
+    sketch(name, width, depth = 4) {
+      const i = idx(name);
+      const rows = rowsOf(i);
+      const set = (row, cell, v) => {
+        if (v === 0) rows[row].delete(cell);
+        else rows[row].set(cell, v);
+        dirty.add(`${i}|${row}|${cell}`);
+      };
+      return {
+        get: (cells) => Math.min(...cells.map((c, d) => rows[d].get(c) ?? 0)),
+        add: (cells, n) => cells.forEach((c, d) => set(d, c, (rows[d].get(c) ?? 0) + n)),
+        reset: (d) => {
+          if (d === day) return; // the object restarted within the day: keep its counts
+          day = d;
+          sketches.forEach((r) => r.forEach((m) => m.clear()));
+          persisted.clear();
+          dirty.clear();
+          seq = 0;
+          upTo = -1;
+          snapRows = 0;
+          journal = 0;
+          void dayKeys(d, (k, isDay) => !isDay).then((keys) => deleteKeys(storage, keys));
+        },
+        cells: (digest) => Array.from({ length: depth }, (_, d) => digest.readUInt32BE(d * 4) % width),
+      };
     },
-    cells: (digest) => rows.map((_, d) => digest.readUInt32BE(d * 4) % width),
+    /**
+     * Persists the cells whose value differs from storage's, in one journal row.
+     * Not awaited: the Durable Object's output gate holds the answer until the write is durable.
+     */
+    flush() {
+      const quads = [];
+      for (const key of dirty) {
+        const [i, row, cell] = key.split("|").map(Number);
+        const v = rowsOf(i)[row].get(cell) ?? 0;
+        if ((persisted.get(key) ?? 0) === v) continue;
+        persisted.set(key, v);
+        quads.push(i, row, cell, v);
+      }
+      dirty.clear();
+      if (quads.length === 0) return 0;
+      const rows = pack(quads);
+      for (const r of rows) void storage.put(`c|${day}|j|${String(seq++).padStart(10, "0")}`, r);
+      journal += rows.length;
+      if (journal >= JOURNAL_MAX * Math.max(1, snapRows)) compact();
+      return rows.length;
+    },
   };
 }
 
@@ -206,14 +345,8 @@ export class VaultRelay {
   async start() {
     const storage = this.state.storage;
     const today = Math.floor(Date.now() / DAY);
-    // The day's counts and key, as the last run of this object left them.
-    const loaded = new Map();
-    for await (const [k, v] of listKeys(storage, "c|")) {
-      const [, name, day, row, cell] = k.split("|");
-      if (Number(day) !== today) continue;
-      if (!loaded.has(name)) loaded.set(name, []);
-      loaded.get(name).push([Number(row), Number(cell), v]);
-    }
+    // The day's counts (a bounded number of rows) and key, as the last run of this object left them.
+    this.counters = await dayCounters(storage, today);
     const keys = new Map();
     for await (const [k, v] of listKeys(storage, "k|")) keys.set(Number(k.slice(2)), v);
     const dayKey = (day) => {
@@ -232,7 +365,7 @@ export class VaultRelay {
       store: durableStore(storage),
       sweep: false,
       clientAddress: (req) => req.headers["x-lumen-client"] || "unknown",
-      daySketch: (name, width) => storedSketch(storage, name, width, { day: loaded.has(name) ? today : -1, cells: loaded.get(name) ?? [] }),
+      daySketch: (name, width) => this.counters.sketch(name, width),
       dayKey,
       maxObjectBytes: num(e.VAULT_RELAY_MAX_OBJECT, 2 * 1024 * 1024),
       maxSpaceBytes: num(e.VAULT_RELAY_MAX_SPACE, 128 * 1024 * 1024),
@@ -259,6 +392,7 @@ export class VaultRelay {
     const headers = {};
     for (const [k, v] of request.headers) headers[k.toLowerCase()] = v;
     const req = requestFor(request, `${url.pathname}${url.search}`, headers);
+    const counters = this.counters;
     return new Promise((resolve) => {
       const res = {
         status: 200,
@@ -268,6 +402,8 @@ export class VaultRelay {
           this.headers = h;
         },
         end(body) {
+          // The request's reservations are settled by now: persist what changed (nothing, for a refused PUT).
+          counters.flush();
           const empty = this.status === 204 || this.status === 304;
           resolve(new Response(empty ? null : body ?? "", { status: this.status, headers: this.headers }));
         },
