@@ -72,6 +72,7 @@
     "eval:agents": "node scripts/agent-eval.mjs",
     "eval:tool-calls": "node scripts/tool-call-eval.mjs",
     "eval:compare": "node scripts/eval-compare.mjs",
+    "eval:public": "node --import tsx scripts/eval-public.mjs",
     "fake-ollama": "node --experimental-strip-types scripts/fake-ollama.mjs",
     "headers": "node scripts/headers.mjs --check",
     "headers:write": "node scripts/headers.mjs --write",

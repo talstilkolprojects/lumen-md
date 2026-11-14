@@ -1,0 +1,45 @@
+{
+  "id": "asr-ivrit-eval-d1",
+  "task": "asr",
+  "title": "ivrit.ai eval-d1 (podcasts, 1.43 h) — the Hebrew Transcription Leaderboard's first set",
+  "dataset": {
+    "hub": "huggingface",
+    "id": "ivrit-ai/eval-d1",
+    "url": "https://huggingface.co/datasets/ivrit-ai/eval-d1",
+    "revision": null,
+    "files": [
+      {
+        "path": "data/test-00000-of-00001.parquet",
+        "sha256": null
+      }
+    ]
+  },
+  "license": {
+    "id": "ivrit.ai license",
+    "url": "https://huggingface.co/ivrit-ai",
+    "redistribute": false,
+    "note": "ivrit.ai's own data licence (permissive for training and evaluation, conditions on redistribution); read the dataset card at pin time."
+  },
+  "split": "test",
+  "format": "audio-jsonl",
+  "export": {
+    "script": "scripts/eval-public/export_hf_audio.py",
+    "output": "export/items.jsonl"
+  },
+  "normalizer": "ivrit-leaderboard",
+  "metrics": [
+    "wer",
+    "cer"
+  ],
+  "leaderboard": "https://ivrit-ai-hebrew-transcription-leaderboard.hf.space/",
+  "owed": [
+    "pin: npm run eval:public -- fetch asr-ivrit-eval-d1 --pin (writes the revision's sha256s; set dataset.revision to the Hub commit first)",
+    "confirm the Parquet file names at the pinned revision (written here as the Hub's default layout)",
+    "normaliser parity: scripts/eval-public/normalizer_parity.py, then npm run eval:public -- parity (50/50)",
+    "runs per engine: Zipformer int8 in the browser (W11.M), whisper turbo on the desktop, the phone"
+  ],
+  "plan": [
+    "W11.H6",
+    "W11.H7"
+  ]
+}

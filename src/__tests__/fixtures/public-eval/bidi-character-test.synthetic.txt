@@ -1,0 +1,16 @@
+# SYNTHETIC — written by hand for Lumen's unit tests (plan W11.H1), in the
+# format of the UCD's BidiCharacterTest.txt (UAX #9 §3.4). These 7 rows are
+# NOT Unicode's test data and prove nothing about conformance; they only
+# exercise the parser and the paragraph-level check. The real file is
+# downloaded by `npm run eval:public -- fetch unicode-bidi` and never committed.
+#
+# Fields: code points; paragraph direction (0 LTR, 1 RTL, 2 auto); resolved
+# paragraph level; resolved levels; visual order.
+0061 0020 05D0;2;0;0 0 1;0 1 2
+05D0 0020 0061;2;1;1 1 2;2 1 0
+# An isolate's content is skipped by P2: the first strong outside it is the Hebrew letter.
+2067 0061 2069 0020 05D0;2;1;1 4 1 1 1;4 3 2 1 0
+05D0 0020 0061;0;0;1 0 0;0 1 2
+0061;1;1;2;0
+0031 0032;2;0;2 2;0 1
+05D0 0020 0031;1;1;1 1 2;2 1 0

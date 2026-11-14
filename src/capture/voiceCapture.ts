@@ -6,9 +6,10 @@
  *
  * Recording is the browser's MediaRecorder; the microphone is opened when
  * the user presses the button and released when recording stops.
- * Transcription goes through a seam (`setVoiceTranscriber`): the live
- * streaming dictation of plan 6.1 (#255) registers itself there; without
- * it, the recording is transcribed after it stops with local Whisper
+ * Transcription goes through a seam (`setVoiceTranscriber`, for tests and
+ * other engines); by default a Hebrew recording goes through the live-
+ * dictation model (ivrit.ai Zipformer2 int8, W11.H7) when it is already on
+ * this device, and anything else — or a failure — through local Whisper
  * (transformers.js, on this device under every policy). If no
  * transcript can be made, the note is kept as audio with a placeholder.
  *
@@ -36,9 +37,27 @@ export function setVoiceTranscriber(fn: VoiceTranscriber | null): void {
  * voice capture must not take, and which the startup bundle already holds.)
  */
 async function defaultTranscriber(audio: Blob, opts: { language?: string; signal?: AbortSignal }): Promise<string | null> {
-  const { decodeAudioTo16k, transcribeAudio } = await import("../ai/transformersEngine");
+  const { decodeAudioTo16k, transcribeAudio, ortBaseUrl } = await import("../ai/transformersEngine");
   const samples = await decodeAudioTo16k(audio);
   if (!samples.length) return null;
+  // Hebrew with the live-dictation model already on this device (W11.H7):
+  // ivrit.ai Zipformer2 int8, the same files and worker as live dictation.
+  // Whisper stays the fallback (another language, no model yet, or a failure).
+  const he = await import("../ai/dictation/fileTranscriber");
+  if (he.isHebrew(opts.language)) {
+    const store = await import("../ai/dictation/modelStore");
+    if (await store.isDictationModelDownloaded().catch(() => false)) {
+      try {
+        const files = await store.loadDictationFiles(undefined, opts.signal);
+        const worker = new Worker(new URL("../ai/dictation/dictation.worker.ts", import.meta.url), { type: "module" });
+        const text = await he.transcribeSamples(samples, files, { worker, ortBase: ortBaseUrl(), signal: opts.signal });
+        if (text) return text;
+      } catch (e) {
+        if ((e as Error)?.name === "AbortError") throw e;
+        /* why: fall through to Whisper, which can still make a transcript */
+      }
+    }
+  }
   const language = opts.language ? opts.language.split(/[-_]/)[0].toLowerCase() : undefined;
   const out = await transcribeAudio(samples, { language, signal: opts.signal });
   return typeof out.text === "string" ? out.text.trim() || null : null;

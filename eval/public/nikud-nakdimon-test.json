@@ -1,0 +1,38 @@
+{
+  "id": "nikud-nakdimon-test",
+  "task": "nikud",
+  "title": "Nakdimon test set (modern Hebrew, manually corrected) — DEC / CHA / WOR",
+  "dataset": {
+    "hub": "github",
+    "id": "elazarg/nakdimon",
+    "url": "https://github.com/elazarg/nakdimon",
+    "revision": "a06ebfd032548b132ac2da2f5aab1289de5ae5f2",
+    "files": [
+      {
+        "path": "tests/",
+        "sha256": null
+      }
+    ]
+  },
+  "license": {
+    "id": "MIT (code); texts from their sources",
+    "url": "https://github.com/elazarg/nakdimon/blob/master/LICENSE",
+    "redistribute": false,
+    "note": "The test texts come from news and other sources; they are read from the clone, not copied."
+  },
+  "split": "test",
+  "format": "nakdimon-test",
+  "normalizer": "none",
+  "metrics": [
+    "dec",
+    "cha",
+    "wor"
+  ],
+  "owed": [
+    "confirm at the pinned commit that tests/ holds the paper's 'new' test set (the commit is the one models/registry.json pins Nakdimon.onnx at); point files[0].path at its folder",
+    "run: Nakdimon, DictaBERT-char-menaked (after its export in W11.M3) and phonikud-onnx; 'high quality' needs WOR ≥ 95 %"
+  ],
+  "plan": [
+    "W11.H10"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "id": "unicode-bidi",
+  "task": "bidi-conformance",
+  "title": "Unicode Bidi conformance: BidiCharacterTest.txt and BidiTest.txt (UAX #9)",
+  "dataset": {
+    "hub": "unicode",
+    "id": "UCD 17.0.0",
+    "url": "https://www.unicode.org/Public/17.0.0/ucd/",
+    "revision": "17.0.0",
+    "files": [
+      {
+        "path": "BidiCharacterTest.txt",
+        "sha256": null,
+        "url": "https://www.unicode.org/Public/17.0.0/ucd/BidiCharacterTest.txt"
+      },
+      {
+        "path": "BidiTest.txt",
+        "sha256": null,
+        "url": "https://www.unicode.org/Public/17.0.0/ucd/BidiTest.txt"
+      }
+    ]
+  },
+  "license": {
+    "id": "Unicode-3.0",
+    "url": "https://www.unicode.org/license.txt",
+    "redistribute": true,
+    "note": "Unicode data files licence. Still not copied into the repo: the run downloads them."
+  },
+  "split": "all",
+  "format": "unicode-bidi",
+  "normalizer": "none",
+  "metrics": [
+    "rowsPassed",
+    "paragraphLevel",
+    "levels",
+    "order"
+  ],
+  "owed": [
+    "pin: npm run eval:public -- fetch unicode-bidi --pin (11.M: no network in the cloud session)",
+    "run: npm run eval:public -- run unicode-bidi (needs bidi-js, a dev dependency, for levels and order); target ≥ 99.9 % of BidiCharacterTest rows",
+    "if bidi-js 1.1.0 carries an older UCD than 17.0.0, rows with newer characters fail as 'levels': read the report before calling them Lumen's"
+  ],
+  "plan": [
+    "W11.H1"
+  ]
+}

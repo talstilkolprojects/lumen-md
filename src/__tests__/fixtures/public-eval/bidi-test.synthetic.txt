@@ -1,0 +1,12 @@
+# SYNTHETIC — hand-written rows in the format of the UCD's BidiTest.txt (plan
+# W11.H1), for the parser's unit test only. Not Unicode's data.
+@Levels: 0
+@Reorder: 0
+L; 3
+@Levels: 1
+@Reorder: 0
+R; 5
+AL; 5
+@Levels: x 0
+@Reorder: 1
+LRE L; 3

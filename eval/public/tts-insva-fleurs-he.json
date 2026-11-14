@@ -1,0 +1,52 @@
+{
+  "id": "tts-insva-fleurs-he",
+  "task": "tts-roundtrip",
+  "title": "Hebrew voices, ASR round trip (INSV-A): 200 frozen FLEURS-he prompts judged by ivrit.ai Whisper-turbo",
+  "dataset": {
+    "hub": "huggingface",
+    "id": "google/fleurs",
+    "config": "he_il",
+    "url": "https://huggingface.co/datasets/google/fleurs",
+    "revision": null,
+    "files": [
+      {
+        "path": "data/he_il/test.tsv",
+        "sha256": null
+      },
+      {
+        "path": "data/he_il/audio/test.tar.gz",
+        "sha256": null
+      }
+    ]
+  },
+  "license": {
+    "id": "CC-BY-4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "redistribute": true,
+    "note": "google/fleurs dataset card. Not copied here anyway: the gate refuses dataset files in the repo."
+  },
+  "split": "test",
+  "format": "fleurs-tsv",
+  "normalizer": "ivrit-leaderboard",
+  "metrics": [
+    "cer",
+    "wer",
+    "naturalCer",
+    "naturalWer"
+  ],
+  "frozen": {
+    "count": 200,
+    "ids": null,
+    "sha256": null,
+    "rule": "the first 200 distinct FLEURS sentence ids of he_il test in numeric order, the first recording (by file name) of each"
+  },
+  "leaderboard": "https://ivrit-ai-tts-arena-hebrew.hf.space/leaderboard",
+  "owed": [
+    "pin: npm run eval:public -- fetch tts-insva-fleurs-he --pin, then npm run eval:public -- freeze tts-insva-fleurs-he (writes the 200 ids and their sha256)",
+    "run per voice: Chatterbox Multilingual (W11.H8), BlueV3 once its data permission is answered; judge ivrit-ai/whisper-large-v3-turbo"
+  ],
+  "plan": [
+    "W11.H9",
+    "W11.H8"
+  ]
+}

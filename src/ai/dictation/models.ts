@@ -26,6 +26,20 @@ export const ZIPFORMER_FILES = {
   tokens: { path: "sherpa-onnx/tokens.txt", url: hf("sherpa-onnx/tokens.txt"), bytes: 17_086, sha256: null }, // not an LFS file: no published sha256; the pinned revision fixes it
 } satisfies Record<string, ModelFile>;
 
+/**
+ * fp16 files for WebGPU (plan W11.H7: an option, never the default — int8 on
+ * WASM is about as fast as fp16 on an integrated GPU at half the download).
+ * Null until W11.M1 reads the repository at the pinned revision and pins
+ * each fp16 file's size and sha256; until then every device uses int8.
+ */
+export const ZIPFORMER_FP16_FILES: Record<"encoder" | "decoder" | "joiner", ModelFile> | null = null;
+
+/** The files live dictation loads: int8, unless pinned fp16 files exist and the device has WebGPU with shader-f16. */
+export function zipformerFilesFor(device: { webgpu: boolean; f16: boolean }): Record<"encoder" | "decoder" | "joiner" | "tokens", ModelFile> {
+  if (ZIPFORMER_FP16_FILES && device.webgpu && device.f16) return { ...ZIPFORMER_FP16_FILES, tokens: ZIPFORMER_FILES.tokens };
+  return ZIPFORMER_FILES;
+}
+
 /** Silero VAD v5 (MIT), staged into public/vad/ by scripts/copy-vad.mjs from @ricky0123/vad-web. */
 export const VAD_FILE: ModelFile = { url: "vad/silero_vad_v5.onnx", bytes: 2_327_524, sha256: null };
 

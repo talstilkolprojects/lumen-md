@@ -1,0 +1,36 @@
+{
+  "id": "ocr-hebocrbench",
+  "task": "ocr",
+  "title": "HebOCRBench v1.0.0 — five tracks; gold answers held by the organisers (W7.12 submission kit)",
+  "dataset": {
+    "hub": "huggingface",
+    "id": "ssdataanalysis/hebocrbench-v1",
+    "url": "https://huggingface.co/datasets/ssdataanalysis/hebocrbench-v1",
+    "revision": null,
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": null
+      }
+    ]
+  },
+  "license": {
+    "id": "MIT (software); images keep their sources' terms",
+    "redistribute": false
+  },
+  "split": "test",
+  "format": "hebocrbench",
+  "normalizer": "none",
+  "metrics": [
+    "cer"
+  ],
+  "leaderboard": "https://huggingface.co/datasets/ssdataanalysis/hebocrbench-v1",
+  "owed": [
+    "pin: npm run eval:public -- fetch ocr-hebocrbench --pin (writes the revision's sha256s; set dataset.revision to the Hub commit first)",
+    "scores come from the organisers (eval/external/hebocrbench.json, W7.12): this manifest only pins the set"
+  ],
+  "plan": [
+    "W11.H5",
+    "W7.12"
+  ]
+}

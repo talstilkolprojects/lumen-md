@@ -1,0 +1,39 @@
+{
+  "id": "asr-voxknesset",
+  "task": "asr",
+  "title": "VoxKnesset — Knesset plenum and committee speech, long-form",
+  "dataset": {
+    "hub": "huggingface",
+    "id": "VoxKnesset (Hub id to confirm)",
+    "url": "https://huggingface.co/ivrit-ai",
+    "revision": null,
+    "files": [
+      {
+        "path": "data/test-00000-of-00001.parquet",
+        "sha256": null
+      }
+    ]
+  },
+  "license": {
+    "id": "to confirm",
+    "redistribute": false,
+    "note": "Knesset recordings; the dataset's own terms are read at pin time."
+  },
+  "split": "test",
+  "format": "audio-jsonl",
+  "export": {
+    "script": "scripts/eval-public/export_hf_audio.py",
+    "output": "export/items.jsonl"
+  },
+  "normalizer": "ivrit-leaderboard",
+  "metrics": [
+    "wer",
+    "cer"
+  ],
+  "owed": [
+    "pin: find the VoxKnesset dataset id (ivrit.ai's org card lists it) and pin its revision; until then this manifest cannot run"
+  ],
+  "plan": [
+    "W11.H6"
+  ]
+}

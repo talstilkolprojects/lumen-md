@@ -4,7 +4,7 @@ import { describe, it, expect } from "vitest";
 import { planSteps, e2eSpecs, i18nDrift, summary, coverageGate, hookPlan, buildState, argErrors, isAppCode, isOcrInput, COVERAGE_MIN, HOOK_MARK, STEP_IDS, dynamicImportTargets } from "../../scripts/lib/ciLocal.mjs";
 
 type Step = { id: string; cmd: string[]; skipReason?: string; coverageMin?: number };
-const pkg = { scripts: { hygiene: "x", budget: "x", licenses: "x" } };
+const pkg = { scripts: { hygiene: "x", budget: "x", licenses: "x", "eval:public": "x" } };
 const exists = (p: string) => p !== "scripts/headers.mjs";
 const plan = (changed: string[] | null, flags: Record<string, unknown> = {}) => planSteps({ pkg, exists, changed, flags }) as Step[];
 const byId = (steps: Step[]) => Object.fromEntries(steps.map((s) => [s.id, s]));
@@ -12,8 +12,8 @@ const byId = (steps: Step[]) => Object.fromEntries(steps.map((s) => [s.id, s]));
 describe("ci:local steps", () => {
   it("a full run has every CI step; tools this branch lacks are 'not here', not failures", () => {
     const s = byId(plan(null));
-    expect(Object.keys(s)).toEqual(["typecheck", "hygiene", "lint", "i18n", "licenses", "headers", "test", "build", "budget", "ocr", "e2e"]);
-    for (const id of ["typecheck", "hygiene", "i18n", "licenses", "test", "build", "budget", "ocr", "e2e"]) expect(s[id].skipReason, id).toBeUndefined();
+    expect(Object.keys(s)).toEqual(["typecheck", "hygiene", "lint", "i18n", "licenses", "headers", "test", "build", "budget", "ocr", "public-eval", "bidi-conformance", "e2e"]);
+    for (const id of ["typecheck", "hygiene", "i18n", "licenses", "test", "build", "budget", "ocr", "public-eval", "bidi-conformance", "e2e"]) expect(s[id].skipReason, id).toBeUndefined();
     expect(s.lint.skipReason).toMatch(/not here/);
     expect(s.headers.skipReason).toMatch(/not here/);
     expect(s.test.cmd).toEqual(["npx", "vitest", "run"]);

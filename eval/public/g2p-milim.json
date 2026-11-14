@@ -1,0 +1,36 @@
+{
+  "id": "g2p-milim",
+  "task": "g2p",
+  "title": "MILIM — Hebrew pronunciation of 3,110 target words in 1,653 sentences, 11 categories (ReNikud, arXiv 2606.20179)",
+  "dataset": {
+    "hub": "other",
+    "id": "MILIM (release to locate)",
+    "url": "https://arxiv.org/abs/2606.20179",
+    "revision": null,
+    "files": [
+      {
+        "path": "milim.jsonl",
+        "sha256": null
+      }
+    ]
+  },
+  "license": {
+    "id": "to confirm",
+    "redistribute": false,
+    "note": "The paper's release terms were not readable offline."
+  },
+  "split": "test",
+  "format": "milim-jsonl",
+  "normalizer": "none",
+  "metrics": [
+    "wer",
+    "cer"
+  ],
+  "owed": [
+    "pin: locate the MILIM release named in arXiv 2606.20179, check its licence and format; adapt parseMilimJsonl if the format differs (it fails loudly on any other shape)",
+    "run phonikud-onnx and ReNikud; ReNikud enters read-aloud only with a published permissive licence and MILIM WER ≤ 0.8 × Phonikud's (renikudAllowed)"
+  ],
+  "plan": [
+    "W11.H10"
+  ]
+}

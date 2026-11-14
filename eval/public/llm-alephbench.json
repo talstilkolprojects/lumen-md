@@ -1,0 +1,35 @@
+{
+  "id": "llm-alephbench",
+  "task": "llm",
+  "title": "AlephBench — 11 Hebrew LLM subsets (HebNLI, Hebrew-QA, sentiment, Winograd, mmlu_heb, gsm8k_heb, israeli_trivia, ted_heb…)",
+  "dataset": {
+    "hub": "huggingface",
+    "id": "HebArabNlpProject/AlephBench",
+    "url": "https://huggingface.co/datasets/HebArabNlpProject/AlephBench",
+    "revision": null,
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": null
+      }
+    ]
+  },
+  "license": {
+    "id": "per subset",
+    "redistribute": false,
+    "note": "Each subset keeps its source's licence; read at pin time."
+  },
+  "split": "test",
+  "format": "alephbench",
+  "normalizer": "none",
+  "metrics": [
+    "macroAccuracy"
+  ],
+  "owed": [
+    "pin: npm run eval:public -- fetch llm-alephbench --pin (writes the revision's sha256s; set dataset.revision to the Hub commit first)",
+    "the LLM runner comes with W2.4/R2.4 (not part of W11.H5); this manifest fixes the set it will run on"
+  ],
+  "plan": [
+    "W11.H5"
+  ]
+}

@@ -46,6 +46,26 @@ export const WHISPER_GGML: GgmlModel = {
   sha256: null,
 };
 
+/**
+ * Yiddish (plan W11.H18, W7.9): ivrit.ai's Yiddish Whisper large-v3-turbo on
+ * the same whisper.cpp track. Unpinned, so never offered, until W11.M13 pins
+ * the ggml file and measures WER (eval/public/asr-fleurs-yi.json).
+ */
+export const WHISPER_GGML_YI: GgmlModel = {
+  sourceRepo: "ivrit-ai/yi-whisper-large-v3-turbo",
+  license: "Apache-2.0",
+  repo: null,
+  revision: null,
+  file: null,
+  bytes: null,
+  sha256: null,
+};
+
+/** The desktop ggml model for a language: Hebrew by default, Yiddish for "yi". */
+export function ggmlFor(language: string | undefined): GgmlModel {
+  return (language ?? "").split(/[-_]/)[0].toLowerCase() === "yi" ? WHISPER_GGML_YI : WHISPER_GGML;
+}
+
 export interface PinnedGgml extends GgmlModel {
   repo: string;
   revision: string;
