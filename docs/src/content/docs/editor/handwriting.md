@@ -79,3 +79,22 @@ The ink is an SVG image written into the Markdown:
   of this feature yet.
 - An ink you write by hand in SVG, without `data-ink-pts`, is shown and kept,
   but its strokes cannot be erased in the pad.
+
+## Recognising handwriting (measured first)
+
+Lumen doesn't turn handwriting into text yet, and it won't show such a
+feature until it works well enough in Hebrew. No open recogniser does that
+today. The measurement comes first:
+
+- **A held-out set**: 300 lines from 20 writers, everyday Hebrew with digits
+  and English words, collected with consent under CC BY 4.0. Each writer
+  gets a sheet (`npx tsx scripts/eval/handwriting/run.mjs sheet <n>`) and
+  writes their 15 lines with the pen in Lumen. The lines of five writers are
+  held out and never enter the repository.
+- **Two paths.** *Ink* reads the pen's strokes in the order they were
+  written, which is easier than reading a picture. *Image* reads a picture
+  of the writing with a vision model on your computer (Qwen3-VL-2B through
+  Ollama), compared with Tesseract.
+- **The bar.** A path is offered only at a character error rate of 15% or
+  less (ink) or 20% or less (image) on the held-out lines. The numbers are
+  published here either way, and recognition never leaves your device.
