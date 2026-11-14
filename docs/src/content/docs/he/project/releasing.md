@@ -50,6 +50,12 @@ npm run release -- 0.2.0-beta.1 --publish     # הבעלים: commit, תג, בנ
 9. **סיכומי ביקורת.** ‏`SHA256SUMS` מפרט כל קובץ. הוא חתום ב-minisign
    (`SHA256SUMS.minisig`), וגם ה-SBOM חתום. אחר כך כל התיקייה נבדקת, ו-`SHA256SUMS`
    שהשתנה חייב להיכשל.
+   אחר כך רץ שער המקור ([מקור הבנייה וחתימות Sigstore](/he/security/provenance/)):
+   - SLSA provenance על הקבצים המדויקים, חתום במפתח הבנייה
+   - חבילת Sigstore בלי מפתח לכל קובץ, מההתחברות של טל
+   - `verify.mjs` בודק את שניהם לכל קובץ; שום דבר לא נדחף אם הבדיקה לא עוברת
+
+   ריצת ניסיון משתמשת במפתחות TEST ובתחליף מקומי ל-Sigstore.
 10. **פרסום** (רק עם `--publish`): ‏`git push origin HEAD vX`, ואז
     `gh release create`. בטא היא pre-release ואף פעם לא "latest", ולכן
     משתמשים בגרסה יציבה לא מקבלים אותה. אחר כך `latest.json` עולה לשחרור

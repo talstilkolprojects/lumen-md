@@ -23,6 +23,8 @@
  *   7. sbom.cdx.json (CycloneDX, offline from package-lock.json + Cargo.lock)
  *   8. RELEASE_NOTES.md: Hebrew, then English (release-notes/<version>.{he,en}.md), then every change
  *   9. SHA256SUMS of every asset, SHA256SUMS.minisig + sbom.cdx.json.minisig (plan W1.27's key), verified
+ *  9b. W7.22: SLSA provenance + a keyless Sigstore bundle per file, checked by verify.mjs (scripts/supply-chain/release-gate.mjs);
+ *      a dry run uses TEST keys and the local Sigstore stand-in, --publish the real ones (nothing is pushed unless it passes)
  *  10. --publish: git push, gh release create (a beta is a pre-release), the beta channel's latest.json
  *
  * A dry run without the owner's keys signs with throwaway test keys (made in a temp folder, named TEST
@@ -62,6 +64,7 @@ import { filesUnder } from "./supply-chain/lib.mjs";
 import { formatPublicKey, generateKeys, parsePublicKey, rawPublicKey, readSecretKey, signData, verifyData } from "./supply-chain/minisign.mjs";
 import { buildSbom, sourceDate } from "./supply-chain/sbom.mjs";
 import { verifyRelease } from "./supply-chain/verify-release.mjs";
+import { provenanceGate } from "./supply-chain/release-gate.mjs";
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, "release");
@@ -365,6 +368,15 @@ export async function main(argv) {
     }
     if (!sumsRefused || verifySums(sums, [{ name: assets[0], data: Buffer.from("changed") }]).length === 0) throw new Error("tamper check on SHA256SUMS failed");
     console.log(`verified: ${r.checked} files match SHA256SUMS; SHA256SUMS and sbom.cdx.json signed by ${release.test ? "a TEST" : "the release"} key ${r.keyId}; a changed SHA256SUMS is refused`);
+
+    // W7.22: how it was built (SLSA provenance, the build key) and who released it (keyless Sigstore).
+    // On --publish the tree must be exactly the tagged commit first: the policy refuses a dirty tree.
+    step("9b", `build provenance and Sigstore bundles${o.publish ? "" : " (TEST keys and the local Sigstore stand-in)"}`);
+    if (o.publish) putBack([CONF]);
+    const gate = provenanceGate({ out: OUT, root: ROOT, commit, publish: o.publish });
+    if (gate.ok) console.log(`provenance gate: ${gate.files} files, each built by a trusted host and signed by ${gate.test ? "a TEST identity" : "the release identity"}\n${gate.log}`);
+    else if (!o.publish && gate.unavailable) warn(`provenance gate not checked here (no Sigstore verifier on this machine): ${gate.log}`);
+    else throw new Error(`provenance gate: ${gate.log}`);
 
     const uploads = readdirSync(OUT).filter((n) => !n.startsWith(".") && n !== "RELEASE_NOTES.md" && n !== "DRY-RUN.md").sort();
     const commands = publishCommands({ version: v, repo, assets: uploads });
