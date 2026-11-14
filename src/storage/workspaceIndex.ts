@@ -92,6 +92,12 @@ const cache = {
   filledVault: null as string | null,
   /** Review 14.11 T2: the last check of a trusted snapshot failed, so the next open waits for the listing. */
   distrust: false,
+  /**
+   * Review 17 W1: the listing a check timed out on, still running. The
+   * rebuild that follows waits for this one instead of starting a second
+   * listing, so a slow but healthy vault pays for one listing.
+   */
+  pendingListing: null as { vault: string; listing: Promise<WorkspaceEntry[]> } | null,
   /** W6.36: the check of a trusted snapshot against the vault's listing, while it runs. */
   verify: null as Promise<void> | null,
 };
@@ -129,24 +135,40 @@ export const VIEW_CHECK_WAIT_MS = 1_000;
  * 10,000-note OPFS listing takes 2–10 s on a slow machine.
  */
 export const CHECK_TIMEOUT_MS = 60_000;
+/** The bounds in force (tests shorten them with `__setCheckBounds`). */
+let checkTimeoutMs = CHECK_TIMEOUT_MS;
+let viewCheckWaitMs = VIEW_CHECK_WAIT_MS;
 
-/** `p`, or a rejection after `ms`. */
+class CheckTimeoutError extends Error {}
+
+/** `p`, or a rejection (CheckTimeoutError) after `ms`. */
 function withDeadline<T>(p: Promise<T>, ms: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const late = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`the vault listing did not settle in ${ms} ms`)), ms);
+    timer = setTimeout(() => reject(new CheckTimeoutError(`the vault listing did not settle in ${ms} ms`)), ms);
   });
   return Promise.race([p, late]).finally(() => clearTimeout(timer));
 }
 
 /** For a view that lists notes (V3): the index open and checked, or, after VIEW_CHECK_WAIT_MS, open and still unchecked (it then lists none). */
 async function checkedView(force: boolean): Promise<void> {
+  // Review 17 W2: after a failed check the rebuild waits for a fresh listing; a view waits for it as long as for a
+  // check, then lists what an index being rebuilt holds (nothing).
+  if (cache.distrust) return bounded(checkedIndex(force));
   await ensureIndex(force);
   if (!cache.verify) return checkedIndex();
+  return bounded(checkedIndex());
+}
+
+/** `p`, waited for at most VIEW_CHECK_WAIT_MS; a rejection inside that time is passed on. */
+async function bounded(p: Promise<void>): Promise<void> {
+  p.catch(() => undefined);
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const waited = await Promise.race([verified().then(() => true), new Promise<false>((r) => (timer = setTimeout(() => r(false), VIEW_CHECK_WAIT_MS)))]);
-  clearTimeout(timer);
-  if (waited && !cache.builtAt) await ensureIndex();
+  try {
+    await Promise.race([p, new Promise<void>((r) => (timer = setTimeout(r, viewCheckWaitMs)))]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**
@@ -166,6 +188,7 @@ function dropIndex(): void {
   cache.listing = null;
   cache.filledEncrypted = false;
   cache.filledVault = null;
+  cache.pendingListing = null;
   cache.version++;
   if (snapshotTimer) clearTimeout(snapshotTimer);
   snapshotTimer = null;
@@ -521,7 +544,10 @@ async function build(trust = false): Promise<void> {
     : [];
   // The listing starts once the snapshot is open (W6.36): the open does not wait for it, nor share the CPU with it.
   if (moved(at, vault)) return discard();
-  const listing = listNotes(false);
+  // W1: the listing a timed-out check was waiting on, when it is this vault's.
+  const pending = cache.pendingListing?.vault === vault ? cache.pendingListing.listing : null;
+  cache.pendingListing = null;
+  const listing = pending ?? listNotes(false);
   listing.catch(() => undefined);
   if (restored.length) {
     cache.byPath = new Map(restored.map((r) => [r.path, r] as const));
@@ -567,7 +593,7 @@ function discard(): void {
 async function verifySnapshot(listing: Promise<WorkspaceEntry[]>, body: Promise<{ refused: boolean }>, at: number): Promise<void> {
   try {
     // V3: a listing that never settles fails the check (closed) instead of holding every query.
-    const [list, texts] = await withDeadline(Promise.all([listing, body]), CHECK_TIMEOUT_MS);
+    const [list, texts] = await withDeadline(Promise.all([listing, body]), checkTimeoutMs);
     if (at !== epoch) return;
     const indexOps: IndexOp[] = [];
     const toRead = new Map<string, ToRead>();
@@ -587,6 +613,8 @@ async function verifySnapshot(listing: Promise<WorkspaceEntry[]>, body: Promise<
     // T2: fail closed. The trusted notes go, and the next open waits for the listing.
     dropIndex();
     cache.distrust = true;
+    // W1: a listing that is only slow is not started again: the rebuild waits for this one.
+    if (err instanceof CheckTimeoutError) cache.pendingListing = { vault: snapshotVault(), listing };
   }
 }
 
@@ -901,6 +929,12 @@ export async function indexStats(): Promise<IndexStats & { engine: IndexEngine["
   return { ...stats, engine: (await getEngine()).kind };
 }
 
+/** Test hook (review 17): shorter check bounds; no argument restores the defaults. */
+export function __setCheckBounds(b: { checkMs?: number; viewMs?: number } = {}): void {
+  checkTimeoutMs = b.checkMs ?? CHECK_TIMEOUT_MS;
+  viewCheckWaitMs = b.viewMs ?? VIEW_CHECK_WAIT_MS;
+}
+
 /** Test hook (W6.36): write the snapshot now, as the idle timer would. */
 export async function __saveSnapshotNow(): Promise<void> {
   await saveSnapshotNow();
@@ -924,6 +958,7 @@ export function __resetWorkspaceIndex(engineFactory?: () => IndexEngine, opts: {
   cache.filledEncrypted = false;
   cache.filledVault = null;
   cache.distrust = false;
+  cache.pendingListing = null;
   epoch++;
   void engine?.then((e) => e.dispose(), () => undefined);
   engine = null;
