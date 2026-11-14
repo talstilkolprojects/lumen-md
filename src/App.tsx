@@ -34,7 +34,7 @@ const ImportWizard = lazy(() => import("./storage/import/ImportWizard").then(m =
 const VersionHistory = lazy(() => import("./ui/VersionHistory").then(m => ({ default: m.VersionHistory })));
 const MarkdownTableEditor = lazy(() => import("./ui/MarkdownTableEditor").then(m => ({ default: m.MarkdownTableEditor })));
 // PDF reader (plan 4.14): pdf.js and the reader load only when a PDF is opened.
-const PdfReader = lazy(() => import("./pdf/PdfReader").then(m => ({ default: m.PdfReaderOverlay })));
+const PdfReader = lazy(() => import("./pdf/PdfReaderOverlay").then(m => ({ default: m.PdfReaderOverlay })));
 const EpubReader = lazy(() => import("./epub/EpubReader").then(m => ({ default: m.EpubReaderOverlay })));
 import { CommandPalette } from "./ui/CommandPalette";
 import { AiFab } from "./ui/AiFab";
