@@ -48,6 +48,9 @@
       },
       {
         "file": "src/__tests__/e2eeKeyringContents.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeKeyringAnchor.test.ts"
       }
     ],
     "src/sync/e2ee/conflict.ts": [
@@ -88,6 +91,9 @@
       {
         "file": "src/__tests__/e2eeSync.test.ts",
         "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/e2eeHeaderMac.test.ts"
       }
     ],
     "src/ai/privacyLedger.ts": [
