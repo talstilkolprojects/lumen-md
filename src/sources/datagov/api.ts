@@ -11,7 +11,7 @@
  *
  * What leaves the device: the search words, a resource id or a series id —
  * never the note. Requests are made only when the user asks, through the
- * gated, ledgered fetch (sources/open/gate).
+ * gated fetch that the ledger records (sources/open/gate).
  */
 
 export const CKAN = "https://data.gov.il/api/3/action/";

@@ -119,6 +119,7 @@ const CASES: Record<string, Case[]> = {
 // skip-reason: an opt-in eval against a real local model (npm run eval:skills), not a unit test | task: W7.1 | until: 2027-05-14
 describe.skipIf(!process.env.LUMEN_EVAL_SKILLS)(`starter skills eval — ${model} @ ${url}`, () => {
   it("each starter skill passes ≥ 5 of its 6 golden cases", async () => {
+    // privacy-ledger: local-ai — an opt-in eval (LUMEN_EVAL_SKILLS) against Ollama on this computer, never in the app.
     const tags = await fetch(`${url}/api/tags`, { signal: AbortSignal.timeout(3000) }).catch((e: Error) => e);
     expect(tags instanceof Error ? `Ollama unreachable at ${url}: ${tags.message}` : "ok").toBe("ok");
     localStorage.setItem("lumen.ollama.baseUrl", url);

@@ -119,6 +119,7 @@ const bookDirection = (book: BookIndex): "rtl" | "ltr" => (/^(he|ar|fa|ur|yi)\b/
 
 async function fontBytes(): Promise<EpubFont | undefined> {
   try {
+    // privacy-ledger: not tracked — the app's own Frank Ruhl Libre font files (Vite ?url assets, this origin).
     const files = await Promise.all(FONT_FILES.map(async (f) => ({ bytes: new Uint8Array(await (await fetch(f.url)).arrayBuffer()), weight: f.weight })));
     return { family: FONT_FAMILY, files };
   } catch {

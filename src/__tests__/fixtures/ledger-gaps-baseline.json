@@ -15,7 +15,6 @@
     "src/ai/anthropicProvider.ts | const res = await fetch(API_URL, {",
     "src/ai/anthropicProvider.ts | const res = await fetch(API_URL, {",
     "src/ai/anthropicProvider.ts | const res = await fetch(API_URL, { method: \"POST\", headers: headers(), body: JSON.stringify(body), signal: opts.signal });",
-    "src/ai/dictation/modelStore.ts | const res = await fetch(url, { signal });",
     "src/ai/embeddingProvider.ts | const res = await fetch(`${getBaseUrl()}/api/embed`, {",
     "src/ai/embeddingProvider.ts | const res = await fetchWithRetry(",
     "src/ai/englishDictionary.ts | const res = await fetch(url);",
