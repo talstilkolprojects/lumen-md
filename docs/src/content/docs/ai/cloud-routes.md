@@ -39,6 +39,7 @@ route loses its gate.
 | Dictation | `speech-recognition` | voice memo with local Whisper | the browser's speech recognition (Chrome sends the audio to Google) | *cloud* only |
 | Read aloud | `network-voices` | the system's on-device voices | server-side browser voices ("Google …") | *cloud* only |
 | PlantUML diagrams | `plantuml-kroki` | — (no local renderer yet) | kroki.io draws the diagram from its text | *cloud*; otherwise only for a diagram you choose to send ("Render this diagram with kroki.io") |
+| Jewish sources | `sefaria-texts` | the copy you saved for offline (Sources/Sefaria) | Sefaria's texts API: the reference only, such as "Genesis 1:1" | under any policy, each time you confirm a lookup; a saved source needs no request |
 
 Model downloads (Hugging Face, the OCR and dictionary files) carry no
 content of yours; they are listed in the privacy ledger and happen only

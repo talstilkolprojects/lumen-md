@@ -54,18 +54,21 @@ const ROUTES: Route[] = [
   { id: "speech-recognition", file: "ui/VoiceDictation.tsx", marker: /\bSpeechRecognition\b/, gate: /if \(!thirdPartyServicesAllowed\(\)\)/ },
   { id: "network-voices", file: "ai/tts.ts", marker: /speechSynthesis\.speak/, gate: /allowNetwork \|\| v\.localService/ },
   { id: "plantuml-kroki", file: "plugins/plantumlPolicy.ts", marker: /kroki\.io\/plantuml/, gate: /if \(!krokiAllowed\(source, policy\)\)/ },
+  // W5.1: the reference only, after the user confirms each lookup; a saved copy needs no request.
+  { id: "sefaria-texts", file: "sources/sefaria/app.ts", marker: /ledgerFetch\(\{ force: \{ category: "cloud-text", reason: LEDGER_REASON \}, consent: true \}\)/, gate: /asked \?\?= await confirm\(\);\s*if \(!asked\) throw new DeclinedError\(\)/ },
 ];
 
 /** Names of cloud AI hosts and browser services that talk to their vendor. */
-const CLOUD_MARKER = /api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com|api\.mistral\.ai|api\.languagetool\.org|kroki\.io\/|\bSpeechRecognition\b|speechSynthesis\.speak/;
+const CLOUD_MARKER = /www\.sefaria\.org\/api|api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com|api\.mistral\.ai|api\.languagetool\.org|kroki\.io\/|\bSpeechRecognition\b|speechSynthesis\.speak/;
 
 /**
  * Files that name a cloud host without sending anything: classification and
- * types, and the live-dictation panel, which only detects whether the browser
+ * types, Sefaria's client (it sends through the fetch that sources/sefaria/app.ts
+ * gates and hands it), and the live-dictation panel, which only detects whether the browser
  * has a speech service; it starts it through VoiceDictation's gated
  * startBrowserSpeech.
  */
-const NAMES_ONLY = new Set(["ai/privacyLedger.ts", "types/fileSystemAccess.d.ts", "ui/LiveDictation.tsx"]);
+const NAMES_ONLY = new Set(["ai/privacyLedger.ts", "types/fileSystemAccess.d.ts", "ui/LiveDictation.tsx", "sources/sefaria/client.ts"]);
 
 const SRC = join(__dirname, "..");
 const ROOT = join(SRC, "..");

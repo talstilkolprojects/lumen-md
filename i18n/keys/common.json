@@ -3065,6 +3065,78 @@
       "vars": []
     },
     {
+      "key": "sources.confirmFetch",
+      "en": "Look up {ref} on Sefaria? Only the reference is sent to sefaria.org; nothing from your notes. Saved sources open without asking.",
+      "vars": [
+        "ref"
+      ]
+    },
+    {
+      "key": "sources.failed",
+      "en": "Sefaria lookup failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "sources.inserted",
+      "en": "Inserted {ref}",
+      "vars": [
+        "ref"
+      ]
+    },
+    {
+      "key": "sources.linkOnly",
+      "en": "{count} version(s) are not freely licensed: they are linked, not copied.",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "sources.noNotes",
+      "en": "No note cites {ref} yet.",
+      "vars": [
+        "ref"
+      ]
+    },
+    {
+      "key": "sources.noVerseHere",
+      "en": "Put the cursor on a source reference first.",
+      "vars": []
+    },
+    {
+      "key": "sources.notARef",
+      "en": "“{text}” is not a reference Lumen recognises.",
+      "vars": [
+        "text"
+      ]
+    },
+    {
+      "key": "sources.notesTitle",
+      "en": "{count} note(s) cite {ref}",
+      "vars": [
+        "count",
+        "ref"
+      ]
+    },
+    {
+      "key": "sources.prompt",
+      "en": "Which source? For example בראשית א:א, שמות כ׳ ג׳, ב״ר א, א or Berakhot 2a",
+      "vars": []
+    },
+    {
+      "key": "sources.saveOffline",
+      "en": "Save for offline",
+      "vars": []
+    },
+    {
+      "key": "sources.saved",
+      "en": "Saved to {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
       "key": "status.aiActive",
       "en": "AI Copilot Active",
       "vars": []

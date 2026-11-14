@@ -1240,6 +1240,27 @@
       "group": "Insert",
       "hint": "[[Page|label]]",
       "icon": "Link"
+    },
+    {
+      "id": "sources.insertSefaria",
+      "label": "Insert a source from Sefaria…",
+      "group": "Insert",
+      "hint": "The Hebrew and a translation of a verse, mishnah or folio (בראשית א:א, ב״ר א, א, Berakhot 2a), with each text's licence",
+      "icon": "Quote"
+    },
+    {
+      "id": "sources.saveOffline",
+      "label": "Save this source for offline",
+      "group": "Insert",
+      "hint": "Keep a copy in Sources/Sefaria (freely licensed texts only), so it opens without a network request",
+      "icon": "Download"
+    },
+    {
+      "id": "sources.notesOnVerse",
+      "label": "My notes on this verse",
+      "group": "Insert",
+      "hint": "Every note that cites the verse under the cursor",
+      "icon": "Link"
     }
   ],
   "full": [
@@ -2618,6 +2639,27 @@
       "group": "Insert",
       "hint": "[[Page|label]]",
       "icon": "Link"
+    },
+    {
+      "id": "sources.insertSefaria",
+      "label": "Insert a source from Sefaria…",
+      "group": "Insert",
+      "hint": "The Hebrew and a translation of a verse, mishnah or folio (בראשית א:א, ב״ר א, א, Berakhot 2a), with each text's licence",
+      "icon": "Quote"
+    },
+    {
+      "id": "sources.saveOffline",
+      "label": "Save this source for offline",
+      "group": "Insert",
+      "hint": "Keep a copy in Sources/Sefaria (freely licensed texts only), so it opens without a network request",
+      "icon": "Download"
+    },
+    {
+      "id": "sources.notesOnVerse",
+      "label": "My notes on this verse",
+      "group": "Insert",
+      "hint": "Every note that cites the verse under the cursor",
+      "icon": "Link"
     }
   ],
   "autoSaveOn": [
@@ -2806,6 +2848,9 @@
     "insert.embed",
     "insert.htmlpreview",
     "insert.bibtex",
-    "insert.wikilink"
+    "insert.wikilink",
+    "sources.insertSefaria",
+    "sources.saveOffline",
+    "sources.notesOnVerse"
   ]
 }

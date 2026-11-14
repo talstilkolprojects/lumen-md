@@ -72,6 +72,8 @@ const RULES: Rule[] = [
   { test: (h) => h === "api.mistral.ai", category: "cloud-ai", reason: "Mistral" },
   { test: (h) => h === "api.languagetool.org", category: "cloud-text", reason: "LanguageTool grammar check" },
   { test: (h) => h === "kroki.io", category: "cloud-text", reason: "PlantUML rendering (kroki.io)" },
+  // Jewish sources (plan W5.1): the reference the user asked for, nothing else.
+  { test: (h) => h === "www.sefaria.org" || h === "sefaria.org", category: "cloud-text", reason: "Jewish sources (Sefaria): the reference only" },
   {
     test: (h) => h === "huggingface.co" || h.endsWith(".huggingface.co") || h.endsWith(".hf.co") || h === "hf.co",
     category: "model-download",

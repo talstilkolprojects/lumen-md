@@ -1153,6 +1153,36 @@
       "vars": []
     },
     {
+      "key": "cmd.sources.insert",
+      "en": "Insert a source from Sefaria…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.insert.hint",
+      "en": "The Hebrew and a translation of a verse, mishnah or folio (בראשית א:א, ב״ר א, א, Berakhot 2a), with each text's licence",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.notesOnVerse",
+      "en": "My notes on this verse",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.notesOnVerse.hint",
+      "en": "Every note that cites the verse under the cursor",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.saveOffline",
+      "en": "Save this source for offline",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.saveOffline.hint",
+      "en": "Keep a copy in Sources/Sefaria (freely licensed texts only), so it opens without a network request",
+      "vars": []
+    },
+    {
       "key": "cmd.spell.hebrewDictionary",
       "en": "Hebrew spelling: dictionary (download / remove)",
       "vars": []

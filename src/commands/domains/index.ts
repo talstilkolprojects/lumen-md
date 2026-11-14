@@ -19,6 +19,7 @@ import { buildReadAloudCommands, buildVoiceCommands } from "./voice";
 import { buildGitCommands } from "./git";
 import { buildCollabCommands, buildCommentCommands } from "./collab";
 import { buildBillingCommands, buildOptionalPanelCommands } from "./settings";
+import { buildSourceCommands } from "./sources";
 
 export const COMMAND_SECTIONS: ReadonlyArray<(ctx: CommandContext) => Command[]> = [
   buildRecentCommands,
@@ -64,4 +65,5 @@ export const COMMAND_SECTIONS: ReadonlyArray<(ctx: CommandContext) => Command[]>
   buildWorkspaceFileCommands,
   buildThemeToggleCommands,
   buildInsertCommands,
+  buildSourceCommands,
 ];
