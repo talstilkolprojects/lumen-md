@@ -69,13 +69,13 @@ jobs:
         run: mkdir -p .bundle-base && cp bundle-sizes.json .bundle-base/
       - name: Save bundle sizes (main)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: .bundle-base
           key: bundle-sizes-${{ github.sha }}
       - name: Restore main's bundle sizes
         if: github.event_name == 'pull_request' && (success() || failure())
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: .bundle-base
           key: bundle-sizes-${{ github.event.pull_request.base.sha }}
