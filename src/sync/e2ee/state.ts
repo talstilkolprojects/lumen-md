@@ -77,6 +77,13 @@ export interface DeviceState {
    */
   pairingUntil?: number;
   /**
+   * Until when (this device's clock) a pairing this device has confirmed
+   * may still commit on the new device (plan W8.5, review 13 S13-1): no key
+   * change before then, and cancelling doesn't release it, since the new
+   * device already holds this device's confirmation.
+   */
+  pairingKept?: number;
+  /**
    * A frozen manifest this device has been waiting on, and when it first saw
    * it on its own clock (RR-4): the wait is measured on one clock only.
    */
@@ -88,9 +95,22 @@ export interface DeviceState {
    * passed since then, the next attempt freezes over whatever freeze is
    * there, so a device that keeps writing fresh freezes (the one being
    * revoked, which still holds the epoch's secret) can't hold it back for
-   * ever. Cleared when a key change from this device commits.
+   * ever. Cleared when a key change from this device commits, and void once
+   * the epoch has moved (ninth review 12.11, H1): the key change that held
+   * it back committed, so a later one is waited on in full. `epoch` is the
+   * epoch this device's keys had at the refusal; a record without one (from
+   * an earlier build) is void.
    */
-  rekeyBlocked?: { since: number };
+  rekeyBlocked?: { since: number; epoch?: number };
+  /**
+   * Revocations from this device whose keyring commit lost, in a row, to a
+   * rewrite of the keyring at the same epoch (ninth review 12.11, H2): a
+   * device that still holds the epoch's secret and the storage login (most
+   * likely the one being removed) can do that every time. After two, the
+   * re-key says so (`RevocationContestedError`). Cleared on a commit and when
+   * the epoch moves.
+   */
+  revokeContested?: { epoch: number; devices: string[]; losses: number };
   /**
    * Blobs replaced by a commit written over a called-off freeze (RR-4):
    * deleted only after a later round has seen the keyring and the manifest
