@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { snapshotUpdateMode } from "./scripts/lib/visualGate.mjs";
 
 /**
  * Visual regression (plan 10.3): `npm run test:visual`.
@@ -6,7 +7,7 @@ import { defineConfig, devices } from "@playwright/test";
  * Runs locally (or in any sandbox with a browser) against the production
  * build served by `vite preview`; GitHub Actions is optional. Baselines live
  * in visual/__baselines__/<platform>/ and are made on the machine that will
- * compare them: `npm run test:visual:update`, review the PNGs, commit them.
+ * compare them: `npm run visual:approve -- visual`, review the PNGs, commit them.
  * A missing baseline is a failure (`updateSnapshots: "none"`), so a new
  * surface can't pass unseen.
  *
@@ -21,7 +22,8 @@ export default defineConfig({
   testDir: "./visual",
   testMatch: /.*\.visual\.ts$/,
   snapshotPathTemplate: "{testDir}/__baselines__/{platform}/{arg}{ext}",
-  updateSnapshots: "none",
+  // "none" except under `npm run visual:approve` (plan W10.B16).
+  updateSnapshots: snapshotUpdateMode(process.env),
   timeout: 60_000,
   fullyParallel: true,
   retries: 0,

@@ -16,10 +16,12 @@ without a baseline.
 
 ```bash
 npx playwright install chromium
-npm run test:visual:update      # builds, serves dist/, writes visual/__baselines__/<platform>/
+npm run visual:approve -- visual   # builds, serves dist/, writes visual/__baselines__/<platform>/ after you type "approve"
 ```
 
-Open every PNG, then commit the folder. From then on:
+Open every PNG, then commit the folder. No other run writes a baseline: a
+missing one fails, on your machine and on the gate, and `visual:approve`
+refuses to run on CI. From then on:
 
 ```bash
 npm run test:visual
@@ -43,8 +45,9 @@ commonest RTL layout bug.
 
 ## An intended change
 
-Run `npm run test:visual:update`, review the PNGs that changed and commit
-them with the change.
+Run `npm run visual:approve -- visual`, review the PNGs that changed and
+commit them with the change. The same command takes `print`, `canvas`,
+`slides` and `smoke` for the e2e specs that compare screenshots.
 
 ## Does the gate work?
 

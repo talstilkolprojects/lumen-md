@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { snapshotUpdateMode } from "./scripts/lib/visualGate.mjs";
 
 /**
  * Playwright configuration for Lumen end-to-end tests.
@@ -27,6 +28,9 @@ const CHROMIUM = process.env.PW_CHROMIUM;
 
 export default defineConfig({
   testDir: "./e2e",
+  // Plan W10.B16: a missing visual baseline fails; no run approves itself.
+  // Only `npm run visual:approve` writes baselines (scripts/lib/visualGate.mjs).
+  updateSnapshots: snapshotUpdateMode(process.env),
   // Compiles the app on the dev server before the first test (e2e/_warmup.ts).
   globalSetup: "./e2e/_warmup.ts",
   timeout: 30_000,

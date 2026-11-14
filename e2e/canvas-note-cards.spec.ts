@@ -9,9 +9,9 @@ import { GOLDEN_CANVASES, goldenFile } from "./fixtures/hebrewCanvases";
  *  - a canvas with 50 note cards opens in < 1.5 s (cards in view loaded);
  *  - a card edits its note in place and opens it in a tab;
  *  - 20 golden canvases with Hebrew: the PNG / SVG exports match their
- *    visual baselines (diff < 0.5%; baselines are made once with
- *    `npx playwright test e2e/canvas-note-cards.spec.ts --update-snapshots`
- *    and checked by eye), and every SVG line lies inside the drawing.
+ *    visual baselines (diff < 0.5%; a missing baseline fails, plan W10.B16;
+ *    they are made with `npm run visual:approve -- canvas` and checked by
+ *    eye), and every SVG line lies inside the drawing.
  * tldraw's absence from the build: scripts/bundle-budget.mjs.
  */
 

@@ -7,8 +7,9 @@ import { SLIDE_GOLDEN } from "../src/__tests__/fixtures/slideNotes";
  *    here the first golden end to end through the real renderer);
  *  - a slide change takes < 50 ms (measured by the presentation itself);
  *  - the PDF is right in Hebrew: one page per slide, right-to-left, the
- *    text as text (a print-media screenshot against its baseline, made once
- *    with --update-snapshots and checked by eye).
+ *    text as text (a print-media screenshot against its baseline, made with
+ *    `npm run visual:approve -- slides` and checked by eye; a missing
+ *    baseline fails, plan W10.B16).
  */
 
 const run = (page: Page, id: string) => page.evaluate((cmd) => window.dispatchEvent(new CustomEvent("lumen-run-command", { detail: { id: cmd } })), id);

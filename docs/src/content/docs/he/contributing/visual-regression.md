@@ -16,10 +16,12 @@ description: npm run test:visual משווה עשרה מסכים בעברית ו�
 
 ```bash
 npx playwright install chromium
-npm run test:visual:update      # בונה, מגיש את dist/, כותב visual/__baselines__/<platform>/
+npm run visual:approve -- visual   # בונה, מגיש את dist/, כותב visual/__baselines__/<platform>/ אחרי שמקלידים "approve"
 ```
 
-פותחים כל PNG, ואז מכניסים את התיקייה ל-commit. מכאן והלאה:
+פותחים כל PNG, ואז מכניסים את התיקייה ל-commit. אף הרצה אחרת לא כותבת תמונת
+בסיס: תמונה חסרה היא כישלון, במחשב שלכם ובשער, ו-`visual:approve` מסרב לרוץ
+ב-CI. מכאן והלאה:
 
 ```bash
 npm run test:visual
@@ -41,8 +43,9 @@ npm run test:visual
 
 ## שינוי מכוון
 
-מריצים `npm run test:visual:update`, בודקים את קובצי ה-PNG שהשתנו ומכניסים
-אותם ל-commit יחד עם השינוי.
+מריצים `npm run visual:approve -- visual`, בודקים את קובצי ה-PNG שהשתנו
+ומכניסים אותם ל-commit יחד עם השינוי. אותה פקודה מקבלת גם `print`, ‏`canvas`,
+‏`slides` ו-`smoke` למבחני ה-e2e שמשווים צילומי מסך.
 
 ## האם השער עובד?
 

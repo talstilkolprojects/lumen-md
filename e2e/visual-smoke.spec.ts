@@ -63,13 +63,12 @@ test("Mermaid block renders inline SVG inside the preview", async ({ page }) => 
  * differs per engine and OS, and one stable baseline beats three flaky
  * ones. Baselines are per-platform (`…-chromium-linux.png`).
  *
- * The chromium-linux baseline is committed. First-run guard for any
- * other platform: when no baseline exists, the test writes one and passes
- * with an annotation instead of failing. Commit it (or regenerate with
- * `npx playwright test e2e/visual-smoke.spec.ts --project=chromium
- * --update-snapshots`) — see CONTRIBUTING.md.
+ * The chromium-linux baseline is committed. On any other platform there
+ * is no baseline, and the test fails (plan W10.B16: it used to write one and
+ * pass). Make one with `npm run visual:approve -- smoke`, look at it, and
+ * commit it — see CONTRIBUTING.md.
  */
-test("Mermaid block matches the pixel baseline", async ({ page, browserName }, testInfo) => {
+test("Mermaid block matches the pixel baseline", async ({ page, browserName }) => {
   // skip-reason: the pixel baseline is one engine's rendering; fonts and anti-aliasing differ per engine | task: 0.5 | until: 2027-05-12
   test.skip(browserName !== "chromium", "pixel baseline is chromium-only");
   test.setTimeout(60_000);
@@ -83,19 +82,8 @@ test("Mermaid block matches the pixel baseline", async ({ page, browserName }, t
   // Let web fonts settle so text metrics are final before capture.
   await page.evaluate(() => document.fonts.ready);
 
+  // No baseline for this platform fails (plan W10.B16): `npm run visual:approve -- smoke`.
   const name = "mermaid-flowchart.png";
-  const baseline = testInfo.snapshotPath(name, { kind: "screenshot" });
-  const { existsSync, mkdirSync } = await import("node:fs");
-  const { dirname } = await import("node:path");
-  if (!existsSync(baseline) && testInfo.config.updateSnapshots !== "all") {
-    mkdirSync(dirname(baseline), { recursive: true });
-    await svg.screenshot({ path: baseline, animations: "disabled" });
-    testInfo.annotations.push({
-      type: "baseline-created",
-      description: `No committed baseline — wrote ${baseline}. Commit it to enable the pixel diff.`,
-    });
-    return;
-  }
   await expect(svg).toHaveScreenshot(name, {
     animations: "disabled",
     // Anti-aliasing noise across GPU/driver versions stays well under 1 %;
