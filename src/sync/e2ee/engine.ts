@@ -63,6 +63,7 @@ import { E2eeSyncKeys } from "./engineKeys";
 // W4.11: the engine is split into engineTypes.ts, vaultOpen.ts,
 // engineCore.ts and engineKeys.ts; everything is still imported from here.
 export {
+  DeviceBusyError,
   DropDevicesRequiredError,
   KeyChangeInProgressError,
   NoVaultError,
@@ -71,6 +72,7 @@ export {
   RevocationContestedError,
   UnverifiedDeviceError,
   VaultExistsError,
+  KEY_CHANGE_LOCK_WAIT_MS,
   type E2eeSyncOptions,
   type RekeyRequest,
   type RekeyResult,

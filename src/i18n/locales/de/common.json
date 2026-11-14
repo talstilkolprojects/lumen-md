@@ -185,6 +185,7 @@
   "dictation.localRecording": "Aufnahme – wird beim Stoppen auf diesem Gerät transkribiert.",
   "dictation.speaking": "Ich höre Sie …",
   "dictation.stop": "⏹ Stopp",
+  "e2ee.busy": "Dieses Gerät synchronisiert gerade in einem anderen Tab, daher wurde nichts geändert. Versuchen Sie es gleich noch einmal; wenn das wiederholt passiert, laden Sie die anderen Lumen-Tabs neu oder schließen Sie sie.",
   "e2ee.conflict.body": "Diese Notiz wurde auch auf einem anderen Gerät geändert. Wähle, was bleiben soll; bis dahin wird sie nicht synchronisiert.",
   "e2ee.conflict.later": "Später entscheiden",
   "e2ee.conflict.title": "Sync-Konflikt — {path}",

@@ -1064,6 +1064,11 @@
       "vars": []
     },
     {
+      "key": "e2ee.busy",
+      "en": "This device is syncing in another tab right now, so nothing was changed. Try again in a moment; if it keeps happening, reload or close the other tabs of Lumen.",
+      "vars": []
+    },
+    {
       "key": "e2ee.conflict.body",
       "en": "This note was also changed on another device. Choose what to keep; it is not synced until you decide.",
       "vars": []

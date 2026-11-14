@@ -185,6 +185,7 @@
   "dictation.localRecording": "Enregistrement — transcrit sur cet appareil à l’arrêt.",
   "dictation.speaking": "Je vous entends…",
   "dictation.stop": "⏹ Arrêter",
+  "e2ee.busy": "Cet appareil se synchronise en ce moment dans un autre onglet, donc rien n'a été modifié. Réessayez dans un instant ; si cela se répète, rechargez ou fermez les autres onglets de Lumen.",
   "e2ee.conflict.body": "Cette note a aussi été modifiée sur un autre appareil. Choisissez ce qu'il faut garder ; elle n'est pas synchronisée tant que vous n'avez pas décidé.",
   "e2ee.conflict.later": "Décider plus tard",
   "e2ee.conflict.title": "Conflit de synchronisation — {path}",

@@ -185,6 +185,7 @@
   "dictation.localRecording": "正在录音——停止后在本设备上转写。",
   "dictation.speaking": "正在听…",
   "dictation.stop": "⏹ 停止",
+  "e2ee.busy": "此设备正在另一个标签页中同步，因此没有做任何更改。请稍后再试；如果反复出现，请重新加载或关闭 Lumen 的其他标签页。",
   "e2ee.conflict.body": "这条笔记在另一台设备上也被修改了。请选择要保留的内容；在你决定之前不会同步。",
   "e2ee.conflict.later": "稍后决定",
   "e2ee.conflict.title": "同步冲突 — {path}",

@@ -185,6 +185,7 @@
   "dictation.localRecording": "録音中 — 停止するとこの端末で文字起こしします。",
   "dictation.speaking": "聞こえています…",
   "dictation.stop": "⏹ 停止",
+  "e2ee.busy": "この端末は現在別のタブで同期中のため、何も変更されていません。少し待ってからもう一度お試しください。繰り返し起きる場合は、Lumen の他のタブを再読み込みするか閉じてください。",
   "e2ee.conflict.body": "このノートは別のデバイスでも変更されました。残す内容を選んでください。決めるまで同期されません。",
   "e2ee.conflict.later": "あとで決める",
   "e2ee.conflict.title": "同期の競合 — {path}",
