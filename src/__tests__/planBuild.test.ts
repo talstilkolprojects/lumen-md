@@ -23,6 +23,15 @@ import {
   withVerified,
   VERIFIED_LEVELS,
   VERIFIED_LABEL,
+  checkDoneLevel,
+  checkStatusLength,
+  STATUS_MAX,
+  wipWarnings,
+  formatWip,
+  waveNumber,
+  belowFloor,
+  WIP_LIMIT,
+  isStarted,
   // @ts-expect-error — plain .mjs script without type declarations
 } from "../../scripts/plan/build.mjs";
 // @ts-expect-error — plain .mjs script without type declarations
@@ -40,7 +49,7 @@ function copy(name: string): string {
   for (const f of ["plan/plan.json", "plan/board.html", "MASTER_PLAN.md"]) cpSync(join(ROOT, f), join(dir, f));
   return dir;
 }
-type Task = { id: string; status?: string; verified?: string; pr?: number; priority: string; dep?: string[] };
+type Task = { id: string; status?: string; verified?: string; pr?: number; priority: string; dep?: string[]; notes?: string };
 const tasks = (p: { phases: { tasks: Task[] }[] }) => p.phases.flatMap((ph) => ph.tasks);
 
 describe("plan build", () => {
@@ -153,9 +162,13 @@ describe("plan build", () => {
   it("non-P0 work backfills a lane that waits on P0 work elsewhere", () => {
     const M = buildModel(plan());
     const release = M.BYID.get("13.5");
-    const lane = M.agent.filter((t: { lane: string; done?: boolean }) => t.lane === release.lane && !t.done);
-    const before = lane.filter((t: { eff: string; end: number }) => t.eff !== "P0" && t.end <= release.start);
-    expect(before.length).toBeGreaterThan(0);
+    // Wave 10 fills the release's own lane (D) with P0 work up to the release, so it has no
+    // idle gap to backfill; the lanes that wait on that P0 work elsewhere must use theirs.
+    const others = M.agent.filter((t: { lane: string; done?: boolean }) => t.lane !== release.lane && !t.done);
+    for (const lane of new Set(others.map((t: { lane: string }) => t.lane))) {
+      const before = others.filter((t: { lane: string; eff: string; end: number }) => t.lane === lane && t.eff !== "P0" && t.end <= release.start);
+      expect(before.length, String(lane)).toBeGreaterThan(0);
+    }
   });
 
   it("P0 spreads to what P0 work waits on, and the release waits on every P0 item", () => {
@@ -276,5 +289,143 @@ describe("verification level (W4.24)", () => {
     t.verified = "real";
     expect(migrate(p).changed).toEqual([]);
     expect(migrate(p, { all: true }).changed).toEqual([t.id]);
+  });
+
+  it("a shortened status keeps its level: the migration reads the full text in notes (W10.G7)", () => {
+    const one = { id: "9.9", status: "⏳ #5 קצר…", notes: "⏳ #5 (ארוך; vitest ב-Chromium 12/12)" };
+    expect(classify(one.status)).toBe("built");
+    const p = { phases: [{ tasks: [one] }] };
+    expect(migrate(p, { all: true }).plan.phases[0].tasks[0].verified).toBe("browser");
+  });
+});
+
+describe("honest statuses (W10.G7, W10.G8, W10.G12)", () => {
+  const one = (t: Record<string, unknown>) => ({ phases: [{ title: "x", tasks: [{ id: "9.9", title: "t", lane: "D", minutes: 10, priority: "P1", steps: [], acceptance: [], ...t }] }] });
+
+  it("✅ needs a browser or real check: built, node and owner are refused (W10.G8)", () => {
+    for (const verified of ["built", "node", "owner", undefined]) {
+      expect(checkDoneLevel(one({ status: "✅ #1", verified }))[0], String(verified)).toMatch(/9\.9: marked ✅ but verified .* needs browser or real/);
+    }
+    expect(checkDoneLevel(one({ status: "✅* #1", verified: "owner" }))[0]).toMatch(/marked ✅\*/);
+    expect(checkDoneLevel(one({ status: "✅ #1", verified: "browser" }))).toEqual([]);
+    expect(checkDoneLevel(one({ status: "✅ #1", verified: "real" }))).toEqual([]);
+    expect(checkDoneLevel(one({ status: "⏳ #1", verified: "built" }))).toEqual([]);
+    expect(checkDoneLevel(plan())).toEqual([]);
+  });
+
+  it("a status is at most 200 characters; the detail goes in notes (W10.G7)", () => {
+    expect(STATUS_MAX).toBe(200);
+    expect(checkStatusLength(one({ status: "⏳ " + "א".repeat(198) }))).toEqual([]);
+    expect(checkStatusLength(one({ status: "⏳ " + "א".repeat(199) }))[0]).toMatch(/9\.9: status is 201 characters, over 200/);
+    expect(checkStatusLength(one({ status: "⏳", notes: " " }))[0]).toMatch(/notes must be a non-empty string/);
+    expect(checkStatusLength(plan())).toEqual([]);
+  });
+
+  it("plan:check fails on a long status or a ✅ below browser in the checked-in files", () => {
+    const dir = copy("honest");
+    const p = plan();
+    const t = tasks(p).find((x) => x.id === "0.6")! as Task & { verified?: string };
+    t.verified = "node";
+    writeFileSync(join(dir, "plan/plan.json"), JSON.stringify(p, null, 1) + "\n");
+    expect(() => run({ root: dir, check: true })).toThrow(/0\.6: marked ✅ but verified "node"/);
+    t.verified = "browser";
+    t.status = "⏳ " + "ב".repeat(STATUS_MAX);
+    writeFileSync(join(dir, "plan/plan.json"), JSON.stringify(p, null, 1) + "\n");
+    expect(() => run({ root: dir, check: true })).toThrow(/0\.6: status is \d+ characters/);
+  });
+
+  it("notes are shown under the task on the board and the page, never as \"undefined\"", () => {
+    const p = plan();
+    const t = tasks(p).find((x) => x.notes) as (Task & { notes?: string }) | undefined;
+    expect(t, "some task keeps its long status in notes").toBeDefined();
+    const M = buildModel(p);
+    const board = renderBoard(M);
+    const html = renderHtml(M);
+    expect(board).toContain(`**פירוט הסטטוס:** ${t!.notes}`);
+    expect(html).toContain("פירוט הסטטוס:");
+    // a task without a branch and a phase without a goal used to print the word "undefined"
+    expect(board).not.toContain("undefined");
+    expect(html).not.toContain("undefined");
+  });
+
+  it("wave 10 is in the plan, every task once, with a status and a known lane (W10.G12)", () => {
+    const p = plan();
+    const w10 = p.phases.find((ph: { title: string }) => ph.title === "גל 10 — השלמה כנה לפי ביקורת הקוד");
+    expect(w10).toBeDefined();
+    expect(w10.tasks).toHaveLength(241);
+    const ids = tasks(p).map((x) => x.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const x of w10.tasks) {
+      expect(x.id, x.id).toMatch(/^W10\.[A-Z]\d+$/);
+      expect(x.status, x.id).toBeTruthy();
+      expect(Object.keys(p.lanes), x.id).toContain(x.lane);
+    }
+  });
+});
+
+describe("work-in-progress limit (plan W6.39)", () => {
+  type T = { id: string; status?: string; verified?: string };
+  const wave = (n: number, ts: T[]) => ({ title: `גל ${n} — x`, tasks: ts });
+  const mini = (w1: T[], w2: T[], schedule: Record<string, unknown> = {}) => ({ schedule, phases: [{ title: "יסודות", tasks: [{ id: "0.1", status: "⏳" }] }, wave(1, w1), wave(2, w2)] });
+  const w1: T[] = [
+    { id: "W1.1", status: "⏳ #1" },
+    { id: "W1.2", status: "⏳ #2", verified: "node" },
+    { id: "W1.3", status: "⏳ #3", verified: "browser" },
+    { id: "W1.4", status: "✅ #4" },
+    { id: "W1.5" },
+  ];
+
+  it("reads waves from phase titles and counts ⏳ below browser (no level = below)", () => {
+    expect([waveNumber("גל 6 — תיקונים"), waveNumber("יסודות ואוטומציה"), waveNumber(" גל 12 — x")]).toEqual([6, null, 12]);
+    expect(w1.map((t) => belowFloor(t))).toEqual([true, true, false, false, false]);
+    expect(belowFloor({ status: "⏳", verified: "real" })).toBe(false);
+    expect(belowFloor({ status: "⏳", verified: "owner" })).toBe(false);
+    expect(WIP_LIMIT).toBe(5);
+  });
+
+  it("a new task of the next wave is flagged while the wave before is over the limit", () => {
+    const quiet = mini(w1, [{ id: "W2.1" }, { id: "W2.2" }]);
+    expect(wipWarnings(quiet, { limit: 1 })).toEqual([]);
+    // W2.1 starts: now it is a warning (and --wip-strict fails the check).
+    const started = mini(w1, [{ id: "W2.1", status: "⏳ #9" }, { id: "W2.2" }]);
+    const [w] = wipWarnings(started, { limit: 1 });
+    expect(w).toEqual({ wave: 1, next: 2, limit: 1, open: ["W1.1", "W1.2"], unlabelled: 1, started: ["W2.1"] });
+    expect(formatWip(w)).toBe("plan: WIP — wave 1 has 2 ⏳ tasks verified below browser (limit 1; 1 with no verified level) while wave 2 has 1 started (W2.1). Verify wave 1 first: W1.1, W1.2.");
+    // At the limit is fine; plan.schedule.wipLimit sets it when no limit is passed.
+    expect(wipWarnings(started, { limit: 2 })).toEqual([]);
+    expect(wipWarnings(mini(w1, [{ id: "W2.1", status: "⏳" }], { wipLimit: 2 }))).toEqual([]);
+    expect(wipWarnings(mini(w1, [{ id: "W2.1", status: "⏳" }], { wipLimit: 1 }))).toHaveLength(1);
+    // Verifying the wave lifts it.
+    const verified = mini(w1.map((t) => (t.status?.startsWith("⏳") ? { ...t, verified: "browser" } : t)), [{ id: "W2.1", status: "⏳" }]);
+    expect(wipWarnings(verified, { limit: 0 })).toEqual([]);
+  });
+
+  it("run() reports the warnings; the CLI only warns unless --wip-strict", () => {
+    const p = plan();
+    expect(run({ root: ROOT, check: true, wipLimit: 3 }).wip).toEqual(wipWarnings(p, { limit: 3 }));
+    const cli = (...args: string[]) => spawnSync(process.execPath, [join(ROOT, "scripts/plan/build.mjs"), "--check", ...args], { cwd: ROOT, encoding: "utf8" });
+    const loose = cli("--wip-limit", "0");
+    expect(loose.status).toBe(0);
+    expect(loose.stderr.split("\n").filter((l) => l.startsWith("plan: WIP")).length).toBe(wipWarnings(p, { limit: 0 }).length);
+    expect(cli("--wip-limit", "0", "--wip-strict").status).toBe(wipWarnings(p, { limit: 0 }).length ? 1 : 0);
+    expect(cli("--wip-limit", "100000", "--wip-strict").status).toBe(0);
+    expect(cli("--wip-limit", "x").status).toBe(1);
+  });
+});
+
+describe("work in progress: what counts as started (W10.G6)", () => {
+  it("a wave's placeholder status is not started; real work is", () => {
+    expect(isStarted({ status: "⏳ גל 10 — לא התחיל" })).toBe(false);
+    expect(isStarted({ status: "⏳ גל 11 — לא התחיל (מחכה ל-W10.Z1)" })).toBe(false);
+    expect(isStarted({ status: "" })).toBe(false);
+    expect(isStarted({})).toBe(false);
+    expect(isStarted({ status: "⏳ #618 — בעבודה" })).toBe(true);
+    expect(isStarted({ status: "✅ #1" })).toBe(true);
+    const wave = (n: number, tasks: object[]) => ({ title: `גל ${n} — x`, tasks });
+    const open = Array.from({ length: 6 }, (_, i) => ({ id: `W1.${i}`, status: "⏳ #1", verified: "built" }));
+    const placeholder = { phases: [wave(1, open), wave(2, [{ id: "W2.1", status: "⏳ גל 2 — לא התחיל" }])] };
+    expect(wipWarnings(placeholder)).toEqual([]);
+    const started = { phases: [wave(1, open), wave(2, [{ id: "W2.1", status: "⏳ #9 בעבודה" }])] };
+    expect(wipWarnings(started)).toHaveLength(1);
   });
 });

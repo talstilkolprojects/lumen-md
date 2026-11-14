@@ -10,7 +10,13 @@
  *
  *   npm run plan             regenerate both
  *   npm run plan:check       exit 1 when either differs from plan.json (CI),
- *                            or a ✅ task has no `dod` (plan 0.7, scripts/dod.mjs)
+ *                            or a ✅ task has no `dod` (plan 0.7, scripts/dod.mjs),
+ *                            a ✅ is verified below `browser` (W10.G8), or a
+ *                            status is longer than STATUS_MAX (W10.G7);
+ *                            warns when a wave is over its work-in-progress limit
+ *                            while the next wave has started (plan W6.39, below)
+ *   npm run plan:check -- --wip-strict      the WIP warning fails the check
+ *   npm run plan:check -- --wip-limit 8     another limit than plan.schedule.wipLimit / WIP_LIMIT
  *   npm run plan -- --hours  also print actual hours per task branch (git)
  *
  * The scheduler started as a port of the earlier Python generator (plan5.py
@@ -135,6 +141,35 @@ export function checkVerified(plan) {
   return problems;
 }
 
+/**
+ * Plan W10.G8 (the core of W4.24) — ✅ means checked at least in a browser.
+ * `built`, `node` and `owner` (only the owner's real-world check is left, the
+ * ✅* tasks) are ⏳ until that check runs.
+ */
+export const DONE_LEVELS = Object.freeze(["browser", "real"]);
+export function checkDoneLevel(plan) {
+  const problems = [];
+  for (const p of plan.phases) for (const t of p.tasks) {
+    if (!String(t.status ?? "").startsWith("✅")) continue;
+    if (!DONE_LEVELS.includes(t.verified)) problems.push(`${t.id}: marked ${t.status.slice(0, 2).trim()} but verified ${JSON.stringify(t.verified ?? null)} — ✅ needs ${DONE_LEVELS.join(" or ")}; keep it ⏳ until that check runs (W10.G8)`);
+  }
+  return problems;
+}
+
+/**
+ * Plan W10.G7 — a status is one short line on the board. The detail goes in
+ * `notes` (rendered under the task, not in the table).
+ */
+export const STATUS_MAX = 200;
+export function checkStatusLength(plan, { max = STATUS_MAX } = {}) {
+  const problems = [];
+  for (const p of plan.phases) for (const t of p.tasks) {
+    if (t.status !== undefined && [...String(t.status)].length > max) problems.push(`${t.id}: status is ${[...String(t.status)].length} characters, over ${max} — move the detail to "notes" (W10.G7)`);
+    if (t.notes !== undefined && (typeof t.notes !== "string" || !t.notes.trim())) problems.push(`${t.id}: notes must be a non-empty string`);
+  }
+  return problems;
+}
+
 // ───────────────────────────── model ─────────────────────────────
 
 /**
@@ -154,11 +189,11 @@ export function buildModel(plan) {
     tasks: p.tasks.map((x) => {
       const done = (x.status ?? "").startsWith("✅");
       const t = {
-        id: x.id, t: x.title, br: x.branch, lane: x.lane,
+        id: x.id, t: x.title, br: x.branch ?? "—", lane: x.lane,
         m: done ? 0 : x.minutes, m_est: x.minutes, done,
         dep: [...(x.dep ?? [])], depRule: x.depRule, g: [...(x.groups ?? [])], p: x.priority,
         status: x.status, verified: x.verified, pr: x.pr, new: !!x.new, tal: x.owner ?? "", old: x.was ?? "", w: x.source ?? "",
-        steps: x.steps, ok: x.acceptance, phase: pi,
+        steps: x.steps, ok: x.acceptance, notes: x.notes, phase: pi,
       };
       agent.push(t);
       return t;
@@ -397,7 +432,7 @@ export function renderBoard(M) {
   o.push("| # | שלב | יעד world class (נמדד) | משימות | מאמץ | התחלה | סיום |\n|---|---|---|---|---|---|---|");
   M.phases.forEach((p, i) => {
     const [a, b] = M.span(p.tasks);
-    o.push(`| ${i} | ${cell(p.title)} | ${cell(p.goal)} | ${p.tasks.length} | ${dur(sum(p.tasks))} | ${fmt(a)} | ${fmt(b)} |`);
+    o.push(`| ${i} | ${cell(p.title)} | ${cell(p.goal ?? "—")} | ${p.tasks.length} | ${dur(sum(p.tasks))} | ${fmt(a)} | ${fmt(b)} |`);
   });
   o.push(`| 15 | מה צריך ממך | — | ${M.owner.length} | ${dur(sum(M.owner))} שלך | ${fmt(Math.min(...M.owner.map((t) => t.start)))} | ${fmt(Math.max(...M.owner.map((t) => t.end)))} |\n`);
   o.push("#### ציר זמן לפי מסלול\n");
@@ -409,7 +444,7 @@ export function renderBoard(M) {
   o.push("");
   M.phases.forEach((p, i) => {
     o.push(`#### ${i}. ${p.title}\n`);
-    o.push(`**יעד:** ${p.goal}` + (p.why ? `  \n**למה:** ${p.why}` : "") + "\n");
+    if (p.goal || p.why) o.push((p.goal ? `**יעד:** ${p.goal}` : "") + (p.goal && p.why ? "  \n" : "") + (p.why ? `**למה:** ${p.why}` : "") + "\n");
     o.push("| # | משימה | עדיפות | מסלול | הערכה | תלוי ב- | התחלה | סיום | מצב | אימות |\n|---|---|---|---|---|---|---|---|---|---|");
     for (const t of p.tasks) {
       const tag = t.new ? " 🆕" : "";
@@ -422,6 +457,7 @@ export function renderBoard(M) {
       o.push(`**${t.id} · ${t.t}** — ${br} · ${lanes[t.lane]} · ${est(t)} · מקור: ${t.w}${extra}\n`);
       t.steps.forEach((st, k) => o.push(`${t.id}.${k + 1}. ${st}`));
       o.push("\n**קבלה:** " + t.ok.join(" · ") + "\n");
+      if (t.notes) o.push(`**פירוט הסטטוס:** ${t.notes}\n`);
     }
   });
   o.push("#### 15. מה צריך ממך\n");
@@ -540,7 +576,7 @@ export function renderHtml(M) {
   M.phases.forEach((p, i) => {
     const [a, b] = M.span(p.tasks);
     H.push(`<section class="card" id="p${i}"><header><h2><span class="num">${i}</span>${E(p.title)}</h2><span class="when">${p.tasks.length} משימות · ${dur(sum(p.tasks))} · ${fmt(a)} ← ${fmt(b)}</span></header>`);
-    H.push(`<div class="target"><b>יעד world class:</b> ${codeHtml(p.goal)}</div>`);
+    if (p.goal) H.push(`<div class="target"><b>יעד world class:</b> ${codeHtml(p.goal)}</div>`);
     if (p.why) H.push(`<div class="why">${codeHtml(p.why)}</div>`);
     for (const t of p.tasks) {
       let pills = "";
@@ -555,7 +591,7 @@ export function renderHtml(M) {
       H.push(`<details class="task"><summary><span class="tid">${t.id}</span><span class="tt">${codeHtml(t.t)}${pills}<span class="meta">${meta}</span></span><span class="est">${est(t)}<span class="dt">${when}</span></span></summary>`);
       H.push('<div class="body"><ol class="steps">');
       t.steps.forEach((st, k) => H.push(`<li><b>${t.id}.${k + 1}</b><span>${codeHtml(st)}</span></li>`));
-      H.push('</ol><div class="ok"><b>קבלה (נמדד):</b><ul>' + t.ok.map((x) => `<li>${codeHtml(x)}</li>`).join("") + `</ul></div><div class="meta">מקור: ${codeHtml(t.w)}${t.old && t.old !== t.id ? " · היה " + E(t.old) : ""}</div></div></details>`);
+      H.push('</ol><div class="ok"><b>קבלה (נמדד):</b><ul>' + t.ok.map((x) => `<li>${codeHtml(x)}</li>`).join("") + `</ul></div>${t.notes ? `<div class="why"><b>פירוט הסטטוס:</b> ${codeHtml(t.notes)}</div>` : ""}<div class="meta">מקור: ${codeHtml(t.w)}${t.old && t.old !== t.id ? " · היה " + E(t.old) : ""}</div></div></details>`);
     }
     H.push("</section>");
   });
@@ -614,15 +650,81 @@ export function actualHours(M, { root = ROOT, base = "origin/main", remote = "or
   return out;
 }
 
+// ───────────────────────────── work in progress (W6.39) ─────────────────────────────
+
+/**
+ * Plan W6.39 — no new wave before the previous one is verified. A wave (a
+ * phase titled "גל N — …") is over its limit when more than `limit` of its
+ * ⏳ tasks are verified below `browser`; while it is, starting tasks of the
+ * next wave is the warning. A task without a `verified` level (plan W4.24)
+ * counts as below `browser`: unknown is not verified.
+ */
+export const WIP_LIMIT = 5;
+/** Verification levels, weakest first (the W4.24 order: `owner` = only the owner's real-world part is left). */
+export const WIP_LEVELS = Object.freeze(["built", "node", "browser", "real", "owner"]);
+export const WIP_FLOOR = "browser";
+
+/** The wave number of a phase title ("גל 6 — …" → 6), or null for the numbered phases before the waves. */
+export function waveNumber(title) {
+  const m = /^גל\s+(\d+)/.exec(String(title ?? "").trim());
+  return m ? Number(m[1]) : null;
+}
+
+/** ⏳ and verified below the floor (or not at all). */
+export function belowFloor(task, floor = WIP_FLOOR) {
+  if (!String(task.status ?? "").startsWith("⏳")) return false;
+  return WIP_LEVELS.indexOf(task.verified) < WIP_LEVELS.indexOf(floor);
+}
+
+/** A task is started once it has a status (a PR, work in progress, or done). */
+/** The placeholder a wave's tasks carry before any work ("⏳ גל 10 — לא התחיל"): not started (W10.G6). */
+export const NOT_STARTED = /^⏳\s*גל\s+\d+\s+—\s+לא התחיל/;
+export const isStarted = (task) => {
+  const s = String(task.status ?? "").trim();
+  return s !== "" && !NOT_STARTED.test(s);
+};
+
+/**
+ * Every wave over its limit whose next wave has started:
+ * [{ wave, next, limit, open: [ids below the floor], unlabelled, started: [ids of the next wave] }].
+ * The limit is `limit`, else plan.schedule.wipLimit, else WIP_LIMIT.
+ */
+export function wipWarnings(plan, { limit } = {}) {
+  const max = Number.isInteger(limit) && limit >= 0 ? limit : Number.isInteger(plan.schedule?.wipLimit) ? plan.schedule.wipLimit : WIP_LIMIT;
+  const waves = plan.phases
+    .map((p) => ({ n: waveNumber(p.title), tasks: p.tasks }))
+    .filter((w) => w.n !== null)
+    .sort((a, b) => a.n - b.n);
+  const out = [];
+  for (let i = 0; i + 1 < waves.length; i++) {
+    const open = waves[i].tasks.filter((t) => belowFloor(t));
+    const started = waves[i + 1].tasks.filter(isStarted);
+    if (open.length > max && started.length) {
+      out.push({ wave: waves[i].n, next: waves[i + 1].n, limit: max, open: open.map((t) => t.id), unlabelled: open.filter((t) => t.verified === undefined).length, started: started.map((t) => t.id) });
+    }
+  }
+  return out;
+}
+
+/** One line per warning, for the terminal. */
+export function formatWip(w) {
+  const list = (ids) => (ids.length > 8 ? `${ids.slice(0, 8).join(", ")} … (+${ids.length - 8})` : ids.join(", "));
+  return `plan: WIP — wave ${w.wave} has ${w.open.length} ⏳ tasks verified below ${WIP_FLOOR} (limit ${w.limit}${w.unlabelled ? `; ${w.unlabelled} with no verified level` : ""}) while wave ${w.next} has ${w.started.length} started (${list(w.started)}). Verify wave ${w.wave} first: ${list(w.open)}.`;
+}
+
 // ───────────────────────────── CLI ─────────────────────────────
 
-export function run({ root = ROOT, check = false } = {}) {
+export function run({ root = ROOT, check = false, wipLimit } = {}) {
   const plan = JSON.parse(readFileSync(join(root, PLAN_FILE), "utf8"));
   // Plan 0.7: no ✅ without the commands that prove it.
   const dodProblems = checkDod(plan);
   if (dodProblems.length) throw new Error(`plan: definition of done —\n  ${dodProblems.join("\n  ")}`);
   const verifiedProblems = checkVerified(plan);
   if (verifiedProblems.length) throw new Error(`plan: verified / pr (W4.24) —\n  ${verifiedProblems.join("\n  ")}`);
+  const levelProblems = checkDoneLevel(plan);
+  if (levelProblems.length) throw new Error(`plan: ✅ below browser (W10.G8) —\n  ${levelProblems.join("\n  ")}`);
+  const lengthProblems = checkStatusLength(plan);
+  if (lengthProblems.length) throw new Error(`plan: status length (W10.G7) —\n  ${lengthProblems.join("\n  ")}`);
   const M = buildModel(plan);
   const docPath = join(root, DOC_FILE);
   const htmlPath = join(root, HTML_FILE);
@@ -636,12 +738,15 @@ export function run({ root = ROOT, check = false } = {}) {
     if (stale.includes(DOC_FILE)) writeFileSync(docPath, wantDoc);
     if (stale.includes(HTML_FILE)) writeFileSync(htmlPath, wantHtml);
   }
-  return { M, stale };
+  return { M, stale, wip: wipWarnings(plan, { limit: wipLimit }) };
 }
 
 function main(argv) {
   const check = argv.includes("--check");
-  const { M, stale } = run({ check });
+  const at = argv.indexOf("--wip-limit");
+  const wipLimit = at >= 0 ? Number(argv[at + 1]) : undefined;
+  if (at >= 0 && !(Number.isInteger(wipLimit) && wipLimit >= 0)) throw new Error(`plan: --wip-limit takes a whole number, not ${JSON.stringify(argv[at + 1])}`);
+  const { M, stale, wip } = run({ check, wipLimit });
   const P0 = M.agent.filter((t) => t.eff === "P0").length;
   const levels = [...VERIFIED_LEVELS.map((k) => `${k} ${M.VERIFIED[k]}`), ...(M.VERIFIED.none ? [`unset ${M.VERIFIED.none}`] : [])].join(", ");
   const summary = `${M.agent.length} tasks, ${M.owner.length} owner items, ${Math.floor(M.EFFORT / 60)} h left; release (P0, ${P0} tasks) ${fmt(M.P0_END)}, end ${fmt(M.END)}; verified: ${levels}`;
@@ -650,6 +755,11 @@ function main(argv) {
     for (const h of actualHours(M, { base })) console.log(`${h.id.padEnd(6)} ${h.branch.padEnd(32)} ${String(h.commits).padStart(3)} commits  ${h.hours.toFixed(2).padStart(6)} h actual  ${h.estimate.toFixed(2).padStart(6)} h estimated`);
   }
   if (check) {
+    for (const w of wip) console.error(formatWip(w));
+    if (wip.length && argv.includes("--wip-strict")) {
+      console.error(`plan: ${wip.length} wave${wip.length > 1 ? "s" : ""} over the work-in-progress limit (--wip-strict).`);
+      return 1;
+    }
     if (stale.length) {
       console.error(`plan: ${stale.join(" and ")} ${stale.length > 1 ? "differ" : "differs"} from ${PLAN_FILE}. Run \`npm run plan\` and commit the result.`);
       return 1;

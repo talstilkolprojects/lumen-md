@@ -13,7 +13,6 @@ import {
   runDod,
   markdown,
   allTasks,
-  DOD_GRANDFATHER_BASELINE,
   // @ts-expect-error — plain .mjs script without type declarations
 } from "../../scripts/dod.mjs";
 // @ts-expect-error — plain .mjs script without type declarations
@@ -28,9 +27,8 @@ const task = (p: Plan, id: string): Task => allTasks(p).find((t: Task) => t.id =
 const tmp = mkdtempSync(join(tmpdir(), "lumen-dod-"));
 afterAll(() => rmSync(tmp, { recursive: true, force: true }));
 
-const mini = (tasks: Task[], dodGrandfathered: string[] = [], dodRevoked: string[] = []): Plan => ({ dodGrandfathered, dodRevoked, phases: [{ tasks }] });
-/** checkDod over a mini plan whose frozen baseline is its own grandfathered + revoked ids. */
-const check = (p: Plan, baseline?: string[]) => checkDod(p, { baseline: baseline ?? [...(p.dodGrandfathered ?? []), ...(p.dodRevoked ?? [])] });
+const mini = (tasks: Task[]): Plan => ({ phases: [{ tasks }] });
+const check = (p: Plan) => checkDod(p);
 
 describe("checkDod", () => {
   it("the checked-in plan follows the rule", () => {
@@ -56,45 +54,28 @@ describe("checkDod", () => {
     expect(check(mini([{ id: "1.1", status: "✅* #1", dod: ["true"], dodMock: true }]))).toEqual([]);
   });
 
-  it("grandfathered tasks pass without a dod, and the list cannot hide anything", () => {
-    expect(check(mini([{ id: "1.1", status: "✅ #1" }], ["1.1"]))).toEqual([]);
-    expect(check(mini([], ["9.9"]))[0]).toMatch(/9\.9 is not a task/);
-    expect(check(mini([{ id: "1.1", status: "✅ #1", dod: ["true"] }], ["1.1"]))[0]).toMatch(/has a dod now/);
+  it("no task is exempt: a grandfather list is refused, whatever it holds (W10.G5)", () => {
+    // the 0.7 exemption is gone: listing a done task no longer lets it pass without a dod
+    const listed = checkDod({ dodGrandfathered: ["1.1"], phases: [{ tasks: [{ id: "1.1", status: "✅ #1" }] }] });
+    expect(listed.some((m: string) => /dodGrandfathered: no task is exempt/.test(m))).toBe(true);
+    expect(listed.some((m: string) => /1\.1 is marked ✅ without a dod/.test(m))).toBe(true);
+    // an empty list or a revocation record is refused too: the mechanism is deleted, not emptied
+    expect(checkDod({ dodGrandfathered: [], phases: [{ tasks: [] }] })[0]).toMatch(/dodGrandfathered: no task is exempt/);
+    expect(checkDod({ dodRevoked: ["1.1"], phases: [{ tasks: [] }] })[0]).toMatch(/dodRevoked: no task is exempt/);
   });
 
-  it("the grandfather list only shrinks: an id outside the frozen baseline is refused (Codex P1, #265)", () => {
-    expect(DOD_GRANDFATHER_BASELINE).toHaveLength(60);
-    expect(Object.isFrozen(DOD_GRANDFATHER_BASELINE)).toBe(true);
-    // 4.11 was never ✅ before 0.7: marking it ✅ and hiding it on the list fails
-    const problems = checkDod(mini([{ id: "4.11", status: "✅ #300" }], ["4.11"]), { baseline: ["4.11-other"] });
-    expect(problems.some((m: string) => /4\.11 was not ✅ before 0\.7/.test(m))).toBe(true);
-    expect(check(mini([{ id: "x", status: "✅ #1" }], ["x"]), ["x"])).toEqual([]);
-    // every id the checked-in plan grandfathers is in the baseline
-    for (const id of plan().dodGrandfathered ?? []) expect(DOD_GRANDFATHER_BASELINE).toContain(id);
+  it("the checked-in plan exempts nothing, and every ✅ in it has its commands (W10.G1–G5)", () => {
+    const p = plan();
+    expect(p.dodGrandfathered).toBeUndefined();
+    expect(p.dodRevoked).toBeUndefined();
+    const done = allTasks(p).filter((t: Task) => (t.status ?? "").startsWith("✅"));
+    expect(done.length).toBeGreaterThan(0);
+    for (const t of done) expect(t.dod?.length, t.id).toBeGreaterThan(0);
   });
 
-  it("a reopened grandfathered task must leave the list, so it can't return to ✅ without a dod (Codex P1, #265)", () => {
-    expect(check(mini([{ id: "1.1", status: "⏳ again" }], ["1.1"]))[0]).toMatch(/1\.1 is not done any more/);
-    // off the list: ⏳ is fine, and ✅ again needs a dod
+  it("a reopened task can't return to ✅ without a dod", () => {
     expect(check(mini([{ id: "1.1", status: "⏳ again" }]))).toEqual([]);
     expect(check(mini([{ id: "1.1", status: "✅ #2" }]))[0]).toMatch(/without a dod/);
-  });
-
-  it("the shrink is one-way: an id that leaves the list is recorded as revoked and can't come back (Codex P1, #265)", () => {
-    const base = ["1.1", "1.2"];
-    // 1.1 graduated (dod, off the list, revoked): fine
-    expect(checkDod(mini([{ id: "1.1", status: "✅ #1", dod: ["true"] }, { id: "1.2", status: "✅ #1" }], ["1.2"], ["1.1"]), { baseline: base })).toEqual([]);
-    // dropped from the list without recording the revocation: refused
-    expect(checkDod(mini([{ id: "1.1", status: "✅ #1", dod: ["true"] }, { id: "1.2", status: "✅ #1" }], ["1.2"]), { baseline: base })[0]).toMatch(/1\.1 left the list without being recorded in dodRevoked/);
-    // the reversal the ratchet exists for: delete the dod and re-add the id → refused
-    const reversed = checkDod(mini([{ id: "1.1", status: "✅ #1" }, { id: "1.2", status: "✅ #1" }], ["1.2", "1.1"], ["1.1"]), { baseline: base });
-    expect(reversed.some((m: string) => /1\.1's exemption was revoked/.test(m))).toBe(true);
-    // revoked ids come only from the baseline
-    expect(checkDod(mini([], [], ["9.9"]), { baseline: [] })[0]).toMatch(/9\.9 was never grandfathered/);
-    // the checked-in plan: every baseline id is grandfathered or revoked, never both
-    const p = plan();
-    for (const id of DOD_GRANDFATHER_BASELINE) expect([...(p.dodGrandfathered ?? []), ...(p.dodRevoked ?? [])]).toContain(id);
-    for (const id of p.dodRevoked ?? []) expect(p.dodGrandfathered).not.toContain(id);
   });
 
   it("a ✅* task declares dodMock, so it can't quietly become ✅ (Codex P1, #265)", () => {
