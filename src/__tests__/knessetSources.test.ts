@@ -172,12 +172,12 @@ describe("Ask the law", () => {
     expect(s.find((x) => x.number === "7")!.text).toContain("(ד) אין פוגעים בסוד שיחו");
   });
 
-  it("20 golden questions on 5 laws: at least 18 with the right section, verified", () => {
+  it("20 golden questions on 5 laws: at least 18 with the right section, quoted word for word (quotes, not verified answers)", () => {
     expect(ASK.questions.length).toBe(20);
     expect(new Set(ASK.questions.map((q) => q.law)).size).toBe(5);
     const right = ASK.questions.filter((g) => {
       const a = askTheLaw(g.q, saved, 1)[0];
-      return a && a.law.law.name === g.law && a.section.number === g.section && a.verified;
+      return a && a.law.law.name === g.law && a.section.number === g.section && a.quoteInLaw;
     });
     const wrong = ASK.questions.filter((g) => !right.includes(g)).map((g) => `${g.q} → ${askTheLaw(g.q, saved, 1)[0]?.section.number ?? "none"}`);
     expect(right.length, wrong.join("; ")).toBeGreaterThanOrEqual(18);

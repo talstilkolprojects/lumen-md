@@ -66,6 +66,21 @@ export async function ask(question: string): Promise<LawAnswer[]> {
   return askTheLaw(question, await savedLaws(vault));
 }
 
+export { answerLawQuestion } from "./answer";
+
+/**
+ * A chat with a model on this device (Ollama or the in-browser model), or
+ * null. Never the cloud "chat" executor: the critic-checked answer (plan
+ * W10.B10) is a local feature, and without a local model there is only the
+ * quote.
+ */
+export async function localLawChat(): Promise<import("./answer").LawChat | null> {
+  const { pickExecutor } = await import("../../agents/executors");
+  const { executor } = await pickExecutor(["ollama", "webllm"]);
+  if (!executor || executor.id === "chat") return null;
+  return async (messages) => (await executor.chat({ messages, tier: "small", temperature: 0, maxTokens: 200 })).content;
+}
+
 /** A protocol quote from the open note (a protocol's text) and the selected words; null when the words are not in a speaker's turn. */
 export function quoteFromProtocol(protocolText: string, excerpt: string): string | null {
   const turn = findTurn(parseProtocol(protocolText), excerpt);

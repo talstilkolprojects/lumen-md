@@ -52,8 +52,17 @@ Nothing is sent: the details come from the protocol's first lines.
 ## Ask the law
 
 **Ask the law…** searches the sections of the laws you saved, on this
-device. Every answer is a section quoted word for word and checked against
-the saved note; an answer that fails the check is marked "not verified".
+device, and inserts the section you pick, quoted word for word with its
+citation. That is a **quote from the law, not a verified answer**: nothing
+checks that the section answers your question, and the note says so.
+
+With a model on this device (Ollama, or the in-browser model), Lumen also
+writes a short answer from that one section, and a critic checks it
+against the section's text. The answer is marked verified only when the
+critic finds the section supports it. An answer with a number the section
+doesn't contain (a deadline, an amount) is never verified, whatever the
+model says. Without a local model there is no answer and nothing is
+verified, only the quote. The cloud is never used for this.
 
 ## What is not here yet
 
