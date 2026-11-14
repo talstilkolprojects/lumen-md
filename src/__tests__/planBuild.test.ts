@@ -23,8 +23,15 @@ import {
   waveNumber,
   belowFloor,
   WIP_LIMIT,
+  renderHtml,
+  checkVerified,
+  withVerified,
+  VERIFIED_LEVELS,
+  VERIFIED_LABEL,
   // @ts-expect-error — plain .mjs script without type declarations
 } from "../../scripts/plan/build.mjs";
+// @ts-expect-error — plain .mjs script without type declarations
+import { classify, prOf, migrate } from "../../scripts/plan/migrate-verified.mjs";
 
 const ROOT = resolve(__dirname, "..", "..");
 const plan = () => JSON.parse(readFileSync(join(ROOT, "plan/plan.json"), "utf8"));
@@ -39,7 +46,7 @@ function copy(name: string): string {
   for (const f of ["plan/plan.json", "plan/board.html", "public/roadmap.html", "MASTER_PLAN.md"]) cpSync(join(ROOT, f), join(dir, f));
   return dir;
 }
-type Task = { id: string; status?: string; priority: string; dep?: string[] };
+type Task = { id: string; status?: string; verified?: string; pr?: number; priority: string; dep?: string[] };
 const tasks = (p: { phases: { tasks: Task[] }[] }) => p.phases.flatMap((ph) => ph.tasks);
 
 describe("plan build", () => {
@@ -168,6 +175,114 @@ describe("plan build", () => {
     const audit = M.agent.find((t: { depRule?: string }) => t.depRule === "all");
     for (const o of M.owner) expect(audit.dep).toContain(o.id);
     expect(audit.start).toBeGreaterThanOrEqual(Math.max(...M.owner.map((o: { end: number }) => o.end)));
+  });
+
+  it("a time with a zone offset or seconds is refused with a clear error, not looped on", () => {
+    // Regression: "2026-11-12T11:40:00+02:00" parsed to NaN and the owner-window walk spun forever.
+    for (const bad of ["2026-11-12T11:40:00+02:00", "2026-11-12T11:40:00", "2026-11-12T11:40Z", "2026-11-12", "", undefined]) {
+      expect(() => parseTime(bad), String(bad)).toThrow(/not YYYY-MM-DDTHH:MM/);
+    }
+    expect(() => parseTime("2026-13-40T99:99")).toThrow(/not YYYY-MM-DDTHH:MM/);
+    const p = plan();
+    p.updated = "2026-11-12T11:40:00+02:00";
+    const t0 = Date.now();
+    expect(() => buildModel(p)).toThrow(/updated "2026-11-12T11:40:00\+02:00" is not YYYY-MM-DDTHH:MM/);
+    expect(Date.now() - t0).toBeLessThan(1000);
+    const q = plan();
+    q.start = "12.11.2026 11:40";
+    expect(() => buildModel(q)).toThrow(/start "12\.11\.2026 11:40"/);
+  });
+});
+
+describe("verification level (W4.24)", () => {
+  it("every task with a status has a known level and its PR, right after the status", () => {
+    const p = plan();
+    expect(checkVerified(p)).toEqual([]);
+    for (const t of tasks(p)) {
+      if (!t.status) {
+        expect(t.verified, t.id).toBeUndefined();
+        continue;
+      }
+      expect(VERIFIED_LEVELS, t.id).toContain(t.verified);
+      expect(t.pr, t.id).toBe(prOf(t.status));
+      const keys = Object.keys(t);
+      expect(keys[keys.indexOf("status") + 1], t.id).toBe("verified");
+    }
+  });
+
+  it("plan:check refuses an unknown level, a bad PR, a level without a status and the wrong key order", () => {
+    const p = plan();
+    // Open tasks, so the definition-of-done rules (plan 0.7) are not what fails.
+    const [a, b, c, d] = tasks(p).filter((t) => t.status?.startsWith("⏳"));
+    a.verified = "ci";
+    b.pr = "#12" as unknown as number;
+    const phaseOf = (t: Task) => p.phases.find((ph: { tasks: Task[] }) => ph.tasks.includes(t))!;
+    // Moved to the end: no longer right after "status".
+    const moved = { ...c };
+    delete moved.verified;
+    phaseOf(c).tasks[phaseOf(c).tasks.indexOf(c)] = { ...moved, verified: c.verified };
+    const bare = { ...d };
+    delete bare.status;
+    phaseOf(d).tasks[phaseOf(d).tasks.indexOf(d)] = bare;
+    const problems: string[] = checkVerified(p);
+    expect(problems.some((x) => x.startsWith(`${a.id}: verified "ci" is not one of built, node, browser, real, owner`))).toBe(true);
+    expect(problems.some((x) => x.startsWith(`${b.id}: pr "#12" is not a PR number`))).toBe(true);
+    expect(problems.some((x) => x.startsWith(`${c.id}: verified, pr must come right after "status"`))).toBe(true);
+    expect(problems.some((x) => x.startsWith(`${d.id}: verified and pr without a status`))).toBe(true);
+    const dir = copy("verified-bad");
+    writeFileSync(join(dir, "plan/plan.json"), JSON.stringify(p, null, 1) + "\n");
+    expect(() => run({ root: dir, check: true })).toThrow(/verified \/ pr \(W4\.24\)/);
+  });
+
+  it("withVerified puts the two keys right after status and keeps every other key in place", () => {
+    const t = { id: "9.9", title: "x", status: "⏳ #12", verified: "node", source: "s", pr: 3, steps: [] };
+    expect(Object.keys(withVerified(t, "browser", 12))).toEqual(["id", "title", "status", "verified", "pr", "source", "steps"]);
+    expect(withVerified(t, "browser", 12)).toMatchObject({ verified: "browser", pr: 12 });
+    expect(Object.keys(withVerified(t, "built", undefined))).toEqual(["id", "title", "status", "verified", "source", "steps"]);
+  });
+
+  it("the board and the page show the level per task and the counts per level", () => {
+    const p = plan();
+    const M = buildModel(p);
+    const counts = Object.fromEntries(VERIFIED_LEVELS.map((k: string) => [k, tasks(p).filter((t) => t.verified === k).length]));
+    const board: string = renderBoard(M);
+    const summary = VERIFIED_LEVELS.map((k: string) => `${VERIFIED_LABEL[k]} ${counts[k]}`).join(" · ");
+    expect(board).toContain(`**רמת אימות (\`verified\`):** ${summary}`);
+    expect(board).toContain("| מצב | אימות |");
+    const t = tasks(p).find((x) => x.verified && x.pr)!;
+    expect(board).toContain(`| ${VERIFIED_LABEL[t.verified!]} · [#${t.pr}](https://github.com/talstilkol/lumen-md/pull/${t.pr}) |`);
+    const html: string = renderHtml(M);
+    expect(html).toContain(`רמת אימות: ${summary}`);
+    expect(html).toContain(`<span class="pill p-v p-v-${t.verified}">אימות: ${VERIFIED_LABEL[t.verified!]} · <a href="https://github.com/talstilkol/lumen-md/pull/${t.pr}">#${t.pr}</a></span>`);
+  });
+
+  it("the migration reads the level from the Hebrew status", () => {
+    expect(prOf("⏳ #331 feat/vault-tasks (על #267)")).toBe(331);
+    expect(prOf("✅ ביקורת עצמאית 10.11")).toBeUndefined();
+    expect(classify("⏳ #331 (…) — נבדק רק ב-Node נקי; typecheck/vitest/build/Playwright ממתינים ל-Vercel Sandbox")).toBe("node");
+    expect(classify("⏳ #388 (…; hebrewTts 37/37 ב-shim; לא נבדק ב-Sandbox (חסום עד 1.12); בעלים: tts:mos עם 5 מדרגים)")).toBe("node");
+    expect(classify("⏳ #413 (whatsNew 6/6, דיאלוג 2/2 ב-Chromium; לא נבדק ב-Sandbox (חסום עד 1.12))")).toBe("browser");
+    expect(classify("⏳ #369 (Vercel Sandbox (Node 24): typecheck 0, vitest 317/3047, e2e chromium+firefox 5/5; בעלים: חיבור Claude Desktop אמיתי, npm publish)")).toBe("owner");
+    expect(classify("⏳ #487 (usabilityUnmoderated 8/8, Chromium עם OPFS 4/4; חסר: גיוס 12 משתתפים (טל))")).toBe("owner");
+    // An owner item is not all that is owed: an agent's item sits next to it in "חסר".
+    expect(classify("⏳ #484 (pagesLimits 5/5, Chromium 3/3; חסר: הפעלה (טל), ci:docker)")).toBe("browser");
+    // A dod list names commands to run, not ones that ran.
+    expect(classify("⏳ #381 (plain-Node 26/26; dod: npx vitest run a.test.ts · npx playwright test e2e/x.spec.ts --project=chromium)")).toBe("node");
+    expect(classify("⏳ #366 (Vercel Sandbox (Node 24): typecheck 0, vitest 334/3395; אין e2e)")).toBe("node");
+    expect(classify("⏳ #421 (npm run bench:models ב-Chromium אמיתי עם WebGPU; לא נבדק ב-Sandbox)")).toBe("built");
+    expect(classify("⏳ #267 (מפרש נוסחאות; CI ירוק על 575b2ecf)")).toBe("browser");
+    expect(classify("⏳ #307 feat/pii-redactor (CI אדום על בדיקות (צעד Test))")).toBe("built");
+    expect(classify("✅ #202")).toBe("browser");
+    expect(classify("✅* #241 (15/15 מקרי eval מול Ollama מזויף)")).toBe("owner");
+  });
+
+  it("the migration is idempotent and keeps a level set by hand unless asked to recompute", () => {
+    const p = plan();
+    expect(migrate(p).changed).toEqual([]);
+    const t = tasks(p).find((x) => x.verified === "browser")!;
+    t.verified = "real";
+    expect(migrate(p).changed).toEqual([]);
+    expect(migrate(p, { all: true }).changed).toEqual([t.id]);
   });
 });
 
