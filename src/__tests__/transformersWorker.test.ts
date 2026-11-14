@@ -20,7 +20,7 @@ vi.mock("@huggingface/transformers", () => ({ env, pipeline: pipelineFn }));
 const posted: unknown[] = [];
 vi.stubGlobal("postMessage", (m: unknown) => posted.push(m));
 
-import { handle, configureOrt, windowsOf } from "../ai/transformers.worker";
+import { handle, configureOrt, windowsOf, asrOptions } from "../ai/transformers.worker";
 
 describe("transformers worker", () => {
   beforeEach(() => {
@@ -69,6 +69,12 @@ describe("transformers worker", () => {
     await handle({ id: 3, type: "transcribe", model: "onnx-community/whisper-tiny", device: "wasm", audio: new Float32Array(10) });
     expect(dispose).toHaveBeenCalledTimes(1);
     expect(pipelineFn.mock.calls[1][2]).toMatchObject({ device: "wasm", dtype: "q8" });
+  });
+
+  it("loads large-v3-turbo with its fp16 encoder on WebGPU: the fp32 one is over the mirror's 2 GiB (W6.33)", () => {
+    expect(asrOptions("webgpu", "onnx-community/whisper-large-v3-turbo")).toEqual({ device: "webgpu", dtype: { encoder_model: "fp16", decoder_model_merged: "q4" } });
+    expect(asrOptions("webgpu", "onnx-community/whisper-small").dtype).toEqual({ encoder_model: "fp32", decoder_model_merged: "q4" });
+    expect(asrOptions("wasm", "onnx-community/whisper-large-v3-turbo").dtype).toBe("q8");
   });
 
   it("cuts windows at the quietest point near the boundary and keeps every sample", () => {

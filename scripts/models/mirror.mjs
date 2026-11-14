@@ -7,6 +7,8 @@
  *       Offline. Lists every model that cannot download without Hugging Face
  *       yet: revision not pinned, no file list, a file with no sha256, a file
  *       over GitHub's 2 GiB. --strict exits 1 when anything is listed.
+ *       Always exits 1 when such a model, or a variant left out (hosting.omitted),
+ *       has no message for the user in English and Hebrew (plan W6.33).
  *       Default: the models that may be defaults (allowed, in the app); --all: every download.
  *
  *   npm run models:mirror -- --pin [--only <id>[,<id>…]] [--include-conditional]
@@ -295,7 +297,22 @@ function check(opts) {
   const files = scope.reduce((s, m) => s + (m.files?.length ?? 0), 0);
   const unhashed = scope.reduce((s, m) => s + (m.files ?? []).filter((f) => !H.hasSha(f)).length + (m.hosting?.unpinned?.length ?? 0), 0);
   console.log(`models:mirror --check: ${scope.length - ids.size}/${scope.length} models can download without Hugging Face; ${files} pinned files, ${unhashed} without sha256`);
+  // W6.33: a model that is (partly) only on Hugging Face must say so, in English and in Hebrew.
+  const only = opts.all ? (m) => m.delivery === "download" : H.isDefaultCandidate;
+  const messages = H.mirrorMessages(reg.models, only);
+  const silent = [];
+  for (const [lang, strings] of Object.entries(messageStrings())) for (const s of H.silentHfOnly(reg.models, strings, only)) silent.push(`${lang}: ${s}`);
+  for (const s of silent) console.log(`no message: ${s}`);
+  console.log(`models:mirror --check: ${new Set(messages.filter((x) => x.gap !== "omitted").map((x) => x.id)).size} models only on Hugging Face and ${messages.filter((x) => x.gap === "omitted").length} variants left out, each with a message; ${silent.length} without a message`);
+  if (silent.length) process.exitCode = 1;
   if (opts.strict && gaps.length) process.exitCode = 1;
+}
+
+/** The strings the messages need: English (the lazy chunk) and Hebrew. */
+export function messageStrings() {
+  const en = JSON.parse(readFileSync(join(ROOT, "src", "i18n", "lazy", "modelSources.json"), "utf8"));
+  const he = JSON.parse(readFileSync(join(ROOT, "src", "i18n", "locales", "he", "common.json"), "utf8"));
+  return { en, he };
 }
 
 const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);

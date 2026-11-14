@@ -55,6 +55,31 @@ storage with free egress, which is too small for the web-llm models, and its
 A deployment turns the mirror on with `VITE_MODEL_MIRROR_URL`, and the build
 adds its origin to the CSP. Until then, step 2 is skipped.
 
+## Files over 2 GiB
+
+GitHub holds at most 2 GiB per file, so the mirror can't hold a file that is
+larger. Only one model the app loads has one: the full-precision (fp32)
+encoder of Whisper large-v3-turbo, about 2.5 GB. Lumen doesn't split it into
+parts. It loads that model's fp16 encoder instead (1.27 GB), from every
+source:
+
+- Whisper runs in fp16 on GPUs anyway, so the results are the same.
+- The download is half the size.
+- A split file would still have to be put back together as one 2.5 GB block
+  in the browser's memory before ONNX Runtime could read it.
+
+Turbo is offered only on a GPU that supports fp16 (shader-f16). Other GPUs
+get whisper-small.
+
+## Models that are only on Hugging Face
+
+Until a model is pinned and uploaded, it downloads only from Hugging Face.
+AI settings → Model download sources lists each such model, with the reason.
+If Hugging Face is blocked on your network, add your own copy or pick the
+files from your device. The same list names every version left out, and the
+version loaded instead. `npm run models:mirror -- --check` fails when a model
+is missing its message in English or Hebrew.
+
 ## For maintainers
 
 ```sh
@@ -62,7 +87,13 @@ npm run models:mirror -- --check            # what can't download without Huggin
 npm run models:mirror -- --pin              # pin revisions + sha256 of every file (needs Hugging Face)
 npm run models:mirror -- --upload           # one release per model, every file verified first
 npm run models:mirror -- --verify --deep    # read every file from the mirror only, check sha256
+npm run owner:models                        # all of the above in order, on a computer that reaches Hugging Face
 ```
+
+To test the app with Hugging Face blocked, run
+`npx playwright test e2e/model-mirror.spec.ts`. With no network, it uses a
+made-up mirror. With `MODEL_MIRROR_URL=<mirror>`, it uses the real mirror;
+start the dev server with the same `VITE_MODEL_MIRROR_URL`.
 
 Only models whose licence class is `allowed` are mirrored by default. Each
 release's notes carry the model's licence and attribution.
