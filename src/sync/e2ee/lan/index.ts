@@ -96,7 +96,7 @@ let offChanged: (() => void) | null = null;
 export function adoptPeerLink(link: LanLink): RemoteLanProvider {
   peer?.link.close();
   offChanged?.();
-  const remote = remoteLanProvider(link.channel);
+  const remote = remoteLanProvider(link.channel, { fingerprints: link.fingerprints });
   peer = { link, remote, auth: null };
   offChanged = remote.onChanged(() => {
     for (const l of [...changeListeners]) l();
