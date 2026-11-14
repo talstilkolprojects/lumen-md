@@ -6,13 +6,18 @@
 #
 # Runs in the current checkout (it must be clean, untracked files included;
 # <target> gets checked out).
-# A conflict only in generated files — i18n/keys/*.json, package-lock.json — is
-# resolved by regenerating them from the merged sources:
-#   i18n/keys/*.json   node scripts/extract-i18n-keys.mjs
-#   package-lock.json  npm install --package-lock-only   (from the merged package.json)
+# A conflict only in generated files — i18n/keys/*.json, package-lock.json,
+# src/help/generated/*.json — is resolved by regenerating them from the merged sources:
+#   i18n/keys/*.json            node scripts/extract-i18n-keys.mjs
+#   package-lock.json           npm install --package-lock-only   (from the merged package.json)
+#   src/help/generated/*.json   node scripts/help-bundle.mjs       (from the merged docs, plan W8.11)
 # Any other conflict stops the run with the merge left in progress, so you can
 # resolve it by hand and rerun with the branches that are left. An i18n/keys/ that
-# merged cleanly but no longer matches the strings is regenerated in the merge too.
+# merged cleanly but no longer matches the strings is regenerated in the merge too,
+# and so is a help bundle that no longer matches the docs (help-bundle --check).
+# The help shards also get a merge driver (scripts/help-merge-driver.mjs, set in
+# this checkout's git config) that keeps our side instead of writing conflict
+# markers; the rebuild after the merge replaces it.
 #
 # A merge that touches package.json or package-lock.json gets its lockfile
 # settled by `npm install --package-lock-only` inside the merge (a clean
@@ -62,12 +67,17 @@ for b in "${branches[@]}"; do
   git rev-parse --verify --quiet "$b^{commit}" >/dev/null || die "branch '$b' not found"
 done
 
+# Generated help shards: no conflict markers, they are rebuilt after each merge (plan W8.11).
+if [ -f scripts/help-merge-driver.mjs ]; then
+  node scripts/help-merge-driver.mjs --install >/dev/null 2>&1 || echo "lane-merge: could not set the help merge driver; help shard conflicts are rebuilt instead" >&2
+fi
+
 if [ "$(git symbolic-ref --quiet --short HEAD 2>/dev/null)" != "$target" ]; then
   git checkout --quiet "$target" || die "could not check out $target"
 fi
 
 # i18n/keys/<domain>.json: one file per domain since plan 0.3.
-GENERATED=("i18n/keys/*.json" "package-lock.json")
+GENERATED=("i18n/keys/*.json" "package-lock.json" "src/help/generated/*.json")
 is_generated() { local f; for f in "${GENERATED[@]}"; do [[ "$1" == $f ]] && return 0; done; return 1; }
 
 regenerate() {
@@ -78,6 +88,11 @@ regenerate() {
       # Start from our side, then let npm fold in whatever the merged package.json needs.
       git checkout --ours -- package-lock.json &&
         npm install --package-lock-only --no-audit --no-fund >/dev/null 2>&1 || return 1 ;;
+    src/help/generated/*.json)
+      # The shards are rebuilt as a set: one may be added or removed.
+      node scripts/help-bundle.mjs >/dev/null 2>&1 || return 1
+      git add -A -- src/help/generated || return 1
+      return 0 ;;
   esac
   git add -- "$1"
 }
@@ -142,6 +157,12 @@ for b in "${branches[@]}"; do
   if ! node scripts/extract-i18n-keys.mjs --check >/dev/null 2>&1; then
     regenerate i18n/keys/ai.json || die "could not regenerate i18n/keys/ while merging $b (merge left in progress)"
     notes+=("refreshed i18n/keys/ (stale after the merge)")
+  fi
+  # The help bundle: two lanes that change different docs pages merge cleanly
+  # in docs/ and still leave the shards out of date (or kept ours by the driver).
+  if [ -f scripts/help-bundle.mjs ] && ! node scripts/help-bundle.mjs --check >/dev/null 2>&1; then
+    regenerate src/help/generated/help.en.0.json || die "could not rebuild src/help/generated/ while merging $b (node scripts/help-bundle.mjs failed; merge left in progress)"
+    notes+=("rebuilt src/help/generated/ (stale after the merge)")
   fi
   # The same for the lockfile: one lane can drop a transitive entry the
   # other's new package reuses, and the text still merges cleanly.
@@ -244,6 +265,16 @@ else
   i18n_result="stale — run npm run i18n:extract and commit"
 fi
 
+help_result="none (no scripts/help-bundle.mjs)"
+if [ -f scripts/help-bundle.mjs ]; then
+  if node scripts/help-bundle.mjs --check >"$log" 2>&1; then
+    help_result="up to date"
+  else
+    ok=0
+    help_result="stale — run node scripts/help-bundle.mjs and commit"
+  fi
+fi
+
 if [ "${LANE_SKIP_TESTS:-}" = 1 ]; then
   vitest_result="skipped (LANE_SKIP_TESTS=1)"
 elif npx vitest run >"$log" 2>&1; then
@@ -259,6 +290,7 @@ print_merges
 echo
 echo "tsc:     $tsc_result"
 echo "i18n:    $i18n_result"
+echo "help:    $help_result"
 echo "vitest:  $vitest_result"
 [ $ok = 1 ] && echo "result:  ready" || echo "result:  NOT ready — fix the failures above before pushing $target"
 [ $ok = 1 ]
