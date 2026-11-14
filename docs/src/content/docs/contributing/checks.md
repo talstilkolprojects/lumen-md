@@ -14,7 +14,7 @@ No GitHub Actions minutes are used.
 
 | Build | What runs, in order |
 |---|---|
-| Preview (the `verify/…` trains) | build, bundle budget, vitest (without the nightly-only suites), e2e (the fast set on chromium, smoke on firefox), `i18n:check`, hygiene, `docs:sync`, the licence gate |
+| Preview (the `verify/…` trains) | lockfile drift, build, bundle budget, vitest (without the nightly-only suites), e2e (the fast set on chromium, smoke on firefox), `i18n:check`, hygiene, `docs:sync`, the licence gate |
 | Production (`main`) | build, bundle budget — as before |
 
 The gates stop at the first failure. The build log ends with the gate that
@@ -82,7 +82,20 @@ Outside Vercel (no `VERCEL_ENV`) the script runs the preview set, so a
 local run is what the branch's build will do. Each gate is also an npm
 script of its own: `npm run build`, `npm run budget`, `npm test`,
 `npm run e2e:gate` (after `VITE_E2E=1 npm run build`: specs reach the app's modules through `window.__lumenTest`, which only such a build has), `npm run i18n:check`, `npm run hygiene`, `npm run docs:sync`,
-`npm run licenses`.
+`npm run licenses`, `npm run lockfile:drift`.
+
+### Lockfile drift
+
+The first preview gate, `npm run lockfile:drift`, compares the installed
+tree (`npm ls --all`) with `package-lock.json` and fails on any package
+installed at another version, missing, or installed without being locked,
+one line per package. It also fails when `package.json` and the lockfile's
+root entry disagree. What the gates test is then what ships. Without
+`node_modules`, `--lock-only` checks only `package.json` against the lockfile,
+and `--tree <dir>` also lists the packages that another `node_modules` (an
+offline test shim) holds at versions the lockfile does not name. To fix a
+drift, reinstall with `npm ci`. If `package.json` changed, regenerate the
+lockfile with `npm install --package-lock-only` and commit it.
 
 ## What does not run in the build
 

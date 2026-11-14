@@ -12,7 +12,7 @@ description: השערים של Lumen רצים בבניית Vercel של כל ענ
 
 | בנייה | מה רץ, לפי הסדר |
 |---|---|
-| ‏Preview (רכבות `verify/…`) | build, תקציב החבילה, vitest (בלי החבילות של הלילה בלבד), ‏e2e (הסט המהיר ב-chromium, ‏smoke ב-firefox), ‏`i18n:check`, ‏hygiene, ‏`docs:sync`, שער הרישיונות |
+| ‏Preview (רכבות `verify/…`) | סחיפת lockfile, ‏build, תקציב החבילה, vitest (בלי החבילות של הלילה בלבד), ‏e2e (הסט המהיר ב-chromium, ‏smoke ב-firefox), ‏`i18n:check`, ‏hygiene, ‏`docs:sync`, שער הרישיונות |
 | ‏Production (`main`) | build, תקציב החבילה — כמו קודם |
 
 השערים נעצרים בכישלון הראשון. יומן הבנייה מסתיים בשער שנכשל ובאלה שעברו
@@ -70,7 +70,19 @@ node scripts/vercel-build.mjs --dry-run    # print the gates, run nothing
 מחוץ ל-Vercel (בלי `VERCEL_ENV`) הסקריפט מריץ את סט ה-preview, כך שהרצה
 מקומית היא מה שהבנייה של הענף תעשה. כל שער הוא גם סקריפט npm בפני עצמו:
 ‏`npm run build`, ‏`npm run budget`, ‏`npm test`, ‏`npm run e2e:gate` (אחרי `VITE_E2E=1 npm run build`: הבדיקות מגיעות למודולים של האפליקציה דרך `window.__lumenTest`, שקיים רק בבנייה כזו), ‏`npm run i18n:check`,
-‏`npm run hygiene`, ‏`npm run docs:sync`, ‏`npm run licenses`.
+‏`npm run hygiene`, ‏`npm run docs:sync`, ‏`npm run licenses`, ‏`npm run lockfile:drift`.
+
+### סחיפת lockfile
+
+שער ה-preview הראשון, ‏`npm run lockfile:drift`, משווה את העץ המותקן
+(‏`npm ls --all`) ל-`package-lock.json`. הוא נכשל על כל חבילה שמותקנת בגרסה
+אחרת, חסרה, או מותקנת בלי להיות נעולה, ומדפיס שורה לכל חבילה. הוא נכשל גם
+כש-`package.json` והרשומה הראשית של ה-lockfile לא מסכימים. כך מה שהשערים
+בודקים הוא מה שנשלח. בלי `node_modules`, הדגל `--lock-only` בודק רק את
+`package.json` מול ה-lockfile, והדגל `--tree <dir>` מציג גם חבילות ש-`node_modules`
+אחר (shim לבדיקות לא מקוונות) מחזיק בגרסאות שה-lockfile לא נועל. לתיקון
+סחיפה, מתקינים מחדש עם `npm ci`. אם `package.json` השתנה, יוצרים את ה-lockfile
+מחדש עם `npm install --package-lock-only` ומבצעים לו commit.
 
 ## מה לא רץ בבנייה
 
