@@ -20,9 +20,13 @@ note in your workspace, ranked by BM25. Agents use the same search
 - Other forms of a word count too, a little less: *אבודות* finds *אבודה*,
   *מזרחנים* finds *מזורחן* (plural, construct and possessive endings).
 - A few common synonyms are searched along (*טלפון* / *סמארטפון*,
-  *רכב* / *מכונית*, *פגישה* / *ישיבה*…), and common Hebrew words also
-  look for their English equivalent, so *מתכון לעוגת שוקולד* finds an
-  English *chocolate cake recipe* note — after the Hebrew notes.
+  *רכב* / *מכונית*, *פגישה* / *ישיבה*…). A short hand-written list of
+  common Hebrew words also looks for their English equivalent (*כלב* →
+  *dog*), after the Hebrew notes. It helps little: on a held-out probe of 30
+  everyday Hebrew queries over English notes, keyword search finds **0/30**.
+  A query reaches an English note only when every one of its words is in
+  the list. For Hebrew questions over English notes, use **Smart** search
+  (below).
 - Question words (*מתי*, *איפה*, *למי*, *what*, *when*…) don't count, so
   you can type a question.
 - A match in the note's name counts more than one in its text, and the
@@ -37,8 +41,12 @@ note in your workspace, ranked by BM25. Agents use the same search
 
 Measured by `src/__tests__/hebrewSearch.test.ts` on the probe set
 `eval/probes/hebrew-search.json` (30 morphology queries, 30 full/defective
-spelling pairs, 5 Hebrew→English queries) and on the HeQ dev split, which
-must not drop.
+spelling pairs) and on the HeQ dev split, which must not drop. Hebrew →
+English is measured on the held-out
+`eval/probes/crosslingual-heldout-he-en.json` (30 queries, frozen by
+sha256; `src/__tests__/hebrewMorph.test.ts`). The probe's own 5
+Hebrew→English queries are not a result: the word list was first written
+from them.
 
 ## Smart (semantic)
 
