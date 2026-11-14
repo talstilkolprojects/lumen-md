@@ -90,6 +90,28 @@ whose frontmatter doesn't parse is never written (you get a message
 instead). Editing the note that is open goes through its editor, so undo
 works.
 
+## Edit many notes at once
+
+Tick the box at the start of a row in the **table** view (or on a card in the **kanban** view)
+to select it. **Shift**-click another box to select every row between them. The box in the
+header selects every note the filter shows; click it again to clear. Notes in a `.base` file's
+table select the same way.
+
+While notes are selected, a bar opens above the view:
+
+- **Field**: any property, or a new name (Hebrew names work: `שפה`, `תאריך עברי`).
+- **Action**: *Set a value*, *Add a tag*, *Remove a tag*, *Clear the field* or *Change the type*.
+- The bar says how many of the selected notes will change before you apply it.
+
+**Change N notes** writes every note's frontmatter, and only its frontmatter: the body, the
+comments, the quoting and the order of the other properties stay byte for byte, and each file
+is saved atomically. A note whose frontmatter doesn't parse, or whose value can't be converted
+without losing it (`forty` to a number), is left as it was and counted in a message.
+
+The whole change is one step: **Undo** in the message, or **Ctrl+Z** outside the editor, puts
+every note back. A note you edited again after the bulk change is left as you left it, and the
+message says how many.
+
 ## Live updates
 
 Edit a note in another tab and the database view re-runs the query
