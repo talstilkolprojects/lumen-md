@@ -495,7 +495,9 @@ export function remoteLanProvider(channel: LanChannel, opts: { timeoutMs?: numbe
     const service = typeof header.op === "string" && header.op.startsWith(SERVICE_PREFIX) ? services.get(header.op) : undefined;
     if (!service) return reply({ error: "unsupported" });
     const r = await service({ header, payload, peer: { ...hostInfo }, keys: provenKeys });
-    return reply(r.header, r.payload);
+    // Never `rq` or `id` from the service's header (review 28, N4): the answer is routed by `rs` alone,
+    // as the host side never passes `rq` back.
+    return reply({ ...r.header, rq: undefined, id: undefined }, r.payload);
   }
 
   m.onMessage((msg) => {

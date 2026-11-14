@@ -346,6 +346,22 @@ describe("W6.19 a phone that hosts the vault sends its dictation to the desktop 
     expect(seen.seen).toEqual([]);
   });
 
+  it("a peer's answer carries no `rq` or `id` its service put in the header: it is routed by `rs` alone (review 28, N4)", async () => {
+    const keys = await vault();
+    const h = lanHost({ bucket: memoryProvider(), keys: () => keys });
+    const [c, e] = memoryChannelPair({ latencyMs: 1 });
+    h.attach(c, { address: "192.168.1.20" });
+    const desk = remoteLanProvider(e, { address: "192.168.1.30" });
+    // A service that copies its request's header, or sets its own numbers.
+    desk.serve("svc.echo", async ({ header }) => ({ header: { ...header, rq: 99, id: 7, ok: true } }));
+    await desk.authenticate(keys);
+    const r = await h.peerLinks()[0].call("svc.echo", { v: 1 });
+    expect(r.header.ok).toBe(true);
+    expect(r.header).not.toHaveProperty("rq");
+    expect(r.header).not.toHaveProperty("id");
+    expect(typeof r.header.rs).toBe("number");
+  });
+
   it("refuses a desktop whose address is not on the local network, on both sides", async () => {
     const d = await phoneHosts({ address: "8.8.8.8" });
     await expect(transcribeOnDesktop(d.links[0], tone(1))).rejects.toBeInstanceOf(NotLocalError);
