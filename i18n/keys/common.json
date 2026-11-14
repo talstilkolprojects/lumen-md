@@ -5924,6 +5924,28 @@
       "vars": []
     },
     {
+      "key": "pdf.listen",
+      "en": "Read aloud",
+      "vars": []
+    },
+    {
+      "key": "pdf.listen.empty",
+      "en": "This PDF has no text to read. Recognise the text of its scanned pages (OCR) first.",
+      "vars": []
+    },
+    {
+      "key": "pdf.listen.page",
+      "en": "Reading page {n}",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "pdf.listen.stop",
+      "en": "Stop reading",
+      "vars": []
+    },
+    {
       "key": "pdf.noWorkspace",
       "en": "PDFs need the workspace, which this browser can't provide.",
       "vars": []

@@ -457,6 +457,13 @@ export async function readAloudCommand(deps: {
   rate?: number;
   /** Ask before a network voice is used; omitted: never ask (local voices only). */
   confirmNetworkVoice?: () => Promise<boolean>;
+  /**
+   * Where the sentence and the word being read go (null: none any more).
+   * Omitted: the editor's highlight (the lumen-speech-* events). The PDF
+   * reader passes its own, since its text is not the note's (W2.6).
+   */
+  onRange?: (range: { from: number; to: number } | null) => void;
+  onWord?: (range: { from: number; to: number } | null) => void;
 }): Promise<void> {
   if (isSpeaking()) {
     stopSpeaking();
@@ -475,8 +482,8 @@ export async function readAloudCommand(deps: {
     const key = noteKeyOf(deps.doc);
     const sentences = speakableSentences(content);
     const startAt = resumeIndex(sentences, key);
-    const range = (detail: unknown) => window.dispatchEvent(new CustomEvent("lumen-speech-range", { detail }));
-    const word = (detail: unknown) => window.dispatchEvent(new CustomEvent("lumen-speech-word", { detail }));
+    const range = deps.onRange ?? ((detail: { from: number; to: number } | null) => window.dispatchEvent(new CustomEvent("lumen-speech-range", { detail })));
+    const word = deps.onWord ?? ((detail: { from: number; to: number } | null) => window.dispatchEvent(new CustomEvent("lumen-speech-word", { detail })));
     let last = -1;
     const onSentence = (s: Sentence, i: number) => {
       last = i;

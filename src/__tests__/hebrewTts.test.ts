@@ -241,4 +241,29 @@ describe("read-aloud: words, settings, position (W2.6)", () => {
     expect(spoken).toEqual([]);
     expect(toasts).toContain("toast.tts.noHebrewVoice");
   });
+  it("readAloudCommand: a PDF's reading goes to its own highlight, not the editor's (W2.6 listening)", async () => {
+    __resetTts();
+    class U {
+      lang = "";
+      rate = 1;
+      voice: unknown = null;
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor(public text: string) {}
+    }
+    const synth = { getVoices: () => [{ lang: "en-US", localService: true, name: "Local", voiceURI: "local-en" }], cancel: () => undefined, speak: (u: U) => queueMicrotask(() => u.onend?.()) };
+    vi.stubGlobal("SpeechSynthesisUtterance", U);
+    vi.stubGlobal("speechSynthesis", synth);
+    Object.defineProperty(window, "speechSynthesis", { configurable: true, value: synth });
+    const editor: unknown[] = [];
+    const onEditor = (e: Event) => editor.push((e as CustomEvent).detail);
+    window.addEventListener("lumen-speech-range", onEditor);
+    const ranges: Array<{ from: number; to: number } | null> = [];
+    const text = "Page one. Page two.";
+    await readAloudCommand({ content: text, doc: { workspaceName: "pdf:docs/a.pdf" }, uiLang: "en", t: (k) => k, toast: () => undefined, onRange: (r) => ranges.push(r), onWord: () => undefined });
+    window.removeEventListener("lumen-speech-range", onEditor);
+    expect(editor).toEqual([]);
+    expect(ranges.filter(Boolean).map((r) => text.slice(r!.from, r!.to).trim())).toEqual(["Page one.", "Page two."]);
+    expect(ranges.at(-1)).toBeNull();
+  });
 });
