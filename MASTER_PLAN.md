@@ -4769,12 +4769,12 @@ W9.7.4. browser-cer.mjs, ‏screenshot-note עם qwen3-vl:2b
 | K2 | קלט עברי עלול לקבל תשובה באנגלית: אף פרומפט ב-`prompts.ts` לא אומר "ענה באותה שפה" | `src/ai/prompts.ts` | 🟠 | T27 | ✅ #173 |
 | K3 | קריאות AI בלי ביטול (שכתוב ב-WYSIWYG, refactor/template, שאל את הכספת); שתי מערכות AI חיות במקביל (`ai/agents.ts` הישן ו-`agents/`) | `WysiwygEditor.tsx:538`, `ai/agents.ts:53,99,146` | 🟡 | T55 | ⏳ #188 — `ai/agents.ts` נמחק; 8 קריאות בלי AbortSignal → 1.5 |
 | L1 | שיתוף פעולה בלי התמדה: `y-websocket` מוחלף ב-stub → חדרים WebRTC בלבד ונעלמים כשהאחרון יוצא | `vite.config.ts:332-346` | 🟠 | T56 | ⬜ תוכנית 3.4 |
-| L2 | שרתי signaling ברירת מחדל: `wss://signal.lumen.md` (לא הדומיין שנבחר), yjs.dev, herokuapp (כנראה מת) | `yjs.ts:70-72` | 🟠 | T56 | ✅ #182 (+ #109) |
+| L2 | שרתי signaling ברירת מחדל: שרת signaling על הדומיין התפוס (the taken domain — לא שלנו), yjs.dev, herokuapp (כנראה מת) | `yjs.ts:70-72` | 🟠 | T56 | ✅ #182 (+ #109) |
 | M1 | API תוספים מינימלי: פקודות, תוכן, change/save, toast; בלי הגדרות, פאנלים, הרחבות עורך, loader או sandbox | `pluginSystem.ts:47-60` | 🔴 | T52 | ⬜ תוכנית 3.2 |
 | N1 | תיעוד דק: 25 עמודים; כלום על git sync, ייצוא, עברית/RTL, קיצורים, התקנה | `docs/` | 🟠 | T53 | ⬜ תוכנית 5.1 |
 | N2 | כל אירוח עם חסרון: Netlify בלי Playground, Docker עם 130MB זמני ריצה, שני nginx שונים | `deploy/` מול `docker/` | 🟡 | T53 | ⬜ תוכנית 5.2 |
 | N3 | שולחן עבודה חלש: בלי auto-updater, Windows לא חתום, הפתקים ב-OPFS של ה-webview ולא בקבצים | `Cargo.toml`, `release.yml:84-89` | 🔴 | T57 | ⬜ תוכנית 3.5 |
-| N4 | דומיין: README ו-`index.html` מצביעים ל-`lumen.md`; §10 בחר "בלי דומיין" | `README:37`, `index.html:15,22` | 🟠 | #109 | ✅ #109 (מחכה למיזוג) |
+| N4 | דומיין: README ו-`index.html` מצביעים לדומיין התפוס (the taken domain); §10 בחר "בלי דומיין" | `README:37`, `index.html:15,22` | 🟠 | #109 | ✅ #109 (מחכה למיזוג) |
 | O1–O4 | קבצים ענקיים (8 קבצים > 900 שורות), ≈3,870 שורות קוד מת (`useAppHandlers`, `useGit`, `cryptoStorage`, `ConflictDialog`, `sync/cloud`), 4 עותקים של `slug`, 3 מאגרי היסטוריה, 69 חבילות מיושנות (16 גרסה ראשית) | `wc -l`, `npm outdated` | 🟠 | T42, T58 | ⬜ תוכניות 5.1–5.2 |
 
 #### חולשות חדשות שהתגלו תוך כדי העבודה
