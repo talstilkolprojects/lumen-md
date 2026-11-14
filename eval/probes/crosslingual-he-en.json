@@ -1,5 +1,5 @@
 {
- "about": "Cross-language search probe for plan W5.28: 50 Hebrew questions, each about one of 50 short English research abstracts (the corpus). Written for this repository, so its numbers are development numbers, not a held-out result: the same author wrote the questions and the search. The held-out check is Belebele heb_Hebr questions over eng_Latn passages, built locally by the owner (see docs). Licence: CC0-1.0 for the questions and abstracts written here; the abstracts paraphrase the kind of findings papers report and are not quotations.",
+ "about": "Cross-language search probe for plan W5.28: 100 Hebrew questions, each about one of 100 short English research abstracts (the corpus). Written for this repository, so its numbers are development numbers, not a held-out result: the same author wrote the questions and the search. The held-out check is Belebele heb_Hebr questions over eng_Latn passages, built locally by the owner (see docs). Licence: CC0-1.0 for the questions and abstracts written here; the abstracts paraphrase the kind of findings papers report and are not quotations.",
  "license": "CC0-1.0",
  "corpus": [
   {
@@ -201,6 +201,206 @@
   {
    "id": "en-p50",
    "text": "Cultivated meat production costs fell by an order of magnitude in five years, but growth media and scale remain the main barriers to price parity."
+  },
+  {
+   "id": "en-p51",
+   "text": "Time-restricted eating within an eight-hour window improved insulin sensitivity in adults with prediabetes over twelve weeks, even without weight loss."
+  },
+  {
+   "id": "en-p52",
+   "text": "Bumblebee colonies exposed to field-realistic doses of neonicotinoid pesticides produced 85 percent fewer new queens than unexposed colonies."
+  },
+  {
+   "id": "en-p53",
+   "text": "Brine discharged from a desalination plant raised local seabed salinity by 2 units and reduced the abundance of bottom-dwelling invertebrates within 300 metres of the outfall."
+  },
+  {
+   "id": "en-p54",
+   "text": "Cities that built separated bike lanes saw fewer road fatalities for all road users, not only cyclists, over a thirteen-year period."
+  },
+  {
+   "id": "en-p55",
+   "text": "Heart attack admissions rose by 24 percent on the Monday after the spring clock change and fell by 21 percent after the autumn change."
+  },
+  {
+   "id": "en-p56",
+   "text": "Social isolation and loneliness in people over 65 were associated with a 26 percent higher risk of death over seven years, independent of health status."
+  },
+  {
+   "id": "en-p57",
+   "text": "A meta-analysis of 54 studies found that readers understood informational texts better on paper than on screens, especially under time pressure."
+  },
+  {
+   "id": "en-p58",
+   "text": "Emergency departments treated head injuries in a third of electric scooter riders, and fewer than five percent of injured riders wore a helmet."
+  },
+  {
+   "id": "en-p59",
+   "text": "Older adults with untreated hearing loss had faster cognitive decline, and a hearing intervention slowed decline by 48 percent in those at higher risk."
+  },
+  {
+   "id": "en-p60",
+   "text": "Taking probiotics alongside antibiotics cut the risk of antibiotic-associated diarrhea by about half in a pooled analysis of 42 trials."
+  },
+  {
+   "id": "en-p61",
+   "text": "Oyster larvae grown in seawater with lower pH formed thinner shells and had survival rates 40 percent below controls."
+  },
+  {
+   "id": "en-p62",
+   "text": "A two-year basic income pilot in Finland did not reduce employment among recipients and improved their reported wellbeing and trust in institutions."
+  },
+  {
+   "id": "en-p63",
+   "text": "Days with heavy wildfire smoke were followed by a 10 percent rise in hospital admissions for asthma and other respiratory conditions."
+  },
+  {
+   "id": "en-p64",
+   "text": "A hydrometallurgical process recovered more than 95 percent of the lithium, cobalt and nickel from spent electric-vehicle batteries."
+  },
+  {
+   "id": "en-p65",
+   "text": "A one-time gene-editing treatment eliminated severe pain crises for at least a year in 29 of 31 patients with sickle cell disease."
+  },
+  {
+   "id": "en-p66",
+   "text": "Remote monitoring of pulmonary artery pressure lowered hospitalizations for heart failure by 37 percent compared with standard care."
+  },
+  {
+   "id": "en-p67",
+   "text": "Ten hours of action video game training improved mental rotation performance, and the gains were still present five months later."
+  },
+  {
+   "id": "en-p68",
+   "text": "Diets without animal products produced about 75 percent less greenhouse gas emissions, land use and water pollution than high-meat diets."
+  },
+  {
+   "id": "en-p69",
+   "text": "Glaciers outside the ice sheets lost 267 gigatonnes of ice a year since 2000, contributing about a fifth of observed sea level rise."
+  },
+  {
+   "id": "en-p70",
+   "text": "Communities where childhood vaccination coverage dropped below 90 percent had measles outbreaks that lasted longer and spread to older age groups."
+  },
+  {
+   "id": "en-p71",
+   "text": "A tax on sugar-sweetened drinks reduced their purchases by 21 percent in low-income neighbourhoods within one year."
+  },
+  {
+   "id": "en-p72",
+   "text": "After two companies moved to open-plan offices, face-to-face interaction fell by about 70 percent while email and messaging increased."
+  },
+  {
+   "id": "en-p73",
+   "text": "Each additional day above 32 degrees Celsius in the school year lowered test scores, and air conditioning offset most of the loss."
+  },
+  {
+   "id": "en-p74",
+   "text": "Street lights reduced the number of moth caterpillars along roadsides by half compared with unlit sites, with LED lights causing the largest effect."
+  },
+  {
+   "id": "en-p75",
+   "text": "Psychotherapy delivered by video was as effective as in-person therapy for depression and anxiety in a review of 20 randomized trials."
+  },
+  {
+   "id": "en-p76",
+   "text": "Concentrations of viral RNA in municipal wastewater rose four to six days before reported COVID-19 cases, giving an early warning of outbreaks."
+  },
+  {
+   "id": "en-p77",
+   "text": "Rice plants edited to express an extra copy of a transcription factor yielded 40 percent more grain in field trials and used nitrogen more efficiently."
+  },
+  {
+   "id": "en-p78",
+   "text": "Commercial face recognition systems misclassified darker-skinned women at error rates up to 35 percent, compared with under one percent for lighter-skinned men."
+  },
+  {
+   "id": "en-p79",
+   "text": "Intensive small-group tutoring during the school day raised math achievement by the equivalent of one to two extra years of learning."
+  },
+  {
+   "id": "en-p80",
+   "text": "Adults who sat more than ten hours a day had a higher risk of death, and 30 to 40 minutes of daily moderate activity largely removed that excess risk."
+  },
+  {
+   "id": "en-p81",
+   "text": "After rent control was expanded in San Francisco, landlords of covered buildings reduced the supply of rental housing by 15 percent."
+  },
+  {
+   "id": "en-p82",
+   "text": "Satellite tracking showed that common cranes wintering in the Hula Valley arrive from as far as Finland and that supplementary feeding kept them away from crops."
+  },
+  {
+   "id": "en-p83",
+   "text": "Drip irrigation used 30 to 50 percent less water than furrow irrigation for cotton while maintaining yields."
+  },
+  {
+   "id": "en-p84",
+   "text": "Bacteria resistant to colistin were found in 20 percent of samples from poultry farms that used the antibiotic as a growth promoter."
+  },
+  {
+   "id": "en-p85",
+   "text": "Children who were breastfed for at least six months had a lower risk of developing asthma by age five than those breastfed for less than two months."
+  },
+  {
+   "id": "en-p86",
+   "text": "Painting one rotor blade of each wind turbine black reduced bird collision deaths by about 70 percent at a Norwegian wind farm."
+  },
+  {
+   "id": "en-p87",
+   "text": "Employees who completed annual anti-phishing training were no less likely to click simulated phishing links than untrained colleagues."
+  },
+  {
+   "id": "en-p88",
+   "text": "Children at risk of dyslexia who received phonics-based reading intervention in first grade read at grade level more often by third grade."
+  },
+  {
+   "id": "en-p89",
+   "text": "Hydrogen fuel-cell trucks emitted about 40 percent less carbon over their life cycle than diesel trucks when the hydrogen came from natural gas, and over 80 percent less with renewable hydrogen."
+  },
+  {
+   "id": "en-p90",
+   "text": "Installing portable air purifiers in classrooms reduced pupil absences due to respiratory illness by about 15 percent."
+  },
+  {
+   "id": "en-p91",
+   "text": "Even moderate drinking of one alcoholic drink a day was associated with a higher risk of breast cancer in women."
+  },
+  {
+   "id": "en-p92",
+   "text": "In a six-month trial at 61 companies, a four-day working week reduced burnout and sick days while revenue stayed stable."
+  },
+  {
+   "id": "en-p93",
+   "text": "Dog owners had a 24 percent lower risk of death from any cause, and the benefit was largest after a heart attack or stroke."
+  },
+  {
+   "id": "en-p94",
+   "text": "The eruption of Mount Pinatubo injected sulfur into the stratosphere and cooled the global average surface temperature by about half a degree for two years."
+  },
+  {
+   "id": "en-p95",
+   "text": "Releasing mosquitoes carrying Wolbachia bacteria reduced dengue cases by 77 percent in treated areas of Yogyakarta."
+  },
+  {
+   "id": "en-p96",
+   "text": "A brain-computer interface decoded attempted speech from a paralyzed patient at 62 words per minute with a vocabulary of 125,000 words."
+  },
+  {
+   "id": "en-p97",
+   "text": "Over-pumping of the coastal aquifer let seawater intrude several kilometres inland, raising chloride levels in wells above drinking standards."
+  },
+  {
+   "id": "en-p98",
+   "text": "Participants on an ultra-processed diet ate about 500 more calories a day and gained weight, compared with an unprocessed diet matched for nutrients."
+  },
+  {
+   "id": "en-p99",
+   "text": "Jellyfish swarms along the eastern Mediterranean coast grew in frequency as sea temperatures rose and overfishing removed their predators."
+  },
+  {
+   "id": "en-p100",
+   "text": "A quantum processor kept a logical qubit with errors below those of its physical qubits by encoding it in a surface code of 49 qubits."
   }
  ],
  "items": [
@@ -552,6 +752,356 @@
    "query": "גידול בשר מתורבת במעבדה",
    "relevant": [
     "en-p50"
+   ]
+  },
+  {
+   "id": "xl-51",
+   "query": "צום לסירוגין ורגישות לאינסולין",
+   "relevant": [
+    "en-p51"
+   ]
+  },
+  {
+   "id": "xl-52",
+   "query": "למה מושבות של דבורים קורסות?",
+   "relevant": [
+    "en-p52"
+   ]
+  },
+  {
+   "id": "xl-53",
+   "query": "ההשפעה של מתקני התפלה על החיים בים",
+   "relevant": [
+    "en-p53"
+   ]
+  },
+  {
+   "id": "xl-54",
+   "query": "האם שבילי אופניים מפחיתים תאונות דרכים?",
+   "relevant": [
+    "en-p54"
+   ]
+  },
+  {
+   "id": "xl-55",
+   "query": "מעבר לשעון קיץ והתקפי לב",
+   "relevant": [
+    "en-p55"
+   ]
+  },
+  {
+   "id": "xl-56",
+   "query": "בדידות אצל אנשים מבוגרים ותוחלת חיים",
+   "relevant": [
+    "en-p56"
+   ]
+  },
+  {
+   "id": "xl-57",
+   "query": "קריאה מהמסך לעומת קריאה מנייר",
+   "relevant": [
+    "en-p57"
+   ]
+  },
+  {
+   "id": "xl-58",
+   "query": "פציעות מקורקינטים חשמליים",
+   "relevant": [
+    "en-p58"
+   ]
+  },
+  {
+   "id": "xl-59",
+   "query": "האם ירידה בשמיעה קשורה לשיטיון?",
+   "relevant": [
+    "en-p59"
+   ]
+  },
+  {
+   "id": "xl-60",
+   "query": "פרוביוטיקה ושלשולים מאנטיביוטיקה",
+   "relevant": [
+    "en-p60"
+   ]
+  },
+  {
+   "id": "xl-61",
+   "query": "החמצת האוקיינוסים ורכיכות",
+   "relevant": [
+    "en-p61"
+   ]
+  },
+  {
+   "id": "xl-62",
+   "query": "מה קרה בניסוי של הכנסה בסיסית אוניברסלית?",
+   "relevant": [
+    "en-p62"
+   ]
+  },
+  {
+   "id": "xl-63",
+   "query": "עשן משריפות יער ואשפוזים בגלל בעיות נשימה",
+   "relevant": [
+    "en-p63"
+   ]
+  },
+  {
+   "id": "xl-64",
+   "query": "מחזור של סוללות ליתיום",
+   "relevant": [
+    "en-p64"
+   ]
+  },
+  {
+   "id": "xl-65",
+   "query": "ריפוי גנטי לאנמיה חרמשית",
+   "relevant": [
+    "en-p65"
+   ]
+  },
+  {
+   "id": "xl-66",
+   "query": "מעקב מרחוק אחרי חולי אי ספיקת לב",
+   "relevant": [
+    "en-p66"
+   ]
+  },
+  {
+   "id": "xl-67",
+   "query": "האם משחקי וידאו משפרים יכולות מרחביות?",
+   "relevant": [
+    "en-p67"
+   ]
+  },
+  {
+   "id": "xl-68",
+   "query": "תזונה צמחית וגזי חממה",
+   "relevant": [
+    "en-p68"
+   ]
+  },
+  {
+   "id": "xl-69",
+   "query": "המסת קרחונים ועליית פני הים",
+   "relevant": [
+    "en-p69"
+   ]
+  },
+  {
+   "id": "xl-70",
+   "query": "ירידה בחיסוני ילדים והתפרצות חצבת",
+   "relevant": [
+    "en-p70"
+   ]
+  },
+  {
+   "id": "xl-71",
+   "query": "מס על משקאות ממותקים",
+   "relevant": [
+    "en-p71"
+   ]
+  },
+  {
+   "id": "xl-72",
+   "query": "משרדים פתוחים ושיחות פנים אל פנים",
+   "relevant": [
+    "en-p72"
+   ]
+  },
+  {
+   "id": "xl-73",
+   "query": "חום בכיתה וציונים במבחנים",
+   "relevant": [
+    "en-p73"
+   ]
+  },
+  {
+   "id": "xl-74",
+   "query": "זיהום אור וחרקים",
+   "relevant": [
+    "en-p74"
+   ]
+  },
+  {
+   "id": "xl-75",
+   "query": "טיפול נפשי מרחוק בווידאו",
+   "relevant": [
+    "en-p75"
+   ]
+  },
+  {
+   "id": "xl-76",
+   "query": "ניטור שפכים לגילוי מגפות",
+   "relevant": [
+    "en-p76"
+   ]
+  },
+  {
+   "id": "xl-77",
+   "query": "עריכה גנטית של יבולים והגדלת היבול",
+   "relevant": [
+    "en-p77"
+   ]
+  },
+  {
+   "id": "xl-78",
+   "query": "הטיה בזיהוי פנים",
+   "relevant": [
+    "en-p78"
+   ]
+  },
+  {
+   "id": "xl-79",
+   "query": "שיעורים פרטיים ושיפור במתמטיקה",
+   "relevant": [
+    "en-p79"
+   ]
+  },
+  {
+   "id": "xl-80",
+   "query": "ישיבה ממושכת ותמותה",
+   "relevant": [
+    "en-p80"
+   ]
+  },
+  {
+   "id": "xl-81",
+   "query": "פיקוח על שכר דירה והיצע הדירות",
+   "relevant": [
+    "en-p81"
+   ]
+  },
+  {
+   "id": "xl-82",
+   "query": "ציפורים נודדות מעל עמק החולה",
+   "relevant": [
+    "en-p82"
+   ]
+  },
+  {
+   "id": "xl-83",
+   "query": "השקיה בטפטוף וחיסכון במים",
+   "relevant": [
+    "en-p83"
+   ]
+  },
+  {
+   "id": "xl-84",
+   "query": "חיידקים עמידים בלולים",
+   "relevant": [
+    "en-p84"
+   ]
+  },
+  {
+   "id": "xl-85",
+   "query": "הנקה ואסטמה בילדות",
+   "relevant": [
+    "en-p85"
+   ]
+  },
+  {
+   "id": "xl-86",
+   "query": "כמה ציפורים נהרגות מטורבינות רוח?",
+   "relevant": [
+    "en-p86"
+   ]
+  },
+  {
+   "id": "xl-87",
+   "query": "האם הדרכה נגד פישינג עובדת?",
+   "relevant": [
+    "en-p87"
+   ]
+  },
+  {
+   "id": "xl-88",
+   "query": "התערבות מוקדמת בקריאה לילדים עם דיסלקציה",
+   "relevant": [
+    "en-p88"
+   ]
+  },
+  {
+   "id": "xl-89",
+   "query": "משאיות על מימן",
+   "relevant": [
+    "en-p89"
+   ]
+  },
+  {
+   "id": "xl-90",
+   "query": "מסנני אוויר בכיתות והיעדרויות",
+   "relevant": [
+    "en-p90"
+   ]
+  },
+  {
+   "id": "xl-91",
+   "query": "אלכוהול וסיכון לסרטן",
+   "relevant": [
+    "en-p91"
+   ]
+  },
+  {
+   "id": "xl-92",
+   "query": "שבוע עבודה של ארבעה ימים ורווחת העובדים",
+   "relevant": [
+    "en-p92"
+   ]
+  },
+  {
+   "id": "xl-93",
+   "query": "גידול כלבים ובריאות הלב",
+   "relevant": [
+    "en-p93"
+   ]
+  },
+  {
+   "id": "xl-94",
+   "query": "התפרצויות הרי געש וטמפרטורה עולמית",
+   "relevant": [
+    "en-p94"
+   ]
+  },
+  {
+   "id": "xl-95",
+   "query": "יתושים עם חיידק וולבכיה ודנגי",
+   "relevant": [
+    "en-p95"
+   ]
+  },
+  {
+   "id": "xl-96",
+   "query": "ממשק מוח מחשב שמחזיר דיבור",
+   "relevant": [
+    "en-p96"
+   ]
+  },
+  {
+   "id": "xl-97",
+   "query": "חדירת מי ים לאקוויפר החוף",
+   "relevant": [
+    "en-p97"
+   ]
+  },
+  {
+   "id": "xl-98",
+   "query": "מזון אולטרה מעובד והשמנה",
+   "relevant": [
+    "en-p98"
+   ]
+  },
+  {
+   "id": "xl-99",
+   "query": "למה יש יותר מדוזות בים התיכון?",
+   "relevant": [
+    "en-p99"
+   ]
+  },
+  {
+   "id": "xl-100",
+   "query": "תיקון שגיאות במחשבים קוונטיים",
+   "relevant": [
+    "en-p100"
    ]
   }
  ]

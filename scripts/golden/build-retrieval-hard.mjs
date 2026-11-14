@@ -42,7 +42,7 @@ const write = (name, items, extra = {}) =>
   );
 write("dev.json", dev);
 write("heldout.json", heldout);
-writeFileSync(join(out, "crosslingual.json"), JSON.stringify({ canary: CANARY, set: "retrieval-hard", split: "crosslingual", about: xl.about, license: xl.license, items: xl.items, corpus: xl.corpus, note: `${xl.items.length} of the 100 cross-lingual questions the plan asks for (W5.28 has ${xl.items.length} so far)` }, null, 2) + "\n");
+writeFileSync(join(out, "crosslingual.json"), JSON.stringify({ canary: CANARY, set: "retrieval-hard", split: "crosslingual", about: xl.about, license: xl.license, items: xl.items, corpus: xl.corpus, note: xl.items.length >= 100 ? `${xl.items.length} cross-lingual questions, the 100 the plan asks for (W5.28 + W7.13 step 2.78)` : `${xl.items.length} of the 100 cross-lingual questions the plan asks for (W5.28 has ${xl.items.length} so far)` }, null, 2) + "\n");
 const kinds = {};
 for (const it of [...dev, ...heldout]) kinds[it.kind] = (kinds[it.kind] ?? 0) + 1;
 console.log(`retrieval-hard: ${dev.length} dev + ${heldout.length} held-out (${JSON.stringify(kinds)}), ${xl.items.length} cross-lingual → ${out}`);

@@ -82,9 +82,10 @@ Two limits:
   comes on top of that.
 
 How it is measured:
-- `eval/probes/crosslingual-he-en.json` has 50 Hebrew questions over 50
+- `eval/probes/crosslingual-he-en.json` has 100 Hebrew questions over 100
   English research abstracts, written for this repository. Its numbers are
-  development numbers. On it, BM25 alone reaches nDCG@10 0.18.
+  development numbers. On it, BM25 alone reaches nDCG@10 0.13 (0.18 on the
+  first 50).
 - `npm run eval:crosslingual` measures BM25, e5 and the fusion with the real
   model.
 - The held-out check is Belebele questions in Hebrew (heb_Hebr) over its
