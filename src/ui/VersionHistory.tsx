@@ -7,7 +7,7 @@ import { t, getLocale } from "../i18n";
  * that every save path writes to (T35).
  */
 
-import { listSnapshots, recordSnapshot, type Snapshot } from "../storage/history";
+import { getHistoryVault, listSnapshots, recordSnapshot, type Snapshot } from "../storage/history";
 import { requestPersistentStorage, storageState, type StorageState } from "../storage/persistentStorage";
 
 function formatBytes(n: number): string {
@@ -81,6 +81,12 @@ export function VersionHistory({ fileName, currentContent, onRestore, onClose }:
 
   const handleRestore = useCallback(async () => {
     if (!selected) return;
+    // Listed from another vault (the vault switched while this was open):
+    // never write its text into this one (2.80).
+    if (selected.vault !== undefined && selected.vault !== getHistoryVault()) {
+      onClose();
+      return;
+    }
     // Keep what is being replaced, so a restore can itself be undone.
     await recordSnapshot(fileName, currentContent, "restore").catch(() => false);
     onRestore(selected.content);

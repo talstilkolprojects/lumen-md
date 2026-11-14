@@ -27,7 +27,8 @@ import type { VaultBackend } from "./types";
 import { createTauriBackend, isDesktopApp, loadTauriInvoke, type TauriInvoke } from "./tauri";
 import { createMobileBackend, isMobileApp, loadMobileBridge, mobileFsFor, type MobileBridge, type MobileStore } from "./mobile";
 import { observeDirectoryHandle, watchExternalChanges } from "./watcher";
-import { VaultMoveConflictError, refuseEncryptedMove, VaultPermissionError, allFiles, bytes, sha256, same, targetBytes } from "./moveCheck";
+import { VaultMoveConflictError, refuseEncryptedMove, VaultPermissionError, allEntries, bytes, parentsOf, preflight, saveLateWrites, same, sha256, targetBytes, trashLeftovers } from "./moveCheck";
+import { __resetIdentity, activeVaultId, adoptIdentity, enterIdentity, identityOrNull } from "./identity";
 import type { MoveReport } from "./moveCheck";
 export { VaultMoveConflictError, VaultEncryptedMoveError, VaultPermissionError } from "./moveCheck";
 export type { MoveReport } from "./moveCheck";
@@ -80,6 +81,9 @@ let kv: KV = { get: (k) => idbGet(k), set: (k, v) => idbSet(k, v), del: (k) => i
 export function __setLocationStore(store: KV): void {
   kv = store;
 }
+
+/** The identity (2.80, ./identity.ts) of `loc`: null when it cannot be read. */
+const idOf = (loc: StoredLocation) => identityOrNull(kv, sameLocation, loc);
 
 // ── Status ───────────────────────────────────────────────────────────────
 
@@ -300,8 +304,9 @@ function watch(loc: StoredLocation, backend: VaultBackend): void {
   }
 }
 
-function activate(loc: StoredLocation, backend: VaultBackend): void {
+function activate(loc: StoredLocation, backend: VaultBackend, id: string | null): void {
   disconnected = null;
+  enterIdentity(id);
   if (loc.kind !== "opfs") desktopFirstRun = false;
   setVaultBackend(loc.kind === "opfs" ? null : backend);
   watch(loc, backend);
@@ -323,21 +328,25 @@ export async function restoreVaultLocation(): Promise<VaultStatus> {
     pending = (await kv.get<MoveRecord>(MOVE_KEY)) ?? null;
     const loc = await kv.get<StoredLocation>(LOCATION_KEY);
     if (!loc || loc.kind === "opfs") {
+      const id = await idOf({ kind: "opfs" });
       // Replaces the closed start-up vault (if any) with OPFS.
-      if (getVaultBackend().id !== "opfs") activate({ kind: "opfs" }, createOpfsBackend());
+      if (getVaultBackend().id !== "opfs") activate({ kind: "opfs" }, createOpfsBackend(), id);
+      else enterIdentity(id);
       // First launch of the desktop app: ask where the vault lives.
       desktopFirstRun = !loc && isDesktopApp();
       return status;
     }
+    const id = await idOf(loc);
     if (loc.kind === "mobile") {
       const bridge = await mobile();
       if (loc.store !== "saf" || !bridge.folder || (await bridge.folder.hasAccess({ uri: loc.uri })).granted) {
-        activate(loc, mobileBackend(loc));
+        activate(loc, mobileBackend(loc), id);
         return status;
       }
       // The folder's permission was revoked (system settings) or it is gone:
       // closed until the user picks it again.
       let open = false;
+      enterIdentity(id);
       setVaultBackend(mobileBackend(loc, { available: () => open }));
       disconnected = {
         name: loc.name,
@@ -346,7 +355,7 @@ export async function restoreVaultLocation(): Promise<VaultStatus> {
           if (!next) return false;
           await kv.set(LOCATION_KEY, next);
           open = true;
-          activate(next, mobileBackend(next));
+          activate(next, mobileBackend(next), await idOf(next));
           return true;
         },
       };
@@ -358,12 +367,13 @@ export async function restoreVaultLocation(): Promise<VaultStatus> {
       const inv = await desktop();
       const root = await inv<string | null>("vault_root");
       if (root && root === loc.root) {
-        activate(loc, createTauriBackend(inv, root));
+        activate(loc, createTauriBackend(inv, root), id);
         return status;
       }
       // The folder moved or the app's config was lost: closed until the
       // user picks the folder again.
       let open = false;
+      enterIdentity(id);
       setVaultBackend(createTauriBackend(inv, loc.root, { available: () => open }));
       disconnected = {
         name: loc.name,
@@ -374,7 +384,7 @@ export async function restoreVaultLocation(): Promise<VaultStatus> {
           await inv("vault_use", { root: picked });
           await kv.set(LOCATION_KEY, next);
           open = true;
-          activate(next, createTauriBackend(inv, picked));
+          activate(next, createTauriBackend(inv, picked), await idOf(next));
           return true;
         },
       };
@@ -383,13 +393,14 @@ export async function restoreVaultLocation(): Promise<VaultStatus> {
       return status;
     }
     if (await ensureFolderPermission(loc.handle, false)) {
-      activate(loc, createFolderBackend(loc.handle));
+      activate(loc, createFolderBackend(loc.handle), id);
       return status;
     }
     let granted = false;
     const handle = loc.handle;
     const name = loc.name;
     const folderBackend = createFolderBackend(handle, () => granted);
+    enterIdentity(id);
     setVaultBackend(folderBackend);
     disconnected = {
       name,
@@ -408,7 +419,7 @@ export async function restoreVaultLocation(): Promise<VaultStatus> {
     changed();
   } catch (err) {
     log.warn("restoring the vault location failed; using browser storage", err);
-    if (getVaultBackend().id === "restoring") activate({ kind: "opfs" }, createOpfsBackend());
+    if (getVaultBackend().id === "restoring") activate({ kind: "opfs" }, createOpfsBackend(), await idOf({ kind: "opfs" }));
   } finally {
     changed();
   }
@@ -438,6 +449,7 @@ export async function restoreVaultLocationWithin(ms: number): Promise<VaultStatu
       );
     }
     status = { location: "restoring" };
+    enterIdentity(null); // no vault is open: no history either
     changed();
   }
   return status;
@@ -470,9 +482,10 @@ export async function chooseDesktopVaultFolder(): Promise<(MoveReport & { backup
   const hasNotes = (await source.list("")).length > 0;
   if (!hasNotes) {
     await inv("vault_use", { root });
+    const id = await keepIdentity(to);
     await kv.set(LOCATION_KEY, to);
-    activate(to, createTauriBackend(inv, root));
-    return { files: 0, bytes: 0, unchanged: 0, trashed: 0, backup: null };
+    activate(to, createTauriBackend(inv, root), id);
+    return { files: 0, bytes: 0, unchanged: 0, trashed: 0, conflictCopies: [], backup: null };
   }
   const backup = await backupCurrentVault(inv);
   return { ...(await moveVault(to)), backup };
@@ -513,9 +526,10 @@ export async function chooseMobileVaultFolder(): Promise<MoveReport | null> {
   const source = getVaultBackend();
   if (!source.available()) throw new Error("The current vault is not available.");
   if ((await source.list("")).length === 0) {
+    const id = await keepIdentity(to);
     await kv.set(LOCATION_KEY, to);
-    activate(to, mobileBackend(to));
-    return { files: 0, bytes: 0, unchanged: 0, trashed: 0 };
+    activate(to, mobileBackend(to), id);
+    return { files: 0, bytes: 0, unchanged: 0, trashed: 0, conflictCopies: [] };
   }
   return moveVault(to);
 }
@@ -526,8 +540,9 @@ export async function openMobileFolderAsVault(): Promise<string | null> {
   if (!loc) return null;
   await kv.set(LOCATION_KEY, loc);
   await cancelPendingMove(); // its source is no longer the vault
+  const id = await idOf(loc);
   onVaultReplaced();
-  activate(loc, mobileBackend(loc));
+  activate(loc, mobileBackend(loc), id);
   return loc.name;
 }
 
@@ -542,8 +557,9 @@ export async function openDesktopFolderAsVault(): Promise<string | null> {
   await inv("vault_use", { root });
   await kv.set(LOCATION_KEY, loc);
   await cancelPendingMove(); // its source is no longer the vault
+  const id = await idOf(loc);
   onVaultReplaced();
-  activate(loc, createTauriBackend(inv, root));
+  activate(loc, createTauriBackend(inv, root), id);
   return loc.name;
 }
 
@@ -564,8 +580,9 @@ export async function switchDesktopVault(root: string): Promise<void> {
   const loc: StoredLocation = { kind: "desktop", root, name: folderName(root) };
   await kv.set(LOCATION_KEY, loc);
   await cancelPendingMove();
+  const id = await idOf(loc);
   onVaultReplaced();
-  activate(loc, createTauriBackend(inv, root));
+  activate(loc, createTauriBackend(inv, root), id);
 }
 
 /** Desktop: "Not now" on the first-run prompt (asked again on the next launch). */
@@ -585,8 +602,9 @@ export async function switchToBrowserStorage(): Promise<void> {
   await releaseDesktopFolder();
   await kv.set(LOCATION_KEY, { kind: "opfs" } satisfies StoredLocation);
   await cancelPendingMove(); // its source is no longer the vault
+  const id = await idOf({ kind: "opfs" });
   onVaultReplaced();
-  activate({ kind: "opfs" }, createOpfsBackend());
+  activate({ kind: "opfs" }, createOpfsBackend(), id);
 }
 
 /** Work in `handle` from now on, without copying anything (e.g. an existing Obsidian vault). */
@@ -600,8 +618,9 @@ export async function openFolderAsVault(handle: FileSystemDirectoryHandle): Prom
   await releaseDesktopFolder();
   await kv.set(LOCATION_KEY, loc);
   await cancelPendingMove(); // its source is no longer the vault
+  const id = await idOf(loc);
   onVaultReplaced();
-  activate(loc, createFolderBackend(handle));
+  activate(loc, createFolderBackend(handle), id);
   return true;
 }
 
@@ -628,6 +647,8 @@ export async function moveVault(
   const source = getVaultBackend();
   if (!source.available()) throw new Error("The current vault is not available.");
   if (await sameLocation(fromLoc, to)) throw new Error("The vault is already there.");
+  // The vault keeps its identity where it goes: its history follows it (2.80).
+  const fromId = activeVaultId() ?? (await idOf(fromLoc));
   const target = backendFor(to);
   // A resume continues the same move: same target *and* same source.
   const resuming = pending && (await sameLocation(pending.to, to)) && (await sameLocation(pending.from, fromLoc)) ? pending : null;
@@ -644,34 +665,25 @@ export async function moveVault(
   };
 
   try {
-    const files = (await allFiles(source)).sort();
+    const listed = await allEntries(source);
+    const files = listed.files.sort();
+    const dirs = listed.dirs.sort();
     report(0, files.length);
 
     // 1. Nothing is written while any target file differs and is not ours.
     //    What each target path holds now is remembered: if it changes while
     //    the copy runs (another app editing the folder), the move stops.
-    const conflicts: string[] = [];
-    const before = new Map<string, string | null>();
-    for (const path of files) {
-      const there = await targetBytes(target, path).catch((e) => {
-        if (e instanceof VaultMoveConflictError) return "conflict" as const;
-        throw e;
-      });
-      if (there === "conflict") {
-        conflicts.push(path);
-        continue;
-      }
-      const hash = there ? await sha256(there) : null;
-      before.set(path, hash);
-      if (there && hash && !same(there, await bytes(source, path)) && !known(path, hash)) conflicts.push(path);
-    }
+    const { conflicts, before } = await preflight(source, target, files, dirs, known);
     if (conflicts.length) throw new VaultMoveConflictError(conflicts);
 
     const record: MoveRecord = { from: fromLoc, to, startedAt: resuming?.startedAt ?? Date.now(), written, total: files.length };
     await kv.set(MOVE_KEY, record);
     pending = record;
 
-    // 2. Copy each file and read it back.
+    // 2. Copy each file and read it back. Folders with nothing in them are
+    //    created too: they are part of the vault (2.79).
+    const parents = new Set(files.flatMap(parentsOf).concat(dirs.flatMap(parentsOf)));
+    for (const dir of dirs.filter((d) => !parents.has(d))) await target.mkdir(dir);
     let total = 0;
     let unchanged = 0;
     const copied: Record<string, string> = {};
@@ -694,9 +706,14 @@ export async function moveVault(
 
     // 3. The whole set once more — and no file added to the source meanwhile
     //    (a note saved during the move) — then switch.
-    const now = (await allFiles(source)).sort();
-    if (now.length !== files.length || now.some((p, i) => p !== files[i])) {
+    const nowListed = await allEntries(source);
+    const now = nowListed.files.sort();
+    const nowDirs = nowListed.dirs.sort();
+    if (now.length !== files.length || now.some((p, i) => p !== files[i]) || nowDirs.length !== dirs.length || nowDirs.some((p, i) => p !== dirs[i])) {
       throw new Error("Files were added or removed while the vault was moving; resume to copy them too.");
+    }
+    for (const dir of dirs) {
+      if ((await target.stat(dir))?.kind !== "directory") throw new Error(`The folder “${dir}” went missing during the move; resume to copy it again.`);
     }
     for (const path of files) {
       const there = await targetBytes(target, path);
@@ -708,52 +725,36 @@ export async function moveVault(
     await kv.set(LOCATION_KEY, to);
     await kv.set(LAST_MOVE_KEY, { from: fromLoc, to, copied } satisfies LastMove);
     await kv.del(MOVE_KEY);
+    if (fromId !== null) await adoptIdentity(kv, sameLocation, to, fromId).catch((err: unknown) => log.warn("the vault identity could not be saved", err));
     pending = null;
     progress = null;
-    activate(to, target);
+    activate(to, target, fromId);
+
+    // 4. After the switch (2.9): a save that reached the source between the
+    //    final check and the switch is not lost. Each source file is hashed
+    //    again; one that changed since it was checked has its newer text
+    //    written to the new vault as a conflict copy, and the report says so.
+    //    No write freeze in the save path (W1.32 kept that out).
+    const conflictCopies = await saveLateWrites(source, target, copied);
 
     // Copies this vault left here earlier and that were deleted since (they
     // are not in the source any more) would come back to life: they go to
     // the trash of the vault that is now active — restorable, not deleted.
-    const stale: string[] = [];
-    for (const [path, hash] of Object.entries(leftBehind)) {
-      if (copied[path]) continue;
-      const there = await targetBytes(target, path).catch(() => null);
-      if (there && (await sha256(there)) === hash) stale.push(path);
-    }
-    let trashed = 0;
-    if (stale.length) {
-      const { moveToTrash, readTrashIndex, trashedPathOf } = await import("../trash");
-      // A note deleted into the trash of the vault it came from is already in
-      // the trash copied here: a leftover with the same bytes is a duplicate
-      // of that entry, so it goes, instead of becoming a second entry (W1.32, Codex on #235).
-      const index = (await readTrashIndex()) ?? [];
-      const toTrash: string[] = [];
-      for (const path of stale) {
-        const leftover = await targetBytes(target, path).catch(() => null);
-        let duplicate = false;
-        for (const item of index) {
-          const at = trashedPathOf(item, path);
-          const kept = at ? await targetBytes(target, at).catch(() => null) : null;
-          if (leftover && kept && same(leftover, kept)) {
-            duplicate = true;
-            break;
-          }
-        }
-        if (duplicate) {
-          await target.remove(path);
-          trashed++;
-        } else toTrash.push(path);
-      }
-      if (toTrash.length) trashed += (await moveToTrash(toTrash, Object.fromEntries(toTrash.map((p) => [p, "file" as const])))).length;
-      notifyWorkspaceChanged({ kind: "structure" });
-    }
-    return { files: files.length, bytes: total, unchanged, trashed };
+    const trashed = await trashLeftovers(target, leftBehind, copied);
+    return { files: files.length, bytes: total, unchanged, trashed, conflictCopies };
   } catch (e) {
     progress = null;
     changed();
     throw e;
   }
+}
+
+/** An empty vault moved to `to` (nothing to copy): it keeps its identity there, as any move does (2.80). */
+async function keepIdentity(to: StoredLocation): Promise<string | null> {
+  const fromLoc: StoredLocation = (await kv.get<StoredLocation>(LOCATION_KEY).catch(() => undefined)) || { kind: "opfs" };
+  const id = activeVaultId() ?? (await idOf(fromLoc));
+  if (id !== null) await adoptIdentity(kv, sameLocation, to, id).catch((err: unknown) => log.warn("the vault identity could not be saved", err));
+  return id;
 }
 
 /** Drop the record of an interrupted move. The files it copied stay where they are. */
@@ -780,6 +781,7 @@ export function __resetVaultLocation(): void {
   stopWatching?.();
   stopWatching = null;
   onVaultReplaced = () => {};
+  __resetIdentity();
   status = { location: "opfs" };
   pending = null;
   progress = null;

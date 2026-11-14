@@ -1634,6 +1634,14 @@
       ]
     },
     {
+      "key": "vault.folder.lateCopies",
+      "en": "{n} note(s) were saved in the previous location while the move was finishing. Their newer text is in the vault now, as a conflict copy next to the note where needed (first: “{path}”).",
+      "vars": [
+        "n",
+        "path"
+      ]
+    },
+    {
       "key": "vault.folder.moved",
       "en": "The vault is now in the folder “{folder}”: {n} files copied and checked. Your notes in browser storage were not deleted.",
       "vars": [

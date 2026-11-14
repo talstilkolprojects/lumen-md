@@ -95,7 +95,7 @@ describe("first run of the desktop app", () => {
   it("an empty app storage just switches to the folder (no backup, no copy)", async () => {
     await restoreVaultLocation();
     const r = await chooseDesktopVaultFolder();
-    expect(r).toEqual({ files: 0, bytes: 0, unchanged: 0, trashed: 0, backup: null });
+    expect(r).toEqual({ files: 0, bytes: 0, unchanged: 0, trashed: 0, conflictCopies: [], backup: null });
     expect(rust.backups.size).toBe(0);
     expect(getVaultBackend().id).toBe("desktop");
   });

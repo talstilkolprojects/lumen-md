@@ -24,6 +24,15 @@
  * sealed and whole — no deltas, which would carry the text in the clear (the
  * document's name is not sealed); nothing is recorded while the vault is
  * locked, and sealed versions read as absent until it is unlocked.
+ *
+ * History belongs to a vault (2.80, Codex P2 on #235): two vaults can both
+ * have `notes/a.md`, and one must never see or restore the other's versions.
+ * Every row is filed under the active vault's identity (`setHistoryVault`,
+ * set by ./vault/location.ts on each switch). The first vault this code ever
+ * saw keeps the empty identity, so the rows written before vaults had one
+ * stay with it, unchanged; every other vault's rows are prefixed with
+ * `lumen-vault:<id>|`. While no vault is open (start-up still restoring)
+ * nothing is recorded and nothing is listed.
  */
 
 import { log } from "../lib/logger";
@@ -43,6 +52,8 @@ export interface Snapshot {
   reason?: SnapshotReason;
   /** Who was editing (collab sessions). */
   author?: string;
+  /** The vault identity it was listed from (set by `listSnapshots`, not stored). */
+  vault?: string;
 }
 
 const DB_NAME = "lumen-history";
@@ -57,6 +68,29 @@ export function __setMaxPerDoc(n = MAX_PER_DOC): void {
 export const FULL_EVERY = 20;
 export const AUTOSAVE_EVERY_MS = 2 * 60_000;
 const lastAutosave = new Map<string, number>();
+
+/** The active vault's identity: "" for the first (legacy) vault, null while none is open. */
+let vault: string | null = "";
+const VAULT_PREFIX = "lumen-vault:";
+
+/** Which vault's history is read and written from now on (null: none is open). */
+export function setHistoryVault(id: string | null): void {
+  vault = id;
+}
+export function getHistoryVault(): string | null {
+  return vault;
+}
+
+/** The stored row name of `name` in vault `v`. */
+function scoped(name: string, v: string): string {
+  return v ? `${VAULT_PREFIX}${v}|${name}` : name;
+}
+
+/** `name` back out of a stored row name, when it belongs to vault `v`. */
+function unscoped(stored: string, v: string): string | null {
+  if (v) return stored.startsWith(`${VAULT_PREFIX}${v}|`) ? stored.slice(VAULT_PREFIX.length + v.length + 1) : null;
+  return stored.startsWith(VAULT_PREFIX) ? null : stored;
+}
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -190,29 +224,35 @@ async function reconstruct(rows: Row[]): Promise<Array<string | null>> {
   return out;
 }
 
-/** Snapshots of one document, newest first. */
+/** Snapshots of one document of the active vault, newest first. */
 export async function listSnapshots(name: string): Promise<Snapshot[]> {
-  const rows = await readRows(name);
+  const v = vault;
+  if (v === null) return [];
+  const rows = await readRows(scoped(name, v));
   const texts = await reconstruct(rows);
   const out: Snapshot[] = [];
   rows.forEach((r, i) => {
     const content = texts[i];
-    if (content !== null) out.push({ id: r.id, name: r.name, content, timestamp: r.timestamp, reason: r.reason, author: r.author });
+    if (content !== null) out.push({ id: r.id, name, content, timestamp: r.timestamp, reason: r.reason, author: r.author, vault: v });
   });
   return out.sort((a, b) => b.timestamp - a.timestamp || b.id - a.id);
 }
 
-/** Every document that has history, with its newest snapshot time. */
+/** Every document of the active vault that has history, with its newest snapshot time. */
 export async function listDocuments(): Promise<Array<{ name: string; latest: number; count: number }>> {
+  const v = vault;
+  if (v === null) return [];
   const db = await openDB();
   const tx = db.transaction(STORE, "readonly");
   const rows = (await promisify(tx.objectStore(STORE).getAll())) as Row[];
   const by = new Map<string, { name: string; latest: number; count: number }>();
   for (const r of rows) {
-    const e = by.get(r.name) ?? { name: r.name, latest: 0, count: 0 };
+    const name = unscoped(r.name, v);
+    if (name === null) continue;
+    const e = by.get(name) ?? { name, latest: 0, count: 0 };
     e.latest = Math.max(e.latest, r.timestamp);
     e.count++;
-    by.set(r.name, e);
+    by.set(name, e);
   }
   return [...by.values()].sort((a, b) => b.latest - a.latest);
 }
@@ -345,9 +385,9 @@ async function writeSnapshotNow(name: string, content: string, reason: SnapshotR
   return true;
 }
 
-/** Stored bytes of one document's history and the text bytes it represents (tests, the panel). */
+/** Stored bytes of one document's history in the active vault and the text bytes it represents (tests, the panel). */
 export async function historyStats(name: string): Promise<{ versions: number; storedBytes: number; textBytes: number }> {
-  const rows = await readRows(name);
+  const rows = vault === null ? [] : await readRows(scoped(name, vault));
   const texts = await reconstruct(rows);
   const enc = new TextEncoder();
   let stored = 0;
@@ -417,12 +457,22 @@ export function onHistoryQuota(fn: QuotaListener): () => void {
  * Record a snapshot. Skips content identical to the document's newest
  * snapshot. On a quota error, prunes the oldest quarter and retries once;
  * if that fails too, listeners are told and the error is rethrown.
- * Returns whether a snapshot was written.
+ * Returns whether a snapshot was written. `inVault` is the vault the text
+ * came from (default: the active one), for a caller that captured it before
+ * a switch could happen.
  */
-export async function recordSnapshot(name: string, content: string, reason: SnapshotReason = "autosave", now = Date.now(), author?: string): Promise<boolean> {
-  if (!name || typeof indexedDB === "undefined") return false;
+export async function recordSnapshot(
+  name: string,
+  content: string,
+  reason: SnapshotReason = "autosave",
+  now = Date.now(),
+  author?: string,
+  inVault: string | null = vault,
+): Promise<boolean> {
+  if (!name || inVault === null || typeof indexedDB === "undefined") return false;
   // W5.11: an unlocked note with its own password is kept in history sealed.
   content = lockedNotes.atRest(name, content);
+  name = scoped(name, inVault);
   // Typing autosaves every pause; keep one autosave snapshot per document
   // per AUTOSAVE_EVERY_MS so a document's 100 slots cover hours, not
   // minutes. Explicit saves, closes, restores and backups always record.
@@ -446,8 +496,11 @@ export async function recordSnapshot(name: string, content: string, reason: Snap
   }
 }
 
-/** Remove one document's history (used when the note is deleted for good). */
+/** Remove one document's history in the active vault (used when the note is deleted for good). */
 export async function clearHistory(name: string): Promise<void> {
+  const v = vault;
+  if (v === null) return;
+  name = scoped(name, v);
   const db = await openDB();
   const tx = db.transaction(STORE, "readwrite");
   const store = tx.objectStore(STORE);
@@ -461,14 +514,17 @@ export async function clearHistory(name: string): Promise<void> {
  * Every version's content into (`seal`) or out of (`open`) the vault's
  * encryption (plan 11.4: turning it on, and off). Sealed versions are stored
  * whole, so a delta chain becomes full rows. Document by document; a row
- * that cannot be converted stays as it is.
+ * that cannot be converted stays as it is. Only the active vault's history:
+ * the encryption is that vault's (2.80).
  */
 async function convertHistory(direction: "seal" | "open"): Promise<number> {
   if (typeof indexedDB === "undefined") return 0;
+  const v = vault;
+  if (v === null) return 0;
   let n = 0;
   for (const { name } of await listDocuments()) {
     const sealed = new Set<number>();
-    const rows = await readRows(name, sealed);
+    const rows = await readRows(scoped(name, v), sealed);
     const texts = await reconstruct(rows);
     const puts: Row[] = [];
     for (const [i, r] of rows.entries()) {
@@ -502,4 +558,5 @@ export function __resetHistoryDb(): void {
   latestText.clear();
   lastQuotaCheck = 0;
   maxPerDoc = MAX_PER_DOC;
+  vault = "";
 }
