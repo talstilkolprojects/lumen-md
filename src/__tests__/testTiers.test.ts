@@ -11,7 +11,7 @@ import { resolve } from "node:path";
 // @ts-expect-error — plain .mjs script without type declarations
 import { E2E_BROWSERS, E2E_COLLAB_PORT, E2E_COLLAB_WS, E2E_FAST, E2E_FIREFOX_FAST, E2E_SHARDS, GATE_BUDGET_MIN, VITEST_NIGHTLY_ONLY, VITEST_SHARDS } from "../../scripts/test-tiers.mjs";
 // @ts-expect-error — plain .mjs script without type declarations
-import { budgetVerdict, quotaFromCpuMax, slowestFiles, usableCpus, vitestArgs } from "../../scripts/vercel-build.mjs";
+import { budgetVerdict, gateEnv, PREVIEW_GATES, PRODUCTION_GATES, quotaFromCpuMax, slowestFiles, usableCpus, vitestArgs } from "../../scripts/vercel-build.mjs";
 // @ts-expect-error — plain .mjs script without type declarations
 import { GROUPS, fullSteps, runPlan } from "../../scripts/nightly/plan.mjs";
 // @ts-expect-error — plain .mjs script without type declarations
@@ -177,9 +177,10 @@ describe("the 38-minute budget and the receipt (scripts/vercel-build.mjs)", () =
     expect(E2E_COLLAB_WS).toBe(`ws://127.0.0.1:${E2E_COLLAB_PORT}`);
     expect(read("e2e/collab-persist.spec.ts")).toMatch(/PORT: String\(E2E_COLLAB_PORT\)/);
     expect(read("playwright.config.ts")).toMatch(/VITE_CSP_CONNECT_EXTRA: \[process\.env\.VITE_CSP_CONNECT_EXTRA, E2E_COLLAB_WS\]/);
-    const build = read("scripts/vercel-build.mjs");
-    // Only inside the e2e branch: a production build (no e2e gate) never adds it.
-    expect(build).toMatch(/if \(gates\.includes\("e2e"\)\) \{\n\s+process\.env\.VITE_E2E \?\?= "1";[\s\S]{0,400}E2E_COLLAB_WS/);
+    // Only the e2e build gets it: never a production build (no e2e gate), never the vitest gate (W4.2).
+    expect(gateEnv("build", {}, PREVIEW_GATES).VITE_CSP_CONNECT_EXTRA).toBe(E2E_COLLAB_WS);
+    expect(gateEnv("build", {}, PRODUCTION_GATES).VITE_CSP_CONNECT_EXTRA).toBeUndefined();
+    expect(gateEnv("vitest", {}, PREVIEW_GATES).VITE_CSP_CONNECT_EXTRA).toBeUndefined();
   });
 });
 

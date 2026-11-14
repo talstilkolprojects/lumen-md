@@ -144,6 +144,21 @@ export function vitestSummary(report, { maxFiles = 80 } = {}) {
   return out;
 }
 
+/**
+ * The environment one gate runs with. A build the e2e gate tests carries
+ * window.__lumenTest (VITE_E2E, src/testing/e2eHooks.ts), through which specs
+ * reach the app's modules, and may reach the loopback collab server
+ * e2e/collab-persist.spec.ts starts (E2E_COLLAB_WS in VITE_CSP_CONNECT_EXTRA,
+ * scripts/test-tiers.mjs). Production builds never get either. Nor does the
+ * vitest gate (W4.2): its tests check what a plain build's page allows, and
+ * with the e2e socket in its environment cspEndpoints.test.ts failed on
+ * verify/train ("a build never does": ws://127.0.0.1:4455).
+ */
+export function gateEnv(gate, env, gates) {
+  if (!gates.includes("e2e") || gate === "vitest") return { ...env };
+  return { ...env, VITE_E2E: env.VITE_E2E ?? "1", VITE_CSP_CONNECT_EXTRA: [env.VITE_CSP_CONNECT_EXTRA, E2E_COLLAB_WS].filter(Boolean).join(" ") };
+}
+
 export const PRODUCTION_GATES = ["build", "budget"];
 export const PREVIEW_GATES = ["build", "budget", "secrets", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "licenses"];
 /**
@@ -174,15 +189,6 @@ function main() {
   const failedGates = [];
   // The e2e gate sizes its time box from the build's start (scripts/e2e-gate.mjs).
   process.env.LUMEN_BUILD_STARTED ??= String(Date.now());
-  // A build the e2e gate tests carries window.__lumenTest (src/testing/e2eHooks.ts),
-  // through which specs reach the app's modules; production builds never do.
-  if (gates.includes("e2e")) {
-    process.env.VITE_E2E ??= "1";
-    // e2e/collab-persist.spec.ts starts a collab server on loopback
-    // (E2E_COLLAB_WS, scripts/test-tiers.mjs): this e2e build's page may reach
-    // it; a production build never runs this branch.
-    process.env.VITE_CSP_CONNECT_EXTRA = [process.env.VITE_CSP_CONNECT_EXTRA, E2E_COLLAB_WS].filter(Boolean).join(" ");
-  }
   const cpu = usableCpus();
   console.log(`vercel-build: ${cpu.cpus} CPU(s) to use (os ${cpu.os}, cgroup quota ${cpu.quota ?? "none"})`);
   const receipt = { sha: process.env.VERCEL_GIT_COMMIT_SHA ?? null, ref: process.env.VERCEL_GIT_COMMIT_REF ?? null, env: where, cpus: cpu, budgetMin: GATE_BUDGET_MIN, gates: [], slowestVitestFiles: [] };
@@ -191,7 +197,7 @@ function main() {
     const started = Date.now();
     console.log(`\n▶ ${gate}`);
     const extra = gate === "vitest" ? [...GATE_EXTRA.vitest, ...vitestArgs(process.env, cpu.cpus)] : (GATE_EXTRA[gate] ?? []);
-    const r = spawnSync(npm, [...GATES[gate], ...extra], { stdio: "inherit", env: process.env });
+    const r = spawnSync(npm, [...GATES[gate], ...extra], { stdio: "inherit", env: gateEnv(gate, process.env, gates) });
     const secs = ((Date.now() - started) / 1000).toFixed(1);
     receipt.gates.push({ gate, seconds: Number(secs), ok: r.status === 0 });
     if (gate === "vitest") {
