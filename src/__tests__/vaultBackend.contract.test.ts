@@ -597,4 +597,38 @@ describe("directory-handle backend specifics", () => {
     expect(v.available()).toBe(false);
     await expect(v.readText("a.md")).rejects.toThrow(/OPFS is not available/);
   });
+
+  it("readMany lists each folder once and returns the files; writeMany writes only unchanged files, under the lock (W7.4)", async () => {
+    const dir = new FakeDir();
+    const v = createDirectoryHandleBackend({ id: "t", root: async () => dir as unknown as FileSystemDirectoryHandle });
+    await v.write("n/a.md", "A");
+    await v.write("n/b.md", "BB");
+    await v.write("m/c.md", "שלום");
+    const files = await v.readMany!(["n/a.md", "n/b.md", "m/c.md", "n/missing.md", "nope/x.md"]);
+    expect([...files.keys()].sort()).toEqual(["m/c.md", "n/a.md", "n/b.md"]);
+    expect(await files.get("m/c.md")!.text()).toBe("שלום");
+    const stamp = (p: string) => ({ size: files.get(p)!.size, mtime: files.get(p)!.lastModified });
+    await v.write("n/b.md", "changed meanwhile");
+    const locked: string[] = [];
+    const events: string[] = [];
+    const off = v.watch((e) => events.push(`${e.type}:${e.path}`));
+    const res = await v.writeMany!(
+      [
+        { path: "n/a.md", data: "A2", expect: stamp("n/a.md") },
+        { path: "n/b.md", data: "B2", expect: stamp("n/b.md") },
+        { path: "m/c.md", data: "C2", expect: stamp("m/c.md") },
+      ],
+      async (p, fn) => {
+        locked.push(p);
+        return fn();
+      },
+    );
+    off();
+    expect(Object.fromEntries(res)).toEqual({ "n/a.md": true, "n/b.md": false, "m/c.md": true });
+    expect(locked.sort()).toEqual(["m/c.md", "n/a.md", "n/b.md"]);
+    expect(await v.readText("n/a.md")).toBe("A2");
+    expect(await v.readText("n/b.md")).toBe("changed meanwhile");
+    expect(await v.readText("m/c.md")).toBe("C2");
+    expect(events.sort()).toEqual(["write:m/c.md", "write:n/a.md"]);
+  });
 });

@@ -7,7 +7,7 @@ import { describe, it, expect } from "vitest";
 import { applyBulkOp, applyBulkOpYaml, bodyOf, planBulkEdit, selectRows, wouldChange, type BulkOp } from "../views/bulkEdit";
 import { lastBulkEditAt, runBulkEdit, undoBulkChanges, undoLastBulkEdit, __resetBulkUndo } from "../views/bulkEditRun";
 import { createMemoryBackend, setVaultBackend } from "../storage/vault";
-import { readWorkspaceFile, writeWorkspaceFile } from "../storage/workspace";
+import { readWorkspaceFile, readWorkspaceTexts, writeWorkspaceFile, writeWorkspaceFileIf } from "../storage/workspace";
 import { parseProperties } from "../properties/frontmatter";
 import { fastBulkOp } from "../views/bulkFast";
 
@@ -208,5 +208,22 @@ describe("1,000 notes", () => {
     expect(u.conflicts).toEqual(["n/2.md"]);
     expect(await readWorkspaceFile("n/1.md")).toBe(vault["n/1.md"]);
     expect(await readWorkspaceFile("n/2.md")).toBe("edited by hand\n");
+  });
+
+  it("the batch read keeps a BOM, and a stamped write refuses a file that changed since it was read", async () => {
+    setVaultBackend(createMemoryBackend());
+    await writeWorkspaceFile("a.md", "\uFEFF---\nx: 1\n---\n");
+    await writeWorkspaceFile("b.md", "plain");
+    const got = await readWorkspaceTexts(["a.md", "b.md", "missing.md"]);
+    expect(got.get("a.md")?.text).toBe("\uFEFF---\nx: 1\n---\n");
+    expect(got.get("b.md")?.text).toBe("plain");
+    expect(got.has("missing.md")).toBe(false);
+    const stamp = got.get("b.md")!.stamp;
+    await writeWorkspaceFile("b.md", "changed by someone");
+    expect(await writeWorkspaceFileIf("b.md", "bulk", stamp)).toBe(false);
+    expect(await readWorkspaceFile("b.md")).toBe("changed by someone");
+    const fresh = (await readWorkspaceTexts(["b.md"])).get("b.md")!.stamp;
+    expect(await writeWorkspaceFileIf("b.md", "bulk", fresh)).toBe(true);
+    expect(await readWorkspaceFile("b.md")).toBe("bulk");
   });
 });
