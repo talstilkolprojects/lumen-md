@@ -6,7 +6,9 @@
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
+// @ts-expect-error — plain .mjs script without type declarations
 import { GATES, PREVIEW_GATES, PRODUCTION_GATES } from "../../scripts/vercel-build.mjs";
+// @ts-expect-error — plain .mjs script without type declarations
 import { attackFiles, green, parseCounts } from "../../scripts/train-offline.mjs";
 
 const files = attackFiles();
