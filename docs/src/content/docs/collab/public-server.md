@@ -54,8 +54,9 @@ npm run collab:deploy
 
 It deploys the Worker, sets the token secret, checks `/healthz` and prints
 the two build variables for the app: `VITE_YJS_WEBSOCKET_URL` and
-`VITE_WEBRTC_SIGNALING_URL`. Measure the delay from where you are with
-`node scripts/collab-latency.mjs wss://<server>/`.
+`VITE_WEBRTC_SIGNALING_URL`. To deploy it together with the encrypted sync
+relay, and to measure the delay from where you are, see
+[the share servers on Cloudflare](/sync/relay-server/) (`npm run owner:share`).
 
 To run your own Node server with the same rules, start
 `sync-server/collab-server.mjs` with `COLLAB_E2EE_ONLY=1`. Rooms unchanged
