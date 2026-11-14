@@ -65,6 +65,39 @@ A new version goes in a folder of its own, for example `kanban@1.1.0`.
 When you install a plugin, the app scans the downloaded code again. It refuses
 the code if its SHA-256 differs from the hash in the registry scan.
 
+## A registry site of its own
+
+The same registry can be published as a static site of its own on Cloudflare
+Pages, the second host. A developer outside the project can then get a plugin
+listed with a pull request, without waiting for an app release.
+
+```sh
+npm run registry:site                 # builds dist-registry/ (it first checks that index.json and scan.json are current)
+npm run registry:verify -- dist-registry
+npx wrangler pages deploy dist-registry --project-name lumen-md-plugins --branch main
+npm run registry:verify -- https://lumen-md-plugins.pages.dev
+```
+
+The site holds:
+
+- `v1/index.json`: every plugin and every version that passed its scan, with
+  its permissions, its scan grade and findings, and the SHA-256 and size of
+  each file. A version that failed its scan is left out.
+- `v1/plugins/<id>/<version>/`: the files. They are served as text and never
+  rewritten, so they can be cached forever.
+- `SHA256SUMS`, in the format `sha256sum -c` reads.
+- `index.html`: the list, in Hebrew and English, with no scripts.
+- `_headers`: `nosniff`, read-only CORS, and a CSP that allows nothing to run.
+
+`registry:verify` recomputes every hash and **scans every version again**
+on your machine. A host that changed a file, or that lists a version the scan
+would refuse, fails the check. The site fits the free plan with room to
+spare: 40 files of the 20,000 allowed, 4 header rules of the 100 allowed.
+
+The app still reads the registry it ships (`/plugins/examples`). Reading this
+site from the app is a separate step, because the app's CSP would need its
+address.
+
 ## Not yet
 
 - The plugins are **unsigned**, so their cards show the “unsigned” note.
