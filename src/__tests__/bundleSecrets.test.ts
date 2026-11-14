@@ -64,6 +64,7 @@ describe("collab secrets stay out of the app", () => {
   });
 
   // When a build is present locally, check it too (CI runs the script on its own build).
+  // skip-reason: needs a build in dist/; the Vercel preview build runs vitest after the build, so it runs there | task: W1.35 | until: 2027-05-12
   it.skipIf(!existsSync(join(ROOT, "dist")))("the built bundle in dist/ has no collab server code", () => {
     expect(scanForSecrets(join(ROOT, "dist"), {}).findings).toEqual([]);
   });

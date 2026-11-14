@@ -1,0 +1,1 @@
+No sign-in is needed. Open the app and start writing: the welcome note explains the basics. Notes are stored on the device. Optional features that use the network (cloud AI with the user's own key, sync to the user's own storage) are off by default and need the user's own account or key; none is required to review the app.

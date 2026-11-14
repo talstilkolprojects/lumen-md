@@ -1,7 +1,7 @@
 /** 0.14 — `npm run ci:local` runs what CI runs; --changed narrows it to what the diff can break. */
 import { describe, it, expect } from "vitest";
 // @ts-expect-error — plain .mjs helper without types
-import { planSteps, e2eSpecs, i18nDrift, summary, coverageGate, hookPlan, buildState, argErrors, isAppCode, COVERAGE_MIN, HOOK_MARK, STEP_IDS } from "../../scripts/lib/ciLocal.mjs";
+import { planSteps, e2eSpecs, i18nDrift, summary, coverageGate, hookPlan, buildState, argErrors, isAppCode, COVERAGE_MIN, HOOK_MARK, STEP_IDS, dynamicImportTargets } from "../../scripts/lib/ciLocal.mjs";
 
 type Step = { id: string; cmd: string[]; skipReason?: string; coverageMin?: number };
 const pkg = { scripts: { hygiene: "x", budget: "x", licenses: "x" } };
@@ -82,6 +82,21 @@ describe("ci:local review fixes", () => {
     expect(s.test.cmd).toEqual(["npx", "vitest", "run"]);
     const pub = byId(planSteps({ pkg, exists: gone, changed: ["public/icon.svg"], flags: {} }) as Step[]);
     for (const id of ["build", "budget", "e2e"]) expect(pub[id].skipReason, id).toBeUndefined();
+  });
+
+  it("a changed module that something loads with a dynamic import runs the full suite (W1.32, #210)", () => {
+    const targets = dynamicImportTargets([
+      { path: "src/App.tsx", text: 'const Gallery = lazy(() => import("./ui/PluginGallery"));' },
+      { path: "src/__tests__/x.test.ts", text: 'await import(/* reload */ "../ai/mt/index.ts");\nimport { y } from "../static/y";' },
+    ]);
+    expect([...targets].sort()).toEqual(["src/ai/mt", "src/ui/PluginGallery"]);
+    const lazy = byId(planSteps({ pkg, exists, changed: ["src/ui/PluginGallery.tsx"], dynamicTargets: targets, flags: {} }) as Step[]);
+    expect(lazy.test.cmd).toEqual(["npx", "vitest", "run"]);
+    const viaIndex = byId(planSteps({ pkg, exists, changed: ["src/ai/mt/index.ts"], dynamicTargets: targets, flags: {} }) as Step[]);
+    expect(viaIndex.test.cmd).toEqual(["npx", "vitest", "run"]);
+    // A module only imported statically keeps the related run.
+    const plain = byId(planSteps({ pkg, exists, changed: ["src/static/y.ts"], dynamicTargets: targets, flags: {} }) as Step[]);
+    expect(plain.test.cmd).toEqual(["npx", "vitest", "related", "--run", "--passWithNoTests", "src/static/y.ts"]);
   });
 
   it("every root HTML entry is app code (playground-runner.html, livejs-runner.html)", () => {

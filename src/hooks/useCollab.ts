@@ -101,8 +101,21 @@ export function useCollab(docContent: string): UseCollabReturn {
         session.awareness.on("change", awarenessTick);
         awarenessTick();
 
+        // Plan W1.19: "Shared with me", role notices and the comments sidecar (lazy).
+        let stopExtras: (() => void) | null = null;
+        let ended = false;
+        void import("../collab/sessionExtras")
+          .then(({ attachSessionExtras }) => {
+            if (ended) return;
+            const st = useAppStore.getState() as { doc?: { workspaceName?: string | null; name?: string } };
+            stopExtras = attachSessionExtras(session, { notePath: st.doc?.workspaceName ?? null, title: st.doc?.name ?? name });
+          })
+          .catch((err) => log.warn("collab extras failed", err));
+
         // Stash cleanup on the session for handleStopCollab to use.
         (session as CollabSessionWithCleanup).__cleanup = () => {
+          ended = true;
+          stopExtras?.();
           session.ytext.unobserve(observer);
           session.awareness.off("change", awarenessTick);
         };

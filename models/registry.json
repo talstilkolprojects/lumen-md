@@ -522,6 +522,25 @@
       "notes": "Plan 9.2. Shipped unmodified next to its licence (public/dict/LICENSE.md), so ShareAlike binds only the list itself, not the app; every spelling hint names the list and its licence (HEBREW_FREQ_CREDIT). Suggestion-only: the list comes from subtitles and has typos of its own. Content licence from the repo README (\"CC-by-sa-4.0 for content\"; code is MIT), checked 2026-10-19 at commit 525f9b5."
     },
     {
+      "id": "hewiktionary-lexicon",
+      "kind": "other",
+      "source": "https://dumps.wikimedia.org/hewiktionary/",
+      "license": "CC-BY-SA-4.0",
+      "class": "allowed",
+      "commercial": "yes",
+      "attribution": "Hebrew dictionary and synonyms: Hebrew Wiktionary (he.wiktionary.org) contributors, licensed CC BY-SA 4.0. Definitions shortened, examples removed.",
+      "size": "not built yet (scripts/build-hebrew-lexicon.mjs writes the size and sha256 to public/lexicon/manifest.json)",
+      "runs": "browser",
+      "delivery": "user-download",
+      "catalog": "LEXICON_PACK_PATH (src/lexicon/store.ts) → public/lexicon/he-wiktionary.json, downloaded on request into Cache Storage",
+      "match": [
+        "hewiktionary",
+        "lexicon/he-wiktionary.json"
+      ],
+      "verified": true,
+      "notes": "Plan W5.26. Built from the hewiktionary pages-articles dump; the pack is a separate file next to its licence (public/lexicon/LICENSE.md), so ShareAlike binds the pack, not the app (same as frequencywords-he-50k). Chosen over Hspell-derived lists, which are AGPL-3.0 and cannot ship inside the MIT app. Text licence: Wikimedia projects are CC BY-SA 4.0 since 2023 (Terms of Use §7)."
+    },
+    {
       "id": "DictaLM-3.0-1.7B",
       "kind": "llm",
       "source": "https://huggingface.co/dicta-il",
@@ -826,6 +845,21 @@
       "notes": "Hebrew files on WebGPU with f16 and >= 1.2 GB VRAM budget (plan 6.1). The ONNX repo's card declares no licence; the source model ivrit-ai/whisper-large-v3-turbo is apache-2.0 (HF API, 2026-10-19). Load/latency measured by the owner (15.3)."
     },
     {
+      "id": "itayinbar/Ozen-v1",
+      "kind": "asr",
+      "source": "https://huggingface.co/itayinbar/Ozen-v1",
+      "license": "Apache-2.0",
+      "class": "allowed",
+      "commercial": "yes",
+      "attribution": "Ozen v1 (Hebrew speech recognition, distilled from ivrit.ai's Whisper large-v3-turbo) © Itay Inbar, Apache License 2.0; architecture from OpenAI Whisper (MIT).",
+      "size": "~164 MB (fp16 encoder + fp32 decoder, transformers.js)",
+      "runs": "browser",
+      "delivery": "download",
+      "catalog": "WHISPER_MODELS.ozenHe (src/ai/transformersEngine.ts)",
+      "verified": false,
+      "notes": "Hebrew files without the turbo's GPU budget, and the WASM / mobile re-read of live dictation sentences (plan W4.13). Weights Apache-2.0 per the model card (read 12.11.2026); its card says the training audio is ivrit.ai's (ivrit.ai License), FLEURS (CC BY 4.0) and imvladikon/hebrew_speech_kan (no licence declared on the Hub) — the owner confirms before release. Revision to pin and FLEURS WER measured by `npm run eval:asr-web` (15.3)."
+    },
+    {
       "id": "franc-min",
       "kind": "other",
       "source": "https://www.npmjs.com/package/franc-min",
@@ -990,6 +1024,117 @@
           "attribution": "Nakdimon © 2022 Elazar Gershuni (Gershuni & Pinter, “Restoring Hebrew Diacritics Without a Dictionary”, NAACL Findings 2022), licensed under the MIT License; mirrored unchanged by Lumen."
         }
       ]
+    },
+    {
+      "id": "dictabert-char-menaked",
+      "kind": "other",
+      "source": "https://huggingface.co/dicta-il/dictabert-large-char-menaked",
+      "license": "CC-BY-4.0",
+      "class": "allowed",
+      "commercial": "yes",
+      "attribution": "DictaBERT-char-menaked © DICTA: The Israel Center for Text Analysis (model card dicta-il/dictabert-large-char-menaked), licensed under CC BY 4.0. Exported to ONNX and quantised to int8 by Lumen.",
+      "size": "set from the first export run (int8 ONNX, q8)",
+      "runs": "browser",
+      "delivery": "download",
+      "catalog": "CONVERTED_MODELS (src/ai/convertedModels.ts), MENAKED_ID (src/ai/nikudService.ts)",
+      "verified": false,
+      "notes": "Plan W2.5: the high-quality niqqud layer above Nakdimon. Custom architecture (trust_remote_code), so it is not an optimum export: scripts/models/export-menaked.py exports it to ONNX, quantises it to int8 and writes menaked.json (vocabulary, class lists, tensor names) at a pinned revision; then scripts/models/registry-edit.mjs records the files here. Until then (no files) the app uses Nakdimon. CC BY 4.0: the attribution is shown in the consent dialog."
+    },
+    {
+      "id": "tessdata_fast/heb.traineddata",
+      "kind": "ocr",
+      "source": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/heb.traineddata",
+      "license": "Apache-2.0",
+      "class": "allowed",
+      "commercial": "yes",
+      "attribution": "Tesseract tessdata_fast © Google / tesseract-ocr contributors, licensed under the Apache License 2.0.",
+      "size": "~1 MB",
+      "runs": "browser",
+      "delivery": "download",
+      "catalog": "LANG_PATH / LANGS (src/ai/ocr.ts)",
+      "match": [
+        "tessdata_fast"
+      ],
+      "verified": true,
+      "notes": ""
+    },
+    {
+      "id": "tessdata_fast/eng.traineddata",
+      "kind": "ocr",
+      "source": "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/eng.traineddata",
+      "license": "Apache-2.0",
+      "class": "allowed",
+      "commercial": "yes",
+      "attribution": "Tesseract tessdata_fast © Google / tesseract-ocr contributors, licensed under the Apache License 2.0.",
+      "size": "~4 MB",
+      "runs": "browser",
+      "delivery": "download",
+      "catalog": "LANG_PATH / LANGS (src/ai/ocr.ts)",
+      "match": [
+        "tessdata_fast"
+      ],
+      "verified": true,
+      "notes": ""
+    },
+    {
+      "id": "DictaLM-3.0-12B",
+      "kind": "llm",
+      "source": "https://huggingface.co/dicta-il",
+      "license": "not verified",
+      "class": "unknown",
+      "commercial": "unknown",
+      "attribution": "",
+      "size": "~7 GB (q4), approximate",
+      "runs": "ollama",
+      "delivery": "none",
+      "catalog": "not in a catalog: owner checks open in models/dictalm3.json (plan W2.4)",
+      "verified": false,
+      "notes": "DictaLM 3.0 12B, adapted from NVIDIA Nemotron Nano V2 (arXiv 2602.02104). The weights' licence and the exact repository were not verified (Hugging Face unreachable from the build environment; the paper states no licence). Until the owner check in models/dictalm3.json is done it stays unknown and out of every catalog; `npm run dictalm3 -- eval` refuses it."
+    },
+    {
+      "id": "DictaLM-3.0-24B",
+      "kind": "llm",
+      "source": "https://huggingface.co/dicta-il",
+      "license": "not verified",
+      "class": "unknown",
+      "commercial": "unknown",
+      "attribution": "",
+      "size": "~14 GB (q4), approximate",
+      "runs": "ollama",
+      "delivery": "none",
+      "catalog": "not in a catalog: owner checks open in models/dictalm3.json (plan W2.4)",
+      "verified": false,
+      "notes": "DictaLM 3.0 24B, adapted from Mistral-Small-3.1 (arXiv 2602.02104). The weights' licence and the exact repository were not verified (Hugging Face unreachable from the build environment; the paper states no licence). Until the owner check in models/dictalm3.json is done it stays unknown and out of every catalog; `npm run dictalm3 -- eval` refuses it."
+    },
+    {
+      "id": "ivrit-ai/whisper-large-v3-turbo",
+      "kind": "asr",
+      "source": "https://huggingface.co/ivrit-ai/whisper-large-v3-turbo",
+      "license": "Apache-2.0",
+      "class": "allowed",
+      "commercial": "yes",
+      "attribution": "ivrit.ai Whisper large-v3-turbo (Hebrew) © ivrit.ai, Apache License 2.0; Whisper © OpenAI.",
+      "size": "ggml file: pinned by the owner (W1.17); large-v3-turbo ggml is ~1.6 GB in f16, approximate",
+      "runs": "desktop",
+      "delivery": "user-install",
+      "catalog": "WHISPER_GGML (src/ai/dictation/whisperDesktop.ts)",
+      "verified": true,
+      "notes": "Desktop file transcription through whisper.cpp (plan W1.17). The source model is apache-2.0 (HF API, 2026-10-19, see the -onnx entry). The ggml file's repository, revision, size and sha256 are owner checks (Hugging Face unreachable where this was written): until WHISPER_GGML is pinned the engine is never offered, and the app checks size + sha256 before every use."
+    },
+    {
+      "id": "whisper.cpp",
+      "kind": "other",
+      "source": "https://github.com/ggml-org/whisper.cpp",
+      "license": "MIT",
+      "class": "allowed",
+      "commercial": "yes",
+      "attribution": "whisper.cpp © The ggml authors, licensed under the MIT License.",
+      "size": "the user's own whisper-cli build (not shipped)",
+      "runs": "desktop",
+      "delivery": "user-install",
+      "catalog": "whisper_cli (src-tauri/src/lib.rs), found via LUMEN_WHISPER_CLI, <app data>/whisper/ or PATH",
+      "verified": false,
+      "notes": "Runtime for desktop Whisper (plan W1.17). Lumen does not bundle the binary: the user installs it (e.g. Homebrew `whisper-cpp`, which provides `whisper-cli`) and Lumen runs it as a separate process. Licence read from the project's LICENSE file, not re-checked here."
     }
   ]
 }

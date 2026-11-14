@@ -20,7 +20,21 @@ vi.mock("../storage/workspace", () => ({
   createWorkspaceFolder: async () => {},
   deleteWorkspaceFile: async (p: string) => void files.delete(p),
   writeWorkspaceBlob: async (p: string, b: Uint8Array) => void files.set(p, new TextDecoder().decode(b)),
+  // The git mirror reads the vault as bytes since #269 (safe git).
+  readWorkspaceBlob: async (p: string) => {
+    if (!files.has(p)) throw new Error("ENOENT");
+    return new Blob([files.get(p)!]);
+  },
+  workspaceHasEntry: async (p: string) => files.has(p) || [...files.keys()].some((k) => k.startsWith(`${p}/`)),
   isAssetName: () => false,
+}));
+// …and asks the vault backend what is at a path (#269): the same in-memory files.
+vi.mock("../storage/vault", async (orig) => ({
+  ...(await orig<typeof import("../storage/vault")>()),
+  getVaultBackend: () => ({
+    stat: async (p: string) =>
+      files.has(p) ? { kind: "file", size: files.get(p)!.length, mtime: 0 } : [...files.keys()].some((k) => k.startsWith(`${p}/`)) ? { kind: "directory", size: 0, mtime: 0 } : null,
+  }),
 }));
 vi.mock("../storage/workspaceIndex", () => ({
   searchWorkspace: async (q: string) => [...files.entries()].filter(([, c]) => c.includes(q)).map(([path, c]) => ({ path, name: path, score: 5, snippet: c.slice(0, 40) })),

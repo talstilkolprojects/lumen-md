@@ -10,6 +10,9 @@ import { t } from "../i18n";
 import { batchProgress, cancelBatch, loadJobs, pauseBatch, resumeBatch, subscribeBatch, type BatchJob, type BatchProgress } from "../ai/batch";
 import { uiConfirm } from "./PromptDialog";
 import { showAiToast } from "./AiToast";
+import { HelpButton } from "./HelpButton";
+import { explainError } from "../lib/userError";
+import { EmptyState, runCommand } from "./EmptyState";
 
 const btn: React.CSSProperties = { padding: "4px 10px", fontSize: 12, borderRadius: 6, border: "1px solid hsl(var(--border))", background: "transparent", color: "inherit", cursor: "pointer" };
 
@@ -132,7 +135,7 @@ export function BatchPanel({ onClose }: { onClose: () => void }) {
   const act = (fn: () => Promise<void>) => {
     setBusy(true);
     fn()
-      .catch((e: unknown) => showAiToast((e as Error)?.message ?? String(e), "error"))
+      .catch((e: unknown) => showAiToast(explainError(e), "error"))
       .finally(() => {
         setBusy(false);
         refresh();
@@ -145,13 +148,14 @@ export function BatchPanel({ onClose }: { onClose: () => void }) {
         <header style={{ padding: "12px 16px", borderBottom: "1px solid hsl(var(--border))", display: "flex", gap: 10, alignItems: "center" }}>
           <Layers size={16} />
           <strong style={{ flex: 1 }}>{t("batch.panel.title")}</strong>
+          <HelpButton topic="ai/batch#the-batch-jobs-panel" />
           <button type="button" style={btn} onClick={onClose} aria-label={t("batch.panel.close")}>
             <X size={14} />
           </button>
         </header>
         <div style={{ overflow: "auto", flex: 1 }}>
           {list === null ? null : list.length === 0 ? (
-            <p style={{ padding: 16, margin: 0, fontSize: 13, color: "hsl(var(--fg-muted))" }}>{t("batch.none")}</p>
+            <EmptyState message={t("batch.none")} action={{ label: t("cmd.ai.batch"), onClick: () => (onClose(), runCommand("ai.batch")) }} />
           ) : (
             <ul style={{ margin: 0, padding: 0 }}>
               {list.map((r) => (

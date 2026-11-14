@@ -1,0 +1,6 @@
+{
+  "plantuml.blocked": "This PlantUML diagram is drawn by kroki.io, an online service, and your AI policy keeps it on this device. Rendering it sends the diagram's text to kroki.io.",
+  "plantuml.send": "Render this diagram with kroki.io",
+  "block.plantuml.error": "⚠︎ PlantUML error (rendered via kroki.io):",
+  "block.plantuml.rendering": "Rendering PlantUML…"
+}

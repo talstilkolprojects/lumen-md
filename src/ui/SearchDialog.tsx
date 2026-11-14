@@ -5,6 +5,8 @@ import { Search, FileText, Sparkles, Loader2, FileCode2, Wand2, Image as ImageIc
 import { t, tPlural } from "../i18n";
 import "../ai/imageSearchStrings";
 import { searchWorkspace, type SearchHit } from "../storage/workspaceIndex";
+import { wrongLayoutVariant } from "../lib/keyboardLayout";
+import { mergeLayoutHits } from "./paletteSearch";
 import { isOPFSAvailable, readWorkspaceFile } from "../storage/workspace";
 import { AiError } from "../ai/llm";
 import type { ChatMessage } from "../ai/llm";
@@ -19,25 +21,45 @@ import { useCapability } from "../billing/gates";
 import { UpgradeNotice } from "./UpgradeNotice";
 import { rememberSearch, getSearchHistory, forgetSearch } from "../storage/searchHistory";
 import { flashSearchHighlight } from "../editor/searchHighlight";
+import { isSaved, removeSavedSearch, saveSearch } from "../search/savedSearches";
 
 // The Images tab (plan 6.7) and its model code load only when it is opened.
 const ImageSearchPanel = lazy(() => import("./ImageSearchPanel").then((m) => ({ default: m.ImageSearchPanel })));
+import { explainError } from "../lib/userError";
+import { EmptyState, runCommand } from "./EmptyState";
+import { HelpButton } from "./HelpButton";
+import "./searchDialogStrings";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   /** Called with the workspace path + content when a file is selected. */
   onOpenFile: (path: string, content: string) => void;
+  /** Plan W3.4: a query to start with (a widget, Siri or Spotlight search). */
+  initialQuery?: string;
 }
 
-export function SearchDialog({ open, onClose, onOpenFile }: Props) {
+export function SearchDialog({ open, onClose, onOpenFile, initialQuery = "" }: Props) {
   const [mode, setMode] = useState<"search" | "smart" | "ai" | "images">("search");
   // Smart (embedding) search is a Pro capability when billing is enforced;
   // self-hosted setups always have it.
   const smartAllowed = useCapability("smartSearch");
   const [query, setQuery] = useState("");
+  // Re-render after saving / removing a saved search (its state lives in localStorage).
+  const [, setSavedTick] = useState(0);
+  // A spoken "search …" (plan W5.20, src/ai/voice/run.ts) fills the box.
+  useEffect(() => {
+    const onQuery = (e: Event) => setQuery(String((e as CustomEvent<{ query?: string }>).detail?.query ?? ""));
+    window.addEventListener("lumen-search-query", onQuery);
+    return () => window.removeEventListener("lumen-search-query", onQuery);
+  }, []);
   const [hits, setHits] = useState<SearchHit[]>([]);
+  /** The other-layout reading of the query whose hits are shown too. */
+  const [layoutVariant, setLayoutVariant] = useState<string | null>(null);
   const [smartHits, setSmartHits] = useState<SemanticHit[]>([]);
+  // W5.28: local translations of the hits in another language than the query, and whether the embeddings bridge languages.
+  const [translations, setTranslations] = useState<Record<string, string | null>>({});
+  const [monolingual, setMonolingual] = useState(false);
   const [smartIndexing, setSmartIndexing] = useState(false);
   const [smartIndexedAt, setSmartIndexedAt] = useState<number | null>(null);
   const [active, setActive] = useState(0);
@@ -55,7 +77,10 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
 
   useEffect(() => {
     if (open) {
-      setQuery("");
+      // A saved search opens the dialog on its query (plan W2.12); a widget or shortcut passes its own (W3.4).
+      const preset = (window as unknown as { __lumenSearchQuery?: string }).__lumenSearchQuery;
+      (window as unknown as { __lumenSearchQuery?: string }).__lumenSearchQuery = undefined;
+      setQuery(preset ?? initialQuery);
       // Honour an optional `lumen-search-mode` event that lets command
       // palette entries open the dialog already on a specific tab.
       const requested = (window as unknown as { __lumenSearchMode?: "search" | "smart" | "ai" | "images" })
@@ -82,9 +107,13 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
     setLoading(true);
     const handle = setTimeout(() => {
       searchWorkspace(query, { limit: 40 })
-        .then((h) => {
+        .then(async (h) => {
+          // Few hits: try the same keystrokes in the other keyboard layout too (plan W2.8).
+          const other = h.length < 3 ? wrongLayoutVariant(query) : null;
+          const more = other ? await searchWorkspace(other, { limit: 40 }).catch(() => [] as SearchHit[]) : [];
           if (cancelled) return;
-          setHits(h);
+          setLayoutVariant(more.length ? other : null);
+          setHits(mergeLayoutHits(h, more));
           setActive(0);
           setLoading(false);
         })
@@ -149,7 +178,7 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
       showAiToast(t("toast.indexedFiles", { count: Object.keys(idx.files).length }), "success");
     } catch (e) {
       log.error("indexWorkspace failed", e);
-      showAiToast(t("toast.indexingFailed", { error: (e as Error).message }), "error");
+      showAiToast(t("toast.indexingFailed", { error: explainError(e) }), "error");
     } finally {
       setSmartIndexing(false);
     }
@@ -179,6 +208,30 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
       /* why: the file was deleted since the search ran; nothing to open */
     }
   }
+
+  useEffect(() => {
+    if (mode !== "smart" || !smartHits.length) {
+      setTranslations({});
+      return;
+    }
+    const ac = new AbortController();
+    setTranslations({});
+    void (async () => {
+      const [{ markCrossLingual, scriptOf }, { translatePassage }, { embeddingStatus }] = await Promise.all([import("../search/crossLingual"), import("../search/passageTranslator"), import("../ai/semanticSearch")]);
+      const marked = markCrossLingual(query, smartHits).slice(0, 8).filter((h) => h.crossLingual);
+      if (scriptOf(query) === "he") {
+        const st = await embeddingStatus().catch(() => null);
+        if (!ac.signal.aborted) setMonolingual(st ? !st.multilingual : false);
+      }
+      const to = scriptOf(query) === "he" ? "he" : "en";
+      for (const h of marked) {
+        const r = await translatePassage(h.snippet, h.lang, to, { signal: ac.signal });
+        if (ac.signal.aborted) return;
+        setTranslations((cur) => ({ ...cur, [h.path]: r.text }));
+      }
+    })();
+    return () => ac.abort();
+  }, [mode, smartHits, query]);
 
   async function openSmartHit(hit: SemanticHit) {
     const q = query.trim();
@@ -384,6 +437,9 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
           <button className={`chart-block-tab ${mode === "images" ? "active" : ""}`} style={{ fontSize: 13, background: "transparent" }} onClick={() => setMode("images")} data-testid="search-tab-images">
              <ImageIcon size={11} style={{ display: "inline", marginInlineEnd: 4 }} /> {t("imageSearch.tab")}
           </button>
+          <span style={{ marginInlineStart: "auto" }}>
+            <HelpButton topic="workspace/search" />
+          </span>
           {mode === "smart" && smartAllowed && (
             <button
               type="button"
@@ -405,6 +461,11 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
             </button>
           )}
         </div>
+        {mode === "search" && layoutVariant && query.trim() && (
+          <div role="status" data-testid="search-layout-hint" dir="auto" style={{ padding: "6px 14px", fontSize: 12, color: "hsl(var(--fg-muted))" }}>
+            {t("palette.layoutHint", { text: layoutVariant })}
+          </div>
+        )}
         <div className="cmd-palette-search">
           <Search size={16} style={{ opacity: 0.6, flexShrink: 0 }} />
           <input
@@ -439,6 +500,33 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
               {tPlural("search.results", resultCount)}
             </span>
           )}
+          {mode === "search" && query.trim() && isOPFSAvailable() && (
+            // Plan W2.12: keep this search in the sidebar.
+            <button
+              type="button"
+              data-testid="search-save"
+              aria-pressed={isSaved(query)}
+              onClick={() => {
+                if (isSaved(query)) removeSavedSearch(query.trim());
+                else saveSearch(query);
+                setSavedTick((n) => n + 1);
+              }}
+              title={isSaved(query) ? t("search.unsave") : t("search.save")}
+              style={{
+                flexShrink: 0,
+                fontSize: 11,
+                padding: "2px 8px",
+                borderRadius: 999,
+                border: "1px solid hsl(var(--border))",
+                background: isSaved(query) ? "hsl(var(--accent) / 0.12)" : "hsl(var(--bg-subtle))",
+                color: isSaved(query) ? "hsl(var(--accent))" : "hsl(var(--fg-muted))",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {isSaved(query) ? `★ ${t("search.savedLabel")}` : `☆ ${t("search.save")}`}
+            </button>
+          )}
         </div>
         {mode !== "smart" && isOPFSAvailable() && (
           // Plan 11.3: the operators, shown under the input (LTR syntax inside an RTL UI stays readable).
@@ -468,13 +556,22 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
             <UpgradeNotice compact plan="pro" message={t("billing.upgrade.smartSearch")} />
           )}
           {empty && mode !== "images" && !(mode === "smart" && !smartAllowed) && (
-            <div className="cmd-palette-empty">
-              {mode === "smart" && !smartIndexedAt && !query
-                ? t("searchDialog.buildHint")
-                : query
-                  ? t("search.noMatches")
-                  : t("search.empty")}
-            </div>
+            mode === "smart" && !smartIndexedAt && !query ? (
+              <div className="cmd-palette-empty">{t("searchDialog.buildHint")}</div>
+            ) : query ? (
+              <EmptyState message={t("search.noMatches")} action={{ label: t("search.clear"), onClick: () => setQuery("") }} />
+            ) : (
+              <EmptyState
+                message={t("search.empty")}
+                action={{
+                  label: t("search.newNote"),
+                  onClick: () => {
+                    onClose();
+                    runCommand("file.new");
+                  },
+                }}
+              />
+            )
           )}
           {/* Recent-searches chip row — only when the query is empty and the
               user has actually run searches before. Click a chip to re-run
@@ -623,10 +720,27 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
                       {hit.snippet}
                     </div>
                   )}
+                  {hit.path in translations && (
+                    <div data-testid="smart-hit-translation" dir="auto" style={{ fontSize: 11.5, marginTop: 2, color: "hsl(var(--fg))" }}>
+                      {translations[hit.path] ? (
+                        <>
+                          <span style={{ color: "hsl(var(--fg-muted))" }}>{t("searchDialog.localTranslation")}: </span>
+                          {translations[hit.path]}
+                        </>
+                      ) : (
+                        <span style={{ color: "hsl(var(--fg-muted))" }}>{t("searchDialog.noLocalTranslator")}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
+          {mode === "smart" && monolingual && smartHits.length > 0 && (
+            <div role="note" data-testid="smart-monolingual" style={{ padding: "6px 12px", fontSize: 11.5, color: "hsl(var(--fg-muted))" }}>
+              {t("searchDialog.monolingualEmbeddings")}
+            </div>
+          )}
         </div>
         
         {mode === "ai" && (
@@ -644,7 +758,7 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
                 {aiCitations && (
                   <div data-testid="vault-citations" style={{ borderTop: "1px solid hsl(var(--border))", paddingTop: 8, marginTop: 4, fontSize: 11.5 }}>
                     {aiCitations.verifiedCount === 0 ? (
-                      <div role="alert" style={{ color: "hsl(35 90% 45%)", fontWeight: 600, marginBottom: 4 }}>{t("vaultCite.unsupported")}</div>
+                      <div role="alert" style={{ color: "hsl(var(--warning))", fontWeight: 600, marginBottom: 4 }}>{t("vaultCite.unsupported")}</div>
                     ) : (
                       <div style={{ color: "hsl(var(--fg-muted))", fontWeight: 600, marginBottom: 4 }}>
                         {t("vaultCite.summary", { ok: aiCitations.verifiedCount, total: aiCitations.citations.length })}
@@ -665,7 +779,7 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
                         }}
                         style={{ display: "flex", gap: 6, alignItems: "baseline", width: "100%", textAlign: "start", padding: "3px 0", background: "none", border: 0, color: "inherit", cursor: c.path ? "pointer" : "default" }}
                       >
-                        <span style={{ color: c.verified ? "hsl(145 60% 38%)" : "hsl(0 70% 55%)", fontWeight: 700 }} aria-label={c.verified ? t("vaultCite.verified") : t("vaultCite.notVerified")}>
+                        <span style={{ color: c.verified ? "hsl(var(--success))" : "hsl(var(--danger))", fontWeight: 700 }} aria-label={c.verified ? t("vaultCite.verified") : t("vaultCite.notVerified")}>
                           {c.verified ? "✓" : "✗"}
                         </span>
                         <span style={{ color: "hsl(var(--accent))", whiteSpace: "nowrap" }}>

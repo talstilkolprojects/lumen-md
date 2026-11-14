@@ -1,0 +1,13 @@
+{
+  "pdf.ask.cite": "Page {page}, line {line}",
+  "pdf.ask.dropped": "{n} quotes that aren't in the PDF were left out",
+  "pdf.ask.indexing": "Reading page {page} of {pages}…",
+  "pdf.ask.notFound": "This PDF doesn't seem to answer that.",
+  "pdf.ask.ocr": "Reading scanned page {page} of {pages} (OCR)…",
+  "pdf.ask.placeholder": "A question about this PDF…",
+  "pdf.ask.submit": "Ask",
+  "pdf.ask.thinking": "Looking for the answer in the PDF…",
+  "pdf.ask.title": "Ask this PDF",
+  "pdf.summarize": "Summarize",
+  "pdf.summary.title": "Summary"
+}

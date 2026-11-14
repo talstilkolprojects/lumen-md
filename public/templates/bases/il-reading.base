@@ -1,0 +1,21 @@
+# Reading list — from the template Book I'm reading
+filters:
+  and:
+    - 'type == "book"'
+properties:
+  file.name:
+    displayName: "Book"
+  note.author:
+    displayName: "Author"
+  note.status:
+    displayName: "Status"
+  note.rating:
+    displayName: "Rating"
+views:
+  - type: table
+    name: "Reading list"
+    order:
+      - file.name
+      - note.author
+      - note.status
+      - note.rating

@@ -4,8 +4,9 @@
  * The commonmark preset renders an image node as a bare <img src>, which
  * would request a note's tracking pixel the moment it is opened in this
  * mode. This node view renders the same placeholder as the preview
- * (src/renderer/components.tsx) until the image may load, and the real
- * <img> once it may. Copy / paste still serialize the node through its
+ * (src/renderer/components.tsx) until the image may load, and then the
+ * image — inside the content frame when it is from another site (plan
+ * W4.15). Copy / paste still serialize the node through its
  * schema (in an inert document, so no request).
  */
 import { Plugin } from "@milkdown/prose/state";
@@ -16,10 +17,12 @@ import {
   allowRemoteImageHosts,
   loadRemoteImagesOnce,
   remoteImageGate,
+  remoteImageHost,
   remoteImagesUnavailable,
   subscribeRemoteImages,
   type RemoteImageGate,
 } from "../lib/remoteImages";
+import { createContentFrame } from "../lib/contentFrame";
 
 /** The placeholder as DOM (the preview renders the same markup with React). */
 export function remoteImagePlaceholder(alt: string, gate: RemoteImageGate, doc: Document = document): HTMLElement {
@@ -89,6 +92,12 @@ export class RemoteImageView implements NodeView {
     this.shown = key;
     if (gate.blocked) {
       this.dom.replaceChildren(remoteImagePlaceholder(alt, gate));
+      return;
+    }
+    // Allowed, from another site: inside the content frame (plan W4.15;
+    // the app's policy has no https: in img-src).
+    if (remoteImageHost(src)) {
+      this.dom.replaceChildren(createContentFrame({ kind: "img", src, alt, title }));
       return;
     }
     const img = document.createElement("img");

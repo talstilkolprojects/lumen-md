@@ -59,8 +59,13 @@ const LONG_FORMS = [
   { re: /\bserver\s+side\s+public\s+licen[cs]e\b/i, id: "SSPL" },
   { re: /\bcreative\s+commons\b.*\bnon-?\s*commercial\b/i, id: "CC-BY-NC" },
 ];
-/** A linking exception spelled out inside a long-form GPL name. */
-const LONG_FORM_EXCEPTION = /\b(classpath|gcc|llvm|autoconf|bison|font|universal\s+foss|linking)\b[\s-]*(runtime\s+library\s+)?exception/i;
+/**
+ * A linking exception spelled out inside a long-form GPL name: only the
+ * named exceptions LINKING_EXCEPTIONS knows. The generic words "linking
+ * exception" ("…with Foo linking exception") prove nothing about the terms,
+ * so they do not downgrade a GPL (W1.32, Codex on #199).
+ */
+const LONG_FORM_EXCEPTION = /\b(classpath|gcc|llvm|autoconf|bison|font|universal\s+foss)\b[\s-]*(runtime\s+library\s+)?(linking\s+)?exception/i;
 
 /** One licence id (with an optional WITH exception) → level + reason. */
 export function classifyId(rawId, exception) {
@@ -80,7 +85,13 @@ export function classifyId(rawId, exception) {
   if (/^cc-by-nc/i.test(id)) return { level: "fail", reason: "Creative Commons NonCommercial" };
   if (/^polyform-(noncommercial|strict)/i.test(id)) return { level: "fail", reason: "PolyForm non-commercial licence" };
   if (/^(cpal|eupl|osl|cc-by-sa|cc-by-nd|polyform)/i.test(id)) return { level: "warn", reason: "copyleft / restricted licence: needs a decision" };
-  if (OK_IDS.has(lower)) return { level: "ok", reason: "" };
+  if (OK_IDS.has(lower)) {
+    // A WITH clause adds terms to the licence: only a known SPDX exception
+    // (Apache-2.0 WITH LLVM-exception) keeps it ok; anything else is
+    // malformed or unreviewed and is shown, not hidden (W1.32, Codex on #199).
+    if (exception !== undefined && !LINKING_EXCEPTIONS.test(exception)) return { level: "warn", reason: `"${id} WITH ${exception}": not a known SPDX exception; review its terms` };
+    return { level: "ok", reason: "" };
+  }
   const long = LONG_FORMS.find((f) => f.re.test(id));
   if (long) {
     const spelled = exception === undefined && /GPL$/.test(long.id) ? id.match(LONG_FORM_EXCEPTION)?.[0] : undefined;
@@ -430,6 +441,8 @@ export const CATALOG_PATTERNS = [
   { file: "src/ai/hebrewSpell.ts", re: /_DICT_URL\s*=\s*"([^"]+)"/g, exact: true },
   // The bundled word list (plan 9.2): swapping the file must meet a registry entry for the new one.
   { file: "src/ai/hebrewFreq.ts", re: /_FREQ_PATH\s*=\s*"([^"]+)"/g, exact: true },
+  // The Hebrew lexicon pack (plan W5.26), downloaded on request.
+  { file: "src/lexicon/store.ts", re: /_PACK_PATH\s*=\s*"([^"]+)"/g, exact: true },
 ];
 
 export function discoverCatalogIds(sources, patterns = CATALOG_PATTERNS) {

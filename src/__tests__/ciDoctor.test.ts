@@ -18,6 +18,7 @@ import {
   observe,
   parseAnnotations,
   sameTest,
+  sameTestSetup,
   testKey,
   // @ts-expect-error — plain .mjs helper without type declarations
 } from "../../scripts/lib/ci-doctor.mjs";
@@ -210,11 +211,32 @@ describe("classify", () => {
     expect(classify(test, [o("passed", 31)], { maxDistance: 30 }).verdict).toBe("unknown");
     expect(classify(test, [o("passed", 31)], { maxDistance: 40 }).verdict).toBe("flake?");
   });
+  it("a deterministic check with nothing to compare is still real, not unknown (W1.32, #204)", () => {
+    expect(classify(budget, [])).toMatchObject({ verdict: "real" });
+    expect(classify(budget, [o("passed", 200)]).why).toMatch(/no run at a similar commit/);
+  });
   it("a deterministic check is never flaky", () => {
     expect(classify(budget, [o("passed", 2, "a")])).toMatchObject({ verdict: "real" });
     expect(classify(budget, [o("passed", 2, "a")]).why).toMatch(/this branch's change/);
     expect(classify(budget, [o("failed", 2, "a"), o("failed", 3, "b")]).why).toMatch(/shared base/);
     expect(classify(budget, [o("passed", 0, "a", true), o("failed", 3, "b")]).verdict).toBe("real");
+  });
+});
+
+describe("sameTestSetup (W1.32, #204)", () => {
+  const side = (...files: string[]) => ({ n: files.length, files });
+  it("the test file and every file that selects tests must be unchanged on both sides", () => {
+    expect(sameTestSetup("e2e/a.spec.ts", side("src/x.ts"), side("README.md"))).toBe(true);
+    expect(sameTestSetup("e2e/a.spec.ts", side("e2e/a.spec.ts"), side())).toBe(false);
+    for (const f of ["playwright.config.ts", "vite.config.ts", "vitest.config.mts", ".github/workflows/ci.yml"]) {
+      expect(sameTestSetup("e2e/a.spec.ts", side(), side(f)), f).toBe(false);
+    }
+    expect(sameTestSetup("e2e/a.spec.ts", side("e2e/playwright.config.ts.md"), side())).toBe(true);
+  });
+  it("proves nothing without a path, a comparison, or with a truncated (300-file) list", () => {
+    expect(sameTestSetup(undefined, side(), side())).toBe(false);
+    expect(sameTestSetup("e2e/a.spec.ts", null, side())).toBe(false);
+    expect(sameTestSetup("e2e/a.spec.ts", { n: 300, files: [] }, side())).toBe(false);
   });
 });
 

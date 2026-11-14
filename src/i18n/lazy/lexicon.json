@@ -1,0 +1,22 @@
+{
+  "lexicon.title": "Dictionary: {word}",
+  "lexicon.close": "Close",
+  "lexicon.synonyms": "Synonyms",
+  "lexicon.definition": "Definition",
+  "lexicon.nikud": "Niqqud of the word",
+  "lexicon.loading": "Looking it up…",
+  "lexicon.notFound": "This word is not in the dictionary.",
+  "lexicon.noSynonyms": "No synonyms listed for this word.",
+  "lexicon.noDefinition": "No definition for this word, only synonyms.",
+  "lexicon.noNikud": "The dictionary has no pointed form of this word.",
+  "lexicon.replaceWith": "Replace the word with “{word}”",
+  "lexicon.prefixNote": "The prefix “{prefix}” is kept unpointed.",
+  "lexicon.removeConfirm": "Remove the Hebrew dictionary from this device?",
+  "lexicon.removed": "The Hebrew dictionary was removed.",
+  "lexicon.unavailable": "The dictionary pack is not published yet.",
+  "lexicon.downloadConfirm": "Download the Hebrew dictionary ({count} entries, {mb} MB) from Hebrew Wiktionary? It stays on this device; lookups never leave it. Licence: CC BY-SA 4.0.",
+  "lexicon.installed": "Hebrew dictionary installed: {count} entries. Right-click a Hebrew word.",
+  "lexicon.failed": "The dictionary could not be downloaded: {error}",
+  "lexicon.notInstalled": "Get the Hebrew dictionary first (palette: Hebrew dictionary and synonyms).",
+  "lexicon.noWord": "Put the cursor on a Hebrew word."
+}

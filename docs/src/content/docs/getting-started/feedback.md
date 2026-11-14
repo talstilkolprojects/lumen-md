@@ -40,3 +40,32 @@ not uploaded. Attach it to the GitHub issue yourself. It may show your notes,
 so look at it first.
 
 Browsers without screen capture (most phones) say so and skip this step.
+
+## Diagnostics file
+
+**Save diagnostics** (in the feedback form, on an error screen, or **Save a
+diagnostics file** in the command palette) saves `lumen-diagnostics-<date>.json`
+on your computer, for you to attach to the issue. It holds what a maintainer
+needs to understand a problem, and nothing about what you wrote:
+
+- the version, the app shell (web, installed, desktop), the platform and
+  the browser;
+- your settings, copied one by one from a fixed list: switches, modes and
+  sizes. No note names, folders, keys, tokens or e-mail addresses;
+- the vault counted, not read: how many notes, other files and folders, and
+  their total size;
+- storage: whether the vault is in the browser's private storage, and how
+  full it is;
+- the last warnings and errors, with every path, URL path, quoted text,
+  address and key in them replaced by a placeholder.
+
+Before the file is saved, Lumen checks it once more against the text it
+holds in memory (your notes, their names, your keys), and refuses to save a
+file that would contain any of it.
+
+## Help in the app
+
+**Help** in the command palette (or F1) opens this documentation inside
+Lumen. It is packed into the app, so it works offline, and its search
+handles Hebrew prefixes as the website's search does. Every panel and
+dialog has a **?** button that opens the help at the part about it.

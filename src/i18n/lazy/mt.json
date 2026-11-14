@@ -1,11 +1,4 @@
 {
-  "models.consent.title": "Download a model to this device?",
-  "models.consent.body": "{purpose}\n\n{name} · {size}. It is downloaded once, checked against its published checksum and kept in this browser's storage. Nothing you write is sent anywhere.\n\nLicence: {license}. {attribution}",
-  "models.consent.ok": "Download {size}",
-  "models.purpose.translateEnHe": "Translation from English to Hebrew",
-  "models.purpose.translateHeEn": "Translation from Hebrew to English",
-  "models.purpose.nerHe": "Finding names, places and organisations in Hebrew text",
-  "models.purpose.imageSearch": "Searching images by text",
   "mt.layer.name.chrome": "Chrome's built-in translator",
   "mt.layer.name.opus": "Opus-MT (on this device)",
   "mt.layer.name.m2m100": "M2M100 (on this device)",

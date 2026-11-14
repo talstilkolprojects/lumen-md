@@ -1,19 +1,43 @@
 /**
  * src/plugins/EmbedBlock.tsx — an ```embed block turns a pasted link into
- * the provider's embeddable player URL inside a sandboxed iframe.
+ * the provider's embeddable player URL. Nothing loads until the user clicks
+ * "Load"; then the player runs inside the content frame (plan W4.15), whose
+ * #fragment carries the request.
  */
 import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent, waitFor } from "@testing-library/react";
 import EmbedBlock from "../plugins/EmbedBlock";
+import { contentFrameRequest, CONTENT_FRAME_PATH, type ContentFrameRequest } from "../lib/contentFrame";
+import { __resetRemoteImagesForTests } from "../lib/remoteImages";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  __resetRemoteImagesForTests();
+  localStorage.clear();
+});
 
-function frame(source: string): HTMLIFrameElement {
+/** The content frame after "Load", and the request it carries (the gate loads lazily). */
+async function loaded(source: string): Promise<{ el: HTMLIFrameElement; req: ContentFrameRequest }> {
   const { container } = render(<EmbedBlock source={source} />);
+  const load = await screen.findByRole("button", { name: "Load" });
+  expect(container.querySelector("iframe"), `${source} framed before Load`).toBeNull();
+  fireEvent.click(load);
+  await waitFor(() => expect(container.querySelector("iframe")).not.toBeNull());
   const el = container.querySelector("iframe");
   if (!el) throw new Error(`no iframe for ${source}`);
-  return el;
+  const src = el.getAttribute("src") ?? "";
+  expect(src.startsWith(`${CONTENT_FRAME_PATH}#`)).toBe(true);
+  const req = contentFrameRequest(src);
+  if (!req) throw new Error(`no request in ${src}`);
+  return { el, req };
 }
+
+async function frame(source: string): Promise<HTMLIFrameElement & { req: ContentFrameRequest }> {
+  const { el, req } = await loaded(source);
+  return Object.assign(el, { req });
+}
+
+const playerSrc = (req: ContentFrameRequest) => (req.kind === "embed" ? req.src : null);
 
 describe("EmbedBlock", () => {
   it.each([
@@ -36,50 +60,74 @@ describe("EmbedBlock", () => {
     ["https://www.reddit.com/r/typescript/comments/abc12/title", "Reddit", "https://www.redditmedia.com/r/typescript/comments/abc12/?embed=true&theme=dark"],
     ["https://www.linkedin.com/embed/feed/update/urn:li:share:123", "LinkedIn", "https://www.linkedin.com/embed/feed/update/urn:li:share:123"],
     ["https://www.linkedin.com/posts/dana_some-slug-activity-7123456789-abcd", "LinkedIn", "https://www.linkedin.com/embed/feed/update/urn:li:activity:7123456789"],
-    ["https://example.com/page", "Embed", "https://example.com/page"],
-  ])("%s → %s player", (url, title, src) => {
-    const el = frame(url);
-    expect(el.getAttribute("src")).toBe(src);
+  ])("%s → %s player", async (url, title, src) => {
+    const el = await frame(url);
+    expect(playerSrc(el.req)).toBe(src);
+    expect(el.req.kind === "embed" && el.req.title).toBe(title);
     expect(el.getAttribute("title")).toBe(title);
     expect(screen.getByText(title).tagName).toBe("SPAN");
   });
 
-  it("uses Figma's embed endpoint with the original URL encoded", () => {
-    const url = "https://www.figma.com/file/AbC/Design";
-    expect(frame(url).getAttribute("src")).toBe(`https://www.figma.com/embed?embed_host=lumen&url=${encodeURIComponent(url)}`);
+  it("a link to a site no policy frames stays a link", () => {
+    const { container } = render(<EmbedBlock source={"https://example.com/page"} />);
+    expect(container.querySelector("iframe")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Load" })).toBeNull();
+    expect(container.textContent).toContain("example.com is not one of the sites Lumen can embed");
+    expect(screen.getByRole("link").getAttribute("href")).toBe("https://example.com/page");
   });
 
-  it("frames an OpenStreetMap view with a bounding box around the centre", () => {
-    const src = frame("https://www.openstreetmap.org/#map=12/32.0853/34.7818").getAttribute("src") ?? "";
+  it("asks before loading, names the host, and Always allow keeps the host", async () => {
+    const { container } = render(<EmbedBlock source={"https://vimeo.com/7"} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Always allow player.vimeo.com" }));
+    expect(container.querySelector("[data-remote-frame]")).toBeNull();
+    await waitFor(() => expect(container.querySelector("iframe")).not.toBeNull());
+    expect(localStorage.getItem("lumen.remoteImages.allowedHosts")).toBe(JSON.stringify(["player.vimeo.com"]));
+    cleanup();
+    // Allowed host: the next embed from it loads with no question.
+    const again = render(<EmbedBlock source={"https://vimeo.com/8"} />);
+    await waitFor(() => expect(again.container.querySelector("iframe")).not.toBeNull());
+    expect(again.container.querySelector("[data-remote-frame]")).toBeNull();
+  });
+
+  it("uses Figma's embed endpoint with the original URL encoded", async () => {
+    const url = "https://www.figma.com/file/AbC/Design";
+    expect(playerSrc((await frame(url)).req)).toBe(`https://www.figma.com/embed?embed_host=lumen&url=${encodeURIComponent(url)}`);
+  });
+
+  it("frames an OpenStreetMap view with a bounding box around the centre", async () => {
+    const src = playerSrc((await frame("https://www.openstreetmap.org/#map=12/32.0853/34.7818")).req) ?? "";
     expect(src.startsWith("https://www.openstreetmap.org/export/embed.html?bbox=")).toBe(true);
     expect(src).toContain("marker=32.0853,34.7818");
   });
 
-  it("embeds Facebook posts through the post plugin", () => {
+  it("embeds Facebook posts through the post plugin", async () => {
     const url = "https://www.facebook.com/page/posts/123";
-    expect(frame(url).getAttribute("src")).toBe(
+    expect(playerSrc((await frame(url)).req)).toBe(
       `https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(url)}&show_text=true&width=500`,
     );
   });
 
-  it("wraps a GitHub gist in a data: page that loads the gist script", () => {
-    const src = frame("https://gist.github.com/someone/abc123").getAttribute("src") ?? "";
-    expect(src.startsWith("data:text/html;base64,")).toBe(true);
-    expect(atob(src.slice("data:text/html;base64,".length))).toContain('src="https://gist.github.com/someone/abc123.js"');
+  it("a GitHub gist runs its embed script in an opaque-origin content frame", async () => {
+    const el = await frame("https://gist.github.com/someone/abc123");
+    expect(el.req).toEqual({ kind: "gist", user: "someone", id: "abc123" });
+    expect(el.getAttribute("sandbox")?.split(" ")).not.toContain("allow-same-origin");
+    expect(el.getAttribute("sandbox")?.split(" ")).toContain("allow-scripts");
   });
 
-  it("SoundCloud gets the audio-only permissions", () => {
-    const el = frame("https://soundcloud.com/artist/track");
-    expect(el.getAttribute("src")?.startsWith("https://w.soundcloud.com/player/?url=")).toBe(true);
+  it("SoundCloud gets the audio-only permissions, delegated through the content frame", async () => {
+    const el = await frame("https://soundcloud.com/artist/track");
+    expect(playerSrc(el.req)?.startsWith("https://w.soundcloud.com/player/?url=")).toBe(true);
+    expect(el.req.kind === "embed" && el.req.allow).toBe("autoplay; encrypted-media");
     expect(el.getAttribute("allow")).toBe("autoplay; encrypted-media");
   });
 
-  it("is sandboxed, lazy, and links to the original", () => {
-    const el = frame("\n\n  https://vimeo.com/1  \nhttps://vimeo.com/2");
-    expect(el.getAttribute("src")).toBe("https://player.vimeo.com/video/1");
+  it("is sandboxed, lazy, and links to the original", async () => {
+    const el = await frame("\n\n  https://vimeo.com/1  \nhttps://vimeo.com/2");
+    expect(playerSrc(el.req)).toBe("https://player.vimeo.com/video/1");
+    expect(el.req.kind === "embed" && el.req.referrerPolicy).toBe("strict-origin-when-cross-origin");
     expect(el.getAttribute("loading")).toBe("lazy");
-    expect(el.getAttribute("sandbox")).toContain("allow-scripts");
-    expect(el.getAttribute("referrerpolicy")).toBe("strict-origin-when-cross-origin");
+    // The providers' players need their own origin: the flags the embed block always gave them.
+    expect(el.getAttribute("sandbox")).toBe("allow-scripts allow-same-origin allow-popups allow-presentation allow-forms");
     const open = screen.getByRole("link");
     expect(open.getAttribute("href")).toBe("https://vimeo.com/1");
     expect(open.getAttribute("rel")).toContain("noopener");

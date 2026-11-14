@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render } from "@testing-library/react";
 
-vi.mock("../i18n", () => ({ t: (k: string) => k }));
+vi.mock("../i18n", () => ({ t: (k: string) => k, registerEnglish: () => undefined }));
 vi.mock("../lib/logger", () => ({
   log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));

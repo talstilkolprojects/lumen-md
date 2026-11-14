@@ -1,93 +1,138 @@
 ---
-title: MCP integration (Claude Desktop, Cursor, …)
-description: Expose your Lumen workspace as a Model Context Protocol server so any AI agent can read, write, and search your notes.
+title: MCP and the lumen CLI
+description: Let Claude Desktop, Claude Code or your IDE search and read your vault — off by default, with scopes per client, and every change waits for your approval.
 ---
 
-Lumen ships an [MCP](https://modelcontextprotocol.io/) server out of the
-box. Configure it once and Claude Desktop / Cursor / any MCP-aware
-client can read your workspace, write new notes, and run substring
-searches — from inside the chat, with no extra UI.
+Lumen's vault can be used from outside the app in two ways:
+
+- the **MCP server** (`@lumen-md/mcp-server`) for AI clients that speak the
+  [Model Context Protocol](https://modelcontextprotocol.io/) — Claude
+  Desktop, Claude Code, Cursor, VS Code, Zed;
+- the **`lumen` CLI** for you at a terminal: `lumen search`, `open`, `new`,
+  `append`, `daily`.
+
+Both work on the vault folder on disk. Three rules hold everywhere:
+
+1. **Off by default.** A client gets no tools until you enable it.
+2. **Scopes per client.** You choose what each client may do.
+3. **No write without approval.** A client's write is only a proposal; the
+   note changes when you approve it.
 
 ## Install
 
-The server isn't published to npm yet, so build it from the repository
-(Node 22 or later):
+The server is not published to npm yet, so build it from the repository (Node 22+):
 
 ```bash
 git clone https://github.com/talstilkol/lumen-md
 cd lumen-md/mcp-server
 npm ci
-npm run build          # → mcp-server/dist/index.js
+npm run build          # → mcp-server/dist/index.js and dist/lumen.js
 ```
 
-## Configure Claude Desktop
+Until it is on npm, run `node /path/to/lumen-md/mcp-server/dist/lumen.js`
+where this page says `npx -p @lumen-md/mcp-server lumen`, and use
+`"command": "node", "args": ["/path/to/lumen-md/mcp-server/dist/index.js", "--client", "…"]`
+where a client config says `npx -y @lumen-md/mcp-server`.
 
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
+## Turn a client on
+
+```bash
+cd ~/Documents/Lumen            # your vault folder
+npx -p @lumen-md/mcp-server lumen mcp enable claude-desktop --scopes search,read
+npx -p @lumen-md/mcp-server lumen mcp status
+```
+
+| Scope | Tools |
+|---|---|
+| `search` | `search_notes` — BM25 over Hebrew and English (prefix letters ו ה ב ל מ ש כ and niqqud are handled) |
+| `read` | `read_note`, `list_notes`, `list_tags`, `get_backlinks` |
+| `propose` | `create_note`, `append_note`, `write_note`, `update_frontmatter` — proposals only |
+
+`lumen mcp enable <client>` without `--scopes` grants `search,read`. Add
+`propose` only for a client you want suggestions from. `lumen mcp disable
+<client>` takes effect on its next call. The settings live in
+`<vault>/.lumen/mcp.json`; clients cannot read or write anything under
+`.lumen/` (or any other dot folder), `..` or absolute paths.
+
+## Connect it
+
+Give each client its own `--client` name — the one you enabled. (Without
+it, the server uses the name the client reports when it connects.)
+
+**Claude Desktop** — `~/Library/Application Support/Claude/claude_desktop_config.json`
+(macOS; `%APPDATA%\Claude\` on Windows):
 
 ```json
 {
   "mcpServers": {
     "lumen": {
-      "command": "node",
-      "args": ["/path/to/lumen-md/mcp-server/dist/index.js"],
-      "env": {
-        "LUMEN_WORKSPACE": "/Users/you/Documents/Lumen"
-      }
+      "command": "npx",
+      "args": ["-y", "@lumen-md/mcp-server", "--client", "claude-desktop"],
+      "env": { "LUMEN_VAULT": "/Users/you/Documents/Lumen" }
     }
   }
 }
 ```
 
-Restart Claude Desktop. A 🔌 icon appears in the chat input — your
-Lumen workspace is now part of Claude's context.
+**Claude Code** — from any folder:
 
-## Tools the agent gets
+```bash
+claude mcp add lumen -e LUMEN_VAULT="$HOME/Documents/Lumen" -- npx -y @lumen-md/mcp-server --client claude-code
+npx -p @lumen-md/mcp-server lumen mcp enable claude-code --vault "$HOME/Documents/Lumen" --scopes search,read
+```
 
-| Tool | Args | Returns |
-| --- | --- | --- |
-| `read_note` | `path` | The full markdown body |
-| `write_note` | `path`, `content` | Confirmation string |
-| `list_notes` | — | Newline-separated list of every `.md` / `.txt` |
-| `search_workspace` | `query`, `limit?` | Substring matches with line numbers |
-| `append_note` | `path`, `content` | Adds to the end of an existing note |
-| `delete_note` | `path`, `confirm: true` | Refuses without `confirm: true` (safety guard) |
-| `update_frontmatter` | `path`, `set?`, `unset?` | Patch YAML keys; body untouched |
-| `list_tags` | — | Tag → count map across the whole workspace |
-| `get_backlinks` | `path` | Notes that contain `[[wiki-link]]` to this one |
+**Cursor** (`~/.cursor/mcp.json`), **VS Code** (`.vscode/mcp.json`, key
+`servers`) and **Zed** (`context_servers`) take the same command and
+arguments: `npx -y @lumen-md/mcp-server --client cursor` (or `vscode`,
+`zed`) with `LUMEN_VAULT` in `env`.
 
-## Examples
+## Approving changes
 
-> *Read my note about deep learning and summarise the open questions.*
+A client's `create_note` / `append_note` / `write_note` /
+`update_frontmatter` writes a proposal to `.lumen/mcp/pending/` and tells
+the client nothing is written yet. You decide:
 
-Claude calls `search_workspace("deep learning")` → top hits → `read_note`
-on each → composes a summary with citations linking back to your notes.
+- **In Lumen:** the proposals appear in the review screen
+  (⌘K → *AI: Review changes proposed by agents*, or the **Review** badge in
+  the status bar) as "Proposed by claude-desktop (MCP client)", each as a
+  diff. Approve writes the note; Reject drops it. This needs the vault
+  folder in the app — the same folder, or synced with Git (`.lumen/` is
+  synced like the notes).
+- **In a terminal:**
 
-> *Capture my last 5 messages as a new note titled "Meeting prep — Q3".*
+  ```bash
+  lumen mcp review              # every proposal as a diff
+  lumen mcp approve <id>        # or --all
+  lumen mcp reject <id>         # or --all
+  ```
 
-Claude calls `write_note("meetings/2026-q3-prep.md", "...")` — your note
-is written to `LUMEN_WORKSPACE` at once; the web app sees it after the
-next Git pull (see below).
+A proposal keeps the text it was computed from. If the note changed since,
+approving writes nothing and the proposal is dropped as a conflict.
 
-> *Tag every note under `2024/` as archived.*
+## The ledger
 
-Claude calls `list_notes` → filters to `2024/` → loops
-`update_frontmatter(path, { set: { status: "archived" } })`. Bodies stay
-intact; only frontmatter is rewritten.
+Every call — allowed, refused, proposed, approved, rejected — is a line in
+`.lumen/mcp/ledger.jsonl`: time, client, tool, scope, note path, decision,
+and how many bytes of your vault went to the client. Never the note text
+or the query. `lumen mcp log` prints it.
 
-> *Which notes link to "Project Aurora"?*
+## The `lumen` CLI
 
-Claude calls `get_backlinks("projects/project-aurora.md")` → returns
-every note containing `[[Project Aurora]]`.
+```bash
+lumen search budget meeting      # path, title, matching line (exit 3: nothing found)
+lumen open "Launch plan"         # opens it in your default app; --print to print it
+lumen new ideas/one "first line" # creates; refuses if it exists
+lumen append ideas/one.md "more"
+lumen daily "call Dana"          # journal/YYYY-MM-DD.md, adds "- 09:05 call Dana"
+```
 
-## Security boundary
+The vault is `--vault <dir>`, else `$LUMEN_VAULT`, else the current folder.
+`new`, `append` and `daily` are you at the keyboard, so they write directly
+(logged as client `cli`). Install with `npm i -g @lumen-md/mcp-server`, or
+run from a clone with `npm run lumen -- search …`.
 
-The server **refuses any path containing `..` or absolute paths**. An
-agent can only see files under `LUMEN_WORKSPACE`. Run the server only
-against directories you'd be comfortable showing the agent.
+## Speed
 
-## Sync with the web app
-
-The MCP server is a Node process — it can't reach OPFS in your browser
-directly. The standard pattern: bind your Lumen workspace to a Git repo
-(`⌘K → Git: clone repository…`), clone the same repo to the path you set
-in `LUMEN_WORKSPACE`, and use `git pull` / push to keep both sides in sync.
+Search keeps an index in memory, built on the first search and brought up
+to date before each one (only changed notes are read again). On 10,000
+notes a search answers in well under 300 ms.

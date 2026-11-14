@@ -126,6 +126,8 @@ export const SETTINGS: readonly SettingEntry[] = [
   local("lumen.telemetry.optOut", { kind: "setting", tab: "general", label: "settings.telemetryOptOut", type: "boolean", values: ["", "1"] }),
   local("lumen-sidebar-width", { kind: "setting", tab: "general", type: "number", min: 120, max: 2000 }),
   local("lumen.marketplace.url", { kind: "setting", tab: "general", type: "text" }),
+  local("lumen.digest.folder", { kind: "setting", tab: "general", type: "text" }),
+  local("lumen.tasks.reminders", { kind: "setting", tab: "general", type: "boolean", values: ["", "1"] }),
 
   // ── AI (the AI settings panel, model manager included) ────────────────
   local("lumen.ai.policy", { kind: "setting", tab: "ai", label: "cmd.ai.policy", type: "choice", options: [{ value: "local-only" }, { value: "local-first" }, { value: "cloud" }] }),
@@ -139,12 +141,25 @@ export const SETTINGS: readonly SettingEntry[] = [
   local("lumen.grammar.endpoint", { kind: "setting", tab: "ai", label: "ai.settings.grammar", type: "text" }),
   local("lumen.research.endpoint", { kind: "setting", tab: "ai", label: "ai.settings.research", type: "text" }),
   local("lumen.research.provider", { kind: "setting", tab: "ai", type: "text" }),
-  local("lumen.research.webConsent", { kind: "setting", tab: "ai", type: "text" }),
+  // A consent: like the other opt-ins, never taken from an imported file.
+  data("lumen.research.webConsent"),
   local("lumen.ai.rerank", { kind: "setting", tab: "ai", label: "cmd.ai.rerankModel", type: "choice", options: [{ value: "lexical" }, { value: "model" }] }),
   local("lumen.ai.imageText", { kind: "setting", tab: "ai", label: "cmd.image.altText", type: "boolean", values: ["off", ""] }),
   local("lumen.ai.styleProfile.active", { kind: "setting", tab: "ai", label: "ai.settings.style.use", type: "boolean", values: ["", "1"] }),
+  local("lumen.fim.enabled", { kind: "setting", tab: "ai", type: "boolean", values: ["", "1"] }),
+  local("lumen.fim.model", { kind: "setting", tab: "ai", type: "text" }),
+  local("lumen.ai.redact", { kind: "setting", tab: "ai", type: "boolean", values: ["off", "on"] }),
+  local("lumen.ai.redact.preview", { kind: "setting", tab: "ai", type: "boolean", values: ["0", "1"] }),
+  local("lumen.ai.authorship.hidden", { kind: "setting", tab: "ai", type: "boolean", values: ["", "1"] }),
+  // Opt-ins that send text or audio off the device are not taken from an
+  // imported file: the user turns each on here, where it is explained.
+  data("lumen.dictate.webSpeech"),
+  data("lumen.tts.networkVoices"),
   secret("lumen.ai.key.*", "ai"),
   secret("lumen.research.searchKey", "ai"),
+  secret("lumen.research.serviceToken", "ai"),
+  // The endpoint the service token is bound to: importing it would send the token elsewhere.
+  secret("lumen.research.tokenEndpoint", "ai"),
 
   // ── Sync and collaboration ────────────────────────────────────────────
   local("lumen.collab.signaling", { kind: "setting", tab: "sync", label: "collab.settings.signalingHint", type: "text" }),
@@ -164,12 +179,26 @@ export const SETTINGS: readonly SettingEntry[] = [
   // OAuth PKCE verifiers live only for one sign-in round trip.
   secret("lumen.cloud.dropbox.pkce", "sync"),
   secret("lumen.cloud.gdrive.pkce", "sync"),
+  // The provider settings kept for one OAuth sign-in round trip (sessionStorage).
+  secret("lumen-sync-pending-oauth", "sync"),
+  secret("lumen.sync.webdav.password", "sync"),
+  secret("lumen.sync.s3.secretAccessKey", "sync"),
+  secret("lumen.publish.github.token", "sync"),
+  // The git CORS proxy sees the git traffic, token included: not imported.
+  data("lumen.git.corsProxy.v1"),
 
   // ── Security and organization ─────────────────────────────────────────
   // Trust anchors and the org policy are not taken from an imported file:
   // a settings file from elsewhere must not add a plugin-signing key.
   local("lumen.plugins.trusted-keys", { kind: "data", tab: "security", label: "cmd.settings.trustedKeys.hint" }),
   local("lumen.org.settings", { kind: "data", tab: "org", label: "cmd.settings.organization.hint" }),
+  local("lumen.vaultLock.minutes", { kind: "setting", tab: "security", type: "number", min: 0, max: 1440 }),
+  // Trust and consent choices, like the trust anchors above, are not imported.
+  data("lumen.remoteImages.allowedHosts"),
+  data("lumen.plantuml.krokiOptIn"),
+  data("lumen.monitoring.consent"),
+  data("lumen.agents.untrustedNotes"),
+  data("lumen.agents.provenanceBackfill.v1"),
   data("lumen.secrets.index"),
   data("lumen.dev.tier"),
 
@@ -191,11 +220,20 @@ export const SETTINGS: readonly SettingEntry[] = [
   data("lumen.templates.downloads"),
   data("lumen.templates.installedNames"),
   data("lumen.publish.mock-store"),
-  data("lumen.cloud.sync.state*"),
   data("lumen.collab.rooms"),
+  data("lumen.ai.authorship"),
+  data("lumen.mt.m2m100.ready"),
+  data("lumen.caption.ready.*"),
+  data("lumen.imageSearch.index.v1"),
+  data("lumen.clip.highlights"),
+  data("lumen.evictionReminder.shownAt"),
+  data("lumen.tasks.reminded"),
+  data("lumen.propertyTypes"),
+  data("lumen.publishSite.v1"),
+  data("lumen.plugin.settings.*"),
+  data("lumen-vault-known"),
   data("lumen-config-health"),
   data("lumen-tour-done"),
-  data("__lumen_sync_state_probe"),
 ];
 
 /** True when `key` is the entry's id, or matches it with `*` as a wildcard. */

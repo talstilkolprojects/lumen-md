@@ -1,0 +1,9 @@
+filters: file.hasTag("movie")
+views:
+  - type: cards
+    name: Movies
+    image: note.cover
+    order: [file.name, note.director, note.year]
+    sort:
+      - property: note.year
+        direction: ASC

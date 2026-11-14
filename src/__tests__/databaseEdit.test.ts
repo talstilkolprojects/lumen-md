@@ -8,7 +8,7 @@ import { installFakeOpfs } from "./helpers/fakeOpfs";
 import { readWorkspaceFile, writeWorkspaceFile } from "../storage/workspace";
 import * as ws from "../storage/workspace";
 import { NOTE_EDIT_EVENT, cellInputText, columnType, editNote, parseCellInput, writeCell, type NoteEditDetail } from "../views/databaseEdit";
-import { NO_VALUE, applyQuery, groupRows, kanbanColumnValue, loadDatabaseRows, parseSort, runDatabaseQuery, specView, type DatabaseRow } from "../views/database";
+import { NO_VALUE, applyQuery, groupKey, groupRows, kanbanColumnValue, loadDatabaseRows, parseSort, runDatabaseQuery, specView, type DatabaseRow } from "../views/database";
 import { parseFilter } from "../views/databaseFilter";
 import { FrontmatterError } from "../properties/frontmatter";
 import { useAppStore } from "../store/useStore";
@@ -147,6 +147,25 @@ describe("kanban moves", () => {
     expect(kanbanColumnValue("3", 3, "number")).toBe(3);
     expect(kanbanColumnValue("4", undefined, "number")).toBe(4);
     expect(kanbanColumnValue(NO_VALUE, undefined, "text")).toBeUndefined();
+  });
+
+  it("an empty checkbox column writes a boolean, not the text (W1.32, #231)", () => {
+    expect(kanbanColumnValue("false", undefined, "checkbox")).toBe(false);
+    expect(kanbanColumnValue("true", undefined, "checkbox")).toBe(true);
+    expect(kanbanColumnValue("maybe", undefined, "checkbox")).toBe("maybe");
+  });
+
+  it("lists that join to the same text keep separate columns (W1.32, #231)", async () => {
+    await writeWorkspaceFile("l/one.md", '---\ntype: task\ntags: ["a,b"]\n---\n');
+    await writeWorkspaceFile("l/two.md", "---\ntype: task\ntags: [a, b]\n---\n");
+    const rows = await loadDatabaseRows({ source: "l", type: "task" });
+    const groups = groupRows(rows, "tags");
+    expect([...groups.keys()].sort()).toEqual(['["a,b"]', "a,b"]);
+    const type = columnType(rows.map((r) => r.fm.tags), "tags");
+    expect(kanbanColumnValue("a,b", groups.get("a,b")![0].fm.tags, type)).toEqual(["a", "b"]);
+    expect(kanbanColumnValue('["a,b"]', groups.get('["a,b"]')![0].fm.tags, type)).toEqual(["a,b"]);
+    expect(groupKey(["fav", "sci-fi"])).toBe("fav,sci-fi");
+    expect(groupKey("")).toBe(NO_VALUE);
   });
 });
 

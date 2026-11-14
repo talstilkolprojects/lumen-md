@@ -1,0 +1,11 @@
+{
+  "toast.tts.unavailable": "This browser can't read aloud",
+  "toast.tts.noHebrewVoice": "No Hebrew voice is installed on this system — add one in the system's speech settings",
+  "tts.resumed": "Resuming at sentence {n} of {total} — where you stopped. It starts over after the end.",
+  "tts.settings.title": "Read aloud",
+  "tts.settings.rate": "Speed",
+  "tts.settings.voice": "Voice for {lang}",
+  "tts.settings.saved": "Read-aloud settings saved ({rate}).",
+  "tts.neural.none": "Hebrew is read with your system's Hebrew voice: no on-device neural Hebrew voice with a licence that allows it exists yet.",
+  "toast.tts.noLocalVoice": "No voice on this device for part of the text — install one in the system's speech settings (network voices are off under local-only)"
+}

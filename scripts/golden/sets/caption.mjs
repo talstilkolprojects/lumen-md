@@ -27,6 +27,25 @@ async function readCaptions(zipPath) {
   return out;
 }
 
+/**
+ * Whether the image hosts are worth trying for the next image. One image
+ * missing from every host (deleted, malformed) says nothing about the rest:
+ * each image is tried. Only a run of failures before any image has ever
+ * arrived means the hosts are out of reach (the agent container), and then
+ * the remaining images are not attempted (W1.32, Codex on #225).
+ */
+export function imageHosts(giveUpAfter = 3) {
+  let reached = false;
+  let failuresInARow = 0;
+  return {
+    worthTrying: () => reached || failuresInARow < giveUpAfter,
+    record(ok) {
+      if (ok) reached = true;
+      failuresInARow = ok ? 0 : failuresInARow + 1;
+    },
+  };
+}
+
 export const xm3600 = {
   async pool(ctx) {
     const s = SRC.xm3600;
@@ -64,13 +83,13 @@ export const xm3600 = {
   async finish(items, { cache, split, splitDir }) {
     const sharp = (await import("sharp")).default;
     let complete = true;
-    let reachable = true;
+    const hosts = imageHosts();
     const out = [];
     for (const it of items) {
       const { _src, ...item } = it;
       let buf = null;
       let from = null;
-      if (reachable)
+      if (hosts.worthTrying())
         for (const url of [`https://open-images-dataset.s3.amazonaws.com/${_src.subset}/${it.id.slice(3)}.jpg`, _src.original, _src.thumb].filter(Boolean)) {
           try {
             buf = fetchCached(join(cache, "xm3600-images"), url, { name: `${it.id}-${sha256(url).slice(0, 8)}` });
@@ -80,8 +99,8 @@ export const xm3600 = {
             /* next host */
           }
         }
+      hosts.record(Boolean(buf));
       if (!buf) {
-        reachable = false;
         complete = false;
         out.push(item);
         continue;

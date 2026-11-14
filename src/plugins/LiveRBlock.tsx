@@ -1,23 +1,31 @@
 /**
  * Live R block (```live-r / ```r-live) — runs the fence body in R compiled
- * to WebAssembly (webR). Nothing loads until the user clicks Run; the
- * runtime (~45 MB, cached afterwards) is self-hosted under /webr/ — no CDN,
- * CSP-safe, works offline. Printed output, messages, warnings, errors and
+ * to WebAssembly (webR). Nothing loads until the user clicks Run. webR's
+ * binaries are GPL-3.0, so Lumen does not ship them (plan W1.34): the first
+ * Run on a device without webR offers the download (≈ 45 MB, licence shown
+ * first, every file checked against this build's checksums), which is then
+ * served same-origin from the service worker's cache — CSP-safe, offline
+ * afterwards. A deployment that serves its own copy (`npm run webr:local`)
+ * skips the offer. Printed output, messages, warnings, errors and
  * base-graphics plots are shown. Packages from CRAN can't be installed
- * (the app only connects to its own origin), but base R and the
+ * (R's worker only reaches its own folder), but base R and the
  * recommended packages bundled with webR are available.
  */
 import { useEffect, useRef, useState } from "react";
-import { Code2, Play, Square, Trash2 } from "lucide-react";
+import { Code2, Download, Play, Square, Trash2 } from "lucide-react";
 import { t } from "../i18n";
-import { resetWebR, runR, type ROutputLine } from "./r/rRuntime";
+import { resetWebR, runR, webrAvailable, type ROutputLine } from "./r/rRuntime";
+import type { WebRInstallError, WebRManifest } from "./r/webrInstall";
+import "./r/webrStrings";
+import "./liveRBlockStrings";
+import { explainError } from "../lib/userError";
 
 interface Props {
   source: string;
   meta?: string;
 }
 
-type RunState = "idle" | "loading" | "running" | "success" | "error" | "timeout";
+type RunState = "idle" | "install" | "loading" | "running" | "success" | "error" | "timeout";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 /** Downloading (~45 MB) and booting R on a slow connection. */
@@ -45,6 +53,100 @@ function Plot({ image }: { image: ImageBitmap }) {
       aria-label={t("block.liveR.plot")}
       style={{ maxWidth: "100%", height: "auto", background: "white", borderRadius: 4 }}
     />
+  );
+}
+
+/** An R install failure in words; the detail is explainError's sentence, never the raw text. */
+function describeInstallError(e: unknown): string {
+  const err = e as Partial<WebRInstallError> | null;
+  const detail = explainError(e, "webr-install");
+  switch (err?.code) {
+    case "no-manifest":
+      return t("block.liveR.install.error.noManifest");
+    case "no-cache":
+      return t("block.liveR.install.error.noCache");
+    case "mismatch":
+      return t("block.liveR.install.error.mismatch", { detail });
+    default:
+      return t("block.liveR.install.error.download", { detail });
+  }
+}
+
+/** The offer to download webR, with its licence and source, then the download itself. */
+function WebRInstallOffer({ onInstalled }: { onInstalled: () => void }) {
+  const [manifest, setManifest] = useState<WebRManifest | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [percent, setPercent] = useState<number | null>(null);
+  const abort = useRef<AbortController | null>(null);
+  useEffect(() => {
+    let alive = true;
+    import("./r/webrInstall")
+      .then((m) => m.fetchWebRManifest())
+      .then(
+        (m) => alive && setManifest(m),
+        (e) => alive && setError(describeInstallError(e)),
+      );
+    return () => {
+      alive = false;
+      abort.current?.abort();
+    };
+  }, []);
+
+  async function download() {
+    if (!manifest) return;
+    setError(null);
+    setPercent(0);
+    const ctrl = new AbortController();
+    abort.current = ctrl;
+    try {
+      const { installWebR } = await import("./r/webrInstall");
+      await installWebR({ manifest, signal: ctrl.signal, onProgress: (done, total) => setPercent(total ? Math.floor((done / total) * 100) : 0) });
+      if (ctrl.signal.aborted) return;
+      setPercent(null);
+      onInstalled();
+    } catch (e) {
+      if (ctrl.signal.aborted) {
+        setPercent(null);
+        return;
+      }
+      setPercent(null);
+      setError(describeInstallError(e));
+    }
+  }
+
+  const size = manifest ? (manifest.bytes / 1e6).toFixed(1) : "…";
+  const version = manifest?.version ?? "…";
+  return (
+    <div data-testid="live-r-install" style={{ display: "grid", gap: 6, padding: "8px 12px", marginBottom: 6, background: "hsl(var(--bg-subtle))", fontSize: 12, lineHeight: 1.5 }}>
+      <strong>{t("block.liveR.install.title")}</strong>
+      <span>{t("block.liveR.install.body", { size, version })}</span>
+      <span style={{ color: "hsl(var(--fg-muted))" }}>{t("block.liveR.install.source", { version })}</span>
+      {manifest && (
+        <a href={`https://github.com/r-wasm/webr/blob/v${manifest.version}/LICENSE.md`} target="_blank" rel="noopener noreferrer">
+          {t("block.liveR.install.license")}
+        </a>
+      )}
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {percent === null ? (
+          <button type="button" className="chart-block-tab" disabled={!manifest} onClick={() => void download()}>
+            <Download size={11} style={{ display: "inline", marginInlineEnd: 4 }} />
+            {t("block.liveR.install.download", { size })}
+          </button>
+        ) : (
+          <>
+            <span role="status">{t("block.liveR.install.progress", { percent })}</span>
+            <button type="button" className="chart-block-tab" onClick={() => abort.current?.abort()}>
+              {t("block.liveR.install.cancel")}
+            </button>
+          </>
+        )}
+      </div>
+      {error && (
+        <span role="alert" style={{ color: "hsl(0 80% 65%)" }}>
+          {error}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -101,8 +203,15 @@ export default function LiveRBlock({ source, meta }: Props) {
         timers.push(setTimeout(() => resolve("timeout"), ms));
       });
     try {
-      // The first Run downloads and boots the runtime: that gets its own,
-      // longer budget, so the block's `timeout=` is all execution time.
+      // No webR on this device yet: offer the download (the user's choice,
+      // with its GPL-3.0 licence shown); Run again once it is here.
+      if (!(await webrAvailable())) {
+        if (runId === runSeq.current) setState("install");
+        return;
+      }
+      if (runId !== runSeq.current) return;
+      // The first Run boots the runtime: that gets its own, longer budget,
+      // so the block's `timeout=` is all execution time.
       const { getWebR } = await import("./r/rRuntime");
       const ready = await Promise.race([getWebR().then(() => "ready" as const), after(LOAD_TIMEOUT_MS)]);
       if (runId !== runSeq.current) return;
@@ -169,6 +278,7 @@ export default function LiveRBlock({ source, meta }: Props) {
   const busy = state === "loading" || state === "running";
   const stateLabel = {
     idle: t("block.liveR.state.idle"),
+    install: t("block.liveR.install.state"),
     loading: t("block.liveR.state.loading"),
     running: t("block.liveR.state.running"),
     success: t("block.liveR.state.success"),
@@ -239,6 +349,7 @@ export default function LiveRBlock({ source, meta }: Props) {
           <code>{source}</code>
         </pre>
       )}
+      {state === "install" && <WebRInstallOffer onInstalled={() => void run()} />}
       <div style={{ marginBottom: 6, fontSize: 11, color: failed ? "hsl(0 80% 65%)" : "hsl(var(--fg-muted))", textAlign: "end" }}>
         R: {stateLabel}
         {elapsed !== null && ` · ${elapsed} ms`}

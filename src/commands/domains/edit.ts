@@ -5,6 +5,7 @@ import { t } from "../../i18n";
 import { BLOCK_SNIPPETS } from "../../snippets";
 import { buildFormatCommands } from "../../editor/formatCommands";
 import { buildSuggestingCommands } from "../../editor/suggestingCommands";
+import { buildBidiMarksCommands } from "../../editor/bidiMarksCommands";
 import { detectIsMac } from "../../lib/detectIsMac";
 import { showAiToast } from "../../ui/AiToast";
 import type { CommandContext } from "./context";
@@ -42,16 +43,89 @@ export function buildEditCommands({ getEditorView, suggestingMode, toggleSuggest
     // ── Suggesting mode (track changes, CriticMarkup) ─────────────────
     ...buildSuggestingCommands({
       getView: () => getEditorView?.() ?? null,
-      getContent: () => useAppStore.getState().doc.content,
+      getContent: () => getEditorView?.()?.state.doc.toString() ?? useAppStore.getState().doc.content,
       setContent: (s: string) => useAppStore.getState().setContent(s),
       suggesting: suggestingMode,
       toggle: toggleSuggestingMode,
     }).map((c) => ({ ...c, icon: cmdIcons.Pencil })),
+    // ── Direction controls (W5.4) ─────────────────────────────────────
+    ...buildBidiMarksCommands({
+      getView: () => getEditorView?.() ?? null,
+      getContent: () => useAppStore.getState().doc.content,
+      setContent: (s: string) => useAppStore.getState().setContent(s),
+    }).map((c) => ({ ...c, icon: cmdIcons.Pencil })),
+    // ── Hebrew typography (plan W2.9, dialog loaded on use) ─────────────
+    {
+      id: "edit.hebrewTypography",
+      label: t("cmd.edit.hebrewTypography"),
+      hint: t("cmd.edit.hebrewTypography.hint"),
+      icon: cmdIcons.Pencil,
+      group: t("group.edit"),
+      action: async () => {
+        const { openTypographyDialog } = await import("../../ui/TypographyDialog");
+        openTypographyDialog({
+          getView: () => getEditorView?.() ?? null,
+          getContent: () => useAppStore.getState().doc.content,
+          setContent: (s: string) => useAppStore.getState().setContent(s),
+        });
+      },
+    },
+    // ── Outline mode and block operations (plan W2.13) ────────────────
+    // Both editors listen for `lumen-outline`; the code is in their lazy chunks.
+    ...(() => {
+      const mac = detectIsMac();
+      const alt = mac ? "⌥" : "Alt+";
+      const mod = mac ? "⌘⌥" : "Ctrl+Alt+";
+      const shift = mac ? "⇧" : "Shift+";
+      const keys: Record<string, string> = {
+        moveUp: `${alt}${shift}↑`,
+        moveDown: `${alt}${shift}↓`,
+        indent: `${mod}→`,
+        outdent: `${mod}←`,
+        duplicate: `${alt}${shift}D`,
+        delete: `${alt}${shift}⌫`,
+        fold: `${mod}↑`,
+        unfold: `${mod}↓`,
+        zoomIn: `${mod}↵`,
+      };
+      const ids = ["moveUp", "moveDown", "indent", "outdent", "duplicate", "delete", "fold", "unfold", "foldAll", "unfoldAll", "zoomIn", "zoomOut", "toggleMode"] as const;
+      return ids.map((cmd) => ({
+        id: `outline.${cmd}`,
+        label: t(`cmd.outline.${cmd}`),
+        hint: cmd === "toggleMode" ? t("cmd.outline.toggleMode.hint") : undefined,
+        shortcut: keys[cmd],
+        icon: cmdIcons.Pencil,
+        group: t("group.edit"),
+        action: () => window.dispatchEvent(new CustomEvent("lumen-outline", { detail: { cmd } })),
+      }));
+    })(),
+    // W1.4 — paste from Word, Google Docs and websites, as text or as Markdown (loaded on use).
+    ...(["plain", "formatted"] as const).map((mode) => ({
+      id: mode === "plain" ? "edit.pastePlain" : "edit.pasteFormatted",
+      label: t(mode === "plain" ? "cmd.edit.pastePlain" : "cmd.edit.pasteFormatted"),
+      hint: t(mode === "plain" ? "cmd.edit.pastePlain.hint" : "cmd.edit.pasteFormatted.hint"),
+      icon: cmdIcons.Pencil,
+      group: t("group.edit"),
+      action: () =>
+        void Promise.all([import("../../paste/pasteCommands"), import("../../store/useToastStore")]).then(async ([{ runPaste }, { useToastStore }]) => {
+          const msg = await runPaste(mode);
+          if (msg) useToastStore.getState().push({ kind: "warning", title: msg });
+        }),
+    })),
+    // W5.5 — Hebrew copied from a PDF, reversed or with broken final letters (loaded on use).
+    {
+      id: "edit.fixPdfHebrew",
+      label: t("cmd.edit.fixPdfHebrew"),
+      hint: t("cmd.edit.fixPdfHebrew.hint"),
+      icon: cmdIcons.Pencil,
+      group: t("group.edit"),
+      action: () => void import("../../paste/pdfPaste").then((m) => m.runFixPdfHebrew()),
+    },
   ];
 }
 
 /** Insert a block (chart, table, diagram, math, embed…). */
-export function buildInsertCommands({ insertSnippet }: CommandContext): Command[] {
+export function buildInsertCommands({ insertSnippet, getEditorView }: CommandContext): Command[] {
   return [
     {
       id: "insert.chart",
@@ -97,6 +171,22 @@ export function buildInsertCommands({ insertSnippet }: CommandContext): Command[
       icon: cmdIcons.Calculator,
       group: t("group.insert"),
       action: () => insertSnippet(BLOCK_SNIPPETS.math),
+    },
+    {
+      // W5.14 — a formula inside the sentence; Ctrl/⌘+M in the source editor.
+      id: "insert.inlineMath",
+      label: t("cmd.insert.inlineMath"),
+      hint: t("cmd.insert.inlineMath.hint"),
+      icon: cmdIcons.Calculator,
+      group: t("group.insert"),
+      action: () => {
+        const view = getEditorView?.();
+        if (!view) return insertSnippet("$x$");
+        void import("../../editor/mathBidi").then((m) => {
+          m.insertInlineMath(view);
+          view.focus();
+        });
+      },
     },
     {
       id: "insert.callout",

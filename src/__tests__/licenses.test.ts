@@ -91,6 +91,15 @@ describe("classifyLicense", () => {
     ["GPL-3.0-only WITH Classpath-exception-2.0x", "fail"],
     ["GPL-2.0-only WITH LLVM-exception-junk", "fail"],
     ["GPL-3.0-only WITH GCC-exception-3.1", "warn"],
+    // A WITH clause on a permissive licence is accepted only for a known
+    // SPDX exception; anything else adds unreviewed terms (W1.32, #199).
+    ["Apache-2.0 WITH LLVM-exception", "ok"],
+    ["MIT WITH CC-BY-NC-4.0", "warn"],
+    ["MIT WITH LicenseRef-Proprietary", "warn"],
+    // A long-form GPL is downgraded only by a named exception, not by the
+    // generic words "linking exception" (W1.32, #199).
+    ["GNU General Public License v3 with Foo linking exception", "fail"],
+    ["GNU General Public License v2 with GCC Runtime Library exception", "warn"],
     // A malformed expression still fails on a forbidden id inside it.
     ["(GPL-3.0-only", "fail"],
     ["MIT OR (AGPL-3.0", "fail"],

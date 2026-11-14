@@ -227,8 +227,10 @@ describe("OPFS canvas store", () => {
   function fakeOpfs(): Map<string, string> {
     const files = new Map<string, string>();
     const fileHandle = (name: string) => ({
+      kind: "file" as const,
+      // A real Blob: the vault reads the first bytes to tell an encrypted file (plan 11.4).
       async getFile() {
-        return { text: async () => files.get(name) ?? "" };
+        return new Blob([files.get(name) ?? ""]);
       },
       async createWritable() {
         let buf = "";
@@ -243,6 +245,7 @@ describe("OPFS canvas store", () => {
       },
     });
     const dir = {
+      kind: "directory" as const,
       async getFileHandle(name: string, opts?: { create?: boolean }) {
         // Yield first, so an unserialised check-then-create would race.
         await new Promise((r) => setTimeout(r, 0));
@@ -253,11 +256,35 @@ describe("OPFS canvas store", () => {
       async removeEntry(name: string) {
         files.delete(name);
       },
+      // No sub-folders: the vault's lookup tries a folder after a missing file.
+      async getDirectoryHandle(): Promise<never> {
+        throw new DOMException("missing", "NotFoundError");
+      },
       async *[Symbol.asyncIterator]() {
         for (const name of [...files.keys()]) yield [name, fileHandle(name)];
       },
+      // The vault lists a folder with entries(), as OPFS does.
+      async *entries() {
+        for (const name of [...files.keys()]) yield [name, fileHandle(name)];
+      },
     };
-    const root = { getDirectoryHandle: async () => dir };
+    // The vault root: canvases/ is its folder, and the root holds no files (the encrypted
+    // vault's header is looked up there first, plan 11.4: it is not there).
+    const root = {
+      async getDirectoryHandle(name: string) {
+        if (name !== "canvases") throw new DOMException("missing", "NotFoundError");
+        return dir;
+      },
+      async getFileHandle(): Promise<never> {
+        throw new DOMException("missing", "NotFoundError");
+      },
+      async *[Symbol.asyncIterator]() {
+        yield ["canvases", dir];
+      },
+      async *entries() {
+        yield ["canvases", dir];
+      },
+    };
     vi.stubGlobal("navigator", { storage: { getDirectory: async () => root } });
     return files;
   }

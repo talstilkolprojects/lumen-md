@@ -1,0 +1,134 @@
+<h1 id="contributing-a-template" dir="auto">Contributing a Template</h1>
+<p dir="auto">The Lumen template gallery (γ.3) is community-driven — anyone can submit<br/>
+a <code>.md</code> template that ships in the in-app picker. Submissions go through<br/>
+a small PR review for malicious-content scanning + frontmatter validity.</p>
+<h2 id="whats-a-good-template" dir="auto">What&#x27;s a &quot;good&quot; template?</h2>
+<ul dir="ltr">
+<li dir="ltr"><strong>Reusable</strong> — solves a recurring writing task (daily journal, weekly<br/>
+review, meeting notes, book annotations). Project-specific writeups<br/>
+should live in your own workspace, not the registry.</li>
+<li dir="ltr"><strong>Self-explanatory</strong> — frontmatter, headings, and section comments<br/>
+are clear enough that a new user knows what to fill in without docs.</li>
+<li dir="ltr"><strong>Database-friendly</strong> — when applicable, ship YAML frontmatter (tags,<br/>
+type, status) so the note shows up in Lumen&#x27;s database views out of<br/>
+the box.</li>
+<li dir="ltr"><strong>Locale-neutral</strong> — write the body in English; translators will<br/>
+localise the visible labels in a follow-up PR.</li>
+</ul>
+<h2 id="file-layout" dir="auto">File layout</h2>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">text</span><button class="icon-btn" data-copy="public/templates/
+├── registry.json          # curated index — your PR adds a new entry here
+├── daily-journal-pro.md   # one .md per template
+└── your-template.md       # your contribution
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span>public/templates/</span></span>
+<span class="line"><span>├── registry.json          # curated index — your PR adds a new entry here</span></span>
+<span class="line"><span>├── daily-journal-pro.md   # one .md per template</span></span>
+<span class="line"><span>└── your-template.md       # your contribution</span></span>
+<span class="line"><span></span></span></code></pre></div>
+<h2 id="steps" dir="auto">Steps</h2>
+<ol dir="ltr">
+<li dir="ltr">
+<p dir="auto">Fork <a href="https://github.com/lumen-md/lumen"><code>lumen-md/lumen</code></a>.</p>
+</li>
+<li dir="ltr">
+<p dir="auto">Create <code>public/templates/&lt;your-id&gt;.md</code>. The file is plain markdown<br/>
+plus optional YAML frontmatter:</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">yaml</span><button class="icon-btn" data-copy="---
+type: book
+author:
+rating:
+status: backlog
+tags: [reading, books]
+---
+
+# {{title}}
+
+## Why I picked it up
+
+## Big ideas
+
+## Verdict
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#0550AE;--shiki-dark:#79C0FF">---</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">type</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">book</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">author</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">:</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">rating</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">:</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">status</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">backlog</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">tags</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: [</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">reading</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">, </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">books</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">]</span></span>
+<span class="line"><span style="color:#0550AE;--shiki-dark:#79C0FF">---</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># {{title}}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">## Why I picked it up</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">## Big ideas</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E">## Verdict</span></span>
+<span class="line"></span></code></pre></div>
+</li>
+<li dir="ltr">
+<p dir="auto">Append an entry to <code>public/templates/registry.json</code>:</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">jsonc</span><button class="icon-btn" data-copy="{
+  &quot;id&quot;: &quot;your-template&quot;,
+  &quot;name&quot;: &quot;Your Template&quot;,
+  &quot;category&quot;: &quot;Reading&quot;,
+  &quot;author&quot;: &quot;Your Name&quot;,
+  &quot;description&quot;: &quot;One sentence describing what this template is for.&quot;,
+  &quot;icon&quot;: &quot;📚&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;url&quot;: &quot;templates/your-template.md&quot;,
+  &quot;rating&quot;: 0,
+  &quot;downloads&quot;: 0,
+  &quot;tags&quot;: [&quot;books&quot;, &quot;reading&quot;]
+}
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">{</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">  &quot;id&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;your-template&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">,</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">  &quot;name&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;Your Template&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">,</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">  &quot;category&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;Reading&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">,</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">  &quot;author&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;Your Name&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">,</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">  &quot;description&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;One sentence describing what this template is for.&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">,</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">  &quot;icon&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;📚&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">,</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">  &quot;version&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;1.0.0&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">,</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">  &quot;url&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;templates/your-template.md&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">,</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">  &quot;rating&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0550AE;--shiki-dark:#79C0FF">0</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">,</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">  &quot;downloads&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: </span><span style="color:#0550AE;--shiki-dark:#79C0FF">0</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">,</span></span>
+<span class="line"><span style="color:#116329;--shiki-dark:#7EE787">  &quot;tags&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">: [</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;books&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">, </span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;reading&quot;</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">]</span></span>
+<span class="line"><span style="color:#1F2328;--shiki-dark:#E6EDF3">}</span></span>
+<span class="line"></span></code></pre></div>
+</li>
+<li dir="ltr">
+<p dir="auto">Run validation locally:</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="npm run i18n:extract        # sanity — regenerates the keys index
+npm test                    # the registry shape is checked by templates.test.ts
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> i18n:extract</span><span style="color:#6E7781;--shiki-dark:#8B949E">        # sanity — regenerates the keys index</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> test</span><span style="color:#6E7781;--shiki-dark:#8B949E">                    # the registry shape is checked by templates.test.ts</span></span>
+<span class="line"></span></code></pre></div>
+</li>
+<li dir="ltr">
+<p dir="auto">Open a PR. The CI workflow:</p>
+<ul dir="ltr">
+<li dir="ltr">Validates the JSON against the registry schema.</li>
+<li dir="ltr">Scans the body for <code>&lt;script&gt;</code>, <code>javascript:</code> URLs, and external<br/>
+iframe references (any one fails the PR).</li>
+<li dir="ltr">Spell-checks the description (warning, not blocker).</li>
+<li dir="ltr">Auto-merges when checks pass + a Lumen maintainer approves.</li>
+</ul>
+</li>
+</ol>
+<h2 id="versioning" dir="auto">Versioning</h2>
+<p dir="auto">Bump <code>version</code> (semver) when you change the template&#x27;s content. The<br/>
+gallery shows installed-version vs. latest so users know to re-install<br/>
+after a breaking change.</p>
+<h2 id="what-we-reject" dir="auto">What we reject</h2>
+<ul dir="ltr">
+<li dir="ltr">Templates that fetch external resources at render time (fetch / src<br/>
+attributes pointing off-domain).</li>
+<li dir="ltr">Templates that include affiliate links or sponsored content without<br/>
+a clear <code>[sponsored]</code> tag.</li>
+<li dir="ltr">Duplicates — if your template overlaps 80 % with an existing one,<br/>
+open a PR against the existing template instead of submitting a new<br/>
+ID.</li>
+<li dir="ltr">Single-locale templates without an English source.</li>
+</ul>
+<h2 id="license" dir="auto">License</h2>
+<p dir="auto">By contributing, you agree your template is licensed MIT alongside the<br/>
+rest of the Lumen repo. Attribution is preserved in the <code>author</code> field.</p>

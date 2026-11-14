@@ -21,6 +21,8 @@ import { showAiToast } from "../ui/AiToast";
 import { uiAlert, uiPrompt } from "../ui/PromptDialog";
 import { flushPendingEdits, useAppStore } from "./useStore";
 import { flushActiveWorkspaceDoc } from "./openDocs";
+import "./gitPullDocsStrings";
+import { explainError } from "../lib/userError";
 
 /** The open note (active document or a tab) at a vault path. */
 function openNote(path: string): { content: string; dirty: boolean } | null {
@@ -193,9 +195,9 @@ export async function reportPull(result: PullResult): Promise<void> {
   else showAiToast(t("git.conflict.allResolved"), "success");
 }
 
-/** A failed clone / pull: add a hint when the request never reached the git host (CORS). */
-export async function netError(e: unknown): Promise<string> {
-  const msg = (e as Error).message;
+/** A failed clone / pull in words (explainError), with a hint when the request never reached the git host (CORS). */
+export async function describeNetError(e: unknown): Promise<string> {
+  const msg = explainError(e, "git");
   const { looksLikeCorsFailure } = await import("../sync/gitProxy");
   return looksLikeCorsFailure(e) ? `${msg}\n\n${t("git.alert.corsHint")}` : msg;
 }

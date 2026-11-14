@@ -4,7 +4,7 @@
  * The rule is the golden set's (eval/golden/bidi): UAX #9 P2–P3, the first
  * strong character decides, looked for in the text the reader sees — after
  * the Markdown markers (`#`, `>`, list bullets and numbers, task boxes),
- * with link URLs and code spans left out. U+200F (RLM) and U+200E (LRM)
+ * with link URLs, code spans and inline math left out. U+200F (RLM) and U+200E (LRM)
  * are strong, so a writer can pin a line that starts with a number or a
  * Latin token.
  *
@@ -18,6 +18,7 @@
  */
 
 import { BIDI_STRONG_RUNS } from "./bidiStrong.generated";
+import { withoutInlineMath } from "./mathIsolate";
 
 export type LineDirection = "ltr" | "rtl";
 
@@ -138,9 +139,13 @@ function stripCodeSpans(text: string): string {
   return out;
 }
 
-/** The part of a Markdown line its reader sees as text, for the direction rule. */
+/**
+ * The part of a Markdown line its reader sees as text, for the direction
+ * rule. Inline formulas are left out too (plan W5.14): they are LTR
+ * isolates, so "$x^2$ הוא ריבוע" is a Hebrew line.
+ */
 export function visibleLineText(line: string): string {
-  return stripCodeSpans(stripLinkDestinations(line.replace(MARKERS, "")));
+  return withoutInlineMath(stripCodeSpans(stripLinkDestinations(line.replace(MARKERS, ""))));
 }
 
 /** Direction of one Markdown line, or null for a neutral line (numbers, emoji, punctuation only). */

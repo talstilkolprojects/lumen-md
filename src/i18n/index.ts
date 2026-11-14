@@ -6,6 +6,7 @@
  */
 
 import { platformKeys } from "../lib/platformKeys";
+import { detectLocale, systemLanguages } from "./detect";
 
 // β.4 — `Locale` includes the 6 deferred locales so the type is stable
 // across the rest of the codebase. Bundles for ar / ru / fr / de / ja /
@@ -229,15 +230,17 @@ function isLocale(x: unknown): x is Locale {
  * chunk fetch, unknown code).
  */
 export async function initLocale(storageKey = "lumen-md"): Promise<Locale> {
-  let locale: Locale = "en";
+  let persisted: unknown = null;
   try {
     const raw = globalThis.localStorage?.getItem(storageKey);
     const parsed = raw ? (JSON.parse(raw) as { state?: { locale?: unknown } }) : null;
-    const persisted = parsed?.state?.locale;
-    if (isLocale(persisted)) locale = persisted;
+    persisted = parsed?.state?.locale;
   } catch {
-    /* why: corrupt storage — stay on English */
+    /* why: corrupt storage — go by the system's languages */
   }
+  // Plan W4.10: no saved choice → the system's language (as public/locale-boot.js
+  // already set lang/dir before the first paint), so a Hebrew system starts in Hebrew.
+  let locale: Locale = isLocale(persisted) ? persisted : detectLocale(null, systemLanguages());
   if (locale !== "en") {
     await loadLocale(locale);
     // The chunk couldn't be fetched (offline, missing): don't apply e.g.
@@ -247,6 +250,8 @@ export async function initLocale(storageKey = "lumen-md"): Promise<Locale> {
   applyLocale(locale);
   return locale;
 }
+
+export { detectLocale, systemLanguages };
 
 export function isRTL(): boolean {
   return SUPPORTED_LOCALES.find((l) => l.code === activeLocale)?.dir === "rtl";

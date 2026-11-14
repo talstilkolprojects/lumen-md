@@ -118,4 +118,17 @@ describe("scripts/ci-doctor.mjs (fake gh)", () => {
     expect(by["e2e/new.spec.ts"].verdict).toBe("unknown");
     expect(by["e2e/new.spec.ts"].why).toMatch(/file differs there/);
   });
+
+  it("a peer that changed the test setup (playwright.config.ts) is no pass either (W1.32, #204)", () => {
+    const routes = join(dir, "routes-setup.json");
+    const changed = ROUTES.map(([re, body]) => (re === `^${esc(`repos/o/r/compare/${S1}...${S2}`)}$` ? [re, { a: 3, b: 2, n: 2, files: ["src/other.ts", "playwright.config.ts"] }] : [re, body]));
+    writeFileSync(routes, JSON.stringify(changed));
+    const r = spawnSync(process.execPath, [cli, "--run", "100", "--json"], {
+      encoding: "utf8",
+      env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, GH_REPO: "o/r", FAKE_GH_ROUTES: routes },
+    });
+    const by = Object.fromEntries(JSON.parse(r.stdout).failures.map((f: Failure) => [f.path, f]));
+    expect(by["e2e/old.spec.ts"].verdict).toBe("unknown");
+    expect(by["e2e/old.spec.ts"].why).toMatch(/test-setup file differs there/);
+  });
 });

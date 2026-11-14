@@ -21,14 +21,45 @@ export const isAppCode = (f) => /^(src|e2e|scripts|public)\/|^[^/]+\.html$|^(vit
 
 const isCodeFile = (f) => /\.(m?[jt]sx?)$/.test(f);
 
+/** A module path without its extension or a trailing /index: how imports name it. */
+export const moduleStem = (p) => p.replace(/\.(m?[jt]sx?)$/, "").replace(/\/index$/, "");
+
+/** Normalise a/b/../c → a/c (POSIX, relative to the repository root). */
+function normalise(p) {
+  const out = [];
+  for (const part of p.split("/")) {
+    if (part === "" || part === ".") continue;
+    if (part === "..") out.pop();
+    else out.push(part);
+  }
+  return out.join("/");
+}
+
+/**
+ * Every module a dynamic `import("./…")` names in these sources, as stems.
+ * `vitest related` follows static imports only, so a changed module reached
+ * this way (the app's lazy panels, and the tests that load them the same way)
+ * would find no related test and pass as "no tests" (W1.32, Codex on #210).
+ * @param {{ path: string, text: string }[]} sources repository-relative POSIX paths
+ */
+export function dynamicImportTargets(sources) {
+  const out = new Set();
+  for (const { path, text } of sources) {
+    const dir = path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
+    for (const m of text.matchAll(/\bimport\(\s*(?:\/\*[^*]*\*\/\s*)?["'](\.{1,2}\/[^"']+)["']\s*\)/g)) out.add(moduleStem(normalise(`${dir}/${m[1]}`)));
+  }
+  return out;
+}
+
 const has = (pkg, name) => Boolean(pkg?.scripts?.[name]);
 
 /**
- * @param {{ pkg: any, exists: (path: string) => boolean, changed: string[] | null, flags: { skip?: string[], only?: string[], coverage?: boolean } }} input
+ * @param {{ pkg: any, exists: (path: string) => boolean, changed: string[] | null, flags: { skip?: string[], only?: string[], coverage?: boolean }, dynamicTargets?: Set<string> }} input
  *   `changed` is the list of changed files for `--changed` (deleted ones included), or null for a full run.
+ *   `dynamicTargets`: module stems some source loads with a dynamic import (dynamicImportTargets).
  * @returns {Step[]}
  */
-export function planSteps({ pkg, exists, changed, flags }) {
+export function planSteps({ pkg, exists, changed, flags, dynamicTargets }) {
   const skip = new Set(flags.skip ?? []);
   const only = flags.only?.length ? new Set(flags.only) : null;
   // A deleted file is a change too: what referenced it may break at build time or at run time.
@@ -38,6 +69,7 @@ export function planSteps({ pkg, exists, changed, flags }) {
   // `vitest related` cannot trace a file that is gone, nor a JSON / HTML / CSS
   // input (locales, public/_headers…) that tests read from disk: either means the full suite.
   const deletedCode = changedCode.filter((f) => !exists(f));
+  const lazyCode = changedCode.filter((f) => dynamicTargets?.has(moduleStem(f)));
   const otherInputs = (changed ?? []).filter((f) => !isCodeFile(f) && isAppCode(f) && !/^e2e\//.test(f));
   const coverage = flags.coverage && changed === null;
   /** @type {Step[]} */
@@ -54,7 +86,9 @@ export function planSteps({ pkg, exists, changed, flags }) {
         : { id: "test", title: "Vitest", cmd: ["npx", "vitest", "run"], slow: true }
       : deletedCode.length
         ? { id: "test", title: `Vitest (full: ${deletedCode.length} code file(s) deleted)`, cmd: ["npx", "vitest", "run"], slow: true }
-        : otherInputs.length
+        : lazyCode.length
+          ? { id: "test", title: `Vitest (full: ${lazyCode[0]} is loaded by a dynamic import, which vitest related does not follow)`, cmd: ["npx", "vitest", "run"], slow: true }
+          : otherInputs.length
           ? { id: "test", title: `Vitest (full: non-code inputs changed, e.g. ${otherInputs[0]})`, cmd: ["npx", "vitest", "run"], slow: true }
           : // --passWithNoTests: a changed file that no unit test covers is not a failure.
             { id: "test", title: "Vitest (related to the diff)", cmd: ["npx", "vitest", "related", "--run", "--passWithNoTests", ...changedCode], slow: true, empty: changedCode.length === 0 },

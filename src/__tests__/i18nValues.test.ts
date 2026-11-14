@@ -20,6 +20,9 @@ const SAME_IN_HEBREW = new Set([
   "cmd.insert.callout.hint", "cmd.insert.model.hint", "cmd.insert.embed.hint",
   "templates.contributeLink", "ai.toast.localLoading.body", "cmd.security.encrypt.hint",
   "publish.target.github", // a product name (plan 4.18)
+  "pii.type.IBAN", // the international standard's own abbreviation, written so in Hebrew too
+  "backup.target", "versions.by", // placeholders and punctuation only ({name} · {mode}, {author}, {date})
+  "query.dataviewTitle", // Dataview, the Obsidian plugin's own name
 ]);
 
 const words = (s: string) => /[A-Za-z]{3}/.test(s);

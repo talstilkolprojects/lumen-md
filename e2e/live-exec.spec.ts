@@ -156,6 +156,19 @@ test("live-lua executes real Lua via wasmoon WASM in a worker", async ({ page })
 
 test("live-r executes real R via webR and draws a plot", async ({ page }) => {
   test.setTimeout(240_000);
+  // webR is GPL-3.0 and never part of the build (W1.34): this test needs a
+  // deployment's own copy under /webr/ (`npm run webr:local`, as the dev
+  // server in playwright.config.ts makes). The e2e gate's dist/ has none.
+  const served = await page.evaluate(async () => {
+    try {
+      const r = await fetch("/webr/webr.js", { cache: "no-store" });
+      return r.ok && /javascript/.test(r.headers.get("content-type") ?? "");
+    } catch {
+      return false;
+    }
+  });
+  // skip-reason: no webR under /webr/ here (the production build ships none; run with npm run webr:local) | task: W4.2 | until: 2027-05-12
+  test.skip(!served, "webR is not served under /webr/ (run `npm run webr:local` first)");
   await page.keyboard.press("Meta+2");
   const editor = page.locator(".cm-content").first();
   await editor.click();
@@ -187,6 +200,30 @@ test("live-r executes real R via webR and draws a plot", async ({ page }) => {
   await expect(block).toContainText("blocked");
   await expect(block.locator("canvas")).toHaveCount(1);
   await expect(block).toHaveAttribute("data-state", "success");
+});
+
+test("live-r without webR offers the download with its licence, and fetches nothing until asked", async ({ page }) => {
+  // No webR on this device or this server (plan W1.34).
+  await page.route("**/webr/**", (r) => r.fulfill({ status: 404, body: "" }));
+  const cdn: string[] = [];
+  page.on("request", (r) => {
+    if (/webr\.r-wasm\.org|cdn\.jsdelivr\.net/.test(r.url())) cdn.push(r.url());
+  });
+  await page.keyboard.press("Meta+2");
+  const editor = page.locator(".cm-content").first();
+  await editor.click();
+  await editor.press("ControlOrMeta+a");
+  await editor.fill("```live-r\ncat(1 + 1)\n```\n");
+  const block = page.locator('[data-testid="live-r"]');
+  await expect(block).toBeVisible({ timeout: 15_000 });
+  await block.getByRole("button", { name: "Run" }).click();
+  const offer = block.getByTestId("live-r-install");
+  await expect(offer).toBeVisible({ timeout: 15_000 });
+  await expect(offer).toContainText("GNU GPL version 3");
+  await expect(offer.getByRole("link", { name: /GPL-3\.0/ })).toHaveAttribute("href", /github\.com\/r-wasm\/webr\/blob\/v[\d.]+\/LICENSE\.md/);
+  await expect(offer.getByRole("button", { name: /Download R/ })).toBeEnabled();
+  await expect(block).toHaveAttribute("data-state", "install");
+  expect(cdn).toEqual([]);
 });
 
 test("live-ruby executes real Ruby via ruby.wasm in a sandboxed worker", async ({ page }) => {
@@ -235,6 +272,9 @@ test("live-ruby executes real Ruby via ruby.wasm in a sandboxed worker", async (
 test("live-ruby runs offline once the runtime was loaded (service-worker runtime cache)", async ({ page, context }) => {
   test.setTimeout(240_000);
   // Production builds only: the dev server registers no service worker.
+  const dev = await page.evaluate(() => !!document.querySelector('script[src*="/@vite/client"]'));
+  // skip-reason: the dev server registers no service worker; the production-build run checks this | task: 0.5 | until: 2027-05-12
+  test.skip(dev, "the service worker runs on the production build only");
   const hasSw = await page.evaluate(async () => {
     if (!("serviceWorker" in navigator)) return false;
     const reg = await Promise.race([
@@ -243,7 +283,8 @@ test("live-ruby runs offline once the runtime was loaded (service-worker runtime
     ]);
     return reg;
   });
-  test.skip(!hasSw, "no service worker (dev server)");
+  // On a production build a missing worker is a regression, not a reason to skip.
+  expect(hasSw).toBe(true);
   // The worker's fetch goes through the SW only once the page is controlled.
   if (!(await page.evaluate(() => !!navigator.serviceWorker.controller))) {
     await page.reload();

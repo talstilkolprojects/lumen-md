@@ -1,0 +1,27 @@
+# Exams — from the template Exam (Moed A / B)
+filters:
+  and:
+    - 'type == "exam"'
+properties:
+  file.name:
+    displayName: "Exam"
+  note.course:
+    displayName: "Course"
+  note.exam_date:
+    displayName: "Date"
+  note.moed:
+    displayName: "Moed"
+  note.grade:
+    displayName: "Grade"
+views:
+  - type: kanban
+    name: "Exams"
+    order:
+      - file.name
+      - note.course
+      - note.exam_date
+      - note.moed
+      - note.grade
+    groupBy:
+      property: note.status
+      direction: ASC

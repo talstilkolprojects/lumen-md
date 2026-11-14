@@ -1,0 +1,233 @@
+<h1 id="contributing-to-lumen" dir="auto">Contributing to Lumen</h1>
+<p dir="auto">Thanks for your interest in Lumen! This document explains how to set up the project, the conventions we follow, and how to submit changes.</p>
+<h2 id="setup" dir="auto">Setup</h2>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="git clone &lt;repo-url&gt;
+cd &quot;md editor&quot;
+npm install
+npm run dev        # http://localhost:5173
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#953800;--shiki-dark:#FFA657">git</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> clone</span><span style="color:#CF222E;--shiki-dark:#FF7B72"> &lt;</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">repo-ur</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">l</span><span style="color:#CF222E;--shiki-dark:#FF7B72">&gt;</span></span>
+<span class="line"><span style="color:#0550AE;--shiki-dark:#79C0FF">cd</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> &quot;md editor&quot;</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> install</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> dev</span><span style="color:#6E7781;--shiki-dark:#8B949E">        # http://localhost:5173</span></span>
+<span class="line"></span></code></pre></div>
+<p dir="auto">For desktop:</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="npm run tauri:dev
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> tauri:dev</span></span>
+<span class="line"></span></code></pre></div>
+<p dir="auto">For mobile (after <code>npx cap add ios|android</code>):</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="npm run build
+npx cap sync
+npx cap run ios   # or android
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> build</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npx</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> cap</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> sync</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npx</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> cap</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> ios</span><span style="color:#6E7781;--shiki-dark:#8B949E">   # or android</span></span>
+<span class="line"></span></code></pre></div>
+<h2 id="architecture-overview" dir="auto">Architecture overview</h2>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">text</span><button class="icon-btn" data-copy="src/
+├── ai/           # AI prompts, grammar, fine-tune, agents
+├── auth/         # Auth providers (local, Supabase)
+├── billing/      # Stripe checkout, entitlement store
+├── collab/       # Yjs/WebRTC real-time collaboration
+├── commands/     # Command palette registry
+├── components/   # Composite React components (overlays)
+├── data/         # Smart-detect, embed detection
+├── editor/       # CodeMirror editor, WYSIWYG (Milkdown)
+├── hooks/        # React hooks (drag-drop, collab, Tauri)
+├── i18n/         # Internationalization (8 locales)
+├── layouts/      # EditorLayout (mode switching)
+├── lib/          # Shared utilities (crypto, logger, audit)
+├── plugins/      # Plugin system, sandbox, blocks (charts, maps, etc.)
+├── renderer/     # Markdown → HTML pipeline, Shiki
+├── storage/      # OPFS workspace, file formats, export
+├── store/        # Zustand global state
+├── sync/         # Cloud sync, publish
+├── ui/           # All UI components (toolbar, dialogs, panels)
+└── views/        # Specialized views (database, graph, louvain)
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span>src/</span></span>
+<span class="line"><span>├── ai/           # AI prompts, grammar, fine-tune, agents</span></span>
+<span class="line"><span>├── auth/         # Auth providers (local, Supabase)</span></span>
+<span class="line"><span>├── billing/      # Stripe checkout, entitlement store</span></span>
+<span class="line"><span>├── collab/       # Yjs/WebRTC real-time collaboration</span></span>
+<span class="line"><span>├── commands/     # Command palette registry</span></span>
+<span class="line"><span>├── components/   # Composite React components (overlays)</span></span>
+<span class="line"><span>├── data/         # Smart-detect, embed detection</span></span>
+<span class="line"><span>├── editor/       # CodeMirror editor, WYSIWYG (Milkdown)</span></span>
+<span class="line"><span>├── hooks/        # React hooks (drag-drop, collab, Tauri)</span></span>
+<span class="line"><span>├── i18n/         # Internationalization (8 locales)</span></span>
+<span class="line"><span>├── layouts/      # EditorLayout (mode switching)</span></span>
+<span class="line"><span>├── lib/          # Shared utilities (crypto, logger, audit)</span></span>
+<span class="line"><span>├── plugins/      # Plugin system, sandbox, blocks (charts, maps, etc.)</span></span>
+<span class="line"><span>├── renderer/     # Markdown → HTML pipeline, Shiki</span></span>
+<span class="line"><span>├── storage/      # OPFS workspace, file formats, export</span></span>
+<span class="line"><span>├── store/        # Zustand global state</span></span>
+<span class="line"><span>├── sync/         # Cloud sync, publish</span></span>
+<span class="line"><span>├── ui/           # All UI components (toolbar, dialogs, panels)</span></span>
+<span class="line"><span>└── views/        # Specialized views (database, graph, louvain)</span></span>
+<span class="line"><span></span></span></code></pre></div>
+<p dir="auto"><strong>Key design decisions:</strong></p>
+<ul dir="ltr">
+<li dir="ltr"><strong>Local-first.</strong> All data stays in the browser (OPFS) by default. Cloud features are opt-in.</li>
+<li dir="ltr"><strong>No <code>any</code>.</strong> TypeScript strict mode is enforced. Use <code>unknown</code> + narrowing.</li>
+<li dir="ltr"><strong>No hardcoded English.</strong> Every user-facing string uses <code>t(&quot;key&quot;)</code> from <code>src/i18n/index.ts</code>.</li>
+<li dir="ltr"><strong>Lazy everything.</strong> Heavy libraries (Mermaid, ECharts, Excalidraw, Graphviz) are <code>lazy()</code> imports.</li>
+<li dir="ltr"><strong>Plugin sandbox.</strong> Third-party plugins run in a sandboxed <code>&lt;iframe&gt;</code> with restricted CSP.</li>
+</ul>
+<h2 id="branches" dir="auto">Branches</h2>
+<ul dir="ltr">
+<li dir="ltr"><code>main</code> — protected, always green.</li>
+<li dir="ltr"><code>track/&lt;area&gt;</code> — feature branches by area (e.g. <code>track/observability</code>, <code>track/types</code>).</li>
+<li dir="ltr"><code>fix/&lt;short-desc&gt;</code> — bug fixes.</li>
+<li dir="ltr"><code>chore/&lt;short-desc&gt;</code> — tooling, deps, docs.</li>
+</ul>
+<h2 id="commits" dir="auto">Commits</h2>
+<p dir="auto">Use Conventional Commits:</p>
+<ul dir="ltr">
+<li dir="ltr"><code>feat(scope): summary</code></li>
+<li dir="ltr"><code>fix(scope): summary</code></li>
+<li dir="ltr"><code>chore(scope): summary</code></li>
+<li dir="ltr"><code>docs(scope): summary</code></li>
+<li dir="ltr"><code>test(scope): summary</code></li>
+<li dir="ltr"><code>refactor(scope): summary</code></li>
+</ul>
+<p dir="auto">Scopes are area names: <code>editor</code>, <code>renderer</code>, <code>collab</code>, <code>storage</code>, <code>ui</code>, <code>ai</code>, <code>i18n</code>, <code>infra</code>, <code>billing</code>, <code>auth</code>, <code>plugins</code>, etc.</p>
+<h2 id="pull-requests" dir="auto">Pull Requests</h2>
+<ol dir="ltr">
+<li dir="ltr">Open against <code>main</code>.</li>
+<li dir="ltr">Ensure CI passes: <code>npm run typecheck &amp;&amp; npm run test &amp;&amp; npm run build</code>.</li>
+<li dir="ltr">Add a short description: what changed, why.</li>
+<li dir="ltr">Link any related issue.</li>
+<li dir="ltr">One of the maintainers will review.</li>
+</ol>
+<h2 id="testing" dir="auto">Testing</h2>
+<h3 id="structure" dir="auto">Structure</h3>
+<ul dir="ltr">
+<li dir="ltr"><strong>Unit tests</strong> live in <code>src/__tests/</code> and run with Vitest (jsdom environment).</li>
+<li dir="ltr"><strong>E2E tests</strong> live in <code>e2e/</code> and run with Playwright.</li>
+<li dir="ltr">Run unit tests: <code>npm run test</code> (single-shot) or <code>npm run test:watch</code>.</li>
+<li dir="ltr">Run E2E: <code>npx playwright test</code> (requires a running dev server).</li>
+</ul>
+<h3 id="local-visual-preview-every-surface-ltrrtl-darklight" dir="auto">Local visual preview (every surface, LTR/RTL, dark/light)</h3>
+<p dir="auto">No Vercel preview needed: build, then screenshot every main surface<br/>
+(split, source, preview, WYSIWYG, palette, shortcuts, plugins, templates,<br/>
+AI settings, AI doctor) in English and Hebrew, dark and light:</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="npm run build
+npm run preview:visual                     # → visual-results/&lt;run&gt;/index.html
+npm run preview:visual -- --baseline visual-results/&lt;older-run&gt;   # pixel diff, exit 1 on change
+npm run preview:visual -- --only palette,wysiwyg --url http://localhost:5173
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> build</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> preview:visual</span><span style="color:#6E7781;--shiki-dark:#8B949E">                     # → visual-results/&lt;run&gt;/index.html</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> preview:visual</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --baseline</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> visual-results/</span><span style="color:#CF222E;--shiki-dark:#FF7B72">&lt;</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">older-ru</span><span style="color:#1F2328;--shiki-dark:#E6EDF3">n</span><span style="color:#CF222E;--shiki-dark:#FF7B72">&gt;</span><span style="color:#6E7781;--shiki-dark:#8B949E">   # pixel diff, exit 1 on change</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> preview:visual</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --only</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> palette,wysiwyg</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --url</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> http://localhost:5173</span></span>
+<span class="line"></span></code></pre></div>
+<p dir="auto">Each shot is also checked for horizontal overflow and for <code>&lt;html dir&gt;</code><br/>
+matching the locale. Take a baseline before a visual change and compare<br/>
+after it; <code>--threshold</code> (default 0.5 %) sets how much may differ.</p>
+<h3 id="visual-pixel-diff-baselines" dir="auto">Visual (pixel-diff) baselines</h3>
+<p dir="auto"><code>e2e/visual-smoke.spec.ts</code> pins the Mermaid diagram with<br/>
+<code>toHaveScreenshot()</code> (chromium only, <code>maxDiffPixelRatio: 0.02</code>). Baselines<br/>
+live next to the spec in <code>e2e/visual-smoke.spec.ts-snapshots/</code> and are<br/>
+per-platform (<code>…-chromium-linux.png</code>).</p>
+<ul dir="ltr">
+<li dir="ltr">
+<p dir="auto"><strong>First run without a baseline</strong> writes one and passes with a<br/>
+<code>baseline-created</code> annotation (so CI can produce it). Download it from<br/>
+the CI artifacts or regenerate locally, review it, and commit it.</p>
+</li>
+<li dir="ltr">
+<p dir="auto"><strong>Intentional visual change</strong> (Mermaid theme, block CSS): regenerate with</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="npx playwright test e2e/visual-smoke.spec.ts --project=chromium --update-snapshots
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npx</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> playwright</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> test</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> e2e/visual-smoke.spec.ts</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --project=chromium</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --update-snapshots</span></span>
+<span class="line"></span></code></pre></div>
+<p dir="auto">and commit the updated PNG together with the change. Generate Linux<br/>
+baselines on Linux (or in CI) — macOS font rendering differs.</p>
+</li>
+</ul>
+<h3 id="visual-regression-suite-10-surfaces--he--en--light--dark" dir="auto">Visual regression suite (10 surfaces × he / en × light / dark)</h3>
+<p dir="auto"><code>visual/</code> holds a Playwright suite that compares ten surfaces (split,<br/>
+source, preview, WYSIWYG, palette, shortcuts, plugins, templates, theme<br/>
+settings, AI settings) in English (LTR) and Hebrew (RTL), light and dark —<br/>
+40 shots — with baselines in <code>visual/__baselines__/&lt;platform&gt;/</code>. It runs<br/>
+on the production build (<code>vite preview</code>) with a fixed note, clock, fonts,<br/>
+viewport (1280×800 at 1×) and with animations and the caret off.</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="npx playwright install chromium        # once
+npm run test:visual:update             # first run on this machine: writes the baselines
+git add visual/__baselines__           # after looking at every PNG
+npm run test:visual                    # compare; a missing baseline fails
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npx</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> playwright</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> install</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> chromium</span><span style="color:#6E7781;--shiki-dark:#8B949E">        # once</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> test:visual:update</span><span style="color:#6E7781;--shiki-dark:#8B949E">             # first run on this machine: writes the baselines</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">git</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> add</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> visual/__baselines__</span><span style="color:#6E7781;--shiki-dark:#8B949E">           # after looking at every PNG</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> test:visual</span><span style="color:#6E7781;--shiki-dark:#8B949E">                    # compare; a missing baseline fails</span></span>
+<span class="line"></span></code></pre></div>
+<ul dir="ltr">
+<li dir="ltr">An <strong>intentional</strong> change: run <code>npm run test:visual:update</code>, review the<br/>
+changed PNGs, commit them with the change.</li>
+<li dir="ltr">A failure leaves the expected / actual / diff images in<br/>
+<code>visual-results/</code> (HTML report: <code>visual-results/report/index.html</code>).</li>
+<li dir="ltr"><code>visual/selftest.visual.ts</code> proves the gate works: a 3 px shift of the<br/>
+toolbar must fail the comparison.</li>
+<li dir="ltr">Baselines are per platform: compare on the kind of machine that wrote<br/>
+them. <code>.github/workflows/visual.yml</code> can run it on Linux, by hand only.</li>
+</ul>
+<h3 id="guidelines" dir="auto">Guidelines</h3>
+<ul dir="ltr">
+<li dir="ltr">Add a test for any non-trivial change.</li>
+<li dir="ltr">Test <strong>pure functions</strong> in isolation — avoid testing React hooks/components unless they have significant logic.</li>
+<li dir="ltr">Use <code>vi.mock()</code> for browser APIs (OPFS, IndexedDB, WebCrypto) that don&#x27;t exist in jsdom.</li>
+<li dir="ltr">For async tests involving <code>IndexedDB</code>, use the <code>fake-indexeddb</code> shim already wired in <code>setup.ts</code>.</li>
+<li dir="ltr">Match the naming convention: <code>src/__tests__/&lt;module&gt;.test.ts</code> (same basename as the source file).</li>
+</ul>
+<h3 id="coverage" dir="auto">Coverage</h3>
+<ul dir="ltr">
+<li dir="ltr"><strong>Current:</strong> 131 test files, 1074 passing tests, 97% line coverage.</li>
+<li dir="ltr">The CI gate requires <code>npm run typecheck &amp;&amp; npm run test</code> to pass on every push.</li>
+<li dir="ltr">The i18n drift gate (<code>i18nDrift.test.ts</code>) ensures every key in the <code>en</code> bundle exists in all 8 locales.</li>
+</ul>
+<h2 id="internationalization-i18n" dir="auto">Internationalization (i18n)</h2>
+<p dir="auto"><strong>Golden rule:</strong> Never write a user-visible English string directly in JSX or TypeScript. Always use <code>t(&quot;key&quot;)</code>.</p>
+<h3 id="adding-a-new-string" dir="auto">Adding a new string</h3>
+<p dir="auto">Strings live in one JSON file per language and domain: <code>src/i18n/locales/&lt;lang&gt;/&lt;domain&gt;.json</code><br/>
+(a key&#x27;s domain is its first segment; see <a href="src/i18n/locales/README.md"><code>src/i18n/locales/README.md</code></a>).</p>
+<ol dir="ltr">
+<li dir="ltr">Add the English key to <code>src/i18n/locales/en/&lt;domain&gt;.json</code> and the Hebrew to <code>src/i18n/locales/he/&lt;domain&gt;.json</code>.</li>
+<li dir="ltr">Run <code>npm run i18n:fix</code> (sorts the files, refreshes <code>i18n/keys/</code>) and <code>node scripts/generate-all-locales.mjs</code> for the other 6 locales.</li>
+<li dir="ltr">Run <code>npm run i18n:check</code> and <code>npm run test</code> — the <code>i18nDrift.test.ts</code> gate will fail if any locale is missing the key.</li>
+</ol>
+<p dir="auto"><code>npm run i18n:hardcoded</code> (part of <code>i18n:check</code>, and a CI step) scans <code>src/</code> and fails on English left in JSX text,<br/>
+user-visible props (<code>aria-label</code>, <code>title</code>, <code>placeholder</code>, <code>alt</code>, <code>label</code>…) or toast / dialog messages. A sentence<br/>
+with markup inside it uses <code>tRich()</code> from <code>src/i18n/rich.tsx</code>; a real exception gets <code>// i18n-allow: &lt;reason&gt;</code>.</p>
+<h3 id="rtl-support" dir="auto">RTL support</h3>
+<ul dir="ltr">
+<li dir="ltr">The app supports RTL (Hebrew, Arabic). The <code>&lt;html dir&gt;</code> attribute is set automatically.</li>
+<li dir="ltr">Test your UI changes in both LTR and RTL by switching via <code>⌘K → Language: עברית</code>.</li>
+</ul>
+<h2 id="code-style" dir="auto">Code Style</h2>
+<ul dir="ltr">
+<li dir="ltr">TypeScript strict mode is enabled — fix type errors, do not suppress them.</li>
+<li dir="ltr">Avoid <code>any</code>; prefer <code>unknown</code> + narrowing.</li>
+<li dir="ltr">Prefer existing utilities (<code>src/lib/</code>) before adding new ones.</li>
+<li dir="ltr">For UI changes, keep components small and composable.</li>
+<li dir="ltr">Use <code>t(&quot;key&quot;)</code> from <code>src/i18n/index.ts</code> for any user-facing string.</li>
+<li dir="ltr">Use <code>log.info()</code> / <code>log.warn()</code> / <code>log.error()</code> from <code>src/lib/logger.ts</code> — never bare <code>console.*</code>.</li>
+<li dir="ltr">Use <code>randomId()</code> from <code>src/lib/cryptoRandom.ts</code> — never <code>Math.random()</code> for IDs or tokens.</li>
+</ul>
+<h2 id="plugin-development" dir="auto">Plugin Development</h2>
+<p dir="auto">Lumen plugins run in a sandboxed iframe. To create a plugin:</p>
+<ol dir="ltr">
+<li dir="ltr">Implement the <code>LumenPlugin</code> interface (see <code>src/plugins/pluginSystem.ts</code>).</li>
+<li dir="ltr">Export an <code>activate(api)</code> function — the API gives you <code>getContent()</code>, <code>setContent()</code>, <code>getFileName()</code>, <code>showToast()</code>.</li>
+<li dir="ltr">Sign your plugin with Ed25519 if distributing publicly (see <code>src/plugins/signing.ts</code>).</li>
+<li dir="ltr">Test locally by dropping the plugin JSON into the Plugin Gallery.</li>
+</ol>
+<h2 id="ci-pipeline" dir="auto">CI Pipeline</h2>
+<p dir="auto">The GitHub Actions workflow (<code>.github/workflows/ci.yml</code>) runs on every push:</p>
+<ol dir="ltr">
+<li dir="ltr"><strong><code>npm run typecheck</code></strong> — Zero TypeScript errors required.</li>
+<li dir="ltr"><strong><code>npm run test</code></strong> — All unit tests must pass (including the i18n drift gate).</li>
+<li dir="ltr"><strong><code>npm run build</code></strong> — Production bundle must build without errors.</li>
+<li dir="ltr"><strong><code>npm run lint</code></strong> — ESLint (typescript-eslint, react-hooks, jsx-a11y). Violations that predate it are recorded in <code>eslint-suppressions.json</code>; a new one fails. Notable rules: <code>react-hooks/rules-of-hooks</code>, <code>@typescript-eslint/no-floating-promises</code> (mark fire-and-forget calls with <code>void</code>), and <code>lumen/empty-catch-why</code> (an empty <code>catch</code>, or an empty <code>.catch(() =&gt; {})</code> handler, needs a <code>// why: …</code> comment — or log the error instead). That rule has no baseline at all; <code>src/__tests__/codeHealth.test.ts</code> checks it under <code>npm test</code> too. When you fix a recorded violation, run <code>npm run lint:prune</code> and commit the smaller baseline. Never add to the baseline with <code>--suppress-all</code>.</li>
+</ol>
+<h2 id="security" dir="auto">Security</h2>
+<p dir="auto">See <a href="SECURITY.md">SECURITY.md</a> for the vulnerability reporting process and the project&#x27;s security architecture.</p>
+<h2 id="questions" dir="auto">Questions</h2>
+<p dir="auto">Open a discussion on the repo, or comment on the relevant issue.</p>
+<p dir="auto">By contributing, you agree your contributions will be licensed under the project&#x27;s <a href="LICENSE">MIT License</a>.</p>

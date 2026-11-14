@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { Plus, Minus } from "lucide-react";
 import { t } from "../i18n";
+import "./markdownTableEditorStrings";
 
 interface Props {
   /** Initial markdown table text, or empty for a new table */
@@ -76,14 +77,14 @@ export function MarkdownTableEditor({ initialMarkdown, onUpdate, onClose }: Prop
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      background: "hsl(0 0% 0% / 0.5)",
+      background: "var(--overlay)",
       backdropFilter: "blur(4px)",
     }}>
       <div style={{
         background: "hsl(var(--bg))",
         border: "1px solid hsl(var(--border-strong))",
         borderRadius: 12,
-        boxShadow: "0 20px 60px hsl(0 0% 0% / 0.4)",
+        boxShadow: "var(--shadow-xl)",
         padding: 20,
         maxWidth: "90vw",
         maxHeight: "80vh",

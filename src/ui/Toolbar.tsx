@@ -203,14 +203,14 @@ export function Toolbar({
             width: 26,
             height: 26,
             borderRadius: 6,
-            background: "linear-gradient(135deg,#7c5cff 0%,#22d3ee 100%)",
+            background: "var(--gradient-brand)",
             color: "white",
             fontWeight: 700,
             fontSize: 12,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "0 2px 6px hsl(252 92% 50% / 0.3)",
+            boxShadow: "var(--shadow-accent)",
           }}
         >
           L
@@ -553,7 +553,6 @@ function MenuBarItem({
           cursor: "pointer",
           fontSize: 12,
           fontWeight: 500,
-          transition: "all 100ms ease",
           whiteSpace: "nowrap",
         }}
       >
@@ -573,10 +572,10 @@ function MenuBarItem({
             background: "hsl(var(--bg))",
             border: "1px solid hsl(var(--border-strong))",
             borderRadius: 10,
-            boxShadow: "0 12px 40px -8px hsl(0 0% 0% / 0.35)",
+            boxShadow: "var(--shadow-lg)",
             zIndex: 9999,
             padding: "6px 0",
-            animation: "cmdSlideIn 120ms ease",
+            animation: "cmdSlideIn var(--duration-fast) var(--ease-out)",
           }}
         >
           {children}
@@ -704,6 +703,7 @@ function SubMenuItem({
             style={{
               position: "fixed",
               top: pos.top,
+              // design-allow: viewport coordinates from getBoundingClientRect are physical
               left: pos.left,
               // Horizontal grid — submenus are dense palettes of categories so
               // browsing them sideways scans much faster than a tall column.
@@ -716,10 +716,10 @@ function SubMenuItem({
               background: "hsl(var(--bg))",
               border: "1px solid hsl(var(--border-strong))",
               borderRadius: 10,
-              boxShadow: "0 12px 40px -8px hsl(0 0% 0% / 0.35)",
+              boxShadow: "var(--shadow-lg)",
               zIndex: 10000,
               padding: 8,
-              animation: "cmdSlideIn 120ms ease",
+              animation: "cmdSlideIn var(--duration-fast) var(--ease-out)",
             }}
           >
             {children}
@@ -762,7 +762,6 @@ function MenuItem({
         fontSize: 13,
         cursor: "pointer",
         textAlign: "start",
-        transition: "background 80ms ease",
       }}
       onMouseEnter={(e) => {
         if (!active) (e.currentTarget as HTMLElement).style.background = "hsl(var(--accent) / 0.06)";

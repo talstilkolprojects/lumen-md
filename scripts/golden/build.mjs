@@ -25,7 +25,7 @@ import { rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { contentHash, freezeSet, partHash, readJson, writeJson, writeSplitPart } from "../lib/golden.mjs";
-import { ROOT, ensureSet } from "./common.mjs";
+import { PART_KEYS, ROOT, ensureSet } from "./common.mjs";
 import { SETS } from "./defs.mjs";
 import { writeDocs } from "./docs.mjs";
 
@@ -73,7 +73,7 @@ const PARTS = {
   langid: { hard: ["./sets/langid.mjs", "hard"] },
   caption: { xm3600: ["./sets/caption.mjs", "xm3600"] },
   nikud: { benyehuda: ["./sets/nikud.mjs", "benyehuda"], nakdimon: ["./sets/nikud.mjs", "nakdimon"] },
-  "ocr-he": { lines: ["./sets/ocr.mjs", "lines"], pages: ["./sets/ocr.mjs", "pages"] },
+  "ocr-he": { lines: ["./sets/ocr.mjs", "lines"], pages: ["./sets/ocr.mjs", "pages"], mixed: ["./sets/ocr.mjs", "mixed"] },
   // The small sets of plan 7.10.
   "spell-en": { moby: ["./sets/small.mjs", "spellEn"] },
   "image-search": { xm3600: ["./sets/small.mjs", "imageSearch"] },
@@ -87,6 +87,29 @@ const PARTS = {
   "hebrew-dates": { dates: ["./sets/small.mjs", "hebrewDates"] },
   citations: { records: ["./sets/small.mjs", "citations"] },
 };
+
+/**
+ * A part the definition has and the set's manifest does not yet (a set grows,
+ * e.g. ocr-he/mixed in W1.18): added with its test hash unrecorded and the
+ * target raised to the parts' sum; the freeze that follows needs --reason.
+ */
+function addNewParts(def, manifest) {
+  for (const d of def.parts) {
+    if (manifest.parts.some((p) => p.id === d.id)) continue;
+    const p = {};
+    for (const k of PART_KEYS) if (d[k] !== undefined) p[k] = d[k];
+    if (p.status === "local-only") p.devSelection = null;
+    else if (p.dev > 0) p.devFiles = [];
+    const owner = manifest.parts.findIndex((x) => x.status === "owner-pending");
+    manifest.parts.splice(owner < 0 ? manifest.parts.length : owner, 0, p);
+    manifest.test.parts[d.id] = null;
+    manifest.test.items += d.test;
+    manifest.test.sha256 = null;
+    manifest.target = manifest.parts.reduce((a, x) => a + x.items, 0);
+    if (def.metric) manifest.metric = def.metric;
+    console.log(`${def.id}: new part ${d.id} (${d.dev} dev + ${d.test} test)`);
+  }
+}
 
 /** Build one part of one split. Throws on failure; the caller reports it without any item content. */
 async function buildPart(def, setDir, manifest, partId, file, name) {
@@ -124,6 +147,7 @@ const report = [];
 for (const def of selected) {
   const setDir = ensureSet(def);
   const manifest = readJson(join(setDir, "manifest.json"));
+  if (!docsOnly) addNewParts(def, manifest);
   for (const [partId, [file, name]] of Object.entries(docsOnly ? {} : (PARTS[def.id] ?? {}))) {
     try {
       await buildPart(def, setDir, manifest, partId, file, name);

@@ -50,6 +50,24 @@ export interface FocusTrapOptions {
 const stack: HTMLElement[] = [];
 const isTop = (el: HTMLElement) => stack[stack.length - 1] === el;
 
+/**
+ * The last element focused outside every modal dialog. A dialog whose own
+ * effect focuses a field before its trap starts (the settings screen's
+ * search box) has that field as `document.activeElement` when the trap
+ * looks; focus then returns here instead, to what opened the dialog.
+ */
+let lastOutside: HTMLElement | null = null;
+if (typeof document !== "undefined") {
+  document.addEventListener(
+    "focusin",
+    (e) => {
+      const t = e.target;
+      if (t instanceof HTMLElement && !t.closest('[aria-modal="true"]')) lastOutside = t;
+    },
+    true,
+  );
+}
+
 export function useFocusTrap<T extends HTMLElement>(ref: RefObject<T | null>, options: FocusTrapOptions = {}): void {
   const { active = true, restoreFocus = true } = options;
   const onEscape = useRef(options.onEscape);
@@ -58,7 +76,8 @@ export function useFocusTrap<T extends HTMLElement>(ref: RefObject<T | null>, op
   useEffect(() => {
     const root = ref.current;
     if (!active || !root) return;
-    const before = document.activeElement as HTMLElement | null;
+    let before = document.activeElement as HTMLElement | null;
+    if (before && root.contains(before)) before = lastOutside;
     stack.push(root);
 
     const enter = () => {

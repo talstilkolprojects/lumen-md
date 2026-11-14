@@ -147,8 +147,9 @@ The owner's recordings, photos, queries, descriptions and attacks never enter th
 
 ```
 golden-owner/
-  CONSENT.md                       "I dedicate everything in this bundle to the public domain (CC0 1.0)" + name, date
-  asr-he/owner/<id>.wav|flac|opus  20 recordings, mono ≥ 16 kHz, 5–20 s
+  CONSENT.md                       "I dedicate everything in this bundle to the public domain (CC0 1.0)"
+                                   + a "Name: <your name>" line and a "Date: YYYY-MM-DD" line (checked)
+  asr-he/owner/<id>.wav|flac|opus  20 recordings, mono ≥ 16 kHz, 5–20 s (checked from each file's header)
   asr-he/owner/transcripts.tsv     <id><TAB><exact transcript>
   ocr-he/owner/<id>.jpg + <id>.txt 15 phone photos of printed Hebrew pages + their exact text
   retrieval/owner/queries.json     [{ "id", "query", "relevant": ["<path under notes/>.md", …] }]  (30)
@@ -157,7 +158,7 @@ golden-owner/
   caption/owner/descriptions.tsv   <id><TAB><Hebrew description><TAB><source URL or "own photo">
   meetings/owner/<id>.wav|flac|opus|m4a + <id>.transcript.txt + <id>.summary.md   5 meetings (5–30 min): audio, exact transcript, reference summary with action items (plan 7.10)
   injection/hebrew/hebrew.json     [{ "id", "vector", "carrier", "user_task", "injected" }]  (30; 6 per vector:
-                                   html-comment, image-alt, frontmatter, zero-width, bidi-override)
+                                   html-comment, image-alt, frontmatter, zero-width, bidi-override; checked)
 ```
 
 Then encrypt the folder and attach it to a **draft** release, which is never published. Only people with write access can see a draft:

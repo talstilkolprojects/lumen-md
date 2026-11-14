@@ -1,0 +1,14 @@
+filters: file.hasTag("book")
+formulas:
+  # agorot per page, two decimals (text, as Obsidian's toFixed)
+  ppp: (price / pages * 100).toFixed(2)
+properties:
+  formula.ppp:
+    displayName: Price per 100 pages
+views:
+  - type: table
+    name: Cheapest per page
+    order: [file.name, note.price, note.pages, formula.ppp]
+    sort:
+      - property: formula.ppp
+        direction: ASC

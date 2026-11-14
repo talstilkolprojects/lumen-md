@@ -1,0 +1,21 @@
+# Projects — from the template Project
+filters:
+  and:
+    - 'type == "project"'
+properties:
+  file.name:
+    displayName: "Project"
+  note.owner:
+    displayName: "Owner"
+  note.due:
+    displayName: "Due"
+views:
+  - type: kanban
+    name: "Projects"
+    order:
+      - file.name
+      - note.owner
+      - note.due
+    groupBy:
+      property: note.status
+      direction: ASC

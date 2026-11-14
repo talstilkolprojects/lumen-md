@@ -16,6 +16,7 @@ import { basename, dirname, splitPath } from "./vault/shared";
 export { basename, dirname, joinPath, splitPath } from "./vault/shared";
 export { WorkspaceConflictError } from "./vault/types";
 export type { VaultEntry } from "./vault/types";
+import { readText } from "./textCodec";
 
 export interface WorkspaceEntry {
   /** File path relative to the workspace root. */
@@ -124,7 +125,8 @@ export async function listWorkspaceDir(dir: string): Promise<VaultEntry[]> {
 }
 
 export async function readWorkspaceFile(path: string): Promise<string> {
-  return vault().readText(path);
+  // Keeps a BOM: a plain text read drops it, and the next save would too (W4.30).
+  return readText(await vault().read(path));
 }
 
 /**
@@ -207,6 +209,20 @@ export function makeAssetName(originalName: string): string {
 /** Delete a file at `path` — recursively when `path` refers to a directory. */
 export async function deleteWorkspaceFile(path: string): Promise<void> {
   await vault().remove(path);
+}
+
+/**
+ * The file names directly in folder `path` (not recursive; dot names
+ * included). Empty when the folder does not exist. For app data folders
+ * such as `.lumen/mcp/pending`, which the tree listing leaves out.
+ */
+export async function listWorkspaceFolder(path: string): Promise<string[]> {
+  try {
+    return (await vault().list(path)).filter((e) => e.kind === "file").map((e) => e.name).sort();
+  } catch {
+    // why: a folder that does not exist (or is not a folder) has no files
+    return [];
+  }
 }
 
 /** Does anything (file or folder) exist at `path`? */

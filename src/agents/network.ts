@@ -20,6 +20,7 @@ import type { AgentTool, NetworkConsentRequest, ToolCall } from "./types";
 import { getAiPolicy } from "../ai/policy";
 import { ledgerFetch, recordBlockedRequest } from "../ai/privacyLedger";
 import { ToolError } from "./tools/define";
+import "./networkStrings";
 
 export type ConsentHook = (request: NetworkConsentRequest) => boolean | Promise<boolean>;
 

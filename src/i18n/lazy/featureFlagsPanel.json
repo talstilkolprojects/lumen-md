@@ -1,0 +1,16 @@
+{
+  "flag.update.checkOnLaunch.desc": "Desktop app: look for a new version once a day when Lumen starts, so beta fixes arrive quickly. Never in local-only mode; every check is in the privacy log.",
+  "flag.update.checkOnLaunch.name": "Check for updates at launch",
+  "flags.close": "Close",
+  "flags.intro.beta": "This is a beta build: features still in beta are on. You can turn any of them off here; the choice stays on this device.",
+  "flags.intro.stable": "Features still in beta are off in this build. You can try one here; the choice stays on this device.",
+  "flags.off": "Off",
+  "flags.on": "On",
+  "flags.reset": "Reset all",
+  "flags.source.channel": "Default for this build",
+  "flags.source.override": "Your choice (default here: {default})",
+  "flags.stage.beta": "Beta",
+  "flags.stage.stable": "Stable",
+  "flags.title": "Feature flags",
+  "flags.useDefault": "Use the default"
+}

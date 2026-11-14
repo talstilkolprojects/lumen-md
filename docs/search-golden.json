@@ -1,0 +1,25 @@
+{
+  "$comment": "Plan W1.28: 20 Hebrew queries a reader types in the docs search, each with the page that must come up in the top 3. Checked on the source by scripts/docs-search.mjs (an index model of Pagefind's prefix matching), and on the built site by scripts/docs-search.mjs --site docs/dist (Pagefind itself, in a browser).",
+  "queries": [
+    { "q": "ייצוא", "page": "he/workspace/export-import" },
+    { "q": "קיצורי מקלדת", "page": "he/getting-started/shortcuts" },
+    { "q": "התקנה", "page": "he/getting-started/install" },
+    { "q": "מימין לשמאל", "page": "he/editor/hebrew" },
+    { "q": "מודל מקומי", "page": "he/ai/local-llm" },
+    { "q": "פרטיות", "page": "he/ai/privacy" },
+    { "q": "תוסף", "page": "he/plugins/develop" },
+    { "q": "חתימה", "page": "he/plugins/signing" },
+    { "q": "תבניות", "page": "he/plugins/templates" },
+    { "q": "מעבר מ-Notion", "page": "he/getting-started/from-notion" },
+    { "q": "Obsidian כספת", "page": "he/getting-started/from-obsidian" },
+    { "q": "Evernote", "page": "he/getting-started/from-evernote" },
+    { "q": "תצוגות מסד נתונים", "page": "he/workspace/database-views" },
+    { "q": "רופא הכספת", "page": "he/workspace/doctor" },
+    { "q": "הצפנה", "page": "he/collab/encryption" },
+    { "q": "שיתוף בזמן אמת", "page": "he/collab/webrtc" },
+    { "q": "התחברות", "page": "he/account/sign-in" },
+    { "q": "אירוח עצמי", "page": "he/self-hosting/docker" },
+    { "q": "ציטוטים", "page": "he/ai/research" },
+    { "q": "הוספה חכמה", "page": "he/editor/smart-insert" }
+  ]
+}

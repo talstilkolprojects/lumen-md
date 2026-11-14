@@ -4,7 +4,8 @@ const log: string[] = [];
 let initHangs = false;
 let initGate: Promise<void> | null = null;
 let created = 0;
-vi.mock("webr", () => {
+// webR is not bundled (plan W1.34): rRuntime loads it through webrModule.
+vi.mock("../plugins/r/webrModule", () => {
   class Shelter {
     async captureR(code: string) {
       log.push(`start ${code}`);
@@ -30,7 +31,7 @@ vi.mock("webr", () => {
     }
     close() {}
   }
-  return { WebR, ChannelType: { PostMessage: 1 } };
+  return { loadWebRModule: async () => ({ WebR, ChannelType: { PostMessage: 1 } }) };
 });
 
 describe("runR", () => {

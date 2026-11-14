@@ -180,6 +180,12 @@ export function isFolderVaultSupported(): boolean {
   return typeof window !== "undefined" && typeof (window as PickerWindow).showDirectoryPicker === "function";
 }
 
+/** The vault's folder handle when the vault is a folder the user picked (null for OPFS and the desktop). Plan W1.6 refuses backup targets inside it. */
+export async function vaultFolderHandle(): Promise<FileSystemDirectoryHandle | null> {
+  const loc = await kv.get<StoredLocation>(LOCATION_KEY);
+  return loc?.kind === "folder" ? loc.handle : null;
+}
+
 /** Ask the user for a folder (null when they cancel). */
 export async function pickVaultFolder(): Promise<FileSystemDirectoryHandle | null> {
   const picker = (window as PickerWindow).showDirectoryPicker;
@@ -537,6 +543,27 @@ export async function openDesktopFolderAsVault(): Promise<string | null> {
   return loc.name;
 }
 
+/** Desktop: the folder vault's absolute path, or "" when notes are in app storage (plan W3.9). */
+export async function desktopVaultRoot(): Promise<string> {
+  const inv = await desktop();
+  return (await inv<string | null>("vault_root")) ?? "";
+}
+
+/**
+ * Desktop: switch to another folder the user used as the vault before (plan
+ * W3.9: a file opened from Finder or Explorer that lives in that vault). The
+ * Rust side refuses a folder it didn't grant, so a link can't name one.
+ */
+export async function switchDesktopVault(root: string): Promise<void> {
+  const inv = await desktop();
+  await inv("vault_use", { root });
+  const loc: StoredLocation = { kind: "desktop", root, name: folderName(root) };
+  await kv.set(LOCATION_KEY, loc);
+  await cancelPendingMove();
+  onVaultReplaced();
+  activate(loc, createTauriBackend(inv, root));
+}
+
 /** Desktop: "Not now" on the first-run prompt (asked again on the next launch). */
 export function dismissDesktopFirstRun(): void {
   desktopFirstRun = false;
@@ -562,6 +589,10 @@ export async function switchToBrowserStorage(): Promise<void> {
 export async function openFolderAsVault(handle: FileSystemDirectoryHandle): Promise<boolean> {
   if (!(await ensureFolderPermission(handle, true))) return false;
   const loc: StoredLocation = { kind: "folder", handle, name: handle.name };
+  // The folder that is already the vault: nothing changes, so the open notes
+  // stay attached and an interrupted move stays resumable (W1.32, Codex on #235).
+  const current = await kv.get<StoredLocation>(LOCATION_KEY);
+  if (current?.kind === "folder" && getVaultBackend().available() && (await sameLocation(current, loc))) return true;
   await releaseDesktopFolder();
   await kv.set(LOCATION_KEY, loc);
   await cancelPendingMove(); // its source is no longer the vault
@@ -764,8 +795,29 @@ export async function moveVault(
     }
     let trashed = 0;
     if (stale.length) {
-      const { moveToTrash } = await import("../trash");
-      trashed = (await moveToTrash(stale, Object.fromEntries(stale.map((p) => [p, "file" as const])))).length;
+      const { moveToTrash, readTrashIndex, trashedPathOf } = await import("../trash");
+      // A note deleted into the trash of the vault it came from is already in
+      // the trash copied here: a leftover with the same bytes is a duplicate
+      // of that entry, so it goes, instead of becoming a second entry (W1.32, Codex on #235).
+      const index = (await readTrashIndex()) ?? [];
+      const toTrash: string[] = [];
+      for (const path of stale) {
+        const leftover = await targetBytes(target, path).catch(() => null);
+        let duplicate = false;
+        for (const item of index) {
+          const at = trashedPathOf(item, path);
+          const kept = at ? await targetBytes(target, at).catch(() => null) : null;
+          if (leftover && kept && same(leftover, kept)) {
+            duplicate = true;
+            break;
+          }
+        }
+        if (duplicate) {
+          await target.remove(path);
+          trashed++;
+        } else toTrash.push(path);
+      }
+      if (toTrash.length) trashed += (await moveToTrash(toTrash, Object.fromEntries(toTrash.map((p) => [p, "file" as const])))).length;
       notifyWorkspaceChanged({ kind: "structure" });
     }
     return { files: files.length, bytes: total, unchanged, trashed };

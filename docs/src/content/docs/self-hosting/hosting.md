@@ -22,7 +22,7 @@ configuration files, so it cannot drift from them.
 | live-js runner | ✅ | ✅ edge function | ✅ | ✅ |
 | Workers that need eval (Graphviz, Ruby, TypeScript checker, webR) with their own policy | ✅ | ✅ | ✅ | ✅ |
 | On-device OCR (tesseract.js worker policy) | ✅ | ✅ | ✅ | ✅ |
-| Same-origin WebAssembly runtimes (Python, R, Ruby, ONNX Runtime, OCR; ≈145 MB) | ✅ in `dist/` | ✅ | ✅ | ✅ `LUMEN_RUNTIMES=full` (default) · `slim` drops them |
+| Same-origin WebAssembly runtimes (Python, Ruby, ONNX Runtime, the dictation VAD model, OCR; ≈100 MB). R (webR, GPL-3.0) is not in the build: each user downloads it from an R block, or the operator stages it with `npm run webr:local` | ✅ in `dist/` | ✅ | ✅ | ✅ `LUMEN_RUNTIMES=full` (default) · `slim` drops them |
 | Your endpoint origins in `connect-src` (`VITE_*_ENDPOINT`) | ✅ at build time | ✅ at build time | ✅ `vercel.ts` at build time | ✅ build args → nginx |
 | HSTS | ✅ | ✅ | ✅ | — the TLS terminator in front sends it |
 | Cross-origin isolation (COOP / COEP, multi-threaded WebAssembly) | — | — | — | ✅ (decision 15.10(7) whether it stays) |
@@ -42,7 +42,7 @@ Build arguments:
 | Argument | Default | What |
 |---|---|---|
 | `VITE_*_ENDPOINT`, `VITE_*_URL`, `VITE_CSP_CONNECT_EXTRA` | empty | The deployment's own services; added to `connect-src` in the header and the `<meta>` policy |
-| `LUMEN_RUNTIMES` | `full` | `slim` removes the same-origin WebAssembly runtimes (≈145 MB measured on 24.10.2026: Pyodide 13.6, webR 47.7, ruby.wasm 30.6, ONNX Runtime 41.2, tesseract.js 11.8). The live-python, live-r and live-ruby blocks, OCR and local transcription then report that their runtime is not installed; everything else, the Web Playground included, is unchanged |
+| `LUMEN_RUNTIMES` | `full` | `slim` removes the same-origin WebAssembly runtimes (≈100 MB measured on 24.10.2026: Pyodide 13.6, ruby.wasm 30.6, ONNX Runtime 41.2, tesseract.js 11.8, plus the 2.3 MB Silero VAD model; webR is never in the image, see live R below). The live-python and live-ruby blocks, OCR and local transcription then report that their runtime is not installed; everything else, the Web Playground, plugins and the canvas fonts included, is unchanged |
 
 ```bash
 # the full image (compose: make onprem-up; Fly: fly deploy)
@@ -60,3 +60,16 @@ Playground could not run there. `netlify/edge-functions/runner-headers.ts`
 runs for `/playground-runner.html` and `/livejs-runner.html` only, drops the
 frame denial and sets the runner's policy. Its policy strings are rendered
 from `security/policy.json`: `npm run headers` fails when they drift.
+
+## Live R (webR)
+
+webR's binaries (R, libgfortran) are GPL-3.0, so no Lumen build or image
+contains them. The first Run of a `live-r` block on a device offers the
+download: the licence and the source come first, the files come from
+webR's own CDN (`webr.r-wasm.org`, or the npm package on `cdn.jsdelivr.net`),
+each one is checked against the checksums in the build's
+`runtimes/webr.json`, and the service worker then serves them from this
+origin, offline included. Both hosts are in `connect-src` for that download
+only. An operator who accepts distributing webR under GPL-3.0 can serve it
+instead: `npm run webr:local` before `npm run build` stages it in
+`public/webr/`, and the R block then uses it without asking.

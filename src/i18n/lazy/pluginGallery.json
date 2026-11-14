@@ -1,0 +1,22 @@
+{
+  "pluginGallery.categories": "Categories",
+  "pluginGallery.categoriesLabel": "Plugin categories",
+  "pluginGallery.close": "Close plugin gallery",
+  "pluginGallery.comingSoon": "More plugins coming soon ·",
+  "pluginGallery.counts": "{installed} installed · {available} available",
+  "pluginGallery.homepage": "{name} homepage",
+  "pluginGallery.install": "Install",
+  "pluginGallery.noMatch": "No plugins matched your search.",
+  "pluginGallery.search": "Search plugins…",
+  "pluginGallery.submit": "Submit a plugin",
+  "pluginGallery.title": "Plugin Gallery",
+  "pluginGallery.uninstall": "Uninstall",
+  "pluginGallery.verified": "Verified by Lumen",
+  "toast.issues": "⚠️ Issues: {count} — {list}",
+  "toast.loadedFromRemoteModule": "✅ Loaded {name} from remote module",
+  "toast.loremIpsumInserted": "📄 Lorem ipsum inserted",
+  "toast.minReadWords": "📖 ~{minutes} min read ({words} words)",
+  "toast.noHeadingsFound": "No headings found",
+  "toast.noIssuesFound": "✅ No issues found!",
+  "toast.tocInsertedAtTop": "📋 TOC inserted at top"
+}

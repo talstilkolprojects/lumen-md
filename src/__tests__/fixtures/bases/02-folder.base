@@ -1,0 +1,8 @@
+filters: file.inFolder("Projects")
+views:
+  - type: table
+    name: Projects by due date
+    order: [file.name, note.status, note.due]
+    sort:
+      - property: note.due
+        direction: ASC

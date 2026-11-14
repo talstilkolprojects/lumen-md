@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // A fake Ollama server for tests: answers /api/tags, /api/version, /api/show,
-// /api/chat, /api/embed, /api/pull (streamed progress) and /api/delete over real HTTP, so the app's local-AI path can be
+// /api/chat, /api/generate, /api/ps, /api/embed, /api/pull (streamed progress) and /api/delete over real HTTP, so the app's local-AI path can be
 // exercised in CI without a GPU or a model download.
 //
 //   npm run fake-ollama -- [--port 11434] [--fixtures src/agents/eval/fixtures.ts]
@@ -196,6 +196,10 @@ const server = http.createServer((req, res) => {
       MODELS.splice(i, 1);
       return res.end("{}");
     }
+    // Fill-in-the-middle (plan 6.9, `npm run bench:fim`): a fixed short completion.
+    if (url === "/api/generate") return res.end(JSON.stringify({ response: " fake completion", done: true, prompt_eval_count: 10, eval_count: 3 }));
+    // Loaded models (`npm run models:day` reads how much sits in GPU memory): none here.
+    if (url === "/api/ps") return res.end(JSON.stringify({ models: [] }));
     if (url === "/api/chat") {
       const j = JSON.parse(body || "{}");
       const message = { role: "assistant", ...messageFor(j.messages ?? [], j.format, j.tools) };

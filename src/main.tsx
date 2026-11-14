@@ -1,5 +1,7 @@
 // Must stay the first import: Trusted Types policies before any DOM sink.
 import "./lib/trustedTypesInit";
+// Airplane mode (plan W5.9): when it is on, the browser refuses other sites from here on.
+import "./privacy/airplaneBoot";
 import "./fonts";
 import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
@@ -8,18 +10,26 @@ import { UpdateBanner } from "./ui/UpdateBanner";
 import { setVaultBackend, createDirectoryHandleBackend } from "./storage/vault";
 import { openVaultAtBoot } from "./storage/vault/boot";
 import { ErrorBoundary } from "./ui/ErrorBoundary";
+import { ErrorActions } from "./ui/ErrorActions";
 import { showAiToast } from "./ui/AiToast";
 import { ToastContainer } from "./components/Toast";
 import { initTelemetry } from "./lib/telemetry";
+import { startUsageCounting } from "./metrics/count";
 import { initAuth } from "./auth/useAuth";
 import { startAutoBackup, startVaultSnapshots } from "./sync/autoBackup";
 import { requestPersistentStorage } from "./storage/persistentStorage";
 import { initLocale, t } from "./i18n";
 import { initSecretStore } from "./lib/secretStore";
 import { installPrivacyLedger } from "./ai/privacyLedger";
-import { installAiEscape } from "./ai/aiAbort";
+import { installAiEscape, onAiBusy } from "./ai/aiAbort";
+import { aiBusyAnnouncer, announce } from "./a11y/announce";
 import { adoptBootLocale } from "./store/useStore";
 import "./index.css";
+import { windowLabel } from "./desktop/window";
+
+// Plan W2.17: this window is a presentation's presenter view (opened by the slides), not the editor.
+const IS_PRESENTER = typeof location !== "undefined" && location.hash === "#lumen-presenter";
+const PresenterView = React.lazy(() => import("./slides/PresenterView"));
 
 // Every AI network request is recorded; local-only blocks cloud ones (T37).
 const lastBlockToast = new Map<string, number>();
@@ -29,18 +39,48 @@ installPrivacyLedger((entry) => {
   lastBlockToast.set(entry.host, Date.now());
   showAiToast(t("toast.privacyBlocked", { reason: entry.reason }), "error");
 });
+// Airplane mode's wrappers and live list of every network attempt (plan W5.9),
+// outside the ledger so they see each request first; off the startup bundle.
+void import("./privacy/airplane").then((m) => {
+  m.installAirplaneMode();
+  if (m.airplaneModeOn()) void import("./privacy/NetworkMonitor").then((u) => u.showAirplaneBadge());
+}).catch(() => {
+  /* why: chunk failed to load — the CSP half (airplaneBoot) still holds when the switch is on */
+});
+// Playwright specs reach the app's modules through window.__lumenTest: on the
+// dev server, and in a build made with VITE_E2E=1 (a preview's e2e gate).
+// A production build drops this branch and src/testing/ (W4.2).
+if (import.meta.env.DEV || __LUMEN_E2E__) void import("./testing/e2eHooks").then((m) => m.installE2eHooks());
 // Esc cancels any running AI request (T55).
 installAiEscape((n) => showAiToast(t("toast.aiCancelled", { count: n }), "info"));
 // Error reports: only when the user turned them on AND the build has a DSN (12.4).
 void initTelemetry();
+// Long AI work is spoken when it starts and when it ends (plan W1.23).
+onAiBusy(aiBusyAnnouncer((busy) => announce(t(busy ? "sr.aiWorking" : "sr.aiDone"))));
 void initAuth();
 startAutoBackup();
+// Plan W1.6: scheduled backups to a second drive, loaded only once they are set up.
+try {
+  if (localStorage.getItem("lumen.backup.enabled") === "1") void import("./backup/start").then((m) => m.startBackups());
+} catch {
+  /* storage blocked: no backups to schedule */
+}
 startVaultSnapshots();
+// Usage counters on this device only (plan W4.26), loaded after start-up; nothing is sent.
+setTimeout(startUsageCounting, 3000);
 // Task reminders (plan 4.13.4), only when the user turned them on; loaded after start-up.
 try {
   if (localStorage.getItem("lumen.tasks.reminders") === "1") setTimeout(() => void import("./tasks/reminders").then((m) => m.startReminders()), 5000);
 } catch {
   /* why: storage blocked: no reminders */
+}
+if (!IS_PRESENTER) {
+}
+// Reading aids (plan W5.6), only when the person turned the dyslexia-friendly layout on.
+try {
+  if (localStorage.getItem("lumen-reading-aids")?.includes('"dyslexia":true')) void import("./reading/readingAids").then((m) => m.applyStoredAids());
+} catch {
+  /* why: storage blocked: no stored aids */
 }
 // The vault lives in OPFS/IndexedDB; without this the browser may evict it.
 // Safari grants persistence to installed apps only and deletes the rest after
@@ -94,6 +134,8 @@ const secretsReady = Promise.race([initSecretStore(), new Promise((r) => setTime
 // the first render, so nothing reads the wrong store; bounded like secrets.
 // Until it is known, the vault is closed (an unavailable backend), never the
 // default store by accident; the location module loads on demand.
+// Plan W3.9: the tray's quick-capture window is this app with a small UI.
+const QuickCaptureWindow = React.lazy(() => import("./ui/QuickCaptureWindow").then((m) => ({ default: m.QuickCaptureWindow })));
 const VaultFolderBanner = React.lazy(() => import("./ui/VaultFolderBanner").then((m) => ({ default: m.VaultFolderBanner })));
 const closedVault = createDirectoryHandleBackend({ id: "restoring", available: () => false, root: async () => Promise.reject(new Error("The vault is still opening.")) });
 setVaultBackend(closedVault);
@@ -145,6 +187,17 @@ void Promise.all([initLocale(), secretsReady, vaultReady])
   })
   .finally(renderApp);
 
+// An encrypted share link (plan W5.10, `#view=…`): the read-only viewer
+// instead of the editor. The note and its key are in the #fragment, which
+// never leaves the browser; the viewer decrypts it here and saves nothing.
+const SharedNoteView = React.lazy(() => import("./share/SharedNoteView"));
+const SHARE_HASH = /^#view(?:-file)?(?:[=&]|$)/;
+const showShare = SHARE_HASH.test(location.hash);
+// A share link pasted into an open tab only changes the fragment: switch views.
+window.addEventListener("hashchange", () => {
+  if (showShare || SHARE_HASH.test(location.hash)) location.reload();
+});
+
 function renderApp() {
 ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
@@ -166,6 +219,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         >
           {t("boot.reload")}
         </button>
+        {/* W3.7: report it, with the diagnostics bundle. */}
+        <ErrorActions />
       </div>
     }>
       <Suspense fallback={
@@ -177,7 +232,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           {t("boot.loading")}
         </div>
       }>
-        <App />
+        {IS_PRESENTER ? <PresenterView /> : windowLabel() === "capture" ? <QuickCaptureWindow /> : showShare ? <SharedNoteView /> : <App />}
       </Suspense>
     </ErrorBoundary>
     <UpdateBanner />

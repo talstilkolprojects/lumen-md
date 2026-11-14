@@ -4,7 +4,12 @@
  * the server; the client only ever holds a token for one room, valid for a
  * few minutes, and asks for a fresh one on every (re)connect.
  *
- * Format: base64url(JSON {r: room, e: expiry in unix seconds}) "." base64url(HMAC-SHA256)
+ * Format: base64url(JSON {r: room, e: expiry in unix seconds, o?: role, s?: share id}) "." base64url(HMAC-SHA256)
+ *
+ * Plan W1.19: a token carries the holder's role — "edit", "comment" or
+ * "view" (no `o` = "edit", the owner's and every token issued before
+ * roles) — and, when it was bought with a share link, that link's id, so
+ * the server can drop the connection the moment the link is revoked.
  */
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
@@ -22,11 +27,19 @@ function mac(key, payload) {
   return createHmac("sha256", key).update(payload).digest();
 }
 
-/** Issue a token for `room`, valid for `ttlS` seconds from `nowMs`. */
-export function issueRoomToken(key, room, { ttlS = DEFAULT_TOKEN_TTL_S, nowMs = Date.now() } = {}) {
-  const exp = Math.floor(nowMs / 1000) + ttlS;
-  const payload = b64url(JSON.stringify({ r: room, e: exp }));
-  return { token: `${payload}.${b64url(mac(key, payload))}`, expiresAt: exp * 1000 };
+export const ROLES = ["view", "comment", "edit"];
+
+/**
+ * Issue a token for `room`, valid for `ttlS` seconds from `nowMs` (never
+ * past `notAfterMs`, a share link's expiry), for `role`, bought with `share`.
+ */
+export function issueRoomToken(key, room, { ttlS = DEFAULT_TOKEN_TTL_S, nowMs = Date.now(), role = "edit", share = null, notAfterMs = null } = {}) {
+  if (!ROLES.includes(role)) throw new Error(`unknown role ${role}`);
+  let exp = Math.floor(nowMs / 1000) + ttlS;
+  if (notAfterMs !== null) exp = Math.min(exp, Math.floor(notAfterMs / 1000));
+  const claims = { r: room, e: exp, ...(role !== "edit" ? { o: role } : {}), ...(share ? { s: share } : {}) };
+  const payload = b64url(JSON.stringify(claims));
+  return { token: `${payload}.${b64url(mac(key, payload))}`, expiresAt: exp * 1000, role };
 }
 
 /**
@@ -34,6 +47,18 @@ export function issueRoomToken(key, room, { ttlS = DEFAULT_TOKEN_TTL_S, nowMs = 
  * ("malformed" | "signature" | "room" | "expired").
  */
 export function verifyRoomToken(key, token, room, { nowMs = Date.now() } = {}) {
+  const r = readRoomToken(key, token, room, { nowMs });
+  return r.ok ? null : r.reason;
+}
+
+/** Like `verifyRoomToken`, with the claims: {ok: true, role, share, expiresAt} or {ok: false, reason}. */
+export function readRoomToken(key, token, room, { nowMs = Date.now() } = {}) {
+  const why = checkToken(key, token, room, nowMs);
+  if (typeof why === "string") return { ok: false, reason: why };
+  return { ok: true, role: why.o ?? "edit", share: why.s ?? null, expiresAt: why.e * 1000 };
+}
+
+function checkToken(key, token, room, nowMs) {
   if (typeof token !== "string") return "malformed";
   const dot = token.indexOf(".");
   if (dot <= 0 || dot !== token.lastIndexOf(".")) return "malformed";
@@ -55,7 +80,9 @@ export function verifyRoomToken(key, token, room, { nowMs = Date.now() } = {}) {
   if (!claims || typeof claims.r !== "string" || typeof claims.e !== "number") return "malformed";
   if (claims.r !== room) return "room";
   if (claims.e * 1000 <= nowMs) return "expired";
-  return null;
+  if (claims.o !== undefined && (claims.o === "edit" || !ROLES.includes(claims.o))) return "malformed";
+  if (claims.s !== undefined && (typeof claims.s !== "string" || !claims.s)) return "malformed";
+  return claims;
 }
 
 /** Constant-time check of the operator's access key (empty `expected` = open server). */

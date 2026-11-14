@@ -15,6 +15,9 @@ vi.mock("../storage/workspace", () => ({
   listWorkspace: vi.fn(async () => []),
   readWorkspaceFile: vi.fn(async () => ""),
   workspaceHasFile: vi.fn(async () => false),
+  // The clone mirror asks these since #269 (safe git): nothing is in the vault yet.
+  workspaceHasEntry: vi.fn(async () => false),
+  readWorkspaceBlob: vi.fn(async () => new Blob([])),
   writeWorkspaceBlob: vi.fn(async (p: string) => {
     // What provenance says at the moment of each write.
     const { untrustedSourcesOfNote } = await import("../agents/provenance");
@@ -22,6 +25,12 @@ vi.mock("../storage/workspace", () => ({
     if (writes.length >= failAt) throw new DOMException("full", "QuotaExceededError");
     writes.push(p);
   }),
+}));
+
+// The mirror looks at the vault through its backend (#269): an empty vault.
+vi.mock("../storage/vault", async (orig) => ({
+  ...(await orig<typeof import("../storage/vault")>()),
+  getVaultBackend: () => ({ stat: async () => null }),
 }));
 
 // A two-file checkout in a fake lightning-fs volume.
@@ -36,7 +45,24 @@ vi.mock("@isomorphic-git/lightning-fs", () => ({
     };
   },
 }));
-vi.mock("isomorphic-git", () => ({ default: { clone: async () => undefined, pull: async () => undefined } }));
+// A pull fetches, then merges into the vault (#269, safe git): the fetch finds a new commit.
+vi.mock("isomorphic-git", () => ({
+  default: {
+    clone: async () => undefined,
+    currentBranch: async () => "main",
+    fetch: async () => ({ fetchHead: "theirs" }),
+    resolveRef: async () => "head",
+  },
+}));
+// The merge itself (gitPull.test.ts covers it) writes the repo's two files through the vault the
+// pull hands it; what is checked here is that the record is made before the first write.
+vi.mock("../sync/gitPull", async (orig) => ({
+  ...(await orig<typeof import("../sync/gitPull")>()),
+  integrateFetched: async (o: { vault: { write: (path: string, data: Uint8Array) => Promise<void> } }) => {
+    for (const f of ["a.md", "b.md"]) await o.vault.write(`team-notes/${f}`, new TextEncoder().encode(f));
+    return { changedFiles: 2, deletedFiles: 0, upToDate: false, conflicts: [], keptDeletedUpstream: [], lfsSkipped: [], lfsPointers: [], copies: [], mergedIntoOpen: [], kindClashes: [], head: "theirs" };
+  },
+}));
 vi.mock("isomorphic-git/http/web", () => ({ default: {} }));
 
 beforeEach(() => {

@@ -1,0 +1,10 @@
+{
+  "block.htmlPreview.exitFullscreen": "Exit fullscreen",
+  "block.htmlPreview.fullscreen": "Fullscreen",
+  "block.htmlPreview.openFullscreen": "Fullscreen preview",
+  "block.htmlPreview.sanitized": "⚠︎ Some HTML content was sanitized before preview for safety.",
+  "block.htmlPreview.scriptsOff": "Scripts off",
+  "block.htmlPreview.scriptsOn": "Enable scripts",
+  "block.htmlPreview.title": "HTML preview",
+  "block.htmlPreview.toggleScripts": "Toggle unsafe script execution"
+}

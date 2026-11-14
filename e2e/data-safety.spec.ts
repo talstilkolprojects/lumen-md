@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { opfsWritable } from "./_opfs";
+import { testHooks, type LumenTestWindow } from "./_lumen";
+import { opfsWritable, vaultOrSkip } from "./_opfs";
 
 /**
  * Data safety (MASTER_PLAN v3 §14) — part A, the history store (T35):
@@ -91,14 +92,14 @@ test("G10: auto-backups no longer create files in the vault", async ({ page }) =
  * thread: vault writes go through a sync-access-handle worker. Remove the
  * method here so every engine exercises that path.
  */
-test("G9: saving to the vault works without createWritable (Safari path)", async ({ page }) => {
+test("G9: saving to the vault works without createWritable (Safari path)", async ({ page, browserName }) => {
   await page.addInitScript(() => {
     const proto = (globalThis as { FileSystemFileHandle?: { prototype: Record<string, unknown> } }).FileSystemFileHandle?.prototype;
     if (proto) delete proto.createWritable;
   });
   await page.reload();
   await expect(page.locator(".cm-content").first()).toContainText("Welcome to", { timeout: 15_000 });
-  test.skip(!(await opfsWritable(page)), "OPFS writes are unavailable in this engine's test context");
+  vaultOrSkip(await opfsWritable(page), browserName);
   const run = (id: string) => page.evaluate((cmd) => window.dispatchEvent(new CustomEvent("lumen-run-command", { detail: { id: cmd } })), id);
   await page.keyboard.press("Meta+1");
   const editor = page.locator(".cm-content").first();
@@ -116,8 +117,8 @@ test("G9: saving to the vault works without createWritable (Safari path)", async
 });
 
 /** Part B — safe files (T46): rename keeps links, delete is undoable. */
-test("G5, G6: renaming a note rewrites links to it; deleting it goes to the trash with Undo", async ({ page }) => {
-  test.skip(!(await opfsWritable(page)), "OPFS writes are unavailable in this engine's test context");
+test("G5, G6: renaming a note rewrites links to it; deleting it goes to the trash with Undo", async ({ page, browserName }) => {
+  vaultOrSkip(await opfsWritable(page), browserName);
   const run = (id: string) => page.evaluate((cmd) => window.dispatchEvent(new CustomEvent("lumen-run-command", { detail: { id: cmd } })), id);
   await page.keyboard.press("Meta+1");
   const editor = page.locator(".cm-content").first();
@@ -165,10 +166,10 @@ test("G5, G6: renaming a note rewrites links to it; deleting it goes to the tras
 });
 
 /** Part C — export everything (T47): the vault comes out as a .zip with paths. */
-test("G7: the whole vault exports as a zip", async ({ page }) => {
+test("G7: the whole vault exports as a zip", async ({ page, browserName }) => {
   // Save, a lazy export chunk, a dialog and a download: more than the default 30 s budget on a cold runner.
   test.slow();
-  test.skip(!(await opfsWritable(page)), "OPFS writes are unavailable in this engine's test context");
+  vaultOrSkip(await opfsWritable(page), browserName);
   const run = (id: string) => page.evaluate((cmd) => window.dispatchEvent(new CustomEvent("lumen-run-command", { detail: { id: cmd } })), id);
   await page.keyboard.press("Meta+1");
   const editor = page.locator(".cm-content").first();
@@ -215,21 +216,21 @@ test("G7: the whole vault exports as a zip", async ({ page }) => {
  *
  * The remote commit is made in the browser's own git store (no network): the
  * merge half of the pull (`integrateIntoVault`) and the real dialogs are
- * what is tested. The modules are imported from the dev server.
+ * what is tested. The modules come through window.__lumenTest (e2e/_lumen.ts),
+ * on the dev server and on the gate's production build alike.
  */
-test("G2: git pull merges three ways, opens the conflict screen, keeps unsaved edits, and deletes nothing", async ({ page }) => {
-  const dev = await page.evaluate(() => !!document.querySelector('script[src*="/@vite/client"]'));
-  test.skip(!dev, "imports the git modules from the dev server");
-  test.skip(!(await opfsWritable(page)), "OPFS writes are unavailable in this engine's test context");
+test("G2: git pull merges three ways, opens the conflict screen, keeps unsaved edits, and deletes nothing", async ({ page, browserName }) => {
+  await testHooks(page);
+  vaultOrSkip(await opfsWritable(page), browserName);
   const repo = `safe-git-${Date.now().toString(36)}`;
   // The vault opens shortly after start-up.
   await expect
-    .poll(() => page.evaluate(async () => (await import(/* @vite-ignore */ "/src/storage/workspace.ts")).isOPFSAvailable()), { timeout: 10_000 })
+    .poll(() => page.evaluate(async () => (await (window as unknown as LumenTestWindow).__lumenTest.load("storage/workspace")).isOPFSAvailable()), { timeout: 10_000 })
     .toBe(true);
 
   const before = await page.evaluate(async (repo) => {
-    const ws = await import(/* @vite-ignore */ "/src/storage/workspace.ts");
-    const g = await import(/* @vite-ignore */ "/src/sync/git.ts");
+    const ws = await (window as unknown as LumenTestWindow).__lumenTest.load("storage/workspace");
+    const g = await (window as unknown as LumenTestWindow).__lumenTest.load("sync/git");
     const { fs, git } = await g.__gitRuntime();
     const dir = `/git/${repo}`;
     const author = { name: "Test", email: "test@example.com" };
@@ -268,9 +269,9 @@ test("G2: git pull merges three ways, opens the conflict screen, keeps unsaved e
   // open.md is open with an unsaved edit; pull at once (the merge half),
   // then the summary and the resolution screen.
   await page.evaluate(async (repo) => {
-    const g = await import(/* @vite-ignore */ "/src/sync/git.ts");
-    const docs = await import(/* @vite-ignore */ "/src/store/gitPullDocs.ts");
-    const { useAppStore } = await import(/* @vite-ignore */ "/src/store/useStore.ts");
+    const g = await (window as unknown as LumenTestWindow).__lumenTest.load("sync/git");
+    const docs = await (window as unknown as LumenTestWindow).__lumenTest.load("store/gitPullDocs");
+    const { useAppStore } = await (window as unknown as LumenTestWindow).__lumenTest.load("store/useStore");
     const content = "ALPHA local\nbeta\ngamma";
     useAppStore.setState({
       doc: { name: "open.md", content, workspaceName: `${repo}/open.md`, dirty: true },
@@ -297,11 +298,11 @@ test("G2: git pull merges three ways, opens the conflict screen, keeps unsaved e
   await expect(editor).toContainText("ALPHA local");
   await expect(editor).toContainText("gamma remote");
   await expect
-    .poll(() => page.evaluate(async (repo) => (await import(/* @vite-ignore */ "/src/storage/workspace.ts")).readWorkspaceFile(`${repo}/open.md`), repo), { timeout: 10_000 })
+    .poll(() => page.evaluate(async (repo) => (await (window as unknown as LumenTestWindow).__lumenTest.load("storage/workspace")).readWorkspaceFile(`${repo}/open.md`), repo), { timeout: 10_000 })
     .toBe("ALPHA local\nbeta\ngamma remote");
 
   const after = await page.evaluate(async (repo) => {
-    const ws = await import(/* @vite-ignore */ "/src/storage/workspace.ts");
+    const ws = await (window as unknown as LumenTestWindow).__lumenTest.load("storage/workspace");
     const paths = (await ws.listWorkspace({ includeHidden: true })).map((e: { path: string }) => e.path).filter((p: string) => p.startsWith(`${repo}/`)).sort();
     const read = (p: string) => ws.readWorkspaceFile(`${repo}/${p}`);
     const pull = (window as unknown as { __pull: { deletedFiles: number; conflicts: unknown[] } }).__pull;
@@ -381,12 +382,13 @@ test("G1: durable storage is requested at start, its state is shown, and it can 
  * through request interception at an origin the CSP allows.
  */
 test("G3: a public repository clones without a token, LFS pointers are named", async ({ page, browserName }, testInfo) => {
-  test.skip(!(await opfsWritable(page)), "OPFS writes are unavailable in this engine's test context");
+  vaultOrSkip(await opfsWritable(page), browserName);
   const { spawnSync } = await import("node:child_process");
   const { mkdtempSync, writeFileSync } = await import("node:fs");
   const { join } = await import("node:path");
   const { tmpdir } = await import("node:os");
   const backend = spawnSync("git", ["--exec-path"], { encoding: "utf8" }).stdout.trim() + "/git-http-backend";
+  // skip-reason: needs git's http-backend on the test machine to serve a real repository; git ships it on macOS and Ubuntu | task: 3.3 | until: 2027-05-12
   test.skip(spawnSync(backend, [], { env: { REQUEST_METHOD: "GET" } }).error !== undefined, "git http-backend is not installed");
 
   const root = mkdtempSync(join(tmpdir(), `lumen-g3-${browserName}-`));
@@ -454,8 +456,8 @@ test("G3: a public repository clones without a token, LFS pointers are named", a
 });
 
 /** G9 — a failed write is announced and retried; the text is not lost. */
-test("G9: a vault write refused for quota shows a message and is retried until it lands", async ({ page }) => {
-  test.skip(!(await opfsWritable(page)), "OPFS writes are unavailable in this engine's test context");
+test("G9: a vault write refused for quota shows a message and is retried until it lands", async ({ page, browserName }) => {
+  vaultOrSkip(await opfsWritable(page), browserName);
   await page.keyboard.press("Meta+1");
   const editor = page.locator(".cm-content").first();
   await editor.click();
@@ -487,8 +489,8 @@ test("G9: a vault write refused for quota shows a message and is retried until i
 });
 
 /** G11 — an Obsidian vault and a Notion export come in note by note, not merged into one. */
-test("G11: Obsidian and Notion imports keep one file per note, with paths and links", async ({ page }) => {
-  test.skip(!(await opfsWritable(page)), "OPFS writes are unavailable in this engine's test context");
+test("G11: Obsidian and Notion imports keep one file per note, with paths and links", async ({ page, browserName }) => {
+  vaultOrSkip(await opfsWritable(page), browserName);
   const { zip } = await import("../src/storage/zip");
   const id = "0123456789abcdef0123456789abcdef";
   const archives = [

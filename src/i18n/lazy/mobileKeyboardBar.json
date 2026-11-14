@@ -1,0 +1,14 @@
+{
+  "mobileBar.customize": "Customize toolbar",
+  "mobileBar.customize.add": "Add {name}",
+  "mobileBar.customize.done": "Done",
+  "mobileBar.customize.down": "Move {name} later",
+  "mobileBar.customize.inRow": "In the toolbar",
+  "mobileBar.customize.intro": "Pick the actions above the keyboard and their order. The row scrolls sideways when it is longer than the screen.",
+  "mobileBar.customize.more": "More actions",
+  "mobileBar.customize.remove": "Remove {name}",
+  "mobileBar.customize.reset": "Reset",
+  "mobileBar.customize.title": "Mobile toolbar",
+  "mobileBar.customize.up": "Move {name} earlier",
+  "mobileBar.label": "Editing toolbar"
+}

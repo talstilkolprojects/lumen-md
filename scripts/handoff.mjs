@@ -37,15 +37,27 @@ function sh(cmd, args) {
  * until a short page. Not `gh api --paginate`: it follows the Link header's
  * repositories/<id>/… URLs, which some API proxies refuse (scripts/ci-doctor.mjs does the same).
  */
-function ghJson(path, perPage = 100, maxPages = 30) {
+function ghJson(path, perPage = 100, maxPages = 1000) {
   const out = [];
   for (let page = 1; page <= maxPages; page++) {
     const items = JSON.parse(sh("gh", ["api", `${path}${path.includes("?") ? "&" : "?"}page=${page}`]));
     if (!Array.isArray(items)) throw new Error(`${path}: expected an array`);
     out.push(...items);
-    if (items.length < perPage) break;
+    if (items.length < perPage) return out;
   }
-  return out;
+  // Never a silently short list presented as complete (W1.32, Codex on #211).
+  throw new Error(`${path}: more than ${maxPages} pages; the count would be incomplete`);
+}
+
+/** The newest CI run of a head branch: the CI workflow's own runs, not the newest ten of every workflow. */
+function ciRuns(head) {
+  const branch = encodeURIComponent(head);
+  try {
+    return JSON.parse(sh("gh", ["api", `repos/${repo}/actions/workflows/ci.yml/runs?branch=${branch}&per_page=30`])).workflow_runs ?? [];
+  } catch {
+    // No ci.yml (renamed?): every workflow's runs, as many as one page holds.
+    return JSON.parse(sh("gh", ["api", `repos/${repo}/actions/runs?branch=${branch}&per_page=100`])).workflow_runs ?? [];
+  }
 }
 
 function repoName() {
@@ -69,7 +81,8 @@ if (!flag("no-github")) {
   prs = ghJson(`repos/${repo}/pulls?state=open&per_page=100`).map((p) => ({ number: p.number, title: p.title, head: p.head.ref, headRepo: p.head.repo?.full_name ?? null, base: p.base.ref }));
   for (const p of prs) {
     try {
-      const runs = JSON.parse(sh("gh", ["api", `repos/${repo}/actions/runs?branch=${encodeURIComponent(p.head)}&per_page=10`])).workflow_runs ?? [];
+      // Other workflows (Tauri runs on every label event) would push the CI run out of a short list.
+      const runs = ciRuns(p.head);
       // A same-named branch of this repository is not a fork PR's head.
       const ci = runs.find((r) => r.name === "CI" && (r.head_repository?.full_name ?? repo) === (p.headRepo ?? repo));
       p.ci = ci ? (ci.status === "completed" ? ci.conclusion : null) : undefined;

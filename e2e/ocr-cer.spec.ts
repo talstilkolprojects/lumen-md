@@ -3,6 +3,7 @@ import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { incompleteParts, loadSet } from "../scripts/lib/golden.mjs";
+import { lineOrderAccuracy } from "../src/ai/ocrLayout";
 import { OCR_CONDITIONS, buildReport, checkGates, formatReport, heldOutGaps, type CerItemInput, type OcrCondition } from "../src/ai/ocrCer";
 
 /**
@@ -19,6 +20,10 @@ import { OCR_CONDITIONS, buildReport, checkGates, formatReport, heldOutGaps, typ
  *  - otherwise (every PR, ci.yml job ocr-cer): the public dev split
  *    committed in eval/golden/ocr-he/dev, and the output says so. These are
  *    dev numbers, never the test score.
+ *
+ * Word order (plan W1.18): on the mixed-script column pages (part
+ * "mixed"), the share of lines whose words come out in reading order
+ * (lineOrderAccuracy), gated at ≥ 95 % once the part is in the set.
  *
  * Opt-in (OCR_CER=1) so the regular e2e jobs do not run a several-minute
  * measurement in three browsers.
@@ -44,6 +49,7 @@ test.describe.configure({ retries: 0 });
 test.use({ trace: "off", video: "off", screenshot: "off" });
 
 test("OCR CER on the golden set ocr-he (Hebrew and English, per condition)", async ({ page }) => {
+  // skip-reason: a 20-minute measurement over the golden set, not a check; the nightly run sets OCR_CER=1 | task: 7.5 | until: 2027-05-12
   test.skip(!process.env.OCR_CER, "set OCR_CER=1 to measure (ci.yml job ocr-cer)");
   test.setTimeout(20 * 60_000);
 
@@ -89,6 +95,14 @@ test("OCR CER on the golden set ocr-he (Hebrew and English, per condition)", asy
     inputs.push({ id: it.id, condition: it.condition, reference: it.text, hypothesis: text });
   }
   const seconds = Math.round((Date.now() - started) / 1000);
+  // Word order per line on the mixed-script column pages (W1.18).
+  const order = { correct: 0, total: 0 };
+  inputs.forEach((x, i) => {
+    if (items[i].part !== "mixed") return;
+    const o = lineOrderAccuracy(x.reference, x.hypothesis);
+    order.correct += o.correct;
+    order.total += o.total;
+  });
 
   const report = buildReport(inputs);
   const gates = checkGates(report);
@@ -97,7 +111,8 @@ test("OCR CER on the golden set ocr-he (Hebrew and English, per condition)", asy
       ? `held-out TEST split (GOLDEN_SEED)${recordRun ? " — record run" : ""}${set.unverified.length ? `; parts without a recorded sha256 yet: ${set.unverified.join(", ")}` : ""}`
       : "public DEV split (eval/golden/ocr-he/dev) — GOLDEN_SEED is not available here, so these are dev numbers, not the held-out test score (plan 15.9)";
   const title = `OCR CER — ocr-he, ${banner}; ${items.length} images, ${seconds} s, tesseract.js tessdata_fast heb+eng`;
-  const md = formatReport(report, title);
+  const orderLine = order.total ? `\n\nWord order per line (mixed column pages, W1.18): ${((100 * order.correct) / order.total).toFixed(1)}% · ${order.correct}/${order.total} lines (≥ 95%)` : "";
+  const md = formatReport(report, title) + orderLine;
 
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(
@@ -109,6 +124,7 @@ test("OCR CER on the golden set ocr-he (Hebrew and English, per condition)", asy
         images: items.length,
         seconds,
         gates,
+        ...(order.total ? { wordOrder: order } : {}),
         byCondition: report.byCondition,
         // Per-item numbers only for the public dev split.
         ...(split === "dev" ? { items: report.items } : {}),
@@ -126,5 +142,6 @@ test("OCR CER on the golden set ocr-he (Hebrew and English, per condition)", asy
   }
   const failed = gates.filter((g) => g.verdict === "fail");
   const detail = failed.map((g) => `${g.script} ${g.condition}: CER ${((g.cer ?? 0) * 100).toFixed(2)}% > ${(g.max * 100).toFixed(0)}%`);
+  if (order.total) expect(order.correct / order.total, `word order per line on the mixed column pages (W1.18): ${order.correct}/${order.total}`).toBeGreaterThanOrEqual(0.95);
   expect(failed.length, `OCR CER gate (plan 7.5) failed on the ${split} split: ${detail.join("; ")}`).toBe(0);
 });

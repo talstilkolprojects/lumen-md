@@ -20,16 +20,23 @@ import type { EditorView } from "@milkdown/prose/view";
 import { Plugin } from "@milkdown/prose/state";
 import { wysiwygBidiPlugin } from "./wysiwygBidi";
 import { remoteImagePlugin } from "./remoteImageView";
+import { wysiwygBidiMarksPlugin } from "./wysiwygBidiMarks";
 import { listSpreadFix } from "./milkdownListSpread";
 import { wrapInList } from "prosemirror-schema-list";
 import { dragHandlePlugin } from "./dragHandles";
 import { buildIndentKeymap } from "./keymapExtra";
+import { wysiwygOutlineKeymap, wysiwygOutlinePlugin } from "./wysiwygOutline";
 import "katex/dist/katex.css";
 import { AiError } from "../ai/llm";
 import { showAiToast } from "../ui/AiToast";
 import { openAiPrompt } from "../ui/AiInlinePrompt";
 import { log } from "../lib/logger";
-import { getMarkdown } from "@milkdown/utils";
+import { getMarkdown, insert as insertMarkdown, $prose } from "@milkdown/utils";
+import { cleanPastedHtml, shouldConvertPaste } from "../paste/htmlPaste";
+import { setWysiwygPasteTarget, type PasteDetail } from "../paste/pasteCommands";
+import { wysiwygPdfPastePlugin } from "../paste/wysiwygPdfPaste";
+import { wysiwygSourcePreserver } from "./wysiwygSource";
+import { wysiwygObsidianPlugins } from "./wysiwygObsidian";
 import {
   configureWysiwygSuggest,
   encodeCriticForWysiwyg,
@@ -42,6 +49,7 @@ import { wysiwygWikiComplete } from "./wysiwygWikiComplete";
 import { registerPendingEdits, useAppStore } from "../store/useStore";
 import { useAuth } from "../auth/useAuth";
 import { t } from "../i18n";
+import { explainError } from "../lib/userError";
 
 // Suggesting mode (track changes) works in WYSIWYG too: CriticMarkup ↔
 // marks, edits tracked while the store's suggestingMode is on.
@@ -334,7 +342,7 @@ function buildSlashItems(): SlashItem[] {
           showAiToast(
             e instanceof AiError && e.code === "NO_KEY"
               ? t("toast.pleaseConfigureYourAiKey")
-              : t("ai.ghostwriter.failed", { error: (e as Error)?.message ?? t("ai.error.unknown") }),
+              : t("ai.ghostwriter.failed", { error: explainError(e) }),
             "error",
           );
         } finally {
@@ -618,6 +626,16 @@ export function splitFrontmatter(md: string): { fm: string; body: string } {
 }
 
 export default function WysiwygEditor({ value, onChange, spellCheck = true }: Props) {
+/** Word lists, Google Docs spans, inline styles and needless direction marks, cleaned on paste. */
+const pasteCleanPlugin = $prose(
+  () =>
+    new Plugin({
+      props: {
+        transformPastedHTML: (html: string) => (shouldConvertPaste(html, "") ? cleanPastedHtml(html) : html),
+      },
+    }),
+);
+
   const hostRef = useRef<HTMLDivElement | null>(null);
   const spellCheckRef = useRef(spellCheck);
   spellCheckRef.current = spellCheck;
@@ -665,6 +683,19 @@ export default function WysiwygEditor({ value, onChange, spellCheck = true }: Pr
   // The editor's markdown as of its creation / last emission: on unmount,
   // anything else is an edit the debounced listener hasn't emitted yet.
   const serializedRef = useRef<string | null>(null);
+  // W1.2 — maps each emission back onto the file as written, so unedited
+  // blocks keep their exact source (see sourcePreserve.ts).
+  const preserveRef = useRef<((md: string) => string) | null>(null);
+  const restoreSource = (md: string) => {
+    const p = preserveRef.current;
+    if (!p) return md;
+    try {
+      return p(md);
+    } catch (e) {
+      log.warn("[wysiwyg] source-preserving save failed; writing the serialization", e);
+      return md;
+    }
+  };
   // This instance's view as registered for the palette's commands; another
   // instance (Focus Mode over the main editor) may be registered too, so
   // only this one is unregistered.
@@ -681,7 +712,7 @@ export default function WysiwygEditor({ value, onChange, spellCheck = true }: Pr
     }
     if (md === serializedRef.current) return;
     serializedRef.current = md;
-    const full = frontmatterRef.current + md;
+    const full = frontmatterRef.current + restoreSource(md);
     if (full !== lastEmittedRef.current) {
       lastEmittedRef.current = full;
       onChangeRef.current(full);
@@ -702,6 +733,7 @@ export default function WysiwygEditor({ value, onChange, spellCheck = true }: Pr
     const ed = editorRef.current;
     editorRef.current = null;
     serializedRef.current = null;
+    preserveRef.current = null;
     if (registeredViewRef.current) unregisterWysiwygView(registeredViewRef.current);
     registeredViewRef.current = null;
     if (!ed) return;
@@ -754,7 +786,7 @@ export default function WysiwygEditor({ value, onChange, spellCheck = true }: Pr
             if (gen !== genRef.current) return;
             if (md === serializedRef.current) return; // already flushed
             serializedRef.current = md;
-            const full = frontmatterRef.current + md;
+            const full = frontmatterRef.current + restoreSource(md);
             lastEmittedRef.current = full;
             onChangeRef.current(full);
           });
@@ -774,6 +806,10 @@ export default function WysiwygEditor({ value, onChange, spellCheck = true }: Pr
             remoteImagePlugin(),
             // 9.2 layer 1 — the browser / OS spellchecker, Hebrew included, no dictionary in the bundle.
             new Plugin({ props: { attributes: () => ({ spellcheck: spellCheckRef.current ? "true" : "false" }) } }),
+            // W5.4 — direction-control tags, the Trojan Source paste warning.
+            wysiwygBidiMarksPlugin(),
+            // W5.5 — "Looks reversed — fix?" after pasting Hebrew from a PDF.
+            wysiwygPdfPastePlugin(),
             new Plugin({
               appendTransaction: (trs) => {
                 if (trs.some((t) => t.docChanged || t.storedMarksSet)) pendingSinceRef.current = Date.now();
@@ -782,6 +818,9 @@ export default function WysiwygEditor({ value, onChange, spellCheck = true }: Pr
             }),
             // γ.1.b — Tab / Shift-Tab indent / outdent inside lists.
             buildIndentKeymap(),
+            // W2.13 — outline mode: fold, zoom and block operations.
+            wysiwygOutlineKeymap(),
+            wysiwygOutlinePlugin(),
           ]);
 
           ctx.set(slash.key, {
@@ -922,6 +961,10 @@ export default function WysiwygEditor({ value, onChange, spellCheck = true }: Pr
         .use(gfm)
         // After both presets: their list schemas, without the spread check that broke every list.
         .use(listSpreadFix)
+        // W1.3 — ==highlights==, callouts and %%comments%%.
+        .use(wysiwygObsidianPlugins)
+        // W1.4 — clipboard HTML cleaned before ProseMirror parses it.
+        .use(pasteCleanPlugin)
         .use(history)
         .use(listener)
         .use(clipboard)
@@ -945,9 +988,41 @@ export default function WysiwygEditor({ value, onChange, spellCheck = true }: Pr
       registeredViewRef.current = editor.action((ctx) => ctx.get(editorViewCtx));
       registerWysiwygView(registeredViewRef.current);
       serializedRef.current = editor.action(getMarkdown());
+      try {
+        preserveRef.current = wysiwygSourcePreserver(body, serializedRef.current).restore;
+      } catch (e) {
+        log.warn("[wysiwyg] could not map the source; saves will use the serialization", e);
+        preserveRef.current = null;
+      }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
+
+  // W1.4 — "Paste as plain text" / "Paste with formatting" from the palette.
+  useEffect(() => {
+    setWysiwygPasteTarget(true);
+    const onPaste = (e: Event) => {
+      const ed = editorRef.current;
+      const detail = (e as CustomEvent<PasteDetail>).detail;
+      if (!ed || !detail) return;
+      try {
+        if (detail.mode === "plain") {
+          ed.action((ctx) => {
+            const view = ctx.get(editorViewCtx);
+            view.dispatch(view.state.tr.insertText(detail.text));
+            view.focus();
+          });
+        } else ed.action(insertMarkdown(detail.markdown));
+      } catch (err) {
+        log.warn("[wysiwyg] paste command failed", err);
+      }
+    };
+    window.addEventListener("lumen-paste", onPaste);
+    return () => {
+      setWysiwygPasteTarget(false);
+      window.removeEventListener("lumen-paste", onPaste);
+    };
+  }, []);
 
   // Final teardown — queued behind any in-flight build so the floating
   // menu DOM is only removed once no plugin view can still reference it.

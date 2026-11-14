@@ -1,0 +1,14 @@
+{
+  "about": "Known fuzz findings (plan W1.27) that are not fixed yet. Each one expires (at most 90 days out): after that date the finding fails the run again. Crashes are never listed here.",
+  "findings": [
+    {
+      "target": "markdown",
+      "kind": "slow",
+      "found": "2026-11-10",
+      "expires": "2027-02-07",
+      "inputs": "seed 1, e.g. #232, #427, #559, #661, #1539, #1651, #1915 (7 of the first 2,000)",
+      "what": "8–14 KB inputs with deep nesting (lists, block quotes, [[ runs, footnotes, directives) took 0.5–2.8 s in the remark/rehype chain, measured alone in the Vercel Sandbox (Node 24). Cause: thousands of [ / ] in one block (micromark's label ends look back through the open link starts) and lists 231 levels deep.",
+      "next": "Fixed by plan W4.16 (src/renderer/boundMarkdown.ts: a block over 256 brackets or 32 nesting levels is shown as raw text; the preview and this fuzz target both apply it). Delete this entry after `npm run fuzz` (1,000,000 inputs) shows no Markdown input over 200 ms."
+    }
+  ]
+}

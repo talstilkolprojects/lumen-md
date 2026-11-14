@@ -217,6 +217,33 @@ describe("moving the vault into a folder", () => {
     expect((await listTrash()).map((t) => t.originalPath)).toEqual(["פרויקטים/סיכום.md"]);
   });
 
+  it("a note trashed in the folder is not trashed a second time when moving back (W1.32, Codex P2 on #235)", async () => {
+    await seed();
+    const opfs = createOpfsBackend();
+    await moveVault(loc(folder()));
+    // In the folder, the Hebrew note goes to the trash (not deleted for good).
+    const { trashPaths } = await import("../storage/fileOps");
+    await trashPaths(["פרויקטים/סיכום.md"]);
+    const r = await moveVault({ kind: "opfs" });
+    expect(r.trashed).toBe(1);
+    expect(await opfs.stat("פרויקטים/סיכום.md")).toBeNull();
+    const { listTrash } = await import("../storage/trash");
+    expect((await listTrash()).map((t) => t.originalPath)).toEqual(["פרויקטים/סיכום.md"]);
+  });
+
+  it("reopening the folder that is already the vault changes nothing: open notes stay attached (W1.32, Codex P2 on #235)", async () => {
+    const replaced = vi.fn();
+    setOnVaultReplaced(replaced);
+    const f = folder();
+    await openFolderAsVault(f.handle);
+    expect(replaced).toHaveBeenCalledTimes(1);
+    expect(await openFolderAsVault(f.handle)).toBe(true);
+    expect(replaced).toHaveBeenCalledTimes(1);
+    // Another folder still switches.
+    await openFolderAsVault(folder("Other").handle);
+    expect(replaced).toHaveBeenCalledTimes(2);
+  });
+
   it("a no-copy switch drops an interrupted move (its source is no longer the vault)", async () => {
     store.set("lumen-vault-move", { from: { kind: "opfs" }, to: loc(folder("A")), startedAt: 1, written: { "a.md": "x" }, total: 1 });
     await restoreVaultLocation();

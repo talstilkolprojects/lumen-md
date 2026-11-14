@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Hebrew (Android's resource qualifier for Hebrew is "iw"). Plan W3.4. -->
+<resources>
+    <string name="widget_search">חיפוש</string>
+    <string name="widget_quick_note">פתק מהיר</string>
+    <string name="widget_daily">היום</string>
+    <string name="widget_description">חיפוש, פתק מהיר או הפתק של היום.</string>
+    <string name="shortcut_capture_short">פתק מהיר</string>
+    <string name="shortcut_capture_long">כתיבת פתק מהיר</string>
+    <string name="shortcut_voice_short">פתק קולי</string>
+    <string name="shortcut_voice_long">הקלטת פתק קולי</string>
+    <string name="shortcut_search_short">חיפוש</string>
+    <string name="shortcut_search_long">חיפוש בפתקים</string>
+    <string name="shortcut_daily_short">היום</string>
+    <string name="shortcut_daily_long">פתיחת הפתק של היום</string>
+</resources>

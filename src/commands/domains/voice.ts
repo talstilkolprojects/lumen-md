@@ -2,9 +2,10 @@
 import { cmdIcons, type Command } from "../../ui/CommandPalette";
 import { useAppStore } from "../../store/useStore";
 import { t, getLocale } from "../../i18n";
-import { uiConfirm, uiPrompt } from "../../ui/PromptDialog";
+import { uiConfirm, uiPrompt, uiSelect } from "../../ui/PromptDialog";
 import { getAiPolicy } from "../../ai/policy";
 import { showAiToast } from "../../ui/AiToast";
+import { explainError } from "../../lib/userError";
 
 /** Read the note aloud (text to speech). */
 export function buildReadAloudCommands(): Command[] {
@@ -16,34 +17,61 @@ export function buildReadAloudCommands(): Command[] {
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
       action: async () => {
-        const tts = await import("../../ai/tts");
-        if (tts.isSpeaking()) {
-          tts.stopSpeaking();
-          return;
-        }
-        if (!tts.ttsAvailable()) {
-          showAiToast(t("toast.tts.unavailable"), "error");
-          return;
-        }
-        const content = useAppStore.getState().doc.content;
-        // why: claim the reading before any await — a second press while voices load or the prompt is open stops it, never starts a second one
-        const run = tts.beginSpeaking();
-        await tts.voicesReady(); // why: the list is empty until voiceschanged on a fresh page
-        if (!tts.isCurrentRun(run)) return;
-        // No voice on this device, but the browser offers network voices: ask once (never under local-only).
-        if (!tts.hasLocalVoiceFor(content, getLocale()) && tts.offersNetworkVoices() && !tts.networkVoicesAllowed() && getAiPolicy() !== "local-only") {
-          const yes = await uiConfirm({ title: t("tts.networkVoice.title"), message: t("tts.networkVoice.body"), okLabel: t("tts.networkVoice.ok") });
-          if (yes) tts.allowNetworkVoices();
-          if (!tts.isCurrentRun(run)) return;
-        }
-        const ok = await tts
-          .speak(content, {
-            run,
-            uiLang: getLocale(),
-            onSentence: (s) => window.dispatchEvent(new CustomEvent("lumen-speech-range", { detail: { from: s.from, to: s.to } })),
-          })
-          .finally(() => window.dispatchEvent(new CustomEvent("lumen-speech-range", { detail: null })));
-        if (!ok) showAiToast(t(/[\u0590-\u05FF]/.test(content) ? "toast.tts.noHebrewVoice" : "toast.tts.noLocalVoice"), "info");
+        const store = useAppStore.getState();
+        // why: the reading-aids speed (plan W5.6); a small lazy module, loaded with the reading
+        const [tts, { loadAids }] = await Promise.all([import("../../ai/tts"), import("../../reading/readingAids")]);
+        await tts.readAloudCommand({
+          content: store.doc.content,
+          doc: store.doc,
+          uiLang: getLocale(),
+          t,
+          toast: showAiToast,
+          rate: loadAids().rate,
+          // No voice on this device, but the browser offers network voices: ask once (never under local-only).
+          confirmNetworkVoice: () =>
+            getAiPolicy() === "local-only" ? Promise.resolve(false) : uiConfirm({ title: t("tts.networkVoice.title"), message: t("tts.networkVoice.body"), okLabel: t("tts.networkVoice.ok") }),
+        });
+      },
+    },
+    {
+      id: "note.readSettings",
+      label: t("cmd.note.readSettings"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      // Read aloud: voice and speed (plan W2.6); the speed is the reading aids' one (W5.6).
+      action: async () => {
+        const [tts, aids] = await Promise.all([import("../../ai/tts"), import("../../reading/readingAids")]);
+        await tts.readAloudSettings({
+          content: useAppStore.getState().doc.content,
+          uiLang: getLocale(),
+          t,
+          toast: showAiToast,
+          select: uiSelect,
+          rate: aids.loadAids().rate,
+          setRate: (rate) => aids.saveAids({ ...aids.loadAids(), rate }),
+        });
+      },
+    },
+    {
+      id: "reading.aids",
+      label: t("cmd.reading.aids"),
+      hint: t("cmd.reading.aids.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: async () => {
+        const { openReadingAids } = await import("../../ui/ReadingAids");
+        openReadingAids();
+      },
+    },
+    {
+      id: "nikud.display",
+      label: t("cmd.nikud.display"),
+      hint: t("cmd.nikud.display.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: async () => {
+        const { toggleDisplayNikud } = await import("../../ui/ReadingAids");
+        await toggleDisplayNikud();
       },
     },
   ];
@@ -52,6 +80,15 @@ export function buildReadAloudCommands(): Command[] {
 /** Voice memo and dictation. */
 export function buildVoiceCommands(): Command[] {
   return [
+    {
+      // Plan W5.20: one spoken command, recognised and parsed on this device.
+      id: "voice.command",
+      label: t("cmd.voice.command"),
+      hint: t("cmd.voice.command.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: () => void import("../../ai/voice/run").then((m) => m.runVoiceCommand()),
+    },
     {
       id: "voice.memo",
       label: t("cmd.tools.voiceMemo"),
@@ -62,6 +99,13 @@ export function buildVoiceCommands(): Command[] {
         const { startVoiceMemo } = await import("../../ui/VoiceDictation");
         await startVoiceMemo();
       },
+    },
+    {
+      id: "voice.transcribeFile",
+      label: t("cmd.tools.transcribeFile"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: async () => (await import("../../ui/TranscribeFile")).transcribeAudioFile(),
     },
     {
       id: "help.credits",
@@ -84,6 +128,21 @@ export function buildVoiceCommands(): Command[] {
         const { startVoiceMemo } = await import("../../ui/VoiceDictation");
         await startVoiceMemo({ meeting: true });
       },
+    },
+    {
+      id: "voice.meetingFile",
+      label: t("cmd.voice.meetingFile"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      // Plan W2.7: a recording → transcript with speakers (W1.17 + diarization) → meeting notes.
+      action: async () => (await import("../../meetings/meetingTranscribe")).transcribeMeeting(),
+    },
+    {
+      id: "speakers.rename",
+      label: t("cmd.speakers.rename"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: async () => (await import("../../meetings/meetingTranscribe")).renameSpeakerInNote(),
     },
     {
       id: "ai.meetingNotes",
@@ -109,7 +168,7 @@ export function buildVoiceCommands(): Command[] {
           showAiToast(t("meeting.inserted", { n: res.notes.tasks.length }), "success");
           void offerIcs(res);
         } catch (e) {
-          if (!isAbort(e)) showAiToast((e as Error).message, "error");
+          if (!isAbort(e)) showAiToast(explainError(e), "error");
         } finally {
           op.end();
         }

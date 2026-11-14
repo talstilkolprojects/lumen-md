@@ -11,6 +11,7 @@ import { Code2, Play, Square, Trash2 } from "lucide-react";
 import { t } from "../i18n";
 import { DEFAULT_RUBY_TIMEOUT_MS, type RubyRunRequest, type RubyWorkerMessage } from "./ruby/rubyRuntime";
 import { RUBY_KILLED_EVENT, killRubyWorker, nextRubyRunId, rubyTurn, rubyWorker } from "./ruby/rubyClient";
+import "./liveRubyBlockStrings";
 
 interface Props {
   source: string;

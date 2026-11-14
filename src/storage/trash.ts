@@ -17,6 +17,7 @@ import {
   workspaceHasEntry,
   writeWorkspaceFile,
 } from "./workspace";
+import { VaultNotFoundError } from "./vault/types";
 
 export const TRASH_DIR = ".trash";
 const INDEX = `${TRASH_DIR}/index.json`;
@@ -51,6 +52,26 @@ export function trashedPathOf(item: TrashItem, path: string): string | null {
 }
 
 /** Items in the trash, newest first. */
+/**
+ * The index as stored, or null when it cannot be read (storage failing, a
+ * damaged file). Unlike listTrash, an unreadable index is not an empty trash;
+ * a trash that was never written has no index file and is empty.
+ */
+export async function readTrashIndex(): Promise<TrashItem[] | null> {
+  let text: string;
+  try {
+    text = await readWorkspaceFile(INDEX);
+  } catch (e) {
+    return e instanceof VaultNotFoundError ? [] : null;
+  }
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    return Array.isArray(parsed) ? (parsed as TrashItem[]) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function listTrash(): Promise<TrashItem[]> {
   return (await readIndex()).sort((a, b) => b.trashedAt - a.trashedAt);
 }

@@ -18,7 +18,7 @@
  */
 import { decodeNamedCharacterReference } from "decode-named-character-reference";
 import GithubSlugger, { slug as headingSlug } from "github-slugger";
-import { resolveWikiTarget, splitWikiTarget } from "../renderer/wikiLinks";
+import { splitWikiTarget } from "../renderer/wikiLinks";
 
 export type DoctorKind =
   | "broken-wiki-link"
@@ -359,6 +359,10 @@ const insideAny = (ranges: ReadonlyArray<[number, number]>, at: number) => range
  * setext headings, also inside block quotes; never in front matter, code
  * or raw HTML. Also feeds the `[[Note#` completion (4.5).
  */
+/** Not a paragraph line: a list item, a quote, an ATX heading, or a setext underline. */
+const NOT_TEXT = String.raw`(?! {0,3}(?:[-*+>]|\d+[.)])\s)(?! {0,3}#{1,6}(?:[ \t]|$))(?! {0,3}(?:=+|-+)[ \t]*$)`;
+const SETEXT_HEADING = new RegExp(String.raw`^(${NOT_TEXT} {0,3}\S[^\n]*\n(?:${NOT_TEXT}[ \t]*\S[^\n]*\n)*) {0,3}(?:=+|-+)[ \t]*$`, "gm");
+
 export function noteHeadings(text: string): string[] {
   return noteHeadingLines(text).map((h) => h.text);
 }
@@ -374,9 +378,11 @@ export function noteHeadingLines(text: string): Array<{ text: string; line: numb
   const found: Array<{ at: number; raw: string }> = [];
   // ATX headings may be indented up to 3 spaces (4+ is indented code).
   for (const m of fenced.matchAll(/^ {0,3}#{1,6}[ \t]+(.+?)\s*#*\s*$/gm)) found.push({ at: m.index ?? 0, raw: m[1] });
-  // Setext headings: a text line underlined with === or --- (the line
-  // above must be text, not a list item, quote or blank line).
-  for (const m of fenced.matchAll(/^(?! {0,3}([-*+>]|\d+[.)])\s)( {0,3}\S[^\n]*)\n {0,3}(=+|-+)[ \t]*$/gm)) found.push({ at: m.index ?? 0, raw: m[2].trim() });
+  // Setext headings: the whole paragraph above a === or --- underline (its
+  // lines must be text, not a list item, quote, ATX heading or another
+  // underline). A wrapped heading renders as one heading whose text keeps the
+  // line break, and its id is slugged from all of it (W1.32, Codex on #238).
+  for (const m of fenced.matchAll(SETEXT_HEADING)) found.push({ at: m.index ?? 0, raw: m[1].split("\n").map((x) => x.trim()).filter(Boolean).join("\n") });
   // Only whole `>` prefixes were removed, never a line: line numbers are the text's.
   return found.sort((a, b) => a.at - b.at).map((h) => ({ text: headingText(h.raw), line: lineAt(fenced, h.at) - 1 }));
 }
@@ -487,6 +493,8 @@ function similarity(a: Uint32Array, b: Uint32Array): number {
 export interface DoctorOptions {
   /** Minimum estimated similarity to report two notes as near-duplicates. */
   duplicateThreshold?: number;
+  /** Skip the near-duplicate pass (the vault integrity check only wants links). */
+  skipDuplicates?: boolean;
 }
 
 export function runVaultDoctor(notes: readonly DoctorNote[], opts: DoctorOptions = {}): DoctorFinding[] {
@@ -504,6 +512,23 @@ export function runVaultDoctor(notes: readonly DoctorNote[], opts: DoctorOptions
     names.set(key, [...(names.get(key) ?? []), p]);
   }
   const headings = new Map(md.map((n) => [n.path, headingsOf(n.text)]));
+  // resolveWikiTarget (../renderer/wikiLinks) with the paths indexed, so a
+  // large vault is not scanned once per link: the first path whose whole
+  // path matches, else the first whose file name matches.
+  const strip = (p: string) => p.toLowerCase().replace(/\.(md|markdown)$/, "");
+  const byPath = new Map<string, string>();
+  const byName = new Map<string, string>();
+  for (const p of paths) {
+    if (!byPath.has(strip(p))) byPath.set(strip(p), p);
+    const name = strip(p.split("/").pop() ?? p);
+    if (!byName.has(name)) byName.set(name, p);
+  }
+  const resolveWiki = (target: string): string | null => {
+    const want = target.trim().toLowerCase().replace(/\.(md|markdown)$/, "");
+    if (!want) return null;
+    return byPath.get(want) ?? byName.get(want) ?? null;
+  };
+  const pathSet = new Set(paths);
   const incoming = new Map<string, number>(paths.map((p) => [p, 0]));
   const findings: DoctorFinding[] = [];
 
@@ -535,7 +560,7 @@ export function runVaultDoctor(notes: readonly DoctorNote[], opts: DoctorOptions
       // `[[Heading]]` to a heading in this same note wins over a note of
       // that name (the preview jumps in-page first).
       if (!heading && hasHeading(headings.get(note.path), target)) continue;
-      const resolved = resolveWikiTarget(target, paths);
+      const resolved = resolveWiki(target);
       if (resolved) {
         if (resolved !== note.path) incoming.set(resolved, (incoming.get(resolved) ?? 0) + 1);
         if (heading && !hasHeading(headings.get(resolved), heading)) {
@@ -577,7 +602,7 @@ export function runVaultDoctor(notes: readonly DoctorNote[], opts: DoctorOptions
       }
       const target = parts.join("/");
       // Relative links are file paths: case matters (OPFS / most servers).
-      if (!escapes && paths.includes(target)) {
+      if (!escapes && pathSet.has(target)) {
         const real = target;
         if (real !== note.path) incoming.set(real, (incoming.get(real) ?? 0) + 1);
       } else {
@@ -610,6 +635,8 @@ export function runVaultDoctor(notes: readonly DoctorNote[], opts: DoctorOptions
       findings.push({ kind: "orphan", path: p });
     }
   }
+
+  if (opts.skipDuplicates) return findings;
 
   // Near-duplicates via LSH: only notes sharing a band are compared.
   const sigs = md.map((n) => {

@@ -1,0 +1,8 @@
+filters: file.hasTag("journal")
+views:
+  - type: list
+    name: Journal
+    order: [file.name]
+    sort:
+      - property: file.name
+        direction: ASC

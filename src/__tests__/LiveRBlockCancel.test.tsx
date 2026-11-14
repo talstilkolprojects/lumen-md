@@ -10,6 +10,7 @@ let release: (() => void) | null = null;
 let startHook: (() => void) | undefined;
 let bootHangs = false;
 vi.mock("../plugins/r/rRuntime", () => ({
+  webrAvailable: async () => true,
   getWebR: () => (bootHangs ? new Promise(() => {}) : Promise.resolve({})),
   resetWebR: () => resetWebR(),
   // A run that starts only when the test says so (queued behind another).
@@ -32,8 +33,10 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+// Enough microtask turns for Run to reach runR: the webR availability check
+// (plan W1.34), the runtime import and the boot race each take a few.
 const flush = () => act(async () => {
-  for (let i = 0; i < 5; i++) await Promise.resolve();
+  for (let i = 0; i < 20; i++) await Promise.resolve();
 });
 
 describe("LiveRBlock cancellation", () => {

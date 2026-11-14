@@ -15,7 +15,7 @@ import { workspaceHasEntry, writeWorkspaceFile } from "../storage/workspace";
 import { __resetWorkspaceIndex } from "../storage/workspaceIndex";
 import { createElement } from "react";
 import { act, cleanup, render } from "@testing-library/react";
-import { keepWikiLinks, unescapeWikiLinks } from "../editor/wysiwygWikiLinks";
+import { keepWikiLinks, protectTypedEscapes, unescapeWikiLinks } from "../editor/wysiwygWikiLinks";
 import { wysiwygWikiComplete } from "../editor/wysiwygWikiComplete";
 import WysiwygEditor from "../editor/WysiwygEditor";
 import { getActiveWysiwygView } from "../editor/wysiwygSuggest";
@@ -91,6 +91,22 @@ describe("escaped wiki links in the WYSIWYG editor", () => {
     expect(onChange).toHaveBeenLastCalledWith(
       "Literal \\[\\[example]], real [[Note]], `\\[\\[code]]`, \\[\\[half]] and \\\\[[after a backslash]] end!\n",
     );
+  });
+});
+
+describe("an escape typed in the WYSIWYG editor (W1.32, Codex P2 on #238)", () => {
+  it("\\[\\[x]] typed as text is saved escaped, never as a live link", async () => {
+    const { editor, view } = await make("Start\n");
+    view.dispatch(view.state.tr.insertText(" \\[\\[x]]", view.state.doc.content.size - 1));
+    const out = editor.action(getMarkdown());
+    expect(out).toBe("Start \\[\\[x]]\n");
+    expect(out).not.toMatch(/(^|[^\\])\[\[x\]\]/);
+  });
+
+  it("only a backslash before both brackets counts; a backslash before a link stays a backslash and a link", () => {
+    expect(protectTypedEscapes("\\[\\[x]]")).toBe("[⁠[x]]");
+    expect(protectTypedEscapes("\\[[x]]")).toBe("\\[[x]]");
+    expect(protectTypedEscapes("plain [[x]]")).toBe("plain [[x]]");
   });
 });
 

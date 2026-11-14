@@ -23,7 +23,7 @@ import { existsSync, readFileSync, readdirSync, writeFileSync, chmodSync, mkdirS
 import { createServer } from "node:net";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { planSteps, e2eSpecs, i18nDrift, summary, coverageGate, hookPlan, buildState, argErrors } from "./lib/ciLocal.mjs";
+import { planSteps, e2eSpecs, i18nDrift, summary, coverageGate, hookPlan, buildState, argErrors, dynamicImportTargets } from "./lib/ciLocal.mjs";
 
 // fileURLToPath, not `.pathname`: a checkout in "lumen md/" is "lumen%20md/" in the URL.
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -79,12 +79,14 @@ function changedFiles() {
     console.error(`ci:local: cannot find a merge base with ${base}; pass --base <ref>`);
     process.exit(2);
   }
+  // --no-renames: a moved file is its deletion plus its addition, so the old
+  // path (say public/templates/x.md, still referenced by name) is planned too.
   const files = new Set([
     // New files not yet staged count too (untracked, not ignored).
     ...(git("ls-files", "--others", "--exclude-standard") ?? "").split("\n"),
-    ...(git("diff", "--name-only", mergeBase, "HEAD") ?? "").split("\n"),
-    ...(git("diff", "--name-only") ?? "").split("\n"),
-    ...(git("diff", "--name-only", "--cached") ?? "").split("\n"),
+    ...(git("diff", "--name-only", "--no-renames", mergeBase, "HEAD") ?? "").split("\n"),
+    ...(git("diff", "--name-only", "--no-renames") ?? "").split("\n"),
+    ...(git("diff", "--name-only", "--no-renames", "--cached") ?? "").split("\n"),
   ]);
   files.delete("");
   const deleted = [...files].filter((f) => !existsSync(f)).length;
@@ -176,7 +178,28 @@ async function e2eStep(changed, state) {
 
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
 const changed = changedFiles();
-const steps = planSteps({ pkg, exists: existsSync, changed, flags: { skip: list("skip"), only: list("only"), coverage: flag("coverage") } });
+/** src/ sources, for the modules reached only by a dynamic import (changed mode). */
+function sourcesUnder(dir) {
+  const out = [];
+  const walk = (d) => {
+    let entries = [];
+    try {
+      entries = readdirSync(d, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      const p = `${d}/${e.name}`;
+      if (e.isDirectory()) {
+        if (e.name !== "node_modules" && !e.name.startsWith(".")) walk(p);
+      } else if (/\.(m?[jt]sx?)$/.test(e.name)) out.push({ path: p, text: readFileSync(p, "utf8") });
+    }
+  };
+  walk(dir);
+  return out;
+}
+const dynamicTargets = changed === null ? undefined : dynamicImportTargets(sourcesUnder("src"));
+const steps = planSteps({ pkg, exists: existsSync, changed, dynamicTargets, flags: { skip: list("skip"), only: list("only"), coverage: flag("coverage") } });
 const results = [];
 let failed = false;
 for (const s of steps) {

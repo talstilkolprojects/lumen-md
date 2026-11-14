@@ -1,0 +1,46 @@
+{
+  "format": "lumen-store-privacy-labels/1",
+  "basis": "What the privacy report and the published local-only audits show (docs: security/privacy-report). src/__tests__/privacyLabels.test.ts keeps this file in step with the privacy ledger's categories and with the published audits.",
+  "default": {
+    "summary": "With the default settings (no cloud key, no sync provider, no crash-reporting key in the build) nothing leaves the device: the local-only audit shows 0 non-local requests.",
+    "dataLeavesDevice": false
+  },
+  "apple": {
+    "tracking": false,
+    "dataNotCollected": true,
+    "dataTypes": [
+      {
+        "category": "Diagnostics",
+        "type": "Crash Data",
+        "linkedToUser": false,
+        "usedForTracking": false,
+        "condition": "Only in a build made with a crash-reporting key (VITE_SENTRY_DSN), and only until the user opts out (Settings). Personal data is scrubbed before sending (src/lib/telemetry.ts)."
+      }
+    ],
+    "note": "Everything under optionalFeatures is sent by the user's own choice to the service the user set up (their own key or account); the developer receives none of it."
+  },
+  "google": {
+    "dataCollected": false,
+    "dataShared": false,
+    "encryptedInTransit": true,
+    "userCanRequestDeletion": "Nothing is held by the developer; all data is on the device.",
+    "conditionalCollection": [
+      {
+        "type": "App info and performance: Crash logs",
+        "optional": true,
+        "condition": "Only in a build made with a crash-reporting key (VITE_SENTRY_DSN), and only until the user opts out."
+      }
+    ]
+  },
+  "optionalFeatures": [
+    { "feature": "Cloud AI (OpenAI, Anthropic, Google Gemini, Mistral)", "ledgerCategory": "cloud-ai", "sends": "The text you send to the AI", "turnedOnBy": "Your own API key and the cloud or local-first AI policy; refused under local-only" },
+    { "feature": "Cloud grammar check (LanguageTool)", "ledgerCategory": "cloud-text", "sends": "The text being checked", "turnedOnBy": "A policy other than local-only; refused under local-only" },
+    { "feature": "Research service", "ledgerCategory": "research", "sends": "Your search query", "turnedOnBy": "Running a research command with a research service configured; refused under local-only" },
+    { "feature": "Canvas (tldraw) licence check", "ledgerCategory": "third-party", "sends": "The page address", "turnedOnBy": "Opening a canvas in a production build; refused under local-only" },
+    { "feature": "Model and dictionary downloads (Hugging Face, GitHub)", "ledgerCategory": "model-download", "sends": "Nothing of yours (a download)", "turnedOnBy": "Choosing a local model or a dictionary" },
+    { "feature": "Canvas fonts, icons and translations", "ledgerCategory": "static-asset", "sends": "Nothing of yours (static files)", "turnedOnBy": "Opening a canvas" },
+    { "feature": "Other requests in audit mode", "ledgerCategory": "network", "sends": "Whatever that request carries; listed so an audit can compare", "turnedOnBy": "Audit mode only (lumen.privacy.audit)" },
+    { "feature": "Encrypted sync (WebDAV, S3, Dropbox, Google Drive)", "ledgerCategory": null, "sends": "Ciphertext only, to the storage you chose", "turnedOnBy": "Connecting a sync provider" },
+    { "feature": "Live collaboration", "ledgerCategory": null, "sends": "End-to-end encrypted edits, to your collaborators (and a collab server, if configured)", "turnedOnBy": "Starting or joining a session" }
+  ]
+}

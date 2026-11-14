@@ -5,6 +5,10 @@
  *           degraded (blur, rotation, noise, low contrast) or pointed (nikud)
  *   pages — synthetic pages (heading, paragraphs, a list); the browser's own
  *           line breaks are read back as the ground truth
+ *   mixed — (plan W1.18) synthetic pages in two or three columns under a
+ *           heading, whose paragraphs mix Latin words, prefixed Latin words
+ *           ("ב-Zoom"), e-mail addresses and numbers into Hebrew prose; the
+ *           browser's lines are read back in logical (reading) order
  *
  * Text: Project Ben-Yehuda public-domain essays (genre article, nikud
  * removed), pointed verse from Ben-Yehuda works the nikud set never scans,
@@ -139,6 +143,48 @@ const DOC_LINES = [
 ];
 const SLUGS = ["about", "contact", "docs/start", "blog/2024", "help"];
 
+/** Mixed-script sentences (written for this set, plan W1.18): Latin terms inside Hebrew, often behind a prefix letter. */
+const MIXED_LINES = [
+  "את הקובץ שמרנו ב-{cloud} ושלחנו קישור ב-{chat}.",
+  "הגרסה החדשה של {app} תומכת ב-{tech} וב-{tech2}.",
+  "לפרטים נוספים כתבו ל-{mail} עד {date}.",
+  "הדוח יוצא כקובץ {fmt} וגם כ-{fmt2} לפי הבחירה.",
+  "בישיבה ב-{chat} הוחלט לעבור ל-{app} כבר בחודש הבא.",
+  "המערכת רצה על {os} ומתעדכנת דרך {tool} בכל לילה.",
+  "התמיכה ב-{tech} עדיין חלקית, ולכן כדאי לבדוק את {app} קודם.",
+  "הנתונים נשמרים ב-{db}, והגיבוי עובר ל-{cloud} פעם ביום.",
+  "מספר הגרסה {ver} פורסם ב-{site} יחד עם הערות שחרור.",
+  "את הסקריפט כתבו ב-{lang} והריצו אותו מתוך {tool}.",
+  "ההרצאה על {topic} תועבר ב-{chat} ותוקלט ל-{video}.",
+  "חיבור ה-{tech} נכשל, אז עברנו ל-{tech2} בינתיים.",
+];
+const MIXED_VALUES = {
+  cloud: ["Google Drive", "Dropbox", "OneDrive", "iCloud"],
+  chat: ["Zoom", "Slack", "WhatsApp", "Teams"],
+  app: ["Firefox", "Chrome", "Excel", "Photoshop", "Notion"],
+  tech: ["Bluetooth", "Wi-Fi", "USB", "HDMI", "NFC"],
+  tech2: ["Ethernet", "LTE", "GPS", "WebGPU"],
+  mail: ["info@example.org", "office@example.co.il", "help@example.com"],
+  fmt: ["PDF", "CSV", "DOCX", "HTML"],
+  fmt2: ["JSON", "XML", "Markdown", "ODT"],
+  os: ["Linux", "Windows", "macOS", "Android"],
+  tool: ["Docker", "GitHub", "Jenkins", "Terminal"],
+  db: ["PostgreSQL", "SQLite", "MongoDB", "Redis"],
+  site: ["GitHub", "Wikipedia", "YouTube"],
+  lang: ["Python", "JavaScript", "Rust", "Java"],
+  topic: ["Machine Learning", "OCR", "Unicode", "TypeScript"],
+  video: ["YouTube", "Vimeo"],
+};
+
+export function mixedLine(seed, key) {
+  const h = (k) => parseInt(rankKey(seed, `${key}:${k}`).slice(0, 8), 16);
+  const t = MIXED_LINES[h("t") % MIXED_LINES.length];
+  const v = (k) => (MIXED_VALUES[k] ? MIXED_VALUES[k][h(k) % MIXED_VALUES[k].length] : null);
+  const two = (k, mod, base = 0) => String(base + (h(k) % mod)).padStart(2, "0");
+  const fixed = { ver: `${1 + (h("v") % 4)}.${h("v2") % 10}`, date: `${two("d", 28, 1)}.${two("mo", 12, 1)}.${2020 + (h("y") % 7)}` };
+  return t.replace(/\{(\w+)\}/g, (_, k) => v(k) ?? fixed[k]);
+}
+
 export function docLine(seed, key) {
   const h = (k) => parseInt(rankKey(seed, `${key}:${k}`).slice(0, 8), 16);
   const t = DOC_LINES[h("t") % DOC_LINES.length];
@@ -254,6 +300,32 @@ function planPages(pools, split, seed, n, devUsed) {
   return items;
 }
 
+/** Plan W1.18: pages in 2 or 3 columns under a heading, each paragraph one or two prose sentences with mixed-script sentences between them. */
+function planMixed(pools, split, seed, n, devUsed) {
+  const avail = pools.prosePages.filter((x) => !devUsed.has(x.id));
+  const prose = sample(avail, n * 6, `${seed}:mixed`);
+  const items = [];
+  for (let i = 0; i < n; i++) {
+    const id = `mixed-${split}-${String(i + 1).padStart(2, "0")}`;
+    const chunk = prose.slice(i * 6, i * 6 + 6);
+    const f = FONTS[pick(seed, `${id}:font`, FONTS.length)];
+    const m = (k) => mixedLine(seed, `${id}:${k}`);
+    const blocks = [
+      { tag: "h1", text: docLine(seed, `${id}:title`).replace(/[:|].*$/, "").trim() || "סיכום" },
+      { tag: "p", text: [chunk[0].text, m("a"), chunk[1].text].join(" ") },
+      { tag: "p", text: [m("b"), chunk[2].text, m("c")].join(" ") },
+      { tag: "li", text: `• ${m("d")}` },
+      { tag: "li", text: `• ${docLine(seed, `${id}:li`)}` },
+      { tag: "p", text: [chunk[3].text, m("e"), chunk[4].text].join(" ") },
+      { tag: "p", text: [m("f"), chunk[5].text].join(" ") },
+    ];
+    const it = { id, font: f.family, fontPackage: `@fontsource/${f.pkg}`, size: [18, 20][pick(seed, `${id}:size`, 2)], columns: pick(seed, `${id}:cols`, 3) === 0 ? 3 : 2, condition: pick(seed, `${id}:cond`, 3) === 0 ? "degraded" : "clean", blocks, sources: chunk.map((u) => ({ benyehuda: u.work, unit: u.id })) };
+    if (it.condition === "degraded") it.degrade = degrade(seed, id);
+    items.push(it);
+  }
+  return items;
+}
+
 // ── Rendering ───────────────────────────────────────────────────────────
 
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -281,6 +353,50 @@ export function pngWithText(png, text) {
   return Buffer.concat([png.subarray(0, ihdrEnd), len, type, data, crc, png.subarray(ihdrEnd)]);
 }
 
+/** The HTML one image is rendered from (exported for local probes that render with other fonts). */
+export function pageHtml(it, kind, css) {
+  const { filter, transform } = styleFor(it);
+  let body;
+  if (kind === "lines") {
+    body = `<div id="box" style="display:inline-block;position:relative;padding:18px 24px;background:#fff;overflow:hidden"><div style="${filter}${transform}font-family:'${it.font}';font-size:${it.size}px;font-weight:${it.weight};line-height:1.45;white-space:pre;color:#111">${esc(it.text)}</div>${noiseSvg(it.degrade)}</div>`;
+  } else {
+    const blocks = it.blocks.map((b, bi) => {
+      // Mixed pages: a word never breaks at its hyphen ("ב-" / "Zoom"), so each word sits on one recorded line.
+      const nowrap = kind === "mixed" ? ' style="white-space:nowrap"' : "";
+      const words = b.text.split(" ").map((w, wi) => `<span data-b="${bi}" data-w="${wi}"${nowrap}>${esc(w)}</span>`).join(" ");
+      if (b.tag === "h1") return `<h1 style="font-size:1.5em;margin:0 0 .6em">${words}</h1>`;
+      if (b.tag === "li") return `<div style="margin:.2em 1.2em 0 0">${words}</div>`;
+      return `<p style="margin:0 0 .8em;text-align:justify">${words}</p>`;
+    });
+    // Mixed pages: the heading across the page, the rest in columns (CSS columns flow right to left under dir="rtl").
+    const inner = kind === "mixed" ? `${blocks[0]}<div style="column-count:${it.columns};column-gap:48px;column-rule:0">${blocks.slice(1).join("")}</div>` : blocks.join("");
+    const width = kind === "mixed" ? 1000 : 760;
+    body = `<div id="box" style="position:relative;width:${width}px;padding:56px 64px;background:#fff;overflow:hidden"><div style="${filter}${transform}font-family:'${it.font}';font-size:${it.size}px;line-height:1.55;color:#111">${inner}</div>${noiseSvg(it.degrade)}</div>`;
+  }
+  return `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><style>${css}html,body{margin:0;background:#fff}</style></head><body>${body}</body></html>`;
+}
+
+/** Read back the rendered lines of a page: words grouped by their line box, in logical (DOM) order. Runs in the page. */
+export function readLines() {
+  // Measure without the rotation (a transform moves the boxes, not the line breaks).
+  const inner = document.querySelector("#box > div");
+  const saved = inner.style.transform;
+  inner.style.transform = "none";
+  const spans = [...document.querySelectorAll("span[data-w]")];
+  const rows = [];
+  for (const s of spans) {
+    const r = s.getClientRects()[0];
+    const mid = (r.top + r.bottom) / 2;
+    const b = s.dataset.b;
+    const last = rows.at(-1);
+    // A paragraph that goes on in the next column starts a new line there (same block, another height).
+    if (last && last.b === b && Math.abs(last.mid - mid) < (r.bottom - r.top) / 2) last.words.push(s.textContent);
+    else rows.push({ b, mid, words: [s.textContent] });
+  }
+  inner.style.transform = saved;
+  return rows.map((row) => ({ block: Number(row.b), text: row.words.join(" ") }));
+}
+
 let rendererVersion = "";
 
 async function render(items, { cache, splitDir, partId, canary, kind }) {
@@ -294,20 +410,7 @@ async function render(items, { cache, splitDir, partId, canary, kind }) {
     const page = await browser.newPage({ viewport: { width: 1400, height: 1000 }, deviceScaleFactor: 1 });
     const out = [];
     for (const it of items) {
-      const { filter, transform } = styleFor(it);
-      let body;
-      if (kind === "lines") {
-        body = `<div id="box" style="display:inline-block;position:relative;padding:18px 24px;background:#fff;overflow:hidden"><div style="${filter}${transform}font-family:'${it.font}';font-size:${it.size}px;font-weight:${it.weight};line-height:1.45;white-space:pre;color:#111">${esc(it.text)}</div>${noiseSvg(it.degrade)}</div>`;
-      } else {
-        const blocks = it.blocks.map((b, bi) => {
-          const words = b.text.split(" ").map((w, wi) => `<span data-b="${bi}" data-w="${wi}">${esc(w)}</span>`).join(" ");
-          if (b.tag === "h1") return `<h1 style="font-size:1.5em;margin:0 0 .6em">${words}</h1>`;
-          if (b.tag === "li") return `<div style="margin:.2em 1.2em 0 0">${words}</div>`;
-          return `<p style="margin:0 0 .8em;text-align:justify">${words}</p>`;
-        });
-        body = `<div id="box" style="position:relative;width:760px;padding:56px 64px;background:#fff;overflow:hidden"><div style="${filter}${transform}font-family:'${it.font}';font-size:${it.size}px;line-height:1.55;color:#111">${blocks.join("")}</div>${noiseSvg(it.degrade)}</div>`;
-      }
-      await page.setContent(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><style>${css}html,body{margin:0;background:#fff}</style></head><body>${body}</body></html>`);
+      await page.setContent(pageHtml(it, kind, css));
       // Load the faces this image uses (Hebrew and Latin subsets), then make sure they did.
       const loaded = await page.evaluate(
         async ({ fam, weight }) => {
@@ -326,26 +429,8 @@ async function render(items, { cache, splitDir, partId, canary, kind }) {
       const { _fi, blocks, ...rest } = it;
       let text = it.text;
       let lines;
-      if (kind === "pages") {
-        // Read back the rendered lines: words grouped by their line box, in logical order.
-        lines = await page.evaluate(() => {
-          // Measure without the rotation (a transform moves the boxes, not the line breaks).
-          const inner = document.querySelector("#box > div");
-          const saved = inner.style.transform;
-          inner.style.transform = "none";
-          const spans = [...document.querySelectorAll("span[data-w]")];
-          const rows = [];
-          for (const s of spans) {
-            const r = s.getClientRects()[0];
-            const mid = (r.top + r.bottom) / 2;
-            const b = s.dataset.b;
-            const last = rows.at(-1);
-            if (last && last.b === b && Math.abs(last.mid - mid) < (r.bottom - r.top) / 2) last.words.push(s.textContent);
-            else rows.push({ b, mid, words: [s.textContent] });
-          }
-          inner.style.transform = saved;
-          return rows.map((row) => ({ block: Number(row.b), text: row.words.join(" ") }));
-        });
+      if (kind !== "lines") {
+        lines = await page.evaluate(readLines);
         text = lines.map((l) => l.text).join("\n");
         rest.blocks = blocks.map((b) => ({ tag: b.tag }));
       }
@@ -366,7 +451,8 @@ const makePart = (kind) => ({
   },
   select(pool, opts) {
     const dSeed = devSeed(opts.set, opts.part);
-    const plan = (split, seed, used) => (kind === "lines" ? planLines(pool.pools, split, seed, used) : planPages(pool.pools, split, seed, split === "dev" ? opts.nDev : opts.nTest, used));
+    const count = (split) => (split === "dev" ? opts.nDev : opts.nTest);
+    const plan = (split, seed, used) => (kind === "lines" ? planLines(pool.pools, split, seed, used) : kind === "mixed" ? planMixed(pool.pools, split, seed, count(split), used) : planPages(pool.pools, split, seed, count(split), used));
     const dev = plan("dev", dSeed, new Set());
     if (kind === "lines" && dev.length !== opts.nDev) throw new Error(`ocr lines: plan gives ${dev.length} dev items, the manifest says ${opts.nDev}`);
     if (!opts.nTest) return { dev, test: [] };
@@ -387,18 +473,21 @@ const makePart = (kind) => ({
       sampling:
         kind === "lines"
           ? "per font: dev 3 clean + 1 degraded + 1 nikud, test 9 + 4 + 2; prose from the lines half of the essay pool, pointed verse from poetry the nikud set does not scan, document lines generated (docLine); texts, sizes, weights and degradations drawn with the split's seed; dev texts never reused in test"
-          : "9 essay sentences per page from the pages half of the essay pool, headings and list items generated (docLine); font, size and degradation drawn with the split's seed; dev texts never reused in test",
+          : kind === "mixed"
+            ? "6 essay sentences per page from the pages half of the essay pool, between mixed-script sentences generated here (mixedLine: Latin terms, prefixed Latin words, e-mail addresses); 2 or 3 columns under a heading; font, size, columns and degradation drawn with the split's seed; dev texts never reused in test"
+            : "9 essay sentences per page from the pages half of the essay pool, headings and list items generated (docLine); font, size and degradation drawn with the split's seed; dev texts never reused in test",
       renderer: `Chromium ${rendererVersion} via Playwright, deviceScaleFactor 1, grayscale PNG via sharp`,
     },
     fields:
       kind === "lines"
         ? { image: "PNG, relative to this split's folder", text: "the exact rendered text, lines separated by \\n", condition: "clean | degraded | nikud", font: "font family (OFL, @fontsource 5.3.0)", degrade: "blur px, rotation deg, contrast, noise seed", sources: "Ben-Yehuda work ids the text comes from" }
-        : { image: "PNG, relative to this split's folder", text: "the rendered lines, \\n-separated (the browser's own breaks)", lines: "[{block, text}]", blocks: "the block structure (h1, p, li)", condition: "clean | degraded" },
+        : { image: "PNG, relative to this split's folder", text: "the rendered lines, \\n-separated (the browser's own breaks), in reading order", lines: "[{block, text}]", blocks: "the block structure (h1, p, li)", condition: "clean | degraded", ...(kind === "mixed" ? { columns: "2 or 3: the blocks after the heading flow in that many columns, right to left" } : {}) },
     textLicense: "Ben-Yehuda texts are public domain; generated lines and the images are CC0 1.0",
   }),
 });
 
 export const lines = makePart("lines");
 export const pages = makePart("pages");
+export const mixed = makePart("mixed");
 
 export { sha256 };

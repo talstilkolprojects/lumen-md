@@ -24,6 +24,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { log } from "../lib/logger";
 import { fetchWithRetry } from "../lib/fetchRetry";
+import { explainError } from "../lib/userError";
 
 export interface FetchedSource {
   effectiveSource: string;
@@ -101,7 +102,7 @@ export function useFetchSource(
       .catch((e: Error) => {
         if (cancelled || e.name === "AbortError") return;
         log.warn(`fetch ${url} failed`, e);
-        setError(e.message);
+        setError(explainError(e, "fetch"));
         setLoading(false);
       });
     return () => {

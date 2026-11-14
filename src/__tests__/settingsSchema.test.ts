@@ -64,14 +64,22 @@ function storedKeys(): Map<string, string> {
       const value = consts.get(m[1]);
       if (value) add(star(value), file);
     }
-    // A zustand `persist` store: `name: "…",` right before `partialize`.
-    for (const m of src.matchAll(/\bname:\s*["'`]([^"'`]+)["'`],\s*\n\s*partialize:/g)) add(m[1], file);
+    // A zustand `persist` store: `name: "…",` before `partialize` in the same options object
+    // (comments and a `storage:` option may stand between them, as in useStore.ts since plan 8.4).
+    for (const m of src.matchAll(/\bname:\s*["'`]([^"'`]+)["'`],[^{}]*?\bpartialize:/g)) add(m[1], file);
   }
   return found;
 }
 
 function persistedFields(): string[] {
   const src = readFileSync(join(SRC, "store", "useStore.ts"), "utf8");
+  // `partialize: partializeAppState` names a function defined above the store (plan 8.4).
+  const named = /const partializeAppState = \(s: AppState\) =>\s*\(\{([\s\S]*?)\n {2}\}\);/.exec(src);
+  if (named) {
+    // Top-level fields (`name: s.name,` or `name: {`), and those of the branch spread in
+    // when the vault is not encrypted (`...(encrypted ? {} : { doc: {…}, openTabs })`).
+    return [...named[1].matchAll(/^(?: {4}| {10})(\w+):/gm)].map((m) => m[1]);
+  }
   const block = /partialize:\s*\(s\)\s*=>\s*\(\{([\s\S]*?)\n\s{6}\}\),/.exec(src);
   if (!block) throw new Error("partialize not found in useStore.ts");
   // Top-level fields only: `name: s.name,` or `name: {` (an object built inline).

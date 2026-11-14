@@ -4,6 +4,28 @@
   "source": "src/i18n/locales/en/cmd.json",
   "entries": [
     {
+      "key": "cmd.a11y.srVerbosity",
+      "en": "Screen reader announcements: {mode}",
+      "vars": [
+        "mode"
+      ]
+    },
+    {
+      "key": "cmd.a11y.srVerbosity.hint",
+      "en": "What the editor says as the cursor moves: headings and structure, every line, or nothing",
+      "vars": []
+    },
+    {
+      "key": "cmd.a11y.whereAmI",
+      "en": "Announce cursor position",
+      "vars": []
+    },
+    {
+      "key": "cmd.a11y.whereAmI.hint",
+      "en": "Line, column and the heading above, read by the screen reader",
+      "vars": []
+    },
+    {
       "key": "cmd.ai.actionItems",
       "en": "AI: Extract Action Items",
       "vars": []
@@ -209,6 +231,16 @@
       "vars": []
     },
     {
+      "key": "cmd.ai.organize",
+      "en": "AI: Organize the vault",
+      "vars": []
+    },
+    {
+      "key": "cmd.ai.organize.hint",
+      "en": "Missing links, tags, duplicates and maps of content — each change waits for your approval",
+      "vars": []
+    },
+    {
       "key": "cmd.ai.outline",
       "en": "AI: Generate Outline",
       "vars": []
@@ -354,6 +386,31 @@
       "vars": []
     },
     {
+      "key": "cmd.airplane.hint.off",
+      "en": "Off: stop every network request and list every attempt",
+      "vars": []
+    },
+    {
+      "key": "cmd.airplane.hint.on",
+      "en": "On since the switch: turning it off reloads the page",
+      "vars": []
+    },
+    {
+      "key": "cmd.airplane.monitor",
+      "en": "Network monitor…",
+      "vars": []
+    },
+    {
+      "key": "cmd.airplane.monitor.hint",
+      "en": "Every request the app tries, allowed or blocked, and where in the code it came from",
+      "vars": []
+    },
+    {
+      "key": "cmd.airplane.toggle",
+      "en": "Airplane mode (no network)…",
+      "vars": []
+    },
+    {
       "key": "cmd.app.checkUpdates",
       "en": "Check for updates…",
       "vars": []
@@ -361,6 +418,26 @@
     {
       "key": "cmd.app.checkUpdates.hint",
       "en": "Desktop app: asks the release server for a newer, signed version",
+      "vars": []
+    },
+    {
+      "key": "cmd.app.featureFlags",
+      "en": "Feature flags…",
+      "vars": []
+    },
+    {
+      "key": "cmd.app.featureFlags.hint",
+      "en": "Turn beta features on or off on this device",
+      "vars": []
+    },
+    {
+      "key": "cmd.app.updateChannel",
+      "en": "Update channel: switch between stable and beta",
+      "vars": []
+    },
+    {
+      "key": "cmd.app.updateChannel.hint",
+      "en": "Beta gets new features first; stable gets tested releases",
       "vars": []
     },
     {
@@ -401,6 +478,36 @@
     {
       "key": "cmd.canvas.migrate.hint",
       "en": "the .tldr files stay as backups",
+      "vars": []
+    },
+    {
+      "key": "cmd.cite.insert",
+      "en": "Insert a citation [@key]…",
+      "vars": []
+    },
+    {
+      "key": "cmd.cite.legal",
+      "en": "Citations: legal source (uniform citation rules)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.cite.legal.hint",
+      "en": "A ruling, a law, regulations, a bill, a book or an article, written by the Israeli uniform citation rules (3rd edition, 2021)",
+      "vars": []
+    },
+    {
+      "key": "cmd.cite.legalFromCase",
+      "en": "Citations: legal citation from the case number at the cursor",
+      "vars": []
+    },
+    {
+      "key": "cmd.cite.legalFromCase.hint",
+      "en": "Finds ע\"א, בג\"ץ, ת\"א … numbers and fills the citation picker; the citation replaces the number",
+      "vars": []
+    },
+    {
+      "key": "cmd.cite.syncZotero",
+      "en": "Citations: copy the Zotero library into the vault",
       "vars": []
     },
     {
@@ -459,6 +566,31 @@
       "vars": []
     },
     {
+      "key": "cmd.collab.namedVersions",
+      "en": "Named versions…",
+      "vars": []
+    },
+    {
+      "key": "cmd.collab.namedVersions.hint",
+      "en": "Name the current text (\"Before submission\") and compare versions word by word",
+      "vars": []
+    },
+    {
+      "key": "cmd.collab.share",
+      "en": "Share this note…",
+      "vars": []
+    },
+    {
+      "key": "cmd.collab.share.hint",
+      "en": "A link to view, comment or edit, that expires",
+      "vars": []
+    },
+    {
+      "key": "cmd.collab.sharedWithMe",
+      "en": "Shared with me",
+      "vars": []
+    },
+    {
       "key": "cmd.collab.start",
       "en": "Start collaboration…",
       "vars": []
@@ -484,6 +616,26 @@
       "vars": []
     },
     {
+      "key": "cmd.edit.bidiFix",
+      "en": "Clean direction marks and fix brackets",
+      "vars": []
+    },
+    {
+      "key": "cmd.edit.bidiFix.hint",
+      "en": "Remove marks that change nothing on screen and swap brackets typed backwards — one undo",
+      "vars": []
+    },
+    {
+      "key": "cmd.edit.fixPdfHebrew",
+      "en": "Fix reversed Hebrew (from a PDF)",
+      "vars": []
+    },
+    {
+      "key": "cmd.edit.fixPdfHebrew.hint",
+      "en": "Puts Hebrew copied from a PDF back in reading order, keeping numbers and English the right way round, and fixes final letters",
+      "vars": []
+    },
+    {
       "key": "cmd.edit.formatCodeBlock",
       "en": "Format code block at cursor",
       "vars": []
@@ -501,6 +653,41 @@
     {
       "key": "cmd.edit.formatDocument.hint",
       "en": "Prettier: tidy Markdown, frontmatter and fenced code",
+      "vars": []
+    },
+    {
+      "key": "cmd.edit.hebrewTypography",
+      "en": "Hebrew typography…",
+      "vars": []
+    },
+    {
+      "key": "cmd.edit.hebrewTypography.hint",
+      "en": "Gershayim, geresh, maqaf, quotation marks and numbers — as you type, or for the whole note with a preview",
+      "vars": []
+    },
+    {
+      "key": "cmd.edit.pasteFormatted",
+      "en": "Paste with formatting",
+      "vars": []
+    },
+    {
+      "key": "cmd.edit.pasteFormatted.hint",
+      "en": "Pastes HTML from Word, Google Docs or a website as clean Markdown: headings, lists, tables, links and emphasis, without styles",
+      "vars": []
+    },
+    {
+      "key": "cmd.edit.pastePlain",
+      "en": "Paste as plain text",
+      "vars": []
+    },
+    {
+      "key": "cmd.edit.pastePlain.hint",
+      "en": "Pastes the clipboard's text without any formatting",
+      "vars": []
+    },
+    {
+      "key": "cmd.epub.open",
+      "en": "Open an EPUB for reading…",
       "vars": []
     },
     {
@@ -708,6 +895,26 @@
       ]
     },
     {
+      "key": "cmd.file.sampleVault.hint",
+      "en": "notes made from the templates, with Bases views, in your language",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.sampleVault.researcher",
+      "en": "Open sample vault: researcher",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.sampleVault.student",
+      "en": "Open sample vault: student",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.sampleVault.writer",
+      "en": "Open sample vault: writer",
+      "vars": []
+    },
+    {
       "key": "cmd.file.save",
       "en": "Save",
       "vars": []
@@ -725,6 +932,16 @@
     {
       "key": "cmd.file.saveToWorkspace.hint",
       "en": "store this doc in OPFS",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.shareLink",
+      "en": "Share as encrypted link",
+      "vars": []
+    },
+    {
+      "key": "cmd.file.shareLink.hint",
+      "en": "A read-only copy inside the link, no server",
       "vars": []
     },
     {
@@ -823,8 +1040,58 @@
       "vars": []
     },
     {
+      "key": "cmd.help.a11yReport",
+      "en": "Report an accessibility problem",
+      "vars": []
+    },
+    {
+      "key": "cmd.help.a11yReport.hint",
+      "en": "Opens the accessibility issue form; these reports are triaged first",
+      "vars": []
+    },
+    {
+      "key": "cmd.help.a11yStatement",
+      "en": "Accessibility statement",
+      "vars": []
+    },
+    {
+      "key": "cmd.help.a11yStatement.hint",
+      "en": "How accessible Lumen is (IS 5568, WCAG 2.2 AA), known gaps, and how to report a barrier",
+      "vars": []
+    },
+    {
+      "key": "cmd.help.acr",
+      "en": "Accessibility conformance report (WCAG 2.2)",
+      "vars": []
+    },
+    {
+      "key": "cmd.help.acr.hint",
+      "en": "Every WCAG 2.2 A and AA criterion: status, evidence, remediation plan",
+      "vars": []
+    },
+    {
       "key": "cmd.help.credits",
       "en": "Credits & model licences",
+      "vars": []
+    },
+    {
+      "key": "cmd.help.diagnostics",
+      "en": "Save a diagnostics file",
+      "vars": []
+    },
+    {
+      "key": "cmd.help.diagnostics.hint",
+      "en": "version, settings, vault size and recent errors — no note text, no keys — to attach to an issue",
+      "vars": []
+    },
+    {
+      "key": "cmd.help.open",
+      "en": "Help",
+      "vars": []
+    },
+    {
+      "key": "cmd.help.open.hint",
+      "en": "the docs, on this device: search and read them offline",
       "vars": []
     },
     {
@@ -835,6 +1102,31 @@
     {
       "key": "cmd.help.setup.hint",
       "en": "Language, vault location, look and a sample vault: the first-run setup again",
+      "vars": []
+    },
+    {
+      "key": "cmd.help.whatsNew",
+      "en": "What's new in this version",
+      "vars": []
+    },
+    {
+      "key": "cmd.highlights.all",
+      "en": "All highlights",
+      "vars": []
+    },
+    {
+      "key": "cmd.highlights.import",
+      "en": "Import highlights (Kindle, Kobo, Readwise, Zotero)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.i18n.suggest",
+      "en": "Suggest a better translation",
+      "vars": []
+    },
+    {
+      "key": "cmd.i18n.suggest.hint",
+      "en": "Opens a GitHub issue filled in with the string, its English and your wording; no account in Lumen",
       "vars": []
     },
     {
@@ -918,6 +1210,16 @@
       "vars": []
     },
     {
+      "key": "cmd.insert.inlineMath",
+      "en": "Insert inline formula",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.inlineMath.hint",
+      "en": "A formula inside the sentence, $…$ (Ctrl/⌘+M). It stays left to right inside Hebrew text.",
+      "vars": []
+    },
+    {
       "key": "cmd.insert.json",
       "en": "Insert JSON table",
       "vars": []
@@ -973,6 +1275,51 @@
       "vars": []
     },
     {
+      "key": "cmd.lexicon.lookup",
+      "en": "Look up the Hebrew word at the cursor",
+      "vars": []
+    },
+    {
+      "key": "cmd.lexicon.lookup.hint",
+      "en": "Synonyms, definition and niqqud of the word, from the offline dictionary",
+      "vars": []
+    },
+    {
+      "key": "cmd.lexicon.pack",
+      "en": "Hebrew dictionary and synonyms (download / remove)",
+      "vars": []
+    },
+    {
+      "key": "cmd.lexicon.pack.hint",
+      "en": "Definitions, synonyms and niqqud from Hebrew Wiktionary, on this device; right-click a Hebrew word to use them",
+      "vars": []
+    },
+    {
+      "key": "cmd.mobile.customizeToolbar",
+      "en": "Customize the mobile toolbar",
+      "vars": []
+    },
+    {
+      "key": "cmd.mobile.customizeToolbar.hint",
+      "en": "The actions above the on-screen keyboard",
+      "vars": []
+    },
+    {
+      "key": "cmd.mobile.readLongNotes",
+      "en": "Phone: open long notes for reading",
+      "vars": []
+    },
+    {
+      "key": "cmd.mobile.readLongNotes.off",
+      "en": "Currently OFF",
+      "vars": []
+    },
+    {
+      "key": "cmd.mobile.readLongNotes.on",
+      "en": "Currently ON (tap the text to edit)",
+      "vars": []
+    },
+    {
       "key": "cmd.new",
       "en": "New document",
       "vars": []
@@ -985,6 +1332,16 @@
     {
       "key": "cmd.nikud.add.hint",
       "en": "Point the selection (or the whole note) on this device",
+      "vars": []
+    },
+    {
+      "key": "cmd.nikud.display",
+      "en": "Show niqqud (display only)",
+      "vars": []
+    },
+    {
+      "key": "cmd.nikud.display.hint",
+      "en": "Vowel points on the preview for reading; the note itself is not changed. Run again to hide",
       "vars": []
     },
     {
@@ -1008,6 +1365,26 @@
       "vars": []
     },
     {
+      "key": "cmd.note.morning",
+      "en": "Daily note: “Your morning”",
+      "vars": []
+    },
+    {
+      "key": "cmd.note.morning.hint",
+      "en": "Adds what changed, today's tasks, the cards to review and the Hebrew date to today's note — from this device only. Turns it on for every morning.",
+      "vars": []
+    },
+    {
+      "key": "cmd.note.morningOff",
+      "en": "Daily note: turn off “Your morning”",
+      "vars": []
+    },
+    {
+      "key": "cmd.note.morningOff.hint",
+      "en": "Today's notes are created without the morning block.",
+      "vars": []
+    },
+    {
       "key": "cmd.note.read",
       "en": "Read aloud",
       "vars": []
@@ -1015,6 +1392,11 @@
     {
       "key": "cmd.note.read.hint",
       "en": "Reads this note with your system's voices (Hebrew included); run again to stop",
+      "vars": []
+    },
+    {
+      "key": "cmd.note.readSettings",
+      "en": "Read aloud: voice and speed…",
       "vars": []
     },
     {
@@ -1033,6 +1415,76 @@
       "vars": []
     },
     {
+      "key": "cmd.outline.delete",
+      "en": "Outline: delete block",
+      "vars": []
+    },
+    {
+      "key": "cmd.outline.duplicate",
+      "en": "Outline: duplicate block",
+      "vars": []
+    },
+    {
+      "key": "cmd.outline.fold",
+      "en": "Outline: fold",
+      "vars": []
+    },
+    {
+      "key": "cmd.outline.foldAll",
+      "en": "Outline: fold all",
+      "vars": []
+    },
+    {
+      "key": "cmd.outline.indent",
+      "en": "Outline: indent block",
+      "vars": []
+    },
+    {
+      "key": "cmd.outline.moveDown",
+      "en": "Outline: move block down",
+      "vars": []
+    },
+    {
+      "key": "cmd.outline.moveUp",
+      "en": "Outline: move block up",
+      "vars": []
+    },
+    {
+      "key": "cmd.outline.outdent",
+      "en": "Outline: outdent block",
+      "vars": []
+    },
+    {
+      "key": "cmd.outline.toggleMode",
+      "en": "Open note as outline",
+      "vars": []
+    },
+    {
+      "key": "cmd.outline.toggleMode.hint",
+      "en": "Fold toggles on headings and lists, everything folded to the top level; the file stays plain Markdown",
+      "vars": []
+    },
+    {
+      "key": "cmd.outline.unfold",
+      "en": "Outline: unfold",
+      "vars": []
+    },
+    {
+      "key": "cmd.outline.unfoldAll",
+      "en": "Outline: unfold all",
+      "vars": []
+    },
+    {
+      "key": "cmd.outline.zoomIn",
+      "en": "Outline: zoom into block",
+      "vars": []
+    },
+    {
+      "key": "cmd.outline.zoomOut",
+      "en": "Outline: zoom out",
+      "vars": []
+    },
+    {
       "key": "cmd.pdf.open",
       "en": "Open a PDF for reading…",
       "vars": []
@@ -1048,6 +1500,46 @@
       "vars": []
     },
     {
+      "key": "cmd.privacy.imageHosts",
+      "en": "Privacy: allowed image hosts…",
+      "vars": []
+    },
+    {
+      "key": "cmd.privacy.imageHosts.hint",
+      "en": "Sites you chose “Always allow” for — revoke one or all",
+      "vars": []
+    },
+    {
+      "key": "cmd.reading.aids",
+      "en": "Reading aids…",
+      "vars": []
+    },
+    {
+      "key": "cmd.reading.aids.hint",
+      "en": "Niqqud for reading, a dyslexia-friendly layout and read-aloud with the word highlighted",
+      "vars": []
+    },
+    {
+      "key": "cmd.reading.mode",
+      "en": "Reading mode",
+      "vars": []
+    },
+    {
+      "key": "cmd.related.folderOff",
+      "en": "Related notes: on / off for this folder",
+      "vars": []
+    },
+    {
+      "key": "cmd.related.toggle",
+      "en": "Related notes: show / hide",
+      "vars": []
+    },
+    {
+      "key": "cmd.related.toggle.hint",
+      "en": "Notes close to the paragraph you are writing, and notes it mentions without a link",
+      "vars": []
+    },
+    {
       "key": "cmd.research.ask",
       "en": "🔎 Research: Ask a Question…",
       "vars": []
@@ -1055,6 +1547,16 @@
     {
       "key": "cmd.research.ask.hint",
       "en": "Searches the web, reads sources and writes a note with a quoted footnote for every claim",
+      "vars": []
+    },
+    {
+      "key": "cmd.research.litReview",
+      "en": "Literature review from the vault's PDFs",
+      "vars": []
+    },
+    {
+      "key": "cmd.research.litReview.hint",
+      "en": "A table of every PDF: question, method, sample, findings, limitations — each value with a quote verified on its page. Runs on this device.",
       "vars": []
     },
     {
@@ -1095,6 +1597,11 @@
     {
       "key": "cmd.research.verify.hint",
       "en": "Checks every footnote link is alive and its quote really appears on the page",
+      "vars": []
+    },
+    {
+      "key": "cmd.review.daily",
+      "en": "Daily review",
       "vars": []
     },
     {
@@ -1163,6 +1670,16 @@
       "vars": []
     },
     {
+      "key": "cmd.settings.trustedRepos",
+      "en": "Trusted repositories…",
+      "vars": []
+    },
+    {
+      "key": "cmd.settings.trustedRepos.hint",
+      "en": "Let agents write in a cloned repo without the extra question",
+      "vars": []
+    },
+    {
       "key": "cmd.shortcuts",
       "en": "Keyboard shortcuts",
       "vars": []
@@ -1170,6 +1687,41 @@
     {
       "key": "cmd.source",
       "en": "Source only",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.insert",
+      "en": "Insert a source from Sefaria…",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.insert.hint",
+      "en": "The Hebrew and a translation of a verse, mishnah or folio (בראשית א:א, ב״ר א, א, Berakhot 2a), with each text's licence",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.notesOnVerse",
+      "en": "My notes on this verse",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.notesOnVerse.hint",
+      "en": "Every note that cites the verse under the cursor",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.saveOffline",
+      "en": "Save this source for offline",
+      "vars": []
+    },
+    {
+      "key": "cmd.sources.saveOffline.hint",
+      "en": "Keep a copy in Sources/Sefaria (freely licensed texts only), so it opens without a network request",
+      "vars": []
+    },
+    {
+      "key": "cmd.speakers.rename",
+      "en": "Rename a speaker in this note…",
       "vars": []
     },
     {
@@ -1188,6 +1740,16 @@
       "vars": []
     },
     {
+      "key": "cmd.student.lecture",
+      "en": "Student mode: record a lecture",
+      "vars": []
+    },
+    {
+      "key": "cmd.student.lecture.hint",
+      "en": "Record, tap “Important!”, and get a transcript with ▶ for each sentence, a summary and review cards — on this device.",
+      "vars": []
+    },
+    {
       "key": "cmd.suggest.accept",
       "en": "Accept suggestion at cursor",
       "vars": []
@@ -1200,6 +1762,19 @@
     {
       "key": "cmd.suggest.acceptAll",
       "en": "Accept all suggestions",
+      "vars": []
+    },
+    {
+      "key": "cmd.suggest.acceptAuthor",
+      "en": "Accept all from {author} ({count})",
+      "vars": [
+        "author",
+        "count"
+      ]
+    },
+    {
+      "key": "cmd.suggest.byAuthor.hint",
+      "en": "Only this author's suggestions; everyone else's stay",
       "vars": []
     },
     {
@@ -1226,6 +1801,14 @@
       "key": "cmd.suggest.rejectAll",
       "en": "Reject all suggestions",
       "vars": []
+    },
+    {
+      "key": "cmd.suggest.rejectAuthor",
+      "en": "Reject all from {author} ({count})",
+      "vars": [
+        "author",
+        "count"
+      ]
     },
     {
       "key": "cmd.suggest.toggle.hint",
@@ -1255,6 +1838,16 @@
     {
       "key": "cmd.tasks.open.hint",
       "en": "Overdue, today and the next 7 days, from every note",
+      "vars": []
+    },
+    {
+      "key": "cmd.template.importFromFile",
+      "en": "Import template from file…",
+      "vars": []
+    },
+    {
+      "key": "cmd.template.importFromFile.hint",
+      "en": "copy a .md file into templates/, for ⌘K",
       "vars": []
     },
     {
@@ -1295,6 +1888,11 @@
     {
       "key": "cmd.tools.suggestLinks.hint",
       "en": "AI scans your workspace for relevant cross-links",
+      "vars": []
+    },
+    {
+      "key": "cmd.tools.transcribeFile",
+      "en": "🎙 Transcribe an audio file (with timestamps)",
       "vars": []
     },
     {
@@ -1355,6 +1953,31 @@
       "vars": []
     },
     {
+      "key": "cmd.usage",
+      "en": "Help: Usage on this device",
+      "vars": []
+    },
+    {
+      "key": "cmd.usage.hint",
+      "en": "Counts on this device and a weekly report you can send — nothing leaves without your click",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.backups",
+      "en": "Backups…",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.backups.hint",
+      "en": "Daily backups to another drive, and restore",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.check",
+      "en": "Check vault integrity",
+      "vars": []
+    },
+    {
       "key": "cmd.vault.digest",
       "en": "Digest: what changed",
       "vars": []
@@ -1386,12 +2009,22 @@
     },
     {
       "key": "cmd.vault.import",
-      "en": "Import notes (zip / folder: Obsidian, Notion, Lumen)…",
+      "en": "Import notes from another app (Obsidian, Notion, Evernote, Bear, Keep, Logseq, OneNote…)…",
       "vars": []
     },
     {
       "key": "cmd.vault.import.hint",
-      "en": "Into a new folder — nothing existing is overwritten",
+      "en": "Into a new folder — nothing existing is overwritten; one click undoes it",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.importUndo",
+      "en": "Undo the last import",
+      "vars": []
+    },
+    {
+      "key": "cmd.vault.importUndo.hint",
+      "en": "Removes the folder the last import created",
       "vars": []
     },
     {
@@ -1452,6 +2085,21 @@
       "vars": []
     },
     {
+      "key": "cmd.view.bidiMarks.hint",
+      "en": "Tag the invisible characters that set text direction (RLM, LRM, isolates…)",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.bidiMarks.off",
+      "en": "Hide direction marks",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.bidiMarks.on",
+      "en": "Show direction marks",
+      "vars": []
+    },
+    {
       "key": "cmd.view.calendar",
       "en": "Show / hide the calendar",
       "vars": []
@@ -1502,6 +2150,16 @@
       "vars": []
     },
     {
+      "key": "cmd.view.hebrewGrammarLevel",
+      "en": "Hebrew grammar: change the writing level",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.hebrewGrammarLevel.hint",
+      "en": "Everyday, academic or legal: academic and legal also flag informal style. Checked on this device.",
+      "vars": []
+    },
+    {
       "key": "cmd.view.language",
       "en": "Language: {label}",
       "vars": [
@@ -1516,6 +2174,16 @@
     {
       "key": "cmd.view.language.rtl",
       "en": "right-to-left",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.localGraph",
+      "en": "Show / hide the local graph",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.localGraph.hint",
+      "en": "the open note's links, 1–3 steps out",
       "vars": []
     },
     {
@@ -1549,6 +2217,16 @@
       "vars": []
     },
     {
+      "key": "cmd.view.present",
+      "en": "▶ Present this note as slides",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.present.hint",
+      "en": "Headings and --- lines start slides; Note: lines are speaker notes",
+      "vars": []
+    },
+    {
       "key": "cmd.view.preview",
       "en": "Preview only",
       "vars": []
@@ -1561,6 +2239,16 @@
     {
       "key": "cmd.view.properties.hint",
       "en": "Text, number, date, list, checkbox and link fields; only the edited value changes",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.readingOptions",
+      "en": "Reading options: font, size, spacing…",
+      "vars": []
+    },
+    {
+      "key": "cmd.view.readingOptions.hint",
+      "en": "For every note or just this one; Hebrew fonts that keep nikud in place",
       "vars": []
     },
     {
@@ -1714,6 +2402,16 @@
       "vars": []
     },
     {
+      "key": "cmd.voice.command",
+      "en": "Voice command",
+      "vars": []
+    },
+    {
+      "key": "cmd.voice.command.hint",
+      "en": "Say one: new note, search…, add task…, daily note, read aloud — recognised on this device",
+      "vars": []
+    },
+    {
       "key": "cmd.voice.meeting",
       "en": "🎙 Meeting notes (record on this device)",
       "vars": []
@@ -1721,6 +2419,21 @@
     {
       "key": "cmd.voice.meeting.hint",
       "en": "Record a meeting, transcribe it on this device, and insert its decisions, tasks with owner and date, and open questions",
+      "vars": []
+    },
+    {
+      "key": "cmd.voice.meetingFile",
+      "en": "🎙 Transcribe a meeting recording (who said what)…",
+      "vars": []
+    },
+    {
+      "key": "cmd.window.new",
+      "en": "New window",
+      "vars": []
+    },
+    {
+      "key": "cmd.window.new.hint",
+      "en": "Another editor window; drag tabs between windows",
       "vars": []
     },
     {
@@ -1962,6 +2675,13 @@
       "key": "palette.close",
       "en": "close",
       "vars": []
+    },
+    {
+      "key": "palette.layoutHint",
+      "en": "Also showing results for “{text}” (the other keyboard layout)",
+      "vars": [
+        "text"
+      ]
     },
     {
       "key": "palette.navigate",

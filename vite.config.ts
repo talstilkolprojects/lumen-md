@@ -3,6 +3,9 @@ import { defineConfig as defineViteConfig, searchForWorkspaceRoot } from "vite";
 import type { Plugin, UserConfig as ViteUserConfig } from "vite";
 import { cspEndpointsPlugin } from "./src/build/cspEndpoints";
 import { laneCacheDir } from "./src/build/laneCache";
+import { webrManifestPlugin } from "./src/build/webrManifest";
+import { LOCALES, whatsNew } from "./scripts/lib/whats-new.mjs";
+import { viteEnvGatePlugin } from "./src/build/viteEnvGate";
 
 interface VitestConfig {
   test?: {
@@ -150,8 +153,15 @@ const devFsAllow = (() => {
  * there reaches installed apps without a runtime upgrade.
  */
 function stagingRevision(dir: string): string {
-  const script = path.resolve(__dirname, `scripts/copy-${dir}.mjs`);
-  return existsSync(script) ? createHash("sha256").update(readFileSync(script)).digest("hex").slice(0, 8) : "0";
+  // webR's preludes and file list live in webrRuntime.json, shared by its
+  // staging script and the in-app download (plan W1.34).
+  const inputs = [`scripts/copy-${dir}.mjs`, ...(dir === "webr" ? ["src/plugins/r/webrRuntime.json"] : [])]
+    .map((f) => path.resolve(__dirname, f))
+    .filter((f) => existsSync(f));
+  if (!inputs.length) return "0";
+  const h = createHash("sha256");
+  for (const f of inputs) h.update(readFileSync(f));
+  return h.digest("hex").slice(0, 8);
 }
 
 /** Runtime caches of the self-hosted language runtimes, named per version and staging revision. */
@@ -239,6 +249,12 @@ function vendorChunk(id: string): string | undefined {
   const exSub = /@excalidraw\/excalidraw\/dist\/(?:prod|dev)\/([^/]+)\/([^/]+?)\.js$/.exec(id);
   if (exSub) return `vendor-excalidraw-${exSub[1]}-${exSub[2]}`.replace(/[^A-Za-z0-9-]/g, "_");
   if (/@excalidraw\/excalidraw\/dist\/(prod|dev)\/subset-/.test(id)) return "vendor-excalidraw-subset";
+  // Excalidraw's own build splits its code into shared chunk-<hash>.js files
+  // (the font-subsetting wasm among them, loaded on export only). In one
+  // group they all became the canvas chunk; each keeps a chunk of its own,
+  // so the ones Excalidraw imports on demand stay on demand.
+  const exChunk = /@excalidraw\/excalidraw\/dist\/(?:prod|dev)\/(chunk-[^/]+?)\.js$/.exec(id);
+  if (exChunk) return `vendor-excalidraw-${exChunk[1]}`.replace(/[^A-Za-z0-9-]/g, "_");
   if (id.includes("@excalidraw/mermaid-to-excalidraw")) return "vendor-excalidraw-mermaid";
   if (id.includes("@excalidraw/")) return "vendor-excalidraw";
   // The web clipper's extractors (plan 4.15): vendor code apart from the clip
@@ -276,6 +292,27 @@ function vendorChunk(id: string): string | undefined {
 
 const viteCacheDir = laneCacheDir(__dirname);
 
+/**
+ * "What's new" (plan 14.6): this version's notes from CHANGELOG.md and the
+ * translations in changelog/<locale>.md, as `virtual:lumen-whats-new` — a
+ * small lazy chunk (so it is precached and works offline), loaded only
+ * when the app was updated or the user asks for it.
+ */
+const APP_VERSION = (JSON.parse(readFileSync(path.resolve(__dirname, "package.json"), "utf8")) as { version: string }).version;
+const WHATS_NEW_ID = "virtual:lumen-whats-new";
+const whatsNewNotes = {
+  name: "lumen-whats-new",
+  resolveId(id: string) {
+    return id === WHATS_NEW_ID ? "\0" + WHATS_NEW_ID : null;
+  },
+  load(id: string) {
+    if (id !== "\0" + WHATS_NEW_ID) return null;
+    const read = (f: string) => (existsSync(path.resolve(__dirname, f)) ? readFileSync(path.resolve(__dirname, f), "utf8") : "");
+    const translations = Object.fromEntries(LOCALES.filter((l) => l !== "en").map((l) => [l, read(`changelog/${l}.md`)]));
+    return `export default ${JSON.stringify(whatsNew(APP_VERSION, read("CHANGELOG.md"), translations))};\n`;
+  },
+};
+
 export default defineConfig({
   // A lane's symlinked node_modules is shared: its Vite cache stays in the worktree (src/build/laneCache.ts).
   ...(viteCacheDir ? { cacheDir: viteCacheDir } : {}),
@@ -283,14 +320,23 @@ export default defineConfig({
   // (src/lib/runtimeCaches.ts): Workbox only cleans its precache.
   define: {
     __LUMEN_RUNTIME_CACHES__: JSON.stringify(RUNTIME_CACHES.map((c) => c.cacheName)),
+    __LUMEN_VERSION__: JSON.stringify(APP_VERSION),
+    // window.__lumenTest for Playwright (src/testing/e2eHooks.ts): a literal,
+    // so a build without VITE_E2E=1 drops the hook and its chunk entirely.
+    __LUMEN_E2E__: JSON.stringify(process.env.VITE_E2E === "1"),
   },
   // Worker bundles get only these plugins (plus Vite's own).
   worker: { plugins: () => [dictionaryEn] },
   plugins: [
+    // W4.4: a VITE_* not on security/vite-env-allowlist.json fails the build.
+    viteEnvGatePlugin(),
     react(),
+    whatsNewNotes,
     cleanUrlAliases,
     dictionaryEn,
     dictionaryEnFiles,
+    // runtimes/webr.json: what the R block's webR download is checked against (plan W1.34).
+    webrManifestPlugin(__dirname),
     // Adds the deployment's own worker origins (VITE_*_ENDPOINT …) to the
     // CSP connect-src of index.html, dist/_headers and the nginx image.
     cspEndpointsPlugin(),
@@ -325,6 +371,7 @@ export default defineConfig({
           { name: "Command Palette", short_name: "Commands", url: "/?action=palette", icons: [{ src: "icons/icon-192.png", sizes: "192x192", type: "image/png" }] },
           // Plan 4.16: a line straight into inbox.md (src/ui/QuickCapture.tsx).
           { name: "Quick Capture", short_name: "Capture", url: "/?capture=1", icons: [{ src: "icons/icon-192.png", sizes: "192x192", type: "image/png" }] },
+          { name: "Voice note", short_name: "Voice", url: "/?capture=voice", icons: [{ src: "icons/icon-192.png", sizes: "192x192", type: "image/png" }] },
         ],
         // GET: the app reads ?title / ?text / ?url on launch (src/pwa/launch.ts)
         // and appends what was shared to inbox.md (plan 4.16).
@@ -411,12 +458,20 @@ export default defineConfig({
           // first live-python Run; its 9.6 MB wasm would also trip the
           // precache size limit and fail `npm run build`.
           "pyodide/**",
-          // webR (R in WebAssembly, ~45 MB, staged by scripts/copy-webr.mjs)
-          // loads on the first live-r Run.
+          // webR (R in WebAssembly, ~45 MB) is not part of the build (GPL-3.0
+          // binaries, plan W1.34): the user downloads it from the R block into
+          // the webr runtime cache below. Only a deployment that serves its
+          // own copy (`npm run webr:local`) has webr/ here.
           "webr/**",
           // ruby.wasm (~30 MB, staged by scripts/copy-ruby.mjs): fetched on
           // the first live-ruby Run.
           "ruby/**",
+          // Reading fonts (plan W3.5): downloaded only when the person picks
+          // one in Reading options, then cached (runtime cache below).
+          "fonts/reading/**",
+          // Reading fonts (plans W3.5, W5.6): downloaded only when the person
+          // picks one, then cached (runtime cache below).
+          "fonts/reading/**",
         ],
         runtimeCaching: [
           {
@@ -435,6 +490,20 @@ export default defineConfig({
               cacheName: "lumen-fonts",
               expiration: { maxAgeSeconds: 60 * 60 * 24 * 365 },
             },
+          },
+          {
+            // Reading fonts (plan W3.5): same origin, fetched on first choice,
+            // then served from this cache — offline too.
+            urlPattern: ({ url }) => url.origin === self.location.origin && url.pathname.includes("/fonts/reading/"),
+            handler: "CacheFirst" as const,
+            options: { cacheName: "lumen-reading-fonts", cacheableResponse: { statuses: [200] } },
+          },
+          {
+            // Reading fonts (plans W3.5, W5.6): same origin, fetched on first choice,
+            // then served from this cache — offline too.
+            urlPattern: ({ url }) => url.origin === self.location.origin && url.pathname.includes("/fonts/reading/"),
+            handler: "CacheFirst" as const,
+            options: { cacheName: "lumen-reading-fonts", cacheableResponse: { statuses: [200] } },
           },
           // Self-hosted language runtimes (webR, ruby.wasm, Pyodide) are
           // kept out of the precache (tens of MB each) but cached the first

@@ -7,9 +7,13 @@
  * and skips what doesn't fit, so a hand-edited or foreign file can't put
  * an unknown key or a wrong type into storage.
  *
- * One more rule: an import never loosens the AI policy. A file that says
- * `cloud` doesn't switch a device that keeps AI on this device to the
- * cloud; the user changes that on purpose, in the AI tab.
+ * One more rule: an import never loosens privacy. A file that says `cloud`
+ * doesn't switch a device that keeps AI on this device to the cloud, and the
+ * same holds for the other safeguards (`loosens` below): PII redaction and
+ * its preview, the encrypted vault's auto-lock, and the endpoints that
+ * receive note text, which an import keeps only when they stay on this
+ * machine (loopback) or equal what the device already uses. The user changes
+ * those on purpose, in their tab. Refused keys are listed in `refused`.
  */
 
 import { SETTINGS, entryForAppField, entryForLocalKey, type SettingEntry } from "./schema";
@@ -36,7 +40,54 @@ export interface SettingsTarget {
 
 export interface ImportResult {
   applied: number;
+  /** Every key not imported (unknown, wrong type, refused, or storage denied). */
   skipped: string[];
+  /** The keys of `skipped` refused because the value would loosen a privacy safeguard. */
+  refused: string[];
+}
+
+/** Endpoints that receive note text: imported only when loopback or unchanged. */
+export const CONTENT_ENDPOINTS: readonly string[] = ["lumen.research.endpoint", "lumen.ollama.baseUrl", "lumen.grammar.endpoint", "lumen.collab.signaling"];
+
+const LOOPBACK = /^(localhost|127(?:\.\d{1,3}){3}|\[::1\]|::1)$/i;
+
+/** Every URL in the value (the signaling list is comma-separated) points at this machine. */
+export function isLoopbackValue(value: string): boolean {
+  const parts = value.split(",").map((p) => p.trim()).filter(Boolean);
+  if (!parts.length) return false;
+  return parts.every((p) => {
+    try {
+      return LOOPBACK.test(new URL(p).hostname);
+    } catch {
+      return false;
+    }
+  });
+}
+
+/** Minutes before the encrypted vault locks; 0 = never (the loosest). */
+const lockLooseness = (v: string | null) => {
+  const n = v === null || v === "" ? 15 : Number(v);
+  return n === 0 ? Infinity : n;
+};
+
+/**
+ * Would writing `value` to `key` loosen a privacy safeguard on this device?
+ * (`current` is what the device holds now, null when unset.)
+ */
+export function loosens(key: string, value: string, current: string | null): boolean {
+  switch (key) {
+    case POLICY_KEY:
+      return (POLICY_RANK[value] ?? 3) > (POLICY_RANK[current ?? "local-only"] ?? 0);
+    case "lumen.ai.redact": // on unless "off"
+      return value === "off" && current !== "off";
+    case "lumen.ai.redact.preview": // on only when "1"
+      return value !== "1" && current === "1";
+    case "lumen.vaultLock.minutes":
+      return lockLooseness(value) > lockLooseness(current);
+    default:
+      if (CONTENT_ENDPOINTS.includes(key)) return value !== (current ?? "") && !isLoopbackValue(value);
+      return false;
+  }
 }
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
@@ -135,6 +186,7 @@ export function parseSettingsFile(text: string): SettingsFile | null {
 
 export function importSettings(file: SettingsFile, target: SettingsTarget): ImportResult {
   const skipped: string[] = [];
+  const refused: string[] = [];
   const patch: Record<string, unknown> = {};
   for (const [field, value] of Object.entries(file.app)) {
     const entry = entryForAppField(field);
@@ -150,12 +202,10 @@ export function importSettings(file: SettingsFile, target: SettingsTarget): Impo
       skipped.push(key);
       continue;
     }
-    if (key === POLICY_KEY) {
-      const current = target.storage.getItem(POLICY_KEY) ?? "local-only";
-      if ((POLICY_RANK[value] ?? 3) > (POLICY_RANK[current] ?? 0)) {
-        skipped.push(key);
-        continue;
-      }
+    if (loosens(key, value, target.storage.getItem(key))) {
+      skipped.push(key);
+      refused.push(key);
+      continue;
     }
     try {
       if (value === "") target.storage.removeItem(key);
@@ -165,5 +215,5 @@ export function importSettings(file: SettingsFile, target: SettingsTarget): Impo
       skipped.push(key); // storage full or denied
     }
   }
-  return { applied, skipped };
+  return { applied, skipped, refused };
 }

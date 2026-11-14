@@ -11,6 +11,7 @@ import { t } from "../../../i18n";
 import { PairingError } from "../pairing";
 import type { E2eeSync } from "../engine";
 import "../strings";
+import { explainError } from "../../../lib/userError";
 
 type Freshness = Awaited<ReturnType<E2eeSync["freshness"]>>;
 
@@ -37,7 +38,7 @@ export function FreshnessBanner({ sync }: Props) {
       await fn();
       setState(await sync.freshness());
     } catch (e) {
-      setError(e instanceof PairingError ? t("e2ee.fresh.badCode") : String((e as Error)?.message ?? e));
+      setError(e instanceof PairingError ? t("e2ee.fresh.badCode") : explainError(e));
     }
   }
 

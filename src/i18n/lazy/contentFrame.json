@@ -1,0 +1,8 @@
+{
+  "remoteFrame.label": "Embedded page from {host}",
+  "remoteFrame.blocked": "Embedded from {host}, not loaded",
+  "remoteFrame.loadHint": "Load this embed once. {host} will see that you opened this note.",
+  "remoteFrame.allowHint": "Load embeds and images from {host} in every note, in this browser.",
+  "block.embed.notEmbeddable": "{host} is not one of the sites Lumen can embed. Open the link instead.",
+  "block.embed.gistDesktop": "The desktop app shows a Gist as a link."
+}

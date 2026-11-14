@@ -1,0 +1,18 @@
+# דמויות — נוצר מהתבנית דמות
+filters:
+  and:
+    - 'type == "character"'
+properties:
+  file.name:
+    displayName: "דמות"
+  note.role:
+    displayName: "תפקיד"
+  note.age:
+    displayName: "גיל"
+views:
+  - type: cards
+    name: "דמויות"
+    order:
+      - file.name
+      - note.role
+      - note.age

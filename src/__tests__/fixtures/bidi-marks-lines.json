@@ -1,0 +1,328 @@
+{
+ "about": "30 lines with direction controls for plan W5.4, written for this test (CC0 1.0). marks: every control in order; risks: Trojan Source reasons in order; clean: the line after fixBidi's mark cleaning.",
+ "items": [
+  {
+   "id": "m01",
+   "line": "\u200f10:30 \u05e4\u05d2\u05d9\u05e9\u05d4",
+   "marks": [
+    "RLM"
+   ],
+   "risks": [],
+   "clean": "\u200f10:30 \u05e4\u05d2\u05d9\u05e9\u05d4",
+   "why": "RLM pins a line that starts with a time: needed"
+  },
+  {
+   "id": "m02",
+   "line": "\u200f\u05e9\u05dc\u05d5\u05dd \u05dc\u05db\u05d5\u05dc\u05dd",
+   "marks": [
+    "RLM"
+   ],
+   "risks": [],
+   "clean": "\u05e9\u05dc\u05d5\u05dd \u05dc\u05db\u05d5\u05dc\u05dd",
+   "why": "RLM before Hebrew: unneeded"
+  },
+  {
+   "id": "m03",
+   "line": "\u05e9\u05dc\u05d5\u05dd\u200f \u05dc\u05db\u05d5\u05dc\u05dd",
+   "marks": [
+    "RLM"
+   ],
+   "risks": [],
+   "clean": "\u05e9\u05dc\u05d5\u05dd \u05dc\u05db\u05d5\u05dc\u05dd",
+   "why": "RLM right after Hebrew: unneeded"
+  },
+  {
+   "id": "m04",
+   "line": "\u05d4\u05de\u05d7\u05d9\u05e8 20\u200f% \u05d4\u05e0\u05d7\u05d4",
+   "marks": [
+    "RLM"
+   ],
+   "risks": [],
+   "clean": "\u05d4\u05de\u05d7\u05d9\u05e8 20\u200f% \u05d4\u05e0\u05d7\u05d4",
+   "why": "RLM after a number: needed"
+  },
+  {
+   "id": "m05",
+   "line": "\u05e7\u05e8\u05d0\u05ea\u05d9 \u05d0\u05ea PDF\u200f \u05d0\u05ea\u05de\u05d5\u05dc",
+   "marks": [
+    "RLM"
+   ],
+   "risks": [],
+   "clean": "\u05e7\u05e8\u05d0\u05ea\u05d9 \u05d0\u05ea PDF\u200f \u05d0\u05ea\u05de\u05d5\u05dc",
+   "why": "RLM after Latin: keeps the space with the Hebrew"
+  },
+  {
+   "id": "m06",
+   "line": "\u200eREADME.md is ready",
+   "marks": [
+    "LRM"
+   ],
+   "risks": [],
+   "clean": "README.md is ready",
+   "why": "LRM before Latin: unneeded"
+  },
+  {
+   "id": "m07",
+   "line": "Version 2.0\u200e",
+   "marks": [
+    "LRM"
+   ],
+   "risks": [],
+   "clean": "Version 2.0\u200e",
+   "why": "LRM after a number: needed"
+  },
+  {
+   "id": "m08",
+   "line": "\u05e4\u05ea\u05d7 \u05d0\u05ea \u200eC++\u200e \u05e2\u05db\u05e9\u05d9\u05d5",
+   "marks": [
+    "LRM",
+    "LRM"
+   ],
+   "risks": [],
+   "clean": "\u05e4\u05ea\u05d7 \u05d0\u05ea C++\u200e \u05e2\u05db\u05e9\u05d9\u05d5",
+   "why": "LRM before C goes; LRM after ++ keeps the plus signs with C"
+  },
+  {
+   "id": "m09",
+   "line": "\u200f\u200f\u05e9\u05dc\u05d5\u05dd",
+   "marks": [
+    "RLM",
+    "RLM"
+   ],
+   "risks": [],
+   "clean": "\u05e9\u05dc\u05d5\u05dd",
+   "why": "two RLMs before Hebrew"
+  },
+  {
+   "id": "m10",
+   "line": "- \u200f(3) \u05de\u05e9\u05d9\u05de\u05d5\u05ea",
+   "marks": [
+    "RLM"
+   ],
+   "risks": [],
+   "clean": "- \u200f(3) \u05de\u05e9\u05d9\u05de\u05d5\u05ea",
+   "why": "list item pinned RTL before a bracketed number"
+  },
+  {
+   "id": "m11",
+   "line": "\u0645\u0631\u062d\u0628\u0627\u061c 2026",
+   "marks": [
+    "ALM"
+   ],
+   "risks": [],
+   "clean": "\u0645\u0631\u062d\u0628\u0627 2026",
+   "why": "ALM after Arabic: unneeded"
+  },
+  {
+   "id": "m12",
+   "line": "\u0645\u0631\u062d\u0628\u0627\u200f 2026",
+   "marks": [
+    "RLM"
+   ],
+   "risks": [],
+   "clean": "\u0645\u0631\u062d\u0628\u0627\u200f 2026",
+   "why": "RLM after Arabic: changes the number class, kept"
+  },
+  {
+   "id": "m13",
+   "line": "\u05e9\u05dc\u05d5\u05dd\u061c 2026",
+   "marks": [
+    "ALM"
+   ],
+   "risks": [],
+   "clean": "\u05e9\u05dc\u05d5\u05dd\u061c 2026",
+   "why": "ALM after Hebrew: makes 2026 Arabic number, kept"
+  },
+  {
+   "id": "m14",
+   "line": "\u05d4\u05e7\u05d5\u05d1\u05e5 \u202bPDF\u202c \u05de\u05d5\u05db\u05df",
+   "marks": [
+    "RLE",
+    "PDF"
+   ],
+   "risks": [],
+   "clean": "\u05d4\u05e7\u05d5\u05d1\u05e5 \u202bPDF\u202c \u05de\u05d5\u05db\u05df",
+   "why": "a matched embedding with content: kept"
+  },
+  {
+   "id": "m15",
+   "line": "\u05d4\u05e7\u05d5\u05d1\u05e5 \u202b\u202c\u05de\u05d5\u05db\u05df",
+   "marks": [
+    "RLE",
+    "PDF"
+   ],
+   "risks": [],
+   "clean": "\u05d4\u05e7\u05d5\u05d1\u05e5 \u05de\u05d5\u05db\u05df",
+   "why": "an empty embedding: removed"
+  },
+  {
+   "id": "m16",
+   "line": "\u05e9\u05dc\u05d5\u05dd\u202c \u05dc\u05db\u05d5\u05dc\u05dd",
+   "marks": [
+    "PDF"
+   ],
+   "risks": [],
+   "clean": "\u05e9\u05dc\u05d5\u05dd \u05dc\u05db\u05d5\u05dc\u05dd",
+   "why": "a PDF that closes nothing"
+  },
+  {
+   "id": "m17",
+   "line": "\u05e9\u05dc\u05d5\u05dd \u2069\u05dc\u05db\u05d5\u05dc\u05dd",
+   "marks": [
+    "PDI"
+   ],
+   "risks": [],
+   "clean": "\u05e9\u05dc\u05d5\u05dd \u05dc\u05db\u05d5\u05dc\u05dd",
+   "why": "a PDI that closes nothing"
+  },
+  {
+   "id": "m18",
+   "line": "\u05d4\u05e7\u05d9\u05e9\u05d5\u05e8 \u2066https://example.com/a\u2069 \u05e2\u05d5\u05d1\u05d3",
+   "marks": [
+    "LRI",
+    "PDI"
+   ],
+   "risks": [],
+   "clean": "\u05d4\u05e7\u05d9\u05e9\u05d5\u05e8 \u2066https://example.com/a\u2069 \u05e2\u05d5\u05d1\u05d3",
+   "why": "an isolate around a URL: kept"
+  },
+  {
+   "id": "m19",
+   "line": "\u05d4\u05e9\u05dd: \u2068Dana Cohen\u2069 \u05d4\u05d2\u05d9\u05e2\u05d4",
+   "marks": [
+    "FSI",
+    "PDI"
+   ],
+   "risks": [],
+   "clean": "\u05d4\u05e9\u05dd: \u2068Dana Cohen\u2069 \u05d4\u05d2\u05d9\u05e2\u05d4",
+   "why": "FSI isolate: kept"
+  },
+  {
+   "id": "m20",
+   "line": "\u05e2\u05e8\u05da \u2067\u2069\u05e8\u05d9\u05e7",
+   "marks": [
+    "RLI",
+    "PDI"
+   ],
+   "risks": [],
+   "clean": "\u05e2\u05e8\u05da \u05e8\u05d9\u05e7",
+   "why": "an empty isolate"
+  },
+  {
+   "id": "m21",
+   "line": "access = \"\u202euser\u202c\" // admin",
+   "marks": [
+    "RLO",
+    "PDF"
+   ],
+   "risks": [
+    "override"
+   ],
+   "clean": "access = \"\u202euser\u202c\" // admin",
+   "why": "Trojan Source: override"
+  },
+  {
+   "id": "m22",
+   "line": "if (isAdmin) { \u202e } \u2066// \u05d1\u05d3\u05d9\u05e7\u05d4",
+   "marks": [
+    "RLO",
+    "LRI"
+   ],
+   "risks": [
+    "unterminated",
+    "unterminated"
+   ],
+   "clean": "if (isAdmin) { \u202e } \u2066// \u05d1\u05d3\u05d9\u05e7\u05d4",
+   "why": "Trojan Source: open override and isolate at line end"
+  },
+  {
+   "id": "m23",
+   "line": "\u05e9\u05dc\u05d5\u05dd \u202d\u05e2\u05d5\u05dc\u05dd\u202c",
+   "marks": [
+    "LRO",
+    "PDF"
+   ],
+   "risks": [
+    "override"
+   ],
+   "clean": "\u05e9\u05dc\u05d5\u05dd \u202d\u05e2\u05d5\u05dc\u05dd\u202c",
+   "why": "an LRO reversing Hebrew"
+  },
+  {
+   "id": "m24",
+   "line": "\u05d4\u05e2\u05e8\u05d4 \u202bopen",
+   "marks": [
+    "RLE"
+   ],
+   "risks": [
+    "unterminated"
+   ],
+   "clean": "\u05d4\u05e2\u05e8\u05d4 \u202bopen",
+   "why": "an embedding left open"
+  },
+  {
+   "id": "m25",
+   "line": "> \u200f`iPhone` \u05d4\u05d2\u05d9\u05e2",
+   "marks": [
+    "RLM"
+   ],
+   "risks": [],
+   "clean": "> \u200f`iPhone` \u05d4\u05d2\u05d9\u05e2",
+   "why": "quote with RLM before a code span: kept"
+  },
+  {
+   "id": "m26",
+   "line": "## \u200fQ3 \u05e1\u05d9\u05db\u05d5\u05dd",
+   "marks": [
+    "RLM"
+   ],
+   "risks": [],
+   "clean": "## \u200fQ3 \u05e1\u05d9\u05db\u05d5\u05dd",
+   "why": "heading pinned RTL"
+  },
+  {
+   "id": "m27",
+   "line": "\u05e9\u05b8\u05c1\u05dc\u05d5\u05b9\u05dd\u200f 5",
+   "marks": [
+    "RLM"
+   ],
+   "risks": [],
+   "clean": "\u05e9\u05b8\u05c1\u05dc\u05d5\u05b9\u05dd 5",
+   "why": "RLM after niqqud belongs to the Hebrew letter"
+  },
+  {
+   "id": "m28",
+   "line": "\u05d0\u200f\u200e\u05d1",
+   "marks": [
+    "RLM",
+    "LRM"
+   ],
+   "risks": [],
+   "clean": "\u05d0\u200e\u05d1",
+   "why": "RLM after Hebrew goes, LRM before Hebrew stays"
+  },
+  {
+   "id": "m29",
+   "line": "\u2066\u202b\u202c\u2069\u05e9\u05dc\u05d5\u05dd",
+   "marks": [
+    "LRI",
+    "RLE",
+    "PDF",
+    "PDI"
+   ],
+   "risks": [],
+   "clean": "\u05e9\u05dc\u05d5\u05dd",
+   "why": "nested empty controls"
+  },
+  {
+   "id": "m30",
+   "line": "[\u05e9\u05dc\u05d5\u05dd](https://example.com/\u200fa)",
+   "marks": [
+    "RLM"
+   ],
+   "risks": [],
+   "clean": "[\u05e9\u05dc\u05d5\u05dd](https://example.com/\u200fa)",
+   "why": "RLM in a link destination: kept"
+  }
+ ]
+}

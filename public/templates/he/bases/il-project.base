@@ -1,0 +1,21 @@
+# פרויקטים — נוצר מהתבנית פרויקט
+filters:
+  and:
+    - 'type == "project"'
+properties:
+  file.name:
+    displayName: "פרויקט"
+  note.owner:
+    displayName: "אחראי"
+  note.due:
+    displayName: "יעד"
+views:
+  - type: kanban
+    name: "פרויקטים"
+    order:
+      - file.name
+      - note.owner
+      - note.due
+    groupBy:
+      property: note.status
+      direction: ASC

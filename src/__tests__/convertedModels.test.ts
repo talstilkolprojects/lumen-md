@@ -28,13 +28,14 @@ async function entryWith(contents: Record<string, { text: string; dtype: string 
 }
 
 describe("converted models catalog", () => {
-  it("lists the four plan-6.0 models and Nakdimon (6.3), each in the registry with licence and attribution", async () => {
+  it("lists the four plan-6.0 models, Nakdimon (6.3) and DictaBERT-char-menaked (W2.5), each in the registry with licence and attribution", async () => {
     expect(CONVERTED_MODELS.map((m) => m.id)).toEqual([
       "opus-mt-en-he",
       "opus-mt-tc-big-he-en",
       "dictabert-ner",
       "siglip-base-patch16-256-multilingual",
       "nakdimon",
+      "dictabert-char-menaked",
     ]);
     const reg = await loadConvertedRegistry();
     for (const m of CONVERTED_MODELS) {

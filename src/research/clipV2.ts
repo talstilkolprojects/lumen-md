@@ -16,8 +16,9 @@
  * text is checked for hidden or instruction-like passages before saving;
  * what was found is written into the note, visibly.
  */
-import { extractPage, htmlToMd, type Extracted } from "./clipExtract";
-import { pickTemplate, renderClip, varsFor, type ClipTemplate, type RenderedClip } from "./clipTemplates";
+import type { Extracted } from "./clipExtract";
+import { pageVars, pickTemplate, renderClip, varsFor, type ClipTemplate, type RenderedClip } from "./clipTemplates";
+import type { InterpretFn } from "./clipInterpreter";
 import { addHighlights, highlightsFor, highlightsMarkdown } from "./clipHighlights";
 
 /** What the extension (or a deep link) sends. */
@@ -32,6 +33,8 @@ export interface ClipPayload {
   /** Legacy v1 payload: title + markdown already made by the extension. */
   title?: string;
   markdown?: string;
+  /** A video's transcript, when the extension could read one (YouTube; W2.14). */
+  transcript?: string;
 }
 
 const MAX_HTML = 8 * 1024 * 1024;
@@ -44,7 +47,7 @@ export function parsePayload(v: unknown): ClipPayload | null {
   if (!/^https?:\/\/\S+$/i.test(url)) return null;
   const str = (k: string) => (typeof o[k] === "string" && (o[k] as string).length <= MAX_HTML ? (o[k] as string) : undefined);
   const highlights = Array.isArray(o.highlights) ? o.highlights.filter((h): h is string => typeof h === "string").slice(0, 200) : undefined;
-  const p: ClipPayload = { url, html: str("html"), selectionHtml: str("selectionHtml"), highlights, title: str("title"), markdown: str("markdown") };
+  const p: ClipPayload = { url, html: str("html"), selectionHtml: str("selectionHtml"), highlights, title: str("title"), markdown: str("markdown"), transcript: str("transcript") };
   if (!p.html && !p.selectionHtml && !p.markdown) return null;
   return p;
 }
@@ -56,10 +59,20 @@ export interface BuiltClip extends RenderedClip {
   /** Hidden or instruction-like passages found and marked in the note. */
   flagged: number;
   template: string;
+  /** W2.14: how the template's prompt variables were answered ("none": it has none). */
+  interpreter: "local" | "unavailable" | "failed" | "none";
+  /** Time the local model took, ms (0 without it). */
+  interpretMs: number;
 }
 
-/** Build the note for a clip. */
-export async function buildClip(p: ClipPayload, opts: { library: string; templates?: ClipTemplate[]; date?: Date }): Promise<BuiltClip> {
+/**
+ * Build the note for a clip. `interpret`: the local model for prompt
+ * variables (W2.14) — by default the one ./clipInterpreter finds (never a
+ * cloud one); `null` turns the interpreter off.
+ */
+export async function buildClip(p: ClipPayload, opts: { library: string; templates?: ClipTemplate[]; date?: Date; interpret?: InterpretFn | null; signal?: AbortSignal }): Promise<BuiltClip> {
+  // Defuddle, Readability and Turndown in their own chunk (the lazy-chunk budget is 100 KB each).
+  const { extractPage, htmlToMd } = await import("./clipExtract");
   const page: Extracted = p.html
     ? extractPage(p.html, p.url)
     : { title: p.title ?? "", author: "", published: "", site: "", description: "", language: "", html: "", markdown: p.markdown ?? "", wordCount: 0, engine: "none" };
@@ -67,9 +80,10 @@ export async function buildClip(p: ClipPayload, opts: { library: string; templat
   const selection = p.selectionHtml ? htmlToMd(p.selectionHtml) : "";
   const stored = p.highlights?.length ? addHighlights(p.url, p.highlights) : highlightsFor(p.url);
   let schema: unknown = null;
+  let doc: Document | null = null;
   if (p.html) {
     try {
-      const doc = new DOMParser().parseFromString(p.html, "text/html");
+      doc = new DOMParser().parseFromString(p.html, "text/html");
       schema = [...doc.querySelectorAll('script[type="application/ld+json"]')].map((s) => {
         try {
           return JSON.parse(s.textContent ?? "null");
@@ -81,8 +95,9 @@ export async function buildClip(p: ClipPayload, opts: { library: string; templat
       schema = null;
     }
   }
-  const template = pickTemplate(p.url, schema, opts.templates);
-  const vars = varsFor(page, p.url, { selection, highlights: highlightsMarkdown(stored), library: opts.library, date: opts.date });
+  let template = pickTemplate(p.url, schema, opts.templates);
+  const vars = varsFor(page, p.url, { selection, highlights: highlightsMarkdown(stored), library: opts.library, date: opts.date, transcript: p.transcript });
+  Object.assign(vars, pageVars(template, doc));
   // Injection guard (plan 2.7) on what came from the page.
   const { sanitizeUntrusted, summarizeFindings } = await import("../agents/untrusted");
   let flagged = 0;
@@ -92,8 +107,37 @@ export async function buildClip(p: ClipPayload, opts: { library: string; templat
     vars[k] = k === "content" || k === "selection" ? s.text : s.text.replace(/\s+/g, " ").trim();
     if (k === "content" && s.findings.length) vars.content = `> [!warning] ${summarizeFindings(s.findings)}\n\n${vars.content}`;
   }
+  for (const k of Object.keys(vars).filter((x) => x.startsWith("meta:") || x.startsWith("selector:"))) {
+    const s = sanitizeUntrusted(vars[k]);
+    flagged += s.findings.length;
+    vars[k] = s.text.replace(/\s+/g, " ").trim();
+  }
+  // W2.14: prompt variables, answered by a local model (or left empty).
+  const { findPrompts, interpret, localInterpreter, applyAnswers, withoutPrompts } = await import("./clipInterpreter");
+  let interpreter: BuiltClip["interpreter"] = "none";
+  let interpretMs = 0;
+  if (findPrompts(template).length) {
+    const ask = opts.interpret === undefined ? await localInterpreter().catch(() => null) : opts.interpret;
+    if (!ask) {
+      interpreter = "unavailable";
+      template = withoutPrompts(template);
+    } else {
+      // A transcript, when there is one, is what the video says: the interpreter reads it instead of the page.
+      const t = p.transcript?.trim() ? { ...template, context: undefined } : template;
+      const r = await interpret(t, { doc, article: p.transcript?.trim() || vars.content, url: p.url }, ask, opts.signal).catch(() => null);
+      if (r) {
+        interpreter = "local";
+        interpretMs = r.ms;
+        flagged += r.flagged;
+        template = applyAnswers(template, r.answers);
+      } else {
+        interpreter = "failed";
+        template = withoutPrompts(template);
+      }
+    }
+  }
   const rendered = renderClip(template, vars);
-  return { ...rendered, title: vars.title, source: p.url, engine: page.engine, flagged, template: template.id };
+  return { ...rendered, title: vars.title, source: p.url, engine: page.engine, flagged, template: template.id, interpreter, interpretMs };
 }
 
 /** Clip from a URL hash (`#clip=<json>`), removing it so a reload doesn't repeat it. */

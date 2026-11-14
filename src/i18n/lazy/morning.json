@@ -1,0 +1,15 @@
+{
+  "morning.title": "Your morning",
+  "morning.changed": "Changed since the last morning",
+  "morning.noChanges": "Nothing changed.",
+  "morning.tasks": "Tasks for today",
+  "morning.noTasks": "No task is due today.",
+  "morning.overdue": "due {date}",
+  "morning.review": "Cards to review: {n}",
+  "morning.noReview": "Nothing to review today.",
+  "morning.openReview": "Open them: ⌘K → Daily review",
+  "morning.more": "and {n} more",
+  "morning.holidays": "Today",
+  "morning.done": "“Your morning” is in today's note ({ms} ms).",
+  "morning.failed": "“Your morning” could not be written: {error}"
+}

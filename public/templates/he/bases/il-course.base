@@ -1,0 +1,24 @@
+# קורסים — נוצר מהתבנית קורס באוניברסיטה
+filters:
+  and:
+    - 'type == "course"'
+properties:
+  file.name:
+    displayName: "קורס"
+  note.course_code:
+    displayName: "מספר"
+  note.lecturer:
+    displayName: "מרצה"
+  note.semester:
+    displayName: "סמסטר"
+  note.credits:
+    displayName: "נ\"ז"
+views:
+  - type: table
+    name: "קורסים"
+    order:
+      - file.name
+      - note.course_code
+      - note.lecturer
+      - note.semester
+      - note.credits

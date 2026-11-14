@@ -88,6 +88,24 @@ function parse(text: string): ParsedYaml | null | { error: string } {
 
 const keyOf = (p: Pair): string | null => (isScalar(p.key) ? String(p.key.value) : null);
 
+function duplicateKeys(pairs: readonly Pair[]): Set<string> {
+  const seen = new Set<string>();
+  const dup = new Set<string>();
+  for (const pair of pairs) {
+    const k = keyOf(pair);
+    if (k === null) continue;
+    if (seen.has(k)) dup.add(k);
+    seen.add(k);
+  }
+  return dup;
+}
+
+/** The one pair for `key`; a key written twice can't be edited (which one would the user mean?). */
+function pairFor(pairs: readonly Pair[], key: string): Pair | undefined {
+  if (duplicateKeys(pairs).has(key)) throw new FrontmatterError(`"${key}" is written twice in the frontmatter; fix it in the editor`);
+  return pairs.find((x) => keyOf(x) === key);
+}
+
 const DATE = /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/;
 const LIST_KEYS = new Set(["tags", "aliases", "cssclasses", "keywords"]);
 const DATE_KEYS = new Set(["date", "created", "updated", "modified", "due"]);
@@ -120,12 +138,15 @@ export function parseProperties(text: string): ParsedProperties {
   if (p === null) return { status: "none", properties: [] };
   if ("error" in p) return { status: "invalid", error: p.error, properties: [] };
   const out: Property[] = [];
+  const dup = duplicateKeys(p.pairs);
   for (const pair of p.pairs) {
     const key = keyOf(pair);
     if (key === null) continue;
     const value = isNode(pair.value) ? pair.value.toJS(p.doc) : pair.value ?? null;
     const scalarList = Array.isArray(value) && value.every((v) => v === null || ["string", "number", "boolean"].includes(typeof v));
-    const editable = value === null || ["string", "number", "boolean"].includes(typeof value) || scalarList;
+    // A key written twice (real vaults have `tags:` twice): a write could only
+    // reach one of them, so neither is edited here (plan W4.30).
+    const editable = !dup.has(key) && (value === null || ["string", "number", "boolean"].includes(typeof value) || scalarList);
     out.push({ key, value, type: inferType(value, key), editable });
   }
   return { status: "ok", properties: out };
@@ -231,7 +252,7 @@ export function setProperty(text: string, key: string, value: PropertyValue): st
   if (p === null) return addFrontmatter(text, key, next);
   if ("error" in p) throw new FrontmatterError(p.error);
   const { block, body } = p;
-  const pair = p.pairs.find((x) => keyOf(x) === key);
+  const pair = pairFor(p.pairs, key);
   const at = (start: number, end: number, insert: string) =>
     text.slice(0, block.bodyStart + start) + insert + text.slice(block.bodyStart + end);
 
@@ -280,7 +301,7 @@ export function removeProperty(text: string, key: string): string {
   const p = parse(text);
   if (p === null) return text;
   if ("error" in p) throw new FrontmatterError(p.error);
-  const pair = p.pairs.find((x) => keyOf(x) === key);
+  const pair = pairFor(p.pairs, key);
   if (!pair) return text;
   const { body, block } = p;
   const keyRange = isNode(pair.key) ? pair.key.range : null;
@@ -300,7 +321,7 @@ export function renameProperty(text: string, from: string, to: string): string {
   if (p === null) return text;
   if ("error" in p) throw new FrontmatterError(p.error);
   if (p.pairs.some((x) => keyOf(x) === to)) throw new FrontmatterError(`"${to}" already exists`);
-  const pair = p.pairs.find((x) => keyOf(x) === from);
+  const pair = pairFor(p.pairs, from);
   const range = pair && isNode(pair.key) ? pair.key.range : null;
   if (!range) return text;
   const { block } = p;

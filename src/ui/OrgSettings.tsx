@@ -28,6 +28,8 @@ import { docsUrl } from "../lib/docsLinks";
 import { showAiToast } from "./AiToast";
 import { UpgradeNotice } from "./UpgradeNotice";
 import { t } from "../i18n";
+import { HelpButton } from "./HelpButton";
+import "./orgSettingsStrings";
 
 interface Props {
   open: boolean;
@@ -132,6 +134,7 @@ export function OrgSettings({ open, onClose, onOpenAuditLog, embedded = false }:
               <X size={14} />
             </button>
           )}
+          <HelpButton topic="account/organization#what-you-can-set" />
         </div>
 
         <div style={{ overflow: "auto", padding: "12px 16px", display: "flex", flexDirection: "column", gap: 18 }}>
@@ -208,7 +211,7 @@ export function OrgSettings({ open, onClose, onOpenAuditLog, embedded = false }:
                 </button>
               </div>
               {domainError && (
-                <p id="org-domain-error" role="alert" style={{ ...muted, color: "hsl(0 70% 60%)", marginTop: 4 }}>
+                <p id="org-domain-error" role="alert" style={{ ...muted, color: "hsl(var(--danger))", marginTop: 4 }}>
                   {domainError}
                 </p>
               )}

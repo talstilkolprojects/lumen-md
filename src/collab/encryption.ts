@@ -27,6 +27,11 @@
 
 const SALT_TEXT = "lumen.collab.v1";
 
+/** The room-scoped salt of the E2E transport (`./e2e.ts`) and of encrypted presence (`./e2eAwareness.ts`). */
+export function roomSalt(room: string): string {
+  return `lumen.collab.v2|${room}`;
+}
+
 /**
  * Optional per-call context. `salt` replaces the fixed application salt —
  * the E2E transport (`./e2e.ts`) passes a room-scoped salt so the same

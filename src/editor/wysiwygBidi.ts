@@ -7,7 +7,8 @@
  * character (a time, a number) takes the document's direction. Container
  * blocks (lists, quotes, list items) get the direction of their own text,
  * because `auto` skips children that carry a `dir` of their own. Code
- * blocks stay `dir="ltr"`.
+ * blocks stay `dir="ltr"`, and so does every inline formula, which the
+ * direction rule leaves out like inline code (W5.14).
  *
  * Arrow keys move in logical order inside a block (plan 9.7): the key that
  * points toward the end of the block — Left in a right-to-left block,
@@ -26,12 +27,14 @@ export const wysiwygBidiKey = new PluginKey<DecorationSet>("lumen-bidi");
 
 const CONTAINER = new Set(["list_item", "bullet_list", "ordered_list", "blockquote"]);
 const CODE_MARKS = new Set(["inlineCode", "code_inline", "code"]);
+/** An inline formula node (@milkdown/plugin-math's `math_inline`): an LTR isolate, left out of the direction rule (W5.14). */
+export const isInlineMath = (node: PMNode) => node.isInline && !node.isText && /math/i.test(node.type.name);
 
 /** A block's text as its reader sees it for direction: inline code left out. */
 function directionText(node: PMNode): string {
   let out = "";
   node.descendants((child) => {
-    if (child.type.name === "code_block" || child.type.name === "math_block") return false;
+    if (child.type.name === "code_block" || child.type.name === "math_block" || isInlineMath(child)) return false;
     if (child.isText && !child.marks.some((m) => CODE_MARKS.has(m.type.name))) out += child.text;
     return true;
   });
@@ -58,6 +61,10 @@ function decorate(state: EditorState): DecorationSet {
   const dirOf = (node: PMNode) => firstStrong(directionText(node)) ?? (base ??= documentDirection(state));
   state.doc.descendants((node, pos) => {
     if (node.type.name === "code_block" || node.type.name === "math_block") {
+      decos.push(Decoration.node(pos, pos + node.nodeSize, { dir: "ltr" }));
+      return false;
+    }
+    if (isInlineMath(node)) {
       decos.push(Decoration.node(pos, pos + node.nodeSize, { dir: "ltr" }));
       return false;
     }

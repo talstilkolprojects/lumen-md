@@ -6,6 +6,9 @@
  * `createSyncProvider` builds the `SyncProvider` the engine (../engine.ts)
  * talks to. OAuth providers need a client id from Tal (plan 15.5):
  * `oauthAvailable()` says whether one is configured.
+ *
+ * Plan W2.19 adds "lan": the local network, no cloud at all (../lan). One
+ * device hosts the vault's bucket, the others pair with it directly.
  */
 
 import { getSecret, setSecret } from "../../../lib/secretStore";
@@ -16,17 +19,19 @@ import { gdriveSyncProvider, GDRIVE_DEFAULT_FOLDER } from "./gdrive";
 import { s3Provider, type S3Provider } from "./s3";
 import { webdavProvider, type WebdavProvider } from "./webdav";
 import type { FetchLike } from "./http";
+import { lanSyncProvider, type LanRole, type LiveProvider } from "../lan";
 
-export type ProviderKind = "webdav" | "s3" | "dropbox" | "gdrive";
+export type ProviderKind = "webdav" | "s3" | "dropbox" | "gdrive" | "lan";
 
-export const PROVIDER_KINDS: ProviderKind[] = ["webdav", "s3", "dropbox", "gdrive"];
+export const PROVIDER_KINDS: ProviderKind[] = ["webdav", "s3", "dropbox", "gdrive", "lan"];
 
 /** Settings without secrets — what is persisted in IndexedDB. */
 export type ProviderSettings =
   | { kind: "webdav"; url: string; username: string }
   | { kind: "s3"; endpoint: string; region: string; bucket: string; prefix: string; accessKeyId: string; pathStyle: boolean }
   | { kind: "dropbox"; folder: string }
-  | { kind: "gdrive"; folderName: string };
+  | { kind: "gdrive"; folderName: string }
+  | { kind: "lan"; role: LanRole };
 
 /** The secret of a provider, by kind (OAuth providers keep their tokens through the cloud modules). */
 export const SECRET_NAMES: Record<ProviderKind, string | null> = {
@@ -34,6 +39,7 @@ export const SECRET_NAMES: Record<ProviderKind, string | null> = {
   s3: "lumen.sync.s3.secretAccessKey",
   dropbox: null,
   gdrive: null,
+  lan: null,
 };
 
 export function defaultSettings(kind: ProviderKind): ProviderSettings {
@@ -46,6 +52,8 @@ export function defaultSettings(kind: ProviderKind): ProviderSettings {
       return { kind, folder: DROPBOX_DEFAULT_FOLDER };
     case "gdrive":
       return { kind, folderName: GDRIVE_DEFAULT_FOLDER };
+    case "lan":
+      return { kind, role: "host" };
   }
 }
 
@@ -88,6 +96,7 @@ export async function saveProviderSecret(kind: ProviderKind, value: string | nul
 export function hasProviderSecret(kind: ProviderKind): boolean {
   const name = SECRET_NAMES[kind];
   if (name) return !!getSecret(name);
+  if (kind === "lan") return true; // no account: the vault's passphrase is the only secret
   return kind === "dropbox" ? dropboxLegacy.isConnected() : gdriveLegacy.isConnected();
 }
 
@@ -105,7 +114,7 @@ export function legacyStore(kind: ProviderKind): LegacyCloudStore | null {
   return null;
 }
 
-/** The hosts a provider talks to, for the privacy ledger. */
+/** The hosts a provider talks to, for the privacy ledger. The LAN provider talks to none (only to devices it paired with). */
 export function providerHosts(settings: ProviderSettings): string[] {
   switch (settings.kind) {
     case "webdav":
@@ -116,6 +125,8 @@ export function providerHosts(settings: ProviderSettings): string[] {
       return ["api.dropboxapi.com", "content.dropboxapi.com"];
     case "gdrive":
       return ["www.googleapis.com", "oauth2.googleapis.com"];
+    case "lan":
+      return [];
   }
 }
 
@@ -127,7 +138,7 @@ function safeHost(url: string): string[] {
   }
 }
 
-export type ConnectedProvider = SyncProvider & { probe?(): Promise<void> };
+export type ConnectedProvider = SyncProvider & Omit<LiveProvider, keyof SyncProvider>;
 
 /** The SyncProvider for `settings`, with its secret from the secret store (or `secret`, before it is saved). */
 export function createSyncProvider(settings: ProviderSettings, opts: { secret?: string; fetch?: FetchLike } = {}): ConnectedProvider {
@@ -145,5 +156,7 @@ export function createSyncProvider(settings: ProviderSettings, opts: { secret?: 
       return dropboxSyncProvider({ folder: settings.folder }, deps);
     case "gdrive":
       return gdriveSyncProvider({ folderName: settings.folderName }, deps);
+    case "lan":
+      return lanSyncProvider(settings.role);
   }
 }

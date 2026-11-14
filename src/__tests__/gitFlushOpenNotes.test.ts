@@ -15,7 +15,12 @@ vi.mock("../storage/workspace", async (orig) => ({
   },
   writeWorkspaceFile: async (p: string, c: string) => void files.set(p, c),
 }));
-vi.mock("../storage/vault", () => ({ getVaultBackend: () => ({ stat: async () => null }), watchVault: () => () => undefined }));
+vi.mock("../storage/vault", () => ({
+  getVaultBackend: () => ({ stat: async () => null }),
+  watchVault: () => () => undefined,
+  // The store reads the vault's encryption state (encrypted vault); this vault is plain.
+  vaultEncryptionState: () => "none",
+}));
 
 import { useAppStore } from "../store/useStore";
 import { flushOpenNotes } from "../store/gitPullDocs";

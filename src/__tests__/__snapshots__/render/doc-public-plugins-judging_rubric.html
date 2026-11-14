@@ -1,0 +1,19 @@
+<h1 id="plugin-contest-judging-rubric" dir="auto">Plugin Contest Judging Rubric</h1>
+<p dir="auto">Each submission is scored 0–100 across five dimensions by a panel of 3 core team members + 2 community maintainers.</p>
+<h2 id="innovation-30-points" dir="auto">Innovation (30 points)</h2>
+<table dir="ltr"><thead><tr><th dir="auto">Score</th><th dir="auto">Criteria</th></tr></thead><tbody><tr><td dir="auto">25–30</td><td dir="auto">Solves a unique problem no existing plugin addresses; novel UX pattern</td></tr><tr><td dir="auto">15–24</td><td dir="auto">Clever twist on existing idea; meaningful differentiation</td></tr><tr><td dir="auto">5–14</td><td dir="auto">Incremental improvement; &quot;me too&quot; plugin</td></tr><tr><td dir="auto">0–4</td><td dir="auto">Already exists as a Lumen built-in or popular plugin</td></tr></tbody></table>
+<h2 id="polish-25-points" dir="auto">Polish (25 points)</h2>
+<table dir="ltr"><thead><tr><th dir="auto">Score</th><th dir="auto">Criteria</th></tr></thead><tbody><tr><td dir="auto">21–25</td><td dir="auto">Production-ready: responsive UI, dark/light mode, error handling, i18n strings</td></tr><tr><td dir="auto">11–20</td><td dir="auto">Good UI, minor rough edges, some missing edge cases</td></tr><tr><td dir="auto">1–10</td><td dir="auto">Works but unpolished; no error states; hardcoded English</td></tr><tr><td dir="auto">0</td><td dir="auto">Crashes or unusable on basic workflows</td></tr></tbody></table>
+<h2 id="performance-20-points" dir="auto">Performance (20 points)</h2>
+<table dir="ltr"><thead><tr><th dir="auto">Score</th><th dir="auto">Criteria</th></tr></thead><tbody><tr><td dir="auto">16–20</td><td dir="auto">&lt;1ms impact on editor startup; lazy-loads everything; no memory leaks</td></tr><tr><td dir="auto">8–15</td><td dir="auto">Minor startup cost (&lt;50ms); reasonable lazy loading</td></tr><tr><td dir="auto">1–7</td><td dir="auto">Noticeable slowdown (&gt;100ms); bundles heavy deps unconditionally</td></tr><tr><td dir="auto">0</td><td dir="auto">Freezes editor or leaks memory</td></tr></tbody></table>
+<h2 id="community-15-points" dir="auto">Community (15 points)</h2>
+<table dir="ltr"><thead><tr><th dir="auto">Score</th><th dir="auto">Criteria</th></tr></thead><tbody><tr><td dir="auto">13–15</td><td dir="auto">Active GitHub discussion &gt;20 comments; demo video &gt;1k views; PRs from others</td></tr><tr><td dir="auto">6–12</td><td dir="auto">Healthy discussion; author responsive to questions</td></tr><tr><td dir="auto">1–5</td><td dir="auto">Minimal engagement; author ghosts issues</td></tr><tr><td dir="auto">0</td><td dir="auto">No README; no install instructions</td></tr></tbody></table>
+<h2 id="code-quality-10-points" dir="auto">Code Quality (10 points)</h2>
+<table dir="ltr"><thead><tr><th dir="auto">Score</th><th dir="auto">Criteria</th></tr></thead><tbody><tr><td dir="auto">9–10</td><td dir="auto">TypeScript strict; unit tests &gt;80% coverage; clean architecture</td></tr><tr><td dir="auto">5–8</td><td dir="auto">Mostly typed; some tests; readable structure</td></tr><tr><td dir="auto">1–4</td><td dir="auto">JS or loose TS; no tests; spaghetti</td></tr><tr><td dir="auto">0</td><td dir="auto">Security vulnerabilities; eval() user input</td></tr></tbody></table>
+<h2 id="tie-breaker" dir="auto">Tie-breaker</h2>
+<p dir="auto">If two entries score identically:</p>
+<ol dir="ltr">
+<li dir="ltr">Fewer dependencies (smaller bundle)</li>
+<li dir="ltr">Earlier submission timestamp</li>
+<li dir="ltr">Community vote (GitHub Discussions upvotes)</li>
+</ol>

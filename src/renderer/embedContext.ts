@@ -10,6 +10,7 @@
 
 import { t } from "../i18n";
 import { createEmbedContext, embeddedTexts, hasEmbeds, type EmbedContext, type EmbedNoticeKind } from "./embeds";
+import "./embedContextStrings";
 
 /** The workspace path a preview doc key (./previewDoc) names, or null. */
 export function hostPathOf(docKey: string | null | undefined): string | null {
@@ -38,9 +39,10 @@ export async function loadEmbedContext(markdownText: string, docKey: string | nu
   if (!hasEmbeds(markdownText)) return undefined;
   let files: { path: string; content: string; modified?: number }[] = [];
   try {
-    const { ensureIndex, indexedFiles } = await import("../storage/workspaceIndex");
+    const { ensureIndex, indexedNotes } = await import("../storage/workspaceIndex");
     await ensureIndex();
-    files = indexedFiles();
+    // W2.22: the notes' text, read from the index for this render.
+    files = await indexedNotes();
   } catch {
     /* why: no workspace */
   }

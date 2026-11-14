@@ -306,11 +306,15 @@ describe("deterministic detection on the set", () => {
   });
 });
 
-/* ─── The 7.1 golden set, when present ─────────────────────────────────── */
+/* ─── The 7.1 golden set ───────────────────────────────────────────────── */
 
 const golden = import.meta.glob<{ items: Array<{ id: string; carrier: string }> }>("../../eval/golden/injection/dev/*.json", { eager: true, import: "default" });
 const goldenItems = Object.values(golden).flatMap((f) => f.items ?? []);
-describe.skipIf(!goldenItems.length)("7.1 golden injection set (dev items)", () => {
+describe("7.1 golden injection set (dev items)", () => {
+  // The set is in the repo (eval/golden/injection/dev/): an empty glob is a moved file, not a reason to skip (W4.12).
+  it("is present", () => {
+    expect(goldenItems.length).toBeGreaterThan(0);
+  });
   it.each(goldenItems.map((g) => [g.id, g] as const))("%s: no unapproved write", async (_id, g) => {
     const { exfil } = await runCase({ id: g.id, channel: "web-page", carrier: g.carrier }, "local-first");
     expect(listStagedChanges({ all: true })).toEqual([]);

@@ -28,8 +28,11 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { t } from "../i18n";
+import { rankCommands } from "./paletteSearch";
 import "./CommandPalette.css";
+import { HelpButton } from "./HelpButton";
 import { announceCommand } from "../research/usability/commandEvents";
+import { countCommand } from "../metrics/count";
 
 export interface Command {
   id: string;
@@ -39,6 +42,12 @@ export interface Command {
   icon?: LucideIcon;
   group?: string;
   action: () => void;
+  /**
+   * The action deletes or replaces what the person made (plan W3.2): it
+   * asks first ("confirm") or offers an undo ("undo").
+   * scripts/check-destructive.mjs holds every command to it.
+   */
+  destructive?: "confirm" | "undo";
   /** Sub-commands — renders as expandable group in palette */
   children?: Command[];
 }
@@ -205,16 +214,13 @@ export function CommandPalette({ open, onClose, commands }: Props) {
     return out;
   }, [commands]);
 
+  const search = useMemo(() => rankCommands(flatAll, query), [flatAll, query]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
 
-    // If searching, search across ALL commands (including children)
-    if (q) {
-      return flatAll.filter((c) => {
-        const haystack = `${c.label} ${c.hint ?? ""} ${c.group ?? ""}`.toLowerCase();
-        return haystack.includes(q);
-      });
-    }
+    // If searching, search across ALL commands (including children), ranked —
+    // and in the other keyboard layout too (plan W2.8).
+    if (q) return search.items;
 
     // Otherwise filter top-level by tab. The palette deliberately suppresses
     // commands that already live in the toolbar (File / Edit / View / Help)
@@ -240,7 +246,7 @@ export function CommandPalette({ open, onClose, commands }: Props) {
       }
     }
     return out;
-  }, [query, commands, flatAll, tab, expanded]);
+  }, [query, commands, search, tab, expanded]);
 
   useEffect(() => {
     if (active >= filtered.length) setActive(0);
@@ -281,6 +287,7 @@ export function CommandPalette({ open, onClose, commands }: Props) {
           announceCommand(cmd.id);
           void cmd.action();
         }, 0);
+        countCommand(cmd.id);
       }
     } else if (e.key === "Backspace" && !query) {
       // When query is empty, Backspace collapses the last expanded sub-menu
@@ -331,6 +338,7 @@ export function CommandPalette({ open, onClose, commands }: Props) {
             aria-activedescendant={filtered.length > 0 ? `cmd-item-${active}` : undefined}
             spellCheck={false}
           />
+          <HelpButton topic="getting-started/shortcuts#anywhere-in-the-app" />
         </div>
 
         {/* ─── Category Tabs ─── */}
@@ -355,7 +363,6 @@ export function CommandPalette({ open, onClose, commands }: Props) {
                   fontWeight: tab === t.key ? 600 : 400,
                   background: tab === t.key ? "hsl(var(--accent) / 0.15)" : "transparent",
                   color: tab === t.key ? "hsl(var(--accent))" : "hsl(var(--fg-muted))",
-                  transition: "all 150ms ease",
                 }}
               >
                 {t.emoji} {t.label}
@@ -364,6 +371,11 @@ export function CommandPalette({ open, onClose, commands }: Props) {
           </div>
         )}
 
+        {query.trim() && search.variant && (
+          <div className="cmd-palette-empty" role="status" data-testid="palette-layout-hint" dir="auto" style={{ padding: "6px 14px", textAlign: "start" }}>
+            {t("palette.layoutHint", { text: search.variant })}
+          </div>
+        )}
         <div
           className="cmd-palette-list"
           ref={listRef}
@@ -419,9 +431,10 @@ export function CommandPalette({ open, onClose, commands }: Props) {
                       }
                       onClose();
                       setTimeout(() => {
-          announceCommand(cmd.id);
-          void cmd.action();
-        }, 0);
+                        announceCommand(cmd.id);
+                        void cmd.action();
+                      }, 0);
+                      countCommand(cmd.id);
                     }}
                   >
                     <Icon size={15} style={{ opacity: 0.75, flexShrink: 0 }} />

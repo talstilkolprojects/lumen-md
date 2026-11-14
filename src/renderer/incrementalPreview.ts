@@ -22,10 +22,14 @@ import { headingSlugger } from "../lib/slug";
 import { mayContainCriticMarkup } from "../editor/suggesting";
 import { BlockTracker } from "./blocks";
 import { prepareCriticMarkup } from "./criticMarkup";
+import { asRawText, boundMarkdown } from "./boundMarkdown";
 import type { Element, Root as HastRoot } from "hast";
 import { toString as hastToString } from "hast-util-to-string";
 import { visit } from "unist-util-visit";
 import { buildBlockProcessor, pipelineOptions } from "./pipeline";
+
+/** A block whose render takes longer than this is shown as raw text on its next render (plan W4.16). */
+export const BLOCK_DEADLINE_MS = 200;
 
 /**
  * rehype-slug for one block: the same id rule (github-slugger over the
@@ -161,6 +165,8 @@ export class IncrementalPreview {
   private running: Promise<unknown> = Promise.resolve();
   /** Blocks rendered since this preview was created (a test counter). */
   rendered = 0;
+  /** Block texts whose render took longer than BLOCK_DEADLINE_MS: raw text from then on (plan W4.16). */
+  readonly slowBlocks = new Set<string>();
 
   private readonly blockSlugs = rehypeSlugAcrossBlocks((text) => {
     const s = this.slugs!;
@@ -241,7 +247,13 @@ export class IncrementalPreview {
     this.slugs = slugs;
     let result: ReactElement;
     try {
-      const file = await proc.process(prepareCriticMarkup(text));
+      // Plan W4.16: a block over the parser's bounds, or one that already
+      // took longer than its deadline, is shown as raw text — so editing a
+      // note with such a block stays responsive.
+      const source = this.slowBlocks.has(text) ? asRawText(text) : boundMarkdown(text);
+      const started = now();
+      const file = await proc.process(prepareCriticMarkup(source));
+      if (now() - started > BLOCK_DEADLINE_MS && !this.slowBlocks.has(text)) this.slowBlocks.add(text);
       result = file.result as ReactElement;
     } finally {
       this.slugs = null;

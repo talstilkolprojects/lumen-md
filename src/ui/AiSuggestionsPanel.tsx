@@ -11,6 +11,9 @@ import { Lightbulb, X } from "lucide-react";
 import { t } from "../i18n";
 import { markNotGood, onAgentAnswer, onAgentSuggestions, rerunCommand, runSuggestion, type AnswerEvent, type SuggestionsEvent } from "../agents/suggestions";
 import type { Suggestion } from "../agents/types";
+import { EmptyState } from "./EmptyState";
+import { explainError } from "../lib/userError";
+import { HelpButton } from "./HelpButton";
 
 function label(s: Suggestion): string {
   return s.raw ? s.title : t(s.title, s.params);
@@ -42,7 +45,7 @@ function NotGood() {
   }, []);
   if (!answer) return null;
   return (
-    <div role="status" data-testid="ai-not-good" style={{ position: "fixed", bottom: 40, left: 16, zIndex: 99997, display: "flex", gap: 8, alignItems: "center", padding: "6px 10px", borderRadius: 10, background: "hsl(var(--bg-subtle))", border: "1px solid hsl(var(--border))", fontSize: 12.5 }}>
+    <div role="status" data-testid="ai-not-good" style={{ position: "fixed", bottom: 40, insetInlineStart: 16, zIndex: 99997, display: "flex", gap: 8, alignItems: "center", padding: "6px 10px", borderRadius: 10, background: "hsl(var(--bg-subtle))", border: "1px solid hsl(var(--border))", fontSize: 12.5 }}>
       <span>{t("agent.notGood.prompt", { agent: answer.run.agentId })}</span>
       <button
         type="button"
@@ -87,7 +90,7 @@ export function AiSuggestionsPanel() {
         rerunCommand(event.commandId ?? run.commandId);
       }
     } catch (e) {
-      setProgress(`${(e as Error).message}`);
+      setProgress(explainError(e));
     } finally {
       setBusy(null);
       setLive(null);
@@ -113,7 +116,7 @@ export function AiSuggestionsPanel() {
         borderRadius: 12,
         background: "hsl(var(--bg-subtle))",
         border: "1px solid hsl(var(--border))",
-        boxShadow: "0 8px 30px hsl(0 0% 0% / 0.2)",
+        boxShadow: "var(--shadow-md)",
         color: "hsl(var(--fg))",
         fontSize: 13,
         display: "flex",
@@ -125,6 +128,7 @@ export function AiSuggestionsPanel() {
         <Lightbulb size={16} style={{ color: "hsl(var(--accent))" }} />
         <strong style={{ flex: 1 }}>{t("agent.panel.title")}</strong>
         <button type="button" aria-label={t("agent.panel.close")} onClick={close} style={{ background: "none", border: "none", color: "inherit", cursor: "pointer" }}>
+        <HelpButton topic="ai/local-agents" />
           <X size={14} />
         </button>
       </div>
@@ -154,7 +158,7 @@ export function AiSuggestionsPanel() {
           ))}
         </ul>
       ) : (
-        <div>{t("agent.panel.none")}</div>
+        <EmptyState style={{ padding: 0 }} message={t("agent.panel.none")} action={{ label: t("agent.panel.retry"), onClick: () => { setEvent(null); rerunCommand(event.commandId ?? run.commandId); } }} />
       )}
       {progress ? <div style={{ fontSize: 12, color: "hsl(var(--fg-muted))" }}>{progress}</div> : null}
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>

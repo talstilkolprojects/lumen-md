@@ -148,17 +148,18 @@ These are written in `policy.json` under `hosts`.
 | meta | no Trusted Types | enforced by the production response headers only. The dev server, Tauri and Capacitor have not been verified under them |
 | Tauri | no `frame-ancestors`, no Trusted Types | a top-level window is never framed (on Linux Tauri injects the policy as `<meta>`). Trusted Types as for meta |
 | Tauri | `connect-src` + `ipc:` `http://ipc.localhost` | Tauri 2 IPC. No `https:`: the list is the app's explicit one. A build with deployment endpoints adds them with `--tauri-config` (below) |
-| Tauri | `img-src` and `media-src` without `https:` | the desktop app loads images only from itself and the hosts the app needs. Images and media inside notes stay unloaded there (below) |
+| Tauri | `frame-src` + the embed providers | Tauri sends one policy with every `.html` asset, `/content-frame.html` included, so the providers the content frame embeds are listed there (plan W4.15). The app's windows frame only `/content-frame.html` |
 | nginx | `connect-src` + `__CSP_CONNECT_EXTRA__` | filled by the `Dockerfile` from `dist/.csp-connect-extra` |
 | nginx | no HSTS | plain-HTTP listener behind the operator's TLS terminator. `includeSubDomains; preload` on someone else's domain is their call |
 | nginx | COOP `same-origin`, COEP `credentialless` | cross-origin isolation (D9). COEP goes on every document and worker it serves. Since 13.2 this is the compose bundle's image too; keeping it is decision 15.10(7) |
-| Netlify | runner pages: `X-Frame-Options` dropped, CSP replaced, by `netlify/edge-functions/runner-headers.ts` | Netlify's `_headers` cannot detach the catch-all rules (13.2); the function's policy strings are a `headers.mjs` source |
+| Netlify | runner pages and the content frame: `X-Frame-Options` dropped, CSP replaced, by `netlify/edge-functions/runner-headers.ts` | Netlify's `_headers` cannot detach the catch-all rules (13.2); the function's policy strings are a `headers.mjs` source |
 
 ## Images in notes and WebSockets (plan 2.2)
 
-**Images from other sites.** The web policies keep `img-src https:` and `media-src https:`
-because a static policy cannot hold one user's choices. The renderer enforces the choice
-instead (`src/lib/remoteImages.ts`):
+**Images from other sites.** A static policy cannot hold one user's choices, so the
+renderer enforces the choice (`src/lib/remoteImages.ts`). Since plan W4.15 the app's own
+policy has no `https:` in `img-src` or `media-src` at all: an image or media file the user
+allowed renders inside the content frame (next section).
 
 - An `<img>` from another origin renders as a placeholder. This covers Markdown images and
   raw HTML `<img>`, `srcset` included, in the preview, the fast first paint, search answers
@@ -185,7 +186,7 @@ WebSockets the app opens:
 
 | Socket | Where it is set | How the policy allows it |
 |---|---|---|
-| Public signaling `wss://signaling.yjs.dev`, `wss://y-webrtc-signaling-eu.herokuapp.com` | `src/collab/yjs.ts`, only when the user opts in (there is no default server) | listed |
+| Public signaling `wss://signaling.yjs.dev`, `wss://y-webrtc-eu.fly.dev` | `src/collab/yjs.ts`, only when the user opts in (there is no default server) | listed |
 | The deployment's signaling / persistent collab server | `VITE_WEBRTC_SIGNALING_URL` (comma list), `VITE_YJS_WEBSOCKET_URL` | added at build time (`src/build/cspEndpoints.ts`, `WEBSOCKET_ENV_VARS`) |
 | A server the user types into Collab settings | `localStorage` `lumen.collab.signaling` / `lumen.collab.ws` | only when the build lists it (`VITE_CSP_CONNECT_EXTRA`). Otherwise `yjs.ts` skips it with a warning, and the dialog says so |
 | Vite's dev server (HMR) | `npm run dev` | the dev page alone gets `ws://*:<port>` / `wss://*:<port>`. CSP3 `'self'` covers the same host too. No build carries it |
@@ -203,6 +204,63 @@ parses and matches only that port. Not checked: Firefox and WebKit (CI runs the 
 suite there against the dev server, whose HMR socket now relies on the explicit
 `ws://*:5173`), the y-websocket persistent server end to end, and Supabase realtime if a
 future feature subscribes to a channel (it would need `wss://*.supabase.co`).
+
+## The content frame (plan W4.15)
+
+The app's policy frames nothing but itself (`frame-src 'self'`) and loads images and media
+only from itself and the hosts it needs. What another site serves into a note renders, once
+the user allowed it, inside `/content-frame.html` (`public/content-frame.html` + `.js`,
+route `content-frame` in `policy.json`): a same-origin page with its own header policy on
+every host (Cloudflare `_headers`, Vercel, the Netlify edge function, nginx) and a `<meta>`
+copy for the dev server and Capacitor.
+
+| Content | Frame sandbox | What the frame's policy allows |
+|---|---|---|
+| Image (Markdown, raw `<img>`, WYSIWYG) | `allow-scripts` (opaque origin) | `img-src https:` |
+| `<video>` / `<audio>` | `allow-scripts` | `media-src https:` (posters stay removed by the sanitizer) |
+| Embed block, raw `<iframe>` | the embed block's old flags, `allow-same-origin` included | `frame-src` = the providers the embed block knows (`src/plugins/EmbedBlock.tsx`) |
+| Gist | `allow-scripts allow-popups allow-popups-to-escape-sandbox` | `script-src https://gist.github.com`, `style-src https://github.githubassets.com` |
+
+- **Nothing loads before the user allows it.** Images and media keep the plan 2.2
+  placeholder. Embeds and raw iframes now wait too (before, they loaded when the note
+  opened): **Load** / **Always allow _host_**, the same choice and the same stored list as
+  for images (`src/renderer/RemoteFrame.tsx`). A link to a site the embed block does not
+  know stays a link: no policy frames it.
+- **Why embeds keep `allow-same-origin`.** A nested frame inherits its parent's sandbox
+  flags, and the providers' players need their own origin (storage, cookies, and YouTube a
+  referrer, else "Error 153"). So the content frame runs at the app's origin for embeds.
+  Its only script is `public/content-frame.js`: it builds elements from the request in the
+  `#fragment` with `createElement` and properties, never HTML, and its policy has
+  `connect-src 'none'` and no `'unsafe-inline'` script.
+- **Gists.** A Gist embed is a script that `document.write()`s the gist and its
+  stylesheet (the old `data:` wrapper inherited the app's `script-src 'self'`, so Gists
+  never rendered). The content frame writes that script only in an opaque-origin frame,
+  and refuses otherwise. The desktop app shows a Gist as a link.
+- **The request travels in the `#fragment`**: it is never sent to a server and is not
+  part of the service worker's cache key (the page is precached like the runner pages).
+  The frame reports the size its content wants with `postMessage`; the app matches the
+  message to the frame by its window (`src/lib/contentFrame.ts`).
+- **WebKit** does not match `'self'` in an opaque-origin frame, so the page's script
+  carries the build's public nonce, as the runner pages do.
+
+**connect-src, also W4.15.** Dropped: `wss://y-webrtc-signaling-eu.herokuapp.com` (Heroku
+ended free dynos in November 2022; y-webrtc 10.3.0, the version in the lockfile, replaced
+it with `wss://y-webrtc-eu.fly.dev` as its own default, which is now the second opt-in
+public server), `https://cdn-lfs.huggingface.co` (covered by `https://*.huggingface.co`),
+`https://www.gstatic.com` (nothing in `src/` uses it) and `https://*.supabase.co` (a
+deployment that uses Supabase sets `VITE_SUPABASE_URL`, which `src/build/cspEndpoints.ts`
+adds). The font hosts stay: the service worker's runtime cache fetches the Google Fonts
+files.
+
+**style-src `'unsafe-inline'`: the plan, not done yet.** React's `style={…}` goes through
+the CSSOM, which CSP does not govern, so the app itself needs `'unsafe-inline'` only for
+`<style>` elements other code injects and for `style="…"` attributes in HTML it inserts as
+markup (KaTeX, Shiki, Mermaid's SVG, the sanitized note HTML). The step that is possible
+without breaking those: split the directive into CSP3's `style-src-elem 'self' 'nonce-…'`
+(CodeMirror takes a nonce through `EditorView.cspNonce`; each other `<style>` injector
+needs an inventory) and `style-src-attr 'unsafe-inline'`. With `https:` gone from
+`img-src`, an inline style can no longer load anything from another site, which was the
+main risk of `'unsafe-inline'` in styles.
 
 ## Desktop (Tauri)
 
@@ -230,9 +288,10 @@ Plan 2.1 leaves no open scheme in the desktop policy. It has no `unsafe-eval`, a
   - the map block's tiles, from `*.tile.openstreetmap.org`;
   - account avatars, from `avatars.githubusercontent.com` and `*.googleusercontent.com`.
   
-  The web policies list the same hosts and keep a trailing `https:` for images inside
-  notes. The desktop policy drops that `https:`, so images from other sites in a note do
-  not load on desktop. The placeholder (plan 2.2) says so and offers no Load button.
+  The web policies list the same hosts. Images from other sites in a note load on the web
+  inside the content frame, whose own policy has `https:`; on desktop Tauri sends the app
+  policy with that page too, so they do not load there. The placeholder (plan 2.2) says so
+  and offers no Load button.
 - **`media-src`** is `'self' blob:`. `<video>` / `<audio>` from other sites in a note do
   not play on desktop.
 - **Not checked here:** rendering inside the desktop app (Graphviz, Python, OCR, the
@@ -268,9 +327,11 @@ their requests to those workers pass too. `vercel.ts` has no imports beyond Node
    and the srcdoc sandboxes' inline policies are separate surfaces, and are not part of
    this policy.
 7. **Images and media inside notes on desktop.** Since plan 2.1 the desktop app loads none
-   from other sites. If they should load on desktop as they do on the web, remove the
-   Tauri rule that drops `https:` from `img-src` / `media-src`. The renderer's own gate
-   (plan 2.2) still holds them back until the user allows them.
+   from other sites. If they should load on desktop as they do on the web, the Tauri
+   policy (which Tauri also sends with `/content-frame.html`) would need `https:` in
+   `img-src` / `media-src`, and `src/lib/remoteImages.ts` would stop treating desktop as
+   unavailable. The renderer's own gate (plan 2.2) still holds them back until the user
+   allows them.
 8. **Desktop builds with deployment endpoints** use `--tauri-config` (see "Desktop
    (Tauri)"). This has not been tried in a real desktop build.
 9. **Collab servers typed in at runtime** (plan 2.2). Before, the bare `wss:` let any

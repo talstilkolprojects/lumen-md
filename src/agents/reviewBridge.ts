@@ -10,7 +10,10 @@
  *    document it worked on;
  *  - reports how many changes wait for review (the status-bar badge);
  *  - announces new proposals with a toast that opens the review panel;
- *  - adds `agentReview` to the e2e test surface (`window.__lumen`).
+ *  - in development and tests only, adds `agentReview` to the e2e test
+ *    surface (`window.__lumen`); see `TEST_SURFACE` below (plan W1.31);
+ *  - stages the proposals of MCP clients from `.lumen/mcp/pending`
+ *    (plan W2.3, `mcpInbox.ts`).
  */
 
 import type { RefObject } from "react";
@@ -23,6 +26,17 @@ import type { ChangeProposal, StagedChange } from "./types";
 import { flushPendingEdits, tabIdOf, useAppStore } from "../store/useStore";
 import { showAiToast } from "../ui/AiToast";
 import { t, tPlural } from "../i18n";
+
+/**
+ * Whether `window.__lumen.agentReview` exists (plan W1.31): in the Vite dev
+ * server and in vitest (`import.meta.env.DEV`), and in a production build
+ * made for e2e with `VITE_LUMEN_TEST_SURFACE=1` (the e2e-prod job). A normal
+ * production build replaces both with constants, so the surface and
+ * `stageForTest` are dropped from the bundle: page scripts cannot stage
+ * changes behind the review panel's back. `npm run check:test-surface`
+ * greps `dist/` for it.
+ */
+const TEST_SURFACE: boolean = import.meta.env.DEV || import.meta.env.VITE_LUMEN_TEST_SURFACE === "1";
 
 /** The open documents' keys, following the store (`stop` unsubscribes). */
 export function trackDocumentKeys(): DocumentKeys & { stop(): void } {
@@ -109,19 +123,29 @@ export function startAgentReview(opts: { editorRef: RefObject<EditorHandle | nul
   onList(listStagedChanges({ all: true }));
   const off = onStagedChanges(onList);
   const surface = window as unknown as { __lumen?: Record<string, unknown> };
-  (surface.__lumen ??= {}).agentReview = { stage: stageForTest, withdrawRun: discardRunChanges };
+  if (TEST_SURFACE) (surface.__lumen ??= {}).agentReview = { stage: stageForTest, withdrawRun: discardRunChanges };
+  // Changes proposed by MCP clients (plan W2.3) wait in the same panel.
+  let inbox: { stop(): void } | null = null;
+  let stopped = false;
+  void import("./mcpInbox")
+    .then((m) => m.startMcpInbox())
+    .then((i) => (stopped ? i.stop() : (inbox = i)))
+    .catch(() => {});
   return () => {
+    stopped = true;
+    inbox?.stop();
     off();
     if (timer) clearTimeout(timer);
     setDocumentApplier(null);
     setDocumentKeyProvider(null);
     keys.stop();
-    delete surface.__lumen?.agentReview;
+    if (TEST_SURFACE) delete surface.__lumen?.agentReview;
   };
 }
 
 /**
- * The e2e test surface (`window.__lumen.agentReview.stage`): stage a
+ * The e2e test surface (`window.__lumen.agentReview.stage`, development
+ * and tests only — `TEST_SURFACE`): stage a
  * proposal the way an agent's write tool and the runtime do — a range
  * with its surroundings, the open document's fingerprint and key. Staging
  * writes nothing; the change waits for approval in the panel. (No shipped

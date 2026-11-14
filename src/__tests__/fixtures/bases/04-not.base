@@ -1,0 +1,12 @@
+filters:
+  and:
+    - file.hasTag("book")
+    - not:
+        - 'status == "read"'
+views:
+  - type: list
+    name: Not read yet
+    order: [file.name, status]
+    sort:
+      - property: file.name
+        direction: ASC

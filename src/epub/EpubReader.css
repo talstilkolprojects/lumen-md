@@ -1,0 +1,138 @@
+/* EPUB reader and reading mode (plan W1.14). Theme colours come from --epub-* set on the root. */
+.epub-reader {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: var(--epub-bg);
+  color: var(--epub-fg);
+  outline: none;
+}
+.epub-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--epub-fg) 15%, transparent);
+  font: 13px system-ui, sans-serif;
+}
+.epub-toolbar button,
+.epub-nav button,
+.epub-list button,
+.epub-toc button {
+  background: transparent;
+  color: inherit;
+  border: 1px solid color-mix(in srgb, var(--epub-fg) 25%, transparent);
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  font: inherit;
+}
+.epub-toolbar button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--epub-fg) 15%, transparent);
+}
+.epub-toolbar button:disabled,
+.epub-nav button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.epub-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40vw;
+}
+.epub-spacer {
+  flex: 1;
+}
+.epub-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+.epub-toc,
+.epub-list {
+  width: min(320px, 40vw);
+  overflow: auto;
+  padding: 12px;
+  border-inline-end: 1px solid color-mix(in srgb, var(--epub-fg) 15%, transparent);
+  font: 14px system-ui, sans-serif;
+}
+.epub-list {
+  border-inline-end: none;
+  border-inline-start: 1px solid color-mix(in srgb, var(--epub-fg) 15%, transparent);
+}
+.epub-toc-list {
+  list-style: none;
+  margin: 0;
+  padding-inline-start: 12px;
+}
+.epub-toc-list button {
+  border: none;
+  text-align: start;
+  width: 100%;
+}
+.epub-toc-list button.current {
+  font-weight: 700;
+}
+.epub-list-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.epub-list-item > button:first-child {
+  text-align: start;
+  border: none;
+}
+.epub-list-item input {
+  background: transparent;
+  color: inherit;
+  border: 1px solid color-mix(in srgb, var(--epub-fg) 25%, transparent);
+  border-radius: 4px;
+  padding: 3px 6px;
+}
+.epub-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 24px 16px 48px;
+}
+.epub-chapter {
+  max-width: var(--epub-width);
+  margin: 0 auto;
+  font-size: var(--epub-size);
+  line-height: 1.6;
+}
+.epub-chapter img,
+.epub-chapter svg {
+  max-width: 100%;
+  height: auto;
+}
+/* Sepia and dark: the reader's colours win over the book's. */
+.epub-theme-sepia .epub-chapter *,
+.epub-theme-dark .epub-chapter * {
+  color: inherit !important;
+  background-color: transparent !important;
+}
+.epub-chapter mark.epub-hl {
+  background: var(--epub-mark) !important;
+  color: inherit;
+  border-radius: 2px;
+}
+.epub-chapter mark.epub-hl-flash {
+  outline: 2px solid currentColor;
+}
+.epub-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: var(--epub-width);
+  margin: 32px auto 0;
+  font: 13px system-ui, sans-serif;
+}
+.epub-error {
+  color: #c62828;
+}

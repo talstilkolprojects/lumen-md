@@ -6,6 +6,9 @@
  *   lumen formats                    list supported import/export formats
  *   lumen publish <dir|file> --out <dir> [--title <name>]
  *                                    render .md files to a static website
+ *   lumen search|open|new|append|daily|mcp …
+ *                                    the vault on disk (plan W2.3) — see
+ *                                    mcp-server/src/cli.ts
  *
  * Run with:  npx tsx bin/lumen.ts convert notes.md notes.tex
  *            npx tsx bin/lumen.ts publish docs --out site
@@ -13,11 +16,13 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { convert, convertBinary, isBinaryTarget, listFormats } from "../src/cli/convert";
 import { publishSite } from "../src/cli/publish";
+import { runVaultCli, USAGE as VAULT_USAGE, VAULT_COMMANDS } from "../mcp-server/src/cli";
 
 const USAGE = [
   "usage: lumen convert <input> [output]",
   "       lumen formats",
   "       lumen publish <dir|file> --out <dir> [--title <name>]",
+  VAULT_USAGE.replace(/^usage: /, "       "),
 ].join("\n");
 
 /** Parse `--flag value` / `--flag=value` pairs; returns flags + positionals. */
@@ -36,6 +41,10 @@ function parseFlags(args: string[]): { flags: Record<string, string>; positional
 
 async function main(argv: string[]): Promise<number> {
   const [cmd, ...rest] = argv;
+
+  if ((VAULT_COMMANDS as readonly string[]).includes(cmd)) {
+    return runVaultCli(argv, { out: (l) => console.log(l), err: (l) => console.error(l), env: process.env, cwd: process.cwd() });
+  }
 
   if (cmd === "formats") {
     const f = listFormats();
@@ -84,7 +93,10 @@ async function main(argv: string[]): Promise<number> {
 }
 
 main(process.argv.slice(2))
-  .then((code) => process.exit(code))
+  // -1: `lumen mcp serve` keeps running.
+  .then((code) => {
+    if (code >= 0) process.exit(code);
+  })
   .catch((err) => {
     console.error("error:", (err as Error).message);
     process.exit(1);

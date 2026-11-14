@@ -6,7 +6,7 @@
  *   node scripts/i18n-review.mjs [--out report.md] [--json report.json] [--back]
  *   npm run i18n:review -- …
  *
- * Checks, per locale and key (English from i18n/keys.json — regenerate it
+ * Checks, per locale and key (English from i18n/keys/<domain>.json — regenerate it
  * with `node scripts/extract-i18n-keys.mjs` first):
  *   missing-var   a {placeholder} of the English is not in the translation   (error)
  *   extra-var     a {placeholder} the English doesn't have                   (error)
@@ -90,15 +90,19 @@ export function checkPair(locale, key, en, tr) {
   return out;
 }
 
-/** English strings, from i18n/keys.json. */
+/** English strings, from i18n/keys/<domain>.json (the per-domain layout, plan 0.3). */
 export function englishStrings(root) {
-  const data = JSON.parse(readFileSync(join(root, "i18n/keys.json"), "utf8"));
-  return new Map(data.entries.map((e) => [e.key, e.en]));
+  const dir = join(root, "i18n/keys");
+  const out = new Map();
+  for (const f of readdirSync(dir).filter((n) => n.endsWith(".json")).sort()) for (const e of JSON.parse(readFileSync(join(dir, f), "utf8")).entries) out.set(e.key, e.en);
+  return out;
 }
 
-/** A locale's translations: its main file and, when present, its lazy files (src/i18n/lazy/<locale>/*.json). */
+/** A locale's translations: its domain files (src/i18n/locales/<locale>/*.json) and, when present, its lazy files (src/i18n/lazy/<locale>/*.json). */
 export function localeStrings(root, locale) {
-  const out = JSON.parse(readFileSync(join(root, "src/i18n/locales", `${locale}.json`), "utf8"));
+  const dir = join(root, "src/i18n/locales", locale);
+  const out = {};
+  for (const f of readdirSync(dir).filter((n) => n.endsWith(".json")).sort()) Object.assign(out, JSON.parse(readFileSync(join(dir, f), "utf8")));
   const lazyDir = join(root, "src/i18n/lazy", locale);
   if (existsSync(lazyDir)) for (const f of readdirSync(lazyDir).filter((n) => n.endsWith(".json"))) Object.assign(out, JSON.parse(readFileSync(join(lazyDir, f), "utf8")));
   return out;

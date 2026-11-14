@@ -1,0 +1,16 @@
+{
+  "block.liveLua.clear": "Clear output",
+  "block.liveLua.loadFailed": "Failed to load the Lua runtime.",
+  "block.liveLua.prompt": "Click Run to execute this Lua block.",
+  "block.liveLua.run": "Run",
+  "block.liveLua.state.error": "Error",
+  "block.liveLua.state.idle": "Not run",
+  "block.liveLua.state.running": "Running…",
+  "block.liveLua.state.success": "Completed",
+  "block.liveLua.state.timeout": "Timed out",
+  "block.liveLua.stop": "Stop",
+  "block.liveLua.stopped": "Stopped.",
+  "block.liveLua.timedOut": "Execution timed out after {ms} ms.",
+  "block.liveLua.title": "Live Lua",
+  "block.liveLua.workerUnavailable": "Web Workers are unavailable in this browser."
+}

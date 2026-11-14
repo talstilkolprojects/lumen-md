@@ -25,6 +25,17 @@ beforeAll(async () => {
     configFile: path.join(root, "vite.config.ts"),
     server: { middlewareMode: true, hmr: false, ws: false },
     optimizeDeps: { noDiscovery: true, include: [] },
+    // The dev server pre-bundles the git modules (#269, vite.config.ts optimizeDeps.include), and
+    // config merging adds that list to ours. The production build never pre-bundles, so the list
+    // is emptied here: what is checked is the alias the client build resolves through.
+    plugins: [
+      {
+        name: "test:no-prebundle",
+        config(c) {
+          if (c.optimizeDeps) c.optimizeDeps.include = [];
+        },
+      },
+    ],
     logLevel: "silent",
   });
 }, 60_000);

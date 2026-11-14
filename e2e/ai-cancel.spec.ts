@@ -51,6 +51,7 @@ test("Esc cancels a running AI command: the request is aborted and nothing is in
   await expect.poll(() => aborted.length, { timeout: 5000 }).toBeGreaterThan(0);
   // The request was aborted, so no answer can arrive: the note stays as it was.
   await expect.poll(() => editor.innerText()).toBe(before);
+  // hygiene-allow: proves a negative (a cancelled reply never lands in the editor), so there is no condition to wait for
   expect(await editor.innerText()).toBe(before);
   expect(await editor.innerText()).not.toContain("Action Items");
   expect(pageErrors).toEqual([]);

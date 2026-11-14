@@ -353,12 +353,14 @@ export function suggestHeadingList(headings: readonly string[], typed: string, l
     const id = slugger.slug(text);
     if (!text.trim()) return;
     const score = q ? rank(noteKey(text), q) : 1;
-    if (score > 0) hits.push({ text, slug: id === headingSlug(text) ? null : id, score, i });
+    // A wrapped setext heading: its text has a line break no link can hold, so it is inserted by its id.
+    if (score > 0) hits.push({ text, slug: id === headingSlug(text) && !text.includes("\n") ? null : id, score, i });
   });
   hits.sort((a, b) => b.score - a.score || a.i - b.i);
-  return hits.slice(0, limit).map(({ text, slug }): WikiSuggestion =>
-    slug === null ? { kind: "heading", label: text, insert: text.replace(LINK_CHARS, "") } : { kind: "heading", label: text, detail: `#${slug}`, insert: slug },
-  );
+  return hits.slice(0, limit).map(({ text, slug }): WikiSuggestion => {
+    const label = text.replace(/\n/g, " ");
+    return slug === null ? { kind: "heading", label, insert: text.replace(LINK_CHARS, "") } : { kind: "heading", label, detail: `#${slug}`, insert: slug };
+  });
 }
 
 /** The `^id` block ids of a note, with their block's text, in document order. */

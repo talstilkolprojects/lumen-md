@@ -115,6 +115,7 @@ export default function GraphvizBlock({ source, meta }: Props) {
           if (first) cache.delete(first);
         }
       } catch (e) {
+        if (!cancelled) // raw-error-allow: the syntax error of the person's own diagram source, with its line
         if (!cancelled) setError((e as Error).message);
         if (!cancelled) setState("failed");
       }

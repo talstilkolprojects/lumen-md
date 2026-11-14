@@ -58,9 +58,24 @@ export function protectEscapedWikiLinks(md: string): string {
   return out + md.slice(last);
 }
 
+/**
+ * A `\[\[` typed into the editor as text (the author's own escape, never
+ * the serializer's) marked like a protected one, so it is written back as
+ * `\[\[` and not unescaped into a live `[[…]]` link (W1.32, Codex on #238).
+ * A single backslash before `[[` (`\\[[x]]` in the source: a backslash, then
+ * a link) is left alone.
+ */
+export function protectTypedEscapes(value: string): string {
+  return value.includes("\\[\\[") ? value.replace(/\\\[\\\[/g, `[${JOINER}[`) : value;
+}
+
 /** For `ctx.update(remarkStringifyOptionsCtx, keepWikiLinks)`: the text handler, minus the wiki-link escapes. */
 export function keepWikiLinks<T extends { handlers?: Options["handlers"] }>(options: T): T {
   const text = options.handlers?.text ?? (defaultHandlers.text as Handle);
-  const wrapped: Handle = (node, parent, state, info) => unescapeWikiLinks(text(node, parent, state, info));
+  const wrapped: Handle = (node, parent, state, info) => {
+    const value = (node as { value?: unknown }).value;
+    const own = typeof value === "string" ? protectTypedEscapes(value) : value;
+    return unescapeWikiLinks(text(own === value ? node : { ...node, value: own }, parent, state, info));
+  };
   return { ...options, handlers: { ...options.handlers, text: wrapped } };
 }

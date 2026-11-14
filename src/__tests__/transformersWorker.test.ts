@@ -71,6 +71,30 @@ describe("transformers worker", () => {
     expect(pipelineFn.mock.calls[1][2]).toMatchObject({ device: "wasm", dtype: "q8" });
   });
 
+  it("with timestamps, returns each window's chunks on the whole file's clock (W1.17)", async () => {
+    asrCall.mockResolvedValueOnce({ text: " א.", chunks: [{ text: " א.", timestamp: [0, 2] }] }).mockResolvedValueOnce({ text: " ב.", chunks: [{ text: " ב.", timestamp: [1, null] }] });
+    // 40 s of equal energy: the cut lands at the start of the ±2 s search range, 28 s.
+    await handle({ id: 4, type: "transcribe", model: "onnx-community/whisper-small", device: "webgpu", audio: new Float32Array(16_000 * 40).fill(0.5), language: "he", timestamps: true });
+    expect(asrCall.mock.calls[0][1]).toEqual({ language: "he", task: "transcribe", return_timestamps: true });
+    expect(posted.at(-1)).toEqual({ id: 4, type: "result", value: { text: "א. ב.", segments: [{ start: 0, end: 2, text: "א." }, { start: 29, end: 40, text: "ב." }] } });
+  });
+
+  it("with timestamps (W5.13): asks for chunk timestamps and puts every window's chunks on the recording's clock", async () => {
+    asrCall.mockResolvedValueOnce({ text: "one two", chunks: [{ timestamp: [0, 2], text: " one" }, { timestamp: [2, 5], text: " two" }] }).mockResolvedValueOnce({ text: "three", chunks: [{ timestamp: [1, null], text: " three" }] });
+    await handle({ id: 4, type: "transcribe", model: "onnx-community/whisper-small", device: "webgpu", audio: new Float32Array(16_000 * 40), timestamps: true });
+    expect(asrCall.mock.calls[0][1]).toEqual({ task: "transcribe", return_timestamps: true });
+    const result = posted.find((m) => (m as { type: string }).type === "result") as { value: { segments: Array<{ start: number; end: number; text: string }> } };
+    const second = result.value.segments[2];
+    expect(result.value.segments.slice(0, 2)).toEqual([
+      { start: 0, end: 2, text: "one" },
+      { start: 2, end: 5, text: "two" },
+    ]);
+    // The second window starts where the first was cut (near 30 s): its chunk is shifted by that.
+    expect(second.text).toBe("three");
+    expect(second.start).toBeGreaterThan(28);
+    expect(second.end).toBeCloseTo(40, 0);
+  });
+
   it("cuts windows at the quietest point near the boundary and keeps every sample", () => {
     const audio = new Float32Array(16_000 * 65).fill(0.5);
     // Silence at 29 s and at 58 s (inside the ±2 s slack of each 30 s target): the cuts land there.

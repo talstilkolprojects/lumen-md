@@ -1,0 +1,7 @@
+{
+  "privacy.cat.network": "Other request (audit mode): listed, never blocked",
+  "privacy.report.export": "Export signed report",
+  "privacy.report.done": "Saved the signed report ({n} requests, {left} left this device). Check it with node scripts/privacy/verify-report.mjs.",
+  "privacy.report.failed": "Couldn't export the report: {error}",
+  "privacy.audit.on": "Audit mode: every request that leaves this device is listed, not only AI."
+}

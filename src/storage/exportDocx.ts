@@ -18,12 +18,14 @@
  * Not handled: embedded images (noted, not embedded) and footnotes.
  */
 import { firstStrongDirection, markdownBaseDirection, type BaseDirection } from "../lib/textDirection";
+import { inlineMathSpans } from "../lib/mathIsolate";
 import { zip } from "./zip";
 
 const DOCX_MIME =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 const R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+const M = "http://schemas.openxmlformats.org/officeDocument/2006/math";
 
 const BULLET_NUM_ID = 1; // numbering.xml <w:num> mapped to the bullet abstract
 const FIRST_ORDERED_NUM_ID = 2; // ordered lists allocate 2, 3, 4 … (restart each)
@@ -45,6 +47,8 @@ interface Run {
   code?: boolean;
   strike?: boolean;
   href?: string;
+  /** An inline formula's TeX (W5.14): written as an OMML math zone. */
+  math?: string;
 }
 
 /** Mutable state accumulated while rendering the body, consumed by the parts. */
@@ -77,6 +81,24 @@ function newCtx(baseDir: BaseDirection = "ltr"): DocxCtx {
  * emphasis.
  */
 function parseInline(text: string): Run[] {
+  // Formulas first (W5.14): `$a*b$` is math, not emphasis.
+  const spans = inlineMathSpans(text);
+  if (spans.length) {
+    const out: Run[] = [];
+    let at = 0;
+    for (const [a, b] of spans) {
+      if (a > at) out.push(...parseProse(text.slice(at, a)));
+      const fence = text.startsWith("$$", a) ? 2 : 1;
+      out.push({ text: "", math: text.slice(a + fence, b - fence) });
+      at = b;
+    }
+    if (at < text.length) out.push(...parseProse(text.slice(at)));
+    return out;
+  }
+  return parseProse(text);
+}
+
+function parseProse(text: string): Run[] {
   const runs: Run[] = [];
   const re =
     /\[([^\]]+)\]\(([^)]+)\)|\*\*\*([^*]+?)\*\*\*|\*\*([^*]+?)\*\*|\*([^*]+?)\*|~~([^~]+?)~~|`([^`]+)`/g;
@@ -101,7 +123,18 @@ const RTL_RUN = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
 
 /** A paragraph whose first strong character is RTL gets <w:bidi/> (T44). */
 function bidiOf(runs: Run[]): string {
+  // Formulas have no text here: they do not decide the paragraph's direction (W5.14).
   return firstStrongDirection(runs.map((r) => r.text).join("")) === "rtl" ? "<w:bidi/>" : "";
+}
+
+/**
+ * An inline formula as an OMML math zone (W5.14). Word lays a math zone
+ * out left to right as one unit inside a right-to-left paragraph, which is
+ * what keeps "$x^2+1$" in order in Hebrew. The zone holds the TeX as
+ * written; converting TeX to built-up OMML is not done here.
+ */
+function mathXml(tex: string): string {
+  return `<m:oMath><m:r><m:t xml:space="preserve">${esc(tex)}</m:t></m:r></m:oMath>`;
 }
 
 function rPrXml(r: Run, hyperlink = false): string {
@@ -122,6 +155,7 @@ function bareRunXml(r: Run): string {
 
 /** A run becomes a <w:hyperlink> wrapper when it carries an href. */
 function runXml(r: Run, ctx: DocxCtx): string {
+  if (r.math !== undefined) return mathXml(r.math);
   if (r.href) {
     const id = `rId${ctx.nextRelId++}`;
     ctx.hyperlinks.push({ id, target: r.href });
@@ -348,6 +382,18 @@ function markdownToBody(md: string, ctx: DocxCtx): string {
       continue;
     }
 
+    // Display math (W5.14): `$$` on its own line, the TeX, `$$`.
+    if (/^\s*\$\$\s*$/.test(line)) {
+      const tex: string[] = [];
+      let j = i + 1;
+      while (j < lines.length && !/^\s*\$\$\s*$/.test(lines[j])) tex.push(lines[j++]);
+      if (j < lines.length) {
+        out.push(`<w:p><m:oMathPara>${mathXml(tex.join(" ").trim())}</m:oMathPara></w:p>`);
+        i = j + 1;
+        continue;
+      }
+    }
+
     // Horizontal rule.
     if (/^\s*([-*_])\1{2,}\s*$/.test(line)) {
       out.push(hrXml());
@@ -496,7 +542,7 @@ function buildDocxParts(content: string): { name: string; data: string }[] {
 
   const documentXml =
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
-    `<w:document xmlns:w="${W}" xmlns:r="${R}"><w:body>` +
+    `<w:document xmlns:w="${W}" xmlns:r="${R}" xmlns:m="${M}"><w:body>` +
     body +
     `<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>` +
     `<w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>` +
@@ -542,6 +588,9 @@ export async function markdownToDocxBlob(content: string): Promise<Blob> {
 /** Export markdown content as a downloadable .docx file. */
 export async function exportToDocx(content: string, fileName: string): Promise<void> {
   const baseName = fileName.replace(/\.[^.]+$/, "");
+  // Plan W2.16: [@key] citations formatted and the reference list added, as in the preview.
+  const { mayHaveCitations, expandWithLibrary } = await import("../citations/expand");
+  if (mayHaveCitations(content)) content = (await expandWithLibrary(content).catch(() => ({ markdown: content }))).markdown;
   const blob = await markdownToDocxBlob(content);
 
   if ("showSaveFilePicker" in window) {

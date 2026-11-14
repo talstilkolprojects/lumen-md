@@ -1,0 +1,11 @@
+{
+  "vault.desktop.choose": "Choose folder…",
+  "vault.desktop.firstRunBody": "Choose the folder where your notes live. Lumen keeps them there as plain Markdown files, so other apps such as Obsidian can open them too. Notes already in the app are backed up and copied there; nothing is deleted.",
+  "vault.desktop.notNow": "Not now",
+  "vault.folder.browserStorage": "browser storage",
+  "vault.folder.cancelMove": "Cancel move",
+  "vault.folder.interrupted": "Moving the vault to “{folder}” was interrupted. Nothing was deleted.",
+  "vault.folder.moving": "Moving the vault… {done} of {total} files",
+  "vault.folder.resume": "Resume move",
+  "vault.folder.useBrowser": "Use browser storage"
+}

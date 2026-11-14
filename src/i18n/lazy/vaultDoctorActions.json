@@ -1,0 +1,9 @@
+{
+  "doctor.checking": "Checking {count} notes…",
+  "doctor.confirmFix": "Fix {links} links in {files} notes?\n\n{list}\n\nNotes open in a tab are skipped.",
+  "doctor.done": "{count} findings",
+  "doctor.fixed": "Fixed {links} links in {files} notes",
+  "doctor.noFixes": "No broken links with a single clear suggestion",
+  "doctor.noWorkspace": "Open a workspace folder first",
+  "doctor.readFailed": "Couldn't read {path}: Vault Doctor stopped so it won't report or fix links against an incomplete workspace"
+}

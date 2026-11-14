@@ -37,11 +37,17 @@ export function prTree(prs) {
   }
   const sort = (a) => a.sort((x, y) => x.number - y.number);
   const lines = [];
+  const seen = new Set();
   const walk = (p, depth) => {
+    if (seen.has(p.number)) return;
+    seen.add(p.number);
     lines.push({ depth, pr: p });
     for (const c of sort(children.get(p.number) ?? [])) walk(c, depth + 1);
   };
   for (const r of sort(roots)) walk(r, 0);
+  // PRs based on one another's heads (a cycle) have no root: show each such
+  // component from its lowest number rather than drop it (W1.32, Codex on #211).
+  for (const p of sort([...prs])) walk(p, 0);
   return lines;
 }
 
@@ -58,13 +64,20 @@ export const isForkPr = (p, repo) => p.headRepo !== undefined && p.headRepo !== 
 export function missingRefs({ prs, worktrees, branches, repo }) {
   const known = new Set(branches);
   const problems = [];
-  for (const p of prs) if (!isForkPr(p, repo) && !known.has(p.head)) problems.push(`PR #${p.number}: branch ${p.head} is not here (git fetch?)`);
+  for (const p of prs) {
+    // A deleted fork (headRepo null) has no head branch anywhere (W1.32, Codex on #211).
+    if (p.headRepo === null) problems.push(`PR #${p.number}: its fork was deleted, so branch ${p.head} exists nowhere (close or recreate the PR)`);
+    else if (!isForkPr(p, repo) && !known.has(p.head)) problems.push(`PR #${p.number}: branch ${p.head} is not here (git fetch?)`);
+  }
   for (const w of worktrees) {
     if (w.prunable) problems.push(`worktree ${w.path}: the directory is gone (${w.prunable}); git worktree prune`);
     else if (w.branch && !known.has(w.branch)) problems.push(`worktree ${w.path}: branch ${w.branch} is gone`);
   }
   return problems;
 }
+
+/** Text for a Markdown table cell: a "|" would end the cell. */
+const cell = (v) => String(v).replace(/\|/g, "\\|");
 
 /** The Markdown document. */
 export function renderHandoff({ now, repo, task, next, prs, worktrees, problems }) {
@@ -77,7 +90,8 @@ export function renderHandoff({ now, repo, task, next, prs, worktrees, problems 
     const ci = `${CI_MARK[pr.ci] ?? pr.ci}${pr.ciSha ? ` \`${pr.ciSha}\`` : ""}`;
     const indent = depth === 0 ? "" : depth <= 3 ? "↳ ".repeat(depth) : `↳${depth} `;
     const head = isForkPr(pr, repo) ? `${pr.headRepo ? pr.headRepo.split("/")[0] : "(deleted fork)"}:${pr.head}` : pr.head;
-    o.push(`| ${indent}#${pr.number} | \`${head}\` → \`${pr.base}\` | ${ci} | ${pr.unanswered ?? "?"} | ${String(pr.title).replace(/\|/g, "\\|")} |`);
+    // A git ref may contain "|", which would end the table cell even inside backticks (W1.32, Codex on #211).
+    o.push(`| ${indent}#${pr.number} | \`${cell(head)}\` → \`${cell(pr.base)}\` | ${ci} | ${pr.unanswered ?? "?"} | ${cell(pr.title)} |`);
   }
   o.push("", "\"Unanswered\" counts top-level review comments that have no reply yet. GitHub's REST API does not expose whether a thread is resolved, so this is an upper bound.", "");
   o.push(`## Worktrees (${worktrees.length})`, "", "| Path | Branch | HEAD |", "|---|---|---|");

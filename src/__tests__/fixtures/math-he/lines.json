@@ -1,0 +1,405 @@
+{
+ "about": "Plan W5.14 golden lines (CC0 1.0): Hebrew sentences with numbers and inline TeX formulas, written for this test. before/after: the Hebrew word right before and after the first formula; letters: its Latin letters in TeX order.",
+ "items": [
+  {
+   "id": "m01",
+   "line": "במדגם של 40 תלמידים קיבלנו $x^2+y^2=r^2$ כאשר הזמן הוא 4 שניות.",
+   "formula": "x^2+y^2=r^2",
+   "before": "קיבלנו",
+   "after": "כאשר",
+   "letters": "xyr"
+  },
+  {
+   "id": "m02",
+   "line": "## הראו ש$a+b=c$ לכל היותר 3 פעמים.",
+   "formula": "a+b=c",
+   "before": "ש",
+   "after": "לכל",
+   "letters": "abc"
+  },
+  {
+   "id": "m03",
+   "line": "בשאלה 3 מוצאים ש$f(x)=3x+2$ (ראו סעיף 2).",
+   "formula": "f(x)=3x+2",
+   "before": "ש",
+   "after": "ראו",
+   "letters": "fxx"
+  },
+  {
+   "id": "m04",
+   "line": "> בשאלה 3 מוצאים ש$E=mc^2$ (ראו סעיף 2).",
+   "formula": "E=mc^2",
+   "before": "ש",
+   "after": "ראו",
+   "letters": "Emc"
+  },
+  {
+   "id": "m05",
+   "line": "בעמוד 12 כתוב $v=v_0+at$ בשתי הדרכים וגם $a_n=a_1+(n-1)d$.",
+   "formula": "v=v_0+at",
+   "before": "כתוב",
+   "after": "בשתי",
+   "letters": "vvat"
+  },
+  {
+   "id": "m06",
+   "line": "## במדגם של 40 תלמידים קיבלנו $F=ma$ לכל היותר 3 פעמים.",
+   "formula": "F=ma",
+   "before": "קיבלנו",
+   "after": "לכל",
+   "letters": "Fma"
+  },
+  {
+   "id": "m07",
+   "line": "ב-2 דקות הגוף עבר $P(A)=0.3$ שווה ל-10.",
+   "formula": "P(A)=0.3",
+   "before": "עבר",
+   "after": "שווה",
+   "letters": "PA"
+  },
+  {
+   "id": "m08",
+   "line": "הראו ש$\\bar{x}=12.5$ (ראו סעיף 2).",
+   "formula": "\\bar{x}=12.5",
+   "before": "ש",
+   "after": "ראו",
+   "letters": "x"
+  },
+  {
+   "id": "m09",
+   "line": "בשאלה 3 מוצאים ש$\\sigma_x^2=4$ ולכן התשובה היא 7.",
+   "formula": "\\sigma_x^2=4",
+   "before": "ש",
+   "after": "ולכן",
+   "letters": "x"
+  },
+  {
+   "id": "m10",
+   "line": "ב-2 דקות הגוף עבר $y=2x-1$ ומכאן נובעת הטענה וגם $\\lim_{n\\to\\infty} a_n$.",
+   "formula": "y=2x-1",
+   "before": "עבר",
+   "after": "ומכאן",
+   "letters": "yx"
+  },
+  {
+   "id": "m11",
+   "line": "החוק השני קובע $\\frac{a}{b}$ (ראו סעיף 2).",
+   "formula": "\\frac{a}{b}",
+   "before": "קובע",
+   "after": "ראו",
+   "letters": "ab"
+  },
+  {
+   "id": "m12",
+   "line": "לפי הנוסחה $\\sqrt{x}+1$ לכל היותר 3 פעמים.",
+   "formula": "\\sqrt{x}+1",
+   "before": "הנוסחה",
+   "after": "לכל",
+   "letters": "x"
+  },
+  {
+   "id": "m13",
+   "line": "בשאלה 3 מוצאים ש$n=30$ עבור כל מספר טבעי.",
+   "formula": "n=30",
+   "before": "ש",
+   "after": "עבור",
+   "letters": "n"
+  },
+  {
+   "id": "m14",
+   "line": "> נסמן $p<0.05$ ומכאן נובעת הטענה.",
+   "formula": "p<0.05",
+   "before": "נסמן",
+   "after": "ומכאן",
+   "letters": "p"
+  },
+  {
+   "id": "m15",
+   "line": "- ב-2 דקות הגוף עבר $a_n=a_1+(n-1)d$ (ראו סעיף 2) וגם $s=\\frac{1}{2}gt^2$.",
+   "formula": "a_n=a_1+(n-1)d",
+   "before": "עבר",
+   "after": "ראו",
+   "letters": "anand"
+  },
+  {
+   "id": "m16",
+   "line": "לפי הנוסחה $x_1+x_2=-b/a$ ולכן התשובה היא 7.",
+   "formula": "x_1+x_2=-b/a",
+   "before": "הנוסחה",
+   "after": "ולכן",
+   "letters": "xxba"
+  },
+  {
+   "id": "m17",
+   "line": "ב-2 דקות הגוף עבר $\\Delta t=5$ בשתי הדרכים.",
+   "formula": "\\Delta t=5",
+   "before": "עבר",
+   "after": "בשתי",
+   "letters": "t"
+  },
+  {
+   "id": "m18",
+   "line": "- חשבו את $k=1,2,3$ ומכאן נובעת הטענה.",
+   "formula": "k=1,2,3",
+   "before": "את",
+   "after": "ומכאן",
+   "letters": "k"
+  },
+  {
+   "id": "m19",
+   "line": "חשבו את $s=\\frac{1}{2}gt^2$ ולכן התשובה היא 7.",
+   "formula": "s=\\frac{1}{2}gt^2",
+   "before": "את",
+   "after": "ולכן",
+   "letters": "sgt"
+  },
+  {
+   "id": "m20",
+   "line": "> ב-2 דקות הגוף עבר $\\mu=\\frac{1}{n}\\sum x_i$ וזה נכון ב-95% מהמקרים וגם $F=ma$.",
+   "formula": "\\mu=\\frac{1}{n}\\sum x_i",
+   "before": "עבר",
+   "after": "וזה",
+   "letters": "nxi"
+  },
+  {
+   "id": "m21",
+   "line": "> החוק השני קובע $\\lim_{n\\to\\infty} a_n$ (ראו סעיף 2).",
+   "formula": "\\lim_{n\\to\\infty} a_n",
+   "before": "קובע",
+   "after": "ראו",
+   "letters": "nan"
+  },
+  {
+   "id": "m22",
+   "line": "החוק השני קובע $\\int_0^1 x\\,dx$ (ראו סעיף 2).",
+   "formula": "\\int_0^1 x\\,dx",
+   "before": "קובע",
+   "after": "ראו",
+   "letters": "xdx"
+  },
+  {
+   "id": "m23",
+   "line": "בשאלה 3 מוצאים ש$z=\\frac{x-\\mu}{\\sigma}$ לכל היותר 3 פעמים.",
+   "formula": "z=\\frac{x-\\mu}{\\sigma}",
+   "before": "ש",
+   "after": "לכל",
+   "letters": "zx"
+  },
+  {
+   "id": "m24",
+   "line": "נסמן $(a+b)^2$ בשתי הדרכים.",
+   "formula": "(a+b)^2",
+   "before": "נסמן",
+   "after": "בשתי",
+   "letters": "ab"
+  },
+  {
+   "id": "m25",
+   "line": "> נסמן $\\log_2 8=k$ (ראו סעיף 2) וגם $\\sigma_x^2=4$.",
+   "formula": "\\log_2 8=k",
+   "before": "נסמן",
+   "after": "ראו",
+   "letters": "k"
+  },
+  {
+   "id": "m26",
+   "line": "נסמן $(a+b)^2$ לכל היותר 3 פעמים.",
+   "formula": "(a+b)^2",
+   "before": "נסמן",
+   "after": "לכל",
+   "letters": "ab"
+  },
+  {
+   "id": "m27",
+   "line": "חשבו את $E=mc^2$ כאשר הזמן הוא 4 שניות.",
+   "formula": "E=mc^2",
+   "before": "את",
+   "after": "כאשר",
+   "letters": "Emc"
+  },
+  {
+   "id": "m28",
+   "line": "1. לפי הנוסחה $s=\\frac{1}{2}gt^2$ שווה ל-10.",
+   "formula": "s=\\frac{1}{2}gt^2",
+   "before": "הנוסחה",
+   "after": "שווה",
+   "letters": "sgt"
+  },
+  {
+   "id": "m29",
+   "line": "> במדגם של 40 תלמידים קיבלנו $\\frac{a}{b}$ עבור כל מספר טבעי.",
+   "formula": "\\frac{a}{b}",
+   "before": "קיבלנו",
+   "after": "עבור",
+   "letters": "ab"
+  },
+  {
+   "id": "m30",
+   "line": "נסמן $x^2+y^2=r^2$ בדיוק כמו בתרגיל 5 וגם $\\sigma_x^2=4$.",
+   "formula": "x^2+y^2=r^2",
+   "before": "נסמן",
+   "after": "בדיוק",
+   "letters": "xyr"
+  },
+  {
+   "id": "m31",
+   "line": "1. נסמן $\\log_2 8=k$ ומכאן נובעת הטענה.",
+   "formula": "\\log_2 8=k",
+   "before": "נסמן",
+   "after": "ומכאן",
+   "letters": "k"
+  },
+  {
+   "id": "m32",
+   "line": "- לפי הנוסחה $p<0.05$ כאשר הזמן הוא 4 שניות.",
+   "formula": "p<0.05",
+   "before": "הנוסחה",
+   "after": "כאשר",
+   "letters": "p"
+  },
+  {
+   "id": "m33",
+   "line": "ב-2 דקות הגוף עבר $f(x)=3x+2$ וזה נכון ב-95% מהמקרים.",
+   "formula": "f(x)=3x+2",
+   "before": "עבר",
+   "after": "וזה",
+   "letters": "fxx"
+  },
+  {
+   "id": "m34",
+   "line": "בשאלה 3 מוצאים ש$n=30$ ולכן התשובה היא 7.",
+   "formula": "n=30",
+   "before": "ש",
+   "after": "ולכן",
+   "letters": "n"
+  },
+  {
+   "id": "m35",
+   "line": "במדגם של 40 תלמידים קיבלנו $\\sqrt{x}+1$ וזה נכון ב-95% מהמקרים וגם $\\int_0^1 x\\,dx$.",
+   "formula": "\\sqrt{x}+1",
+   "before": "קיבלנו",
+   "after": "וזה",
+   "letters": "x"
+  },
+  {
+   "id": "m36",
+   "line": "## בעמוד 12 כתוב $z=\\frac{x-\\mu}{\\sigma}$ בשתי הדרכים.",
+   "formula": "z=\\frac{x-\\mu}{\\sigma}",
+   "before": "כתוב",
+   "after": "בשתי",
+   "letters": "zx"
+  },
+  {
+   "id": "m37",
+   "line": "1. נסמן $f(x)=3x+2$ וזה נכון ב-95% מהמקרים.",
+   "formula": "f(x)=3x+2",
+   "before": "נסמן",
+   "after": "וזה",
+   "letters": "fxx"
+  },
+  {
+   "id": "m38",
+   "line": "חשבו את $\\int_0^1 x\\,dx$ שווה ל-10.",
+   "formula": "\\int_0^1 x\\,dx",
+   "before": "את",
+   "after": "שווה",
+   "letters": "xdx"
+  },
+  {
+   "id": "m39",
+   "line": "> לפי הנוסחה $(a+b)^2$ בשתי הדרכים.",
+   "formula": "(a+b)^2",
+   "before": "הנוסחה",
+   "after": "בשתי",
+   "letters": "ab"
+  },
+  {
+   "id": "m40",
+   "line": "## במדגם של 40 תלמידים קיבלנו $\\frac{a}{b}$ בשתי הדרכים וגם $\\mu=\\frac{1}{n}\\sum x_i$.",
+   "formula": "\\frac{a}{b}",
+   "before": "קיבלנו",
+   "after": "בשתי",
+   "letters": "ab"
+  },
+  {
+   "id": "m41",
+   "line": "לפי הנוסחה $z=\\frac{x-\\mu}{\\sigma}$ (ראו סעיף 2).",
+   "formula": "z=\\frac{x-\\mu}{\\sigma}",
+   "before": "הנוסחה",
+   "after": "ראו",
+   "letters": "zx"
+  },
+  {
+   "id": "m42",
+   "line": "> בשאלה 3 מוצאים ש$P(A)=0.3$ שווה ל-10.",
+   "formula": "P(A)=0.3",
+   "before": "ש",
+   "after": "שווה",
+   "letters": "PA"
+  },
+  {
+   "id": "m43",
+   "line": "החוק השני קובע $y=2x-1$ לכל היותר 3 פעמים.",
+   "formula": "y=2x-1",
+   "before": "קובע",
+   "after": "לכל",
+   "letters": "yx"
+  },
+  {
+   "id": "m44",
+   "line": "במדגם של 40 תלמידים קיבלנו $z=\\frac{x-\\mu}{\\sigma}$ ומכאן נובעת הטענה.",
+   "formula": "z=\\frac{x-\\mu}{\\sigma}",
+   "before": "קיבלנו",
+   "after": "ומכאן",
+   "letters": "zx"
+  },
+  {
+   "id": "m45",
+   "line": "1. החוק השני קובע $x^2+y^2=r^2$ ולכן התשובה היא 7 וגם $P(A)=0.3$.",
+   "formula": "x^2+y^2=r^2",
+   "before": "קובע",
+   "after": "ולכן",
+   "letters": "xyr"
+  },
+  {
+   "id": "m46",
+   "line": "> בעמוד 12 כתוב $x_1+x_2=-b/a$ בדיוק כמו בתרגיל 5.",
+   "formula": "x_1+x_2=-b/a",
+   "before": "כתוב",
+   "after": "בדיוק",
+   "letters": "xxba"
+  },
+  {
+   "id": "m47",
+   "line": "חשבו את $\\int_0^1 x\\,dx$ בשתי הדרכים.",
+   "formula": "\\int_0^1 x\\,dx",
+   "before": "את",
+   "after": "בשתי",
+   "letters": "xdx"
+  },
+  {
+   "id": "m48",
+   "line": "1. במדגם של 40 תלמידים קיבלנו $v=v_0+at$ בדיוק כמו בתרגיל 5.",
+   "formula": "v=v_0+at",
+   "before": "קיבלנו",
+   "after": "בדיוק",
+   "letters": "vvat"
+  },
+  {
+   "id": "m49",
+   "line": "## חשבו את $n=30$ וזה נכון ב-95% מהמקרים.",
+   "formula": "n=30",
+   "before": "את",
+   "after": "וזה",
+   "letters": "n"
+  },
+  {
+   "id": "m50",
+   "line": "- לפי הנוסחה $P(A)=0.3$ בשתי הדרכים וגם $v=v_0+at$.",
+   "formula": "P(A)=0.3",
+   "before": "הנוסחה",
+   "after": "בשתי",
+   "letters": "PA"
+  }
+ ]
+}

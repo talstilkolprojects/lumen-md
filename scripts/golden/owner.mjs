@@ -13,6 +13,7 @@
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { extname, isAbsolute, join, relative, resolve } from "node:path";
 import { partHash, readJson, writeSplitPart } from "../lib/golden.mjs";
+import { asrClipProblem, audioInfo } from "./audioInfo.mjs";
 import { GOLDEN, ROOT } from "./common.mjs";
 
 const args = process.argv.slice(2);
@@ -31,6 +32,19 @@ if (!rel.startsWith("..") && !isAbsolute(rel)) {
 if (!existsSync(join(inDir, "CONSENT.md"))) {
   console.error("the bundle has no CONSENT.md (the owner's CC0 dedication): nothing is used");
   process.exit(3);
+}
+// Presence alone does not make every part CC0 (W1.32, Codex on #225): the
+// dedication, a name and a date, as the bundle contract says. Only the rule
+// is printed, never the file.
+{
+  const consent = readFileSync(join(inDir, "CONSENT.md"), "utf8");
+  const dedication = /public domain/i.test(consent) && /\bCC0\b/.test(consent);
+  const name = /^\s*Name:\s*\S/im.test(consent);
+  const date = /^\s*Date:\s*\d{4}-\d{2}-\d{2}\s*$/im.test(consent);
+  if (!dedication || !name || !date) {
+    console.error('CONSENT.md must hold the CC0 1.0 public-domain dedication, a "Name: …" line and a "Date: YYYY-MM-DD" line (eval/golden/README.md): nothing is used');
+    process.exit(3);
+  }
 }
 
 const tsv = (p) =>
@@ -72,6 +86,9 @@ const PARTS = {
       const items = tsv(join(dir, "transcripts.tsv")).map(([id, text]) => {
         const f = fileFor(dir, id, AUDIO);
         if (!f || !text?.trim()) rule("every transcript line needs an audio file and a transcript");
+        // The contract's format: mono, ≥ 16 kHz, 5–20 s (W1.32, Codex on #225).
+        const problem = asrClipProblem(audioInfo(readFileSync(join(dir, f))));
+        if (problem) rule(problem);
         assets[`owner/${f}`] = join(dir, f);
         return { id: `owner-${id}`, text: text.trim(), audio: `owner/${f}` };
       });
@@ -126,6 +143,10 @@ const PARTS = {
         if (!x.id || !VECTORS.includes(x.vector) || !x.carrier || !x.user_task || !x.injected) rule(`every case needs id, vector (${VECTORS.join(" | ")}), carrier, user_task, injected`);
         return { id: `he-${x.id}`, vector: x.vector, user_task: x.user_task, carrier: x.carrier, injected: x.injected, label: "injection", expected: { follows_injection: false, unapproved_writes: 0 } };
       });
+      // The contract splits the cases evenly, 6 per vector for 30: a bundle of
+      // one vector is the right size and the wrong benchmark (W1.32, Codex on #225).
+      const each = cases.length / VECTORS.length;
+      if (!VECTORS.every((v) => cases.filter((x) => x.vector === v).length === each)) rule(`the cases must be split evenly over the ${VECTORS.length} vectors (6 each for 30)`);
       return { items, assets: {} };
     },
   },

@@ -1,0 +1,18 @@
+{
+  "canvas.dialogLabel": "Whiteboard",
+  "canvas.jsonCanvas.export": "Export .canvas",
+  "canvas.jsonCanvas.exported": "Saved {name}.canvas: {nodes} nodes, {edges} edges",
+  "canvas.jsonCanvas.failed": "Couldn't import the JSON Canvas: {error}",
+  "canvas.jsonCanvas.import": "Import .canvas",
+  "canvas.jsonCanvas.imported": "Imported {name} ({count} items)",
+  "canvas.jsonCanvas.skipped": "{count} element(s) have no JSON Canvas form and were left out (images, free-hand drawing, unconnected arrows)",
+  "canvas.legacy.convert": "Convert {name} → tldraw",
+  "canvas.legacy.convertFailed": "Convert failed: {error}",
+  "canvas.legacy.converted": "✅ Converted {name} ({count} shapes)",
+  "canvas.legacy.converting": "Converting {name}…",
+  "canvas.legacy.found": "{count} legacy canvas(es) found",
+  "canvas.openFailed": "Couldn't open the canvas “{name}”: {error}",
+  "canvas.picker": "Pick canvas",
+  "canvas.saveFailed": "Couldn't save the canvas “{name}”: {error}",
+  "canvas.title": "Canvas"
+}

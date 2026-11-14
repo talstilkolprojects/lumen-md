@@ -289,7 +289,7 @@ export function renderDocs(): RenderDoc[] {
   ];
   for (const f of readdirSync(join(root, "public/templates")).filter((n) => n.endsWith(".md")).sort()) docs.push({ name: `template-${f.replace(/\.md$/, "")}`, markdown: read(`public/templates/${f}`) });
   for (const f of readdirSync(join(root, "public/templates/he")).filter((n) => n.endsWith(".md")).sort()) docs.push({ name: `template-he-${f.replace(/\.md$/, "")}`, markdown: read(`public/templates/he/${f}`) });
-  for (const rel of ["public/tutorials/index.md", "public/plugins/CONTEST.md", "public/plugins/JUDGING_RUBRIC.md", "public/plugins/CONTRIBUTING.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "SECURITY.md", "DEPLOY.md", "TERMS.md", "PRIVACY.md", "RELEASE.md", "RELEASE_NOTES_2026-05-01.md", "MASTER_PLAN.md"]) {
+  for (const rel of ["public/tutorials/index.md", "public/plugins/CONTEST.md", "public/plugins/JUDGING_RUBRIC.md", "public/plugins/CONTRIBUTING.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "SECURITY.md", "DEPLOY.md"]) {
     docs.push({ name: `doc-${rel.replace(/\.md$/, "").replace(/[/.]/g, "-").toLowerCase()}`, markdown: read(rel) });
   }
   for (const [name, markdown] of Object.entries(SYNTHETIC)) docs.push({ name, markdown });

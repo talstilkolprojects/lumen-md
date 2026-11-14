@@ -1,0 +1,6 @@
+{
+  "desktop.capture.failed": "Couldn't add it to the inbox. Is the vault open?",
+  "desktop.capture.hint": "Enter adds it to {inbox} · Shift+Enter for a new line · Esc closes",
+  "desktop.capture.placeholder": "A thought, a task, a link…",
+  "desktop.capture.title": "Quick capture"
+}

@@ -112,6 +112,23 @@ describe("privacy ledger", () => {
     expect(sent).toEqual(["download=true".length, 2 + "x=1".length, 0]);
   });
 
+  it("the webR download the user asks for is a model download (allowed under local-only); other jsDelivr traffic is third-party (plan W1.34)", async () => {
+    expect(classify("https://webr.r-wasm.org/v0.6.0/R.wasm")).toMatchObject({ host: "webr.r-wasm.org", category: "model-download" });
+    expect(classify("https://cdn.jsdelivr.net/npm/webr@0.6.0/dist/R.wasm")).toMatchObject({ category: "model-download" });
+    expect(classify("https://cdn.jsdelivr.net/npm/other@1/x.js")).toMatchObject({ category: "third-party" });
+    const inner = vi.fn(async () => new Response("x", { status: 200 }));
+    const f = withLedger(inner as unknown as typeof fetch);
+    setAiPolicy("local-only");
+    await expect(f("https://webr.r-wasm.org/v0.6.0/R.wasm")).resolves.toBeInstanceOf(Response);
+    await expect(f("https://cdn.jsdelivr.net/npm/other@1/x.js")).rejects.toBeInstanceOf(PrivacyBlockedError);
+    expect(inner).toHaveBeenCalledTimes(1);
+    expect(ledgerEntries().map((e) => [e.category, e.decision])).toEqual([
+      ["model-download", "allowed"],
+      ["third-party", "blocked"],
+    ]);
+    setAiPolicy("local-first");
+  });
+
   it("Excalidraw's font fallback CDN is third-party traffic — blocked under local-only, never needed (fonts are served locally, plan 4.19)", async () => {
     const font = "https://esm.sh/@excalidraw/excalidraw@0.18.1/dist/prod/fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2";
     expect(classify(font)).toMatchObject({ host: "esm.sh", category: "third-party" });

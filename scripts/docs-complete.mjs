@@ -14,6 +14,10 @@
  * 5. Every internal link (`](/a/b/)`, `](/he/a/b/#x)`) resolves to a page,
  *    or to a pending one; a Hebrew page links to Hebrew pages (`/he/…`)
  *    when the Hebrew twin exists.
+ * 7. Parity (plan W1.28): every page, in the sidebar or not (the splash
+ *    page too), exists in both languages — no English page without its
+ *    Hebrew twin, no Hebrew page without its English one — except a page
+ *    listed in `hebrewPending`.
  * 6. A page another open PR writes is listed in `pending` with that PR; it
  *    is exempt from 1 until it lands, and listing a page that already
  *    exists is an error (the exemption must be removed).
@@ -79,6 +83,16 @@ export function check({ config, required, has, list, pages = [], read = () => ""
       if (he && !page(target, "he")) problems.push(`${rel}: link ${raw} — no Hebrew page ${target} yet; link /${target}/`);
       if (isHe && !he && page(target, "he")) problems.push(`${rel}: link ${raw} — a Hebrew page links to /he/${target}/`);
     }
+  }
+  const all = new Set(pages);
+  for (const rel of pages) {
+    const isHe = rel.startsWith("he/");
+    const twin = isHe ? rel.slice(3) : `he/${rel}`;
+    const slug = (isHe ? twin : rel).replace(/\.mdx?$/, "");
+    const twins = [twin.replace(/\.mdx?$/, ".md"), twin.replace(/\.mdx?$/, ".mdx")];
+    if (twins.some((t) => all.has(t))) continue;
+    if (!isHe && (required.hebrewPending ?? {})[slug]) continue;
+    problems.push(isHe ? `${rel}: a Hebrew page with no English twin (${twin})` : `${rel}: no Hebrew twin (docs/src/content/docs/${twin})`);
   }
   for (const [area, slug] of Object.entries(required.areas ?? {})) {
     if (!slugs.includes(slug)) problems.push(`area "${area}": its page ${slug} is not in the sidebar`);

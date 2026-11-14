@@ -3,6 +3,7 @@ import { sanitizeSvgMarkup } from "../lib/markupSanitizer";
 import { toTrustedHTML } from "../lib/trustedTypes";
 import { t } from "../i18n";
 import { KrokiBlockedError, optInKroki, renderViaKroki } from "./plantumlPolicy";
+import "./plantUMLBlockStrings";
 
 interface Props {
   source: string;
@@ -85,6 +86,7 @@ export default function PlantUMLBlock({ source }: Props) {
           return;
         }
         if (!cancelled) {
+          // raw-error-allow: the syntax error of the person's own diagram source, with its line
           setError(e.message);
           setState("failed");
         }

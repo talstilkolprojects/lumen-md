@@ -3,10 +3,12 @@
  * the vault and open it in the reader. Its own chunk, loaded by the command.
  */
 
+import "./strings";
 import { t } from "../i18n";
 import { showAiToast } from "../ui/AiToast";
 import { isOPFSAvailable, uniqueWorkspaceName, writeWorkspaceBlob } from "../storage/workspace";
 import { notifyWorkspaceChanged } from "../storage/workspaceEvents";
+import { explainError } from "../lib/userError";
 
 export function pickAndOpenPdf(): void {
   if (!isOPFSAvailable()) {
@@ -25,7 +27,7 @@ export function pickAndOpenPdf(): void {
       notifyWorkspaceChanged();
       window.dispatchEvent(new CustomEvent("lumen-open-file", { detail: { path } }));
     } catch (e) {
-      showAiToast(t("pdf.failed", { error: e instanceof Error ? e.message : String(e) }), "error");
+      showAiToast(t("pdf.failed", { error: explainError(e) }), "error");
     }
   };
   input.click();

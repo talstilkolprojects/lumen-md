@@ -97,9 +97,7 @@
   color: hsl(var(--fg-muted));
   border-radius: 3px;
   opacity: 0;
-  transition:
-    opacity 80ms ease,
-    background 80ms ease;
+  transition: opacity var(--duration-fast) var(--ease-out);
   cursor: pointer;
 }
 .file-tree-action:hover {

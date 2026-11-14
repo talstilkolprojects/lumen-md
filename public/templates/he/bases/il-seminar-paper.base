@@ -1,0 +1,24 @@
+# עבודות — נוצר מהתבנית עבודה סמינריונית
+filters:
+  and:
+    - 'type == "paper"'
+properties:
+  file.name:
+    displayName: "עבודה"
+  note.advisor:
+    displayName: "מנחה"
+  note.due:
+    displayName: "הגשה"
+  note.status:
+    displayName: "סטטוס"
+views:
+  - type: table
+    name: "עבודות"
+    order:
+      - file.name
+      - note.advisor
+      - note.due
+      - note.status
+    sort:
+      - property: note.due
+        direction: DESC

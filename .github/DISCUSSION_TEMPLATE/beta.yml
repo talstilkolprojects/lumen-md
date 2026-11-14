@@ -1,0 +1,38 @@
+# Plan W2.25: joining the beta = opening a discussion in the "Beta" category
+# (slug: beta) with this form. Everything here is public on GitHub, so the
+# form asks for nothing personal beyond what the person chooses to write.
+title: "בטא: "
+labels: ["beta"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        תודה שאתם מצטרפים לבטא של Lumen! / Thanks for joining the Lumen beta!
+        הכול כאן ציבורי. אל תכתבו פרטים אישיים. / Everything here is public: please don't share personal details.
+  - type: dropdown
+    id: role
+    attributes:
+      label: "במה אתם עוסקים? / What do you do?"
+      options: ["סטודנט/ית · Student", "מחקר · Research", "כתיבה · Writing", "פיתוח · Software", "אחר · Other"]
+    validations:
+      required: true
+  - type: checkboxes
+    id: devices
+    attributes:
+      label: "על מה תנסו את Lumen? / Where will you try Lumen?"
+      options:
+        - label: "דפדפן במחשב / Desktop browser"
+        - label: "אפליקציית שולחן העבודה / Desktop app"
+        - label: "טלפון / Phone"
+  - type: input
+    id: today
+    attributes:
+      label: "במה אתם כותבים היום? / What do you write in today?"
+      placeholder: "Word, Notion, Obsidian, Google Docs…"
+  - type: checkboxes
+    id: conduct
+    attributes:
+      label: "כללי התנהגות / Code of conduct"
+      options:
+        - label: "קראתי את כללי ההתנהגות ואני מסכים/ה להם / I have read and agree to the code of conduct (CODE_OF_CONDUCT.md)"
+          required: true

@@ -25,7 +25,8 @@ describe("speak()", () => {
     const spoken: string[] = [];
     vi.stubGlobal("SpeechSynthesisUtterance", FakeUtterance);
     vi.stubGlobal("speechSynthesis", {
-      getVoices: () => [],
+      // A local voice: since #195 a sentence with no local voice is not spoken.
+      getVoices: () => [{ name: "Local English", lang: "en-US", localService: true }],
       cancel: () => undefined,
       speak: (u: FakeUtterance) => {
         spoken.push(u.text);

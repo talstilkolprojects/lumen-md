@@ -21,10 +21,10 @@ import { log } from "../lib/logger";
  */
 export function deferredJSONStorage<S>(
   isLarge: (value: StorageValue<S>) => boolean,
-  opts: { delayMs?: number; storage?: () => Storage } = {},
+  opts: { delayMs?: number; storage?: () => Pick<Storage, "getItem" | "setItem" | "removeItem"> } = {},
 ): PersistStorage<S> | undefined {
   const delayMs = opts.delayMs ?? 1000;
-  let store: Storage;
+  let store: Pick<Storage, "getItem" | "setItem" | "removeItem">;
   try {
     store = (opts.storage ?? (() => localStorage))();
   } catch {

@@ -87,10 +87,11 @@ describe("agent eval — scoring", () => {
 });
 
 describe("agent eval — fixtures", () => {
-  it("every one of the 14 agents has at least five cases, in Hebrew and in English (7.3.1)", () => {
+  // 14 in 7.3.1, and the formulator (plan 4.11) since.
+  it("every one of the 15 agents has at least five cases, in Hebrew and in English (7.3.1)", () => {
     const by = new Map<string, typeof EVAL_CASES>();
     for (const c of EVAL_CASES) by.set(c.agent, [...(by.get(c.agent) ?? []), c]);
-    expect(by.size).toBe(14);
+    expect(by.size).toBe(15);
     for (const [agent, cases] of by) {
       expect(cases.length, agent).toBeGreaterThanOrEqual(5);
       expect(cases.some((c) => hebrewRatio(c.input.text ?? "") > 0.5), `${agent}: a Hebrew case`).toBe(true);

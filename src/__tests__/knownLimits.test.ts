@@ -1,6 +1,6 @@
 /**
  * The known limitations A1–A9 (plan 12.3): one test per item, named by its
- * id. Fixed items pin the fix; documented decisions (A4, A5, A7) pin the
+ * id. Fixed items pin the fix; documented decisions (A4, A7) pin the
  * documented behaviour. A8 (the research worker requires its token) is
  * tested next to the worker's other tests, in researchWorker.test.ts.
  */
@@ -81,15 +81,17 @@ describe("known limitations A1–A9", () => {
     expect(circularImportMessage(["main.js"], "main.js")).toMatch(/^Circular import: main\.js → main\.js\./);
   });
 
-  it("A5: Netlify can't lift the runner's headers (decision); a runner that never loads is reported", () => {
+  it("A5: Netlify lifts the runner's headers with an edge function (plan 13.2); a runner that never loads is reported", () => {
     const root = process.cwd();
     // Cloudflare Pages detaches the app's frame / CSP headers for the runner…
     const headers = readFileSync(join(root, "public/_headers"), "utf8");
     const runner = headers.slice(headers.indexOf("/playground-runner.html"));
     expect(runner).toMatch(/^\/playground-runner\.html\n {2}! Content-Security-Policy\n {2}! X-Frame-Options\n/);
-    // …Netlify's grammar has no such thing, and the limitation is documented there.
+    // …Netlify's _headers grammar has no such thing; since plan 13.2 an edge function
+    // replaces the two headers for the runner pages (the decision A5 documented is lifted).
     const netlify = readFileSync(join(root, "netlify.toml"), "utf8");
-    expect(netlify).toContain("Known limitation");
+    expect(netlify).toMatch(/\[\[edge_functions\]\]\s*\n\s*path = "\/playground-runner\.html"\s*\n\s*function = "runner-headers"/);
+    expect(readFileSync(join(root, "netlify/edge-functions/runner-headers.ts"), "utf8")).toMatch(/headers\.delete/);
     expect(netlify).not.toMatch(/for\s*=\s*"\/playground-runner\.html"/);
     // In the app, a run whose runner page never says `ready` says why.
     vi.useFakeTimers();

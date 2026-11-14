@@ -19,8 +19,14 @@ function controlled() {
   const answer = (_system: string, user: string, _max: number, ctx?: batch.LocalAnswerContext) =>
     new Promise<string>((resolve, reject) => {
       calls.push(user);
-      ctx?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
-      pending.push({ user, resolve });
+      const entry = { user, resolve };
+      // A cancelled note is no longer in flight: it leaves the queue, so finishNext() never resolves it.
+      ctx?.signal?.addEventListener("abort", () => {
+        const i = pending.indexOf(entry);
+        if (i >= 0) pending.splice(i, 1);
+        reject(new DOMException("aborted", "AbortError"));
+      });
+      pending.push(entry);
     });
   /** Resolve the oldest note in flight and let the queue move on. */
   const finishNext = async (text = "a. b.") => {
@@ -116,7 +122,8 @@ describe("batch control (5.8)", () => {
     expect((await batch.batchProgress(job)).etaMs).toBeNull();
     await a.finishNext();
     await vi.waitFor(async () => expect((await batch.batchProgress(job)).done).toBe(1));
-    expect(heard).toHaveBeenCalled();
+    // The note counts as done in memory first; listeners hear it once its state is stored.
+    await vi.waitFor(() => expect(heard).toHaveBeenCalled());
     expect((await batch.batchProgress(job)).etaMs).not.toBeNull();
     await a.finishNext();
     await batch.__localBatchRun(job.id);

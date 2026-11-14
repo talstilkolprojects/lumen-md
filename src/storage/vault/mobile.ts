@@ -34,6 +34,7 @@ import {
   type VaultEntry,
   type VaultEvent,
 } from "./index";
+import { atomicWrite, hasLeftovers, parseLeftover, recoverDir, saveId, type AtomicFs } from "./atomic";
 
 export interface MobileEntry {
   name: string;
@@ -61,10 +62,74 @@ export interface MobileFs {
 
 const join = (parts: string[]) => parts.join("/");
 
+/** The atomic-save steps (./atomic.ts) over a phone folder. */
+export function atomicFsOf(fs: MobileFs): AtomicFs {
+  return {
+    readdir: (dir) => fs.readdir(dir),
+    exists: async (path) => !!(await fs.stat(path)),
+    writeFile: (path, data) => fs.writeFile(path, data),
+    size: async (path) => {
+      const s = await fs.stat(path);
+      return s && s.type === "file" ? s.size : null;
+    },
+    rename: (from, to) => fs.rename(from, to),
+    remove: (path) => fs.remove(path),
+  };
+}
+
 /** A `VaultBackend` over a phone folder. */
 export function createMobileBackend(fs: MobileFs, opts: { id?: string; available?: () => boolean } = {}): VaultBackend {
   const events = new VaultEmitter();
   const emit = (e: Omit<VaultEvent, "origin">) => events.emit({ ...e, origin: "self" });
+  const afs = atomicFsOf(fs);
+  // Saves running now (path → done), and their ids: their temporary files
+  // are not leftovers, and a read of the note waits for the save.
+  const saving = new Map<string, Promise<void>>();
+  const busy = new Set<string>();
+  const settled = async (paths: Iterable<string>) => {
+    for (const p of [...paths]) await saving.get(p)?.catch(() => undefined);
+  };
+  const inFolder = (dir: string) => [...saving.keys()].filter((p) => (p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "") === dir);
+
+  /**
+   * A save the app did not live to finish leaves hidden files next to the
+   * note (./atomic.ts); finish or undo it the first time the folder is
+   * looked at, so the note is never missing. Returns the folder's listing.
+   */
+  // Folders found without leftovers in this session: leftovers come from a
+  // run that was stopped (a failed save removes its own), so a missing note
+  // costs one listing of its folder at most.
+  const clean = new Set<string>();
+
+  async function listRecovered(dir: string, wait = true): Promise<MobileEntry[]> {
+    if (wait) await settled(inFolder(dir));
+    let entries = await fs.readdir(dir);
+    if (hasLeftovers(entries.map((e) => e.name).filter((n) => !busy.has(parseLeftover(n)?.id ?? "")))) {
+      await recoverDir(afs, dir, { names: entries.map((e) => e.name), busy });
+      entries = await fs.readdir(dir);
+    }
+    clean.add(dir);
+    // A save that started meanwhile: its temporary file is not a note.
+    return entries.filter((e) => {
+      const l = parseLeftover(e.name);
+      return !l || !busy.has(l.id);
+    });
+  }
+
+  /**
+   * stat(), finishing an interrupted save of `p` first when the note is
+   * missing. `wait`: let a running save of `p` finish first (not from inside
+   * that save).
+   */
+  async function statRecovered(p: string, wait = true): Promise<Omit<MobileEntry, "name"> | null> {
+    if (wait) await settled([p]);
+    const s = await fs.stat(p);
+    if (s || !p) return s;
+    const dir = p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "";
+    if (clean.has(dir) || (dir && (await fs.stat(dir))?.type !== "directory")) return null;
+    await listRecovered(dir, wait);
+    return fs.stat(p);
+  }
 
   /** Every folder from the root down to `parts` must be a folder (or missing). */
   async function checkParents(parts: string[], path: string): Promise<void> {
@@ -83,7 +148,7 @@ export function createMobileBackend(fs: MobileFs, opts: { id?: string; available
       const parts = vaultSegments(dir);
       const s = await fs.stat(join(parts));
       if (parts.length && (!s || s.type !== "directory")) throw new VaultNotFoundError(dir);
-      const out = (await fs.readdir(join(parts))).map(
+      const out = (await listRecovered(join(parts))).map(
         (e): VaultEntry =>
           e.type === "directory"
             ? { name: e.name, path: join([...parts, e.name]), kind: "directory" }
@@ -95,14 +160,14 @@ export function createMobileBackend(fs: MobileFs, opts: { id?: string; available
     async stat(path) {
       const parts = vaultSegments(path);
       if (!parts.length) return { kind: "directory", size: 0, mtime: 0 };
-      const s = await fs.stat(join(parts));
+      const s = await statRecovered(join(parts));
       if (!s) return null;
       return s.type === "directory" ? { kind: "directory", size: 0, mtime: 0 } : { kind: "file", size: s.size, mtime: s.mtime };
     },
 
     async read(path) {
       const p = join(vaultSegments(path));
-      const s = p ? await fs.stat(p) : null;
+      const s = p ? await statRecovered(p) : null;
       if (!s || s.type !== "file") throw new VaultNotFoundError(path);
       return new Blob([(await fs.readFile(p)) as BlobPart]);
     },
@@ -117,8 +182,25 @@ export function createMobileBackend(fs: MobileFs, opts: { id?: string; available
       const p = join(parts);
       const bytes = await toBytes(data);
       await checkParents(parts, path);
-      if ((await fs.stat(p))?.type === "directory") throw new VaultError("EKIND", path, `Cannot write "${path}": a folder of that name is in the way`);
-      await fs.writeFile(p, bytes);
+      // One save of a note at a time; each lands whole (./atomic.ts).
+      const previous = saving.get(p);
+      const id = saveId();
+      const run = (async () => {
+        await previous?.catch(() => undefined);
+        if ((await statRecovered(p, false))?.type === "directory") throw new VaultError("EKIND", path, `Cannot write "${path}": a folder of that name is in the way`);
+        busy.add(id);
+        try {
+          await atomicWrite(afs, p, bytes, id);
+        } finally {
+          busy.delete(id);
+        }
+      })();
+      saving.set(p, run);
+      try {
+        await run;
+      } finally {
+        if (saving.get(p) === run) saving.delete(p);
+      }
       emit({ type: "write", path: p });
     },
 
@@ -137,7 +219,8 @@ export function createMobileBackend(fs: MobileFs, opts: { id?: string; available
       const r = checkRename(from, to);
       if (!r) return;
       const [a, b] = [join(r.src), join(r.dst)];
-      if (!(await fs.stat(a))) throw new VaultNotFoundError(from);
+      await settled([...saving.keys()].filter((k) => k === a || k.startsWith(a + "/") || k === b || k.startsWith(b + "/")));
+      if (!(await statRecovered(a))) throw new VaultNotFoundError(from);
       const target = await fs.stat(b);
       if (target && !o.overwrite) throw new WorkspaceConflictError(to);
       await checkParents(r.dst, to);
@@ -152,7 +235,8 @@ export function createMobileBackend(fs: MobileFs, opts: { id?: string; available
       const parts = vaultSegments(path);
       if (!parts.length) throw new VaultError("EINVAL", path, "Cannot delete the workspace root");
       const p = join(parts);
-      if (!(await fs.stat(p))) throw new VaultNotFoundError(path);
+      await settled([...saving.keys()].filter((k) => k === p || k.startsWith(p + "/")));
+      if (!(await statRecovered(p))) throw new VaultNotFoundError(path);
       await fs.remove(p);
       emit({ type: "delete", path: p });
     },

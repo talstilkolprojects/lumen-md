@@ -1,0 +1,14 @@
+{
+  "query.badOptions": "Ignored: {options}",
+  "query.col.folder": "Folder",
+  "query.col.modified": "Modified",
+  "query.col.note": "Note",
+  "query.col.tags": "Tags",
+  "query.count": "{count} notes",
+  "query.dataviewTitle": "Dataview",
+  "query.empty": "Write a search in the block: words, tag:, path:, \"…\", /regex/, -",
+  "query.error": "Can't run this query: {error}",
+  "query.loading": "Running the query…",
+  "query.none": "No notes match.",
+  "query.title": "Query"
+}

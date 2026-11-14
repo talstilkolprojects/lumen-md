@@ -353,6 +353,28 @@ describe("scripts/stack.mjs restack (fallback, local repo)", () => {
     }
   });
 
+  it("a layer amended here but still on its parent is pushed with the layers rebased above it (W1.32, #201)", () => {
+    const { dir, g, old, run } = setup();
+    try {
+      expect(run().status).toBe(0);
+      // b is amended after the restack; c still sits on the b before the amend.
+      g("checkout", "-q", "b");
+      writeFileSync(join(dir, "repo", "b.txt"), "b3\n");
+      g("commit", "-q", "-a", "--amend", "-m", "b3");
+      g("checkout", "-q", "main");
+      const r = run();
+      expect(r.status).toBe(0);
+      expect(r.stdout).toContain("#2 b: already on a (changed here since its PR head: pushed with the rest)");
+      expect(g("log", "--format=%s", "main..c").split("\n")).toEqual(["c", "b3", "a2"]);
+      const pushes = r.stdout.split("Push when ready")[1] ?? "";
+      expect(pushes).toContain(`git push --force-with-lease=b:${old.b} origin b`);
+      expect(pushes).toContain(`git push --force-with-lease=c:${old.c} origin c`);
+      expect(pushes.indexOf("origin b")).toBeLessThan(pushes.indexOf("origin c"));
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("an amended top branch is still pushed when nothing is stacked on it", () => {
     const { dir, g, old, runOn } = setup();
     try {
@@ -378,6 +400,8 @@ describe("scripts/stack.mjs restack (fallback, local repo)", () => {
       const r = runOn("a", ghEnv, "--remote", "upstream");
       expect(r.status).toBe(0);
       expect(readFileSync(join(dir, "gh.log"), "utf8")).toContain("stack rebase --upstack --remote upstream a");
+      // The printed push names the same remote (W1.32, #201).
+      expect(r.stdout).toContain("To push: gh stack push --remote upstream");
       writeFileSync(join(dir, "gh.log"), "");
       const withBase = runOn("a", ghEnv, "--old-base", old.a);
       expect(withBase.status).toBe(0);

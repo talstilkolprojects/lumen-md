@@ -3,8 +3,8 @@
  * one note at a time.
  */
 import { describe, it, expect, vi } from "vitest";
-import { Bm25Index } from "../search/bm25";
-import { documentTerms, queryTerms, stemTerms, surfaceTokens } from "../text/searchTokens";
+import { Bm25Index, MAX_PREFIX_POSTINGS } from "../search/bm25";
+import { documentTerms, queryTerms, stemTerms, surfaceTokens, KTIV, LEMMA } from "../text/searchTokens";
 
 describe("Hebrew search tokens", () => {
   it("strip niqqud and fold final letters, keeping the word's own form", () => {
@@ -14,9 +14,11 @@ describe("Hebrew search tokens", () => {
   });
 
   it("add prefix-less stems beside the exact form, without stripping below three letters", () => {
-    expect(documentTerms("והבית")).toEqual(["והבית", "~והבית", "~הבית", "~בית"]);
+    // (W2.11's morphology terms, ≈ and ≃, are tested in hebrewMorph.test.ts.)
+    const surfaceAndStems = (text: string) => documentTerms(text).filter((t) => !t.startsWith(KTIV) && !t.startsWith(LEMMA));
+    expect(surfaceAndStems("והבית")).toEqual(["והבית", "~והבית", "~הבית", "~בית"]);
     // ש is a prefix letter, but "לומ" keeps three letters and is only a weaker stem; "שלומ" itself stays exact.
-    expect(documentTerms("שלום")).toEqual(["שלומ", "~שלומ", "~לומ"]);
+    expect(surfaceAndStems("שלום")).toEqual(["שלומ", "~שלומ", "~לומ"]);
     expect(stemTerms("בית")).toEqual(["~בית"]); // three letters: nothing stripped
     expect(stemTerms("hello")).toEqual([]);
   });
@@ -76,7 +78,8 @@ describe("Bm25Index", () => {
     expect(ix.size).toBe(4);
     ix.set("b.md", "גינה ופרחים", "b");
     expect(ix.search("ספר")).toEqual([]);
-    expect(ix.search("גינה").map((h) => h.id)).toEqual(["b.md"]);
+    // b.md has the word; d.md ("garden") only its English equivalent (W2.11), so it comes after.
+    expect(ix.search("גינה").map((h) => h.id)).toEqual(["b.md", "d.md"]);
     ix.remove("a.md");
     expect(ix.size).toBe(3);
     expect(ix.search("הבית").map((h) => h.id)).not.toContain("a.md");
@@ -107,9 +110,28 @@ describe("Bm25Index", () => {
     expect(ix.search("e-mail").map((h) => h.id)).toContain("m.md");
   });
 
+  it("a rare completion of the word being typed is found behind thirty common ones (W1.32, #232)", () => {
+    const ix = new Bm25Index();
+    // 30 common completions of "pro", each in five notes.
+    for (let i = 0; i < 30; i++) for (let j = 0; j < 5; j++) ix.set(`c${i}-${j}.md`, `progress${String.fromCharCode(97 + i)} report`, `c${i}-${j}`);
+    ix.set("rare.md", "notes on protolanguage", "rare");
+    expect(ix.search("pro", { prefix: true, limit: 500 }).map((h) => h.id)).toContain("rare.md");
+  });
+
+  it("caps what a very common prefix adds, leaving out the most common completions first (W1.32, #232)", () => {
+    expect(MAX_PREFIX_POSTINGS).toBeGreaterThanOrEqual(10_000);
+    const ix = new Bm25Index();
+    ix.set("rare.md", "gardenia", "rare");
+    ix.set("common1.md", "garden", "common1");
+    ix.set("common2.md", "garden", "common2");
+    const hits = ix.search("gar", { prefix: true }).map((h) => h.id);
+    expect(hits).toEqual(expect.arrayContaining(["rare.md", "common1.md", "common2.md"]));
+  });
+
   it("filters before the limit", () => {
     const ix = index();
-    expect(ix.search("בית", { filter: (id) => id !== "b.md" }).map((h) => h.id)).toEqual(["a.md"]);
+    // d.md ("house") matches only through the English equivalent of בית (W2.11), after the Hebrew note.
+    expect(ix.search("בית", { filter: (id) => id !== "b.md" }).map((h) => h.id)).toEqual(["a.md", "d.md"]);
     expect(ix.search("בית", { limit: 1 })).toHaveLength(1);
   });
 });

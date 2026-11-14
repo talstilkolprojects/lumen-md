@@ -48,13 +48,13 @@ describe("e2ee bytes", () => {
 });
 
 describe("e2ee KDF", () => {
-  it("production defaults are PBKDF2-SHA256 with at least 600,000 iterations (OWASP 2023)", () => {
+  it("a new vault gets Argon2id (OWASP 2023: 46 MiB, 1 pass); PBKDF2 keeps its 600,000-iteration floor", () => {
     expect(PBKDF2_MIN_ITERATIONS).toBeGreaterThanOrEqual(600_000);
     expect(PBKDF2_DEFAULT_ITERATIONS).toBeGreaterThanOrEqual(PBKDF2_MIN_ITERATIONS);
     const p = newKdfParams();
-    expect(p.alg).toBe("pbkdf2-sha256");
-    expect(p.iterations).toBeGreaterThanOrEqual(600_000);
+    expect(p).toMatchObject({ alg: "argon2id", memoryKiB: 47_104, iterations: 1, parallelism: 1 });
     expect(fromB64u(p.salt)).toHaveLength(16);
+    expect(validateKdfParams(p)).toEqual(p);
   });
 
   it("refuses weak parameters unless a test lowers the floor explicitly", () => {
@@ -63,18 +63,22 @@ describe("e2ee KDF", () => {
     expect(validateKdfParams(cheap, TEST_POLICY)).toEqual(cheap);
     expect(() => validateKdfParams({ ...cheap, salt: toB64u(new Uint8Array(4)) }, TEST_POLICY)).toThrow(WeakKdfError);
     expect(() => validateKdfParams(null)).toThrow(WeakKdfError);
+    const salt = toB64u(new Uint8Array(16));
+    // Below OWASP's Argon2id options (memory × passes ≥ 37 MiB, memory ≥ 7 MiB).
+    expect(() => validateKdfParams({ alg: "argon2id", memoryKiB: 19_456, iterations: 1, parallelism: 1, salt })).toThrow(WeakKdfError);
+    expect(() => validateKdfParams({ alg: "argon2id", memoryKiB: 4096, iterations: 10, parallelism: 1, salt })).toThrow(WeakKdfError);
+    expect(validateKdfParams({ alg: "argon2id", memoryKiB: 19_456, iterations: 2, parallelism: 1, salt })).toMatchObject({ alg: "argon2id" });
   });
 
-  it("reserves argon2id without a format break: recognised, refused as unavailable", () => {
+  it("derives with Argon2id (RFC 9106's own test vector), and refuses unknown algorithms", async () => {
     expect(KDF_IDS).toContain("argon2id");
     const salt = toB64u(new Uint8Array(16));
-    expect(() => validateKdfParams({ alg: "argon2id", memoryKiB: 65536, iterations: 3, parallelism: 1, salt })).toThrow(
-      KdfUnavailableError,
-    );
     expect(() => validateKdfParams({ alg: "scrypt", salt })).toThrow(KdfUnavailableError);
-    return expect(
-      deriveMasterKey("x", { alg: "argon2id", memoryKiB: 65536, iterations: 3, parallelism: 1, salt }),
-    ).rejects.toBeInstanceOf(KdfUnavailableError);
+    const { argon2id } = await import("../sync/e2ee/primitives/argon2");
+    const tag = argon2id({ password: new Uint8Array(32).fill(1), salt: new Uint8Array(16).fill(2), secret: new Uint8Array(8).fill(3), associatedData: new Uint8Array(12).fill(4), memoryKiB: 32, iterations: 3, parallelism: 4, tagLength: 32 });
+    expect(Buffer.from(tag).toString("hex")).toBe("0d640df58d78766c08c037a34a8b53c9d01ef0452d75b65eb52520e96b01e659");
+    const k = await deriveMasterKey("שלום", { alg: "argon2id", memoryKiB: 64, iterations: 2, parallelism: 1, salt });
+    expect(k).toHaveLength(32);
   });
 
   it("normalises the passphrase to NFC (Hebrew typed on macOS and Windows derives one key)", async () => {

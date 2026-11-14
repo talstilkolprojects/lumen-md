@@ -30,6 +30,8 @@ import {
   type FeedbackKind,
 } from "../feedback/feedback";
 import { getAiPolicy } from "../ai/policy";
+import { HelpButton } from "./HelpButton";
+import { explainError } from "../lib/userError";
 
 export interface FeedbackOptions {
   /** The AI doctor's report, when opened from the doctor (still included only if ticked). */
@@ -171,7 +173,7 @@ export function FeedbackDialog({ options, onClose }: { options: FeedbackOptions;
       setScreenshot(name);
       setNotice(t("feedback.screenshot.saved", { name }));
     } catch (e) {
-      setNotice(t("feedback.screenshot.failed", { error: (e as Error).message }));
+      setNotice(t("feedback.screenshot.failed", { error: explainError(e) }));
     }
   };
 
@@ -183,6 +185,7 @@ export function FeedbackDialog({ options, onClose }: { options: FeedbackOptions;
         <header style={{ padding: "14px 18px", borderBottom: "1px solid hsl(var(--border))", display: "flex", gap: 10, alignItems: "center" }}>
           <MessageSquareWarning size={18} style={{ color: "hsl(var(--accent))" }} />
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, flex: 1 }}>{t("feedback.title")}</h2>
+          <HelpButton topic="getting-started/feedback" />
           <button type="button" style={ghost} onClick={onClose} aria-label={t("feedback.close")}>
             <X size={16} />
           </button>
@@ -227,6 +230,10 @@ export function FeedbackDialog({ options, onClose }: { options: FeedbackOptions;
                 {t("feedback.screenshot")}
               </button>
               {screenshot && <span style={muted}>{screenshot}</span>}
+              {/* W3.7: a diagnostics file to attach (no note text, no keys). */}
+              <button type="button" style={ghost} onClick={() => void import("./diagnosticsActions").then((m) => m.saveDiagnostics())} data-testid="feedback-diagnostics">
+                {t("errorScreen.diagnostics")}
+              </button>
             </div>
             <span style={muted}>{t("feedback.screenshot.hint")}</span>
           </div>

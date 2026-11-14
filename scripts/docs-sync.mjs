@@ -8,8 +8,13 @@
  * 2. Every `npm run <script>` the docs mention exists in the package.json
  *    the reader would run it from (the repo root, or docs/ for the docs site).
  * 3. README.md carries no hand-typed test or command counts — those go
- *    stale (it said 2196 tests and 992 in the same file). The CI badge says
- *    whether the tests pass.
+ *    stale (it said 2196 tests and 992 in the same file). The test runner
+ *    says how many there are.
+ * 4. The READMEs say what is true by default (plan W4.10): README.md is
+ *    Hebrew first and links README.en.md (and back); the first 20 lines of
+ *    each name no cloud AI provider, and no line says one is the default —
+ *    Lumen is local and private by default; no GitHub Actions badge (the
+ *    project runs its checks locally).
  *
  * Exits 1 with one line per problem. Run: `npm run docs:sync`.
  */
@@ -20,7 +25,7 @@ import { fileURLToPath } from "node:url";
 
 /** Every markdown file the docs site or the repo root publishes. */
 function docFiles(ROOT) {
-  const out = [join(ROOT, "README.md")];
+  const out = [join(ROOT, "README.md"), join(ROOT, "README.en.md")];
   const walk = (dir) => {
     for (const name of readdirSync(dir)) {
       const p = join(dir, name);
@@ -124,6 +129,29 @@ export function npmRuns(line) {
  * "e2e-33/33", "100+ commands", "638-key", "595 keys each", "20+ templates",
  * and measured percentages on a coverage line.
  */
+const CLOUD = /\b(OpenAI|GPT-?\d|ChatGPT|Anthropic|Claude(?! Desktop)|Gemini|Mistral|Cohere|OpenRouter)\b/;
+
+/** Plan W4.10: what a README must not say in its opening, or anywhere about defaults. */
+export function readmeProblems(text, file) {
+  const out = [];
+  const lines = text.split("\n");
+  lines.slice(0, 20).forEach((l, i) => {
+    const m = CLOUD.exec(l);
+    if (m) out.push(`${file}:${i + 1}: names a cloud provider (“${m[1]}”) in the first 20 lines — Lumen is local by default`);
+  });
+  lines.forEach((l, i) => {
+    if (/actions\/workflows\/[^)]*badge/.test(l)) out.push(`${file}:${i + 1}: GitHub Actions badge — the checks run locally`);
+    if (/\b(by default|default)\b[^.|]*\b(OpenAI|Anthropic|Gemini|Mistral|GPT-?\d)\b|\b(OpenAI|Anthropic|Gemini|Mistral|GPT-?\d)\b[^.|]*\bby default\b|ברירת מחדל[^.|]*\b(OpenAI|Anthropic|Gemini|Mistral)\b/i.test(l)) out.push(`${file}:${i + 1}: says a cloud provider is the default`);
+  });
+  if (file === "README.md") {
+    const head = lines.filter((l) => l.trim()).slice(0, 4).join(" ");
+    if (!/[\u0590-\u05FF]/.test(head)) out.push("README.md: must open in Hebrew (README.en.md is the English one)");
+    if (!text.includes("](README.en.md)")) out.push("README.md: no link to README.en.md");
+  }
+  if (file === "README.en.md" && !text.includes("](README.md)")) out.push("README.en.md: no link back to README.md");
+  return out;
+}
+
 export function staleCounts(line) {
   const out = [];
   const COUNT = /\b\d[\d,]*\+?(?:\s+|-)(?:unit |e2e |starter )?(?:tests?|test files|specs?|commands|keys?|templates)\b|\b(?:tests|e2e)-\d+/gi;
@@ -155,7 +183,9 @@ function main() {
   let commands = 0;
   for (const file of docFiles(ROOT)) {
     const rel = relative(ROOT, file);
-    const lines = readFileSync(file, "utf8").split("\n");
+    const text = readFileSync(file, "utf8");
+    const lines = text.split("\n");
+    if (rel === "README.md" || rel === "README.en.md") problems.push(...readmeProblems(text, rel));
     let fence = false;
     let cwdDocs = false; // a code block that starts with `cd docs`
     lines.forEach((line, i) => {
@@ -177,7 +207,7 @@ function main() {
         const ok = scripts.root.includes(s) || (inDocs && scripts.docs.includes(s));
         if (!ok) problems.push(`${at}: \`npm run ${s}\` — no such script in ${inDocs ? "package.json or docs/package.json" : "package.json"}`);
       }
-      if (rel === "README.md") for (const c of staleCounts(line)) problems.push(`${at}: hand-typed count “${c}” — let CI report it (badge) instead`);
+      if (rel === "README.md" || rel === "README.en.md") for (const c of staleCounts(line)) problems.push(`${at}: hand-typed count “${c}” — let the test runner report it instead`);
     });
   }
   if (problems.length) {

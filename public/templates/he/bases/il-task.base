@@ -1,0 +1,27 @@
+# משימות — נוצר מהתבנית משימה
+filters:
+  and:
+    - 'type == "task"'
+properties:
+  file.name:
+    displayName: "משימה"
+  note.project:
+    displayName: "פרויקט"
+  note.priority:
+    displayName: "עדיפות"
+  note.due:
+    displayName: "יעד"
+  note.done:
+    displayName: "בוצע"
+views:
+  - type: table
+    name: "משימות"
+    order:
+      - file.name
+      - note.project
+      - note.priority
+      - note.due
+      - note.done
+    sort:
+      - property: note.due
+        direction: DESC

@@ -36,10 +36,17 @@ results of batch AI jobs; what the learning critic remembers. A vault export
 ## Passphrase, recovery key, lock
 
 - **Passphrase** — at least 12 characters. The key is derived with
-  PBKDF2-SHA256, 600,000 iterations (the same function as the
-  [encrypted sync](/sync/e2ee/)). Argon2id is reserved in the format and
-  replaces it once its library is added; a vault that asks for Argon2id is
-  refused by an older Lumen, never misread.
+  **Argon2id** (RFC 9106), memory-hard so guessing on graphics cards is
+  slow. Lumen picks the most memory this device opens within a second:
+  46 MiB in one pass, or 19 MiB in two on a slower device (OWASP's
+  options). It runs in Lumen's own code, with no extra library, and is
+  checked against the RFC's test vectors. A vault made before this, with
+  PBKDF2-SHA256 (600,000 iterations), still opens and stays on PBKDF2,
+  including when you change the passphrase. To move it, choose **Switch to
+  Argon2id** under Vault encryption. Update Lumen on every device that
+  opens the vault first: an older Lumen refuses an Argon2id vault (it
+  doesn't misread it), so Lumen never switches on its own. Only the small
+  header file is rewritten.
 - **Recovery key** — 30 characters (150 random bits), shown **once**, when
   you turn encryption on, before anything is encrypted. Lumen goes on only
   after you confirm you saved it. The vault's key is derived from it, so it

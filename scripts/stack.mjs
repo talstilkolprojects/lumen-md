@@ -230,7 +230,8 @@ async function restack() {
     const r = spawnSync("gh", ["stack", "rebase", "--upstack", "--remote", remote, branch], { stdio: "inherit", env });
     if (r.status === 0) {
       if (doPush) process.exit(spawnSync("gh", ["stack", "push", "--remote", remote], { stdio: "inherit", env }).status ?? 1);
-      console.log("\nRebased with gh stack. To push: gh stack push");
+      // The push goes to the remote the rebase used, not one gh stack guesses.
+      console.log(`\nRebased with gh stack. To push: gh stack push --remote ${sh(remote)}`);
       return;
     }
     // 2 = "not in a stack": the branches are not tracked by gh stack, use the fallback.
@@ -283,10 +284,16 @@ async function restack() {
   // above), so every worktree can be checked and every recovery command is exact.
   const moving = new Set();
   const plan = [];
+  // Already on its parent, but changed here since its PR head (amended):
+  // nothing to rebase, but it is pushed with the layers above it, or their
+  // PRs would carry its change in their own diff.
+  const changedOnly = [];
   for (const s of steps) {
     const parentMoves = moving.has(s.parent);
     if (!parentMoves && isAncestor(s.parent, s.branch)) {
-      console.log(`  #${s.number} ${s.branch}: already on ${s.parent}`);
+      const changed = Boolean(s.remoteSha) && git("rev-parse", s.branch) !== s.remoteSha;
+      console.log(`  #${s.number} ${s.branch}: already on ${s.parent}${changed ? " (changed here since its PR head: pushed with the rest)" : ""}`);
+      if (changed) changedOnly.push(s);
       continue;
     }
     // A moving parent's recorded tip is the old base only if the child was
@@ -308,6 +315,7 @@ async function restack() {
   const problems = [
     start.headSha && git("rev-parse", start.head) !== start.headSha ? leaseProblem(start.head, start.number, start.headSha) : null,
     ...plan.map((p) => leaseProblem(p.s.branch, p.s.number, p.s.remoteSha)),
+    ...changedOnly.map((s) => leaseProblem(s.branch, s.number, s.remoteSha)),
   ].filter(Boolean);
   if (problems.length) {
     console.error(`\nstack: nothing was rebased.\n  ${problems.join("\n  ")}`);
@@ -332,7 +340,9 @@ async function restack() {
     const now = tryGit("symbolic-ref", "-q", "--short", "HEAD") ?? git("rev-parse", "HEAD");
     if (now !== original) spawnSync("git", ["checkout", "-q", original], { stdio: "inherit" });
   }
-  const moved = plan.map((p) => p.s);
+  // Bottom to top, as the stack is: rebased layers and changed-only ones.
+  const pushed = new Set([...plan.map((p) => p.s.branch), ...changedOnly.map((s) => s.branch)]);
+  const moved = steps.filter((s) => pushed.has(s.branch));
 
   const startLocal = git("rev-parse", start.head);
   const toPush = [...(start.headSha && startLocal !== start.headSha ? [{ branch: start.head, remoteSha: start.headSha }] : []), ...moved.map((s) => ({ branch: s.branch, remoteSha: s.remoteSha }))];

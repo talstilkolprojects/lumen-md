@@ -11,6 +11,7 @@ import { WrongPassphraseError } from "../sync/e2ee/header";
 import { memoryProvider } from "../sync/e2ee/provider";
 import * as e2ee from "../sync/e2ee";
 import { joinVault, newVault } from "./helpers/e2ee";
+import { t } from "../i18n";
 
 function type(label: string, value: string) {
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
@@ -49,9 +50,11 @@ describe("e2ee passphrase form", () => {
     type("Passphrase", "x");
     fireEvent.click(screen.getByText("Unlock"));
     expect((await screen.findByRole("alert")).textContent).toBe("Wrong passphrase.");
+    // Any other failure is said in words (explainError), never as the error's own text.
     fail = new Error("offline");
     fireEvent.click(screen.getByText("Unlock"));
-    await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("offline"));
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toBe(t("error.network")));
+    expect(screen.getByRole("alert").textContent).not.toBe("offline");
   });
 });
 

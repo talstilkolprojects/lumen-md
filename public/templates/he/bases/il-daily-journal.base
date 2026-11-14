@@ -1,0 +1,21 @@
+# יומן — נוצר מהתבנית יומן יומי (עם תאריך עברי)
+filters:
+  and:
+    - 'type == "journal"'
+properties:
+  file.name:
+    displayName: "פתק"
+  note.date:
+    displayName: "תאריך"
+  note.mood:
+    displayName: "מצב רוח"
+views:
+  - type: table
+    name: "יומן"
+    order:
+      - file.name
+      - note.date
+      - note.mood
+    sort:
+      - property: note.date
+        direction: DESC

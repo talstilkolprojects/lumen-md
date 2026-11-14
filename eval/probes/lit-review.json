@@ -1,0 +1,206 @@
+{
+ "about": "Literature-review probe for plan W5.12: 5 short papers (page texts, English and Hebrew) written for this repository, each with its question, method, sample, findings and limitations, the page each is on, and a phrase from it. Development numbers only; the acceptance set is 20 real papers (owner). CC0-1.0.",
+ "license": "CC0-1.0",
+ "papers": [
+  {
+   "id": "p1",
+   "title": "Sleep and memory in adolescents",
+   "pages": [
+    {
+     "page": 1,
+     "text": "Sleep and memory in adolescents\nAbstract\nThe aim of this study was to test whether one week of shortened sleep impairs memory consolidation in adolescents.\nIntroduction\nSleep supports the stabilisation of new memories."
+    },
+    {
+     "page": 2,
+     "text": "Methods\nWe conducted a randomized crossover trial with two sleep conditions of seven nights each.\nParticipants\nA total of 64 adolescents aged 15 to 18 were recruited from three high schools.\nMemory was assessed with a paired-associates task."
+    },
+    {
+     "page": 3,
+     "text": "Results\nAfter the restricted week, participants recalled 18 percent fewer word pairs than after the control week.\nDiscussion\nA limitation of this study is that sleep was measured with actigraphy rather than polysomnography."
+    }
+   ],
+   "gold": {
+    "question": {
+     "page": 1,
+     "phrase": "test whether one week of shortened sleep impairs memory consolidation"
+    },
+    "method": {
+     "page": 2,
+     "phrase": "randomized crossover trial"
+    },
+    "sample": {
+     "page": 2,
+     "phrase": "64 adolescents aged 15 to 18"
+    },
+    "findings": {
+     "page": 3,
+     "phrase": "recalled 18 percent fewer word pairs"
+    },
+    "limitations": {
+     "page": 3,
+     "phrase": "sleep was measured with actigraphy rather than polysomnography"
+    }
+   }
+  },
+  {
+   "id": "p2",
+   "title": "Remote work and productivity",
+   "pages": [
+    {
+     "page": 1,
+     "text": "Remote work and productivity: a field experiment\nWe ask whether working from home changes the productivity of call-centre employees."
+    },
+    {
+     "page": 2,
+     "text": "Design\nThe study used a randomized field experiment over nine months in a travel agency.\nSample\nThe sample consisted of 249 employees who volunteered, of whom 131 were assigned to work from home."
+    },
+    {
+     "page": 3,
+     "text": "Findings\nHome workers completed 13 percent more calls per shift and quit at half the rate of the office group.\nLimitations\nOur results may not generalize to jobs that require close teamwork."
+    }
+   ],
+   "gold": {
+    "question": {
+     "page": 1,
+     "phrase": "whether working from home changes the productivity of call-centre employees"
+    },
+    "method": {
+     "page": 2,
+     "phrase": "randomized field experiment over nine months"
+    },
+    "sample": {
+     "page": 2,
+     "phrase": "249 employees who volunteered"
+    },
+    "findings": {
+     "page": 3,
+     "phrase": "completed 13 percent more calls per shift"
+    },
+    "limitations": {
+     "page": 3,
+     "phrase": "may not generalize to jobs that require close teamwork"
+    }
+   }
+  },
+  {
+   "id": "p3",
+   "title": "Microplastics in freshwater fish",
+   "pages": [
+    {
+     "page": 1,
+     "text": "Microplastics in freshwater fish\nThe purpose of this study was to measure how microplastic ingestion affects gut health and growth in zebrafish."
+    },
+    {
+     "page": 2,
+     "text": "Materials and methods\nFish were exposed in the laboratory to polystyrene particles for four weeks, and tissues were examined by histology.\nA total of 120 zebrafish were divided into four exposure groups."
+    },
+    {
+     "page": 3,
+     "text": "Results\nExposed fish showed gut inflammation and grew 12 percent less than controls.\nLimitations and future work\nLaboratory concentrations were higher than those found in most rivers."
+    }
+   ],
+   "gold": {
+    "question": {
+     "page": 1,
+     "phrase": "measure how microplastic ingestion affects gut health and growth in zebrafish"
+    },
+    "method": {
+     "page": 2,
+     "phrase": "exposed in the laboratory to polystyrene particles for four weeks"
+    },
+    "sample": {
+     "page": 2,
+     "phrase": "120 zebrafish were divided into four exposure groups"
+    },
+    "findings": {
+     "page": 3,
+     "phrase": "showed gut inflammation and grew 12 percent less than controls"
+    },
+    "limitations": {
+     "page": 3,
+     "phrase": "Laboratory concentrations were higher than those found in most rivers"
+    }
+   }
+  },
+  {
+   "id": "p4",
+   "title": "שימוש ברשתות חברתיות וחרדה בקרב בני נוער",
+   "pages": [
+    {
+     "page": 1,
+     "text": "שימוש ברשתות חברתיות וחרדה בקרב בני נוער\nמטרת המחקר הייתה לבדוק אם שימוש יומי ממושך ברשתות חברתיות קשור לתסמיני חרדה בקרב בני נוער."
+    },
+    {
+     "page": 2,
+     "text": "שיטה\nנערך סקר אורך בשני גלים בהפרש של שנה.\nמשתתפים\nבמדגם השתתפו 1,200 תלמידים בכיתות ט' עד י\"ב מעשרים בתי ספר."
+    },
+    {
+     "page": 3,
+     "text": "ממצאים\nנמצא כי תלמידים שהשתמשו ברשתות יותר משלוש שעות ביום דיווחו על פי שניים תסמיני חרדה.\nמגבלות\nהנתונים מבוססים על דיווח עצמי ואינם מאפשרים להסיק סיבתיות."
+    }
+   ],
+   "gold": {
+    "question": {
+     "page": 1,
+     "phrase": "לבדוק אם שימוש יומי ממושך ברשתות חברתיות קשור לתסמיני חרדה"
+    },
+    "method": {
+     "page": 2,
+     "phrase": "סקר אורך בשני גלים בהפרש של שנה"
+    },
+    "sample": {
+     "page": 2,
+     "phrase": "1,200 תלמידים בכיתות ט' עד י\"ב"
+    },
+    "findings": {
+     "page": 3,
+     "phrase": "דיווחו על פי שניים תסמיני חרדה"
+    },
+    "limitations": {
+     "page": 3,
+     "phrase": "הנתונים מבוססים על דיווח עצמי ואינם מאפשרים להסיק סיבתיות"
+    }
+   }
+  },
+  {
+   "id": "p5",
+   "title": "Exercise and depressive symptoms",
+   "pages": [
+    {
+     "page": 1,
+     "text": "Exercise and depressive symptoms: a meta-analysis\nOur objective was to estimate the effect of aerobic exercise on depressive symptoms in adults."
+    },
+    {
+     "page": 2,
+     "text": "Methods\nWe performed a systematic review and random-effects meta-analysis of randomized trials published up to 2025.\nForty-one trials with 2,890 adult participants met the inclusion criteria."
+    },
+    {
+     "page": 3,
+     "text": "Results\nAerobic exercise three times a week reduced depressive symptoms with a standardized mean difference of 0.56.\nLimitations\nMost trials were small and could not blind participants to the intervention."
+    }
+   ],
+   "gold": {
+    "question": {
+     "page": 1,
+     "phrase": "estimate the effect of aerobic exercise on depressive symptoms in adults"
+    },
+    "method": {
+     "page": 2,
+     "phrase": "systematic review and random-effects meta-analysis of randomized trials"
+    },
+    "sample": {
+     "page": 2,
+     "phrase": "Forty-one trials with 2,890 adult participants"
+    },
+    "findings": {
+     "page": 3,
+     "phrase": "reduced depressive symptoms with a standardized mean difference of 0.56"
+    },
+    "limitations": {
+     "page": 3,
+     "phrase": "Most trials were small and could not blind participants"
+    }
+   }
+  }
+ ]
+}

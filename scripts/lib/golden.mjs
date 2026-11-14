@@ -443,13 +443,12 @@ export function freezeSet(dir, { reason, today = new Date().toISOString().slice(
 /** Record the sha256 of a CI-built test split (only hashes; the data stays in CI). */
 export function recordTest(dir, splitDir) {
   const mPath = join(dir, "manifest.json");
+  // The same rules as the --hashes path: only complete parts are hashed, and
+  // a part this split does not have complete goes back to null, so neither a
+  // half-built part nor an older recording completes it (W1.32, Codex on #225).
   const m = readJson(mPath);
-  for (const p of m.parts) {
-    if (!partFiles(splitDir, p.id).length) continue;
-    m.test.parts[p.id] = partHash(splitDir, p.id);
-  }
-  const all = m.parts.every((p) => HEX64.test(m.test.parts[p.id] ?? ""));
-  m.test.sha256 = all ? splitHash(Object.fromEntries(m.parts.map((p) => [p.id, m.test.parts[p.id]]))) : null;
+  const hashes = Object.fromEntries(m.parts.filter((p) => completeTestPart(splitDir, m, p.id)).map((p) => [p.id, partHash(splitDir, p.id)]));
+  applyTestHashes(m, hashes);
   writeJson(mPath, m);
   return m.test;
 }
@@ -525,13 +524,21 @@ export function loadSet(root, name, { split = "dev", testDir, parts, local = fal
       // Only with local: true, from local/<part>.json (fetch_local), checked item by item against the frozen selection.
       const f = join(dir, "local", `${p.id}.json`);
       if (!local || !p.devSelection || !existsSync(f)) continue;
-      const want = new Map(readJson(join(dir, p.devSelection)).items.map((it) => [it.id, it.sha256]));
-      const got = readJson(f).items;
+      const sel = readJson(join(dir, p.devSelection));
+      const want = new Map(sel.items.map((it) => [it.id, it.sha256]));
+      // The sha256 covers the selection's hashFields; the local item also keeps
+      // the fields a harness needs (retrieval: relevant), and the local file
+      // its part documents (corpus), or the set cannot be scored (W1.32, Codex on #225).
+      const fields = Array.isArray(sel.hashFields) && sel.hashFields.length ? sel.hashFields : null;
+      const hashed = (it) => (fields ? Object.fromEntries(fields.map((k) => [k, it[k]])) : it);
+      const localPart = readJson(f);
+      const got = localPart.items;
       if (got.length !== want.size) throw new Error(`${name}/${p.id}: local/ has ${got.length} items, the selection ${want.size}`);
       for (const it of got) {
-        if (contentHash(it) !== want.get(it.id)) throw new Error(`${name}/${p.id}: local item ${it.id} does not match its frozen sha256`);
+        if (contentHash(hashed(it)) !== want.get(it.id)) throw new Error(`${name}/${p.id}: local item ${it.id} does not match its frozen sha256`);
         items.push({ ...it, part: p.id });
       }
+      if (Array.isArray(localPart.corpus)) corpus[p.id] = localPart.corpus;
       continue;
     }
     if (split === "dev") {
@@ -577,6 +584,9 @@ export function completeTestPart(testDir, manifest, partId) {
     return false;
   }
   if (!Array.isArray(data.items) || (typeof p.test === "number" && data.items.length !== p.test)) return false;
+  // The right count of rows with a repeated or empty id would score a case twice (W1.32, Codex on #225).
+  const ids = data.items.map((it) => it?.id);
+  if (ids.some((id) => typeof id !== "string" || !id) || new Set(ids).size !== ids.length) return false;
   return data.items.every((it) => ASSET_FIELDS.every((k) => typeof it[k] !== "string" || existsSync(join(testDir, it[k]))));
 }
 

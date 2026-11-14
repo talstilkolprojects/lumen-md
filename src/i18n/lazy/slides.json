@@ -1,0 +1,17 @@
+{
+  "slides.label": "Presentation: {title}",
+  "slides.prev": "Previous slide",
+  "slides.next": "Next slide",
+  "slides.count": "{n} / {total}",
+  "slides.presenter": "Presenter view",
+  "slides.pdf": "PDF",
+  "slides.close": "End",
+  "slides.presenterTitle": "Presenter view",
+  "slides.presenterWaiting": "Waiting for the presentation… Start it from a note or the canvas.",
+  "slides.nextUp": "Next: {title}",
+  "slides.last": "Last slide",
+  "slides.noNotes": "No speaker notes for this slide.",
+  "canvas.present": "Present",
+  "canvas.present.noFrames": "Add frames to the canvas to present it: each frame is a slide, arrows between frames set the order.",
+  "canvas.present.failed": "Couldn't start the presentation: {error}"
+}

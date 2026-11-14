@@ -1,0 +1,21 @@
+Lumen is a Markdown editor for notes, research and writing, built for Hebrew and right-to-left from the start, and it works in English just as well.
+
+HEBREW FIRST
+• The interface in Hebrew, mirrored; also Arabic and six more languages.
+• Direction is set per line, so an English term or a number inside a Hebrew sentence stays in place.
+• Search finds words with a prefix and ignores niqqud.
+
+YOUR NOTES, ON YOUR DEVICE
+• No account needed. Notes are stored on the device, and nothing is sent anywhere by default.
+• Works without a network.
+• Every note is a plain Markdown file. Export the whole vault as a .zip or a folder, any time.
+• Import an Obsidian vault or a Notion export.
+
+WRITE THE WAY YOU THINK
+• Source, split, preview and rich-text modes.
+• Links between notes, tags, a graph of your notes, daily notes.
+• Tables, math, diagrams and code blocks.
+• Optional AI that can run on the device; nothing goes to a cloud service unless you set one up with your own key.
+
+OPEN SOURCE
+Lumen is free and open source under the MIT licence. Questions and feedback: GitHub Discussions.

@@ -30,6 +30,7 @@ import {
   loadSet,
   newCanary,
   partHash,
+  recordTest,
   scanForTestData,
   splitHash,
   splitPool,
@@ -51,6 +52,8 @@ import { hard } from "../../scripts/golden/sets/langid.mjs";
 import { bipia } from "../../scripts/golden/sets/injection.mjs";
 // @ts-expect-error — plain .mjs module without type declarations
 import { heq } from "../../scripts/golden/sets/retrieval.mjs";
+// @ts-expect-error — plain .mjs module without type declarations
+import { imageHosts } from "../../scripts/golden/sets/caption.mjs";
 // @ts-expect-error — plain .mjs module without type declarations
 import { lines as ocrLines, pages as ocrPages, pngWithText } from "../../scripts/golden/sets/ocr.mjs";
 
@@ -448,8 +451,6 @@ describe("samplers are deterministic for a (dummy) seed", () => {
   });
 
   it("Python (scripts/golden/hf_build.py) samples and hashes exactly like Node", () => {
-    const py = spawnSync("python3", ["--version"]);
-    if (py.status !== 0) return; // CI images have python3; skip where it is missing
     const pool = Array.from({ length: 60 }, (_, i) => ({ id: `x-${String(i).padStart(3, "0")}`, text: `t${i}` }));
     const code = [
       "import importlib.util, json, sys",
@@ -485,5 +486,87 @@ describe("the licence gate on a copy of the sets", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("golden-set review fixes (W1.32, Codex P2 on #225)", () => {
+  it("a test part with a repeated or empty id is not complete, so it is never hashed", () => {
+    const dir = mkdtempSync(join(tmpdir(), "lumen-golden-ids-"));
+    try {
+      const m = { parts: [{ id: "q", test: 2 }] };
+      writeFileSync(join(dir, "q.json"), JSON.stringify({ items: [{ id: "1" }, { id: "1" }] }));
+      expect(completeTestPart(dir, m, "q")).toBe(false);
+      writeFileSync(join(dir, "q.json"), JSON.stringify({ items: [{ id: "1" }, { id: "" }] }));
+      expect(completeTestPart(dir, m, "q")).toBe(false);
+      writeFileSync(join(dir, "q.json"), JSON.stringify({ items: [{ id: "1" }, { id: "2" }] }));
+      expect(completeTestPart(dir, m, "q")).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("record-test --dir hashes complete parts only and resets the rest, like the --hashes path", () => {
+    const dir = mkdtempSync(join(tmpdir(), "lumen-golden-record-"));
+    try {
+      const set = join(dir, "set");
+      const split = join(dir, "split");
+      mkdirSync(set);
+      mkdirSync(split);
+      const old = "f".repeat(64);
+      writeFileSync(join(set, "manifest.json"), JSON.stringify({ parts: [{ id: "a", test: 1 }, { id: "b", test: 2 }, { id: "c", test: 1 }], test: { parts: { a: old, b: old, c: old }, sha256: old } }));
+      writeFileSync(join(split, "a.json"), JSON.stringify({ items: [{ id: "1" }] })); // complete
+      writeFileSync(join(split, "b.json"), JSON.stringify({ items: [{ id: "1" }] })); // 1 of 2: partial
+      // c was not built in this run: its old hash must not survive.
+      const t = recordTest(set, split);
+      expect(t.parts.a).toBe(partHash(split, "a"));
+      expect(t.parts.b).toBeNull();
+      expect(t.parts.c).toBeNull();
+      expect(t.sha256).toBeNull();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("a local-only part keeps every field and its corpus, verified on its hashFields only", () => {
+    const root = mkdtempSync(join(tmpdir(), "lumen-golden-local-"));
+    try {
+      cpSync(join(golden, "retrieval"), join(root, "retrieval"), { recursive: true });
+      const dir = join(root, "retrieval");
+      const manifest = JSON.parse(readFileSync(join(dir, "manifest.json"), "utf8"));
+      const part = manifest.parts.find((p: { id: string }) => p.id === "belebele");
+      const items = Array.from({ length: part.dev }, (_, i) => ({ id: `belebele-${i}`, query: `q${i}`, passageHe: `פסקה ${i}`, relevant: [`bb-d${i}`] }));
+      mkdirSync(join(dir, "selection"), { recursive: true });
+      writeFileSync(join(dir, "selection", "belebele.json"), JSON.stringify({ canary: manifest.canary, hashFields: ["query", "passageHe"], items: items.map((it) => ({ id: it.id, sha256: contentHash({ id: it.id, query: it.query, passageHe: it.passageHe }) })) }));
+      part.devSelection = "selection/belebele.json";
+      writeFileSync(join(dir, "manifest.json"), JSON.stringify(manifest, null, 2));
+      freezeSet(dir, { reason: "test: a frozen selection for the local part" });
+      mkdirSync(join(dir, "local"));
+      const corpus = items.map((it, i) => ({ id: `bb-d${i}`, text: it.passageHe }));
+      writeFileSync(join(dir, "local", "belebele.json"), JSON.stringify({ items, corpus }));
+      const got = loadSet(root, "retrieval", { local: true, parts: ["belebele"] });
+      expect(got.items).toHaveLength(part.dev);
+      expect(got.items[0].relevant).toEqual(["bb-d0"]);
+      expect(got.corpus.belebele).toEqual(corpus);
+      // A hashed field that changed is still refused.
+      writeFileSync(join(dir, "local", "belebele.json"), JSON.stringify({ items: items.map((it, i) => (i ? it : { ...it, query: "changed" })), corpus }));
+      expect(() => loadSet(root, "retrieval", { local: true, parts: ["belebele"] })).toThrow(/does not match its frozen sha256/);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("one image missing everywhere does not stop the others; only failures before any success give up", () => {
+    const h = imageHosts();
+    h.record(true);
+    for (let i = 0; i < 10; i++) h.record(false);
+    expect(h.worthTrying()).toBe(true);
+    const down = imageHosts();
+    for (let i = 0; i < 2; i++) {
+      expect(down.worthTrying()).toBe(true);
+      down.record(false);
+    }
+    expect(down.worthTrying()).toBe(true);
+    down.record(false);
+    expect(down.worthTrying()).toBe(false);
   });
 });

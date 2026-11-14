@@ -1,0 +1,21 @@
+{
+  "canvas.diagram.open": "Diagram…",
+  "canvas.diagram.title": "Diagram on the canvas",
+  "canvas.diagram.describe": "Describe it and a model on this device draws it",
+  "canvas.diagram.describePlaceholder": "e.g. the order process: request, approval, shipping",
+  "canvas.diagram.draw": "Draw",
+  "canvas.diagram.drawing": "Drawing…",
+  "canvas.diagram.drawn": "Drawn. Check the diagram, then insert it.",
+  "canvas.diagram.localOnly": "Runs only on a local model (Ollama or in the browser); nothing leaves the device.",
+  "canvas.diagram.noLocalModel": "No local model is available. Start Ollama with a model, or load one in Settings → AI.",
+  "canvas.diagram.drawFailed": "The model didn't produce a valid diagram: {error}",
+  "canvas.diagram.code": "Mermaid (flowchart, sequence, class, state or ER)",
+  "canvas.diagram.insert": "Insert",
+  "canvas.diagram.inserting": "Converting…",
+  "canvas.diagram.empty": "Paste or draw a diagram first.",
+  "canvas.diagram.unknown": "This isn't a Mermaid diagram: the first line should be its type (flowchart TD, sequenceDiagram, …).",
+  "canvas.diagram.invalid": "Mermaid can't read it: {error}",
+  "canvas.diagram.missing": "Inserted, but these labels are missing from the drawing: {labels}",
+  "canvas.diagram.notEditable": "A {kind} diagram is inserted as a picture, not as shapes you can edit.",
+  "canvas.diagram.insertedAsImage": "Inserted as a picture: this diagram type can't be made editable."
+}

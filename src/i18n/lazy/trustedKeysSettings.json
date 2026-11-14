@@ -1,0 +1,22 @@
+{
+  "trustedKeys.add.help": "Paste an Ed25519 public key as PEM or base64 SPKI.",
+  "trustedKeys.add.label": "Add a public key",
+  "trustedKeys.add.submit": "Trust key",
+  "trustedKeys.added": "Key trusted",
+  "trustedKeys.alreadyTrusted": "This key is already trusted",
+  "trustedKeys.builtinBadge": "Built-in",
+  "trustedKeys.close": "Close",
+  "trustedKeys.empty": "You haven't trusted any keys yet.",
+  "trustedKeys.error.empty": "Paste a public key first.",
+  "trustedKeys.error.notBase64": "That doesn't look like a PEM or base64 key — check that you copied the whole block.",
+  "trustedKeys.error.notEd25519": "Not an Ed25519 public key. Only Ed25519 keys (44-byte SPKI) are accepted.",
+  "trustedKeys.intro": "Plugins install only when signed by a key listed here. Compare the fingerprint with the one the publisher lists before trusting a key.",
+  "trustedKeys.loading": "Loading keys…",
+  "trustedKeys.remove.aria": "Remove key {fingerprint}",
+  "trustedKeys.remove.confirm": "Stop trusting key {fingerprint}…? Plugins signed only with it will no longer install.",
+  "trustedKeys.remove.title": "Remove key",
+  "trustedKeys.removed": "Key removed",
+  "trustedKeys.saveFailed": "Couldn't save the key: {error}",
+  "trustedKeys.section.builtin": "Built-in keys",
+  "trustedKeys.section.user": "Your keys"
+}

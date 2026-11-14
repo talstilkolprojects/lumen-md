@@ -5,6 +5,7 @@
  * Loaded lazily with the dialog.
  */
 import type { Locale } from "../i18n";
+import { detectLocale, systemHasHebrew } from "../i18n/detect";
 import { t } from "../i18n";
 import type { Theme } from "../store/useStore";
 import type { PresetId } from "../lib/themeSettings";
@@ -85,4 +86,22 @@ export async function importInto(kind: "obsidian" | "notion", files: ArrayLike<F
   const { importZip, importFileList } = await import("../storage/exportAll");
   const r = kind === "notion" ? await importZip(await files[0].arrayBuffer(), files[0].name) : await importFileList(files);
   return { notes: r.notes, folder: r.folder };
+}
+
+/**
+ * Plan W4.35: the language question. A system that lists Hebrew starts in
+ * Hebrew with no question (the language step is skipped; it can be opened
+ * from the dialog). Otherwise one question, "Which language will you write
+ * in?", with the system's language suggested and Hebrew first in the list.
+ */
+export function languagePlan(languages: readonly string[], saved: unknown = null): { ask: boolean; locale: Locale } {
+  if (typeof saved === "string" && saved) return { ask: false, locale: detectLocale(saved, languages) };
+  if (systemHasHebrew(languages)) return { ask: false, locale: "he" };
+  return { ask: true, locale: detectLocale(null, languages) };
+}
+
+/** The order of the language choices: Hebrew, English, then the rest as listed. */
+export function languageOrder<T extends { code: string }>(locales: readonly T[]): T[] {
+  const rank = (c: string) => (c === "he" ? 0 : c === "en" ? 1 : 2);
+  return [...locales].sort((a, b) => rank(a.code) - rank(b.code));
 }

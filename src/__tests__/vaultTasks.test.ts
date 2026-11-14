@@ -158,13 +158,13 @@ describe("index worker: tasks over the vault (4.13.2)", () => {
       { path: "a.md", name: "a.md", content: "- [ ] alpha 📅 2026-10-24", modified: 1 },
       { path: "b.md", name: "b.md", content: "no tasks here", modified: 1 },
     ] });
-    let r = handleIndexRequest(index, { id: 2, op: "tasks", query: "due today", today: "2026-10-24" });
+    let r = await handleIndexRequest(index, { id: 2, op: "tasks", query: "due today", today: "2026-10-24" });
     expect(r.ok && (r.result as { total: number }).total).toBe(1);
     handleIndexRequest(index, { id: 3, op: "upsert", files: [{ path: "b.md", name: "b.md", content: "- [ ] beta 📅 2026-10-24", modified: 2 }] });
-    r = handleIndexRequest(index, { id: 4, op: "tasks", query: "due today\nsort by description", today: "2026-10-24" });
+    r = await handleIndexRequest(index, { id: 4, op: "tasks", query: "due today\nsort by description", today: "2026-10-24" });
     expect(r.ok && (r.result as { groups: Array<{ tasks: Array<{ description: string }> }> }).groups[0].tasks.map((t) => t.description)).toEqual(["alpha", "beta"]);
     handleIndexRequest(index, { id: 5, op: "remove", paths: ["a.md"] });
-    r = handleIndexRequest(index, { id: 6, op: "tasks", query: "not done", today: "2026-10-24" });
+    r = await handleIndexRequest(index, { id: 6, op: "tasks", query: "not done", today: "2026-10-24" });
     expect(r.ok && (r.result as { total: number }).total).toBe(1);
   });
 

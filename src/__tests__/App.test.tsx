@@ -44,6 +44,7 @@ const h = await vi.hoisted(async () => {
     writeWorkspaceFile: vi.fn<AnyFn>(),
     writeWorkspaceBlob: vi.fn<AnyFn>(),
     readWorkspaceFile: vi.fn<AnyFn>(),
+    workspaceHasFile: vi.fn<AnyFn>(),
     uiAlert: vi.fn<AnyFn>(),
     uiConfirm: vi.fn<AnyFn>(),
     uiPrompt: vi.fn<AnyFn>(),
@@ -69,13 +70,14 @@ vi.mock("../ui/FileTree", () => ({ FileTree: h.stub("FileTree") }));
 vi.mock("../ui/SidebarResizer", () => ({ SidebarResizer: h.stub("SidebarResizer") }));
 vi.mock("../ui/BacklinksPanel", () => ({ BacklinksPanel: h.stub("BacklinksPanel") }));
 vi.mock("../ui/AiSuggestionsPanel", () => ({ AiSuggestionsPanel: h.stub("AiSuggestionsPanel") }));
-vi.mock("../ui/MobileKeyboardBar", () => ({ MobileKeyboardBar: h.stub("MobileKeyboardBar") }));
+vi.mock("../ui/MobileKeyboardBarHost", () => ({ MobileKeyboardBarHost: h.stub("MobileKeyboardBarHost") }));
 vi.mock("../ui/TagsPanel", () => ({ TagsPanel: h.stub("TagsPanel") }));
 vi.mock("../ui/AiInlinePrompt", () => ({ AiInlinePromptOverlay: h.stub("AiInlinePromptOverlay"), openAiPrompt: () => {} }));
 vi.mock("../ui/RuntimeMetricsPanel", () => ({ RuntimeMetricsPanel: h.stub("RuntimeMetricsPanel") }));
 vi.mock("../ui/KeyboardShortcuts", () => ({ KeyboardShortcuts: h.stub("KeyboardShortcuts"), detectIsMac: () => false }));
 vi.mock("../ui/FocusMode", () => ({ FocusMode: h.stub("FocusMode") }));
 vi.mock("../ui/OnboardingTour", () => ({ OnboardingTour: h.stub("OnboardingTour") }));
+vi.mock("../onboarding/FirstRun", () => ({ default: h.stub("FirstRun") }));
 vi.mock("../layouts/EditorLayout", () => ({ EditorLayout: h.stub("EditorLayout") }));
 vi.mock("../ui/DocTabs", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../ui/DocTabs")>()),
@@ -122,6 +124,9 @@ vi.mock("../pwa/launch", () => ({
   parseLaunch: (...a: unknown[]) => h.parseLaunch(...a),
   clearLaunchParams: (...a: unknown[]) => h.clearLaunchParams(...a),
   onLaunchFiles: (...a: unknown[]) => h.onLaunchFiles(...a),
+  // Quick capture (#268): App also asks for a shared item and listens for the desktop capture shortcut.
+  sharedItem: () => null,
+  onDesktopCapture: () => {},
 }));
 vi.mock("../storage/fs", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../storage/fs")>()),
@@ -141,6 +146,7 @@ vi.mock("../storage/workspace", async (importOriginal) => ({
   writeWorkspaceFile: (...a: unknown[]) => h.writeWorkspaceFile(...a),
   writeWorkspaceBlob: (...a: unknown[]) => h.writeWorkspaceBlob(...a),
   readWorkspaceFile: (...a: unknown[]) => h.readWorkspaceFile(...a),
+  workspaceHasFile: (...a: unknown[]) => h.workspaceHasFile(...a),
   makeAssetName: (name: string) => `lumen-asset-${name}`,
 }));
 vi.mock("../storage/exportHtml", async (importOriginal) => ({
@@ -168,6 +174,7 @@ vi.mock("../renderer/wikiLinks", async (importOriginal) => ({
 
 import App from "../App";
 import { useAppStore } from "../store/useStore";
+import { __resetExternalChanges } from "../store/externalChanges";
 import { welcomeDoc } from "../welcomeDoc";
 import { applyLocale, loadLocale, t } from "../i18n";
 import { useToastStore } from "../store/useToastStore";
@@ -178,6 +185,13 @@ function propsOf(name: string): Props {
   if (!p) throw new Error(`${name} was never rendered`);
   return p;
 }
+/** A lazily loaded surface mounted only while open (#261): wait for the chunk, then read its props. */
+async function opened(name: string): Promise<Props> {
+  await waitFor(() => expect(propsOf(name).open).toBe(true), { timeout: 3000 });
+  return propsOf(name);
+}
+const mounted = (name: string) => screen.queryByText(`[${name}]`) !== null;
+
 function cb<T = AnyFn>(name: string, key: string): T {
   return propsOf(name)[key] as T;
 }
@@ -214,6 +228,8 @@ function setDocState(d: Partial<ReturnType<typeof doc>>, tabs = true) {
 }
 
 beforeEach(() => {
+  // The outside-change guard (#258) remembers what each path last held, across cases: start clean.
+  __resetExternalChanges();
   for (const k of Object.keys(h.props)) delete h.props[k];
   h.commandOpts = null;
   h.menu = null;
@@ -222,7 +238,7 @@ beforeEach(() => {
   for (const fn of [
     h.openNewDoc, h.openFileDialog, h.saveFile, h.getRecents, h.pushRecent, h.reopenRecent,
     h.isOPFSAvailable, h.uniqueWorkspaceName, h.writeWorkspaceFile, h.writeWorkspaceBlob,
-    h.readWorkspaceFile, h.uiAlert, h.uiConfirm, h.uiPrompt, h.openInsertTextDialog,
+    h.readWorkspaceFile, h.workspaceHasFile, h.uiAlert, h.uiConfirm, h.uiPrompt, h.openInsertTextDialog,
     h.exportToHtml, h.recordSnapshot, h.scrollToHeading, h.parseLaunch, h.clearLaunchParams, h.onLaunchFiles,
   ]) fn.mockReset();
   h.getRecents.mockResolvedValue([]);
@@ -232,6 +248,7 @@ beforeEach(() => {
   h.writeWorkspaceFile.mockResolvedValue(undefined);
   h.writeWorkspaceBlob.mockResolvedValue(undefined);
   h.readWorkspaceFile.mockResolvedValue("");
+  h.workspaceHasFile.mockResolvedValue(false);
   h.uiAlert.mockResolvedValue(null);
   h.uiConfirm.mockResolvedValue(true);
   h.uiPrompt.mockResolvedValue(null);
@@ -290,19 +307,22 @@ describe("App first launch", () => {
     expect(propsOf("DocTabs").activeId).toBe("notes.md");
   });
 
-  it("starts the onboarding tour on a first visit and remembers when it is closed", async () => {
+  it("starts the setup, then the onboarding tour, on a first visit and remembers when it is closed", async () => {
     localStorage.removeItem("lumen-tour-done");
     await renderApp();
-    expect(propsOf("OnboardingTour").open).toBe(false);
-    await waitFor(() => expect(propsOf("OnboardingTour").open).toBe(true), { timeout: 3000 });
+    // A first visit opens the setup (#261, plan 14.1); the tour follows when it is done.
+    await waitFor(() => expect(mounted("FirstRun")).toBe(true), { timeout: 3000 });
+    await run(() => cb("FirstRun", "onDone")({ note: { path: "Welcome.md", content: "# Welcome\n" } }));
+    await opened("OnboardingTour");
     await run(() => cb("OnboardingTour", "onClose")());
-    expect(propsOf("OnboardingTour").open).toBe(false);
+    expect(mounted("OnboardingTour")).toBe(false);
     expect(localStorage.getItem("lumen-tour-done")).toBe("1");
   });
 
   it("the tour's action opens the runtime metrics panel", async () => {
     await renderApp();
-    const actions = propsOf("OnboardingTour").actions as Array<{ id: string; label: string; onRun: () => void }>;
+    await run(() => cb("Toolbar", "onTour")());
+    const actions = (await opened("OnboardingTour")).actions as Array<{ id: string; label: string; onRun: () => void }>;
     expect(actions[0].id).toBe("runtimeMetrics.open");
     expect(actions[0].label).toBe(t("tour.action.openRuntimeMetrics"));
     await run(() => actions[0].onRun());
@@ -384,7 +404,7 @@ describe("App keyboard shortcuts", () => {
     key("K", { meta: true });
     expect(propsOf("CommandPalette").open).toBe(false);
     key("/");
-    expect(propsOf("KeyboardShortcuts").open).toBe(true);
+    await opened("KeyboardShortcuts");
     key("h");
     expect(propsOf("SearchReplace").open).toBe(true);
     // Without a modifier nothing happens.
@@ -587,9 +607,18 @@ describe("App autosave", () => {
     act(() => {
       window.dispatchEvent(new Event("pagehide"));
     });
-    expect(h.writeWorkspaceFile).toHaveBeenCalledWith("w.md", "unflushed");
+    // The write goes through the outside-change guard (#258), loaded on demand: wait for it.
+    await waitFor(() => expect(h.writeWorkspaceFile).toHaveBeenCalledWith("w.md", "unflushed"));
     expect(h.recordSnapshot).toHaveBeenCalledWith("w.md", "unflushed", "close");
     h.writeWorkspaceFile.mockClear();
+    // The flush marked the note saved (main); a new edit makes it pending again. The vault
+    // now holds what was written, so the guard (#258) sees no outside change.
+    await waitFor(() => expect(doc().dirty).toBe(false));
+    h.workspaceHasFile.mockResolvedValue(true);
+    h.readWorkspaceFile.mockResolvedValue("unflushed");
+    act(() => {
+      useAppStore.getState().setContent("unflushed, again");
+    });
     const vis = Object.getOwnPropertyDescriptor(document, "visibilityState");
     Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" });
     act(() => {
@@ -597,7 +626,7 @@ describe("App autosave", () => {
     });
     if (vis) Object.defineProperty(document, "visibilityState", vis);
     else delete (document as unknown as Record<string, unknown>).visibilityState;
-    expect(h.writeWorkspaceFile).toHaveBeenCalledWith("w.md", "unflushed");
+    await waitFor(() => expect(h.writeWorkspaceFile).toHaveBeenCalledWith("w.md", "unflushed, again"));
   });
 
   it("warns before unloading only with unsaved changes", async () => {
@@ -825,11 +854,11 @@ describe("App toolbar callbacks", () => {
     await run(() => cb("CommandPalette", "onClose")());
     expect(propsOf("CommandPalette").open).toBe(false);
     await run(() => cb("Toolbar", "onShortcuts")());
-    expect(propsOf("KeyboardShortcuts").open).toBe(true);
+    await opened("KeyboardShortcuts");
     await run(() => cb("KeyboardShortcuts", "onClose")());
-    expect(propsOf("KeyboardShortcuts").open).toBe(false);
+    expect(mounted("KeyboardShortcuts")).toBe(false);
     await run(() => cb("Toolbar", "onTour")());
-    expect(propsOf("OnboardingTour").open).toBe(true);
+    await opened("OnboardingTour");
     await run(() => cb("Toolbar", "onFocusMode")());
     expect(screen.getByText("[FocusMode]")).toBeTruthy();
     await run(() => cb("FocusMode", "onExit")());
@@ -967,9 +996,9 @@ describe("App native (Tauri) menu", () => {
     await run(() => menu.onCommandPalette());
     expect(propsOf("CommandPalette").open).toBe(true);
     await run(() => menu.onShortcuts?.());
-    expect(propsOf("KeyboardShortcuts").open).toBe(true);
+    await opened("KeyboardShortcuts");
     await run(() => menu.onTour?.());
-    expect(propsOf("OnboardingTour").open).toBe(true);
+    await opened("OnboardingTour");
     await run(() => menu.onFindReplace?.());
     expect(propsOf("SearchReplace").open).toBe(true);
     await run(() => menu.onWorkspaceSearch?.());

@@ -6,10 +6,11 @@
  * Tatoeba (which only CI can download).
  */
 import { describe, expect, it } from "vitest";
-import { appendFileSync, readFileSync } from "node:fs";
+import { appendFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 // @ts-expect-error — plain .mjs module without types
 import { loadSet } from "../../scripts/lib/golden.mjs";
+import { readLocale } from "../../scripts/lib/i18n-files.mjs";
 import { detectLanguage, languageCode } from "../text/langId";
 import { dominantScript, languageFromScript, looksYiddish, proseForLanguage } from "../text/script";
 
@@ -82,9 +83,8 @@ describe("langid golden set (dev split) and a local stand-in for Tatoeba", () =>
     // Fully translated strings of ≥ 3 words (≥ 6 characters in ja / zh):
     // a translation that keeps an English word of the source ("Exporter to
     // OPML") is left out — it is not one language.
-    const enSrc = readFileSync(join(root, "src/i18n/index.ts"), "utf8");
-    const en: Record<string, string> = {};
-    for (const m of enSrc.matchAll(/^\s+"([\w.-]+)": "((?:[^"\\]|\\.)*)",?$/gm)) en[m[1]] = m[2];
+    // The per-domain layout (plan 0.3): src/i18n/locales/<lang>/<domain>.json.
+    const en: Record<string, string> = readLocale("en");
     const latinWords = (t: string) => new Set((t.match(/[A-Za-z]{3,}/g) ?? []).map((w) => w.toLowerCase()));
     const files: Record<string, string> = { he: "he", ar: "ar", de: "de", fr: "fr", ja: "ja", ru: "ru", zh: "zh-CN" };
     const per: Record<string, [number, number]> = {};
@@ -102,7 +102,7 @@ describe("langid golden set (dev split) and a local stand-in for Tatoeba", () =>
       if (got === lang) per[lang][0]++;
       else if (process.env.LANGID_DEBUG) appendFileSync(process.env.LANGID_DEBUG, `MISS ${lang} ${got} ${t.slice(0, 80)}\n`);
     };
-    for (const [lang, f] of Object.entries(files)) for (const [k, v] of Object.entries(JSON.parse(readFileSync(join(root, "src/i18n/locales", `${f}.json`), "utf8")) as Record<string, string>)) check(lang, k, v);
+    for (const [lang, f] of Object.entries(files)) for (const [k, v] of Object.entries(readLocale(f) as Record<string, string>)) check(lang, k, v);
     for (const [k, v] of Object.entries(en)) check("en", k, v);
     const rates = Object.fromEntries(Object.entries(per).map(([l, [a, n]]) => [l, `${(a / n).toFixed(3)} (${n})`]));
     const [a, n] = Object.values(per).reduce(([x, y], [p, q]) => [x + p, y + q], [0, 0]);

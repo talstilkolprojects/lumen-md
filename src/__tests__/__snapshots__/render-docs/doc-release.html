@@ -1,0 +1,283 @@
+<h1 id="releasing-lumen" dir="auto">Releasing Lumen</h1>
+<p dir="auto">This document covers building and shipping Lumen across all targets:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table dir="ltr"><thead><tr><th dir="auto">Target</th><th dir="auto">Tooling</th><th dir="auto">Output</th></tr></thead><tbody><tr><td dir="auto"><strong>Web (PWA)</strong></td><td dir="auto">Vite</td><td dir="auto"><code>dist/</code> — static files for any host</td></tr><tr><td dir="auto"><strong>macOS</strong></td><td dir="auto">Tauri 2 + Rust</td><td dir="auto"><code>Lumen.app</code> + <code>Lumen_*.dmg</code></td></tr><tr><td dir="auto"><strong>Windows</strong></td><td dir="auto">Tauri 2 + Rust</td><td dir="auto"><code>Lumen_*.msi</code> + <code>Lumen_*.exe</code></td></tr><tr><td dir="auto"><strong>Linux</strong></td><td dir="auto">Tauri 2 + Rust</td><td dir="auto"><code>.deb</code>, <code>.rpm</code>, <code>.AppImage</code></td></tr><tr><td dir="auto"><strong>iOS</strong></td><td dir="auto">Capacitor 8 + Xcode</td><td dir="auto"><code>Lumen.ipa</code> (TestFlight / App Store)</td></tr><tr><td dir="auto"><strong>Android</strong></td><td dir="auto">Capacitor 8 + Gradle</td><td dir="auto"><code>Lumen.aab</code> (Play Store)</td></tr></tbody></table>
+<blockquote dir="ltr">
+<p dir="auto">Web and macOS builds are reproducible from CI. iOS / Android still need<br/>
+a developer account (Apple, Google) for signing + store submission, so<br/>
+the final upload is a local Xcode / Android Studio step.</p>
+</blockquote>
+<hr/>
+<h2 id="versioning" dir="auto">Versioning</h2>
+<p dir="auto">Bump the version in three places, in lock-step:</p>
+<ol dir="ltr">
+<li dir="ltr"><code>package.json</code> → <code>&quot;version&quot;</code></li>
+<li dir="ltr"><code>src-tauri/tauri.conf.json</code> → <code>&quot;version&quot;</code> and <code>src-tauri/Cargo.toml</code></li>
+<li dir="ltr">iOS Xcode project (<code>MARKETING_VERSION</code> in <code>ios/App/App.xcodeproj/project.pbxproj</code>)</li>
+<li dir="ltr">Android Gradle (<code>android/app/build.gradle</code> → <code>versionName</code> / <code>versionCode</code>)</li>
+</ol>
+<p dir="auto">Use <a href="https://semver.org/">semver</a>: <code>MAJOR.MINOR.PATCH</code> for the marketing<br/>
+string, monotonically increasing integer for App Store / Play Store<br/>
+internal codes.</p>
+<hr/>
+<h2 id="1-web-build-pwa" dir="auto">1. Web build (PWA)</h2>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="npm install
+npm run typecheck &amp;&amp; npm run test
+npm run build              # → dist/
+npm run budget             # fail-fast on bundle bloat
+npm run preview            # smoke-test locally
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> install</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> typecheck</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> &amp;&amp; </span><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> test</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> build</span><span style="color:#6E7781;--shiki-dark:#8B949E">              # → dist/</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> budget</span><span style="color:#6E7781;--shiki-dark:#8B949E">             # fail-fast on bundle bloat</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> preview</span><span style="color:#6E7781;--shiki-dark:#8B949E">            # smoke-test locally</span></span>
+<span class="line"></span></code></pre></div>
+<p dir="auto">Deploy <code>dist/</code> to anything static — Cloudflare Pages, Netlify, Vercel,<br/>
+GitHub Pages, your own nginx. The service worker auto-updates clients on<br/>
+the next visit.</p>
+<hr/>
+<h2 id="2-macos-tauri" dir="auto">2. macOS (Tauri)</h2>
+<h3 id="prerequisites" dir="auto">Prerequisites</h3>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="# One-time
+xcode-select --install
+brew install rust         # or use rustup
+rustup target add aarch64-apple-darwin x86_64-apple-darwin
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># One-time</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">xcode-select</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --install</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">brew</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> install</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> rust</span><span style="color:#6E7781;--shiki-dark:#8B949E">         # or use rustup</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">rustup</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> target</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> add</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> aarch64-apple-darwin</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> x86_64-apple-darwin</span></span>
+<span class="line"></span></code></pre></div>
+<h3 id="build" dir="auto">Build</h3>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="npm run tauri:build
+# → src-tauri/target/release/bundle/macos/Lumen.app
+# → src-tauri/target/release/bundle/dmg/Lumen_&lt;version&gt;_&lt;arch&gt;.dmg
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> tauri:build</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># → src-tauri/target/release/bundle/macos/Lumen.app</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># → src-tauri/target/release/bundle/dmg/Lumen_&lt;version&gt;_&lt;arch&gt;.dmg</span></span>
+<span class="line"></span></code></pre></div>
+<p dir="auto">The default build is an <strong>ad-hoc signed</strong> bundle for the Mac it was built<br/>
+on. Users opening the .dmg on another Mac will hit Gatekeeper warnings<br/>
+(&quot;cannot be opened because the developer cannot be verified&quot;) — they can<br/>
+right-click → Open to bypass.</p>
+<h3 id="signed--notarized-build-production" dir="auto">Signed + notarized build (production)</h3>
+<p dir="auto">For a release that runs without warnings:</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="# .env or shell:
+export APPLE_ID=&quot;you@example.com&quot;
+export APPLE_PASSWORD=&quot;app-specific-password&quot;   # appleid.apple.com → Sign-in &amp; Security
+export APPLE_TEAM_ID=&quot;ABCDEF1234&quot;
+export APPLE_SIGNING_IDENTITY=&quot;Developer ID Application: Your Name (ABCDEF1234)&quot;
+
+npm run tauri:build
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># .env or shell:</span></span>
+<span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">export</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> APPLE_ID</span><span style="color:#CF222E;--shiki-dark:#FF7B72">=</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;you@example.com&quot;</span></span>
+<span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">export</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> APPLE_PASSWORD</span><span style="color:#CF222E;--shiki-dark:#FF7B72">=</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;app-specific-password&quot;</span><span style="color:#6E7781;--shiki-dark:#8B949E">   # appleid.apple.com → Sign-in &amp; Security</span></span>
+<span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">export</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> APPLE_TEAM_ID</span><span style="color:#CF222E;--shiki-dark:#FF7B72">=</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;ABCDEF1234&quot;</span></span>
+<span class="line"><span style="color:#CF222E;--shiki-dark:#FF7B72">export</span><span style="color:#1F2328;--shiki-dark:#E6EDF3"> APPLE_SIGNING_IDENTITY</span><span style="color:#CF222E;--shiki-dark:#FF7B72">=</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">&quot;Developer ID Application: Your Name (ABCDEF1234)&quot;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> tauri:build</span></span>
+<span class="line"></span></code></pre></div>
+<p dir="auto">Tauri picks the env vars up automatically and runs <code>codesign</code> +<br/>
+<code>notarytool</code> against the resulting bundle. Verify:</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="codesign -dv --verbose=4 src-tauri/target/release/bundle/macos/Lumen.app
+spctl -a -t exec -vv      src-tauri/target/release/bundle/macos/Lumen.app
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#953800;--shiki-dark:#FFA657">codesign</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -dv</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --verbose=4</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> src-tauri/target/release/bundle/macos/Lumen.app</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">spctl</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -a</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -t</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> exec</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -vv</span><span style="color:#0A3069;--shiki-dark:#A5D6FF">      src-tauri/target/release/bundle/macos/Lumen.app</span></span>
+<span class="line"></span></code></pre></div>
+<h3 id="universal-binary-intel--apple-silicon" dir="auto">Universal binary (Intel + Apple Silicon)</h3>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="npm run tauri:build -- --target universal-apple-darwin
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> tauri:build</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --target</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> universal-apple-darwin</span></span>
+<span class="line"></span></code></pre></div>
+<hr/>
+<h2 id="3-ios-capacitor-8" dir="auto">3. iOS (Capacitor 8)</h2>
+<h3 id="prerequisites-1" dir="auto">Prerequisites</h3>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="# One-time
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+xcodebuild -license accept
+
+# Capacitor 8 uses Swift Package Manager — no CocoaPods needed.
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># One-time</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">sudo</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> xcode-select</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -s</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> /Applications/Xcode.app/Contents/Developer</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">xcodebuild</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> -license</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> accept</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Capacitor 8 uses Swift Package Manager — no CocoaPods needed.</span></span>
+<span class="line"></span></code></pre></div>
+<h3 id="develop-run-on-simulator--device" dir="auto">Develop (run on simulator / device)</h3>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="npm run build              # produces dist/
+npx cap sync ios           # copies dist/ + plugins into ios/App/App/public
+npx cap open ios           # opens Xcode
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> build</span><span style="color:#6E7781;--shiki-dark:#8B949E">              # produces dist/</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npx</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> cap</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> sync</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> ios</span><span style="color:#6E7781;--shiki-dark:#8B949E">           # copies dist/ + plugins into ios/App/App/public</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npx</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> cap</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> open</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> ios</span><span style="color:#6E7781;--shiki-dark:#8B949E">           # opens Xcode</span></span>
+<span class="line"></span></code></pre></div>
+<p dir="auto">In Xcode:</p>
+<ol dir="ltr">
+<li dir="ltr">Pick the <code>App</code> scheme + your target device or simulator.</li>
+<li dir="ltr">⌘R to build &amp; run.</li>
+</ol>
+<h3 id="archive-for-the-app-store" dir="auto">Archive for the App Store</h3>
+<p dir="auto">In Xcode:</p>
+<ol dir="ltr">
+<li dir="ltr">Select <strong>Any iOS Device (arm64)</strong> as the run target.</li>
+<li dir="ltr"><strong>Product → Archive</strong> — produces an <code>.xcarchive</code>.</li>
+<li dir="ltr"><strong>Distribute App → App Store Connect → Upload</strong>.</li>
+<li dir="ltr">Wait for processing (~10 min), then add to TestFlight or submit for review.</li>
+</ol>
+<h3 id="bundle-identifier--signing" dir="auto">Bundle identifier + signing</h3>
+<ul dir="ltr">
+<li dir="ltr">Open <code>ios/App/App.xcodeproj</code> → <strong>Signing &amp; Capabilities</strong> tab.</li>
+<li dir="ltr">Set your <strong>Team</strong> (your Apple Developer team).</li>
+<li dir="ltr">Optionally change the <strong>Bundle Identifier</strong> (default <code>com.lumen.editor</code>).</li>
+<li dir="ltr">Provisioning profile is created automatically the first time.</li>
+</ul>
+<h3 id="permission-strings-shipped" dir="auto">Permission strings shipped</h3>
+<p dir="auto"><code>ios/App/App/Info.plist</code> already includes user-facing permission strings<br/>
+for: photo library, camera, microphone, speech recognition, and<br/>
+file-sharing. Edit there if you change the wording.</p>
+<hr/>
+<h2 id="4-android-capacitor-8" dir="auto">4. Android (Capacitor 8)</h2>
+<h3 id="prerequisites-2" dir="auto">Prerequisites</h3>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="brew install --cask android-studio
+# Set ANDROID_HOME after first launch of Android Studio + SDK Manager.
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#953800;--shiki-dark:#FFA657">brew</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> install</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --cask</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> android-studio</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Set ANDROID_HOME after first launch of Android Studio + SDK Manager.</span></span>
+<span class="line"></span></code></pre></div>
+<h3 id="initialise" dir="auto">Initialise</h3>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="npx cap add android        # one-time
+npm run build
+npx cap sync android
+npx cap open android       # opens Android Studio
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npx</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> cap</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> add</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> android</span><span style="color:#6E7781;--shiki-dark:#8B949E">        # one-time</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npm</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> run</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> build</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npx</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> cap</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> sync</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> android</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">npx</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> cap</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> open</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> android</span><span style="color:#6E7781;--shiki-dark:#8B949E">       # opens Android Studio</span></span>
+<span class="line"></span></code></pre></div>
+<h3 id="build-an-aab-play-store" dir="auto">Build an <code>.aab</code> (Play Store)</h3>
+<p dir="auto">In Android Studio:</p>
+<ol dir="ltr">
+<li dir="ltr"><strong>Build → Generate Signed Bundle / APK → Android App Bundle</strong>.</li>
+<li dir="ltr">Pick / create your keystore, fill alias + password.</li>
+<li dir="ltr"><strong>release</strong> build variant → produces <code>app-release.aab</code>.</li>
+<li dir="ltr">Upload to <a href="https://play.google.com/console">Play Console</a>.</li>
+</ol>
+<hr/>
+<h2 id="5-ci-release-pipeline" dir="auto">5. CI release pipeline</h2>
+<p dir="auto"><code>.github/workflows/release.yml</code> runs on tag push (<code>v*</code>) and produces:</p>
+<ul dir="ltr">
+<li dir="ltr">Web bundle as a workflow artifact + GitHub Pages deploy.</li>
+<li dir="ltr">macOS <code>.dmg</code> (Apple Silicon + Intel) attached to the GitHub Release.</li>
+<li dir="ltr">Windows <code>.msi</code> + Linux <code>.AppImage</code> attached to the same Release.</li>
+<li dir="ltr">iOS / Android archives are NOT produced by CI (signing keys live on<br/>
+developer machines) — see sections 3 and 4 above.</li>
+</ul>
+<h3 id="signing-and-updates-plan-115" dir="auto">Signing and updates (plan 11.5)</h3>
+<p dir="auto">Every secret is optional: without it the step is skipped with a warning and<br/>
+the build still succeeds (unsigned). Tal sets them up in plan 15.7.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table dir="ltr"><thead><tr><th dir="auto">Secret / variable</th><th dir="auto">What it does</th><th dir="auto">Without it</th></tr></thead><tbody><tr><td dir="auto"><code>TAURI_SIGNING_PRIVATE_KEY</code> (+ <code>_PASSWORD</code>)</td><td dir="auto">Signs the update artifacts (<code>.sig</code>); <code>latest.json</code> is published</td><td dir="auto">No auto-update</td></tr><tr><td dir="auto"><code>vars.LUMEN_UPDATER_PUBKEY</code></td><td dir="auto">The public key compiled into the app</td><td dir="auto">The updater is off (&quot;not configured&quot;)</td></tr><tr><td dir="auto"><code>vars.LUMEN_UPDATER_ENDPOINT</code></td><td dir="auto">Where <code>latest.json</code> lives (default: this repo&#x27;s latest release)</td><td dir="auto">—</td></tr><tr><td dir="auto"><code>WINDOWS_CERTIFICATE</code> (base64 .pfx) + <code>WINDOWS_CERTIFICATE_PASSWORD</code></td><td dir="auto">Authenticode-signs the Windows installer</td><td dir="auto">Unsigned: SmartScreen warns</td></tr><tr><td dir="auto"><code>APPLE_CERTIFICATE</code>, <code>APPLE_SIGNING_IDENTITY</code>, <code>APPLE_ID</code>, <code>APPLE_APP_SPECIFIC_PASSWORD</code>, <code>APPLE_TEAM_ID</code></td><td dir="auto">Signs and notarises the macOS app</td><td dir="auto">Ad-hoc signed, Gatekeeper warns</td></tr></tbody></table>
+<p dir="auto">Create the updater key once: <code>npx tauri signer generate -w ~/.tauri/lumen.key</code>.<br/>
+The app checks for updates only when asked (<em>Check for updates…</em>), never under the<br/>
+&quot;local only&quot; privacy policy, and every check goes in the privacy log. The<br/>
+plugin refuses a download whose signature does not match, and<br/>
+<code>requireSignedVersion</code> refuses a downgrade.</p>
+<p dir="auto">The build carries no source maps (<code>scripts/check-sourcemaps.mjs</code>; the startup<br/>
+budget fails a build that has any). <code>LUMEN_SOURCEMAP=1 npm run build</code> makes<br/>
+them for a local investigation only.</p>
+<div class="code-block" dir="ltr"><div class="code-block-header"><span class="lang">bash</span><button class="icon-btn" data-copy="# Cut a release:
+git tag v0.2.0
+git push --tags
+# → CI takes over, creates the GitHub Release + uploads artifacts.
+" title="Copy" style="padding:2px 8px;font-size:11px;height:24px;width:auto">Copy</button></div><pre class="shiki shiki-themes github-light-default github-dark-default" style="background-color:#ffffff;--shiki-dark-bg:#0d1117;color:#1f2328;--shiki-dark:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># Cut a release:</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">git</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> tag</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> v0.2.0</span></span>
+<span class="line"><span style="color:#953800;--shiki-dark:#FFA657">git</span><span style="color:#0A3069;--shiki-dark:#A5D6FF"> push</span><span style="color:#0550AE;--shiki-dark:#79C0FF"> --tags</span></span>
+<span class="line"><span style="color:#6E7781;--shiki-dark:#8B949E"># → CI takes over, creates the GitHub Release + uploads artifacts.</span></span>
+<span class="line"></span></code></pre></div>
+<hr/>
+<h2 id="smoke-test-checklist" dir="auto">Smoke-test checklist</h2>
+<p dir="auto">After every build, before publishing:</p>
+<ul class="contains-task-list" dir="ltr">
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Open the .app / .dmg / .ipa on a clean device — first-launch loads</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> <code>⌘K</code> → command palette appears</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Type something → <code>⌘S</code> → file save dialog → reload → restored</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Switch to RTL locale → flip is correct</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Paste a YouTube URL → &quot;wrap as embed&quot; pill → renders the video</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Print preview → colors preserved (PDF export)</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Toggle theme → no flash of unstyled content</li>
+<li class="task-list-item" dir="ltr"><input type="checkbox" disabled="" readonly="" aria-label="Task"/> Offline mode (DevTools → Network → Offline) → app still works</li>
+</ul>
+<hr/>
+<h2 id="release-notes" dir="auto">Release notes</h2>
+<p dir="auto">Add an entry to <code>CHANGELOG.md</code> for every version. Keep entries terse,<br/>
+group under <code>Added</code> / <code>Changed</code> / <code>Fixed</code> headings, and link to PRs.</p>

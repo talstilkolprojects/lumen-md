@@ -1,0 +1,16 @@
+{
+  "srs.title": "Daily review",
+  "srs.loading": "Getting today's cards…",
+  "srs.progress": "{n} of {total}",
+  "srs.showAnswer": "Show the answer (space)",
+  "srs.showSource": "Show where it's from (space)",
+  "srs.rate.1": "Again",
+  "srs.rate.2": "Hard",
+  "srs.rate.3": "Good",
+  "srs.rate.4": "Easy",
+  "srs.done": "Done for today: {n} reviewed.",
+  "srs.empty": "Nothing to review yet. Highlight passages, or write question::answer lines in your notes.",
+  "srs.unreadable": "{path} can't be read, so it isn't changed. Fix or remove it to review again.",
+  "srs.failed": "Couldn't save the review: {error}",
+  "srs.close": "Close"
+}

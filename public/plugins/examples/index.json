@@ -1,0 +1,13 @@
+{
+  "about": "Sandboxed plugin registry (plan 11.2, W1.20): every version listed here is scanned (scripts/scan-plugins.mjs → scan.json); a version whose scan fails is not shown.",
+  "plugins": [
+    { "id": "lumen.example.word-stats", "versions": [{ "version": "1.0.0", "path": "word-stats" }] },
+    { "id": "lumen.example.callout", "versions": [{ "version": "1.0.0", "path": "callout" }] },
+    { "id": "lumen.example.daily-quote", "versions": [{ "version": "1.0.0", "path": "daily-quote" }] },
+    { "id": "lumen.example.toc", "versions": [{ "version": "1.0.0", "path": "toc" }] },
+    { "id": "lumen.example.hebrew-date", "versions": [{ "version": "1.0.0", "path": "hebrew-date" }] },
+    { "id": "lumen.example.tasks-overview", "versions": [{ "version": "1.0.0", "path": "tasks-overview" }] },
+    { "id": "lumen.example.bidi-cleaner", "versions": [{ "version": "1.0.0", "path": "bidi-cleaner" }] },
+    { "id": "lumen.example.text-format", "versions": [{ "version": "1.0.0", "path": "text-format" }] }
+  ]
+}

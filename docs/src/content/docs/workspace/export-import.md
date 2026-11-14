@@ -13,7 +13,7 @@ and attachment is written with its folder path. A folder export goes into
 a new `lumen-vault-<date>` subfolder, so nothing already in the folder you
 picked is overwritten. The note you are editing is saved first.
 
-**Import:** `⌘K → Import notes (zip / folder: Obsidian, Notion, Lumen)…`.
+**Import:** `⌘K → Import notes from another app (Obsidian, Notion, Evernote, Bear, Keep, Logseq, OneNote…)…`.
 Pick a .zip or a folder. Lumen recognises:
 
 | Source | Recognised by | What import does |

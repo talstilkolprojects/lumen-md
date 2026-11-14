@@ -16,14 +16,15 @@ export const MAX_WORD_CHANGE = 0.1;
 export interface PolishDeps {
   /** The active provider is on this device (checked by the caller). */
   localModelReady: () => boolean;
-  chat: (system: string, user: string) => Promise<string>;
+  /** The signal is the caller's cancel (Esc / "AI: Cancel", T55). */
+  chat: (system: string, user: string, opts?: { signal?: AbortSignal }) => Promise<string>;
 }
 
-export async function polishDictation(text: string, deps: PolishDeps): Promise<{ text: string; polished: boolean }> {
+export async function polishDictation(text: string, deps: PolishDeps, signal?: AbortSignal): Promise<{ text: string; polished: boolean }> {
   if (!text.trim() || !deps.localModelReady()) return { text, polished: false };
   let answer: string;
   try {
-    answer = (await deps.chat(POLISH_PROMPT, text)).trim();
+    answer = (await deps.chat(POLISH_PROMPT, text, { signal })).trim();
   } catch {
     return { text, polished: false };
   }

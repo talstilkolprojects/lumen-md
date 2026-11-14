@@ -285,6 +285,47 @@ const BASE_CASES: EvalCase[] = [
     checks: [{ type: "contains", all: ["יעד", "סטטוס"] }, { type: "containsAny", any: ["datediff", "today()"] }, { type: "maxChars", max: 200 }],
     example: 'if(סטטוס = "הושלם", null, datediff(יעד, today()))',
   },
+  /* formulator (+4, plan 4.11 on 7.3.1's bar: five cases, Hebrew and English) */
+  {
+    id: "formulator-en-total",
+    agent: "formulator",
+    input: {
+      text: "The line total: price times quantity, with the discount percent taken off",
+      extra: { fields: [{ name: "Price", example: "12.5" }, { name: "Quantity", example: "3" }, { name: "Discount", example: "10" }, { name: "Customer" }] },
+    },
+    checks: [{ type: "contains", all: ["Price", "Quantity", "Discount"] }, { type: "containsAny", any: ["*"] }, { type: "maxChars", max: 200 }],
+    example: "Price * Quantity * (1 - Discount / 100)",
+  },
+  {
+    id: "formulator-en-overdue",
+    agent: "formulator",
+    input: {
+      text: "True when the due date has passed and the task is not done yet",
+      extra: { fields: [{ name: "Status", example: "Done" }, { name: "Due", example: "2026-11-01" }, { name: "Owner" }] },
+    },
+    checks: [{ type: "contains", all: ["Status", "Due"] }, { type: "containsAny", any: ["today()"] }, { type: "maxChars", max: 200 }],
+    example: 'Status != "Done" and Due < today()',
+  },
+  {
+    id: "formulator-he-fullname",
+    agent: "formulator",
+    input: {
+      text: "השם המלא: השם הפרטי, רווח, ואחריו שם המשפחה",
+      extra: { fields: [{ name: "פרטי", example: "נועה" }, { name: "משפחה", example: "כהן" }, { name: "טלפון" }] },
+    },
+    checks: [{ type: "contains", all: ["פרטי", "משפחה"] }, { type: "containsAny", any: ["&", "concat"] }, { type: "maxChars", max: 200 }],
+    example: 'פרטי & " " & משפחה',
+  },
+  {
+    id: "formulator-he-average",
+    agent: "formulator",
+    input: {
+      text: "ממוצע הציונים של שלושת המבחנים, מעוגל למספר שלם",
+      extra: { fields: [{ name: "בוחן", example: "80" }, { name: "אמצע", example: "92" }, { name: "סופי", example: "75" }] },
+    },
+    checks: [{ type: "contains", all: ["בוחן", "אמצע", "סופי"] }, { type: "containsAny", any: ["round", "avg"] }, { type: "maxChars", max: 200 }],
+    example: "round((בוחן + אמצע + סופי) / 3)",
+  },
 ];
 
 /** Every eval case: the original set plus 7.3's (every agent with at least five, Hebrew and English). */

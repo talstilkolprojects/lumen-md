@@ -1,0 +1,21 @@
+{
+  "organizer.analysing": "Looking for links, tags, duplicates and maps of content…",
+  "organizer.cancel": "Cancel",
+  "organizer.cancelled": "Cancelled. Nothing was written.",
+  "organizer.failed": "Stopped: {error}",
+  "organizer.intro": "Suggestions only. Each goes to the review screen as a change; nothing is written until you approve it.",
+  "organizer.kind.link": "Link",
+  "organizer.kind.merge": "Merge",
+  "organizer.kind.moc": "Map of content",
+  "organizer.kind.tag": "Tags",
+  "organizer.next": "Review the next {n}",
+  "organizer.none": "No suggestions: the vault looks organized.",
+  "organizer.openReview": "Open the review screen",
+  "organizer.pause": "Pause",
+  "organizer.paused": "Paused",
+  "organizer.reading": "Reading notes: {read} of {total}",
+  "organizer.ready": "{count} suggestions: {link} links, {tag} tags, {merge} merges, {moc} maps of content",
+  "organizer.resume": "Resume",
+  "organizer.sent": "{staged} of {count} sent to the review screen",
+  "organizer.title": "Organize the vault"
+}

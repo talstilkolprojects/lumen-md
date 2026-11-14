@@ -140,6 +140,38 @@ describe("scripts/lane-merge.sh", () => {
     }
   });
 
+  it("a newer install made from another lockfile still stops before the checks (W1.32, #202)", () => {
+    const { dir, work, run, log } = setup();
+    try {
+      // Installed after the last dependency change, but for another branch's graph.
+      writeFileSync(join(work, "node_modules/.package-lock.json"), JSON.stringify({ packages: { "node_modules/other-branch-only": { version: "1.0.0" } } }));
+      const r = run();
+      expect(r.status).toBe(2);
+      expect(r.stderr).toContain("node_modules was installed from a different lockfile than target's package-lock.json");
+      expect(log()).not.toContain("npx tsc");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("a hand-resolved conflict on the last branch points back to this command, so its gates still run (W1.32, #202)", () => {
+    const { dir, work, g, run } = setup();
+    try {
+      g("checkout", "-q", "target");
+      writeFileSync(join(work, "src/feature.ts"), "export const f = 2;\n");
+      g("add", ".");
+      g("commit", "-q", "-m", "target edits feature");
+      g("checkout", "-q", "main");
+      const r = run();
+      expect(r.status).toBe(1);
+      expect(r.stderr).toContain("lane-merge: STOP — lane conflicts with target");
+      expect(r.stderr).toContain("then run the checks:  scripts/lane-merge.sh target lane");
+      expect(r.stderr).not.toContain("npx tsc --noEmit -p . && npx vitest run");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("a lane that does not touch dependencies runs no npm at all", () => {
     const { dir, run, log } = setup();
     try {

@@ -62,6 +62,7 @@ vi.mock("../pdf/pdfjs", () => {
 import { PdfReader } from "../pdf/PdfReader";
 import * as ws from "../storage/workspace";
 import { createPdfAnnotation, upsertAnnotationsNote } from "../pdf/annotations";
+import { t } from "../i18n";
 
 afterEach(() => cleanup());
 
@@ -152,7 +153,9 @@ describe("PdfReader", () => {
     });
     render(<PdfReader path="a.pdf" openSeq={1} onClose={() => undefined} onOpenNotes={() => undefined} />);
     expect(await screen.findByRole("alert")).toBeTruthy();
-    expect(screen.getByRole("alert").textContent).toContain("busy");
+    // Said in words (explainError), not the DOMException's own text.
+    expect(screen.getByRole("alert").textContent).toContain(t("error.unknown"));
+    expect(screen.getByRole("alert").textContent).not.toContain("busy");
     expect(reader().getAttribute("data-ready")).toBeNull();
     expect(screen.getByTestId("pdf-highlight").hasAttribute("disabled")).toBe(true);
     expect(write).not.toHaveBeenCalled();

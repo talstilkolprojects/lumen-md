@@ -8,6 +8,7 @@ import { showAiToast } from "../../ui/AiToast";
 import { getSecret, setSecret } from "../../lib/secretStore";
 import { cancelAllAi, isAbort } from "../../ai/aiAbort";
 import { cancellable, type CommandContext } from "./context";
+import { explainError } from "../../lib/userError";
 
 /** Privacy Mode: run every AI prompt in the browser (WebGPU). */
 export function buildPrivacyModeCommands({ useLocalAi, toggleLocalAi }: CommandContext): Command[] {
@@ -140,84 +141,12 @@ export function buildAiModelCommands(): Command[] {
       hint: t("cmd.ai.localModels.hint"),
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
-      action: async () => {
-        const { detectHardware, WEBLLM_CATALOG, webLlmModelId, vramBudgetMB, recommendWebLlmModel, selectedWebLlmModel, setWebLlmModel } = await import("../../ai/modelManager");
-        const { webLlmModelCached, loadWebLlmModel, onWebLlmProgress } = await import("../../ai/webllmEngine");
-        const hw = await detectHardware();
-        if (!hw.webgpu) {
-          showAiToast(t("ai.localModels.noWebgpu"), "error");
-          return;
-        }
-        const budget = vramBudgetMB(hw);
-        const recommended = recommendWebLlmModel("small", hw);
-        const selected = selectedWebLlmModel();
-        const cached = await Promise.all(WEBLLM_CATALOG.map((e) => webLlmModelCached(webLlmModelId(e, hw.f16))));
-        const choices = WEBLLM_CATALOG.map((e, i) => {
-          const id = webLlmModelId(e, hw.f16);
-          const gb = Math.round(((hw.f16 ? e.vramMB.f16 : e.vramMB.f32) / 1024) * 10) / 10;
-          const marks = [
-            id === selected ? t("ai.localModels.selected") : "",
-            id === recommended ? t("ai.localModels.recommended") : "",
-            cached[i] ? t("ai.localModels.cached") : "",
-            (hw.f16 ? e.vramMB.f16 : e.vramMB.f32) > budget ? t("ai.localModels.tooBig") : "",
-          ].filter(Boolean);
-          // why: custom-licence models (Llama, Gemma…) are opt-in and named as such (plan 1.7)
-          const lic = e.licence ? ` · ${e.licence}` : "";
-          return { value: id, label: `${e.label} · ${gb} GB · ${e.tier}${lic}${marks.length ? " — " + marks.join(", ") : ""}` };
-        });
-        choices.push({ value: "__auto__", label: t("ai.localModels.auto") });
-        const choice = await uiSelect({
-          title: t("ai.localModels.title"),
-          message: t("ai.localModels.message", { budget: Math.round(budget / 1024), f16: hw.f16 ? "q4f16" : "q4f32" }),
-          defaultValue: selected ?? recommended,
-          choices,
-        });
-        if (!choice) return;
-        if (choice === "__auto__") {
-          setWebLlmModel(null);
-          showAiToast(t("ai.localModels.autoSet", { model: recommended }), "success");
-          return;
-        }
-        const picked = WEBLLM_CATALOG.find((e) => webLlmModelId(e, hw.f16) === choice);
-        if (picked?.licence && choice !== selected) {
-          const ok = await uiConfirm({
-            title: t("ai.localModels.licenceTitle"),
-            message: t("ai.localModels.licenceBody", { model: picked.label, licence: picked.licence }),
-            okLabel: t("ai.localModels.licenceOk"),
-          });
-          if (!ok) return;
-        }
-        setWebLlmModel(choice);
-        const idx = choices.findIndex((c) => c.value === choice);
-        if (idx >= 0 && cached[idx]) {
-          showAiToast(t("ai.localModels.set", { model: choice }), "success");
-          return;
-        }
-        const download = await uiConfirm({ message: t("ai.localModels.downloadNow", { model: choice }) });
-        if (!download) {
-          showAiToast(t("ai.localModels.set", { model: choice }), "success");
-          return;
-        }
-        let lastPct = -1;
-        const off = onWebLlmProgress(({ progress, text }) => {
-          const pct = Math.round(progress * 100);
-          if (pct >= lastPct + 5 || pct === 100) {
-            lastPct = pct;
-            showAiToast(t("ai.toast.localLoading.body", { pct, status: text || t("ai.toast.localLoading.preparing") }), "info");
-          }
-        });
-        try {
-          await loadWebLlmModel(choice);
-          showAiToast(t("ai.localModels.ready", { model: choice }), "success");
-        } catch (err) {
-          showAiToast(t("ai.localModels.failed", { error: err instanceof Error ? err.message : String(err) }), "error");
-        } finally {
-          off();
-        }
-      },
+      // The picker, the licence check and the download live in a lazy module.
+      action: async () => (await import("../../ai/localModelsCommand")).runLocalModelsCommand(),
     },
     {
       id: "ai.styleProfile",
+      destructive: "confirm",
       label: t("cmd.ai.styleProfile"),
       hint: t("cmd.ai.styleProfile.hint"),
       icon: cmdIcons.Sparkles,
@@ -263,13 +192,15 @@ export function buildAiModelCommands(): Command[] {
             await writeWorkspaceFile(path, sp.styleModelfile(getOllamaConfigModel()));
             showAiToast(t("ai.style.modelfileSaved", { path }), "success");
           } else if (choice === "clear") {
+            // The profile took a read of the notes to build: ask before it goes (messages:check).
+            if (!(await uiConfirm({ title: t("ai.style.title"), message: t("ai.style.clear"), okLabel: t("ai.style.clear") }))) return;
             sp.clearStyleProfile();
             showAiToast(t("ai.style.cleared"), "success");
           }
         } catch (e) {
           if (isAbort(e)) return;
           if ((await import("../../agents/suggestions")).reportAgentFailure(e, "ai.styleProfile")) return;
-          showAiToast((e as Error).message, "error");
+          showAiToast(explainError(e), "error");
         }
       },
     },
@@ -325,7 +256,7 @@ export function buildAiCancelCommands(): Command[] {
 }
 
 /** Reranker, privacy ledger, AI doctor, policy, trace, response cache, provider. */
-export function buildAiControlCommands(): Command[] {
+export function buildAiControlCommands({ getEditorView }: CommandContext): Command[] {
   return [
     {
       id: "ai.rerankModel",
@@ -359,6 +290,18 @@ export function buildAiControlCommands(): Command[] {
       },
     },
     {
+      id: "ai.organize",
+      label: t("cmd.ai.organize"),
+      hint: t("cmd.ai.organize.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.ai", { defaultValue: "AI Copilot" }),
+      action: async () => {
+        // Plan W2.1: suggestions only; every change goes through the review screen.
+        const { openOrganizerPanel } = await import("../../ui/OrganizerPanel");
+        await openOrganizerPanel();
+      },
+    },
+    {
       id: "ai.reviewChanges",
       label: t("cmd.ai.reviewChanges"),
       hint: t("cmd.ai.reviewChanges.hint"),
@@ -366,6 +309,32 @@ export function buildAiControlCommands(): Command[] {
       group: t("group.ai", { defaultValue: "AI Copilot" }),
       action: () => {
         window.dispatchEvent(new CustomEvent("lumen-open-agent-review"));
+      },
+    },
+    {
+      id: "related.toggle",
+      label: t("cmd.related.toggle"),
+      hint: t("cmd.related.toggle.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.ai", { defaultValue: "AI Copilot" }),
+      action: async () => {
+        // Plan W2.2: lazy panel + editor plugin; nothing runs per keystroke.
+        const { toggleRelatedPanel } = await import("../../ui/RelatedPanel");
+        await toggleRelatedPanel(() => getEditorView?.() ?? null);
+      },
+    },
+    {
+      id: "related.folderOff",
+      label: t("cmd.related.folderOff"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.ai", { defaultValue: "AI Copilot" }),
+      action: async () => {
+        const path = useAppStore.getState().doc.workspaceName;
+        const { offFolders, setFolderOff } = await import("../../related/prefs");
+        const folder = path && path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : (path ?? "");
+        const off = !offFolders().includes(folder);
+        setFolderOff(folder, off);
+        showAiToast(t(off ? "toast.related.folderOff" : "toast.related.folderOn", { folder: folder || "/" }), "info");
       },
     },
     {
@@ -387,6 +356,35 @@ export function buildAiControlCommands(): Command[] {
       group: t("group.tools"),
       action: () => {
         void import("../../ui/FeedbackDialog").then((m) => m.openFeedback());
+      },
+    },
+    {
+      // W3.7: the docs, packed into the app and searched on the device.
+      id: "help.open",
+      label: t("cmd.help.open"),
+      hint: t("cmd.help.open.hint"),
+      shortcut: "F1",
+      icon: cmdIcons.FileText,
+      group: t("group.tools"),
+      action: () => void import("../../ui/HelpButton").then((m) => m.openHelp()),
+    },
+    {
+      id: "help.diagnostics",
+      label: t("cmd.help.diagnostics"),
+      hint: t("cmd.help.diagnostics.hint"),
+      icon: cmdIcons.FileText,
+      group: t("group.tools"),
+      action: () => void import("../../ui/diagnosticsActions").then((m) => m.saveDiagnostics()),
+    },
+    {
+      // W4.26: local usage counters and the weekly report the user sends by hand.
+      id: "help.usage",
+      label: t("cmd.usage"),
+      hint: t("cmd.usage.hint"),
+      icon: cmdIcons.Link,
+      group: t("group.tools"),
+      action: () => {
+        window.dispatchEvent(new CustomEvent("lumen-open-usage"));
       },
     },
     {

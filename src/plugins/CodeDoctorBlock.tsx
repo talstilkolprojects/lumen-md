@@ -34,6 +34,7 @@ import { DataTable } from "./DataTable";
 import { toast } from "../store/useToastStore";
 import { t, tPlural } from "../i18n";
 import { tRich } from "../i18n/rich";
+import "./codeDoctorBlockStrings";
 
 interface Props {
   source: string;
@@ -314,8 +315,8 @@ function RepairedPanel({
 }) {
   const onCopy = () => {
     navigator.clipboard?.writeText(repair.output).then(
-      () => toast.success("Repaired JSON copied to clipboard."),
-      () => toast.error("Could not copy to clipboard."),
+      () => toast.success(t("block.codeDoctor.copied")),
+      () => toast.error(t("block.codeDoctor.copyFailed")),
     );
   };
   return (

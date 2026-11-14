@@ -1,0 +1,24 @@
+# Lectures — from the template Lecture summary
+filters:
+  and:
+    - 'type == "lecture"'
+properties:
+  file.name:
+    displayName: "Lecture"
+  note.course:
+    displayName: "Course"
+  note.lecture:
+    displayName: "No."
+  note.date:
+    displayName: "Date"
+views:
+  - type: table
+    name: "Lectures"
+    order:
+      - file.name
+      - note.course
+      - note.lecture
+      - note.date
+    sort:
+      - property: note.date
+        direction: DESC

@@ -47,6 +47,9 @@ describe("buildSuggestingCommands", () => {
       "edit.suggesting.rejectAll",
       "edit.suggesting.next",
       "edit.suggesting.prev",
+      // W3.11 — one accept / reject pair per author in the note (here: no author tag).
+      "edit.suggesting.acceptAuthor.-",
+      "edit.suggesting.rejectAuthor.-",
     ]);
   });
 

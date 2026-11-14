@@ -6,8 +6,11 @@ description: How the Lumen desktop app checks for, verifies and installs updates
 The desktop app (Windows, macOS, Linux) updates itself from the project's
 GitHub releases.
 
-- **Check:** command palette → **Check for updates…**. Lumen never checks
-  on its own.
+- **Check:** command palette → **Check for updates…**. A stable build never
+  checks on its own. A beta build checks once a day at launch, unless you
+  turn that off under [feature flags](/getting-started/beta/).
+- **Channel:** command palette → **Update channel: switch between stable and beta** switches between stable
+  and beta releases ([beta channel](/getting-started/beta/)).
 - **What is sent:** one request to the release server with the app version
   and platform. No notes, no account, no identifier. It appears in the
   privacy log.

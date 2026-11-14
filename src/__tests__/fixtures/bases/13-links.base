@@ -1,0 +1,8 @@
+filters: file.hasLink("Dune")
+views:
+  - type: table
+    name: Links to Dune
+    order: [file.name, file.folder]
+    sort:
+      - property: file.name
+        direction: ASC

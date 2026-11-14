@@ -1,0 +1,17 @@
+{
+  "capture.placeholder": "A thought, a task, a link",
+  "capture.hint": "Enter: add · Shift+Enter: new line · Esc: close",
+  "capture.save": "Add to inbox",
+  "capture.openInbox": "Open inbox",
+  "capture.saved": "Added to {path}",
+  "capture.failed": "Couldn't add to the inbox: {error}",
+  "capture.noWorkspace": "Quick capture needs the workspace, which this browser can't provide.",
+  "capture.inboxHeading": "Inbox",
+  "capture.voice.start": "Record",
+  "capture.voice.recording": "Stop · {time}",
+  "capture.voice.transcribing": "Transcribing…",
+  "capture.voice.keepAudio": "Keep audio",
+  "capture.voice.noMic": "No microphone access.",
+  "capture.voice.noTranscript": "Not transcribed; audio kept.",
+  "capture.voice.placeholderNote": "Voice note (not transcribed)"
+}

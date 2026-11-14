@@ -1,0 +1,10 @@
+filters: file.hasTag("book")
+formulas:
+  hours: (pages / 50).round(1)
+views:
+  - type: table
+    name: Longest first
+    order: [file.name, formula.hours]
+    sort:
+      - property: formula.hours
+        direction: DESC

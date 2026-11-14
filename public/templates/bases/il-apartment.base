@@ -1,0 +1,24 @@
+# Apartments — from the template Apartment hunting
+filters:
+  and:
+    - 'type == "apartment"'
+properties:
+  file.name:
+    displayName: "Apartment"
+  note.neighborhood:
+    displayName: "Neighbourhood"
+  note.rent:
+    displayName: "Rent ₪"
+  note.rooms:
+    displayName: "Rooms"
+  note.status:
+    displayName: "Status"
+views:
+  - type: table
+    name: "Apartments"
+    order:
+      - file.name
+      - note.neighborhood
+      - note.rent
+      - note.rooms
+      - note.status

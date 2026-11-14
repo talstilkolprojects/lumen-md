@@ -65,6 +65,46 @@ describe("scripts/ci-local.mjs (copy, stubbed npm/npx)", () => {
     expect(log.indexOf("npm run -s build")).toBeLessThan(log.indexOf("npm run -s budget"));
   });
 
+  it("--changed plans a moved file's old path too (an asset renamed out of public/, W1.32, #210)", () => {
+    const g = (...a: string[]) => execFileSync("git", a, { cwd: work, env });
+    g("checkout", "-q", "main");
+    mkdirSync(join(work, "public"), { recursive: true });
+    writeFileSync(join(work, "public/t.md"), "template\n");
+    g("add", ".");
+    g("commit", "-q", "-m", "a public asset");
+    g("checkout", "-q", "-b", "move", "main");
+    mkdirSync(join(work, "docs"), { recursive: true });
+    g("mv", "public/t.md", "docs/t.md");
+    g("commit", "-q", "-m", "move it out of the app");
+    try {
+      const r = ciLocal("--changed", "--base", "main", "--only", "build");
+      expect(r.status).toBe(0);
+      expect(r.stdout).toMatch(/2 files vs main .*, 1 deleted/);
+      expect(calls()).toContain("npm run -s build");
+    } finally {
+      g("checkout", "-q", "feat");
+    }
+  });
+
+  it("--changed runs the full suite for a module loaded by a dynamic import (W1.32, #210)", () => {
+    const g = (...a: string[]) => execFileSync("git", a, { cwd: work, env });
+    g("checkout", "-q", "-b", "lazy", "feat");
+    writeFileSync(join(work, "src/panel.ts"), "export const p = 1;\n");
+    writeFileSync(join(work, "src/host.ts"), 'export const load = () => import("./panel");\n');
+    g("add", ".");
+    g("commit", "-q", "-m", "a lazy panel");
+    writeFileSync(join(work, "src/panel.ts"), "export const p = 2;\n");
+    try {
+      const r = ciLocal("--changed", "--base", "main", "--only", "test");
+      expect(r.status).toBe(0);
+      expect(calls()).toContain("npx vitest run");
+      expect(calls()).not.toContain("vitest related");
+    } finally {
+      g("checkout", "-q", "--", "src/panel.ts");
+      g("checkout", "-q", "feat");
+    }
+  });
+
   it("a run in which no step ran is not a pass", () => {
     const r = ciLocal("--only", "lint"); // no lint script here: "not here"
     expect(r.status).toBe(1);

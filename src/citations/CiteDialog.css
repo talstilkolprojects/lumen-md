@@ -1,0 +1,97 @@
+/* The cite dialog (plan W2.16). Logical properties: it mirrors under dir="rtl". */
+.cite-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  justify-content: center;
+  padding-block-start: 12vh;
+  background: rgb(0 0 0 / 0.3);
+}
+
+.cite-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  inline-size: min(620px, calc(100vw - 32px));
+  max-block-size: 70vh;
+  padding: 12px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  background: hsl(var(--bg));
+  color: hsl(var(--fg));
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
+}
+
+.cite-fields {
+  display: flex;
+  gap: 8px;
+}
+
+.cite-fields input {
+  flex: 1;
+  padding-block: 6px;
+  padding-inline: 8px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+  background: hsl(var(--bg));
+  color: inherit;
+  font: inherit;
+}
+
+.cite-fields .cite-locator {
+  flex: 0 0 9em;
+}
+
+.cite-list {
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.cite-item {
+  display: flex;
+  flex-direction: column;
+  padding-block: 6px;
+  padding-inline: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cite-item.sel {
+  background: hsl(var(--accent) / 0.15);
+}
+
+.cite-title {
+  font-weight: 600;
+}
+
+.cite-meta,
+.cite-empty,
+.cite-foot {
+  color: hsl(var(--fg-muted));
+  font-size: 12px;
+}
+
+.cite-empty {
+  padding: 8px;
+}
+
+.cite-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cite-foot button {
+  padding-block: 3px;
+  padding-inline: 9px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}

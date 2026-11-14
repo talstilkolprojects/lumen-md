@@ -3,13 +3,12 @@
  * Uses the File System Access API where supported, with a graceful fallback to
  * a hidden <input type="file"> + download trick for Save As.
  */
-import {
-  rtfToMarkdown,
-  htmlToMarkdown,
-  xmlToMarkdown,
-  fileToMarkdown,
-  SUPPORTED_IMPORT_EXTENSIONS,
-} from "./fileFormats";
+import { SUPPORTED_IMPORT_EXTENSIONS } from "./importExtensions";
+// The converters load on the first import, not at startup (bundle budget).
+import type * as FileFormats from "./fileFormats";
+
+/** The converters of the markup formats `convertImported` turns into Markdown. */
+export type MarkupConverters = Pick<typeof FileFormats, "rtfToMarkdown" | "htmlToMarkdown" | "xmlToMarkdown">;
 
 declare global {
   interface Window {
@@ -151,8 +150,10 @@ export async function saveFile(
 export async function importFile(file: File): Promise<OpenedFile> {
   if (/\.(csv|tsv|json|rtf|html?|xml)$/i.test(file.name)) {
     const raw = await file.text();
-    return { name: file.name, content: convertImported(file.name, raw) };
+    const markup = /\.(rtf|html?|xml)$/i.test(file.name) ? await import("./fileFormats") : undefined;
+    return { name: file.name, content: convertImported(file.name, raw, markup) };
   }
+  const { fileToMarkdown } = await import("./fileFormats");
   const { name, content } = await fileToMarkdown(file);
   return { name, content };
 }
@@ -165,7 +166,7 @@ export async function importFile(file: File): Promise<OpenedFile> {
  * Exported so tests can exercise the actual transformation rather than a
  * locally-reimplemented copy (which is theatre and can drift silently).
  */
-export function convertImported(name: string, raw: string): string {
+export function convertImported(name: string, raw: string, markup?: MarkupConverters): string {
   const lower = name.toLowerCase();
   if (lower.endsWith(".csv") || lower.endsWith(".tsv")) {
     const lang = lower.endsWith(".tsv") ? "tsv" : "csv";
@@ -184,6 +185,9 @@ export function convertImported(name: string, raw: string): string {
     }
     return `# ${name}\n\n\`\`\`json\n${trimmed}\n\`\`\`\n`;
   }
+  // rtf / html / xml need the converter library: importFile loads it first.
+  if (!markup) return raw;
+  const { rtfToMarkdown, htmlToMarkdown, xmlToMarkdown } = markup;
   if (lower.endsWith(".rtf")) {
     return `# ${name}\n\n${rtfToMarkdown(raw)}`;
   }

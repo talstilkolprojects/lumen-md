@@ -1,0 +1,21 @@
+# One-on-ones — from the template One-on-one
+filters:
+  and:
+    - 'type == "one-on-one"'
+properties:
+  file.name:
+    displayName: "Conversation"
+  note.with:
+    displayName: "With"
+  note.date:
+    displayName: "Date"
+views:
+  - type: table
+    name: "One-on-ones"
+    order:
+      - file.name
+      - note.with
+      - note.date
+    sort:
+      - property: note.date
+        direction: DESC

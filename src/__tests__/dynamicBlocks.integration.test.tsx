@@ -31,6 +31,8 @@ vi.mock("mermaid", () => ({
 
 describe("dynamic block integration smoke", () => {
   beforeEach(() => {
+    // kroki.io is a third-party service: allowed under the cloud policy only (#352, plan 6.17).
+    localStorage.setItem("lumen.ai.policy", "cloud");
     fetchMock = vi.fn(async () =>
       new Response("<svg xmlns=\"http://www.w3.org/2000/svg\"><text>plantuml</text></svg>"),
     );
@@ -48,6 +50,7 @@ describe("dynamic block integration smoke", () => {
   });
 
   afterEach(() => {
+    localStorage.removeItem("lumen.ai.policy");
     cleanup();
     vi.unstubAllGlobals();
     vi.clearAllMocks();

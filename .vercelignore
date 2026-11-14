@@ -1,7 +1,9 @@
-# Exclude only the genuinely-huge or irrelevant trees. The web build
-# (tsc -b && vite build) type-checks src/__tests__, some of which import the
-# small sibling service packages (mcp-server, marketplace-server) — so those
-# are kept. node_modules is reinstalled by Vercel.
+# Exclude only build outputs and local trees. The preview build runs the
+# gates (W1.35: build, budget, vitest, i18n, hygiene, docs-sync, licences),
+# and the tests read e2e/ specs, the docs pages, src-tauri/, ios/ and
+# android/ configs: those sources ship (they are small; a local
+# src-tauri/target is what used to be ~1.1GB). node_modules is reinstalled
+# by Vercel.
 .git
 node_modules
 **/node_modules
@@ -11,16 +13,17 @@ coverage
 playwright-report
 test-results
 
-# Native / desktop / mobile (src-tauri/target alone is ~1.1GB)
-src-tauri
-ios
-android
+# Build outputs of the native / desktop / mobile and docs trees
+src-tauri/target
+src-tauri/gen
+ios/App/Pods
+ios/App/build
+android/build
+android/app/build
+android/.gradle
+docs/dist
+docs/.astro
 
-# Separate Astro docs site (has its own node_modules + pagefind binary)
-docs
-
-# Not needed to type-check or bundle the SPA
-e2e
 .claude
 *.log
 *.local

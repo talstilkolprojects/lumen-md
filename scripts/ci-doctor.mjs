@@ -34,7 +34,7 @@
  */
 import { execFile, execFileSync } from "node:child_process";
 import { promisify } from "node:util";
-import { classify, failureItems, isFailed, nextAction, observe, parseAnnotations } from "./lib/ci-doctor.mjs";
+import { classify, failureItems, isFailed, nextAction, observe, parseAnnotations, sameTestSetup } from "./lib/ci-doctor.mjs";
 
 const usage = "usage: node scripts/ci-doctor.mjs <branch|pr-number> [--run ID] [--workflow ci.yml] [--peers N] [--max-distance N] [--json]";
 const argv = process.argv.slice(2);
@@ -193,16 +193,15 @@ const compare = memo((basehead) =>
 );
 const distanceTo = (sha) => (sha === run.head_sha ? Promise.resolve(0) : compare(`${sha}...${run.head_sha}`).then((d) => (d ? d.a + d.b : null)));
 /**
- * Did the peer commit have this test file exactly as here? True when neither
- * side changed it since the merge base. The compare API lists at most 300
- * files, so a full list proves nothing.
+ * Did the peer commit run this test file as here? Neither side changed it,
+ * nor a file that selects the tests (playwright / vite / vitest config, the
+ * CI workflow), since the merge base: see sameTestSetup.
  */
 async function sameTestFile(path, sha) {
   if (sha === run.head_sha) return true;
   if (!path) return false;
   const [mine, theirs] = await Promise.all([compare(`${sha}...${run.head_sha}`), compare(`${run.head_sha}...${sha}`)]);
-  if (!mine || !theirs || mine.n >= 300 || theirs.n >= 300) return false;
-  return !mine.files.includes(path) && !theirs.files.includes(path);
+  return sameTestSetup(path, mine, theirs);
 }
 const peerData = await mapLimit(peers, 6, async (p) => ({ run: p, jobs: await jobsOf(p.id), distance: await distanceTo(p.head_sha) }));
 const testJobs = new Set(items.filter((i) => i.kind === "test").map((i) => i.job));

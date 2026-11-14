@@ -1,6 +1,7 @@
 /** 1.3 — dictation runs on this device; the browser speech service never runs under local-only. */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { chooseDictationEngine, downsampleTo16k, Segmenter, SerialQueue, WEB_SPEECH_KEY } from "../ai/dictation";
+import { t } from "../i18n";
 
 vi.mock("../ui/AiToast", () => ({ showAiToast: vi.fn() }));
 vi.mock("../ui/PromptDialog", () => ({ uiConfirm: vi.fn(async () => true) }));
@@ -69,7 +70,8 @@ describe("startVoiceRecording and the privacy policy", () => {
     const { ledgerEntries } = await import("../ai/privacyLedger");
     const before = ledgerEntries().length;
     const { startVoiceRecording } = await import("../ui/VoiceDictation");
-    startVoiceRecording("he-IL"); // jsdom has no getUserMedia → local path unavailable
+    // Hebrew opens the live engine's panel first (#255); this case is the device path's fallback.
+    startVoiceRecording("en-US"); // jsdom has no getUserMedia → local path unavailable
     await new Promise((r) => setTimeout(r, 0));
     expect(ctor).not.toHaveBeenCalled();
     const added = ledgerEntries().slice(before);
@@ -172,6 +174,9 @@ describe("the browser speech service and a policy change mid-session (review: #1
   beforeEach(() => {
     localStorage.clear();
     vi.resetModules();
+    // A session left by an earlier case keeps its pill: it belongs to a module instance that
+    // resetModules dropped, which only a storage event (not setAiPolicy here) would reach.
+    document.getElementById("voice-recording-root")?.remove();
   });
 
   it.each(["this tab", "another tab"])("stops when the policy turns local-only in %s", async (where) => {
@@ -436,7 +441,9 @@ describe("dictation setup and failures (review: #197)", () => {
     expect(confirms.mock.calls.length).toBe(confirmsBefore + 1);
     const errors = toasts.mock.calls.slice(toastsBefore).filter((c) => c[1] === "error");
     expect(errors).toHaveLength(1);
-    expect(String(errors[0][0])).toContain("model download failed");
+    // One toast, in words (explainError), not the engine's own text.
+    expect(String(errors[0][0])).toContain(t("error.unknown"));
+    expect(String(errors[0][0])).not.toContain("model download failed");
     expect(stopTrack).toHaveBeenCalled();
     vi.doUnmock("../ai/transformersEngine");
     delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;

@@ -9,6 +9,11 @@
       "vars": []
     },
     {
+      "key": "backlinks.copyLink",
+      "en": "Copy a link to this note",
+      "vars": []
+    },
+    {
       "key": "backlinks.empty",
       "en": "No other file links here yet.",
       "vars": []
@@ -167,6 +172,16 @@
     {
       "key": "collab.prompt.room",
       "en": "Room name:",
+      "vars": []
+    },
+    {
+      "key": "collab.role.comment",
+      "en": "You can read and comment on this note, not change it.",
+      "vars": []
+    },
+    {
+      "key": "collab.role.view",
+      "en": "You can view this note. Changes and comments need a link with more access.",
       "vars": []
     },
     {
@@ -570,6 +585,13 @@
       "vars": []
     },
     {
+      "key": "git.pull.confirm",
+      "en": "Pull replaces the files of “{folder}” with the versions on the remote. Files deleted there go to the trash. Pull now?",
+      "vars": [
+        "folder"
+      ]
+    },
+    {
       "key": "git.pull.copies",
       "en": "Versions that could not be merged are kept as copies: {files}",
       "vars": [
@@ -655,8 +677,18 @@
       ]
     },
     {
+      "key": "search.clear",
+      "en": "Clear the search",
+      "vars": []
+    },
+    {
       "key": "search.empty",
       "en": "Workspace is empty.",
+      "vars": []
+    },
+    {
+      "key": "search.newNote",
+      "en": "New note",
       "vars": []
     },
     {
@@ -675,6 +707,13 @@
       "vars": []
     },
     {
+      "key": "search.removeSaved",
+      "en": "Remove saved search {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
       "key": "search.results.one",
       "en": "{n} result",
       "vars": [
@@ -689,8 +728,28 @@
       ]
     },
     {
+      "key": "search.save",
+      "en": "Save search",
+      "vars": []
+    },
+    {
+      "key": "search.savedLabel",
+      "en": "Saved",
+      "vars": []
+    },
+    {
+      "key": "search.savedTitle",
+      "en": "Saved searches",
+      "vars": []
+    },
+    {
       "key": "search.unavailable",
       "en": "Workspace storage isn't available in this browser.",
+      "vars": []
+    },
+    {
+      "key": "search.unsave",
+      "en": "Remove from saved searches",
       "vars": []
     },
     {
@@ -729,6 +788,11 @@
       "vars": []
     },
     {
+      "key": "searchDialog.localTranslation",
+      "en": "Local translation",
+      "vars": []
+    },
+    {
       "key": "searchDialog.mode.ai",
       "en": "Ask Workspace",
       "vars": []
@@ -741,6 +805,16 @@
     {
       "key": "searchDialog.mode.smart",
       "en": "Smart",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.monolingualEmbeddings",
+      "en": "The embedding model here is English-only, so Hebrew questions find English notes by keywords only. Use the built-in model (multilingual-e5) for cross-language search.",
+      "vars": []
+    },
+    {
+      "key": "searchDialog.noLocalTranslator",
+      "en": "No translator on this device: the original is shown.",
       "vars": []
     },
     {
@@ -815,6 +889,11 @@
       "vars": [
         "n"
       ]
+    },
+    {
+      "key": "tagsPanel.addTag",
+      "en": "Add a tag here",
+      "vars": []
     },
     {
       "key": "tagsPanel.close",
@@ -924,6 +1003,66 @@
       ]
     },
     {
+      "key": "templates.category.Engineering",
+      "en": "Engineering",
+      "vars": []
+    },
+    {
+      "key": "templates.category.Home",
+      "en": "Home",
+      "vars": []
+    },
+    {
+      "key": "templates.category.Journaling",
+      "en": "Journaling",
+      "vars": []
+    },
+    {
+      "key": "templates.category.Personal",
+      "en": "Personal",
+      "vars": []
+    },
+    {
+      "key": "templates.category.Planning",
+      "en": "Planning",
+      "vars": []
+    },
+    {
+      "key": "templates.category.Reading",
+      "en": "Reading",
+      "vars": []
+    },
+    {
+      "key": "templates.category.Reflection",
+      "en": "Reflection",
+      "vars": []
+    },
+    {
+      "key": "templates.category.Research",
+      "en": "Research",
+      "vars": []
+    },
+    {
+      "key": "templates.category.Student",
+      "en": "Student",
+      "vars": []
+    },
+    {
+      "key": "templates.category.Work",
+      "en": "Work",
+      "vars": []
+    },
+    {
+      "key": "templates.category.Writing",
+      "en": "Writing",
+      "vars": []
+    },
+    {
+      "key": "templates.clearFilter",
+      "en": "Clear the filter",
+      "vars": []
+    },
+    {
       "key": "templates.close",
       "en": "Close gallery",
       "vars": []
@@ -958,6 +1097,30 @@
       ]
     },
     {
+      "key": "templates.importFailed",
+      "en": "Couldn't import the template: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "templates.importFromFile",
+      "en": "Import from file…",
+      "vars": []
+    },
+    {
+      "key": "templates.importNotMarkdown",
+      "en": "Pick a Markdown file (.md).",
+      "vars": []
+    },
+    {
+      "key": "templates.imported",
+      "en": "Imported “{name}”: it's in ⌘K → Templates.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
       "key": "templates.install",
       "en": "Install",
       "vars": []
@@ -981,6 +1144,15 @@
       "key": "templates.installed.button",
       "en": "Installed",
       "vars": []
+    },
+    {
+      "key": "templates.installedWithBase",
+      "en": "Installed “{name}” to {path}, with its table view in {base}.",
+      "vars": [
+        "name",
+        "path",
+        "base"
+      ]
     },
     {
       "key": "templates.installing",
@@ -1032,6 +1204,11 @@
       "vars": []
     },
     {
+      "key": "trash.backToNotes",
+      "en": "Back to the notes",
+      "vars": []
+    },
+    {
       "key": "trash.close",
       "en": "Close",
       "vars": []
@@ -1049,6 +1226,13 @@
       "vars": []
     },
     {
+      "key": "trash.deleteForeverConfirm",
+      "en": "Delete “{path}” for good? It cannot be restored afterwards.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
       "key": "trash.empty",
       "en": "The trash is empty.",
       "vars": []
@@ -1057,6 +1241,13 @@
       "key": "trash.emptyAll",
       "en": "Empty trash",
       "vars": []
+    },
+    {
+      "key": "trash.emptyAllConfirm",
+      "en": "Delete all {n} items in the trash for good? They cannot be restored afterwards.",
+      "vars": [
+        "n"
+      ]
     },
     {
       "key": "trash.restore",
@@ -1242,6 +1433,11 @@
     {
       "key": "tree.newFolderRoot",
       "en": "New folder at root",
+      "vars": []
+    },
+    {
+      "key": "tree.newNote",
+      "en": "New note",
       "vars": []
     },
     {
@@ -1508,38 +1704,6 @@
       "vars": []
     },
     {
-      "key": "vault.import.done",
-      "en": "Imported {notes} notes and {files} files ({source}) into “{folder}”.",
-      "vars": [
-        "notes",
-        "files",
-        "source",
-        "folder"
-      ]
-    },
-    {
-      "key": "vault.import.failed",
-      "en": "Import failed: {error}",
-      "vars": [
-        "error"
-      ]
-    },
-    {
-      "key": "vault.import.folder",
-      "en": "A folder",
-      "vars": []
-    },
-    {
-      "key": "vault.import.what",
-      "en": "Import from…",
-      "vars": []
-    },
-    {
-      "key": "vault.import.zip",
-      "en": "A .zip file",
-      "vars": []
-    },
-    {
       "key": "vault.prompt.decryptPassword",
       "en": "Enter decryption password:",
       "vars": []
@@ -1567,6 +1731,11 @@
       "vars": [
         "n"
       ]
+    },
+    {
+      "key": "versionHistory.keepNow",
+      "en": "Keep a version now",
+      "vars": []
     },
     {
       "key": "versionHistory.noVersions",
@@ -1601,6 +1770,11 @@
     {
       "key": "versionHistory.reason.manual",
       "en": "manual",
+      "vars": []
+    },
+    {
+      "key": "versionHistory.reason.merge",
+      "en": "kept at a merge",
       "vars": []
     },
     {

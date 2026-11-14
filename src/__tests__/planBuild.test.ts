@@ -97,7 +97,8 @@ describe("plan build", () => {
   it("plan.json is kept in one canonical format (one line per status)", () => {
     const text = readFileSync(join(ROOT, "plan/plan.json"), "utf8");
     expect(JSON.stringify(JSON.parse(text), null, 1) + "\n").toBe(text);
-    for (const t of tasks(JSON.parse(text))) if (t.status) expect(text).toContain(`"status": ${JSON.stringify(t.status)},`);
+    // The status is one line: followed by a comma, or the task's last key (the W-section tasks end with it).
+    for (const t of tasks(JSON.parse(text))) if (t.status) expect(text).toMatch(new RegExp(`"status": ${JSON.stringify(t.status).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")},?\n`));
   });
 
   it("an unknown dependency and a cycle are refused", () => {

@@ -208,6 +208,7 @@ describe("CSP alignment", () => {
       "http://127.0.0.1:11434/api/tags", // Ollama via loopback IP
       "https://api.languagetool.org/v2/check",
       "https://kroki.io/plantuml/svg",
+      "https://www.sefaria.org/api/v3/texts/Genesis%201%3A1", // sources/sefaria (W5.1)
       "https://oauth2.googleapis.com/token",
       "https://www.googleapis.com/drive/v3/files",
       "https://api.dropboxapi.com/2/files/list_folder",

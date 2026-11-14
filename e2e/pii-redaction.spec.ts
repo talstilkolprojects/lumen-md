@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 /**
  * Plan 2.6 — personal data never reaches the cloud provider. Every pattern
@@ -12,7 +12,7 @@ import { join } from "node:path";
  */
 
 const PATTERN = new Set(["EMAIL", "PHONE", "IL_ID", "CREDIT_CARD", "IBAN", "LICENSE_PLATE", "DATE_OF_BIRTH"]);
-const set = JSON.parse(readFileSync(join(__dirname, "../eval/golden/ner-pii/dev/synthetic.json"), "utf8")) as {
+const set = JSON.parse(readFileSync(fileURLToPath(new URL("../eval/golden/ner-pii/dev/synthetic.json", import.meta.url)), "utf8")) as {
   items: Array<{ text: string; kind: string; entities: Array<{ type: string; text: string }> }>;
 };
 const positives = set.items.filter((i) => i.kind === "positive" && i.entities.some((e) => PATTERN.has(e.type)));

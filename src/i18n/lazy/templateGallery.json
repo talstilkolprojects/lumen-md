@@ -1,0 +1,21 @@
+{
+  "templates.allCategories": "All",
+  "templates.byAuthor": "by {author}",
+  "templates.clearFilter": "Clear the filter",
+  "templates.close": "Close gallery",
+  "templates.contribute": "Contribute a template:",
+  "templates.contributeLink": "lumen-templates-contrib →",
+  "templates.downloads": "{count} installs",
+  "templates.empty": "No templates match your filter.",
+  "templates.error": "Failed to load registry: {error}",
+  "templates.installFailed": "Install failed: {error}",
+  "templates.installed": "✅ Installed {name} → {path}",
+  "templates.installing": "Installing…",
+  "templates.loading": "Loading templates…",
+  "templates.rating": "{rating} stars",
+  "templates.searchPlaceholder": "Search templates by name, description, or tag…",
+  "templates.sort": "Sort",
+  "templates.sort.downloads": "Most installed",
+  "templates.sort.rating": "Rating",
+  "templates.title": "Template gallery"
+}

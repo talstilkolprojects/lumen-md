@@ -21,6 +21,23 @@
  *   Without COLLAB_ACCESS_KEY anyone who knows a room name gets a token —
  *   room names are 128-bit random, so the room name is then the capability.
  *
+ * ── Roles and share links (plan W1.19, collab/sharing.mjs) ───────────────
+ *   A token carries a role. "view" connections are read-only on both of a
+ *   room's documents (`<room>` and `<room>~comments`), "comment" ones on the
+ *   text, "edit" on neither. Read-only is the connection flag plus a second
+ *   check on every message (`isDocumentWrite`): an update sent by hand is
+ *   dropped with the connection. Share links (role, expiry, revocation) and
+ *   the room's owner live in SQLite; every COLLAB_REVOKE_CHECK_MS (default
+ *   1 s) connections bought with a revoked or expired link are closed.
+ *
+ * ── Sealed rooms (plan W2.20, collab/sealed.mjs) ─────────────────────────
+ *   An end-to-end encrypted client asks for its token with `e2ee: true`;
+ *   the room is then sealed for good: an update that writes anything but
+ *   ciphertext envelopes, or a presence state that isn't sealed, is refused
+ *   with its connection, and a document that isn't ciphertext-only is never
+ *   stored. COLLAB_REQUIRE_E2EE=1 seals every room (a server for encrypted
+ *   rooms only: plaintext clients can't write at all).
+ *
  * ── Storage ───────────────────────────────────────────────────────────────
  *   COLLAB_DATA_DIR (default ./.collab-data): collab.sqlite plus backups/.
  *   A backup is taken every COLLAB_BACKUP_INTERVAL_MS (default 1 h) and on
@@ -42,9 +59,9 @@ import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { openStore } from "./collab/sqliteStore.mjs";
 import { importLegacyDir } from "./collab/legacyImport.mjs";
-import { DEFAULT_TOKEN_TTL_S, accessKeyOk, issueRoomToken, signingKey, verifyRoomToken } from "./collab/roomToken.mjs";
-
-const ROOM_NAME = /^[\w-]{1,128}$/;
+import { DEFAULT_TOKEN_TTL_S, readRoomToken, signingKey } from "./collab/roomToken.mjs";
+import { canWrite, handleTokenRequest, isDocumentWrite, parseDocumentName, shareState } from "./collab/sharing.mjs";
+import { isSealedDocument, isSealedState, sealedMessageProblem } from "./collab/sealed.mjs";
 
 /**
  * Build (not start) a collab server. `listen()` resolves with the bound
@@ -65,10 +82,21 @@ export function createCollabServer(opts = {}) {
     backupIntervalMs = 60 * 60 * 1000,
     keepBackups = 24,
     quiet = true,
+    revokeCheckMs = 1000,
+    requireE2ee = false,
     log = () => {},
   } = opts;
+  /** Live connections bought with a share link: closed when the link is revoked or expires. */
+  const shared = new Set();
   const key = signingKey(tokenSecret);
   const store = openStore(dataDir, { keepBackups });
+  const sealed = (room) => requireE2ee || store.isSealed(room);
+  /** A room may be sealed while it stores no readable content (a new room, or one that was always encrypted). */
+  const sealable = (room) =>
+    [room, `${room}~comments`].every((name) => {
+      const state = store.load(name);
+      return !state || isSealedState(state, Y);
+    });
   const tokenWss = new WebSocketServer({ noServer: true, maxPayload: 4096 });
 
   tokenWss.on("connection", (ws) => {
@@ -88,9 +116,14 @@ export function createCollabServer(opts = {}) {
       } catch {
         return done({ error: "bad-request" });
       }
-      if (!req || typeof req.room !== "string" || !ROOM_NAME.test(req.room)) return done({ error: "bad-room" });
-      if (!accessKeyOk(req.key, accessKey)) return done({ error: "unauthorized" });
-      done(issueRoomToken(key, req.room, { ttlS: tokenTtlS }));
+      let answer;
+      try {
+        answer = handleTokenRequest(req, { store, key, accessKey, tokenTtlS, requireE2ee, sealable });
+      } catch (e) {
+        log(`token request failed: ${e instanceof Error ? e.message : String(e)}`);
+        answer = { error: "server-error" };
+      }
+      done(answer);
     });
   });
 
@@ -116,12 +149,49 @@ export function createCollabServer(opts = {}) {
       response.end(JSON.stringify({ ok: true, status: "ok", service: "lumen-collab", persistence: "sqlite" }));
       throw null;
     },
-    async onAuthenticate({ token, documentName }) {
-      if (!ROOM_NAME.test(documentName)) throw new Error("bad-room");
-      const why = verifyRoomToken(key, token, documentName);
-      if (why) {
-        log(`auth rejected (${why})`);
+    async onAuthenticate(data) {
+      const { token, documentName } = data;
+      const doc = parseDocumentName(documentName);
+      if (!doc) throw new Error("bad-room");
+      const claims = readRoomToken(key, token, doc.room);
+      if (!claims.ok) {
+        log(`auth rejected (${claims.reason})`);
         throw new Error("unauthorized");
+      }
+      if (claims.share) {
+        const s = store.getShare(claims.share);
+        if (!s || s.room !== doc.room || shareState(s) !== "active") {
+          log("auth rejected (share)");
+          throw new Error("unauthorized");
+        }
+      }
+      const writable = canWrite(claims.role, doc.kind);
+      if (!writable && data.connectionConfig) data.connectionConfig.readOnly = true;
+      // The context every later hook sees for this connection.
+      return { role: claims.role, share: claims.share, kind: doc.kind, room: doc.room, writable };
+    },
+    async connected({ connection, context }) {
+      if (context?.share && connection) shared.add({ connection, share: context.share });
+    },
+    async onDisconnect({ connection }) {
+      for (const c of shared) if (c.connection === connection) shared.delete(c);
+    },
+    async beforeHandleMessage({ context, update, documentName }) {
+      // Second guard after the read-only flag: a change sent by hand on a
+      // connection that may not write ends that connection.
+      if (context && context.writable === false && update && isDocumentWrite(update)) {
+        log(`write refused (${context.role} on ${context.kind})`);
+        throw new Error("read-only");
+      }
+      // A sealed room takes ciphertext only (checked per message: a room
+      // can be sealed while a connection is open).
+      const room = context?.room ?? parseDocumentName(documentName)?.room;
+      if (update && room && sealed(room)) {
+        const problem = sealedMessageProblem(update, Y);
+        if (problem) {
+          log(`plaintext refused in a sealed room (${problem})`);
+          throw new Error("sealed");
+        }
       }
     },
     async onLoadDocument({ document, documentName }) {
@@ -129,6 +199,12 @@ export function createCollabServer(opts = {}) {
       if (state) Y.applyUpdate(document, state);
     },
     async onStoreDocument({ document, documentName }) {
+      const room = parseDocumentName(documentName)?.room;
+      // Belt and braces: a sealed room's readable content is never written to disk.
+      if (room && sealed(room) && !isSealedDocument(document)) {
+        log("store refused: a sealed room's document is not ciphertext-only");
+        return;
+      }
       store.save(documentName, Y.encodeStateAsUpdate(document));
     },
   });
@@ -146,11 +222,46 @@ export function createCollabServer(opts = {}) {
   const backupTimer = backupIntervalMs > 0 ? setInterval(backup, backupIntervalMs) : null;
   backupTimer?.unref?.();
 
+  /** Close every live connection whose share link was revoked or has expired. */
+  const sweep = () => {
+    const now = Date.now();
+    const live = new Map();
+    const ended = (share) => {
+      if (!live.has(share)) {
+        const s = store.getShare(share);
+        live.set(share, !!s && shareState(s, now) === "active");
+      }
+      return !live.get(share);
+    };
+    const close = (connection) => {
+      try {
+        connection.close({ code: 4403, reason: "share-ended" });
+      } catch {
+        /* already closed */
+      }
+    };
+    // Every open document's connections (each carries its onAuthenticate context)…
+    for (const document of server.hocuspocus?.documents?.values?.() ?? []) {
+      for (const connection of document.getConnections?.() ?? []) {
+        if (connection?.context?.share && ended(connection.context.share)) close(connection);
+      }
+    }
+    // …and those recorded by the `connected` hook.
+    for (const c of [...shared]) {
+      if (!ended(c.share)) continue;
+      shared.delete(c);
+      close(c.connection);
+    }
+  };
+  const sweepTimer = revokeCheckMs > 0 ? setInterval(sweep, revokeCheckMs) : null;
+  sweepTimer?.unref?.();
+
   let closing = null;
   return {
     server,
     store,
     backup,
+    sweep,
     async listen() {
       // Before accepting connections, so nobody opens an "empty" legacy room.
       if (legacyLeveldbDir) await importLegacyDir(store, legacyLeveldbDir, { log });
@@ -160,6 +271,7 @@ export function createCollabServer(opts = {}) {
     close() {
       closing ??= (async () => {
         if (backupTimer) clearInterval(backupTimer);
+        if (sweepTimer) clearInterval(sweepTimer);
         for (const c of tokenWss.clients) c.terminate();
         tokenWss.close();
         await server.destroy();
@@ -186,6 +298,8 @@ function fromEnv(env) {
     debounceMs: num(env.COLLAB_DEBOUNCE_MS, 2000),
     backupIntervalMs: num(env.COLLAB_BACKUP_INTERVAL_MS, 60 * 60 * 1000),
     keepBackups: num(env.COLLAB_BACKUP_KEEP, 24),
+    revokeCheckMs: num(env.COLLAB_REVOKE_CHECK_MS, 1000),
+    requireE2ee: env.COLLAB_REQUIRE_E2EE === "1" || env.COLLAB_REQUIRE_E2EE === "true",
     log: (m) => console.log(`[collab] ${m}`),
   };
 }

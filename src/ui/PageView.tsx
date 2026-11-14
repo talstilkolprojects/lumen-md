@@ -163,7 +163,7 @@ export function PageView({ markdownText, docKey = null }: Props) {
               minHeight: PAGE_HEIGHT,
               margin: "0 auto 40px",
               background: "hsl(var(--bg))",
-              boxShadow: "0 2px 12px hsl(0 0% 0% / 0.15), 0 0 0 1px hsl(var(--border) / 0.3)",
+              boxShadow: "var(--shadow-sm), 0 0 0 1px hsl(var(--border) / 0.3)",
               borderRadius: 2,
               padding: PAGE_PADDING,
               position: "relative",
@@ -175,8 +175,8 @@ export function PageView({ markdownText, docKey = null }: Props) {
               style={{
                 position: "absolute",
                 top: PAGE_PADDING,
-                left: PAGE_PADDING,
-                right: PAGE_PADDING,
+                insetInlineStart: PAGE_PADDING,
+                insetInlineEnd: PAGE_PADDING,
                 bottom: PAGE_PADDING,
                 overflow: "hidden",
               }}
@@ -195,8 +195,8 @@ export function PageView({ markdownText, docKey = null }: Props) {
               style={{
                 position: "absolute",
                 bottom: 24,
-                left: 0,
-                right: 0,
+                insetInlineStart: 0,
+                insetInlineEnd: 0,
                 textAlign: "center",
                 fontSize: 10,
                 color: "hsl(var(--fg-muted) / 0.4)",

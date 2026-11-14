@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "about": "DictaLM 3.0 (Dicta, arXiv 2602.02104) in Lumen's Hebrew model catalogue — plan W2.4. One entry per size. A value that was not verified from a primary source is null and listed under ownerChecks; scripts/dictalm3.mjs refuses to evaluate or propose a variant while any of its owner checks is open. Sizes and base models are from the paper's abstract (read 10.11.2026). `ramGB` is approximate (q4 weights plus context). `compareWith` is the model recommendOllamaModel({ hebrew: true, ramGB }) picks today at that variant's RAM (src/ai/modelCatalog.ts); `tools` says whether Lumen may route tool-calling agents to it: false until the agent eval shows the Ollama build answering tool calls (the paper says the chat models support them). A variant becomes the default only when its eval score beats that model by at least `minGainPoints`.",
+  "paper": "https://arxiv.org/abs/2602.02104",
+  "minGainPoints": 5,
+  "variants": [
+    {
+      "size": "1.7B",
+      "base": "Qwen3-1.7B",
+      "repo": "dicta-il/DictaLM-3.0-1.7B-Instruct",
+      "revision": null,
+      "ollama": "hf.co/dicta-il/DictaLM-3.0-1.7B-Thinking-GGUF",
+      "ollamaRevision": null,
+      "licence": {
+        "name": "Apache-2.0",
+        "class": "allowed",
+        "verified": true,
+        "source": "models/registry.json: licence tag apache-2.0 on dicta-il/DictaLM-3.0-1.7B-Instruct, checked 18.10.2026"
+      },
+      "ramGB": 2,
+      "compareWith": "qwen3:4b",
+      "tools": false,
+      "runtimes": {
+        "ollama": "official GGUF (Thinking variant only)",
+        "web-llm": "needs an MLC conversion (q4f16_1) — not hosted anywhere Lumen can use yet",
+        "transformers.js": "needs an ONNX export through the 6.0 pipeline (ci/model-convert)"
+      },
+      "ownerChecks": [
+        "revision: the commit sha of dicta-il/DictaLM-3.0-1.7B-Instruct the eval ran on",
+        "ollamaRevision: the commit sha of dicta-il/DictaLM-3.0-1.7B-Thinking-GGUF that `ollama pull` fetched"
+      ]
+    },
+    {
+      "size": "12B",
+      "base": "NVIDIA Nemotron Nano V2",
+      "repo": null,
+      "revision": null,
+      "ollama": null,
+      "ollamaRevision": null,
+      "licence": {
+        "name": null,
+        "class": "unknown",
+        "verified": false,
+        "source": "not verified: Hugging Face is unreachable from the build environment and the paper does not state the weights' licence. The base model is NVIDIA's; if the weights carry the NVIDIA Open Model License (a custom licence) the class is conditional — offered with its notice, never a default."
+      },
+      "ramGB": 12,
+      "compareWith": "qwen3:14b",
+      "tools": false,
+      "runtimes": {
+        "ollama": "GGUF — official or converted: owner check",
+        "web-llm": "too large for the browser tier",
+        "transformers.js": "too large for the browser tier"
+      },
+      "ownerChecks": [
+        "repo: the exact dicta-il repository id of the 12B chat (instruct / thinking) model",
+        "licence: the weights' licence on that model card, and its class (allowed / conditional / forbidden)",
+        "ollama: an Ollama-pullable GGUF name (hf.co/<owner>/<repo>) and who publishes it",
+        "revision and ollamaRevision: the commit shas evaluated"
+      ]
+    },
+    {
+      "size": "24B",
+      "base": "Mistral-Small-3.1",
+      "repo": null,
+      "revision": null,
+      "ollama": null,
+      "ollamaRevision": null,
+      "licence": {
+        "name": null,
+        "class": "unknown",
+        "verified": false,
+        "source": "not verified: Hugging Face is unreachable from the build environment and the paper does not state the weights' licence. Search results list dicta-il/DictaLM-3.0-24B-Base and dicta-il/DictaLM-3.0-24B-Thinking only through third-party mirrors, so neither name nor licence is taken from them."
+      },
+      "ramGB": 16,
+      "compareWith": "qwen3:14b",
+      "tools": false,
+      "runtimes": {
+        "ollama": "GGUF — official or converted: owner check",
+        "web-llm": "too large for the browser tier",
+        "transformers.js": "too large for the browser tier"
+      },
+      "ownerChecks": [
+        "repo: the exact dicta-il repository id of the 24B chat (instruct / thinking) model",
+        "licence: the weights' licence on that model card, and its class (allowed / conditional / forbidden)",
+        "ollama: an Ollama-pullable GGUF name (hf.co/<owner>/<repo>) and who publishes it",
+        "revision and ollamaRevision: the commit shas evaluated"
+      ]
+    }
+  ]
+}

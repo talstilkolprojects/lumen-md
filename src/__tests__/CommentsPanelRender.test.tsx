@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent } from "@testing-library/react";
 
-vi.mock("../i18n", () => ({ t: (k: string) => k }));
+vi.mock("../i18n", () => ({ registerEnglish: () => undefined, t: (k: string) => k }));
 vi.mock("../lib/logger", () => ({
   log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
@@ -18,6 +18,9 @@ vi.mock("../collab/comments", () => ({
 function makeCollab() {
   return {
     doc: {} as any,
+    commentsDoc: {} as any,
+    canComment: () => true,
+    canEdit: () => true,
     ytext: { toString: () => "sample text" } as any,
     user: { name: "Test User", color: "#ff0" } as any,
   };

@@ -62,6 +62,7 @@ export function formatRealReport(results: RealResult[], meta: { model: string; u
   ].join("\n");
 }
 
+// skip-reason: runs only where a real tiny model is served (npm run ci:real-model) | task: 7.2 | until: 2027-05-12
 describe.skipIf(!model)(`real tiny model — ${model} @ ${url}`, () => {
   it("every agent returns output of the right shape", async () => {
     const tags = await fetch(`${url}/api/tags`, { signal: AbortSignal.timeout(3000) }).catch((e: Error) => e);

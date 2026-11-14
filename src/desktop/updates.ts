@@ -1,11 +1,18 @@
 /**
- * Desktop updates, the WebView side (plan 11.5.1). The Rust shell checks and
+ * Desktop updates, the WebView side (plans 11.5.1, 14.4). The Rust shell checks and
  * installs (`update_check`, `update_install`, signature verified by
  * tauri-plugin-updater); this file only asks it, after the privacy policy:
  * in "local only" nothing is checked, and every check is in the privacy log.
+ *
+ * Two update channels (plan 14.4): stable follows the latest release; beta
+ * also gets beta releases, so new features reach testers first. The
+ * channel is the user's choice (default: the build's own channel); the
+ * shell maps it to its build-time endpoint and never accepts a URL from
+ * here.
  */
 import { getAiPolicy } from "../ai/policy";
 import { recordAppUpdateCheck } from "../ai/privacyLedger";
+import { buildChannel, isEnabled, type Channel } from "../flags/flags";
 
 export type UpdateStatus =
   | { state: "not-configured" }
@@ -20,20 +27,84 @@ const isDesktop = () => typeof window !== "undefined" && "__TAURI_INTERNALS__" i
 const defaultInvoke: Invoke = async (cmd, args) => (await import("@tauri-apps/api/core")).invoke(cmd, args);
 
 const RELEASE_HOST = "github.com";
+const CHANNEL_KEY = "lumen-update-channel";
+const LAST_CHECK_KEY = "lumen-update-last-check";
 
-export async function checkForUpdate(deps: { invoke?: Invoke; desktop?: boolean } = {}): Promise<CheckResult> {
+/** The update channel: the user's choice, else the build's. */
+export function updateChannel(storage: Pick<Storage, "getItem"> | null = safeStorage()): Channel {
+  try {
+    const v = storage?.getItem(CHANNEL_KEY);
+    if (v === "beta" || v === "stable") return v;
+  } catch {
+    /* storage blocked */
+  }
+  return buildChannel();
+}
+
+export function setUpdateChannel(channel: Channel, storage: Pick<Storage, "setItem"> | null = safeStorage()): void {
+  try {
+    storage?.setItem(CHANNEL_KEY, channel);
+  } catch {
+    /* storage blocked: this session only */
+  }
+}
+
+function safeStorage(): Storage | null {
+  try {
+    return typeof localStorage === "undefined" ? null : localStorage;
+  } catch {
+    return null;
+  }
+}
+
+export async function checkForUpdate(deps: { invoke?: Invoke; desktop?: boolean; channel?: Channel } = {}): Promise<CheckResult> {
   if (!(deps.desktop ?? isDesktop())) return { state: "not-desktop" };
   if (getAiPolicy() === "local-only") {
     recordAppUpdateCheck(RELEASE_HOST, "blocked");
     return { state: "blocked-local-only" };
   }
-  const status = await (deps.invoke ?? defaultInvoke)<UpdateStatus>("update_check");
+  const status = await (deps.invoke ?? defaultInvoke)<UpdateStatus>("update_check", { channel: deps.channel ?? updateChannel() });
   if (status.state !== "not-configured") recordAppUpdateCheck(RELEASE_HOST, "allowed");
   return status;
 }
 
-export async function installUpdate(deps: { invoke?: Invoke } = {}): Promise<void> {
+export async function installUpdate(deps: { invoke?: Invoke; channel?: Channel } = {}): Promise<void> {
   if (getAiPolicy() === "local-only") throw new Error("local-only");
   recordAppUpdateCheck(RELEASE_HOST, "allowed");
-  await (deps.invoke ?? defaultInvoke)("update_install");
+  await (deps.invoke ?? defaultInvoke)("update_install", { channel: deps.channel ?? updateChannel() });
+}
+
+/** One automatic check a day at most. */
+export const LAUNCH_CHECK_EVERY_MS = 24 * 60 * 60 * 1000;
+
+export function shouldCheckOnLaunch(lastIso: string | null, now: number): boolean {
+  const last = lastIso ? Date.parse(lastIso) : NaN;
+  return !Number.isFinite(last) || now - last >= LAUNCH_CHECK_EVERY_MS || last > now;
+}
+
+/**
+ * The beta flag `update.checkOnLaunch`: in beta builds, check once a day at
+ * launch so testers get fixes quickly. Off in stable until promoted; never
+ * in local-only (checkForUpdate refuses, and that is logged); quiet unless
+ * there is an update.
+ */
+export async function launchUpdateCheck(deps: { invoke?: Invoke; desktop?: boolean; now?: number; storage?: Pick<Storage, "getItem" | "setItem"> | null; enabled?: boolean } = {}): Promise<CheckResult | null> {
+  if (!(deps.desktop ?? isDesktop())) return null;
+  if (!(deps.enabled ?? isEnabled("update.checkOnLaunch"))) return null;
+  if (getAiPolicy() === "local-only") return null;
+  const storage = deps.storage === undefined ? safeStorage() : deps.storage;
+  const now = deps.now ?? Date.now();
+  let last: string | null = null;
+  try {
+    last = storage?.getItem(LAST_CHECK_KEY) ?? null;
+  } catch {
+    /* storage blocked */
+  }
+  if (!shouldCheckOnLaunch(last, now)) return null;
+  try {
+    storage?.setItem(LAST_CHECK_KEY, new Date(now).toISOString());
+  } catch {
+    /* storage blocked */
+  }
+  return checkForUpdate({ invoke: deps.invoke, desktop: true });
 }

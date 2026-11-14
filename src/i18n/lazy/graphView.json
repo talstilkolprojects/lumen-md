@@ -1,0 +1,14 @@
+{
+  "graphView.empty": "No workspace files found. Open the workspace panel and add files to see the knowledge graph.",
+  "graphView.openWorkspace": "Open the workspace",
+  "graphView.stats": "{nodes} nodes · {edges} connections",
+  "graph.ariaLabel": "Knowledge graph of {nodes} notes",
+  "graph.filter.property": "Property (key=value)",
+  "graph.filters": "Graph filters",
+  "graph.groupBy": "Colour by",
+  "graph.groupBy.folder": "Folder",
+  "graph.groupBy.none": "Nothing",
+  "graph.groupBy.tag": "Tag",
+  "graph.groups": "Colour groups",
+  "graph.layingOut": "laying out…"
+}

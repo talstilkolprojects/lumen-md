@@ -1,0 +1,21 @@
+# ישיבות — נוצר מהתבנית ישיבת צוות
+filters:
+  and:
+    - 'type == "meeting"'
+properties:
+  file.name:
+    displayName: "ישיבה"
+  note.date:
+    displayName: "תאריך"
+  note.participants:
+    displayName: "משתתפים"
+views:
+  - type: table
+    name: "ישיבות"
+    order:
+      - file.name
+      - note.date
+      - note.participants
+    sort:
+      - property: note.date
+        direction: DESC

@@ -4,5 +4,10 @@
   "toast.nikud.noHost": "The niqqud model is not available to download yet (its host is not set up).",
   "toast.nikud.declined": "Niqqud needs the model download; nothing was changed.",
   "toast.nikud.failed": "Niqqud failed: {error}",
-  "models.purpose.nikud": "Hebrew niqqud (vowel points) on this device"
+  "models.purpose.nikud": "Hebrew niqqud (vowel points) on this device",
+  "toast.nikud.done": "Niqqud added on this device. Underlined words can be read more than one way: click one for its readings (Alt+click any word).",
+  "toast.nikud.doneHigh": "Niqqud added on this device with DictaBERT-char-menaked (high quality). Underlined words can be read more than one way: click one for its readings.",
+  "models.purpose.nikudHigh": "High-quality Hebrew niqqud (DictaBERT-char-menaked) on this device",
+  "nikud.alt.title": "Other readings",
+  "nikud.alt.choose": "Use “{word}”"
 }

@@ -18,6 +18,8 @@ import {
   type WikiSuggestion,
 } from "../editor/wikiComplete";
 
+import { headingSlug } from "../lib/slug";
+
 const file = (path: string, content = "", modified = 0): CatalogFile => ({ path, content, modified });
 
 const PROJECT = `---
@@ -144,6 +146,9 @@ describe("headings and blocks", () => {
     expect(labels(suggestHeadings(PROJECT, ""))).toEqual(["Project Alpha", "Goals"]);
     expect(labels(suggestHeadings(PROJECT, "go"))).toEqual(["Goals"]);
     expect(labels(suggestHeadings("# שָׁלוֹם רַב\n", "שלומ"))).toEqual(["שָׁלוֹם רַב"]);
+    // A wrapped setext heading: shown on one line, inserted by its id (its text has a line break; W1.32, #238).
+    const wrapped = suggestHeadings("A wrapped\ntitle\n===\n", "");
+    expect(wrapped).toEqual([{ kind: "heading", label: "A wrapped title", detail: `#${headingSlug("A wrapped\ntitle")}`, insert: headingSlug("A wrapped\ntitle") }]);
   });
 
   it("a repeated heading is linked by its numbered slug, as the preview ids it", () => {

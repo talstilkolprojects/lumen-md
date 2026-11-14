@@ -1,0 +1,21 @@
+# רשימת קריאה — נוצר מהתבנית ספר שאני קורא/ת
+filters:
+  and:
+    - 'type == "book"'
+properties:
+  file.name:
+    displayName: "ספר"
+  note.author:
+    displayName: "סופר/ת"
+  note.status:
+    displayName: "סטטוס"
+  note.rating:
+    displayName: "דירוג"
+views:
+  - type: table
+    name: "רשימת קריאה"
+    order:
+      - file.name
+      - note.author
+      - note.status
+      - note.rating

@@ -12,6 +12,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import YAML from "yaml";
 import { REMINDER_EVERY_MS, isWebKitBrowser, shouldRemind, type ReminderEnv } from "../storage/evictionReminder";
+import { readLocale } from "../../scripts/lib/i18n-files.mjs";
 
 const ROOT = resolve(__dirname, "..", "..");
 const read = (f: string) => readFileSync(join(ROOT, f), "utf8");
@@ -132,7 +133,8 @@ describe("Safari eviction reminder (13.3.3)", () => {
     const en = read("src/i18n/lazy/eviction.json");
     expect(read("src/i18n/index.ts")).not.toContain('"storage.eviction.');
     for (const lang of ["he", "ar", "ru", "fr", "de", "ja", "zh-CN"]) {
-      const bundle = JSON.parse(read(`src/i18n/locales/${lang}.json`)) as Record<string, string>;
+      // The per-domain layout (plan 0.3): every domain file of the language.
+      const bundle = readLocale(lang) as Record<string, string>;
       for (const k of ["storage.eviction.title", "storage.eviction.body", "storage.eviction.export"]) {
         expect(en, `en ${k}`).toContain(`"${k}":`);
         expect(bundle[k], `${lang} ${k}`).toBeTruthy();

@@ -3,15 +3,16 @@ title: בדיקות בכל ענף (Vercel)
 description: השערים של Lumen רצים בבניית Vercel של כל ענף, בלי GitHub Actions — מה רץ, מה המשמעות של סטטוס אדום, ולאן עברו בדיקות ה-CI הישנות.
 ---
 
-כל ענף שנדחף ל-GitHub מקבל בנייה ב-Vercel, ו-Vercel מדווח עליה ב-commit
-כסטטוס **Vercel**. הבנייה הזו היא השער של Lumen: פקודת הבנייה היא
+‏`main` ורכבות האינטגרציה (`verify/…`) מקבלים בנייה ב-Vercel כשהם נדחפים,
+ו-Vercel מדווח עליה ב-commit כסטטוס **Vercel**; הענף של בקשת משיכה נבדק דרך
+הרכבת (ראו [בניות שמדולגות](#בניות-שמדולגות)). הבנייה הזו היא השער של Lumen: פקודת הבנייה היא
 `node scripts/vercel-build.mjs` (ב-`deploy/vercel.base.json`), ובניית preview
 מריצה את כל הבדיקות. בקשת משיכה עם בדיקה שנכשלת או שער שבור מקבלת סטטוס
 **Vercel** אדום; בקשה נקייה מקבלת ירוק. לא נצרכות דקות של GitHub Actions.
 
 | בנייה | מה רץ, לפי הסדר |
 |---|---|
-| ‏Preview (כל ענף חוץ מ-`main`) | build, תקציב החבילה, vitest, ‏`i18n:check`, ‏hygiene, ‏`docs:sync`, שער הרישיונות |
+| ‏Preview (רכבות `verify/…`) | build, תקציב החבילה, סריקת הסודות של `dist/`, vitest, ‏e2e (smoke ב-chromium וב-firefox), ‏`i18n:check`, ‏hygiene, ‏`docs:sync`, שער הרישיונות |
 | ‏Production (`main`) | build, תקציב החבילה — כמו קודם |
 
 השערים נעצרים בכישלון הראשון. יומן הבנייה מסתיים בשער שנכשל ובאלה שעברו
@@ -20,6 +21,23 @@ description: השערים של Lumen רצים בבניית Vercel של כל ענ
 ```text
 ✗ vercel-build: the vitest gate failed (212.4 s, exit 1). Passed before it: build 95.1 s, budget 1.2 s.
 ```
+
+## בניות שמדולגות
+
+Vercel בונה פריסה אחת בכל פעם, כך שכל בנייה בתור מעכבת את אלה שאחריה.
+‏`scripts/vercel-ignore.sh` (ה-`ignoreCommand` של התצורה) מדלג על בנייה לפני
+שהיא מתחילה כאשר:
+
+- הענף שלה איננו `main` (פרודקשן) ואיננו רכבת אינטגרציה (`verify/…`): ענף של
+  pull request נבדק דרך הרכבת (`verify/train-2`), ולכן לא נבנה בעצמו. משתנה
+  הפרויקט ב-Vercel ‏`LUMEN_BUILD_ALL=1` מחזיר בנייה של כל ענף;
+- ה-commit שלה כבר איננו ראש הענף: push חדש יותר ממתין בתור וייבנה במקומה.
+  כשאי אפשר לקרוא את ראש הענף (אין רשת, הענף נמחק), הכלל הבא מחליט;
+- ה-commit לא משנה שום דבר שבניית האתר קוראת (Markdown מחוץ ל-`src/`
+  ו-`public/`, אתר התיעוד, הפריסות האחרות).
+
+בנייה שדולגה מופיעה ב-Vercel כ-**Canceled**, לא כמעבר: הסטטוס של הענף נקבע
+לפי ה-commit החדש ביותר שלו.
 
 ## להריץ את אותן בדיקות מקומית
 
@@ -31,8 +49,9 @@ node scripts/vercel-build.mjs --dry-run    # print the gates, run nothing
 
 מחוץ ל-Vercel (בלי `VERCEL_ENV`) הסקריפט מריץ את סט ה-preview, כך שהרצה
 מקומית היא מה שהבנייה של הענף תעשה. כל שער הוא גם סקריפט npm בפני עצמו:
-‏`npm run build`, ‏`npm run budget`, ‏`npm test`, ‏`npm run i18n:check`,
-‏`npm run hygiene`, ‏`npm run docs:sync`, ‏`npm run licenses`.
+‏`npm run build`, ‏`npm run budget`, ‏`npm test`, ‏`npm run e2e:gate` (אחרי `VITE_E2E=1 npm run build`: הבדיקות מגיעות למודולים של האפליקציה דרך `window.__lumenTest`, שקיים רק בבנייה כזו), ‏`npm run i18n:check`,
+‏`npm run hygiene`, ‏`npm run docs:sync`, ‏`npm run licenses`, ‏`npm run secrets:dist` (ראו
+[סריקת סודות בבנייה](/he/security/secret-scan/)).
 
 ## מה לא רץ בבנייה
 
@@ -45,7 +64,7 @@ node scripts/vercel-build.mjs --dry-run    # print the gates, run nothing
 | 0.19 שער PR ‏(Danger.js, ‏size-limit) | תגובת Danger ו-size-limit בכל PR | חלק הגודל הוא שער **תקציב החבילה** (לכל chunk ראשי יש תקציב, `scripts/bundle-budget.mjs`); קריאת רשת שלא רשומה מכשילה את **vitest** ‏(`src/__tests__/cloudRoutes.test.ts` בודק כל נתיב ענן); הפרש הרישיונות הוא **שער הרישיונות**. לתגובה עצמה ב-PR עוד אין תחליף |
 | 13.3 בניות Android ו-iOS | בניות מובייל ב-CI | `npm run android:sync` / `npm run ios:sync` במחשב עם ה-SDK (‏iOS דורש macOS); חלק הרשת שהן כוללות הוא מה שבניית ה-preview בודקת |
 | 13.4 צינור שחרור | workflow של שחרור | סקריפט שחרור מקומי, ארטיפקטים חתומים ו-rollback במחשב של מפתח; השחרור של אפליקציית הרשת הוא בניית ה-production |
-| e2e של Playwright | משימות e2e בכל PR | `npx playwright test` ב-Vercel Sandbox ‏(W1.1) |
+| e2e של Playwright | משימות e2e בכל PR | שער **e2e** מריץ את `e2e/smoke.spec.ts` ב-chromium וב-firefox בתוך הבנייה (`scripts/e2e-gate.mjs`); כל החבילה רצה ב-`npx playwright test` במחשב של מפתח או ב-Sandbox ‏(W1.1), כי במכונת הבנייה פרויקט chromium לבדו לוקח כ-30 דקות. WebKit לא יכול לרוץ בבנייה: ה-WebKit של Playwright צריך glibc 2.38, ובתמונת הבנייה (Amazon Linux 2023) יש 2.34. הכיסוי של Safari נעשה על Mac ‏(W4.22) |
 
 ## כששער אדום
 

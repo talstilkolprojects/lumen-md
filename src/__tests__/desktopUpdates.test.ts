@@ -30,7 +30,7 @@ describe("desktop updates", () => {
     setAiPolicy("local-first");
     const invoke = vi.fn().mockResolvedValue({ state: "available", current: "0.1.0", version: "0.2.0", notes: null });
     expect(await checkForUpdate({ invoke, desktop: true })).toMatchObject({ state: "available", version: "0.2.0" });
-    expect(invoke).toHaveBeenCalledWith("update_check");
+    expect(invoke).toHaveBeenCalledWith("update_check", { channel: "stable" });
     expect(ledgerEntries().at(-1)).toMatchObject({ host: "github.com", decision: "allowed", reason: expect.stringMatching(/update check/) });
   });
 

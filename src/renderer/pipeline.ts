@@ -4,16 +4,16 @@ import { unified } from "unified";
 import type { Processor } from "unified";
 import type { ReactElement } from "react";
 import remarkParse from "remark-parse";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import remarkFrontmatter from "remark-frontmatter";
-import remarkDirective from "remark-directive";
+import { markdownSyntax } from "./syntax";
+import { defaultCalloutTitle, isKnownCallout, remarkObsidian } from "./remarkObsidian";
+import { t } from "../i18n";
 import remarkRehype from "remark-rehype";
 // rehype-katex (+ katex + mhchem, ~84 KB gz) is dynamically imported via
 // ./katexPlugin only for docs that contain `$` — it is no longer a static
 // dependency of the main chunk (A7 lever 1/3).
 import rehypeSlug from "rehype-slug";
 import { rehypeDirAuto } from "./rehypeDirAuto";
+import { rehypeMathIsolate } from "../lib/mathIsolate";
 import { rehypeSanitizeRaw } from "./rehypeSanitizeRaw";
 // rehype-raw is dynamically imported in getProcessorWithRaw() — it
 // pulls in parse5 (~275 KB raw / ~40 KB gzipped) and most docs don't
@@ -27,6 +27,7 @@ import type { Root as HastRoot } from "hast";
 import { components } from "./components";
 import { rehypeShiki } from "./shiki";
 import { prepareCriticMarkup, rehypeCriticMarkup, stripCriticDelimiters } from "./criticMarkup";
+import { boundMarkdown } from "./boundMarkdown";
 import {
   remarkBreaks,
   remarkWikiLinks,
@@ -37,6 +38,7 @@ import {
 import { EMBEDS_DATA_KEY, remarkEmbeds } from "./remarkEmbeds";
 import { remarkBlockIds } from "./remarkBlockIds";
 import type { EmbedContext } from "./embeds";
+import { remarkBaseEmbeds } from "../views/bases/embed";
 
 const SPECIAL_LANGS = new Set([
   "mermaid",
@@ -69,6 +71,10 @@ const SPECIAL_LANGS = new Set([
   // obsidian-tasks queries over the vault (plan 4.13).
   "tasks",
   "database",
+  "base",
+  // Embedded queries and Dataview blocks (plan W2.12).
+  "query",
+  "dataview",
   // Single-language live previews — render the snippet inside a tiny
   // sandboxed iframe so users can experiment with HTML/CSS/JS/GLSL/SVG
   // without writing the full boilerplate of an `htmlpreview` block.
@@ -172,16 +178,25 @@ type RehypeKatex = typeof import("./katexPlugin").default;
 
 /** Parse + the Lumen dialect transforms that run before embeds are expanded. */
 function buildDialect() {
+/** A callout's default title: translated for Obsidian's own types, the type itself otherwise. */
+function calloutTitle(kind: string, type: string): string {
+  return isKnownCallout(type) ? t(`callout.${kind}`) : defaultCalloutTitle(kind, type);
+}
+
   return unified()
     .use(remarkParse)
-    .use(remarkFrontmatter, ["yaml"])
+    // Frontmatter, GFM, math and directives: the syntax the conformance suite tests.
+    .use(markdownSyntax)
     .use(remarkStripFrontmatter)
-    .use(remarkGfm)
+    // W1.3 — Obsidian callouts, %%comments%%, ==highlights==, ![[image|300]].
+    // Before soft breaks (a callout's title ends at the first line break)
+    // and before wiki links (an embed is not a link).
+    .use(remarkObsidian, { calloutTitle })
     .use(remarkBreaks)
-    .use(remarkMath)
-    .use(remarkDirective)
     .use(remarkAdmonitions)
-    .use(remarkColumns);
+    .use(remarkColumns)
+    // ![[x.base]] becomes a base block before note embeds are expanded (Obsidian Bases).
+    .use(remarkBaseEmbeds);
 }
 
 let embedParser: ReturnType<typeof buildDialect> | null = null;
@@ -264,7 +279,8 @@ async function buildFullProcessor(
   p = p.use(rehypeCriticMarkup);
   p = blockSlugs ? p.use(blockSlugs) : p.use(rehypeSlug);
   p = p.use(rehypeDirAuto);
-  if (rehypeKatex) p = p.use(rehypeKatex);
+  // W5.14 — each formula an LTR isolate, so it keeps its order inside Hebrew.
+  if (rehypeKatex) p = p.use(rehypeKatex).use(rehypeMathIsolate);
   return toReact(p.use(rehypeShiki, { isDark }));
 }
 
@@ -315,8 +331,12 @@ export interface RenderOptions {
 function input(markdownText: string, opts: RenderOptions) {
   const data: Record<string, unknown> = {};
   if (opts.embeds) data[EMBEDS_DATA_KEY] = opts.embeds;
-  return { value: prepareCriticMarkup(markdownText), data };
+  // A block that would take seconds to parse (plan W4.16) is shown as raw text.
+  return { value: prepareCriticMarkup(boundMarkdown(markdownText)), data };
 }
+
+/** Pandoc citations ([@key], @key): expanded from the vault's library (plan W2.16), loaded only when a note has one. */
+const CITATION_HINT = /(^|[\s([;\u2014\u2013"\u201C'])-?@[\p{L}\p{N}_]/mu;
 
 export async function renderMarkdown(
   markdownText: string,
@@ -330,6 +350,12 @@ export async function renderMarkdown(
     ? [markdownText, ...(await import("./embeds")).embeddedTexts(markdownText, opts.embeds)]
     : [markdownText];
   const each = sources.map(pipelineOptions);
+  if (CITATION_HINT.test(markdownText)) {
+    markdownText = await import("../citations/expand")
+      .then((m) => m.expandWithLibrary(markdownText))
+      .then((r) => r.markdown)
+      .catch(() => markdownText);
+  }
   const proc = await getFullProcessor(isDark, {
     raw: each.some((o) => o.raw),
     math: each.some((o) => o.math),

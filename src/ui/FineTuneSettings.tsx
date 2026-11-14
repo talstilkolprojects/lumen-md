@@ -20,11 +20,14 @@ import { showAiToast } from "./AiToast";
 import { startFineTune, getFineTuneJob, fineTuneJobActive, type FineTuneJob } from "../ai/fineTune";
 import { uiConfirm } from "./PromptDialog";
 import { log } from "../lib/logger";
+import "./fineTuneStrings";
 import { t } from "../i18n";
 import "../ai/localLoraStrings";
 
 // The local LoRA route (plan 6.12.4) comes first; its code loads with this dialog's first paint.
 const LocalLoraSection = lazy(() => import("./LocalLoraSection").then((m) => ({ default: m.LocalLoraSection })));
+import { explainError } from "../lib/userError";
+import { HelpButton } from "./HelpButton";
 
 interface Props {
   open: boolean;
@@ -155,7 +158,7 @@ export function FineTuneSettings({ open, onClose, embedded = false }: Props) {
       );
     } catch (e) {
       log.error("fine-tune start failed", e);
-      showAiToast(t("fineTune.toast.error", { error: (e as Error).message }), "error");
+      showAiToast(t("fineTune.toast.error", { error: explainError(e) }), "error");
     } finally {
       setRunning(false);
     }
@@ -191,7 +194,8 @@ export function FineTuneSettings({ open, onClose, embedded = false }: Props) {
       >
         <header style={{ padding: "14px 18px", borderBottom: "1px solid hsl(var(--border))", display: "flex", gap: 10, alignItems: "center" }}>
           <Brain size={18} style={{ color: "hsl(var(--accent))" }} />
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{t("fineTune.title")}</h2>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, flex: 1 }}>{t("fineTune.title")}</h2>
+          <HelpButton topic="ai/local-llm" />
         </header>
 
         <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 16, fontSize: 13, lineHeight: 1.5, overflowY: "auto" }}>
@@ -312,9 +316,9 @@ export function FineTuneSettings({ open, onClose, embedded = false }: Props) {
                   padding: "6px 12px",
                   fontSize: 12,
                   borderRadius: 6,
-                  border: "1px solid hsl(0 60% 60% / 0.5)",
+                  border: "1px solid hsl(var(--danger) / 0.5)",
                   background: "transparent",
-                  color: "hsl(0 70% 65%)",
+                  color: "hsl(var(--danger))",
                   cursor: "pointer",
                 }}
               >

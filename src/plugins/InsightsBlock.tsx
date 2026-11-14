@@ -50,6 +50,8 @@ import { toast } from "../store/useToastStore";
 import { EChart } from "./EChart";
 import { t, tPlural } from "../i18n";
 import { tRich } from "../i18n/rich";
+import { explainError } from "../lib/userError";
+import "./insightsBlockStrings";
 
 interface Props {
   source: string;
@@ -106,6 +108,7 @@ export default function InsightsBlock({ source, meta }: Props) {
   }
   if (parsed.records.length === 0) {
     return (
+      // empty-allow: inside a code block the fix is the block's own source (the message says what to paste)
       <ErrorCard message={t("block.insights.empty")} />
     );
   }
@@ -430,11 +433,11 @@ function SuggestionsList({
           break;
       }
     } catch (e) {
-      toast.error("Insights generation failed", (e as Error).message);
+      toast.error(t("block.insights.generateFailed"), explainError(e));
       return;
     }
     if (docs.length === 0) {
-      toast.info("Nothing to generate for that suggestion.");
+      toast.info(t("block.insights.nothing"));
       return;
     }
 
@@ -442,12 +445,7 @@ function SuggestionsList({
       // No workspace — open the first doc in a tab so the user still gets value.
       const first = docs[0];
       openTab({ name: basename(first.name), content: first.content, workspaceName: null });
-      toast.info(
-        docs.length === 1
-          ? "Opened generated doc in a new tab"
-          : `Opened 1 of ${docs.length} generated docs`,
-        "Workspace storage isn't available in this browser.",
-      );
+      toast.info(docs.length === 1 ? t("block.insights.openedOne") : t("block.insights.openedSome", { n: docs.length }), t("block.insights.noWorkspace"));
       return;
     }
 
@@ -460,15 +458,15 @@ function SuggestionsList({
         if (!firstWritten) firstWritten = path;
         written++;
       } catch (e) {
-        toast.error("Insights write failed", (e as Error).message);
+        toast.error(t("block.insights.writeFailed"), explainError(e));
         break;
       }
     }
     if (written > 0) {
       window.dispatchEvent(new Event("lumen-workspace-changed"));
       toast.success(
-        written === 1 ? `Created ${firstWritten}` : `Created ${written} files`,
-        written === 1 ? undefined : "All under insights/ in your workspace.",
+        written === 1 ? t("block.insights.createdOne", { path: firstWritten ?? "" }) : t("block.insights.createdMany", { n: written }),
+        written === 1 ? undefined : t("block.insights.createdWhere"),
       );
       if (firstWritten) {
         openTab({

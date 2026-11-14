@@ -179,8 +179,9 @@ describe("golden cases cover every agent (7.4.3)", () => {
 });
 
 describe("the web CSPs allow the local services (7.4.1)", () => {
-  it("_headers, vercel.json and the nginx image allow 8010 and 8787 on localhost and 127.0.0.1", () => {
-    for (const file of ["public/_headers", "vercel.json", "docker/nginx.conf"]) {
+  it("_headers, the Vercel config and the nginx image allow 8010 and 8787 on localhost and 127.0.0.1", () => {
+    // vercel.json is deploy/vercel.base.json read through vercel.ts (#239); the image's nginx is deploy/nginx.conf (#301).
+    for (const file of ["public/_headers", "deploy/vercel.base.json", "deploy/nginx.conf"]) {
       const text = readFileSync(file, "utf8");
       for (const host of ["localhost", "127.0.0.1"]) for (const port of [8010, 8787]) expect(text, `${file} ${host}:${port}`).toContain(`http://${host}:${port}`);
     }

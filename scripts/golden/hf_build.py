@@ -648,11 +648,15 @@ def fetch_local(only_set=None):
                 fn = {"flores": flores, "belebele": belebele}[p["id"]]
                 ctx = {"split": "dev", "revision": sel["source"].get("revision"), "pool": None}
                 pool = {x["id"]: x for x in fn(ctx)["items"]}
-                got = [{"id": i, **{k: pool[i][k] for k in fields}} for i in want if i in pool]
-            bad = [g["id"] for g in got if content_hash(g) != want[g["id"]]["sha256"]]
+                # Every field of the item (retrieval needs `relevant`), not only the hashed ones;
+                # the sha256 still covers exactly the selection's hashFields (W1.32, Codex on #225).
+                got = [{k: v for k, v in pool[i].items() if not k.startswith("_")} for i in want if i in pool]
+            bad = [g["id"] for g in got if content_hash({"id": g["id"], **{k: g.get(k) for k in fields}}) != want[g["id"]]["sha256"]]
             if bad or len(got) != len(want):
                 raise Refused(f"{set_dir.name}/{p['id']}: {len(bad)} items do not match their frozen sha256, {len(want) - len(got)} missing")
-            write_json(set_dir / "local" / f"{p['id']}.json", {"set": set_dir.name, "part": p["id"], "split": "dev", "license": p["license"], "note": "Local only: never commit (eval/golden/*/local/ is git-ignored).", "items": got})
+            # Part documents the harness needs with the items (retrieval: the corpus of passages).
+            extra = ctx.get("extra", {}) if p["id"] != "nakdimon" else {}
+            write_json(set_dir / "local" / f"{p['id']}.json", {"set": set_dir.name, "part": p["id"], "split": "dev", "license": p["license"], "note": "Local only: never commit (eval/golden/*/local/ is git-ignored).", "items": got, **extra})
             print(f"{set_dir.name}/{p['id']}: {len(got)} dev items in local/", flush=True)
 
 

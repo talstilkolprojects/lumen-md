@@ -21,8 +21,15 @@ export const B = 0.75;
 export const NAME_BOOST = 3;
 /** A term the last query word is the start of (typing ahead: "gard" → "garden") counts this much. */
 export const PREFIX_WEIGHT = 0.5;
-/** At most this many completions of the last word, the most frequent first. */
-const MAX_PREFIX_TERMS = 30;
+/**
+ * How many postings the completions of the last word may add to one search.
+ * Rare completions come first: a note whose only match is a rare word being
+ * typed (`pro` → `protolanguage`) must not lose to thirty common ones, and a
+ * rare word costs little. Only a very short, very common prefix reaches the
+ * cap, and then it is the most common completions that are left out
+ * (W1.32, Codex on #232; it used to keep the 30 most frequent terms).
+ */
+export const MAX_PREFIX_POSTINGS = 50_000;
 
 interface Doc {
   id: string;
@@ -130,8 +137,15 @@ export class Bm25Index {
     if (!base || base.length < 2 || base.startsWith(STEM)) return [];
     const found: Array<[string, number]> = [];
     for (const [term, p] of this.postings) if (term.length > base.length && term.startsWith(base)) found.push([term, p.size]);
-    found.sort((a, b) => b[1] - a[1]);
-    return found.slice(0, MAX_PREFIX_TERMS).map(([term]) => ({ term, weight: PREFIX_WEIGHT, group: last }));
+    found.sort((a, b) => a[1] - b[1] || (a[0] < b[0] ? -1 : 1));
+    const out: QueryTerm[] = [];
+    let postings = 0;
+    for (const [term, df] of found) {
+      if (out.length && postings + df > MAX_PREFIX_POSTINGS) break;
+      postings += df;
+      out.push({ term, weight: PREFIX_WEIGHT, group: last });
+    }
+    return out;
   }
 
   search(query: string | QueryTerm[], opts: { limit?: number; filter?: (id: string) => boolean; prefix?: boolean } = {}): Bm25Hit[] {

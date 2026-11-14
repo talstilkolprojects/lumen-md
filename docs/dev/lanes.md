@@ -122,11 +122,16 @@ merge that touches `package.json` or `package-lock.json` gets
 `npm install --package-lock-only` before it commits (a clean textual merge
 of two dependency changes can still leave the lockfile incomplete).
 Any other conflict stops the run with the merge left in progress and prints
-the command to continue with the remaining branches. If dependencies changed
+the command to continue with the remaining branches (for the last branch,
+the same command again: it skips that branch and still runs the dependency
+and i18n gates before the checks). If dependencies changed
 on the target after node_modules was last installed (the last commit
 touching package.json / package-lock.json is newer than
 node_modules/.package-lock.json, so this also holds for a run resumed after
-a conflict), the run stops before the checks (exit 2): run `npm install`
+a conflict), or node_modules was installed from another lockfile (npm's
+hidden node_modules/.package-lock.json lacks a package this lockfile needs
+at its version, or has one it does not know: an install made on another
+branch), the run stops before the checks (exit 2): run `npm install`
 (lanes only touched the lockfile), then the same command again — merged
 branches are skipped and the checks run. `LANE_INSTALL=1` does the install
 itself (it changes the node_modules the lanes link to). The checks are

@@ -22,6 +22,7 @@ describe("scripts/check-i18n-hardcoded", () => {
     expect(rules(`showAiToast("Token saved", "info");`)).toEqual(["ui-call"]);
     expect(rules(`await uiAlert({ message: "Push failed" });`)).toEqual(["ui-call"]);
     expect(rules(`window.alert("Done");`)).toEqual(["ui-call"]);
+    expect(rules(`toast.error("Copy failed", detail);`)).toEqual(["ui-call"]);
   });
 
   it("leaves translated text, code, symbols and names alone", () => {

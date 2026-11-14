@@ -43,7 +43,12 @@ describe("read-aloud licence guard (6.2, until 15.10(1))", () => {
       constructor(public text: string) {}
     }
     vi.stubGlobal("SpeechSynthesisUtterance", U);
-    const synth = { getVoices: () => [], cancel: () => undefined, speak: (u: U) => (spoken.push(u.text), queueMicrotask(() => u.onend?.())) };
+    // The device's own voices: since #195 a sentence with no local voice is not handed to the browser.
+    const voices = [
+      { name: "Local English", lang: "en-US", localService: true },
+      { name: "Local Hebrew", lang: "he-IL", localService: true },
+    ];
+    const synth = { getVoices: () => voices, cancel: () => undefined, speak: (u: U) => (spoken.push(u.text), queueMicrotask(() => u.onend?.())) };
     vi.stubGlobal("speechSynthesis", synth);
     Object.defineProperty(window, "speechSynthesis", { configurable: true, value: synth });
     const { speak } = await import("../ai/tts");

@@ -1,0 +1,558 @@
+{
+ "about": "Cross-language search probe for plan W5.28: 50 Hebrew questions, each about one of 50 short English research abstracts (the corpus). Written for this repository, so its numbers are development numbers, not a held-out result: the same author wrote the questions and the search. The held-out check is Belebele heb_Hebr questions over eng_Latn passages, built locally by the owner (see docs). Licence: CC0-1.0 for the questions and abstracts written here; the abstracts paraphrase the kind of findings papers report and are not quotations.",
+ "license": "CC0-1.0",
+ "corpus": [
+  {
+   "id": "en-p01",
+   "text": "Sleep restriction and memory consolidation: participants who slept five hours for a week recalled fewer word pairs than those who slept eight hours, and the deficit persisted after one night of recovery sleep."
+  },
+  {
+   "id": "en-p02",
+   "text": "A meta-analysis of 41 randomized trials found that aerobic exercise three times a week reduced depressive symptoms in adults, with effects comparable to antidepressant medication in mild cases."
+  },
+  {
+   "id": "en-p03",
+   "text": "Microplastic ingestion in freshwater fish: laboratory exposure caused gut inflammation and slower growth in zebrafish, and particles accumulated in the liver after four weeks."
+  },
+  {
+   "id": "en-p04",
+   "text": "Influenza vaccine effectiveness among adults over 65 was estimated at 38 percent across five seasons, lower than in younger adults, with high-dose vaccines performing better."
+  },
+  {
+   "id": "en-p05",
+   "text": "Preschool children with more than two hours of daily screen time scored lower on language development tests at age five, after adjusting for parental education and income."
+  },
+  {
+   "id": "en-p06",
+   "text": "A convolutional neural network trained on dermoscopic images classified melanoma with sensitivity similar to dermatologists in a reader study of 100 lesions."
+  },
+  {
+   "id": "en-p07",
+   "text": "A field experiment at a travel agency showed that employees working from home four days a week were 13 percent more productive and quit less often than the office group."
+  },
+  {
+   "id": "en-p08",
+   "text": "Drought-tolerant wheat varieties kept 80 percent of their yield under water deficit in field trials in semi-arid regions, compared with 55 percent for standard varieties."
+  },
+  {
+   "id": "en-p09",
+   "text": "Raising the minimum wage in neighbouring counties had no significant effect on employment in fast-food restaurants, according to a difference-in-differences analysis of payroll data."
+  },
+  {
+   "id": "en-p10",
+   "text": "Electric buses cut lifecycle carbon emissions by about half compared with diesel buses in cities with a mixed electricity grid, with larger savings where renewables dominate."
+  },
+  {
+   "id": "en-p11",
+   "text": "During school closures, students in remote learning lost the equivalent of half a school year in mathematics, with the largest losses in low-income districts."
+  },
+  {
+   "id": "en-p12",
+   "text": "Moderate coffee consumption of two to three cups a day was associated with a lower risk of cardiovascular disease in a cohort of 400,000 adults followed for ten years."
+  },
+  {
+   "id": "en-p13",
+   "text": "Hospital antibiotic stewardship programs reduced carbapenem use by a quarter and lowered rates of resistant Klebsiella infections over three years."
+  },
+  {
+   "id": "en-p14",
+   "text": "Large language models produce fabricated citations; in a sample of generated literature reviews, 40 percent of references did not exist, and retrieval grounding halved the rate."
+  },
+  {
+   "id": "en-p15",
+   "text": "Rising temperatures expanded the range of Aedes mosquitoes northward by about 150 kilometres per decade, increasing the population at risk of dengue transmission."
+  },
+  {
+   "id": "en-p16",
+   "text": "An eight-week mindfulness course lowered self-reported stress and cortisol levels in university staff compared with a waiting-list control group."
+  },
+  {
+   "id": "en-p17",
+   "text": "Long-term exposure to fine particulate matter was linked to faster cognitive decline in older adults, measured by memory and verbal fluency tests over six years."
+  },
+  {
+   "id": "en-p18",
+   "text": "Targeted social media advertising increased online sales by 4 percent in a randomized experiment, but most of the effect disappeared within two weeks."
+  },
+  {
+   "id": "en-p19",
+   "text": "A genome-wide association study identified 37 new loci associated with type 2 diabetes, many of them affecting insulin secretion rather than insulin resistance."
+  },
+  {
+   "id": "en-p20",
+   "text": "The Dead Sea level has dropped by about one metre per year, causing thousands of sinkholes along its western shore, mainly due to water diversion from the Jordan River."
+  },
+  {
+   "id": "en-p21",
+   "text": "Adherence to a Mediterranean diet rich in olive oil, nuts and vegetables was associated with a 20 percent lower all-cause mortality in a prospective study of older Europeans."
+  },
+  {
+   "id": "en-p22",
+   "text": "Robot-assisted prostatectomy shortened hospital stays and reduced blood loss compared with open surgery, but long-term functional outcomes were similar."
+  },
+  {
+   "id": "en-p23",
+   "text": "Bilingual children outperformed monolingual peers on tasks of attention switching, while vocabulary in each language was slightly smaller at age six."
+  },
+  {
+   "id": "en-p24",
+   "text": "Photovoltaic panels in desert plants lose up to 25 percent of output to dust; robotic dry cleaning every two days recovered most of the loss without water."
+  },
+  {
+   "id": "en-p25",
+   "text": "Each additional patient per nurse was associated with a 7 percent increase in the odds of patient death within 30 days of surgery in a study of 300 hospitals."
+  },
+  {
+   "id": "en-p26",
+   "text": "Lattice-based post-quantum key exchange added less than a millisecond to TLS handshakes in a large-scale deployment test, making migration practical for web servers."
+  },
+  {
+   "id": "en-p27",
+   "text": "Urban birds sing at higher pitch in noisy areas; great tits near highways shifted their minimum song frequency upward compared with forest populations."
+  },
+  {
+   "id": "en-p28",
+   "text": "Coral transplantation restored live cover on degraded reefs from 10 to 40 percent within four years, though heat waves killed many transplanted fragments."
+  },
+  {
+   "id": "en-p29",
+   "text": "Semaglutide reduced major cardiovascular events by 20 percent in adults with obesity and heart disease but without diabetes, in a trial of 17,000 participants."
+  },
+  {
+   "id": "en-p30",
+   "text": "Adolescents who used social media more than three hours a day had double the risk of reporting symptoms of anxiety and depression, in a longitudinal survey."
+  },
+  {
+   "id": "en-p31",
+   "text": "Machine learning recovered text from carbonized Herculaneum scrolls by detecting ink in X-ray scans, revealing passages of a lost philosophical work."
+  },
+  {
+   "id": "en-p32",
+   "text": "Autonomous vehicles in a ride-hailing fleet had fewer injury crashes per million miles than human drivers in the same cities, though most incidents involved being rear-ended."
+  },
+  {
+   "id": "en-p33",
+   "text": "Children who received two years of instrumental music training showed better phonological awareness and reading skills than a control group that received art classes."
+  },
+  {
+   "id": "en-p34",
+   "text": "Only 9 percent of plastic waste has ever been recycled; chemical recycling of mixed plastics remains energy intensive and covers a small fraction of capacity."
+  },
+  {
+   "id": "en-p35",
+   "text": "Exposure to vaccine misinformation online reduced intention to vaccinate by about six percentage points in a randomized survey experiment in two countries."
+  },
+  {
+   "id": "en-p36",
+   "text": "Irrigation with treated greywater gave tomato yields similar to fresh water, but salt accumulated in the soil after three seasons without leaching."
+  },
+  {
+   "id": "en-p37",
+   "text": "Machine learning on laboratory fault data predicted the timing of slip events, but attempts to forecast real earthquakes have not shown reliable skill."
+  },
+  {
+   "id": "en-p38",
+   "text": "Professional football players with fewer than four days between matches had a sixfold higher injury rate than those with longer recovery periods."
+  },
+  {
+   "id": "en-p39",
+   "text": "Cognitive behavioural therapy for insomnia improved sleep efficiency and reduced time to fall asleep, with benefits lasting a year, better than sleeping pills in the long term."
+  },
+  {
+   "id": "en-p40",
+   "text": "Vitamin D deficiency was common among office workers in northern countries during winter, and supplementation raised blood levels but did not reduce respiratory infections."
+  },
+  {
+   "id": "en-p41",
+   "text": "Researchers bioprinted a small vascularized tissue patch that survived and connected to the host circulation after implantation in mice."
+  },
+  {
+   "id": "en-p42",
+   "text": "Automatic enrollment in pension plans raised participation from 40 to over 90 percent, showing the power of defaults in retirement saving."
+  },
+  {
+   "id": "en-p43",
+   "text": "Residents who moved to greener neighbourhoods reported better mental health over the following three years, in a panel study controlling for income."
+  },
+  {
+   "id": "en-p44",
+   "text": "Mice receiving gut bacteria from obese human twins gained more fat than mice receiving bacteria from the lean twin, on the same diet."
+  },
+  {
+   "id": "en-p45",
+   "text": "New nuclear power plants in Europe and the United States have run years late and several times over budget, raising their levelized cost above wind and solar."
+  },
+  {
+   "id": "en-p46",
+   "text": "Automatic fake news detectors trained on one topic lost much of their accuracy on new topics, suggesting they learn style rather than truthfulness."
+  },
+  {
+   "id": "en-p47",
+   "text": "Excavations near the City of David uncovered a stepped street from the Second Temple period, dated by coins found beneath its paving stones."
+  },
+  {
+   "id": "en-p48",
+   "text": "Students who kept their phones on the desk performed worse on attention tests than those who left them in another room, even when the phones were silent."
+  },
+  {
+   "id": "en-p49",
+   "text": "Outdoor workers lost on average 2 percent of productivity for each degree above 30 Celsius, and heat-related injuries rose sharply during heat waves."
+  },
+  {
+   "id": "en-p50",
+   "text": "Cultivated meat production costs fell by an order of magnitude in five years, but growth media and scale remain the main barriers to price parity."
+  }
+ ],
+ "items": [
+  {
+   "id": "xl-01",
+   "query": "מה השפעת שינה קצרה על הזיכרון?",
+   "relevant": [
+    "en-p01"
+   ]
+  },
+  {
+   "id": "xl-02",
+   "query": "האם פעילות גופנית מפחיתה סימפטומים של דיכאון?",
+   "relevant": [
+    "en-p02"
+   ]
+  },
+  {
+   "id": "xl-03",
+   "query": "איך מיקרופלסטיק משפיע על דגים?",
+   "relevant": [
+    "en-p03"
+   ]
+  },
+  {
+   "id": "xl-04",
+   "query": "יעילות חיסון השפעת אצל קשישים",
+   "relevant": [
+    "en-p04"
+   ]
+  },
+  {
+   "id": "xl-05",
+   "query": "השפעת זמן מסך על ילדים בגיל הגן",
+   "relevant": [
+    "en-p05"
+   ]
+  },
+  {
+   "id": "xl-06",
+   "query": "שימוש בבינה מלאכותית לאבחון סרטן עור",
+   "relevant": [
+    "en-p06"
+   ]
+  },
+  {
+   "id": "xl-07",
+   "query": "האם עבודה מהבית מגבירה פריון?",
+   "relevant": [
+    "en-p07"
+   ]
+  },
+  {
+   "id": "xl-08",
+   "query": "גידול חיטה בתנאי בצורת",
+   "relevant": [
+    "en-p08"
+   ]
+  },
+  {
+   "id": "xl-09",
+   "query": "השפעת שכר מינימום על תעסוקה",
+   "relevant": [
+    "en-p09"
+   ]
+  },
+  {
+   "id": "xl-10",
+   "query": "שיטות להפחתת פליטות פחמן בתחבורה ציבורית",
+   "relevant": [
+    "en-p10"
+   ]
+  },
+  {
+   "id": "xl-11",
+   "query": "למידה מרחוק ותוצאות של תלמידים",
+   "relevant": [
+    "en-p11"
+   ]
+  },
+  {
+   "id": "xl-12",
+   "query": "האם קפה מעלה את הסיכון למחלות לב?",
+   "relevant": [
+    "en-p12"
+   ]
+  },
+  {
+   "id": "xl-13",
+   "query": "אנטיביוטיקה ועמידות חיידקים בבתי חולים",
+   "relevant": [
+    "en-p13"
+   ]
+  },
+  {
+   "id": "xl-14",
+   "query": "מודלי שפה גדולים והזיות",
+   "relevant": [
+    "en-p14"
+   ]
+  },
+  {
+   "id": "xl-15",
+   "query": "שינויי אקלים והתפשטות יתושים",
+   "relevant": [
+    "en-p15"
+   ]
+  },
+  {
+   "id": "xl-16",
+   "query": "השפעת מדיטציה על לחץ",
+   "relevant": [
+    "en-p16"
+   ]
+  },
+  {
+   "id": "xl-17",
+   "query": "זיהום אוויר ותפקוד קוגניטיבי",
+   "relevant": [
+    "en-p17"
+   ]
+  },
+  {
+   "id": "xl-18",
+   "query": "יעילות קידום מכירות ברשתות חברתיות",
+   "relevant": [
+    "en-p18"
+   ]
+  },
+  {
+   "id": "xl-19",
+   "query": "גנטיקה של סוכרת מסוג 2",
+   "relevant": [
+    "en-p19"
+   ]
+  },
+  {
+   "id": "xl-20",
+   "query": "התייבשות ים המלח",
+   "relevant": [
+    "en-p20"
+   ]
+  },
+  {
+   "id": "xl-21",
+   "query": "השפעת תזונה ים תיכונית על אריכות ימים",
+   "relevant": [
+    "en-p21"
+   ]
+  },
+  {
+   "id": "xl-22",
+   "query": "רובוטים בניתוחים",
+   "relevant": [
+    "en-p22"
+   ]
+  },
+  {
+   "id": "xl-23",
+   "query": "למידה דו-לשונית אצל ילדים",
+   "relevant": [
+    "en-p23"
+   ]
+  },
+  {
+   "id": "xl-24",
+   "query": "אנרגיה סולארית במדבר",
+   "relevant": [
+    "en-p24"
+   ]
+  },
+  {
+   "id": "xl-25",
+   "query": "מחסור באחיות ובטיחות מטופלים",
+   "relevant": [
+    "en-p25"
+   ]
+  },
+  {
+   "id": "xl-26",
+   "query": "הצפנה פוסט-קוונטית",
+   "relevant": [
+    "en-p26"
+   ]
+  },
+  {
+   "id": "xl-27",
+   "query": "השפעת רעש על ציפורים עירוניות",
+   "relevant": [
+    "en-p27"
+   ]
+  },
+  {
+   "id": "xl-28",
+   "query": "שיקום אלמוגים",
+   "relevant": [
+    "en-p28"
+   ]
+  },
+  {
+   "id": "xl-29",
+   "query": "תרופות לירידה במשקל והשפעתן על הלב",
+   "relevant": [
+    "en-p29"
+   ]
+  },
+  {
+   "id": "xl-30",
+   "query": "השפעת הרשתות החברתיות על בני נוער",
+   "relevant": [
+    "en-p30"
+   ]
+  },
+  {
+   "id": "xl-31",
+   "query": "פיענוח כתבי יד עתיקים בעזרת מחשב",
+   "relevant": [
+    "en-p31"
+   ]
+  },
+  {
+   "id": "xl-32",
+   "query": "בטיחות מכוניות אוטונומיות",
+   "relevant": [
+    "en-p32"
+   ]
+  },
+  {
+   "id": "xl-33",
+   "query": "הקשר בין מוזיקה ללמידה",
+   "relevant": [
+    "en-p33"
+   ]
+  },
+  {
+   "id": "xl-34",
+   "query": "מחזור פלסטיק ותעשייה",
+   "relevant": [
+    "en-p34"
+   ]
+  },
+  {
+   "id": "xl-35",
+   "query": "התנגדות לחיסונים ומידע כוזב",
+   "relevant": [
+    "en-p35"
+   ]
+  },
+  {
+   "id": "xl-36",
+   "query": "שימוש במים אפורים בחקלאות",
+   "relevant": [
+    "en-p36"
+   ]
+  },
+  {
+   "id": "xl-37",
+   "query": "ניבוי רעידות אדמה",
+   "relevant": [
+    "en-p37"
+   ]
+  },
+  {
+   "id": "xl-38",
+   "query": "השפעת מנוחה על פציעות ספורט",
+   "relevant": [
+    "en-p38"
+   ]
+  },
+  {
+   "id": "xl-39",
+   "query": "תרפיה קוגניטיבית התנהגותית לנדודי שינה",
+   "relevant": [
+    "en-p39"
+   ]
+  },
+  {
+   "id": "xl-40",
+   "query": "חשיפה לשמש וחוסר ויטמין D",
+   "relevant": [
+    "en-p40"
+   ]
+  },
+  {
+   "id": "xl-41",
+   "query": "הדפסת איברים בתלת ממד",
+   "relevant": [
+    "en-p41"
+   ]
+  },
+  {
+   "id": "xl-42",
+   "query": "כלכלה התנהגותית וחיסכון לפנסיה",
+   "relevant": [
+    "en-p42"
+   ]
+  },
+  {
+   "id": "xl-43",
+   "query": "השפעת ירוק עירוני על בריאות הנפש",
+   "relevant": [
+    "en-p43"
+   ]
+  },
+  {
+   "id": "xl-44",
+   "query": "חיידקי מעיים והשמנה",
+   "relevant": [
+    "en-p44"
+   ]
+  },
+  {
+   "id": "xl-45",
+   "query": "עלות האנרגיה הגרעינית",
+   "relevant": [
+    "en-p45"
+   ]
+  },
+  {
+   "id": "xl-46",
+   "query": "זיהוי פייק ניוז אוטומטי",
+   "relevant": [
+    "en-p46"
+   ]
+  },
+  {
+   "id": "xl-47",
+   "query": "שימור ארכיאולוגי בירושלים",
+   "relevant": [
+    "en-p47"
+   ]
+  },
+  {
+   "id": "xl-48",
+   "query": "ריכוז ושימוש בטלפון בזמן לימוד",
+   "relevant": [
+    "en-p48"
+   ]
+  },
+  {
+   "id": "xl-49",
+   "query": "השפעת חום קיצוני על עובדים",
+   "relevant": [
+    "en-p49"
+   ]
+  },
+  {
+   "id": "xl-50",
+   "query": "גידול בשר מתורבת במעבדה",
+   "relevant": [
+    "en-p50"
+   ]
+  }
+ ]
+}

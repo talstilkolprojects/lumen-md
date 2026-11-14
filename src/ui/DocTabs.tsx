@@ -3,6 +3,8 @@ import { X, FileText } from "lucide-react";
 import type { DocFile } from "../store/useStore";
 import { t } from "../i18n";
 import { inlineDirectionOf, rovingIndex } from "../lib/logicalKeys";
+import { matchShortcut } from "../lib/keyboardLayout";
+import { droppedOutside } from "../desktop/window";
 
 export interface TabItem {
   id: string;
@@ -17,6 +19,8 @@ interface Props {
   onClose: (id: string) => void;
   /** Reorder a tab by drag-and-drop. Indexes are relative to the `tabs` prop. */
   onReorder?: (fromIndex: number, toIndex: number) => void;
+  /** Desktop (plan W3.9): a tab dropped outside the window moves to the window under the pointer, or a new one. */
+  onDragOut?: (id: string) => void;
 }
 
 /**
@@ -34,6 +38,7 @@ export const DocTabs = React.memo(function DocTabs({
   onSelect,
   onClose,
   onReorder,
+  onDragOut,
 }: Props) {
   const [dragSrc, setDragSrc] = useState<number | null>(null);
   const [dragHover, setDragHover] = useState<number | null>(null);
@@ -166,9 +171,10 @@ export const DocTabs = React.memo(function DocTabs({
               setDragSrc(null);
               setDragHover(null);
             }}
-            onDragEnd={() => {
+            onDragEnd={(e) => {
               setDragSrc(null);
               setDragHover(null);
+              if (onDragOut && e.dataTransfer.dropEffect === "none" && droppedOutside(e, { w: window.innerWidth, h: window.innerHeight })) onDragOut(tab.id);
             }}
             style={{
               position: "relative",
@@ -182,7 +188,6 @@ export const DocTabs = React.memo(function DocTabs({
                 ? "2px solid hsl(var(--accent))"
                 : "2px solid transparent",
               background: isActive ? "hsl(var(--bg))" : "transparent",
-              transition: "background 120ms, border-color 80ms",
               opacity: isDragSource ? 0.45 : 1,
             }}
           >
@@ -195,7 +200,7 @@ export const DocTabs = React.memo(function DocTabs({
               data-doc-tab=""
               onKeyDown={(e) => {
                 // Cmd/Ctrl+W → close from the keyboard while focused on the tab.
-                if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "w") {
+                if (matchShortcut(e, "Mod+W")) {
                   e.preventDefault();
                   onClose(tab.id);
                   return;
@@ -220,7 +225,6 @@ export const DocTabs = React.memo(function DocTabs({
                 border: "none",
                 cursor: onReorder ? "grab" : "pointer",
                 whiteSpace: "nowrap",
-                transition: "color 120ms",
                 minWidth: 0,
                 maxWidth: 162,
                 userSelect: "none",
@@ -260,7 +264,7 @@ export const DocTabs = React.memo(function DocTabs({
                 cursor: "pointer",
                 flexShrink: 0,
                 opacity: isActive ? 0.7 : 0.5,
-                transition: "opacity 120ms, background 120ms",
+                transition: "opacity var(--duration-fast) var(--ease-out)",
               }}
               onMouseEnter={(e) => {
                 const el = e.currentTarget as HTMLElement;

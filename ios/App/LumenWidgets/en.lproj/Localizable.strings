@@ -1,0 +1,5 @@
+"widget.name" = "Lumen";
+"widget.description" = "Search, write a quick note, or open today's note.";
+"widget.search" = "Search";
+"widget.quickNote" = "Quick note";
+"widget.daily" = "Today";

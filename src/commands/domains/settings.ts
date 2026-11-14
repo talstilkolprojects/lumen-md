@@ -3,6 +3,8 @@ import { cmdIcons, type Command } from "../../ui/CommandPalette";
 import { t } from "../../i18n";
 import { canPurchasePlans, manageBilling, upgradeTo } from "../../billing/planActions";
 import type { CommandContext } from "./context";
+import { airplaneFlagOn } from "../../privacy/airplaneBoot";
+import { showAiToast } from "../../ui/AiToast";
 
 /** Panels only some builds mount: listed only when App passes their setter. */
 export function buildOptionalPanelCommands({ setTemplateGalleryOpen, setAuditLogOpen, setOrgSettingsOpen, setTrustedKeysOpen, setThemeSettingsOpen, setFineTuneOpen, setTagsPanelOpen, theme }: CommandContext): Command[] {
@@ -55,6 +57,14 @@ export function buildOptionalPanelCommands({ setTemplateGalleryOpen, setAuditLog
           },
         ]
       : []),
+    {
+      id: "settings.trustedRepos",
+      label: t("cmd.settings.trustedRepos"),
+      hint: t("cmd.settings.trustedRepos.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.security"),
+      action: async () => (await import("../../ui/TrustedReposDialog")).openTrustedReposDialog(),
+    },
     ...(setThemeSettingsOpen
       ? [
           {
@@ -67,6 +77,14 @@ export function buildOptionalPanelCommands({ setTemplateGalleryOpen, setAuditLog
           },
         ]
       : []),
+    {
+      id: "view.readingOptions",
+      label: t("cmd.view.readingOptions"),
+      hint: t("cmd.view.readingOptions.hint"),
+      icon: cmdIcons.FileText,
+      group: t("group.view"),
+      action: () => window.dispatchEvent(new Event("lumen-open-reading")),
+    },
     ...(setFineTuneOpen
       ? [
           {
@@ -109,5 +127,35 @@ export function buildBillingCommands(): Command[] {
           },
         ].map((c) => ({ ...c, icon: cmdIcons.Sparkles, group: t("group.tools") }))
       : []),
+  ];
+}
+
+/** Airplane mode and the network monitor (plan W5.9); both load on use. */
+export function buildAirplaneCommands(): Command[] {
+  return [
+    {
+      id: "privacy.airplane",
+      label: t("cmd.airplane.toggle"),
+      hint: t(airplaneFlagOn() ? "cmd.airplane.hint.on" : "cmd.airplane.hint.off"),
+      icon: cmdIcons.Network,
+      group: t("group.security"),
+      action: async () => {
+        // why: the state when the command runs, not when the list was built
+        const ui = await import("../../privacy/NetworkMonitor");
+        if (airplaneFlagOn()) return ui.confirmAirplaneOff();
+        ui.turnAirplaneOn();
+        showAiToast(t("airplane.toast.on"), "info");
+      },
+    },
+    {
+      id: "privacy.networkMonitor",
+      label: t("cmd.airplane.monitor"),
+      hint: t("cmd.airplane.monitor.hint"),
+      icon: cmdIcons.Network,
+      group: t("group.security"),
+      action: () => {
+        void import("../../privacy/NetworkMonitor").then((m) => m.openNetworkMonitor());
+      },
+    },
   ];
 }

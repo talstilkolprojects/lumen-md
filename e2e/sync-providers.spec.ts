@@ -1,5 +1,6 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { fakeWebdav } from "../src/__tests__/helpers/fakeServers/webdav";
+import { opfsWritable, vaultOrSkip } from "./_opfs";
 
 /**
  * Plan 3.5 / 3.7 G8 — settings → connect a provider → sync, in two
@@ -93,7 +94,10 @@ async function connect(page: Page) {
 const result = (page: Page) => page.getByTestId("sync-result");
 
 test("two browsers sync through one WebDAV server without losing a note", async ({ browser, browserName }) => {
-  test.skip(browserName !== "chromium", "the vault reads OPFS through Chromium's async iterator");
+  // Two browsers, two key derivations and five sync rounds, each allowed 30 s
+  // below: the default 30 s for the whole test ran out on the 2-CPU Vercel
+  // build machine (W4.2), before any step had failed.
+  test.setTimeout(150_000);
   const server = fakeWebdav({ baseUrl: DAV, username: "tal", password: "app-password" });
   const ctxA = await browser.newContext();
   const ctxB = await browser.newContext();
@@ -101,6 +105,10 @@ test("two browsers sync through one WebDAV server without losing a note", async 
   await wire(ctxB, server);
   const a = await open(ctxA);
   const b = await open(ctxB);
+  // The vault walks OPFS with the async iterator, which Firefox has too (W4.12).
+  const writable = await opfsWritable(a);
+  if (!writable) await Promise.all([ctxA.close(), ctxB.close()]);
+  vaultOrSkip(writable, browserName);
 
   // A: the first device creates the vault.
   await writeNote(a, "from-a.md", "# from A\n\nשלום");

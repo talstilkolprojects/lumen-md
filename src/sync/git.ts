@@ -20,8 +20,8 @@ import {
   writeWorkspaceBlob,
 } from "../storage/workspace";
 import { getSecret, setSecret, initSecretStore, flushSecrets } from "../lib/secretStore";
-import { hasConflictMarkers, isLfsPointer } from "./gitMerge";
-import { integrateFetched, type PendingConflict, type PullGit, type SafePullResult } from "./gitPull";
+import { hasConflictMarkers, isLfsPointer } from "./gitText";
+import type { PendingConflict, PullGit, SafePullResult } from "./gitPull";
 import { authFor, getCorsProxy } from "./gitProxy";
 import { writeIntoMirror } from "./gitMirror";
 import { getVaultBackend } from "../storage/vault";
@@ -531,6 +531,8 @@ export async function integrateIntoVault(
   const author = opts.author ?? (await getGitIdentity());
   const editor = opts.editor ?? (await import("../store/gitPullDocs")).pullEditorHooks();
   const earlier = await stillConflicted(repoFolder);
+  // The pull integration and the merge engine load with the first pull.
+  const { integrateFetched } = await import("./gitPull");
   const result = await integrateFetched({
     git,
     fs,

@@ -71,7 +71,9 @@ export function blockIdEdit(text: string, pos: number, makeId: (taken: ReadonlyS
       fence = null;
     }
   }
-  if (fence !== null && at >= fenceOpen) inFence = [fenceOpen, lines.length - 1];
+  // A fence never closed runs to the end of the note (CommonMark): a `^id`
+  // after it would be code too, so the link would reach nothing (W1.32, Codex on #238).
+  if (fence !== null && at >= fenceOpen) return { kind: "none" };
 
   const taken = new Set(noteBlocks(text).map((b) => b.id));
   /** A `^id` line of its own after line `last` (directly, or after one blank line). */
@@ -123,7 +125,9 @@ export function blockIdEdit(text: string, pos: number, makeId: (taken: ReadonlyS
     let id = "";
     for (const x of hs) id = slugger.slug(x);
     const own = hs[hs.length - 1] ?? h[1];
-    return { kind: "heading", heading: id && id !== headingSlug(own) ? id : own };
+    // A wrapped setext heading's text has a line break, which no wiki link
+    // can hold: link it by its id, as a repeated heading is (W1.32, Codex on #238).
+    return { kind: "heading", heading: id && (id !== headingSlug(own) || own.includes("\n")) ? id : own };
   }
 
   // A table — also one without outer pipes (`a | b` / `-- | --`): its header

@@ -16,6 +16,7 @@ import { effectiveCapabilities, gatesEnforced } from "./gates";
 import { showAiToast } from "../ui/AiToast";
 import { t } from "../i18n";
 import { hasAiCredentials } from "../ai/credentials";
+import { UserFacingError } from "../lib/userError";
 
 const KEY_PREFIX = "lumen.ai.quota.";
 
@@ -129,7 +130,7 @@ export function isAiPromptCommand(id: string): boolean {
 const armedCommands: { charged: boolean }[] = [];
 
 /** Thrown by the LLM layer when an uncounted request would exceed the quota. */
-export class AiQuotaExceededError extends Error {
+export class AiQuotaExceededError extends UserFacingError {
   constructor(limit: number) {
     super(t("billing.aiQuota.exceeded", { limit }));
     this.name = "AiQuotaExceededError";

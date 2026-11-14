@@ -93,6 +93,16 @@
       "vars": []
     },
     {
+      "key": "block.codeDoctor.copied",
+      "en": "Repaired JSON copied to the clipboard.",
+      "vars": []
+    },
+    {
+      "key": "block.codeDoctor.copyFailed",
+      "en": "Could not copy to the clipboard. Select the text and copy it by hand.",
+      "vars": []
+    },
+    {
       "key": "block.codeDoctor.diagnostics",
       "en": "{n} individual diagnostics",
       "vars": [
@@ -435,6 +445,18 @@
       "vars": []
     },
     {
+      "key": "block.embed.gistDesktop",
+      "en": "The desktop app shows a Gist as a link.",
+      "vars": []
+    },
+    {
+      "key": "block.embed.notEmbeddable",
+      "en": "{host} is not one of the sites Lumen can embed. Open the link instead.",
+      "vars": [
+        "host"
+      ]
+    },
+    {
       "key": "block.embed.open",
       "en": "Open ↗",
       "vars": []
@@ -540,6 +562,25 @@
       "vars": []
     },
     {
+      "key": "block.insights.createdMany",
+      "en": "Created {n} files",
+      "vars": [
+        "n"
+      ]
+    },
+    {
+      "key": "block.insights.createdOne",
+      "en": "Created {path}",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "block.insights.createdWhere",
+      "en": "All under insights/ in your workspace.",
+      "vars": []
+    },
+    {
       "key": "block.insights.empty",
       "en": "Insights block is empty — paste JSONL (one object per line) or a JSON array.",
       "vars": []
@@ -573,6 +614,11 @@
       ]
     },
     {
+      "key": "block.insights.generateFailed",
+      "en": "Could not build the insights",
+      "vars": []
+    },
+    {
       "key": "block.insights.groupBy",
       "en": "Group by:",
       "vars": []
@@ -594,6 +640,23 @@
       "key": "block.insights.noWorkspace",
       "en": "Workspace storage is unavailable in this browser — running a suggestion will open the first generated document in a new tab instead of writing files.",
       "vars": []
+    },
+    {
+      "key": "block.insights.nothing",
+      "en": "Nothing to generate for that suggestion.",
+      "vars": []
+    },
+    {
+      "key": "block.insights.openedOne",
+      "en": "Opened the generated note in a new tab",
+      "vars": []
+    },
+    {
+      "key": "block.insights.openedSome",
+      "en": "Opened 1 of {n} generated notes",
+      "vars": [
+        "n"
+      ]
     },
     {
       "key": "block.insights.parseError",
@@ -653,6 +716,11 @@
     {
       "key": "block.insights.tab.suggestions",
       "en": "Suggestions",
+      "vars": []
+    },
+    {
+      "key": "block.insights.writeFailed",
+      "en": "Could not save the insights",
       "vars": []
     },
     {
@@ -834,6 +902,79 @@
       "vars": []
     },
     {
+      "key": "block.liveR.install.body",
+      "en": "Live R blocks run webR, R compiled to WebAssembly. Lumen doesn't include it: webR's binaries (R and libgfortran) are licensed under the GNU GPL version 3. Download it once ({size} MB, webR {version}) and it stays on this device and works offline.",
+      "vars": [
+        "size",
+        "version"
+      ]
+    },
+    {
+      "key": "block.liveR.install.cancel",
+      "en": "Cancel",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.install.download",
+      "en": "Download R ({size} MB)",
+      "vars": [
+        "size"
+      ]
+    },
+    {
+      "key": "block.liveR.install.error.download",
+      "en": "The download failed: {detail}",
+      "vars": [
+        "detail"
+      ]
+    },
+    {
+      "key": "block.liveR.install.error.mismatch",
+      "en": "A downloaded file did not match this build's checksum, so nothing was installed: {detail}",
+      "vars": [
+        "detail"
+      ]
+    },
+    {
+      "key": "block.liveR.install.error.noCache",
+      "en": "R can only be stored once Lumen's offline support is active. Reload the page, then try again.",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.install.error.noManifest",
+      "en": "This build can't download R (it has no webR manifest).",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.install.license",
+      "en": "Licence: GPL-3.0 (webR's LICENSE.md)",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.install.progress",
+      "en": "Downloading R… {percent}%",
+      "vars": [
+        "percent"
+      ]
+    },
+    {
+      "key": "block.liveR.install.source",
+      "en": "From webR's own site, webr.r-wasm.org (or the npm package webr@{version} on cdn.jsdelivr.net if that fails). Every file is checked against this build's checksums. Nothing from your notes is sent.",
+      "vars": [
+        "version"
+      ]
+    },
+    {
+      "key": "block.liveR.install.state",
+      "en": "not installed",
+      "vars": []
+    },
+    {
+      "key": "block.liveR.install.title",
+      "en": "R is not installed on this device",
+      "vars": []
+    },
+    {
       "key": "block.liveR.loadFailed",
       "en": "Failed to load the R runtime.",
       "vars": []
@@ -996,6 +1137,13 @@
       "key": "block.liveRuby.title",
       "en": "Live Ruby",
       "vars": []
+    },
+    {
+      "key": "block.liveSql.loadFailed",
+      "en": "The SQL engine could not load. {error}",
+      "vars": [
+        "error"
+      ]
     },
     {
       "key": "block.liveSql.noResult",
@@ -1382,6 +1530,11 @@
       "vars": []
     },
     {
+      "key": "commentsPanel.add",
+      "en": "Add a comment",
+      "vars": []
+    },
+    {
       "key": "commentsPanel.close",
       "en": "Close comments panel",
       "vars": []
@@ -1389,6 +1542,11 @@
     {
       "key": "commentsPanel.delete",
       "en": "Delete comment",
+      "vars": []
+    },
+    {
+      "key": "commentsPanel.deleteConfirm",
+      "en": "Delete this comment and its replies for everyone in the room?",
       "vars": []
     },
     {
@@ -1788,6 +1946,11 @@
       "vars": []
     },
     {
+      "key": "outline.addHeading",
+      "en": "Add a heading",
+      "vars": []
+    },
+    {
       "key": "outline.close",
       "en": "Close the outline",
       "vars": []
@@ -1798,8 +1961,23 @@
       "vars": []
     },
     {
+      "key": "outline.fold",
+      "en": "Fold",
+      "vars": []
+    },
+    {
       "key": "outline.title",
       "en": "Outline",
+      "vars": []
+    },
+    {
+      "key": "outline.unfold",
+      "en": "Unfold",
+      "vars": []
+    },
+    {
+      "key": "outline.zoomOut",
+      "en": "← Back to the whole note",
       "vars": []
     },
     {

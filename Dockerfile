@@ -37,15 +37,18 @@ ARG VITE_YJS_WEBSOCKET_URL
 ARG VITE_CSP_CONNECT_EXTRA
 RUN npm run build
 # LUMEN_RUNTIMES=full (default) keeps the same-origin WebAssembly runtimes the
-# live blocks and on-device AI load (Pyodide, webR, ruby.wasm, ONNX Runtime,
-# tesseract.js: ≈145 MB of dist/). `slim` drops them for an image that only
-# needs the editor: live-python / live-r / live-ruby blocks, OCR and local
+# live blocks and on-device AI load (Pyodide, ruby.wasm, ONNX Runtime, the
+# dictation VAD model, tesseract.js: ≈100 MB of dist/). `slim` drops them for an image that only
+# needs the editor: live-python / live-ruby blocks, OCR and local
 # transcription then report that their runtime is not installed. Everything
-# else (incl. the Web Playground, whose vendor files stay) works the same.
+# else works the same: the Web Playground's vendor files, the plugin engine
+# (QuickJS, ~0.5 MB) and the canvas fonts stay.
+# webR (live R) is never in the image: GPL-3.0, so each user downloads it
+# from the R block (plan W1.34).
 ARG LUMEN_RUNTIMES=full
 RUN case "$LUMEN_RUNTIMES" in \
       full) ;; \
-      slim) rm -rf dist/pyodide dist/webr dist/ruby dist/ort dist/tesseract ;; \
+      slim) rm -rf dist/pyodide dist/ruby dist/ort dist/vad dist/tesseract ;; \
       *) echo "LUMEN_RUNTIMES must be full or slim, got '$LUMEN_RUNTIMES'" >&2; exit 1 ;; \
     esac
 

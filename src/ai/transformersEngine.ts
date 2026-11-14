@@ -14,10 +14,10 @@
  *   Embeddings multilingual-e5-small (384 dims, ~100 languages).
  */
 
-import type { CaptionFamily, Device, EmbedResult, TranscribeResult, WorkerIn, WorkerOut } from "./transformers.worker";
+import type { CaptionFamily, Device, EmbedResult, TranscribeResult, WorkerIn, WorkerOut, TimedSegment } from "./transformers.worker";
 import { detectHardware, vramBudgetMB, type Hardware } from "./modelManager";
 
-export type { TranscribeResult, EmbedResult };
+export type { TranscribeResult, EmbedResult, TimedSegment };
 
 export const WHISPER_MODELS = {
   tiny: "onnx-community/whisper-tiny",
@@ -26,6 +26,12 @@ export const WHISPER_MODELS = {
   turbo: "onnx-community/whisper-large-v3-turbo",
   /** ivrit.ai's Hebrew fine-tune of turbo, ONNX (q4f16 ≈ 563 MB, WebGPU). */
   turboHe: "ivrit-ai/whisper-large-v3-turbo-onnx",
+  /**
+   * Ozen v1 (Apache-2.0, 61 M parameters): distilled from ivrit.ai's Hebrew
+   * turbo for phones and browsers — fp16 encoder + fp32 decoder ≈ 164 MB,
+   * WebGPU or wasm (plan W4.13). Hebrew-only, so no language or task token.
+   */
+  ozenHe: "itayinbar/Ozen-v1",
 } as const;
 
 /** VRAM the Hebrew turbo needs (563 MB of q4f16 weights + activations), MB. */
@@ -168,23 +174,24 @@ export function whisperModelFor(hw: Hardware, device: Device = hw.webgpu ? "webg
 /**
  * The Whisper model for files and recordings in a known language (plan 6.1):
  * Hebrew gets ivrit.ai's turbo on a GPU with f16 and the VRAM for it, else
- * whisper-base (77 MB, q8 on wasm) — tiny is too weak for Hebrew. Other
- * languages keep whisperModelFor.
+ * Ozen v1 (164 MB, WebGPU or wasm, plan W4.13) — whisper-base and tiny are too
+ * weak for Hebrew (Ozen's card: 48 % WER for whisper-base vs 8.6 % on
+ * ivrit-ai/eval-d1). Other languages keep whisperModelFor.
  */
 export function whisperModelForLanguage(hw: Hardware, device: Device, language: string | undefined): string {
   if (language !== "he") return whisperModelFor(hw, device);
   if (device === "webgpu" && hw.f16 && !hw.mobile && vramBudgetMB(hw) >= TURBO_HE_VRAM_MB) return WHISPER_MODELS.turboHe;
-  return WHISPER_MODELS.base;
+  return WHISPER_MODELS.ozenHe;
 }
 
 /** Transcribe 16 kHz mono PCM. `language` is an ISO-639-1 code ("he", "en"); omitted = auto-detect. */
-export async function transcribeAudio(samples: Float32Array, opts: { language?: string; model?: string; signal?: AbortSignal } = {}): Promise<TranscribeResult> {
+export async function transcribeAudio(samples: Float32Array, opts: { language?: string; model?: string; signal?: AbortSignal; timestamps?: boolean } = {}): Promise<TranscribeResult> {
   if (opts.signal?.aborted) throw new DOMException("aborted", "AbortError");
   const hw = await detectHardware();
   const device = await transformersDevice(hw);
   const model = opts.model ?? whisperModelForLanguage(hw, device, opts.language);
   // The buffer is transferred, not copied; callers must not reuse it.
-  return call<TranscribeResult>({ type: "transcribe", model, device, audio: samples, language: opts.language, task: "transcribe" }, [samples.buffer], opts.signal);
+  return call<TranscribeResult>({ type: "transcribe", model, device, audio: samples, language: opts.language, task: "transcribe", ...(opts.timestamps ? { timestamps: true } : {}) }, [samples.buffer], opts.signal);
 }
 
 /** Normalised embeddings (mean pooled) for `texts`. */

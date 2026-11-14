@@ -1,0 +1,141 @@
+{
+  "$comment": "Plan 0.15: critical pure modules and the tests that must kill their mutants. `filter` is a test-name regex (the slow 10,000-round tests are left out). `runner: \"harness\"`: offline, run in a browser harness (the vitest shim cannot load it); under vitest every test runs in vitest.",
+  "modules": {
+    "src/sync/e2ee/primitives/chacha20poly1305.ts": [
+      {
+        "file": "src/__tests__/e2eeAge.test.ts"
+      }
+    ],
+    "src/sync/e2ee/primitives/blake2b.ts": [
+      {
+        "file": "src/__tests__/e2eeAge.test.ts"
+      }
+    ],
+    "src/sync/e2ee/primitives/scrypt.ts": [
+      {
+        "file": "src/__tests__/e2eeAge.test.ts"
+      }
+    ],
+    "src/sync/e2ee/primitives/argon2.ts": [
+      {
+        "file": "src/__tests__/e2eeCrypto.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeVectors.test.ts"
+      }
+    ],
+    "src/sync/e2ee/age.ts": [
+      {
+        "file": "src/__tests__/e2eeAge.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeVectors.test.ts"
+      }
+    ],
+    "src/sync/e2ee/keyring.ts": [
+      {
+        "file": "src/__tests__/e2eeKeyring.test.ts",
+        "filter": "rotates|rollback|revoked|passphrase"
+      },
+      {
+        "file": "src/__tests__/e2eeMutants.test.ts"
+      }
+    ],
+    "src/sync/e2ee/conflict.ts": [
+      {
+        "file": "src/__tests__/e2eeSync.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeMutants.test.ts"
+      }
+    ],
+    "src/sync/e2ee/manifest.ts": [
+      {
+        "file": "src/__tests__/e2eeSync.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeKeyring.test.ts",
+        "filter": "rotates|rollback|revoked|passphrase"
+      }
+    ],
+    "src/sync/e2ee/header.ts": [
+      {
+        "file": "src/__tests__/e2eeCrypto.test.ts"
+      },
+      {
+        "file": "src/__tests__/e2eeSync.test.ts"
+      }
+    ],
+    "src/ai/privacyLedger.ts": [
+      {
+        "file": "src/__tests__/privacyLedger.test.ts"
+      },
+      {
+        "file": "src/__tests__/privacyLedgerMutants.test.ts"
+      }
+    ],
+    "src/text/hebrew.ts": [
+      {
+        "file": "src/__tests__/hebrewMutation.test.ts"
+      }
+    ],
+    "src/renderer/rehypeSanitizeRaw.ts": [
+      {
+        "file": "src/__tests__/rehypeSanitizeRawMutation.test.ts"
+      }
+    ],
+    "src/lib/secretStore.ts": [
+      {
+        "file": "src/__tests__/secretStoreMutation.test.ts"
+      }
+    ],
+    "src/storage/encryption.ts": [
+      {
+        "file": "src/__tests__/encryption.test.ts"
+      }
+    ],
+    "src/storage/zip.ts": [
+      {
+        "file": "src/__tests__/zipMutation.test.ts"
+      },
+      {
+        "file": "src/__tests__/zipFormats.test.ts",
+        "runner": "harness"
+      }
+    ],
+    "src/agents/runtime.ts": [
+      {
+        "file": "src/__tests__/agentRuntime.test.ts",
+        "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/agentDefsB1.test.ts",
+        "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/agentDefsB3.test.ts",
+        "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/agentReviewFixesB1.test.ts",
+        "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/agentReviewFixesB3.test.ts",
+        "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/oneAi.test.ts",
+        "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/hebrewModels.test.ts",
+        "runner": "harness"
+      },
+      {
+        "file": "src/__tests__/agentRuntimeMutation.test.ts",
+        "runner": "harness"
+      }
+    ]
+  }
+}

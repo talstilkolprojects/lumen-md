@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Plan W3.4: three buttons; start/end (not left/right) so Hebrew runs right to left. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:layoutDirection="locale"
+    android:background="@drawable/widget_background"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/widget_search"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:drawableTop="@android:drawable/ic_menu_search"
+        android:text="@string/widget_search"
+        android:contentDescription="@string/widget_search"
+        android:textColor="#E8E8E8"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/widget_capture"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"
+        android:gravity="center"
+        android:drawableTop="@android:drawable/ic_menu_edit"
+        android:text="@string/widget_quick_note"
+        android:contentDescription="@string/widget_quick_note"
+        android:textColor="#E8E8E8"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/widget_daily"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:drawableTop="@android:drawable/ic_menu_today"
+        android:text="@string/widget_daily"
+        android:contentDescription="@string/widget_daily"
+        android:textColor="#E8E8E8"
+        android:textSize="12sp" />
+</LinearLayout>

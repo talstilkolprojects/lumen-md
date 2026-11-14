@@ -169,6 +169,27 @@ export function observe(item, peerJob, peerParsed, opts = {}) {
 }
 
 /**
+ * Files outside a test that decide which tests run and how: a change to one
+ * can newly include an unchanged test file (W1.32, Codex on #204).
+ */
+export const TEST_SETUP_FILE = /^(playwright\.config|vite\.config|vitest\.config|vitest\.workspace)\.[cm]?[jt]s$|^\.github\/workflows\/ci\.ya?ml$/;
+
+/**
+ * Did the peer commit run this test file as this commit does? True when,
+ * since the merge base, neither side changed the file nor a test-setup file.
+ * `mine` / `theirs` are the compare results (files changed on each side); the
+ * compare API lists at most 300 files, so a full list proves nothing.
+ * @param {string|null|undefined} path
+ * @param {{n:number, files:string[]}|null} mine
+ * @param {{n:number, files:string[]}|null} theirs
+ */
+export function sameTestSetup(path, mine, theirs) {
+  if (!path || !mine || !theirs || mine.n >= 300 || theirs.n >= 300) return false;
+  const touched = (f) => f === path || TEST_SETUP_FILE.test(f);
+  return !mine.files.some(touched) && !theirs.files.some(touched);
+}
+
+/**
  * Real or flaky?
  * @param {object} item
  * @param {Array<{outcome:string|null, distance:number|null, sameSha?:boolean, branch?:string, unproven?:boolean}>} observations
@@ -188,12 +209,17 @@ export function classify(item, observations, opts = {}) {
   const list = (xs) => (xs.length > 3 ? `${xs.slice(0, 3).join(", ")} +${xs.length - 3}` : xs.join(", "));
   const res = (verdict, why) => ({ verdict, why, passed, failed, flaky });
 
+  const deterministic = item.kind !== "test" && isDeterministicStep(item.step ?? item.job);
+  // A deterministic check fails on the code, compared or not: no peer to
+  // compare with (a renamed job, a failed request) does not make it unknown,
+  // which --json would exit 0 for (W1.32, Codex on #204).
+  if (deterministic && !near.length) return res("real", "deterministic check — it fails on this commit's code (no run at a similar commit to compare with)");
   if (!near.length) {
     const unproven = (observations ?? []).filter((o) => !o.outcome && o.unproven && (o.sameSha || (o.distance != null && o.distance <= maxDistance))).length;
-    if (unproven) return res("unknown", `green at ${unproven} similar commit(s), but the test's file differs there (a new or renamed test?): no comparison`);
+    if (unproven) return res("unknown", `green at ${unproven} similar commit(s), but the test's file or a test-setup file differs there (a new or renamed test, or a changed selection?): no comparison`);
     return res("unknown", seen.length ? `no run of this job at a similar commit (${seen.length} further away)` : "no other branch ran this job recently");
   }
-  if (item.kind !== "test" && isDeterministicStep(item.step ?? item.job)) {
+  if (deterministic) {
     if (passed && !failed) return res("real", `deterministic check — passes on ${list(names(near, "passed"))}, so it is this branch's change`);
     if (failed && !passed) return res("real", `deterministic check — fails on ${list(names(near, "failed"))} too: broken in a shared base`);
     return res("real", `deterministic check — fails on ${failed}, passes on ${passed} similar commits: compare those branches' diffs`);

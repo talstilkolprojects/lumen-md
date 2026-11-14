@@ -168,8 +168,9 @@ describe("5.6.4 every failure reaches the panel", () => {
   it("the remaining callers hand failures to reportAgentFailure", async () => {
     const { readFileSync } = await import("node:fs");
     for (const [file, id] of [
-      ["src/commands/useCommands.ts", "research.ask"],
-      ["src/commands/useCommands.ts", "ai.batch"],
+      // useCommands.ts is split into per-domain builders (#208).
+      ["src/commands/domains/research.ts", "research.ask"],
+      ["src/commands/domains/batch.ts", "ai.batch"],
       ["src/ui/SearchDialog.tsx", "search.askWorkspace"],
       ["src/plugins/CsvBlock.tsx", "ai.chart"],
       ["src/editor/WysiwygEditor.tsx", "wysiwyg.aiRewrite"],

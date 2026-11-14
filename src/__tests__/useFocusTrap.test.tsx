@@ -5,7 +5,7 @@
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { focusableIn, useFocusTrap } from "../ui/useFocusTrap";
 
 afterEach(() => cleanup());
@@ -132,6 +132,41 @@ describe("useFocusTrap", () => {
     fireEvent.keyDown(document.activeElement!, { key: "Escape" });
     expect(onEscape).toHaveBeenCalledTimes(1);
     expect(queryByTestId("dlg")).toBeNull();
+    await tick();
+    expect(active()).toBe("opener");
+  });
+
+  it("a dialog that focuses its own field before the trap starts still gives focus back to its opener (W4.2)", async () => {
+    // The settings screen focuses its search box in an effect that runs before
+    // the trap's: the trap must not take that box for "what had focus before".
+    function SelfFocusing({ onClose }: { onClose: () => void }) {
+      const ref = useRef<HTMLDivElement>(null);
+      const field = useRef<HTMLInputElement>(null);
+      useEffect(() => field.current?.focus(), []);
+      useFocusTrap(ref, { onEscape: onClose });
+      return (
+        <div ref={ref} role="dialog" aria-modal="true" data-testid="self">
+          <input ref={field} aria-label="search" />
+          <button>close</button>
+        </div>
+      );
+    }
+    function Toggle() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button onClick={() => setOpen(true)}>opener</button>
+          {open && <SelfFocusing onClose={() => setOpen(false)} />}
+        </>
+      );
+    }
+    const { getByText, queryByTestId } = render(<Toggle />);
+    act(() => getByText("opener").focus());
+    fireEvent.click(getByText("opener"));
+    await tick();
+    expect(active()).toBe("search");
+    fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+    expect(queryByTestId("self")).toBeNull();
     await tick();
     expect(active()).toBe("opener");
   });

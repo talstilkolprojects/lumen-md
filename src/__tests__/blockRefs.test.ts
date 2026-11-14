@@ -12,6 +12,7 @@ import { toHtml } from "hast-util-to-html";
 import type { Root as HastRoot } from "hast";
 import { remarkBlockIds } from "../renderer/remarkBlockIds";
 import { blockIdEdit, newBlockId } from "../editor/blockLink";
+import { headingSlug } from "../lib/slug";
 import { rewriteLinks } from "../storage/linkRewrite";
 
 const html = (md: string) => {
@@ -139,6 +140,23 @@ describe("review fixes (PR #238)", () => {
     for (const row of ["a | b", "-- | --", "3 | 4"]) expect(apply(md, md.indexOf(row) + 1)).toBe("Intro.\n\na | b\n-- | --\n1 | 2\n3 | 4\n\n^abc123\n\nAfter.\n");
     expect(html(apply(md, md.indexOf("3 | 4")))).toContain('<table id="^abc123">');
   });
+
+  it("inside a fence that is never closed there is no block to link (W1.32, Codex P2 on #238)", () => {
+    expect(blockIdEdit("Intro.\n\n```js\nx()\nmore()\n", "Intro.\n\n```js\nx(".length, id)).toEqual({ kind: "none" });
+    // Closed, it still takes its id on a line after the fence.
+    expect(apply("```js\nx()\n```\n", 7)).toBe("```js\nx()\n```\n\n^abc123\n");
+  });
+
+  it("a wrapped setext heading links by the id the preview gives it, from any of its lines (W1.32, Codex P2 on #238)", async () => {
+    const md = "A wrapped\ntitle\n===\n\nbody\n";
+    const first = blockIdEdit(md, 2, id);
+    expect(first).toEqual({ kind: "heading", heading: headingSlug("A wrapped\ntitle") });
+    expect(blockIdEdit(md, md.indexOf("title"), id)).toEqual(first);
+    const { renderMarkdown } = await import("../renderer/pipeline");
+    const { render } = await import("@testing-library/react");
+    const { container } = render(await renderMarkdown(md, () => false));
+    expect(container.querySelector("h1")?.id).toBe((first as { heading: string }).heading);
+  }, 30_000);
 
   it("a repeated heading copies its numbered slug", () => {
     const md = "# Setup\n\ntext\n\n## Setup\n\n## Other\n";

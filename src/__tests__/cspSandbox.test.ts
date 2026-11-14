@@ -59,12 +59,13 @@ describe("Vercel security headers", () => {
     }
   });
 
-  it("frames and CSP for the app exclude the two runner pages", () => {
+  it("frames and CSP for the app exclude the two runner pages and the content frame", () => {
     const entry = vercel.headers.find((h) => h.headers.some((x) => x.key === "X-Frame-Options"))!;
     const re = new RegExp(`^${entry.source}$`);
     expect(re.test("/index.html")).toBe(true);
     expect(re.test("/livejs-runner.html")).toBe(false);
     expect(re.test("/playground-runner.html")).toBe(false);
+    expect(re.test("/content-frame.html")).toBe(false);
     const csp = entry.headers.find((x) => x.key === "Content-Security-Policy")!.value;
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).toContain("object-src 'none'");
@@ -96,10 +97,14 @@ describe("Tauri CSP", () => {
       expect(open, d).toEqual([]);
     }
   });
-  it("connect-src is the page's explicit list plus the IPC protocol", () => {
+  it("connect-src is the page's explicit list, without webR's jsDelivr fallback, plus the IPC protocol", () => {
     const html = readFileSync(join(root, "index.html"), "utf8");
     const meta = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)"/.exec(html)![1];
-    expect(directive(csp, "connect-src")).toEqual([...directive(meta, "connect-src"), "ipc:", "http://ipc.localhost"]);
+    // The web page keeps https://cdn.jsdelivr.net for webR's packages; the desktop
+    // app never loads them from there (security/policy.json, review 13.5).
+    expect(directive(meta, "connect-src")).toContain("https://cdn.jsdelivr.net");
+    const expected = directive(meta, "connect-src").filter((s) => s !== "https://cdn.jsdelivr.net");
+    expect(directive(csp, "connect-src")).toEqual([...expected, "ipc:", "http://ipc.localhost"]);
   });
   it("img-src keeps the hosts the app itself loads images from", () => {
     expect(directive(csp, "img-src")).toEqual(

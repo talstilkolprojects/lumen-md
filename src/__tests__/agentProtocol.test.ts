@@ -102,9 +102,12 @@ describe("critic (stage 1)", () => {
   });
 
   it("suggests splitting long input on context errors", () => {
-    const v = diagnose({ kind: "error", attempt: 1, maxRetries: 2, tier: "small", executor: "webllm", reason: "context window exceeded", inputChars: 20000 });
+    // An agent that can run per part (5.6.2) is offered the split; any other asks for a smaller selection (#315).
+    const v = diagnose({ kind: "error", attempt: 1, maxRetries: 2, tier: "small", executor: "webllm", reason: "context window exceeded", inputChars: 20000, splittable: true });
     expect(v.diagnosis).toBe("context");
     expect(v.retry).toBeTruthy();
     expect(v.suggestions.map((s) => s.id)).toEqual(["split-input"]);
+    const other = diagnose({ kind: "error", attempt: 1, maxRetries: 2, tier: "small", executor: "webllm", reason: "context window exceeded", inputChars: 20000 });
+    expect(other.suggestions.map((s) => s.id)).toEqual(["select-part"]);
   });
 });

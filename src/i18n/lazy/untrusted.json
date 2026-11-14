@@ -1,0 +1,8 @@
+{
+  "agents.untrusted.action.network": "send a request to the web",
+  "agents.untrusted.action.write": "propose a change to your notes",
+  "agents.untrusted.args": "What it would do: “{value}”.",
+  "agents.untrusted.body": "The {tool} tool wants to {action}. This run has read content from outside ({sources}), which may contain instructions planted to trick the agent.",
+  "agents.untrusted.ok": "Allow once",
+  "agents.untrusted.title": "Approve this agent action?"
+}

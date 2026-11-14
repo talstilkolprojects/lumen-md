@@ -1,0 +1,13 @@
+# Every book, by name.
+filters:
+  and:
+    - file.hasTag("book")
+views:
+  - type: table
+    name: All books
+    order:
+      - file.name
+      - note.author
+    sort:
+      - property: file.name
+        direction: ASC

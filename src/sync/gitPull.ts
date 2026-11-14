@@ -300,7 +300,11 @@ export async function integrateFetched(d: PullDeps): Promise<SafePullResult> {
           break;
         }
         const before = await d.vault.read(vp);
-        if (before && a.why === "merged") await d.snapshot?.(vp, decoder.decode(before));
+        if (before && a.why === "merged") {
+          // An automatic merge keeps both versions in the note's history (W1.9).
+          if (a.theirs !== undefined) await d.snapshot?.(vp, a.theirs);
+          await d.snapshot?.(vp, decoder.decode(before));
+        }
         await d.vault.write(vp, a.data);
         d.onWritten?.(vp, text);
         result.changedFiles++;

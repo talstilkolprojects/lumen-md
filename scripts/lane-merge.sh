@@ -121,7 +121,9 @@ for b in "${branches[@]}"; do
       if [ ${#rest[@]} -gt 0 ]; then
         echo "then continue with:  scripts/lane-merge.sh $target ${rest[*]}" >&2
       else
-        echo "then rerun the checks: npx tsc --noEmit -p . && npx vitest run" >&2
+        # Not tsc / vitest directly: this command skips the merged branch and
+        # still runs the dependency and i18n gates before the checks.
+        echo "then run the checks:  scripts/lane-merge.sh $target $b" >&2
       fi
       echo "Or give up on this branch: git merge --abort" >&2
       [ ${#summary[@]} -gt 0 ] && { echo "Merged before the stop:" >&2; printf '    %s\n' "${summary[@]%%|*}" >&2; }
@@ -176,23 +178,49 @@ done
 # node_modules/.package-lock.json on every install). This holds across runs:
 # a run resumed after a conflict still sees a dependency change merged by
 # the earlier one.
+# A newer install is not enough: it may have been made on another branch,
+# from another lockfile. So the installed tree (npm's hidden lockfile) must
+# also be the one this package-lock.json describes: every package it needs
+# at its version, and nothing it does not know (optional ones may be absent).
 mtime() { stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null; }
+LOCK_MATCHES='
+const fs = require("fs");
+const read = (f) => JSON.parse(fs.readFileSync(f, "utf8")).packages || {};
+let lock, have;
+try { lock = read("package-lock.json"); have = read("node_modules/.package-lock.json"); } catch { process.exit(1); }
+const deps = (o) => Object.entries(o).filter(([p, e]) => p.startsWith("node_modules/") && !e.link);
+for (const [p, e] of deps(lock)) {
+  if (e.optional || e.devOptional) { if (have[p] && have[p].version !== e.version) process.exit(1); continue; }
+  if (!have[p] || have[p].version !== e.version) process.exit(1);
+}
+for (const [p] of deps(have)) if (!(p in lock)) process.exit(1);
+'
+stale_reason=""
 deps_stale() {
   [ -f package-lock.json ] || [ -f package.json ] || return 1
   local changed installed
   changed=$(git log -1 --first-parent --format=%ct HEAD -- package.json package-lock.json)
   [ -n "$changed" ] || return 1
   installed=$(mtime node_modules/.package-lock.json)
-  [ -z "$installed" ] || [ "$changed" -gt "$installed" ]
+  if [ -z "$installed" ] || [ "$changed" -gt "$installed" ]; then
+    stale_reason="dependencies (package.json / package-lock.json) changed on $target after node_modules was last installed"
+    return 0
+  fi
+  [ -f package-lock.json ] || return 1
+  if ! node -e "$LOCK_MATCHES" >/dev/null 2>&1; then
+    stale_reason="node_modules was installed from a different lockfile than $target's package-lock.json (another branch's?)"
+    return 0
+  fi
+  return 1
 }
 if deps_stale; then
   if [ "${LANE_INSTALL:-}" = 1 ]; then
-    echo "== dependencies changed since the last install: npm install (LANE_INSTALL=1)"
+    echo "== $stale_reason: npm install (LANE_INSTALL=1)"
     npm install --no-audit --no-fund >/dev/null 2>&1 || die "npm install failed; fix it, then rerun this command (merged branches are skipped)"
   else
     print_merges
     echo >&2
-    echo "lane-merge: STOP before the checks — dependencies (package.json / package-lock.json) changed on $target after node_modules was last installed. Run npm install (or rerun with LANE_INSTALL=1), then rerun this same command: merged branches are skipped and the checks run." >&2
+    echo "lane-merge: STOP before the checks — $stale_reason. Run npm install (or rerun with LANE_INSTALL=1), then rerun this same command: merged branches are skipped and the checks run." >&2
     exit 2
   fi
 fi
