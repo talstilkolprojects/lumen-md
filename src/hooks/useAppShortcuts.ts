@@ -9,7 +9,6 @@ import type { EditorHandle } from "../editor/Editor";
 import { appShortcutFor } from "../lib/shortcuts";
 import { noteTypedKey } from "../lib/keyboardLayout";
 import { handleTrashUndoKey } from "../ui/trashUndoShortcut";
-import { openInsertTextDialog } from "../ui/insertTextFromDialog";
 import { useAppStore } from "../store/useStore";
 
 export interface AppShortcutActions {
@@ -108,7 +107,7 @@ export function useAppShortcuts(a: AppShortcutActions): void {
         case "insert.smart":
           // ⌘⇧V — Smart Insert (paste anything → auto-detect → wrap).
           (async () => {
-            const result = await openInsertTextDialog();
+            const result = await import("../ui/InsertTextDialog").then((m) => m.openInsertTextDialog());
             if (!result) return;
             const cur = useAppStore.getState().doc.content;
             const setter = useAppStore.getState().setContent;

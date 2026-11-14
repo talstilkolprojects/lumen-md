@@ -41,8 +41,9 @@ import { AiFab } from "./ui/AiFab";
 import { FileTree } from "./ui/FileTree";
 import { SidebarResizer } from "./ui/SidebarResizer";
 import { uiAlert, uiPrompt } from "./ui/PromptDialog";
-// The Insert-text dialog loads on first use, off the startup path (4.14).
-import { insertTextFromDialog } from "./ui/insertTextFromDialog";
+// The Insert-text dialog loads on first use, off the startup path (4.14); train 5: so does the flow
+// around it (the startup budget after the W6.25 split).
+const insertTextFromDialog = (...a: Parameters<typeof import("./ui/insertTextFromDialog").insertTextFromDialog>) => import("./ui/insertTextFromDialog").then((m) => m.insertTextFromDialog(...a));
 import { BacklinksPanel } from "./ui/BacklinksPanel";
 // SearchDialog imports the CodeMirror search-highlight extension; lazy so
 // the boot path stays CodeMirror-free (the dialog opens on ⌘⇧F).
