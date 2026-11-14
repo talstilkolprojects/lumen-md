@@ -169,15 +169,42 @@ export async function readWorkspaceFile(path: string): Promise<string> {
   return await file.text();
 }
 
+/**
+ * Per-path serialization for workspace writes. Every write through this
+ * module holds the path's lock — a Web Lock, so other tabs of the app (and
+ * the sync / agent code running in them) queue behind it too; an in-process
+ * queue where Web Locks are missing. `createWorkspaceFile` checks and writes
+ * under it, so nothing lands between its check and its write.
+ */
+const localLocks = new Map<string, Promise<unknown>>();
+
+function withPathLock<T>(path: string, fn: () => Promise<T>): Promise<T> {
+  const name = `lumen-workspace:${splitPath(path).join("/")}`;
+  const locks = typeof navigator !== "undefined" ? (navigator as Navigator & { locks?: LockManager }).locks : undefined;
+  if (locks?.request) return locks.request(name, () => fn()) as Promise<T>;
+  const prev = localLocks.get(name) ?? Promise.resolve();
+  const run = prev.then(fn, fn);
+  const tail = run.catch(() => undefined);
+  localLocks.set(name, tail);
+  void tail.then(() => {
+    if (localLocks.get(name) === tail) localLocks.delete(name);
+  });
+  return run;
+}
+
+async function writeUnlocked(path: string, data: string | Blob | ArrayBuffer | Uint8Array): Promise<void> {
+  const handle = await getFileHandleAt(path, { create: true });
+  if (needsSyncWriteFallback(handle)) return syncWriteOpfs(splitPath(path), data);
+  const writable = await handle.createWritable();
+  await writable.write(data as FileSystemWriteChunkType);
+  await writable.close();
+}
+
 export async function writeWorkspaceFile(
   path: string,
   content: string,
 ): Promise<void> {
-  const handle = await getFileHandleAt(path, { create: true });
-  if (needsSyncWriteFallback(handle)) return syncWriteOpfs(splitPath(path), content);
-  const writable = await handle.createWritable();
-  await writable.write(content);
-  await writable.close();
+  return withPathLock(path, () => writeUnlocked(path, content));
 }
 
 /** Write arbitrary binary content (e.g. an image asset). */
@@ -185,11 +212,21 @@ export async function writeWorkspaceBlob(
   path: string,
   data: Blob | ArrayBuffer | Uint8Array,
 ): Promise<void> {
-  const handle = await getFileHandleAt(path, { create: true });
-  if (needsSyncWriteFallback(handle)) return syncWriteOpfs(splitPath(path), data);
-  const writable = await handle.createWritable();
-  await writable.write(data as FileSystemWriteChunkType);
-  await writable.close();
+  return withPathLock(path, () => writeUnlocked(path, data));
+}
+
+/**
+ * Create a file only if nothing exists at `path`: the check and the write
+ * hold the path's lock, so a write from another tab, sync or an agent can't
+ * slip in between and be truncated. Resolves to false (and writes nothing)
+ * when the path is taken.
+ */
+export async function createWorkspaceFile(path: string, content: string): Promise<boolean> {
+  return withPathLock(path, async () => {
+    if (await workspaceHasEntry(path)) return false;
+    await writeUnlocked(path, content);
+    return true;
+  });
 }
 
 /** Read raw bytes; useful for assets resolved into blob URLs. */

@@ -271,25 +271,33 @@ const markdownLinkRanges = (text: string): Array<[number, number]> =>
   [...text.matchAll(/\[((?:[^\[\]\n]|\[\[[^\]\n]*\]\])*)\](?:\([^)\n]*\)|\[[^\[\]\n]*\])/g)].map((l) => [l.index ?? 0, (l.index ?? 0) + l[0].length]);
 const insideAny = (ranges: ReadonlyArray<[number, number]>, at: number) => ranges.some(([a, b]) => at > a && at < b);
 
-function headingsOf(text: string): Set<string> {
-  const out = new Set<string>();
+/**
+ * A note's headings — their rendered text, in document order. ATX and
+ * setext headings, also inside block quotes; never in front matter, code
+ * or raw HTML. Also feeds the `[[Note#` completion (4.5).
+ */
+export function noteHeadings(text: string): string[] {
   // Inline code in headings matters for the rendered text, so scan only
   // with fenced blocks blanked.
   // Headings inside block quotes render (with ids) too: drop the `>` prefixes.
   // A `# line` inside a raw HTML block is HTML text, not a heading.
   const fenced = blankHtmlBlocks(blankFences(blankFrontmatter(text)).replace(/<(pre|script|style|textarea)\b[\s\S]*?(?:<\/\1>|$)/gi, blank))
     .replace(/^(?:[ \t]*>[ ]?)+/gm, "");
-  // In document order, with a stateful slugger: a repeated heading gets
-  // `-1`, `-2`… like rehype-slug, so `[[Note#setup-1]]` resolves.
   const found: Array<{ at: number; raw: string }> = [];
   // ATX headings may be indented up to 3 spaces (4+ is indented code).
   for (const m of fenced.matchAll(/^ {0,3}#{1,6}[ \t]+(.+?)\s*#*\s*$/gm)) found.push({ at: m.index ?? 0, raw: m[1] });
   // Setext headings: a text line underlined with === or --- (the line
   // above must be text, not a list item, quote or blank line).
   for (const m of fenced.matchAll(/^(?! {0,3}([-*+>]|\d+[.)])\s)( {0,3}\S[^\n]*)\n {0,3}(=+|-+)[ \t]*$/gm)) found.push({ at: m.index ?? 0, raw: m[2].trim() });
+  return found.sort((a, b) => a.at - b.at).map((h) => headingText(h.raw));
+}
+
+function headingsOf(text: string): Set<string> {
+  const out = new Set<string>();
+  // In document order, with a stateful slugger: a repeated heading gets
+  // `-1`, `-2`… like rehype-slug, so `[[Note#setup-1]]` resolves.
   const slugger = new GithubSlugger();
-  for (const h of found.sort((a, b) => a.at - b.at)) {
-    const rendered = headingText(h.raw);
+  for (const rendered of noteHeadings(text)) {
     out.add(slugger.slug(rendered));
     out.add(headingSlug(rendered));
     out.add(rendered.toLowerCase());

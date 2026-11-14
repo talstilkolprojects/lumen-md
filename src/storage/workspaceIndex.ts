@@ -30,6 +30,8 @@ const cache = {
   stale: false,
   /** When the index was last checked against the vault listing. */
   checkedAt: 0,
+  /** Bumped whenever `byPath` changes, so views can cache what they derive from it. */
+  version: 0,
 };
 
 /**
@@ -82,6 +84,7 @@ async function build(): Promise<void> {
   );
   cache.byPath = next;
   cache.builtAt = cache.checkedAt = Date.now();
+  cache.version++;
 }
 
 /** Fallback for unannounced writes: re-read what the listing says changed. */
@@ -89,16 +92,15 @@ async function revalidate(): Promise<void> {
   cache.checkedAt = Date.now();
   const list = (await listWorkspace({ includeAssets: false })).filter((e) => !isAssetName(e.path));
   const seen = new Set(list.map((e) => e.path));
+  const size = cache.byPath.size;
   for (const path of [...cache.byPath.keys()]) if (!seen.has(path)) cache.byPath.delete(path);
-  await mapLimit(
-    list.filter((e) => cache.byPath.get(e.path)?.modified !== e.modified),
-    16,
-    async (e) => {
-      const f = await indexFile(e);
-      if (f) cache.byPath.set(e.path, f);
-      else cache.byPath.delete(e.path);
-    },
-  );
+  const changed = list.filter((e) => cache.byPath.get(e.path)?.modified !== e.modified);
+  await mapLimit(changed, 16, async (e) => {
+    const f = await indexFile(e);
+    if (f) cache.byPath.set(e.path, f);
+    else cache.byPath.delete(e.path);
+  });
+  if (changed.length || cache.byPath.size !== size) cache.version++;
 }
 
 /**
@@ -116,6 +118,7 @@ async function refreshDirty(): Promise<void> {
       else cache.byPath.delete(path);
     }),
   );
+  cache.version++;
 }
 
 export async function ensureIndex(force = false): Promise<void> {
@@ -158,6 +161,11 @@ export function indexedFiles(): IndexedFile[] {
   return [...cache.byPath.values()];
 }
 
+/** Changes whenever the indexed files do: a cache of something derived from them is good while it is the same. */
+export function indexVersion(): number {
+  return cache.version;
+}
+
 /** Test hook. */
 export function __resetWorkspaceIndex(): void {
   cache.byPath = new Map();
@@ -166,6 +174,7 @@ export function __resetWorkspaceIndex(): void {
   cache.dirty.clear();
   cache.stale = false;
   cache.checkedAt = 0;
+  cache.version++;
 }
 
 export interface BacklinkHit {

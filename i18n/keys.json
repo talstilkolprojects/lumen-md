@@ -2,7 +2,7 @@
   "version": 1,
   "generated_at": "2026-10-18T03:18:44.238Z",
   "source": "src/i18n/index.ts (en bundle)",
-  "count": 1411,
+  "count": 1416,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -5659,6 +5659,40 @@
     {
       "key": "editor.ariaLabel",
       "en": "Markdown source editor",
+      "vars": []
+    },
+    {
+      "key": "wikiComplete.create",
+      "en": "Create note «{name}»",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "wikiComplete.aliasOf",
+      "en": "alias of {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "wikiComplete.created",
+      "en": "Created note «{name}»",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "wikiComplete.createFailed",
+      "en": "Couldn't create the note «{name}»: {error}",
+      "vars": [
+        "name",
+        "error"
+      ]
+    },
+    {
+      "key": "wikiComplete.listLabel",
+      "en": "Link suggestions",
       "vars": []
     },
     {

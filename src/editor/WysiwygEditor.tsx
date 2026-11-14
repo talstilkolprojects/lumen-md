@@ -5,6 +5,7 @@ import {
   defaultValueCtx,
   editorViewCtx,
   prosePluginsCtx,
+  remarkStringifyOptionsCtx,
 } from "@milkdown/core";
 import { commonmark } from "@milkdown/preset-commonmark";
 import { gfm } from "@milkdown/preset-gfm";
@@ -35,6 +36,8 @@ import {
   unregisterWysiwygView,
   wysiwygSuggestPlugins,
 } from "./wysiwygSuggest";
+import { keepWikiLinks, protectEscapedWikiLinks } from "./wysiwygWikiLinks";
+import { wysiwygWikiComplete } from "./wysiwygWikiComplete";
 import { registerPendingEdits, useAppStore } from "../store/useStore";
 import { useAuth } from "../auth/useAuth";
 import { t } from "../i18n";
@@ -715,7 +718,10 @@ export default function WysiwygEditor({ value, onChange }: Props) {
       const editor = await MilkdownEditor.make()
         .config((ctx) => {
           ctx.set(rootCtx, host);
-          ctx.set(defaultValueCtx, encodeCriticForWysiwyg(body));
+          // An escaped `\[\[x]]` stays escaped (not a wiki link) on the way out.
+          ctx.set(defaultValueCtx, encodeCriticForWysiwyg(protectEscapedWikiLinks(body)));
+          // `[[Note]]` is written back as is, not as `\[\[Note]]`.
+          ctx.update(remarkStringifyOptionsCtx, keepWikiLinks);
           ctx.get(listenerCtx).markdownUpdated((_, md) => {
             // The listener plugin debounces emissions by 200ms and
             // nothing cancels that timer on destroy, so a torn-down (or
@@ -734,6 +740,9 @@ export default function WysiwygEditor({ value, onChange }: Props) {
           // visibility of the handle for the hovered row.
           ctx.update(prosePluginsCtx, (plugins) => [
             ...plugins,
+            // 4.5 — `[[` completes notes, `#` headings, `^` blocks. First, so
+            // Enter / Tab in its menu pick a link (not split or indent).
+            wysiwygWikiComplete(),
             dragHandlePlugin,
             // T25 — every block reads in the direction of its own text.
             wysiwygBidiPlugin(),

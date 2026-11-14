@@ -6,11 +6,11 @@
  * scope are checked together, as they run. Opt-in ("Enable TypeScript checks in code blocks") because
  * the compiler is a multi-MB download, loaded in a worker on first use.
  */
-import { StateEffect, StateField } from "@codemirror/state";
+import { EditorState, Prec, StateEffect, StateField } from "@codemirror/state";
 import type { Extension, Range } from "@codemirror/state";
-import { Decoration, EditorView, ViewPlugin, hoverTooltip } from "@codemirror/view";
+import { Decoration, EditorView, ViewPlugin, hoverTooltip, keymap } from "@codemirror/view";
 import type { DecorationSet, ViewUpdate } from "@codemirror/view";
-import { autocompletion } from "@codemirror/autocomplete";
+import { autocompletion, startCompletion } from "@codemirror/autocomplete";
 import type { CompletionContext, CompletionResult } from "@codemirror/autocomplete";
 import { findTsBlocks, toUnits, unitAt, unitRangeToDoc, type TsUnit } from "../lsp/tsBlocks";
 import type { TsClient } from "../lsp/tsClient";
@@ -162,7 +162,20 @@ export function tsCheckExtension(client: TsClient, opts: { debounceMs?: number }
     };
   });
 
-  return [tsDiagnosticsField, checker, theme, hover, autocompletion({ override: [source] })];
+  // A language-data source, not `autocompletion({ override })`: overrides
+  // can't be combined, and the `[[` link completion (4.5) is one too. The
+  // source answers only inside ts blocks.
+  // Ctrl-Space asks for completions inside a ts block; elsewhere it stays the
+  // AI ghost text's (the link completion turns the default binding off).
+  const explicit = Prec.highest(
+    keymap.of([
+      {
+        key: "Ctrl-Space",
+        run: (view) => !!unitAt(toUnits(findTsBlocks(view.state.doc.toString())), view.state.selection.main.head) && startCompletion(view),
+      },
+    ]),
+  );
+  return [tsDiagnosticsField, checker, theme, hover, autocompletion(), explicit, EditorState.languageData.of(() => [{ autocomplete: source }])];
 }
 
 function completionType(kind: string): string {

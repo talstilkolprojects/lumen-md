@@ -937,6 +937,7 @@
 
   /* ─── Milkdown slash menu + selection tooltip ─── */
   .milkdown-slash-menu,
+  .lumen-wiki-menu,
   .milkdown-tooltip {
     position: absolute;
     z-index: var(--z-dropdown);
@@ -946,17 +947,24 @@
     border-radius: 8px;
     box-shadow: 0 12px 40px -10px hsl(0 0% 0% / 0.35);
   }
-  .milkdown-slash-menu[data-show="true"] {
+  .milkdown-slash-menu[data-show="true"],
+  .lumen-wiki-menu[data-show="true"] {
     display: block;
   }
   .milkdown-tooltip[data-show="true"] {
     display: flex;
   }
-  .milkdown-slash-menu {
+  .milkdown-slash-menu,
+  .lumen-wiki-menu {
     padding: 4px;
     min-width: 180px;
     max-height: 320px;
     overflow-y: auto;
+  }
+  /* `[[` link completion (WYSIWYG): placed at the caret, over the page. */
+  .lumen-wiki-menu {
+    position: fixed;
+    max-width: min(420px, calc(100vw - 16px));
   }
   .milkdown-slash-item {
     display: flex;
