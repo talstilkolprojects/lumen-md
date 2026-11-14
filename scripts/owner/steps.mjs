@@ -371,7 +371,7 @@ export const STEPS = [
     checks: [
       { id: "train-merged", auto: true, en: "#431 (train 1) is merged", he: "‏#431 (רכבת 1) ממוזג", run: merged(431) },
 
-      { id: "security-md", auto: true, en: "SECURITY.md points to private reporting", he: "‏SECURITY.md מפנה לדיווח הפרטי", run: async (ctx) => { const r = await ghJson(ctx, `repos/${REPO}/contents/SECURITY.md`); const t = r.json?.content ? Buffer.from(r.json.content, "base64").toString("utf8") : ""; return r.status === 200 ? ok(/security\/advisories\/new|private vulnerability report/i.test(t), "it does", "main\u2019s SECURITY.md does not link security/advisories/new yet (train 1 fixes it)") : need(`HTTP ${r.status}`); } },
+      { id: "security-md", auto: true, en: "SECURITY.md points to a reporting channel that works", he: "‏SECURITY.md מפנה לערוץ דיווח שעובד", run: async (ctx) => { const r = await ghJson(ctx, `repos/${REPO}/contents/SECURITY.md`); const t = r.json?.content ? Buffer.from(r.json.content, "base64").toString("utf8") : ""; return r.status === 200 ? ok(/Security%20contact%20request/.test(t), "it does", "main\u2019s SECURITY.md still links only GitHub private reporting, which is off (W10.D15 fixes it)") : need(`HTTP ${r.status}`); } },
       { id: "live-meta", auto: true, en: "live:meta passed on production", he: "‏live:meta עבר על production", run: async (ctx) => (ctx.ran["live-meta"] === undefined ? need("the live:meta action did not run (needs #498)") : ok(ctx.ran["live-meta"] === 0, "live:meta: passed", `live:meta: exit ${ctx.ran["live-meta"]}`)) },
       manual("recrawl", "Re-crawl requested in Google and Bing", "סריקה מחדש התבקשה ב-Google וב-Bing"),
     ],
