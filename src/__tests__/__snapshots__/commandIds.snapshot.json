@@ -1240,6 +1240,13 @@
       "group": "Insert",
       "hint": "[[Page|label]]",
       "icon": "Link"
+    },
+    {
+      "id": "insert.ink",
+      "label": "Handwriting: draw or edit",
+      "group": "Insert",
+      "hint": "Pen, Apple Pencil or finger; saved as SVG in the note",
+      "icon": "Pencil"
     }
   ],
   "full": [
@@ -2618,6 +2625,13 @@
       "group": "Insert",
       "hint": "[[Page|label]]",
       "icon": "Link"
+    },
+    {
+      "id": "insert.ink",
+      "label": "Handwriting: draw or edit",
+      "group": "Insert",
+      "hint": "Pen, Apple Pencil or finger; saved as SVG in the note",
+      "icon": "Pencil"
     }
   ],
   "autoSaveOn": [
@@ -2806,6 +2820,7 @@
     "insert.embed",
     "insert.htmlpreview",
     "insert.bibtex",
-    "insert.wikilink"
+    "insert.wikilink",
+    "insert.ink"
   ]
 }

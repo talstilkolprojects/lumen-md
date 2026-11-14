@@ -163,6 +163,14 @@ export function Preview({ markdownText, docKey = null }: Props) {
       style={{ contain: "layout" }}
       // Hover / focus on a [[link]] previews the note (4.6; loaded on first use).
       {...wikiHoverHandlers}
+      // Double-click a handwriting block to edit it in the pad (W5.27; loaded on first use).
+      onDoubleClick={(e) => {
+        const ink = (e.target as Element).closest?.("svg[data-lumen-ink]");
+        const id = ink?.getAttribute("data-ink-id");
+        if (!id) return;
+        e.preventDefault();
+        void import("../ink/inkCommand").then((m) => m.editInkInNote(id));
+      }}
       onClick={(e) => {
         // [[Wiki links]] without a matching heading here open the note.
         handleWikiLinkClick(

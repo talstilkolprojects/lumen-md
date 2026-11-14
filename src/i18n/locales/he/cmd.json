@@ -181,6 +181,8 @@
   "cmd.insert.graphviz": "הוספת Graphviz / DOT",
   "cmd.insert.htmlpreview": "הוספת תצוגת HTML חיה",
   "cmd.insert.htmlpreview.hint": "HTML/CSS/JS ב-iframe מבודד",
+  "cmd.insert.ink": "כתב יד: לכתוב או לערוך",
+  "cmd.insert.ink.hint": "עט, Apple Pencil או אצבע; נשמר כ-SVG בתוך הפתק",
   "cmd.insert.json": "הוספת טבלת JSON",
   "cmd.insert.map": "הוספת מפה",
   "cmd.insert.math": "הוספת בלוק מתמטי",

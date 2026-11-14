@@ -181,6 +181,8 @@
   "cmd.insert.graphviz": "插入 Graphviz / DOT",
   "cmd.insert.htmlpreview": "插入 live HTML preview",
   "cmd.insert.htmlpreview.hint": "iframe 中沙盒化的 HTML/CSS/JS",
+  "cmd.insert.ink": "手写：绘制或编辑",
+  "cmd.insert.ink.hint": "笔、Apple Pencil 或手指；以 SVG 保存在笔记中",
   "cmd.insert.json": "插入 JSON table",
   "cmd.insert.map": "插入 map",
   "cmd.insert.math": "插入 math block",

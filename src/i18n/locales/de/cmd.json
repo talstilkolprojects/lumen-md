@@ -181,6 +181,8 @@
   "cmd.insert.graphviz": "Einfügen Graphviz / DOT",
   "cmd.insert.htmlpreview": "Einfügen live HTML preview",
   "cmd.insert.htmlpreview.hint": "HTML/CSS/JS in einem iframe in der Sandbox",
+  "cmd.insert.ink": "Handschrift: zeichnen oder bearbeiten",
+  "cmd.insert.ink.hint": "Stift, Apple Pencil oder Finger; als SVG in der Notiz gespeichert",
   "cmd.insert.json": "Einfügen JSON table",
   "cmd.insert.map": "Einfügen map",
   "cmd.insert.math": "Einfügen math block",

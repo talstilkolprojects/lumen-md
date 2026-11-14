@@ -148,6 +148,7 @@
     "nspell": "^2.1.5",
     "papaparse": "^5.4.1",
     "pdfjs-dist": "^6.4.299",
+    "perfect-freehand": "1.2.0",
     "prettier": "^3.9.10",
     "prosemirror-state": "^1.4.4",
     "prosemirror-view": "^1.41.8",

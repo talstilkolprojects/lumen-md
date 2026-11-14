@@ -51,7 +51,7 @@ export function buildEditCommands({ getEditorView, suggestingMode, toggleSuggest
 }
 
 /** Insert a block (chart, table, diagram, math, embed…). */
-export function buildInsertCommands({ insertSnippet }: CommandContext): Command[] {
+export function buildInsertCommands({ insertSnippet, getEditorView }: CommandContext): Command[] {
   return [
     {
       id: "insert.chart",
@@ -167,6 +167,22 @@ export function buildInsertCommands({ insertSnippet }: CommandContext): Command[
       icon: cmdIcons.Link,
       group: t("group.insert"),
       action: () => insertSnippet(BLOCK_SNIPPETS.wikilink),
+    },
+    // ── Handwriting (W5.27): pen / Apple Pencil ink saved as SVG in the note ──
+    {
+      id: "insert.ink",
+      label: t("cmd.insert.ink"),
+      hint: t("cmd.insert.ink.hint"),
+      icon: cmdIcons.Pencil,
+      group: t("group.insert"),
+      action: async () => {
+        const { drawOrEditInk } = await import("../../ink/inkCommand");
+        await drawOrEditInk({
+          getView: () => getEditorView?.() ?? null,
+          getContent: () => useAppStore.getState().doc.content,
+          setContent: (s: string) => useAppStore.getState().setContent(s),
+        });
+      },
     },
   ];
 }

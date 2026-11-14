@@ -918,6 +918,16 @@
       "vars": []
     },
     {
+      "key": "cmd.insert.ink",
+      "en": "Handwriting: draw or edit",
+      "vars": []
+    },
+    {
+      "key": "cmd.insert.ink.hint",
+      "en": "Pen, Apple Pencil or finger; saved as SVG in the note",
+      "vars": []
+    },
+    {
       "key": "cmd.insert.json",
       "en": "Insert JSON table",
       "vars": []

@@ -181,6 +181,8 @@
   "cmd.insert.graphviz": "إدراج Graphviz / DOT",
   "cmd.insert.htmlpreview": "إدراج live HTML preview",
   "cmd.insert.htmlpreview.hint": "HTML/CSS/JS معزول في iframe",
+  "cmd.insert.ink": "كتابة يدوية: ارسم أو حرّر",
+  "cmd.insert.ink.hint": "قلم أو Apple Pencil أو إصبع؛ تُحفظ بصيغة SVG داخل الملاحظة",
   "cmd.insert.json": "إدراج JSON table",
   "cmd.insert.map": "إدراج map",
   "cmd.insert.math": "إدراج math block",

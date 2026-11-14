@@ -43,6 +43,8 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "vaultEncryption.json": { module: "storage/vault/encrypted/strings.ts", users: ["ui/VaultEncryptionDialog.tsx", "ui/VaultUnlock.tsx"], prefixes: ["vaultEnc."] },
   // The webR download offer (plan W1.34), in the lazily rendered live-R block.
   "webr.json": { module: "plugins/r/webrStrings.ts", users: ["plugins/LiveRBlock.tsx"], prefixes: ["block.liveR.install."] },
+  // The handwriting pad (plan W5.27): the palette command and the preview's double-click load it.
+  "ink.json": { module: "ink/inkStrings.ts", users: ["ink/InkPad.tsx", "ink/inkCommand.ts"], prefixes: ["ink."] },
 };
 
 function sources(dir: string): string[] {
