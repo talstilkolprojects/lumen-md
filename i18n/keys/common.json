@@ -4491,6 +4491,110 @@
       ]
     },
     {
+      "key": "knesset.askNone",
+      "en": "No saved law answers that. The search reads only laws saved for offline, with their text.",
+      "vars": []
+    },
+    {
+      "key": "knesset.askPick",
+      "en": "Sections that answer it",
+      "vars": []
+    },
+    {
+      "key": "knesset.askPrompt",
+      "en": "Ask the laws you saved (searched on this device)",
+      "vars": []
+    },
+    {
+      "key": "knesset.billPick",
+      "en": "{count} bill(s) found",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "knesset.billPrompt",
+      "en": "Which bill? A word from its name",
+      "vars": []
+    },
+    {
+      "key": "knesset.confirm",
+      "en": "Look up “{name}” in the Knesset's records? Only the name is sent to knesset.gov.il, nothing from your notes. Saved laws open without asking.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "knesset.enable",
+      "en": "Turn on Knesset sources? Lumen then sends law and bill names to knesset.gov.il when you ask, and never on its own.",
+      "vars": []
+    },
+    {
+      "key": "knesset.failed",
+      "en": "Knesset lookup failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "knesset.inserted",
+      "en": "Cited {name}",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "knesset.noBills",
+      "en": "No bill matches “{name}”.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "knesset.noMatch",
+      "en": "No law named “{name}” was found.",
+      "vars": [
+        "name"
+      ]
+    },
+    {
+      "key": "knesset.pick",
+      "en": "Which of these laws?",
+      "vars": []
+    },
+    {
+      "key": "knesset.prompt",
+      "en": "Which law? For example חוק הגנת הפרטיות or [[חוק:חופש המידע]]",
+      "vars": []
+    },
+    {
+      "key": "knesset.protocolNotFound",
+      "en": "These words are not in a speaker's turn in this protocol.",
+      "vars": []
+    },
+    {
+      "key": "knesset.protocolSelect",
+      "en": "Open a committee protocol and select the words to quote first.",
+      "vars": []
+    },
+    {
+      "key": "knesset.saveOffline",
+      "en": "Save for offline",
+      "vars": []
+    },
+    {
+      "key": "knesset.saved",
+      "en": "Saved to {path}. Paste the law's text under “## נוסח” to ask it questions.",
+      "vars": [
+        "path"
+      ]
+    },
+    {
+      "key": "knesset.unverified",
+      "en": "not verified",
+      "vars": []
+    },
+    {
       "key": "legalCite.cancel",
       "en": "Cancel",
       "vars": []

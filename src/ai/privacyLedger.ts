@@ -79,6 +79,8 @@ const RULES: Rule[] = [
   { test: (h) => h === "kroki.io", category: "cloud-text", reason: "PlantUML rendering (kroki.io)" },
   // Jewish sources (plan W5.1): the reference the user asked for, nothing else.
   { test: (h) => h === "www.sefaria.org" || h === "sefaria.org", category: "cloud-text", reason: "Jewish sources (Sefaria): the reference only" },
+  // Knesset records (plan W7.5): the law or bill name the user asked for.
+  { test: (h) => h === "knesset.gov.il" || h === "main.knesset.gov.il", category: "cloud-text", reason: "Knesset records (OData): the law or bill name only" },
   {
     test: (h) => h === "huggingface.co" || h.endsWith(".huggingface.co") || h.endsWith(".hf.co") || h === "hf.co",
     category: "model-download",
@@ -430,6 +432,21 @@ export function ledgerFetch(opts: LedgerOptions): typeof fetch {
 }
 
 let rawFetch: typeof fetch | null = null;
+
+/**
+ * Airplane mode (W5.9) wraps the window's fetch after the ledger is
+ * installed (main.tsx), so the ledger's own transport — the fetch it
+ * captured, used by ledgerFetch and guardedFetch — would go around it, and a
+ * request still in flight when the switch goes on would be neither counted
+ * nor aborted (review 20, RR20-1). Airplane mode hands its guard here, and
+ * the ledger then sends through it. No request is recorded twice: the
+ * window's fetch is the ledger wrapping the guard, and this path is the
+ * guard alone.
+ */
+export function wrapLedgerTransport(wrap: (inner: typeof fetch) => typeof fetch): void {
+  if (unwrappedFetch) unwrappedFetch = wrap(unwrappedFetch);
+  if (rawFetch) rawFetch = wrap(rawFetch);
+}
 
 /**
  * Requests that workers report (workerLedger.ts): recorded with the same
