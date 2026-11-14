@@ -1,11 +1,6 @@
 /** Voice: read aloud, voice memo, dictation. */
 import { cmdIcons, type Command } from "../../ui/CommandPalette";
-import { useAppStore } from "../../store/useStore";
-import { t, getLocale } from "../../i18n";
-import { uiConfirm, uiPrompt, uiSelect } from "../../ui/PromptDialog";
-import { getAiPolicy } from "../../ai/policy";
-import { showAiToast } from "../../ui/AiToast";
-import { explainError } from "../../lib/userError";
+import { t } from "../../i18n";
 
 /** Read the note aloud (text to speech). */
 export function buildReadAloudCommands(): Command[] {
@@ -16,22 +11,7 @@ export function buildReadAloudCommands(): Command[] {
       hint: t("cmd.note.read.hint"),
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
-      action: async () => {
-        const store = useAppStore.getState();
-        // why: the reading-aids speed (plan W5.6); a small lazy module, loaded with the reading
-        const [tts, { loadAids }] = await Promise.all([import("../../ai/tts"), import("../../reading/readingAids")]);
-        await tts.readAloudCommand({
-          content: store.doc.content,
-          doc: store.doc,
-          uiLang: getLocale(),
-          t,
-          toast: showAiToast,
-          rate: loadAids().rate,
-          // No voice on this device, but the browser offers network voices: ask once (never under local-only).
-          confirmNetworkVoice: () =>
-            getAiPolicy() === "local-only" ? Promise.resolve(false) : uiConfirm({ title: t("tts.networkVoice.title"), message: t("tts.networkVoice.body"), okLabel: t("tts.networkVoice.ok") }),
-        });
-      },
+      action: () => import("./voiceActions").then((m) => m.noteRead()),
     },
     {
       id: "note.readSettings",
@@ -39,18 +19,7 @@ export function buildReadAloudCommands(): Command[] {
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
       // Read aloud: voice and speed (plan W2.6); the speed is the reading aids' one (W5.6).
-      action: async () => {
-        const [tts, aids] = await Promise.all([import("../../ai/tts"), import("../../reading/readingAids")]);
-        await tts.readAloudSettings({
-          content: useAppStore.getState().doc.content,
-          uiLang: getLocale(),
-          t,
-          toast: showAiToast,
-          select: uiSelect,
-          rate: aids.loadAids().rate,
-          setRate: (rate) => aids.saveAids({ ...aids.loadAids(), rate }),
-        });
-      },
+      action: () => import("./voiceActions").then((m) => m.noteReadSettings()),
     },
     {
       id: "reading.aids",
@@ -150,29 +119,7 @@ export function buildVoiceCommands(): Command[] {
       hint: t("cmd.ai.meetingNotes.hint"),
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
-      action: async () => {
-        // A transcript already in the note (or the selection): meeting notes appended.
-        const st = useAppStore.getState();
-        const transcript = (window.getSelection()?.toString() ?? "").trim() || st.doc.content.trim();
-        if (!transcript) {
-          showAiToast(t("meeting.empty"), "info");
-          return;
-        }
-        const [{ meetingNotesFrom, offerIcs }, { aiOperation, isAbort }] = await Promise.all([import("../../meetings/meetingNotes"), import("../../ai/aiAbort")]);
-        const op = aiOperation();
-        showAiToast(t("toast.summarising"), "info");
-        try {
-          const res = await meetingNotesFrom(transcript, { signal: op.signal, local: getAiPolicy() === "local-only" });
-          const current = useAppStore.getState().doc.content;
-          useAppStore.getState().setContent(current + (current.endsWith("\n") ? "" : "\n") + "\n" + res.markdown);
-          showAiToast(t("meeting.inserted", { n: res.notes.tasks.length }), "success");
-          void offerIcs(res);
-        } catch (e) {
-          if (!isAbort(e)) showAiToast(explainError(e), "error");
-        } finally {
-          op.end();
-        }
-      },
+      action: () => import("./voiceActions").then((m) => m.aiMeetingNotes()),
     },
     {
       id: "voice.dictate",
@@ -180,24 +127,7 @@ export function buildVoiceCommands(): Command[] {
       hint: t("cmd.tools.voice.hint"),
       icon: cmdIcons.Sparkles,
       group: t("group.tools"),
-      action: async () => {
-        // Language selector
-        const langMap: Record<string, string> = {
-          "English": "en-US", "Hebrew (עברית)": "he-IL", "Arabic (العربية)": "ar-SA",
-          "Russian (Русский)": "ru-RU", "Spanish": "es-ES", "French": "fr-FR",
-          "German": "de-DE", "Chinese (中文)": "zh-CN", "Japanese (日本語)": "ja-JP",
-        };
-        const langChoice = await uiPrompt({
-          message: t("voice.languagePrompt"),
-          placeholder: "English",
-        });
-        const lang = langMap[langChoice ?? ""] ?? (useAppStore.getState().locale === "he" ? "he-IL" : "en-US");
-
-        // Loaded on use, as for the voice memo: dictation (and the
-        // transcription code it brings) stays out of the startup bundle.
-        const { startVoiceRecording } = await import("../../ui/VoiceDictation");
-        startVoiceRecording(lang);
-      },
+      action: () => import("./voiceActions").then((m) => m.voiceDictate()),
     },
   ];
 }
