@@ -491,6 +491,16 @@
       "vars": []
     },
     {
+      "key": "cmd.beta",
+      "en": "Help: Beta programme",
+      "vars": []
+    },
+    {
+      "key": "cmd.beta.hint",
+      "en": "Join the beta on this device, send feedback, and a weekly report only if you ask for it",
+      "vars": []
+    },
+    {
       "key": "cmd.billing.manage",
       "en": "Billing: Manage subscription",
       "vars": []

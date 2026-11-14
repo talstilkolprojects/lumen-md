@@ -81,6 +81,8 @@ const DOMAINS: Record<string, { module: string; users: string[]; prefixes: strin
   "templates.json": { module: "storage/templateStrings.ts", users: ["ui/TemplateGallery.tsx"], prefixes: ["templates."] },
   "transcribeFile.json": { module: "ai/dictation/strings.ts", users: ["ui/TranscribeFile.ts"], prefixes: ["transcribeFile."] },
   "usage.json": { module: "metrics/strings.ts", users: ["metrics/reminder.ts", "ui/UsageDialog.tsx"], prefixes: ["usage."] },
+  // The beta programme (plan W6.31): its panel and its weekly reminder, both loaded with a dynamic import.
+  "betaProgramme.json": { module: "beta/strings.ts", users: ["beta/reminder.ts", "ui/BetaPanel.tsx"], prefixes: ["beta."] },
   "vaultCheck.json": { module: "storage/vault/integrityStrings.ts", users: ["storage/vault/integrityReport.ts"], prefixes: ["vaultCheck."] },
   "versions.json": { module: "collab/versionStrings.ts", users: ["ui/NamedVersionsDialog.tsx"], prefixes: ["versions."] },
   "voiceCommands.json": { module: "ai/voice/strings.ts", users: ["ai/voice/run.ts"], prefixes: ["voiceCmd."] },

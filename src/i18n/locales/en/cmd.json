@@ -95,6 +95,8 @@
   "cmd.automations.new.hint": "A rule in a few choices: note created, tag added, property changed or daily → move, tag, template or a line in the daily note",
   "cmd.automations.undo": "Automations: undo the last run",
   "cmd.automations.undo.hint": "Puts back every file the last automation run changed, byte for byte",
+  "cmd.beta": "Help: Beta programme",
+  "cmd.beta.hint": "Join the beta on this device, send feedback, and a weekly report only if you ask for it",
   "cmd.billing.manage": "Billing: Manage subscription",
   "cmd.billing.managePersonal": "Billing: Manage personal subscription",
   "cmd.billing.upgradePro": "Billing: Upgrade to Pro",

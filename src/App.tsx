@@ -1029,8 +1029,8 @@ export default function App() {
         void cmd.action();
       }
     };
-    // The usage dialog (plan W4.26) needs every command id to name the unused ones.
-    const onUsage = () => {
+    // The usage dialog (plan W4.26) needs every command id to name the unused ones; the beta panel's report (W6.31) names only these.
+    const commandIds = () => {
       const ids: string[] = [];
       const walk = (list: typeof commands) => {
         for (const c of list) {
@@ -1039,13 +1039,17 @@ export default function App() {
         }
       };
       walk(commandsRef.current);
-      void import("./ui/UsageDialog").then((m) => m.openUsage({ commandIds: ids }));
+      return ids;
     };
+    const onUsage = () => void import("./ui/UsageDialog").then((m) => m.openUsage({ commandIds: commandIds() }));
+    const onBeta = () => void import("./ui/BetaPanel").then((m) => m.openBeta({ commandIds: commandIds() }));
     window.addEventListener("lumen-run-command", onRun);
     window.addEventListener("lumen-open-usage", onUsage);
+    window.addEventListener("lumen-open-beta", onBeta);
     return () => {
       window.removeEventListener("lumen-run-command", onRun);
       window.removeEventListener("lumen-open-usage", onUsage);
+      window.removeEventListener("lumen-open-beta", onBeta);
     };
   }, []);
   useEffect(() => {

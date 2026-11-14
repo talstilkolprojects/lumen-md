@@ -96,6 +96,8 @@
   "cmd.automations.new.hint": "几步即可创建规则：创建笔记、添加标签、属性变化或每天 → 移动、加标签、应用模板或在每日笔记中加一行",
   "cmd.automations.undo": "自动化：撤销上次运行",
   "cmd.automations.undo.hint": "将上次运行更改的每个文件逐字节恢复",
+  "cmd.beta": "帮助：测试版计划",
+  "cmd.beta.hint": "在本设备上加入测试版、发送反馈，并仅在你要求时生成每周报告",
   "cmd.billing.manage": "账单：管理订阅",
   "cmd.billing.managePersonal": "账单：管理个人订阅",
   "cmd.billing.upgradePro": "账单：升级到 Pro",

@@ -96,6 +96,8 @@
   "cmd.automations.new.hint": "Eine Regel in wenigen Schritten: Notiz erstellt, Tag hinzugefügt, Eigenschaft geändert oder täglich → verschieben, taggen, Vorlage oder Zeile in der Tagesnotiz",
   "cmd.automations.undo": "Automationen: letzten Lauf rückgängig machen",
   "cmd.automations.undo.hint": "Stellt jede Datei, die der letzte Lauf geändert hat, Byte für Byte wieder her",
+  "cmd.beta": "Hilfe: Beta-Programm",
+  "cmd.beta.hint": "Auf diesem Gerät an der Beta teilnehmen, Feedback senden und einen Wochenbericht nur auf Wunsch",
   "cmd.billing.manage": "Abrechnung: Abo verwalten",
   "cmd.billing.managePersonal": "Abrechnung: Persönliches Abo verwalten",
   "cmd.billing.upgradePro": "Abrechnung: Auf Pro upgraden",

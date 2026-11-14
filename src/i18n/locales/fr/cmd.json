@@ -96,6 +96,8 @@
   "cmd.automations.new.hint": "Une règle en quelques choix : note créée, tag ajouté, propriété modifiée ou chaque jour → déplacer, taguer, modèle ou ligne dans la note du jour",
   "cmd.automations.undo": "Automatisations : annuler la dernière exécution",
   "cmd.automations.undo.hint": "Remet chaque fichier modifié par la dernière exécution, octet par octet",
+  "cmd.beta": "Aide : programme bêta",
+  "cmd.beta.hint": "Rejoindre la bêta sur cet appareil, envoyer un avis, et un rapport hebdomadaire seulement si vous le demandez",
   "cmd.billing.manage": "Facturation : gérer l'abonnement",
   "cmd.billing.managePersonal": "Facturation : gérer l'abonnement personnel",
   "cmd.billing.upgradePro": "Facturation : passer à Pro",

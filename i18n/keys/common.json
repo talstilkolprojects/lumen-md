@@ -1161,6 +1161,209 @@
       ]
     },
     {
+      "key": "beta.area.ai",
+      "en": "AI",
+      "vars": []
+    },
+    {
+      "key": "beta.area.editor",
+      "en": "Editor",
+      "vars": []
+    },
+    {
+      "key": "beta.area.files",
+      "en": "Files and import",
+      "vars": []
+    },
+    {
+      "key": "beta.area.hebrew",
+      "en": "Hebrew and RTL",
+      "vars": []
+    },
+    {
+      "key": "beta.area.mobile",
+      "en": "Phone and tablet",
+      "vars": []
+    },
+    {
+      "key": "beta.area.other",
+      "en": "Something else",
+      "vars": []
+    },
+    {
+      "key": "beta.area.search",
+      "en": "Search",
+      "vars": []
+    },
+    {
+      "key": "beta.area.sync",
+      "en": "Sync and sharing",
+      "vars": []
+    },
+    {
+      "key": "beta.close",
+      "en": "Close",
+      "vars": []
+    },
+    {
+      "key": "beta.copied",
+      "en": "Copied.",
+      "vars": []
+    },
+    {
+      "key": "beta.copy",
+      "en": "Copy report",
+      "vars": []
+    },
+    {
+      "key": "beta.copyFailed",
+      "en": "Couldn't copy. Select the text and copy it.",
+      "vars": []
+    },
+    {
+      "key": "beta.feedback",
+      "en": "Feedback",
+      "vars": []
+    },
+    {
+      "key": "beta.feedback.area",
+      "en": "Part of the app",
+      "vars": []
+    },
+    {
+      "key": "beta.feedback.env",
+      "en": "Include the app version, platform and language",
+      "vars": []
+    },
+    {
+      "key": "beta.feedback.kind",
+      "en": "Kind",
+      "vars": []
+    },
+    {
+      "key": "beta.feedback.send",
+      "en": "Open feedback on GitHub",
+      "vars": []
+    },
+    {
+      "key": "beta.feedback.text",
+      "en": "What happened, or what you would like",
+      "vars": []
+    },
+    {
+      "key": "beta.feedback.title",
+      "en": "Short title",
+      "vars": []
+    },
+    {
+      "key": "beta.feedback.tooLong",
+      "en": "The text is too long for a link. It was copied: paste it into the issue.",
+      "vars": []
+    },
+    {
+      "key": "beta.intro",
+      "en": "Get new features first and help shape them. Everything here stays on this device until you click a button that opens GitHub.",
+      "vars": []
+    },
+    {
+      "key": "beta.join",
+      "en": "Join the beta on this device",
+      "vars": []
+    },
+    {
+      "key": "beta.joined.toast",
+      "en": "You joined the beta. Thank you!",
+      "vars": []
+    },
+    {
+      "key": "beta.joinedOn",
+      "en": "In the beta since {date} (week {week})",
+      "vars": [
+        "date",
+        "week"
+      ]
+    },
+    {
+      "key": "beta.kind.bug",
+      "en": "Something is broken",
+      "vars": []
+    },
+    {
+      "key": "beta.kind.idea",
+      "en": "An idea",
+      "vars": []
+    },
+    {
+      "key": "beta.kind.question",
+      "en": "A question",
+      "vars": []
+    },
+    {
+      "key": "beta.leave",
+      "en": "Leave the beta",
+      "vars": []
+    },
+    {
+      "key": "beta.left.toast",
+      "en": "You left the beta. Updates follow stable releases again.",
+      "vars": []
+    },
+    {
+      "key": "beta.notJoined",
+      "en": "You are not in the beta on this device.",
+      "vars": []
+    },
+    {
+      "key": "beta.opened",
+      "en": "The issue form is open in a new tab. Nothing is sent until you submit it there.",
+      "vars": []
+    },
+    {
+      "key": "beta.preview",
+      "en": "This week's report, exactly as it would be sent:",
+      "vars": []
+    },
+    {
+      "key": "beta.reminder",
+      "en": "Your weekly beta report is ready",
+      "vars": []
+    },
+    {
+      "key": "beta.reminder.body",
+      "en": "Counts only. You review it before anything is sent.",
+      "vars": []
+    },
+    {
+      "key": "beta.reminder.open",
+      "en": "Review",
+      "vars": []
+    },
+    {
+      "key": "beta.send",
+      "en": "Open report on GitHub",
+      "vars": []
+    },
+    {
+      "key": "beta.title",
+      "en": "Beta programme",
+      "vars": []
+    },
+    {
+      "key": "beta.weekly",
+      "en": "Once a week, prepare a usage report I can send",
+      "vars": []
+    },
+    {
+      "key": "beta.weekly.hint",
+      "en": "Counts only: days used, starts, errors and the app's command names. No notes, names or ids. You see all of it before anything leaves.",
+      "vars": []
+    },
+    {
+      "key": "beta.what",
+      "en": "Joining turns on the features in beta here and, in the desktop app, switches updates to the beta channel. Leaving undoes both.",
+      "vars": []
+    },
+    {
       "key": "bidi.control.ALM",
       "en": "Arabic letter mark",
       "vars": []

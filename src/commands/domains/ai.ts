@@ -388,6 +388,17 @@ export function buildAiControlCommands({ getEditorView }: CommandContext): Comma
       },
     },
     {
+      // W6.31: join the beta on this device, send beta feedback and the opt-in weekly report.
+      id: "help.beta",
+      label: t("cmd.beta"),
+      hint: t("cmd.beta.hint"),
+      icon: cmdIcons.Sparkles,
+      group: t("group.tools"),
+      action: () => {
+        window.dispatchEvent(new CustomEvent("lumen-open-beta"));
+      },
+    },
+    {
       id: "ai.policy",
       label: t("cmd.ai.policy"),
       hint: t("cmd.ai.policy.hint"),
