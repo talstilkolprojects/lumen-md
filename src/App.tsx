@@ -816,6 +816,12 @@ export default function App() {
         setCaptureOpen(true);
         return;
       }
+      // ⌥⌘S → the open-sources dialog (plan W7.24). Not AltGr: AltGr+S types a letter (ś).
+      if (e.altKey && e.code === "KeyS" && !e.getModifierState("AltGraph")) {
+        e.preventDefault();
+        void import("./sources/open/OpenSourcesDialog").then((m) => m.openSourcesDialog());
+        return;
+      }
       // ⌥⌘C → the cite dialog (plan W2.16).
       if (e.altKey && e.code === "KeyC") {
         e.preventDefault();

@@ -61,6 +61,8 @@ const ROUTES: Route[] = [
   { id: "datagov-ckan", file: "sources/datagov/app.ts", marker: /withGate\(gate\(confirm\)/, gate: /enabled: \(\) => isSourceEnabled\("datagov"\)/ },
   // W7.7: the public-domain dump (catalogue and chosen authors' works), once, after the user turns the library on and confirms.
   { id: "benyehuda-dump", file: "sources/benyehuda/app.ts", marker: /withGate\(gate\(confirm\)/, gate: /enabled: \(\) => isSourceEnabled\("benyehuda"\)/ },
+  // W7.24: one dialog search; asks once, and sends only to the sources that are on.
+  { id: "open-sources-search", file: "sources/open/app.ts", marker: /searchOnline\(q, enabled, dialogFetch\(confirm\), kind\)/, gate: /if \(!h \|\| !enabledSources\(\)\[h\.source\]\) throw new SourceOffError/ },
   { id: "sefaria-texts", file: "sources/sefaria/app.ts", marker: /ledgerFetch\(\{ force: \{ category: "cloud-text", reason: LEDGER_REASON \}, consent: true \}\)/, gate: /asked \?\?= await confirm\(\);\s*if \(!asked\) throw new DeclinedError\(\)/ },
 ];
 
@@ -74,7 +76,7 @@ const CLOUD_MARKER = /data\.gov\.il\/api|apis\.cbs\.gov\.il|knesset\.gov\.il\/Od
  * has a speech service; it starts it through VoiceDictation's gated
  * startBrowserSpeech.
  */
-const NAMES_ONLY = new Set(["ai/privacyLedger.ts", "types/fileSystemAccess.d.ts", "ui/LiveDictation.tsx", "sources/sefaria/client.ts", "sources/knesset/odata.ts", "sources/datagov/api.ts", "sources/datagov/snapshot.ts"]);
+const NAMES_ONLY = new Set(["ai/privacyLedger.ts", "types/fileSystemAccess.d.ts", "ui/LiveDictation.tsx", "sources/sefaria/client.ts", "sources/knesset/odata.ts", "sources/datagov/api.ts", "sources/datagov/snapshot.ts", "sources/open/search.ts"]);
 
 const SRC = join(__dirname, "..");
 const ROOT = join(SRC, "..");

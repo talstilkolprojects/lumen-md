@@ -359,6 +359,8 @@
   "cmd.sources.knessetProtocol.hint": "Выделенные слова с выступающим, датой заседания и страницей",
   "cmd.sources.notesOnVerse": "Мои заметки об этом стихе",
   "cmd.sources.notesOnVerse.hint": "Все заметки, цитирующие стих под курсором",
+  "cmd.sources.open": "Открытые источники…",
+  "cmd.sources.open.hint": "Единый поиск по Sefaria, Кнессету, data.gov.il и «Бен-Иегуде» с правами каждого результата",
   "cmd.sources.saveOffline": "Сохранить источник для офлайна",
   "cmd.sources.saveOffline.hint": "Сохранить копию в Sources/Sefaria (только свободно лицензированные тексты), чтобы он открывался без сетевого запроса",
   "cmd.speakers.rename": "Переименовать говорящего в этой заметке…",

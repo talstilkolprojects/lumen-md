@@ -1853,6 +1853,14 @@
       "group": "Insert",
       "hint": "Keep the selected passage of a work in the highlights hub",
       "icon": "Pencil"
+    },
+    {
+      "id": "sources.open",
+      "label": "Open sources…",
+      "group": "Insert",
+      "hint": "One search over Sefaria, the Knesset, data.gov.il and the Ben-Yehuda library, with each result's rights",
+      "shortcut": "⌥⌘S",
+      "icon": "Quote"
     }
   ],
   "full": [
@@ -3858,6 +3866,14 @@
       "group": "Insert",
       "hint": "Keep the selected passage of a work in the highlights hub",
       "icon": "Pencil"
+    },
+    {
+      "id": "sources.open",
+      "label": "Open sources…",
+      "group": "Insert",
+      "hint": "One search over Sefaria, the Knesset, data.gov.il and the Ben-Yehuda library, with each result's rights",
+      "shortcut": "⌥⌘S",
+      "icon": "Quote"
     }
   ],
   "autoSaveOn": [
@@ -4136,6 +4152,7 @@
     "sources.benyehudaDownload",
     "sources.benyehudaSearch",
     "sources.benyehudaQuote",
-    "sources.benyehudaHighlight"
+    "sources.benyehudaHighlight",
+    "sources.open"
   ]
 }

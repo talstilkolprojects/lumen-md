@@ -359,6 +359,8 @@
   "cmd.sources.knessetProtocol.hint": "選択した言葉に発言者・会議日・ページを添えて",
   "cmd.sources.notesOnVerse": "この節についての自分のノート",
   "cmd.sources.notesOnVerse.hint": "カーソル位置の節を引用しているすべてのノート",
+  "cmd.sources.open": "オープンソース…",
+  "cmd.sources.open.hint": "Sefaria・クネセト・data.gov.il・ベン・イェフダを一度に検索し、各結果の権利を表示",
   "cmd.sources.saveOffline": "この典拠をオフライン用に保存",
   "cmd.sources.saveOffline.hint": "Sources/Sefaria にコピーを保存（自由ライセンスのテキストのみ）し、ネットワーク要求なしで開けるようにします",
   "cmd.speakers.rename": "このノートの話者名を変更…",

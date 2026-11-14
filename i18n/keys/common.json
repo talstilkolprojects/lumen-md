@@ -5950,6 +5950,204 @@
       "vars": []
     },
     {
+      "key": "openSources.confirm",
+      "en": "Search online for “{query}”? Only these words go to the sources you turned on (the Knesset, data.gov.il), nothing from your notes.",
+      "vars": [
+        "query"
+      ]
+    },
+    {
+      "key": "openSources.confirmFetch",
+      "en": "Fetch “{what}” from its source? Only its reference or id is sent.",
+      "vars": [
+        "what"
+      ]
+    },
+    {
+      "key": "openSources.declined",
+      "en": "Nothing was sent.",
+      "vars": []
+    },
+    {
+      "key": "openSources.failed",
+      "en": "The search failed: {error}",
+      "vars": [
+        "error"
+      ]
+    },
+    {
+      "key": "openSources.found",
+      "en": "{count} result(s) online",
+      "vars": [
+        "count"
+      ]
+    },
+    {
+      "key": "openSources.hint",
+      "en": "Type to search the sources on this device; “Search online” asks before it sends anything.",
+      "vars": []
+    },
+    {
+      "key": "openSources.keys",
+      "en": "↑↓ choose · Enter insert · Alt+O search online · Esc close",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind",
+      "en": "Kind",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.all",
+      "en": "All",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.dataset",
+      "en": "Datasets",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.law",
+      "en": "Laws",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.series",
+      "en": "Statistics",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.verse",
+      "en": "Jewish sources",
+      "vars": []
+    },
+    {
+      "key": "openSources.kind.work",
+      "en": "Literature",
+      "vars": []
+    },
+    {
+      "key": "openSources.noLocal",
+      "en": "Nothing on this device. Try “Search online”.",
+      "vars": []
+    },
+    {
+      "key": "openSources.onDevice",
+      "en": "on this device",
+      "vars": []
+    },
+    {
+      "key": "openSources.online",
+      "en": "Search online",
+      "vars": []
+    },
+    {
+      "key": "openSources.placeholder",
+      "en": "A verse, a law, a poem or a statistic",
+      "vars": []
+    },
+    {
+      "key": "openSources.results",
+      "en": "Results",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.cbs-licence",
+      "en": "CBS licence",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.cc-by",
+      "en": "CC BY",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.cc-by-sa",
+      "en": "CC BY-SA",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.cc0",
+      "en": "CC0",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.gov-open",
+      "en": "Government open data",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.link-only",
+      "en": "Link only",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.public-domain",
+      "en": "Public domain",
+      "vars": []
+    },
+    {
+      "key": "openSources.rights.section-6",
+      "en": "§6: laws and Knesset records",
+      "vars": []
+    },
+    {
+      "key": "openSources.searching",
+      "en": "Searching…",
+      "vars": []
+    },
+    {
+      "key": "openSources.sends.benyehuda",
+      "en": "downloads once; search is local",
+      "vars": []
+    },
+    {
+      "key": "openSources.sends.datagov",
+      "en": "sends search words and dataset ids",
+      "vars": []
+    },
+    {
+      "key": "openSources.sends.knesset",
+      "en": "sends law and bill names",
+      "vars": []
+    },
+    {
+      "key": "openSources.sends.sefaria",
+      "en": "sends the reference you choose",
+      "vars": []
+    },
+    {
+      "key": "openSources.source.benyehuda",
+      "en": "Ben-Yehuda library",
+      "vars": []
+    },
+    {
+      "key": "openSources.source.datagov",
+      "en": "data.gov.il and CBS",
+      "vars": []
+    },
+    {
+      "key": "openSources.source.knesset",
+      "en": "Knesset",
+      "vars": []
+    },
+    {
+      "key": "openSources.source.sefaria",
+      "en": "Sefaria",
+      "vars": []
+    },
+    {
+      "key": "openSources.switches",
+      "en": "Sources (off: nothing is sent to it)",
+      "vars": []
+    },
+    {
+      "key": "openSources.title",
+      "en": "Open sources",
+      "vars": []
+    },
+    {
       "key": "organizer.analysing",
       "en": "Looking for links, tags, duplicates and maps of content…",
       "vars": []

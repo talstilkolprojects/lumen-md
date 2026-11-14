@@ -43,6 +43,7 @@ route loses its gate.
 | Laws and Knesset records | `knesset-odata` | laws you saved for offline (Sources/Knesset/Laws); "Ask the law" searches only them | the Knesset's OData service: the law or bill name only, such as "הגנת הפרטיות" | only after you turn Knesset sources on, each time you confirm a lookup |
 | Government data | `datagov-ckan` | the CSV snapshot saved in your vault (Data/datagov, Data/cbs) | data.gov.il's CKAN API and the CBS series API: the search words, a dataset id or a series id | only after you turn government data on, each time you confirm a fetch; a note with a snapshot needs no request |
 | Ben-Yehuda library | `benyehuda-dump` | the works you downloaded (Sources/BenYehuda): search and reading are local | GitHub (raw.githubusercontent.com): the project's public-domain catalogue and the chosen authors' texts; nothing of yours is sent | once, when you turn the library on and confirm a download |
+| Open sources dialog | `open-sources-search` | results from this device: references, saved laws, the downloaded library | the search words, to the Knesset and data.gov.il only when they are on | each time you press "Search online" and confirm |
 
 Model downloads (Hugging Face, the OCR and dictionary files) carry no
 content of yours; they are listed in the privacy ledger and happen only

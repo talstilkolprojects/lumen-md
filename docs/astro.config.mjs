@@ -132,6 +132,7 @@ export default defineConfig({
             { label: "Laws and Knesset records", slug: "workspace/knesset-sources", translations: { he: "חקיקה ודברי הכנסת" } },
             { label: "Government data (data.gov.il, CBS)", slug: "workspace/government-data", translations: { he: "נתונים ממשלתיים (data.gov.il, הלמ״ס)" } },
             { label: "Ben-Yehuda library (offline)", slug: "workspace/ben-yehuda-library", translations: { he: "ספריית בן־יהודה (בלי רשת)" } },
+            { label: "Open sources", slug: "workspace/open-sources", translations: { he: "מקורות פתוחים" } },
             { label: "Israeli time", slug: "workspace/israeli-time", translations: { he: "זמן ישראלי" } },
           ],
         },
