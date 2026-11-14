@@ -341,12 +341,16 @@ one-way code, nor the reverse:
 
 | kind | prefix | version | body fields |
 |---|---|---|---|
-| `request` | `lumen-pair-request:2:` | 2 | `kind, vaultId, epoch, ringRev, ringDigest, counter, digest, requestedAt, nonce` |
-| `answer` | `lumen-pair-answer:2:` | 2 | `kind, vaultId, request, nonce, counter, digest, epoch, ringRev, ringDigest, answeredAt` |
-| `code` | `lumen-pair:3:` | 3 | `kind, vaultId, counter, digest, epoch, ringRev, ringDigest, issuedAt, nonce` |
+| `request` | `lumen-pair-request:3:` | 3 | `kind, vaultId, epoch, ringRev, ringDigest, counter, digest, requestedAt, nonce, commit` |
+| `answer` | `lumen-pair-answer:3:` | 3 | `kind, vaultId, request, nonce, counter, digest, epoch, ringRev, ringDigest, answeredAt, pub` |
+| `code` | `lumen-pair:4:` | 4 | `kind, vaultId, counter, digest, epoch, ringRev, ringDigest, issuedAt, nonce, commit` |
+| `reveal` | `lumen-pair-reveal:1:` | 1 | `kind, vaultId, session, role, pub` (§6a, through the storage) |
+| `confirm` | `lumen-pair-confirm:2:` | 2 | `kind, vaultId, session, role, tag, window` (§6a, through the storage) |
 
-Messages of earlier builds (`lumen-pair:2:`, `lumen-pair-request:1:`,
-`lumen-pair-answer:1:`) are refused as "from an older build".
+Messages of earlier builds (`lumen-pair:2:`, `lumen-pair:3:`,
+`lumen-pair-request:1:`, `lumen-pair-request:2:`, `lumen-pair-answer:1:`,
+`lumen-pair-answer:2:`, `lumen-pair-confirm:1:`) are refused as "from an older build": the last three
+carry no comparison key (§6a), so they could never be confirmed.
 
 **Two-way pairing** (third review 12.11, N3), the default:
 
@@ -383,6 +387,97 @@ so a new device shown an epoch from before *any* device's revocation is
 caught on the answering device. What remains is a key change made on a
 third device between an answer and its use (§9).
 
+### 6a. The comparison (plan W8.5, seventh review 12.11 G4)
+
+No message above commits anything by itself. A code or an answer is a
+bearer token: one that leaked, or that the user enters after cancelling the
+pairing on the issuing device (G4), would otherwise pair a device the
+storage shows an old state. So both devices show five symbols derived from a
+fresh X25519 exchange and the whole transcript, and the new device takes the
+anchors only once the user has confirmed that the symbols match **on both
+devices** and it holds the issuer's confirmation.
+
+The design follows Matrix's SAS verification (a hash commitment first, then
+the keys, then the symbols and MACs; spec "Short Authentication String (SAS)
+verification"), compared with Signal's safety numbers (60 digits, long enough
+that no commitment is needed, but too long to compare in 20 seconds) and
+Magic Wormhole (a PAKE on a short code, with an optional "verifier" hash of
+the session key to compare). A PAKE would need a new primitive; Lumen already
+has X25519, HKDF and HMAC.
+
+Roles: the *issuer* is the existing device, the *joiner* the new one. Each
+makes a fresh X25519 key pair per pairing, kept in memory only (a restart
+ends the pairing; its code or answer can then never be confirmed).
+`commit(pub) = sha256hex("lumen-pair-sas/1/commit\0" ‖ pub)`.
+
+| flow | by hand, first | by hand, second | through the storage |
+|---|---|---|---|
+| two-way | request: `commit = commit(pub_J)` | answer: `pub = b64u(pub_I)` | reveal (joiner): `pub_J` |
+| one-way | code: `commit = commit(pub_I)` | — | reveal (joiner): `pub_J`, then reveal (issuer): `pub_I` |
+
+Whoever sends a key first sends only its commitment, and reveals the key
+after it has seen the other's; a reveal that doesn't match its commitment is
+ignored. An attacker in the middle — even one holding the epoch's pairing
+key, such as the device about to be revoked, and controlling both hand-carried
+transfers — must fix its keys before it can compute either device's symbols:
+one guess, 2^-30.
+
+Storage objects are named `opaqueName("pairing/" + session + "/" + what)`
+(§4's names key), `what` one of `reveal-issuer`, `reveal-joiner`,
+`confirm-issuer`, `confirm-joiner`; their content is the message text above
+(UTF-8). `session` is the SHA-256 hex of the first message (the request, or
+the code), trimmed.
+
+    transcript = JSON array ["lumen-pair-sas/1", flow, vaultId, epoch, ringRev,
+                 ringDigest, counter, digest, session, answer, nonce,
+                 b64u(pub_I), b64u(pub_J)]
+      (epoch … digest: the anchors the issuer's message vouches for;
+       answer: sha256hex(answer text), "" one-way; nonce: the first message's)
+    salt       = SHA-256(transcript)
+    shared     = X25519(own private key, other's public key)   (all-zero refused)
+    sas        = HKDF-SHA256(shared, salt, "lumen-pair-sas/1/sas", 4 bytes)
+    symbols    = the top 30 bits of sas, six bits each, most significant first:
+                 five indices into the 64-symbol list (src/sync/e2ee/sas.ts)
+    confirm_R  = HMAC-SHA256(HKDF-SHA256(shared, salt, "lumen-pair-sas/1/confirm/" + R, 32),
+                             "lumen-pair-sas/1/confirm-window\0" ‖ salt ‖ "\0" ‖ decimal(window)),
+                 R ∈ {issuer, joiner}; window: the ms that side still holds (0 … 6 min)
+
+When its user presses "They match", the joiner posts its `confirm` once,
+with `window` = the time it can still commit (its `until` minus its now, a
+duration, so no clock is compared). **The issuer confirms last** (review
+13, S13-1): after its user's "They match" it posts nothing until the
+joiner's confirmation is there and verifies. Then (review 27, S27-1) it sets
+`hold = min(window, until − now) + 60 s` (`until`: when its code or answer
+stops holding), stores `pairingKept = now + hold`, and posts its own
+`confirm` with `window = hold`. No key change happens before `pairingKept`,
+**cancel included**. The joiner commits only if the issuer's confirmation
+verifies *and* it is still within `hold` of when it posted its own: the
+issuer read the joiner's confirmation after it was posted, so every commit
+falls inside the issuer's hold whatever either clock says. The joiner's
+window ends when the offer does: the code's `issuedAt + 2 min` or the
+request's life. A code or an answer more than 60 s in the joiner's future
+(`issuedAt`, `answeredAt`) is refused when entered.
+
+No pairing holds longer than an answer's life plus 60 s (S27-2): a
+`pairingUntil` or `pairingKept` stored further ahead than that (a clock that
+was fast, then corrected) is void and cleared.
+
+A confirmation that doesn't verify aborts that side. "They don't match" (or
+a stop, or a cancel before the issuer confirmed) aborts and records nothing:
+the joiner forgets its request; the issuer's hold on key changes goes back to
+what it was, since its code or answer can no longer be confirmed. The issuer
+confirms only while its keyring is the one its message vouched for, and
+within the code's or answer's life. Confirm, reject and cancel run under the
+device lock on the state as stored (ninth review H3). The provider can
+withhold any of these objects: then nothing is paired.
+
+The 64 symbols are an emoji each, with a name in every language
+(`e2ee.sas.w0` … `e2ee.sas.w63`), so two devices set to different languages
+compare the emoji. The Hebrew and English names were chosen without
+near-homographs: no name is within one letter of another, contained in
+another, or (four letters and up) within two letters of another; the lists
+are in the user docs (sync/e2ee-keys).
+
 ## 7. age
 
 Lumen reads and writes age v1 itself: X25519 and scrypt recipients, the
@@ -414,10 +509,15 @@ scrypt file.
   keyring revision 1), with what they anchor.
 - `pairingTwoWay[]`: a request and its answer for the same two vaults, with
   what each says; the request relabelled as an answer or a code must not
-  verify.
+  verify. Since §6a the code carries the issuer's commitment, the request
+  the joiner's, and the answer the issuer's comparison key.
+- `sas[]` (§6a): for each of those sessions and both flows, the two fixed
+  X25519 private keys (hex), the transcript, the commitment(s), the five
+  symbols and both confirmations. `make-vectors.mts --pairing-only` remakes
+  the pairing vectors and these without touching the rest.
 
 ```sh
-python3 scripts/sync-protocol/check_vectors.py      # the independent reader: 31/31
+python3 scripts/sync-protocol/check_vectors.py      # the independent reader: 39/39
 npx vitest run src/__tests__/e2eeVectors.test.ts    # Lumen's own reader, same file
 ```
 

@@ -19,7 +19,7 @@ import { isSyncedPath, vaultLocalFiles } from "../sync/e2ee/localFiles";
 import { createMemoryBackend } from "../storage/vault/memory";
 import { VaultError, type VaultBackend } from "../storage/vault/types";
 import { utf8 } from "../sync/e2ee/bytes";
-import { device, joinTrusted, joinVault, newVault, trusted, PASSPHRASE, snapshot, TEST_ITERATIONS, TEST_POLICY } from "./helpers/e2ee";
+import { pairConfirmed, device, joinTrusted, joinVault, newVault, trusted, PASSPHRASE, snapshot, TEST_ITERATIONS, TEST_POLICY } from "./helpers/e2ee";
 
 /** True when `needle` occurs in `hay` as a byte sequence. */
 function contains(hay: Uint8Array, needle: Uint8Array): boolean {
@@ -218,10 +218,10 @@ describe("e2ee sync: anchoring a new device (pairing / TOFU)", () => {
   it("after pairing, a new device rejects the old manifest", async () => {
     const { provider, a, name, old } = await replaySetup();
     const code = await a.sync.pairingCode();
-    expect(code).toMatch(/^lumen-pair:3:0:[A-Za-z0-9_-]+$/);
+    expect(code).toMatch(/^lumen-pair:4:0:[A-Za-z0-9_-]+$/);
 
     const c = await joinVault("C", provider);
-    await c.sync.pair(code);
+    await pairConfirmed(c, a, code);
     expect(await c.sync.freshness()).toEqual({ source: "paired", verified: true, counter: 4 });
     provider.objects.set(name, { ...old, etag: "replayed" });
     await expect(c.sync.sync()).rejects.toMatchObject({ kind: "older", seen: 4, got: 3 });
@@ -257,7 +257,7 @@ describe("e2ee sync: anchoring a new device (pairing / TOFU)", () => {
     // … cannot vouch for D's newer state: refused, D stays unverified at 5.
     await expect(d.sync.pair(staleCode)).rejects.toThrow(/older than this device/);
     expect(await d.sync.freshness()).toEqual({ source: "unverified", verified: false, counter: 5 });
-    await d.sync.pair(await a.sync.pairingCode()); // a current code does
+    await pairConfirmed(d, a, await a.sync.pairingCode()); // a current code does
     expect(await d.sync.freshness()).toEqual({ source: "paired", verified: true, counter: 5 });
     // A verified device ignores an old code: nothing changes.
     await d.sync.pair(staleCode);
@@ -276,9 +276,10 @@ describe("e2ee sync: anchoring a new device (pairing / TOFU)", () => {
     await expect(c.sync.pair("hello")).rejects.toBeInstanceOf(PairingError);
     await expect(c.sync.pair("lumen-pair:1:AAAA")).rejects.toBeInstanceOf(PairingError); // an older build's code
     await expect(c.sync.pair("lumen-pair:2:0:AAAA")).rejects.toThrow(/older build/); // before the fifth review's domain separation
-    await expect(c.sync.pair("lumen-pair:3:0:@@@")).rejects.toBeInstanceOf(PairingError);
-    await expect(c.sync.pair("lumen-pair:3:0:AAAA")).rejects.toBeInstanceOf(PairingError);
-    await expect(c.sync.pair("lumen-pair:3:x:AAAA")).rejects.toBeInstanceOf(PairingError);
+    await expect(c.sync.pair("lumen-pair:3:0:AAAA")).rejects.toThrow(/older build/); // before the comparison (W8.5)
+    await expect(c.sync.pair("lumen-pair:4:0:@@@")).rejects.toBeInstanceOf(PairingError);
+    await expect(c.sync.pair("lumen-pair:4:0:AAAA")).rejects.toBeInstanceOf(PairingError);
+    await expect(c.sync.pair("lumen-pair:4:x:AAAA")).rejects.toBeInstanceOf(PairingError);
     const altered = code.slice(0, -3) + (code.endsWith("A") ? "BBB" : "AAA");
     await expect(c.sync.pair(altered)).rejects.toBeInstanceOf(PairingError);
 
@@ -665,7 +666,7 @@ describe("e2ee sync: edge cases", () => {
     const d = await joinVault("D", provider);
     await d.sync.sync();
     expect(await d.sync.freshness()).toMatchObject({ source: "unverified", counter: 2 });
-    await d.sync.pair(await a.sync.pairingCode());
+    await pairConfirmed(d, a, await a.sync.pairingCode());
     expect(await d.sync.freshness()).toEqual({ source: "paired", verified: true, counter: 3 });
     await expect(d.sync.sync()).rejects.toMatchObject({ kind: "older", seen: 3, got: 2 });
     provider.objects.set(name, current);
@@ -991,7 +992,7 @@ describe("e2ee sync: newer manifests must descend from the trusted one", () => {
     await a.sync.sync();
     const b = await joinTrusted("B", provider);
     await b.sync.sync();
-    await b.sync.pair(await a.sync.pairingCode());
+    await pairConfirmed(b, a, await a.sync.pairingCode());
     const fork = provider.objects.get(name)!; // counter 2, both devices anchored here
 
     a.files.set("n.md", "A's edit");
@@ -1020,7 +1021,7 @@ describe("e2ee sync: newer manifests must descend from the trusted one", () => {
     await a.sync.sync();
     const c = await joinVault("C", provider);
     await c.sync.sync();
-    await c.sync.pair(await a.sync.pairingCode());
+    await pairConfirmed(c, a, await a.sync.pairingCode());
     expect(await c.sync.freshness()).toMatchObject({ verified: true });
     for (let i = 0; i < HISTORY_LENGTH + 1; i++) {
       a.files.set("n.md", `v${i}`);
@@ -1032,7 +1033,7 @@ describe("e2ee sync: newer manifests must descend from the trusted one", () => {
     // A device that keeps up stays verified.
     a.files.set("n.md", "again");
     await a.sync.sync();
-    await c.sync.pair(await a.sync.pairingCode());
+    await pairConfirmed(c, a, await a.sync.pairingCode());
     a.files.set("n.md", "and again");
     await a.sync.sync();
     await c.sync.sync();
