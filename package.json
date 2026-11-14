@@ -140,6 +140,7 @@
     "eval:lit-review": "LUMEN_EVAL_LIT=1 vitest run --config vitest.eval.config.ts src/agents/eval/litReview.eval.ts",
     "skips": "node scripts/skip-report.mjs",
     "nightly": "node scripts/nightly/run.mjs",
+    "security:ruleset-drift": "node scripts/security/ruleset-drift.mjs",
     "tts:mos": "node scripts/tts-mos.mjs",
     "test:sr": "playwright test -c sr/playwright.sr.config.ts",
     "drill:data-safety": "node scripts/data-safety-drill.mjs",

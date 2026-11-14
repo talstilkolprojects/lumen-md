@@ -1,0 +1,66 @@
+{
+  "$comment": "Plan W11.S4: the repository rulesets as code. Without GitHub Actions only the server can enforce a gate, so these are the branch rules for main and the integration trains (verify/*). Applied by the owner (W10.O1): `node scripts/security/ruleset-drift.mjs --print-apply` prints the gh commands. `node scripts/security/ruleset-drift.mjs` compares this file with `gh api repos/talstilkol/lumen-md/rulesets` (the local nightly runs it). Schema: security/github-ruleset.schema.json (GitHub's REST body for POST /repos/{owner}/{repo}/rulesets). The status checks are pinned by name; integration_id is filled from the API after the first apply. Bypass: the repository admin role (actor_id 5), in pull_request mode only — a bypass is a merged PR, recorded in the PR and the ruleset insights; never a direct push.",
+  "repo": "talstilkol/lumen-md",
+  "rulesets": [
+    {
+      "name": "main",
+      "target": "branch",
+      "enforcement": "active",
+      "bypass_actors": [{ "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "pull_request" }],
+      "conditions": { "ref_name": { "include": ["refs/heads/main"], "exclude": [] } },
+      "rules": [
+        { "type": "deletion" },
+        { "type": "non_fast_forward" },
+        { "type": "required_signatures" },
+        {
+          "type": "pull_request",
+          "parameters": {
+            "required_approving_review_count": 1,
+            "dismiss_stale_reviews_on_push": true,
+            "require_code_owner_review": true,
+            "require_last_push_approval": true,
+            "required_review_thread_resolution": true
+          }
+        },
+        {
+          "type": "required_status_checks",
+          "parameters": {
+            "strict_required_status_checks_policy": true,
+            "do_not_enforce_on_create": false,
+            "required_status_checks": [{ "context": "Vercel" }, { "context": "lumen/buildkite" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "verify trains",
+      "target": "branch",
+      "enforcement": "active",
+      "bypass_actors": [{ "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "pull_request" }],
+      "conditions": { "ref_name": { "include": ["refs/heads/verify/*"], "exclude": [] } },
+      "rules": [
+        { "type": "deletion" },
+        { "type": "non_fast_forward" },
+        { "type": "required_signatures" },
+        {
+          "type": "pull_request",
+          "parameters": {
+            "required_approving_review_count": 1,
+            "dismiss_stale_reviews_on_push": true,
+            "require_code_owner_review": true,
+            "require_last_push_approval": true,
+            "required_review_thread_resolution": true
+          }
+        },
+        {
+          "type": "required_status_checks",
+          "parameters": {
+            "strict_required_status_checks_policy": false,
+            "do_not_enforce_on_create": true,
+            "required_status_checks": [{ "context": "Vercel" }, { "context": "lumen/buildkite" }]
+          }
+        }
+      ]
+    }
+  ]
+}
