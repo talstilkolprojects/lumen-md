@@ -73,13 +73,35 @@ pub enum UpdateStatus {
 #[cfg(desktop)]
 pub mod imp {
     use super::{configured, Channel, UpdateStatus};
+    use crate::update_guard;
+    use tauri::Manager;
     use tauri_plugin_updater::UpdaterExt;
+
+    /// W10.D9: the highest version ever installed on this machine, kept in
+    /// the app data dir and raised to the running version on every check.
+    fn highest_installed(app: &tauri::AppHandle) -> Option<String> {
+        let dir = app.path().app_data_dir().ok()?;
+        let file = dir.join("highest-installed-version");
+        let recorded = std::fs::read_to_string(&file).ok();
+        let current = app.package_info().version.to_string();
+        let top = update_guard::highest(&current, recorded.as_deref());
+        if recorded.as_deref().map(str::trim) != Some(top.as_str()) {
+            let _ = std::fs::create_dir_all(&dir);
+            let _ = std::fs::write(&file, &top);
+        }
+        Some(top)
+    }
 
     fn updater(app: &tauri::AppHandle, channel: Channel) -> Result<Option<tauri_plugin_updater::Updater>, String> {
         let Some((key, url)) = configured(channel) else { return Ok(None) };
         let endpoint = url.parse().map_err(|e| format!("{e}"))?;
+        let recorded = highest_installed(app);
         app.updater_builder()
             .pubkey(key)
+            // W10.D9 (CVE-2026-95625): the manifest isn't signed, so an older
+            // but validly signed build is refused here, and so is anything
+            // below the highest version this machine ever ran.
+            .version_comparator(move |current, remote| update_guard::accept(&current.to_string(), &remote.version.to_string(), recorded.as_deref()))
             .endpoints(vec![endpoint])
             .map_err(|e| e.to_string())?
             .build()

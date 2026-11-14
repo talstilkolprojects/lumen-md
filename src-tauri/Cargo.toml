@@ -24,7 +24,7 @@ tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-dialog = "2"
 # Desktop updates (plan 11.5): checked and installed from Rust commands
 # (`update_check`, `update_install`); signed with Tal's updater key (15.7).
-tauri-plugin-updater = "2"
+tauri-plugin-updater = "2.14.1"
 # The desktop vault (plan 4.3): the only file-system access the WebView has,
 # confined to the folder the user picked. Replaces tauri-plugin-fs, whose
 # broad `fs:` scope nothing used.

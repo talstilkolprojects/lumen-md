@@ -85,7 +85,8 @@
       "endpoints": [
         "https://github.com/talstilkol/lumen-md/releases/latest/download/latest.json"
       ],
-      "requireSignedVersion": true
+      "requireSignedVersion": true,
+      "allowDowngrades": false
     }
   }
 }

@@ -135,3 +135,35 @@ describe("the repo", () => {
     expect(errors).toEqual([]);
   });
 });
+
+describe("W10.D9: the critical zip advisory and the updater", () => {
+  const root = process.cwd();
+  const { entries } = JSON.parse(readFileSync(join(root, "security/known-bad.json"), "utf8"));
+  const lock = readFileSync(join(root, "src-tauri/Cargo.lock"), "utf8");
+  // verify/train-4's Cargo.lock (fcf760fde8): tauri-plugin-updater 2.14.0, zip 4.6.1. The two blocks as they were.
+  const oldLock = `[[package]]\nname = "tauri-plugin-updater"\nversion = "2.14.0"\n\n[[package]]\nname = "zip"\nversion = "4.6.1"\n`;
+  const withOld = (f: string) => (f === "src-tauri/Cargo.lock" ? cargoLockVersions(oldLock) : existsSync(join(root, f)) ? readVersions(root, f) : null);
+
+  it("a critical or high entry can't wait behind an open exception", () => {
+    const crit = { file: "Cargo.lock", name: "zip", versions: ["4.6.1"], advisories: ["GHSA-y"], status: "open", severity: "critical", fix: "cargo update", expires: "2026-12-01" };
+    const m = (f: string) => (f === "Cargo.lock" ? cargoLockVersions(oldLock) : null);
+    expect(check([crit], m, today).errors[0]).toMatch(/zip: critical GHSA-y can't stay open \(still at 4\.6\.1\); run: cargo update/);
+    expect(check([{ ...crit, severity: "high" }], m, today).errors).toHaveLength(1);
+    expect(check([{ ...crit, severity: "moderate" }], m, today).errors).toEqual([]);
+  });
+
+  it("is red on train-4's lock (zip 4.6.1, updater 2.14.0)", () => {
+    const { errors } = check(entries, withOld, today);
+    expect(errors.some((e: string) => /zip is back at a known-bad version: 4\.6\.1/.test(e))).toBe(true);
+    expect(errors.some((e: string) => /tauri-plugin-updater is back at a known-bad version: 2\.14\.0/.test(e))).toBe(true);
+  });
+
+  it("is green on this lock: zip ≥ 9.1.0 through tauri-plugin-updater ≥ 2.14.1, which Cargo.toml requires", () => {
+    const v = Object.fromEntries(cargoLockVersions(lock).map((p: Pkg) => [p.name, p.version]));
+    expect(compareVersions(v.zip, "9.1.0")).toBeGreaterThanOrEqual(0);
+    expect(compareVersions(v["tauri-plugin-updater"], "2.14.1")).toBeGreaterThanOrEqual(0);
+    expect(readFileSync(join(root, "src-tauri/Cargo.toml"), "utf8")).toMatch(/^tauri-plugin-updater = "2\.14\.1"$/m);
+    const zip = entries.find((e: { name: string }) => e.name === "zip");
+    expect(zip).toMatchObject({ status: "fixed", severity: "critical", range: "<9.1.0" });
+  });
+});
