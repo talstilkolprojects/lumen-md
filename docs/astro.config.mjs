@@ -177,6 +177,7 @@ export default defineConfig({
             { label: "Grounded summaries", translations: { he: "סיכומים מעוגנים" }, slug: "ai/summarize" },
             { label: "Measuring the local models", slug: "ai/model-bench", translations: { he: "מדידת המודלים המקומיים" } },
             { label: "Search reranking, measured", translations: { he: "דירוג מחדש בחיפוש, במדידה" }, slug: "ai/reranker" },
+            { label: "Choosing the Hebrew search model", translations: { he: "בחירת מודל החיפוש בעברית" }, slug: "ai/embedding-competition" },
             { label: "Meeting notes", translations: { he: "סיכום פגישה" }, slug: "ai/meeting-notes" },
             { label: "Privacy and the AI policy", slug: "ai/privacy", translations: { he: "פרטיות ומדיניות ה-AI" } },
             { label: "Airplane mode and the network monitor", slug: "ai/airplane-mode", translations: { he: "מצב טיסה וצג הרשת" } },
