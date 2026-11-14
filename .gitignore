@@ -4,6 +4,8 @@ node_modules_bad/
 dist/
 dist-registry/
 dist-legal-packet/
+# The Cloudflare rebuild's manifest (plan W7.23, scripts/supply-chain/cf-build.sh)
+/.repro-out/
 
 # Build
 tsconfig.tsbuildinfo

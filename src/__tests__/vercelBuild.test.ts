@@ -17,8 +17,8 @@ const pkg = JSON.parse(readFileSync(resolve(ROOT, "package.json"), "utf8")) as {
 
 describe("scripts/vercel-build.mjs", () => {
   it("runs every gate on a preview, and only build + budget in production", () => {
-    expect(gatesFor({ VERCEL_ENV: "preview" })).toEqual(["build", "budget", "secrets", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "docs:complete", "licenses", "mutation"]);
-    expect(gatesFor({ VERCEL_ENV: "production" })).toEqual(["build", "budget"]);
+    expect(gatesFor({ VERCEL_ENV: "preview" })).toEqual(["build", "budget", "secrets", "manifest", "vitest", "e2e", "i18n:check", "hygiene", "docs:sync", "docs:complete", "licenses", "mutation"]);
+    expect(gatesFor({ VERCEL_ENV: "production" })).toEqual(["build", "budget", "manifest"]);
     // Not on Vercel: a local run reproduces a preview build.
     expect(gatesFor({})).toEqual(PREVIEW_GATES);
     expect(gatesFor({ VERCEL_ENV: "preview" }, ["--production"])).toEqual(PRODUCTION_GATES);
