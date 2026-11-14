@@ -19,7 +19,7 @@ import { memoryFiles } from "../sync/e2ee/localFiles";
 import { blobName, manifestName, sealManifest } from "../sync/e2ee/manifest";
 import { PairingEpochError, PairingError, PAIRING_TTL_MS } from "../sync/e2ee/pairing";
 import { memoryStateStore } from "../sync/e2ee/state";
-import { device, joinVault, newVault, PASSPHRASE, TEST_POLICY } from "./helpers/e2ee";
+import { pairConfirmed, device, joinVault, newVault, PASSPHRASE, TEST_POLICY } from "./helpers/e2ee";
 
 type Provider = ReturnType<typeof memoryProvider>;
 const ringJson = (p: Provider) => JSON.parse(fromUtf8(p.objects.get(KEYRING_NAME)!.data));
@@ -234,7 +234,7 @@ describe("N3: pairing", () => {
     const laptop = await joinVault("laptop", p);
     await laptop.sync.sync();
     const request = await laptop.sync.pairingRequest();
-    expect(request).toMatch(/^lumen-pair-request:2:1:/);
+    expect(request).toMatch(/^lumen-pair-request:3:1:/);
     for (const [k, v] of now) p.objects.set(k, v);
     const err = await a.sync.answerPairing(request).then(() => null, (e) => e);
     expect(err).toBeInstanceOf(PairingEpochError);
@@ -255,7 +255,7 @@ describe("N3: pairing", () => {
     const forB = await a.sync.answerPairing(await b.sync.pairingRequest());
     await c.sync.pairingRequest();
     await expect(c.sync.pair(forB)).rejects.toBeInstanceOf(PairingError);
-    await b.sync.pair(forB);
+    await pairConfirmed(b, a, forB);
     expect((await b.sync.freshness()).source).toBe("paired");
     await expect(b.sync.pair(forB)).rejects.toBeInstanceOf(PairingError); // one use
   });

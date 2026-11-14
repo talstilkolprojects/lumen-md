@@ -74,3 +74,43 @@ export function trusted(d: Device): Device {
 export function snapshot(d: Device): Array<[string, string]> {
   return [...d.files.files.keys()].sort().map((p) => [p, d.files.text(p) ?? ""]);
 }
+
+/**
+ * Pair `joiner` with `code` (a one-way code or the answer to its request)
+ * from `issuer`, the user saying the symbols match on both devices (plan
+ * W8.5): `pair`, the symbols on both, `confirmPairing` on both. Fails when
+ * the symbols differ or either side doesn't finish. A joiner that needs
+ * nothing from the code (verified, already newer) shows no symbols: then
+ * the issuer's side is called off.
+ */
+export async function pairConfirmed(joiner: { sync: E2eeSync }, issuer: { sync: E2eeSync }, code: string, relay: () => void = () => undefined): Promise<void> {
+  await joiner.sync.pair(code);
+  relay();
+  const i = await issuer.sync.pairingSas();
+  relay();
+  const j = await joiner.sync.pairingSas();
+  if (!j) {
+    await issuer.sync.rejectPairing();
+    return;
+  }
+  if (!i || i.symbols.join() !== j.symbols.join()) throw new Error(`the symbols differ: ${i?.emoji.join("")} | ${j.emoji.join("")}`);
+  if ((await issuer.sync.confirmPairing()) !== "waiting") throw new Error("the issuer finished before the new device confirmed");
+  relay();
+  if ((await joiner.sync.confirmPairing()) !== "done") throw new Error("the new device is still waiting");
+  relay();
+  if ((await issuer.sync.confirmPairing()) !== "done") throw new Error("the issuer is still waiting");
+  relay();
+}
+
+/**
+ * Two storages that differ (one withholds the other's state from a device)
+ * but both pass on the comparison's objects (plan W8.5): copies every object
+ * one has and the other lacks, both ways. For tests that pair a device the
+ * storage shows a withheld copy.
+ */
+export function relayBetween(a: { objects: Map<string, { data: Uint8Array; etag: string }> }, b: { objects: Map<string, { data: Uint8Array; etag: string }> }): () => void {
+  return () => {
+    for (const [k, v] of a.objects) if (!b.objects.has(k)) b.objects.set(k, v);
+    for (const [k, v] of b.objects) if (!a.objects.has(k)) a.objects.set(k, v);
+  };
+}
