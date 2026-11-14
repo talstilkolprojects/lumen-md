@@ -81,3 +81,51 @@ Post it as a PR comment with a fenced block whose language is
   that the test fails without your fix.
 - Put the fix in a patch or a separate PR for the author; then post the
   receipt for the head you reviewed.
+
+## Who can post a receipt
+
+Only a comment by an account with write access to the repository counts:
+GitHub's `OWNER`, `MEMBER` or `COLLABORATOR`. On a public repository anyone
+can comment, and a stranger's receipt doesn't open the gate. `pr:check`
+lists it with the reason. A receipt's `files` must name what was read. An
+entry such as `*`, `**` or `/` that covers the whole repository doesn't count.
+
+The PR's author can't review it, and neither can anyone who wrote or
+committed a commit in its range. `pr:check` refuses a receipt posted by the
+PR's author, and a receipt whose reviewer matches the author, or any
+commit's author or committer, by GitHub login, git name or email. The
+registry entry may list the reviewer's `login` and `emails` for this.
+
+## Signed receipts
+
+Every agent lane posts as the same GitHub account, so the account can't show
+that the reviewer isn't the author. A receipt counts only when it is signed
+with the Ed25519 key that `security/reviewers.json` lists for the reviewer it
+names. An unsigned receipt never counts:
+
+```bash
+# once per reviewer; the private key never goes into a repository
+node scripts/review-sign.mjs keygen R --out ~/.lumen-review-keys
+#   → add the printed entry under "reviewers" in security/reviewers.json
+# for each review
+node scripts/review-sign.mjs sign receipt.json --key ~/.lumen-review-keys/R.key.pem --comment
+#   → post the printed comment on the PR
+node scripts/review-sign.mjs verify receipt.json
+```
+
+The signature covers the whole receipt except `signature`, with keys sorted,
+so changing any field after signing breaks it. With no key in
+`security/reviewers.json` (or no file), no receipt counts, and the report says
+so.
+
+## A train's coverage
+
+`npm run review:coverage -- --train origin/verify/train-2 --base origin/main`
+lists every sensitive PR merged into the train (merge subjects
+`Merge #N …`, trains merged into the train included) and the train's own
+integration commits. For each, it says whether a receipt counts for the head
+the train holds. The train's own commits need a receipt for the train's head
+(`--train-pr <n>`). Receipts come from the PRs' comments (`--live`) and/or a
+folder of receipt files (`--receipts <dir>`). The command exits with 1 below
+100%. `--codeowners <file>` reads the sensitive list from a file, for a train
+that doesn't carry `.github/CODEOWNERS` yet.
