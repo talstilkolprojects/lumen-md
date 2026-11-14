@@ -80,12 +80,19 @@ export function countWords(text: string): number {
  * from in the original, so a match found in the normalized text can be
  * highlighted in the text the user sees.
  */
+/** `normalizeForMatch` of single characters, memoised: a text repeats few distinct characters. */
+const foldCache = new Map<string, string>();
+
 export function normalizeWithMap(text: string): { text: string; map: number[] } {
   let out = "";
   const map: number[] = [];
   let i = 0;
   for (const ch of text) {
-    const folded = normalizeForMatch(ch);
+    let folded = foldCache.get(ch);
+    if (folded === undefined) {
+      folded = normalizeForMatch(ch);
+      if (foldCache.size < 4096) foldCache.set(ch, folded);
+    }
     for (const c of folded) {
       out += c;
       map.push(i);

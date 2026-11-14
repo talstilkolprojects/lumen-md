@@ -110,7 +110,9 @@ export const searchWorkspaceTool = defineTool<
   { hits: Array<{ path: string; snippet: string | null; score: number }> }
 >({
   name: "search_workspace",
-  description: "Full-text search over file names and contents. Returns the best matching files with a snippet.",
+  description:
+    "Keyword search (BM25, Hebrew-aware: niqqud, final letters and prefix letters folded) over file names and contents. " +
+    "Ask with the key words, or a question. Returns the best matching files with a snippet.",
   parameters: {
     type: "object",
     properties: { query: { type: "string" }, limit: { type: "number" } },

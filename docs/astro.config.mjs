@@ -45,6 +45,7 @@ export default defineConfig({
           items: [
             { label: "Database views", slug: "workspace/database-views" },
             { label: "Search (BM25 + Smart)", slug: "workspace/search" },
+            { label: "Search operators and #tags", slug: "workspace/search-operators", translations: { he: "אופרטורי חיפוש ו-#תגיות" } },
             { label: "Vault Doctor", slug: "workspace/doctor" },
             { label: "Large vaults and long notes", slug: "workspace/large-vaults" },
           ],

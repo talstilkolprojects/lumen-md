@@ -12,6 +12,7 @@ import { docsUrl } from "../lib/docsLinks";
 import { estimateTokens, recordCacheHit, recordUsage, type Usage } from "./usage";
 import { cloudAllowed, getAiPolicy, isCloudProvider, isLocalOrigin, providerAllowed } from "./policy";
 import { getSecret } from "../lib/secretStore";
+import { getOllamaConfigModel } from "./ollamaProvider";
 
 // ── Rate limiting ───────────────────────────────────────────────────────
 // Token bucket — protects the user's API key against runaway loops.
@@ -294,7 +295,7 @@ export function effectiveModel(provider: AiProvider, opts: ChatOptions = {}): st
   }
   try {
     // Ollama keeps its model where the Ollama picker writes it.
-    if (provider === "ollama") return localStorage.getItem("lumen.ollama.model") || "llama3.1";
+    if (provider === "ollama") return getOllamaConfigModel(); // same default the provider runs (plan 1.7)
     const fallback = (PROVIDER_DEFAULT_MODELS as Record<string, string>)[provider] ?? "default";
     return localStorage.getItem(`lumen.ai.model.${provider}`) || fallback;
   } catch {

@@ -7,13 +7,24 @@ description: Fast keyword search by default, semantic embeddings on demand.
 
 ## Search (BM25)
 
-The default — instant keyword + filename search across every `.md` /
-`.txt` in your OPFS workspace. Built on BM25+ with bigram phrase
-matching, runs in a Web Worker so the UI never stalls.
+The default: keyword and filename search across every `.md` / `.txt`
+note in your workspace, ranked by BM25. Agents use the same search
+(`search_workspace`).
 
-- File-name match scores higher than body match.
-- Highlights the matched substring inside a 160-char snippet.
-- Returns the top 40 hits ordered by relevance.
+- Hebrew-aware: niqqud, final letters (ם/מ, ן/נ…) and the prefix letters
+  ו ה ב כ ל מ ש are folded, so *בבית*, *והבית* and *הַבַּיִת* all find
+  *בית*. The exact form you typed still ranks first.
+- Question words (*מתי*, *איפה*, *למי*, *what*, *when*…) don't count, so
+  you can type a question.
+- A match in the note's name counts more than one in its text, and the
+  whole query found as a phrase counts extra.
+- The index is built on the first search and then updated one note at a
+  time as you save; a 10 000-note vault answers in a few tens of
+  milliseconds.
+- Each hit shows a snippet with the match highlighted; the top 40 are
+  listed.
+- Operators narrow the search: `tag:`, `path:`, `"phrase"`, `/regex/` and
+  `-` to exclude. See [Search operators and #tags](/workspace/search-operators/).
 
 ## Smart (semantic)
 

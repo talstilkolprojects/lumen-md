@@ -51,6 +51,16 @@ describe("ollamaProvider", () => {
     expect(await listOllamaModels()).toEqual([]);
   });
 
+  it("with no model chosen, runs the same open-licence default that usage and the cache record (1.7)", async () => {
+    handler = () => json({ choices: [{ message: { content: "ok" } }] });
+    await chatOllama([{ role: "user", content: "hello" }]);
+    const { DEFAULT_OLLAMA_MODEL } = await import("../ai/ollamaProvider");
+    const { effectiveModel } = await import("../ai/llm");
+    expect(DEFAULT_OLLAMA_MODEL).toBe("qwen2.5:7b");
+    expect(calls[0].body).toMatchObject({ model: DEFAULT_OLLAMA_MODEL });
+    expect(effectiveModel("ollama")).toBe(DEFAULT_OLLAMA_MODEL);
+  });
+
   it("chats through the OpenAI-compatible endpoint with the configured model", async () => {
     setOllamaConfig({ model: "qwen2.5:7b" });
     handler = () => json({ choices: [{ message: { content: "  hi there " } }] });
@@ -79,5 +89,27 @@ describe("ollamaProvider", () => {
     const events: unknown[] = [];
     for await (const e of pullOllamaModel("x")) events.push(e);
     expect(events).toEqual([{ status: "pulling" }, { status: "success", completed: 5, total: 5 }]);
+  });
+});
+
+describe("the no-models hint names the open-licence default (plan 1.7)", () => {
+  it("in English and every locale, and the Ollama Models command uses it", async () => {
+    const { readFileSync, readdirSync } = await import("node:fs");
+    const { join, resolve } = await import("node:path");
+    const { DEFAULT_OLLAMA_MODEL } = await import("../ai/ollamaProvider");
+    const root = resolve(__dirname, "..");
+    const en = readFileSync(join(root, "i18n/index.ts"), "utf8").match(/"ai\.settings\.ollama\.none":\s*"([^"]+)"/)?.[1];
+    expect(en).toContain(`ollama pull ${DEFAULT_OLLAMA_MODEL}`);
+    const locales = readdirSync(join(root, "i18n/locales")).filter((f) => f.endsWith(".json"));
+    expect(locales.length).toBe(7);
+    for (const f of locales) {
+      const strings = JSON.parse(readFileSync(join(root, "i18n/locales", f), "utf8")) as Record<string, string>;
+      expect([f, strings["ai.settings.ollama.none"]]).toEqual([f, expect.stringContaining(`ollama pull ${DEFAULT_OLLAMA_MODEL}`)]);
+    }
+    // The palette's AI commands live in commands/domains/ai.ts since the useCommands split.
+    const commands = readFileSync(join(root, "commands/domains/ai.ts"), "utf8");
+    const block = commands.slice(commands.indexOf('id: "ai.ollamaModels"'), commands.indexOf('id: "ai.usage"'));
+    expect(block).toContain('t("ai.settings.ollama.none")');
+    expect(commands).not.toMatch(/ollama pull (llama|gemma|aya)/);
   });
 });

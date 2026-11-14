@@ -133,9 +133,12 @@ const en: Strings = {
   "backlinks.selectFile": "Select a workspace file to see backlinks.",
   // Search
   "search.placeholder": "Search workspace files & content…",
+  "search.operatorsHint": "Operators: tag:name  path:folder  \"exact phrase\"  /regex/  -exclude",
   "search.unavailable": "Workspace storage isn't available in this browser.",
   "search.empty": "Workspace is empty.",
   "search.noMatches": "No matches.",
+  "search.regexSkipped": "/regex/ skipped {count} very long notes (over {limit} characters).",
+  "search.regexTimedOut": "The /regex/ took too long and was stopped. Try a simpler pattern.",
   "search.results.one": "{n} result",
   "search.results.other": "{n} results",
   // Generic dialog
@@ -1036,6 +1039,9 @@ const en: Strings = {
   "ai.localModels.recommended": "recommended",
   "ai.localModels.cached": "downloaded",
   "ai.localModels.tooBig": "may not fit",
+  "ai.localModels.licenceTitle": "Model under its own licence",
+  "ai.localModels.licenceBody": "{{model}} is published under the {{licence}}, not an open-source licence. Read its terms before you use it, especially for work. Lumen will not choose it for you.",
+  "ai.localModels.licenceOk": "Use it",
   "ai.localModels.auto": "Automatic — pick by hardware and task",
   "ai.localModels.autoSet": "Automatic model selection. Current pick: {model}",
   "ai.localModels.set": "Local model: {model}",

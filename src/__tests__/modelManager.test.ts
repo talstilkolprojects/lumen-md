@@ -48,8 +48,17 @@ describe("model manager — catalog and recommendation", () => {
     expect(recommendWebLlmModel("tiny", hw({ webgpu: false }))).toBe("SmolLM2-360M-Instruct-q4f16_1-MLC");
   });
 
+  it("never picks a custom-licence model automatically, but lists it with its licence", () => {
+    for (const tier of ["tiny", "small", "medium", "large"] as const) {
+      for (const opts of [{}, { tools: true }, { multilingual: true }]) {
+        expect(recommendWebLlmModel(tier, hw(), opts)).not.toMatch(/Llama|Hermes|gemma/);
+      }
+    }
+  });
+
   it("prefers tool-calling and code models when asked", () => {
-    expect(recommendWebLlmModel("medium", hw(), { tools: true })).toBe("Hermes-3-Llama-3.1-8B-q4f16_1-MLC");
+    // Hermes (Llama licence) is no longer picked automatically (plan 1.7): an open-licence model gets JSON-ReAct.
+    expect(recommendWebLlmModel("medium", hw(), { tools: true })).toBe("Qwen3-8B-q4f16_1-MLC");
     expect(recommendWebLlmModel("medium", hw(), { code: true })).toBe("Qwen2.5-Coder-7B-Instruct-q4f16_1-MLC");
     // No tool model in the tier → the plain recommendation.
     expect(recommendWebLlmModel("tiny", hw(), { tools: true })).toBe("SmolLM2-1.7B-Instruct-q4f16_1-MLC");
@@ -72,9 +81,9 @@ describe("model manager — selection and hardware", () => {
     expect(webLlmModelFor("small", hw())).toBe("Qwen3-4B-q4f16_1-MLC");
     expect(webLlmModelFor("tiny", hw())).toBe("Qwen3-4B-q4f16_1-MLC");
     expect(webLlmModelFor("medium", hw())).toBe("Qwen3-8B-q4f16_1-MLC");
-    // A tool-calling agent gets a function-calling model instead of a plain choice when the device can run one…
+    // A tool-calling agent no longer swaps to Hermes (Llama licence, plan 1.7); the open-licence choice stays…
     setWebLlmModel("Qwen3-8B-q4f16_1-MLC");
-    expect(webLlmModelFor("medium", hw(), { tools: true })).toBe("Hermes-3-Llama-3.1-8B-q4f16_1-MLC");
+    expect(webLlmModelFor("medium", hw(), { tools: true })).toBe("Qwen3-8B-q4f16_1-MLC");
     expect(webLlmModelFor("medium", hw())).toBe("Qwen3-8B-q4f16_1-MLC");
     // …and keeps the choice when no native tool model fits (mobile budget).
     expect(webLlmModelFor("medium", hw({ mobile: true }), { tools: true })).toBe("Qwen3-8B-q4f16_1-MLC");

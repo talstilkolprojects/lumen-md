@@ -1,0 +1,34 @@
+{
+  "name": "fixture",
+  "version": "1.0.0",
+  "lockfileVersion": 3,
+  "requires": true,
+  "packages": {
+    "": {
+      "name": "fixture",
+      "version": "1.0.0",
+      "dependencies": { "a": "^1.0.0", "b": "^1.0.0", "c": "^1.0.0", "d": "^1.0.0", "e": "^1.0.0", "phonemizer": "^1.0.0", "hpeer": "^1.0.0" },
+      "optionalDependencies": { "plat": "^1.0.0" },
+      "devDependencies": { "g": "^1.0.0" }
+    },
+    "node_modules/a": { "version": "1.0.0", "license": "MIT", "dependencies": { "x": "^2.0.0", "f": "^1.0.0" } },
+    "node_modules/a/node_modules/x": { "version": "2.0.0", "license": "Apache-2.0" },
+    "node_modules/x": { "version": "1.0.0", "license": "GPL-2.0-only", "dev": true },
+    "node_modules/f": { "version": "1.0.0", "license": "LGPL-3.0-or-later" },
+    "node_modules/b": { "version": "1.0.0", "license": "GPL-3.0-only" },
+    "node_modules/c": { "version": "1.0.0", "license": "(MIT OR GPL-3.0-or-later)" },
+    "node_modules/d": { "version": "1.0.0", "license": "SEE LICENSE IN LICENSE.md" },
+    "node_modules/e": { "version": "1.0.0" },
+    "node_modules/phonemizer": { "version": "1.0.0", "license": "MIT" },
+    "node_modules/hpeer": {
+      "version": "1.0.0",
+      "license": "ISC",
+      "peerDependencies": { "react": "*", "opt-peer": "*" },
+      "peerDependenciesMeta": { "opt-peer": { "optional": true } }
+    },
+    "node_modules/react": { "version": "18.0.0", "license": "MIT" },
+    "node_modules/opt-peer": { "version": "1.0.0", "license": "AGPL-3.0-only", "dev": true },
+    "node_modules/plat": { "version": "1.0.0", "license": "BUSL-1.1", "optional": true, "os": ["linux"] },
+    "node_modules/g": { "version": "1.0.0", "license": "GPL-3.0-only", "dev": true, "dependencies": { "x": "^1.0.0" } }
+  }
+}

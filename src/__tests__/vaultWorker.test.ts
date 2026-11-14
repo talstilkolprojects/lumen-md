@@ -28,10 +28,10 @@ import {
   searchWorkspace,
   workspaceTree,
 } from "../storage/workspaceIndex";
-import { VaultIndex, foldForSearch, fuzzyMatch, snippetAround, type IndexInput } from "../storage/vaultIndexCore";
+import { VaultIndex, foldForSearch, snippetAround, type IndexInput } from "../storage/vaultIndexCore";
 import { workerEngine, type IndexRequest, type IndexResponse, type WorkerLike } from "../storage/vaultIndexProtocol";
 import { handleIndexRequest, localEngine } from "../storage/vaultIndexLocal";
-import { hasHebrew, hebrewFind, normalizeWithMap } from "../text/hebrew";
+import { normalizeWithMap } from "../text/hebrew";
 import { noteKey } from "../lib/slug";
 import { BlockTracker, splitBlocks } from "../renderer/blocks";
 import { IncrementalToc } from "../renderer/incrementalToc";
@@ -279,41 +279,6 @@ function scanBacklinks(files: IndexInput[], targetPath: string) {
   return out;
 }
 
-function findIn(text: string, lower: string, q: string) {
-  const at = lower.indexOf(q);
-  if (at >= 0) return { start: at, end: at + q.length };
-  return hasHebrew(q) ? hebrewFind(text, q) : null;
-}
-
-function scanSearch(files: IndexInput[], query: string, limit = 30) {
-  const q = query.trim().toLowerCase();
-  if (!q) return [...files].sort((a, b) => b.modified - a.modified).slice(0, limit).map((f) => ({ path: f.path, name: f.name, score: 0, snippet: null }));
-  const out: { path: string; name: string; score: number; snippet: string | null; match?: { start: number; end: number } }[] = [];
-  for (const file of files) {
-    const nameLower = file.name.toLowerCase();
-    const pathLower = file.path.toLowerCase();
-    let score = 0;
-    let snippet: string | null = null;
-    let match: { start: number; end: number } | undefined;
-    if (nameLower.includes(q)) score += 10;
-    if (nameLower === q) score += 20;
-    if (nameLower.startsWith(q)) score += 5;
-    if (pathLower.includes(q) && pathLower !== nameLower) score += 6;
-    const found = findIn(file.content, file.content.toLowerCase(), q);
-    if (!nameLower.includes(q) && hasHebrew(q) && hebrewFind(file.name, q)) score += 10;
-    if (found) {
-      score += 4;
-      const ctx = snippetAround(file.content, found.start, 80);
-      const local = findIn(ctx, ctx.toLowerCase(), file.content.slice(found.start, found.end).replace(/\s+/g, " ").toLowerCase());
-      snippet = ctx;
-      if (local) match = local;
-    } else if (fuzzyMatch(nameLower, q) || fuzzyMatch(pathLower, q)) score += 1;
-    if (score > 0) out.push(match ? { path: file.path, name: file.name, score, snippet, match } : { path: file.path, name: file.name, score, snippet });
-  }
-  out.sort((a, b) => b.score - a.score);
-  return out.slice(0, limit);
-}
-
 function rng(seed: number) {
   let s = seed;
   return () => ((s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
@@ -326,7 +291,7 @@ describe("VaultIndex", () => {
     }
   });
 
-  it("answers search and backlinks like the old scan, through edits", async () => {
+  it("answers search like a fresh index, and backlinks like the old scan, through edits", async () => {
     const random = rng(7);
     const pick = <T,>(a: T[]) => a[Math.floor(random() * a.length)];
     const words = ["alpha", "Beta", "שָׁלוֹם", "שלום", "הבית", "בַּיִת", "ספרים", "מלך", "עולם", "café", "note"];
@@ -348,7 +313,11 @@ describe("VaultIndex", () => {
     const check = async () => {
       const all = [...files.values()];
       for (const q of ["alpha", "", " BETA ", "והבית", "שלום", "בית", "a", "zz", "d3/", "café", "שלום עולם", "note"]) {
-        expect(await engine.search(q, { limit: 30 })).toEqual(scanSearch(all, q));
+        // Ranking is BM25 (plan 5.2): kept up to date one note at a time, it
+        // must answer as an index built from scratch over the same notes.
+        const fresh = new VaultIndex();
+        for (const f of all) fresh.upsert(f);
+        expect(await engine.search(q, { limit: 30 })).toEqual(fresh.search(q, { limit: 30 }));
       }
       for (const t of ["d1/n1.md", "שלום.md", "x/עולם.md", "Beta.md"]) expect(await engine.backlinks(t)).toEqual(scanBacklinks(all, t));
     };

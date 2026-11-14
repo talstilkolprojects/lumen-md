@@ -55,6 +55,7 @@ describe("ollama executor — model choice", () => {
     { name: "gemma3:12b", params: 12.2, family: "gemma3" },
     { name: "qwen3:0.6b", params: 0.6, family: "qwen3" },
     { name: "nomic-embed-text:latest", params: 0.137, family: "nomic-bert" },
+    { name: "qwen3:14b", params: 14.8, family: "qwen3" },
   ];
 
   it("parses parameter sizes and tiers", () => {
@@ -71,10 +72,12 @@ describe("ollama executor — model choice", () => {
   it("keeps the configured model when it fits the tier, else the largest in the band", () => {
     expect(pickModel("small", models, "llama3.2:3b")).toBe("llama3.2:3b");
     expect(pickModel("small", models, null)).toBe("qwen2.5:7b");
-    expect(pickModel("medium", models, "qwen2.5:7b")).toBe("gemma3:12b");
+    // gemma3:12b is in the medium band too, but a custom licence (Gemma Terms) is only run when configured.
+    expect(pickModel("medium", models, "qwen2.5:7b")).toBe("qwen3:14b");
+    expect(pickModel("medium", models, "gemma3:12b")).toBe("gemma3:12b");
     expect(pickModel("tiny", models, null)).toBe("qwen3:0.6b");
     // Nothing in the large band: the largest below it.
-    expect(pickModel("large", models, null)).toBe("gemma3:12b");
+    expect(pickModel("large", models, null)).toBe("qwen3:14b");
     // Everything installed is bigger than the tier: the smallest.
     expect(pickModel("tiny", [models[0], models[2]], null)).toBe("qwen2.5:7b");
     // Embedding models are never chosen for chat.
@@ -214,13 +217,31 @@ describe("ollama executor — server", () => {
   });
 
   it("probes tool support for every tier's model and prefers a tool model for tool agents", async () => {
+    localStorage.setItem("lumen.ollama.model", "gemma3:12b");
     await ollamaExecutor.available();
     const probed = calls.filter((c) => c.url.endsWith("/api/show")).map((c) => c.body!.model);
-    expect(new Set(probed)).toEqual(new Set(["llama3.2:3b", "qwen2.5:7b", "gemma3:12b"]));
-    // medium → gemma3 (no tools); a tool agent on medium gets the best tool-capable model instead.
+    // llama3.2:3b (custom licence, not configured) is never a pick, so it is not probed.
+    expect(new Set(probed)).toEqual(new Set(["qwen2.5:7b", "gemma3:12b"]));
+    // medium → the configured gemma3 (no tools); a tool agent on medium gets the best tool-capable model instead.
     expect(ollamaExecutor.modelFor("medium")).toBe("gemma3:12b");
     expect(ollamaExecutor.modelFor("medium", { tools: true })).toBe("qwen2.5:7b");
     expect(ollamaExecutor.supportsTools("gemma3:12b")).toBe(false);
+  });
+
+  it("never runs an installed custom-licence model the user did not configure (plan 1.7)", async () => {
+    await ollamaExecutor.available();
+    for (const tier of ["tiny", "small", "medium", "large"] as const) {
+      expect(ollamaExecutor.modelFor(tier)).toBe("qwen2.5:7b");
+      expect(ollamaExecutor.modelFor(tier, { tools: true })).toBe("qwen2.5:7b");
+    }
+    // Only custom-licence models installed: nothing to run until the user picks one.
+    __resetOllamaState();
+    routes["/api/tags"] = () => json({ models: TAGS.models.filter((m) => /^(llama|gemma)/.test(m.name)) });
+    expect(await ollamaExecutor.available()).toMatchObject({ available: false, reason: "no-model", detail: "qwen2.5:7b" });
+    localStorage.setItem("lumen.ollama.model", "llama3.2:3b");
+    __resetOllamaState();
+    expect(await ollamaExecutor.available()).toEqual({ available: true });
+    expect(ollamaExecutor.modelFor("small")).toBe("llama3.2:3b");
   });
 
   it("is not available when only embedding models are installed", async () => {

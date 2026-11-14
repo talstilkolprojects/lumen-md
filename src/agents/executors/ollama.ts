@@ -6,12 +6,14 @@
  *
  * Model choice by tier comes from what is installed: the configured model
  * (`lumen.ollama.model`) when it fits the tier, otherwise the largest
- * installed model that fits, otherwise the largest installed. Tool support
+ * installed model that fits, otherwise the largest installed. A
+ * custom-licence model (Llama, Gemma) is only run when it is the configured
+ * one, never picked on its own (plan 1.7). Tool support
  * is read from `/api/show` (`capabilities`) when the server reports it,
  * with a family list as the fallback for older servers.
  */
 
-import { hebrewSupportOf, prefersHebrew } from "../../ai/modelCatalog";
+import { autoPickable, hebrewSupportOf, prefersHebrew } from "../../ai/modelCatalog";
 import { useAppStore } from "../../store/useStore";
 import type { AgentTool, Availability, Executor, ExecutorMessage, ExecutorRequest, ExecutorResponse, ModelTier, ToolCall } from "../types";
 import { getBaseUrl } from "../../ai/ollamaProvider";
@@ -88,14 +90,25 @@ function configuredModel(): string | null {
   }
 }
 
+const isConfigured = (name: string, configured: string | null) => !!configured && (name === configured || name === `${configured}:latest`);
+
+/**
+ * Installed chat models an agent may run: no embedding models, and a
+ * custom-licence or forbidden model only when it is the configured one.
+ */
+export function runnableModels(models: InstalledModel[], configured: string | null): InstalledModel[] {
+  return models.filter((m) => !/embed/i.test(m.name) && (autoPickable(m.name) || isConfigured(m.name, configured)));
+}
+
 /**
  * The installed model for a tier: the configured one when it fits, else
  * the largest installed model inside the tier's band, else the largest
  * below it, else (everything installed is bigger) the smallest installed.
- * Embedding models are never chosen for chat.
+ * Embedding models are never chosen for chat, and custom-licence models
+ * only when configured.
  */
 export function pickModel(tier: ModelTier, models: InstalledModel[], configured: string | null, opts: { hebrew?: boolean } = {}): string | null {
-  const chat = models.filter((m) => !/embed/i.test(m.name));
+  const chat = runnableModels(models, configured);
   if (!chat.length) return configured;
   const byName = new Map(chat.map((m) => [m.name, m]));
   const cfg = configured ? byName.get(configured) ?? byName.get(`${configured}:latest`) : undefined;
@@ -121,8 +134,8 @@ export function pickModel(tier: ModelTier, models: InstalledModel[], configured:
  * any tier; on Hebrew notes the better Hebrew wins before the size, as in
  * pickModel.
  */
-export function pickToolModel(tier: ModelTier, models: InstalledModel[], supports: (m: InstalledModel) => boolean, opts: { hebrew?: boolean } = {}): string | null {
-  const chat = models.filter((m) => !/embed/i.test(m.name) && supports(m));
+export function pickToolModel(tier: ModelTier, models: InstalledModel[], supports: (m: InstalledModel) => boolean, opts: { hebrew?: boolean; configured?: string | null } = {}): string | null {
+  const chat = runnableModels(models, opts.configured ?? null).filter(supports);
   const heb = (m: InstalledModel) => (opts.hebrew ? HEBREW_RANK[hebrewSupportOf(m.name) ?? "none"] : 0);
   const best = (list: InstalledModel[]) => list.reduce((b, m) => (heb(m) > heb(b) || (heb(m) === heb(b) && (m.params ?? 0) > (b.params ?? 0)) ? m : b));
   const sameTier = chat.filter((m) => tierOf(m.params) === tier);
@@ -244,7 +257,9 @@ export const ollamaExecutor: Executor = {
       const s = await refreshOllama();
       // Only chat-capable installs count: an embedding-only Ollama would
       // otherwise be picked and then 404 on the recommended model.
-      if (!s.models.some((m) => !/embed/i.test(m.name))) return { available: false, reason: "no-model", detail: RECOMMENDED_OLLAMA_MODEL };
+      // Custom-licence models count only when configured: they are never
+      // picked on their own (plan 1.7).
+      if (!runnableModels(s.models, configuredModel()).length) return { available: false, reason: "no-model", detail: RECOMMENDED_OLLAMA_MODEL };
       // Cache tool support for every model a tier can select (and the
       // tool-preferring picks), so the synchronous supportsTools() the
       // runtime consults is backed by /api/show, not the name heuristic.
@@ -277,7 +292,7 @@ export const ollamaExecutor: Executor = {
     // A tool-calling agent prefers an installed model with tool support in
     // the same tier (then any tier) over the plain pick.
     const supports = (m: InstalledModel) => state.tools.get(m.name) ?? TOOL_FAMILIES.test(m.name);
-    return pickToolModel(tier, state.models, supports, { hebrew: notesInHebrew() }) ?? pick;
+    return pickToolModel(tier, state.models, supports, { hebrew: notesInHebrew(), configured }) ?? pick;
   },
   async chat(req: ExecutorRequest): Promise<ExecutorResponse> {
     if (remoteRefused()) throw new AiPolicyError(`The AI policy is "local only": the Ollama server at ${getBaseUrl()} is not on this machine or network.`);

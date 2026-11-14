@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generated_at": "2026-10-20T19:44:50.605Z",
+  "generated_at": "2026-11-14T19:49:15.018Z",
   "source": "src/i18n/index.ts (en bundle)",
-  "count": 1427,
+  "count": 1433,
   "entries": [
     {
       "key": "toolbar.tagline",
@@ -298,6 +298,11 @@
       "vars": []
     },
     {
+      "key": "search.operatorsHint",
+      "en": "Operators: tag:name  path:folder  \"exact phrase\"  /regex/  -exclude",
+      "vars": []
+    },
+    {
       "key": "search.unavailable",
       "en": "Workspace storage isn't available in this browser.",
       "vars": []
@@ -310,6 +315,19 @@
     {
       "key": "search.noMatches",
       "en": "No matches.",
+      "vars": []
+    },
+    {
+      "key": "search.regexSkipped",
+      "en": "/regex/ skipped {count} very long notes (over {limit} characters).",
+      "vars": [
+        "count",
+        "limit"
+      ]
+    },
+    {
+      "key": "search.regexTimedOut",
+      "en": "The /regex/ took too long and was stopped. Try a simpler pattern.",
       "vars": []
     },
     {
@@ -5010,6 +5028,24 @@
     {
       "key": "ai.localModels.tooBig",
       "en": "may not fit",
+      "vars": []
+    },
+    {
+      "key": "ai.localModels.licenceTitle",
+      "en": "Model under its own licence",
+      "vars": []
+    },
+    {
+      "key": "ai.localModels.licenceBody",
+      "en": "{{model}} is published under the {{licence}}, not an open-source licence. Read its terms before you use it, especially for work. Lumen will not choose it for you.",
+      "vars": [
+        "model",
+        "licence"
+      ]
+    },
+    {
+      "key": "ai.localModels.licenceOk",
+      "en": "Use it",
       "vars": []
     },
     {

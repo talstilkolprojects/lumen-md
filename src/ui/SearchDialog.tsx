@@ -33,6 +33,8 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
   const smartAllowed = useCapability("smartSearch");
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
+  /** What a /regex/ could not check (2.39): skipped long notes, or a stopped search. */
+  const [regexNote, setRegexNote] = useState("");
   const [smartHits, setSmartHits] = useState<SemanticHit[]>([]);
   const [smartIndexing, setSmartIndexing] = useState(false);
   const [smartIndexedAt, setSmartIndexedAt] = useState<number | null>(null);
@@ -101,16 +103,28 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
     let cancelled = false;
     setLoading(true);
     const handle = setTimeout(() => {
-      searchWorkspace(query, { limit: 40 })
+      let note = "";
+      searchWorkspace(query, {
+        limit: 40,
+        onRegexInfo: (r) => {
+          note = r.regexTimedOut
+            ? t("search.regexTimedOut")
+            : r.regexSkipped
+              ? t("search.regexSkipped", { count: String(r.regexSkipped), limit: (r.regexMaxChars ?? 0).toLocaleString() })
+              : "";
+        },
+      })
         .then((h) => {
           if (cancelled) return;
           setHits(h);
+          setRegexNote(note);
           setActive(0);
           setLoading(false);
         })
         .catch(() => {
           if (cancelled) return;
           setHits([]);
+          setRegexNote("");
           setLoading(false);
         });
     }, 150);
@@ -446,6 +460,21 @@ export function SearchDialog({ open, onClose, onOpenFile }: Props) {
             </span>
           )}
         </div>
+        {mode !== "smart" && isOPFSAvailable() && (
+          // Plan 11.3: the operators, shown under the input (LTR syntax inside an RTL UI stays readable).
+          <div
+            data-testid="search-operators-hint"
+            dir="auto"
+            style={{ padding: "2px 14px 6px", fontSize: 11, color: "hsl(var(--fg-muted))", unicodeBidi: "plaintext" }}
+          >
+            {t("search.operatorsHint")}
+          </div>
+        )}
+        {mode === "search" && regexNote && (
+          <div data-testid="search-regex-note" role="status" dir="auto" style={{ padding: "2px 14px 6px", fontSize: 11, color: "hsl(var(--fg-muted))", unicodeBidi: "plaintext" }}>
+            {regexNote}
+          </div>
+        )}
         <div className="cmd-palette-list" ref={listRef}>
           {mode === "smart" && !smartAllowed && (
             <UpgradeNotice compact plan="pro" message={t("billing.upgrade.smartSearch")} />

@@ -50,15 +50,21 @@ export function getBaseUrl(): string {
   }
 }
 
+/**
+ * Model used when the user has not picked one. Open licence (Apache-2.0), so a
+ * fresh install never runs a custom-licence model without an opt-in (plan 1.7).
+ */
+export const DEFAULT_OLLAMA_MODEL = "qwen2.5:7b";
+
 function getModel(): string {
   try {
-    return localStorage.getItem("lumen.ollama.model") || "llama3.1";
+    return localStorage.getItem("lumen.ollama.model") || DEFAULT_OLLAMA_MODEL;
   } catch {
-    return "llama3.1";
+    return DEFAULT_OLLAMA_MODEL;
   }
 }
 
-/** The configured Ollama chat model (`lumen.ollama.model`, default llama3.1). */
+/** The configured Ollama chat model (`lumen.ollama.model`, default {@link DEFAULT_OLLAMA_MODEL}). */
 export function getOllamaConfigModel(): string {
   return getModel();
 }

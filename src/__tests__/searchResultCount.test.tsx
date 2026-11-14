@@ -54,6 +54,25 @@ describe("tPlural", () => {
   });
 });
 
+describe("SearchDialog: what a /regex/ could not check (2.39)", () => {
+  it("says how many long notes a /regex/ skipped, that a runaway one was stopped, and nothing otherwise", async () => {
+    type Opts = { onRegexInfo?: (i: { regexSkipped: number; regexMaxChars?: number; regexTimedOut?: true }) => void };
+    searchWorkspace.mockImplementation(async (q: string, o: Opts) => {
+      if (q === "/skip/") o.onRegexInfo?.({ regexSkipped: 2, regexMaxChars: 500000 });
+      else if (q === "/(a+)+$/") o.onRegexInfo?.({ regexSkipped: 0, regexTimedOut: true });
+      else o.onRegexInfo?.({ regexSkipped: 0 });
+      return [hit(1)];
+    });
+    render(<SearchDialog open onClose={() => {}} onOpenFile={() => {}} />);
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "/skip/" } });
+    await waitFor(() => expect(screen.getByTestId("search-regex-note").textContent).toBe("/regex/ skipped 2 very long notes (over 500,000 characters)."));
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "/(a+)+$/" } });
+    await waitFor(() => expect(screen.getByTestId("search-regex-note").textContent).toContain("took too long and was stopped"));
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "plain" } });
+    await waitFor(() => expect(screen.queryByTestId("search-regex-note")).toBeNull());
+  });
+});
+
 describe("SearchDialog result-count badge", () => {
   it("is hidden for an empty query and shows a pluralised count after searching", async () => {
     searchWorkspace.mockResolvedValue([]);

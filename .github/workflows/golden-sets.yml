@@ -1,0 +1,282 @@
+# Golden sets (plan 7.1, appendix 20). See eval/golden/README.md.
+#
+# task=dev   Builds the public DEV parts the agent container cannot reach
+#            (Hugging Face, Tatoeba, Wikipedia, Open Images on S3) with the
+#            public seed, checks each licence at the source, and pushes them to
+#            a branch golden/dev-<run id> for a PR. No secret is needed except
+#            HF_TOKEN for the gated sets (FLORES+, Common Voice; plan 15.9).
+#
+# task=test  (and nightly) Builds the held-out TEST split with the secret
+#            GOLDEN_SEED into $RUNNER_TEMP — never into the checkout — adds the
+#            owner's encrypted parts, checks every part against the sha256
+#            recorded in the manifests, runs the evals and publishes scores
+#            only. With record=true a separate job writes the hashes (never
+#            the data) to a branch golden/test-sha-<run id>.
+#
+# Secrets (repository or the `golden` environment; plan 15.9 / 15.11):
+#   GOLDEN_SEED       the test seed — without it task=test does nothing
+#   HF_TOKEN          Hugging Face read token, after accepting the FLORES+ and Common Voice terms
+#   GOLDEN_OWNER_KEY  passphrase of the owner's encrypted bundle (release asset golden-owner.tar.gz.gpg)
+name: Golden sets
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "dev = build the dev parts that need Hugging Face / Tatoeba / Wikipedia / S3 and push a branch; test = build the held-out test split, check it and run the evals (scores only)"
+        type: choice
+        options: [test, dev]
+        default: test
+      parts:
+        description: "task=dev: space-separated jobs — fleurs common-voice flores belebele deepset gandalf tatoeba wikipedia-typos xm3600-images — or all"
+        type: string
+        default: all
+      record:
+        description: "task=test: record the test split's sha256 in the manifests (pushes a branch; hashes only)"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "41 2 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: golden-sets
+  cancel-in-progress: false
+
+jobs:
+  dev:
+    name: dev parts (public seed) → branch
+    if: github.event_name == 'workflow_dispatch' && inputs.task == 'dev'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r scripts/golden/requirements.txt
+      - run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+      - name: Paths
+        run: echo "GOLDEN_CACHE=$RUNNER_TEMP/golden-cache" >> "$GITHUB_ENV"
+      - uses: actions/cache@v5
+        with:
+          path: ${{ runner.temp }}/golden-cache
+          key: golden-sources-${{ hashFiles('scripts/golden/**') }}
+          restore-keys: golden-sources-
+
+      - name: Build the dev parts
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          PARTS: ${{ inputs.parts }}
+        run: |
+          set -uo pipefail
+          [ "$PARTS" = "all" ] && PARTS="fleurs common-voice flores belebele deepset gandalf tatoeba wikipedia-typos xm3600-images"
+          # job → the set/part pairs it builds
+          declare -A TARGETS=(
+            [fleurs]="asr-he/fleurs" [common-voice]="asr-he/common-voice" [flores]="mt-he-en/flores"
+            [belebele]="retrieval/belebele" [deepset]="injection/deepset" [gandalf]="injection/gandalf"
+            [tatoeba]="mt-he-en/tatoeba langid/tatoeba" [wikipedia-typos]="typos-he/wikipedia"
+          )
+          failed=""
+          for job in $PARTS; do
+            if [ "$job" = xm3600-images ]; then
+              node scripts/golden/build.mjs caption --split dev --reason "dev images added by the workflow (run $GITHUB_RUN_ID)" || failed="$failed $job"
+              continue
+            fi
+            if { [ "$job" = common-voice ] || [ "$job" = flores ]; } && [ -z "${HF_TOKEN:-}" ]; then
+              echo "::warning::$job is gated: it needs HF_TOKEN and the dataset's terms accepted (plan 15.9, 15.11) — skipped"
+              continue
+            fi
+            if python -I scripts/golden/hf_build.py build --job "$job" --split dev; then
+              for t in ${TARGETS[$job]}; do
+                node scripts/golden.mjs attach-dev "${t%/*}" "${t#*/}" --reason "dev part built by the workflow (run $GITHUB_RUN_ID)" || failed="$failed $t"
+              done
+            else
+              failed="$failed $job"
+            fi
+          done
+          [ -z "$failed" ] || echo "::warning::not built:$failed (see the step log; a licence mismatch is reported as 'refused')"
+
+      - name: Verify the sets and the licence gate
+        run: |
+          node scripts/golden.mjs verify
+          npm run -s licenses
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: golden-dev
+          path: eval/golden
+          retention-days: 14
+
+      - name: Push a branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- eval/golden && [ -z "$(git ls-files --others --exclude-standard eval/golden)" ]; then echo "nothing changed"; exit 0; fi
+          branch="golden/dev-$GITHUB_RUN_ID"
+          git checkout -b "$branch"
+          git add eval/golden
+          git commit -m "chore(golden): dev parts from the workflow (run $GITHUB_RUN_ID)"
+          git push origin "$branch"
+          echo "Pushed $branch — open a PR from it." >> "$GITHUB_STEP_SUMMARY"
+
+  test:
+    name: test split (GOLDEN_SEED) → scores
+    if: github.event_name == 'schedule' || inputs.task == 'test'
+    runs-on: ubuntu-24.04
+    environment: golden
+    timeout-minutes: 150
+    permissions:
+      contents: read
+    steps:
+      - name: GOLDEN_SEED
+        id: seed
+        env:
+          GOLDEN_SEED: ${{ secrets.GOLDEN_SEED }}
+        run: |
+          if [ -z "$GOLDEN_SEED" ]; then
+            echo "::warning::GOLDEN_SEED is not set (plan 15.9): no test split is built"
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.seed.outputs.ok == 'true'
+        uses: actions/checkout@v7
+      - if: steps.seed.outputs.ok == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.seed.outputs.ok == 'true'
+        run: npm ci && npx playwright install --with-deps chromium
+      - if: steps.seed.outputs.ok == 'true'
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - if: steps.seed.outputs.ok == 'true'
+        run: |
+          python -m pip install -r scripts/golden/requirements.txt
+          sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+          echo "GOLDEN_CACHE=$RUNNER_TEMP/golden-cache" >> "$GITHUB_ENV"
+          echo "GOLDEN_TEST=$RUNNER_TEMP/golden-test" >> "$GITHUB_ENV"
+      # Only the public sources are cached; the split itself never is.
+      - if: steps.seed.outputs.ok == 'true'
+        uses: actions/cache@v5
+        with:
+          path: ${{ runner.temp }}/golden-cache
+          key: golden-sources-${{ hashFiles('scripts/golden/**') }}
+          restore-keys: golden-sources-
+
+      - name: Build the test split (prints counts and sha256 only)
+        if: steps.seed.outputs.ok == 'true'
+        env:
+          GOLDEN_SEED: ${{ secrets.GOLDEN_SEED }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -uo pipefail
+          node scripts/golden/build.mjs --split test --out "$GOLDEN_TEST" || echo "::warning::some GitHub / npm / generated parts failed"
+          for job in fleurs common-voice flores belebele deepset gandalf tatoeba wikipedia-typos; do
+            if { [ "$job" = common-voice ] || [ "$job" = flores ]; } && [ -z "${HF_TOKEN:-}" ]; then echo "::warning::$job: no HF_TOKEN — skipped"; continue; fi
+            python -I scripts/golden/hf_build.py build --job "$job" --split test --out "$GOLDEN_TEST" || echo "::warning::$job: not built"
+          done
+
+      - name: The owner's parts (encrypted bundle)
+        if: steps.seed.outputs.ok == 'true'
+        env:
+          GOLDEN_OWNER_KEY: ${{ secrets.GOLDEN_OWNER_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GOLDEN_OWNER_KEY:-}" ]; then echo "::notice::no GOLDEN_OWNER_KEY: the owner's parts are not in this run (plan 15.11)"; exit 0; fi
+          d="$RUNNER_TEMP/golden-owner"; mkdir -p "$d"
+          # A never-published (draft) release holds the encrypted bundle; the API lists drafts to tokens with access.
+          asset=$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq '.[] | select(.name == "golden-owner") | .assets[] | select(.name == "golden-owner.tar.gz.gpg") | .url' | head -1)
+          if [ -z "$asset" ]; then echo "::warning::no golden-owner release asset yet (plan 15.11)"; exit 0; fi
+          gh api -H "Accept: application/octet-stream" "$asset" > "$d/bundle.gpg"
+          gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 0 --decrypt "$d/bundle.gpg" <<< "$GOLDEN_OWNER_KEY" | tar -xz -C "$d"
+          rm "$d/bundle.gpg"
+          node scripts/golden/owner.mjs --in "$d/golden-owner" --out "$GOLDEN_TEST"
+
+      - name: Check the split against the recorded sha256
+        if: steps.seed.outputs.ok == 'true'
+        run: |
+          node scripts/golden.mjs hash-test --dir "$GOLDEN_TEST" --out "$RUNNER_TEMP/test-hashes.json"
+          node scripts/golden.mjs check-test --dir "$GOLDEN_TEST" || echo "::error::a test part differs from its recorded sha256 (source drift or a changed builder): re-record with a reason"
+
+      - name: Evals (scores only)
+        if: steps.seed.outputs.ok == 'true'
+        run: node scripts/golden/run-evals.mjs --dir "$GOLDEN_TEST" --out "$RUNNER_TEMP/scores.json"
+
+      - if: steps.seed.outputs.ok == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: golden-scores
+          path: ${{ runner.temp }}/scores.json
+          retention-days: 90
+      - if: steps.seed.outputs.ok == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: golden-test-hashes
+          path: ${{ runner.temp }}/test-hashes.json
+          retention-days: 7
+
+      # Kept one day for the owner only: encrypted with GOLDEN_SEED, because anyone who can read the repo can
+      # download its artifacts. openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:GOLDEN_SEED decrypts it.
+      - name: Encrypt the split
+        if: steps.seed.outputs.ok == 'true'
+        env:
+          GOLDEN_SEED: ${{ secrets.GOLDEN_SEED }}
+        run: tar -C "$GOLDEN_TEST" -cz . | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:GOLDEN_SEED -out "$RUNNER_TEMP/golden-test.tar.gz.enc"
+      - if: steps.seed.outputs.ok == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: golden-test-encrypted
+          path: ${{ runner.temp }}/golden-test.tar.gz.enc
+          retention-days: 1
+      - name: Remove the split
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/golden-test" "$RUNNER_TEMP/golden-owner" "$RUNNER_TEMP/golden-test.tar.gz.enc"
+
+  record:
+    name: record the test hashes → branch
+    needs: test
+    if: github.event_name == 'workflow_dispatch' && inputs.task == 'test' && inputs.record
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v7
+        with:
+          name: golden-test-hashes
+          path: ${{ runner.temp }}
+      - name: Record (hashes only) and push a branch
+        run: |
+          echo "GOLDEN_CACHE=$RUNNER_TEMP/golden-cache" >> "$GITHUB_ENV"
+          export GOLDEN_CACHE="$RUNNER_TEMP/golden-cache"
+          node scripts/golden.mjs record-test --hashes "$RUNNER_TEMP/test-hashes.json" --reason "test split sha256 recorded by run $GITHUB_RUN_ID"
+          node scripts/golden.mjs verify
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- eval/golden; then echo "nothing to record"; exit 0; fi
+          branch="golden/test-sha-$GITHUB_RUN_ID"
+          git checkout -b "$branch"
+          git add eval/golden
+          git commit -m "chore(golden): record the test split's sha256 (run $GITHUB_RUN_ID)"
+          git push origin "$branch"
+          echo "Pushed $branch — open a PR from it." >> "$GITHUB_STEP_SUMMARY"

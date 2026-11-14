@@ -16,13 +16,17 @@
  *     niqqud-aware offset map behind a snippet) runs only for the hits it
  *     returns.
  *
- * Results are the same as the scan the index used to do on every query
- * (src/__tests__/vaultWorker.test.ts compares them).
+ * Content is ranked by BM25 (plan 5.2, ../search/bm25.ts), kept in the same
+ * place and updated in the same `upsert` / `remove`, so ranking runs in the
+ * worker too. Results equal a from-scratch ranking over the same notes
+ * (src/__tests__/vaultWorker.test.ts compares them through edits).
  */
 
 import { noteKey } from "../lib/slug";
 import { hasHebrew, hebrewFind, normalizeForMatch, prefixVariants } from "../text/hebrew";
 import { WIKI_RE } from "./wikiTargets";
+import { Bm25Index } from "../search/bm25";
+import { matchesOps, noteTags, opLocation, parseQuery, REGEX_MAX_CHARS } from "../search/queryOps";
 
 export interface IndexInput {
   /** Full workspace path. */
@@ -57,6 +61,17 @@ export interface SearchHit {
   match?: { start: number; end: number };
 }
 
+/** A search's hits, and what it could not check (2.39). */
+export interface SearchResult {
+  hits: SearchHit[];
+  /** Notes left out because they are too long for the query's /regex/ (`REGEX_MAX_CHARS`). */
+  regexSkipped: number;
+  /** With `regexSkipped`: the length limit (characters) those notes are over. */
+  regexMaxChars?: number;
+  /** The /regex/ ran past `REGEX_TIME_LIMIT_MS` and was stopped: no hits (set by the main thread). */
+  regexTimedOut?: true;
+}
+
 export interface SearchOptions {
   limit?: number;
   /** Only these paths (applied before `limit`). Serialisable, unlike a filter function. */
@@ -75,6 +90,10 @@ export interface IndexStats {
   backlinkReads: number;
   /** Distinct link targets (note keys) the backlinks map holds. */
   linkKeys: number;
+  /** Notes BM25 tokenised since the index was created (plan 5.2). */
+  tokenised: number;
+  /** Upserts skipped because the note was sent again unchanged. */
+  unchanged: number;
 }
 
 interface Link {
@@ -102,6 +121,8 @@ interface Entry {
    */
   folded: string | null;
   links: Link[];
+  /** Front matter `tags:` and body `#tags` (plan 11.3), lower-case. */
+  tags: string[];
 }
 
 /** Hebrew letters, marks and presentation forms: only notes with one of these need the folded form. */
@@ -168,7 +189,9 @@ export class VaultIndex {
   /** Link target key → the notes that link to it. */
   private readonly incoming = new Map<string, Set<string>>();
   private nextOrder = 0;
-  private readonly counters = { indexed: 0, removed: 0, backlinkReads: 0 };
+  /** Content ranking (plan 5.2), one document per note, updated with it. */
+  private readonly bm25 = new Bm25Index();
+  private readonly counters = { indexed: 0, removed: 0, backlinkReads: 0, tokenised: 0, unchanged: 0 };
 
   get size(): number {
     return this.files.size;
@@ -186,9 +209,18 @@ export class VaultIndex {
     return { files: this.files.size, ...this.counters, linkKeys: this.incoming.size };
   }
 
-  /** Add or replace one note. O(size of the note). */
-  upsert(input: IndexInput): void {
+  /**
+   * Add or replace one note. O(size of the note). A note sent again
+   * unchanged (same text, name and mtime — a redundant full re-upsert) is
+   * skipped: nothing is re-tokenised, as #232's `isCurrent` check did.
+   * Returns whether the note was (re-)indexed.
+   */
+  upsert(input: IndexInput): boolean {
     const prev = this.files.get(input.path);
+    if (prev && prev.content === input.content && prev.name === input.name && prev.modified === input.modified && this.bm25.isCurrent(input.path, input.content, bm25Name(input.name))) {
+      this.counters.unchanged++;
+      return false;
+    }
     if (prev) this.unlink(prev);
     const content = input.content;
     const links: Link[] = [];
@@ -211,15 +243,21 @@ export class VaultIndex {
       lower: content.toLowerCase(),
       folded: MAY_FOLD_TO_HEBREW.test(content) ? foldForSearch(content) : null,
       links,
+      tags: noteTags(content),
     };
     // Map.set on an existing key keeps its position, as the old index did.
     this.files.set(input.path, entry);
+    if (!this.bm25.isCurrent(input.path, content, bm25Name(input.name))) {
+      this.bm25.set(input.path, content, bm25Name(input.name));
+      this.counters.tokenised++;
+    }
     for (const l of links) {
       let set = this.incoming.get(l.key);
       if (!set) this.incoming.set(l.key, (set = new Set()));
       set.add(input.path);
     }
     this.counters.indexed++;
+    return true;
   }
 
   /** Remove one note. O(its links). */
@@ -228,11 +266,13 @@ export class VaultIndex {
     if (!prev) return false;
     this.unlink(prev);
     this.files.delete(path);
+    this.bm25.remove(path);
     this.counters.removed++;
     return true;
   }
 
   clear(): void {
+    for (const p of this.files.keys()) this.bm25.remove(p);
     this.files.clear();
     this.incoming.clear();
   }
@@ -244,6 +284,18 @@ export class VaultIndex {
       set.delete(e.path);
       if (!set.size) this.incoming.delete(l.key);
     }
+  }
+
+  /** Every tag and the notes that carry it (front matter and body), for the tags panel. */
+  tagIndex(): { tag: string; paths: string[] }[] {
+    const by = new Map<string, string[]>();
+    for (const e of [...this.files.values()].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0)))
+      for (const t of e.tags) {
+        let arr = by.get(t);
+        if (!arr) by.set(t, (arr = []));
+        arr.push(e.path);
+      }
+    return [...by].map(([tag, paths]) => ({ tag, paths }));
   }
 
   /** Notes whose wiki-links point at `targetPath` (by note name, not slug). */
@@ -265,43 +317,79 @@ export class VaultIndex {
     return out;
   }
 
-  /** Cheap fuzzy + substring search across file names, paths and content. */
-  search(query: string, opts: SearchOptions = {}): SearchHit[] {
+  /**
+   * Search file names, paths and content. Content is ranked by BM25 over
+   * Hebrew-aware terms (niqqud, final letters and prefix letters folded; the
+   * exact form counts more), the name and path add points of their own, and
+   * the whole query found as a phrase adds a few more. Each hit carries a
+   * snippet around the phrase, or around its best-matching word.
+   */
+  search(rawQuery: string, opts: SearchOptions = {}): SearchHit[] {
+    return this.query(rawQuery, opts).hits;
+  }
+
+  /** `search`, and how many notes a /regex/ skipped because they are too long (2.39). */
+  query(rawQuery: string, opts: SearchOptions = {}): SearchResult {
+    let regexSkipped = 0;
+    const hits = this.rank(rawQuery, opts, () => regexSkipped++);
+    return regexSkipped ? { hits, regexSkipped, regexMaxChars: REGEX_MAX_CHARS } : { hits, regexSkipped };
+  }
+
+  private rank(rawQuery: string, opts: SearchOptions, onRegexSkip: () => void): SearchHit[] {
     const limit = opts.limit ?? 30;
+    // Operators (plan 11.3): tag:, path:, "phrase", /regex/, -term. The rest ranks.
+    const { text: query, ops, invalid } = parseQuery(rawQuery);
+    // A /regex/ that does not compile matches nothing, rather than being dropped (which would list every note).
+    if (invalid.length) return [];
     const q = query.trim().toLowerCase();
+    const scope = opts.paths ? new Set(opts.paths) : null;
+    const pass = (e: Entry) => (!scope || scope.has(e.path)) && (!ops.length || matchesOps(ops, e, onRegexSkip));
+    const allow = scope || ops.length ? new Set([...this.files.values()].filter(pass).map((e) => e.path)) : null;
     if (!q) {
       return [...this.files.values()]
-        .sort((a, b) => b.modified - a.modified)
+        .filter((f) => !allow || allow.has(f.path))
+        .sort((a, b) => b.modified - a.modified || (a.path < b.path ? -1 : 1))
         .slice(0, limit)
-        .map((f) => ({ path: f.path, name: f.name, score: 0, snippet: null }));
+        .map((f) => {
+          // An operator-only query shows where it matched.
+          const at = ops.length ? opLocation(ops, f) : null;
+          if (!at) return { path: f.path, name: f.name, score: 0, snippet: null };
+          const ctx = snippetAround(f.content, at.start, 80);
+          const local = findIn(ctx, ctx.toLowerCase(), f.content.slice(at.start, at.end).replace(/\s+/g, " ").toLowerCase());
+          return local ? { path: f.path, name: f.name, score: 0, snippet: ctx, match: local } : { path: f.path, name: f.name, score: 0, snippet: ctx };
+        });
     }
-    const allow = opts.paths ? new Set(opts.paths) : null;
     const hebrewQuery = hasHebrew(q);
-    // What `hebrewFind` looks for: the folded query, or its bare forms.
     const n = hebrewQuery ? normalizeForMatch(q.trim()) : "";
-    const candidates = !n ? [] : /\s/.test(n) ? [n] : prefixVariants(n);
-    const scored: { e: Entry; score: number; found: boolean }[] = [];
+    const forms = !n ? [] : /\s/.test(n) ? [n] : prefixVariants(n);
+    // The last word may still be typed: it also matches the terms it starts.
+    const content = new Map<string, { score: number; matched: string[]; complete: boolean }>();
+    const filter = allow ? (id: string) => allow.has(id) : undefined;
+    for (const h of this.bm25.search(query, { limit: Math.max(limit * 3, 100), filter, prefix: true })) content.set(h.id, h);
+    // The whole query as a phrase only means something for several words,
+    // and only in a note that has every one of them.
+    const multiWord = /\s/.test(q);
+    const ranked: Array<{ e: Entry; score: number; matched: string[]; phraseable: boolean }> = [];
     for (const e of this.files.values()) {
       if (allow && !allow.has(e.path)) continue;
-      let score = 0;
-      const inName = e.nameLower.includes(q);
-      if (inName) score += 10;
-      if (e.nameLower === q) score += 20;
-      if (e.nameLower.startsWith(q)) score += 5;
-      if (e.pathLower.includes(q) && e.pathLower !== e.nameLower) score += 6;
-      // Niqqud-, final-letter- and prefix-insensitive for Hebrew (T26).
-      const found =
-        e.lower.includes(q) || (hebrewQuery && e.folded !== null && candidates.some((c) => e.folded!.includes(c)));
-      // = `hebrewFind(e.name, q)`, against the name folded at index time.
-      if (!inName && hebrewQuery && e.nameFolded !== null && candidates.some((c) => e.nameFolded!.includes(c))) score += 10;
-      if (found) score += 4;
-      else if (fuzzyMatch(e.nameLower, q) || fuzzyMatch(e.pathLower, q)) score += 1;
-      if (score > 0) scored.push({ e, score, found });
+      const c = content.get(e.path);
+      let score = nameScore(e, q, hebrewQuery, forms) + (c?.score ?? 0);
+      if (!score && (fuzzyMatch(e.nameLower, q) || fuzzyMatch(e.pathLower, q))) score = 1;
+      if (score) ranked.push({ e, score, matched: c?.matched ?? [], phraseable: multiWord && !!c?.complete });
     }
-    scored.sort((a, b) => b.score - a.score);
-    return scored.slice(0, limit).map(({ e, score, found }) => {
+    ranked.sort((a, b) => b.score - a.score || (a.e.path < b.e.path ? -1 : 1));
+    // The phrase check and the snippet scan a note's text, so they run only
+    // for the leading candidates — but for every one the phrase bonus could
+    // still lift into the first `limit`.
+    const cutoff = ranked.length > limit ? ranked[limit - 1].score : -Infinity;
+    const candidates = ranked.filter((r, i) => i < limit || (r.phraseable && r.score + PHRASE_BONUS >= cutoff));
+    const out: SearchHit[] = [];
+    for (const { e, score: base, matched, phraseable } of candidates) {
+      let score = base;
+      const phrase = phraseable ? findIn(e.content, e.lower, q) : null;
+      if (phrase) score += PHRASE_BONUS;
+      const at = phrase ?? (matched.length ? locateTerm(e.content, e.lower, matched) : base > 1 ? findIn(e.content, e.lower, q) : null);
       const hit: SearchHit = { path: e.path, name: e.name, score, snippet: null };
-      const at = found ? findIn(e.content, e.lower, q) : null;
       if (at) {
         const ctx = snippetAround(e.content, at.start, 80);
         // Re-locate the hit inside the (whitespace-collapsed, "…"-prefixed) snippet.
@@ -309,7 +397,38 @@ export class VaultIndex {
         hit.snippet = ctx;
         if (local) hit.match = local;
       }
-      return hit;
-    });
+      out.push(hit);
+    }
+    out.sort((a, b) => b.score - a.score || (a.path < b.path ? -1 : 1));
+    return out.slice(0, limit);
   }
+}
+
+/** The phrase (several words) is in the text as written: a few points on top of BM25. */
+export const PHRASE_BONUS = 4;
+
+/** The name BM25 indexes: without its extension. */
+export const bm25Name = (name: string) => name.replace(/\.(md|markdown|txt)$/i, "");
+
+/** Points for the query in a note's name or path (file-name search stays first-class). */
+function nameScore(e: Entry, q: string, hebrewQuery: boolean, forms: string[]): number {
+  let score = 0;
+  const inName = e.nameLower.includes(q);
+  if (inName) score += 10;
+  if (e.nameLower === q) score += 20;
+  if (e.nameLower.startsWith(q)) score += 5;
+  if (e.pathLower.includes(q) && e.pathLower !== e.nameLower) score += 6;
+  // Niqqud-, final-letter- and prefix-insensitive for Hebrew (T26), against the name folded at index time.
+  if (!inName && hebrewQuery && e.nameFolded !== null && forms.some((f) => e.nameFolded!.includes(f))) score += 10;
+  return score;
+}
+
+/** Where the first of the matched terms (best first; a `~stem` without its marker) occurs in `text`. */
+function locateTerm(text: string, lower: string, terms: string[]): { start: number; end: number } | null {
+  for (const t of terms) {
+    const bare = t.startsWith("~") ? t.slice(1) : t;
+    const at = hasHebrew(bare) ? hebrewFind(text, bare) : findIn(text, lower, bare);
+    if (at) return at;
+  }
+  return null;
 }

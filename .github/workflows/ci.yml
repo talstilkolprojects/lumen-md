@@ -108,6 +108,41 @@ jobs:
             exit 1
           fi
 
+  licenses:
+    name: licence gate (npm • models • datasets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Node 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      # Only the registry download: no install scripts (they would fetch
+      # binaries), and the gate itself reads package-lock.json offline.
+      - name: Install (no scripts)
+        run: npm ci --ignore-scripts || npm install --ignore-scripts
+      - name: Licence gate
+        # The table goes to the job summary whether the gate passes or not.
+        run: |
+          status=0
+          npm run -s licenses > licenses.txt 2>&1 || status=$?
+          cat licenses.txt
+          { echo '```'; cat licenses.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: licenses
+          path: reports/licenses.json
+          if-no-files-found: ignore
+          retention-days: 14
+
   local-ai:
     name: local agents (fake Ollama)
     runs-on: ubuntu-latest

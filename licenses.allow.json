@@ -1,0 +1,37 @@
+{
+  "about": "Documented exceptions to the licence gate (scripts/licenses.mjs). Each entry caps a finding at `level` (warn by default; notice or ok also allowed) and must say why. `until` (YYYY-MM-DD) makes an exception lapse; an entry that matches nothing is reported so this file stays honest. `name` may end with * to match a prefix. `license` is the licence text the decision was about: a finding whose licence has changed since is reported again, not waived.",
+  "exceptions": [
+    {
+      "area": "npm",
+      "name": "tldraw",
+      "license": "SEE LICENSE IN LICENSE.md",
+      "level": "warn",
+      "reason": "tldraw SDK is under the custom 'tldraw license' (not OSI); production use needs a tldraw licence key. Kept as a warning until the owner decides: buy a licence, ship with the watermark terms, or replace the whiteboard.",
+      "decision": "15.10 (measured in 1.9; default plan: Excalidraw, 4.19)"
+    },
+    {
+      "area": "npm",
+      "name": "@tldraw/*",
+      "license": "SEE LICENSE IN LICENSE.md",
+      "level": "warn",
+      "reason": "Same tldraw licence for @tldraw/editor, @tldraw/utils and @tldraw/validate (the other @tldraw packages are MIT).",
+      "decision": "15.10 (measured in 1.9; default plan: Excalidraw, 4.19)"
+    },
+    {
+      "area": "model",
+      "name": "hspell-he-dictionary",
+      "license": "AGPL-3.0-only",
+      "level": "warn",
+      "reason": "AGPL-3.0 Hspell word list: never bundled. The app fetches it from upstream (wooorm/dictionaries) only after an explicit user command and names the licence first (HEBREW_DICT_LICENSE in src/ai/hebrewSpell.ts), so Lumen does not distribute it."
+    },
+    {
+      "area": "npm",
+      "name": "webr",
+      "license": "SEE LICENSE IN LICENCE.md",
+      "level": "warn",
+      "until": "2026-11-15",
+      "reason": "webR's binaries are GPL-3.0 (its LICENSE.md) and scripts/copy-webr.mjs ships them for live R blocks. Pending the owner's decision (plan 15.10): make R a user-initiated download (like Hspell), or drop live R. Lapses on 2026-11-15 so it cannot stay silent.",
+      "decision": "15.10"
+    }
+  ]
+}

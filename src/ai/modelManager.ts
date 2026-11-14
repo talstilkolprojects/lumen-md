@@ -28,24 +28,26 @@ export interface WebLlmCatalogEntry {
   code?: boolean;
   /** Declared multilingual by the model's authors (Hebrew not verified by us). */
   multilingual?: boolean;
+  /** Custom-licence model (plan 1.7): listed with its notice, never picked automatically. */
+  licence?: string;
 }
 
 export const WEBLLM_CATALOG: WebLlmCatalogEntry[] = [
   { base: "SmolLM2-360M-Instruct", label: "SmolLM2 360M", tier: "tiny", vramMB: { f16: 376, f32: 580 }, lowResource: true },
   { base: "Qwen3-0.6B", label: "Qwen3 0.6B", tier: "tiny", vramMB: { f16: 1403, f32: 1925 }, lowResource: true, multilingual: true },
-  { base: "Llama-3.2-1B-Instruct", label: "Llama 3.2 1B", tier: "tiny", vramMB: { f16: 879, f32: 1129 }, lowResource: true, multilingual: true },
+  { base: "Llama-3.2-1B-Instruct", label: "Llama 3.2 1B", tier: "tiny", vramMB: { f16: 879, f32: 1129 }, lowResource: true, multilingual: true, licence: "Llama 3.2 Community License" },
   { base: "SmolLM2-1.7B-Instruct", label: "SmolLM2 1.7B", tier: "tiny", vramMB: { f16: 1774, f32: 2692 }, lowResource: true },
-  { base: "Llama-3.2-3B-Instruct", label: "Llama 3.2 3B", tier: "small", vramMB: { f16: 2264, f32: 2952 }, lowResource: true, multilingual: true },
+  { base: "Llama-3.2-3B-Instruct", label: "Llama 3.2 3B", tier: "small", vramMB: { f16: 2264, f32: 2952 }, lowResource: true, multilingual: true, licence: "Llama 3.2 Community License" },
   // web-llm's function-calling support (functionCallingModelIds) covers the
   // 8B Hermes models only; the 3B model gets the JSON-ReAct protocol.
-  { base: "Hermes-3-Llama-3.2-3B", label: "Hermes 3 (Llama 3.2 3B)", tier: "small", vramMB: { f16: 2264, f32: 2952 }, lowResource: true },
+  { base: "Hermes-3-Llama-3.2-3B", label: "Hermes 3 (Llama 3.2 3B)", tier: "small", vramMB: { f16: 2264, f32: 2952 }, lowResource: true, licence: "Llama 3.2 Community License" },
   { base: "Qwen3-4B", label: "Qwen3 4B", tier: "small", vramMB: { f16: 3432, f32: 4328 }, lowResource: true, multilingual: true },
   { base: "Phi-3.5-mini-instruct", label: "Phi 3.5 mini", tier: "small", vramMB: { f16: 3672, f32: 5483 }, lowResource: false },
   { base: "Qwen2.5-Coder-7B-Instruct", label: "Qwen2.5 Coder 7B", tier: "medium", vramMB: { f16: 5107, f32: 5900 }, lowResource: false, code: true },
-  { base: "Llama-3.1-8B-Instruct", label: "Llama 3.1 8B", tier: "medium", vramMB: { f16: 5001, f32: 6101 }, lowResource: false, multilingual: true },
-  { base: "Hermes-3-Llama-3.1-8B", label: "Hermes 3 (Llama 3.1 8B)", tier: "medium", vramMB: { f16: 4876, f32: 5779 }, lowResource: false, tools: true },
+  { base: "Llama-3.1-8B-Instruct", label: "Llama 3.1 8B", tier: "medium", vramMB: { f16: 5001, f32: 6101 }, lowResource: false, multilingual: true, licence: "Llama 3.1 Community License" },
+  { base: "Hermes-3-Llama-3.1-8B", label: "Hermes 3 (Llama 3.1 8B)", tier: "medium", vramMB: { f16: 4876, f32: 5779 }, lowResource: false, tools: true, licence: "Llama 3.1 Community License" },
   { base: "Qwen3-8B", label: "Qwen3 8B", tier: "medium", vramMB: { f16: 5696, f32: 6853 }, lowResource: false, multilingual: true },
-  { base: "gemma-2-9b-it", label: "Gemma 2 9B", tier: "large", vramMB: { f16: 6422, f32: 8383 }, lowResource: false, multilingual: true },
+  { base: "gemma-2-9b-it", label: "Gemma 2 9B", tier: "large", vramMB: { f16: 6422, f32: 8383 }, lowResource: false, multilingual: true, licence: "Gemma Terms of Use" },
 ];
 
 export const WEBLLM_MODEL_KEY = "lumen.ai.model.local-webgpu";
@@ -132,6 +134,7 @@ export function recommendWebLlmModel(tier: ModelTier, hw: Hardware, opts: { tool
   const order: ModelTier[] = ["tiny", "small", "medium", "large"];
   const want = order.indexOf(tier);
   const prefer = (list: WebLlmCatalogEntry[]) => {
+    list = list.filter((e) => !e.licence); // custom licences are opt-in only (plan 1.7)
     const scored = list.filter((e) => (!opts.tools || e.tools) && (!opts.code || e.code));
     const base = scored.length ? scored : list;
     // Hebrew notes: a multilingual model of the tier, when one fits (T27).
@@ -143,7 +146,7 @@ export function recommendWebLlmModel(tier: ModelTier, hw: Hardware, opts: { tool
     const fits = prefer(WEBLLM_CATALOG.filter((e) => e.tier === order[i] && vram(e) <= budget && (!hw.mobile || e.lowResource)));
     if (fits.length) return webLlmModelId(fits.reduce((b, e) => (vram(e) > vram(b) ? e : b)), hw.f16);
   }
-  const smallest = WEBLLM_CATALOG.reduce((b, e) => (vram(e) < vram(b) ? e : b));
+  const smallest = WEBLLM_CATALOG.filter((e) => !e.licence).reduce((b, e) => (vram(e) < vram(b) ? e : b));
   return webLlmModelId(smallest, hw.f16);
 }
 

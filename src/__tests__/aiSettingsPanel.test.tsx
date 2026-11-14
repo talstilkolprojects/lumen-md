@@ -11,6 +11,10 @@ vi.mock("../ai/modelManager", async (orig) => ({
   detectHardware: vi.fn(async () => ({ webgpu: true, f16: true, maxBufferMB: 2048, deviceMemoryGB: 8, cores: 8, mobile: false })),
 }));
 
+const confirm = vi.hoisted(() => ({ fn: vi.fn(async () => true) }));
+vi.mock("../ui/PromptDialog", () => ({ uiConfirm: (...a: unknown[]) => confirm.fn(...(a as [])) }));
+
+import { refreshOllama } from "../agents/executors/ollama";
 import { pickExecutor, registerExecutor, resetExecutors, setPreferredExecutor, withPreference, preferredExecutor } from "../agents/executors";
 import { AiSettingsPanel } from "../ui/AiSettingsPanel";
 import { clearTrace, recordRun } from "../agents/trace";
@@ -72,6 +76,24 @@ describe("AiSettingsPanel", () => {
     for (const b of screen.getAllByText("Save")) fireEvent.click(b);
     await waitFor(() => expect(localStorage.getItem("lumen.ollama.baseUrl")).toBe("http://127.0.0.1:11434"));
     await waitFor(() => expect(localStorage.getItem("lumen.grammar.endpoint")).toBe("http://localhost:8010/v2/check"));
+  });
+
+  it("names a custom-licence Ollama model in the picker and confirms it before saving", async () => {
+    vi.mocked(refreshOllama).mockResolvedValue({ models: [{ name: "qwen2.5:7b", params: 7, family: "qwen2" }, { name: "llama3.1:8b", params: 8, family: "llama" }] } as never);
+    registerExecutor(fake("ollama", true));
+    const { container } = render(<AiSettingsPanel open onClose={() => {}} />);
+    await waitFor(() => expect(container.querySelector('option[value="llama3.1:8b"]')?.getAttribute("label")).toBe("llama3.1:8b · Llama 3.1 Community License"));
+    expect(container.querySelector('option[value="qwen2.5:7b"]')?.getAttribute("label")).toBeNull();
+    const model = screen.getByPlaceholderText("qwen2.5:7b");
+    fireEvent.change(model, { target: { value: "llama3.1:8b" } });
+    confirm.fn.mockResolvedValueOnce(false);
+    fireEvent.click(screen.getAllByText("Save")[0]);
+    await waitFor(() => expect(confirm.fn).toHaveBeenCalledTimes(1));
+    expect(localStorage.getItem("lumen.ollama.model")).toBeNull();
+    confirm.fn.mockResolvedValueOnce(true);
+    fireEvent.click(screen.getAllByText("Save")[0]);
+    await waitFor(() => expect(localStorage.getItem("lumen.ollama.model")).toBe("llama3.1:8b"));
+    vi.mocked(refreshOllama).mockResolvedValue({ models: [{ name: "qwen2.5:7b", params: 7, family: "qwen2" }] } as never);
   });
 
   it("buttons hand off to the existing commands", async () => {
