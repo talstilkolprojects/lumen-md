@@ -14,7 +14,7 @@
 
 import { Budget, DEFAULT_LIMITS, FormulaError, type FormulaLimits } from "../formula/ast";
 import { formatDate, utcDate } from "../formula/values";
-import { parseBasesExpr, type BasesNode, type BasesParse } from "./expr";
+import { type BasesNode } from "./expr";
 import {
   addDuration,
   compareValues,
@@ -35,6 +35,10 @@ import {
   type BLink,
   type BValue,
 } from "./values";
+import { BASES_DOCUMENTED, BASES_UNSUPPORTED } from "./catalogue";
+export { BASES_DOCUMENTED, BASES_UNSUPPORTED, BASES_LEGACY_GLOBALS, parseBases, BASES_GLOBALS } from "./catalogue";
+import { fileValue, textArg, numArg, toNumberOrNull, clean, formatMoment, relativeText, escapeHtml, titleCase, tagMatches, normFolder } from "./evalHelpers";
+export { formatMoment } from "./evalHelpers";
 
 /** What an expression can reach besides its own row. */
 export interface BasesVault {
@@ -65,171 +69,6 @@ export interface BasesEvalOptions {
 }
 
 export type BasesResult = { ok: true; value: BValue } | { ok: false; error: FormulaError };
-
-/* ─── The function catalogue ─────────────────────────────────────────── */
-
-export const BASES_GLOBALS = ["escapeHTML", "date", "duration", "file", "html", "if", "image", "icon", "link", "list", "max", "min", "now", "number", "today", "random"] as const;
-
-/** Every function in the Bases reference, as `Type.name` (global ones as `global.name`). */
-export const BASES_DOCUMENTED: readonly string[] = [
-  ...BASES_GLOBALS.map((n) => `global.${n}`),
-  "any.isTruthy", "any.isType", "any.toString",
-  "date.date", "date.format", "date.time", "date.relative", "date.isEmpty",
-  "string.contains", "string.containsAll", "string.containsAny", "string.endsWith", "string.isEmpty", "string.lower", "string.replace", "string.repeat", "string.reverse", "string.slice", "string.split", "string.startsWith", "string.title", "string.trim",
-  "number.abs", "number.ceil", "number.floor", "number.isEmpty", "number.round", "number.toFixed",
-  "list.contains", "list.containsAll", "list.containsAny", "list.filter", "list.flat", "list.isEmpty", "list.join", "list.map", "list.reduce", "list.reverse", "list.slice", "list.sort", "list.unique",
-  "link.asFile", "link.linksTo",
-  "file.asLink", "file.hasLink", "file.hasProperty", "file.hasTag", "file.inFolder",
-  "object.isEmpty", "object.keys", "object.values",
-  "regexp.matches",
-];
-
-/**
- * Documented, not run here: `icon()` needs Obsidian's icon set (Lucide, ~1,500
- * icons — far over the lazy-chunk budget); `html()` is shown as plain text,
- * never as markup, so it is counted as not supported.
- */
-export const BASES_UNSUPPORTED: ReadonlySet<string> = new Set(["global.icon", "global.html"]);
-
-/**
- * Global functions of the first Bases releases (1.9), no longer in the
- * reference but still in real files (plan W4.30: kepano's own vault has
- * `not(empty(note.last))`): `not(x)` is `!x`, `empty(x)` is `x.isEmpty()`.
- */
-export const BASES_LEGACY_GLOBALS = ["not", "empty"] as const;
-
-const GLOBAL_SET: ReadonlySet<string> = new Set<string>([...BASES_GLOBALS.filter((n) => !BASES_UNSUPPORTED.has(`global.${n}`)), "html", ...BASES_LEGACY_GLOBALS]);
-const METHOD_NAMES: ReadonlySet<string> = new Set(
-  BASES_DOCUMENTED.filter((n) => !n.startsWith("global.")).map((n) => n.slice(n.indexOf(".") + 1)).concat(["upper", "length", "toLowerCase", "toUpperCase", "includes", "matches"]),
-);
-const UNSUPPORTED_NAMES: ReadonlySet<string> = new Set([...BASES_UNSUPPORTED].map((n) => n.slice(n.indexOf(".") + 1)).filter((n) => n !== "html"));
-
-/** Parse a Bases expression with the Bases function table. */
-export function parseBases(src: string, limits?: Partial<FormulaLimits>): BasesParse {
-  return parseBasesExpr(src, { limits, globals: GLOBAL_SET, methods: METHOD_NAMES, unsupported: UNSUPPORTED_NAMES });
-}
-
-/* ─── Helpers ────────────────────────────────────────────────────────── */
-
-const fileValue = (file: BasesFile): BValue => ({ $: "file", file });
-
-function textArg(v: BValue | undefined, what: string, at: number): string {
-  if (v === undefined) throw new FormulaError("arity", `${what} needs an argument`, at);
-  return toText(v);
-}
-
-function numArg(v: BValue | undefined, what: string, at: number, fallback?: number): number {
-  if (v === undefined || v === null) {
-    if (fallback !== undefined) return fallback;
-    throw new FormulaError("arity", `${what} needs a number`, at);
-  }
-  const n = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? Number(v) : typeof v === "boolean" ? (v ? 1 : 0) : Number.NaN;
-  if (!Number.isFinite(n)) throw new FormulaError("type", `${what} needs a number, not "${toText(v)}"`, at);
-  return n;
-}
-
-function toNumberOrNull(v: BValue): number | null {
-  if (v === null || v === "") return null;
-  if (typeof v === "number") return Number.isFinite(v) ? v : null;
-  if (typeof v === "boolean") return v ? 1 : 0;
-  if (v instanceof Date) return v.getTime();
-  if (isTagged(v) && v.$ === "duration") return durationMs(v);
-  if (typeof v === "string") {
-    const n = Number(v.trim());
-    return v.trim() !== "" && Number.isFinite(n) ? n : null;
-  }
-  return null;
-}
-
-function clean(n: number, at: number): number {
-  if (!Number.isFinite(n)) throw new FormulaError("math", "the result is not a finite number", at);
-  return Number.isInteger(n) ? n : Number(n.toPrecision(15));
-}
-
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const pad = (n: number, w = 2) => String(Math.abs(n)).padStart(w, "0");
-const ordinal = (n: number) => {
-  const s = n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] ?? "th";
-  return `${n}${s}`;
-};
-
-/** Moment.js-style tokens (what Obsidian's `format()` takes), in UTC. `[text]` is literal. */
-export function formatMoment(d: Date, fmt: string): string {
-  const y = d.getUTCFullYear();
-  const mo = d.getUTCMonth();
-  const day = d.getUTCDate();
-  const wd = d.getUTCDay();
-  const h = d.getUTCHours();
-  const mi = d.getUTCMinutes();
-  const s = d.getUTCSeconds();
-  const ms = d.getUTCMilliseconds();
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  const tokens: Record<string, () => string> = {
-    YYYY: () => pad(y, 4),
-    YY: () => pad(y % 100),
-    Q: () => String(Math.floor(mo / 3) + 1),
-    MMMM: () => MONTHS[mo],
-    MMM: () => MONTHS[mo].slice(0, 3),
-    MM: () => pad(mo + 1),
-    M: () => String(mo + 1),
-    Do: () => ordinal(day),
-    DD: () => pad(day),
-    D: () => String(day),
-    dddd: () => DAYS[wd],
-    ddd: () => DAYS[wd].slice(0, 3),
-    dd: () => DAYS[wd].slice(0, 2),
-    d: () => String(wd),
-    HH: () => pad(h),
-    H: () => String(h),
-    hh: () => pad(h12),
-    h: () => String(h12),
-    mm: () => pad(mi),
-    m: () => String(mi),
-    ss: () => pad(s),
-    s: () => String(s),
-    SSS: () => pad(ms, 3),
-    A: () => (h < 12 ? "AM" : "PM"),
-    a: () => (h < 12 ? "am" : "pm"),
-    X: () => String(Math.floor(d.getTime() / 1000)),
-    x: () => String(d.getTime()),
-    Z: () => "+00:00",
-  };
-  const re = /\[([^\]]*)\]|YYYY|YY|Q|MMMM|MMM|MM|M|Do|DD|D|dddd|ddd|dd|d|HH|H|hh|h|mm|m|ss|s|SSS|A|a|X|x|Z/g;
-  return fmt.replace(re, (tok, literal: string | undefined) => (literal !== undefined ? literal : tokens[tok]()));
-}
-
-function relativeText(d: Date, now: Date, locale: string): string {
-  const diff = d.getTime() - now.getTime();
-  const abs = Math.abs(diff);
-  const units: Array<[Intl.RelativeTimeFormatUnit, number]> = [
-    ["year", 365 * 86_400_000],
-    ["month", 30 * 86_400_000],
-    ["week", 7 * 86_400_000],
-    ["day", 86_400_000],
-    ["hour", 3_600_000],
-    ["minute", 60_000],
-    ["second", 1000],
-  ];
-  const fmt = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
-  for (const [unit, size] of units) {
-    if (abs >= size || unit === "second") return fmt.format(Math.round(diff / size), unit);
-  }
-  return fmt.format(0, "second");
-}
-
-const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-
-const titleCase = (s: string) => s.replace(/(^|[\s\-_/])(\p{L})/gu, (_m, sep: string, c: string) => sep + c.toUpperCase());
-
-/** Tag `a` matches `a` and `a/b` (nested tags), ignoring case and a leading `#`. */
-function tagMatches(tag: string, want: string): boolean {
-  const t = tag.replace(/^#/, "").toLowerCase();
-  const w = want.replace(/^#/, "").toLowerCase();
-  return t === w || t.startsWith(`${w}/`);
-}
-
-const normFolder = (f: string) => f.replace(/^\/+|\/+$/g, "").toLowerCase();
 
 /* ─── The interpreter ────────────────────────────────────────────────── */
 
