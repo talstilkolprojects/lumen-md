@@ -13,7 +13,7 @@ import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { t } from "../i18n";
 import { showAiToast } from "../ui/AiToast";
-import { allSources, allTags, buildIndex, cleanTag, exportNote, isIndexed, quoteBlock, retagItem, search, type HighlightItem, type HighlightKind } from "./hub";
+import { allSources, allTags, cleanTag, exportNote, quoteBlock, retagItem, search, type HighlightItem, type HighlightKind } from "./hub";
 import { retagSidecar, type RetagLabels } from "./retag";
 import "./HighlightsPanel.css";
 import { HelpButton } from "../ui/HelpButton";
@@ -37,12 +37,9 @@ function retagLabels(it: HighlightItem): RetagLabels {
   };
 }
 
-/** Read every indexed note in the vault and build the index. */
+/** The vault's highlights, from the index worker (W10.C25): nothing is read or parsed on this thread. */
 export async function loadIndex(): Promise<HighlightItem[]> {
-  const ws = await import("../storage/workspace");
-  const files = (await ws.listWorkspace()).map((f) => f.path).filter(isIndexed);
-  const texts = await Promise.all(files.map(async (path) => ({ path, content: await ws.readWorkspaceFile(path).catch(() => "") })));
-  return buildIndex(texts);
+  return (await import("../storage/workspaceIndex")).indexedHighlights();
 }
 
 /** Open the highlight: the reader at its page / chapter (it flashes), or the clip note. */
