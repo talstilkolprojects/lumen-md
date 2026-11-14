@@ -36,9 +36,9 @@
       "mutants": 107,
       "max": 80,
       "runner": "shim",
-      "sha256": "e60ee7fa980d5b13b932edbbeca773bad3ac06adc47dd21b96aae98b6a3a5602",
+      "sha256": "111c2a1fb7b9a12266920c64bc0b9e7ddd8d9b9bacf92474ca9a645b5c9d0f15",
       "tests": "664206c449e8cb5b6a9a191369e111d60c81ae1e3299a59ee2ca5aad3d6d79d2",
-      "date": "2026-11-12"
+      "date": "2026-11-14"
     },
     "src/storage/encryption.ts": {
       "score": 85.7,
@@ -54,15 +54,15 @@
       "date": "2026-11-12"
     },
     "src/storage/vault/handleBackend.ts": {
-      "score": 93.8,
-      "caught": 75,
-      "survived": 5,
+      "score": 92.5,
+      "caught": 74,
+      "survived": 6,
       "invalid": 0,
       "sampled": 80,
-      "mutants": 146,
+      "mutants": 149,
       "max": 80,
       "runner": "shim",
-      "sha256": "3a47f920cd3f1df57f7a87992275c2c2362d244dd0b3b4f91bd24e8b60428b1c",
+      "sha256": "71c8fad764d10439cf2eba313309b7c01a3e7f0275088cb709bc7782cc6e8e70",
       "tests": "f75c4ca87974529390e262a54811fa8289ae4b081fc4b79ddedcdba91b20c100",
       "date": "2026-11-12"
     },
@@ -89,7 +89,7 @@
       "max": 80,
       "runner": "shim",
       "sha256": "d549898d9003fdb5b78800ef6e01f336a81a0d23e98c61177de78097e368dab9",
-      "tests": "59831ed77516774f40a20090333bf5ecfd14ab045135db0d039fb3bee4e70ecf",
+      "tests": "df5f6469610d9cd794ad17ba477bdcd9b034d1dbe05daa5d5524e4abec6fca29",
       "date": "2026-11-12"
     },
     "src/sync/e2ee/conflict.ts": {
@@ -102,34 +102,34 @@
       "max": 80,
       "runner": "shim",
       "sha256": "e46888f04f783824ec03df0e15ec11428cd9ca3b8ab5874091dd542373181b01",
-      "tests": "a5a8a4e74fa85041885dd1770593e52cdc37bf3032c5da2a0971215e9560a3ac",
+      "tests": "22c52dd6955005232ad20bdcc4f215e40b10b6c85a8a9ff037c682803ef692b1",
       "date": "2026-11-12"
     },
     "src/sync/e2ee/header.ts": {
-      "score": 86.7,
-      "caught": 13,
-      "survived": 2,
+      "score": 100,
+      "caught": 17,
+      "survived": 0,
       "invalid": 0,
-      "sampled": 15,
-      "mutants": 15,
+      "sampled": 17,
+      "mutants": 17,
       "max": 80,
       "runner": "shim",
-      "sha256": "75ccdf3cd1054f3e8dac142ea9da725c262eddbc459f7063670fdf8ae6a61e46",
-      "tests": "b568ebabfe6031bad073caed6a622bd7b99c455a29349d3a1034518878dc5463",
-      "date": "2026-11-12"
+      "sha256": "11fea3129f73ddf401d0af8b8db49bcbf58a3700fb06897547aa5347bc37363f",
+      "tests": "0d6651393b6d725c48dddfb05f010f57a577a6ce0d8858fd48e87e7033047527",
+      "date": "2026-11-14"
     },
     "src/sync/e2ee/keyring.ts": {
-      "score": 92.5,
-      "caught": 74,
-      "survived": 6,
+      "score": 81.3,
+      "caught": 65,
+      "survived": 15,
       "invalid": 0,
       "sampled": 80,
-      "mutants": 344,
+      "mutants": 441,
       "max": 80,
       "runner": "shim",
-      "sha256": "e861c72c0f5b20304c2cb524359bfa3333e34fbd3ab3f554d9cfbb57d488b928",
-      "tests": "a560631bc19e1229486908962f863a04e538fc05146ee009393a8d882adca49d",
-      "date": "2026-11-12"
+      "sha256": "964fd218fb5b54b9d3e54568bedd2c9be073c990aba877cf88d5ccb98c2e3ed8",
+      "tests": "e060760eec0bc971b9215e34c4b0433c61234ef9c7c008ac019ac9b05788e541",
+      "date": "2026-11-14"
     },
     "src/sync/e2ee/manifest.ts": {
       "score": 85,
@@ -141,7 +141,7 @@
       "max": 80,
       "runner": "shim",
       "sha256": "d2fa650500a865a93b17de4d2f76ddec9162440979903b439ee7ed23435e24ce",
-      "tests": "a845bfda6e323a67bcaf08de4f6c1f779b2fe49e8bd8131fea901e15716be741",
+      "tests": "28b95d3621c91197b130d000c6667f3ee104381c30a86843259fd219f57672b0",
       "date": "2026-11-12"
     },
     "src/sync/e2ee/primitives/argon2.ts": {
@@ -154,7 +154,7 @@
       "max": 80,
       "runner": "shim",
       "sha256": "24ef4f826b8cd14e2004b12d991ac1d3af1f2a7e6bdc52b1dbc21c12dc7c48a4",
-      "tests": "4eae955df1d77e1c21461fe3e7235c24ba52886c3aae12181465eb34f15a2198",
+      "tests": "49e5021f69dfe1ee03b4fc8b4c12e223eec587703d8eb406691fc20e4d572c94",
       "date": "2026-11-12"
     },
     "src/sync/e2ee/primitives/blake2b.ts": {
